@@ -1,0 +1,299 @@
+{
+  "settings": {
+    "width": 600,
+    "backgroundColor": "#fbfaf3",
+    "textColor": "#0c0d0b",
+    "linkColor": "#0c0d0b",
+    "linkUnderline": true,
+    "fontFamily": "Georgia",
+    "locale": "en",
+    "preheaderText": "A link to choose a new password."
+  },
+  "blocks": [
+    {
+      "id": "s-03n",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        }
+      },
+      "children": [
+        [
+          {
+            "id": "sp-03m",
+            "type": "spacer",
+            "height": 28,
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-03q",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 34,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "p-03o",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#0c0d0b;font-family:Menlo, Consolas, monospace\">PLATFORMKIT DEMO</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 2,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-03p",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">Books to keep</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-03s",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "d-03r",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 18,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-03x",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "t-03t",
+            "type": "title",
+            "level": 2,
+            "content": "Choose a new password.",
+            "textAlign": "left",
+            "color": "#0c0d0b",
+            "fontFamily": "Georgia, Times New Roman, serif",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 10,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-03u",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:16px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">Someone — we hope you — asked to reset the password for {{ .Email }}. The link below opens a form to choose a new one; it works once, and for an hour.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 12,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "b-03v",
+            "type": "button",
+            "text": "Choose a new password",
+            "url": "{{ .ConfirmationURL }}",
+            "backgroundColor": "#0c0d0b",
+            "textColor": "#fbfaf3",
+            "borderRadius": 999,
+            "fontSize": 15,
+            "fontFamily": "Georgia, Times New Roman, serif",
+            "buttonPadding": {
+              "top": 13,
+              "right": 24,
+              "bottom": 13,
+              "left": 24
+            },
+            "align": "left",
+            "styles": {
+              "padding": {
+                "top": 10,
+                "right": 0,
+                "bottom": 14,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-03w",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">If you did not ask for this, ignore it — your password stays as it is.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-041",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 34,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "d-03y",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 22,
+                "right": 0,
+                "bottom": 14,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-03z",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">Questions? Reply to this email.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-040",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">You are receiving this because a password reset was asked for at this site.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-043",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        }
+      },
+      "children": [
+        [
+          {
+            "id": "sp-042",
+            "type": "spacer",
+            "height": 28,
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    }
+  ]
+}

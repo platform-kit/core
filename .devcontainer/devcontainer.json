@@ -1,0 +1,24 @@
+{
+  "name": "PlatformKit",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "hostRequirements": { "cpus": 4, "memory": "8gb" },
+  "forwardPorts": [5173, 54321, 54322, 54323, 54324],
+  "portsAttributes": {
+    "5173": { "label": "vite" },
+    "54321": { "label": "supabase api" },
+    "54322": { "label": "supabase db" },
+    "54323": { "label": "supabase studio" },
+    "54324": { "label": "supabase mail" }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": ["Vue.volar", "dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "anthropic.claude-code"]
+    }
+  }
+}

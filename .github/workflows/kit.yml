@@ -1,0 +1,88 @@
+# The kit's CI: the kit's checks and the phone probe against the demo on every push and pull request,
+# and, on a tag `kit-v<version>`, both packages published to npm and to GitHub Packages.
+# Secrets: NPM_TOKEN (npm, publish rights on @platform-kit); GITHUB_TOKEN is the runner's own.
+name: kit
+on:
+  push:
+    branches: [main]
+    tags: ['kit-v*']
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: denoland/setup-deno@v2
+        with: { deno-version: v2.x }
+      - run: npm ci
+      - name: the kit's checks against the demo
+        run: npm test
+        working-directory: sites/demo
+      - name: the kit's checks against the docs site
+        run: npm test
+        working-directory: sites/docs
+        env: { SCHEMA_TEST: '0' }
+      - name: the docs site's bundle and the probe over it
+        run: |
+          npx platformkit build --outDir dist
+          (npx vite preview --port 5174 --strictPort &) && sleep 5
+          npx platformkit probe --url http://localhost:5174 --routes /,/docs,/docs/start-here,/docs/running-a-site/the-admin,/docs/building-a-site/the-database,/docs/reference/frontmatter
+        working-directory: sites/docs
+        env: { PRERENDER: '0', SHARE_IMAGES: '0' }
+      - name: the demo's content and bundle
+        run: |
+          npx supabase start
+          npx supabase db reset
+          node --input-type=module <<'NODE'
+          import { execFileSync, spawnSync } from 'node:child_process'
+
+          const stack = JSON.parse(execFileSync('npx', ['supabase', 'status', '-o', 'json'], { encoding: 'utf8' }))
+          const env = {
+            ...process.env,
+            APP_URL: 'http://localhost:5173',
+            SUPABASE_URL: stack.API_URL,
+            SUPABASE_ANON_KEY: stack.ANON_KEY,
+            SUPABASE_SERVICE_ROLE_KEY: stack.SERVICE_ROLE_KEY,
+            VITE_APP_URL: 'http://localhost:5173',
+            VITE_SUPABASE_URL: stack.API_URL,
+            VITE_SUPABASE_ANON_KEY: stack.ANON_KEY,
+          }
+          if (!stack.API_URL || !stack.ANON_KEY || !stack.SERVICE_ROLE_KEY) {
+            throw new Error('Supabase status did not return the local API URL and keys.')
+          }
+          const build = spawnSync('npx', ['platformkit', 'build', '--outDir', 'dist'], { env, stdio: 'inherit' })
+          if (build.error) throw build.error
+          process.exitCode = build.status ?? 1
+          NODE
+        working-directory: sites/demo
+        env: { PRERENDER: '0', SHARE_IMAGES: '0' }
+      - name: the phone probe over the demo
+        run: |
+          npx playwright install --with-deps chromium
+          (npx vite preview --port 5173 --strictPort &) && sleep 5
+          npx platformkit probe --url http://localhost:5173 --routes /,/content,/content/books/the-field-guide,/store,/pricing,/app
+        working-directory: sites/demo
+  publish:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/kit-v')
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: write, id-token: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, registry-url: 'https://registry.npmjs.org', scope: '@platform-kit' }
+      - run: npm ci
+      - name: the version from the tag
+        run: |
+          V="${GITHUB_REF_NAME#kit-v}"
+          npm version "$V" --no-git-tag-version --workspace @platform-kit/kit --workspace @platform-kit/movable-types
+      - name: npm
+        run: npm publish --workspace @platform-kit/kit --workspace @platform-kit/movable-types --access public
+        env: { NODE_AUTH_TOKEN: '${{ secrets.NPM_TOKEN }}' }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, registry-url: 'https://npm.pkg.github.com', scope: '@platform-kit' }
+      - name: GitHub Packages
+        run: npm publish --workspace @platform-kit/kit --workspace @platform-kit/movable-types
+        env: { NODE_AUTH_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }

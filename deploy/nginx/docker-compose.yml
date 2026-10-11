@@ -1,0 +1,58 @@
+# The site on nginx: build the site first (npm run build), then `docker compose -f deploy/nginx/docker-compose.yml up`
+# from the repository's root. SUPABASE_URL is the project's address (https://<ref>.supabase.co).
+#
+# THE PRERENDER SIDECAR IS THE CLOUD SHAPE'S ALONE. A static or git-backed deployment bakes its
+# pages and its share pictures at build time and needs nothing here; a cloud deployment never builds
+# again, so a crawler asking for a record published since the last build gets the shell and its
+# og:image names a file nobody took. Start it with the profile, and tell nginx where it is:
+#
+#   docker compose -f deploy/nginx/docker-compose.yml --profile cloud up
+#
+# With PRERENDER_URL unset the site serves exactly as before — the entrypoint empties the include,
+# so there is no upstream to be down and nothing to go wrong.
+services:
+  site:
+    build:
+      context: ../..
+      dockerfile: deploy/nginx/Dockerfile
+      args:
+        SITE_DIST: ${PLATFORMKIT_SITE_DIST:-sites/docs/dist}
+    ports: ['8080:80']
+    env_file:
+      - path: ../../.env
+        required: false
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      PLATFORMKIT_DOMAIN: ${PLATFORMKIT_DOMAIN:-}
+      PLATFORMKIT_DEFAULT_SITE: ${PLATFORMKIT_DEFAULT_SITE:-docs}
+      PLATFORMKIT_SITES: ${PLATFORMKIT_SITES:-docs}
+      PLATFORMKIT_APEX: ${PLATFORMKIT_APEX:-docs}
+      PLATFORMKIT_SITES_MODE: ${PLATFORMKIT_SITES_MODE:-files}
+      PRERENDER_URL: ${PRERENDER_URL:-}
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+
+  prerender:
+    profiles: ['cloud']
+    build: { context: ../.., dockerfile: deploy/prerender/Dockerfile }
+    environment:
+      # the one origin it will render: the site beside it, by its name on this network
+      ORIGIN: ${PRERENDER_ORIGIN:-http://site}
+      CACHE_TTL: ${PRERENDER_CACHE_TTL:-3600}
+    expose: ['3000']
+
+  dev-front-door:
+    profiles: ['dev']
+    build: { context: ../.., dockerfile: deploy/nginx/Dockerfile, target: dev }
+    ports: ['${DEV_FRONT_DOOR_PORT:-8080}:80']
+    environment:
+      PLATFORMKIT_DOMAIN: ${PLATFORMKIT_DOMAIN:-localhost}
+      PLATFORMKIT_SITES: ${PLATFORMKIT_SITES:-}
+      PLATFORMKIT_APEX: ${PLATFORMKIT_APEX:-}
+      PLATFORMKIT_SITES_MODE: proxy
+      PLATFORMKIT_DEV_DIRECTORY: ${PLATFORMKIT_DEV_DIRECTORY:-}
+      PLATFORMKIT_DEV_DIRECTORY_PORT: ${PLATFORMKIT_DEV_DIRECTORY_PORT:-}
+    volumes:
+      - ../../node_modules/.cache/platformkit/dev:/workspace/node_modules/.cache/platformkit/dev:ro
+    extra_hosts:
+      - host.docker.internal:host-gateway

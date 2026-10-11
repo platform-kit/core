@@ -1,0 +1,13 @@
+{
+  "imports": {
+    "zod": "npm:zod@4",
+    "gray-matter": "npm:gray-matter@4",
+    "js-yaml": "npm:js-yaml@5",
+    "yaml": "npm:yaml@2",
+    "marked": "npm:marked@18",
+    "validatorjs": "npm:validatorjs@3",
+    "validatorjs/src/lang/en.js": "npm:validatorjs@3/src/lang/en.js",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
+    "#site": "../_shared/pipe/site.js"
+  }
+}

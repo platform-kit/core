@@ -1,0 +1,1100 @@
+{
+ "content-css-utility-classes-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "house:number*",
+   "road:number*",
+   "city:text*"
+  ]
+ },
+ "content-css-utility-classes-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "price:number",
+   "quantity:number"
+  ]
+ },
+ "content-css-utility-classes-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "price:number",
+   "quantity:number"
+  ]
+ },
+ "content-css-utility-classes-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "email:email*"
+  ]
+ },
+ "content-data-binding-1.md": {
+  "errors": [],
+  "slides": [
+   "body",
+   "body"
+  ],
+  "fields": [
+   "email:email*"
+  ]
+ },
+ "content-data-binding-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "price:number*",
+   "quantity:number*"
+  ]
+ },
+ "content-data-binding-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "name:text*",
+   "email:email*"
+  ]
+ },
+ "content-end-slide-1.md": {
+  "errors": [],
+  "slides": [
+   "body",
+   "end"
+  ],
+  "fields": [
+   "email:email*"
+  ]
+ },
+ "content-end-slide-2.md": {
+  "errors": [],
+  "slides": [
+   "body",
+   "end"
+  ],
+  "fields": [
+   "feedback:text"
+  ]
+ },
+ "content-end-slide-3.md": {
+  "errors": [],
+  "slides": [
+   "body",
+   "end"
+  ],
+  "fields": [
+   "rating:rating*"
+  ]
+ },
+ "content-end-slide-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "email:email*"
+  ]
+ },
+ "content-markdown-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": []
+ },
+ "content-slide-1.md": {
+  "errors": [],
+  "slides": [
+   "body",
+   "body@50%",
+   "body?referralSource == 'Recommendation'@75%"
+  ],
+  "fields": [
+   "position:choice*",
+   "referralSource:choice*",
+   "recommender:email"
+  ]
+ },
+ "content-slide-2.md": {
+  "errors": [],
+  "slides": [
+   "body",
+   "body?age > 18"
+  ],
+  "fields": [
+   "age:number*",
+   "drivingLicense:text*"
+  ]
+ },
+ "content-slide-3.md": {
+  "errors": [],
+  "slides": [
+   "body",
+   "body@50%"
+  ],
+  "fields": [
+   "name:text*",
+   "phone:tel"
+  ]
+ },
+ "content-slide-4.md": {
+  "errors": [],
+  "slides": [
+   "body",
+   "body"
+  ],
+  "fields": [
+   "companyName:text*",
+   "employees:number"
+  ]
+ },
+ "content-slide-5.md": {
+  "errors": [
+   "\"post-url\" is set by the kit"
+  ],
+  "slides": [
+   "body",
+   "body"
+  ],
+  "fields": [
+   "accountEmail:email*",
+   "verificationCode:number*"
+  ]
+ },
+ "content-slide-6.md": {
+  "errors": [],
+  "slides": [
+   "body",
+   "body"
+  ],
+  "fields": [
+   "acceptTerms:choice*",
+   "signature:text*"
+  ]
+ },
+ "content-slide-7.md": {
+  "errors": [],
+  "slides": [
+   "body",
+   "body?accountType == 'business'@75%"
+  ],
+  "fields": [
+   "accountType:choice*",
+   "businessName:text*"
+  ]
+ },
+ "content-start-slide-1.md": {
+  "errors": [],
+  "slides": [
+   "start",
+   "body"
+  ],
+  "fields": [
+   "experience:choice*"
+  ]
+ },
+ "content-start-slide-2.md": {
+  "errors": [],
+  "slides": [
+   "start",
+   "body"
+  ],
+  "fields": [
+   "fullName:text*"
+  ]
+ },
+ "content-start-slide-3.md": {
+  "errors": [],
+  "slides": [
+   "start",
+   "body"
+  ],
+  "fields": [
+   "feedback:text"
+  ]
+ },
+ "content-start-slide-4.md": {
+  "errors": [],
+  "slides": [
+   "start",
+   "body"
+  ],
+  "fields": [
+   "satisfaction:choice"
+  ]
+ },
+ "customization-localization-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "nps:scale*"
+  ]
+ },
+ "getting-started-readme-1.md": {
+  "errors": [
+   "\"post-url\" is set by the kit"
+  ],
+  "slides": [
+   "body"
+  ],
+  "fields": []
+ },
+ "getting-started-settings-1.md": {
+  "errors": [
+   "\"post-url\" is set by the kit"
+  ],
+  "slides": [
+   "body"
+  ],
+  "fields": []
+ },
+ "input-types-choice-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "interest:choice"
+  ]
+ },
+ "input-types-choice-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "interest:choice*"
+  ]
+ },
+ "input-types-choice-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "experience:choice*"
+  ]
+ },
+ "input-types-choice-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "subscription:choice"
+  ]
+ },
+ "input-types-choice-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "preferences:choice"
+  ]
+ },
+ "input-types-choice-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "position:choice*",
+   "languages:choice?"
+  ]
+ },
+ "input-types-date-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "birthdate:date"
+  ]
+ },
+ "input-types-date-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "birthdate:date*"
+  ]
+ },
+ "input-types-date-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "appointmentDate:date*"
+  ]
+ },
+ "input-types-date-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "startDate:date"
+  ]
+ },
+ "input-types-date-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "eventDate:date"
+  ]
+ },
+ "input-types-date-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "tripType:choice*",
+   "returnDate:date?"
+  ]
+ },
+ "input-types-datetime-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "appointment:datetime"
+  ]
+ },
+ "input-types-datetime-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "appointment:datetime*"
+  ]
+ },
+ "input-types-datetime-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "meetingTime:datetime*"
+  ]
+ },
+ "input-types-datetime-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "appointmentTime:datetime*"
+  ]
+ },
+ "input-types-datetime-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "eventDateTime:datetime"
+  ]
+ },
+ "input-types-datetime-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "tripType:choice*",
+   "returnFlight:datetime?"
+  ]
+ },
+ "input-types-email-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "email:email"
+  ]
+ },
+ "input-types-email-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "email:email*"
+  ]
+ },
+ "input-types-email-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "contactEmail:email*"
+  ]
+ },
+ "input-types-email-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "workEmail:email*"
+  ]
+ },
+ "input-types-email-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "emailAddress:email"
+  ]
+ },
+ "input-types-email-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "wantAlternateEmail:choice*",
+   "alternateEmail:email?"
+  ]
+ },
+ "input-types-file-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "document:file"
+  ]
+ },
+ "input-types-file-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "document:file*"
+  ]
+ },
+ "input-types-file-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "resume:file*"
+  ]
+ },
+ "input-types-file-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "profilePicture:file*"
+  ]
+ },
+ "input-types-file-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "document:file"
+  ]
+ },
+ "input-types-file-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "attachment:file"
+  ]
+ },
+ "input-types-file-input-7.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "hasDocument:choice*",
+   "supportingDoc:file?"
+  ]
+ },
+ "input-types-number-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "quantity:number"
+  ]
+ },
+ "input-types-number-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "quantity:number*"
+  ]
+ },
+ "input-types-number-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "age:number*"
+  ]
+ },
+ "input-types-number-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "price:number*"
+  ]
+ },
+ "input-types-number-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "quantity:number"
+  ]
+ },
+ "input-types-number-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "wantToPurchase:choice*",
+   "quantity:number?"
+  ]
+ },
+ "input-types-opinion-scale-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "agreement:scale"
+  ]
+ },
+ "input-types-opinion-scale-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "agreement:scale*"
+  ]
+ },
+ "input-types-opinion-scale-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "satisfaction:scale*"
+  ]
+ },
+ "input-types-opinion-scale-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "rating:scale"
+  ]
+ },
+ "input-types-opinion-scale-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "feedback:scale"
+  ]
+ },
+ "input-types-opinion-scale-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "wantFeedback:choice*",
+   "detailedFeedback:scale?"
+  ]
+ },
+ "input-types-password-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "password:password"
+  ]
+ },
+ "input-types-password-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "password:password*"
+  ]
+ },
+ "input-types-password-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "newPassword:password*"
+  ]
+ },
+ "input-types-password-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "password:password*"
+  ]
+ },
+ "input-types-password-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "accountPassword:password"
+  ]
+ },
+ "input-types-password-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "createAccount:choice*",
+   "accountPassword:password?"
+  ]
+ },
+ "input-types-picture-choice-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "style:picture"
+  ]
+ },
+ "input-types-picture-choice-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "style:picture*"
+  ]
+ },
+ "input-types-picture-choice-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "theme:picture*"
+  ]
+ },
+ "input-types-picture-choice-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "avatar:picture"
+  ]
+ },
+ "input-types-picture-choice-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "layout:picture"
+  ]
+ },
+ "input-types-picture-choice-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "interest:choice*",
+   "roomStyle:picture?"
+  ]
+ },
+ "input-types-rating-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "rating:rating"
+  ]
+ },
+ "input-types-rating-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "rating:rating*"
+  ]
+ },
+ "input-types-rating-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "satisfaction:rating*"
+  ]
+ },
+ "input-types-rating-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "experience:rating"
+  ]
+ },
+ "input-types-rating-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "userRating:rating"
+  ]
+ },
+ "input-types-rating-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "wantToRate:choice*",
+   "serviceRating:rating?"
+  ]
+ },
+ "input-types-select-box-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "country:select"
+  ]
+ },
+ "input-types-select-box-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "country:select*"
+  ]
+ },
+ "input-types-select-box-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "experience:select*"
+  ]
+ },
+ "input-types-select-box-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "language:select*"
+  ]
+ },
+ "input-types-select-box-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "jobRole:select"
+  ]
+ },
+ "input-types-select-box-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "jobTitle:select*",
+   "framework:select?"
+  ]
+ },
+ "input-types-tel-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "phone:tel"
+  ]
+ },
+ "input-types-tel-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "phone:tel*"
+  ]
+ },
+ "input-types-tel-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "contactPhone:tel*"
+  ]
+ },
+ "input-types-tel-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "phoneNumber:tel*"
+  ]
+ },
+ "input-types-tel-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "phoneNumber:tel"
+  ]
+ },
+ "input-types-tel-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "wantSMS:choice*",
+   "mobilePhone:tel?"
+  ]
+ },
+ "input-types-text-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "fullName:text"
+  ]
+ },
+ "input-types-text-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "fullName:text*"
+  ]
+ },
+ "input-types-text-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "comments:text"
+  ]
+ },
+ "input-types-text-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "username:text*"
+  ]
+ },
+ "input-types-text-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "fullName:text"
+  ]
+ },
+ "input-types-text-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "reason:choice*",
+   "otherReason:text?"
+  ]
+ },
+ "input-types-time-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "appointmentTime:time"
+  ]
+ },
+ "input-types-time-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "appointmentTime:time*"
+  ]
+ },
+ "input-types-time-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "meetingTime:time*"
+  ]
+ },
+ "input-types-time-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "appointmentTime:time*"
+  ]
+ },
+ "input-types-time-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "preferredTime:time"
+  ]
+ },
+ "input-types-time-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "wantMeeting:choice*",
+   "meetingTime:time?"
+  ]
+ },
+ "input-types-url-input-1.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "website:url"
+  ]
+ },
+ "input-types-url-input-2.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "website:url*"
+  ]
+ },
+ "input-types-url-input-3.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "blogUrl:url*"
+  ]
+ },
+ "input-types-url-input-4.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "githubProfile:url*"
+  ]
+ },
+ "input-types-url-input-5.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "portfolioUrl:url"
+  ]
+ },
+ "input-types-url-input-6.md": {
+  "errors": [],
+  "slides": [
+   "body"
+  ],
+  "fields": [
+   "hasPortfolio:choice*",
+   "portfolioUrl:url?"
+  ]
+ }
+}

@@ -1,0 +1,128 @@
+{
+  "name": "@platform-kit/movable-types",
+  "version": "0.1.0",
+  "description": "Movable Types — PlatformKit's default theme: every page and component a reader or an admin sees, replaceable piece by piece or whole.",
+  "type": "module",
+  "license": "MIT",
+  "repository": "github:platform-kit/core",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "imports": {
+    "#content": {
+      "node": "@platform-kit/kit/build/content-node.mjs",
+      "default": "./.velite/index.js"
+    },
+    "#site": {
+      "node": "@platform-kit/kit/build/site-node.mjs",
+      "default": "@platform-kit/kit/build/site-node.mjs"
+    },
+    "#site/looks": {
+      "node": "@platform-kit/kit/build/site-looks-node.mjs",
+      "default": "@platform-kit/kit/build/site-looks-node.mjs"
+    },
+    "#site/landing": {
+      "node": "@platform-kit/kit/build/site-landing-node.mjs",
+      "default": "@platform-kit/kit/build/site-landing-node.mjs"
+    },
+    "#site/app": {
+      "node": "@platform-kit/kit/build/site-app-node.mjs",
+      "default": "@platform-kit/kit/build/site-app-node.mjs"
+    },
+    "#site/routes": {
+      "node": "@platform-kit/kit/build/site-routes-node.mjs",
+      "default": "@platform-kit/kit/build/site-routes-node.mjs"
+    },
+    "#site/nav": {
+      "node": "@platform-kit/kit/build/site-nav-node.mjs",
+      "default": "@platform-kit/kit/build/site-nav-node.mjs"
+    },
+    "#site/analytics": {
+      "node": "@platform-kit/kit/build/site-analytics-node.mjs",
+      "default": "@platform-kit/kit/build/site-analytics-node.mjs"
+    },
+    "#site/instrument": {
+      "node": "@platform-kit/kit/build/site-instrument-node.mjs",
+      "default": "@platform-kit/kit/build/site-instrument-node.mjs"
+    },
+    "#site/content/*": {
+      "node": "@platform-kit/kit/build/content-file-node.mjs",
+      "default": "@platform-kit/kit/build/content-file-node.mjs"
+    },
+    "#content/*": {
+      "node": "@platform-kit/kit/build/content-file-node.mjs",
+      "default": "@platform-kit/kit/build/content-file-node.mjs"
+    },
+    "#site/recommendations": {
+      "node": "@platform-kit/kit/build/site-recommendations-node.mjs",
+      "default": "@platform-kit/kit/build/site-recommendations-node.mjs"
+    },
+    "#site/permissions": {
+      "node": "@platform-kit/kit/build/site-permissions-node.mjs",
+      "default": "@platform-kit/kit/build/site-permissions-node.mjs"
+    },
+    "#site/member": {
+      "node": "@platform-kit/kit/build/site-member-node.mjs",
+      "default": "@platform-kit/kit/build/site-member-node.mjs"
+    },
+    "#site/admin": {
+      "node": "@platform-kit/kit/build/site-admin-node.mjs",
+      "default": "@platform-kit/kit/build/site-admin-node.mjs"
+    }
+  },
+  "dependencies": {
+    "@platform-kit/kit": "0.1.0",
+    "@primevue/themes": "^4.5.4",
+    "@scalar/api-reference": "^1.70.0",
+    "@templatical/editor": "^0.39.0",
+    "@templatical/renderer": "^0.39.0",
+    "@tiptap/core": "^2.27.3",
+    "@tiptap/extension-bold": "^2.27.3",
+    "@tiptap/extension-document": "^2.27.3",
+    "@tiptap/extension-hard-break": "^2.27.3",
+    "@tiptap/extension-history": "^2.27.3",
+    "@tiptap/extension-image": "^2.27.3",
+    "@tiptap/extension-italic": "^2.27.3",
+    "@tiptap/extension-link": "^2.27.3",
+    "@tiptap/extension-paragraph": "^2.27.3",
+    "@tiptap/extension-placeholder": "^2.27.3",
+    "@tiptap/extension-text": "^2.27.3",
+    "@tiptap/extension-typography": "^2.27.3",
+    "@tiptap/starter-kit": "^2.27.3",
+    "@tiptap/vue-3": "^2.27.3",
+    "@uppy/core": "^6.0.1",
+    "@vueuse/core": "^14.4.0",
+    "ag-grid-community": "^36.1.0",
+    "ag-grid-vue3": "^36.1.0",
+    "echarts": "^6.1.0",
+    "livekit-client": "^2.22.3",
+    "lucide-vue-next": "^1.0.0",
+    "marked": "^18.0.11",
+    "mjml-browser": "^5.4.1",
+    "page-flip": "^2.0.7",
+    "pdfjs-dist": "^4.10.38",
+    "primevue": "^4.5.5",
+    "tiptap-markdown": "^0.8.10",
+    "vidstack": "^0.6.15",
+    "vue": "^3.5.13",
+    "vue-echarts": "^8.3.0",
+    "vuedraggable": "^4.1.0",
+    "vuefinder": "^4.7.6",
+    "wavesurfer.js": "^7.12.12",
+    "zod": "^4.5.4"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.13"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@calcom/embed-core": "^1.5.3",
+    "@typeform/embed": "^6.0.0"
+  }
+}

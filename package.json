@@ -1,0 +1,63 @@
+{
+  "name": "@platform-kit/workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "repository": "github:platform-kit/core",
+  "description": "PlatformKit workspace containing the kit, theme, and generic site fixtures.",
+  "bin": {
+    "platformkit": "./packages/kit/bin/platformkit.mjs"
+  },
+  "workspaces": [
+    "packages/*",
+    "sites/brochure",
+    "sites/demo",
+    "sites/docs"
+  ],
+  "scripts": {
+    "dev": "platformkit dev",
+    "sites": "platformkit sites",
+    "docs:dev": "npm run dev --workspace @platform-kit/docs",
+    "build": "platformkit build",
+    "build:spa": "platformkit site-run build:spa",
+    "preview": "platformkit site-run preview",
+    "test": "platformkit test",
+    "format": "platformkit site-run format",
+    "format:check": "platformkit site-run format:check",
+    "db:start": "platformkit site-run db:start",
+    "db:stop": "platformkit site-run db:stop",
+    "db:reset": "platformkit migrate reset",
+    "db:serve": "platformkit functions",
+    "db:assemble": "platformkit assemble",
+    "deploy": "platformkit deploy",
+    "lint:bank": "platformkit site-run lint:bank",
+    "sheet": "platformkit site-run sheet",
+    "sheet:write": "platformkit site-run sheet:write",
+    "bank:csv": "platformkit site-run bank:csv",
+    "resonance": "platformkit site-run resonance",
+    "resonance:write": "platformkit site-run resonance:write",
+    "affinity": "platformkit site-run affinity",
+    "affinity:review": "platformkit site-run affinity:review",
+    "complexes": "platformkit site-run complexes",
+    "raters": "platformkit site-run raters",
+    "raters:sheet": "platformkit site-run raters:sheet",
+    "raters:model": "platformkit site-run raters:model",
+    "share-images": "platformkit site-run share-images",
+    "tts": "platformkit tts",
+    "enrich": "platformkit enrich",
+    "enrich:write": "platformkit site-run enrich:write",
+    "dev:vite": "platformkit site-run dev:vite",
+    "probe": "platformkit probe",
+    "tts:setup": "platformkit site-run tts:setup",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "sites/*/content/{articles,wiki,docs}/**/*.md": "prettier --write"
+  },
+  "devDependencies": {
+    "@fission-ai/openspec": "^1.13.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.9.6"
+  }
+}

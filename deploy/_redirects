@@ -1,0 +1,78 @@
+# The rewrites this site needs from its host — the one list. Netlify's _redirects format: a line is
+# `source destination status`, `:splat` the rest of a `/*` path, 200 a rewrite (the browser stays on the site's
+# domain). $SUPABASE_URL is the project's address (https://<ref>.supabase.co): the build writes dist/_redirects with it
+# filled from VITE_SUPABASE_URL, so Netlify takes that file as is; Render's Redirects/Rewrites are these lines typed in
+# (action Rewrite, above any catch-all); deploy/nginx/ is generated from this file (npm test refuses drift). The order is
+# the order a host that takes the first match keeps: the specific before the general, the app's fallback last.
+# `node packages/kit/build/rewrites.mjs --check` (in npm test) refuses a rule a module on this site needs and this file
+# lacks, and one for a module that is off.
+
+# EVERY API OF THIS SITE HAS A ROOM OF ITS OWN UNDER /api: one segment named for what the API does,
+# never for the product whose shape it wears, and inside it that product's own path continues
+# unchanged — so a client changes its base URL and nothing else. No two rooms can collide and no
+# rule has to come before another to be correct. A reader's address is never a machine's, which is
+# what lets a surface have the obvious name (/spaces is the community, not Contentful).
+#
+# Three rooms repeat a word — /api/store/api/<version>/…, /api/desk/api/v1/…, /api/forms/forms/… —
+# because those products build that part of the path themselves. The repetition IS the
+# compatibility; trimming it would rewrite their path. Do not tidy it.
+
+# the content API — Contentful's Delivery, Preview, Sync and GraphQL (api + a content kind)
+#   contentful.js: createClient({ host: <site>, basePath: '/api/content' })
+/api/content/*       $SUPABASE_URL/functions/v1/content/:splat                  200
+
+# the media API — the images door, whose urls the content API writes (api + a content kind)
+/api/media/*         $SUPABASE_URL/functions/v1/images/:splat                   200
+
+# the desk — Chatwoot's Client API, Application API and website snippet (api + support)
+#   chatwootSDK.run({ baseUrl: '<site>/api/desk' }); the snippet's script is a file of the build
+/api/desk/packs/js/sdk.js  /packs/js/sdk.js                                     200
+/api/desk/*          $SUPABASE_URL/functions/v1/support-api/:splat              200
+
+# the scheduling API — cal.com's v2 (api + sessions); the base is <site>/api/scheduling/v2
+/api/scheduling/*    $SUPABASE_URL/functions/v1/scheduling-api/:splat           200
+
+# the forms API — Typeform's (api + forms); @typeform/api-client: apiBaseUrl: '<site>/api/forms'
+/api/forms/*         $SUPABASE_URL/functions/v1/forms-api/:splat                200
+
+# the events API — every event, the site's own and a registered source's, in PostHog's wire
+# protocol (always); a PostHog SDK: api_host: '<site>/api/events'
+/api/events/*        $SUPABASE_URL/functions/v1/ingest/:splat                   200
+/api/events          $SUPABASE_URL/functions/v1/ingest                          200
+
+# the store API — Shopify's Storefront endpoint and the handoff's cart read (api + store)
+/api/store/*         $SUPABASE_URL/functions/v1/storefront-api/:splat           200
+
+# THE STORE'S ALIAS, and the reason it is the last rule under /api: @shopify/storefront-api-client
+# takes a storeDomain and throws away any path on it — given <site>/api/store it asks for
+# <site>/api/<version>/graphql.json regardless. So the same door is served there too, and its
+# second segment being a version is why nothing else may sit under /api without a room.
+# build/storefront-api.test.mjs pins the client's behaviour, so the alias cannot be removed
+# without a failing test saying why it was there.
+/api/*               $SUPABASE_URL/functions/v1/storefront-api/api/:splat       200
+
+# THE SOCIAL NETWORK'S DOORS (the network module). An atproto client — Bluesky's app, or any other —
+# asks /xrpc/<method> at the ROOT of the host it was given, and resolves a member's handle at that
+# host's /.well-known; neither can carry a room under /api, so these three are the one place a
+# protocol's own path stands at the root. A site with the network off has none of them.
+/xrpc/*                    $SUPABASE_URL/functions/v1/atproto/xrpc/:splat                       200
+/.well-known/atproto-did   $SUPABASE_URL/functions/v1/atproto/.well-known/atproto-did           200
+/.well-known/did.json      $SUPABASE_URL/functions/v1/atproto/.well-known/did.json              200
+
+# THE APP CALLING ITS OWN BACKEND IS NOT AN API and has no room: /v1/<function> is the Edge
+# Functions gateway on this site's domain (the v1 is Supabase's, not ours), so the browser reaches
+# every function same-origin and without a preflight, and a link a function writes into an email
+# points at this site rather than at supabase.co. It is what PUBLIC_FUNCTIONS_URL names.
+# It can never be renamed: the tracked links, the open pixel and the unsubscribe link in marketing
+# email already sent are written as <site>/v1/… and are sitting in people's inboxes.
+/v1/*                $SUPABASE_URL/functions/v1/:splat                          200
+
+# THE SHARE PICTURES, for a host that cannot run a browser. A redirect applies only where no file
+# matches, so the build's own photograph wins and only a record published since it reaches the
+# function — which draws a card with satori rather than photographing the real one (it cannot: there
+# is no browser). Where a prerender sidecar is running it answers instead and the card is the real
+# one; nginx implements this rule itself (rewrites.mjs NGINX_OWN).
+/share/*             $SUPABASE_URL/functions/v1/share-image?path=:splat           200
+
+# everything else is the app: a prerendered page as it is, else the shell — 200, never a redirect
+/*                   /index.html                                                200

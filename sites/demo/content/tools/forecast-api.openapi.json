@@ -1,0 +1,43 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "National Weather Service API", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.weather.gov" }],
+  "paths": {
+    "/points/{latitude},{longitude}": {
+      "parameters": [
+        { "$ref": "#/components/parameters/Latitude" },
+        { "$ref": "#/components/parameters/Longitude" }
+      ],
+      "get": {
+        "operationId": "point",
+        "summary": "Find the forecast office and grid point for a location"
+      }
+    },
+    "/gridpoints/{wfo}/{x},{y}/forecast": {
+      "get": {
+        "operationId": "gridpoint_forecast",
+        "summary": "Get the forecast for a weather service grid point",
+        "parameters": [
+          { "name": "wfo", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "x", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "y", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ]
+      }
+    },
+    "/alerts/active": {
+      "get": {
+        "operationId": "alerts_active",
+        "summary": "Get active weather alerts for a location",
+        "parameters": [
+          { "name": "point", "in": "query", "required": true, "schema": { "type": "string" } }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "Latitude": { "name": "latitude", "in": "path", "required": true, "schema": { "type": "number" } },
+      "Longitude": { "name": "longitude", "in": "path", "required": true, "schema": { "type": "number" } }
+    }
+  }
+}

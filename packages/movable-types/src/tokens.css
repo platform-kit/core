@@ -1,0 +1,86 @@
+/*
+ * The design's tokens: the theme's own palette, type and shadow, which a look then overrides (src/looks/<name>.css,
+ * whose blocks are `:root[data-look="…"]`). Its own file because the site is not the only thing that wears it: the
+ * form embed and the support snippet (build/form-embed.mjs, build/support-sdk.mjs) carry the widget onto another
+ * site's page and must bring the tokens with them — atlas.css, which used to hold this block, is the whole site's
+ * stylesheet and would restyle the page it landed on. Imported first by app.js (before atlas.css) and by each embed's
+ * entry. Nothing here paints: a custom property is inert until something of ours reads it.
+ */
+:root {
+  --paper: #fbfaf3;
+  --ink: #0c0d0b;
+  --ink2: #3a3c38;
+  --ink3: #6c6f69;
+  --hair: #00000018;
+  --hair2: #0000000e;
+  --card: #ffffffb8;
+  --wash: #0000000a;
+  --accent: #0e8c8c;
+  --accent2: #0b6e6e;
+  --accentbg: #0e8c8c12;
+  --lv0: #ffffff;
+  --lv1: #dd5454;
+  --lv2: #ffa509;
+  --lv3: #ffd106; --rs0: #ffd106; --rs1: #ffa509; --rs2: #ff7b2e; --rs3: #f04a3a; --rs4: #c41e2a;
+  /* the two states a cell can be in at any level: a catch (needs work), a shadow */
+  --lvcatch: #dd3b3b;
+  --lvshadow: #1a1614;
+  --c1: #5fc4bf;
+  --c2: #2aa39d;
+  --c3: #12807a;
+  --c4: #0a5a55;
+  --sh: 0 1px 2px #0000000a, 0 10px 26px -16px #0b3a3a38;
+  /* --f, --fd and --m are NOT set here. The three faces come from content/site.md and the build
+     writes them into the head before anything paints; a stylesheet setting them would load after
+     that block and silently win over the site's own choice. See build/typefaces.mjs. */
+}
+:root[data-theme='dark'] {
+  --paper: #0a1220;
+  --ink: #edf1f8;
+  --ink2: #b7c1d2;
+  --ink3: #7c8698;
+  --hair: #ffffff22;
+  --hair2: #ffffff12;
+  --card: #101e34ab;
+  --wash: #ffffff09;
+  --accent: #4fe3df;
+  --accent2: #8cf0ec;
+  --accentbg: #4fe3df14;
+  --lv0: #1a2a45;
+  --lv1: #dd5454;
+  --lv2: #ffa509;
+  --lv3: #ffd106; --rs0: #ffd106; --rs1: #ffa509; --rs2: #ff7b2e; --rs3: #f04a3a; --rs4: #c41e2a;
+  --lvcatch: #ff5252;
+  --lvshadow: #050607;
+  --c1: #0e5f5c;
+  --c2: #158f8a;
+  --c3: #35bdb6;
+  --c4: #77e6df;
+  --sh: 0 1px 2px #00000044, 0 10px 26px -16px #000000a0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #0a1220;
+    --ink: #edf1f8;
+    --ink2: #b7c1d2;
+    --ink3: #7c8698;
+    --hair: #ffffff22;
+    --hair2: #ffffff12;
+    --card: #101e34ab;
+    --wash: #ffffff09;
+    --accent: #4fe3df;
+    --accent2: #8cf0ec;
+    --accentbg: #4fe3df14;
+    --lv0:#1a2a45;
+  --lv1: #dd5454; 
+    --lv2: #ffa509; 
+    --lv3: #ffd106; --rs0: #ffd106; --rs1: #ffa509; --rs2: #ff7b2e; --rs3: #f04a3a; --rs4: #c41e2a;
+    --lvcatch: #ff5252;
+    --lvshadow: #050607;
+    --c1: #0e5f5c;
+    --c2: #158f8a;
+    --c3: #35bdb6;
+    --c4: #77e6df;
+    --sh: 0 1px 2px #00000044, 0 10px 26px -16px #000000a0;
+  }
+}

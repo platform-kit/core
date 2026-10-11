@@ -1,0 +1,38 @@
+# the site: the static build at the root, the rewrites to the functions (rewrites.conf — generated), the SPA fallback
+
+# WHICH AGENTS GET THE PRERENDERED PAGE. Known crawlers only, and everything else is a person: an
+# unknown agent served prerendered html gets a dead page, while a crawler served the app gets what
+# it already had. So the uncertain case fails toward the reader.
+map $http_user_agent $is_crawler {
+  default 0;
+  "~*(googlebot|bingbot|duckduckbot|baiduspider|yandex(bot)?)"                 1;
+  "~*(slackbot|discordbot|twitterbot|facebookexternalhit|linkedinbot)"         1;
+  "~*(whatsapp|telegrambot|pinterest|redditbot|applebot|mastodon)"             1;
+  "~*(embedly|quora link preview|showyoubot|outbrain|vkshare|skypeuripreview)" 1;
+}
+
+server {
+  listen 80;
+  server_name _;
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # the bundle's hashed files are immutable; a page is never cached (the build changes it)
+  location ~* \.(js|css|woff2?|png|jpe?g|webp|svg|gif|ico|mp3|wasm)$ { expires 1y; add_header Cache-Control "public, immutable"; try_files $uri =404; }
+  location = /index.html { add_header Cache-Control "no-cache"; }
+
+  include /etc/nginx/conf.d/rewrites.inc;
+
+  # THE SHARE PICTURES AND THE CRAWLER'S PAGE. Both named locations are always defined — the real
+  # ones where there is a sidecar, inert stubs where there is not (40-prerender.sh), because a
+  # named location that does not exist is nginx refusing to start rather than a fallback.
+  include /etc/nginx/conf.d/prerender.inc;
+
+  # a crawler goes to the sidecar, a person gets the app. The 418 is nginx's way of branching to a
+  # named location on a condition: `error_page` maps the code, `return` takes the branch.
+  location @page {
+    error_page 418 = @prerender;
+    if ($is_crawler) { return 418; }
+    try_files /index.html =404;
+  }
+}

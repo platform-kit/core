@@ -1,0 +1,74 @@
+/*
+ * Tailwind, for writing new components with.
+ *
+ * PREFLIGHT IS OFF, and that is the whole trick to adding this to an app that
+ * already has styles. Preflight is Tailwind's reset: it strips margins off every
+ * heading and paragraph, unstyles every button and list, and sets a global
+ * border-box. Dropping it into this app would have flattened the landing page and
+ * the whole instrument in one go. See corePlugins in tailwind.config.js.
+ *
+ * So this file adds utilities and nothing else. Nothing that already exists moves.
+ *
+ * WHERE THE UTILITIES END UP. They are generated into the entry stylesheet, not
+ * into the chunk of whatever component used them — so a class written inside the
+ * instrument compiles into index-*.css rather than Instrument-*.css.
+ * Worth knowing before concluding a utility did not compile.
+ *
+ * ONE THING TO KNOW WHEN USING IT. A Vue scoped style compiles to `.foo[data-v-x]`,
+ * which is two classes' worth of specificity; a Tailwind utility like `p-4` is one.
+ * So on an element that a scoped style already targets, the scoped rule wins and
+ * the utility appears to do nothing. Either style that element in the scoped block
+ * or in utilities — not both. On new markup with no scoped rule against it,
+ * utilities behave normally.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- the shadcn-vue variables (HSL channels), drawn from the site's palette so the
+   page builder's controls sit naturally inside the admin; dark follows data-theme ---- */
+@layer base {
+  :root {
+    --background: 48 50% 97%;
+    --foreground: 90 8% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 90 8% 5%;
+    --popover: 48 50% 98%;
+    --popover-foreground: 90 8% 5%;
+    --primary: 90 8% 5%;
+    --primary-foreground: 48 50% 97%;
+    --secondary: 48 12% 92%;
+    --secondary-foreground: 90 8% 5%;
+    --muted: 48 12% 93%;
+    --muted-foreground: 90 4% 43%;
+    --accent: 180 82% 30%;
+    --accent-foreground: 48 50% 97%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 48 10% 86%;
+    --input: 48 10% 84%;
+    --ring: 180 82% 30%;
+    --radius: 0.6rem;
+  }
+  [data-theme="dark"] {
+    --background: 218 52% 8%;
+    --foreground: 218 44% 95%;
+    --card: 218 48% 11%;
+    --card-foreground: 218 44% 95%;
+    --popover: 218 48% 10%;
+    --popover-foreground: 218 44% 95%;
+    --primary: 218 44% 95%;
+    --primary-foreground: 218 52% 8%;
+    --secondary: 218 30% 16%;
+    --secondary-foreground: 218 44% 95%;
+    --muted: 218 30% 15%;
+    --muted-foreground: 218 16% 62%;
+    --accent: 178 72% 60%;
+    --accent-foreground: 218 52% 8%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 218 20% 22%;
+    --input: 218 20% 24%;
+    --ring: 178 72% 60%;
+  }
+}

@@ -1,0 +1,110 @@
+/*
+ * The furniture the spaces surface shares, as plain global classes — the pattern admin-ui.css set.
+ * Every name is `su-`prefixed on purpose: the site's global stylesheet owns short bare names (its
+ * own `.sb` is a two-column grid, `.wrap`, `.title` and `.empty` are all taken), and a component
+ * that borrows one is restyled by it without warning.
+ *
+ * It holds one thing today: WHAT A SURFACE SAYS WHEN IT HOLDS NOTHING. Every view had its own
+ * answer — a grey sentence at the top-left of a nine-hundred-pixel pane — which reads as a page
+ * that failed to load rather than a page with nothing in it yet. A community's rooms are ALL
+ * empty on the day it opens, which is exactly when somebody is deciding whether the place is real,
+ * so this is not a rare state and it is not a detail.
+ *
+ * A block says three things: what is not here, why that is so or what would change it, and — where
+ * there is something to do about it — the one thing to do. Nothing more; an empty screen is not an
+ * opportunity to sell.
+ */
+/* THE SITE'S STYLESHEET PADS EVERY BARE section AND header (a landing page's bands): inside the
+   community neither is a band, so neither takes that padding or rule. A class of one's own (scoped,
+   so it carries an attribute) still says what it wants; this only takes away what nobody asked for. */
+.sp-page :where(section, header) { padding: 0; border-bottom: 0 }
+
+.su-none {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  /* CENTRED IN WHATEVER ROOM IT HAS. Pinned to the left it sat in the top corner of a pane twice
+     its width with an acre of nothing beside it, which reads as a layout that has broken rather
+     than as a room that is empty — and this block is shown on the day somebody is deciding whether
+     the place is real. The measure stays: a paragraph does not get wider because a screen did.
+     ONE LOOK FOR EVERY EMPTY PLACE, the network's included: a glyph on a soft tile, the words, the
+     one thing to do as the accent's button, rising into place. */
+  margin: 36px auto;
+  max-width: 520px;
+  padding: 8px 24px 12px;
+  text-align: center;
+  background: transparent;
+  border: 0;
+  animation: su-rise .45s cubic-bezier(.2, .8, .2, 1) both;
+}
+/* the tile, and the glyph cut from the accent over it */
+.su-none { position: relative }
+.su-none::before {
+  content: '';
+  width: 60px;
+  height: 60px;
+  margin-bottom: 8px;
+  border-radius: 19px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 16%, var(--paper)), color-mix(in srgb, var(--accent) 5%, var(--paper)));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent), 0 12px 28px -18px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+.su-none::after {
+  content: '';
+  position: absolute;
+  top: 24px;
+  left: calc(50% - 14px);
+  width: 28px;
+  height: 28px;
+  background: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%206.5A2.5%202.5%200%200%201%206.5%204h11A2.5%202.5%200%200%201%2020%206.5v7a2.5%202.5%200%200%201-2.5%202.5H10l-5%204v-4h-.5A.5.5%200%200%201%204%2015.5z%22%2F%3E%3Cpath%20d%3D%22M9%2010h.01M12%2010h.01M15%2010h.01%22%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%206.5A2.5%202.5%200%200%201%206.5%204h11A2.5%202.5%200%200%201%2020%206.5v7a2.5%202.5%200%200%201-2.5%202.5H10l-5%204v-4h-.5A.5.5%200%200%201%204%2015.5z%22%2F%3E%3Cpath%20d%3D%22M9%2010h.01M12%2010h.01M15%2010h.01%22%2F%3E%3C%2Fsvg%3E") center / contain no-repeat;
+}
+.su-none h3 {
+  margin: 0;
+  font-family: var(--fd);
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+.su-none p {
+  margin: 0 auto;
+  max-width: 44ch;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink2);
+}
+.su-none button,
+.su-none a {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--paper);
+  text-decoration: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 20px;
+  cursor: pointer;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 82%, #fff) 0%, var(--accent) 60%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), 0 10px 22px -12px color-mix(in srgb, var(--accent) 85%, transparent);
+  transition: transform .25s cubic-bezier(.2, .8, .2, 1), filter .25s;
+}
+.su-none button:hover,
+.su-none a:hover {
+  color: var(--paper);
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+@keyframes su-rise { from { opacity: 0; transform: translateY(8px) } }
+@media (prefers-reduced-motion: reduce) { .su-none { animation: none } .su-none button, .su-none a { transition: none } }
+/* a quiet one, for an empty run INSIDE a card that already has its own heading and border */
+.su-quiet {
+  margin: 0;
+  max-width: none;
+  font-size: 13.5px;
+  color: var(--ink3);
+}

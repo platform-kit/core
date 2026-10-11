@@ -1,0 +1,3268 @@
+/* The site's stylesheet: every global rule. The tokens it used to open with are tokens.css, which app.js imports first (the embeds need them without the rest of this file). */
+* {
+  box-sizing: border-box;
+}
+/* A DRAWER PARKED OFF THE RIGHT EDGE MUST NOT WIDEN THE PAGE. The cart is fixed, hidden and
+   translated 104% out of view, and Chromium still counts it in the document's scroll width — so
+   every page on the site had 384px of empty white to scroll into. It goes on the root and not on
+   the body: a fixed element's containing block is the viewport, so the body's clip never reaches
+   it. "clip" rather than "hidden", because hidden would make this a scroll container and break
+   every sticky heading in the product. */
+html {
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f);
+  font-size: 16.5px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+.band {
+  height: 5px; /*background:linear-gradient(90deg,#FBFBDA,#F2FBEA 32%,#7CF0EE 76%,#3EE9F2)*/
+  display: none;
+}
+/* One content width for every page that is not full-bleed: the header's own
+   (.sitehead-in), which the landing (.lpwrap) and the results sheet share too. */
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 28px;
+}
+/*
+ * THE READING MEASURE — narrower than the page, because prose has an optimum line length and the
+ * page does not. Named here and nowhere else so that everything which is part of the reading sits
+ * on the same column: the article's own prose, and the conversation underneath it. A comment
+ * thread at the page's full width does not read as the end of the piece, it reads as a band across
+ * the site that happens to be below it.
+ */
+:root {
+  --readw: 788px;
+  --readpad: 24px;
+}
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.024em;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+p {
+  margin: 0 0 15px;
+  max-width: 74ch;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+code,
+.mono {
+  font-family: var(--m);
+}
+header {
+  padding: 70px 0 44px;
+  border-bottom: 1px solid var(--hair);
+}
+.kicker {
+  font-family: var(--m);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 16px;
+}
+h1 {
+  font-size: clamp(34px, 5vw, 50px);
+  max-width: 16ch;
+  margin-bottom: 18px;
+}
+.subtitle {
+  font-size: 19px;
+  color: var(--ink2);
+  max-width: 66ch;
+  line-height: 1.5;
+}
+section {
+  padding: 56px 0;
+  border-bottom: 1px solid var(--hair);
+}
+section:last-of-type {
+  border-bottom: 0;
+}
+h2 {
+  font-size: clamp(24px, 3.2vw, 32px);
+  margin-bottom: 8px;
+}
+.snum {
+  font-family: var(--m);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--accent2);
+  display: block;
+  margin-bottom: 12px;
+}
+h3 {
+  font-size: 19.5px;
+  margin: 30px 0 10px;
+}
+.lead {
+  font-size: 18px;
+  color: var(--ink2);
+  max-width: 70ch;
+  margin-bottom: 22px;
+}
+strong {
+  font-weight: 700;
+}
+em {
+  font-style: italic;
+}
+
+/* layer stack */
+.layers {
+  display: grid;
+  gap: 10px;
+  margin: 26px 0 6px;
+}
+.layer {
+  display: grid;
+  grid-template-columns: 120px 1fr 210px;
+  gap: 0 22px;
+  align-items: baseline;
+  padding: 18px 22px;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--card);
+}
+@media (max-width: 760px) {
+  .layer {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+}
+.layer .lv {
+  font-family: var(--m);
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+.layer .ln {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.layer .ld {
+  font-size: 14.5px;
+  color: var(--ink3);
+  line-height: 1.42;
+}
+.layer.meas {
+  border-color: var(--accent);
+}
+.layer.meas .lv {
+  color: var(--accent2);
+}
+
+/* channel ramp */
+.chans {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 24px 0;
+}
+@media (max-width: 820px) {
+  .chans {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 500px) {
+  .chans {
+    grid-template-columns: 1fr;
+  }
+}
+.ch {
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--card);
+}
+.ch .bar {
+  height: 6px;
+  display: block;
+}
+.ch .inner {
+  padding: 18px 18px 16px;
+}
+.ch .q {
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 4px;
+  line-height: 1.25;
+}
+.ch .nm {
+  font-family: var(--m);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 10px;
+}
+.ch .d {
+  font-size: 14px;
+  color: var(--ink3);
+  line-height: 1.42;
+}
+
+/* matrix table */
+.scroller {
+  overflow-x: auto;
+  margin: 26px 0 8px;
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  background: var(--card);
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 920px;
+  font-size: 14.5px;
+}
+th,
+td {
+  text-align: left;
+  vertical-align: top;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--hair2);
+}
+th {
+  font-family: var(--m);
+  font-size: 10.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  font-weight: 500;
+  border-bottom: 1px solid var(--hair);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background: var(--paper);
+}
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+tbody tr:hover {
+  background: var(--wash);
+}
+td.cx {
+  font-weight: 700;
+  font-size: 15.5px;
+  letter-spacing: -0.012em;
+  white-space: nowrap;
+}
+td.cx small {
+  display: block;
+  font-weight: 400;
+  font-size: 12.5px;
+  color: var(--ink3);
+  letter-spacing: 0;
+  margin-top: 3px;
+  white-space: normal;
+  max-width: 20ch;
+}
+.dn {
+  color: var(--ink);
+  font-weight: 600;
+}
+.up {
+  color: var(--accent2);
+  font-weight: 600;
+}
+.pill {
+  display: inline-block;
+  font-family: var(--m);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #fff;
+  white-space: nowrap;
+}
+:root[data-theme='dark'] .pill {
+  color: #08100f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .pill {
+    color: #08100f;
+  }
+}
+.wa {
+  font-family: var(--m);
+  font-size: 12.5px;
+  color: var(--ink3);
+  line-height: 1.5;
+}
+
+/* rules */
+.rules {
+  counter-reset: r;
+  margin: 24px 0 0;
+}
+.rule {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: 0 18px;
+  padding: 18px 0;
+  border-top: 1px solid var(--hair);
+}
+.rule:last-child {
+  border-bottom: 1px solid var(--hair);
+}
+.rule .rid {
+  font-family: var(--m);
+  font-size: 11.5px;
+  color: var(--accent2);
+  padding-top: 3px;
+}
+.rule .rn {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 7px;
+}
+.expr {
+  font-family: var(--m);
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ink2);
+  background: var(--wash);
+  border: 1px solid var(--hair2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  margin-bottom: 8px;
+}
+.rule .rw {
+  font-size: 14.5px;
+  color: var(--ink3);
+  line-height: 1.45;
+}
+
+/* callout */
+.call {
+  border-left: 3px solid var(--accent);
+  background: var(--accentbg);
+  padding: 20px 22px;
+  border-radius: 0 14px 14px 0;
+  margin: 24px 0;
+}
+.call p:last-child {
+  margin-bottom: 0;
+}
+.call .h {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 7px;
+}
+
+/* schema */
+.schema {
+  font-family: var(--m);
+  font-size: 13px;
+  line-height: 1.8;
+  background: var(--wash);
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  padding: 20px 22px;
+  overflow-x: auto;
+  white-space: pre;
+  margin: 22px 0;
+}
+
+/* mvp */
+.mvp {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+}
+.mv {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 0 16px;
+  padding: 18px 22px;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--card);
+  align-items: start;
+}
+.mv .n {
+  font-family: var(--m);
+  font-size: 11px;
+  color: var(--accent2);
+  padding-top: 4px;
+}
+.mv .t {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 5px;
+}
+.mv .d {
+  font-size: 14.5px;
+  color: var(--ink3);
+  line-height: 1.45;
+}
+.warn {
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  padding: 22px 24px;
+  background: var(--card);
+  margin-top: 22px;
+}
+.warn .h {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 9px;
+}
+.warn ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.warn li {
+  font-size: 15px;
+  color: var(--ink2);
+  margin-bottom: 9px;
+  line-height: 1.45;
+}
+/* ---------- demo ---------- */
+.demo {
+  border: 1px solid var(--hair);
+  border-radius: 18px;
+  background: var(--card);
+  padding: 0;
+  overflow: hidden;
+  margin: 26px 0;
+}
+.demohead {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--hair);
+  background: var(--wash);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.demohead .dt {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.demohead .ds {
+  font-size: 13.5px;
+  color: var(--ink3);
+}
+.demobody {
+  padding: 24px;
+}
+.btn {
+  font-family: var(--f);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+.btn.solid {
+  background: var(--ink);
+  color: var(--paper);
+}
+.btn.solid:hover {
+  opacity: 0.85;
+}
+.btn.sm {
+  font-size: 12.5px;
+  padding: 6px 13px;
+}
+.btnrow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+/* item runner */
+.itemq {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+.itemsub {
+  font-size: 14px;
+  color: var(--ink3);
+  margin-bottom: 18px;
+}
+.opts {
+  display: grid;
+  gap: 8px;
+  max-width: 520px;
+}
+.optb {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: left;
+  font-family: var(--f);
+  font-size: 15px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--hair);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.optb:hover {
+  border-color: var(--ink);
+}
+.optb .sw {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.pbar {
+  height: 4px;
+  background: var(--hair);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  max-width: 520px;
+}
+.pbar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+.meta {
+  font-family: var(--m);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 14px;
+}
+
+/* results */
+.res {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.rcard {
+  border: 1px solid var(--hair);
+  border-radius: 13px;
+  padding: 16px 18px;
+  background: var(--wash);
+}
+.rcard .rl {
+  font-family: var(--m);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 7px;
+}
+.rcard .rv2 {
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.rcard .rx {
+  font-size: 13px;
+  color: var(--ink3);
+  margin-top: 5px;
+  line-height: 1.35;
+}
+.chanbar {
+  display: flex;
+  height: 26px;
+  border-radius: 7px;
+  overflow: hidden;
+  margin: 6px 0 10px;
+  border: 1px solid var(--hair);
+}
+.chanbar span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--m);
+  font-size: 10px;
+  color: #fff;
+  min-width: 0;
+  overflow: hidden;
+}
+:root[data-theme='dark'] .chanbar span {
+  color: #08100f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .chanbar span {
+    color: #08100f;
+  }
+}
+.chankey {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--ink3);
+}
+.chankey i {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+
+/* equating */
+.eqrow {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr;
+  gap: 0 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--hair2);
+  align-items: center;
+  font-size: 14.5px;
+}
+.eqrow:last-child {
+  border-bottom: 0;
+}
+.eqrow .en {
+  font-family: var(--m);
+  font-size: 11.5px;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.eqbar {
+  height: 11px;
+  background: var(--hair2);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.eqbar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+.eqv {
+  font-family: var(--m);
+  font-size: 12.5px;
+  color: var(--ink2);
+  margin-top: 3px;
+  display: block;
+}
+.eqhead {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr;
+  gap: 0 16px;
+  font-family: var(--m);
+  font-size: 10px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hair);
+}
+
+/* sandbox */
+.sb {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 26px;
+}
+@media (max-width: 900px) {
+  .sb {
+    grid-template-columns: 1fr;
+  }
+}
+.sbrow {
+  display: grid;
+  grid-template-columns: 96px 1fr 34px;
+  gap: 0 12px;
+  align-items: center;
+  margin-bottom: 9px;
+}
+.sbrow label {
+  font-size: 13.5px;
+  color: var(--ink2);
+}
+.sbrow output {
+  font-family: var(--m);
+  font-size: 12px;
+  color: var(--ink3);
+  text-align: right;
+}
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+  height: 20px;
+}
+select {
+  font-family: var(--m);
+  font-size: 11.5px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--hair);
+  background: var(--paper);
+  color: var(--ink);
+}
+.sbsub {
+  font-family: var(--m);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin: 20px 0 10px;
+}
+.hyp {
+  border: 1px solid var(--hair);
+  border-radius: 13px;
+  padding: 16px 18px;
+  margin-bottom: 10px;
+  background: var(--wash);
+}
+.hyp.top {
+  border-color: var(--accent);
+  background: var(--accentbg);
+}
+.hyp .hh {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.hyp .hn {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.hyp .hc {
+  font-family: var(--m);
+  font-size: 11.5px;
+  color: var(--accent2);
+  white-space: nowrap;
+}
+.hyp .hr {
+  font-family: var(--m);
+  font-size: 10.5px;
+  color: var(--ink3);
+  margin-bottom: 9px;
+}
+.hyp .ev {
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.5;
+  padding-left: 16px;
+  position: relative;
+  margin-bottom: 3px;
+}
+.hyp .ev::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--accent2);
+  font-size: 11px;
+}
+.hyp .task {
+  font-size: 13.5px;
+  color: var(--ink3);
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--hair2);
+  line-height: 1.45;
+}
+.empty {
+  font-size: 14.5px;
+  color: var(--ink3);
+  padding: 18px 0;
+}
+.presets {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+/* ---------- tabs ---------- */
+.tabwrap {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--paper);
+  border-bottom: 1px solid var(--hair);
+  margin-bottom: 0;
+}
+.tabs {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 28px;
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+.tabmark {
+  display: flex;
+  align-items: center;
+  padding-right: 14px;
+  flex: none;
+}
+.tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-family: var(--f);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink3);
+  padding: 15px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+.tab:hover {
+  color: var(--ink);
+}
+.tab.on {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+.tab .n {
+  font-family: var(--m);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--ink3);
+  margin-left: 7px;
+}
+.tabintro {
+  max-width: 74ch;
+  font-size: 17px;
+  color: var(--ink2);
+  line-height: 1.55;
+  padding: 34px 0 6px;
+  margin: 0;
+}
+.tabbed section[data-tab] {
+  display: none;
+}
+.tabbed section[data-tab].show {
+  display: block;
+}
+section[data-tab].show:first-of-type {
+  border-top: 0;
+}
+@media (max-width: 640px) {
+  .tabs {
+    padding: 0 20px;
+  }
+  .tab {
+    padding: 14px 12px;
+    font-size: 13.5px;
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+}
+.brand svg {
+  display: block;
+}
+.brand span {
+  font-family: var(--f);
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+footer {
+  padding: 40px 0 70px;
+  font-size: 14px;
+  color: var(--ink3);
+}
+
+/* ================= landing (scoped under .lproot) ================= */
+
+.lproot {
+  /* light: the hero's yellow and peach, then a quiet ivory the rest of the way,
+     white cards, and the same soft yellow returning as a glow at the close.
+     Teal stays the one cool accent. */
+  --ink: #17140d;
+  --ink2: #443d30;
+  --ink3: #736a58;
+  --hair: #2a1e0016;
+  --hair2: #2a1e000c;
+  --card: #ffffffd0;
+  --card2: #fffffff0;
+  --wash: #fff9ea70;
+  --accent: #0e8c8c;
+  --accent2: #0b6e6e;
+  --accentbg: #0e8c8c12;
+  --lv0: #ffffff;
+  --lv1: #dd5454;
+  --lv2: #ffa509;
+  --lv3: #ffd106; --rs0: #ffd106; --rs1: #ffa509; --rs2: #ff7b2e; --rs3: #f04a3a; --rs4: #c41e2a;
+  --g1: #ffe066;
+  --g2: #fbf5e6;
+  --g3: #f8f2e2;
+  --g4: #f7efd8;
+  --blob1: #fff2a0;
+  --blob2: #ffc861;
+  --blob3: #fff1b8;
+  /* the sun over the hero, and the same light returning at the close */
+  --glow:
+    radial-gradient(72vw 46vh at 10% 4%, #fff3a8 0%, #fff3a800 62%),
+    radial-gradient(90vw 38vh at 50% 100%, #ffe58a 0%, #ffe58a00 66%);
+  --s1: #00918e;
+  --s2: #b06a12;
+  --s3: #6b5bc4;
+  --sh: 0 1px 2px #2a1e0008, 0 14px 34px -18px #4a380f38;
+  --shhi: 0 2px 4px #2a1e000d, 0 30px 60px -24px #4a380f4d;
+  /* --f, --fd and --m are NOT set here. The three faces come from content/site.md and the build
+     writes them into the head before anything paints; a stylesheet setting them would load after
+     that block and silently win over the site's own choice. See build/typefaces.mjs. */
+}
+[data-theme='dark'] .lproot {
+  --glow: none;
+  --ink: #f2f4f0;
+  --ink2: #c3c7bf;
+  --ink3: #8b8f88;
+  --hair: #ffffff20;
+  --hair2: #ffffff12;
+  --card: #0e1618b0;
+  --card2: #0f1a1cec;
+  --wash: #ffffff09;
+  --accent: #4fe3df;
+  --accent2: #8cf0ec;
+  --accentbg: #4fe3df14;
+  --lv0: #1a2a45;
+  --lv1: #dd5454;
+  --lv2: #ffa509;
+  --lv3: #ffd106; --rs0: #ffd106; --rs1: #ffa509; --rs2: #ff7b2e; --rs3: #f04a3a; --rs4: #c41e2a;
+  --g1: #12150f;
+  --g2: #003a8a;
+  --g3: #053a3a;
+  --g4: #00c674;
+  --blob1: #02163f;
+  --blob2: #051026;
+  --blob3: #045256;
+  --s1: #1fa8a4;
+  --s2: #bc8226;
+  --s3: #8a7ace;
+  --sh: 0 1px 2px #00000047, 0 14px 34px -18px #000000a8;
+  --shhi: 0 2px 4px #00000055, 0 30px 60px -24px #000000c4;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .lproot {
+    --glow: none;
+    --ink: #f2f4f0;
+    --ink2: #c3c7bf;
+    --ink3: #8b8f88;
+    --hair: #ffffff20;
+    --hair2: #ffffff12;
+    --card: #0e1618b0;
+    --card2: #0f1a1cec;
+    --wash: #ffffff09;
+    --accent: #4fe3df;
+    --accent2: #8cf0ec;
+    --accentbg: #4fe3df14;
+    --lv0: #1a2a45;
+  --lv1: #dd5454;
+    --lv2: #ffa509;
+    --lv3: #ffd106; --rs0: #ffd106; --rs1: #ffa509; --rs2: #ff7b2e; --rs3: #f04a3a; --rs4: #c41e2a;
+    --g1: #12150f;
+    --g2: #0c1614;
+    --g3: #053a3a;
+    --g4: #045256;
+    --blob1: #2a3210;
+    --blob2: #0a5e60;
+    --blob3: #0b3b34;
+    --s1: #1fa8a4;
+    --s2: #bc8226;
+    --s3: #8a7ace;
+    --sh: 0 1px 2px #00000047, 0 14px 34px -18px #000000a8;
+    --shhi: 0 2px 4px #00000055, 0 30px 60px -24px #000000c4;
+  }
+}
+
+.lproot {
+  position: relative;
+  isolation: isolate;
+  color: var(--ink);
+  font-family: var(--f);
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  border-radius: 20px;
+  margin: 8px 0 40px;
+}
+
+/* ---------- atmosphere ---------- */
+.lpbg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    var(--glow, none),
+    linear-gradient(152deg, var(--g1) 0%, var(--g2) 30%, var(--g3) 76%, var(--g4) 100%);
+}
+.lpblobs {
+  position: absolute;
+  inset: -20vh -10vw;
+  z-index: 0;
+  filter: blur(80px);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.lpblob {
+  position: absolute;
+  border-radius: 50%;
+  mix-blend-mode: normal;
+}
+.lpb1 {
+  width: 60vw;
+  height: 60vw;
+  left: -14vw;
+  top: -10vh;
+  background: var(--blob1);
+  animation: drift1 26s ease-in-out infinite alternate;
+}
+.lpb2 {
+  width: 52vw;
+  height: 52vw;
+  right: -12vw;
+  top: 22vh;
+  background: var(--blob2);
+  opacity: 0.7;
+  animation: drift2 32s ease-in-out infinite alternate;
+}
+.lpb3 {
+  width: 46vw;
+  height: 46vw;
+  left: 18vw;
+  bottom: -14vh;
+  background: var(--blob3);
+  opacity: 0.55;
+  animation: drift3 38s ease-in-out infinite alternate;
+}
+@keyframes drift1 {
+  to {
+    transform: translate3d(6vw, 7vh, 0) scale(1.12);
+  }
+}
+@keyframes drift2 {
+  to {
+    transform: translate3d(-7vw, -6vh, 0) scale(1.08);
+  }
+}
+@keyframes drift3 {
+  to {
+    transform: translate3d(5vw, -8vh, 0) scale(1.14);
+  }
+}
+.lpgrain {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  /* a fixed raster tile of noise, not an SVG filter: a filter is re-rasterised inside a
+     3D-transformed region (the book covers) and the seam shows as a pale box */
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAACMCAYAAACuwEE+AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAgAElEQVR42lXdZbMltRaA4fwlqmBgBrfG3d3d3d3d3d3d3WGAD/ylW0+q3qm+VB3OnL27k+VJVpaM4447brn66quXt956a3nwwQeXk046abn33nuXU089dXnssceWiy++ePHfnXfeuTzxxBPLQw89tJx22mnLbbfdtlx22WXz80MPPXTZe++9lzfeeGM555xz5s8ll1wyf19//fXL888/P8d55JFHlmuuuWa+f+aZZy6vv/768uyzz87PXnjhheWKK65YjjjiiOWMM86Y77/99ttzDHO++OKLE76DDz54znn22WcvRx555Pz7o48+Ws4777zlpZdemu+C/corr1xuvfXW5dNPP11eeeWV5YEHHlgOOeSQ5c0335z4Hn300fMZ899xxx3z5+abb16uvfbaif/hhx++3HDDDctFF10053/00UeXG2+8cbngggsmPueee+5y/vnnL/fdd9/y1FNPLffcc8+kyf333z/pcuGFF873wXb66af/3xzggDu47r777gmv3+ZC4+eee245/vjj59gnnnjictVVVy0nnHDCpKX30Qh9PAPfm266aX722WefLXfddddy1llnTVrefvvtEz/fv/baa/M7tAO7seADTnObx3vk4Zlnnpl47rPPPhOXTz75ZDnmmGMmjuPYY49dXn311Tk4BAmOFwCAiQgLKMheeumly/vvvz8Zt3nz5slQRPvuu+/mYJA1+R577DGFAMImPuWUU5brrrtu/v3kk0/OvxHJuL7HDO9hBGIikGcQFRLvvPPOFBzIXX755XNO4xFohPQcoTUGZmMQYhKMl19+eRIMsRDbXGAjYMY48MADJ0y+9z7c999//ylst9xyyxRugm4swuR5cz399NMTX995DvExAeE9i0GIfNhhh02h9vxRRx018TM2OHfdddc5PmFGB0KAod5Hb//5HGwPP/zw/B4++IRGmAmPDz74YNLJ98YmuOCilIQSvzyD5uYiTGAFE9z97RljeMczxvF5ykBo0G0AnJCQagT1EKJ6gWZhFCHxGQ1AAEikSRi4ww47zOcxBgCEDcKAMgZJJbmEAHEx2XusBmn3GUYgsmcQmHBCHGyI4t/mJzwEFRxgB4fvIANWzDS2+c1trATC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");
+}
+/* #lpsky was here: the hero's sky canvas. The theme no longer renders one — a site that wants
+   something behind its hero fills the hero’s `behind` slot and brings its own styling with it. */
+
+.lpwrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 28px;
+  position: relative;
+  z-index: 2;
+}
+.lproot h1,
+.lproot h2,
+.lproot h3,
+.lproot h4 {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.026em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.lproot p {
+  margin: 0 0 16px;
+}
+.lproot a {
+  color: inherit;
+}
+.lproot :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.lpnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- primitives ---------- */
+.lpeyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--m);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+.lpeyebrow::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+  box-shadow: 0 0 0 4px var(--accentbg);
+}
+.lpcol {
+  max-width: 660px;
+}
+h2.lps {
+  font-size: clamp(29px, 4.1vw, 46px);
+  margin: 14px 0 18px;
+}
+p.lplead {
+  font-size: 19.5px;
+  line-height: 1.45;
+  color: var(--ink2);
+}
+.lpcard {
+  background: var(--card);
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  border: 1px solid var(--hair);
+  border-radius: 20px;
+  box-shadow: var(--sh);
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.8, 0.3, 1),
+    box-shadow 0.3s ease;
+}
+.lplift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shhi);
+}
+.lproot section {
+  padding: 96px 0;
+  position: relative;
+}
+/* .lproot a{color:inherit} above is more specific than .lpbtn, so the label was
+   inheriting --ink onto an --ink pill — black on black. Same bug in atlas.html;
+   the stray `text-white` in the hero markup was an earlier attempt at this fix. */
+.lproot a.lpbtn,
+.lpbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--ink);
+  color: var(--g1);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15.5px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.lpbtn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shhi);
+}
+.lpbtn svg {
+  transition: transform 0.22s ease;
+}
+.lpbtn:hover svg {
+  transform: translateX(3px);
+}
+.lpico {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  stroke: var(--accent);
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- nav ---------- */
+.lproot nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid transparent;
+  transition:
+    border-color 0.25s,
+    background 0.25s;
+}
+.lproot nav.lpstuck {
+  border-bottom-color: var(--hair);
+  background: var(--wash);
+}
+.lplogo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.lplogo span {
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.lplogo svg {
+  animation: spin 48s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.lpnlinks {
+  display: flex;
+  gap: 26px;
+  font-size: 14.5px;
+}
+.lpnlinks a {
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.lpnlinks a:hover {
+  opacity: 1;
+}
+@media (max-width: 820px) {
+  .lpnlinks {
+    display: none;
+  }
+}
+
+/* ---------- hero ---------- */
+.lphero {
+  display: grid;
+  grid-template-columns: 1.03fr 0.97fr;
+  gap: 56px;
+  align-items: center;
+  padding: 78px 0 70px;
+  position: relative;
+}
+/* under an announcement bar the header has come down by the bar's height, so the hero makes room for it */
+.lpann + .lphero-sec .lphero {
+  padding-top: 112px;
+}
+@media (max-width: 980px) {
+  .lphero {
+    grid-template-columns: 1fr;
+    gap: 56px;
+    padding: 54px 0 44px;
+  }
+  .lpann + .lphero-sec .lphero {
+    padding-top: 84px;
+  }
+}
+.lphero h1 {
+  font-size: clamp(38px, 5.6vw, 66px);
+  max-width: 14ch;
+  margin-bottom: 22px;
+}
+.lphero .lpsub {
+  font-size: 19.5px;
+  line-height: 1.5;
+  color: var(--ink2);
+  max-width: 46ch;
+  margin-bottom: 30px;
+}
+.lphero em {
+  font-style: italic;
+  color: var(--ink);
+}
+.lpcta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.lpfine {
+  font-size: 14.5px;
+  color: var(--ink3);
+}
+.lphero .lph1w {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+}
+.lphero .lph1w i {
+  display: block;
+  font-style: normal;
+  transform: translateY(105%);
+  animation: rise 0.85s cubic-bezier(0.2, 0.85, 0.25, 1) forwards;
+}
+.lphero .lph1w:nth-child(2) i {
+  animation-delay: 0.09s;
+}
+.lphero .lph1w:nth-child(3) i {
+  animation-delay: 0.18s;
+}
+@keyframes rise {
+  to {
+    transform: none;
+  }
+}
+
+/* app mock stack */
+.lpstage {
+  position: relative;
+  perspective: 1400px;
+}
+.lpappcard {
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+}
+/* the tilt: a card inside a revealed block turns into its angle as it arrives —
+   flat until its .lprv wrapper is marked .lpin (or with no reveal script at all),
+   then rotated, over a second; desktop only, and still under reduced motion */
+.lptilt {
+  transform-style: preserve-3d;
+  transition: transform 1.1s cubic-bezier(0.22, 0.9, 0.28, 1);
+}
+@media (min-width: 981px) {
+  .lprv.lpin .lptilt,
+  html:not(.lprvwatch) .lptilt {
+    transform: rotateY(-7deg) rotateX(3deg);
+  }
+}
+.lpappbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--hair);
+  background: var(--wash);
+}
+.lpdots {
+  display: flex;
+  gap: 5px;
+}
+.lpdots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--hair);
+  display: block;
+}
+.lpappbar .lpt {
+  font-family: var(--m);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+.lpappbody {
+  padding: 26px 26px 22px;
+}
+.lpprog {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--hair);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.lpprog i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: fillp 1.6s 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+@keyframes fillp {
+  to {
+    width: 20%;
+  }
+}
+.lpq {
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+  line-height: 1.18;
+}
+.lpqs {
+  font-size: 15px;
+  color: var(--ink3);
+  margin-bottom: 18px;
+}
+.lpopt {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 15px;
+  padding: 11px 17px;
+  border-radius: 999px;
+  background: var(--wash);
+  border: 1.5px solid transparent;
+  margin-bottom: 8px;
+  opacity: 0;
+  animation: optin 0.5s forwards;
+}
+.lpopt:nth-of-type(1) {
+  animation-delay: 0.55s;
+}
+.lpopt:nth-of-type(2) {
+  animation-delay: 0.65s;
+}
+.lpopt:nth-of-type(3) {
+  animation-delay: 0.75s;
+}
+.lpopt:nth-of-type(4) {
+  animation-delay: 0.85s;
+}
+.lpopt:nth-of-type(5) {
+  animation-delay: 0.95s;
+}
+@keyframes optin {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.lpopt .lpr {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink3);
+  flex: none;
+}
+.lpopt.lpon {
+  background: transparent;
+  border-color: var(--ink);
+  font-weight: 600;
+}
+.lpopt.lpon .lpr {
+  border-color: var(--ink);
+  background: radial-gradient(circle, var(--ink) 0 45%, transparent 46%);
+}
+.lppeek {
+  position: absolute;
+  right: -26px;
+  bottom: -34px;
+  width: 216px;
+  padding: 16px 18px;
+  z-index: 3;
+  transform: rotateY(-7deg);
+}
+@media (max-width: 980px) {
+  .lppeek {
+    right: -8px;
+    bottom: -28px;
+    width: 196px;
+    transform: none;
+  }
+}
+@media (max-width: 480px) {
+  .lppeek {
+    display: none;
+  }
+}
+.lppeek .lppl {
+  font-family: var(--m);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 11px;
+}
+.lppk {
+  display: grid;
+  grid-template-columns: 1fr 26px;
+  gap: 0 9px;
+  align-items: center;
+  margin-bottom: 7px;
+}
+.lppk .lpb {
+  height: 7px;
+  border-radius: 3px;
+  background: var(--hair);
+  overflow: hidden;
+}
+.lppk .lpb i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--ink);
+  width: 0;
+  animation: pkw 1.1s 1.05s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+@keyframes pkw {
+  to {
+    width: var(--w);
+  }
+}
+.lppk .lpv {
+  font-family: var(--m);
+  font-size: 10.5px;
+  color: var(--ink3);
+  text-align: right;
+}
+.lphalo {
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  left: -10%;
+  top: -10%;
+  z-index: 0;
+  background: radial-gradient(closest-side, var(--accentbg), transparent 70%);
+}
+
+/* ---------- marquee ---------- */
+.lpmq {
+  overflow: hidden;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+  padding: 16px 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.lpmqi {
+  display: flex;
+  gap: 44px;
+  width: max-content;
+  animation: slide 44s linear infinite;
+}
+.lpmq:hover .lpmqi {
+  animation-play-state: paused;
+}
+@keyframes slide {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.lpmqi span {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  font-family: var(--m);
+  font-size: 12px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  white-space: nowrap;
+}
+.lpmqi span::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+/* Qualifiers ride as tags, so the two kinds read apart at a glance. Deliberately
+   unlike .lpbtn on all three of its axes — tinted rather than solid ink, a
+   rounded rectangle rather than a full pill, accent text rather than paper — so
+   nothing in the band reads as a thing you could press. */
+.lpmqi span.lpmqq {
+  background: var(--accentbg);
+  color: var(--accent2);
+  border: 1px solid var(--hair2);
+  border-radius: 7px;
+  padding: 6px 12px;
+  letter-spacing: 0.11em;
+  font-weight: 600;
+}
+.lpmqi span.lpmqq::before {
+  display: none;
+}
+
+/* The stats bar and the tracked-metrics card were styled here. Both went with
+   their markup. */
+
+/* ---------- layout helpers ---------- */
+.lpgrid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+@media (max-width: 920px) {
+  .lpgrid2 {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+}
+
+/* steps */
+.lpsteps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 36px;
+}
+@media (max-width: 880px) {
+  .lpsteps {
+    grid-template-columns: 1fr;
+  }
+}
+.lpstep {
+  padding: 26px 26px 24px;
+}
+.lpstep .lpk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.lpstep .lpk b {
+  font-family: var(--m);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--ink3);
+}
+.lpstep h4 {
+  font-size: 18.5px;
+  margin-bottom: 7px;
+}
+.lpstep p {
+  font-size: 15px;
+  color: var(--ink3);
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ---------- chart ---------- */
+.lppanel {
+  padding: 34px 34px 28px;
+}
+.lpchartttl {
+  font-size: 16.5px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.lpchartsub {
+  font-size: 13.5px;
+  color: var(--ink3);
+  margin-bottom: 24px;
+}
+.lprow {
+  display: grid;
+  grid-template-columns: 118px 1fr 38px;
+  gap: 0 14px;
+  align-items: center;
+  margin-bottom: 9px;
+  padding: 3px 6px;
+  border-radius: 8px;
+  margin-left: -6px;
+  transition: background 0.18s;
+}
+.lprow:hover {
+  background: var(--wash);
+}
+.lprow .lplbl {
+  font-size: 14px;
+  text-align: right;
+  color: var(--ink2);
+}
+.lptrack {
+  height: 16px;
+  background: var(--hair2);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.lpfill {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  border-radius: 0 5px 5px 0;
+  width: 0;
+  transition: width 1s cubic-bezier(0.22, 0.9, 0.28, 1);
+}
+.lprow.lpin .lpfill {
+  width: var(--w);
+}
+.lprow .lpval {
+  font-family: var(--m);
+  font-size: 12.5px;
+  color: var(--ink3);
+}
+.lprow.lpgap .lplbl,
+.lprow.lpgap .lpval {
+  color: var(--accent2);
+  font-weight: 600;
+}
+.lpaxis {
+  display: grid;
+  grid-template-columns: 118px 1fr 38px;
+  gap: 0 14px;
+  margin-top: 12px;
+}
+.lpticks {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--m);
+  font-size: 10.5px;
+  color: var(--ink3);
+  border-top: 1px solid var(--hair);
+  padding-top: 6px;
+}
+.lpnote {
+  margin-top: 26px;
+  padding: 20px 22px;
+  border-radius: 15px;
+  background: var(--accentbg);
+  border: 1px solid var(--hair);
+  font-size: 15.5px;
+  color: var(--ink2);
+  line-height: 1.5;
+}
+.lpnote b {
+  color: var(--ink);
+}
+
+/* ---------- trend chart ---------- */
+.lptrend {
+  padding: 32px 32px 24px;
+  position: relative;
+}
+.lptrendhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.lplegend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.lplg {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  color: var(--ink2);
+}
+.lplg i {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  flex: none;
+}
+.lptsvg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  touch-action: pan-y;
+}
+.lpgl {
+  stroke: var(--hair);
+  stroke-width: 1;
+}
+.lpal {
+  fill: var(--ink3);
+  font-family: var(--m);
+  font-size: 10.5px;
+}
+.lpln {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lplnd {
+  stroke-width: 0;
+}
+.lpcross {
+  stroke: var(--ink3);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.lptip {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.14s;
+  z-index: 5;
+  background: var(--card2);
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  padding: 11px 13px;
+  box-shadow: var(--shhi);
+  font-size: 13.5px;
+  min-width: 150px;
+  backdrop-filter: blur(12px);
+}
+.lptip .lptw {
+  font-family: var(--m);
+  font-size: 10px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 7px;
+}
+.lptip .lptr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 4px;
+}
+.lptip .lptr span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink2);
+}
+.lptip .lptr i {
+  width: 9px;
+  height: 3px;
+  border-radius: 2px;
+  display: block;
+}
+.lptip .lptr b {
+  font-family: var(--m);
+  font-weight: 500;
+}
+.lpdlab {
+  font-family: var(--m);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ---------- areas ---------- */
+.lpareas {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 30px;
+}
+@media (max-width: 820px) {
+  .lpareas {
+    grid-template-columns: 1fr;
+  }
+}
+.lparea {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 0 14px;
+  padding: 20px 22px;
+  align-items: start;
+  position: relative;
+  overflow: hidden;
+}
+.lparea::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  opacity: 0;
+  background: radial-gradient(
+    240px 120px at var(--mx, 50%) var(--my, 50%),
+    var(--accentbg),
+    transparent 70%
+  );
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.lparea:hover::after {
+  opacity: 1;
+}
+.lparea .lpn {
+  font-family: var(--m);
+  font-size: 11px;
+  color: var(--accent2);
+  padding-top: 5px;
+}
+.lparea .lpt {
+  font-size: 18.5px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.lparea .lpd {
+  font-size: 15px;
+  color: var(--ink3);
+  margin-top: 3px;
+  line-height: 1.42;
+}
+
+/* ---------- sticky routing ---------- */
+.lpsticky-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: start;
+  margin-top: 26px;
+}
+@media (max-width: 980px) {
+  .lpsticky-wrap {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+}
+.lpsticky-vis {
+  position: sticky;
+  top: 100px;
+  height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 980px) {
+  .lpsticky-vis {
+    position: relative;
+    top: 0;
+    height: 300px;
+    order: -1;
+  }
+}
+.lpvis {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.94);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s cubic-bezier(0.2, 0.85, 0.25, 1);
+}
+.lpvis.lpon {
+  opacity: 1;
+  transform: none;
+}
+.lpbeats {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.lpbeat {
+  padding: 34px 0;
+  border-bottom: 1px solid var(--hair);
+  opacity: 0.42;
+  transition: opacity 0.4s;
+}
+.lpbeat.lpon {
+  opacity: 1;
+}
+.lpbeat:last-child {
+  border-bottom: 0;
+}
+.lpbeat .lpk {
+  font-family: var(--m);
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 9px;
+  display: block;
+}
+.lpbeat .lph {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.018em;
+  margin-bottom: 7px;
+}
+.lpbeat .lpd {
+  font-size: 16px;
+  color: var(--ink3);
+  line-height: 1.45;
+}
+.lpchipset {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 26px;
+}
+.lpchip {
+  font-family: var(--m);
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--hair);
+  color: var(--ink2);
+  white-space: nowrap;
+  background: var(--wash);
+}
+.lpchip.lplow {
+  border-color: var(--accent);
+  color: var(--accent2);
+}
+
+/* wheel + glyph art */
+.lpart {
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 1;
+  position: relative;
+}
+.lpart svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.lpwline {
+  stroke: var(--hair);
+  fill: none;
+  stroke-width: 1;
+}
+.lpwring {
+  stroke: var(--ink3);
+  fill: none;
+  stroke-width: 1;
+  opacity: 0.5;
+}
+.lpwacc {
+  stroke: var(--accent);
+  fill: none;
+  stroke-width: 1.4;
+}
+.lpwdot {
+  fill: var(--accent);
+}
+.lpwtxt {
+  fill: var(--ink3);
+  font-family: var(--m);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+.lprot {
+  transform-origin: 50% 50%;
+  animation: spin 120s linear infinite;
+}
+.lprotr {
+  transform-origin: 50% 50%;
+  animation: spin 90s linear infinite reverse;
+}
+.lpwaves {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 130px;
+}
+.lpwaves i {
+  display: block;
+  width: 8px;
+  border-radius: 4px;
+  background: var(--accent);
+  opacity: 0.75;
+  animation: wv 1.5s ease-in-out infinite alternate;
+}
+.lpstackbk {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  align-items: center;
+}
+.lpstackbk i {
+  display: block;
+  height: 13px;
+  border-radius: 3px;
+  background: var(--ink);
+  opacity: 0.8;
+}
+
+/* ---------- bento ---------- */
+.lpbento {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 34px;
+}
+@media (max-width: 860px) {
+  .lpbento {
+    grid-template-columns: 1fr;
+  }
+}
+.lplay {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.lplayart {
+  height: 132px;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--hair);
+  background: linear-gradient(140deg, var(--accentbg), transparent 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lplayart svg {
+  width: 100%;
+  height: 100%;
+}
+.lplaybody {
+  padding: 24px 26px 22px;
+}
+.lplay .lph {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 6px;
+}
+.lplay h3 {
+  font-size: 23px;
+}
+.lplay .lpw {
+  font-size: 15px;
+  color: var(--ink3);
+  margin: 0 0 16px;
+  line-height: 1.45;
+}
+.lpli {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  gap: 0 18px;
+  padding: 11px 0;
+  border-top: 1px solid var(--hair2);
+  align-items: baseline;
+}
+.lpli .lpnm {
+  font-size: 15.5px;
+  font-weight: 600;
+}
+.lpli .lpds {
+  font-size: 14.5px;
+  color: var(--ink3);
+  line-height: 1.42;
+}
+@media (max-width: 520px) {
+  .lpli {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+.lpfree {
+  margin-top: 16px;
+  padding: 30px 32px 26px;
+}
+.lpfreehead {
+  max-width: 74ch;
+  margin-bottom: 22px;
+}
+.lpfreehead h3 {
+  font-size: 24px;
+  margin: 12px 0 12px;
+}
+.lpfreehead p {
+  font-size: 15.5px;
+  color: var(--ink3);
+  margin: 0;
+  line-height: 1.5;
+}
+.lpfreegrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--hair);
+}
+@media (max-width: 900px) {
+  .lpfreegrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .lpfreegrid {
+    grid-template-columns: 1fr;
+  }
+}
+.lpfi {
+  padding: 20px 22px 18px;
+  border-right: 1px solid var(--hair);
+}
+.lpfi:last-child {
+  border-right: 0;
+}
+@media (max-width: 900px) {
+  .lpfi {
+    border-bottom: 1px solid var(--hair);
+  }
+  .lpfi:nth-child(2n) {
+    border-right: 0;
+  }
+  .lpfi:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+}
+.lpfi .lpft {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 5px;
+}
+.lpfi .lpfd {
+  font-size: 14.5px;
+  color: var(--ink3);
+  line-height: 1.42;
+}
+
+/* ---------- trust ---------- */
+.lpduo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 880px) {
+  .lpduo {
+    grid-template-columns: 1fr;
+  }
+}
+.lptc {
+  padding: 32px 32px 26px;
+}
+.lptc h3 {
+  font-size: 23px;
+  margin: 14px 0 14px;
+}
+.lptc p {
+  font-size: 15.5px;
+  color: var(--ink2);
+  line-height: 1.5;
+}
+.lptc p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- pricing ---------- */
+.lptiers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 32px;
+}
+@media (max-width: 1080px) {
+  .lptiers {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .lptiers {
+    grid-template-columns: 1fr;
+  }
+}
+.lptier {
+  padding: 28px 26px 26px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.lptier.lpmark {
+  border-color: var(--ink);
+  background: var(--card2);
+}
+.lptier .lptag {
+  position: absolute;
+  top: -10px;
+  left: 26px;
+  font-family: var(--m);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: var(--g1);
+  padding: 5px 11px;
+  border-radius: 999px;
+}
+.lptier .lpnm {
+  font-family: var(--m);
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 10px;
+}
+.lptier .lppr {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.038em;
+  line-height: 1;
+  margin-bottom: 16px;
+}
+.lptier .lppr small {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink3);
+  letter-spacing: 0;
+}
+.lptier ul {
+  list-style: none;
+  margin: 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--hair2);
+}
+.lptier li {
+  font-size: 14.5px;
+  color: var(--ink2);
+  padding: 6px 0 6px 20px;
+  position: relative;
+  line-height: 1.4;
+}
+.lptier li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 13px;
+  width: 8px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+.lppfine {
+  font-size: 15px;
+  color: var(--ink3);
+  margin-top: 24px;
+  max-width: 70ch;
+}
+
+/* ---------- refusals ---------- */
+.lpno {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 32px;
+}
+@media (max-width: 820px) {
+  .lpno {
+    grid-template-columns: 1fr;
+  }
+}
+.lpnoi {
+  padding: 22px 24px;
+}
+.lpnoi .lph {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 17.5px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  margin-bottom: 6px;
+}
+.lpnoi .lph svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  stroke: var(--ink3);
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  fill: none;
+}
+.lpnoi .lpw {
+  font-size: 15px;
+  color: var(--ink3);
+  line-height: 1.45;
+}
+
+/* ---------- close ---------- */
+.lpclose {
+  text-align: center;
+  padding: 110px 0 96px;
+  position: relative;
+}
+.lpclose h2 {
+  font-size: clamp(32px, 5.4vw, 58px);
+  max-width: 14ch;
+  margin: 0 auto 20px;
+}
+.lpclose p {
+  font-size: 18.5px;
+  color: var(--ink2);
+  margin-bottom: 30px;
+}
+.lpcloseart {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(620px, 90vw);
+  aspect-ratio: 1;
+  opacity: 0.16;
+  z-index: -1;
+  pointer-events: none;
+}
+.lpcloseart svg {
+  width: 100%;
+  height: 100%;
+}
+.lproot footer {
+  border-top: 1px solid var(--hair);
+  padding: 40px 0 68px;
+  font-size: 14.5px;
+  color: var(--ink3);
+}
+.lpfcols {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 30px;
+}
+@media (max-width: 780px) {
+  .lpfcols {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.lpfcols a {
+  text-decoration: none;
+  opacity: 0.82;
+  display: block;
+  margin-bottom: 8px;
+}
+.lpfcols a:hover {
+  opacity: 1;
+}
+.lpfh {
+  font-family: var(--m);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 12px;
+}
+
+/* ---------- reveal ----------
+   A block is hidden only while the reveal script is watching it (.lprvwatch on
+   the root, set by initLanding); without the script — a baked page before the app
+   boots, a crawler, a script error — everything is simply visible. */
+.lprvwatch .lprv {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.95s ease,
+    transform 0.95s cubic-bezier(0.22, 0.9, 0.28, 1);
+}
+.lprvwatch .lprv.lpin {
+  opacity: 1;
+  transform: none;
+}
+/* what is already on screen when the script starts shows at once, no fade */
+.lprvwatch .lprv.lpnow {
+  transition: none;
+}
+.lprv.lpd1 {
+  transition-delay: 0.08s;
+}
+.lprv.lpd2 {
+  transition-delay: 0.16s;
+}
+.lprv.lpd3 {
+  transition-delay: 0.24s;
+}
+/* ---------- choreography ----------
+   Inside a revealed block, the pieces marked .lpk arrive one after another:
+   each rises, settles and fades in over about a second, starting --k seconds
+   after the block itself. Variants: .lpk-pop grows into place with a soft
+   overshoot (a marker, a button), .lpk-tip rises with a slight turn (a cover
+   dealt onto a shelf), .lpk-right slides in from the right. Like the block,
+   a piece is hidden only while the reveal script is watching. */
+.lprvwatch .lprv .lpk {
+  opacity: 0;
+  transform: translateY(26px) scale(0.975);
+}
+.lprvwatch .lprv .lpk-pop {
+  transform: scale(0.45);
+}
+.lprvwatch .lprv .lpk-tip {
+  transform: translateY(30px) rotate(-3deg) scale(0.94);
+}
+.lprvwatch .lprv .lpk-right {
+  transform: translateX(34px);
+}
+/* hiding is instant and only the arrival is timed: a piece marked hidden and
+   revealed in the same task (a block on screen at load) still starts from hidden */
+.lprvwatch .lprv.lpin .lpk {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 1s ease var(--k, 0s),
+    transform 1.15s cubic-bezier(0.22, 0.9, 0.28, 1) var(--k, 0s);
+}
+.lprvwatch .lprv.lpin .lpk-pop {
+  transition:
+    opacity 0.6s ease var(--k, 0s),
+    transform 0.8s cubic-bezier(0.34, 1.45, 0.64, 1) var(--k, 0s);
+}
+/* the app mock's own animations (the statement line, the options, the
+   profile bars) wait for the block to be seen instead of running at load */
+.lprvwatch .lprv:not(.lpin) .lpappcard *,
+.lprvwatch .lprv:not(.lpin) .lppeek * {
+  animation-play-state: paused !important;
+}
+/* the profile peek keeps its turn when it lands */
+.lprvwatch .lprv .lppeek.lpk {
+  transform: translate(34px, 22px) rotateY(-7deg);
+}
+.lprvwatch .lprv.lpin .lppeek.lpk {
+  transform: rotateY(-7deg);
+}
+@keyframes wv {
+  to {
+    transform: scaleY(0.35);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lprv {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .lptilt {
+    transition: none;
+  }
+  .lprvwatch .lprv .lpk {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .lprvwatch .lprv .lppeek.lpk {
+    transform: rotateY(-7deg);
+  }
+  .lpfill {
+    transition: none;
+    width: var(--w);
+  }
+  .lpblob,
+  .lprot,
+  .lprotr,
+  .lpmqi,
+  .lpwaves i,
+  .lplogo svg,
+  .lpprog i,
+  .lpopt,
+  .lppk .lpb i,
+  .lphero .lph1w i {
+    animation: none !important;
+  }
+  .lphero .lph1w i {
+    transform: none;
+  }
+  .lpopt {
+    opacity: 1;
+  }
+  .lpprog i {
+    width: 20%;
+  }
+  .lppk .lpb i {
+    width: var(--w);
+  }
+  .lpbtn,
+  .lpcard,
+  .lpvis,
+  .lpbeat {
+    transition: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ================= landing, full-bleed ================= */
+/* At / the product page is the whole page: no column, no card, no chrome.
+   Inside the working document it keeps the rounded-panel treatment above. */
+/* Only the frame changes. overflow stays hidden — the drifting blobs are inset
+   past the edges and would otherwise put a horizontal scrollbar on the page. */
+.lpsectionfull {
+  padding: 0;
+  border-bottom: 0;
+}
+.lproot.lpfull {
+  border-radius: 0;
+  margin: 0;
+}
+
+/* ---------- disclosure ---------- */
+/* Internal reasoning and long reference material: kept in the page, folded away
+   so it is not standing between the reader and the next paragraph. */
+details.disc {
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--card);
+  margin: 26px 0 8px;
+  overflow: hidden;
+}
+details.disc > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 16px 22px;
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+details.disc > summary::-webkit-details-marker {
+  display: none;
+}
+details.disc > summary::after {
+  content: '+';
+  font-family: var(--m);
+  font-size: 17px;
+  color: var(--ink3);
+  line-height: 1;
+  flex: none;
+}
+details.disc[open] > summary {
+  border-bottom: 1px solid var(--hair);
+}
+details.disc[open] > summary::after {
+  content: '\2212';
+}
+details.disc > summary:hover {
+  background: var(--wash);
+}
+details.disc > summary .tag {
+  font-family: var(--m);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  font-weight: 400;
+  margin-left: auto;
+  padding-right: 12px;
+}
+.discb {
+  padding: 18px 22px 22px;
+}
+.discb > :first-child {
+  margin-top: 0;
+}
+.discb .scroller:first-child {
+  margin-top: 0;
+}
+.discb p:last-child {
+  margin-bottom: 0;
+}
+
+/* The hero's profile peek used to be four unlabelled bars and four numbers, which
+   read as decoration. Naming the areas is what makes it a profile. */
+.lppeek {
+  width: 248px;
+}
+@media (max-width: 980px) {
+  .lppeek {
+    width: 228px;
+  }
+}
+.lppk {
+  grid-template-columns: 78px 1fr 22px;
+}
+.lppk .lppn {
+  font-family: var(--m);
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The area card's name and description are spans inside a span, so they ran
+   together on one line and the margin between them did nothing. */
+.lparea .lpt,
+.lparea .lpd {
+  display: block;
+}
+
+/* ================= site header ================= */
+/* Shared by / and /diagnostics. The working document keeps its own.
+ *
+ * The height is fixed rather than content-driven, and the border stays in the box
+ * on both pages. Otherwise the header measures whatever is inside it, and since
+ * the call to action is taller than the mark and only renders on the page you are
+ * not on, / and /diagnostics disagreed by ten pixels — enough to see the mark jump
+ * on navigation. Everything below centres inside that height, so the only thing
+ * that changes between the two is what you can see through it.
+ *
+ * padding:0 also overrides the bare `header` rule, which is sized for the working
+ * document's title block and would otherwise put 70px above the mark.
+ */
+:root {
+  --headh: 68px;
+}
+.sitehead {
+  height: var(--headh);
+  padding: 0;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--hair);
+  background: var(--paper);
+}
+.sitehead-in {
+  height: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+/* everything but the brand waits for the session, the role and the entitlements, then fades in as one —
+   never a button popping in after each database answer */
+.sitehead-in .sitesearch,
+.sitehead-in .sitenav {
+  transition: opacity 0.35s ease;
+}
+.sitehead-in.settling .sitesearch,
+.sitehead-in.settling .sitenav {
+  opacity: 0;
+  pointer-events: none;
+}
+.brand.sitebrand {
+  margin-bottom: 0;
+  text-decoration: none;
+  color: var(--ink);
+  /* THE NAME DOES NOT WRAP. A site with a two-word name and five links in the header had its own
+     name broken across two lines, which reads as a layout that gave up rather than a design. The
+     nav shrinks before the name does: the links are what there are many of. */
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.sitenav {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  min-width: 0;
+}
+.sitelink {
+  font-family: var(--m);
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.sitelink:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.sitelink.on {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.sitehead-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  /* it SHRINKS and the nav does not: between two breakpoints the thing that gives is the wordmark,
+     which clips, rather than the links, which would be written over */
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+.sitenav {
+  flex: none;
+}
+.sitesearch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--m);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink3);
+  background: var(--wash);
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 7px 8px 7px 13px;
+  cursor: pointer;
+}
+.sitesearch:hover {
+  color: var(--ink);
+  border-color: var(--ink3);
+}
+.sitesearch kbd {
+  font-family: var(--m);
+  font-size: 9.5px;
+  border: 1px solid var(--hair);
+  border-radius: 5px;
+  padding: 2px 5px;
+  background: var(--paper);
+}
+/* THE HEADER COLLAPSES BEFORE IT COLLIDES, in two steps rather than one.
+   It used to do it all at once at 700px, which is a phone — so between about 1000px and 700px the
+   mark, a 140px search pill and four uppercase links were all laid out at full size in a row too
+   narrow to hold them, and the search sat straight on top of the first link. A breakpoint that
+   fires after the overlap is not a breakpoint.
+   Step one, at 1024: the search pill becomes the icon it already is on a phone, which gives the
+   links back about 140px and costs nothing — the shortcut still works and the icon says what it is.
+   Step two, at 900: the links and the call to action go behind the burger. 900 is where the mark,
+   the nav's five icons and four links stop fitting with air between them; a site that adds a fifth
+   link wants a larger number, which is why the left group shrinks (min-width: 0, the wordmark
+   truncating) rather than pushing — so the worst case is a clipped word, never two words on top of
+   one another. */
+.sitenav .sitesearch-m {
+  display: none;
+}
+@media (max-width: 1024px) {
+  .sitesearch {
+    display: none;
+  }
+  .sitenav .sitesearch-m {
+    display: inline-flex;
+  }
+}
+/* …and above those, the header measures itself and says which step it is on (SiteLayout.vue,
+   fitHead). The breakpoints above are the floor — a prerendered page is read before any of this
+   runs, and a phone has to be right in the first frame — but the number that actually matters is
+   not a property of the window: it is the site's name, the words it chose for its links, how many
+   modules are on, and the typeface it picked in Settings. Every fixed number here was wrong for
+   some site, including 1024 for a theme with five links, and including a count of entries. */
+.sitehead-in[data-fit='compact'] .sitesearch,
+.sitehead-in[data-fit='menu'] .sitesearch {
+  display: none;
+}
+.sitehead-in[data-fit='compact'] .sitenav .sitesearch-m,
+.sitehead-in[data-fit='menu'] .sitenav .sitesearch-m {
+  display: inline-flex;
+}
+.sitehead-in[data-fit='menu'] .sitenav .sitelink,
+.sitehead-in[data-fit='menu'] .sitenav .sitecta {
+  display: none;
+}
+.sitehead-in[data-fit='menu'] .sitenav .sitemenu-btn,
+.sitenav .sitemenu-btn.sitemenu-on {
+  display: inline-flex;
+}
+.sitenav .sitemenu-btn {
+  display: none;
+}
+@media (max-width: 900px) {
+  .sitenav .sitelink {
+    display: none;
+  }
+  .sitenav .sitecta {
+    display: none;
+  }
+  .sitenav .sitemenu-btn {
+    display: inline-flex;
+  }
+}
+/* a full-screen mobile menu: the panel fills the viewport, the links are
+   full-width rows */
+.navmodal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;   /* over the support launcher (85) and the bag (90): the menu is the whole screen */
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+}
+.navmodal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--headh, 57px);
+  padding: 0 14px;
+  border-bottom: 1px solid var(--hair);
+  flex: none;
+}
+.navmodal-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--ink2);
+  background: none;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.navmodal-x:hover {
+  color: var(--ink);
+  border-color: var(--ink3);
+}
+.navmodal-links {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  overflow-y: auto;
+}
+.navmodal-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  line-height: 1.2;
+  font-family: var(--m);
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 22px 22px;
+  border-bottom: 1px solid var(--hair);
+}
+.navmodal-link:hover,
+.navmodal-link.on {
+  background: var(--wash);
+}
+.navmodal-link.cta {
+  margin: 20px 18px 0;
+  width: auto;
+  justify-content: center;
+  text-align: center;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 18px 22px;
+}
+.navmodal-link.cta:hover,
+.navmodal-link.cta.on {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+/* by night the way in is the site's black pill, as on the landing */
+:root[data-theme="dark"] .navmodal-link.cta {
+  background: #0c0d0b;
+  color: var(--g1);
+  border-color: #0c0d0b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .navmodal-link.cta {
+    background: #0c0d0b;
+    color: var(--g1);
+    border-color: #0c0d0b;
+  }
+}
+/* the wide measure the content surfaces share. A section under the landing's root is also
+   named here: .lproot section (padding: 96px 0) outranks .wrapwide and took the gutter away,
+   which is how the store's text once ran to the edge of a phone. */
+.wrapwide,
+.lproot section.wrapwide {
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-inline: 28px;
+}
+.wrapwide {
+  margin-block: 0;
+  padding-block: 0;
+}
+@media (max-width: 700px) {
+  .wrapwide,
+  .lproot section.wrapwide {
+    padding-inline: 20px;
+  }
+}
+.sitetheme {
+  /* a count on any round button (the menu's, on a phone) sits on that button, not on the header */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--ink2);
+  background: none;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.sitetheme:hover {
+  color: var(--ink);
+  border-color: var(--ink3);
+}
+.sitecta {
+  font-family: var(--m);
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  padding: 9px 17px;
+  white-space: nowrap;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.sitecta:hover {
+  background: var(--wash);
+  border-color: var(--ink3);
+}
+.sitecta.on {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+/* the same pill on a <button> (the header's sign-in): strip the UA button chrome
+   only — hover, .on and the header variants above still win by specificity */
+button.sitecta {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+  line-height: inherit;
+  margin: 0;
+}
+
+/* On the landing the header rides on the hero's own gradient rather than a paper
+   strip, so the page still opens edge to edge on colour. The hairline under it is
+   kept, so the two headers are identical and only the backdrop differs. */
+.sitehead.ontop {
+  background: transparent;
+  position: absolute;
+  top: var(--sitehead-top, 0px); /* an announcement bar at the head of a landing page sets it to its height */
+  left: 0;
+  right: 0;
+  z-index: 20;
+}
+.sitehead.ontop .sitecta {
+  border: 1px solid var(--hair);
+  backdrop-filter: blur(8px);
+}
+.sitehead.ontop + .lpsectionfull .lproot {
+  padding-top: var(--headh);
+}
+
+/* Over an article's full-bleed cover: the image runs to the top of the viewport
+   behind the header, so a soft top-down scrim keeps the nav legible over anything
+   and the header's own ink flips to light. */
+.sitehead.ontop.overimg {
+  border-bottom: 1px solid #ffffff26;
+}
+.sitehead.ontop.overimg::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 220%;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(180deg, #0a0d0bb0 0%, #0a0d0b5c 46%, #0a0d0b00 100%);
+}
+.sitehead.ontop.overimg .sitebrand,
+.sitehead.ontop.overimg .sitebrand span {
+  color: #fff;
+}
+.sitehead.ontop.overimg .sitelink {
+  color: #e8ede5;
+}
+.sitehead.ontop.overimg .sitelink:hover,
+.sitehead.ontop.overimg .sitelink.on {
+  color: #fff;
+}
+.sitehead.ontop.overimg .sitesearch {
+  color: #e8ede5;
+  background: #ffffff1c;
+  border-color: #ffffff3b;
+  backdrop-filter: blur(8px);
+}
+.sitehead.ontop.overimg .sitesearch:hover {
+  color: #fff;
+  border-color: #ffffff70;
+}
+.sitehead.ontop.overimg .sitesearch kbd {
+  color: #eef2ec;
+  background: #ffffff14;
+  border-color: #ffffff33;
+}
+.sitehead.ontop.overimg .sitetheme {
+  color: #eef2ec;
+  border-color: #ffffff3b;
+  backdrop-filter: blur(8px);
+}
+.sitehead.ontop.overimg .sitetheme:hover {
+  color: #fff;
+  border-color: #ffffff70;
+}
+.sitehead.ontop.overimg .sitecta {
+  color: #fff;
+  border-color: #ffffff47;
+}
+.sitehead.ontop.overimg .sitecta:hover {
+  background: #ffffff1f;
+  border-color: #ffffff85;
+}
+@media (max-width: 560px) {
+  .sitehead-in {
+    padding: 0 14px;
+    gap: 10px;
+  }
+  .sitehead-left {
+    gap: 10px;
+  }
+  .sitenav {
+    gap: 8px;
+  }
+  /* a phone's bar holds four buttons at most beside the wordmark — search, the bag, the account,
+     the menu; the theme and the chat go into the menu (a waiting message shows on its button) */
+  .sitenav .sitemode,
+  .sitenav .sitechat {
+    display: none;
+  }
+  .sitenav .sitemenu-btn {
+    position: relative;
+  }
+}
+/* the icon at the far right of a row — the chat, the bag, the theme, the account */
+.navmodal-ic {
+  flex: none;
+  color: var(--ink2);
+}
+
+/* the bag drawer is open: the page behind it holds still */
+html.bag-open {
+  overflow: hidden;
+}
+
+/* ---------- arriving ----------
+   Every page's content fades and rises in under the header (SiteLayout wraps the
+   page in .pagein), and the blocks inside its content column follow a beat apart —
+   the same arrival the landing's sections and the reader's pages make. The landing
+   keeps its own reveals (.lproot) and the reader its own fades (.reader). */
+@keyframes pagein {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+/* the wrapper itself only fades: a transform on it, even a finished one, would make it the
+   containing block of anything fixed inside — the reader's bottom bar, the modals */
+@keyframes pagefade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.pagein { animation: pagefade 0.55s ease both; }
+.pagein .wrap > *, .pagein .wrapwide > *, .pagein .contentground > * > *, .pagein .qzstage > div > * {
+  animation: pagein 0.7s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+.pagein .wrap > :nth-child(2), .pagein .wrapwide > :nth-child(2), .pagein .contentground > * > :nth-child(2), .pagein .qzstage > div > :nth-child(2) { animation-delay: 0.08s; }
+.pagein .wrap > :nth-child(3), .pagein .wrapwide > :nth-child(3), .pagein .contentground > * > :nth-child(3), .pagein .qzstage > div > :nth-child(3) { animation-delay: 0.16s; }
+.pagein .wrap > :nth-child(4), .pagein .wrapwide > :nth-child(4), .pagein .contentground > * > :nth-child(4), .pagein .qzstage > div > :nth-child(4) { animation-delay: 0.24s; }
+.pagein .wrap > :nth-child(5), .pagein .wrapwide > :nth-child(5), .pagein .contentground > * > :nth-child(5), .pagein .qzstage > div > :nth-child(5) { animation-delay: 0.32s; }
+.pagein .wrap > :nth-child(6), .pagein .wrapwide > :nth-child(6), .pagein .contentground > * > :nth-child(6), .pagein .qzstage > div > :nth-child(6) { animation-delay: 0.4s; }
+.pagein .wrap > :nth-child(n + 7), .pagein .wrapwide > :nth-child(n + 7), .pagein .contentground > * > :nth-child(n + 7) { animation-delay: 0.48s; }
+@media (prefers-reduced-motion: reduce) {
+  .pagein, .pagein * { animation: none !important; }
+}
+
+
+/* A SHORT PAGE STILL FILLS THE SCREEN, and the footer sits at the bottom of it.
+   Without this a page with little on it ends half way up a tall monitor and leaves a field of
+   nothing under it — the page does not look short, it looks broken.
+   The shell is a column at least a viewport tall (the header is out of flow above it). The page
+   keeps its natural height and THE FOOTER takes up whatever is left, so on a tall screen the
+   leftover room is unambiguously the foot of the page, in the foot's own colour, rather than a
+   band of nothing between two things. On an ordinary page the footer is its natural height and
+   none of this does anything.
+   The alternative — stretching the page's last section — needs a flex chain four levels deep
+   through markup the page owns, and would break the moment a page nested its sections differently.
+   dvh, not vh: on a phone vh is the tallest the viewport ever gets, so a vh column leaves the
+   footer under the address bar until it is scrolled away. */
+.pageshell {
+  display: flex;
+  flex-direction: column;
+  /* THE HEADER IS IN FLOW, so the shell is a viewport LESS the header — not a whole one. A plain
+     100dvh here makes every page exactly one header taller than the screen: on a page that scrolls
+     nobody sees it (the footer is simply 68px deeper than it needs to be), but on a surface that
+     fills the screen and scrolls inside itself — the workspace — it is a band of dead ground under
+     the page that you can scroll to and that holds nothing, with the surface own last row already
+     out of reach above it. */
+  min-height: calc(100dvh - var(--headh));
+}
+.pageshell > .pagein {
+  flex: 0 0 auto;
+}
+/* it wears .lproot for the landing tokens its type and rules are built on, and .lproot carries a
+   margin meant for a landing block embedded in a page. The foot of a page is flush, and it grows. */
+.sitefoot {
+  flex: 1 0 auto;
+  margin: 0;
+}

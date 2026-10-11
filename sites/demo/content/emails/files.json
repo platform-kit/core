@@ -1,0 +1,389 @@
+{
+  "settings": {
+    "width": 600,
+    "backgroundColor": "#fbfaf3",
+    "textColor": "#0c0d0b",
+    "linkColor": "#0c0d0b",
+    "linkUnderline": true,
+    "fontFamily": "Georgia",
+    "locale": "en",
+    "preheaderText": "Your files are ready."
+  },
+  "blocks": [
+    {
+      "id": "s-020",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        }
+      },
+      "children": [
+        [
+          {
+            "id": "sp-01z",
+            "type": "spacer",
+            "height": 28,
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-023",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 34,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "p-021",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#0c0d0b;font-family:Menlo, Consolas, monospace\">PLATFORMKIT DEMO</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 2,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-022",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">Books to keep</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-025",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "d-024",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 18,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-029",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "t-026",
+            "type": "title",
+            "level": 2,
+            "content": "Your files are ready.",
+            "textAlign": "left",
+            "color": "#0c0d0b",
+            "fontFamily": "Georgia, Times New Roman, serif",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 10,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-027",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:16px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">Hello {{name}},</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 12,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-028",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:16px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">The {{files}} of {{title}} are yours to download — every edition of them, kept in your account.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 12,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-02b",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "p-02a",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:16px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">Sign in and open the book's page in the store; your files are under “Your files”.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 12,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ],
+      "displayCondition": {
+        "label": "Only for a signed-in buyer",
+        "before": "{{#unless guest}}",
+        "after": "{{/unless}}"
+      }
+    },
+    {
+      "id": "s-02d",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "p-02c",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:16px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">Make an account with this email address and your files will be there when you sign in.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 12,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ],
+      "displayCondition": {
+        "label": "Only for a guest (no account)",
+        "before": "{{#if guest}}",
+        "after": "{{/if}}"
+      }
+    },
+    {
+      "id": "s-02f",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "b-02e",
+            "type": "button",
+            "text": "Download your files",
+            "url": "{{url}}",
+            "backgroundColor": "#0c0d0b",
+            "textColor": "#fbfaf3",
+            "borderRadius": 999,
+            "fontSize": 15,
+            "fontFamily": "Georgia, Times New Roman, serif",
+            "buttonPadding": {
+              "top": 13,
+              "right": 24,
+              "bottom": 13,
+              "left": 24
+            },
+            "align": "left",
+            "styles": {
+              "padding": {
+                "top": 10,
+                "right": 0,
+                "bottom": 14,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-02j",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 34,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "d-02g",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 22,
+                "right": 0,
+                "bottom": 14,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-02h",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">Questions? Reply to this email.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-02i",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">You are receiving this because of an order placed at this site.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-02l",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        }
+      },
+      "children": [
+        [
+          {
+            "id": "sp-02k",
+            "type": "spacer",
+            "height": 28,
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "marked": "npm:marked@18"
+  }
+}

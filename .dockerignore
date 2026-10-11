@@ -1,0 +1,11 @@
+.git
+node_modules
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+sites/*/*
+!sites/*/package.json
+!sites/*/dist/
+sites/*/dist/*
+!sites/*/dist/**

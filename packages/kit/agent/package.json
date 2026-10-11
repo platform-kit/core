@@ -1,0 +1,17 @@
+{
+  "name": "@platform-kit/copilot-agent",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node agent.mjs start",
+    "test": "node --test *.test.mjs"
+  },
+  "dependencies": {
+    "@livekit/agents": "1.9.1",
+    "@livekit/rtc-node": "^1.1.0",
+    "zod": "^4.1.8"
+  }
+}

@@ -1,0 +1,123 @@
+/*
+ * THE STAFF'S QUEUES WEAR ONE FRAME. Support Chat, Clients, Comments, the Social queues (SpaceDesk)
+ * and Support Tickets (SpaceTickets) are different work — a conversation, a ticket with a state and
+ * a priority — and each keeps what is its own; what they share is drawn once, here, so moving from
+ * one row of Work to the next changes what is in the room and never the room:
+ *
+ *   .wq            the two panes: a list of one width, and what is open
+ *   .wq-head       the list's title row (a count or one action on the right), its line under it
+ *   .wq-controls   whatever narrows the list — the segmented state first — ruled off below
+ *   .wq-row        a row: what it is about on top, the facts under it, the clock as a soft label
+ *   .wq-thead      the open thing's header: who or what, then the actions, one line of each
+ *   .wq-btn        every action in a header; .primary for the one that makes something
+ *   .wq-msg        a line said: theirs on the left, the staff's on the right
+ *   .wq-pick       the pane with nothing open: one quiet sentence, centred
+ *
+ * Every class is prefixed, since the site's global stylesheet owns the bare names.
+ */
+.wq { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr);
+  min-height: 0; height: 100%; margin: 0; padding: 0; background: var(--paper); overflow: hidden }
+.wq-list { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--hair) }
+
+.wq-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  height: 60px; margin: 0; padding: 0 16px; border: 0 }
+.wq-head h2 { margin: 0; font-family: var(--fd); font-weight: 800; font-size: 18px; letter-spacing: -.005em; color: var(--ink) }
+.wq-count { font-style: normal; font-family: var(--m); font-size: 11.5px; font-weight: 700; color: var(--ink3); white-space: nowrap }
+.wq-line { flex: none; margin: -10px 16px 12px; max-width: none; font-size: 12.5px; line-height: 1.45; color: var(--ink3) }
+.wq-line + .wq-line { margin-top: -6px }
+
+.wq-controls { flex: none; display: grid; gap: 8px; padding: 0 16px 12px; border-bottom: 1px solid var(--hair) }
+/* the state: a segmented control, the chosen one raised */
+.wq-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent) }
+.wq-seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: inherit; font-size: 12.5px; font-weight: 600;
+  color: var(--ink2); background: transparent; border: 0; border-radius: 8px; padding: 6px 8px; cursor: pointer; white-space: nowrap;
+  transition: background .2s cubic-bezier(.2, .8, .2, 1), color .2s, box-shadow .2s }
+.wq-seg button:hover { color: var(--ink) }
+.wq-seg button.on { color: var(--ink); background: var(--paper); box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 15%, transparent) }
+.wq-seg i { font-style: normal; font-family: var(--m); font-size: 10.5px; font-weight: 700; color: var(--ink3);
+  background: color-mix(in srgb, var(--ink) 8%, transparent); border-radius: 999px; padding: 0 6px; line-height: 17px }
+.wq-find { display: flex; align-items: center; gap: 7px; padding: 0 10px; height: 34px;
+  border: 1px solid var(--hair); border-radius: 9px; color: var(--ink3); background: var(--paper) }
+.wq-find:focus-within { border-color: color-mix(in srgb, var(--ink) 30%, transparent) }
+.wq-find input { flex: 1; min-width: 0; font: inherit; font-size: 13px; color: var(--ink); background: transparent; border: 0; outline: none; padding: 0 }
+
+.wq-rows { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 8px 18px }
+.wq-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; width: 100%;
+  text-align: left; font: inherit; background: transparent; border: 0; border-radius: 10px; padding: 10px; cursor: pointer;
+  transition: background .15s }
+.wq-row + .wq-row { margin-top: 2px }
+.wq-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent) }
+.wq-row.on { background: color-mix(in srgb, var(--ink) 7%, transparent) }
+.wq-mid { display: flex; flex-direction: column; gap: 3px; min-width: 0 }
+.wq-top { display: flex; align-items: baseline; gap: 6px; min-width: 0 }
+.wq-title { min-width: 0; font-family: var(--fd); font-size: 14.5px; font-weight: 700; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.wq-time { flex: none; margin-left: auto; text-decoration: none; font-family: var(--m); font-size: 11px; color: var(--ink3) }
+.wq-meta { display: flex; align-items: center; gap: 4px 8px; min-width: 0; font-size: 11.5px; font-weight: 600; color: var(--ink3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.wq-say { display: block; font-size: 13.5px; line-height: 1.4; color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+/* the clock: a soft label, red only once it is late */
+.wq-due { display: inline-block; justify-self: start; align-self: flex-start; width: fit-content; margin-top: 3px;
+  font-size: 11px; font-weight: 700; font-style: normal; color: var(--ink2); white-space: nowrap;
+  background: color-mix(in srgb, var(--ink) 6%, transparent); border-radius: 999px; padding: 2px 8px }
+.wq-due.over { color: var(--sp-badge); background: color-mix(in srgb, var(--sp-badge) 12%, transparent) }
+.wq-due.soft { font-weight: 600; color: var(--ink3) }
+.wq-quiet { margin: 18px 12px; max-width: none; text-align: center; font-size: 13px; color: var(--ink3) }
+
+.wq-pane { display: flex; flex-direction: column; min-height: 0; container: wq-pane / inline-size }
+.wq-pane:has(> .wq-pick) { display: grid; place-items: center }
+.wq-pick { margin: 0; max-width: none; text-align: center; font-size: 14px; color: var(--ink3) }
+
+.wq-thead { flex: none; display: flex; align-items: center; gap: 10px; min-height: 60px; margin: 0; padding: 8px 16px;
+  border: 0; border-bottom: 1px solid var(--hair) }
+/* the clock sits beside the name it is about; the actions keep the right */
+.wq-who { display: block; flex: 0 1 auto; min-width: 7em }
+.wq-who > b, .wq-who > h3 { display: block; margin: 0; font-family: var(--fd); font-size: 15px; font-weight: 700; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.wq-who > i, .wq-who > p { display: block; margin: 1px 0 0; max-width: none; font-style: normal; font-size: 11.5px; color: var(--ink3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.wq-actions { flex: none; display: flex; align-items: center; gap: 7px; margin-left: auto }
+
+.wq-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; font: inherit; font-size: 12.5px; font-weight: 600;
+  color: var(--ink2); background: transparent; border: 1px solid var(--hair); border-radius: 8px; padding: 0 10px;
+  cursor: pointer; white-space: nowrap; transition: background .15s, color .15s, border-color .15s }
+.wq-btn:hover { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 28%, transparent); background: color-mix(in srgb, var(--ink) 4%, transparent) }
+.wq-btn.primary { color: var(--paper); border-color: transparent;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 86%, #fff), var(--accent));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22) }
+.wq-btn.primary:hover { color: var(--paper); filter: brightness(1.05) }
+.wq-btn.go { color: #fff; background: var(--sp-go); border-color: transparent }
+.wq-btn:disabled { opacity: .45; cursor: default }
+.wq-x { flex: none; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; font: inherit; font-size: 18px; line-height: 1;
+  color: var(--ink3); background: transparent; border: 0; border-radius: 8px; cursor: pointer }
+.wq-x:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent) }
+
+.wq-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px 18px }
+.wq-msg { width: fit-content; max-width: 68%; margin-bottom: 8px; padding: 7px 11px; border-radius: 12px 12px 12px 3px;
+  background: color-mix(in srgb, var(--ink) 5%, transparent) }
+.wq-msg.mine { margin-left: auto; border-radius: 12px 12px 3px 12px; background: color-mix(in srgb, var(--sp-link) 13%, transparent) }
+.wq-msg > time, .wq-msg > footer { display: block; margin: 2px 0 0; padding: 0; border: 0; font-family: var(--m); font-size: 10px; color: var(--ink3) }
+.wq-write { flex: none; padding: 10px 14px 12px; border-top: 1px solid var(--hair) }
+
+.wq-veil { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ink) 40%, transparent); padding: 20px }
+.wq-make { width: min(500px, 100%); max-height: 86vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+  background: var(--paper); border-radius: 14px; padding: 20px }
+.wq-make h3 { margin: 0; font-family: var(--fd); font-weight: 800; font-size: 18px; color: var(--ink) }
+.wq-make label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: var(--ink2) }
+.wq-make input, .wq-make textarea, .wq-make select { font: inherit; font-size: 14px; font-weight: 400; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--hair); border-radius: 9px; padding: 8px 11px }
+.wq-make footer { display: flex; justify-content: flex-end; gap: 8px; margin: 0; padding: 0; border: 0 }
+
+/* a narrow pane keeps the person: the actions fall back to their glyphs, the words in their titles */
+@container wq-pane (max-width: 620px) {
+  .wq-actions .wq-lbl { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%) }
+  .wq-actions .wq-btn:has(.wq-lbl) { padding-inline: 8px }
+}
+@container wq-pane (max-width: 470px) { .wq-thead > .wq-due { display: none } }
+
+@media (max-width: 900px) {
+  .wq { grid-template-columns: minmax(0, 1fr) }
+  .wq-list { border-right: 0 }
+}

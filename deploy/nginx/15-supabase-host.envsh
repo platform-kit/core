@@ -1,0 +1,8 @@
+#!/bin/sh
+# SUPABASE_HOST — the Host header the functions expect — from SUPABASE_URL, before the image fills the templates
+# (the entrypoint sources an .envsh before running 20-envsubst-on-templates.sh, so the variable is in its environment)
+if [ -z "${PLATFORMKIT_DOMAIN:-}" ]; then
+  : "${SUPABASE_URL:?SUPABASE_URL is the project's address, https://<ref>.supabase.co}"
+  SUPABASE_HOST="$(printf '%s' "$SUPABASE_URL" | sed -E 's#^[a-z]+://##; s#/.*$##')"
+  export SUPABASE_HOST
+fi

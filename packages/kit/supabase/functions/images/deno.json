@@ -1,0 +1,15 @@
+{
+  "imports": {
+    "@cf-wasm/photon/others": "npm:@cf-wasm/photon@0.4.0/others",
+    "marked": "npm:marked@18",
+    "github-slugger": "npm:github-slugger@2",
+    "gray-matter": "npm:gray-matter@4",
+    "yaml": "npm:yaml@2",
+    "js-yaml": "npm:js-yaml@5",
+    "zod": "npm:zod@4",
+    "validatorjs": "npm:validatorjs@3",
+    "validatorjs/src/lang/en.js": "npm:validatorjs@3/src/lang/en.js",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2",
+    "#site": "../_shared/pipe/site.js"
+  }
+}

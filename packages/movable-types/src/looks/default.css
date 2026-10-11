@@ -1,0 +1,189 @@
+/* ==========================================================================
+   THE DEFAULT — the theme's own palette, and what a site looks like before
+   anybody has made a single decision.
+
+   The theme ships the design; this ships the colours, and until it existed a site that registered
+   no look got every token empty and a landing button that drew its text in the colour of its own
+   background. So the first duty here is completeness: every colour the theme reads, in both
+   schemes, held by build/theme-look.test.mjs.
+
+   WHAT IT IS. White surfaces, cool slate neutrals and an indigo accent — a software palette,
+   because the thing most people build on this is a product site, and a default should look like
+   what it will most often be. Crisp rather than atmospheric: near-white grounds, real contrast,
+   one saturated colour used sparingly and meaning "this is the thing to press".
+
+   WHAT IT DELIBERATELY IS NOT. Not warm. An earlier draft was bone and brass and it was both
+   worse and wrong — beige is the site's register (cream, sunset, coral), and a default that
+   reads as somebody else's brand is a default nobody can use. The neutrals here are cool and
+   sit under any content without tinting it.
+
+   Day and night are one family: the night is the same slate taken down until it is nearly black,
+   with the indigo lifted rather than swapped, so the accent belongs in both.
+
+   Every surface is written three times — [data-theme='dark'], and the media query guarded by
+   :not([data-theme='light']) — because the viewer has three states, not two: an explicit choice
+   either way, and the default, where only the media query speaks.
+   ========================================================================== */
+
+/* ---------- site-wide ---------- */
+:root[data-look='default'] {
+  --paper: #ffffff;
+  --ink: #0f172a;
+  --ink2: #475569;
+  /* the third level of text: a label, a unit, a caption. It was #8a97a8 by day and #6f7c93 by
+     night, which measured 2.97:1 and 4.49:1 against their own grounds — both under WCAG AA's 4.5
+     for body text, the first badly, and it showed up about fifty times on a single page of
+     sections ("From $5", "Cards and wallets", "4 items"). These two measure 4.76 and 5.22, and
+     stay well clear of --ink2 (7.58 and 8.96), so it is still plainly a third level and not a
+     second one.
+     The night one is measured against a CARD (#161d33) rather than the page, because that is the
+     lighter of the two grounds it sits on and the page alone would have passed while every
+     testimonial and collection card still failed at 4.19. */
+  --ink3: #677485;
+  --hair: #0f172a1a;
+  --hair2: #0f172a0d;
+  --card: #ffffff;
+  --accent: #4f46e5;
+  --accent2: #4338ca;
+  --accentbg: #4f46e50f;
+  --sun: #c7d2fe;
+  --c1: #c7d2fe; --c2: #a5b4fc; --c3: #818cf8; --c4: #4f46e5;
+}
+[data-theme='dark'][data-look='default'] {
+  --paper: #0b1020;
+  --ink: #e8ecf4;
+  --ink2: #a8b3c7;
+  --ink3: #7a879e;
+  --hair: #ffffff1c;
+  --hair2: #ffffff0e;
+  --card: #131a2ecc;
+  --accent: #8b95f7;
+  --accent2: #b0b7fb;
+  --accentbg: #8b95f714;
+  --sun: #2c2f6b;
+  --c1: #23264f; --c2: #3a3f86; --c3: #6169d4; --c4: #8b95f7;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-look='default']:not([data-theme='light']) {
+    --paper: #0b1020; --ink: #e8ecf4; --ink2: #a8b3c7; --ink3: #7a879e;
+    --hair: #ffffff1c; --hair2: #ffffff0e; --card: #131a2ecc;
+    --accent: #8b95f7; --accent2: #b0b7fb; --accentbg: #8b95f714; --sun: #2c2f6b;
+    --c1: #23264f; --c2: #3a3f86; --c3: #6169d4; --c4: #8b95f7;
+  }
+}
+
+/* ---------- the landing by day: white, with the indigo lifting off one corner ---------- */
+[data-look='default'] .lproot {
+  --ink: #0f172a;
+  --ink2: #475569;
+  --ink3: #677485;
+  --hair: #0f172a16;
+  --hair2: #0f172a0b;
+  --card: #ffffffe6;
+  --card2: #ffffff;
+  --edge: #ffffff;
+  --shade: #1e293b40;
+  --wash: #0f172a07;
+  --accent: #4f46e5;
+  --accent2: #4338ca;
+  --accentbg: #4f46e50f;
+  --sun: #dbe0ff;
+  --sunbg: #dbe0ff80;
+  --dusk: #c3cbe8;
+  --g1: #f3f5fb;
+  --g2: #fafbfe;
+  --g3: #ffffff;
+  --g4: #eef1fc;
+  --blob1: #ffffff;
+  --blob2: #e5e9ff;
+  --blob3: #e9f2fd;
+  --glow: radial-gradient(70vw 40vh at 0% 0%, #4f46e514 0%, #4f46e500 60%);
+  --closeglow: #4f46e5;
+  --sh: 0 1px 2px #0f172a0a, 0 14px 34px -18px #1e293b38;
+  --shhi: 0 2px 4px #0f172a12, 0 30px 60px -24px #1e293b48;
+}
+[data-theme='dark'][data-look='default'] .lproot {
+  --ink: #e8ecf4; --ink2: #a8b3c7; --ink3: #7a879e;
+  --hair: #ffffff1c; --hair2: #ffffff0e;
+  --card: #131a2ed9; --card2: #161d33f2; --edge: #ffffff14; --shade: #000000aa; --wash: #ffffff0a;
+  --accent: #8b95f7; --accent2: #b0b7fb; --accentbg: #8b95f714;
+  --sun: #2c2f6b; --sunbg: #2c2f6b66; --btntext: #0b1020; --dusk: #232a44;
+  --g1: #080c18; --g2: #0b1020; --g3: #0e1426; --g4: #070a14;
+  --blob1: #161d33; --blob2: #1d2350; --blob3: #12203a;
+  --glow: radial-gradient(70vw 40vh at 0% 0%, #8b95f714 0%, #8b95f700 60%);
+  --closeglow: #8b95f7;
+  --sh: 0 1px 2px #00000047, 0 14px 34px -18px #000000a8;
+  --shhi: 0 2px 4px #00000055, 0 30px 60px -24px #000000c4;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-look='default']:not([data-theme='light']) .lproot {
+    --ink: #e8ecf4; --ink2: #a8b3c7; --ink3: #7a879e; --hair: #ffffff1c; --hair2: #ffffff0e;
+    --card: #131a2ed9; --card2: #161d33f2; --edge: #ffffff14; --shade: #000000aa; --wash: #ffffff0a;
+    --accent: #8b95f7; --accent2: #b0b7fb; --accentbg: #8b95f714;
+    --sun: #2c2f6b; --sunbg: #2c2f6b66; --btntext: #0b1020; --dusk: #232a44;
+    --g1: #080c18; --g2: #0b1020; --g3: #0e1426; --g4: #070a14;
+    --blob1: #161d33; --blob2: #1d2350; --blob3: #12203a;
+    --glow: radial-gradient(70vw 40vh at 0% 0%, #8b95f714 0%, #8b95f700 60%);
+    --closeglow: #8b95f7;
+    --sh: 0 1px 2px #00000047, 0 14px 34px -18px #000000a8;
+    --shhi: 0 2px 4px #00000055, 0 30px 60px -24px #000000c4;
+  }
+}
+
+/* ---------- the app shell: the same white, so nothing seams where they meet ---------- */
+html[data-look='default'] .qz {
+  --qink: #0f172a; --qink2: #475569; --qink3: #7d8a9c; --qhair: #0f172a1f; --qcard: #ffffff; --qhalo: #f7f9fd; --lv0: #e8ecf6;
+  border-color: var(--qhair);
+  background: linear-gradient(148deg, #ffffff 0%, #f8fafd 60%, #eef2fb 100%);
+}
+html[data-look='default'] .qz.qzread { --qcard: #ffffff; --qhair: #0f172a16; background: linear-gradient(180deg, #eef2fb 0%, #ffffff 220px, #ffffff 100%); }
+html[data-look='default'] .qz.qzread .qzbar { background: #eef2fbcc; }
+html[data-theme='dark'][data-look='default'] .qz {
+  --qink: #e8ecf4; --qink2: #a8b3c7; --qink3: #6f7c93; --qhair: #ffffff22; --qcard: #131a2ecc; --qflip: #0b1020; --qhalo: #0e1426; --lv0: #1b2338;
+  border-color: #ffffff22;
+  background: linear-gradient(148deg, #0b1020 0%, #0e1426 50%, #161d33 100%);
+}
+html[data-theme='dark'][data-look='default'] .qz.qzread { --qcard: #131a2e; background: linear-gradient(180deg, #161d33 0%, #0b1020 220px, #0b1020 100%); }
+html[data-theme='dark'][data-look='default'] .qz.qzread .qzbar { background: #0e1426cc; }
+@media (prefers-color-scheme: dark) {
+  html[data-look='default']:not([data-theme='light']) .qz {
+    --qink: #e8ecf4; --qink2: #a8b3c7; --qink3: #6f7c93; --qhair: #ffffff22; --qcard: #131a2ecc; --qflip: #0b1020; --qhalo: #0e1426; --lv0: #1b2338;
+    border-color: #ffffff22; background: linear-gradient(148deg, #0b1020 0%, #0e1426 50%, #161d33 100%);
+  }
+  html[data-look='default']:not([data-theme='light']) .qz.qzread { --qcard: #131a2e; background: linear-gradient(180deg, #161d33 0%, #0b1020 220px, #0b1020 100%); }
+  html[data-look='default']:not([data-theme='light']) .qz.qzread .qzbar { background: #0e1426cc; }
+}
+
+/* ---------- the close: the indigo, so the foot of a page is the accent and not a wash ---------- */
+[data-look='default'] #lpstart.ac { --sun: #c7d2fe; }
+[data-theme='dark'][data-look='default'] #lpstart.ac { --sun: #3a3f86; }
+@media (prefers-color-scheme: dark) { :root[data-look='default']:not([data-theme='light']) #lpstart.ac { --sun: #3a3f86; } }
+
+/* ---------- the reader's night page is the site's own night, so nothing seams ---------- */
+html[data-theme='dark'][data-look='default'] .reader.scheme-night { --pg: #0b1020; }
+@media (prefers-color-scheme: dark) { html[data-look='default']:not([data-theme='light']) .reader.scheme-night { --pg: #0b1020; } }
+
+/* ---------- the community: a room is not a page, so the rail is dark in both schemes ----------
+   `go` stays green and `badge` stays red because those two mean something before they are
+   decorative: one is "this is live", the other "this wants you". */
+html[data-look='default'] .sp-page {
+  --spaces-rail: #101728;
+  --spaces-side: #18203a;
+  --spaces-side-ink: #c4ccdc;
+  --spaces-side-on: #27304f;
+  --spaces-go: #2f855a;
+  --spaces-link: #8b95f7;
+  --spaces-badge: #dc2626;
+  --spaces-tint: #eef1fc;
+  --spaces-tint-bar: #4f46e5;
+}
+html[data-theme='dark'][data-look='default'] .sp-page {
+  --spaces-rail: #070b16; --spaces-side: #0f1526; --spaces-side-ink: #a8b3c7; --spaces-side-on: #1b2338;
+  --spaces-go: #3fa06d; --spaces-link: #8b95f7; --spaces-badge: #ef4444; --spaces-tint: #141a2e; --spaces-tint-bar: #6169d4;
+}
+@media (prefers-color-scheme: dark) {
+  html[data-look='default']:not([data-theme='light']) .sp-page {
+    --spaces-rail: #070b16; --spaces-side: #0f1526; --spaces-side-ink: #a8b3c7; --spaces-side-on: #1b2338;
+    --spaces-go: #3fa06d; --spaces-link: #8b95f7; --spaces-badge: #ef4444; --spaces-tint: #141a2e; --spaces-tint-bar: #6169d4;
+  }
+}

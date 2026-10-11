@@ -1,0 +1,9 @@
+# THE RULE THAT READS THE MESSAGE lives here and not in pre-commit.
+#
+# Git prepares the message AFTER pre-commit has run, so `.git/COMMIT_EDITMSG` is the previous
+# message there, or nothing at all. The rule — a kit change writes a page, or says in its own
+# message why none was needed — therefore never saw the escape and refused every commit that
+# used it. The escape was documented, committed, and unusable.
+#
+# commit-msg is handed the message file as $1, which is the whole reason it exists.
+node packages/kit/build/docs-check.mjs --staged --message-file "$1"

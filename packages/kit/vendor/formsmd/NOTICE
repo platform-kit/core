@@ -1,0 +1,34 @@
+Forms.md (formsmd) 1.1.3 — https://github.com/formsmd/formsmd — Copyright Tahmid Khan Nafee
+Licensed under the Apache License, Version 2.0 (LICENSE beside this file).
+
+What is vendored here, from the npm package formsmd@1.1.3 (published 2025-04-27), is the separable
+part of the library — the parts of its language that stand apart from its renderer:
+
+  helpers.js             src/helpers.js             isNumeric, escape, cleanUrl, unescape
+  settings-parse.js      src/settings-parse.js      the `#! key = value` settings and their validation
+  attrs-parse.js         src/attrs-parse.js         the `[#id .class attr="v"]` attribute grammar
+  data-blocks-parse.js   src/data-blocks-parse.js   the ```data JSON blocks
+  phone-numbers.js       src/phone-numbers.js       the placeholders and calling codes by country
+  composer.js            src/composer.js            the Composer: the document written from calls
+  field-parse.js         (new; factored out of src/form-field-create.js)
+                         the form-field line pattern and every kind's parameter parsing, as a
+                         pure function returning the field's model — the HTML the original
+                         emitted alongside is left behind
+  tests/*.test.mjs       tests/<name>.test.js       the library's own tests for those parts
+
+Changes made to the vendored files (and nothing else):
+  - CommonJS → ES modules: each `require` is an `import`, each `exports.x` an `export`.
+  - composer.js: the import of `./translations` is dropped (the table is not vendored — a form's
+    words are the kit's `forms` strings scope); `translate(localization, translations)` stays as
+    the generic helper it is. The Composer's constructor writes any setting it is given, which is
+    how the kit's own settings reach a document, and `free()` is the raw chunk the kit's builder
+    carries an unmodelled construct through.
+  - tests: `require` → `import`; the Jest matchers they use come from tests/jest-lite.mjs; one
+    assertion in Composer.test.mjs (`composer.constructor(allSettings)`, which Babel let a compiled
+    class answer) reads `composer.template` instead; the `beautify` package one test compared
+    <option> lists with is a whitespace-insensitive normaliser in the shim.
+
+Not vendored: the renderer (marked-renderer.js, form-field-create.js's templates, slides-parse.js,
+div-span-parse.js, templates-create.js, main.js), the stylesheet, translations.js, the Google Apps
+Script, the CLI and the dist bundles. The kit parses the same language into a model of its own
+(packages/kit/src/lib/forms/parse.js) and draws it with its own runner.

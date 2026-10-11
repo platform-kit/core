@@ -1,0 +1,717 @@
+{
+  "settings": {
+    "width": 600,
+    "backgroundColor": "#fbfaf3",
+    "textColor": "#0c0d0b",
+    "linkColor": "#0c0d0b",
+    "linkUnderline": true,
+    "fontFamily": "Georgia",
+    "locale": "en",
+    "preheaderText": "Thank you — your order is going to the press."
+  },
+  "blocks": [
+    {
+      "id": "s-002",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        }
+      },
+      "children": [
+        [
+          {
+            "id": "sp-001",
+            "type": "spacer",
+            "height": 28,
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-005",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 34,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "p-003",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#0c0d0b;font-family:Menlo, Consolas, monospace\">PLATFORMKIT DEMO</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 2,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-004",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">Books to keep</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-007",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "d-006",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 18,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-00c",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "t-008",
+            "type": "title",
+            "level": 2,
+            "content": "Thank you — it's going to the press.",
+            "textAlign": "left",
+            "color": "#0c0d0b",
+            "fontFamily": "Georgia, Times New Roman, serif",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 10,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-009",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:16px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">Hello {{name}},</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 12,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-00a",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:16px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">We've received your order. Every copy is printed to order and bound for you; it ships within five business days, and delivery takes one to two weeks more.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 18,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-00b",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:11px;color:#b8402e;font-family:Menlo, Consolas, monospace\">WHAT YOU ORDERED</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-00e",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "d-00d",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-00i",
+      "type": "section",
+      "columns": "2-1",
+      "styles": {
+        "padding": {
+          "top": 10,
+          "right": 36,
+          "bottom": 10,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "p-00f",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:15px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\"><strong>{{title}}</strong></span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 2,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-00g",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:12.5px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">{{detail}}</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ],
+        [
+          {
+            "id": "p-00h",
+            "type": "paragraph",
+            "content": "<p style=\"text-align:right\"><span style=\"font-size:15px;color:#0c0d0b;font-family:Menlo, Consolas, monospace\">{{qty}} × {{amount}}</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ],
+      "displayCondition": {
+        "label": "Each line of the order",
+        "before": "{{#each lines}}",
+        "after": "{{/each}}"
+      }
+    },
+    {
+      "id": "s-00k",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "d-00j",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-00r",
+      "type": "section",
+      "columns": "2-1",
+      "styles": {
+        "padding": {
+          "top": 10,
+          "right": 36,
+          "bottom": 18,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "p-00l",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:14px;color:#4a4c47;font-family:Georgia, Times New Roman, serif\">Subtotal</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 4,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-00m",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:14px;color:#4a4c47;font-family:Georgia, Times New Roman, serif\">Shipping</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 4,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-00n",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:14px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\"><strong>Total</strong></span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ],
+        [
+          {
+            "id": "p-00o",
+            "type": "paragraph",
+            "content": "<p style=\"text-align:right\"><span style=\"font-size:14px;color:#0c0d0b;font-family:Menlo, Consolas, monospace\">{{subtotal}}</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 4,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-00p",
+            "type": "paragraph",
+            "content": "<p style=\"text-align:right\"><span style=\"font-size:14px;color:#0c0d0b;font-family:Menlo, Consolas, monospace\">{{shipping}}</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 4,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-00q",
+            "type": "paragraph",
+            "content": "<p style=\"text-align:right\"><span style=\"font-size:17px;color:#0c0d0b;font-family:Menlo, Consolas, monospace\"><strong>{{total}}</strong></span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-00u",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "p-00s",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:11px;color:#b8402e;font-family:Menlo, Consolas, monospace\">SHIPS TO</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-00t",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:15px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">{{#each address}}{{this}}<br>{{/each}}</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 18,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ],
+      "displayCondition": {
+        "label": "Only when it ships",
+        "before": "{{#if ships}}",
+        "after": "{{/if}}"
+      }
+    },
+    {
+      "id": "s-00w",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "p-00v",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:16px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">The PDF and EPUB that come with a printed copy are ready now: sign in and open the book's page in the store.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 12,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ],
+      "displayCondition": {
+        "label": "Only when files come with it",
+        "before": "{{#if files}}",
+        "after": "{{/if}}"
+      }
+    },
+    {
+      "id": "s-00y",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "b-00x",
+            "type": "button",
+            "text": "See the book",
+            "url": "{{url}}",
+            "backgroundColor": "#0c0d0b",
+            "textColor": "#fbfaf3",
+            "borderRadius": 999,
+            "fontSize": 15,
+            "fontFamily": "Georgia, Times New Roman, serif",
+            "buttonPadding": {
+              "top": 13,
+              "right": 24,
+              "bottom": 13,
+              "left": 24
+            },
+            "align": "left",
+            "styles": {
+              "padding": {
+                "top": 10,
+                "right": 0,
+                "bottom": 14,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-010",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "p-00z",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">Every copy is made for you, so all sales are final.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ],
+      "displayCondition": {
+        "label": "Only when it ships",
+        "before": "{{#if ships}}",
+        "after": "{{/if}}"
+      }
+    },
+    {
+      "id": "s-012",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 8,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "p-011",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">You checked out without an account. Make one with this email address whenever you like — your order and your files will be waiting in it.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ],
+      "displayCondition": {
+        "label": "Only for a guest (no account)",
+        "before": "{{#if guest}}",
+        "after": "{{/if}}"
+      }
+    },
+    {
+      "id": "s-016",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 34,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "d-013",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 22,
+                "right": 0,
+                "bottom": 14,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-014",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">Questions? Reply to this email.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "p-015",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">You are receiving this because of an order placed at this site.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "s-018",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        }
+      },
+      "children": [
+        [
+          {
+            "id": "sp-017",
+            "type": "spacer",
+            "height": 28,
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    }
+  ]
+}

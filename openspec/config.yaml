@@ -1,0 +1,34 @@
+schema: spec-driven
+
+context: |
+  PlatformKit is a reusable core package and default theme for independently owned sites.
+  The workspace includes generic fixtures and a documentation site; downstream sites are
+  separate repositories and are fetched only for local development. Specifications under
+  openspec/specs describe current PlatformKit behavior. Repository conventions live in AGENTS.md.
+  Keep product-specific content, language, and policy in the site that owns them.
+
+rules:
+  proposal:
+    - "Under 500 words. Explain the reader-visible reason, changes, non-goals, review focus, and affected specifications."
+    - "Quote proposed reader-facing copy in full and state the purpose of each section before its copy."
+    - "Name the platform surfaces affected so verification can cover them."
+  specs:
+    - "Requirements describe observable behavior, not internal component, table, or function names."
+    - "Every mechanically verifiable scenario names its test or command; visual scenarios name the states and viewports to inspect."
+    - "Repeated product rules become requirements in the appropriate specification."
+  design:
+    - "Identify language, data ownership, controls, and motion affected by the change."
+    - "Say what is deliberately not built and why."
+  tasks:
+    - "Each task ends with how it is verified; visual changes are verified by rendered output."
+    - "Changes to documented behavior name the page to update; docs-check.mjs refuses stale documentation."
+    - "The final task verifies the change's scenarios and applicable cross-cutting specifications."
+    - "Report every scenario as passed, failed, or not verified and explain why."
+
+operations:
+  apply:
+    guidance:
+      - "Do not publish packages, deploy, or push to a remote unless explicitly requested."
+  archive:
+    guidance:
+      - "After deltas merge, remove duplicated guidance from AGENTS.md where the specification is authoritative."

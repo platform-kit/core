@@ -1,0 +1,107 @@
+{
+  "articles/reading-aloud": {
+    "query": "open book pages read",
+    "license": "cc0",
+    "source": "https://www.rawpixel.com/image/5919478/free-open-book-photo-public-domain-cc0-image",
+    "title": "Free open book photo",
+    "creator": null
+  },
+  "articles/markdown": {
+    "query": "pinned",
+    "license": "cc0",
+    "source": "https://stocksnap.io/photo/programming-code-1STVFMTBJY",
+    "title": "Programming Code",
+    "creator": "One Idea LLC"
+  },
+  "articles/ten-minutes": {
+    "query": "pinned",
+    "license": "cc0",
+    "source": "https://stocksnap.io/photo/microphone-music-8KQC04JDT0",
+    "title": "Microphone Music",
+    "creator": "Freestocks.org"
+  },
+  "articles/autumn-list": {
+    "query": "printing press paper",
+    "license": "cc0",
+    "source": "https://www.rawpixel.com/image/5937838/free-public-domain-cc0-photo",
+    "title": null,
+    "creator": null
+  },
+  "store/goods": {
+    "query": "pinned",
+    "license": "cc0",
+    "source": "https://stocksnap.io/photo/writing-desk-E8VATIYGAF",
+    "title": "Writing Desk",
+    "creator": "Burst"
+  },
+  "store/notebook": {
+    "query": "notebook",
+    "license": "cc0",
+    "source": "https://stocksnap.io/photo/notebook-paper-JLXDNN5BNE",
+    "title": "Notebook Paper",
+    "creator": "Angelina Litvin"
+  },
+  "store/notebook-open": {
+    "query": "open notebook",
+    "license": "cc0",
+    "source": "https://www.rawpixel.com/image/5916233/image-book-public-domain-notebook",
+    "title": "Free open notebook study table",
+    "creator": null
+  },
+  "store/print": {
+    "query": "letterpress",
+    "license": "cc0",
+    "source": "https://www.rawpixel.com/image/3296086/free-photo-image-letter-press-vintage-background-cat",
+    "title": "Metal letters letterpress Weldon Spring",
+    "creator": null
+  },
+  "articles/companion": {
+    "query": "pinned",
+    "license": "cc0",
+    "source": "https://stocksnap.io/photo/notebook-books-7LW16BU9FT",
+    "title": "Notebook Books",
+    "creator": "Suzy Hazelwood"
+  },
+  "articles/first-hour": {
+    "query": "morning coffee desk",
+    "license": "cc0",
+    "source": "https://stocksnap.io/photo/flatlay-coffee-XEHZ3E3S25",
+    "title": "Flatlay Coffee",
+    "creator": "FOCA Stock"
+  },
+  "pages/editor": {
+    "query": "typewriter desk",
+    "license": "cc0",
+    "source": "https://stocksnap.io/photo/vintage-typewriter-MOGHVUSJIE",
+    "title": "Vintage Typewriter",
+    "creator": "Ian Livesey"
+  },
+  "store/books": {
+    "query": "books stack",
+    "license": "cc0",
+    "source": "https://www.rawpixel.com/image/3298137/free-photo-image-book-bookcase-cc0",
+    "title": "Books stacked shelf",
+    "creator": null
+  },
+  "share": {
+    "query": "bookshelf",
+    "license": "cc0",
+    "source": "https://www.rawpixel.com/image/6027567/photo-image-book-public-domain-room",
+    "title": "Bookshelf library",
+    "creator": null
+  },
+  "pages/library": {
+    "query": "pinned",
+    "license": "cc0",
+    "source": "https://stocksnap.io/photo/book-table-Z33HMFDOF9",
+    "title": "Book Table",
+    "creator": "Chuttersnap"
+  },
+  "store/workshop": {
+    "query": "workshop table people",
+    "license": "cc0",
+    "source": "https://www.rawpixel.com/image/3304070/free-photo-image-carpenter-canada-work-people-apparel",
+    "title": "man working craft project table",
+    "creator": null
+  }
+}

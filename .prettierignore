@@ -1,0 +1,19 @@
+# Generated / vendored — never format
+node_modules
+dist
+.velite
+public/static
+package-lock.json
+build/*.csv
+
+# Custom-syntax content that Prettier would corrupt if it reflowed it:
+#   content/app/ui/*.md    — the `## group / ### key / field: value` UI-strings format
+#                            (Prettier injects blank lines and breaks the one-line rule)
+#   content/app/**         — results copy, tests, and other custom-parsed app content
+#   content/books/*.md     — carry ==highlight=={colour} marks and deliberate verse
+#                            line-breaks; Prettier rewrites emphasis and escapes the
+#                            in-word underscores next to marks
+# These are authored through the CMS or by hand and guarded by the editing note in
+# AGENTS.md, not by Prettier.
+sites/*/content/app
+sites/*/content/books

@@ -1,0 +1,16 @@
+# Copy to dist/.htaccess (or your docroot).
+#
+# Serves the SPA for every route.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # real files and directories win
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # everything else is the app
+  RewriteRule ^ index.html [L]
+</IfModule>

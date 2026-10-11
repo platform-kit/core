@@ -1,0 +1,150 @@
+/* The analytics pages' idiom — Dashboard → Analytics and → Content analytics wear the same head, tiles, cards,
+   lists and bars, so the two read as one; every class is an-prefixed and the file is imported by both. */
+/* the column is `.ui-page`’s; this says only what is true of analytics */
+.an { color: var(--ink) }
+.an-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 22px }
+.an-controls { display: flex; gap: 10px; flex-wrap: wrap }
+.an-seg { display: inline-flex; align-items: center; gap: 2px; background: var(--wash); border: 1px solid var(--hair); border-radius: 999px; padding: 3px }
+.an-seg button { font: inherit; font-size: 12.5px; color: var(--ink3); background: none; border: 0; border-radius: 999px; padding: 6px 12px; cursor: pointer; white-space: nowrap }
+.an-seg button.on { color: var(--ink); background: var(--paper); box-shadow: 0 1px 2px #0000000f }
+.an-refresh { margin-left: 2px }
+.an-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--hair); margin: 0 0 18px; overflow-x: auto; scrollbar-width: none } .an-tabs::-webkit-scrollbar { display: none }
+.an-tabs button { font: inherit; font-size: 13.5px; font-weight: 500; color: var(--ink3); background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 8px 12px 10px; cursor: pointer; white-space: nowrap; transition: color .15s, border-color .15s } .an-tabs button:hover { color: var(--ink) } .an-tabs button.on { color: var(--ink); border-bottom-color: var(--ink) }
+.an-range { display: flex; align-items: baseline; gap: 10px; margin: 0 0 14px }
+.an-rangelabel { font-family: var(--m); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink3) }
+.an-vs { font-size: 12.5px; color: var(--ink3) }
+.an-note { max-width: 520px; margin: 40px auto; text-align: center; padding: 34px 28px; border: 1px solid var(--hair); border-radius: 18px; background: var(--card) }
+.an-note h2 { font-family: var(--fd); font-weight: 600; font-size: 24px; margin: 0 0 8px }
+.an-note p { color: var(--ink2); margin: 0 0 18px; line-height: 1.5 }
+.an-cta { font: inherit; font-size: 15px; font-weight: 600; color: var(--paper); background: var(--ink); border: 0; border-radius: 999px; padding: 11px 24px; cursor: pointer }
+.an-loading, .an-empty, .an-muted { color: var(--ink3); font-size: 14px; margin: 12px 0 }
+.an-none { color: var(--ink3); font-size: 13px; margin: 6px 0 0 }
+.an-k { display: block; font-family: var(--m); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink3) }
+
+/* the eight numbers: one panel, cells divided by hairlines */
+.an-panel { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--hair); border-radius: 18px; background: var(--card); overflow: hidden }
+/* the tiles: four to a row; five, six or seven of them have their last row widened to fill it */
+.an-panel[data-n="7"], .an-panel[data-n="6"], .an-panel[data-n="5"] { grid-template-columns: repeat(12, minmax(0, 1fr)) } .an-panel[data-n="7"] .an-cell, .an-panel[data-n="6"] .an-cell, .an-panel[data-n="5"] .an-cell { grid-column: span 3 }
+.an-panel[data-n="7"] .an-cell:nth-child(n+5) { grid-column: span 4 } .an-panel[data-n="6"] .an-cell:nth-child(n+5) { grid-column: span 6 } .an-panel[data-n="5"] .an-cell:nth-child(5) { grid-column: span 12 }
+.an-panel[data-n="7"] .an-cell:nth-child(7), .an-panel[data-n="6"] .an-cell:nth-child(6), .an-panel[data-n="5"] .an-cell:nth-child(5) { border-right: 0 } .an-panel[data-n="7"] .an-cell:nth-child(4), .an-panel[data-n="6"] .an-cell:nth-child(4), .an-panel[data-n="5"] .an-cell:nth-child(4) { border-right: 0 }
+.an-cell { display: flex; flex-direction: column; gap: 8px; padding: 18px 20px 14px; border-right: 1px solid var(--hair); border-bottom: 1px solid var(--hair); min-width: 0 }
+.an-cell:nth-child(4n) { border-right: 0 } .an-cell:nth-child(n+5) { border-bottom: 0 }
+.an-cellrow { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px }
+.an-cell b { font-family: var(--fd); font-weight: 600; font-size: 30px; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums }
+.an-spark { width: 84px; height: 30px; color: var(--accent2); opacity: .9; flex: none }
+.an-delta { font-family: var(--m); font-size: 11px; color: var(--ink3); min-height: 14px }
+.an-delta.up { color: #059669 } .an-delta.down { color: #e11d48 }
+
+/* sections and cards */
+.an-group { display: flex; align-items: center; gap: 14px; font-family: var(--m); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink3); margin: 30px 0 12px; font-weight: 500 }
+.an-group::after { content: ''; flex: 1; height: 1px; background: var(--hair) }
+.an-card { display: flex; flex-direction: column; border: 1px solid var(--hair); border-radius: 18px; background: var(--card); padding: 20px 22px 18px; min-width: 0 }
+.an-panel + .an-empty { margin-top: 18px }
+.an-panel ~ .an-card:first-of-type { margin-top: 18px }
+.an > .an-card + :not(.an-group), .an > .an-grid2 + :not(.an-group), .an > .an-grid3 + :not(.an-group), .an > .an-grid4 + :not(.an-group), .an > .an-panel + :not(.an-group), .an > .an-explore + :not(.an-group), .an > .an-two + :not(.an-group) { margin-top: 16px }
+.an-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch }
+.an-grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: stretch }
+.an-span2 { grid-column: span 2 }
+.an-ch { margin: 0 0 12px } .an-ch h2 { font-family: var(--m); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink); margin: 0; font-weight: 600 } .an-ch p { margin: 4px 0 0; color: var(--ink3); font-size: 13px }
+.an-sub { font-family: var(--m); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); margin: 18px 0 6px; font-weight: 500 }
+.an-chart { height: 300px; width: 100% } .an-chart.sm { height: 240px } .an-chart.xl { height: 460px }
+.an-quality { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--hair) }
+.an-quality b, .an-stats b { font-family: var(--fd); font-weight: 600; font-size: 22px; letter-spacing: -.01em; font-variant-numeric: tabular-nums }
+.an-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px } .an-stats.two { grid-template-columns: repeat(2, minmax(0, 1fr)) } .an-stats.three { grid-template-columns: repeat(3, minmax(0, 1fr)) }
+.an-stats > div, .an-quality > div { display: flex; flex-direction: column; gap: 4px }
+.an-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px }
+
+/* ranked lists: label and number on one line, the bar as a thin track beneath */
+.an-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column }
+.an-list li { display: flex; flex-direction: column; gap: 6px; padding: 8px 0 9px; border-bottom: 1px solid color-mix(in srgb, var(--hair) 55%, transparent) }
+.an-list li:last-child { border-bottom: 0 }
+.an-rowtxt { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-width: 0; font-size: 13px }
+.an-rowtxt.stack { flex-direction: column; align-items: flex-start; gap: 2px }
+.an-list code { font-family: var(--m); font-size: 12px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0 }
+.an-list b { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 12.5px; flex: none }
+.an-list i { font-style: normal; font-weight: 400; color: var(--ink3); font-size: 11.5px }
+.an-track { display: block; height: 3px; border-radius: 2px; background: color-mix(in srgb, var(--ink) 6%, transparent); overflow: hidden }
+.an-fill { display: block; height: 100%; border-radius: 2px; background: var(--accent2); min-width: 2px }
+.an-more { align-self: flex-start; margin-top: 10px; font: inherit; font-size: 12.5px; color: var(--accent2); background: none; border: 0; padding: 0; cursor: pointer }
+.an-more:hover { text-decoration: underline }
+.an-funnel { display: flex; flex-direction: column; gap: 6px }
+.an-fstep { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; overflow: hidden; font-size: 13px }
+.an-fbar { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 8px }
+.an-fl, .an-fstep b { position: relative } .an-fstep b { font-variant-numeric: tabular-nums }
+
+/* experiments */
+.an-exp { padding: 12px 0 4px; border-top: 1px solid var(--hair) } .an-exp:first-of-type { border-top: 0; padding-top: 0 }
+.an-exph { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; font-size: 13.5px }
+.an-exph b { font-family: var(--fd); font-weight: 600; font-size: 16px }
+.an-pill { font-family: var(--m); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; border-radius: 999px; padding: 3px 8px; border: 1px solid var(--hair) }
+.an-pill.live { color: #059669; border-color: #05966955 } .an-pill.ended { color: var(--ink3) }
+.an-pill.paused { color: #b45309; border-color: #b4530955 } .an-pill.kind { color: var(--ink3) }
+.an-lift { margin-left: auto; font-family: var(--m); font-size: 12px; color: var(--ink3) } .an-lift.up { color: #059669 }
+.an-table { width: 100%; border-collapse: collapse; font-size: 13px }
+.an-table th { text-align: left; font-family: var(--m); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--hair) }
+.an-table td { padding: 9px 8px; border-bottom: 1px solid var(--hair); font-variant-numeric: tabular-nums }
+.an-table tr:last-child td { border-bottom: 0 }
+.an-table .n { text-align: right }
+.an-table tr.is-lead td { background: color-mix(in srgb, var(--accent) 8%, transparent) }
+.an-lead { margin-left: 8px; font-family: var(--m); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent2) }
+.an-ratecell { width: 30% } .an-rate { display: block; height: 6px; border-radius: 3px; background: var(--accent2); min-width: 2px }
+
+/* explore */
+.an-explore { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 18px; align-items: start }
+.an-xtitle { font-family: var(--fd); font-weight: 600; font-size: 24px; letter-spacing: -.02em; margin: 0 0 4px }
+.an-chips { display: flex; flex-wrap: wrap; gap: 6px }
+.an-chip { display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 12.5px; color: var(--ink2); background: transparent; border: 1px solid var(--hair); border-radius: 999px; padding: 6px 11px 6px 9px; cursor: pointer }
+.an-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--hair) }
+.an-chip.on { color: var(--ink); border-color: var(--c, var(--accent)) } .an-chip.on i { background: var(--c, var(--accent)) }
+.an-check { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink2); margin: 10px 0 0 }
+.an-ghost { margin-top: 18px; font: inherit; font-size: 13px; color: var(--ink2); background: none; border: 1px solid var(--hair); border-radius: 999px; padding: 8px 14px; cursor: pointer }
+.an-ghost:hover { color: var(--ink); border-color: var(--ink3) }
+.an-xsum { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--hair) }
+.an-xsum > div { display: flex; align-items: baseline; gap: 8px } .an-xsum i { width: 8px; height: 8px; border-radius: 50%; align-self: center }
+.an-xsum b { font-family: var(--fd); font-weight: 600; font-size: 20px; font-variant-numeric: tabular-nums }
+
+@media (max-width: 1000px) { .an-panel, .an-panel[data-n] { grid-template-columns: repeat(2, minmax(0, 1fr)) } .an-panel[data-n] .an-cell:nth-child(n) { grid-column: auto; border-right: 1px solid var(--hair) } .an-cell:nth-child(2n), .an-panel[data-n] .an-cell:nth-child(2n) { border-right: 0 } .an-cell:nth-child(n+5) { border-bottom: 1px solid var(--hair) } .an-cell:nth-last-child(-n+2) { border-bottom: 0 } .an-grid3, .an-grid4 { grid-template-columns: 1fr } .an-span2 { grid-column: auto } .an-quality { grid-template-columns: repeat(3, minmax(0, 1fr)) } .an-explore { grid-template-columns: 1fr } .an-two { grid-template-columns: 1fr } }
+
+/* the feature panels (Find your book, the support prompts, the forms): two columns, a prompt's or a form's head, a field's rows */
+.an-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px } .an-grid2.tight { gap: 28px } .an-grid2.tight .an-sub { margin-top: 0 }
+.an-stats b i, .an-muted { font-style: normal; color: var(--ink3) } .an-stats b i { font-family: var(--m); font-size: 12px; font-weight: 400 }
+.an-stats + .an-grid2, .an-stats + .an-chart { margin-top: 18px }
+.an-prompt { font-family: var(--fd); font-size: 16px; font-weight: 600; margin: 0 0 2px; letter-spacing: -.01em }
+.an-promptmeta { margin: 0 0 8px; font-family: var(--m); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink3) }
+.an-word { font-family: var(--fd); font-size: 15px; font-weight: 600; color: var(--ink) }
+.an-field { margin-bottom: 10px } .an-list.an-sub, .an-none.an-sub { margin-top: 4px; text-transform: none; letter-spacing: 0; font-family: inherit; font-size: 13px }
+@media (max-width: 900px) { .an-grid2 { grid-template-columns: 1fr } }
+@media (max-width: 760px) { .an { padding: 8px 4px 60px } .an-head { flex-direction: column; align-items: flex-start; gap: 12px } .an-spark { display: none } .an-stats, .an-quality { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 14px } }
+
+/* ---- the pieces the dashboard, the content page and the funnel page share ---- */
+.an-crumb { font: inherit; font-size: 13px; color: var(--ink3); background: none; border: 0; padding: 0 0 10px; cursor: pointer } .an-crumb:hover { color: var(--ink) }
+.an-kindpill { display: inline-block; vertical-align: middle; margin-left: 8px; font-family: var(--m); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); border: 1px solid var(--hair); border-radius: 999px; padding: 3px 8px }
+/* right now, in the title: a dot that is lit while anyone is on the site */
+.an-now { display: inline-flex; align-items: center; gap: 7px; vertical-align: middle; margin-left: 12px; font-family: var(--m); font-size: 11px; letter-spacing: .04em; font-weight: 400; color: var(--ink3); border: 1px solid var(--hair); border-radius: 999px; padding: 4px 10px 4px 8px } .an-now i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink3); opacity: .5 } .an-now.some { color: var(--ink) } .an-now.some i { background: #059669; opacity: 1; box-shadow: 0 0 0 3px color-mix(in srgb, #059669 20%, transparent) }
+.an-audline { font-weight: 600; color: var(--ink) }
+/* the goals: a count, its rate per hundred visitors, the delta */
+.an-goals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px } .an-goals[data-n="1"] { grid-template-columns: minmax(0, 1fr) } .an-goals[data-n="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+.an-goal { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border: 1px solid var(--hair); border-radius: 14px; min-width: 0 } .an-goalrow { display: flex; align-items: flex-end; gap: 12px; min-width: 0 } .an-goalrow > b { font-family: var(--fd); font-weight: 600; font-size: 28px; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums } .an-goalrate { display: flex; flex-direction: column; gap: 1px; padding-bottom: 2px } .an-goalrate b { font-family: var(--fd); font-weight: 600; font-size: 16px; letter-spacing: -.01em; line-height: 1 } .an-goalrate i { font-style: normal; font-family: var(--m); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3) } .an-goalrow .an-spark { margin-left: auto }
+/* the channels table: a dot per channel, a row that opens its referrers */
+.an-channels .an-td-title { min-width: 180px } .an-chname { display: inline-flex; align-items: center; gap: 8px; font-weight: 600 } .an-channels .an-track { margin-top: 6px; max-width: 220px }
+.an-chdot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--ink3); margin-right: 7px; vertical-align: middle } .an-chdot[data-channel="search"] { background: #2563eb } .an-chdot[data-channel="direct"] { background: #4b5563 } .an-chdot[data-channel="social"] { background: #db2777 } .an-chdot[data-channel="email"] { background: #d97706 } .an-chdot[data-channel="ai"] { background: #7c3aed } .an-chdot[data-channel="referral"] { background: #059669 } .an-chdot[data-channel="paid"] { background: #0891b2 }
+.an-chrow { cursor: pointer } .an-chrow:hover td { background: color-mix(in srgb, var(--ink) 3%, transparent) } .an-chrow.open td { background: color-mix(in srgb, var(--ink) 4%, transparent) } .an-td-open { width: 28px; text-align: right; color: var(--ink3); font-family: var(--m) } .an-td-num .an-delta { display: block; font-size: 10px; min-height: 0 } .an-chrefs td { padding: 4px 12px 14px 28px; border-bottom: 1px solid var(--hair) } .an-list-tight li { padding: 4px 0 }
+/* new against returning, one bar */
+.an-split { height: 14px; border-radius: 7px; background: color-mix(in srgb, var(--accent2) 22%, transparent); overflow: hidden } .an-splitfill { display: block; height: 100%; background: var(--accent2); border-radius: 7px 0 0 7px; min-width: 2px } .an-splitlegend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 10px; font-size: 13px; color: var(--ink3) } .an-splitlegend b { color: var(--ink); font-weight: 600 } .an-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: middle } .an-dot.a { background: var(--accent2) } .an-dot.b { background: color-mix(in srgb, var(--accent2) 22%, transparent) }
+/* the hours: a 7 × 24 grid of cells shaded by their share of the busiest hour */
+.an-hours { overflow-x: auto } .an-heat { display: grid; gap: 3px; max-width: 760px; min-width: 520px } .an-heatrow { display: grid; grid-template-columns: 34px repeat(24, minmax(0, 1fr)); gap: 3px; align-items: center } .an-heatday { font-family: var(--m); font-size: 10px; color: var(--ink3) } .an-heatcell { aspect-ratio: 1; border-radius: 3px; background: color-mix(in srgb, var(--accent2) calc(8% + var(--a) * 92%), color-mix(in srgb, var(--ink) 5%, transparent)) } .an-heath { font-family: var(--m); font-size: 9.5px; color: var(--ink3); text-align: left } .an-heataxis { margin-top: 2px }
+@media (max-width: 760px) { .an-goals, .an-goals[data-n="2"] { grid-template-columns: minmax(0, 1fr) } .an-audience button { padding-inline: 8px } .an-channels th:nth-child(3), .an-channels td:nth-child(3), .an-channels th:nth-child(4), .an-channels td:nth-child(4), .an-channels th:nth-child(5), .an-channels td:nth-child(5), .an-channels th:nth-child(8), .an-channels td:nth-child(8), .an-channels .an-track, .an-td-num .an-delta { display: none } .an-channels .an-td-title { min-width: 0 } .an-channels { table-layout: fixed } .an-channels .an-td-num, .an-channels th.an-td-num { width: 44px; padding-left: 2px; padding-right: 2px; font-size: 12px } .an-channels .an-td-open { width: 18px } .an-now { display: flex; margin: 8px 0 0; width: fit-content } }
+
+/* ---- the filters: chips under the range, rows that are buttons, the source select ---- */
+.an-fchips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -6px 0 14px } .an-fchipslabel { font-family: var(--m); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink3) }
+.an-fchip { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 12.5px; color: var(--ink); background: color-mix(in srgb, var(--accent2) 10%, transparent); border: 1px solid color-mix(in srgb, var(--accent2) 40%, transparent); border-radius: 999px; padding: 4px 10px 4px 11px; cursor: pointer } .an-fchip i { font-style: normal; color: var(--ink3) } .an-fchip b { font-weight: 600 } .an-fchip span { color: var(--ink3); font-size: 14px; line-height: 1; margin-left: 2px } .an-fchip:hover { border-color: var(--accent2) } .an-fchip:hover span { color: #e11d48 }
+.an-fchipclear { font: inherit; font-size: 12px; color: var(--ink3); background: none; border: 0; padding: 4px 6px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px } .an-fchipclear:hover { color: var(--ink) }
+.an-rowbtn { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; min-width: 0; overflow: hidden; text-overflow: ellipsis } .an-rowbtn:hover { color: var(--accent2); text-decoration: underline; text-underline-offset: 3px } .an-rowbtn[aria-pressed="true"] { color: var(--accent2); font-weight: 600 } .an-rowbtn code { color: inherit }
+.an-list li.on .an-fill { background: var(--accent2) } .an-chrow.on td { background: color-mix(in srgb, var(--accent2) 6%, transparent) }
+.an-source { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink3) } .an-source select, .an-select { font: inherit; font-size: 13px; color: var(--ink); background: var(--card); border: 1px solid var(--hair); border-radius: 999px; padding: 6px 28px 6px 12px; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink3) 50%), linear-gradient(135deg, var(--ink3) 50%, transparent 50%); background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%; background-size: 5px 5px; background-repeat: no-repeat } .an-select { border-radius: 10px; width: 100% }
+/* the goal columns, the cohorts, the events */
+.an-td-goal { color: var(--ink2) }
+.an-cohorts { overflow-x: auto } .an-cohorttable { table-layout: auto; width: max-content; min-width: 100% } .an-cohorttable td, .an-cohorttable th { white-space: nowrap } .an-cohortcell { padding: 4px 3px } .an-cohortval { display: block; min-width: 46px; padding: 6px 4px; border-radius: 6px; text-align: center; font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink); background: color-mix(in srgb, var(--accent2) calc(8% + var(--a) * 80%), color-mix(in srgb, var(--ink) 4%, transparent)) } .an-cohortval.hot { color: var(--card) }
+.an-evname { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap } .an-evname small code { font-size: 11px } .an-events .an-track { margin-top: 6px; max-width: 220px }
+.an-evdetail { display: grid; gap: 14px; padding: 6px 0 4px } .an-evprop { margin-bottom: 10px } .an-evprop > code { display: inline-block; margin-bottom: 4px; font-size: 11.5px; color: var(--ink2) }
+@media (max-width: 760px) { .an-events th:nth-child(4), .an-events td:nth-child(4), .an-events th:nth-child(5), .an-events td:nth-child(5), .an-events th:nth-child(6), .an-events td:nth-child(6), .an-events .an-track { display: none } .an-events .an-td-num { padding-inline: 4px } .an-fchips { margin-top: 0 } .an-source { width: 100% } .an-source select { flex: 1 } }

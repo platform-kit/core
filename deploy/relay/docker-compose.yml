@@ -1,0 +1,38 @@
+# A relay for the calls that cannot be made directly — a coturn you run yourself.
+#
+# Supabase has no TURN service and nothing in that stack can relay media: a relay is a box, and no
+# Supabase-only deployment of anything relays WebRTC. This is that box, and it is the reason the kit
+# depends on no relay service: point the two settings at this and nothing of anyone else's is
+# involved.
+#
+#   docker compose -f deploy/relay/docker-compose.yml up -d
+#   WEBRTC_TURN_URL=turn:<this machine>:3478
+#   WEBRTC_TURN_SECRET=<the same secret as below>
+#
+# The credentials are minted per person and per call by the site's own function, in the standard's
+# own terms, so nothing here knows or stores who anybody is.
+services:
+  relay:
+    image: coturn/coturn:4.6
+    restart: unless-stopped
+    network_mode: host          # a relay needs its own ports, not a bridge's
+    command:
+      - -n                                   # no config file; everything is here
+      - --log-file=stdout
+      - --realm=${TURN_REALM:-platformkit}
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET:-a-secret-of-your-own}
+      - --listening-port=3478
+      - --min-port=49160
+      - --max-port=49200                     # the range a small site needs; widen it for a big one
+      - --no-cli
+      - --no-tlsv1
+      - --no-tlsv1_1
+      # A relay with no rules is somebody else's proxy: these are the ones that matter.
+      - --no-multicast-peers
+      - --denied-peer-ip=0.0.0.0-0.255.255.255
+      - --denied-peer-ip=10.0.0.0-10.255.255.255
+      - --denied-peer-ip=169.254.0.0-169.254.255.255
+      - --denied-peer-ip=172.16.0.0-172.31.255.255
+      - --denied-peer-ip=192.168.0.0-192.168.255.255
+      - --denied-peer-ip=127.0.0.0-127.255.255.255

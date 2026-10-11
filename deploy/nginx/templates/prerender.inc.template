@@ -1,0 +1,55 @@
+# THE PRERENDER SIDECAR's two locations, included by the server block. Written by envsubst from the
+# environment; REPLACED WITH STUBS BY 40-prerender.sh WHEN PRERENDER_URL IS UNSET, so a static or
+# git-backed deployment has no upstream to be down and nothing here to go wrong.
+#
+# Both fail toward the reader and toward the build: a sidecar that is slow, broken or absent leaves
+# the visitor with the app and the crawler with the shell, which is what they had before.
+#
+# TWO THINGS THAT ARE NOT OBVIOUS AND WERE BOTH WRONG FIRST:
+#
+#   A `proxy_pass` whose url contains a runtime variable ($scheme, $host) is resolved per request,
+#   so nginx needs a RESOLVER — without one every crawler got "no resolver defined to resolve
+#   prerender" and a 502. The base image's 15-local-resolvers.envsh reads /etc/resolv.conf into
+#   ${NGINX_LOCAL_RESOLVERS}, which is Docker's embedded DNS on a compose network.
+#
+#   These locations are reached THROUGH an error_page (the 418 branch below), and nginx does not
+#   run an error_page from inside one unless RECURSIVE_ERROR_PAGES is on. Without it the fallback
+#   to @app was dead code and a sidecar that was down took the page down with it.
+resolver __RESOLVER__ valid=30s ipv6=off;
+recursive_error_pages on;
+
+# A CRAWLER gets the page with its JavaScript run, so the head is the record's own. Everything that
+# is not a known crawler is served the app — an unknown agent is a person, because serving
+# prerendered html to a reader gives them a dead page, and serving the app to a crawler gives it
+# what it already had.
+location @prerender {
+  proxy_pass ${PRERENDER_URL}/render?path=$request_uri;
+  proxy_set_header Host $host;
+  proxy_http_version 1.1;
+  proxy_buffering off;
+  proxy_read_timeout 30s;
+  # the sidecar being down is not the page being down
+  proxy_intercept_errors on;
+  error_page 500 502 503 504 = @app;
+}
+location @app { try_files /index.html =404; }
+
+# THE SHARE PICTURE: the file the build photographed where there is one, otherwise the sidecar's
+# photograph of the app's own card — the same card, drawn by the site's own components.
+location ^~ /share/ {
+  try_files $uri @shot;
+  expires 1y;
+  add_header Cache-Control "public, immutable";
+}
+location @shot {
+  # /share/articles/the-long-winter.png  ->  /__share/articles/the-long-winter
+  rewrite ^/share/(.+)\.png$ /__share/$1 break;
+  proxy_pass ${PRERENDER_URL}/shot?path=$uri&w=1200&h=675;
+  proxy_set_header Host $host;
+  proxy_http_version 1.1;
+  proxy_read_timeout 30s;
+  proxy_intercept_errors on;
+  # no picture is better than a broken one: a crawler that gets a 404 shows the site's default
+  error_page 500 502 503 504 = @nopicture;
+}
+location @nopicture { return 404; }

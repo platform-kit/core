@@ -1,0 +1,2 @@
+npx lint-staged
+node packages/kit/build/docs-check.mjs --staged --no-message-rule

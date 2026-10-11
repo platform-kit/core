@@ -1,0 +1,61 @@
+name: Publish PlatformKit packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact version declared by both package manifests
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-platformkit-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - name: Check release version
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs'
+          const names = ['packages/kit/package.json', 'packages/movable-types/package.json']
+          const packages = names.map((file) => JSON.parse(fs.readFileSync(file, 'utf8')))
+          const version = process.env.RELEASE_VERSION
+          if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version ?? '')) {
+            throw new Error('Release version must be an exact semver version')
+          }
+          for (const pkg of packages) {
+            if (pkg.version !== version) {
+              throw new Error(`${pkg.name} declares ${pkg.version}; expected ${version}`)
+            }
+          }
+          if (packages[1].dependencies?.['@platform-kit/kit'] !== version) {
+            throw new Error(`@platform-kit/movable-types must depend on @platform-kit/kit@${version}`)
+          }
+          NODE
+      - name: Verify release
+        run: npm test
+      - name: Publish core package
+        working-directory: packages/kit
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish theme package
+        working-directory: packages/movable-types
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,0 +1,343 @@
+{
+ "settings": {
+  "width": 600,
+  "backgroundColor": "#fbfaf3",
+  "textColor": "#0c0d0b",
+  "linkColor": "#0c0d0b",
+  "linkUnderline": true,
+  "fontFamily": "Georgia",
+  "locale": "en",
+  "preheaderText": "New terms to agree to before anything new goes on sale"
+ },
+ "blocks": [
+  {
+   "id": "s-045",
+   "type": "section",
+   "columns": "1",
+   "styles": {
+    "padding": {
+     "top": 0,
+     "right": 36,
+     "bottom": 0,
+     "left": 36
+    }
+   },
+   "children": [
+    [
+     {
+      "id": "sp-044",
+      "type": "spacer",
+      "height": 28,
+      "styles": {
+       "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+       }
+      }
+     }
+    ]
+   ]
+  },
+  {
+   "id": "s-048",
+   "type": "section",
+   "columns": "1",
+   "styles": {
+    "padding": {
+     "top": 34,
+     "right": 36,
+     "bottom": 0,
+     "left": 36
+    },
+    "backgroundColor": "#ffffff"
+   },
+   "children": [
+    [
+     {
+      "id": "p-046",
+      "type": "paragraph",
+      "content": "<p><span style=\"font-size:13px;color:#0c0d0b;font-family:Menlo, Consolas, monospace\">Your site</span></p>",
+      "styles": {
+       "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 2,
+        "left": 0
+       }
+      }
+     },
+     {
+      "id": "p-047",
+      "type": "paragraph",
+      "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">What you send it about</span></p>",
+      "styles": {
+       "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+       }
+      }
+     }
+    ]
+   ]
+  },
+  {
+   "id": "s-04a",
+   "type": "section",
+   "columns": "1",
+   "styles": {
+    "padding": {
+     "top": 0,
+     "right": 36,
+     "bottom": 0,
+     "left": 36
+    },
+    "backgroundColor": "#ffffff"
+   },
+   "children": [
+    [
+     {
+      "id": "d-049",
+      "type": "divider",
+      "lineStyle": "solid",
+      "color": "#e6e2d6",
+      "thickness": 1,
+      "width": "full",
+      "styles": {
+       "padding": {
+        "top": 18,
+        "right": 0,
+        "bottom": 6,
+        "left": 0
+       }
+      }
+     }
+    ]
+   ]
+  },
+  {
+   "id": "s-04d",
+   "type": "section",
+   "columns": "1",
+   "styles": {
+    "padding": {
+     "top": 0,
+     "right": 36,
+     "bottom": 0,
+     "left": 36
+    },
+    "backgroundColor": "#ffffff"
+   },
+   "children": [
+    [
+     {
+      "id": "t-04b",
+      "type": "title",
+      "level": 2,
+      "content": "New terms for providers",
+      "textAlign": "left",
+      "color": "#0c0d0b",
+      "fontFamily": "Georgia, Times New Roman, serif",
+      "styles": {
+       "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 10,
+        "left": 0
+       }
+      }
+     },
+     {
+      "id": "p-04c",
+      "type": "paragraph",
+      "content": "<p><span style=\"font-size:16px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">Hello {{name}},</span></p>",
+      "styles": {
+       "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 12,
+        "left": 0
+       }
+      }
+     }
+    ]
+   ]
+  },
+  {
+   "id": "s-04f",
+   "type": "section",
+   "columns": "1",
+   "styles": {
+    "padding": {
+     "top": 0,
+     "right": 36,
+     "bottom": 0,
+     "left": 36
+    },
+    "backgroundColor": "#ffffff"
+   },
+   "children": [
+    [
+     {
+      "id": "p-t01",
+      "type": "paragraph",
+      "content": "<p><span style=\"font-size:16px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">The terms for selling your own sessions on this site have changed{{#if signed}} since you agreed to {{signed}}{{/if}}. The new version is <b>{{version}}</b>, and it is below in full.</span></p>",
+      "styles": {
+       "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 12,
+        "left": 0
+       }
+      }
+     },
+     {
+      "id": "p-t00",
+      "type": "paragraph",
+      "content": "<p><span style=\"font-size:16px;color:#0c0d0b;font-family:Georgia, Times New Roman, serif\">Until you agree to it, nothing <i>new</i> can go on sale. Your page stays, whatever is already live stays live, everything you have earned is still paid, and every call already booked still happens.</span></p>",
+      "styles": {
+       "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 14,
+        "left": 0
+       }
+      }
+     },
+     {
+      "id": "h-04e",
+      "type": "html",
+      "content": "{{{body}}}",
+      "styles": {
+       "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+       }
+      }
+     },
+     {
+      "id": "b-t02",
+      "type": "button",
+      "styles": {
+       "padding": {
+        "top": 16,
+        "right": 0,
+        "bottom": 6,
+        "left": 0
+       }
+      },
+      "text": "Read and agree",
+      "url": "{{url}}",
+      "backgroundColor": "#0c0d0b",
+      "textColor": "#fbfaf3",
+      "borderRadius": 999,
+      "fontSize": 15,
+      "fontFamily": "Georgia, Times New Roman, serif",
+      "buttonPadding": {
+       "top": 13,
+       "right": 24,
+       "bottom": 13,
+       "left": 24
+      },
+      "align": "left"
+     }
+    ]
+   ]
+  },
+  {
+   "id": "s-04j",
+   "type": "section",
+   "columns": "1",
+   "styles": {
+    "padding": {
+     "top": 0,
+     "right": 36,
+     "bottom": 34,
+     "left": 36
+    },
+    "backgroundColor": "#ffffff"
+   },
+   "children": [
+    [
+     {
+      "id": "d-04g",
+      "type": "divider",
+      "lineStyle": "solid",
+      "color": "#e6e2d6",
+      "thickness": 1,
+      "width": "full",
+      "styles": {
+       "padding": {
+        "top": 22,
+        "right": 0,
+        "bottom": 14,
+        "left": 0
+       }
+      }
+     },
+     {
+      "id": "p-04h",
+      "type": "paragraph",
+      "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">Any questions about the terms? Reply to this email.</span></p>",
+      "styles": {
+       "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 6,
+        "left": 0
+       }
+      }
+     },
+     {
+      "id": "p-04i",
+      "type": "paragraph",
+      "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">You are receiving this because you sell your own sessions on this site.</span></p>",
+      "styles": {
+       "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+       }
+      }
+     }
+    ]
+   ]
+  },
+  {
+   "id": "s-04l",
+   "type": "section",
+   "columns": "1",
+   "styles": {
+    "padding": {
+     "top": 0,
+     "right": 36,
+     "bottom": 0,
+     "left": 36
+    }
+   },
+   "children": [
+    [
+     {
+      "id": "sp-04k",
+      "type": "spacer",
+      "height": 28,
+      "styles": {
+       "padding": {
+        "top": 0,
+        "right": 0,
+        "bottom": 0,
+        "left": 0
+       }
+      }
+     }
+    ]
+   ]
+  }
+ ]
+}

@@ -1,0 +1,12 @@
+# The assistant may never push: main auto-deploys to production. Claude Code
+# sets CLAUDECODE in every shell it runs, so a push from it is refused here,
+# whatever it was told. A person's own terminal has no such variable.
+if [ -n "$CLAUDECODE" ]; then
+  echo "pre-push: refused — pushes from the assistant's shell are not allowed (main auto-deploys)." >&2
+  exit 1
+fi
+# Husky owns core.hooksPath, so Git LFS's own pre-push hook is never installed:
+# without this line a push sends the audio store's pointers and not the objects,
+# and every clone (the deploy box first) fails to check out. Git LFS reads the
+# same stdin Git gives the hook.
+git lfs pre-push "$@"

@@ -1,0 +1,157 @@
+/* The forms' own styles, over the instrument's (instrument.css: .qz is the ground, .qzin the column,
+   .qh the question, .qopt an option, .qbtn the button, .qwordin an input). Every colour is a token
+   the look sets on .qz, so a form wears the site's design by day and by night. forms.md's utility
+   classes (`[.text-center]`, `[.col-6]`, `[.mb-2]`…) are defined here under the prefix its docs
+   give them, so a document's copy lays out as it says. */
+.frun { min-height: 100vh; margin: 0; border: 0; border-radius: 0 }
+.frun-embed { min-height: 0; border: 1px solid var(--qhair); border-radius: 20px }
+.frun .qzstage { align-items: flex-start; padding: clamp(28px, 6vh, 64px) clamp(16px, 4vw, 40px) 96px }
+.frun-embed .qzstage { padding: 32px 24px 80px }
+.frun .qzin { max-width: min(100%, 720px) }
+.fprog { position: sticky; top: 0; z-index: 2; height: 4px; background: var(--qhair) }
+.fprog i { display: block; height: 100%; background: var(--qink); transition: width .4s cubic-bezier(.2, .8, .3, 1) }
+.fctl { position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: 8px; padding: 12px clamp(16px, 4vw, 40px); pointer-events: none }
+.fctl .qzicon { pointer-events: auto; background: var(--qcard); backdrop-filter: blur(6px) }
+.fctl .qzicon:disabled { opacity: .35; cursor: default }
+.fctl .qzicon:disabled:hover { background: var(--qcard) }
+
+/* the copy */
+.fcopy { font-size: 17px; line-height: 1.55; color: var(--qink2); margin: 0 0 22px }
+.fcopy > :first-child { margin-top: 0 }
+.fcopy h1, .fcopy h2, .fcopy h3 { color: var(--qink); letter-spacing: -.02em; line-height: 1.15; margin: 0 0 12px; max-width: none }   /* the site sheet caps an h1 at 16ch; a form's title runs the column */
+.fcopy h1 { font-size: clamp(28px, 4.4vw, 42px); font-weight: 700 }
+.fcopy h2 { font-size: clamp(22px, 3vw, 30px); font-weight: 700 }
+.fcopy h3 { font-size: 20px; font-weight: 600 }
+.fcopy p { margin: 0 0 12px }
+.fcopy a { color: var(--accent2, var(--qink)); text-decoration: underline; text-underline-offset: 2px }
+.fcopy ul, .fcopy ol { padding-left: 1.3em; margin: 0 0 12px }
+.fcopy img { max-width: 100%; border-radius: 12px }
+.fcopy blockquote { margin: 0 0 12px; padding: 4px 0 4px 16px; border-left: 3px solid var(--qhair); color: var(--qink3) }
+.fcopy pre { background: var(--qcard); border: 1px solid var(--qhair); border-radius: 12px; padding: 14px 16px; overflow-x: auto; font-size: 13.5px }
+.fcopy code { font-family: var(--m, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: .92em }
+.fcopy table { border-collapse: collapse; margin: 0 0 12px; display: block; max-width: 100%; overflow-x: auto }
+.fcopy th, .fcopy td { border: 1px solid var(--qhair); padding: 6px 10px; text-align: left }
+.fcopy hr { border: 0; border-top: 1px solid var(--qhair); margin: 18px 0 }
+
+/* a field */
+.ff { margin: 0 0 26px }
+.fq { display: block; font-size: clamp(21px, 2.6vw, 27px); font-weight: 700; letter-spacing: -.02em; line-height: 1.2; color: var(--qink); margin: 0 0 8px }
+.fq.fq-sm { font-size: 16.5px; font-weight: 600; letter-spacing: 0 }
+.fq-req { color: var(--accent2, var(--qink)); font-size: .7em; margin-left: 2px }
+.fq-vh { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0 }
+.fq-desc { font-size: 15.5px; color: var(--qink3); margin: 0 0 12px; line-height: 1.45 }
+.ff-hint { font-size: 13px; color: var(--qink3); margin: 8px 0 0 }
+.ff-hint kbd { font-family: var(--m, ui-monospace, monospace); font-size: 11px; border: 1px solid var(--qhair); border-radius: 4px; padding: 1px 5px }
+.ff-msg { font-size: 14px; color: var(--accent2, var(--qink)); margin: 8px 0 0; font-weight: 600 }
+.fslide-err { margin-top: -8px; margin-bottom: 16px }
+.qz .ff .qwordin, .qz .ff-in { width: 100%; max-width: 560px; margin-top: 4px; font-size: 18px }
+.qz .ff-area { resize: none; min-height: 3.2em; line-height: 1.45 }
+.qz .ff-in:focus, .qz .ff-cc:focus { outline: none; border-color: var(--qink) }
+.ff-err .ff-in, .ff-err .ff-cc { border-color: var(--accent2, var(--qink)) }
+.ff-inwrap { display: flex; align-items: center; gap: 8px; max-width: 560px }
+.ff-unit .ff-in { flex: 1; min-width: 0 }
+.ff-unitl, .ff-unitr { font-size: 15px; color: var(--qink3); white-space: nowrap }
+.ff-telrow { display: flex; gap: 8px; max-width: 560px; align-items: flex-start }
+.qz .ff-telrow .ff-in { flex: 1 1 0; min-width: 0; width: 0 }   /* the input yields to the row: an intrinsic width would push the slide off a phone */
+.qz .ff .ff-cc { width: auto; max-width: 150px; flex: 0 0 auto; margin-top: 4px }
+.qz select.qwordin { appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--qink3) 50%), linear-gradient(135deg, var(--qink3) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 36px; cursor: pointer }
+.qz .ff-select .ff-in option { color: initial }
+
+/* by night the inputs sit on the ground, not on a pale card */
+html[data-theme='dark'] .qz .ff-in, html[data-theme='dark'] .qz .ff-cc, html[data-theme='dark'] .ff-drop { background: #FFFFFF14; color: var(--qink) }
+html[data-theme='dark'] .qz .ff-in::placeholder { color: var(--qink3) }
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme='light']) .qz .ff-in, html:not([data-theme='light']) .qz .ff-cc, html:not([data-theme='light']) .ff-drop { background: #FFFFFF14; color: var(--qink) }
+  html:not([data-theme='light']) .qz .ff-in::placeholder { color: var(--qink3) }
+  html:not([data-theme='light']) .ff-step, html:not([data-theme='light']) .qopt { background: #FFFFFF10 }
+}
+.frun .qzin { min-width: 0; max-width: min(100%, 720px) }
+
+/* choices */
+.ff-choices { display: flex; flex-direction: column; gap: 10px; max-width: 560px }
+.ff-horizontal .ff-choices { flex-direction: row; flex-wrap: wrap }
+.ff-super .ff-choices .qopt { font-size: 19px; padding: 18px 24px }
+.ff-choice .qopt.on, .ff-picture .qopt.on { border-color: var(--qink); background: var(--qcard); box-shadow: inset 0 0 0 1px var(--qink) }
+.ff-tick { margin-left: auto; opacity: 0; font-size: 14px }
+.qopt.on .ff-tick { opacity: 1 }
+.ff-picture .ff-choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); max-width: none }
+.ff-picture .qopt { flex-direction: column; align-items: stretch; border-radius: 16px; padding: 10px; gap: 8px; text-align: center }
+.ff-picture .qopt:hover { transform: translateY(-2px) }
+.ff-picture .ff-pic { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px }
+.ff-picture .qopt .k { position: absolute; top: 16px; left: 16px; background: var(--qcard) }
+.ff-picture .qopt { position: relative }
+.ff-picture .qopt .qoptl { flex: 0 0 auto }
+.ff-nolabels.ff-picture .qopt .qoptl { display: none }
+.ff-super.ff-picture .ff-choices { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) }
+.qopt:disabled { opacity: .5; cursor: default }
+
+/* rating, scale */
+.ff-stars { display: flex; gap: 4px }
+.ff-star { background: none; border: 0; padding: 4px; cursor: pointer; color: var(--qhair); transition: transform .12s, color .12s }
+.ff-star svg { width: 34px; height: 34px; fill: currentColor; stroke: var(--qink3); stroke-width: 1 }
+.ff-star.lit { color: var(--accent2, var(--qink)) }
+.ff-star.lit svg { stroke: var(--accent2, var(--qink)) }
+.ff-star:hover { transform: scale(1.12) }
+.ff-steps { display: flex; gap: 6px; flex-wrap: wrap; max-width: 560px }
+.ff-step { flex: 1 1 0; min-width: 40px; height: 48px; border-radius: 10px; border: 1.5px solid var(--qhair); background: #FFFFFF66; color: var(--qink); font: inherit; font-size: 16px; cursor: pointer; transition: border-color .12s, background .12s }
+html[data-theme='dark'] .ff-step, html[data-theme='dark'] .qopt { background: #FFFFFF10 }
+.ff-step:hover { border-color: var(--qink) }
+.ff-step.on { background: var(--qink); color: var(--qflip, #fff); border-color: var(--qink) }
+.ff-ends { display: flex; justify-content: space-between; max-width: 560px; font-size: 13px; color: var(--qink3); margin-top: 8px }
+
+/* file */
+.ff-drop { border: 1.5px dashed var(--qhair); border-radius: 14px; padding: 22px; max-width: 560px; background: #FFFFFF40; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; transition: border-color .12s, background .12s }
+.ff-file.over .ff-drop { border-color: var(--qink); background: var(--qcard) }
+.ff-flink { font: inherit; font-size: 15px; color: var(--qink); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px }
+.ff-fchoose { text-decoration: none }
+.ff-fchoose strong { color: var(--accent2, var(--qink)); text-decoration: underline; text-underline-offset: 3px }
+.ff-fdrag { color: var(--qink3) }
+.ff-fname { font-weight: 600 }
+
+/* the button row, the end */
+.fact { display: flex; gap: 12px; margin-top: 6px }
+.fact-center { justify-content: center } .fact-end { justify-content: flex-end } .fact-stretch .qbtn { flex: 1; justify-content: center }
+.fact-arrow { font-size: 15px }
+.fact-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: fpulse 1s infinite }
+@keyframes fpulse { 50% { opacity: .3 } }
+.qbtn:disabled { opacity: .5; cursor: default }
+.fend .qh { margin-bottom: 10px }
+.fscore { display: flex; align-items: baseline; gap: 14px; margin: 8px 0 22px }
+.fscore-n { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -.03em; color: var(--qink) }
+.fscore-p { font-family: var(--m, ui-monospace, monospace); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--qink3) }
+.fscore-p.ok { color: var(--accent2, var(--qink)) }
+.fdiv { margin: 0 0 8px }
+
+/* forms.md's utility classes, under the prefix its docs give them */
+.fmd-text-center { text-align: center !important } .fmd-text-start { text-align: left !important } .fmd-text-end { text-align: right !important }
+.fmd-text-nowrap { white-space: nowrap } .fmd-text-accent { color: var(--accent2, var(--qink)) !important } .fmd-text-emphasis { color: var(--qink) !important }
+.fmd-fs-lead { font-size: 1.15em !important }
+.fmd-h1 { font-size: clamp(28px, 4.4vw, 42px) !important; font-weight: 700 } .fmd-h2 { font-size: clamp(22px, 3vw, 30px) !important; font-weight: 700 } .fmd-h3 { font-size: 20px !important; font-weight: 600 }
+.fmd-h4 { font-size: 18px !important; font-weight: 600 } .fmd-h5 { font-size: 16px !important; font-weight: 600 } .fmd-h6 { font-size: 14px !important; font-weight: 600 }
+.fmd-d-none { display: none !important } .fmd-d-block { display: block !important } .fmd-d-flex { display: flex !important } .fmd-d-inline { display: inline !important }
+.fmd-justify-content-start { justify-content: flex-start } .fmd-justify-content-center { justify-content: center } .fmd-justify-content-end { justify-content: flex-end } .fmd-justify-content-stretch { justify-content: stretch }
+.fmd-align-items-center { align-items: center }
+.fmd-mt-0 { margin-top: 0 !important } .fmd-mt-1 { margin-top: 4px !important } .fmd-mt-2 { margin-top: 8px !important } .fmd-mt-3 { margin-top: 16px !important }
+.fmd-mb-0 { margin-bottom: 0 !important } .fmd-mb-1 { margin-bottom: 4px !important } .fmd-mb-2 { margin-bottom: 8px !important } .fmd-mb-3 { margin-bottom: 16px !important }
+.fmd-ms-0 { margin-left: 0 !important } .fmd-ms-1 { margin-left: 4px !important } .fmd-ms-2 { margin-left: 8px !important } .fmd-ms-3 { margin-left: 16px !important }
+.fmd-me-0 { margin-right: 0 !important } .fmd-me-1 { margin-right: 4px !important } .fmd-me-2 { margin-right: 8px !important } .fmd-me-3 { margin-right: 16px !important }
+.fmd-pt-0 { padding-top: 0 !important } .fmd-pt-1 { padding-top: 4px !important } .fmd-pt-2 { padding-top: 8px !important } .fmd-pt-3 { padding-top: 16px !important }
+.fmd-pb-0 { padding-bottom: 0 !important } .fmd-pb-1 { padding-bottom: 4px !important } .fmd-pb-2 { padding-bottom: 8px !important } .fmd-pb-3 { padding-bottom: 16px !important }
+.fmd-ps-0 { padding-left: 0 !important } .fmd-ps-1 { padding-left: 4px !important } .fmd-ps-2 { padding-left: 8px !important } .fmd-ps-3 { padding-left: 16px !important }
+.fmd-pe-0 { padding-right: 0 !important } .fmd-pe-1 { padding-right: 4px !important } .fmd-pe-2 { padding-right: 8px !important } .fmd-pe-3 { padding-right: 16px !important }
+/* a div is a 12-column grid, as forms.md's; its children span it unless a column class says otherwise */
+.fdiv.fmd-grid, .fdiv { display: grid; grid-template-columns: repeat(12, 1fr); gap: 0 16px }
+.fdiv > * { grid-column: span 12 / span 12 }
+@media (min-width: 576px) {
+  .fdiv > .fmd-col-1 { grid-column: span 1 } .fdiv > .fmd-col-2 { grid-column: span 2 } .fdiv > .fmd-col-3 { grid-column: span 3 } .fdiv > .fmd-col-4 { grid-column: span 4 }
+  .fdiv > .fmd-col-5 { grid-column: span 5 } .fdiv > .fmd-col-6 { grid-column: span 6 } .fdiv > .fmd-col-7 { grid-column: span 7 } .fdiv > .fmd-col-8 { grid-column: span 8 }
+  .fdiv > .fmd-col-9 { grid-column: span 9 } .fdiv > .fmd-col-10 { grid-column: span 10 } .fdiv > .fmd-col-11 { grid-column: span 11 } .fdiv > .fmd-col-12 { grid-column: span 12 }
+  .fmd-col-1 { grid-column: span 1 } .fmd-col-2 { grid-column: span 2 } .fmd-col-3 { grid-column: span 3 } .fmd-col-4 { grid-column: span 4 }
+  .fmd-col-5 { grid-column: span 5 } .fmd-col-6 { grid-column: span 6 } .fmd-col-7 { grid-column: span 7 } .fmd-col-8 { grid-column: span 8 }
+  .fmd-col-9 { grid-column: span 9 } .fmd-col-10 { grid-column: span 10 } .fmd-col-11 { grid-column: span 11 } .fmd-col-12 { grid-column: span 12 }
+}
+@media (max-width: 760px) {
+  .frun .qzstage { padding-top: 24px }
+  .fq { font-size: 21px }
+  .ff-steps .ff-step { min-width: 36px; height: 44px; font-size: 15px }
+}

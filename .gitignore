@@ -1,0 +1,97 @@
+# OS / editor noise
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependencies
+node_modules/
+
+# Build output
+/dist/
+# Temporary isolated verification workspaces
+/.verify-local/
+/.verify-isolated/
+# the content index the content API answers from: the build writes it beside the functions (build/content-json.mjs)
+# THE DATA THE FUNCTIONS IMPORT IS GENERATED, NEVER COMMITTED (build/functions-data.mjs).
+# Each is a pure function of the content. Committed, they were a second source of truth that could
+# disagree with the first, and twice did — the catalog drifted by 55 price entries and the email
+# subjects by three — because the checks read each file's contents and never asked whether it was
+# what a fresh build would write. npm run dev, npm test and the deploy all make them first.
+supabase/functions/_shared/catalog.json
+supabase/functions/_shared/analytics.json
+supabase/functions/_shared/cloud.json
+supabase/functions/_shared/webhooks.json
+supabase/functions/_shared/bots.json
+supabase/functions/_shared/commands.json
+supabase/functions/_shared/spaces.json
+supabase/functions/_shared/teams.json
+supabase/functions/_shared/forms.json
+supabase/functions/_shared/emails/compiled.json
+supabase/functions/_shared/emails/funnels.json
+supabase/functions/_shared/emails/strings.json
+supabase/functions/cal-webhook/strings.json
+# the auth emails compiled for the local stack, written by the same run (build/emails.mjs).
+# The sites' copies were already ignored; the root's were not, which is why they were tracked.
+supabase/templates/
+supabase/.temp/
+# vite writes one of these beside the config each time it loads it
+vite.config.js.timestamp-*
+supabase/functions/_shared/content/
+sites/*/dist/
+# a site under sites/ keeps its assembled supabase tree out of the monorepo (assemble.mjs makes it; its config.toml is its own)
+sites/*/supabase/schemas/
+sites/*/supabase/data.sql
+sites/*/supabase/functions/
+sites/*/supabase/seed.sql
+sites/*/supabase/.assembled.json
+sites/*/supabase/templates/
+sites/*/supabase/.branches/
+sites/*/supabase/.temp/
+sites/*/public/static/
+.vite/
+*.log
+# velite regenerates this whole dir each build (output.assets, clean: true)
+/public/static/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Coverage / environment files
+.coverage
+coverage/
+.env
+.env.*
+!.env.example
+.velite/
+
+# Studio saves SQL-editor snippets here; personal scratch, not project state
+supabase/snippets/
+build/companion-review.html
+build/introduction-review.html
+build/.cache/
+# the throwaway scripts a screenshot is taken with: dot-prefixed, never part of the build
+build/.*.mjs
+build/enrich-review.html
+
+packages/kit/build/tts/models/
+packages/kit/build/tts/.work/
+.env.dev
+
+# the printed editions (build/print.mjs) — rendered, never committed
+.print/
+packages/kit/build/print/_*.typ
+# the covers as art for the store's book, written by build/print.mjs
+public/print
+public/__book3d.html
+/sites/external/
+/platformkit.sites.json
+
+# the second content engine's own cache and output (build/collections.mjs; velite's .velite is the one both write)
+.content-collections/
+
+# the candidate sheet the photo fetcher draws, to choose by looking
+sites/demo/build/.sheet.png

@@ -1,0 +1,415 @@
+/*
+ * The admin's working surfaces: one set of primitives the editors share, on the
+ * site's own tokens (paper, wash, card, hair, ink, accent). Layout does the
+ * spacing — cards, rows and fields are flex/grid with gaps, never per-element
+ * margins — and every control has the same height, radius and focus ring, so a
+ * screen made of these reads as one tool rather than a stack of forms.
+ */
+
+/* ---- layout ---- */
+.ui-page { display: flex; flex-direction: column; min-height: 0; flex: 1; gap: 18px }
+.ui-scroll { min-height: 0; overflow-y: auto; flex: 1; padding-bottom: 8px }
+.ui-split { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 22px; align-items: start; min-height: 0 }
+.ui-stack { display: flex; flex-direction: column; gap: 14px; min-width: 0 }
+.ui-row { display: flex; align-items: center; gap: 10px; min-width: 0 }
+.ui-row.ui-between { justify-content: space-between }
+.ui-row.ui-wrap { flex-wrap: wrap }
+.ui-grow { flex: 1; min-width: 0 }
+.ui-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 1180px) { .ui-split { grid-template-columns: 1fr } }
+
+/* ---- toolbar and segmented control ---- */
+.ui-toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap }
+.ui-seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--wash); border: 1px solid var(--hair); border-radius: 10px }
+.ui-seg button { font: inherit; font-size: 13px; font-weight: 500; color: var(--ink3); background: none; border: 0; border-radius: 7px; padding: 6px 13px; cursor: pointer; white-space: nowrap; transition: color .12s, background .12s }
+.ui-seg button:hover { color: var(--ink) }
+.ui-seg button.ui-on { color: var(--ink); background: var(--paper); box-shadow: 0 1px 2px #0000001a, 0 0 0 1px var(--hair) }
+.ui-count { font-family: var(--m); font-size: 11.5px; letter-spacing: .02em; color: var(--ink3) }
+.ui-count b { color: var(--ink2); font-weight: 500 }
+
+/* ---- buttons ---- */
+.ui-btn { display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 13px; font-weight: 600; line-height: 1; color: var(--ink); background: var(--paper); border: 1px solid var(--hair); border-radius: 9px; padding: 0 14px; height: 34px; cursor: pointer; white-space: nowrap; transition: background .12s, border-color .12s, color .12s }
+.ui-btn:hover { border-color: var(--ink3); background: var(--card) }
+.ui-btn:disabled { opacity: .5; cursor: default }
+.ui-btn.ui-primary { color: var(--paper); background: var(--ink); border-color: var(--ink) }
+.ui-btn.ui-primary:hover { background: color-mix(in srgb, var(--ink) 88%, var(--accent2)) }
+.ui-btn.ui-ghost { border-color: transparent; background: none; color: var(--ink2) }
+.ui-btn.ui-ghost:hover { background: var(--wash); color: var(--ink) }
+.ui-btn.ui-danger { color: #b3261e }
+.ui-btn.ui-danger:hover { border-color: #b3261e66; background: #b3261e0d }
+.ui-btn.ui-sm { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 7px }
+.ui-btn svg { flex: none }
+.ui-iconbtn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; font: inherit; font-size: 15px; line-height: 1; color: var(--ink3); background: none; border: 1px solid transparent; border-radius: 7px; cursor: pointer }
+.ui-iconbtn:hover { color: var(--ink); background: var(--wash); border-color: var(--hair) }
+.ui-iconbtn.ui-danger:hover { color: #b3261e; background: #b3261e0d; border-color: #b3261e44 }
+
+/* ---- the switch ---- */
+.ui-switch { position: relative; display: inline-flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; font-size: 13px; color: var(--ink2) }
+.ui-switch input { position: absolute; opacity: 0; width: 0; height: 0 }
+.ui-switch i { position: relative; flex: none; width: 34px; height: 20px; border-radius: 999px; background: color-mix(in srgb, var(--ink3) 45%, var(--paper)); transition: background .15s }
+.ui-switch i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px #00000033; transition: transform .15s }
+.ui-switch input:checked + i { background: var(--accent2) }
+.ui-switch input:checked + i::after { transform: translateX(14px) }
+.ui-switch input:focus-visible + i { outline: 2px solid var(--accent2); outline-offset: 2px }
+.ui-switch.ui-compact { gap: 0 }
+
+/* ---- badges and meters ---- */
+.ui-badge { display: inline-flex; align-items: center; gap: 5px; font-family: var(--m); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); background: var(--wash); border: 1px solid var(--hair); border-radius: 999px; padding: 3px 8px; white-space: nowrap }
+.ui-badge.ui-ok { color: #0b6e4f; background: #0b6e4f12; border-color: #0b6e4f33 }
+.ui-badge.ui-warn { color: #9a6a10; background: #d8a03a1a; border-color: #d8a03a55 }
+.ui-badge.ui-mono { text-transform: none; letter-spacing: 0 }
+.ui-meter { position: relative; width: 72px; height: 5px; border-radius: 999px; background: var(--wash); overflow: hidden }
+.ui-meter b { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent2) }
+.ui-key { font-family: var(--m); font-size: 11.5px; color: var(--ink3) }
+
+/* ---- table ---- */
+.ui-table { display: flex; flex-direction: column; border: 1px solid var(--hair); border-radius: 12px; background: var(--paper); overflow: hidden }
+.ui-th, .ui-tr { display: grid; grid-template-columns: var(--cols); align-items: center; gap: 12px; padding: 0 14px }
+.ui-th { height: 36px; font-family: var(--m); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); background: var(--wash); border-bottom: 1px solid var(--hair) }
+.ui-tr { min-height: 54px; border-bottom: 1px solid var(--hair); cursor: pointer; transition: background .1s }
+.ui-tr:last-child { border-bottom: 0 }
+.ui-tr:hover { background: var(--wash) }
+.ui-tr.ui-off { color: var(--ink3) }
+.ui-tr.ui-off .ui-title { color: var(--ink2) }
+.ui-tr.ui-ghost-row { opacity: .35 }
+.ui-cell-r { text-align: right; justify-self: end }
+.ui-tr > .ui-badge { justify-self: start }
+.ui-title { font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.25 }
+.ui-titlestack { display: flex; flex-direction: column; gap: 2px; min-width: 0 }
+.ui-grip { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 24px; color: var(--ink3); cursor: grab; opacity: .55 }
+.ui-tr:hover .ui-grip { opacity: 1 }
+.ui-chev { color: var(--ink3); font-size: 14px; justify-self: end }
+.ui-num { font-family: var(--m); font-size: 12.5px; color: var(--ink2); font-variant-numeric: tabular-nums }
+
+/* ---- cards and fields ---- */
+.ui-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--hair); border-radius: 12px; background: var(--paper) }
+/* ─────────────── THE COLUMN A PAGE IS DRAWN IN ───────────────
+   Every admin page sits in one of these: the same top, the same gutter, the same measure,
+   whether it is a grid of files or a dashboard. The shell (.ad-main) owns the window and the
+   scroll; this owns the page.
+
+   `.ui-wrap` was being used for this by one page, and `.ui-wrap` is not a class — it exists
+   only as `.ui-row.ui-wrap`, a modifier of a row — so that page had no column at all. */
+.ui-page { display: flex; flex-direction: column; min-height: 0; max-width: 1280px; padding: 0 0 36px }
+/* a page that is a form, a set of switches or a short list reads badly at a desktop's full
+   width — a line of prose has a measure whatever is around it. One narrow, not five. */
+.ui-page.ui-narrow { max-width: 880px }
+/* the body under the head: what scrolls, and what the page's own content fills */
+.ui-pagebody { flex: 1; min-height: 0 }
+
+/* ─────────────── THE HEAD OF A PAGE ───────────────
+   One title, one size, one weight, one face, one gutter, one distance from the top — drawn by
+   components/admin/AdminHead.vue, which every admin page uses. Before it there were seven sizes,
+   three weights and two typefaces for this one element, and People's title sat a hundred and
+   fifty-two pixels down an empty page. */
+.ui-pagehead {
+  flex: none; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: 14px 20px; margin: 0 0 16px; padding: 0 0 16px; border-bottom: 1px solid var(--hair);
+}
+.ui-pagename { flex: 1 1 320px; min-width: 260px }
+.ui-pagetitle {
+  font-family: var(--fd); font-weight: 600; font-size: 26px; line-height: 1.15;
+  letter-spacing: -.015em; color: var(--ink); margin: 0;
+  /* a flex row so a mark beside the name sits on its baseline — and the full width of the
+     column, since a shrink-to-fit flex container wraps its own mark onto a second line */
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; max-width: none;
+}
+/* the sentence under it: what the page is for. Held to a readable measure rather than running
+   the whole width of a desktop, which is the one place a line of prose should not go */
+.ui-pagesub { margin: 6px 0 0; color: var(--ink3); font-size: 13px; line-height: 1.5; max-width: 72ch }
+.ui-pagesub code { font-family: var(--m); font-size: 12px; color: var(--ink2) }
+
+/* ─── THE BAR: the tabs, and everything the page can be done to ───
+   One place, on every page. It used to be the head on some pages and a row of its own on
+   others, so no two pages in the admin began the same way. */
+.ui-pagebar {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 10px 16px; margin: 0 0 20px; min-width: 0;
+}
+.ui-pagebarleft { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0 }
+.ui-pageacts { flex: 1 1 auto; display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; justify-content: flex-end; min-width: 0 }
+.ui-pageacts > * { max-width: 100% }
+.ui-pageacts .ui-input, .ui-pageacts .ui-select, .ui-pageacts select, .ui-pageacts input { width: auto }
+/* a bar with nothing on its left puts its controls where they always are: the right */
+.ui-pagebar:has(.ui-pagebarleft:empty) { justify-content: flex-end }
+
+/* the tabs, which name the parts of a page */
+.ui-pagetabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--wash); border: 1px solid var(--hair); border-radius: 11px }
+.ui-pagetabs button {
+  display: inline-flex; align-items: center; gap: 8px; font: inherit; font-family: var(--fd);
+  font-weight: 600; font-size: 16px; letter-spacing: -.01em; color: var(--ink3);
+  background: none; border: 0; border-radius: 8px; padding: 7px 15px; cursor: pointer;
+  transition: color .14s, background .14s, box-shadow .14s;
+}
+.ui-pagetabs button:hover { color: var(--ink) }
+.ui-pagetabs button.on { color: var(--ink); background: var(--paper); box-shadow: 0 1px 2px #0000001a, 0 0 0 1px var(--hair) }
+.ui-tabcount { font-family: var(--m); font-size: 11px; color: var(--ink3); background: var(--wash); border-radius: 999px; padding: 1px 7px }
+.ui-pagetabs button.on .ui-tabcount { color: var(--ink2) }
+
+@media (max-width: 760px) {
+  .ui-pagebar { flex-direction: column; align-items: stretch }
+  .ui-pageacts { justify-content: flex-start }
+}
+@media (max-width: 560px) {
+  .ui-pagetitle { font-size: 22px }
+  .ui-pagehead { margin-bottom: 14px; padding-bottom: 14px }
+}
+
+.ui-cardhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px }
+.ui-cardhead h3 { font-family: var(--fd); font-weight: 600; font-size: 15.5px; margin: 0 }
+.ui-cardhead span { font-size: 12px; color: var(--ink3) }
+.ui-field { display: flex; flex-direction: column; gap: 5px; min-width: 0 }
+.ui-field > span { font-family: var(--m); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink3) }
+.ui-field > span small { text-transform: none; letter-spacing: 0; font-family: var(--f, inherit); font-size: 11.5px; opacity: .85; margin-left: 6px }
+.ui-input, .ui-select, .ui-textarea { font: inherit; font-size: 13.5px; color: var(--ink); background: var(--card); border: 1px solid var(--hair); border-radius: 8px; padding: 0 10px; height: 34px; width: 100%; box-sizing: border-box; min-width: 0 }
+.ui-textarea { height: auto; padding: 8px 10px; line-height: 1.45; resize: vertical }
+.ui-input:focus, .ui-select:focus, .ui-textarea:focus { outline: 2px solid var(--accent2); outline-offset: -1px; border-color: transparent }
+.ui-input.ui-mono { font-family: var(--m); font-size: 12.5px }
+.ui-input.ui-titlein { font-family: var(--fd); font-weight: 600; font-size: 20px; height: 42px; background: none; border-color: transparent; padding-left: 6px; margin-left: -6px }
+.ui-input.ui-titlein:hover { border-color: var(--hair) }
+.ui-input.ui-titlein:focus { background: var(--card) }
+.ui-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.ui-help { font-size: 12px; color: var(--ink3); line-height: 1.45; margin: 0; max-width: none }
+/* the notes under a card: a paragraph or two at full width, and a list of the marks */
+.ui-helpnotes { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--hair) }
+.ui-helpnotes p { margin: 0; max-width: none }
+.ui-helpnotes b { color: var(--ink2); font-weight: 600 }
+.ui-err { font-size: 12.5px; color: #b3261e }
+.ui-ok { font-size: 12.5px; color: #0b6e4f }
+
+/* ---- the level × phase grid navigator ---- */
+.ui-grid9 { display: grid; grid-template-columns: 168px repeat(3, minmax(0, 1fr)); gap: 6px; align-items: stretch }
+.ui-grid9 .ui-gh { font-family: var(--m); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); align-self: end; padding: 0 0 4px 4px }
+.ui-grid9 .ui-gl { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 0 8px 0 4px }
+.ui-grid9 .ui-gl b { font-size: 13px; color: var(--ink) }
+.ui-grid9 .ui-gl span { font-size: 11.5px; color: var(--ink3); line-height: 1.3 }
+.ui-cellbtn { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 4px 8px; font: inherit; text-align: left; min-height: 54px; padding: 9px 12px; color: var(--ink); background: var(--paper); border: 1px solid var(--hair); border-radius: 10px; cursor: pointer; transition: border-color .12s, background .12s, box-shadow .12s }
+.ui-cellbtn:hover { border-color: var(--ink3) }
+.ui-cellbtn.ui-on { border-color: var(--accent2); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent2) 30%, transparent); background: color-mix(in srgb, var(--accent2) 6%, var(--paper)) }
+.ui-cellbtn.ui-empty-cell { border-style: dashed }
+.ui-cellbtn b { font-size: 13.5px; font-weight: 600; line-height: 1.2 }
+.ui-cellbtn b.ph { color: var(--ink3); font-weight: 500; font-style: italic }
+.ui-cellbtn .ui-num { font-size: 11.5px; color: var(--ink3) }
+.ui-cellbtn .ui-meter { grid-column: 1 / -1; width: 100%; height: 3px }
+.ui-cellbtn b.ui-ph { color: var(--ink3); font-weight: 500; font-style: italic }
+
+/* ---- statement rows ---- */
+.ui-tiers { display: grid; grid-template-columns: 1fr; gap: 12px }
+.ui-tier { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--hair); border-radius: 10px; background: var(--wash) }
+.ui-tierhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px }
+.ui-tierhead b { font-size: 12.5px; color: var(--ink) }
+.ui-tierhead span { font-size: 11.5px; color: var(--ink3) }
+.ui-st { display: grid; grid-template-columns: 18px 76px minmax(0, 1fr) 28px; gap: 6px; align-items: center; user-select: none }
+.ui-st input, .ui-st textarea, .ui-st .ui-stfield { user-select: text }
+/* a statement's text: rendered until clicked, then a one-line editor with its three marks */
+.ui-stfield { position: relative; min-width: 0 }
+/* block, not flex: a flex box trims the spaces between a text run and a <strong> */
+.ui-stview { display: block; height: 32px; line-height: 30px; font-size: 13px; padding: 0 10px; cursor: text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.ui-stview.ui-ph { color: var(--ink3) }
+.ui-sthost { height: 32px; padding: 0 84px 0 10px; font-size: 13px; display: flex; align-items: center; border-color: var(--ink3) }
+.ui-sthost .ui-stedit { outline: none; flex: 1; min-width: 0; white-space: nowrap; overflow-x: auto }
+.ui-sthost .ui-stedit p { margin: 0; display: inline }
+.ui-stedit u, .ui-stview u { text-decoration-thickness: .06em; text-underline-offset: .12em }
+.ui-sttools { position: absolute; top: 3px; right: 3px; display: flex; gap: 2px }
+.ui-sttools button { width: 24px; height: 26px; font-family: var(--f); font-size: 12px; color: var(--ink3); background: var(--paper); border: 1px solid var(--hair); border-radius: 5px; cursor: pointer }
+.ui-sttools button:hover { color: var(--ink); border-color: var(--ink3) }
+.ui-sttools button.ui-on { color: var(--paper); background: var(--ink); border-color: var(--ink) }
+.ui-st .ui-grip { opacity: .35 }
+.ui-st:hover .ui-grip { opacity: 1 }
+.ui-sts { display: flex; flex-direction: column; gap: 6px; min-height: 8px }
+.ui-st.ui-ghost-row { opacity: .35 }
+/* the marks menu: what the row is, in one small control */
+.ui-marks { position: relative }
+.ui-marksbtn { white-space: nowrap; display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; height: 32px; padding: 0 8px 0 9px; font-family: var(--m); font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--ink3); background: var(--paper); border: 1px solid var(--hair); border-radius: 7px; cursor: pointer }
+.ui-marksbtn:not(.ui-on) { border-color: transparent; background: transparent; opacity: .55 }
+.ui-st:hover .ui-marksbtn:not(.ui-on) { border-color: var(--hair); opacity: 1 }
+.ui-marksbtn:hover, .ui-marksbtn.ui-open { border-color: var(--ink3) !important; color: var(--ink); opacity: 1 !important }
+.ui-marksbtn.ui-on { color: var(--ink); background: var(--wash) }
+.ui-marksbtn svg { flex: none; opacity: .6 }
+.ui-markmenu { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; width: 300px; padding: 6px; background: var(--paper); border: 1px solid var(--hair); border-radius: 10px; box-shadow: 0 10px 30px #0a0d0b26 }
+.ui-markrow { display: grid; grid-template-columns: 16px 20px minmax(0, 1fr); gap: 8px; align-items: start; padding: 7px 8px; border-radius: 7px; cursor: pointer; font-size: 12.5px; line-height: 1.35; color: var(--ink2) }
+.ui-markrow:hover { background: var(--wash) }
+.ui-markrow.ui-off { opacity: .45; cursor: default }
+.ui-markrow input { margin: 2px 0 0; accent-color: var(--ink) }
+.ui-markrow b { font-family: var(--m); font-size: 11px; color: var(--ink); padding-top: 2px }
+.ui-markrow em { display: block; font-style: normal; font-weight: 600; color: var(--ink) }
+.ui-st .ui-input { height: 32px; font-size: 13px }
+.ui-st.ui-r .ui-input { border-color: #b4530966; background: #b453090a }
+.ui-st.ui-b .ui-input { border-color: #0b6e6e66; background: #0b6e6e0a }
+.ui-st.ui-d .ui-input { border-style: dashed; opacity: .6 }
+.ui-addline { align-self: flex-start; font: inherit; font-size: 12px; color: var(--ink3); background: none; border: 1px dashed var(--hair); border-radius: 7px; padding: 5px 10px; cursor: pointer }
+.ui-addline:hover { color: var(--ink); border-color: var(--ink3) }
+
+/* ---- the picked movement: its place, its name and its line as quiet fields; folds for the rest ---- */
+.ui-mv { gap: 14px }
+.ui-mvhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px }
+.ui-mvtitle { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0 }
+.ui-eyebrow { font-family: var(--m); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); padding-left: 6px }
+.ui-input.ui-mvname { font-family: var(--fd); font-weight: 600; font-size: 19px; height: 38px; background: none; border-color: transparent; padding-left: 6px; margin-left: 0 }
+.ui-input.ui-mvname:hover { border-color: var(--hair) }
+.ui-input.ui-mvname:focus { background: var(--card) }
+.ui-textarea.ui-mvdef { font-size: 13.5px; color: var(--ink2); background: none; border-color: transparent; padding: 6px; line-height: 1.4; resize: none; min-height: 32px; field-sizing: content }
+.ui-textarea.ui-mvdef:hover { border-color: var(--hair) }
+.ui-textarea.ui-mvdef:focus { background: var(--card); color: var(--ink) }
+.ui-mvtools { flex: none; padding-top: 4px }
+.ui-btn.ui-ghost.ui-on { background: var(--wash); color: var(--ink); border-color: var(--hair) }
+.ui-fold { padding: 12px 14px; border: 1px solid var(--hair); border-radius: 10px; background: var(--wash) }
+.ui-fold.ui-helpnotes { border-top: 1px solid var(--hair); padding-top: 12px }
+.ui-settings { display: flex; flex-direction: column; gap: 14px; max-width: 720px }
+.ui-dangerzone { border-color: #b3261e33 }
+.ui-dangerzone .ui-cardhead { flex-direction: column; align-items: flex-start; gap: 4px }
+.ui-dangerzone h3 { color: #b3261e }
+
+/* ---- the topic at once: a band per level, its movements side by side, tiers as rows ---- */
+.ui-bands { display: flex; flex-direction: column; gap: 18px }
+.ui-band { display: flex; flex-direction: column; gap: 8px }
+.ui-bandhead { display: flex; align-items: baseline; gap: 10px; padding: 0 2px }
+.ui-bandhead b { font-family: var(--fd); font-weight: 600; font-size: 15px; color: var(--ink) }
+.ui-bandhead span { font-size: 12px; color: var(--ink3) }
+.ui-bandgrid { display: grid; grid-template-columns: 84px repeat(3, minmax(0, 1fr)); gap: 6px; align-items: stretch }
+.ui-bandcol { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; font: inherit; text-align: left; padding: 9px 11px; color: var(--ink); background: var(--paper); border: 1px solid var(--hair); border-radius: 10px; cursor: pointer; transition: border-color .12s }
+.ui-bandcol:hover { border-color: var(--ink3) }
+.ui-bandcol.ui-empty-cell { border-style: dashed }
+.ui-bandcol b { font-size: 13.5px; font-weight: 600; line-height: 1.2 }
+.ui-bandcol b.ui-ph { color: var(--ink3); font-weight: 500; font-style: italic }
+.ui-bandcol span { font-family: var(--m); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink3) }
+.ui-bandcol i { font-style: normal; font-size: 11.5px; color: var(--ink3); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }
+.ui-bandtier { display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; padding: 10px 8px 0 4px }
+.ui-bandtier b { font-size: 12.5px; color: var(--ink) }
+.ui-bandtier span { font-size: 11px; color: var(--ink3) }
+.ui-bandcell { display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px solid var(--hair); border-radius: 10px; background: var(--wash); min-height: 44px }
+.ui-line { display: grid; grid-template-columns: 14px auto minmax(0, 1fr) 22px 22px; gap: 6px; align-items: baseline; font-size: 12.5px; line-height: 1.4; padding: 6px 9px 6px 6px; color: var(--ink); background: var(--paper); border: 1px solid var(--hair); border-radius: 8px; transition: border-color .12s; user-select: none }
+.ui-line:hover { border-color: var(--ink3) }
+/* every part on its own column, so a line with no marks (its <i> hidden) keeps the same shape */
+.ui-line > .ui-grip { grid-column: 1 } .ui-line > i { grid-column: 2 } .ui-line > .ui-linetxt, .ui-line > .ui-stfield { grid-column: 3 } .ui-line > .ui-linepen { grid-column: 4 } .ui-line > .ui-linex { grid-column: 5 }
+.ui-line .ui-grip { width: 14px; height: 18px; align-self: center; opacity: .3 }
+.ui-line:hover .ui-grip { opacity: 1 }
+.ui-line .ui-linex, .ui-line .ui-linepen { width: 22px; height: 22px; font-size: 14px; align-self: center; opacity: .35 }
+.ui-line:hover .ui-linex, .ui-line:hover .ui-linepen, .ui-line .ui-linepen.ui-on { opacity: 1 }
+.ui-line .ui-linepen.ui-on { color: var(--ink); background: var(--wash); border-color: var(--hair) }
+/* the field in a line: the line's own type, wrapping as the rendered text does */
+.ui-line .ui-stfield { align-self: center }
+.ui-line .ui-sthost { height: auto; min-height: 30px; font-size: 12.5px; padding: 5px 8px 32px }
+.ui-line .ui-sthost .ui-stedit { white-space: normal; overflow: visible }
+.ui-line .ui-sttools { top: auto; bottom: 3px; right: 3px }
+.ui-line.ui-ghost-row { opacity: .35 }
+.ui-line i { font-family: var(--m); font-style: normal; font-size: 10px; letter-spacing: .08em; color: var(--ink3); padding-top: 2px }
+.ui-line i:empty { display: none }
+.ui-linetxt { display: block; font: inherit; text-align: left; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; min-width: 0 }
+.ui-linetxt.ui-ph { color: var(--ink3); font-style: italic }
+.ui-linetxt u { text-decoration-thickness: .06em; text-underline-offset: .12em }
+.ui-line.ui-r { border-color: #b4530966; background: #b453090a } .ui-line.ui-r i { color: #b45309 }
+.ui-line.ui-b { border-color: #0b6e6e66; background: #0b6e6e0a } .ui-line.ui-b i { color: #0b6e6e }
+.ui-line.ui-d { border-style: dashed; opacity: .6 }
+.ui-bandcell-off { border-style: dashed; background: transparent }
+.ui-none { font-size: 11.5px; color: var(--ink3); font-style: italic; padding: 4px 2px }
+@media (max-width: 900px) { .ui-bandgrid { grid-template-columns: 64px repeat(3, minmax(0, 1fr)) } }
+
+/* ---- master list (types, movements off the grid) ---- */
+.ui-list { display: flex; flex-direction: column; gap: 3px }
+.ui-listitem { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 10px; font: inherit; text-align: left; padding: 8px 10px; color: var(--ink2); background: none; border: 1px solid transparent; border-radius: 9px; cursor: pointer }
+.ui-listitem:hover { background: var(--wash); color: var(--ink) }
+.ui-listitem.ui-on { color: var(--ink); background: var(--paper); border-color: var(--hair); box-shadow: 0 1px 2px #0000000f }
+.ui-listitem .ui-n { font-family: var(--m); font-size: 11.5px; color: var(--ink3); text-align: right }
+.ui-listitem b { font-weight: 600; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+
+/* ---- save bar and modal ---- */
+.ui-savebar { position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-top: 6px; background: var(--paper); border: 1px solid var(--hair); border-radius: 12px; box-shadow: 0 -10px 30px -18px #00000040 }
+.ui-savebar .ui-dirty { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink3) }
+.ui-savebar .ui-dirty::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #d8a03a }
+.ui-savebar .ui-dirty.ui-clean::before { background: #0b6e4f }
+.ui-veil { position: fixed; inset: 0; z-index: 70; background: #0a0d0b66; backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; padding: 20px }
+.ui-modal { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px; padding: 20px; background: var(--paper); color: var(--ink); border: 1px solid var(--hair); border-radius: 14px; box-shadow: 0 30px 80px -30px #00000080 }
+.ui-modal h3 { font-family: var(--fd); font-weight: 600; font-size: 19px; margin: 0 }
+.ui-modal .ui-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px }
+
+/* ---- empty and loading ---- */
+.ui-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 28px; border: 1px dashed var(--hair); border-radius: 12px; color: var(--ink3); font-size: 13.5px }
+.ui-muted { font-size: 12.5px; color: var(--ink3) }
+
+/* ---- crumbs ---- */
+.ui-crumb { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; color: var(--ink3); background: none; border: 0; padding: 0; cursor: pointer }
+.ui-crumb:hover { color: var(--ink) }
+
+/* ---- chips: a set of toggles (an audience's areas, tiers, levels) ---- */
+.ui-chips { display: flex; flex-wrap: wrap; gap: 6px }
+.ui-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; border: 1px solid var(--hair); background: var(--paper); color: var(--ink2); font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap }
+.ui-chip:hover { border-color: var(--ink3); color: var(--ink) }
+.ui-chip.ui-on { background: var(--ink); color: var(--paper); border-color: var(--ink) }
+.ui-chip.ui-static { cursor: default; background: var(--wash); border-color: transparent; color: var(--ink2) }
+.ui-chip.ui-static:hover { border-color: transparent; color: var(--ink2) }
+
+/* ---- a rail: the things on the left, one open (the emails, the funnels) ---- */
+.ui-rail { display: flex; flex-direction: column; gap: 2px; min-width: 0 }
+.ui-railhead { font-family: var(--m); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3); margin: 14px 0 6px 10px }
+.ui-railhead:first-child { margin-top: 0 }
+.ui-railitem { display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 9px 12px; border-radius: 10px; border: 1px solid transparent; background: none; font: inherit; color: var(--ink); cursor: pointer; min-width: 0 }
+.ui-railitem:hover { background: var(--wash) }
+.ui-railitem.ui-on { background: var(--card); border-color: var(--hair); box-shadow: 0 1px 2px #0000000a }
+.ui-railitem b { font-weight: 600; font-size: 13.5px }
+.ui-railitem small { font-size: 12px; color: var(--ink3); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+
+/* ---- cards in a grid (the funnels, the blasts) ---- */
+.ui-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px }
+.ui-cardrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap }
+.ui-cardtitle { font-family: var(--fd); font-weight: 600; font-size: 18px; margin: 0; letter-spacing: -.01em }
+.ui-stat { display: flex; flex-direction: column; gap: 1px } .ui-stat b { font-size: 18px; font-weight: 600; letter-spacing: -.01em } .ui-stat span { font-family: var(--m); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink3) }
+.ui-stats { display: flex; gap: 22px; flex-wrap: wrap }
+.ui-two { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 20px; align-items: start }
+@media (max-width: 1100px) { .ui-two { grid-template-columns: 1fr } }
+.ui-help { font-size: 12.5px; color: var(--ink3); line-height: 1.5; margin: 0 }
+.ui-row { display: flex; gap: 10px; align-items: end } .ui-row > .ui-field { flex: 1 }
+.ui-mono { font-family: var(--m); font-size: 13px }
+
+/* ---- polish: depth, status, empty states, toolbars, timelines ---- */
+.ui-card { box-shadow: 0 1px 2px #0000000a, 0 10px 30px -24px #00000040; transition: border-color .15s, box-shadow .15s, transform .15s }
+.ui-card.ui-link { cursor: pointer } .ui-card.ui-link:hover { border-color: var(--ink3); box-shadow: 0 1px 2px #0000000a, 0 18px 40px -24px #00000055; transform: translateY(-1px) }
+.ui-pill { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px 0 8px; border-radius: 999px; font-family: var(--m); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--hair); color: var(--ink2); background: var(--paper) }
+.ui-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--ink3) }
+.ui-pill.ui-ok { color: #0b6e4f; border-color: #0b6e4f33; background: #0b6e4f0f } .ui-pill.ui-ok::before { background: #0b6e4f; box-shadow: 0 0 0 3px #0b6e4f22 }
+.ui-pill.ui-warn { color: #9a6a10; border-color: #d8a03a55; background: #d8a03a14 } .ui-pill.ui-warn::before { background: #d8a03a }
+.ui-pill.ui-off { color: var(--ink3) } .ui-pill.ui-off::before { background: var(--hair) }
+.ui-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 48px 24px; border: 1px dashed var(--hair); border-radius: 16px; color: var(--ink2) }
+.ui-empty h3 { font-family: var(--fd); font-weight: 600; font-size: 20px; margin: 0; color: var(--ink) } .ui-empty p { margin: 0; max-width: 46ch; font-size: 14px; line-height: 1.5 }
+.ui-toolbar { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: 12px 16px; border: 1px solid var(--hair); border-radius: 14px; background: var(--card); box-shadow: 0 1px 2px #0000000a }
+.ui-toolbar .ui-tlabel { font-family: var(--m); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3) }
+.ui-num { display: inline-flex; align-items: center; gap: 8px } .ui-num input { width: 58px; text-align: center; height: 32px }
+.ui-num span { font-family: var(--f); font-size: 13px; color: var(--ink2); white-space: nowrap }
+.ui-vr { width: 1px; align-self: stretch; background: var(--hair) }
+.ui-kpi { display: flex; flex-direction: column; gap: 1px; min-width: 64px } .ui-kpi b { font-size: 20px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1 } .ui-kpi span { font-family: var(--m); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink3) }
+.ui-section { display: flex; align-items: baseline; gap: 12px; margin: 8px 0 0 } .ui-section h3 { font-family: var(--fd); font-weight: 600; font-size: 22px; letter-spacing: -.01em; margin: 0 } .ui-section .ui-count { font-family: var(--m); font-size: 12px; color: var(--ink3) }
+/* a timeline of steps on a card */
+.ui-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column }
+.ui-timeline li { position: relative; display: flex; gap: 10px; align-items: baseline; padding: 0 0 10px 22px; font-size: 13.5px }
+.ui-timeline li::before { content: ''; position: absolute; left: 6px; top: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--ink); z-index: 1 }
+.ui-timeline li::after { content: ''; position: absolute; left: 9px; top: 12px; bottom: -4px; width: 1px; background: var(--hair) }
+.ui-timeline li:last-child::after { display: none }
+.ui-timeline li em { font-style: normal; font-family: var(--m); font-size: 11px; color: var(--ink3); white-space: nowrap }
+.ui-timeline li b { font-weight: 500; color: var(--ink) }
+.ui-timeline li > div { display: flex; flex-direction: column; gap: 2px; min-width: 0 } .ui-timeline li small { font-family: var(--m); font-size: 10.5px; color: var(--ink3) }
+.ui-timeline li em:first-child { min-width: 34px }
+/* a group box inside a card */
+.ui-group { border: 1px solid var(--hair); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; background: color-mix(in srgb, var(--wash) 50%, var(--card)) }
+.ui-grouphead { display: flex; align-items: baseline; gap: 8px } .ui-grouphead b { font-size: 13px; font-weight: 600 } .ui-grouphead span { font-size: 12px; color: var(--ink3) }
+/* the step strip: numbered tabs */
+.ui-steps { display: flex; gap: 6px; flex-wrap: wrap }
+.ui-step { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px 0 6px; border-radius: 999px; border: 1px solid var(--hair); background: var(--paper); font: inherit; font-size: 13px; color: var(--ink2); cursor: pointer; max-width: 260px }
+.ui-step i { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--wash); color: var(--ink); font-family: var(--m); font-size: 11px; font-style: normal; flex: none }
+.ui-step b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .ui-step small { font-family: var(--m); font-size: 10.5px; color: var(--ink3); white-space: nowrap }
+.ui-step:hover { border-color: var(--ink3); color: var(--ink) }
+.ui-step.ui-on { background: var(--ink); color: var(--paper); border-color: var(--ink) } .ui-step.ui-on i { background: var(--paper); color: var(--ink) } .ui-step.ui-on small { color: color-mix(in srgb, var(--paper) 70%, transparent) }
+.ui-step.ui-add { border-style: dashed; padding: 0 12px }
+.ui-md { font-family: var(--m); font-size: 12.5px; line-height: 1.6; height: auto; padding: 12px 14px; resize: vertical; tab-size: 2 }
+.ui-frame { width: 100%; border: 1px solid var(--hair); border-radius: 12px; background: #fbfaf3 }
+.ui-hint { font-size: 12px; color: var(--ink3); margin: 0; line-height: 1.5 }

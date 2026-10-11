@@ -1,0 +1,71 @@
+{
+  "name": "@platform-kit/demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The PlatformKit demo: a generic site with every module on, no code of its own.",
+  "scripts": {
+    "dev": "platformkit dev",
+    "build": "platformkit build",
+    "preview": "vite preview --host",
+    "test": "platformkit test",
+    "db:reset": "platformkit migrate reset",
+    "db:serve": "platformkit functions"
+  },
+  "dependencies": {
+    "@platform-kit/kit": "0.1.0",
+    "@platform-kit/movable-types": "0.1.0",
+    "@templatical/renderer": "^0.39.0",
+    "cheerio": "^1.2.0",
+    "mjml": "^5.4.1",
+    "mjml-browser": "^5.4.1"
+  },
+  "imports": {
+    "#content": {
+      "node": "@platform-kit/kit/build/content-node.mjs",
+      "default": "./.velite/index.js"
+    },
+    "#content/*": "./.velite/*",
+    "#site/content/*": "./content/*",
+    "#site": {
+      "node": "@platform-kit/kit/build/site-node.mjs",
+      "default": "@platform-kit/kit/build/site-node.mjs"
+    },
+    "#site/looks": {
+      "node": "@platform-kit/kit/build/site-looks-node.mjs",
+      "default": "@platform-kit/kit/build/site-looks-node.mjs"
+    },
+    "#site/landing": {
+      "node": "@platform-kit/kit/build/site-landing-node.mjs",
+      "default": "@platform-kit/kit/build/site-landing-node.mjs"
+    },
+    "#site/app": {
+      "node": "@platform-kit/kit/build/site-app-node.mjs",
+      "default": "@platform-kit/kit/build/site-app-node.mjs"
+    },
+    "#site/routes": {
+      "node": "@platform-kit/kit/build/site-routes-node.mjs",
+      "default": "@platform-kit/kit/build/site-routes-node.mjs"
+    },
+    "#site/nav": {
+      "node": "@platform-kit/kit/build/site-nav-node.mjs",
+      "default": "@platform-kit/kit/build/site-nav-node.mjs"
+    },
+    "#site/analytics": {
+      "node": "@platform-kit/kit/build/site-analytics-node.mjs",
+      "default": "@platform-kit/kit/build/site-analytics-node.mjs"
+    },
+    "#site/instrument": {
+      "node": "@platform-kit/kit/build/site-instrument-node.mjs",
+      "default": "@platform-kit/kit/build/site-instrument-node.mjs"
+    },
+    "#site/recommendations": {
+      "node": "@platform-kit/kit/build/site-recommendations-node.mjs",
+      "default": "@platform-kit/kit/build/site-recommendations-node.mjs"
+    },
+    "#site/admin": {
+      "node": "@platform-kit/kit/build/site-admin-node.mjs",
+      "default": "@platform-kit/kit/build/site-admin-node.mjs"
+    }
+  }
+}
