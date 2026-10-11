@@ -199,7 +199,10 @@ export function configureHosts({
 
   const mode = env.PLATFORMKIT_SITES_MODE || 'files'
   if (mode === 'files' && !String(env.PLATFORMKIT_SITES || '').trim()) throw new Error('files mode requires PLATFORMKIT_SITES to explicitly name the sites being published')
-  const siteList = discoverSites(root, env).map((site) => ({
+  const selectedProxySites = mode === 'proxy' && String(env.PLATFORMKIT_SITES || '').trim()
+    ? String(env.PLATFORMKIT_SITES).split(',').map((name) => ({ name: name.trim(), root: false }))
+    : discoverSites(root, env)
+  const siteList = selectedProxySites.map((site) => ({
     ...site,
     backend: fs.existsSync(rewriteTemplateFor(templateDir, site)),
   }))

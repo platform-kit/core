@@ -16,7 +16,7 @@ COPY deploy/nginx/templates/ /etc/nginx/templates/
 COPY deploy/nginx/15-supabase-host.envsh /docker-entrypoint.d/15-supabase-host.envsh
 COPY deploy/nginx/30-hosts.sh /docker-entrypoint.d/30-hosts.sh
 COPY deploy/nginx/40-prerender.sh /docker-entrypoint.d/40-prerender.sh
-COPY packages/kit/build/hosts.mjs packages/kit/build/sites.mjs /workspace/packages/kit/build/
+COPY packages/kit/build/hosts.mjs packages/kit/build/sites.mjs packages/kit/build/runtime-paths.mjs /workspace/packages/kit/build/
 COPY sites/ /workspace/sites/
 RUN chmod +x /docker-entrypoint.d/15-supabase-host.envsh /docker-entrypoint.d/30-hosts.sh /docker-entrypoint.d/40-prerender.sh
 # the templates land in conf.d: default.conf the server, the .inc files what it includes (nginx loads *.conf alone)

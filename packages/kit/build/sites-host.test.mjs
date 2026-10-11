@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { sites, siteNameFor, siteEnvSuffix, workspaceRoot } from './sites.mjs'
 import { configureHosts, renderHostConfig, renderSiteIncludes } from './hosts.mjs'
+import { platformkitRuntimePath } from './runtime-paths.mjs'
 
 const ROOT = workspaceRoot(process.cwd())
 const KIT = (file) => fileURLToPath(new URL('../' + file, import.meta.url))
@@ -133,6 +134,23 @@ try {
     assert.match(config, /server_name www\.localhost;\s+return 404;/)
     assert.match(config, /server_name demo\.localhost;/)
     assert.match(config, /proxy_pass http:\/\/host\.docker\.internal:5173;/)
+  })
+  test('proxy mode accepts selected fetched sites absent from the front-door image', () => {
+    const portFile = platformkitRuntimePath(fixture, 'dev', 'dharmalab-site.port')
+    fs.mkdirSync(path.dirname(portFile), { recursive: true })
+    fs.writeFileSync(portFile, '5176\n')
+    const result = configureHosts({
+      root: fixture,
+      output: path.join(fixture, 'conf'),
+      templateDir: path.join(fixture, 'templates'),
+      env: {
+        PLATFORMKIT_DOMAIN: 'localhost',
+        PLATFORMKIT_SITES: 'docs,dharmalab-site',
+        PLATFORMKIT_SITES_MODE: 'proxy',
+      },
+    })
+    assert.match(result.config, /server_name dharmalab-site\.localhost;/)
+    assert.match(result.config, /proxy_pass http:\/\/host\.docker\.internal:5176;/)
   })
   test('the development directory opt-in cannot change file-mode or default production apex behavior', () => {
     const env = { PLATFORMKIT_DEV_DIRECTORY: '1', PLATFORMKIT_DEV_DIRECTORY_PORT: '5300' }

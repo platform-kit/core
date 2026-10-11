@@ -59,6 +59,7 @@ PlatformKit combines a reusable site foundation with optional features. The list
 - Expose compatible interfaces for selected commerce, content, forms, scheduling, chat, and social-network workflows, so existing tools and clients can integrate with a site's own domain.
 - Choose a static site with no live backend, a repository-and-backend setup, or a backend publishing workflow where content changes do not require a full site rebuild. The feature set differs by setup: accounts, orders, and conversations need a backend; a static site can still publish and search files.
 - Develop and test multiple independent sites against the shared toolkit without making those sites part of PlatformKit's product identity.
+- Route selected workspace sites, including separately fetched repositories, through one local front door, with each hostname directed to its own development server.
 
 ## Availability and limits
 

@@ -379,7 +379,7 @@ export async function runWorkspace({
       children.push(record)
     }
 
-    const deadline = Date.now() + 90000
+    const deadline = Date.now() + 180000
     for (const { site, child } of children) {
       const portFile = platformkitRuntimePath(root, 'dev', `${site.name}.port`)
       while (Date.now() < deadline) {
