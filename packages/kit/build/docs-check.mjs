@@ -1,6 +1,7 @@
 /*
  * The docs stay true to the code, or nothing is done. Two kinds of check over the documentation — the docs
- * site's pages (sites/docs/content/docs) and the repo's docs (docs/PLATFORMKIT.md, docs/WHAT-IS-PLATFORMKIT.md):
+ * site's pages (sites/docs/content/docs) and the repo's docs:
+ * docs/PLATFORMKIT.md, docs/WHAT-IS-PLATFORMKIT.md, docs/PURPOSE.md and docs/FEATURES.md.
  *
  *   1. STALENESS. Every page names the code it describes — `sources:` in its frontmatter (or a
  *      `<!-- sources: … -->` line in a repo doc): files, or directories as prefixes. A page whose source has
@@ -38,7 +39,7 @@ import { isReviewedForCurrentDate } from './docs-review-date.mjs'
 
 const ROOT = workspaceRoot(process.cwd())
 const DOCS = 'sites/docs/content/docs'
-const REPO_DOCS = ['docs/PLATFORMKIT.md', 'docs/WHAT-IS-PLATFORMKIT.md']
+const REPO_DOCS = ['docs/PLATFORMKIT.md', 'docs/WHAT-IS-PLATFORMKIT.md', 'docs/PURPOSE.md', 'docs/FEATURES.md']
 const SETTINGS = { ...loadEnv('development', ROOT, 'PLATFORMKIT_'), ...process.env }
 const SITE_ROOT = (() => {
   const cwd = path.resolve(process.cwd())

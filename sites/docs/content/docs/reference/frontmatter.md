@@ -14,7 +14,7 @@ sources:
 reviewed: 2026-10-11
 ---
 
-Every shared record is a markdown file with a frontmatter block; the admin edits the fields as a form. `published` (boolean, default true) is on every collection and is omitted below. A field marked _build_ is written by the build, not by a person. Site-defined model records use the keys declared by that model's `fields` list; those vary by site and are not shared collection fields.
+Every shared record is a markdown file with a frontmatter block; the admin edits the fields as a form. `published` (boolean, default true) is on every collection and is omitted below. A field marked _build_ is written by the build, not by a person. Site-defined model records use the keys declared by that model's `fields` list; those vary by site and are not shared collection fields. This page covers shared content fields; the repository-level purpose and feature overviews are tracked separately and do not define a site's content models.
 
 ## Articles — `content/articles/**/*.md`
 

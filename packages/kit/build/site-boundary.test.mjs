@@ -71,7 +71,15 @@ assert.deepEqual(workspace.workspaces, [
   'sites/docs',
 ], 'PlatformKit workspaces must contain packages and generic fixtures only')
 
-for (const document of ['PURPOSE.md', 'FEATURES.md', 'TODO.md', 'SHEET.md', 'MODEL.md']) {
+for (const document of ['PURPOSE.md', 'FEATURES.md']) {
+  assert.equal(
+    fs.existsSync(path.join(ROOT, 'docs', document)),
+    true,
+    `${document} must describe PlatformKit in the Core repository`,
+  )
+}
+
+for (const document of ['TODO.md', 'SHEET.md', 'MODEL.md']) {
   assert.equal(
     fs.existsSync(path.join(ROOT, 'docs', document)),
     false,

@@ -28,18 +28,24 @@ function canonicalRepository(value) {
 
 export function platformKitPackageHash(root) {
   const hash = crypto.createHash('sha256')
+  return hashPackageTree(root, hash)
+}
+
+function hashPackageTree(root, hash, includedFiles = null) {
+  const included = includedFiles === null ? null : new Set(includedFiles)
   const visit = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
       if (entry.name === 'node_modules' || entry.name === '.git') continue
       const file = path.join(dir, entry.name)
       const relative = path.relative(root, file).split(path.sep).join('/')
       if (entry.isSymbolicLink()) {
+        if (included && !included.has(relative)) continue
         hash.update(relative)
         hash.update('\0link\0')
         hash.update(fs.readlinkSync(file))
       }
       if (entry.isDirectory()) visit(file)
-      else if (!entry.isSymbolicLink()) {
+      else if (!entry.isSymbolicLink() && (!included || included.has(relative))) {
         hash.update(relative)
         hash.update('\0')
         hash.update(fs.readFileSync(file))
@@ -48,6 +54,31 @@ export function platformKitPackageHash(root) {
   }
   visit(root)
   return hash.digest('hex')
+}
+
+function sourcePackageHash(root) {
+  const result = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts', '--silent'], {
+    cwd: root,
+    encoding: 'utf8',
+    maxBuffer: 16 * 1024 * 1024,
+  })
+  if (result.error) throw new Error(`could not inspect the npm package at ${root}: ${result.error.message}`)
+  if (result.status !== 0) {
+    throw new Error(`could not inspect the npm package at ${root}${result.stderr.trim() ? `: ${result.stderr.trim()}` : ''}`)
+  }
+  let packages
+  try {
+    packages = JSON.parse(result.stdout)
+  } catch (error) {
+    throw new Error(`could not read the npm package file list at ${root}: ${error.message}`)
+  }
+  const files = packages.length === 1 && Array.isArray(packages[0]?.files)
+    ? packages[0].files.map(({ path: file }) => file)
+    : null
+  if (!files || files.some((file) => typeof file !== 'string' || path.isAbsolute(file) || file.split('/').includes('..'))) {
+    throw new Error(`npm returned an invalid package file list for ${root}`)
+  }
+  return hashPackageTree(root, crypto.createHash('sha256'), files)
 }
 
 function writeReceipt(site, sourceRoot) {
@@ -61,7 +92,7 @@ function writeReceipt(site, sourceRoot) {
       throw new Error(`installed PlatformKit package ${name} has an invalid package manifest`)
     }
     const installedHash = platformKitPackageHash(directory)
-    if (installedHash !== platformKitPackageHash(sourceDirectory)) {
+    if (installedHash !== sourcePackageHash(sourceDirectory)) {
       throw new Error(`installed PlatformKit package ${name} differs from its source checkout`)
     }
     packages[name] = { version: manifest.version, sha256: installedHash }

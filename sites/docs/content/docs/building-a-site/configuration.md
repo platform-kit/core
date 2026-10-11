@@ -19,7 +19,7 @@ reviewed: 2026-10-11
 
 `platformkit.config.js` is the one place the kit and the theme learn about a site. It exports a plain object. A change to it restarts the dev server. While it runs, the Vite plugin also watches Markdown edits and refreshes only the build steps whose declared inputs match the changed path.
 
-From the Core checkout, a site command reads this config from the selected site. When that site is a separate checkout, the Git-source CLI makes the matching kit and theme available in its `node_modules` from the same Core source, without writing the site's manifest or lockfile. A production host can do the same by running `npx --yes --package=github:platform-kit/core platformkit deploy` from the site checkout; deploying from Core source does not depend on publishing the packages to npm.
+From the Core checkout, a site command reads this config from the selected site. When that site is a separate checkout, the Git-source CLI installs the kit and theme into its `node_modules` from the same Core source, without writing the site's manifest or lockfile. Its receipt checks the files npm actually packs for each package, so development-only files in the Core checkout do not cause a false mismatch. A production host can do the same by running `npx --yes --package=github:platform-kit/core platformkit deploy` from the site checkout; deploying from Core source does not depend on publishing the packages to npm.
 
 ```js
 export default {
