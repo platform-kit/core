@@ -31,7 +31,7 @@ sources:
 reviewed: 2026-10-11
 ---
 
-Local values belong in ignored `.env` files: workspace-wide settings live at the workspace root, and site-specific settings live beside the selected site package. The root `.env.example` documents local defaults and optional PlatformKit settings with sensitive values blank; `sites/demo/.env.example` shows the demo site's local settings. Production values live only in the deploy environment and the functions' secrets.
+Local values belong in ignored `.env` files: workspace-wide settings live at the workspace root, and site-specific settings live beside the selected site package. The root `.env.example` indexes every environment name read by Core, separates operator settings from test controls and internal markers, and leaves credentials blank; `sites/demo/.env.example` shows the demo site's local settings. The docs check verifies the root example against Core's environment reads. Production values live only in the deploy environment and the functions' secrets.
 
 ## Always needed by the deploy
 

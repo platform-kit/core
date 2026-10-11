@@ -47,8 +47,8 @@ const SITE_ROOT = (() => {
   return defaultSite(ROOT, SETTINGS).directory
 })()
 const ENV_EXAMPLE = [
-  path.join(ROOT, 'sites/demo/.env.example'),
   path.join(ROOT, '.env.example'),
+  path.join(ROOT, 'sites/demo/.env.example'),
 ].find((file) => fs.existsSync(file))
 const args = process.argv.slice(2)
 const flag = (f) => args.includes(f)
@@ -239,10 +239,13 @@ const walk2 = (d, exts) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes:
     for (const m of code.matchAll(/\benv\(['"]([A-Z_][A-Z0-9_]*)['"]\)/g)) read.add(m[1])
     /* names the code makes rather than writes: per-site URL variables, provider mocks, and script tokens */
     for (const v of ['PLATFORMKIT_SITE_', 'LULU_MOCK', 'MIXAM_MOCK', 'BOOKVAULT_MOCK', 'PRINT_GITHUB_TOKEN', 'TTS_GITHUB_TOKEN']) read.add(v)
-    const example = ENV_EXAMPLE ? new Set([...fs.readFileSync(ENV_EXAMPLE, 'utf8').matchAll(/^#?([A-Z][A-Z0-9_]{2,})=/gm)].map((m) => m[1])) : new Set()
+    const exampleText = ENV_EXAMPLE ? fs.readFileSync(ENV_EXAMPLE, 'utf8') : ''
+    const example = new Set([...exampleText.matchAll(/^#?([A-Z][A-Z0-9_]{2,})=/gm)].map((m) => m[1]))
+    if (exampleText.includes('PLATFORMKIT_SITE_<NAME>_GIT_URL=')) example.add('PLATFORMKIT_SITE_')
     const IGNORE = new Set(['NODE_ENV', 'DEV', 'PROD', 'CI', 'HOME', 'PATH', 'MODE', 'BASE_URL', 'SSR'])
     const listed = ticks(doc.text)
     for (const v of read) if (!IGNORE.has(v) && !listed.has(v)) fault(doc.file, `the kit reads ${v} and the page does not list it`)
+    for (const v of read) if (!IGNORE.has(v) && !example.has(v)) fault(doc.file, `the kit reads ${v} and the root .env.example does not include it`)
     for (const v of listed) if (/^[A-Z][A-Z0-9_]{3,}$/.test(v) && v !== 'VITE_' && !read.has(v) && !example.has(v)) fault(doc.file, `lists ${v}, which nothing reads and .env.example does not name`)
   }
 }
