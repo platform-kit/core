@@ -2,70 +2,53 @@
 title: Publishing basics
 description: The Published switch, titles and descriptions for search, share images, access levels, and writing in the editor.
 order: 11
-sources: [packages/kit/build/velite.mjs, packages/kit/src/lib/seo.js, packages/kit/src/lib/seo-head.js, packages/kit/src/lib/access.js, packages/movable-types/src/pages/SharePage.vue]
-reviewed: 2026-10-08
+sources:
+  [
+    packages/kit/build/velite.mjs,
+    packages/kit/src/lib/seo.js,
+    packages/kit/src/lib/seo-head.js,
+    packages/kit/src/lib/access.js,
+    packages/movable-types/src/pages/SharePage.vue,
+  ]
+reviewed: 2026-10-11
 ---
 
-A session type may also carry the hours it is bookable at by default, so a site deployed from its folder offers times before any host has set their own.
+Use the Published switch to control whether a record is available to visitors. Set titles, descriptions, and images so search results and shared links describe the right page. This guide covers the shared rules; each editor has its own fields and validation.
 
 ## The Published switch
 
-Every record — an article, a book and its companion, a wiki or docs page, a product, a collection, a landing page, an ad, a session, a test — carries **Published**. It is the one switch that decides whether the thing exists to the outside world.
+Published is on by default. When it is on, the record can appear on its public page and in the listings, search results, sitemap, or generated output provided for that content type. When it is off, the record stays available in the admin but is omitted from public output. A companion is available only when its book is published.
 
-- On (the default): the record is built, listed, searchable, prerendered, in the sitemap, and given a share image.
-- Off: the file stays on disk and in the admin, and the build leaves it out entirely. A companion goes wherever its book goes.
-
-It is also how a quiz or a reading is taken out of the app on a site with an instrument: the test's file says `published: false` and its card, tab and scorer all go with it — nothing else has to be edited, and no copy should ever count the tests.
-
-Experiments are the exception: they have an **Active** flag instead, which means *running*, not *hidden*. A paused experiment shows everyone its first variant.
+For a site's diagnostic or quiz, turn off the test's Published switch to remove it from the app. Its card and entry point are removed with it. Experiments use a separate **Active** switch: pausing an experiment is not the same as hiding its records; visitors see its first variant while it is paused.
 
 ## Title, description, share image
 
-Every page the site shows sets its own browser title, search description and share picture. Where they come from:
+Set the site's defaults under **Settings → Site settings**: site name, tagline, description, public address, social handle, and optional default share image. A record's title and description are used on its page. Where offered, a record's **Share image** overrides the default; landing pages use their **Image** field.
 
-- **Site settings** (Settings → Site settings) hold the defaults: the site's name, tagline, description, public address, social handle, and a default share image if you want one.
-- **A record's own fields** — `title`, `description` — override them on its page. An article or a book may also set a **Share image** of its own; a landing page sets `image`.
-- **Index pages** (the library, the store) take their titles from Settings → UI strings, under the `pages` scope, `## seo`.
+If no image is supplied, the build generates a share card. Each page points to its own card when one is available; otherwise it uses the site's default. Article and book cards use their own content.
 
-If you set no share image, the build photographs one: the default landing's opening section on its own ground for most pages; an article's title over its cover; a book's cover beside its title and author. The favicon is drawn the same way, from the site's mark. You never upload an icon. The share route requests its artwork eagerly and awaits browser decoding; errors are logged. The same SEO-head resolver supplies metadata to development workspace previews, so the directory does not need to infer a site's title, description or image from its files.
-
-## Who can read what
-
-Articles, wiki pages and docs may carry an access level — **guest**, **authenticated** (signed in), **paid** (has bought something), **subscribed** (a live membership). Somebody below the bar sees the page's head and a gate offering the way up (sign in, buy, join). Books are gated by chapter instead: each book says how many chapters each class may read before the paywall (a blank means the whole book for that class), and the guest allowance starts after the introduction.
-
-## Writing in the editor
-
-The body of most records is a rich-text editor that writes markdown. What it supports: headings, paragraphs, bold and italic, links, lists, quotes, code, images. Two things to know:
-
-- Books and companions are edited **chapter by chapter**: a book is split at its top-level headings, one chapter open at a time, and everything you did not open is kept byte for byte.
-- Line breaks inside a paragraph (verse, an address, a run of affirmations) are kept as hard breaks. In a book they are honoured by the printed edition too, unless the whole book was typed with a break at the end of every line, in which case the typesetter flows them.
-
-Long-form copy that is not a record — the header's links, the landing's fine print, the footer — lives under Settings → UI strings, not in a body.
-
-## Dates and ordering
-
-Articles order by date, newest first. Wiki pages and docs order by their `order` field within their folder (lower first), then by title; folders take the order of their lowest page. Products and collections have an `order` too, and `featured` for the rails. A landing page has no order — it has a route.
-
-## What the build refuses
-
-Saving in the admin validates a record against its schema, so a form will not let you save a product with no price, a session with no cal.com address, or a landing section with a missing required field. A few rules are checked at build time instead and would fail a deploy rather than a save: a product with no key or a shared key, a funnel step with no subject, an email design that will not compile, a hand-edited test file with a malformed line. The admin's own writers never produce those; they come from hand edits.
-
+Index-page titles and descriptions are in **Settings → UI strings → pages**, under the `seo` group.
 
 ## The picture a link shows
 
-Every page has one, and every page now points at its own: the address is `/share/<kind>/<id>.png`
-for an article, a wiki entry, a doc, a product, a collection and a landing page alike. Before, a
-product with no picture of its own fell through to the site's default card, so a link to a product
-showed the site's name. A record that names its own share picture still wins.
+A generated card is available at `/share/<kind>/<id>.png`; the default card is `/share/default.png`. A record's own share image takes precedence over its generated card. Set the site's **Mark** in Site settings to include the site's logo; when no mark is set, the theme's mark is used where available. The favicon is generated from the same mark, so no separate icon upload is required.
 
-What answers that address depends on the deployment: the file the build photographed, a prerender
-sidecar's photograph of the app's own card, or the `share-image` function drawing one. You do not
-choose — the server does.
+Long titles are reduced to fit the card instead of running beyond its frame. A short title is left at its original size.
 
-**The mark on the card** is `mark` in Site settings: an SVG or a PNG you upload. It is used as it
-is, untinted, because a logo has its own colours. Leave it empty and the theme draws its own in
-your accent; a site with neither shows its name alone, which is a perfectly good brand row.
+## Who can read what
 
-**A long title is stepped down** until the card holds it, rather than growing off the top of the
-frame — which is what it used to do at about 130 characters, ending up set over the bright part of
-the picture. A short title is unchanged.
+Articles, wiki pages, and docs may be limited to **guest**, **authenticated** (signed in), **paid** (has a qualifying purchase), or **subscribed** (has a live membership) readers. A visitor below the required level sees the page title and an access prompt instead of the protected content. Books can set chapter allowances by reader class; a blank allowance means the full book is available to that class. The book's introduction is outside the chapter count.
+
+## Writing in the editor
+
+Use the rich-text editor for headings, paragraphs, emphasis, links, lists, quotes, code, and images. Books and companions are edited one chapter at a time; unopened chapters are left unchanged. Line breaks used for verse or other intentional line-by-line text are preserved. Printed books also preserve deliberate hard breaks, while ordinary prose broken at every source line is flowed for print.
+
+Site-wide interface copy—such as navigation labels and footer text—belongs in **Settings → UI strings**, not in a content record's body.
+
+## Dates and ordering
+
+Articles are ordered by date, newest first. Wiki pages and docs use their order value within a folder (lower values first); folders are ordered by their earliest page. Products and collections also have an order value, and may be marked featured. Landing pages are reached by their route rather than an order value.
+
+## What the build refuses
+
+The admin validates records when you save them. For example, it will not save an incomplete product offer or a landing section missing a required field. Some cross-record and file-format checks run during a build instead. A build can reject a product with a missing or duplicated key, an invalid funnel step, an email design that cannot compile, or a malformed hand-edited test file. If a build fails after a hand edit, use the error's record and field or line to correct the source file, then build again.

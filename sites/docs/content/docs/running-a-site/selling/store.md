@@ -27,18 +27,20 @@ sources:
     packages/kit/supabase/schemas/40-commerce.sql,
     packages/kit/supabase/schemas/55-sessions.sql,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-11
 ---
 
-The store sells three kinds of thing: **books** (online unlocks, printed copies, files), **memberships** (see [Memberships and pricing](/content/docs/running-a-site/selling/memberships-and-pricing)), and **goods**. It is switched on by the `store` module; off, the route, the nav link, the bag and every store view in the admin are gone.
+The store sells book unlocks, printed books and downloads, memberships, and goods. It is enabled by the `store` module; when the module is off, store pages, checkout, and store administration are unavailable. For membership offers and tiers, see [Memberships and pricing](/content/docs/running-a-site/selling/memberships-and-pricing).
 
-What it does **not** sell is a provider's own time. An offering is a row rather than a file, is booked rather than added to a bag, and is priced from its own row at the checkout — see [Providers and payouts](/content/docs/running-a-site/selling/providers-and-payouts).
+Provider offerings are booked rather than added to the store bag. See [Providers and payouts](/content/docs/running-a-site/selling/providers-and-payouts).
 
 ## The storefront
 
-Sales → **Storefront** is one record: the front of the store. Its hero (an eyebrow, a title — one run may be italicised with `*asterisks*`, the only mark it takes — a sub-line, a primary button and a quiet second one), and a set of **switches**: show the collection tiles, the featured rail, the editions band (what is inside every copy), the membership band, and the book online as a way to have it. Under the hero three printed books stand: the best seller of the last ninety days in the middle (earned from paid purchases at build time — never a field), or else the longest featured book; either side the shortest and the longest of the rest. `heroBooks` overrides the choice and is normally left empty. The store's ground is the landing's ground, in the look's colours. A book does not have to be **in print** to stand there: a shop that sells its books online and nothing else stands up its own covers, and the three are ordered by how much text each book holds. A press that fills the gap with a photograph of its shelf instead gets a flat panel where the books should be, so leave `heroImage` empty unless the picture is the point.
+Edit the store home page in Sales → **Storefront**. Set the hero eyebrow, title, subtitle, primary button, and optional secondary link. One part of the title may be italicized with a single `*...*` pair. Use the switches to show or hide collection tiles, featured products, the editions explanation, membership offers, and online book access.
 
-A press selling printed books alone keeps every switch but the shelves off.
+The hero shows up to three books when books are available for sale. By default, the book with the most paid purchases in the last 90 days is centered if it is available; otherwise the longest featured book is centered, falling back to the longest available book. The side books are selected by length from the featured books when at least three are featured, or from all available books otherwise. Set `heroBooks` to choose the display manually. Books without a print edition can still appear, using their regular covers. Set `heroImage` only when the image is intended to replace the book display.
+
+If the store sells printed books only, leave the online-access, membership, and editions switches off.
 
 ## Products
 
@@ -59,7 +61,7 @@ Sales → **Products**: one file per thing a person can buy, and the file is the
 | **tracked**, **backorder**                                | Whether the stock is counted, and whether it may be sold past zero. Never _how many_ — that is kept in the shop                                                                                                                                                                                                                                                                                         |
 | **compare**, **rating**, **reviews**                      | An old price as written, struck through beside the price on the card and the spotlight; stars out of five and how many reviews, under the price                                                                                                                                                                                                                                                         |
 
-The body is the long description; its `## ` sections become the details panels of the product page.
+The body is the product's long description. Each `## ` heading becomes a details panel on its product page.
 
 **A printed book's page previews.** The product gallery prefers the edition's generated page
 images. If a fresh deploy has no such images because print generation was skipped, the same slides
@@ -71,16 +73,13 @@ does not run Typst or create a PDF; line wrapping and pagination are not the pri
 On phones, readers can swipe left or right one slide at a time or tap the position
 dots; vertical swipes still scroll the page.
 
-**A product with no picture.** A membership and a session have nothing to photograph. Their card sets the product's own title on a ground made from its name, so a shelf never comes out with a hole in it; their product page simply leaves the gallery out and the words come first. Nothing has to be invented to fill a frame.
+Membership and session cards use a title treatment instead of a product photo. Their product pages omit the image gallery.
 
 Nothing reads Stripe to show a price. The store, the product page and the pricing page render from the files alone, so the store looks the same locally with no Stripe account at all.
 
-## The shapes a thing is sold in
+## Product options and variants
 
-A product may be sold in more than one shape — a notebook in linen or leather, ruled or dotted;
-a shirt in three sizes and two colours. **Options** are what a buyer chooses between; the
-**variants** are every combination of them, and they are worked out for you. Nobody types a
-combination and nobody keeps a list of them in step.
+A product may have options such as material, size, or colour. The store generates each available combination as a variant; you do not enter combinations by hand.
 
 In Store → Products the editor shows the options as rows — a name, and the values as chips you
 add, reorder by dragging and remove — and beneath them a table of every shape that follows,
@@ -92,33 +91,22 @@ with three things you may set on each:
 | **Its own sku** | Blank means the one made from the product’s (`notebook-leather-lined`), which is what Stripe and a warehouse see. Fill it in where you already have a code for that shape |
 | **Sold**        | Turn it off for a combination you do not make. It stays on the page, struck through, rather than disappearing                                                             |
 
-### When the supplier says what the shapes are
+### Sync options from a supplier
 
-Where you sell something somebody else makes, the colours and the sizes are not yours to invent:
-they are whatever that supplier is running this month, and they change without telling you. So a
-product may name its **supplier**, and where that supplier publishes a catalogue the editor shows
-**Read the catalogue again**. What comes back is written into the product as ordinary option rows,
-marked with whose they are — you cannot type over them, and you do not have to keep them in step.
+If a product names a supplier with a catalogue, use **Read the catalogue again** in the product editor to refresh its options and values. Supplier-managed options are read-only in the editor.
 
-A value the supplier has stopped making is **struck through and kept**, never deleted. Every shape
-that holds it goes off sale at once and the till refuses one, but an order already placed still
-reads as the words the buyer chose — which it would not if the row had gone. Bring the colour
-back into the catalogue and it sells again; there is nothing to tidy up. Your own _Sold_ switches
-are untouched by a refresh: those are your decision, and this is news.
+If a supplier removes a value, the editor keeps it for existing orders but marks every variant using it unavailable. The store refuses new orders for those variants. If the supplier restores the value, it becomes available again unless you have manually turned off its **Sold** switch.
 
 Most suppliers publish no catalogue — a printer makes what it is sent — and then the options are
 yours as usual. [Suppliers](/content/docs/reference/suppliers) has the whole of it.
 
-**Why a withdrawn shape is shown rather than hidden.** If values appeared and vanished as the
-buyer picked other options, the page would read as broken. So Plain is visible and unpressable
-while Leather is chosen, and comes back when they choose Linen.
+Unavailable values remain visible but cannot be selected, so buyers can understand why some combinations are unavailable.
 
 The price on the page follows the choice: before anything is picked it says _from_ the cheapest,
 because any single number would be one somebody is not charged; where every shape costs the same
 it simply says the price.
 
-**Sizes alone.** A shop that only needs sizes may write `sizes: [S, M, L]` instead, which IS one
-Size option — the same mechanism written short, not a second one.
+For size-only products, use `sizes: [S, M, L]`; it creates a single Size option.
 
 > **Two things worth knowing before you reorder options.** The order you write them in is part of
 > each shape's identity, so moving Colour above Size renames every shape and anything already in
@@ -127,7 +115,7 @@ Size option — the same mechanism written short, not a second one.
 > was made with, so a purchase from last year still reads "Leather · Lined" after you have
 > reworded it to "Full-grain leather".
 
-## What is left
+## Track inventory
 
 Turn **Count the stock** on for a product whose units run out, and the shop keeps the number —
 per shape, so linen and leather are counted separately. **Sell past zero** keeps the thing on
@@ -147,7 +135,7 @@ in the bag, and the checkout refuses it; with **Sell past zero** on, none of tha
 reserved, and if they wander off the reservation is released when the checkout expires, so one
 abandoned basket cannot hold your last unit all day.
 
-## A sale, a members’ rate, a second currency
+## Set price lists and promotions
 
 Sales → **Price lists**. A product’s own price is the usual one; a list is a further price for
 some people, some of the time, or in another currency. Each list says what **kind** it is — a
@@ -177,15 +165,15 @@ at the checkout, which is Stripe’s limit rather than ours.
 > any one line. Storing the discounted price instead meant the bag discounted it a second time,
 > which is the kind of error that costs money and shows nothing.
 
-## Stripe is made to match
+## Sync offers with Stripe
 
 Stripe is kept in step _from_ the files, never the other way round. At deploy, and again just before every checkout, the offers are pushed: a Stripe product is found by the offer's key or created, its price found by the same key or created. A changed price makes a new Stripe price under the same key and retires the old — an existing subscriber stays on what they signed up at. The shopper's browser sends skus, never amounts, and a sku the files do not declare is refused.
 
-## Collections
+## Organize products into collections
 
 Sales → **Collections**: a title, subtitle, tile image, order, featured, and a curated list of products. The storefront shows them as tiles and shelves in the order you set.
 
-## A book's store page
+## Book product pages
 
 A book in print has **one store page** (`/store/products/<slug>`) carrying every way to have it: read online first (the unlock — "yours" when it is), then what is printed and what downloads, with the buyer's choices (contents; a hardcover's cloth and foil) made on the page. A card for a book shows **the book**, standing on the paper with no box round it, at the main offer's price ("From" when a dearer format exists) — the printed cover sheet where there is one, its own cover where there is not. Never a photograph of a cover in a shadowed box: that is what the gallery on the product page shows too, where the first slide is the book itself. The card's room is the book's own 2:3, so the quick-add pill spans the book rather than floating over bare paper beside it. Buying a printed copy or a file opens nothing online; only the unlock does.
 
@@ -193,20 +181,20 @@ A book in print has **one store page** (`/store/products/<slug>`) carrying every
 
 Where the store ships and what it charges are the storefront's **shipping** settings: a whitelist of countries or a blacklist, a default price with per-country overrides (US $5, the rest $15, say), and the methods a buyer may choose — each a printer's shipping level (standard, priority, express) with a surcharge and a delivery estimate. The buyer picks the destination on the site first (the bag and the product page ask), and checkout is made for that country alone. The printer ships straight to the buyer; what the buyer paid for shipping is the site's.
 
-## Checkout, guests, files
+## Checkout, guest purchases, and downloads
 
 A bag of printed copies and files alone checks out **without an account**: Stripe asks the email itself, the purchase and the print order are written under that address, and when an account is later made with it, the purchases move onto the account. A paid session may also be booked as a guest when the site opts out of sign-in with `coaching.requireAuthToBook: false` and that session admits `anyone` or `guest`; Checkout must contain only that one session and its selected time. Its booking uses the email Stripe returns, not an address supplied by the browser. A verified account with that same address can later claim its booking and any unused session credit. Other session bookings, memberships, and online unlocks still require sign-in.
 
 A buyer of a download — or of a printed copy whose format includes the files — gets **every** edition of that file, whichever they chose at print time; the store page and the person's cover page show them under _Your files_, as links good for an hour, minted on request.
 
-## After a sale
+## Manage orders
 
 The buyer gets the order's confirmation email (with the files' letter when a file is in it) and, later, the parcel-shipped email with tracking. A print order is written and sent to the printer the moment the payment lands. Sales → Print Orders follows it. The purchase shows in Analytics, and the buyer's account becomes _paid_ for every rule that reads it.
 
-## Testing the store locally
+## Test checkout locally
 
 With `STRIPE_MOCK=1` in the local settings, every buying path completes on the spot with no Stripe account: a purchase, a subscription, a switch of plan, a cancellation. The deploy refuses a mock switched on. A mock purchase differs from a real one only by its ids.
 
-## Comments
+## Product comments
 
 A product takes them with `comments:` in its own file. See [Comments](/content/docs/building-a-site/comments).

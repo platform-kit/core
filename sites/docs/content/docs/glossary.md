@@ -1,70 +1,74 @@
 ---
-
 title: Glossary
 description: The words these docs use, in one place.
 order: 3
-sources: [packages/kit/build/site.mjs, packages/kit/src/lib/router.js, packages/movable-types/src/pages/AdminPage.vue]
+sources:
+  [
+    packages/kit/build/site.mjs,
+    packages/kit/src/lib/router.js,
+    packages/movable-types/src/pages/AdminPage.vue,
+  ]
 reviewed: 2026-10-11
 ---
 
-**Site.** One installation of the platform: a config file, a folder of content, a palette, and whatever it registers on top. Northlight Press (the demo) is a site; this documentation is a site.
+**Site.** One PlatformKit website and its configuration, content, visual design, and site-specific features. The generic demo and this documentation site are separate sites.
 
-**The kit.** `@platform-kit/kit` — everything with no pixels: the content pipeline, the build, the database, the store, memberships, chats, funnels, emails, print production, spoken books, the deploy, the command line.
+**The kit.** `@platform-kit/kit` — shared code for content processing, the CLI, build and deploy, database declarations, APIs, and application services such as checkout, memberships, messaging, email, and print production.
 
-**The theme.** `@platform-kit/movable-types` — everything somebody or an editor sees: every page, component, screen and stylesheet. A site may replace any piece of it by name.
+**The theme.** `@platform-kit/movable-types` — the pages, components, admin screens, and styles that users see. A site can replace a theme component by name.
 
-**Form.** A forms.md document under `content/forms`: slides, fields, conditions and bindings, run by the kit's runner on its own page, on a landing page or embedded on another site, every answer kept as it is given. See [Forms](/content/docs/running-a-site/marketing/forms).
+**Form.** A record under `content/forms/` that defines its questions, answer types, conditions, and completion behavior. A form can have its own page, appear on a landing page, or be embedded on another site. See [Forms](/content/docs/running-a-site/marketing/forms).
 
-**Deployment shape.** Which of three a site is, declared in its config as `deployment: { backend, content, repo }`: **static** (a build and a static host, no Supabase, deployed CMS or authentication), **git** (a repository and a backend; content may be files or rows, and publishing commits and rebuilds), **cloud** (a backend and no repository; Supabase rows are the source of truth and nothing rebuilds). A backend site with row-backed content includes its production CMS whether or not it has a repository. See [The three deployment shapes](/content/docs/building-a-site/deployment-modes).
+**Deployment shape.** The site's runtime and publishing arrangement, declared with `deployment: { backend, content, repo }`: **static** serves built files without a backend; **git** uses a repository and backend, and published changes are committed and rebuilt; **cloud** uses a backend without a repository, and database rows are the source of truth. A backend site with row-backed content has a production CMS. See [The three deployment shapes](/content/docs/building-a-site/deployment-modes).
 
-**Row-backed content.** Content stored in Supabase rows rather than files (`CONTENT_STORE=cloud`): the production CMS is included and published edits become live. When a repository is in the publish cycle, those edits are committed back to it and rebuilt; without a repository, the rows are the only source. See [Cloud mode](/content/docs/running-a-site/settings/cloud-mode).
+**Row-backed content.** Content stored in Supabase instead of files (`CONTENT_STORE=cloud`). Each record has a draft and a published version. Publishing makes the draft live; if the site has a repository in its publish cycle, publishing also commits the change and triggers a rebuild. See [Cloud mode](/content/docs/running-a-site/settings/cloud-mode).
 
-**Content model.** A kind of content of the site's own — teachers, events — defined in the admin as fields with kinds and rules, its entries markdown under `content/models/<key>/`, its pages under `/c/<key>`. See [Content models](/content/docs/running-a-site/content/content-models).
+**Content model.** A site-defined record type, such as an event or teacher profile. The model specifies the fields; entries are stored under `content/models/<key>/` and can be published on `/c/<key>`. See [Content models](/content/docs/running-a-site/content/content-models).
 
-**Module.** A part of the platform a site can switch on or off in its config: the store, print, memberships, sessions, coaching, support, social publishing, spaces, events, funnels, emails, forms, models, the instrument, recommendations, translation, tts, enrichment, push. Off means gone — the pages, the nav link, the admin sections, and the settings the deploy would otherwise demand.
+**Module.** A feature group that a site enables or disables in `platformkit.config.js`, such as the store, forms, support desk, or email campaigns. A disabled module contributes no routes, navigation, admin screens, build steps, or deployment-secret requirements.
 
-**The admin.** The surface at `/admin`: local development has the full CMS; production has content editors when content is row-backed, plus live views allowed by staff role. A static deployment has no deployed admin or authentication.
+**The admin.** The site's editing and operations interface at `/admin`. Local development exposes the CMS. Production exposes content editing for row-backed sites and operational screens according to the site's modules and the staff member's role. Static sites do not deploy an admin or authentication.
 
-**Collection.** One kind of content: articles, wiki, docs, books, companions, ads, products, collections (of products), pages, sessions, experiments, funnels, blasts, email designs. Each is a folder of files under `content/`.
+**Collection.** A group of records with the same fields, such as articles, books, products, pages, or email designs. File-backed collections are stored under `content/`.
 
-**Published.** The switch every record carries. Off, the file stays on disk and in the admin and is left out of the build.
+**Published.** A record's visibility setting. An unpublished record stays editable but is excluded from the public site and its indexes. Its file remains in a file-backed site; its draft remains in cloud storage.
 
-**Frontmatter.** The block of fields at the top of a markdown file, between `---` lines. The admin edits these as form fields; a developer may edit them by hand.
+**Frontmatter.** The structured fields between the opening `---` lines of a markdown record. Editors change these through form controls in the admin; developers can edit them in the file.
 
-**Look.** A palette: one CSS file of colour and font tokens the whole design wears. A site names its looks in the config and picks one in Site settings.
+**Look.** A site's colour palette and font tokens. The site registers available looks in its configuration and selects one in Site settings.
 
-**Landing page / section.** A page of the site (`/`, `/pricing`, `/about`…) built from an ordered list of sections — Hero, How, Pricing, Close and so on — each with its own fields, arranged in the page builder.
+**Landing page / section.** A public page assembled from ordered sections such as a hero, pricing block, or FAQ. Editors add, configure, and reorder sections in the page builder.
 
-**Strings.** Every word of the interface — labels, buttons, empty states, prompts — kept in markdown files under `content/app/ui/`, one per scope, and edited under Settings → UI strings. The theme ships defaults; a site changes only the words it wants to.
+**Strings.** Editable interface copy—labels, buttons, empty states, prompts—stored in markdown under `content/app/ui/`. Editors manage it in Settings → UI strings. Theme defaults are used wherever the site has no override.
 
-**Companion.** A book's second file: a summary, the key ideas and a five-question quiz for every chapter, plus the one-line insight shown wherever the book is recommended.
+**Companion.** A record paired with a book. It can contain chapter summaries, key ideas, quiz questions, and a short recommendation blurb.
 
-**Highlight (a mark).** An editorial underline baked into a book's text, colour-coded by theme, distinct from a person's own highlights.
+**Highlight (a mark).** An editorial underline included in a book's text and marked with a colour. It is separate from highlights a reader adds.
 
-**Edition.** One printed or downloadable version of a book: which contents, at which trim, with which cover — made by the build, kept in a private bucket, sold through the store.
+**Edition.** A specific printed or downloadable version of a book, defined by its contents, trim, and cover. The build creates the edition files; the store can sell them.
 
-**Offer / sku / key.** What the store sells. The sku is the slug (the product's address); the key is its permanent identity, eight characters given once and never edited, which Stripe and every purchase are attributed by.
+**Offer / sku / key.** An offer is an item the store sells. Its `sku` is the offer's URL-safe identifier and may change; its permanent `key` is the identity used to match the offer with Stripe records and purchases.
 
-**Tier.** A membership level. Any number of offers (weekly, monthly) may belong to one tier; a higher rank includes everything below.
+**Tier.** A membership level with a rank. Multiple offers, such as weekly and monthly plans, can provide the same tier; a higher rank includes lower-ranked tiers.
 
-**Session.** A coaching call, booked in the app through the native scheduler or cal.com; `sessions` the module that offers them. A site may require sign-in or allow guest booking, while each session's own access rule still applies.
+**Session.** A bookable appointment, such as a coaching call. The `sessions` module can use PlatformKit's scheduler or cal.com; each session record sets its price and access rules.
 
-**Coaching chat.** The members' chat with the coaches, one thread per member per coach.
+**Coaching chat.** Private conversations between members and coaches, with one thread for each member–coach pair.
 
-**Support desk.** The support chat for guests and account holders — a widget on every public page, an inbox for the staff — kept entirely apart from coaching.
+**Support desk.** A public chat widget for guests and signed-in readers, connected to a staff inbox. It is separate from coaching chat.
 
-**Funnel / blast / prompt.** A funnel is a sequence of emails sent to an audience over days; a blast is one email sent once; a prompt is a funnel step that appears as a chat popup in the browser instead of an email.
+**Funnel / blast / prompt.** A funnel sends a sequence of scheduled emails to matching accounts. A blast sends one campaign to an audience. A prompt is a funnel step that appears in the browser as a support-chat prompt instead of an email.
 
-**Audience.** The rules that pick who a funnel or blast goes to, written from what the account knows: how long inactive, what was bought, the membership tier, what was read.
+**Audience.** Rules that determine which accounts qualify for a campaign, based on account activity, purchases, memberships, reading, or other supported account data.
 
-**The plan.** What brings a database to the declared schema: the renames, the diff, the data script. Computed by `platformkit migrate --plan`, applied by the deploy.
+**Migration plan.** The proposed database changes needed to match the declared schema, including supported renames, schema differences, and the data script. Preview it with `platformkit migrate --plan`; deploy applies the plan after its safety checks.
 
-**The declaration.** The database's schema as files describing its end state — never a migration.
+**Database declaration.** Schema files that describe the database's intended end state. PlatformKit compares that declaration with the database; sites do not write migrations.
 
-**Supabase.** The hosted Postgres, auth, storage and edge functions the platform runs on. Locally a copy runs in Docker.
+**Supabase.** The backend PlatformKit uses for Postgres, authentication, file storage, and edge functions. Local development runs a Supabase stack in Docker.
 
-**Edge function.** A small server-side program (Deno) run by Supabase: the checkout, the webhooks, the support chat's door, the emails, the push notifications.
+**Edge function.** Server-side code deployed to Supabase for work such as checkout, webhooks, support requests, email, or push notifications.
 
-**Instrument.** A site's own module for readings (the diagnostics, the personality and word tests), their scoring and their results sheet. A site may have one, or none.
+**Instrument.** An optional site module for assessments, scoring, and results pages, such as diagnostics or personality and word tests.
 
-**OpenSpec.** The way a change to the platform is proposed, built and verified: a proposal read before code, spec deltas, tasks, a verification report.
+**OpenSpec.** The workflow used to propose and implement platform changes: define the requirements, implement the tasks, then verify each requirement before archiving the change.

@@ -1,12 +1,20 @@
 ---
 title: Print editions
-description: Putting a book on sale in print and as files — the block on the book, the Print Products page, setting the editions, proofs, the publisher's note.
+description: Putting a book on sale in print and as files — the block on the book, the Print editions page, setting the editions, proofs, the publisher's note.
 order: 21
-sources: [packages/movable-types/src/components/admin/PrintAdmin.vue, packages/movable-types/src/components/PrintOrders.vue, packages/kit/build/print.mjs, packages/kit/build/print/block.mjs, packages/kit/src/lib/print-offers.js]
-reviewed: 2026-10-01
+sources:
+  [
+    packages/movable-types/src/components/admin/PrintAdmin.vue,
+    packages/movable-types/src/components/PrintOrders.vue,
+    packages/movable-types/src/pages/AdminPage.vue,
+    packages/kit/build/print.mjs,
+    packages/kit/build/print/block.mjs,
+    packages/kit/src/lib/print-offers.js,
+  ]
+reviewed: 2026-10-11
 ---
 
-A book is sold in print — and as PDF and EPUB — by a block of settings on the book itself, edited on Sales → **Print Products**. There is no separate product file: the offers are derived from the book, one store page per book, one line per format.
+A book is sold in print — and as PDF and EPUB — by a block of settings on the book itself, edited on **Store → Print editions**. There is no separate product file: the offers are derived from the book, one store page per book, one line per format.
 
 ## The index
 
@@ -14,15 +22,15 @@ Every book, with the state of its sale: each format on sale at what price (or wh
 
 ## The editor's panels
 
-**Edition.** Which *contents* the buyer may choose — `parts` (Part One, the publisher's own edition: the whole book rewritten for today, chapter by chapter; Part Two, the original full text), `full` (the text alone), `summary` (the edition alone), `both` (the text, each chapter followed by its companion); the first is the default and every one is an edition of its own. The trim (6×9 or 5×8), the paper (cream or white), the default cloth and foil colours as swatches, a **spine title** (a shorter title for a long one, counted against the foil's 25 characters — the field refuses more), and whether the page mentions the book online.
+**Edition.** Which _contents_ the buyer may choose — `parts` (Part One, the publisher's own edition: the whole book rewritten for today, chapter by chapter; Part Two, the original full text), `full` (the text alone), `summary` (the edition alone), `both` (the text, each chapter followed by its companion); the first is the default and every one is an edition of its own. The trim (6×9 or 5×8), the paper (cream or white), the default cloth and foil colours as swatches, a **spine title** (a shorter title for a long one, counted against the foil's 25 characters — the field refuses more), and whether the page mentions the book online.
 
 **Formats & prices.** A row per format — softcover, hardcover, premium (cloth boards, foil, a ribbon, sprayed edges), pdf, epub — each with its switch and either a **price** as written or a **markup** in dollars over what its printer charges to make one copy, rounded up to the next $5 (the markup sits on the costliest contents the buyer may choose, so it is a floor). The hardcover's cloths and foils: one, or the buyer's choice among several (a jacket is rendered for each combination). What comes with a printed copy (the files). The rights line — without which nothing is set or sold. The offer's key, read-only.
 
-**Printers.** For each printed format, a printer by name (Lulu, Mixam, Bookvault) or *the cheapest available* by a real quote; under it a live quote from every printer that could make it, at the draft's page count, with what the format would then sell for; then a card per printer in play with its own options (Lulu's case style; Mixam's lamination and jacket; Bookvault's paper, cloth, foil colour and positions, ribbon, bands, endpapers, sprayed edges), every change re-quoted. A printer with no keys says so and quotes as the mock.
+**Printers.** For each printed format, a printer by name (Lulu, Mixam, Bookvault) or _the cheapest available_ by a real quote; under it a live quote from every printer that could make it, at the draft's page count, with what the format would then sell for; then a card per printer in play with its own options (Lulu's case style; Mixam's lamination and jacket; Bookvault's paper, cloth, foil colour and positions, ribbon, bands, endpapers, sprayed edges), every change re-quoted. A printer with no keys says so and quotes as the mock.
 
 **Jacket.** The **blurb** (two short paragraphs written for the back, under the companion's insight as a pull quote — never the site's copy reused) and the **flap** (what the book and its author are). Every book carries its jacket copy whether or not it is on sale.
 
-**Note.** *A Note on This Edition*, the publisher's page — see below.
+**Note.** _A Note on This Edition_, the publisher's page — see below.
 
 Beside the panels, the book itself: the interior as a book to turn, page by page; a select for the contents and for the cover when there is more than one; the EPUB to download; the cover flat.
 
@@ -33,7 +41,7 @@ Beside the panels, the book itself: the interior as a book to turn, page by page
 **Set the editions** does the real thing: the files go to the private print bucket, the printers quote and check them, a printer that keeps a title (Bookvault) is asked for one (the confirmation names it — a title costs a fee once), the store's index is updated, and the book is on sale. An edition is identified by a hash of the text, the templates, the trim, the colours and the cover picture, so an edition already set is never set twice, and a changed word is a new one. The deploy sets any book flagged since the last deploy, too.
 
 On a site with **no build box** — a cloud-only deployment, where nothing rebuilds — the pictures a
-listing shows are drawn by *your own browser*, straight after the set, from the files that were just
+listing shows are drawn by _your own browser_, straight after the set, from the files that were just
 made: the cover the shop draws the book from, and three pages of the interior. It says how many it
 drew beside what it set. They are not a condition of the sale: the book is priced and orderable
 first, and where a browser cannot draw them the listing simply shows the book alone. Keep the page

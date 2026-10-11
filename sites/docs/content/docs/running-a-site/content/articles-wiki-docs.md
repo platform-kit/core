@@ -2,8 +2,14 @@
 title: Articles, wiki and docs
 description: The three prose collections — a magazine, a canon, and a manual — and how each is arranged.
 order: 13
-reviewed: 2026-10-02
-sources: [packages/movable-types/src/components/content/TreeSection.vue, packages/movable-types/src/components/content/ArticleView.vue, packages/movable-types/src/components/content/ArticleIndex.vue, packages/movable-types/src/pages/ContentPage.vue]
+reviewed: 2026-10-11
+sources:
+  [
+    packages/movable-types/src/components/content/TreeSection.vue,
+    packages/movable-types/src/components/content/ArticleView.vue,
+    packages/movable-types/src/components/content/ArticleIndex.vue,
+    packages/movable-types/src/pages/ContentPage.vue,
+  ]
 ---
 
 Three collections hold prose, and they differ in how they are read.
@@ -16,7 +22,7 @@ At the foot of every article is the site's **close** — a question and a button
 
 ## Wiki
 
-The canon, page by page, at `/content/wiki`: pages arranged in **folders**, each folder a section, ordered by the `order` field. The wiki page is editorial — a hero (an optional cover), a reading panel, a navigation tree down the side, an on-this-page rail, related pages. The rail breaks a heading anywhere it has to: a reference page's headings carry paths — `Promotions — content/store/promotions/*.md` — and a path has no spaces to wrap at, so without it the widest entry pushed the whole page sideways by however much it could not fit. Nothing looked wrong; the page simply scrolled horizontally.
+The canon, page by page, at `/content/wiki`: pages arranged in **folders**, each folder a section, ordered by the `order` field. Readers can browse the navigation tree or jump to a heading in the page; a page may also have a cover.
 
 Files live under `content/wiki/`, and a folder becomes a section whose title is the folder's name, prettified (`getting-oriented` → "Getting oriented"). A page's **related** field lists other pages by id to show at its foot.
 
@@ -32,7 +38,7 @@ A site configured down to the docs alone — the other kinds off, nothing on tha
 
 ## Where they show up
 
-All three are in the site-wide search (⌘K), in the sitemap, and on the content hub at `/content` alongside the books. Each records a *content view* event when read, which is what the analytics count and what the funnels' *interest* rule reads.
+All three are in the site-wide search (⌘K), in the sitemap, and on the content hub at `/content` alongside the books. Each records a _content view_ event when read, which is what the analytics count and what the funnels' _interest_ rule reads.
 
 ## Comments
 

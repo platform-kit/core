@@ -44,47 +44,30 @@ sources:
     packages/movable-types/src/content/ui/library.md,
     packages/kit/src/lib/call,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-11
 ---
 
-Two modules: `sessions` (booking calls) and `coaching` (the members' chat). A coach is anybody holding the **coach** role — and an administrator, who reaches everything. Nothing asks for the name of a role to find out: `is_provider()` in the database, `isCoach` in `_shared/roles.ts` and in `lib/auth.js` are the one answer, and `is_coach(uuid)` asks it about somebody else (which is how `chat_open` knows the person being written to is a coach).
+This guide covers booking setup, provider availability, and the coaching chat. A provider has the `provider` role; older accounts with the `coach` role are still recognized. Administrators can manage bookings and assign provider roles. The booking rules below apply whether a type is scheduled by the site or by cal.com.
 
-A voice note in the coaching chat arrives with a transcript under it, written down by the browser
-while it was recorded.
+A voice note in the coaching chat includes a transcript created in the browser during recording.
 
-Copilot voice sessions also use LiveKit: the `copilot-llm` function mints a room token whose signed room configuration dispatches the `copilot` agent and carries its bounded session grant as metadata. This is separate from booking a coaching session; see [Bots, tools and commands](/content/docs/building-a-site/bots).
+Copilot voice calls are separate from booked coaching sessions. See [Bots, tools and commands](/content/docs/building-a-site/bots).
 
-**A type that happens at a fixed time.** Two kinds of thing are booked and they are not the same.
-Most are _whenever suits us_: the host's open hours less what is taken, and the person picks. But a
-weekly group call happens at seven on Tuesday whether anybody books or not, and offering that as an
-open calendar is both wrong and a great many empty slots. So a type may say `repeats:` in its own
-file — the same recurrence grammar as everything else here (`every`, `on`, `at`, `zone`,
-`interval`, `until`, `except`) — and then **its occurrences are its bookable times**: the hosts'
-hours are not asked, because the time is the point, and an occurrence already full is simply not
-offered (one seat for a one-to-one, as many as `seats` says for a group). A host who is busy
-cancels the occurrence rather than quietly making it unbookable. It is for a type this site
-schedules; cal.com keeps its own calendar, and the compile says so rather than letting it pass.
+**Fixed-time sessions.** Most booking types offer times from a provider's availability. If a group meets at a set time whether or not anyone books, configure `repeats:` on a site-scheduled type instead. Its generated occurrences are the bookable times; provider hours do not apply. An occurrence is hidden when it has no seats left. Cancel an occurrence if the provider cannot attend. Fixed-time recurrence is not available for cal.com-scheduled types. Times follow the configured time zone across daylight-saving changes.
 
-The wall time wins across a clocks change, as it does everywhere else here: a call at seven in
-London is at seven in London in November, which is a different hour in UTC from the one in
-September.
-
-A session type may say **when it is bookable by default** (`hours` in its file: a timezone and a
-weekday-to-ranges week). A host who sets their own hours replaces it entirely — it is a default and
-never a cap — but it means a site deployed from its folder offers times on the first day instead of
-an empty calendar until somebody opens the Coaching tab. (Where a site keeps coaching in the community — `coaching.where: spaces` — a member books from their coaching place there, the **Sessions** tab beside **Chat**: the same page, the same booker and the same rules; the sheet's Coaching tab stays only for a host, for their hours, offerings and earnings. Within the community coaching page, **Book a session** is the first, default-selected tab, so `/community/coaching` opens directly to the calendar; upcoming and past sessions follow.)
+A type may also declare default availability in its `hours` field. Provider-specific hours take precedence over that default. This lets a new site offer times before providers have configured their own schedules. If `coaching.where: spaces`, members book from the **Sessions** tab in their community; providers still manage hours and offerings from the Coaching area.
 
 ## Booking types
 
-Sales → **Booking types**: one record per way to book — an _appointment_ of any kind, never only a video call. A title, one line, a price as written, **requires** (`anyone`, `guest`, `authenticated`, a tier slug meaning that tier and every higher rank, or **a list of tier slugs meaning exactly those** — see below), optionally **below** (a tier the option is hidden from and up), how many a **week** or a **month** the option allows (0 = no limit), Published — and **who schedules it**.
+In Sales → **Booking types**, create one type for each appointment or group session. Set its title, description, price, eligibility (`requires`), optional membership-tier cutoff (`below`), weekly or monthly booking limits, publication status, and scheduler.
 
 Whether sign-in is required to book is controlled by `coaching.requireAuthToBook` in `platformkit.config.js`; it defaults to `true`, so existing sites remain sign-in-only. When a site sets it to `false`, a signed-out visitor may book only a session whose `requires` rule is `anyone` or `guest`. `session-slots` returns availability only for those types without a JWT; provider-specific and member-specific reads remain authenticated. A free guest booking asks for a valid email and records the booking under that address. A paid guest booking goes through Checkout with one paid session and the selected time; fulfillment uses the email returned by Stripe, never a typed email. The same judge still enforces session eligibility and allowances. A slot is not held while Checkout is open. If it is taken before payment completes, the payment remains recorded and its unused credit can be claimed by an account only after that account verifies the same email address. Moving or cancelling a booking remains an account action.
 
-**Scheduled by this site** (the default): the type says its **length** in minutes, its **hosts** (the accounts that give it, by email — the least recently booked free host takes a one-to-one), its **seats** (a group session: how many share one time; 0 is one-to-one), **breathing room** and **minimum notice** of its own on top of the host's, and **where it happens** — a video room on this site (`video`; the room itself comes with the video module), a link (`link`, a URL), in person (`place`, a name and an address), by phone (`phone`, a number to call, or blank to ask the person's at booking), or nowhere in particular (`none`: a consultation, a delivery window). A video room is the one kind with a provider: LiveKit on this site, Cal Video for a cal.com type; the rest need none and are untouched by any of it. The open times are the hosts' own hours less their bookings, computed by the site; a booking is the site's own row from the moment it is made, and a time is never booked twice — two people confirming the same last time are answered _taken_ for the second.
+**Scheduled by this site** (the default): set the session length, hosts, seats for group sessions (use 0 for one-to-one), buffer time, minimum notice, and location. Locations can be a site video room, a link, an address, a phone number, or none. Available times are calculated from host hours and existing bookings. If two people try to book the last slot, the first booking succeeds and the other is told that the slot is no longer available.
 
-**Scheduled by cal.com**: the type carries the **cal.com address** of the event type instead, and cal.com's availability, invites and video link do the rest. A file with a cal.com url and no `scheduler` key is cal.com's, so every existing type keeps working; `scheduler: native` written outright is the site's whatever else the file holds. A site whose every type is its own needs no cal.com account at all — the demo runs that way.
+**Scheduled by cal.com**: enter the event type's cal.com URL. If a type has a cal.com URL and no `scheduler` value, cal.com schedules it. Set `scheduler: native` to keep scheduling on the site. A site that schedules every type itself does not need a cal.com account.
 
-## A provider's own offerings
+## Provider offerings
 
 A booking type is a file, because what the _business_ sells is part of what the business is. A
 **provider's offering** is a row, because the moment the thing being sold belongs to one named
@@ -92,7 +75,7 @@ person a file would be a declaration about that person. Where a site has turned 
 appear in one booking surface and each offering says whose it is; everything that follows a booking
 is the same. See [Providers and payouts](/content/docs/reference/suppliers).
 
-## Whose time a booking takes
+## Prevent overlapping bookings
 
 A booking says who its **host** is; a row of `booking_holds` says whose _time it takes_, one per
 person. They are not the same thing, and separating them is what lets a collective session take
@@ -114,9 +97,9 @@ hold stops is something _else_ taking that hour.
 
 A host — any account that gives appointments, and an administrator — can book a session for other people: on the Coaching page's **Settings** tab (**Book for someone**, beside _Your hours_) and from Sales → Bookings (the same booker), choose a type (every published one, whatever the host's own tier), name the invitees by email — accounts or plain addresses, as many as the type seats — pick a time from the host's hours, and book. Nothing is judged, no credit is spent and nothing is charged: it is the host's courtesy (a client who missed a paid call, rebooked without paying again) or the record of a sale made elsewhere. Every invitee is on the booking — it is on their Coaching tab marked _Booked by …_, they get the booked email with the invitation, they enter the room when there is one — and it counts against no one's allowance. A cal.com type is booked the same way through cal.com, as the first invitee.
 
-## A tier says what it includes
+## Include sessions in a membership
 
-### Tiers are not a ladder unless you ask for one
+### Choose exact tiers or a tier rank
 
 A single slug in `requires` is a shorthand: _that tier and every higher rank_. It is convenient and it is an assumption — it says the tiers are ordered and that a higher one includes a lower one, which is true of some sites and not others.
 
@@ -133,7 +116,7 @@ The rule itself is one function, `_shared/sessions/admits.js`, asked by both the
 
 A membership product may carry **Sessions included**: rows of a booking type with how many a week and a month (0 is no limit), edited on the product's drawer as rows — a type from the list and two numbers. Somebody whose live tier lists a type may book it under those counts whatever the type's own `requires` and counts say — a paid type included, no credit asked — so one type serves every tier at its own quota; a tier that lists nothing leaves the types' own rules to decide, as before. The judge and the Coaching tab's options read the tier first, the type second.
 
-## A run of sessions
+## Offer a series of sessions
 
 A type may be booked as a **run** — six weekly sittings, say, all at once. (That is `repeat`, the
 reader choosing how many; `repeats` is the other thing, where the type happens at a fixed time
@@ -155,7 +138,7 @@ because cancelling one of six and being left with five is sometimes exactly what
 sometimes the opposite. The whole run means the ones still to come; a run half attended is half
 attended.
 
-## A group session, and several lengths
+## Set group capacity and session lengths
 
 A type with **seats** is a group: several people share one time. Two switches on its page decide
 what somebody is told — **how many seats are left** (a nudge and a warning at once, and not every
@@ -175,7 +158,7 @@ And a type may say **what the booking is called**, where its title is not what b
 beside four other things: `{reader}`, `{host}`, `{type}` and `{length}` are filled from the
 booking itself.
 
-## When you confirm it yourself
+## Require host approval
 
 A type may wait for the host's word: **always**, or **only inside the minimum notice** — a booking
 three weeks out is fine, one tomorrow morning needs a look, which is the setting most people want
@@ -200,7 +183,7 @@ and leave the person waiting for an answer that is never coming.
 Three designs go with it under Marketing → Emails: **Time held** to the person, **Waiting on you**
 to the host, **Declined** to the person.
 
-## Questions on the way in
+## Ask questions before booking
 
 A type may ask a **form**'s questions between choosing a time and confirming — after the time rather
 than before, because somebody who cannot find an hour that suits should not have answered anything
@@ -218,7 +201,7 @@ the host the wrong person's.
 A form that is **gone or unpublished asks nothing** and the type books as it always did. A booking
 page that refuses because somebody unpublished a questionnaire is worse than one that skips it.
 
-## The booking page itself
+## Configure the booking page
 
 One block on the type says what its page shows and what it lets somebody do afterwards. Every switch
 defaults to yes, so a type that says nothing behaves exactly as every type did before there was one.
@@ -239,7 +222,7 @@ defaults to yes, so a type that says nothing behaves exactly as every type did b
 A **host is not held to these**: they are the person's page's switches, and a host cancels or moves
 a session they are giving whenever they need to.
 
-## What a type limits
+## Set booking windows and limits
 
 A type says its own **grid** and its own **window**, so a host need not write either into their week:
 
@@ -264,7 +247,7 @@ which cap it met, not "that time has gone", because those lead to opposite next 
 
 The calendar and its time list stack when the available picker width is too narrow to use both comfortably, and remain reachable on short screens. The coaching tabs wrap their labels on phones so every action stays inside the available width. If availability cannot be loaded, the reader sees the existing booking error rather than an empty calendar; the underlying failure is logged, and a retry asks for availability again without changing the booking.
 
-## How a type is shared between its hosts
+## Assign bookings across hosts
 
 A booking type names its hosts, or names a **team** whose members give it (`team:` — and then who
 gives it follows the rows, so somebody joining gives it from that moment and nothing is edited).
@@ -301,7 +284,7 @@ rows do not vanish when a rule changes.
 A host booking for somebody asks for **their own** times rather than the union — a time only a
 colleague keeps is no use to them.
 
-## A host's hours
+## Set provider availability
 
 A host — any account that gives appointments; an administrator today — sets when people may book them on their Coaching page's **Settings** tab, under **Your hours**: the time zone, the week as seven rows (a switch per day, its ranges as from · to pickers, up to four a day), breathing room **before** and **after** a session, minimum notice, at most so many sessions a day and so many a week, and **days off and exceptions** (a date, off all day or its own ranges instead of the week's). A host with no hours set is told so on the tab, and no native type offers them. The hours are theirs alone: somebody learns of them only through the open times, and the desk reads them without editing. Until an external calendar is synced, a host blocks outside meetings as exceptions.
 
@@ -309,7 +292,7 @@ A host — any account that gives appointments; an administrator today — sets 
 
 A booking type asks for a set **by name** (`schedule: Evenings` in its file, edited on the type): every host of that type is then read at their own set of that name, and any host who keeps no such set is read at their default — so the type need not know what each host calls things. A type that asks for no set uses each host's default. Where both the host's set and the type say a breathing room or a notice, **the wider holds**: a type asking for more room than the host keeps gets it, and a type asking for less never takes the host's away.
 
-## When you are away
+## Add time off and cover
 
 A stretch of days nobody can book you — a holiday, a course, a week ill — set on the Coaching page's Settings tab
 under **When you are away**. It is kept apart from your hours because it is not a change to how you
@@ -324,15 +307,15 @@ They stand in for those days and no others. With no cover, the days are simply c
 **What is already booked in those days stands.** Being away later is not a reason to cancel what
 somebody has already been promised; cancel the ones you mean to, one at a time.
 
-## From outside the app
+## Connect the scheduling API
 
 The sessions are also served to anything written for **cal.com's API** — the same event types, open times, bookings and webhooks at `https://<domain>/api/scheduling/v2/…` under a key of kind Scheduling from Settings → API, every booking judged as the app judges it — and a booking page at `/book/<slug>` shows the booker on its own, which cal.com's own embed can place on another site (see [the Scheduling API](/content/docs/building-a-site/scheduling-api)).
 
-## What was booked
+## Review bookings
 
 Sales → **Bookings** lists every session — the site's own (tagged _This site_, with where it happens) and cal.com's mirrored — upcoming first, then past — with the attendee (and whether they have an account), the coach, the booking type, how long, the status (upcoming, ended, cancelled, rescheduled, no-show, or refused with why), whether a credit paid for it, the join link while it is upcoming, and the recording once the call has left one. It is an administrator's view of every coach's bookings; a coach's own Coaching tab still shows only the sessions they give.
 
-## A call's recording is ours
+## Store and access recordings
 
 When a Cal Video call ends and cal.com says its recording is ready, the site pulls the file into its own private storage at once — asking cal.com for a fresh link (the one in the webhook expires within the hour) and streaming the file into the `recordings` bucket under the booking, the transcript beside it — and remembers where it is. A pull that does not land yet (the recording still being made, a hiccup) is tried again every ten minutes for a day; the row says _pending_ meanwhile, and _failed_ with the reason after, where Sales → Bookings offers **Fetch again**. A call on Zoom or Meet leaves its recording with that provider, and the row shows nothing.
 
@@ -342,7 +325,7 @@ On the local stack the demo's `.env` carries a placeholder API key and a webhook
 
 One setting to make once on the Supabase project: the `recordings` bucket allows 2 GB per file, and the project's own upload limit (Dashboard → Storage → Settings) must allow that too, or a long call's pull is refused and the row says so — the deploy notes it.
 
-## A video room on the site
+## Offer on-site video calls
 
 A type whose place is **a video room on this site** gets one on [LiveKit](https://livekit.io) where the site has an account — open source, LiveKit Cloud or a server of your own (`LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`) — and, where it has none, **browser to browser**: the people in the call talk to each other directly and the site carries only the signalling. That needs no account and nothing to configure, and the difference is stated rather than hidden — such a call is **not recorded** and carries **five people in total**, everyone counted the same. The deploy asks for an account only for a type whose own content says otherwise (one that records, or seats more than five) and allows every other without a word.
 
@@ -352,11 +335,11 @@ Two people who cannot reach each other directly need a **relay**. Supabase has n
 
 Locally, with no LiveKit keys, the rooms run on a LiveKit server in Docker (`docker run --name lk-dev -p 7880:7880 -p 7881:7881 -p 7882:7882/udp livekit/livekit-server --keys "devkey: secretsecretsecretsecretsecretsecret" --node-ip 127.0.0.1`; point its webhook at the served `livekit-webhook` for the start and the end to land) and a recording is a fixture film the mock puts in the bucket — the whole chain with no account. The deploy refuses `LIVEKIT_MOCK`.
 
-## The site's own emails around a session
+## Configure booking emails
 
 For a session the site schedules, the site sends its own mail — four designs under Marketing → Emails: **booked** to the person and the host when the booking is made, **moved** and **cancelled** to both, and a **reminder** to the person at each of the hours before the session the sending rules name (24 and 1 by default; edited on the Funnels page under _Sending rules_, a field per hour). Every one carries a calendar invitation the person's mail client offers to add — the place in its location, the link as its url, a move updating it, a cancellation withdrawing it — and says the time in each person's own zone. None of it carries a cal.com link; a cal.com booking has cal.com's own emails. The host's first line after the session goes five minutes after its end time, as it does after a cal.com call.
 
-## Booking happens in the app
+## Book in the app rather than cal.com
 
 People book on the Coaching tab of the app, never on cal.com's own page: a month of open days, the day's times, one confirm step — the same screen whoever schedules the type. On a phone the offering summary and time-zone control are compact so every date in the month is visible without scrolling; the times and remaining actions stay reachable in the page's scroll area. For a type the site schedules the app computes the times from the hosts' hours; for a cal.com type it asks cal.com and books through it (hide the event types on cal.com so its pages are not a way around the rules). Upcoming sessions are moved and cancelled from the row: a native session by the person up to the type's minimum notice (_That time is too close — pick one at least {n} hours ahead_) and by its host at any time, who may also mark a no-show after the time; a cal.com session under cal.com's rules (it must allow rescheduling on the event type).
 
@@ -366,22 +349,22 @@ People book on the Coaching tab of the app, never on cal.com's own page: a month
 
 A session record may name a **sku** — a product of kind `session`, billed once. It is paid as it is booked: the picker sends the chosen time with the checkout, the payment grants one credit and books the time with it. If the time went meanwhile, the credit stays and the picker says "Paid — pick a time". Cancelling gives the credit back (a refund is a person's decision in Stripe). A paid session comes with **a week of chat** with that session's coach, from the booking until a week after the session ends. It is read from the booking itself, so moving the session moves the week and cancelling it ends it — and it is not a membership: it opens that one conversation and nothing else in the community.
 
-## Wiring cal.com
+## Connect cal.com
 
 In cal.com → Settings → Developer → Webhooks, subscribe the site's `cal-webhook` function to every trigger with the secret the deploy holds. The coach's cal.com email must be the address they sign in to the site with, or their bookings link by email only. A paid session's event type must carry no price of its own on cal.com.
 
-## The coaching chat
+## Coaching chat
 
 The Chat tab of the app (`/app/chat`): a member's conversations with the coaches, one thread per member per coach, and a coach's inbox of every member who has written. Text with the three marks every composer here offers, voice notes and attachments — a picture shown as the message, anything else a chip, ten megabytes at most, named for its own message in the private bucket and fetched back through the signed-in client — emoji reactions, reply-to, sending · sent · read ticks, unread badges, and an email when the other side is away. A message wears the same marks every other chat surface here offers (bold, italic, struck, code, bullets, a quotation, a link), cut by one parser and drawn by one component. A coach always sends; a member sends while the membership is live and reads after it lapses.
 
 **After a session, the coach writes first.** When cal.com says a meeting ended, a follow-up line (one of several, drawn at random, editable under UI strings → chat) is sent from the host to every attendee five minutes on, in the thread between them, once.
 
-## The coach's inbox
+## Manage coaching conversations
 
 The inbox says what is owed. Each thread waiting on the coach carries a badge — "Reply due in 4h", "Overdue by 2h" (red, and it pulses), or "Awaiting your reply" when the member has no promised time — from the reply time the member's highest tier promises (`chat-hours` on the product). The order control sorts by activity, by newest thread, or by longest wait. A member sees none of this.
 
 **New message** lets a coach open a thread to any member by name or email.
 
-## Words
+## Change interface wording
 
 The chat's words are UI strings → `chat` (the follow-up lines under `## followup`, the refusal lines under `## refusal`); the booker's under `library` → `coaching.booker`; the gate's under `gate` → `## chat`.

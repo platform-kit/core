@@ -1,7 +1,7 @@
 /*
  * The docs stay true to the code, or nothing is done. Two kinds of check over the documentation — the docs
  * site's pages (sites/docs/content/docs) and the repo's docs:
- * docs/PLATFORMKIT.md, docs/WHAT-IS-PLATFORMKIT.md, docs/PURPOSE.md and docs/FEATURES.md.
+ * docs/PLATFORMKIT.md, docs/COMPETITORS.md, docs/PURPOSE.md and docs/FEATURES.md.
  *
  *   1. STALENESS. Every page names the code it describes — `sources:` in its frontmatter (or a
  *      `<!-- sources: … -->` line in a repo doc): files, or directories as prefixes. A page whose source has
@@ -39,7 +39,7 @@ import { isReviewedForCurrentDate } from './docs-review-date.mjs'
 
 const ROOT = workspaceRoot(process.cwd())
 const DOCS = 'sites/docs/content/docs'
-const REPO_DOCS = ['docs/PLATFORMKIT.md', 'docs/WHAT-IS-PLATFORMKIT.md', 'docs/PURPOSE.md', 'docs/FEATURES.md']
+const REPO_DOCS = ['docs/PLATFORMKIT.md', 'docs/COMPETITORS.md', 'docs/PURPOSE.md', 'docs/FEATURES.md']
 const SETTINGS = { ...loadEnv('development', ROOT, 'PLATFORMKIT_'), ...process.env }
 const SITE_ROOT = (() => {
   const cwd = path.resolve(process.cwd())
@@ -63,9 +63,9 @@ const pages = [...walk(path.join(ROOT, DOCS)), ...REPO_DOCS.map((f) => path.join
   const text = fs.readFileSync(f, 'utf8')
   const fm = /^---\n([\s\S]*?)\n---/.exec(text)
   let sources = []
-  const m = fm ? /^sources:\s*\[([^\]]*)\]/m.exec(fm[1]) : /<!--\s*sources:\s*([^>]*?)\s*-->/.exec(text)
-  if (m) sources = m[1].split(',').map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean)
-  const rv = fm ? /^reviewed:\s*(\d{4}-\d{2}-\d{2})/m.exec(fm[1]) : /<!--\s*reviewed:\s*(\d{4}-\d{2}-\d{2})\s*-->/.exec(text)
+  const m = fm ? /^sources:\s*\[([^\]]*)\]/m.exec(fm[1]) : /^\*\*Sources:\*\*\s*(.*?)\s*$/m.exec(text)
+  if (m) sources = m[1].split(',').map((s) => s.trim().replace(/^['"`]|['"`]$/g, '')).filter(Boolean)
+  const rv = fm ? /^reviewed:\s*(\d{4}-\d{2}-\d{2})/m.exec(fm[1]) : /^\*\*Reviewed:\*\*\s*`?(\d{4}-\d{2}-\d{2})`?\s*$/m.exec(text)
   return { file: rel, text, sources, reviewed: rv ? rv[1] : '' }
 })
 const covers = (page, file) => page.sources.some((s) => file === s || file.startsWith(s.replace(/\/$/, '') + '/'))
@@ -207,7 +207,7 @@ for (const rel of uncovered(changed)) fault(rel, `no docs-site page names it in 
   }
   const pkg = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).name || '' } catch { return '' } })()
   const names = fs.existsSync(rootConfig) ? [readName(), (pkg.match(/^@([^/]+)\//) || [])[1]].filter(Boolean) : []
-  const PUBLIC = [...pages.filter((p) => p.file.startsWith(DOCS + '/')), ...pages.filter((p) => p.file === 'docs/WHAT-IS-PLATFORMKIT.md')]
+  const PUBLIC = [...pages.filter((p) => p.file.startsWith(DOCS + '/')), ...pages.filter((p) => p.file === 'docs/COMPETITORS.md')]
   for (const n of new Set(names.map((x) => x.toLowerCase()))) {
     if (n.length < 4) continue
     const re = new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, '\\/* ---- 2. exactness ---- */'), 'i')
@@ -383,7 +383,7 @@ const walk2 = (d, exts) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes:
     const changes = path.join(ROOT, 'openspec', 'changes')
     const proposed = fs.existsSync(changes) ? fs.readdirSync(changes).filter((c) => c !== 'archive' && fs.existsSync(path.join(changes, c, 'specs', 'kit-principles', 'spec.md'))).map((c) => ({ change: c, text: norm(fs.readFileSync(path.join(changes, c, 'specs', 'kit-principles', 'spec.md'), 'utf8')) })) : []
     const proposedIn = (name) => { const p = proposed.find((x) => x.change !== 'platformkit' && x.text.includes(norm(name))); return p && p.change }
-    for (const p of pages.filter((x) => /WHAT-IS-PLATFORMKIT\.md$|what-platformkit-is\.md$/.test(x.file))) {
+    for (const p of pages.filter((x) => /COMPETITORS\.md$|what-platformkit-is\.md$/.test(x.file))) {
       const rows = table(p.text)
       const seen = new Set()
       for (const r of rows) {

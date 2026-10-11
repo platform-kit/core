@@ -3,26 +3,23 @@ title: Start here
 description: What PlatformKit is, who these docs are for, and where to begin.
 order: 1
 sources: [openspec/specs/kit-principles/spec.md]
-reviewed: 2026-10-10
+reviewed: 2026-10-11
 ---
 
-PlatformKit is an open-source platform for running a business on one site. What a site _is_ depends on which modules it switches on, and the range is wide: a documentation site, a shop, a subscription business, a practice taking bookings, a community, a publisher, a SaaS product with accounts and plans — most often several of those at once, which is the point of having them under one roof.
+PlatformKit is an open-source web platform for operating a business from one site. A site's configuration selects the features it needs: for example, a shop can add subscriptions and bookings, while a publisher can combine a library, memberships, print sales, and newsletters. The site keeps its own content, business rules, and visual identity.
 
-What there is to switch on: content of every kind — landing pages, articles, a wiki, documentation, a book library, and **content models** for the kinds the platform has never heard of (teachers, events, properties, case studies, recipes, anything with fields); a store selling goods, files, subscriptions and printed things; memberships in tiers; bookings against a calendar, with video rooms; a community of spaces and channels with chat, threads and huddles, plus a social network members can connect to Bluesky by choice — any channel may be end-to-end encrypted, and the whole of it readable in Element or any other Matrix client; a support desk with one queue for everyone waiting on the staff; forms; marketing funnels, emails and A/B tests; analytics; and an admin where all of it is edited.
+PlatformKit includes content pages and collections, a page builder, accounts, a store and checkout, memberships, bookings, forms, community features, support, email campaigns, analytics, and an admin. A site can enable these modules together or leave out the ones it does not use. The generic demo shows modules working together. This documentation site disables the application modules and serves docs without sign-in.
 
-Two sites in this repository run on it and they look nothing alike. Northlight Press, the demo, is a small press with every module on. This documentation site has every module off but the docs you are reading — which makes it a static site with no database anywhere.
+## Choose a guide
 
-These docs are written for two audiences, and the sections say which.
+**I edit a site.** Use [The admin, in one tour](/content/docs/running-a-site/the-admin), then open the guide for your task: [publishing content](/content/docs/running-a-site/publishing-basics), [selling](/content/docs/running-a-site/selling/store), [bookings](/content/docs/running-a-site/bookings/sessions-and-coaching), or [marketing](/content/docs/running-a-site/marketing/emails).
 
-For the whole thing in one read — what the platform is, how it is opinionated, and what it replaces — start with [What PlatformKit is](/content/docs/what-platformkit-is).
+**I am creating or extending a site.** Start with [Architecture](/content/docs/building-a-site/architecture) to see what belongs to the kit, theme, and site. Then follow [Your first site](/content/docs/building-a-site/your-first-site) and [Configuration](/content/docs/building-a-site/configuration).
 
-**Editors** run a site day to day: writing and publishing, putting something on sale, answering customers, sending a campaign. Nothing in the _Running a site_ section needs code, a terminal or a developer. Start with [The admin, in one tour](/content/docs/running-a-site/the-admin).
+**I need an exact setting or command.** Look in [Reference](/content/docs/reference/cli) for CLI commands, [configuration keys](/content/docs/reference/config-keys), [environment variables](/content/docs/reference/environment-variables), and [content fields](/content/docs/reference/frontmatter).
 
-**Developers** build a site, extend it, or work on the platform itself. _Building a site_ explains the three layers (the kit, the theme, a site), the config, the content pipeline, the declared database and the deploy. Start with [Architecture](/content/docs/building-a-site/architecture) and then [Your first site](/content/docs/building-a-site/your-first-site).
+## Where content lives and what gets published
 
-**Reference** is tables: every environment variable, CLI command, config key and frontmatter field.
+In file-backed mode, a page, book, product, or email design lives as a markdown or JSON file in the site's `content/` directory. In cloud mode, a row in `public.content` holds the draft and published version. Editors change the draft in the admin; publishing makes it live and, when the site has a repository in its publish cycle, commits the change and triggers a rebuild.
 
-Two habits run through everything and are worth knowing before you read on:
-
-1. **Content is files.** A book, a page, a product, a funnel, an email design — each is a markdown or JSON file in the site's `content/` folder. The admin edits those files; the build compiles them; nothing lives only in a database. That is why a site can be checked out, copied, diffed and restored.
-2. **Nothing unpublished reaches the site.** Every content record has a Published switch. Off, the file stays on disk and in the admin and is left out of the build entirely — no page, no search result, no share image.
+The Published switch controls what readers can see. When a record is unpublished, it stays available for editing but is omitted from public pages, indexes, and search. In a file-backed site its file remains in the repository; in cloud mode its draft remains in the database.

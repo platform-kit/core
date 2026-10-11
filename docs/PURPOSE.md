@@ -1,27 +1,69 @@
 # Purpose
 
-<!-- sources: openspec/specs/kit-principles/spec.md, packages/kit/build/modules/kit.mjs, packages/kit/build/site.mjs -->
+PlatformKit exists to let a team run the parts of its business that belong on its own site—publishing, paid access, sales, services, communication, and community—together as one product and ship them with one deploy. Its objective is to make different business models configurable as combinations of shared capabilities, rather than separate products that happen to share a brand.
 
-PlatformKit is an open-source foundation for a site that publishes useful material and runs a business or community around it. It brings the publishing experience, the site design, and the practical work of accounts, sales, communication, and administration together, so a site team can spend more time on what it offers and less time assembling the same general-purpose parts.
+## The objectives
+
+### Run different business models on one site
+
+A publishing business may sell books, offer memberships, book coaching, and host a community. An educator may publish lessons, charge for access, and run events. A service business may need accounts, subscriptions, bookings, and a support desk without being a publication at all.
+
+PlatformKit provides these as capabilities that can be combined. The site can present them through one reader experience, apply its own rules to who can use them, and operate them from one administration and deployment. A team does not have to assemble an unrelated hosted product for every part of its work or send its audience through a different service for each interaction. The goal is one deployable site for the chosen combination—not a claim that every module is active in every deployment or that outside providers are unnecessary.
+
+### Keep the site's work separate from the framework
+
+The site's custom content, identity, and business rules belong to the site—not to the reusable framework. A site team can maintain its own material and configuration in its own project while PlatformKit provides shared capabilities and improvements independently.
+
+That separation is meant to work in both directions: the framework should not acquire one site's identity or editorial material, and a site should not need to fork the framework just to express its own voice, content, or policies. The framework and a site's content can therefore be maintained, reviewed, and released on their own tracks. Sites can register their own additions where the shared capabilities do not fit.
+
+### Make capabilities optional without making them fragments
+
+A site chooses the capabilities it needs. Publishing, a store, memberships, sessions, support, community, and other modules are not a mandatory bundle; turning a capability off should remove its related experience rather than leave a dormant feature in the product.
+
+When capabilities are combined, they should behave as parts of one site. Accounts, content, administration, and deployment provide shared context, while each feature keeps its own purpose and rules. For example, a paid membership can govern access to both content and a community, instead of those areas maintaining unrelated accounts and entitlements.
+
+## Product and design decisions
+
+### Publishing is a first-class use, not a prerequisite
+
+The reader and published material are central to PlatformKit's shape: a site may have a library, articles, books, a wiki, or documentation, and connect those to paid access and other services. But a site does not have to publish content to use the platform. A service or software business can select the capabilities it needs without adopting a publishing identity.
+
+### One site owns the reader relationship
+
+The site is where its audience reads, buys, joins, books, and communicates. PlatformKit is designed to keep those activities within that site and under the site's policies, rather than making an external platform the only place a customer can interact with the business.
+
+This does not mean every outside service is replaced. Payment processors, calendars, printers, email relays, and other providers can remain part of the system. The site owns the product experience and the rules around those services.
+
+### Prefer clear conventions to a large settings surface
+
+PlatformKit makes deliberate choices about how common work is represented and edited. Published content is authored in maintainable records; the admin presents structured fields instead of asking people to type configuration syntax; reader-facing language can be maintained as content; and a capability's policies should have an identifiable owner. Source files are the declarations for the database and the external services the site uses, rather than mirrors of independently edited catalogs.
+
+These conventions aim to make the built-in features work together and stay understandable. They are not a claim that every site must use the same content, appearance, or business model.
+
+### Keep the visual system replaceable
+
+The shared theme supplies a coherent default reader and admin experience. A site can choose its own look, replace components, and provide its own language without changing the reusable kit. A default is a starting point, not the site's identity.
+
+### Support more than one way to operate
+
+Some sites need only a static build. Others need a repository-backed site with a live backend, or cloud publishing that can update content without rebuilding the site. PlatformKit treats these as different operating choices, so a site can select the one that fits how its content and backend are managed.
+
+### Keep a clear line between shared and site-owned work
+
+The kit and theme provide reusable mechanisms; the site supplies its own material, brand, policies, and registrations. A generic demo demonstrates combinations of those mechanisms, but is not the definition of the platform and does not make its own content or business rules part of Core.
 
 ## Who it is for
 
-PlatformKit is for independent publishers, educators, membership organizations, coaches, and other teams whose work belongs on a site of their own. It is especially suited to publishing-first projects: a library, journal, course of written material, or community can sit alongside memberships, events, bookings, and a shop. It can also support a service or software-shaped business; it does not require a site to be a publication.
+PlatformKit is for independent publishers, educators, membership organizations, coaches, and other teams that want to operate a digital product on a site they control. It is also for teams whose business is services or software and who want common capabilities such as accounts, billing, bookings, support, or community in one deploy.
 
-## What it provides
-
-The project includes a core toolkit and a ready-to-use theme. Together they provide a way to create a site, edit its material, and add the capabilities the site needs. A team can choose from the available modules and visual building blocks, then provide its own name, design choices, material, policies, and integrations.
-
-The aim is a coherent product rather than a collection of unrelated services: the content, reader experience, membership, shop, and community can share one site and one set of rules. Sites can keep their published material as ordinary files, or use a connected backend for live accounts and activity. They can be built as a straightforward static site, as a site whose repository and backend work together, or as a site that publishes content without rebuilding for every change.
-
-## How it works by design
-
-PlatformKit favors a small number of clear conventions over a large number of independent settings. Site teams choose from structured fields rather than having to write configuration syntax for everyday editing. Reader-facing language and published material remain editable. Optional capabilities can be left out, and the theme can be adapted or replaced without turning site-specific identity into part of the shared toolkit.
-
-The shared project is deliberately separate from every site built with it. PlatformKit supplies reusable capabilities; each site supplies its own subject, voice, content, visual identity, business rules, and credentials. A generic demonstration site shows how the pieces can work together, but it is not the product identity of PlatformKit or a requirement for sites that use it.
+It is most useful when several of those needs belong together, the team wants to own the site experience, and its content and policies should remain portable with the site rather than being trapped in a collection of unrelated tools.
 
 ## What PlatformKit is not
 
-PlatformKit is not a hosted website service, a finished site for one particular organization, or a promise that every capability is enabled in every installation. A site team chooses its features and provides any external accounts those features need. The toolkit does not supply a site's editorial work, brand, payment account, calendar, email relay, or hosting provider.
+PlatformKit is not a hosted website service, a finished site for one organization, or a requirement to enable every module. It does not supply a site's editorial work, brand, business decisions, hosting, payment account, calendar, printer, or email provider. A capability that relies on an outside provider still needs that provider to be configured.
 
-For the current capability inventory, see [FEATURES.md](./FEATURES.md). For the project's broader description, see [WHAT-IS-PLATFORMKIT.md](./WHAT-IS-PLATFORMKIT.md).
+For the built capabilities and their sub-features, see [FEATURES.md](./FEATURES.md). For the capability-by-capability comparison, see [COMPETITORS.md](./COMPETITORS.md).
+
+---
+
+**Sources:** `openspec/specs/kit-principles/spec.md`, `packages/kit/build/modules/kit.mjs`, `packages/kit/build/site.mjs`

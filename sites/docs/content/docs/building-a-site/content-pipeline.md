@@ -33,113 +33,36 @@ sources:
     packages/kit/build/steps.mjs,
     packages/kit/build/steps.test.mjs,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-11
 ---
 
-Everything a site publishes is a file under `content/`. **velite** compiles them into `.velite/` — one JSON per collection plus an `index.js` — and the app imports that as `#content`. `packages/kit/build/velite.mjs` is the pipeline: the markdown processing, the kit's collections, the `prepare` step. A site's `velite.config.js` is two lines calling `kitConfig()`.
+Content authors edit Markdown files under `content/`. During the build, Velite validates those files, renders their Markdown, and writes one JSON file per collection plus an `index.js` under `.velite/`. The app imports the generated collections through `#content`. The kit defines this pipeline in `packages/kit/build/velite.mjs`; a site's `velite.config.js` calls `kitConfig()`.
 
-Every collection here is a **declaration** — what the site is — and the database only ever holds a projection of one. Which tables are which, and the checks that hold it, are on [Declarations and state](/content/docs/building-a-site/declarations-and-state).
+Collections are content declarations. In deployments that use a database, database tables may contain projections generated from those declarations; people and other runtime activity remain database state. See [Declarations and state](/content/docs/building-a-site/declarations-and-state).
 
-## What somebody downloads, and what is fetched
+## Bundle and search data
 
-`#content` is a static import, so anything a widely-imported module reads from it lands in the one
-chunk every reader of every page loads. `content.js` is the library's read surface and is in almost
-every page's import graph, which made that chunk **6.1 MB** on a large site — and 4.3 MB of it was the
-library's text. Somebody opening the storefront downloaded every book.
+The browser bundle includes the collection fields imported by application code. To avoid loading the searchable library text with the initial page, the search corpus is a separate chunk fetched on demand.
 
-Two of the three causes are fixed:
+`search-index.js` exposes the corpus through `corpus()`, which dynamically imports the search data. The search palette, book finder, and live preview use this accessor so they share the same array; preview edits update the corpus used by search. Companions expose parsed chapters without retaining a duplicate raw body. Books still include their raw text and companions their parsed chapters in collection records.
 
-- **A companion's `raw` is no longer kept.** The body is READ to parse `chapters` out of it and then
-  dropped; returning it too put the same words in a second time (764 KB). `entry.js` never emitted it,
-  so `entry.test.mjs` caught the half-done version of this change immediately, which is what that
-  check is for.
-- **The palette's index is fetched.** `search.json` is the whole library as searchable text — 1.5 MB —
-  and three modules read it: the palette, Find your book, and the live preview. All three go through
-  `lib/search-index.js` now, one dynamic import behind `corpus()`. Every caller was already async, so
-  no call site changed shape. They must share one accessor for more than tidiness: the preview
-  **rewrites the array in place** so an edit shows in the palette, and that only holds while all three
-  hold the same array — a module namespace is cached by the runtime, so they do.
+## Adding a content type
 
-The chunk is **3.9 MB**, with `search-*.js` a 1.5 MB chunk fetched when somebody searches.
+When you add a content directory or a file directly under `content/`, register it in `build/content-kinds.mjs` and provide the admin model that edits it. `content-kinds.test.mjs` checks that every content path has a matching admin model; without one, the type is not editable through the cloud CMS.
 
-**The third cause is still there**: a book's `raw` (1.5 MB) and its companion's `chapters` (1.2 MB)
-are in the collection's records, and only the person of that one book needs either. Moving them
-behind a per-book fetch changes what a collection's shape IS, which `entry.js` mirrors field for
-field and both engines emit — a change rather than a fix.
+If a content declaration produces database rows, add a `projected(ctx)` action to its admin model. That action lets the content pipeline update projections when content is published in cloud mode, where no site build may run. The declarations checks require a projection source and ensure that clients cannot write projected tables directly. See [Declarations and state](/content/docs/building-a-site/declarations-and-state).
 
-## A content type is not finished until it can be edited without a checkout
+In development, the content watcher runs only the steps affected by a changed file. Each build step declares its `inputs`; use a recursive pattern such as `content/bots/**` to watch files below a directory. After Velite rebuilds, the watcher runs matching `prepare`, function-data, and `site` work. It runs `after` steps only when they set `localProjection: true` and the configured Supabase URL is local. A failed step stops the remaining refresh work for that change.
 
-One question decides whether a new kind of content is done: **with no checkout — cloud mode, where
-every file is a row of `public.content` — can somebody still change it?** If not, it is half-built
-however well the rest works. The rows are there, the compile reads them, a publish would push them,
-and nothing on earth can edit them short of writing SQL.
+The deployment-shape checks derive whether each module's declared capabilities work in static, git, and cloud deployments. Any known gap must be listed as an exception in the [deployment matrix](/content/docs/building-a-site/deployment-modes), with the change expected to close it.
 
-That failure is invisible from the machine you build it on, where there is always a checkout and
-always an editor. So it is held mechanically rather than asked for politely:
-`build/content-kinds.mjs` lists every directory under `content/` — **and every single file at its
-root**, which is where `content/providers.md` once slipped out with a working projection and no way
-to edit it — with the admin model that edits it, and `content-kinds.test.mjs` refuses one that
-appears in neither list. Adding a content type means answering the question in the same commit.
+`build/artefacts.mjs` classifies JSON files consumed by the functions as `PUBLISHED`, `LIVE`, or `FIXED`. `PUBLISHED` files are compiled into `public.compiled` on publish; `LIVE` data is built by the function from database rows; `FIXED` files change only with a deploy. The artefact checks require every function-side JSON file to have a classification and compare build output with output produced through a content-only store.
 
-The same test asks a second question of a declaration that becomes rows: **can it be projected with
-no machine?** A projected table (`build/declarations.mjs`) whose source is under `content/` needs its
-model to carry `projected(ctx)`, because over rows `ctx.script()` answers "the deploy runs it" and a
-deployment with the repository out of the cycle and no deploy hook never has one. **Every projected
-table has one**, and the check requires it rather than excusing anything: spaces, the calendar, the
-bots, the achievements and the search index were the last five, and they are paid.
-
-In local development, editing a Markdown file also refreshes the outputs that read it. After Velite
-rebuilds, the watcher matches the changed path against each build step's declared `inputs` and runs
-the matching `prepare`, function-data, and `site` work. A directory input must be recursive
-(`content/bots/**`) to match files below it. `content-refresh.mjs` then runs only `after` steps
-explicitly marked `localProjection: true`, and only when the configured Supabase URL is local;
-remote projection steps and paid deployment work stay out of the watcher. A failed step is reported
-and stops subsequent phases for that change.
-
-There used to be a hand-written `PROJECTION_DEBT` beside this naming what could not yet, and it is
-gone — not because the debt was cleared but because the list was the wrong instrument. A hand-written
-list is a second opinion, and the second opinion is the one that goes stale: print's entry outlived
-its finished cloud path by days, was read back off the list, and repeated as fact. The question is
-worked out from the code now, in this check and in `build/modes.test.mjs`, and a gap carried on
-purpose is declared in [the matrix](/content/docs/building-a-site/deployment-modes) as an exception
-naming the change that closes it — where the guard holds it in both directions, including the
-expensive one: an exception whose change has been archived with the gap still open fails the run.
-
-And **`build/artefacts.mjs` does the same for what the functions read that is compiled rather than
-content** — the catalog, the forms, the funnels, the email designs. Each is `PUBLISHED` (a publish
-compiles it into `public.compiled` and the functions read that row over their file), `LIVE` (the
-function builds it from the rows itself) or `FIXED` (with the reason it cannot change without a
-deploy); `artefacts.test.mjs` refuses a `.json` beside the functions that is none of the three. On a static site the count of function artefacts is not a deployment gate; the shared overlay wiring is still checked against the kit source. The `FIXED`
-list is where the theme's own belong — its strings, its skills, its brand (the faces its looks set
-and the site's mark): they are code rather than content, they cannot change on a publish, and the
-function has no stylesheet to read them from. It
-also runs each compile **twice over this checkout** — once as the build runs it, once through a store
-that answers nothing outside `content/` — and requires the two to be identical, which is what catches
-a compile that quietly loses something when it cannot see a disk.
-
-The same test holds the other half — **nothing in the admin's pipe may open a content path through `fs`**. The pipe is the set of files copied into the `admin` Edge Function, computed by `build/pipe-closure.mjs` and used by the assembler that copies them, so there is one definition of what runs in the function. Inside it there is no filesystem and content is only ever rows. A build script OUTSIDE the pipe may use `fs` freely: in cloud mode the deploy writes every row out to a file before the build, so a build always has a checkout. Guessing at that line from the outside gives false alarms —
-the first version of this guard flagged three build scripts that were perfectly correct, and a guard that cries wolf is one people learn to ignore. A file in the pipe that reaches the filesystem on purpose (the store's own two halves) is listed with the reason.
-A module the function genuinely never reaches is named in `PIPE_SKIP` instead — the print renderer
-and the pusher, both reached by a specifier built at runtime.
-
-**A literal specifier is not such a path.** The edge runtime resolves every literal import it can
-see, a guarded `import('./fonts.mjs')` inside a command-line branch included, so a file left out of
-the closure while something in it still names one by a literal is a runtime that does not boot — and
-it does not say so where you are looking. It surfaces as every call to every function failing name
-resolution, which reads exactly like a stack that is down. `closureResolves()` is the guard: a
-literal specifier inside the closure must name a file inside the closure. So `build/fonts.mjs` is
-copied although nothing in the function calls it, and listed with its reason beside the store's own
-two halves; the faces, mark and accent it reads off a stylesheet arrive compiled instead, as
-`pipe/theme-brand.json`.
-
-The assembler once kept its own second copy of the closure and the skip list. A module added to the
-skip list went on being copied anyway, and the divergence was invisible because the assembler's
-own check compares the tree with its own plan. There is one definition now, and no file may declare
-a second.
+The admin Edge Function runs without a Node filesystem. Its content requests must use the content store, not read or write content files directly. `build/pipe-closure.mjs` defines the files copied into that function, and the assembler uses the same definition. The closure check also verifies that every literal relative import resolves to a file included in the closure. Some files the function does not execute are still included when a literal import references them; the runtime resolves those imports when it starts.
 
 ## The markdown
 
-One renderer, `src/lib/markdown.js` — marked with GitHub-flavoured tables and task lists, every heading given its id (github-slugger, as GitHub does — a slugger per document, given as the tokens are walked, so two documents rendered at once never number each other's headings) and wrapped in an anchor to itself, a fenced block handed to a highlighter where one is given — used by velite here with shiki as the highlighter, and by the browser in cloud mode with none, so a document renders the same html either side but for the colours inside a `<pre>`. Velite adds the table of contents (the headings as a tree), reading time and word count, and an excerpt over the plain text; a companion's chapter summaries go through the same renderer. Books keep their raw text too (the person splits it into chapters itself).
+The shared renderer, `src/lib/markdown.js`, supports GitHub-flavoured tables and task lists, adds linked heading IDs, and highlights code blocks when a highlighter is provided. Velite uses Shiki for code highlighting; cloud-mode rendering uses the same renderer without syntax colours. Velite also generates a table of contents, reading time, word count, and plain-text excerpt. Companion chapter summaries use this renderer too. Book records retain their raw Markdown, which the reader splits into chapters.
 
 ## The collections
 
@@ -172,73 +95,32 @@ Every field above is edited as a form in the admin; the full field-by-field refe
 
 ## Nothing unpublished reaches the bundle
 
-Every collection carries `published` (default true). The `prepare` step drops every entry with `published: false` before `.velite` is written — so the site, the search index, the prerender, the sitemap and the share images never see it — and drops a companion whose book is gone. The admin reads the files, never the compiled output, so an unpublished record is still there to edit. The runtime flags that read `published` (the tests, the topics, the routes) are then always looking at published data, and stay as belt and braces. Every data module tolerates an empty collection.
+Every collection has `published`, which defaults to `true`. During `prepare`, Velite removes records marked `published: false` before writing `.velite/`; unpublished records therefore do not enter the site bundle, search index, prerender, sitemap, or share-image build. A companion is also omitted if its book is missing. The admin reads source content rather than `.velite/`, so editors can still open and change unpublished records. Runtime checks also filter published tests, topics, and routes.
 
 ## The strings merge
 
-`prepare` also merges the site's UI strings over the theme's defaults, group by group, key by key, field by field, so the `ui` collection the app reads is the merge and a word the site leaves out is the theme's. See [Strings](/content/docs/building-a-site/strings).
+During `prepare`, the site's UI strings are merged over the theme defaults by scope, group, key, and field. A site can override only the fields it needs; omitted fields keep the theme's text. See [Strings](/content/docs/building-a-site/strings).
 
 ## The post-steps
 
-After velite the Vite plugin runs the steps that read the compiled content: the icons the pages name (`icons.mjs`: the Lucide glyphs written into `.velite/icons.json` so the bundle carries only those — every glyph in dev, for the builder's palette), the search embedding (`embed-content.mjs`: every book's teaching, for the finder), the sales report (`sales.mjs`: the best seller from paid purchases), and the funnels' compile (so the support prompts are there for the widget). They run again whenever velite cleans `.velite` in dev.
-
-**A glyph nothing can draw is said out loud.** A page's `icon` is a name, and a name is drawn in one
-of three ways: the theme's own few (`glyphs.js`), any of Lucide's, or by a section that owns a small
-vocabulary and draws each one inline — `LandingLibrary` does, with `lines`, `highlight`, `note`,
-`place` and the rest. A name none of the three knows used to be skipped in silence and drew a
-fallback, which only a screenshot would ever have shown. `icons.mjs` now reports it and, with
-`--check` (in `npm test`), refuses the build — and it reads all three vocabularies, because a check
-that knew only Lucide's called four working icons broken.
+After Velite, the Vite plugin runs additional build steps that consume compiled content. These include generating the icon list used by the bundle, the book-search embeddings, the sales report, and the compiled funnels used by support prompts. During development, the steps rerun when Velite clears and regenerates `.velite/`. The icon check also rejects names that are not provided by the theme, Lucide, or a section's own icon set.
 
 ## A site's own collections
 
-`collections: './velite.site.js'` in the config names a module exporting `collections` (velite collection definitions, spread before the kit's) and optionally `prepare(collections)`, run after the kit's. A site with an instrument adds its tests and its results copy. A collection a site does not have reads as empty under Node (`content-node.mjs`) and is absent in the browser, so a kit component that reads one it might not find must guard — the kit's do.
+Set `collections` in `platformkit.config.js` to a module that exports Velite `collections` and, optionally, `prepare(collections)`. The kit adds the site's collections before its own; the site's `prepare` function runs after the kit's. For example, a site with its own instrument can define its tests and results copy there. In Node, a missing collection reads as an empty collection; in the browser it is absent, so components must account for either case.
 
 ## Cloud mode: the rows through one adapter
 
-With `CONTENT_STORE=cloud` the site does not wait for a build to see an edit. Before the app's modules are evaluated, `main.js` awaits `lib/content-live.js` `load()`: one query of `public.content` (anyone the published rows, an administrator the drafts too, by the policies), each row turned into the entry velite would have made by `lib/entry.js` — the one adapter: the frontmatter picked to the collection's fields and given velite's defaults (including `payments: []` for products with no methods configured, a product's optional trial, and the store's separate price-list and promotion records), the id or slug from the path, the body rendered by the shared renderer, the excerpt, the toc and the reading time over it, the strings' groups, a companion's chapters and a form's model parsed by the same pure grammars the build uses — and put into the bundled collections in place, so every importer of `#content`, and every list a module makes of one at import time, sees the live content. What a browser cannot make is carried over from the bundle's entry of the same slug (a book's cover as the build sized it, its recordings; a cover saved in cloud mode is the bucket's url and stands as one); the strings merge by scope over the theme's defaults as built; the palette's rows are made again from what was loaded, a built row keeping its vector while its words are unchanged. A collection the bundle does not carry — a new content model, a site's own velite collections — waits for the deploy; a query that fails or times out leaves the bundle as built. `build/entry.test.mjs` (in `npm test`) pins the adapter against velite: every entry velite built for the site is made again from its file as a row and compared field for field. The admin's live preview in cloud mode is the same adapter over the draft, in the browser.
+With `CONTENT_STORE=cloud`, `main.js` loads rows from `public.content` before evaluating app modules. `lib/entry.js` converts each row into the same collection shape Velite produces: it applies collection defaults, renders the body, derives excerpts and tables of contents, and parses structured content such as companion chapters and form models. The adapter also restores build-generated fields, such as processed covers and book audio, from the bundled entry with the same slug. The app then reads these updated collections through its normal `#content` imports.
+
+This live replacement applies only to collections included in the bundle. Site-defined collections and new content models require a deploy. If the database query fails or times out, the app keeps the bundled content. `build/entry.test.mjs` compares the adapter's output with Velite's output field by field. Cloud-mode admin previews use the same adapter to display drafts.
 
 ## Reading content in code
 
-`@platform-kit/kit/lib/content.js` is the one door: `article(id)`, `articleIndex()`, `docTree(collection)`, `loadDoc(collection, id)`, the books and their chapters, the strings helpers (`us(scope)`, `ug(scope, group)`, `t()`), the site record. Components never import `.velite` files directly.
+Read content through `@platform-kit/kit/lib/content.js` rather than importing generated `.velite` files. Its helpers include `article(id)`, `articleIndex()`, `docTree(collection)`, `loadDoc(collection, id)`, book and chapter accessors, UI-string helpers (`us(scope)`, `ug(scope, group)`, `t()`), and the site record.
 
 ## A declaration that contradicts itself is refused
 
-A collection's schema checks that each field of a record is the right **shape**. What it cannot
-check is whether the fields make sense **together**, and that is where the costly mistakes live.
-A booking type carrying a cal.com url _and_ settings read only by the native scheduler is valid
-field by field and incoherent as a whole: one of the two is a lie, and which one wins is a line of
-code nobody reading the file would think to look up.
+A collection schema checks individual field types. Cross-field rules in `packages/kit/build/content-rules.mjs` check combinations that would otherwise be valid in isolation but inconsistent together. For example, a session record cannot specify both a cal.com URL and `scheduler: native`.
 
-This happened when a booking record declared `scheduler: native` while carrying a cal.com url.
-The competing declarations left the scheduler unclear; the booking was matched under the type's
-filename rather than the cal.com event, so its "one a week" limit was counted against a name no
-booking carried. The content rule now refuses that contradiction before it can ship.
-
-**The rules live in `packages/kit/build/content-rules.mjs`**, one entry per collection. A rule is
-a pure function over a single compiled record that returns `null` when it has nothing to say and
-a sentence when it does — a sentence for whoever has to fix the file, naming what is wrong and
-what to do about it, never the field's type.
-
-**They throw, and that is the point.** velite refuses a record of the wrong shape, prints it and
-exits 0: the record is dropped and the site is built without it. The deploy runs `npm run build`
-and no tests at all. So neither a refused record nor an incoherent one would be noticed before
-production. These rules run last in velite's `prepare` and throw, which exits 1, which fails the
-build, which fails the deploy. An invalid declaration is not deployable, which is the whole claim.
-
-**A site extends them without editing the kit.** Its collections module — the one
-`platformkit.config.js` names under `collections` — may export `rules` of the same shape, which
-are added to the kit's, and `rulesOff`, a list of kit rule keys it does not want. Switching one
-off is the only way to be rid of it, and it shows in a diff.
-
-**One trap worth knowing about.** By the time a record is compiled, a schema's default and an
-author's declaration are the same value, so a rule that reads a field cannot tell whether anybody
-wrote it. That is why the session rule looks only at fields whose unset state is empty, and why
-`notice` is not among them: it defaults to 24, so the rule cannot distinguish the default from a
-value the file actually declares; treating it as an authored setting would make valid cal.com
-records appear contradictory. `content-rules.test.mjs` holds the list to that condition whenever
-compiled content includes a cal.com session; content without cal.com sessions reports the check
-as not applicable. Giving one of those fields a default later fails the suite rather than quietly
-turning the rule into a liar. Every rule also needs a
-fixture it must refuse and one it must accept; a rule with no failing fixture fails the suite by
-name, because a rule that never fires reads as cover and gives none.
+These rules run during Velite's `prepare` phase and fail the build when a record violates one. A site's collection module can add rules by exporting `rules`, or disable named kit rules with `rulesOff`. Each rule needs tests for both a record it rejects and one it accepts. Rules that depend on whether a field was explicitly set must account for schema defaults: after compilation, a default value is indistinguishable from the same value written in the file.

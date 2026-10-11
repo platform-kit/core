@@ -1,42 +1,45 @@
 ---
 title: Your account, membership and purchases
-description: What an account keeps, what a membership opens, buying a book, and where to find your files and orders.
+description: Find what your account saves, how memberships and purchases work, and where to manage files, orders, coaching, and support.
 order: 31
-sources: [packages/movable-types/src/components/AuthModal.vue, packages/movable-types/src/components/store/ProductPage.vue, packages/kit/src/lib/downloads.js, packages/kit/src/lib/booking.js]
-reviewed: 2026-10-05
+sources:
+  [
+    packages/movable-types/src/components/AuthModal.vue,
+    packages/movable-types/src/components/store/ProductPage.vue,
+    packages/kit/src/lib/downloads.js,
+    packages/kit/src/lib/booking.js,
+  ]
+reviewed: 2026-10-11
 ---
 
 ## An account
 
-An account keeps a person's place in every book, their highlights, their quiz results and trophies, their readings on a site that has them, and their purchases. Sign in with an email and a password (or Google, or a magic link, where the site offers them). When a feature asks for sign-in to finish an action, it returns to that same-site page afterward; the modal's return address is never allowed to point to another site. A new reader has an account the moment they sign up; a confirmation link goes to the address, and a few things — the results of a reading, being reachable from the support desk — wait until it is clicked.
+An account keeps your place in books, your personal highlights, quiz results and trophies, and purchases. Sign in with an email and password, Google, or a magic link if the site offers those options. When a feature asks you to sign in, it returns you to the page where you started; the return address must belong to the same site.
 
-Nobody is handed a face. An account starts with a **pattern** drawn from a digest of its own
-address — not a face, because a face nobody chose can be wrong about the person wearing it. **Your
-account** in the account menu is where that is changed: a style, then the parts of it, or a picture
-of your own, which always wins. What is designed there is what the account button in the header
-shows from then on, on every page. See
-[A person's own page](/content/docs/running-a-site/community/people-and-profiles).
+A new account can sign in immediately. The site also sends a confirmation link to the email address. Some features—such as seeing reading results or receiving a support reply by email—require a confirmed address. Select the link in that email to confirm it.
+
+Your account menu opens **Your account**, where you can choose an avatar style or upload your own picture. The picture you choose replaces the generated avatar. To create or edit a public profile page, see [A person's own page](/content/docs/running-a-site/community/people-and-profiles).
 
 ## A membership
 
-A membership opens what the site's rules give members: every chapter of every book, the members' articles, the coaching chat, the sessions the tier includes. Join from the pricing page or the store; **Manage membership** in the account menu opens the billing portal to change the card or cancel. Switching to a higher plan happens now, charged for the difference; switching down takes effect when the current period ends.
+A membership gives access to the content, chat, or sessions included by that site's membership rules. Review the site's pricing page for the available tiers and included benefits. Join from the pricing page or store. To update your payment method or cancel, choose **Manage membership** from the account menu. Switching to a higher plan takes effect immediately and charges the prorated difference; switching to a lower plan takes effect at renewal.
 
 ## Buying a book
 
-A book's store page offers every way to have it: **read online** (the unlock, which opens the whole book on the site), a **printed copy** (softcover, hardcover, sometimes a premium binding; the contents, and for a hardcover the cloth and foil, chosen on the page), and **files** (PDF, EPUB). Choose the country the copy ships to first; the shipping methods and prices follow it.
+On a book's store page, choose **Read online**, a printed format, or an available PDF/EPUB download. Printed formats may offer a choice of contents; some hardcovers also let you choose cloth and foil. Select the destination country before choosing shipping. The page then shows the available shipping methods and prices.
 
-The gallery prefers generated page images. If one is missing, it shows a bounded text preview with a label for its content type; on phones, swipe horizontally or use the position buttons to move between slides.
-
-A printed copy or a file can be bought **without an account** — checkout asks the email. If an account is made later with that address, the purchase is there.
+You can buy a printed copy or a file without an account. Checkout asks for an email address. If you later create an account using that same address, the purchase is attached to it. Buying a printed copy or download does not unlock the online book; that requires the separate online offer.
 
 ## Your files and orders
 
-A buyer of a file, or of a printed copy that includes the files, finds them under **Your files** on the book's store page and on its cover page in the person — every edition of the file, as links that are minted fresh each time. An order's confirmation comes by email, and a second email with tracking when the parcel ships. The printer ships straight to the buyer.
+If your purchase includes files, open the book's store page or its cover page in the reader and choose **Your files**. Links are generated when requested and expire, so request a fresh link if an old one no longer opens. Your order confirmation arrives by email; a shipping update with tracking follows when the parcel ships. The printer sends the parcel to the address entered at checkout.
 
 ## Coaching
 
-The Coaching tab of the app shows the sessions somebody may book — how many this week or month, and when a used-up allowance comes back — and books them there: a month of open days, the day's times, a confirm step. Signed-out visitors can also browse public sessions and availability at `/community/coaching` (the `/app/coaching` entry redirects there), without seeing personal bookings or chat. Sign-in is requested before paid checkout, and the selected time is checked again after authentication. Upcoming sessions can be moved or cancelled from the row. The **Chat** tab is the conversation with the coaches, for members and for a week after a paid session.
+Open the app's **Coaching** tab to see sessions you can book, your remaining weekly or monthly allowance, and when a used allowance becomes available again. Choose a date and time, review the details, then confirm. Signed-out visitors can view public session types and availability at `/community/coaching`; personal bookings and chat require sign-in. Some sites require sign-in before booking; others allow eligible session types to be booked as a guest. You can move or cancel an upcoming booking from its row when those actions are available.
+
+The **Chat** tab is the conversation with coaches. Membership access varies by site; a paid session also includes a week of chat after the session.
 
 ## Getting help
 
-The chat launcher in the corner of every page reaches the support desk. A guest can write without signing in; signing in makes the reply reachable by email.
+Select the support-chat launcher in the page corner to contact the support desk. You can start as a guest. Sign in and confirm your email if you want the desk's reply to be reachable by email.

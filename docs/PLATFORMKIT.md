@@ -1,8 +1,5 @@
 # PlatformKit
 
-<!-- sources: package.json, packages/kit/package.json, packages/movable-types/package.json, packages/kit/bin/platformkit.mjs, packages/kit/build/sites.mjs, packages/kit/build/dev-workspace.mjs, .github/workflows/kit.yml -->
-<!-- reviewed: 2026-10-11 -->
-
 PlatformKit is a reusable publishing platform made of a core package and a default theme. A site supplies its own content and configuration, then selects the modules and visual choices it needs.
 
 ## The platform and a site
@@ -40,3 +37,8 @@ PlatformKit maintainers own package releases. The kit CI tests both workspaces b
 Site maintainers own the site repository and its lockfile. When a site consumes npm-published PlatformKit packages, its maintainers pin exact versions and commit the matching lockfile. Alternatively, the production host can run `npx --yes --package=github:platform-kit/core platformkit deploy` from the site checkout; that sources the kit and theme from Core without requiring npm publication or changing the site's manifest and lockfile. In either case, the host checks out the site's selected commit and builds from that repository, not from PlatformKit's local site registry or a sibling site. Git-backed publishing returns edits to the same site repository, keeping it the source of truth.
 
 The maintained reference documentation is in the documentation site. The OpenSpec specifications describe observable platform behavior, while the repository guidance describes how changes are proposed, implemented, and verified.
+
+---
+
+**Sources:** `package.json`, `packages/kit/package.json`, `packages/movable-types/package.json`, `packages/kit/bin/platformkit.mjs`, `packages/kit/build/sites.mjs`, `packages/kit/build/dev-workspace.mjs`, `.github/workflows/kit.yml`
+**Reviewed:** `2026-10-11`

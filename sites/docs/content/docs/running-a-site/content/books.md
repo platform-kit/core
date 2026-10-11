@@ -20,8 +20,9 @@ sources:
     packages/kit/src/lib/finding.js,
     packages/kit/src/lib/finding-rows.js,
     packages/kit/src/lib/finding-score.js,
+    packages/movable-types/src/pages/AdminPage.vue,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-11
 ---
 
 ## A book is one file, edited by chapter
@@ -86,7 +87,7 @@ A site with the `tts` module speaks every chapter and every summary with a local
 
 ## Putting a book in print
 
-A book is sold in print through its **print block** — the formats, the prices, the printers, the jacket copy — edited on its own page, Sales → Print Products. The Books drawer only says whether the book has one and opens it there. Where generated print-cover art is absent, book displays fall back to the ordinary cover from the book's markdown. See [Print editions](/content/docs/running-a-site/selling/print-editions).
+A book is sold in print through its **print block** — the formats, prices, printers and jacket copy — on **Store → Print editions**. The Books drawer links to that page. Where generated print-cover art is absent, book displays fall back to the ordinary cover from the book's markdown. See [Print editions](/content/docs/running-a-site/selling/print-editions).
 
 ## Comments
 
