@@ -168,6 +168,31 @@ Each site maintainer owns the site repository, its exact PlatformKit package ver
 
 Before any production-facing deploy step, `platformkit deploy` checks that `package.json` directly pins both `@platform-kit/kit` and `@platform-kit/movable-types` to exact versions and that `package-lock.json` resolves those same versions from an HTTPS package registry with integrity hashes. A missing lockfile, range, stale resolution, workspace link, or local package source refuses the deploy; release the packages and regenerate the site's lockfile before trying again.
 
+### Render build commands
+
+When Render checks out the Core repository itself, set the repository root as its root directory and build the docs site with:
+
+```sh
+npm ci && npx platformkit --site sites/docs build
+```
+
+With Render's Root Directory set to the repository root, set its Publish Directory to `sites/docs/dist`; Render resolves that path relative to its Root Directory. The root install provides the workspace CLI, so this command does not require PlatformKit packages to be published to npm.
+
+For a separately owned site repository, run commands from the site's root. Install the site's locked dependencies, then build with the Core CLI and packages fetched from GitHub:
+
+```sh
+npm ci
+npx --yes --package=github:platform-kit/core platformkit build
+```
+
+For a production deployment, with the site's production environment configured, run:
+
+```sh
+DEPLOY=1 npx --yes --package=github:platform-kit/core platformkit deploy
+```
+
+This avoids waiting for Core and theme releases on npm; npm is still used to install the site's dependencies and fetch the GitHub-hosted CLI. The source route installs the kit and theme into the site's `node_modules` without changing its manifest or lockfile.
+
 ## `platformkit build`
 
 The build resolves `deployment.content` before running export or compiling the browser bundle: row-backed sites build with the CMS enabled, while file-backed sites build without it. If the site registers admin models and has a backend, a file-backed build is refused; it cannot silently produce an admin with only the live-data views.
