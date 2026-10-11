@@ -19,7 +19,7 @@ sources:
     sites/docs/package.json,
     sites/docs/platformkit.config.js,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-11
 ---
 
 Where anything lives is decided by one question, and held mechanically rather than asked for:

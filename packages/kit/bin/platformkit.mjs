@@ -31,7 +31,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { loadEnv } from 'vite'
 import { VERBOSE } from '../build/verbose.mjs'
 import { defaultSite, platformKitWorkspaceRoot, workspaceRoot } from '../build/sites.mjs'
 import { installPlatformKitSource } from '../build/source-install.mjs'
@@ -59,7 +58,8 @@ if (process.versions.node.split('.')[0] !== '22') {
   process.exit(1)
 }
 
-const KIT = (f) => fileURLToPath(new URL('../build/' + f, import.meta.url))
+let kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const KIT = (f) => path.join(kitRoot, 'build', f)
 const isWorkspace = (directory) => fs.existsSync(path.join(directory, 'sites'))
   && fs.existsSync(path.join(directory, 'packages', 'kit'))
 const sourceRoot = platformKitWorkspaceRoot(path.dirname(fileURLToPath(import.meta.url)))
@@ -79,6 +79,7 @@ const atWorkspaceRoot = inWorkspace && fs.realpathSync(cwd) === fs.realpathSync(
 let site = explicitSite ? path.resolve(requestedSite) : cwd
 if (!explicitSite && atWorkspaceRoot && cmd && !['help', '--help', 'dev', 'sites', 'stop'].includes(cmd)) {
   try {
+    const { loadEnv } = await import('vite')
     const env = { ...loadEnv('development', root, 'PLATFORMKIT_'), ...process.env }
     site = defaultSite(root, env).directory
   } catch (error) {
@@ -103,7 +104,10 @@ if (!['help', '--help', 'sites', 'stop'].includes(cmd)) {
   const relativeSite = sourceRoot ? path.relative(sourceRoot, site) : null
   const usesWorkspaceSource = sourceRoot && (relativeSite === '' || (!relativeSite.startsWith(`..${path.sep}`) && relativeSite !== '..' && !path.isAbsolute(relativeSite)))
   if (sourceRoot && !usesWorkspaceSource) {
-    try { installPlatformKitSource(site, sourceRoot) }
+    try {
+      installPlatformKitSource(site, sourceRoot)
+      kitRoot = path.join(site, 'node_modules', '@platform-kit', 'kit')
+    }
     catch (error) { console.error(`✖ ${error.message}`); process.exit(1) }
   } else if (!sourceRoot) {
     for (const packageName of ['kit', 'movable-types']) {

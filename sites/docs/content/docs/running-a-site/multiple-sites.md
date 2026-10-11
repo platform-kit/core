@@ -38,7 +38,7 @@ sources:
     deploy/nginx,
     package.json,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-11
 ---
 
 The workspace root contains PlatformKit's packages and generic fixtures. A separately owned site stays in its own Git repository; it is fetched to `sites/external/<name>` and is not part of the root npm workspaces. The root registry is `platformkit.sites.json`. `platformkit sites` lists both kinds of sites. Use `platformkit sites --json` for their full paths and pin information. A registered repository that has not been fetched is listed with the command needed to fetch it. Site names are DNS labels. `PLATFORMKIT_DEFAULT_SITE` selects the site used by root commands (default `sites/docs`) and accepts either a site name or a path. `PLATFORMKIT_SITES` explicitly selects one or more sites for multi-site development, taking precedence over the default; `PLATFORMKIT_ROOT_SITE` optionally names a configured site at the workspace root.
@@ -72,7 +72,7 @@ Generic fixtures under `sites/` continue to work without a remote. A fetched sit
 
 ## Build and deploy a site independently
 
-A production build starts from the site's own repository and commit. Install the site's other dependencies there, then run its documented build and test commands. A site may use exact PlatformKit package versions from its lockfile or invoke the Core CLI from GitHub with `npx --yes --package=github:platform-kit/core platformkit`; the latter installs the kit and theme from that Core source into the site's `node_modules` without changing its manifest or lockfile. No Core source is copied into the site repository. Changing a local site pin does not publish packages or deploy anything.
+A production build starts from the site's own repository and commit. Install the site's other dependencies there, then run its documented build and test commands. A site may use exact PlatformKit package versions from its lockfile or invoke the Core CLI from GitHub with `npx --yes --package=github:platform-kit/core platformkit deploy`. The source route installs the kit and theme from the clean Core package directories in the public repository into the site's `node_modules`, without changing its manifest or lockfile, and records a receipt that deploy verifies against the public Core repository and the installed package contents. The CLI then runs the deploy script from those installed packages, so it uses their dependencies rather than assuming the transient `npx` package has the whole workspace installed. No Core source is copied into the site repository. Changing a local site pin does not publish packages or deploy anything.
 
 For a multi-site host, build each selected site from its own repository, then configure the host with `PLATFORMKIT_DOMAIN`, `PLATFORMKIT_SITES`, and `PLATFORMKIT_SITES_MODE=files`. Backend URLs are supplied per site using `SUPABASE_URL_<SITE>`; replace hyphens in the site name with underscores and uppercase it. A selected site that requires a backend but has no URL is refused before nginx starts. Each server block serves that site's build and generated rewrites. `PLATFORMKIT_APEX` optionally names the site that also answers on the bare domain. TLS certificates are mounted at `/etc/nginx/certs/fullchain.pem` and `/etc/nginx/certs/privkey.pem`; the host, not the image, obtains them.
 

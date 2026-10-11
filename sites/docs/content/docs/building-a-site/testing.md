@@ -55,7 +55,7 @@ sources:
     packages/kit/build/source-install.mjs,
     packages/kit/build/runtime-paths.mjs,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-11
 ---
 
 ## A proposal promises nothing it does not require
@@ -152,7 +152,7 @@ The navigation editor's options are checked against the pages and membership tie
 
 The module-manifest checks match build steps to their declared owners across the kit, theme and site, so a site-registered module is held to the same ownership rule as a kit module. The YAML front-matter writer is also checked for no-op saves: unchanged records retain their original formatting, including the spacing inside inline maps.
 
-`packages/kit/build/test.mjs`, what every site's `npm test` calls. Run it from the site directory: the runner takes `process.cwd()` as the site root and resolves shared packages, docs and specs from the workspace root. CI runs it from the generic `sites/docs` and `sites/demo` fixtures; the workspace-root, dev-directory and stop tests cover the shared front door and managed local processes. The source-CLI test invokes a local Git source without requiring publication, and the runtime-path test pins the shared cache location. Before the demo bundle build, CI starts and resets its local Supabase stack and passes the local URL and keys to the build; it does not use hosted backend credentials.
+`packages/kit/build/test.mjs`, what every site's `npm test` calls. Run it from the site directory: the runner takes `process.cwd()` as the site root and resolves shared packages, docs and specs from the workspace root. CI runs it from the generic `sites/docs` and `sites/demo` fixtures; the workspace-root, dev-directory and stop tests cover the shared front door and managed local processes. The source-CLI test invokes a local Git source without requiring publication and checks that standalone help does not need workspace Vite dependencies; the runtime-path test pins the shared cache location. Before the demo bundle build, CI starts and resets its local Supabase stack and passes the local URL and keys to the build; it does not use hosted backend credentials.
 
 CI installs Deno because `social-provider-matrix.test.mjs` runs a real SDK capability probe with `deno eval`.
 

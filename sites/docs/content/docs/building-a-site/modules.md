@@ -25,7 +25,7 @@ sources:
     packages/kit/build/runtime-paths.test.mjs,
     packages/movable-types/src/pages/AdminPage.vue,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-11
 ---
 
 Every module is a key of `modules` in the config, on unless `false`. Switching one off removes the whole module — its pages, its nav link, its admin sections, its share of the prerender — and the deploy's environment checks ask nothing of it. When a backend site registers admin models, its content must be row-backed for the production CMS and its editors to ship; the build refuses a file-backed bundle for that site.

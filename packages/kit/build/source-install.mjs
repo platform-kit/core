@@ -102,6 +102,7 @@ export function installPlatformKitSource(site, sourceRoot, { env = process.env }
   const result = spawnSync('npm', [
     'install',
     '--no-save',
+    '--install-links',
     '--package-lock=false',
     '--ignore-scripts',
     '--no-audit',

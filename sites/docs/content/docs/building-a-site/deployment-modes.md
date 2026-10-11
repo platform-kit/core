@@ -23,7 +23,7 @@ sources:
     packages/movable-types/src/pages/AdminPage.vue,
     packages/kit/src/lib/router.js,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-11
 ---
 
 A site built on the kit ships in one of three shapes, and the difference between them is not cosmetic: it decides which features exist at all.
@@ -40,7 +40,7 @@ There are four arrangements and three columns, which is not a rounding error. A 
 
 When `backend` and `repo` are both on and `content` is `rows`, the site is still in the **git** shape: Supabase rows drive the live CMS, while the connected repository remains the source of truth. Publishing writes the change back to that repository and its rebuild produces the static site. With `backend: true`, `content: 'rows'` and `repo: false`, Supabase is the only content store and the same CMS remains available; there is no repository to publish back to. A **static** deployment has no deployed CMS or authentication, though local development still has the editor.
 
-A production deploy from a standalone site also requires exact published versions of both PlatformKit packages in the site's manifest and lockfile. The GitHub-source CLI removes that registry dependency for local commands, not for production deploys. This is an install and release contract, not another deployment shape; a missing or inconsistent pin is refused before any production command.
+A production deploy from a standalone site accepts either exact published versions of both PlatformKit packages in the site's manifest and lockfile, or a verified source-install receipt created by the GitHub-source CLI. The source route installs both packages from the clean Core package directories in the public repository without changing the site's manifest or lockfile; deploy checks the receipt and the installed package contents before any production command. This is an install and release contract, not another deployment shape; missing, inconsistent, or modified packages are refused.
 
 ## A site declares its shape
 

@@ -4,7 +4,7 @@ title: File map
 description: Where things are — in a site, in the kit, in the theme — and the handful of places that are generated rather than written.
 order: 84
 sources: [packages/kit/package.json, packages/movable-types/package.json, packages/movable-types/src/theme.js, package.json, packages/kit/bin/platformkit.mjs, packages/kit/build/sites.mjs, packages/kit/build/runtime-paths.mjs, packages/kit/build/assets.mjs, packages/kit/build/plan.mjs, packages/kit/build/dev-directory.mjs, packages/kit/build/dev-stop.mjs, packages/kit/build/dev-workspace.mjs]
-reviewed: 2026-10-10
+reviewed: 2026-10-11
 ---
 
 ## A site
