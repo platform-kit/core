@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS "public"."bots" (
     "name" "text" NOT NULL,
     "avatar" "text",
     "model" "text",
+    "billing" "text",
     -- where it may be summoned: a room, the support desk, a coaching thread
     "surfaces" "text"[] DEFAULT ARRAY['spaces'::"text"] NOT NULL,
     -- who may summon it — the same grammar a space's membership is filled by
@@ -417,6 +418,12 @@ begin
   spent_window := public.agent_over_cap(b.slug, sk, b.limits->'per');
   if spent_window is not null then
     return jsonb_build_object('error', 'spent', 'window', spent_window);
+  end if;
+  -- A billed run reserves its bounded cost in agent-run immediately before each provider call.
+  -- Reject an unbillable subject here, but never substitute the legacy balance-only check for the
+  -- shared authorization/reservation/settlement contract.
+  if b.billing is not null and su is null then
+    return jsonb_build_object('error', 'usage-subject-required');
   end if;
 
   state := jsonb_build_object('messages',

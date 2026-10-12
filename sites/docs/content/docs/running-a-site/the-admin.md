@@ -10,7 +10,7 @@ sources:
     packages/movable-types/src/components/Orders.vue,
     packages/movable-types/src/components/Bookings.vue,
   ]
-reviewed: 2026-10-07
+reviewed: 2026-10-12
 ---
 
 ## Two admins, one address

@@ -18,4 +18,4 @@
 ## 3. The page and the whole
 
 - [x] 3.1 The docs page on the dev server says a restart takes over from an abandoned run. Verify: `docs-check.mjs`.
-- [ ] 3.2 By hand: `npm run dev` at the root, close the terminal tab, open another and run `npm run dev` again; it starts, naming what it stopped. Verify: recorded in `verify.md`.
+- [x] 3.2 By hand: `npm run dev` at the root, close the terminal tab, open another and run `npm run dev` again; it starts, naming what it stopped. Verify: recorded in `verify.md`.

@@ -40,6 +40,8 @@ import path from 'node:path'
 import matter from 'gray-matter'
 import { spanMinutes as delayMinutes } from '../src/lib/payouts.js'
 import { printSpec, PRINTED } from '../src/lib/print-offers.js'
+import { inferenceOf } from './inference-config.mjs'
+import { usageOf } from './site.mjs'
 
 const has = (env, k) => !!String(env[k] ?? '').trim()
 const toolOnPath = (t) => { try { execSync('command -v ' + t, { stdio: 'ignore', shell: true }); return true } catch { return false } }
@@ -54,7 +56,8 @@ const configured = (env, p) => (PRINTER_KEYS[p] || []).every((k) => has(env, k))
 export function surfaces(root = '.') {
   const md = (dir) => existsSync(`${root}/${dir}`) ? readdirSync(`${root}/${dir}`).filter((n) => n.endsWith('.md')).map((n) => ({ file: n.slice(0, -3), ...matter(readFileSync(`${root}/${dir}/${n}`, 'utf8')).data })) : []
   const live = (d) => d.published !== false
-  const offers = md('content/store/products').filter((d) => live(d) && d.sku && Number(d.price) > 0)
+  const offers = md('content/store/products').filter((d) => live(d) && d.sku &&
+    (Number(d.price) > 0 || (d.billing === 'subscription' && d.usage?.meter)))
   const printed = []
   for (const b of md('content/books')) {
     if (!live(b) || !b.print || !String(b.print.rights || '').trim()) continue
@@ -79,7 +82,13 @@ export function surfaces(root = '.') {
     const d = matter(readFileSync(`${root}/content/providers.md`, 'utf8')).data || {}
     providers = { offerings: d.offerings, connect: d.connect, terms: String(d.terms || '').trim(), delay: d['payout-delay'] }
   } catch { /* no policy file: providers are off */ }
-  return { root, offers: offers.map((o) => ({ sku: o.sku, kind: o.kind, ...(o.tax && (o.tax.automatic || o.tax.registration) ? { tax: true } : {}) })), printed, sessions, pricingSkus, funnels, sources, providers }
+  return { root, offers: offers.map((o) => ({
+    sku: o.sku,
+    key: o.key,
+    kind: o.kind,
+    ...(o.usage ? { usage: { unit: o.usage.unit, meter: o.usage.meter, overagePrice: o.usage.overagePrice } } : {}),
+    ...(o.tax && (o.tax.automatic || o.tax.registration) ? { tax: true } : {}),
+  })), printed, sessions, pricingSkus, funnels, sources, providers }
 }
 
 /*
@@ -145,6 +154,30 @@ export function checkDeploy(env, s, modules = {}, stepNeeds = [], shape = null, 
   }
   const mod = (m) => modules[m] !== false   /* a module off in platformkit.config.js asks for nothing of its own */
   const need = (k, why) => { if (!has(env, k)) missing.push({ key: k, why }) }
+
+  /* A site's provider declarations are its server-side billing authority. Validate them again at
+     deploy time and require secrets only for providers the bounded fallback policy can reach. */
+  let inference = null
+  let usage = null
+  try {
+    inference = inferenceOf(site || {})
+    usage = usageOf(site || {})
+  } catch (error) {
+    wrong.push(`inference or usage configuration is invalid: ${String(error?.message || error)}`)
+  }
+  if (inference) {
+    const attempts = inference.fallback.enabled ? inference.fallback.maxAttempts : 1
+    for (const provider of inference.providers.slice(0, attempts)) {
+      need(provider.secretEnv, `inference provider "${provider.id}" is reachable in the configured fallback chain`)
+    }
+    for (const [operationId, policy] of Object.entries(usage?.operations || {})) {
+      if (policy.mode === 'offer' && !s.offers.some((offer) => offer.key === policy.offerKey && offer.usage)) {
+        wrong.push(`usage operation "${operationId}" names no published usage offer with key ${policy.offerKey}`)
+      }
+    }
+  } else if (Object.values(usage?.operations || {}).some((policy) => policy.mode === 'offer')) {
+    wrong.push('reader-billed inference operations require a site inference provider and tariff declaration')
+  }
 
   /*
    * IS THERE A BACKEND, AND DOES ANYTHING NEED ONE?
@@ -213,6 +246,23 @@ export function checkDeploy(env, s, modules = {}, stepNeeds = [], shape = null, 
     need('STRIPE_WEBHOOK_SECRET', `the signing secret of the Stripe webhook endpoint (whsec_…) — every payment lands through it; ${why}`)
     if (has(env, 'STRIPE_SECRET_KEY') && !/^sk_live_/.test(env.STRIPE_SECRET_KEY)) wrong.push('STRIPE_SECRET_KEY is not a live key (sk_live_…) — a test key would sell nothing')
     if (has(env, 'STRIPE_WEBHOOK_SECRET') && !/^whsec_/.test(env.STRIPE_WEBHOOK_SECRET)) wrong.push('STRIPE_WEBHOOK_SECRET is not a webhook signing secret (whsec_…)')
+  }
+  const meteredOffers = s.offers.filter((offer) => offer.usage?.meter != null)
+  if (meteredOffers.length) {
+    const names = new Map()
+    for (const offer of meteredOffers) {
+      const meter = String(offer.usage.meter || '')
+      if (!/^[a-z][a-z0-9_]{0,99}$/.test(meter)) {
+        wrong.push(`${offer.sku} declares metering without a valid Stripe meter event name`)
+      } else if (names.has(meter)) {
+        wrong.push(`${offer.sku} and ${names.get(meter)} share Stripe meter event name ${meter}`)
+      } else {
+        names.set(meter, offer.sku)
+      }
+      if (!String(offer.usage.unit || '').trim() || !(Number(offer.usage.overagePrice) > 0)) {
+        wrong.push(`${offer.sku} declares metering without a usage unit and positive overage price`)
+      }
+    }
   }
   /* TAX IS A NOTE, NOT A REFUSAL, and the distinction is the point. An offer asking for automatic
      tax needs Stripe Tax switched on and a registration added in the Dashboard — there is no key
@@ -383,13 +433,59 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     const base = { VITE_SUPABASE_ANON_KEY: 'a', SUPABASE_SERVICE_ROLE_KEY: 's', VITE_APP_URL: 'https://example.com', SUPABASE_DB_URL: 'postgresql://postgres.example:x@aws-0-us-east-1.pooler.supabase.com:5432/postgres', PLATFORMKIT_SHADOW_DB_URL: 'postgresql://postgres.shadow:x@aws-0-us-east-1.pooler.supabase.com:5432/postgres', SMTP_HOST: 'h', SMTP_PORT: '587', SMTP_USER: 'u', SMTP_PASS: 'p', SMTP_FROM: 'The Site <hi@example.com>', VAPID_PRIVATE_KEY: 'k', VITE_VAPID_PUBLIC_KEY: 'K', VAPID_SUBJECT: 'mailto:support@example.com', NETWORK_HANDLE_DOMAIN: 'people.example.com' }
     const stripe = { STRIPE_SECRET_KEY: 'sk_live_x', STRIPE_WEBHOOK_SECRET: 'whsec_x' }
     const none = { offers: [], printed: [], sessions: [], pricingSkus: [], funnels: [] }
+    const pricedInferenceSite = {
+      inference: {
+        providers: [
+          { id: 'primary', protocol: 'openai-chat', secret: 'env:PRIMARY_KEY', model: 'm', models: { m: { inputPerMillionUsd: 1, outputPerMillionUsd: 2 } } },
+          { id: 'backup', protocol: 'openai-chat', secret: 'env:BACKUP_KEY', model: 'm', models: { m: { inputPerMillionUsd: 3, outputPerMillionUsd: 4 } } },
+        ],
+        fallback: { maxAttempts: 2 },
+        markup: { default: 1.25 },
+      },
+      usage: { operations: { 'agent.game': { mode: 'offer', offerKey: 'abcdef12' } } },
+    }
+    const inferenceSale = {
+      ...none,
+      offers: [{ key: 'abcdef12', sku: 'usage-pack', kind: 'good', usage: { unit: 'credit' } }],
+    }
+    const meteredSale = {
+      ...none,
+      offers: [{ sku: 'usage-plan', kind: 'form', usage: { unit: 'minute', meter: 'assistant_usage', overagePrice: 0.03 } }],
+    }
     const keys = (r) => r.missing.map((m) => m.key)
     const wrongs = (r) => r.wrong
     let n = 0, bad = 0
     const t = (name, cond) => { n++; if (!cond) { bad++; console.log('  FAIL', name) } }
     t('nothing on: the always-set alone', checkDeploy(base, none).ok)
     t('nothing on: stripe not asked for', !keys(checkDeploy(base, none)).includes('STRIPE_SECRET_KEY'))
+    t('the inference fallback chain asks for every reachable provider secret',
+      keys(checkDeploy(base, inferenceSale, {}, [], null, [], undefined, pricedInferenceSite))
+        .filter((key) => key === 'PRIMARY_KEY' || key === 'BACKUP_KEY').length === 2)
+    t('the inference site passes with every configured provider secret',
+      checkDeploy({ ...base, ...stripe, PRIMARY_KEY: 'p', BACKUP_KEY: 'b' }, inferenceSale, {}, [], null, [], undefined, pricedInferenceSite).ok)
+    t('a reader-billed operation without site tariffs is refused',
+      wrongs(checkDeploy(base, inferenceSale, {}, [], null, [], undefined, { usage: pricedInferenceSite.usage }))
+        .some((message) => /require a site inference provider and tariff/.test(message)))
+    t('an operation cannot refer to an unpublished or non-usage offer',
+      wrongs(checkDeploy({ ...base, PRIMARY_KEY: 'p', BACKUP_KEY: 'b' }, none, {}, [], null, [], undefined, pricedInferenceSite))
+        .some((message) => /no published usage offer/.test(message)))
+    t('deploy rejects invalid provider references and fallback limits',
+      wrongs(checkDeploy(base, inferenceSale, {}, [], null, [], undefined, {
+        ...pricedInferenceSite,
+        inference: { ...pricedInferenceSite.inference, fallback: { maxAttempts: 3 } },
+      })).some((message) => /inference\.fallback\.maxAttempts/.test(message)))
     t('an offer for sale asks for stripe', keys(checkDeploy(base, { ...none, offers: [{ sku: 'x', kind: 'membership' }] })).includes('STRIPE_SECRET_KEY'))
+    t('a zero-base metered offer asks for live Stripe credentials', (() => {
+      const r = checkDeploy(base, meteredSale)
+      return keys(r).includes('STRIPE_SECRET_KEY') && keys(r).includes('STRIPE_WEBHOOK_SECRET')
+    })())
+    t('a metered offer passes with live Stripe credentials', checkDeploy({ ...base, ...stripe }, meteredSale).ok)
+    t('a metered offer with an invalid event name is refused', checkDeploy({ ...base, ...stripe }, {
+      ...meteredSale, offers: [{ ...meteredSale.offers[0], usage: { ...meteredSale.offers[0].usage, meter: 'Not valid' } }],
+    }).wrong.some((w) => /valid Stripe meter event name/.test(w)))
+    t('metered offers cannot share an event name', checkDeploy({ ...base, ...stripe }, {
+      ...meteredSale, offers: [meteredSale.offers[0], { ...meteredSale.offers[0], sku: 'other-plan' }],
+    }).wrong.some((w) => /share Stripe meter event name/.test(w)))
     /* TAX IS A NOTE, NOT A REFUSAL: there is no key for Stripe Tax, so nothing here can verify it,
        and unconfigured Stripe returns no tax rather than an error — which is the silent failure the
        note exists to prevent. These two cases pin that it is said, and only when asked for. */

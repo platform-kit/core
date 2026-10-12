@@ -20,11 +20,13 @@
  */
 import { stripe } from './lib.ts'
 import { of, onRefresh } from './compiled.ts'
+import { ensureUsageBilling } from './usage-stripe.mjs'
 
 export type Offer = {
   sku: string; key: string; title: string; kind: 'book' | 'good' | 'membership' | 'session' | 'print' | 'download' | 'event'; billing: 'once' | 'subscription'
   period: 'weekly' | 'monthly' | null; unit_amount: number; currency: string
   tier: string | null; rank: number | null; book: string | null
+  usage?: { unit: string; rate_micros: number; grant_micros?: number; included_micros?: number; meter?: string; overage_price_micros?: number; speech_cost_per_second_micros?: number }
   /* a book in print (src/lib/print-offers.js): the format this sku is, its binding, the choices a line may carry, the files that come with it */
   format?: string; binding?: string | null; trim?: string; paper?: string; contents?: string[]; cloth?: string[] | null; foil?: string[] | null; includes?: string[]
 }
@@ -54,11 +56,28 @@ export const offer = (sku: string): Offer | null => OFFERS[sku] ?? null
 export const offerByKey = (key: string): Offer | null => Object.values(OFFERS).find((o) => o.key === key) ?? null
 
 const interval = (o: Offer) => (o.period === 'weekly' ? 'week' : 'month')
+export const offerMetadata = (o: Offer): Record<string, string> => ({
+  key: o.key,
+  sku: o.sku,
+  kind: o.kind,
+  ...(o.tier ? { tier: o.tier } : {}),
+  ...(o.book ? { book: o.book } : {}),
+  ...(o.usage ? {
+    usage_unit: o.usage.unit,
+    usage_rate_micros: String(o.usage.rate_micros),
+    ...(o.usage.grant_micros === undefined ? {} : { usage_grant_micros: String(o.usage.grant_micros) }),
+    ...(o.usage.included_micros === undefined ? {} : { usage_included_micros: String(o.usage.included_micros) }),
+    ...(o.usage.meter ? { usage_meter: o.usage.meter } : {}),
+    ...(o.usage.overage_price_micros === undefined ? {} : { usage_overage_price_micros: String(o.usage.overage_price_micros) }),
+    usage_speech_cost_per_second_micros: String(o.usage.speech_cost_per_second_micros ?? 0),
+  } : {}),
+})
 const priceMatches = (p: any, o: Offer) =>
   p.active && p.unit_amount === o.unit_amount && p.currency === o.currency &&
-  (o.billing === 'subscription' ? p.type === 'recurring' && p.recurring?.interval === interval(o) && (p.recurring?.interval_count ?? 1) === 1 : p.type === 'one_time')
+  (o.billing === 'subscription' ? p.type === 'recurring' && p.recurring?.interval === interval(o) && (p.recurring?.interval_count ?? 1) === 1 : p.type === 'one_time') &&
+  (!o.usage || Object.entries(offerMetadata(o)).every(([key, value]) => p.metadata?.[key] === value))
 
-const meta = (o: Offer) => ({ key: o.key, sku: o.sku, kind: o.kind, ...(o.tier ? { tier: o.tier } : {}), ...(o.book ? { book: o.book } : {}) })
+const meta = offerMetadata
 
 /* the Stripe product for an offer: found by metadata.key (the offer's identity), else
    created; its name and sku kept current, since both may change */
@@ -68,7 +87,9 @@ export async function ensureProduct(o: Offer) {
   /* a product made before offers had keys is found by its sku once, and given its key */
   if (!p) { const old = await stripe.products.search({ query: `active:'true' AND metadata['sku']:'${o.sku}'`, limit: 1 }); p = old.data[0] }
   if (!p) p = await stripe.products.create({ name: o.title, metadata: meta(o) })
-  else if (p.name !== o.title || p.metadata?.sku !== o.sku || p.metadata?.key !== o.key) p = await stripe.products.update(p.id, { name: o.title, metadata: meta(o) })
+  else if (p.name !== o.title || Object.entries(meta(o)).some(([key, value]) => p.metadata?.[key] !== value)) {
+    p = await stripe.products.update(p.id, { name: o.title, metadata: meta(o) })
+  }
   return p
 }
 
@@ -91,7 +112,7 @@ function currencyOptionsOf(o: any): Record<string, { unit_amount: number }> {
   return out
 }
 
-export async function ensureOffer(sku: string): Promise<{ product: string; price: string; made: boolean }> {
+export async function ensureOffer(sku: string): Promise<{ product: string; price: string; made: boolean; usage_price?: string }> {
   const o = offer(sku)
   if (!o) throw new Error(`unknown offer ${sku}`)
   const product = await ensureProduct(o)
@@ -99,7 +120,11 @@ export async function ensureOffer(sku: string): Promise<{ product: string; price
   const current = live.data[0]
   /* a price still under the sku from before offers had keys retires, so one offer has one live price */
   const retireBySku = async (keep: string) => { const bySku = await stripe.prices.list({ lookup_keys: [o.sku], active: true, limit: 1 }); for (const p of bySku.data) if (p.product === product.id && p.id !== keep) { await stripe.products.update(product.id, { default_price: keep }); await stripe.prices.update(p.id, { active: false }) } }
-  if (current && current.product === product.id && priceMatches(current, o)) { await retireBySku(current.id); return { product: product.id, price: current.id, made: false } }
+  if (current && current.product === product.id && priceMatches(current, o)) {
+    await retireBySku(current.id)
+    const usage = await ensureUsageBilling(stripe, o, product.id, meta(o))
+    return { product: product.id, price: current.id, made: Boolean(usage?.made), ...(usage ? { usage_price: usage.price } : {}) }
+  }
   /*
    * A SECOND CURRENCY IS AN ENTRY ON THIS PRICE, NOT A SECOND PRICE.
    *
@@ -121,12 +146,13 @@ export async function ensureOffer(sku: string): Promise<{ product: string; price
   await stripe.products.update(product.id, { default_price: price.id })
   if (current) await stripe.prices.update(current.id, { active: false })
   await retireBySku(price.id)
-  return { product: product.id, price: price.id, made: true }
+  const usage = await ensureUsageBilling(stripe, o, product.id, meta(o))
+  return { product: product.id, price: price.id, made: true, ...(usage ? { usage_price: usage.price } : {}) }
 }
 
 /* every offer, for the deploy's push */
 export async function ensureAll() {
-  const out: Record<string, { product: string; price: string; made: boolean }> = {}
+  const out: Record<string, { product: string; price: string; made: boolean; usage_price?: string }> = {}
   for (const sku of Object.keys(OFFERS)) out[sku] = await ensureOffer(sku)
   return out
 }

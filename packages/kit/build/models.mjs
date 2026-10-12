@@ -15,7 +15,7 @@
  *   modelWords(root)                    the `models` strings scope, merged (theme under site)
  *   writeJson(root, outDir)             /data/models/<key>.json for every model with JSON on, from .velite
  *
- *   node build/models.mjs --check       every model and its entries checked, listed
+ *   node build/models-check.mjs --check every model and its entries checked, listed
  *   node build/models.mjs --json [dir]  the JSON files written (the build runs it into dist)
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'   /* the JSON the build writes into dist: a build output, not content */
@@ -95,7 +95,8 @@ export async function readEntries(store, key) {
   return out
 }
 export async function checkAll(root = ROOT, opts = {}) {
-  const { s } = await import('velite')
+  const s = opts.s
+  if (!s) throw new Error('checkAll requires the schema library from its Node-only caller')
   const words = opts.words || await modelWords(root)
   const faults = []
   const models = await readModels(root)
@@ -144,9 +145,7 @@ if (import.meta.url === new URL(process.argv[1], 'file:').href) {
     const w = await writeJson(ROOT, dir)
     console.log(`✔ models: ${w.length} JSON file(s)${w.length ? ' — ' + w.join(', ') : ''} → ${dir}/data/models`)
   } else {
-    const { faults, report } = await checkAll(ROOT)
-    if (faults.length) { console.error('✖ models:\n  ' + faults.join('\n  ')); process.exit(1) }
-    if (args.includes('--check')) for (const r of report) console.log(`  ${r.key}${r.published ? '' : ' (unpublished)'}: ${r.fields} field(s), ${r.entries} entr${r.entries === 1 ? 'y' : 'ies'} — ${r.deliver.join(', ')}`)
-    console.log(`✔ models: ${report.length} model(s)`)
+    console.error('Run node build/models-check.mjs [--check] to validate models.')
+    process.exitCode = 1
   }
 }

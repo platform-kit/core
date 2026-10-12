@@ -9,7 +9,7 @@ sources:
     packages/kit/vite/index.mjs,
     packages/kit/supabase/config.toml.template,
   ]
-reviewed: 2026-10-11
+reviewed: 2026-10-12
 ---
 
 | Key                                                     | Type                                                                                     | Default                                       | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |

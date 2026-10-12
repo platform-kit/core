@@ -49,6 +49,7 @@ commerce: Commerce
 events: Events
 experiments: Experiments
 explore: Explore
+usage: Usage
 
 ### filters
 
@@ -681,3 +682,45 @@ kind-number: number
 kind-date: date
 kind-file: file
 kind-boolean: yes / no
+
+## usage
+
+### page
+
+title: Usage billing
+subtitle: Provider costs, customer unit prices and Stripe usage awaiting reconciliation.
+inference-heading: Inference attempts · last 30 days
+inference-copy: Provider spend is shown separately from customer charges. Estimated attempts are marked for review.
+no-inference: No inference attempts were recorded in this period.
+operation: Operation
+markup: Markup
+customer-cost: Customer cost
+customer-units: Customer units
+retail-value: Retail value
+measurement: Measurement
+estimated: Estimated
+measured: Measured
+site: Site-funded
+reader: Reader-funded
+no-offer: No usage offer
+not-applicable: Not applicable
+refresh: Refresh
+loading: Loading usage records…
+error: Unable to load usage records.
+recent-heading: Recent measured usage · last 30 days
+no-usage: No billable usage was recorded in this period.
+offer: Offer
+unit: Unit
+events: Calls
+provider-cost: Provider cost
+measured-unit-cost: Measured cost per unit
+customer-unit-price: Customer price per unit
+unknown: Not available
+below-cost: Price is below measured provider cost
+unresolved-heading: Stripe reports needing attention
+unresolved-copy: Pending reports are retried only while the provider guarantees identifier deduplication. Expired reports need manual reconciliation.
+no-unresolved: No usage reports need attention.
+retry-safe: Retry safe reports
+retrying: Retrying…
+pending: Pending
+expired: Expired · reconcile manually

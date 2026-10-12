@@ -5,6 +5,7 @@ import path from 'node:path'
 import { DEPLOYMENT_DEFAULTS, modeOf } from './modes.mjs'
 import { MODULES } from './modules/kit.mjs'
 import { readManifests } from './modules/manifest.mjs'
+import { inferenceOf } from './inference-config.mjs'
 
 /*
  * THE RESOLVED MODULE SET. The manifests are the kit's own for now; a site's own module joins them
@@ -48,6 +49,55 @@ export async function loadSite(root = process.cwd()) {
 export const storeOf = (c) => ({ suppliers: ((c.store || {}).suppliers) || null, kinds: ((c.store || {}).kinds) || null })
 
 export const deploymentOf = (c) => ({ ...DEPLOYMENT_DEFAULTS, ...(c.deployment || {}) })
+
+export const usageOf = (c) => {
+  const autoTopUp = c.usage?.autoTopUp
+  if (autoTopUp != null && (!autoTopUp || typeof autoTopUp !== 'object' || Array.isArray(autoTopUp))) {
+    throw new Error('usage.autoTopUp must be a group of fields')
+  }
+  const packKeys = autoTopUp?.packKeys == null ? [] : autoTopUp.packKeys
+  if (!Array.isArray(packKeys) || packKeys.some((key) => typeof key !== 'string' || !/^[0-9a-f]{8}$/.test(key))) {
+    throw new Error('usage.autoTopUp.packKeys must be stable eight-character offer keys')
+  }
+  if (new Set(packKeys).size !== packKeys.length) throw new Error('usage.autoTopUp.packKeys cannot repeat an offer key')
+  const operationsSource = c.usage?.operations ?? {}
+  if (!operationsSource || typeof operationsSource !== 'object' || Array.isArray(operationsSource)) {
+    throw new Error('usage.operations must map stable operation IDs to billing policies')
+  }
+  const operations = {}
+  for (const [id, policy] of Object.entries(operationsSource)) {
+    if (!/^[a-z][a-z0-9_.:-]{0,95}$/.test(id)) throw new Error(`usage.operations key "${id}" must be a stable operation ID`)
+    if (!policy || typeof policy !== 'object' || Array.isArray(policy)) {
+      throw new Error(`usage.operations.${id} must be a group of fields`)
+    }
+    if (policy.mode === 'site-funded') {
+      if (policy.offerKey != null) throw new Error(`usage.operations.${id}: site-funded policy cannot name an offer`)
+      if (policy.markup != null) throw new Error(`usage.operations.${id}: site-funded policy cannot set reader markup`)
+    } else if (policy.mode === 'offer') {
+      if (typeof policy.offerKey !== 'string' || !/^[0-9a-f]{8}$/.test(policy.offerKey)) {
+        throw new Error(`usage.operations.${id}.offerKey must be a stable eight-character offer key`)
+      }
+    } else {
+      throw new Error(`usage.operations.${id}.mode must be site-funded or offer`)
+    }
+    const normalized = { mode: policy.mode, ...(policy.offerKey ? { offerKey: policy.offerKey } : {}) }
+    if (policy.markup != null) {
+      const markup = Number(policy.markup)
+      if (!Number.isFinite(markup) || markup <= 0 || Math.round(markup * 1_000_000) < 1 ||
+          !Number.isSafeInteger(Math.round(markup * 1_000_000))) {
+        throw new Error(`usage.operations.${id}.markup must be a positive multiplier`)
+      }
+      normalized.markup_micros = Math.round(markup * 1_000_000)
+    }
+    operations[id] = normalized
+  }
+  return {
+    autoTopUp: { enabled: autoTopUp?.enabled === true, packKeys: [...packKeys] },
+    ...(Object.keys(operations).length ? { operations } : {}),
+  }
+}
+
+export { inferenceOf }
 
 /*
  * THE ONE PLACE THE SHAPE IS ANSWERED. Nothing else may read CONTENT_STORE, cloud.json or a key to
@@ -276,6 +326,8 @@ export const theme = ${JSON.stringify(c.theme || '')}
 export const api = ${JSON.stringify(c.api || {})}
 export const network = ${JSON.stringify(c.network || {})}
 export const coaching = ${JSON.stringify(coachingOf(c))}
+export const usage = ${JSON.stringify(usageOf(c))}
+export const inference = ${JSON.stringify(inferenceOf(c))}
 `
 /* WHAT THE SITE SAID, and nothing invented. This used to answer 'icon' for a site that had said
    nothing, which is a default decided in the wrong place: whether the word or the icon is right

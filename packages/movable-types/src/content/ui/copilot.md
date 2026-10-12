@@ -34,6 +34,7 @@ no-mic: This page needs the microphone. Allow it and reload.
 no-listening: This browser cannot listen, so type instead.
 compose: Type a message
 send: Send
+telemetry-error: Speech recognition time could not be recorded.
 sessions-show: Past conversations
 sessions-hide: Hide past conversations
 sessions-head: Conversations

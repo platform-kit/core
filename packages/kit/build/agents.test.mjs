@@ -147,6 +147,8 @@ const toolStep = (name, result, call = 'c1') => ({ kind: 'tool', name, response:
   const tiny = costOf({ tokensIn: 900, tokensOut: 8 }, { in: 1, out: 5 })
   ok("a sub-penny call still costs something", tiny > 0 && tiny < 1, String(tiny))
   ok("…and twenty of them add up to something a budget can see", tiny * 20 > 1)
+  ok("micro-dollar precision preserves the measured cost of small provider calls",
+    costOf({ tokensIn: 1, tokensOut: 0 }, { in: 1, out: 0 }) > 0)
   /* and the budget still bites, whatever the size of the numbers */
   const spent = { ...bot, limits: { ...bot.limits, spend: 0.01 } }   /* one penny */
   ok("a run that has spent its pennies stops",
@@ -302,6 +304,21 @@ const toolStep = (name, result, call = 'c1') => ({ kind: 'tool', name, response:
 
   /* the worker must not offer one either */
   const w = readFileSync(join(HERE, '..', 'supabase', 'functions', 'agent-run', 'index.ts'), 'utf8')
+  const think = w.slice(w.indexOf('async function think'), w.indexOf('async function stopForUsage'))
+  ok('billed agent calls reserve through the shared gate before the provider call',
+    think.indexOf('authorizeUsage(') >= 0 && think.indexOf('authorizeUsage(') < think.indexOf('await ask('))
+  ok('billed agent calls settle through their reservation rather than legacy usage RPCs',
+    think.includes('usageAuthorization.settle(') && !/usage_(?:admit|record)\(/.test(think))
+  ok('the verified offer and reader stay attached to the reservation',
+    think.includes('offerKey: bot.billing') && think.includes('userId: usageUserId'))
+  const agentSql = readFileSync(join(HERE, '..', 'supabase', 'schemas', '96-agents.sql'), 'utf8')
+  const summonSql = agentSql.slice(agentSql.indexOf('"public"."agent_summon"'), agentSql.indexOf('$$;', agentSql.indexOf('"public"."agent_summon"')))
+  ok('agent_summon keeps the per-person ceiling and defers billable authorization to the worker',
+    summonSql.includes('agent_over_cap') && summonSql.includes('usage-subject-required') && !summonSql.includes('usage_admit'))
+  const copilotSql = readFileSync(join(HERE, '..', 'supabase', 'schemas', '95-copilot.sql'), 'utf8')
+  const turnSql = copilotSql.slice(copilotSql.indexOf('"public"."copilot_turn"'), copilotSql.indexOf('$$;', copilotSql.indexOf('"public"."copilot_turn"')))
+  ok('copilot_turn keeps its per-turn spend ceiling and defers billing to the same worker gate',
+    turnSql.includes('turn_budget') && turnSql.includes('agent_over_cap') && !turnSql.includes('usage_admit'))
   const call = /result = await builtin\.run\(\{[^}]*\}/.exec(w)
   ok('the worker passes no asker to a builtin', call && !/asker/.test(call[0]), call && call[0])
   const ctx = /const ctxOf = \(run: any\) => \(\{[\s\S]*?\}\)/.exec(w)

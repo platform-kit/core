@@ -17,6 +17,7 @@ import siteConfig, { modules } from '#site'   /* the module switches (platformki
 /* The instrument is 200kB of corpora and engine. Keeping it behind a dynamic
    import means / never pays for it. */
 const DiagnosticsPage = defineAsyncComponent(() => import('./pages/DiagnosticsPage.vue'))
+const UsagePage = defineAsyncComponent(() => import('./pages/UsagePage.vue'))
 /* a booking's video room on the site: its own page, no sheet around it (the sessions module) */
 const CallPage = moduleOn('sessions') ? defineAsyncComponent(() => import('./pages/CallPage.vue')) : null
 /* speaking to an assistant: its own page, no sheet around it (the bots module) */
@@ -84,6 +85,7 @@ watch(route, (path) => { applyRouteMeta(path); if (path !== ROUTES.preview) page
   <LandingPage v-else-if="route === ROUTES.home" />
   <CallPage v-else-if="CallPage && route.startsWith(ROUTES.diagnostics + '/call/')" :key="route" />
   <VoicePage v-else-if="VoicePage && route.startsWith(ROUTES.diagnostics + '/voice/')" :key="route" />
+  <UsagePage v-else-if="route === ROUTES.diagnostics + '/usage'" />
   <DiagnosticsPage v-else-if="route === ROUTES.diagnostics || route.startsWith(ROUTES.diagnostics + '/')" />
   <ContentPage v-else-if="route === ROUTES.content || route.startsWith(ROUTES.content + '/')" />
   <ContentPage v-else-if="DOCS_ONLY && (route === ROUTES.docs || route.startsWith(ROUTES.docs + '/'))" />

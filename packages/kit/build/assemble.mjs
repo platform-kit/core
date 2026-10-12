@@ -103,17 +103,46 @@ plan.set('data.sql', {
 for (const f of walk(path.join(KIT, 'functions'))) put('functions/' + rel(path.join(KIT, 'functions'), f), f)
 const siteFn = path.resolve(ROOT, D.functions)
 for (const f of walk(siteFn)) { const r = rel(siteFn, f); if (path.basename(r) === '.gitkeep') continue; put('functions/' + r, f) }
-/* the content pipe, for the admin function of cloud mode: build/admin-pipe.mjs and every module it reaches by a relative
-   import — the models, the grammars, the store, the pure libraries under src/lib — copied under functions/_shared/pipe/
-   with the kit's own layout kept, so every relative import still resolves; the machine-bound scripts (the print's
-   renderer, the pusher) are reached by a name no bundler follows and are not copied. The site's own models (admin.models)
-   and what they import come too, under pipe/site/, their `@platform-kit/kit/…` imports rewritten to the copy. A stub
-   `#site` (pipe/site.js) says what the config says. The function's deno.json maps the bare names. */
+/* The content pipe, for the admin and agent functions: shared modules are copied under one
+   `_shared/pipe/` tree with their relative imports intact. A function's deno.json import map is
+   scoped to its own directory and does not resolve bare imports from this shared tree, so those
+   imports are rewritten to the explicit npm:/jsr: targets declared by the consuming functions. */
 /* THE PIPE IS ONE DEFINITION, and it is build/pipe-closure.mjs — the roots, the skip list and the
    walk. It was two for a while: this file kept its own copy, and a module added to the skip list
    there went on being copied into the function from here. Never re-declare either list. */
 const KIT_PKG = path.resolve(KIT, '..')
-for (const [r, abs] of closure(KIT_PKG, PIPE_ROOTS, PIPE_SKIP)) put('functions/_shared/pipe/' + r, abs)
+const pipeImportMaps = [...plan]
+  .filter(([name]) => /^functions\/[^/]+\/deno\.json$/.test(name))
+  .flatMap(([file, { content }]) => {
+    const imports = JSON.parse(content.toString()).imports || {}
+    return Object.entries(imports).map(([key, target]) => ({ file, key, target }))
+  })
+const sharedSpecifier = (specifier, importer) => {
+  if (/^(?:\.{1,2}\/|\/|npm:|jsr:|node:|https?:|data:)/.test(specifier)) return specifier
+  const matches = pipeImportMaps.filter(({ key }) => specifier === key || specifier.startsWith(key.endsWith('/') ? key : key + '/'))
+  if (!matches.length) throw new Error(`assemble: shared Edge module ${importer} imports "${specifier}" but no function deno.json maps it`)
+  const longest = Math.max(...matches.map(({ key }) => key.length))
+  const resolved = new Set(matches.filter(({ key }) => key.length === longest).map(({ file, key, target }) => {
+    if (typeof target !== 'string') throw new Error(`assemble: invalid Deno import map target for "${key}" in ${file}`)
+    const suffix = specifier.slice(key.length)
+    if (/^(?:npm|jsr|node):/.test(target)) return target + suffix
+    if (target.startsWith('./') || target.startsWith('../')) {
+      const mapped = path.posix.normalize(path.posix.join(path.posix.dirname(file), target, suffix))
+      let relative = path.posix.relative(path.posix.dirname(importer), mapped)
+      if (!relative.startsWith('.')) relative = './' + relative
+      return relative
+    }
+    return target + suffix
+  }))
+  if (resolved.size !== 1) throw new Error(`assemble: functions declare conflicting Deno import maps for shared import "${specifier}" in ${importer}`)
+  return [...resolved][0]
+}
+const sharedStaticImportPattern = /^(\s*(?:import|export)\s+(?:[^'"]*?\s+from\s+)?)(['"])([^'"]+)\2/gm
+const sharedDynamicImportPattern = /(\bimport\s*\(\s*)(['"])([^'"]+)\2/g
+for (const [r, abs] of closure(KIT_PKG, PIPE_ROOTS, PIPE_SKIP)) {
+  const target = 'functions/_shared/pipe/' + r
+  plan.set(target, { from: abs, content: fs.readFileSync(abs) })
+}
 
 /* THE PRINT FUNCTION'S OWN. print-render sets a book where there is no machine, and the three
    things it needs are already written and already pure: the typesetter (which never touched a
@@ -185,6 +214,14 @@ if (c.admin && c.admin.models) {
   }
   plan.set('functions/_shared/pipe/site/index.js', { from: c.admin.models, content: Buffer.from(`export { models } from './${entry}'\n`) })
 } else plan.set('functions/_shared/pipe/site/index.js', { from: 'platformkit.config.js', content: Buffer.from('export const models = []\n') })
+for (const [target, entry] of plan) {
+  if (!target.startsWith('functions/_shared/pipe/') || !/\.(?:[cm]?js|ts)$/.test(target)) continue
+  const rewrite = (_, prefix, quote, specifier) => `${prefix}${quote}${sharedSpecifier(specifier, target)}${quote}`
+  const content = entry.content.toString('utf8')
+    .replace(sharedStaticImportPattern, rewrite)
+    .replace(sharedDynamicImportPattern, rewrite)
+  plan.set(target, { ...entry, content: Buffer.from(content) })
+}
 /* the theme's default strings, by scope, for the pipe's words in the function (the theme's manifest is not there to read) */
 {
   const { loadTheme } = await import('./theme.mjs'); const { readScopes } = await import('./strings-io.mjs')

@@ -64,6 +64,10 @@ sources:
 reviewed: 2026-10-11
 ---
 
+## Restarting development
+
+At the workspace root, `platformkit dev` starts selected sites behind the shared front door. If a run ends without cleanup, the next start takes over its recorded site servers and front door; see [multiple-site development](/content/docs/running-a-site/multiple-sites) for what the restart reports and how it protects unrelated listeners.
+
 Some steps exist so a deployment comes up already configured rather than waiting to be clicked into shape: **cloud-config** writes where cloud mode publishes, **webhooks-config** the subscriptions this deployment ships (with **webhooks-push** making them real against the project after the catalog), and **spaces** compiles the rooms a site declares under `content/spaces` (with **spaces-push** projecting them into the tables the surface reads). **bots** compiles the bots, tools and slash commands a site declares into three files — the worker's, which carries each bot's prompt and each command's, and the browser's two, which carry only enough to offer a bot and draw a command's form — with **bots-push** projecting the bots themselves into the table the database asks when somebody summons one (one way; a bot no file declares is removed). **events** does the same for what is on — `content/events` compiled for the site, then **events-push** expanding each repeat into a rolling year of occurrences once the spaces exist to hang them on. See [Declarations and state](/content/docs/building-a-site/declarations-and-state).
 
 ## Which engine compiles the content

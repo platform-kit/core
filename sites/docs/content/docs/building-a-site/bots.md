@@ -16,6 +16,9 @@ sources:
     packages/kit/build/copilot.test.mjs,
     packages/movable-types/src/content/skills,
     packages/kit/src/lib/agents/loop.js,
+    packages/kit/supabase/functions/_shared/usage-gate.mjs,
+    packages/kit/supabase/functions/_shared/usage.ts,
+    packages/kit/build/usage.test.mjs,
     packages/kit/src/lib/agents/api.js,
     packages/kit/build/agents.test.mjs,
     packages/kit/build/agents-db.test.mjs,
@@ -178,6 +181,8 @@ limits: { steps: 12, spend: 0.50, minutes: 10 }
 ---
 You are a study buddy for people reading the wisdom classics…
 ```
+
+A bot may also name a usage offer by its stable key with `billing`. The same server-side gate reserves or verifies usage before paid provider work and attributes completed calls to the verified person the bot serves, whether they use voice, a private conversation or a shared channel. The offer can be a prepaid pack or a Stripe-metered subscription; unbilled bots keep their existing behavior. Readers review balances and manage top-up independently at `/app/usage`, not in conversation history. See [Usage billing](/content/docs/running-a-site/selling/usage-billing) for the offer fields and operating rules.
 
 ## Social automations
 

@@ -14,7 +14,8 @@
  * what it granted and nothing else.
  */
 import { stripe, admin, json } from '../_shared/lib.ts'
-import { checkoutCompleted, subscriptionChanged, subscriptionDeleted, iso, idOf } from '../_shared/ledger.ts'
+import { checkoutCompleted, subscriptionChanged, subscriptionDeleted, grantUsage, iso, idOf } from '../_shared/ledger.ts'
+import { includedGrantForInvoice } from '../_shared/usage-stripe.mjs'
 
 const SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? ''
 
@@ -27,11 +28,40 @@ async function handle(event: any) {
     case 'customer.subscription.deleted': await subscriptionDeleted(o.id); break
     case 'invoice.paid': {
       const subId = idOf(o.subscription); if (!subId) break
-      const end = iso(o.lines?.data?.[0]?.period?.end)
-      if (end) {
-        await admin.from('subscriptions').update({ current_period_end: end, status: 'active', updated_at: new Date().toISOString() }).eq('id', subId)
-        await admin.from('entitlements').update({ expires_at: end, active: true }).eq('source_id', subId)
+      let { data: subscription } = await admin.from('subscriptions').select('user_id, key, usage_price_id, usage_meter, usage_unit, usage_rate_micros, usage_included_micros, usage_overage_price_micros, usage_speech_cost_per_second_micros, current_period_start, current_period_end').eq('id', subId).maybeSingle()
+      if (!subscription) {
+        const current = await stripe.subscriptions.retrieve(subId, { expand: ['items.data.price'] })
+        await subscriptionChanged(current)
+        ;({ data: subscription } = await admin.from('subscriptions').select('user_id, key, usage_price_id, usage_meter, usage_unit, usage_rate_micros, usage_included_micros, usage_overage_price_micros, usage_speech_cost_per_second_micros, current_period_start, current_period_end').eq('id', subId).maybeSingle())
       }
+      const lines = o.lines?.data ?? []
+      const meteredLine = lines.find((line: any) =>
+        line.price?.metadata?.usage === 'metered' ||
+        String(line.price?.lookup_key ?? '').endsWith('_usage') ||
+        idOf(line.price ?? line.pricing?.price_details?.price) === subscription?.usage_price_id)
+      const periodLine = meteredLine ?? lines.find((line: any) => line.period?.start && line.period?.end)
+      const start = iso(periodLine?.period?.start) ?? subscription?.current_period_start ?? null
+      const end = iso(periodLine?.period?.end) ?? subscription?.current_period_end ?? null
+      if (start || end) {
+        const { error } = await admin.from('subscriptions').update({
+          ...(start ? { current_period_start: start } : {}),
+          ...(end ? { current_period_end: end } : {}),
+          status: 'active', updated_at: new Date().toISOString(),
+        }).eq('id', subId)
+        if (error) throw new Error(`subscription invoice period was not recorded: ${error.message}`)
+        if (end) await admin.from('entitlements').update({ expires_at: end, active: true }).eq('source_id', subId)
+      }
+      const priceId = idOf(meteredLine?.price ?? meteredLine?.pricing?.price_details?.price)
+      const inlineMetadata = meteredLine?.price?.metadata
+      const priceMetadata = inlineMetadata?.usage_offer_key
+        ? inlineMetadata
+        : priceId ? (await stripe.prices.retrieve(priceId)).metadata ?? {} : {}
+      const usageGrant = includedGrantForInvoice(subscription, o, start, end, priceMetadata)
+      if (usageGrant) await grantUsage(
+        usageGrant.user_id, usageGrant.offer_key, usageGrant.source, usageGrant.source_id,
+        usageGrant.units_micros, usageGrant.period_start, usageGrant.expires_at,
+        usageGrant,
+      )
       break
     }
     case 'invoice.payment_failed': {

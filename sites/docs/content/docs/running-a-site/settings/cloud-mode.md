@@ -22,7 +22,7 @@ sources:
     packages/kit/supabase/functions/_shared/mjml.ts,
     packages/kit/build/emails-compile.mjs,
   ]
-reviewed: 2026-10-11
+reviewed: 2026-10-12
 ---
 
 Cloud mode stores editable content in Supabase instead of relying on files in a checkout. Use it when editors need to change published content from the live site. It requires a backend and the live admin at `/admin`; a static site cannot use it.

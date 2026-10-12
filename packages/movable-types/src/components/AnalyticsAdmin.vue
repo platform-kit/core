@@ -28,6 +28,7 @@ import { statusOf, endsAt } from '@platform-kit/kit/lib/experiments.js'
 import { TYPEN } from '#site/instrument'   /* the site's vocabulary for a reading, or the kit's empty default */
 import { modules } from '#site'
 import AdminHead from './admin/AdminHead.vue'
+import UsageAdmin from './UsageAdmin.vue'
 /* what the site has on decides what the dashboard reports: no store, no store card; no instrument, no diagnostic */
 const STORE_ON = moduleOn('store'), MEMBERS_ON = moduleOn('memberships'), INSTRUMENT_ON = moduleOn('instrument')
 
@@ -66,7 +67,7 @@ const tab = ref((() => { try { return localStorage.getItem(TAB_KEY) || 'overview
 watch(tab, (v) => { try { localStorage.setItem(TAB_KEY, v) } catch (e) { /* private mode */ } })
 const tabs = computed(() => [
   { key: 'overview', label: TB.overview }, { key: 'acquisition', label: TB.acquisition }, { key: 'audience', label: TB.audience }, { key: 'content', label: INSTRUMENT_ON ? TB.content : TB['content-only'] },
-  { key: 'commerce', label: TB.commerce }, { key: 'events', label: TB.events }, { key: 'experiments', label: TB.experiments }, { key: 'explore', label: TB.explore },
+  { key: 'commerce', label: TB.commerce }, { key: 'usage', label: TB.usage }, { key: 'events', label: TB.events }, { key: 'experiments', label: TB.experiments }, { key: 'explore', label: TB.explore },
 ])
 watch(tabs, (list) => { if (!list.some((t) => t.key === tab.value)) tab.value = 'overview' })
 const state = ref('idle')      /* idle | loading | ok | denied | error */
@@ -642,6 +643,10 @@ function openAuth() { if (window.DLauth) window.DLauth.open() }
             
           </section>
         </div>
+      </template>
+
+      <template v-else-if="tab === 'usage'">
+        <UsageAdmin />
       </template>
 
       <!-- ============ events: every name sent, the site's own by their label ============ -->

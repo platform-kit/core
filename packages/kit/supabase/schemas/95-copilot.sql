@@ -260,6 +260,8 @@ begin
   if spent_window is not null then
     return jsonb_build_object('error', 'spent', 'window', spent_window);
   end if;
+  -- The agent worker reserves and settles each bounded provider call through the shared usage
+  -- gate. This turn creator enforces the run's own ceilings, not a parallel balance-only gate.
 
   state := jsonb_build_object(
     'messages', case when coalesce(trim(p_ask), '') = '' then '[]'::jsonb

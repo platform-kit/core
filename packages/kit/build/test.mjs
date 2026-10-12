@@ -41,6 +41,7 @@ const KIT_TESTS = [
   ['proposal-trace.test.mjs'],  /* what a proposal promises reaches a requirement: the Stripe bullet that named five things against deltas requiring one is how four features were never built, with every check green */
   ['docs-review-date.test.mjs'],
   ['checkout-params.test.mjs'],  /* a trial, tax, the payment methods accepted and a quantity the buyer may change — four things Stripe always offered and the store never passed; and the assertion that an offer declaring none of them resolves to exactly what it did before */
+  on('store') && ['usage.test.mjs'],
   ['copilot.test.mjs'],  /* a spoken conversation's grant: one bot, one person, one room, a ceiling it cannot raise and a clock it cannot wind back — every field altered in turn */
   ['copilot-db.test.mjs'],  /* what a person told an assistant is theirs: they read their own and nobody else's, delete their own, and no client may write a word into somebody's mouth the assistant would recall as theirs */
   ['fonts.test.mjs'],   /* the three faces: the families the kit offers, a name nobody serves refused, a face left unset falling to the theme's, and every stack ending in a generic so a face that never loads still sets type */
@@ -174,6 +175,7 @@ const KIT_TESTS = [
   on('store') && ['stock.test.mjs'],   /* sold out is not the same as not sold, and unknown is BUYABLE — a shop that stops selling when it cannot reach its database fails silently and in the one direction nobody notices */
   on('store') && ['promotions-db.test.mjs'],   /* a budget nothing counts is a decoration: ten checkouts racing for three uses, and exactly three win */
   on('store') && ['inventory-db.test.mjs'],   /* what is left, against the real database: the decrement is ONE statement, so two sessions racing for the last unit cannot both win — a read-then-write implementation passes every test but this one */
+  on('store') && ['usage-db.test.mjs'],   /* what was granted less what was used, against the real database: replay, exhaustion, two readers, and no client writes */
   on('store') && ['orders-db.test.mjs'],   /* an order has a life: the transactions summing to the total and refused AT THE WRITE, fulfilment and payment derived from the rows rather than stored beside them, an edit that raises the version while an invoice still renders at the old one, and stock coming back on received and never on requested */
   on('store') && ['sales.test.mjs'],   /* the Bestseller badge is earned, never set: no sales means no badge (the path a fresh clone takes), the count is per BOOK across its offers, and neither an old sale nor a refund is a sale */
   ['reads-db.test.mjs'],   /* one read is one read: a session in three segments must move the Content page by ONE, keep the deepest point and add the seconds — figures nobody can check are worse than none, because they get acted on */

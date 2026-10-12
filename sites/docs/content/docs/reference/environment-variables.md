@@ -28,7 +28,7 @@ sources:
     packages/kit/supabase/functions,
     package.json,
   ]
-reviewed: 2026-10-11
+reviewed: 2026-10-12
 ---
 
 Local values belong in ignored `.env` files: workspace-wide settings live at the workspace root, and site-specific settings live beside the selected site package. The root `.env.example` indexes every environment name read by Core, separates operator settings from test controls and internal markers, and leaves credentials blank; `sites/demo/.env.example` shows the demo site's local settings. The docs check verifies the root example against Core's environment reads and source-tracks the repository's purpose and feature overviews separately from this settings reference. Production values live only in the deploy environment and the functions' secrets.
@@ -178,7 +178,7 @@ Local values belong in ignored `.env` files: workspace-wide settings live at the
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PLATFORMKIT_DOMAIN`             | the parent domain that enables named site hosts; use `localhost` in development and the real domain in production. Unset, the existing single-site host stays in place                                                                                                                 |
 | `PLATFORMKIT_ROOT_SITE`          | optional DNS name for a site configured at the checkout root, which has no directory name; the tooling-only root is not a site and this is normally unset                                                                                                                              |
-| `PLATFORMKIT_DEFAULT_SITE`       | site used by root CLI and npm site commands, and by workspace development when no explicit multi-site selection is set; defaults to `sites/docs`. It may name a site or give a path to a tracked, fetched, or separately linked site; `--site` takes precedence |
+| `PLATFORMKIT_DEFAULT_SITE`       | site used by root CLI and npm site commands, and by workspace development when no explicit multi-site selection is set; defaults to `sites/docs`. It may name a site or give a path to a tracked, fetched, or separately linked site; `--site` takes precedence                        |
 | `PLATFORMKIT_SITES`              | comma-separated site names to include. In workspace development, an explicit value selects a multi-site set and takes precedence over `PLATFORMKIT_DEFAULT_SITE`; in production `files` mode it is required so a fixture or other unselected site is never published                   |
 | `PLATFORMKIT_SITES_MODE`         | `proxy` for the local Vite front door or `files` for built production sites; defaults to `files`                                                                                                                                                                                       |
 | `PLATFORMKIT_APEX`               | the selected site that also answers the bare domain; `www` redirects to its subdomain. Unset, the bare domain and `www` return 404                                                                                                                                                     |

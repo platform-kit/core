@@ -39,9 +39,19 @@ import {
   socialBotAllowsAnonymousSubject,
 } from '../_shared/social/automation-rules.mjs'
 import { cutAnswer } from '../_shared/choices.js'
+import { offerByKey } from '../_shared/offers.ts'
+import { authorizeUsage, recordInferenceAttempt, reportPendingUsage } from '../_shared/usage.ts'
+import { resolveUsageOperation } from '../_shared/usage-gate.mjs'
+import { boundedModelUsage, unitsForCost } from '../_shared/usage-stripe.mjs'
+import {
+  billableInferenceAttempts,
+  boundedInferenceUsage,
+  markupFor,
+} from '../_shared/inference-meter.mjs'
+import { inference as SITE_INFERENCE, usage as SITE_USAGE } from '../_shared/pipe/site.js'
 import bots from '../_shared/bots.json' with { type: 'json' }
 import commands from '../_shared/commands.json' with { type: 'json' }
-import { of } from '../_shared/compiled.ts'
+import { fresh, of } from '../_shared/compiled.ts'
 /* the catalog as this deployment has it: the shipped file, or the row a publish wrote */
 const catalog = of<Record<string, any>>('catalog')
 
@@ -89,7 +99,7 @@ Deno.serve(async (req) => {
    * the UI within one.
    */
   {
-    const live = !providersFrom(Deno.env.toObject()).mock
+    const live = !providersFrom(Deno.env.toObject(), SITE_INFERENCE).mock
     await admin.from('app_settings').upsert({ key: 'agents_live', value: live ? 'true' : 'false' }, { onConflict: 'key' })
   }
 
@@ -233,7 +243,7 @@ async function jobStep(run: any) {
     return void await finish(run, 'failed', 'this deployment has no enrichment briefs compiled in — the site names none, or the last build could not read the module it names')
   }
 
-  const providers = providersFrom(Deno.env.toObject())
+  const providers = providersFrom(Deno.env.toObject(), SITE_INFERENCE)
   /* a scripted job is a rehearsal and is never bought: the mock rides on the run, as it does for a bot */
   const llm = runLlm({ run, providers, model: opts.model || undefined, admin, think: opts.think || 'low', mock: run.state?.mock || null })
   if (!llm.ready()) return void await finish(run, 'failed', llm.missingKey())
@@ -487,48 +497,273 @@ async function fromCommand(run: any) {
 }
 
 /* --- a model call --- */
+async function accountInferenceAttempts({
+  attempts, bound, invocationRef, operation, bot, usageOffer, usageAuthorization, usageUserId, markupMicros,
+}: any) {
+  if (!attempts.length) {
+    if (usageAuthorization?.admitted) await usageAuthorization.release()
+    return { providerCostMicros: 0, customerCostMicros: 0, customerUnitsMicros: 0, measurementStatus: 'measured' }
+  }
+  if (!bound?.attempts?.length) throw new Error('provider work has no reserved inference-attempt bounds')
+
+  const sponsor = operation.mode === 'site-funded' ? 'site' : 'reader'
+  const accounting = billableInferenceAttempts({
+    attempts,
+    bounds: bound.attempts,
+    inference: SITE_INFERENCE,
+    sponsor,
+    markupMicros,
+    usageRateMicros: usageOffer?.usage?.rate_micros,
+  })
+  for (const attempt of accounting.attempts) {
+    const recorded = await recordInferenceAttempt({
+      invocationRef,
+      attemptNo: attempt.attemptNo,
+      userId: usageUserId,
+      operationId: operation.operationId,
+      botId: bot.slug,
+      offerKey: operation.offerKey,
+      sponsor,
+      providerId: attempt.provider,
+      model: attempt.model,
+      protocol: attempt.protocol,
+      outcome: attempt.outcome,
+      measurementStatus: attempt.measurementStatus,
+      usageDimensions: attempt.usageDimensions,
+      providerCostMicros: attempt.providerCostMicros,
+      markupMicros: attempt.markupMicros,
+      customerCostMicros: attempt.customerCostMicros,
+      customerUnitsMicros: attempt.customerUnitsMicros,
+      retailValueMicros: attempt.retailValueMicros,
+      retailCurrency: sponsor === 'reader' ? String(usageOffer.currency || 'usd').toLowerCase() : null,
+      httpStatus: attempt.httpStatus,
+    })
+    if (!recorded?.recorded) throw new Error(`provider attempt ${attempt.attemptNo} was not durably recorded`)
+  }
+
+  if (sponsor === 'reader' && usageAuthorization?.admitted) {
+    if (accounting.customerUnitsMicros === 0 && accounting.providerCostMicros === 0) {
+      await usageAuthorization.release()
+    } else {
+      const recorded = await usageAuthorization.settle({
+        kind: 'model',
+        costMicros: accounting.providerCostMicros,
+        unitsMicros: accounting.customerUnitsMicros,
+        customerCostMicros: accounting.customerCostMicros,
+        retailValueMicros: accounting.retailValueMicros,
+        retailCurrency: String(usageOffer.currency || 'usd').toLowerCase(),
+        markupMicros,
+        measurementStatus: accounting.measurementStatus,
+      })
+      if (!recorded?.admitted) throw new Error(`inference usage settlement was refused: ${recorded?.reason || 'unknown usage error'}`)
+      if (Number(recorded.metered_micros) > 0) await reportPendingUsage()
+    }
+  }
+
+  return accounting
+}
+
 async function think(run: any, bot: any, taken: any[], messages: any[]) {
-  const providers = providersFrom(Deno.env.toObject())
-  /* the model the bot asked for goes to the FIRST provider; a fallback uses its own */
-  const model = bot.model || providers.list[0]?.model
   const tools = toolsFor({ bot, declared: bot.declared || {}, surface: run.surface, opened: openedSkills(taken), allowed: run.allowed })
   const began = Date.now()
+  let modelStepWritten = false
+  let usageAuthorization: any = null
+  let inferenceAccounted = false
+  let operation: any = null
+  let usageOffer: any = null
+  let usageUserId: string | null = null
+  let bound: any = null
+  let markupMicros: number | null = null
+  let invocationRef = `agent-step:${run.id}:${taken.length}`
+  let providerAttempts: any[] = []
+  let providers: any = null
   try {
+    let maxOutputTokens = 0
+    providers = providersFrom(Deno.env.toObject(), SITE_INFERENCE)
+    /* the model the bot asked for goes to the FIRST provider; a fallback uses its own */
+    const model = bot.model || providers.list[0]?.model
     /* the mock's script rides on the system message, so the provider needs to know nothing of runs */
     const msgs = run.state?.mock
       ? messages.map((m: any, i: number) => (i === 0 && m.role === 'system'
         ? { ...m, content: `${m.content}\n<<mock:${JSON.stringify(run.state.mock)}>>` }
         : m))
       : messages
-    const out = await ask({ providers, model, messages: msgs, tools })
+    operation = SITE_INFERENCE
+      ? resolveUsageOperation(SITE_USAGE.operations || {}, `agent.${bot.slug}`)
+      : null
+    if (SITE_INFERENCE && !providers.mock) {
+      const remainingCostMicros = Math.floor(
+        (Number(run.budget_cents) - Number(run.spent_cents || 0)) * 10_000,
+      )
+      bound = boundedInferenceUsage({
+        messages: msgs,
+        tools,
+        providers: providers.list,
+        model,
+        remainingCostMicros,
+        maxOutputTokens: providers.list[0]?.maxTokens || 4096,
+      })
+      maxOutputTokens = bound.maxOutputTokens
+    }
+    if ((operation?.mode === 'offer' && (!SITE_INFERENCE || !providers.mock)) ||
+        (!SITE_INFERENCE && bot.billing)) {
+      await fresh()
+      const offerKey = operation?.offerKey || bot.billing
+      usageOffer = offerByKey(offerKey)
+      if (!usageOffer?.usage) throw new Error(`usage offer ${offerKey} is not available in the deployed catalog`)
+      usageUserId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(run.subject_key || ''))
+        ? run.subject_key
+        : null
+      if (!usageUserId) {
+        await stopForUsage(run, bot, 'usage_subject_required')
+        return false
+      }
+      if (SITE_INFERENCE) {
+        markupMicros = markupFor(SITE_INFERENCE, SITE_USAGE, operation.operationId)
+        const maxUnitsMicros = bound.attempts.reduce((sum: number, attempt: any) => {
+          const customerMaximum = customerCostMicros(attempt.maxCostMicros, markupMicros!)
+          const attemptUnits = unitsForCost(customerMaximum, usageOffer.usage.rate_micros)
+          const total = sum + attemptUnits
+          if (!Number.isSafeInteger(total)) throw new Error('inference authorization exceeds the safe usage range')
+          return total
+        }, 0)
+        usageAuthorization = await authorizeUsage({
+          userId: usageUserId,
+          offerKey,
+          invocationRef,
+          maxUnitsMicros,
+          botId: bot.slug,
+          operationId: operation.operationId,
+          markupMicros,
+        })
+      } else {
+        const prices = providers.list.map((provider: any, index: number) =>
+          priceOf(index === 0 ? model : provider.model))
+        const remainingCostMicros = Math.floor(
+          (Number(run.budget_cents) - Number(run.spent_cents || 0)) * 10_000,
+        )
+        const legacyBound = boundedModelUsage({ messages: msgs, tools, prices, remainingCostMicros })
+        maxOutputTokens = legacyBound.maxOutputTokens
+        usageAuthorization = await authorizeUsage({
+          userId: usageUserId,
+          offerKey,
+          invocationRef,
+          maxUnitsMicros: unitsForCost(legacyBound.maxCostMicros, usageOffer.usage.rate_micros),
+          botId: bot.slug,
+        })
+      }
+      if (!usageAuthorization.admitted) {
+        await stopForUsage(run, bot, usageAuthorization.reason || 'usage_balance_exhausted')
+        return false
+      }
+    }
+    const out = await ask({
+      providers, model, messages: msgs, tools,
+      ...(maxOutputTokens ? { maxTokens: maxOutputTokens } : {}),
+    })
+    providerAttempts = out.attempts || []
     /* costed on what ANSWERED, not on what was asked: a fallback is a different model and a
        different price, and a bill that says otherwise is a bill nobody can check */
-    const cost = costOf({ tokensIn: out.usage.in, tokensOut: out.usage.out }, priceOf(out.model || model))
-    await admin.from('agent_steps').insert({
+    const inferenceAccounting = SITE_INFERENCE && providerAttempts.length
+      ? await accountInferenceAttempts({
+        attempts: providerAttempts,
+        bound,
+        invocationRef,
+        operation,
+        bot,
+        usageOffer,
+        usageAuthorization,
+        usageUserId,
+        markupMicros,
+      })
+      : null
+    inferenceAccounted = Boolean(inferenceAccounting)
+    const siteCostMicros = inferenceAccounting?.providerCostMicros ?? null
+    const cost = siteCostMicros == null
+      ? costOf({ tokensIn: out.usage.in, tokensOut: out.usage.out }, priceOf(out.model || model))
+      : Math.ceil(siteCostMicros / 10_000)
+    const { data: modelStep, error: stepError } = await admin.from('agent_steps').insert({
       run_id: run.id, n: taken.length, kind: 'model', name: out.model || model,
       request: {
         messages: messages.length, tools: tools.map((t: any) => t.name),
         ...(out.provider ? { provider: out.provider } : {}),
         /* said out loud, because a site quietly paying a second vendor is a thing to notice */
         ...(out.fellBackFrom ? { fell_back_from: out.fellBackFrom } : {}),
+        ...(inferenceAccounting ? {
+          attempts: providerAttempts.map(({ provider, model: usedModel, outcome, measurementStatus, status }: any) => ({
+            provider, model: usedModel, outcome, measurement: measurementStatus, status,
+          })),
+          measurement: inferenceAccounting.measurementStatus,
+        } : {}),
       },
       response: { message: out.message },
       tokens_in: out.usage.in, tokens_out: out.usage.out, cost_cents: cost, ms: Date.now() - began,
-    })
-    await admin.from('agent_runs').update({
+    }).select('id').single()
+    if (stepError || !modelStep?.id) throw new Error(`completed model step could not be recorded: ${stepError?.message ?? 'missing step id'}`)
+    modelStepWritten = true
+    const { error: runError } = await admin.from('agent_runs').update({
       step: taken.length + 1, spent_cents: Number(run.spent_cents || 0) + cost,
       lease_until: new Date(Date.now() + LEASE * 1000).toISOString(), updated_at: new Date().toISOString(),
     }).eq('id', run.id)
+    if (runError) throw new Error(`completed model cost could not be added to the run: ${runError.message}`)
+    if (usageOffer && usageAuthorization?.admitted && !SITE_INFERENCE) {
+      const costMicros = Math.round(cost * 10_000)
+      if (!Number.isSafeInteger(costMicros)) throw new Error('measured model cost exceeds the usage ledger range')
+      if (costMicros === 0 || out.provider === 'mock' || out.model === 'mock') {
+        await usageAuthorization.release()
+      } else {
+        const recorded = await usageAuthorization.settle({
+          kind: 'model',
+          costMicros,
+          unitsMicros: unitsForCost(costMicros, usageOffer.usage.rate_micros),
+        })
+        if (!recorded?.admitted) throw new Error(`completed model usage was refused: ${recorded?.reason || 'unknown usage error'}`)
+        if (Number(recorded.metered_micros) > 0) await reportPendingUsage()
+      }
+    }
     return true
   } catch (e) {
-    await admin.from('agent_steps').insert({
-      run_id: run.id, n: taken.length, kind: 'model', name: model, error: String((e as Error).message || e), ms: Date.now() - began,
-      request: { providers: providers.list.map((x: any) => x.id) },
+    if (SITE_INFERENCE && operation && !inferenceAccounted && (providerAttempts.length || (e as any)?.attempts?.length)) {
+      providerAttempts = providerAttempts.length ? providerAttempts : (e as any).attempts
+      try {
+        await accountInferenceAttempts({
+          attempts: providerAttempts,
+          bound,
+          invocationRef,
+          operation,
+          bot,
+          usageOffer,
+          usageAuthorization,
+          usageUserId,
+          markupMicros,
+        })
+      } catch (accountingError) {
+        console.error(`inference accounting for run ${run.id} could not be completed; its reservation remains active`, accountingError)
+        usageAuthorization = null
+      }
+    }
+    if (usageAuthorization?.admitted) {
+      try { await usageAuthorization.release() }
+      catch (releaseError) { console.error(`agent usage reservation for run ${run.id} could not be released`, releaseError) }
+    }
+    if (!modelStepWritten) await admin.from('agent_steps').insert({
+      run_id: run.id, n: taken.length, kind: 'model', name: bot.model || null,
+      error: String((e as Error).message || e), ms: Date.now() - began,
     })
     await post(run, bot, endingOf('failed', bot.endings || {}))
     await finish(run, 'failed', String((e as Error).message || e))
     return false
   }
+}
+
+async function stopForUsage(run: any, bot: any, reason: string) {
+  const message = endingOf('usage', bot.endings || {})
+  if (run.surface === 'social') {
+    return failSocialRun(run, `Usage admission refused: ${reason}.`)
+  }
+  if (message) await post(run, bot, message)
+  await finish(run, 'failed', `usage:${reason}`)
+  return false
 }
 
 /* --- a tool call --- */

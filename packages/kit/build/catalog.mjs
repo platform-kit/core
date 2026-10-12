@@ -46,9 +46,49 @@ import { shippingRules } from '../src/lib/shipping.js'
 import { printWords, SPINE_EDITION } from './print/words.mjs'
 import { uiScope } from './strings-io.mjs'
 import { problems as repeatProblems } from '../src/lib/recurrence.js'
+import { usageOf } from './site.mjs'
 
 const OUT_AT = 'supabase/functions/_shared/catalog.json'
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const USAGE_SCALE = 1_000_000
+
+export function compileUsage(file, usage, billing, err) {
+  if (usage == null) return null
+  if (!usage || typeof usage !== 'object' || Array.isArray(usage)) {
+    err(`${file}: usage must be a group of fields`)
+    return null
+  }
+  const unit = String(usage.unit || '').trim()
+  if (!unit) err(`${file}: usage.unit names the site's usage unit`)
+  const micros = (value, field, { positive = false } = {}) => {
+    const n = Number(value)
+    const scaled = Math.round(n * USAGE_SCALE)
+    if (!Number.isFinite(n) || (positive ? n <= 0 : n < 0) || !Number.isSafeInteger(scaled) || Math.abs(scaled / USAGE_SCALE - n) > 1e-9) {
+      err(`${file}: usage.${field} must be ${positive ? 'positive' : 'zero or more'} and use at most six decimal places`)
+      return 0
+    }
+    return scaled
+  }
+  const out = { unit, rate_micros: micros(usage.rate, 'rate', { positive: true }) }
+  if (usage.speechCostPerSecond != null) out.speech_cost_per_second_micros = micros(usage.speechCostPerSecond, 'speechCostPerSecond')
+
+  if (billing === 'once') {
+    if (!Number.isInteger(usage.grant) || usage.grant < 1) err(`${file}: a one-time usage offer needs a whole-number usage.grant`)
+    else out.grant_micros = usage.grant * USAGE_SCALE
+    for (const field of ['included', 'meter', 'overagePrice']) if (usage[field] != null) err(`${file}: usage.${field} is for a metered subscription, not a one-time offer`)
+    return out
+  }
+
+  if (usage.grant != null) err(`${file}: usage.grant is for a one-time usage offer`)
+  const meter = String(usage.meter || '')
+  if (!/^[a-z][a-z0-9_]{0,99}$/.test(meter)) err(`${file}: usage.meter must be a lower-case Stripe event name of at most 100 characters`)
+  else out.meter = meter
+  const included = usage.included == null ? 0 : Number(usage.included)
+  if (!Number.isInteger(included) || included < 0 || !Number.isSafeInteger(included * USAGE_SCALE)) err(`${file}: usage.included must be a non-negative whole number of units`)
+  else out.included_micros = included * USAGE_SCALE
+  out.overage_price_micros = micros(usage.overagePrice, 'overagePrice', { positive: true })
+  return out
+}
 
 /* THE FOLDERS IT READS, pulled in through the store before anything is worked out.
    Everything below this is the compile as it always was: the same straight line over the same
@@ -72,7 +112,7 @@ async function load(st) {
 }
 const text = async (st, at) => { try { return await st.read(at) } catch { return null } }
 
-export async function compileCatalog({ store: from, root = process.cwd(), theme = null, brand = null } = {}) {
+export async function compileCatalog({ store: from, root = process.cwd(), theme = null, brand = null, site = null } = {}) {
 const ROOT = root
 const st = asStore(from || root)
 const CACHE = await load(st)
@@ -95,6 +135,7 @@ const EVENTS_MD = await (async () => {
 })()
 const errors = []
 const err = (m) => errors.push(m)
+const siteUsage = usageOf(site || {})
 
 const files = (dir) => CACHE[dir] || []
 /* the published teams, so a type naming one that is gone is refused here rather than at nine on a
@@ -142,6 +183,7 @@ for (const { file, data: d } of files('content/store/products')) {
     else tiers[d.tier] = d.rank
   } else if (d.tier || d.rank != null) err(`${file}: only a membership has a tier and rank`)
   if (d.kind === 'book' && !d.book) err(`${file}: a book unlock names its book`)
+  const usage = compileUsage(file, d.usage, billing, err)
   /*
    * A GARMENT'S PRODUCT TYPE IS ITS SUPPLIER'S FACT. The build is the first of the three places a
    * file can reach the shop, and all three refuse it with the same words from the same function
@@ -174,6 +216,7 @@ for (const { file, data: d } of files('content/store/products')) {
   if (d.adjustable) {
     offers[sku].adjustable = { min: Number(d.adjustable.min ?? 1), max: Number(d.adjustable.max ?? 99) }
   }
+  if (usage) offers[sku].usage = usage
   /* THE SHAPES THIS IS SOLD IN. Carried on the offer rather than in a file of their own, because
      the checkout function already has the offer and a second lookup is a second thing that can
      be stale. An offer with no options adds nothing here and its record is unchanged. */
@@ -202,6 +245,13 @@ for (const { file, data: d } of files('content/store/products')) {
       }
     }
   }
+}
+const meterOwners = new Map()
+for (const offer of Object.values(offers)) {
+  if (!offer.usage?.meter) continue
+  const owner = meterOwners.get(offer.usage.meter)
+  if (owner) err(`${offer.file}: Stripe meter "${offer.usage.meter}" is already used by ${owner.file}; each metered offer needs its own meter event`)
+  else meterOwners.set(offer.usage.meter, offer)
 }
 /* the editions the build has set (content/store/print.json): which files an order prints, and
    what the printer quoted for one copy of each, which a markup is priced over */
@@ -427,7 +477,6 @@ for (const { file, data: d } of files('content/sessions')) {
   sessions.push({ title: String(d.title || ''), slug, event, scheduler, username, requires: r, below: d.below || null, weekly: Number(d.weekly) || 0, monthly: Number(d.monthly) || 0, sku: d.sku || null, duration, hosts, rota, team, assign, confirm, repeat, lengths, name, page, form: d.form ? String(d.form) : null, interval, offset: offsetMins, windowDays, windowFrom, windowTo, limits, seats: Number(d.seats) || 0, buffer: Number(d.buffer) || 0, schedule: d.schedule || null, notice: d.notice == null ? 24 : Number(d.notice) || 0, where, record: !!d.record, hours: d.hours || null, repeats: d.repeats || null })
 }
 
-  if (errors.length) { const e = new Error('catalog:\n  ' + errors.join('\n  ')); e.faults = errors; throw e }
   const list = Object.values(offers).map(({ file, ...o }) => o)
   /* THE THREE FACES THE SITE SETS, beside the words and for the same reason: what a function needs
      in order to render something in the site's own voice travels with the catalog. The share-image
@@ -452,11 +501,11 @@ for (const { file, data: d } of files('content/sessions')) {
    * dropped at build time could not open on the day it was written for.
    */
   const priceFiles = []
-  for (const f of await st.list('content/store/prices').catch(() => [])) {
-    const raw = await text(st, 'content/store/prices/' + f)
+  for (const f of await st.list('content/store/prices', { ext: 'md' }).catch(() => [])) {
+    const raw = await text(st, 'content/store/prices/' + f + '.md')
     if (!raw) continue
     const { data } = matter(raw)
-    if (data && data.published !== false) priceFiles.push({ ...data, path: String(f).replace(/[.]md$/, '') })
+    if (data && data.published !== false) priceFiles.push({ ...data, path: f })
   }
   /* the discounts, which are not prices and are read as their own thing */
   const promoFiles = []
@@ -466,7 +515,67 @@ for (const { file, data: d } of files('content/sessions')) {
     const { data } = matter(raw)
     if (data && data.published !== false) promoFiles.push({ ...data, name: String(f).replace(/[.]md$/, '') })
   }
-  return { offers: bySku, lists: priceLists(bySku, priceFiles), promotions: promotions(promoFiles), tiers, allowances, sessions, shipping, editions, words, fonts, mark, accent }
+  const lists = priceLists(bySku, priceFiles)
+  for (const [operationId, policy] of Object.entries(siteUsage.operations || {})) {
+    if (policy.mode !== 'offer') continue
+    const offer = Object.values(offers).find((candidate) => candidate.key === policy.offerKey)
+    if (!offer) err(`usage.operations.${operationId}: no published offer has key ${policy.offerKey}`)
+    else if (!offer.usage) err(`${offer.file}: usage.operations.${operationId} names an offer without usage billing`)
+  }
+  for (const priceList of lists) {
+    for (const price of priceList.prices || []) {
+      const offer = bySku[price.sku]
+      if (offer?.billing === 'subscription' && offer.usage?.meter && price.currency !== offer.currency) {
+        err(`${priceList.name}: metered offer "${offer.sku}" cannot have an alternate currency; its base and metered prices must use the same currency`)
+      }
+    }
+  }
+  let usageAutoTopUp
+  const autoTopUp = site?.usage?.autoTopUp
+  if (autoTopUp != null) {
+    if (!autoTopUp || typeof autoTopUp !== 'object' || Array.isArray(autoTopUp)) {
+      err('usage.autoTopUp must be a group of fields')
+    } else {
+      const packKeys = autoTopUp.packKeys ?? []
+      if (autoTopUp.enabled != null && typeof autoTopUp.enabled !== 'boolean') err('usage.autoTopUp.enabled must be true or false')
+      if (!Array.isArray(packKeys) || packKeys.some((key) => typeof key !== 'string' || !/^[0-9a-f]{8}$/.test(key))) {
+        err('usage.autoTopUp.packKeys must be stable eight-character offer keys')
+      } else {
+        if (new Set(packKeys).size !== packKeys.length) err('usage.autoTopUp.packKeys cannot repeat an offer key')
+        const packs = []
+        for (const key of [...new Set(packKeys)]) {
+          const pack = Object.values(offers).find((candidate) => candidate.key === key)
+          if (!pack) {
+            err(`usage.autoTopUp.packKeys: no published offer has stable key ${key}`)
+            continue
+          }
+          if (pack.billing !== 'once' || !pack.usage?.grant_micros) {
+            err(`${pack.file}: automatic top-up requires a one-time offer that grants usage units`)
+            continue
+          }
+          packs.push({
+            key: pack.key, sku: pack.sku, title: pack.title, unit_amount: pack.unit_amount,
+            currency: pack.currency, units_micros: pack.usage.grant_micros, unit: pack.usage.unit,
+            rate_micros: pack.usage.rate_micros,
+            speech_cost_per_second_micros: pack.usage.speech_cost_per_second_micros || 0,
+          })
+        }
+        const currencies = new Set(packs.map((pack) => pack.currency))
+        if (autoTopUp.enabled === true && packs.length === 0) err('usage.autoTopUp needs at least one eligible prepaid usage pack')
+        if (autoTopUp.enabled === true && currencies.size > 1) err('usage.autoTopUp packs must use one currency so the reader’s monthly cap has an unambiguous value')
+        usageAutoTopUp = {
+          enabled: autoTopUp.enabled === true,
+          currency: currencies.size === 1 ? [...currencies][0] : null,
+          packs,
+        }
+      }
+    }
+  }
+  if (errors.length) { const e = new Error('catalog:\n  ' + errors.join('\n  ')); e.faults = errors; throw e }
+  return {
+    offers: bySku, lists, promotions: promotions(promoFiles), tiers, allowances, sessions, shipping, editions, words, fonts, mark, accent,
+    ...(usageAutoTopUp ? { usage_auto_topup: usageAutoTopUp } : {}),
+  }
 }
 
 /* the script's own write-if-changed: inline, because anything this module names — even in a
@@ -490,7 +599,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     try { const m = await import('./fonts.mjs'); return { fonts: await m.fontsOf(), mark: await m.markOf(process.cwd(), { size: 26, stroke: '__STROKE__' }), accent: await m.accentOf() } }
     catch { return null }
   })()
-  const out = await compileCatalog({ brand }).catch((e) => { console.error('✖ ' + e.message); process.exit(1) })
+  const site = await (await import('./site.mjs')).loadSite()
+  const out = await compileCatalog({ brand, site }).catch((e) => { console.error('✖ ' + e.message); process.exit(1) })
   const n = Object.keys(out.offers).length
   if (process.argv.includes('--check')) { console.log(`✔ catalog: ${n} offers, tiers ${Object.keys(out.tiers).join(' ') || '—'}`); process.exit(0) }
   write(join(process.cwd(), OUT_AT), JSON.stringify(out, null, 2) + '\n')

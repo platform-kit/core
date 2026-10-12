@@ -53,6 +53,7 @@ signout: Sign out
 account: Account
 admin: Admin
 manage: Manage membership
+usage: Usage
 close: Close
 working: One moment…
 resend: Send the email again

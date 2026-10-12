@@ -10,6 +10,7 @@ PlatformKit is configurable: the generic demo exercises the built modules it ena
 
 - Develop, build, test, and deploy a selected site without turning that site into part of the PlatformKit package.
 - Run the CLI from a site directory, select a site by name or path, or choose multiple workspace sites for development.
+- Restart a workspace dev run after its terminal closes; the next run takes over the earlier run's site and function servers and front door, and names the resources it stopped.
 - Register separately owned site repositories, fetch a pinned revision, and update to an explicitly chosen revision. Updates refuse a checkout with local changes.
 - Build from a site's own repository, using its dependencies and lockfile. A site can use exact published PlatformKit packages or invoke the CLI from the public Core repository.
 - Extend the build with site- and theme-provided steps. Steps have named phases, module ownership, and declared prerequisites.

@@ -47,6 +47,26 @@ export async function sign(claims, secret) {
     },
     x: Number(claims.expires || 0),
   }
+  if (claims.usage) {
+    const offerKey = String(claims.usage.offer_key || '')
+    const rateMicros = Number(claims.usage.rate_micros)
+    const speechRateMicros = Number(claims.usage.speech_cost_per_second_micros || 0)
+    const overagePriceMicros = Number(claims.usage.overage_price_micros || 0)
+    if (!offerKey || !Number.isSafeInteger(rateMicros) || rateMicros <= 0 ||
+        !Number.isSafeInteger(speechRateMicros) || speechRateMicros < 0 ||
+        !Number.isSafeInteger(overagePriceMicros) || overagePriceMicros < 0) {
+      throw new Error('a usage grant needs an offer key and safe usage rates')
+    }
+    body.u = {
+      k: offerKey,
+      r: rateMicros,
+      t: speechRateMicros,
+      o: overagePriceMicros,
+      n: String(claims.usage.unit || '').slice(0, 50),
+      d: String(claims.usage.meter || '').slice(0, 100),
+      m: Boolean(claims.usage.metered),
+    }
+  }
   if (!body.b || !body.s || !body.x) throw new Error('a grant names a bot, a subject and an expiry')
   const payload = b64u(enc.encode(JSON.stringify(body)))
   const mac = b64u(await crypto.subtle.sign('HMAC', await key(secret), enc.encode(payload)))
@@ -69,6 +89,13 @@ export async function open(token, secret, now = Date.now()) {
   let b
   try { b = JSON.parse(new TextDecoder().decode(unb64u(parts[0]))) } catch { return { error: 'malformed' } }
   if (!b || !b.b || !b.s || !b.x) return { error: 'malformed' }
+  if (b.u && (!b.u.k || !Number.isSafeInteger(Number(b.u.r)) || Number(b.u.r) <= 0 ||
+      !Number.isSafeInteger(Number(b.u.t)) || Number(b.u.t) < 0 ||
+      (b.u.o !== undefined && (!Number.isSafeInteger(Number(b.u.o)) || Number(b.u.o) < 0)) ||
+      (b.u.n !== undefined && typeof b.u.n !== 'string') ||
+      (b.u.d !== undefined && typeof b.u.d !== 'string') || typeof b.u.m !== 'boolean')) {
+    return { error: 'malformed' }
+  }
   if (Number(b.x) <= now) return { error: 'expired' }
   return {
     bot: b.b,
@@ -80,6 +107,17 @@ export async function open(token, secret, now = Date.now()) {
       minutes: typeof b.e?.m === 'string' ? b.e.m.slice(0, 500) : '',
       spend: typeof b.e?.c === 'string' ? b.e.c.slice(0, 500) : '',
     },
+    ...(b.u ? {
+      usage: {
+        offer_key: String(b.u.k),
+        rate_micros: Number(b.u.r),
+        speech_cost_per_second_micros: Number(b.u.t),
+        overage_price_micros: Number(b.u.o) || 0,
+        unit: typeof b.u.n === 'string' ? b.u.n : '',
+        meter: typeof b.u.d === 'string' ? b.u.d || null : null,
+        metered: b.u.m,
+      },
+    } : {}),
     expires: Number(b.x),
   }
 }

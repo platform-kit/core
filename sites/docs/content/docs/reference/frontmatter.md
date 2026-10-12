@@ -101,6 +101,11 @@ The body is the text, split into chapters at `# ` headings, with `==marks=={colo
 `title`, `subtitle`, `sku` (slug), `key` (8 hex), `kind` (book · good · membership · session · form — a form names the sku it is paid for with `#! paid = <sku>`), `billing` (once · subscription), `period` (weekly · monthly), `price` (dollars), `currency` (usd), `chat-hours`, `sessions` (a membership's sessions included: rows of `type`, `weekly`, `monthly`), `book` (for an unlock), `tier`, `rank`, `image`, `gallery`, `collections`, `badge`, `featured`, `order`, `tags`, `compare` (an old price as written, struck through beside the price), `rating` (0–5), `reviews` (how many, said beside the stars on a card and a Spotlight) and
 `comments` (whether the page takes them). The body's `## ` sections are the product page's details.
 
+An optional `usage` block names a billable unit and its provider-cost rate. One-time offers may
+also set `grant` (prepaid whole units); subscriptions may set `included`, a unique `meter` event
+name, and `overagePrice` per unit. `speechCostPerSecond` declares endpoint speech cost when used.
+The offer's stable `key` remains the billing identity across changes to its sku or price.
+
 **What Stripe already does, declared per offer.** Four parameters, each off unless a file asks:
 `trial` (whole days before a subscription is first charged — refused on a one-off at build, because
 Stripe would refuse it at the till); `tax` (`{ automatic, registration }` — whether Stripe works the

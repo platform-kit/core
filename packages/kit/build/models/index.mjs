@@ -163,7 +163,7 @@ export const FEEDS = {
 const COMPILE = {
   /* the theme's scopes come from the caller: in a function there is no manifest on a disk to read,
      and without them the checkout would lose its words and a spine its edition line */
-  catalog: async (store, made, extra = {}) => (await import('../catalog.mjs')).compileCatalog({ store, theme: extra.theme || null, brand: extra.brand || null }),
+  catalog: async (store, made, extra = {}) => (await import('../catalog.mjs')).compileCatalog({ store, theme: extra.theme || null, brand: extra.brand || null, site: extra.site || null }),
   forms: async (store) => {
     const { compileForms } = await import('../forms.mjs')
     const { forms, faults } = await compileForms(store)

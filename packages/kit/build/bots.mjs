@@ -246,6 +246,13 @@ export async function readSkills(st, { theme, themeSkills } = {}) {
 
 export async function readBots(st, { tools = {}, skills = {}, sealed = null } = {}) {
   const names = await st.list('content/bots')
+  const usageOfferKeys = new Set()
+  for (const name of await st.list('content/store/products')) {
+    const parsed = matter(String((await st.read(`content/store/products/${name}.md`)) || ''))
+    if (parsed.data?.published !== false && parsed.data?.usage && /^[0-9a-f]{8}$/.test(String(parsed.data?.key || ''))) {
+      usageOfferKeys.add(parsed.data.key)
+    }
+  }
   const out = []
   const faults = []
   /* what a bot says when it stops: the theme's words with the site's merged over them, and each
@@ -273,6 +280,7 @@ export async function readBots(st, { tools = {}, skills = {}, sealed = null } = 
     const prompt = String(parsed.content || '').trim()
     let bot = {
       slug, name: d.name || slug, avatar: d.avatar || null, model: d.model || null,
+      ...(d.billing ? { billing: lower(d.billing) } : {}),
       surfaces: (Array.isArray(d.surfaces) ? d.surfaces : d.surfaces ? [d.surfaces] : ['spaces']).map(lower),
       ...(d.voice ? { voice: d.voice } : {}),
       audience: audienceOf(d.for), serves: audienceOf(d.serves), spaces: d.spaces || [],
@@ -312,6 +320,11 @@ export async function readBots(st, { tools = {}, skills = {}, sealed = null } = 
     }
     if (bot.extends === DESK_BOT.slug) bot = extend({ ...bot, prompt }, DESK_BOT)
     if (!bot.prompt) faults.push(`${where}: a bot's body is its prompt, and this one has none.`)
+    if (bot.billing && !/^[0-9a-f]{8}$/.test(bot.billing)) {
+      faults.push(`${where}: billing must be the stable eight-hex key of a published usage offer.`)
+    } else if (bot.billing && !usageOfferKeys.has(bot.billing)) {
+      faults.push(`${where}: billing key "${bot.billing}" does not name a published usage offer.`)
+    }
     for (const s of bot.surfaces) if (!SURFACES.includes(s)) faults.push(`${where}: "${s}" is not a surface — ${SURFACES.join(', ')}.`)
     /* A VOICE WITH NOWHERE TO SPEAK is a file somebody wrote half of — the same fault as a
        schedule with no room, and refused the same way rather than ignored. */
@@ -450,7 +463,7 @@ export async function compileBots({ root = process.cwd(), store, check = false, 
     await st.write(SITE_OUT, JSON.stringify(commands.map(({ prompt, ...c }) => c), null, 2))
     await st.write(SITE_BOTS, JSON.stringify(live.map((b) => ({
       slug: b.slug, name: b.name, avatar: b.avatar, surfaces: b.surfaces,
-      audience: b.audience, hears: b.hears, answers: b.answers,
+      audience: b.audience, hears: b.hears, answers: b.answers, ...(b.billing ? { billing: b.billing } : {}),
     })), null, 2))
   }
   return { bots: live, tools, skills, commands, faults }

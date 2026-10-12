@@ -10,6 +10,9 @@ sources:
     packages/kit/build/webhooks-config.mjs,
     packages/kit/build/deploy.mjs,
     packages/kit/build/deploy-checks.mjs,
+    packages/kit/build/inference-config.mjs,
+    packages/kit/build/inference-config.test.mjs,
+    packages/kit/build/usage.test.mjs,
     packages/kit/bin/platformkit.mjs,
     packages/kit/build/source-install.mjs,
     packages/kit/build/admin-cms-mode.test.mjs,
@@ -45,6 +48,22 @@ export default {
   enrichment: { briefs: './build/briefs.mjs' },
   data: { schemas: './db/schemas', rows: './db/data.sql', functions: './db/functions', seed: './db/seed.sql', ports: 54320 },
   dev: { projectId: 'pk_northlight_local', projectName: 'Northlight Press' },
+  inference: {
+    providers: [{
+      id: 'primary', protocol: 'openai-chat', secret: 'env:PRIMARY_API_KEY',
+      baseUrl: 'https://api.example.com/v1', model: 'example-model',
+      models: { 'example-model': { inputPerMillionUsd: 1, outputPerMillionUsd: 2 } },
+    }],
+    fallback: { enabled: true, maxAttempts: 1 },
+    markup: { default: 1.25 },
+  },
+  usage: {
+    autoTopUp: { enabled: true, packKeys: ['0123abcd'] },
+    operations: {
+      'assistant.game': { mode: 'offer', offerKey: '0123abcd' },
+      'assistant.staff': { mode: 'site-funded' },
+    },
+  },
   build: { tests: ['./build/results.test.mjs'], steps: ['./build/steps/books-csv.mjs'] },
 }
 ```
@@ -65,6 +84,9 @@ When a site registers `admin.models` and has a backend, its production content s
 | `looks`                               | The palettes by name: each a `css` file and, optionally, a `skins` module (sections rebuilt for that look). Every look's CSS is imported; `content/site.md` picks the one worn                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `defaultLook`                         | The look when `site.md` names none                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `languages`                           | The catalogs under `content/strings/<lang>/`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `usage`                               | `autoTopUp.enabled` turns reader-managed automatic usage refills on for the site; `autoTopUp.packKeys` lists eligible prepaid offers by their stable eight-character keys. Readers still choose their own pack, balance threshold, payment consent and monthly spend cap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `inference`                           | The site's ordered external providers and model tariffs, secret environment-variable references, fallback policy and default/offer-specific markup. Provider costs are rates in USD per million measured tokens; required input and output rates are declared per provider/model. These settings are server-only. See [Usage billing](/content/docs/running-a-site/selling/usage-billing)                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `usage.operations`                    | Stable server-side operation IDs mapped to either `{ mode: 'site-funded' }` or `{ mode: 'offer', offerKey }`. Each reader-billed operation uses only its named prepaid or metered offer; optional `markup` overrides that offer's and the site's defaults. Operations do not inherit another operation's policy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `overrides`                           | Theme components replaced by name: `{ ComponentName: './path.vue' }`. Every import that lands on the theme's file gets the site's, however written; the override importing the component it replaces gets the original                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `nav`                                 | The header: `links` (each a strings `key` under `nav`, an `href`, and `prefix: true` to stay lit for paths under it) and the `cta` (its `href`/`key`, and `hrefIn`/`keyIn` for a signed-in person). Absent: the theme's default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `routes`                              | The site's own pages: a `path`, a `component`, `prefix` for paths under it, `prerender: false` to leave one out of the build's pages                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -94,6 +116,29 @@ When a site registers `admin.models` and has a backend, its production content s
 | `build.steps`                         | The site's own build steps, a module exporting one record each, run in their phase among the kit's ([the build steps](/content/docs/building-a-site/dev-build-and-deploy#the-build-steps))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 Paths are relative to the site's root. Every module named is loaded with `import()` and must be importable under Node as well as under Vite where the kit reads it at build time (the schemas, the collections, the handlers, the briefs); the components are Vite's alone. In development, Vite also answers `GET /__platformkit/site-meta` for workspace directory previews, using the built site/page/UI records and the shared SEO resolver.
+
+## Inference providers and operation policies
+
+`inference` is the site's private provider and cost declaration. Its `providers` array is ordered,
+supports at most four providers, and each entry names an `id`, a supported `protocol`, a `secret`
+as `env:UPPERCASE_NAME`, an optional `baseUrl`, a default `model`, and the provider's `models`
+with required `inputPerMillionUsd` and `outputPerMillionUsd` rates. Optional rate fields price
+additional usage dimensions only when the provider adapter measures them. These rates are the
+site's own upstream prices in USD; the same model label at another provider is a different tariff.
+The secret value belongs in the deployment environment, never in this file.
+
+`fallback` controls whether configured providers may be tried in order, which HTTP statuses
+permit retry, and the maximum number of attempts. `markup.default` is the multiplier applied
+after measuring provider cost. `markup.offers` can override it for a stable usage offer key.
+Reader-billed model work requires a complete provider tariff and a reservation for the maximum
+cost of every permitted attempt before the first external call.
+
+`usage.operations` maps stable, server-selected operation IDs to `{ mode: 'site-funded' }` or
+`{ mode: 'offer', offerKey }`. An offer's existing usage declaration selects prepaid or metered
+authorization. An operation may set `markup` to override the offer and site defaults; the
+precedence is operation, offer, then site. Site-funded work records upstream costs without
+charging reader units. Missing operation policies fail closed rather than inheriting another
+operation's billing rule. The map is server-only and is not available through `#site`.
 
 ## A shop of your own
 

@@ -2,8 +2,27 @@
 title: Encrypted channels
 description: A channel the server cannot read — what it costs, how a room is sealed, where the keys live, and what goes dark.
 order: 56.45
-sources: [packages/kit/supabase/schemas/92-encryption.sql, packages/kit/supabase/functions/_shared/matrix/keys.js, packages/kit/build/encryption.test.mjs, packages/kit/build/encryption-db.test.mjs, packages/kit/build/modules/kit.mjs, packages/kit/build/spaces-io.mjs, packages/kit/build/spaces.mjs, packages/kit/build/spaces-push.mjs, packages/kit/supabase/functions/matrix-api/index.ts, packages/kit/supabase/functions/_shared/matrix/state.js, packages/kit/src/lib/spaces/crypto.js, packages/kit/src/lib/spaces/api.js, packages/kit/src/lib/spaces/audio.js, packages/kit/src/lib/spaces/model.js, packages/kit/vite/index.mjs, packages/movable-types/src/components/spaces/SpaceSealSetup.vue, packages/movable-types/src/content/ui/spaces.md]
-reviewed: 2026-10-10
+sources:
+  [
+    packages/kit/supabase/schemas/92-encryption.sql,
+    packages/kit/supabase/functions/_shared/matrix/keys.js,
+    packages/kit/build/encryption.test.mjs,
+    packages/kit/build/encryption-db.test.mjs,
+    packages/kit/build/modules/kit.mjs,
+    packages/kit/build/spaces-io.mjs,
+    packages/kit/build/spaces.mjs,
+    packages/kit/build/spaces-push.mjs,
+    packages/kit/supabase/functions/matrix-api/index.ts,
+    packages/kit/supabase/functions/_shared/matrix/state.js,
+    packages/kit/src/lib/spaces/crypto.js,
+    packages/kit/src/lib/spaces/api.js,
+    packages/kit/src/lib/spaces/audio.js,
+    packages/kit/src/lib/spaces/model.js,
+    packages/kit/vite/index.mjs,
+    packages/movable-types/src/components/spaces/SpaceSealSetup.vue,
+    packages/movable-types/src/content/ui/spaces.md,
+  ]
+reviewed: 2026-10-12
 ---
 
 A channel can be **end-to-end encrypted**: the ciphertext is the only copy the site has, and every
@@ -37,13 +56,13 @@ should take it deliberately. That is the whole reason the switch is separate fro
 # content/spaces/the-guild.md
 name: The Guild
 kind: community
-encrypted: true          # every room under it, unless a room says otherwise
+encrypted: true # every room under it, unless a room says otherwise
 ```
 
 ```yaml
 # content/spaces/the-guild/open-house.md
 name: Open house
-encrypted: false         # …and this one is not
+encrypted: false # …and this one is not
 ```
 
 `encryptedOf` in `build/spaces-io.mjs` is the one reading of the two: the channel's own answer where
@@ -67,12 +86,12 @@ is free, and allowed.
 Nowhere the site can read them. Four tables hold what is needed and every one is **state**, not a
 declaration: a device is an act, somebody signing a client in on a laptop.
 
-| table | holds |
-| --- | --- |
-| `space_devices` | a person's devices and their **public** identity, signing and cross-signing keys |
+| table                 | holds                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| `space_devices`       | a person's devices and their **public** identity, signing and cross-signing keys   |
 | `space_one_time_keys` | public keys a correspondent claims to start a session, each claimable exactly once |
-| `space_to_device` | a room key on its way between devices, queued and deleted once delivered |
-| `space_key_backups` | the reader's own sessions, sealed under a recovery key the site has never seen |
+| `space_to_device`     | a room key on its way between devices, queued and deleted once delivered           |
+| `space_key_backups`   | the reader's own sessions, sealed under a recovery key the site has never seen     |
 
 Drop all four and every reader sets a device up again and the messages already sealed become
 unreadable — which is the guarantee **working** rather than the guarantee failing. There is no file

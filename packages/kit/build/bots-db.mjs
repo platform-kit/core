@@ -23,6 +23,7 @@ export async function projectBots({ bots, db, log = () => {} } = {}) {
   for (const b of list) {
     const row = {
       slug: b.slug, name: b.name, avatar: b.avatar, model: b.model,
+      billing: b.billing ?? null,
       surfaces: b.surfaces, audience: b.audience, serves: b.serves || [], offer: b.offer || 'off', spaces: b.spaces, hears: b.hears,
       tools: b.tools, limits: b.limits, memory: b.memory, extends: b.extends,
       prompt: b.prompt, published: true, updated_at: new Date().toISOString(),

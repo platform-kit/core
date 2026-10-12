@@ -314,6 +314,15 @@ export async function kitConfig() {
           min: s.number().int().min(1).default(1),
           max: s.number().int().min(1).max(999).default(99),
         }).optional(),
+        usage: s.object({
+          unit: s.string().min(1),
+          rate: s.number().min(0.000001),
+          grant: s.number().int().min(1).optional(),
+          included: s.number().int().min(0).optional(),
+          meter: s.string().regex(/^[a-z][a-z0-9_]{0,99}$/).optional(),
+          overagePrice: s.number().min(0.000001).optional(),
+          speechCostPerSecond: s.number().min(0).optional(),
+        }).optional(),
         sessions: s.array(s.object({ type: s.string(), weekly: s.number().default(0), monthly: s.number().default(0) })).default([]),   /* a membership's sessions included: booking types with how many a week and a month (0 = no limit); a listed type is the tier's whatever the type's own rules say */
         book: s.string().optional(),              /* book slug, for a book unlock */
         /* a membership is a tier: its slug is what every price of it carries as
@@ -673,6 +682,8 @@ export async function kitConfig() {
         avatar: s.string().optional(),
         model: s.string().optional(),
         published: s.boolean().default(true),
+        /* stable offer identity (the product's eight-hex key), not its renameable sku */
+        billing: s.string().regex(/^[0-9a-f]{8}$/).optional(),
         /* where it may be summoned: a room, the support desk, a coaching thread */
         surfaces: s.array(s.string()).default(['spaces']),
         /* who may summon it — the same grammar a space's membership is filled by */

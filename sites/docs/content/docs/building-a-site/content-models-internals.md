@@ -6,6 +6,7 @@ sources:
   [
     packages/kit/build/model-io.mjs,
     packages/kit/build/models.mjs,
+    packages/kit/build/models-check.mjs,
     packages/kit/build/models.test.mjs,
     packages/kit/build/fixtures/models,
     packages/kit/src/lib/models,
@@ -72,4 +73,4 @@ The models themselves are the `models` model of the registry (`build/models/core
 
 ## The test
 
-`build/models.test.mjs` (in `npm test` with the module on) pins it over `build/fixtures/models`: a model of every kind, every option and a rule of every family — parsed, written, byte-stable; every refused fixture with its line; every rule against a passing and a failing value, worded from the theme's scope; required, unique, a reference that is not there, shown-when skipping; the fixture entry of every kind into the collection with its values in their shapes; the carry (a field renamed in five entries, the rest byte for byte; a kind changed under entries counted); a `books` model beside the stock books; the JSON writer. `models.mjs --check` lists every model and its entries and refuses a failing one.
+`build/models.test.mjs` (in `npm test` with the module on) pins it over `build/fixtures/models`: a model of every kind, every option and a rule of every family — parsed, written, byte-stable; every refused fixture with its line; every rule against a passing and a failing value, worded from the theme's scope; required, unique, a reference that is not there, shown-when skipping; the fixture entry of every kind into the collection with its values in their shapes; the carry (a field renamed in five entries, the rest byte for byte; a kind changed under entries counted); a `books` model beside the stock books; the JSON writer. `models-check.mjs --check` lists every model and its entries and refuses a failing one; it supplies Velite’s schema from the Node-only CLI so the shared `models.mjs` module has no build-only package import.

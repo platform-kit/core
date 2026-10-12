@@ -126,9 +126,9 @@ Deno.serve(async (req) => {
 
   /* every change the pipe makes is told to the content webhooks (the Management API's), a person's publish included */
   const store = rowsStore({ client: admin, by, url: '', key: '', onEvent: (e: unknown) => deliverContentEvent(e as any) })
-  const site = { root: '', modules: SITE.modules, admin: {} }
+  const site = { root: '', modules: SITE.modules, admin: {}, usage: SITE.usage }
   const env = {
-    root: '', store, by, theme: THEME, themeSkills: THEME_SKILLS, brand: THEME_BRAND, only,
+    root: '', store, by, site, theme: THEME, themeSkills: THEME_SKILLS, brand: THEME_BRAND, only,
     models: () => registry('', { site, siteModels: SITE_MODELS, store }),
     describe,
     /*

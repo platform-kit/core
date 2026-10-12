@@ -198,10 +198,10 @@ t('defaults and order', () => {
 })
 await ta('checkAll over the fixture site is clean, and a hand-written entry that fails a rule is refused with its line', async () => {
   const d = fresh()
-  let r = await checkAll(d, { words })
+  let r = await checkAll(d, { words, s })
   assert.deepEqual(r.faults, []); assert.equal(r.report.length, 2)
   writeFileSync(path.join(d, 'content/models/people/zed.md'), '---\nname: Al\nrole: pilot\n---\n')
-  r = await checkAll(d, { words })
+  r = await checkAll(d, { words, s })
   assert.ok(r.faults.some((f) => f.startsWith('content/models/people/zed.md: Role:')), r.faults.join(' | '))
   rmSync(d, { recursive: true, force: true })
 })

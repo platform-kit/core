@@ -2,8 +2,16 @@
 title: Memberships and pricing
 description: Tiers, the pricing page, buying from a landing page, switching up and down, and what a membership unlocks.
 order: 22
-sources: [packages/kit/supabase/functions/create-checkout-session, packages/kit/supabase/functions/_shared/ledger.ts, packages/kit/supabase/functions/_shared/ledger-rules.js, packages/kit/build/ledger.test.mjs, packages/movable-types/src/components/landing/LandingPricing.vue, packages/kit/src/lib/auth.js]
-reviewed: 2026-10-02
+sources:
+  [
+    packages/kit/supabase/functions/create-checkout-session,
+    packages/kit/supabase/functions/_shared/ledger.ts,
+    packages/kit/supabase/functions/_shared/ledger-rules.js,
+    packages/kit/build/ledger.test.mjs,
+    packages/movable-types/src/components/landing/LandingPricing.vue,
+    packages/kit/src/lib/auth.js,
+  ]
+reviewed: 2026-10-12
 ---
 
 A **membership** is a tier — a level — and any number of offers may belong to it: `group-coaching-weekly` and `group-coaching-monthly` are two product files with the same **tier** slug. A higher **rank** includes everything below it. Never assume one membership product.
@@ -30,7 +38,7 @@ The store's membership band shows one card per tier with a price and a Join butt
 
 ## The pricing page
 
-The pricing page is a landing page with a **Pricing** section: rows you write in the page builder — a name, a glyph, a price line (with a "from" before it when it is a floor), features (one written `- ` is drawn crossed out: what the rung lacks), a button — as columns, rows, one rung, a choice list with a radio per rung, or a selector whose ticked options add up to a total. A row with a **sku** *buys from the page*: sign in first (the modal says why), then the offer's own checkout. So a site can sell a membership with the store switched off. An optional toggle lets the page flip between weekly and monthly rows; the rows stand as columns, as bands, or as one rung alone, the featured one outlined, in ink or in the accent, and a **compare** table of the plans by their features can sit under them.
+The pricing page is a landing page with a **Pricing** section: rows you write in the page builder — a name, a glyph, a price line (with a "from" before it when it is a floor), features (one written `- ` is drawn crossed out: what the rung lacks), a button — as columns, rows, one rung, a choice list with a radio per rung, or a selector whose ticked options add up to a total. A row with a **sku** _buys from the page_: sign in first (the modal says why), then the offer's own checkout. So a site can sell a membership with the store switched off. An optional toggle lets the page flip between weekly and monthly rows; the rows stand as columns, as bands, or as one rung alone, the featured one outlined, in ink or in the accent, and a **compare** table of the plans by their features can sit under them.
 
 ## What a member gets
 

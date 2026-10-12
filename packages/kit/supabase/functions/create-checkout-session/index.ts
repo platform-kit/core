@@ -28,7 +28,8 @@
 import { stripe, stripeConfigured, stripeMock, isMockId, stripeUnconfigured, admin, json, preflight, getUser, appUrl } from '../_shared/lib.ts'
 import { sessionParams, lineQuantity, trialDaysFor } from '../_shared/checkout-params.js'
 import { checkVariant } from '../_shared/variants.js'
-import { offer, offerByKey, ensureOffer, ships, printVariant, TIERS, WORDS, LISTS, PROMOTIONS } from '../_shared/offers.ts'
+import { offer, offerByKey, ensureOffer, offerMetadata, ships, printVariant, TIERS, WORDS, LISTS, PROMOTIONS } from '../_shared/offers.ts'
+import { meteredCheckoutLine, usageStripeMetadata } from '../_shared/usage-stripe.mjs'
 import { shipsTo, ratesFor } from '../_shared/shipping.ts'
 import { buyable, stockKey } from '../_shared/stock.js'   /* the one sold-out rule, the page's own */
 import { guestSessionSku, mayBookAsGuest } from '../_shared/sessions/guest-booking.js'
@@ -328,7 +329,7 @@ Deno.serve(async (req) => {
     const id = 'cs_mock_' + crypto.randomUUID().replace(/-/g, '').slice(0, 24)
     const customer = user ? 'cus_mock_' + user.id.slice(0, 8) : 'cus_mock_guest'
     const skus = [...merged.keys()]
-    const lines = [...merged].map(([sku, quantity]) => { const o = offerOf(sku)!; const v = variantOfSku(variants, sku); return { quantity, price: { id: 'price_mock_' + sku, lookup_key: o.key, product: 'prod_mock_' + sku, unit_amount: paid(sku, v, quantity), currency: o.currency, metadata: { key: o.key, sku, kind: o.kind, ...(o.tier ? { tier: o.tier } : {}), ...(o.book ? { book: o.book } : {}) } } } })
+      const lines = [...merged].map(([sku, quantity]) => { const o = offerOf(sku)!; const v = variantOfSku(variants, sku); return { quantity, price: { id: 'price_mock_' + sku, lookup_key: o.key, product: 'prod_mock_' + sku, unit_amount: paid(sku, v, quantity), currency: o.currency, metadata: offerMetadata(o) } } })
     const total = lines.reduce((n, l) => n + l.price.unit_amount * l.quantity, 0)
     /* a guest under the mock has the address Checkout would have asked for */
     const email = user ? user.email ?? null : 'guest@example.com'
@@ -338,7 +339,15 @@ Deno.serve(async (req) => {
     if (mode === 'subscription' && user) {
       const o = offerOf(skus[0])!
       const days = o.period === 'weekly' ? 7 : 30
-      await subscriptionChanged({ id: 'sub_mock_' + id.slice(8), status: 'active', customer, metadata: { user_id: user.id }, items: { data: [lines[0]] }, current_period_end: Math.floor(Date.now() / 1000) + days * 86400, cancel_at_period_end: false })
+      const usageLine = o.usage?.meter ? {
+        quantity: 1,
+        price: {
+          id: 'price_mock_usage_' + skus[0], lookup_key: `${o.key}_usage`, product: 'prod_mock_' + skus[0],
+          currency: o.currency, metadata: usageStripeMetadata(o, offerMetadata(o)),
+        },
+      } : null
+      const now = Math.floor(Date.now() / 1000)
+      await subscriptionChanged({ id: 'sub_mock_' + id.slice(8), status: 'active', customer, metadata: { user_id: user.id }, items: { data: [lines[0], ...(usageLine ? [usageLine] : [])] }, current_period_start: now, current_period_end: now + days * 86400, cancel_at_period_end: false })
     }
     return json({ url: `${appUrl()}${done}${done.includes('?') ? '&' : '?'}checkout=success`, mock: true })
   }
@@ -360,7 +369,6 @@ Deno.serve(async (req) => {
       const o = offerOf(sku)!
       const v = variantOfSku(variants, sku)
       const amount = paid(sku, v, quantity)
-      const { price } = await ensureOffer(sku)
       /*
        * A LIST PRICE IS CHARGED INLINE, and the catalog price is used where no list moved it.
        *
@@ -371,18 +379,21 @@ Deno.serve(async (req) => {
        * it finds one by a lookup key. Nothing downstream can tell the difference, which is the
        * point: the ledger must not learn about pricing.
        */
+      const { price, usage_price } = await ensureOffer(sku)
       if (amount !== o.unit_amount) {
-        const marks = { key: o.key, sku, kind: o.kind, ...(o.tier ? { tier: o.tier } : {}), ...(o.book ? { book: o.book } : {}) }
+        const marks = offerMetadata(o)
         line_items.push({ price_data: {
           currency: o.currency, unit_amount: amount, metadata: marks,
           ...(o.billing === 'subscription' ? { recurring: { interval: o.period === 'weekly' ? 'week' : 'month' } } : {}),
           product_data: { name: o.title ?? sku, metadata: marks },
         }, quantity })
-        continue
+      } else {
+        /* the buyer's to change, where the offer says so and within its own bounds */
+        const adjustable = lineQuantity(o)
+        line_items.push({ price, quantity, ...(adjustable ? { adjustable_quantity: adjustable } : {}) })
       }
-      /* the buyer's to change, where the offer says so and within its own bounds */
-      const adjustable = lineQuantity(o)
-      line_items.push({ price, quantity, ...(adjustable ? { adjustable_quantity: adjustable } : {}) })
+      const usageLine = meteredCheckoutLine(o, usage_price)
+      if (usageLine) line_items.push(usageLine)
     }
 
     /* the Stripe customer, created once and remembered; a guest has none — Checkout asks

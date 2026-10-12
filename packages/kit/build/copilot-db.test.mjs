@@ -7,6 +7,7 @@
  * reading it.
  */
 import { createClient } from '@supabase/supabase-js'
+import { randomUUID } from 'node:crypto'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 
 const note = (m) => console.log('copilot-db: ' + m)
@@ -30,7 +31,7 @@ const service = createClient(url, serviceKey(), { auth: { persistSession: false,
 
 /* a 384-vector pointing mostly one way, so "near" and "far" are arranged rather than hoped for */
 const vec = (lean) => { const v = new Array(384).fill(0); v[lean] = 1; return v }
-const BOT = 'zz-copilot-probe'
+const BOT = `zz-copilot-probe-${randomUUID()}`
 const made = []
 
 console.log('\nWHAT A PERSON TOLD AN ASSISTANT\n')
@@ -53,13 +54,13 @@ try {
 
   /* ------------------------------------------------------- theirs to read */
   {
-    const { data } = await one.sb.from('copilot_memory').select('said')
+    const { data } = await one.sb.from('copilot_memory').select('said').eq('bot', BOT)
     const mine = (data || []).map((r) => r.said)
     ok('a person reads their own', mine.length === 3, JSON.stringify(mine))
     ok('and nobody else\'s — the other person\'s cello is not there', !mine.some((t) => /cello/.test(t)), JSON.stringify(mine))
   }
   {
-    const { data } = await two.sb.from('copilot_memory').select('said')
+    const { data } = await two.sb.from('copilot_memory').select('said').eq('bot', BOT)
     ok('and it runs both ways', (data || []).length === 1 && /cello/.test(data[0].said), JSON.stringify(data))
   }
 
@@ -69,7 +70,7 @@ try {
     ok('a client cannot write a memory, not even their own', !!error, 'the insert was allowed')
   }
   {
-    const { data } = await one.sb.from('copilot_memory').select('id').limit(1)
+    const { data } = await one.sb.from('copilot_memory').select('id').eq('bot', BOT).limit(1)
     const { error, count } = await one.sb.from('copilot_memory').update({ said: 'something else' }).eq('id', data[0].id).select('id')
     ok('and cannot edit one', !!error || !count, 'the update was allowed')
   }
@@ -88,17 +89,18 @@ try {
 
   /* ------------------------------------------------------ theirs to delete */
   {
-    const before = (await one.sb.from('copilot_memory').select('id')).data || []
-    const { error } = await one.sb.from('copilot_memory').delete().eq('user_id', one.id)
+    const before = (await one.sb.from('copilot_memory').select('id').eq('bot', BOT)).data || []
+    const { error } = await one.sb.from('copilot_memory').delete().eq('user_id', one.id).eq('bot', BOT)
     ok('a person deletes their own', !error, error && error.message)
-    const after = (await one.sb.from('copilot_memory').select('id')).data || []
+    const after = (await one.sb.from('copilot_memory').select('id').eq('bot', BOT)).data || []
     ok('and it is gone', before.length > 0 && after.length === 0, `${before.length} → ${after.length}`)
     const { data: recalled } = await service.rpc('copilot_recall', { p_user: one.id, p_bot: BOT, p_query: JSON.stringify(vec(0)), p_limit: 6 })
     ok('the assistant recalls none of it afterwards', (recalled || []).length === 0, JSON.stringify(recalled))
   }
   {
-    const { error } = await one.sb.from('copilot_memory').delete().eq('user_id', two.id)
-    const left = (await service.from('copilot_memory').select('id').eq('user_id', two.id)).data || []
+    const { error } = await one.sb.from('copilot_memory').delete().eq('user_id', two.id).eq('bot', BOT)
+    const left = (await service.from('copilot_memory').select('id')
+      .eq('user_id', two.id).eq('bot', BOT)).data || []
     ok('and cannot delete anybody else\'s', left.length === 1, `${left.length} left of the other person's`)
   }
   /* ------------------------------------------------------ the conversations themselves */

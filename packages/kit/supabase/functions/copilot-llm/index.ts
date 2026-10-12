@@ -26,8 +26,10 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { cors, json } from '../_shared/lib.ts'
 import { open as openGrant, sign as signGrant, grantExpiry } from '../_shared/copilot/grant.js'
+import { speechTelemetryRecord } from '../_shared/copilot/speech-proxy.js'
 import { livekit } from '../_shared/video/livekit.js'
 import { recalls } from '../_shared/agents/loop.js'
+import { fresh, of } from '../_shared/compiled.ts'
 import bots from '../_shared/bots.json' with { type: 'json' }
 import themeStrings from '../_shared/pipe/theme-strings.json' with { type: 'json' }
 
@@ -97,6 +99,84 @@ Deno.serve(async (req) => {
     const bot: any = (bots as any[]).find((b) => b.slug === slug && (b.surfaces || []).includes('voice'))
     if (!bot) return json({ error: { message: 'no bot of that name speaks', type: 'invalid_request_error' } }, 404)
 
+    let usage: any = null
+    let usageSummary: any = null
+    if (bot.billing) {
+      await fresh()
+      const offers = Object.values((of('catalog') as any).offers || {}) as any[]
+      const offer = offers.find((item) => item.key === bot.billing && item.usage)
+      if (!offer) return json({ error: { message: 'the assistant usage offer is not available', type: 'server_error' } }, 503)
+      usage = {
+        offer_key: String(offer.key),
+        rate_micros: Number(offer.usage.rate_micros),
+        speech_cost_per_second_micros: Number(offer.usage.speech_cost_per_second_micros || 0),
+        overage_price_micros: Number(offer.usage.overage_price_micros || 0),
+        unit: String(offer.usage.unit),
+        meter: String(offer.usage.meter || ''),
+        metered: Boolean(offer.usage.meter),
+      }
+      if (!Number.isSafeInteger(usage.rate_micros) || usage.rate_micros <= 0 ||
+          !Number.isSafeInteger(usage.speech_cost_per_second_micros) ||
+          usage.speech_cost_per_second_micros < 0) {
+        return json({ error: { message: 'the assistant usage offer has invalid rates', type: 'server_error' } }, 503)
+      }
+
+      let mode = usage.metered ? 'metered' : 'prepaid'
+      let remainingMicros = 0
+      let periodStart: string | null = null
+      if (usage.metered) {
+        const { data: subscriptions, error: subscriptionError } = await admin.from('subscriptions')
+          .select('current_period_start, usage_unit, usage_rate_micros, usage_meter, usage_included_micros, usage_overage_price_micros, usage_speech_cost_per_second_micros')
+          .eq('user_id', me.id).eq('key', usage.offer_key)
+          .in('status', ['active', 'trialing'])
+          .not('usage_meter', 'is', null)
+          .lte('current_period_start', new Date().toISOString())
+          .gt('current_period_end', new Date().toISOString())
+          .order('updated_at', { ascending: false }).limit(1)
+        if (subscriptionError) return json({ error: { message: subscriptionError.message, type: 'server_error' } }, 500)
+        if (!subscriptions?.length) mode = 'prepaid'
+        else {
+          const subscribed = subscriptions[0]
+          periodStart = subscribed.current_period_start
+          usage = {
+            ...usage,
+            unit: subscribed.usage_unit ?? usage.unit,
+            rate_micros: subscribed.usage_rate_micros == null ? usage.rate_micros : Number(subscribed.usage_rate_micros),
+            meter: subscribed.usage_meter ?? usage.meter,
+            overage_price_micros: subscribed.usage_overage_price_micros == null
+              ? usage.overage_price_micros : Number(subscribed.usage_overage_price_micros),
+            speech_cost_per_second_micros: subscribed.usage_speech_cost_per_second_micros == null
+              ? usage.speech_cost_per_second_micros : Number(subscribed.usage_speech_cost_per_second_micros),
+          }
+          const { data: balance, error: balanceError } = await admin.from('usage_balances')
+            .select('remaining_micros')
+            .eq('user_id', me.id).eq('offer_key', usage.offer_key)
+            .eq('period_start', periodStart)
+            .maybeSingle()
+          if (balanceError) return json({ error: { message: balanceError.message, type: 'server_error' } }, 500)
+          remainingMicros = Number(balance?.remaining_micros || 0)
+        }
+      }
+      if (mode === 'prepaid') {
+        const { data: balance, error: balanceError } = await admin.from('usage_balances')
+          .select('remaining_micros')
+          .eq('user_id', me.id).eq('offer_key', usage.offer_key).is('period_start', null)
+          .maybeSingle()
+        if (balanceError) return json({ error: { message: balanceError.message, type: 'server_error' } }, 500)
+        remainingMicros = Number(balance?.remaining_micros || 0)
+      }
+      usageSummary = {
+        offer_key: usage.offer_key,
+        sku: offer.sku,
+        billing: offer.billing,
+        unit: usage.unit,
+        mode,
+        remaining_micros: remainingMicros,
+        period_start: periodStart,
+        purchase_sku: offer.billing === 'once' && Number(offer.usage.grant_micros) > 0 ? offer.sku : null,
+      }
+    }
+
     /* the ceilings are the bot's own, carried IN the grant so nothing downstream can raise them */
     const minutes = Number(bot.limits?.minutes) || 10
     const cents = Math.round((Number(bot.limits?.spend) || 0.5) * 100)
@@ -106,7 +186,7 @@ Deno.serve(async (req) => {
       minutes: String(WORDS['ceiling-minutes'] || ''),
       spend: String(WORDS['ceiling-spend'] || ''),
     }
-    const grant = await signGrant({ bot: bot.slug, subject: me.id, room, minutes, cents, ending, expires }, SERVICE)
+    const grant = await signGrant({ bot: bot.slug, subject: me.id, room, minutes, cents, ending, expires, usage }, SERVICE)
     const livekitKeys = ['LIVEKIT_URL', 'LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET']
       .map((key) => Deno.env.get(key))
     if (livekitKeys.some(Boolean) && !livekitKeys.every(Boolean)) {
@@ -131,6 +211,7 @@ Deno.serve(async (req) => {
       transport,
       /* what the page needs to draw and speak, so it asks for nothing twice */
       voice: bot.voice || {}, minutes, greeting: bot.voice?.greeting || '',
+      ...(usageSummary ? { usage: usageSummary } : {}),
     })
   }
 
@@ -140,6 +221,38 @@ Deno.serve(async (req) => {
   if (g.error) {
     /* said plainly: a worker that cannot start should know why without anybody reading a log */
     return json({ error: { message: `grant ${g.error}`, type: 'invalid_request_error' } }, 401)
+  }
+
+  if (new URL(req.url).pathname.endsWith('/telemetry')) {
+    const telemetry = await req.json().catch(() => ({}))
+    const secondsMicros = Number(telemetry?.seconds_micros)
+    const id = String(telemetry?.id || '')
+    if (telemetry?.kind !== 'stt' || !Number.isSafeInteger(secondsMicros) || secondsMicros < 0 ||
+        secondsMicros > Number(g.minutes) * 60 * 1_000_000 ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+      return json({ error: { message: 'invalid speech telemetry', type: 'invalid_request_error' } }, 400)
+    }
+    const usageRecord = speechTelemetryRecord(g, id, secondsMicros)
+    if (!usageRecord) return json({ ok: true, recorded: false })
+    const { data, error } = await admin.rpc('usage_record', {
+      p_source_ref: usageRecord.source_ref,
+      p_user_id: usageRecord.user_id,
+      p_bot_id: usageRecord.bot_id,
+      p_offer_key: usageRecord.offer_key,
+      p_kind: usageRecord.kind,
+      p_cost_micros: usageRecord.cost_micros,
+      p_seconds_micros: usageRecord.seconds_micros,
+      p_units_micros: usageRecord.units_micros,
+      p_metered: usageRecord.metered,
+      p_usage_unit: usageRecord.usage_unit,
+      p_rate_micros: usageRecord.rate_micros,
+      p_meter: usageRecord.meter,
+      p_overage_price_micros: usageRecord.overage_price_micros,
+      p_speech_cost_per_second_micros: usageRecord.speech_cost_per_second_micros,
+    })
+    if (error) return json({ error: { message: `speech telemetry could not be recorded: ${error.message}`, type: 'server_error' } }, 500)
+    if (!data?.admitted) return json({ error: { message: data?.reason || 'speech telemetry was refused', type: 'server_error' } }, 503)
+    return json({ ok: true, duplicate: Boolean(data.duplicate) })
   }
 
   const body = await req.json().catch(() => ({}))

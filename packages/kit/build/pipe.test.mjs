@@ -171,6 +171,29 @@ await ta('every bare name a function reaches is in its own import map', async ()
   assert.deepEqual(gaps.sort(), [], 'a function cannot resolve a name it imports — its worker will not boot, and every request to it is a 503')
 })
 
+await ta('shared pipe imports do not depend on a function-scoped import map', async () => {
+  const pipe = path.join(ROOT, 'supabase', 'functions', '_shared', 'pipe')
+  if (!fs.existsSync(pipe)) return
+  const STATIC_IMPORT = /^\s*(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]/gm
+  const DYNAMIC_IMPORT = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g
+  const code = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const file = path.join(dir, entry.name)
+    if (entry.isDirectory()) return code(file)
+    return /\.(?:[cm]?js|ts)$/.test(file) ? [file] : []
+  })
+  const bare = []
+  for (const file of code(pipe)) {
+    const rel = path.relative(pipe, file).split(path.sep).join('/')
+    const text = fs.readFileSync(file, 'utf8')
+    const imports = [...text.matchAll(STATIC_IMPORT), ...text.matchAll(DYNAMIC_IMPORT)]
+    for (const match of imports) {
+      const specifier = match[1]
+      if (!/^(?:\.{1,2}\/|\/|npm:|jsr:|node:|https?:|data:)/.test(specifier)) bare.push(`${rel} → "${specifier}"`)
+    }
+  }
+  assert.deepEqual(bare, [], 'shared modules are outside each function’s import-map scope; external dependencies must use explicit Deno specifiers')
+})
+
 /*
  * A CONDITION NOBODY READS IS NOT A CONDITION.
  *

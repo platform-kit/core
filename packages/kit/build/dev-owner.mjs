@@ -292,6 +292,28 @@ export async function stopPortRecords(root, report, { keep = () => false } = {})
   return stopped
 }
 
+function runResources(root, record) {
+  const resources = []
+  const knownSites = sites(root)
+  const stateDir = platformkitRuntimePath(root, 'dev')
+  for (const pid of runChildren(record.runId)) {
+    const cwd = processCwd(pid)
+    const site = knownSites.find(({ directory }) => cwd && path.resolve(directory) === path.resolve(cwd))
+    if (!site) continue
+    const portFile = path.join(stateDir, `${site.name}.port`)
+    let port = 0
+    try { port = Number(fs.readFileSync(portFile, 'utf8').trim()) }
+    catch (error) { if (error.code !== 'ENOENT') throw error }
+    resources.push(Number.isInteger(port) && port > 0 ? `${site.name} (${port})` : `${site.name} dev server`)
+  }
+  if (record.kind === 'workspace') {
+    const name = record.composeProjectName || composeName(root)
+    const port = composeRunning(root, name)
+    if (port !== null) resources.push(`the front door${port ? ` (${port})` : ''}`)
+  }
+  return [...new Set(resources)]
+}
+
 /*
  * TAKING OVER, before a run starts: whatever a gone or abandoned run of this checkout left — its
  * own process, its sites' servers, its stacks, its front door — is stopped; a living run and
@@ -307,7 +329,12 @@ export async function takeOver(root, report) {
     if (run.record.pid === process.pid) continue
     const state = runState(run.record)
     if (state === 'live') { live.push(run.record); continue }
-    if (await stopRun(root, run, quiet)) stopped.push(state === 'abandoned' ? `an abandoned ${run.record.kind || 'dev'} run (PID ${run.record.pid})` : `what a ${run.record.kind || 'dev'} run left`)
+    const resources = runResources(root, run.record)
+    if (await stopRun(root, run, quiet)) {
+      if (state === 'abandoned') resources.unshift(`an abandoned ${run.record.kind || 'dev'} run (PID ${run.record.pid})`)
+      if (state === 'reused' || !resources.length) resources.push(`a stale ${run.record.kind || 'dev'} run record (PID ${run.record.pid})`)
+      stopped.push(...resources)
+    }
   }
   const livePids = new Set(live.map((record) => record.pid))
   stopped.push(...await stopPortRecords(root, quiet, { keep: (pid) => livePids.has(pid) }))
@@ -318,7 +345,7 @@ export async function takeOver(root, report) {
     const port = composeRunning(root, name)
     if (port !== null && stopCompose(root, name, quiet)) stopped.push(`the front door${port ? ` (${port})` : ''}`)
   }
-  return { stopped, live }
+  return { stopped: [...new Set(stopped)], live }
 }
 
 export const takeOverLine = (stopped) => `Stopped what an earlier dev run left behind: ${stopped.join(', ')}.`

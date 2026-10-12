@@ -25,12 +25,14 @@ sources:
     packages/kit/supabase/functions/_shared/ledger-rules.js,
     packages/kit/supabase/functions/_shared/sessions/guest-booking.js,
     packages/kit/supabase/schemas/40-commerce.sql,
+    packages/kit/build/usage.test.mjs,
+    packages/kit/build/velite.mjs,
     packages/kit/supabase/schemas/55-sessions.sql,
   ]
 reviewed: 2026-10-11
 ---
 
-The store sells book unlocks, printed books and downloads, memberships, and goods. It is enabled by the `store` module; when the module is off, store pages, checkout, and store administration are unavailable. For membership offers and tiers, see [Memberships and pricing](/content/docs/running-a-site/selling/memberships-and-pricing).
+The store sells book unlocks, printed books and downloads, memberships, and goods. It is enabled by the `store` module; when the module is off, store pages, checkout, and store administration are unavailable. For membership offers and tiers, see [Memberships and pricing](/content/docs/running-a-site/selling/memberships-and-pricing). For prepaid allowances and metered assistant services, see [Usage billing](/content/docs/running-a-site/selling/usage-billing).
 
 Provider offerings are booked rather than added to the store bag. See [Providers and payouts](/content/docs/running-a-site/selling/providers-and-payouts).
 
@@ -55,6 +57,7 @@ Sales → **Products**: one file per thing a person can buy, and the file is the
 | **price / currency**                                      | In dollars as written (10 or 10.00)                                                                                                                                                                                                                                                                                                                                                                     |
 | **book**                                                  | For an unlock: which book                                                                                                                                                                                                                                                                                                                                                                               |
 | **tier / rank**                                           | For a membership: its level and where it ranks                                                                                                                                                                                                                                                                                                                                                          |
+| **usage**                                                 | Optional usage economics: the named unit, provider-cost rate, and either prepaid grant units or subscription allowance, meter, and overage price. A usage offer keeps the same stable `key` across renames and repricing                                                                                                                                                                                |
 | **chat-hours**                                            | What a membership or session promises: a coach's reply within this many hours                                                                                                                                                                                                                                                                                                                           |
 | image, gallery, badge, featured, order, tags, collections | The editorial layer: pictures, a "New" badge, the rails                                                                                                                                                                                                                                                                                                                                                 |
 | **options**, **sizes**, **variants**, **unsold**          | The shapes it is sold in — see below                                                                                                                                                                                                                                                                                                                                                                    |

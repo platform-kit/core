@@ -17,7 +17,7 @@ sources:
     packages/kit/build/images,
     packages/movable-types/src/components/admin/ImageSource.vue,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-12
 ---
 
 ## One library

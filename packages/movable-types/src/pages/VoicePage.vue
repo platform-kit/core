@@ -79,6 +79,7 @@ const memoryLoading = ref(false)
 const memoryFault = ref('')
 const askingMemory = ref(null)
 const memoryDeleting = ref(null)
+const usageFault = ref('')
 let store = null
 /* what the recogniser has heard so far in this breath, before it has committed to it */
 const heard = ref('')
@@ -252,7 +253,7 @@ function sendTyped() {
   chat.value.say(t)
 }
 
-let grant = '', mic = null, ctx = null, raf = 0, recog = null, out = null
+let grant = '', mic = null, ctx = null, raf = 0, recog = null, out = null, sttStartedAt = 0
 let voiceRoom = null
 const roomAnswers = new Map()
 const ROOM_INPUT = 'copilot.input'
@@ -310,6 +311,30 @@ watch(() => [log.value.length, showLog.value], async () => {
 const needsSignIn = computed(() => fault.value === (W.value['sign-in'] || ''))
 const openAuth = () => { if (window.DLauth) window.DLauth.open({ intent: 'buy' }) }
 
+async function reportStt(elapsedMs) {
+  if (!grant || !bot.value?.usage?.offer_key || elapsedMs <= 0) return
+  const secondsMicros = Math.min(Math.round(elapsedMs * 1000), Number(bot.value.minutes || 0) * 60_000_000)
+  if (!secondsMicros) return
+  const payload = { kind: 'stt', id: crypto.randomUUID(), seconds_micros: secondsMicros }
+  try {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const response = await fetch(`${functionsBase()}/copilot-llm/telemetry`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `******` },
+        body: JSON.stringify(payload),
+      })
+      if (response.ok) return
+      const result = await response.json().catch(() => ({}))
+      if (response.status < 500 || attempt === 1) {
+        throw new Error(result?.error?.message || String(response.status))
+      }
+    }
+  } catch (error) {
+    console.error('Unable to record speech recognition time', error)
+    usageFault.value = W.value['telemetry-error'] || ''
+  }
+}
+
 async function begin() {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) { fault.value = W.value['sign-in'] || ''; return }
@@ -356,7 +381,13 @@ async function begin() {
    * later fails, the failover builds it then.
    */
   if (sp.id === 'browser') warmEngine()
-  chat.value = conversation({ speaker: voiced, ask, onSaid: (line) => { if (line.who === 'them') ear.speaking(line.text); keep(line) } })
+  chat.value = conversation({ speaker: voiced, ask, onSaid: (line) => {
+    if (line.who === 'them') {
+      ear.speaking(line.text)
+      if (bot.value?.usage) setTimeout(() => { void refreshUsage() }, 1_000)
+    }
+    keep(line)
+  } })
   store = threadStore(supabase, slug.value)
   store.list().then((l) => { sessions.value = l }).catch(() => { store = null })
   /*
@@ -409,7 +440,24 @@ function buildSpeaker() {
         method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${grant}` },
         body: JSON.stringify({ text, voice, format: format || 'pcm' }),
       })
-      return res.ok ? res.body : null
+      if (!res.ok || !res.body || !bot.value?.usage) return res.ok ? res.body : null
+      const reader = res.body.getReader()
+      return new ReadableStream({
+        async pull(controller) {
+          try {
+            const { done, value } = await reader.read()
+            if (done) {
+              await refreshUsage()
+              controller.close()
+            } else controller.enqueue(value)
+          } catch (error) {
+            controller.error(error)
+          }
+        },
+        async cancel(reason) {
+          try { await reader.cancel(reason) } finally { void refreshUsage() }
+        },
+      })
     },
   })
   /* whatever the provider, the bytes end up here — raw frames played as they land, or the
@@ -580,6 +628,7 @@ function listen() {
   if (!Engine) { deaf.value = true; return }
   recog = new Engine()
   recog.continuous = true; recog.interimResults = true; recog.lang = document.documentElement.lang || 'en-GB'
+  recog.onstart = () => { sttStartedAt = performance.now() }
   /* the sentence is over: it goes to the model, and the words on screen do not move — the line
      clears at the same moment the pending sentence takes its place, with the same text in it */
   const finish = () => {
@@ -631,7 +680,14 @@ function listen() {
    * mode — for some people it is the only usable one — so it starts and stops the recogniser
    * rather than muting it, and nothing is listened to between presses.
    */
-  recog.onend = () => { if (!ended.value && !prefs.value.hold) try { recog.start() } catch { /* going */ } }
+  recog.onend = () => {
+    if (sttStartedAt) {
+      const elapsed = performance.now() - sttStartedAt
+      sttStartedAt = 0
+      void reportStt(elapsed)
+    }
+    if (!ended.value && !prefs.value.hold) try { recog.start() } catch { /* going */ }
+  }
   listenAs(prefs.value.hold)
 }
 
@@ -644,6 +700,7 @@ function listen() {
  */
 function leaving() {
   out && out.stop()
+  clearInterval(usageTimer); usageTimer = 0
   clearTimeout(settle); settle = 0; breath = ''
   heard.value = ''
   ended.value = true
@@ -789,6 +846,7 @@ onBeforeUnmount(() => {
         </ul>
       </template>
     </div>
+    <p v-if="usageFault" class="vp-telemetry-alert" role="alert">{{ usageFault }}</p>
     <div v-if="showSessions" class="vp-veil" @click="showSessions = false"></div>
 
     <!--
@@ -1048,6 +1106,7 @@ li[data-who='me'].vp-msg-enter-from { transform: translate3d(10px, 8px, 0) }
 .vp-past-new { padding: 4px 10px; border: 1px solid var(--hair); border-radius: 999px; background: none; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer }
 .vp-past-new:hover { background: var(--accentbg) }
 .vp-past-none { margin: 10px 8px; color: var(--ink3); font-size: 14px; line-height: 1.5 }
+.vp-telemetry-alert { position: fixed; z-index: 20; bottom: 1rem; left: 50%; width: min(90vw, 32rem); transform: translateX(-50%); margin: 0; padding: .8rem 1rem; border: 1px solid var(--hair); border-radius: .8rem; background: var(--paper); color: var(--ink); box-shadow: 0 12px 40px -20px #0008; font-size: .85rem; }
 .vp-past-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: grid; gap: 2px; align-content: start }
 .vp-past-list li { display: flex; align-items: center; gap: 2px; border-radius: 10px }
 .vp-past-list li:hover, .vp-past-list li.is-here { background: var(--accentbg) }

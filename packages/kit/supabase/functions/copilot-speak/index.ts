@@ -22,6 +22,7 @@
  */
 import { cors, json } from '../_shared/lib.ts'
 import { createSpeechHandler } from '../_shared/copilot/speech-proxy.js'
+import { authorizeUsage } from '../_shared/usage.ts'
 
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const TTS_URL = (Deno.env.get('COPILOT_TTS_URL') ?? '').replace(/\/$/, '')
@@ -37,4 +38,5 @@ Deno.serve(createSpeechHandler({
   voice: TTS_VOICE,
   cors,
   json,
+  authorizeUsage,
 }))

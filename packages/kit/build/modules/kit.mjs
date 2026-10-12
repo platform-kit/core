@@ -49,9 +49,11 @@ export const MODULES = [
     static: false, git: true, cloud: true,
     owns: {
       steps: ['sales'],
+      functions: ['usage-meter-report', 'usage-topup'],
       cron: [
         { name: 'stock-holds', schedule: '*/20 * * * *', command: 'select public.inventory_sweep()' },
         { name: 'payouts-sweep', schedule: '15 * * * *', command: 'select public.payouts_sweep()' },
+        { name: 'usage-meter-reports', schedule: '*/5 * * * *', command: 'select public.run_usage_meter_reports()' },
       ],
       env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'],
     },

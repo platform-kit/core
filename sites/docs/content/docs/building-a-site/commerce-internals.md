@@ -36,6 +36,11 @@ sources:
     packages/kit/supabase/functions/stripe-webhook,
     packages/kit/supabase/functions/book-files,
     packages/kit/build/catalog.mjs,
+    packages/kit/supabase/functions/_shared/usage-stripe.mjs,
+    packages/kit/supabase/functions/_shared/usage-gate.mjs,
+    packages/kit/supabase/functions/_shared/usage.ts,
+    packages/kit/supabase/functions/usage-meter-report,
+    packages/kit/build/usage.test.mjs,
     packages/kit/src/lib/commerce.js,
     packages/kit/supabase/schemas/40-commerce.sql,
     packages/kit/build/policies.test.mjs,
@@ -82,6 +87,8 @@ browser can photograph the real one, and none of it can be read off a stylesheet
 function — so it travels here (`build/fonts.mjs`).
 
 `_shared/offers.ts` makes Stripe match an offer: the product found by `metadata.key` or created, its name and sku kept current; the price found by `lookup_key = key` or created, carrying `key`, `sku`, `kind`, `tier` and `book` as metadata. A changed amount, currency or period makes a **new** price under the same key and retires the old (the new one made the product's default first, since Stripe will not archive a default) — a subscriber stays on what they signed up at, and because every price of a tier carries the tier, both count. It runs in two places: `push-catalog` for every offer (the deploy calls it with the service-role key), and `create-checkout-session` for each sku in the cart just before the session is made, so an empty Stripe account still sells. The client sends skus (`checkout(items)`, `subscribe(sku)` in `lib/commerce.js`), never an amount or a Stripe id; a sku the files do not declare is refused.
+
+A product may also declare a **usage allowance**: a one-time offer grants prepaid units, or a subscription may include an allowance and attach a separate Stripe meter for overage. The stable offer key and saved price metadata keep later usage and invoices tied to the terms in effect when they were created. Completed work is recorded before overage is sent to Stripe; reports that pass the provider's safe retry window are held for manual reconciliation. Any configured server operation can reserve and settle usage through the shared gate; it is not tied to the assistant interface. The customer-facing fields and operating limits are described in [Usage billing](/content/docs/running-a-site/selling/usage-billing).
 
 ## What Stripe already does, and this never passed
 

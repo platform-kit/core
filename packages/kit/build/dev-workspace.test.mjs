@@ -237,7 +237,9 @@ try {
       assert.ok(stateFiles(root).some((name) => name.startsWith('runs/')), 'the killed run left its record (nothing could remove it)')
       const again = await startHeld(root, 'hup').exited
       assert.equal(again.code, 0, again.output)
-      assert.match(again.output, /Stopped what an earlier dev run left behind: what a workspace run left/)
+      const takeover = again.output.match(/Stopped what an earlier dev run left behind: ([^\n]+)/)?.[1] || ''
+      assert.ok(takeover.includes('alpha (') || takeover.includes('a stale workspace run record'), takeover)
+      assert.doesNotMatch(takeover, /what a workspace run left/)
       assert.deepEqual(stateFiles(root), [])
     })
 
@@ -245,12 +247,16 @@ try {
       const root = heldFixture('restart')
       const held = startHeld(root, 'hold')
       await held.ready
+      const stateDir = path.join(root, 'node_modules', '.cache', 'platformkit', 'dev')
+      const ports = ['alpha', 'beta'].map((site) => Number(fs.readFileSync(path.join(stateDir, `${site}.port`), 'utf8').trim()))
       held.worker.kill('SIGKILL')
       await held.exited
       const again = await startHeld(root, 'hup').exited
       assert.equal(again.code, 0, again.output)
       assert.match(again.output, /Waiting for 2 server\(s\) of an earlier run to finish stopping/)
-      assert.match(again.output, /Stopped what an earlier dev run left behind: what a workspace run left/)
+      const takeover = again.output.match(/Stopped what an earlier dev run left behind: ([^\n]+)/)?.[1] || ''
+      assert.ok(takeover.includes(`alpha (${ports[0]})`), takeover)
+      assert.ok(takeover.includes(`beta (${ports[1]})`), takeover)
       assert.deepEqual(stateFiles(root), [])
     })
 

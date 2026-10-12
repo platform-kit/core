@@ -21,7 +21,7 @@ export function costOf({ tokensIn = 0, tokensOut = 0 } = {}, price = {}) {
   const inM = Number(price.in) || 0
   const outM = Number(price.out) || 0
   const cents = ((tokensIn / 1e6) * inM + (tokensOut / 1e6) * outM) * 100
-  return Math.round(cents * 100) / 100
+  return Math.round(cents * 10_000) / 10_000
 }
 
 /* the limits a run is held to, with the kit's own defaults where a bot says nothing */

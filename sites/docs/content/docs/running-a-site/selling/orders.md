@@ -2,8 +2,14 @@
 title: Orders
 description: What happens to a sale after it is paid for — the lines, the money, the parcels and the returns.
 order: 22
-sources: [packages/kit/supabase/schemas/43-orders.sql, packages/kit/build/orders-db.test.mjs, packages/movable-types/src/components/Orders.vue, packages/kit/supabase/functions/_shared/ledger.ts]
-reviewed: 2026-10-09
+sources:
+  [
+    packages/kit/supabase/schemas/43-orders.sql,
+    packages/kit/build/orders-db.test.mjs,
+    packages/movable-types/src/components/Orders.vue,
+    packages/kit/supabase/functions/_shared/ledger.ts,
+  ]
+reviewed: 2026-10-12
 ---
 
 A purchase says what somebody bought. An **order** is the thing that has a life after that: an
@@ -13,7 +19,7 @@ back.
 A paid session can be booked as the buyer checks out. The ledger takes the attendee email from Stripe's Checkout Session, then claims its id in the service-role-only `booking_checkout_fulfilments` table before contacting the scheduler. The claim records `processing`, then `booked`, `unavailable` or `failed`; a duplicate webhook or success-page confirmation cannot claim the same session again. A successful booking stores the Checkout Session id on `bookings` under a unique index as a second safeguard.
 
 **Sales → Orders** is every sale and what has happened to it since. The printed copies are a
-*filter* of that page rather than a page of their own — a parcel from a printer and a parcel off
+_filter_ of that page rather than a page of their own — a parcel from a printer and a parcel off
 your own shelf are the same fact about one sale, and having two pages meant a shop selling both
 had to look in two places to see one order.
 
@@ -26,12 +32,12 @@ shown in the admin with nothing to do about it.
 
 ## What an order is made of
 
-| | |
-| --- | --- |
-| **Lines** | What was on it, as it read at the time — the title, the shape, the price each. A line keeps its identity for ever, so it is still recognisable after the order has been edited |
-| **Money** | Every payment and every refund, each carrying the processor's own id, so the same event arriving twice is one row |
-| **Parcels** | What has gone out, and what is still being made. Each one names its lines and how many of each |
-| **Returns** | What is coming back, with states of their own |
+|             |                                                                                                                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Lines**   | What was on it, as it read at the time — the title, the shape, the price each. A line keeps its identity for ever, so it is still recognisable after the order has been edited |
+| **Money**   | Every payment and every refund, each carrying the processor's own id, so the same event arriving twice is one row                                                              |
+| **Parcels** | What has gone out, and what is still being made. Each one names its lines and how many of each                                                                                 |
+| **Returns** | What is coming back, with states of their own                                                                                                                                  |
 
 ## Nothing about an order's state is stored
 
@@ -40,7 +46,7 @@ part-sent — every one is worked out from the rows it is a total of, every time
 
 That is not tidiness. A stored total is a second source that disagrees with the rows the first
 time anything goes wrong, and the one that is wrong is the one every page reads. Cancel a parcel
-and the order says *nothing sent* again immediately, with nothing told to recompute.
+and the order says _nothing sent_ again immediately, with nothing told to recompute.
 
 ## Editing an order
 
@@ -60,7 +66,7 @@ different moments and the shelf moves at the second one.
 
 Crediting the stock at the request would sell a unit that has not come back, and you would find
 out when the next buyer's order could not be filled. A unit that comes back damaged is marked
-*not restocked* — it is in the shop but not on the shelf, and that is a decision somebody makes
+_not restocked_ — it is in the shop but not on the shelf, and that is a decision somebody makes
 rather than something to infer.
 
 **An exchange is a return with an outbound order**, not a fourth kind of thing: what comes back is
@@ -94,7 +100,7 @@ the same generic pair.
 
 The six columns themselves survive one more deploy, and that is a property of the declaration
 rather than a plan anybody has to remember. A plan applies renames, then the schema diff, then the
-data script — so a deploy that dropped the columns would drop them *before* the script that carries
+data script — so a deploy that dropped the columns would drop them _before_ the script that carries
 their values into `chosen`, and every printed copy ordered before the change would lose what it
 was. So the backfill ships first and the drop follows, and `store-separation.test.mjs` fails
 either way: add a seventh column and it fails, drop the six and it fails until the exception is

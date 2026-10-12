@@ -71,9 +71,31 @@ export const worthAnother = (status) => !(status === 400 || status === 422)
  * reaches a vendor. The difference between "we meant not to spend anything" and "we could not
  * have" is one line, and this is the line.
  */
-export function providersFrom(env = {}) {
+export function providersFrom(env = {}, inference = null) {
   const asked = env.PLATFORMKIT_AGENT_MOCK === '1'
   const live = env.AGENTS_LIVE === '1'
+  if (inference) {
+    const list = inference.providers.map((provider) => ({
+      id: provider.id,
+      kind: provider.protocol === 'anthropic' ? 'anthropic' : 'openai',
+      protocol: provider.protocol,
+      base: provider.baseUrl,
+      key: String(env[provider.secretEnv] || ''),
+      model: provider.model,
+      models: provider.models,
+      maxTokens: provider.maxOutputTokens,
+    })).slice(0, inference.fallback.enabled ? inference.fallback.maxAttempts : 1)
+    const missing = list.find((provider) => !provider.key)
+    return {
+      mock: asked || !live,
+      why: asked ? 'asked for' : !live ? 'not switched on (AGENTS_LIVE)' : '',
+      error: missing && live && !asked
+        ? `inference provider "${missing.id}" is missing deployment secret ${inference.providers.find((provider) => provider.id === missing.id).secretEnv}`
+        : null,
+      list,
+      retryStatuses: inference.fallback.retryStatuses,
+    }
+  }
   const all = []
   const openaiKey = env.AGENT_API_KEY || env.OPENAI_API_KEY || ''
   if (openaiKey) {
@@ -146,6 +168,7 @@ export async function ask({ provider, providers, model, messages, tools = [], sc
      a test, a dry run, a site trying a bot out — and it is answered from the script whatever keys
      happen to be lying about in the environment. Putting the rule here rather than in a variable
      is the difference between "we meant not to spend anything" and "we could not have". */
+  if (where.error) throw new Error(where.error)
   if (where.mock || hasScript(messages)) {
     return mockAsk({ messages, tools, schema, model: model || where.list[0]?.model, why: where.why })
   }
@@ -164,25 +187,72 @@ export async function ask({ provider, providers, model, messages, tools = [], sc
   const order = where.list.filter((p) => !SORE.has(p.id))
   const list = order.length ? order : where.list   /* all sore: try them all again rather than give up */
   let last = null
+  const attempts = []
   for (let i = 0; i < list.length; i++) {
     const p = list[i]
     /* the bot's own model belongs to the provider it was written for — which is the first one the
        SITE declares, not whichever one this call happens to start with once a sore one is skipped */
     const first = p.id === where.list[0].id
+    let requestStarted = false
+    let selectedModel = first ? (model || p.model) : p.model
     try {
+      if (p.models && !Object.hasOwn(p.models, selectedModel)) {
+        throw new Error(`model "${selectedModel}" has no tariff under provider "${p.id}"`)
+      }
+      const outputLimit = maxTokens || p.maxTokens || 0
+      requestStarted = true
       const out = p.kind === 'anthropic'
-        ? await askAnthropic({ p, model: first ? (model || p.model) : p.model, messages, tools, schema, signal, maxTokens })
-        : await askOpenAI({ p, model: first ? (model || p.model) : p.model, messages, tools, schema, temperature, signal, maxTokens })
+        ? await askAnthropic({ p, model: selectedModel, messages, tools, schema, signal, maxTokens: outputLimit })
+        : await askOpenAI({ p, model: selectedModel, messages, tools, schema, temperature, signal, maxTokens: outputLimit })
       SORE.delete(p.id)
-      return { ...out, provider: p.id, ...(p.id !== where.list[0].id ? { fellBackFrom: where.list[0].id } : {}) }
+      attempts.push({
+        provider: p.id,
+        model: out.model || selectedModel,
+        requestedModel: selectedModel,
+        protocol: p.protocol || (p.kind === 'anthropic' ? 'anthropic' : 'openai-chat'),
+        outcome: 'succeeded',
+        measurementStatus: out.usage?.raw ? 'measured' : 'estimated',
+        status: 200,
+        usage: out.usage?.raw || null,
+      })
+      return {
+        ...out,
+        provider: p.id,
+        protocol: p.protocol || (p.kind === 'anthropic' ? 'anthropic' : 'openai-chat'),
+        ...(p.id !== where.list[0].id ? { fellBackFrom: where.list[0].id } : {}),
+        attempts,
+      }
     } catch (e) {
       last = e
-      if (!worthAnother(e.status)) throw e
+      attempts.push({
+        provider: p.id,
+        model: selectedModel,
+        requestedModel: selectedModel,
+        protocol: p.protocol || (p.kind === 'anthropic' ? 'anthropic' : 'openai-chat'),
+        outcome: requestStarted ? 'failed' : 'not_sent',
+        measurementStatus: requestStarted ? 'estimated' : 'not_sent',
+        status: Number.isInteger(e.status) ? e.status : null,
+        usage: null,
+      })
+      if (!requestStarted) {
+        e.attempts = attempts
+        throw e
+      }
+      if (e.status == null) {
+        e.attempts = attempts
+        throw e
+      }
+      const retryStatuses = where.retryStatuses
+      if (retryStatuses ? !retryStatuses.includes(Number(e.status) || 0) : !worthAnother(e.status)) {
+        e.attempts = attempts
+        throw e
+      }
       /* out of credit, rate-limited, or simply down: worth another provider, not worth asking this
          one again on the next step of the same run */
       if (SORE_STATUS(e.status)) SORE.add(p.id)
     }
   }
+  if (last) last.attempts = attempts
   throw last || new Error('no provider answered')
 }
 
@@ -209,9 +279,14 @@ async function askOpenAI({ p, model, messages, tools = [], schema = null, temper
   }
   const data = await r.json()
   const choice = (data.choices || [])[0] || {}
+  const usage = data.usage
   return {
     ...asReply({ message: choice.message || { role: 'assistant', content: '' } }, schema),
-    usage: { in: data.usage?.prompt_tokens || 0, out: data.usage?.completion_tokens || 0 },
+    usage: {
+      in: Number(usage?.prompt_tokens) || 0,
+      out: Number(usage?.completion_tokens) || 0,
+      raw: usage && typeof usage === 'object' ? usage : null,
+    },
     model: data.model || body.model,
   }
 }
@@ -240,7 +315,9 @@ async function askAnthropic({ p, model, messages, tools = [], schema = null, sig
     const said = await r.text().catch(() => '')
     throw Object.assign(new Error(`the model answered ${r.status}${said ? ': ' + said.slice(0, 300) : ''}`), { status: r.status })
   }
-  const out = fromAnthropic(await r.json())
+  const body = await r.json()
+  const out = fromAnthropic(body)
+  out.usage.raw = body.usage && typeof body.usage === 'object' ? body.usage : null
   return { ...asReply(out, schema), model: out.model || model }
 }
 

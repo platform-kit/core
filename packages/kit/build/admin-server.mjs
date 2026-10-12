@@ -104,7 +104,7 @@ async function preview({ col, name, data, content }, models) {
 }
 
 /* what the pipe is given here: the checkout, velite's preview, the registry read fresh */
-const ENV = { root: ROOT, store: STORE, models, describe, validateSections, preview, by: '' }
+const ENV = { root: ROOT, store: STORE, site: SITE, models, describe, validateSections, preview, by: '' }
 
 const send = (res, code, obj) => {
   res.statusCode = code
