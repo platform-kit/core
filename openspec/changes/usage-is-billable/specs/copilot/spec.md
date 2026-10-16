@@ -44,7 +44,7 @@ Verified by: `build/usage.test.mjs` and the reader-page browser probe
 
 #### Scenario: a reader reviews usage from different operations
 
-- **WHEN** a reader opens `/app/usage`
+- **WHEN** a reader opens `/billing#usage` or follows the former `/app/usage` address
 - **THEN** the usage page shows their own balance and recorded usage across all configured billable operations, without requiring a bot or conversation
 
 Verified by: `build/usage.test.mjs` and the reader-page browser probe

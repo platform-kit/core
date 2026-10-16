@@ -17,7 +17,6 @@ import siteConfig, { modules } from '#site'   /* the module switches (platformki
 /* The instrument is 200kB of corpora and engine. Keeping it behind a dynamic
    import means / never pays for it. */
 const DiagnosticsPage = defineAsyncComponent(() => import('./pages/DiagnosticsPage.vue'))
-const UsagePage = defineAsyncComponent(() => import('./pages/UsagePage.vue'))
 /* a booking's video room on the site: its own page, no sheet around it (the sessions module) */
 const CallPage = moduleOn('sessions') ? defineAsyncComponent(() => import('./pages/CallPage.vue')) : null
 /* speaking to an assistant: its own page, no sheet around it (the bots module) */
@@ -39,6 +38,8 @@ const ApiReferencePage = API_ON ? defineAsyncComponent(() => import('./pages/Api
 const BookPage = SESSIONS_ON ? defineAsyncComponent(() => import('./pages/BookPage.vue')) : null
 /* a cart from the Store API followed to its checkout (store-api): the bag filled, the buyer sent on */
 const CartHandoffPage = STORE_ON ? defineAsyncComponent(() => import('./pages/CartHandoffPage.vue')) : null
+const HyperswitchCheckoutPage = defineAsyncComponent(() => import('./pages/HyperswitchCheckoutPage.vue'))
+const BillingPortalPage = defineAsyncComponent(() => import('./pages/BillingPortalPage.vue'))
 /* the support panel on a page of its own ($chatwidget.popoutChatWindow; support-api) */
 const SupportPage = moduleOn('support') ? defineAsyncComponent(() => import('./pages/SupportPage.vue')) : null
 /* the comment thread in somebody else's frame — a chunk of its own, since the site itself never draws it */
@@ -85,7 +86,6 @@ watch(route, (path) => { applyRouteMeta(path); if (path !== ROUTES.preview) page
   <LandingPage v-else-if="route === ROUTES.home" />
   <CallPage v-else-if="CallPage && route.startsWith(ROUTES.diagnostics + '/call/')" :key="route" />
   <VoicePage v-else-if="VoicePage && route.startsWith(ROUTES.diagnostics + '/voice/')" :key="route" />
-  <UsagePage v-else-if="route === ROUTES.diagnostics + '/usage'" />
   <DiagnosticsPage v-else-if="route === ROUTES.diagnostics || route.startsWith(ROUTES.diagnostics + '/')" />
   <ContentPage v-else-if="route === ROUTES.content || route.startsWith(ROUTES.content + '/')" />
   <ContentPage v-else-if="DOCS_ONLY && (route === ROUTES.docs || route.startsWith(ROUTES.docs + '/'))" />
@@ -97,6 +97,8 @@ watch(route, (path) => { applyRouteMeta(path); if (path !== ROUTES.preview) page
   <ApiReferencePage v-else-if="ApiReferencePage && route === ROUTES.api" />
   <BookPage v-else-if="BookPage && route.startsWith(ROUTES.book + '/')" :key="route" :path="route" />
   <CartHandoffPage v-else-if="CartHandoffPage && route.startsWith(ROUTES.cart + '/c/')" :key="route" :path="route" />
+  <HyperswitchCheckoutPage v-else-if="route === ROUTES.hyperswitchCheckout" :key="route" />
+  <BillingPortalPage v-else-if="route === ROUTES.billing" :key="route" />
   <SupportPage v-else-if="SupportPage && route === ROUTES.support" />
   <!-- the comment thread in somebody else's frame: our page, so our session and our sign-in -->
   <CommentsEmbedPage v-else-if="route.startsWith(ROUTES.embed + '/comments')" :key="route" :path="route" />

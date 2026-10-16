@@ -58,6 +58,19 @@ t('module and when switch a step off, with the reason', () => {
   assert.equal(whyOff(s, { modules: {} }, { TTS: '1' }), null)
   assert.ok(isOn(norm({ key: 'y', phase: 'site' }), { modules: {} }, {}))
 })
+t('catalog push follows the selected payment provider and its declared capability', () => {
+  const step = STEPS.find((item) => item.key === 'push-catalog')
+  assert.equal(step.when({ STRIPE_SECRET_KEY: 'sk_live_x' }, {}), true)
+  assert.equal(step.when({}, {}), false)
+  assert.equal(step.when({}, {
+    payments: { provider: 'site-mock' },
+    _paymentProviderRegistrations: [{ id: 'site-mock', capabilities: ['checkout.one-time'] }],
+  }), false)
+  assert.equal(step.when({}, {
+    payments: { provider: 'site-catalog' },
+    _paymentProviderRegistrations: [{ id: 'site-catalog', capabilities: ['catalog.sync'] }],
+  }), true)
+})
 ta('print generation is opt-in and its off step is not run or asked for build-only needs', async () => {
   const step = norm(STEPS.find((s) => s.key === 'print'))
   assert.equal(whyOff(step, site, {}), 'PRINT_BUILD is not 1')
@@ -93,6 +106,13 @@ await ta('a site step from a config is merged and ordered among the kit\'s; a du
   const o = order(steps, 'site').map((s) => s.key)
   assert.ok(o.indexOf('form-embed') < o.indexOf('mine') && o.includes('prerender'))
   assert.equal(steps.find((s) => s.key === 'mine').from, 'the site (./build/mine.mjs)')
+  const providerFixture = {
+    ...cfg,
+    payments: { provider: 'site-mock' },
+    build: { modules: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures/site-payment-provider/module.mjs')] },
+  }
+  await loadSteps(providerFixture)
+  assert.ok(providerFixture._paymentProviderRegistrations.some((provider) => provider.id === 'site-mock'))
   await assert.rejects(() => loadSteps({ ...cfg, build: { steps: ['./build/dup.mjs'] } }), /step prerender is already declared by the kit/)
   rmSync(d, { recursive: true, force: true })
 })

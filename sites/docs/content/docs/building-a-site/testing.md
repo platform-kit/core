@@ -55,7 +55,7 @@ sources:
     packages/kit/build/source-install.mjs,
     packages/kit/build/runtime-paths.mjs,
   ]
-reviewed: 2026-10-12
+reviewed: 2026-10-13
 ---
 
 ## A proposal promises nothing it does not require
@@ -150,7 +150,7 @@ It needs a dev server and the stack, and skips loudly naming what went uncovered
 
 The navigation editor's options are checked against the pages and membership tiers the site actually declares. Declared routes are checked across all options: `/` is supplied by the shared Home link, not duplicated in the separate `Your pages` group. A site with no landing-page records or store offers should not need to invent either just to pass the shared suite.
 
-The module-manifest checks match build steps to their declared owners across the kit, theme and site, so a site-registered module is held to the same ownership rule as a kit module. The YAML front-matter writer is also checked for no-op saves: unchanged records retain their original formatting, including the spacing inside inline maps.
+The module-manifest checks match build steps to their declared owners across the kit, theme and site, validate registered payment-provider declarations, and hold a site-registered module to the same ownership rules as a kit module. The YAML front-matter writer is also checked for no-op saves: unchanged records retain their original formatting, including the spacing inside inline maps.
 
 `packages/kit/build/test.mjs`, what every site's `npm test` calls. Run it from the site directory: the runner takes `process.cwd()` as the site root and resolves shared packages, docs and specs from the workspace root. CI runs it from the generic `sites/docs` and `sites/demo` fixtures; the workspace-root, dev-directory and stop tests cover the shared front door and managed local processes. The source-CLI test invokes a local Git source without requiring publication and checks that standalone help does not need workspace Vite dependencies; the runtime-path test pins the shared cache location. Before the demo bundle build, CI starts and resets its local Supabase stack and passes the local URL and keys to the build; it does not use hosted backend credentials.
 

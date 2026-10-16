@@ -17,8 +17,33 @@ cancel-heading: No charge was made
 cancel-subtitle: Nothing was charged and nothing changed.
 error-heading: That didn't go through
 unconfigured-heading: Payments aren’t set up in this environment
-unconfigured-subtitle: The store works, but checkout needs Stripe keys. In production this is a real checkout.
+unconfigured-subtitle: The store works, but checkout needs payment-provider credentials. In production this is a real checkout.
+checkout-options-unavailable: This purchase needs checkout options that are not available right now. Please contact the site for help.
+payment-provider-error: We couldn't complete this payment action. Please try again, or contact the site if the issue continues.
 trial-free: First {n} days free
+checkout-title: Complete your payment
+checkout-subtitle: Your payment details are entered securely with the payment provider.
+checkout-summary: Order summary
+checkout-total: Due now
+checkout-recurring: Then {price} every {interval}
+checkout-frequency: Billed every {interval}
+checkout-once: One-time purchase
+checkout-trial: {n} days free
+checkout-secure: Secure checkout
+checkout-loading: Loading secure payment form…
+checkout-unavailable-title: Checkout unavailable
+checkout-return: Return to the store
+checkout-error: Your payment could not be completed. Check your details and try again.
+checkout-declined: The payment method was declined. Try another payment method or check with your bank.
+checkout-action-required: Complete the additional verification in the secure payment form.
+checkout-submit: Pay securely
+checkout-submitting: Confirming…
+checkout-cancel: Cancel and return
+checkout-expired: This checkout link has expired.
+checkout-pending-heading: Payment is still processing
+checkout-pending-subtitle: We have not confirmed this payment yet. Please wait for the order status before trying again.
+checkout-unverified-heading: We’re checking your payment
+checkout-unverified-subtitle: We could not verify this payment yet. Check your orders before trying again; access is added only after confirmation.
 dismiss: OK
 not-found: There's nothing at this address.
 not-found-cta: Back to the store
@@ -57,7 +82,7 @@ highlights: Key passages marked
 ### promise
 
 unlock: Books unlock the moment you pay
-secure: Checkout secured by Stripe
+secure: Secure checkout
 ships: Shipping priced for your country before you pay
 final: All sales are final — every copy is made to order
 
@@ -74,7 +99,7 @@ three-line: The passages that carry the teaching are highlighted on the page and
 
 ### strip
 
-secure: Checkout secured by Stripe
+secure: Secure checkout
 ships: International shipping available
 final: All sales are final
 

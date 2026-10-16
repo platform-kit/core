@@ -41,7 +41,12 @@ const KIT_TESTS = [
   ['proposal-trace.test.mjs'],  /* what a proposal promises reaches a requirement: the Stripe bullet that named five things against deltas requiring one is how four features were never built, with every check green */
   ['docs-review-date.test.mjs'],
   ['checkout-params.test.mjs'],  /* a trial, tax, the payment methods accepted and a quantity the buyer may change — four things Stripe always offered and the store never passed; and the assertion that an offer declaring none of them resolves to exactly what it did before */
+  ['payment-provider-adapters.test.mjs'], /* every declared provider operation is mapped by the Stripe and Hyperswitch adapter contracts */
+  ['hyperswitch-sdk.test.mjs'],
+  process.env.HYPERSWITCH_LOCAL_INTEGRATION_CONFIG &&
+    ['hyperswitch-local.integration.mjs', process.env.HYPERSWITCH_LOCAL_INTEGRATION_CONFIG],
   on('store') && ['usage.test.mjs'],
+  ['usage-incremental-recovery.test.mjs'],
   ['copilot.test.mjs'],  /* a spoken conversation's grant: one bot, one person, one room, a ceiling it cannot raise and a clock it cannot wind back — every field altered in turn */
   ['copilot-db.test.mjs'],  /* what a person told an assistant is theirs: they read their own and nobody else's, delete their own, and no client may write a word into somebody's mouth the assistant would recall as theirs */
   ['fonts.test.mjs'],   /* the three faces: the families the kit offers, a name nobody serves refused, a face left unset falling to the theme's, and every stack ending in a generic so a face that never loads still sets type */

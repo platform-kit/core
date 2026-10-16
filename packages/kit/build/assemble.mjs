@@ -29,6 +29,13 @@ import { moduleSet } from './steps.mjs'
 import { assertNoManualCron, cronSql } from './cron.mjs'
 import { accessOf, accessSql, communityAccessOf } from './network-access.mjs'
 import { closure, PIPE_ROOTS, PIPE_SKIP } from './pipe-closure.mjs'
+import {
+  HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION,
+  paymentProviderConfigurationOf,
+  paymentProviderIdOf,
+  paymentProviderRegistrySource,
+  STRIPE_PAYMENT_PROVIDER_REGISTRATION,
+} from './payment-provider-registry.mjs'
 
 /* a refusal is one line, never a stack */
 process.on('uncaughtException', (e) => { console.error('✖ ' + (e.message || e)); process.exit(1) })
@@ -103,6 +110,33 @@ plan.set('data.sql', {
 for (const f of walk(path.join(KIT, 'functions'))) put('functions/' + rel(path.join(KIT, 'functions'), f), f)
 const siteFn = path.resolve(ROOT, D.functions)
 for (const f of walk(siteFn)) { const r = rel(siteFn, f); if (path.basename(r) === '.gitkeep') continue; put('functions/' + r, f) }
+plan.set('functions/_shared/payment-provider.d.ts', {
+  from: 'the published server-side payment provider contract',
+  content: Buffer.from(fs.readFileSync(path.join(KIT, '..', 'src', 'payment-provider.d.ts'))),
+})
+{
+  const selectedProvider = paymentProviderIdOf(c)
+  const registrations = [
+    STRIPE_PAYMENT_PROVIDER_REGISTRATION,
+    ...(selectedProvider === 'hyperswitch' ? [HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION] : []),
+    ...[...modules.values()]
+    .filter((module) => c.modules?.[module.key] !== false)
+    .flatMap((module) => module.paymentProviders),
+  ]
+  for (const registration of registrations) {
+    const adapterPath = `functions/_shared/${registration.adapter}`
+    if (!plan.has(adapterPath)) throw new Error(`assemble: payment provider "${registration.id}" adapter is missing from ${D.functions}/_shared/${registration.adapter}`)
+  }
+  plan.set('functions/_shared/payment-provider-registry.ts', {
+    from: 'the enabled site module payment-provider registrations',
+    content: Buffer.from(paymentProviderRegistrySource(
+      registrations,
+      selectedProvider,
+      paymentProviderConfigurationOf(c),
+      { typescript: true },
+    )),
+  })
+}
 /* The content pipe, for the admin and agent functions: shared modules are copied under one
    `_shared/pipe/` tree with their relative imports intact. A function's deno.json import map is
    scoped to its own directory and does not resolve bare imports from this shared tree, so those

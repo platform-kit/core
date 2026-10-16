@@ -97,6 +97,7 @@ try { assertAdminCmsShape(DEPLOY_SITE, SHAPE) } catch (error) { die(error.messag
 if (!env.CONTENT_STORE) env.CONTENT_STORE = contentStoreMode(SHAPE)
 const PLAN = deployPlan(SHAPE)
 console.log(`\n› a ${SHAPE.mode} deployment — backend ${SHAPE.backend ? 'yes' : 'no'}, content in ${SHAPE.content}, repository ${SHAPE.repo ? 'in' : 'out of'} the cycle`)
+let DEPLOY_MODULES
 
 const url = env.VITE_SUPABASE_URL || ''
 if (PLAN.targetGuards && (!url || /localhost|127\.0\.0\.1/.test(url))) {
@@ -115,17 +116,28 @@ if (PLAN.targetGuards && !env.SUPABASE_ACCESS_TOKEN) {
 
 /* ---- everything production needs, checked before a single command runs ----
    What the content switches on decides what must be set (build/deploy-checks.mjs): anything for
-   sale needs Stripe, a book in print needs a printer, a session needs cal.com, and the mail relay
+   sale needs its selected payment provider, a book in print needs a printer, a session needs cal.com, and the mail relay
    and the staff's push are always needed. A deploy without any of it is refused here, all of it
    named at once — nothing linked, pushed, built or deployed — rather than found one at a time
    from production. `node build/deploy-checks.mjs --env .env.production` gives the same report. */
 {
-  const { surfaces, checkDeploy, format, unmetFor } = await import('./deploy-checks.mjs')
+  const { surfaces, checkDeploy, format } = await import('./deploy-checks.mjs')
   const s = surfaces('.')
   const site = DEPLOY_SITE
   s.network = site.network || {}
-  const { loadSteps, needsOf } = await import('./steps.mjs')
-  const r = checkDeploy(env, s, site.modules, needsOf(await loadSteps(site), site, env, SHAPE), SHAPE, await unmetFor(site, site.modules), undefined, site)
+  const { loadSteps, needsOf, moduleSet } = await import('./steps.mjs')
+  const { unmetRequirements } = await import('./modules/manifest.mjs')
+  DEPLOY_MODULES = await moduleSet(site)
+  const r = checkDeploy(
+    env,
+    s,
+    site.modules,
+    needsOf(await loadSteps(site), site, env, SHAPE),
+    SHAPE,
+    unmetRequirements(DEPLOY_MODULES, site.modules),
+    DEPLOY_MODULES,
+    site,
+  )
   console.log(format(r, s))
   if (!r.ok) die('the production environment is incomplete (above); nothing was run')
 }
@@ -180,10 +192,42 @@ if (!env.APP_URL && env.VITE_APP_URL) env.APP_URL = env.VITE_APP_URL
   a process listing. SUPABASE_* values are injected by the platform and cannot
   be set as user secrets. */
 const SECRET_KEYS = ['CONTENT_STORE', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'CAL_WEBHOOK_SECRET', 'CAL_API_KEY', 'CAL_API_BASE',
+  'HYPERSWITCH_BASE_URL', 'HYPERSWITCH_API_KEY', 'HYPERSWITCH_PROFILE_ID', 'HYPERSWITCH_PUBLISHABLE_KEY', 'HYPERSWITCH_WEBHOOK_SECRET',
   'APP_URL', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM',
   'LULU_CLIENT_KEY', 'LULU_CLIENT_SECRET', 'LULU_SANDBOX', 'MIXAM_USER', 'MIXAM_PASS', 'MIXAM_UK', 'BOOKVAULT_API_KEY', 'SUPPORT_EMAIL', 'VAPID_PRIVATE_KEY', 'VAPID_SUBJECT', 'VITE_VAPID_PUBLIC_KEY']
 /* the functions' links point at the site: APP_URL (set above from VITE_APP_URL when unset) */
-const secrets = PLAN.secrets ? SECRET_KEYS.filter((k) => env[k]).map((k) => `${k}=${env[k]}`).join('\n') : ''
+const {
+  HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION,
+  paymentProviderIdOf,
+  STRIPE_PAYMENT_PROVIDER_REGISTRATION,
+} = await import('./payment-provider-registry.mjs')
+const selectedPaymentProvider = paymentProviderIdOf(DEPLOY_SITE)
+const enabledModules = [...DEPLOY_MODULES.values()].filter((module) => DEPLOY_SITE.modules?.[module.key] !== false)
+const providerRegistrations = [
+  STRIPE_PAYMENT_PROVIDER_REGISTRATION,
+  HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION,
+  ...enabledModules.flatMap((module) => module.paymentProviders || []),
+]
+const selectedPaymentRegistration = providerRegistrations.find((provider) => provider.id === selectedPaymentProvider)
+if (!selectedPaymentRegistration) die(`payment provider "${selectedPaymentProvider}" is not registered by an enabled site module`)
+const stripeSecrets = new Set([
+  ...STRIPE_PAYMENT_PROVIDER_REGISTRATION.secrets,
+  'STRIPE_PUBLISHABLE_KEY',
+])
+const secretKeys = new Set([
+  ...SECRET_KEYS,
+  ...enabledModules.flatMap((module) => module.owns.env || []),
+])
+if (selectedPaymentProvider !== 'stripe') {
+  for (const secret of stripeSecrets) secretKeys.delete(secret)
+}
+for (const secret of selectedPaymentRegistration.secrets) secretKeys.add(secret)
+for (const secret of selectedPaymentRegistration.optionalSecrets ?? []) secretKeys.add(secret)
+if (selectedPaymentProvider === 'stripe') {
+  const { conditionalPaymentSecrets, surfaces } = await import('./deploy-checks.mjs')
+  for (const secret of conditionalPaymentSecrets(selectedPaymentProvider, surfaces('.'))) secretKeys.add(secret)
+}
+const secrets = PLAN.secrets ? [...secretKeys].filter((k) => env[k]).map((k) => `${k}=${env[k]}`).join('\n') : ''
 if (secrets) {
   const tmp = '.supabase-secrets.tmp'
   try {

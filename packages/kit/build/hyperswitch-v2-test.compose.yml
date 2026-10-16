@@ -1,0 +1,54 @@
+services:
+  pg:
+    ports: !override []
+  redis-standalone:
+    ports: !override []
+  superposition:
+    ports: !override []
+  superposition-init:
+    command: !override
+      - sh
+      - -c
+      - apk add --no-cache curl jq yq bash && bash /seed_superposition.sh
+  migration_runner:
+    command: !override
+      - bash
+      - -c
+      - |
+        set -euo pipefail
+        apt-get update
+        apt-get install -y curl xz-utils
+        curl --proto '=https' --tlsv1.2 -LsSf https://github.com/diesel-rs/diesel/releases/download/v2.3.5/diesel_cli-installer.sh | bash
+        ln -sf /root/.cargo/bin/diesel /usr/local/bin/diesel
+        if ! command -v just >/dev/null 2>&1; then
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+        fi
+        export PATH="$PATH:$HOME/.cargo/bin"
+        mkdir -p /tmp/platformkit-hyperswitch-v2-migrations
+        just prefix_and_copy_migrations ./migrations ./v2_compatible_migrations 8 /tmp/platformkit-hyperswitch-v2-migrations
+        just prefix_and_copy_migrations /tmp/platformkit-hyperswitch-v2-migrations ./v2_migrations 9 /tmp/platformkit-hyperswitch-v2-migrations
+        cd /tmp
+        # The v2 config patch is for schema generation; this test stack only needs SQL migrations.
+        diesel migration --database-url "$$DATABASE_URL" run --migration-dir /tmp/platformkit-hyperswitch-v2-migrations
+  hyperswitch-server:
+    image: platformkit/hyperswitch-v2-test:local
+    pull_policy: build
+    command: !override
+      - cargo
+      - run
+      - --no-default-features
+      - --features
+      - v2,redis-rs,oltp,payouts,tokenization_v2
+      - --bin
+      - router
+      - --
+      - -f
+      - ./config/docker_compose.toml
+    ports: !override
+      - "127.0.0.1:${PLATFORMKIT_HYPERSWITCH_TEST_PORT:-18323}:8080"
+    healthcheck: !override
+      test: ["CMD-SHELL", "curl --fail http://localhost:8080/v2/health || exit 1"]
+      interval: 5s
+      retries: 6
+      start_period: 30m
+      timeout: 5s

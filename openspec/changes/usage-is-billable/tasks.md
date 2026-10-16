@@ -85,6 +85,9 @@
 
 ## 5. Reader and administrator surfaces
 
+> The completed tasks below record the original implementation on `/app/usage`. That address now
+> redirects to the Usage section of `/billing` (`/billing#usage`).
+
 - [x] 5.1 Add a dedicated `/app/usage` page for the reader's balance, cross-operation usage
       history, and purchase-more route, independent of bots and conversations. Remove usage
       statistics from the voice conversation-history drawer while preserving its list, resume,

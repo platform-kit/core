@@ -436,7 +436,9 @@ begin
     left join lateral (
       select pu.id, pu.amount_total as collected, pu.created_at as at, pu.status
         from public.entitlements e
-        join public.purchases pu on pu.stripe_checkout_session_id = split_part(e.source_id, ':', 1)
+        join public.purchases pu
+          on left(e.source_id, length(coalesce(pu.checkout_identity, pu.stripe_checkout_session_id)) + 1)
+             = coalesce(pu.checkout_identity, pu.stripe_checkout_session_id) || ':'
        where e.id = b.credit_id
        order by pu.created_at desc limit 1) pay on true
     -- A PAYMENT ALREADY GIVEN BACK EARNS NOTHING. The refund landed before the call was ever

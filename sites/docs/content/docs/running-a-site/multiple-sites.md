@@ -38,7 +38,7 @@ sources:
     deploy/nginx,
     package.json,
   ]
-reviewed: 2026-10-11
+reviewed: 2026-10-12
 ---
 
 The workspace root contains PlatformKit's packages and generic fixtures. A separately owned site stays in its own Git repository; it is fetched to `sites/external/<name>` and is not part of the root npm workspaces. The root registry is `platformkit.sites.json`. `platformkit sites` lists both kinds of sites. Use `platformkit sites --json` for their full paths and pin information. A registered repository that has not been fetched is listed with the command needed to fetch it. Site names are DNS labels. `PLATFORMKIT_DEFAULT_SITE` selects the site used by root commands (default `sites/docs`) and accepts either a site name or a path. `PLATFORMKIT_SITES` explicitly selects one or more sites for multi-site development, taking precedence over the default; `PLATFORMKIT_ROOT_SITE` optionally names a configured site at the workspace root.
@@ -80,4 +80,4 @@ A production build starts from the site's own repository and commit. Install the
 
 For a multi-site host, build each selected site from its own repository, then configure the host with `PLATFORMKIT_DOMAIN`, `PLATFORMKIT_SITES`, and `PLATFORMKIT_SITES_MODE=files`. Backend URLs are supplied per site using `SUPABASE_URL_<SITE>`; replace hyphens in the site name with underscores and uppercase it. A selected site that requires a backend but has no URL is refused before nginx starts. Each server block serves that site's build and generated rewrites. `PLATFORMKIT_APEX` optionally names the site that also answers on the bare domain. TLS certificates are mounted at `/etc/nginx/certs/fullchain.pem` and `/etc/nginx/certs/privkey.pem`; the host, not the image, obtains them.
 
-A single-site host can continue to build and deploy directly from that site's repository with the site's own deployment settings. Package publication is a PlatformKit release action; it is not triggered by a site fetch, pin update, or site deployment. After the kit CI passes, a `kit-v<version>` tag publishes both `@platform-kit/kit` and `@platform-kit/movable-types` to npm and GitHub Packages; a site updates both exact pins and its lockfile in a separate change.
+A single-site host can continue to build and deploy directly from that site's repository with the site's own deployment settings. The selected payment provider and its server secrets are resolved from that site's config and environment; one site's provider selection is not shared with another. Package publication is a PlatformKit release action; it is not triggered by a site fetch, pin update, or site deployment. After the kit CI passes, a `kit-v<version>` tag publishes both `@platform-kit/kit` and `@platform-kit/movable-types` to npm and GitHub Packages; a site updates both exact pins and its lockfile in a separate change.

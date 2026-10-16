@@ -11,7 +11,7 @@ sources:
     packages/kit/build/webhooks-push.mjs,
     packages/kit/build/webhooks.test.mjs,
   ]
-reviewed: 2026-10-12
+reviewed: 2026-10-13
 ---
 
 Use this rule to decide whether information belongs in a content file or in the database:
@@ -59,8 +59,9 @@ admin edits the draft. Publishing makes it live and pushes the change to the rep
 commit.
 
 Modules do not need separate synchronization paths. Admin editors update declaration files through
-the content pipe; build or publish steps update their projections, such as the Stripe catalog or
-search index. An admin editor must not write directly to a projected table.
+the content pipe; build or publish steps update their projections, such as a supported payment
+provider's catalog or the search index. An admin editor must not write directly to a projected
+table.
 
 ## Table classification and checks
 

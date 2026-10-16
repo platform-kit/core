@@ -33,9 +33,9 @@ const on = (v) => /^(1|true|yes|on)$/i.test(String(v || ''))
 export const AUTH_GOOGLE = on(import.meta.env.VITE_AUTH_GOOGLE)
 export const AUTH_MAGIC = on(import.meta.env.VITE_AUTH_MAGIC_LINK)
 
-/* 'success' | 'cancel' | null — what Stripe Checkout sent us back with, read
-   once at boot before the URL is cleaned, so the store page can say so */
+/* The verified outcome of a provider checkout return, read once before the URL is cleaned. */
 export const checkoutResult = ref(null)
+export const checkoutMode = ref(null)
 
 export const session = ref(null)
 export const user = computed(() => (session.value ? session.value.user : null))
@@ -246,16 +246,13 @@ export async function initAuth() {
   if (!configured) { authSettled.value = true; return }
   started = true
 
-  /* back from Stripe Checkout: the webhook has (or is about to have) written the
-     ledger; mint a fresh token and re-read entitlements, never trust the URL alone */
+  /* A checkout return is only a request to verify the payment, never proof by itself. */
   const params = new URLSearchParams(window.location.search)
   const fromCheckout = params.get('checkout') === 'success'
-  const checkoutSession = fromCheckout ? params.get('session') : null   /* Stripe's id of what was just paid */
+  const checkoutSession = fromCheckout ? params.get('session') : null
   if (params.has('checkout')) {
-    checkoutResult.value = fromCheckout ? 'success' : 'cancel'
-    if (fromCheckout) clearCart()
-    /* a cancel is said at once; a success is said once the session is confirmed below,
-       since what it says depends on what was bought */
+    checkoutResult.value = fromCheckout ? 'pending' : 'cancel'
+    checkoutMode.value = null
     const W = (us('store').page || {}).head || {}
     if (!fromCheckout) toast({ kind: 'note', title: W['cancel-heading'], body: W['cancel-subtitle'], dismiss: W.dismiss || '' })
     params.delete('checkout'); params.delete('session')
@@ -271,25 +268,83 @@ export async function initAuth() {
   if (data.session) {
     attachSync(data.session)
     if (fromCheckout) await supabase.auth.refreshSession().catch(() => {})
-    /* the buyer's own confirmation of the session, written to the ledger before the
-       entitlements are read — so what was paid for is theirs on landing, whether or not
-       the webhook has arrived (locally it may never, with no forwarder running) */
     let bought = null
-    if (checkoutSession) bought = await supabase.functions.invoke('confirm-checkout', { body: { session: checkoutSession } }).then((r) => (r && r.data) || null).catch(() => null)
+    if (fromCheckout) {
+      try {
+        const { data: result, error } = await supabase.functions.invoke('confirm-checkout', {
+          body: { session: checkoutSession || 'mock' },
+        })
+        if (error) {
+          console.error('checkout confirmation could not be verified', error.status || 'request failed')
+          bought = { outcome: 'error' }
+        } else if (result?.ok === true) {
+          bought = { outcome: 'success', mode: result.mode }
+        } else if (result?.pending === true) {
+          bought = { outcome: 'pending' }
+        } else {
+          console.error('checkout confirmation returned an unrecognized result')
+          bought = { outcome: 'error' }
+        }
+      } catch (error) {
+        console.error('checkout confirmation could not be verified', error instanceof Error ? error.name : 'unknown error')
+        bought = { outcome: 'error' }
+      }
+    }
     settle(data.session)
-    /* said in a toast, since the buyer may land anywhere (the app, the pricing page):
-       a membership, or a purchase — the confirmation says which; the mock says nothing */
     if (fromCheckout) {
       const W = (us('store').page || {}).head || {}
-      const purchase = bought && bought.mode === 'payment'
-      toast({ kind: 'ok', title: W['success-heading'], body: purchase ? (W['success-subtitle-purchase'] || W['success-subtitle']) : W['success-subtitle'], dismiss: W.dismiss || '' })
+      checkoutResult.value = bought?.outcome || 'error'
+      checkoutMode.value = bought?.mode || null
+      if (bought?.outcome === 'success') {
+        clearCart()
+        const purchase = bought.mode === 'payment'
+        toast({ kind: 'ok', title: W['success-heading'], body: purchase ? (W['success-subtitle-purchase'] || W['success-subtitle']) : W['success-subtitle'], dismiss: W.dismiss || '' })
+      } else {
+        const pending = bought?.outcome === 'pending'
+        toast({
+          kind: 'note',
+          title: pending ? W['checkout-pending-heading'] : W['checkout-unverified-heading'],
+          body: pending ? W['checkout-pending-subtitle'] : W['checkout-unverified-subtitle'],
+          dismiss: W.dismiss || '',
+        })
+      }
     }
   } else if (fromCheckout) {
-    /* a guest's purchase: confirmed the same way (the function accepts a guest's session), and
-       told that an account made with the address they gave will hold the order and the files */
-    if (checkoutSession) await supabase.functions.invoke('confirm-checkout', { body: { session: checkoutSession } }).catch(() => null)
     const W = (us('store').page || {}).head || {}
-    toast({ kind: 'ok', title: W['success-heading'], body: W['success-subtitle-guest'] || W['success-subtitle'], dismiss: W.dismiss || '' })
+    let bought
+    try {
+      const { data: result, error } = await supabase.functions.invoke('confirm-checkout', {
+        body: { session: checkoutSession || 'mock' },
+      })
+      if (error) {
+        console.error('guest checkout confirmation could not be verified', error.status || 'request failed')
+        bought = { outcome: 'error' }
+      } else if (result?.ok === true) {
+        bought = { outcome: 'success', mode: result.mode }
+      } else if (result?.pending === true) {
+        bought = { outcome: 'pending' }
+      } else {
+        console.error('guest checkout confirmation returned an unrecognized result')
+        bought = { outcome: 'error' }
+      }
+    } catch (error) {
+      console.error('guest checkout confirmation could not be verified', error instanceof Error ? error.name : 'unknown error')
+      bought = { outcome: 'error' }
+    }
+    checkoutResult.value = bought.outcome
+    checkoutMode.value = bought.mode || null
+    if (bought.outcome === 'success') {
+      clearCart()
+      toast({ kind: 'ok', title: W['success-heading'], body: W['success-subtitle-guest'] || W['success-subtitle'], dismiss: W.dismiss || '' })
+    } else {
+      const pending = bought.outcome === 'pending'
+      toast({
+        kind: 'note',
+        title: pending ? W['checkout-pending-heading'] : W['checkout-unverified-heading'],
+        body: pending ? W['checkout-pending-subtitle'] : W['checkout-unverified-subtitle'],
+        dismiss: W.dismiss || '',
+      })
+    }
   }
   /* the work is deferred a tick: supabase-js holds its auth lock while it calls this,
      and a call that needs the lock from inside (any request, which asks for the

@@ -17,7 +17,7 @@ sources:
     packages/kit/build/avatar.test.mjs,
     packages/movable-types/src/components/spaces/SpaceAvatar.vue,
   ]
-reviewed: 2026-10-12
+reviewed: 2026-10-14
 ---
 
 Everything on this page is the person's own. It is written straight to their profile row under the policy that the row is theirs — no function, no approval — because none of it is a decision anybody else has a say in. The guard trigger refuses the columns that are _not_ theirs: their roles, the proof of their address, the Stripe customer.

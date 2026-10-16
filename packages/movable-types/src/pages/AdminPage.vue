@@ -50,6 +50,7 @@ import CommentsAdmin from '../components/CommentsAdmin.vue'
 import NetworkAdmin from '../components/NetworkAdmin.vue'
 import PeopleAdmin from '../components/admin/PeopleAdmin.vue'
 import PayoutsAdmin from '../components/admin/PayoutsAdmin.vue'
+import PaymentsAdmin from '../components/admin/PaymentsAdmin.vue'
 import SpacesAdmin from '../components/SpacesAdmin.vue'
 import PushSettings from '../components/PushSettings.vue'
 import ApiAdmin from '../components/ApiAdmin.vue'
@@ -141,7 +142,7 @@ const parsed = computed(() => {
    bookings — nothing that needs the content pipe. A support agent, wherever, sees Notifications and Support and
    nothing else; a reader who is not on the staff sees the gate. */
 const LIVE = !CMS
-const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'funnel-analytics', 'notifications', 'api', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'bookings', 'social', 'network'])
+const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'funnel-analytics', 'notifications', 'api', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'bookings', 'social', 'network', 'payments'])
 const socialAccess = ref(false)
 const socialAccessKnown = ref(false)
 const socialAccessError = ref(false)
@@ -190,6 +191,7 @@ const NEEDS = {
   /* anybody who runs any part of the site */
   notifications: 'staff',
   social: 'social',
+  payments: 'admin',
   /* the desk */
   support: 'support',
   /* the figures — the dashboards, and nothing with a person's name in it. What was sold is NOT a
@@ -348,7 +350,7 @@ const NAV = [
   { key: 'community', items: ['support', 'comments', 'community', 'network'] },   /* people reaching the desk, or each other; the policy is a tab of Comments and the spaces a tab of Community */
   { key: 'people', items: ['people', 'teams', 'providers'] },   /* everyone with an account, the teams they are in, and whoever sells through the site */
   { key: 'social', items: ['social'] },
-  { key: 'settings', items: ['site', 'strings', 'notifications', 'api'] },   /* what is SET, never what is read */
+  { key: 'settings', items: ['site', 'strings', 'notifications', 'api', 'payments'] },   /* what is SET, never what is read */
 ]
 /* the group's NAME, from the words — falling back to the key so a group a site invents still
    reads as something rather than as nothing */
@@ -363,6 +365,7 @@ const VIEWS = {
   ...RAILVIEWS,
   /* a page whose own strings file already names it keeps that name: one name, one place */
   payouts: ((us('payouts').page || {}).main || {}).title || RAILVIEWS.payouts,
+  payments: ((us('payments').page || {}).main || {}).title || RAILVIEWS.payments,
   people: ((us('people').page || {}).main || {}).title || RAILVIEWS.people,
   media: ((us('media').page || {}).head || {}).rail || RAILVIEWS.media,
   publishing: ((us('publishing').page || {}).head || {}).rail || RAILVIEWS.publishing,
@@ -1228,6 +1231,9 @@ onMounted(async () => {
 
       <div v-else-if="view === 'payouts'" class="ad-analytics">
         <PayoutsAdmin />
+      </div>
+      <div v-else-if="view === 'payments'" class="ad-analytics">
+        <PaymentsAdmin />
       </div>
       <div v-else-if="view === 'people'" class="ad-analytics">
         <PeopleAdmin />

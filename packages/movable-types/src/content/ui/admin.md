@@ -160,6 +160,7 @@ sessions: Booking types
 teams: Teams
 providers: Providers
 payouts: Payouts
+payments: Payments
 people: People
 media: Media
 publishing: Publishing

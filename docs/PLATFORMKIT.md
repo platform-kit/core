@@ -28,6 +28,11 @@ Use `platformkit sites` to list, fetch, and update separately owned site checkou
 
 Commands run from the workspace root select `PLATFORMKIT_DEFAULT_SITE`, defaulting to `sites/docs`. The setting accepts a site name or path; `--site <path>` takes precedence, and `PLATFORMKIT_SITES` selects a set for multi-site development. The root registry is `platformkit.sites.json`, and fetched site repositories live in `sites/external/`, separate from tracked fixture sites. A site outside the workspace can invoke the CLI with `npx --yes --package=github:platform-kit/core platformkit`; the kit and theme are sourced from that checkout without requiring their npm publication or changing the site's manifest and lockfile.
 
+The workspace root also provides opt-in Docker commands for Hyperswitch v2 integration testing.
+They build the router from a local Hyperswitch checkout and run separately from the default tests;
+the [payment-provider guide](../sites/docs/content/docs/building-a-site/payment-providers.md)
+documents setup, private test profiles, and cleanup.
+
 ## Build and release boundary
 
 A production build runs from the site's repository and uses that repository's dependency installation and lockfile. A site may use published PlatformKit packages or invoke the CLI from GitHub source; the latter installs the matching kit and theme into local `node_modules` without saving package entries. Package publication and deployment remain explicit release operations; a local site registry is only a development convenience.
@@ -41,4 +46,4 @@ The maintained reference documentation is in the documentation site. The OpenSpe
 ---
 
 **Sources:** `package.json`, `packages/kit/package.json`, `packages/movable-types/package.json`, `packages/kit/bin/platformkit.mjs`, `packages/kit/build/sites.mjs`, `packages/kit/build/dev-workspace.mjs`, `.github/workflows/kit.yml`
-**Reviewed:** `2026-10-11`
+**Reviewed:** `2026-10-14`

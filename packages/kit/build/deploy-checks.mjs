@@ -42,6 +42,12 @@ import { spanMinutes as delayMinutes } from '../src/lib/payouts.js'
 import { printSpec, PRINTED } from '../src/lib/print-offers.js'
 import { inferenceOf } from './inference-config.mjs'
 import { usageOf } from './site.mjs'
+import {
+  HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION,
+  paymentProviderConfigurationOf,
+  paymentProviderIdOf,
+  STRIPE_PAYMENT_PROVIDER_REGISTRATION,
+} from './payment-provider-registry.mjs'
 
 const has = (env, k) => !!String(env[k] ?? '').trim()
 const toolOnPath = (t) => { try { execSync('command -v ' + t, { stdio: 'ignore', shell: true }); return true } catch { return false } }
@@ -51,6 +57,12 @@ const off = (v) => /^(0|false|no|off)$/i.test(String(v || '').trim())
 
 export const PRINTER_KEYS = { lulu: ['LULU_CLIENT_KEY', 'LULU_CLIENT_SECRET'], mixam: ['MIXAM_USER', 'MIXAM_PASS'], bookvault: ['BOOKVAULT_API_KEY'] }
 const configured = (env, p) => (PRINTER_KEYS[p] || []).every((k) => has(env, k))
+export function conditionalPaymentSecrets(providerId, siteSurface) {
+  return providerId === 'stripe' &&
+    siteSurface.offers.some((offer) => Number(offer.usage?.incrementalCharge) > 0)
+    ? ['STRIPE_PUBLISHABLE_KEY']
+    : []
+}
 
 /* what the content switches on, read from the files (never the compiled output, which a deploy has not made yet) */
 export function surfaces(root = '.') {
@@ -86,7 +98,17 @@ export function surfaces(root = '.') {
     sku: o.sku,
     key: o.key,
     kind: o.kind,
-    ...(o.usage ? { usage: { unit: o.usage.unit, meter: o.usage.meter, overagePrice: o.usage.overagePrice } } : {}),
+    billing: o.billing || 'once',
+    trial: Number(o.trial) > 0,
+    paymentMethods: Array.isArray(o.payments) ? o.payments : [],
+    ...(o.usage ? {
+      usage: {
+        unit: o.usage.unit,
+        meter: o.usage.meter,
+        overagePrice: o.usage.overagePrice,
+        ...(o.usage.incrementalCharge == null ? {} : { incrementalCharge: o.usage.incrementalCharge }),
+      },
+    } : {}),
     ...(o.tax && (o.tax.automatic || o.tax.registration) ? { tax: true } : {}),
   })), printed, sessions, pricingSkus, funnels, sources, providers }
 }
@@ -130,6 +152,7 @@ export const declaredEnv = (manifests = KIT_MANIFESTS) => [...new Set([...manife
  */
 export const DEPLOYMENT_ENV = [
   'VITE_SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_DB_URL', 'PLATFORMKIT_SHADOW_DB_URL', 'VITE_APP_URL',
+  'HYPERSWITCH_BASE_URL',
 ]
 
 /* the report: what is missing, what is set but wrong, and what is worth a note */
@@ -215,7 +238,7 @@ export function checkDeploy(env, s, modules = {}, stepNeeds = [], shape = null, 
     }
   } else {
     need('VITE_SUPABASE_ANON_KEY', "the client's key to the production project (Project settings → API)")
-    need('SUPABASE_SERVICE_ROLE_KEY', 'the service-role key — the offers are pushed to Stripe with it, the functions write with it')
+    need('SUPABASE_SERVICE_ROLE_KEY', 'the service-role key — provider catalog synchronization and server functions use it')
     need('SUPABASE_DB_URL', "the production database's connection (Project settings → Database → the session pooler url) — the plan that brings it to the declaration runs over it")
     need('PLATFORMKIT_SHADOW_DB_URL', "the shadow database's connection — a Postgres kept for nothing else, reset to the declaration on every deploy and diffed against production: a Supabase project (its session-pooler url; its user is postgres, which the diff needs) or a plain Postgres whose user is postgres; the deploy box has no Docker for a shadow of its own")
     /* the relay is asked for by whatever sends: the account confirmations and resets are the floor,
@@ -235,32 +258,104 @@ export function checkDeploy(env, s, modules = {}, stepNeeds = [], shape = null, 
      whether or not there is a database behind the page */
   need('VITE_APP_URL', "the site's https origin — the sitemap, absolute links, and (with a backend) auth links, checkout returns and emails")
   /* anything for sale */
+  let selectedPaymentProvider = 'stripe'
+  let selectedPaymentRegistration = STRIPE_PAYMENT_PROVIDER_REGISTRATION
+  let selectedPaymentConfiguration = {}
+  const configuredProvider = site?.payments?.provider
+  if (typeof configuredProvider === 'string' && /^[a-z][a-z0-9-]*$/.test(configuredProvider)) {
+    selectedPaymentProvider = configuredProvider
+  }
+  try {
+    selectedPaymentProvider = paymentProviderIdOf(site)
+    selectedPaymentConfiguration = paymentProviderConfigurationOf(site)
+  } catch (error) {
+    wrong.push(String(error?.message || error))
+  }
+  const providerModules = manifests || KIT_MANIFESTS
+  const registeredProviders = [...providerModules.values()]
+    .filter((module) => modules[module.key] !== false)
+    .flatMap((module) => module.paymentProviders || [])
+  if (selectedPaymentProvider !== 'stripe') {
+    selectedPaymentRegistration = selectedPaymentProvider === 'hyperswitch'
+      ? HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION
+      : registeredProviders.find((provider) => provider.id === selectedPaymentProvider) || null
+    if (!selectedPaymentRegistration) {
+      wrong.push(`payments.provider "${selectedPaymentProvider}" is not registered by an enabled site module`)
+    }
+  }
   const selling = [
     ...s.offers.map((o) => `${o.sku} (${o.kind})`),
     ...s.printed.map((b) => `${b.slug} in print`),
     ...s.pricingSkus.filter((k) => !s.offers.some((o) => o.sku === k)).map((k) => `pricing row ${k}`),
   ]
-  if (selling.length && anyAsking(manifests, modules, 'STRIPE_SECRET_KEY')) {
+  if (selectedPaymentProvider === 'hyperswitch' && selectedPaymentRegistration) {
+    const requiredCapabilities = new Set()
+    if (selling.length) {
+      if (s.offers.some((offer) => offer.billing !== 'subscription') || s.printed.length || s.pricingSkus.length) {
+        requiredCapabilities.add('checkout.one-time')
+      }
+      if (s.offers.some((offer) => offer.billing === 'subscription')) {
+        requiredCapabilities.add('checkout.subscription')
+      }
+    }
+    if (s.offers.some((offer) => offer.trial)) requiredCapabilities.add('checkout.trial')
+    if (s.offers.some((offer) => offer.paymentMethods?.length)) {
+      requiredCapabilities.add('checkout.payment-method-selection')
+    }
+    if (s.offers.some((offer) => offer.tax)) requiredCapabilities.add('checkout.tax')
+    if (usage?.autoTopUp?.enabled) requiredCapabilities.add('usage.prepaid-top-up')
+    if (s.providers?.offerings === 'on') {
+      requiredCapabilities.add('payouts.connected-accounts')
+      if (selectedPaymentProvider === 'hyperswitch') requiredCapabilities.add('customer.create')
+    }
+    for (const capability of requiredCapabilities) {
+      if (!selectedPaymentConfiguration.profileCapabilities?.includes(capability)) {
+        wrong.push(`payments.profileCapabilities does not declare "${capability}" required by enabled commerce features`)
+      }
+    }
+  }
+  if (selling.length && selectedPaymentProvider === 'stripe' && anyAsking(manifests, modules, 'STRIPE_SECRET_KEY')) {
     const why = `for sale: ${selling.slice(0, 4).join(', ')}${selling.length > 4 ? ` and ${selling.length - 4} more` : ''}`
     need('STRIPE_SECRET_KEY', `the LIVE secret key (sk_live_…) — checkout, the portal, the offers pushed to Stripe; ${why}`)
     need('STRIPE_WEBHOOK_SECRET', `the signing secret of the Stripe webhook endpoint (whsec_…) — every payment lands through it; ${why}`)
     if (has(env, 'STRIPE_SECRET_KEY') && !/^sk_live_/.test(env.STRIPE_SECRET_KEY)) wrong.push('STRIPE_SECRET_KEY is not a live key (sk_live_…) — a test key would sell nothing')
     if (has(env, 'STRIPE_WEBHOOK_SECRET') && !/^whsec_/.test(env.STRIPE_WEBHOOK_SECRET)) wrong.push('STRIPE_WEBHOOK_SECRET is not a webhook signing secret (whsec_…)')
+    if (s.offers.some((offer) => Number(offer.usage?.incrementalCharge) > 0)) {
+      need('STRIPE_PUBLISHABLE_KEY', 'the LIVE publishable key (pk_live_…) — customers may need to authenticate incremental usage charges')
+      if (has(env, 'STRIPE_PUBLISHABLE_KEY') && !/^pk_live_/.test(env.STRIPE_PUBLISHABLE_KEY)) {
+        wrong.push('STRIPE_PUBLISHABLE_KEY is not a live publishable key (pk_live_…)')
+      }
+    }
+  } else if (selling.length && selectedPaymentProvider !== 'stripe' && selectedPaymentRegistration) {
+    const why = `for sale: ${selling.slice(0, 4).join(', ')}${selling.length > 4 ? ` and ${selling.length - 4} more` : ''}`
+    for (const secret of selectedPaymentRegistration.secrets) {
+      need(secret, `payment provider "${selectedPaymentProvider}" requires this server-side secret; ${why}`)
+    }
   }
   const meteredOffers = s.offers.filter((offer) => offer.usage?.meter != null)
   if (meteredOffers.length) {
+    if (selectedPaymentRegistration && !selectedPaymentRegistration.capabilities.includes('usage.metered')) {
+      wrong.push(`payment provider "${selectedPaymentProvider}" does not declare metered usage support`)
+    }
     const names = new Map()
     for (const offer of meteredOffers) {
       const meter = String(offer.usage.meter || '')
-      if (!/^[a-z][a-z0-9_]{0,99}$/.test(meter)) {
+      if (selectedPaymentProvider === 'stripe' && !/^[a-z][a-z0-9_]{0,99}$/.test(meter)) {
         wrong.push(`${offer.sku} declares metering without a valid Stripe meter event name`)
+      } else if (!meter.trim()) {
+        wrong.push(`${offer.sku} declares metering without a meter identifier`)
       } else if (names.has(meter)) {
-        wrong.push(`${offer.sku} and ${names.get(meter)} share Stripe meter event name ${meter}`)
+        const kind = selectedPaymentProvider === 'stripe' ? 'Stripe meter event name' : 'meter identifier'
+        wrong.push(`${offer.sku} and ${names.get(meter)} share ${kind} ${meter}`)
       } else {
         names.set(meter, offer.sku)
       }
-      if (!String(offer.usage.unit || '').trim() || !(Number(offer.usage.overagePrice) > 0)) {
-        wrong.push(`${offer.sku} declares metering without a usage unit and positive overage price`)
+      if (!(Number(offer.usage.overagePrice) > 0)) {
+        wrong.push(`${offer.sku} declares metering without a positive overage price`)
+      }
+      if (usage?.autoTopUp?.enabled && selectedPaymentRegistration &&
+          !selectedPaymentRegistration.capabilities.includes('usage.prepaid-top-up')) {
+        wrong.push(`payment provider "${selectedPaymentProvider}" does not declare automatic usage top-up support`)
       }
     }
   }
@@ -271,8 +366,12 @@ export function checkDeploy(env, s, modules = {}, stepNeeds = [], shape = null, 
      SAYS SO, with the offers named, rather than letting a shop find out from an accountant. */
   {
     const taxed = s.offers.filter((o) => o.tax).map((o) => o.sku)
-    if (taxed.length) {
+    if (taxed.length && selectedPaymentProvider === 'stripe') {
       notes.push(`${taxed.length} offer${taxed.length === 1 ? '' : 's'} ask${taxed.length === 1 ? 's' : ''} Stripe to work out tax (${taxed.slice(0, 4).join(', ')}${taxed.length > 4 ? ' and more' : ''}) — Stripe Tax must be active with a registration for every place you sell, which only the Dashboard can tell you; unconfigured it returns no tax rather than an error`)
+    }
+    if (taxed.length && selectedPaymentRegistration &&
+        !selectedPaymentRegistration.capabilities.includes('checkout.tax')) {
+      wrong.push(`payment provider "${selectedPaymentProvider}" does not declare tax support required by ${taxed.slice(0, 4).join(', ')}`)
     }
   }
 
@@ -365,8 +464,18 @@ export function checkDeploy(env, s, modules = {}, stepNeeds = [], shape = null, 
        version has nothing to point at when one of them asks what the arrangement was. */
     if (offering && !P.terms) wrong.push('content/providers.md lets providers offer their own services with no terms: version — nothing is agreed before anything is sold; write the terms in the body and name the version')
     if (offering) {
-      if (!has(env, 'STRIPE_SECRET_KEY')) missing.push({ key: 'STRIPE_SECRET_KEY', why: 'providers may sell their own services, and they are paid through it' })
-      notes.push(`providers may offer their own services, paid through ${connect === 'own' ? 'accounts they already hold' : 'accounts the processor onboards'} — Connect must be enabled on the Stripe account, and no card or bank detail is ever kept here`)
+      if (!selectedPaymentRegistration?.capabilities.includes('payouts.connected-accounts')) {
+        wrong.push(`payment provider "${selectedPaymentProvider}" does not declare connected-account payouts required by provider offerings`)
+      }
+      if (selectedPaymentProvider === 'stripe') {
+        if (!has(env, 'STRIPE_SECRET_KEY')) missing.push({ key: 'STRIPE_SECRET_KEY', why: 'providers may sell their own services, and they are paid through it' })
+        notes.push(`providers may offer their own services, paid through ${connect === 'own' ? 'accounts they already hold' : 'accounts the processor onboards'} — Connect must be enabled on the Stripe account, and no card or bank detail is ever kept here`)
+      } else if (selectedPaymentRegistration) {
+        for (const secret of selectedPaymentRegistration.secrets) {
+          need(secret, `payment provider "${selectedPaymentProvider}" requires this server-side secret for provider offerings`)
+        }
+        notes.push(`providers may offer their own services using the "${selectedPaymentProvider}" connected-account operations; no card or bank detail is ever kept here`)
+      }
     }
     const delay = delayMinutes(P.delay)
     if (P.delay != null && delay == null) wrong.push(`content/providers.md says payout-delay: ${P.delay}, which is not a span (30d, 2w, 12h)`)
@@ -375,7 +484,7 @@ export function checkDeploy(env, s, modules = {}, stepNeeds = [], shape = null, 
   if (on(env.PAYOUTS_MOCK)) wrong.push('PAYOUTS_MOCK is on — the mock sends nothing and marks lines as paid; for local development only')
 
   /* a mock on is never a production setting */
-  if (on(env.STRIPE_MOCK)) wrong.push('STRIPE_MOCK is on — the mock completes purchases without Stripe and is for local development only')
+  if (selectedPaymentProvider === 'stripe' && on(env.STRIPE_MOCK)) wrong.push('STRIPE_MOCK is on — the mock completes Stripe purchases without contacting Stripe and is for local development only')
   for (const k of ['PRINT_MOCK', 'LULU_MOCK', 'MIXAM_MOCK', 'BOOKVAULT_MOCK']) if (on(env[k])) wrong.push(`${k} is on — the mock prints nothing and is for local development only`)
   if (on(env.NETWORK_FEDERATE)) wrong.push('NETWORK_FEDERATE is on — it makes a site federate whatever its config says, for a local stack\'s tests only; a site federates by `network.federate` in platformkit.config.js')
   if (on(env.LIVEKIT_MOCK)) wrong.push('LIVEKIT_MOCK is on — the mock\'s rooms run on a dev server and its films are fixtures; for local development only')
@@ -383,6 +492,31 @@ export function checkDeploy(env, s, modules = {}, stepNeeds = [], shape = null, 
 
   /* the shape of what is set, where a wrong value would pass as a right one */
   if (has(env, 'VITE_APP_URL') && !/^https:\/\/[^/\s]+$/.test(env.VITE_APP_URL)) wrong.push(`VITE_APP_URL "${env.VITE_APP_URL}" must be the https origin alone, nothing after the host`)
+  if (has(env, 'HYPERSWITCH_BASE_URL')) {
+    try {
+      const base = new URL(env.HYPERSWITCH_BASE_URL)
+      if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash) {
+        wrong.push('HYPERSWITCH_BASE_URL must be an https URL without credentials, query, or fragment')
+      }
+    } catch {
+      wrong.push('HYPERSWITCH_BASE_URL is not a valid https URL')
+    }
+  }
+  if (has(env, 'HYPERSWITCH_PUBLISHABLE_KEY') &&
+      !/^pk_(?:dev|snd|prd)_[^\s]+$/.test(env.HYPERSWITCH_PUBLISHABLE_KEY)) {
+    wrong.push('HYPERSWITCH_PUBLISHABLE_KEY must use a Web SDK key issued with the pk_dev_, pk_snd_, or pk_prd_ prefix')
+  }
+  if (selectedPaymentProvider === 'hyperswitch' && has(env, 'HYPERSWITCH_CLIENT_URL')) {
+    try {
+      const clientUrl = new URL(env.HYPERSWITCH_CLIENT_URL)
+      if (clientUrl.protocol !== 'https:' || clientUrl.username || clientUrl.password ||
+          clientUrl.search || clientUrl.hash) {
+        wrong.push('HYPERSWITCH_CLIENT_URL must be an https SDK base URL without credentials, query, or fragment')
+      }
+    } catch {
+      wrong.push('HYPERSWITCH_CLIENT_URL is not a valid https SDK base URL')
+    }
+  }
   if (has(env, 'SMTP_FROM') && !/^[^@\s]+@[^@\s]+$/.test(env.SMTP_FROM.replace(/^.*<([^>]+)>\s*$/, '$1'))) wrong.push(`SMTP_FROM "${env.SMTP_FROM}" is not an address or "Name <address>"`)
   if (has(env, 'SMTP_PORT') && !/^\d+$/.test(env.SMTP_PORT)) wrong.push(`SMTP_PORT "${env.SMTP_PORT}" is not a port`)
   /* a database's identity is its user, host and database — two projects share a pooler host and differ by user (postgres.<ref>) */
@@ -432,7 +566,25 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   if (args.includes('--test')) {
     const base = { VITE_SUPABASE_ANON_KEY: 'a', SUPABASE_SERVICE_ROLE_KEY: 's', VITE_APP_URL: 'https://example.com', SUPABASE_DB_URL: 'postgresql://postgres.example:x@aws-0-us-east-1.pooler.supabase.com:5432/postgres', PLATFORMKIT_SHADOW_DB_URL: 'postgresql://postgres.shadow:x@aws-0-us-east-1.pooler.supabase.com:5432/postgres', SMTP_HOST: 'h', SMTP_PORT: '587', SMTP_USER: 'u', SMTP_PASS: 'p', SMTP_FROM: 'The Site <hi@example.com>', VAPID_PRIVATE_KEY: 'k', VITE_VAPID_PUBLIC_KEY: 'K', VAPID_SUBJECT: 'mailto:support@example.com', NETWORK_HANDLE_DOMAIN: 'people.example.com' }
     const stripe = { STRIPE_SECRET_KEY: 'sk_live_x', STRIPE_WEBHOOK_SECRET: 'whsec_x' }
+    const hyperswitch = {
+      HYPERSWITCH_BASE_URL: 'https://sandbox.hyperswitch.io',
+      HYPERSWITCH_API_KEY: 'hyperswitch-test-key',
+      HYPERSWITCH_PROFILE_ID: 'profile_test',
+      HYPERSWITCH_PUBLISHABLE_KEY: 'pk_snd_test',
+      HYPERSWITCH_WEBHOOK_SECRET: 'hyperswitch-webhook-key',
+    }
     const none = { offers: [], printed: [], sessions: [], pricingSkus: [], funnels: [] }
+    const customProvider = {
+      id: 'site-mock',
+      capabilities: ['checkout.one-time', 'checkout.subscription', 'usage.metered'],
+      secrets: ['SITE_MOCK_PAYMENT_SECRET'],
+    }
+    const customProviderManifests = new Map(KIT_MANIFESTS)
+    customProviderManifests.set('site-mock-payments', {
+      key: 'site-mock-payments',
+      owns: { env: ['SITE_MOCK_PAYMENT_SECRET'] },
+      paymentProviders: [customProvider],
+    })
     const pricedInferenceSite = {
       inference: {
         providers: [
@@ -451,6 +603,15 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     const meteredSale = {
       ...none,
       offers: [{ sku: 'usage-plan', kind: 'form', usage: { unit: 'minute', meter: 'assistant_usage', overagePrice: 0.03 } }],
+    }
+    const incrementalSale = {
+      ...none,
+      offers: [{
+        sku: 'incremental-plan',
+        kind: 'membership',
+        billing: 'subscription',
+        usage: { unit: 'request', meter: 'requests', overagePrice: 0.02, incrementalCharge: 100 },
+      }],
     }
     const keys = (r) => r.missing.map((m) => m.key)
     const wrongs = (r) => r.wrong
@@ -475,17 +636,192 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
         inference: { ...pricedInferenceSite.inference, fallback: { maxAttempts: 3 } },
       })).some((message) => /inference\.fallback\.maxAttempts/.test(message)))
     t('an offer for sale asks for stripe', keys(checkDeploy(base, { ...none, offers: [{ sku: 'x', kind: 'membership' }] })).includes('STRIPE_SECRET_KEY'))
+    const hyperswitchSite = {
+      payments: {
+        provider: 'hyperswitch',
+        profileCapabilities: [
+          'catalog.sync',
+          'checkout.one-time',
+          'checkout.subscription',
+          'checkout.trial',
+          'checkout.payment-method-selection',
+          'checkout.tax',
+          'usage.metered',
+          'usage.prepaid-top-up',
+          'payouts.connected-accounts',
+        ],
+      },
+    }
+    const hyperswitchSale = { ...none, offers: [{ sku: 'x', kind: 'membership', billing: 'once' }] }
+    const hyperswitchCheck = checkDeploy({ ...base, ...hyperswitch }, hyperswitchSale, {}, [], null, [], undefined, hyperswitchSite)
+    t('a selected Hyperswitch provider passes without Stripe settings', hyperswitchCheck.ok &&
+      !keys(hyperswitchCheck).includes('STRIPE_SECRET_KEY') &&
+      !keys(hyperswitchCheck).includes('STRIPE_WEBHOOK_SECRET'))
+    t('PlatformKit-owned catalog synchronization does not require a Hyperswitch profile capability',
+      checkDeploy({ ...base, ...hyperswitch }, hyperswitchSale, {}, [], null, [], undefined, {
+        payments: { provider: 'hyperswitch', profileCapabilities: ['checkout.one-time'] },
+      }).ok)
+    t('PlatformKit-managed metered usage does not require a Hyperswitch profile capability',
+      checkDeploy({ ...base, ...hyperswitch }, {
+        ...none,
+        offers: [{
+          sku: 'metered',
+          kind: 'membership',
+          billing: 'subscription',
+          usage: { meter: 'audio_seconds', unit: 'second', overagePrice: 1 },
+        }],
+      }, {}, [], null, [], undefined, {
+        payments: { provider: 'hyperswitch', profileCapabilities: ['checkout.subscription'] },
+      }).ok)
+    t('a selected Hyperswitch provider asks for every server credential and no Stripe credential', (() => {
+      const r = checkDeploy(base, hyperswitchSale, {}, [], null, [], undefined, hyperswitchSite)
+      const missing = new Set(keys(r))
+      return ['HYPERSWITCH_BASE_URL', 'HYPERSWITCH_API_KEY', 'HYPERSWITCH_PROFILE_ID', 'HYPERSWITCH_PUBLISHABLE_KEY', 'HYPERSWITCH_WEBHOOK_SECRET']
+        .every((key) => missing.has(key)) && !missing.has('STRIPE_SECRET_KEY') && !missing.has('STRIPE_WEBHOOK_SECRET')
+    })())
+    t('Hyperswitch deployment refuses an unavailable required capability', checkDeploy(
+      { ...base, ...hyperswitch },
+      hyperswitchSale,
+      {},
+      [],
+      null,
+      [],
+      undefined,
+      { payments: { provider: 'hyperswitch', profileCapabilities: ['catalog.sync'] } },
+    ).wrong.some((message) => /checkout\.one-time/.test(message)))
+    t('Hyperswitch deployment rejects a non-https instance URL', checkDeploy(
+      { ...base, ...hyperswitch, HYPERSWITCH_BASE_URL: 'http://localhost:8080' },
+      hyperswitchSale,
+      {},
+      [],
+      null,
+      [],
+      undefined,
+      hyperswitchSite,
+    ).wrong.some((message) => /HYPERSWITCH_BASE_URL/.test(message)))
+    t('Hyperswitch deployment rejects an unsupported Web SDK publishable-key prefix', checkDeploy(
+      { ...base, ...hyperswitch, HYPERSWITCH_PUBLISHABLE_KEY: 'pk_test_legacy' },
+      hyperswitchSale,
+      {},
+      [],
+      null,
+      [],
+      undefined,
+      hyperswitchSite,
+    ).wrong.some((message) => /HYPERSWITCH_PUBLISHABLE_KEY.*pk_dev_.*pk_snd_.*pk_prd_/.test(message)))
+    t('Hyperswitch deployment accepts a configured HTTPS Web SDK URL', !checkDeploy(
+      { ...base, ...hyperswitch, HYPERSWITCH_CLIENT_URL: 'https://sdk.example.test/v1' },
+      hyperswitchSale,
+      {},
+      [],
+      null,
+      [],
+      undefined,
+      hyperswitchSite,
+    ).wrong.some((message) => /HYPERSWITCH_CLIENT_URL/.test(message)))
+    t('Hyperswitch deployment rejects a configured HTTP Web SDK URL', checkDeploy(
+      { ...base, ...hyperswitch, HYPERSWITCH_CLIENT_URL: 'http://sdk.example.test/v1' },
+      hyperswitchSale,
+      {},
+      [],
+      null,
+      [],
+      undefined,
+      hyperswitchSite,
+    ).wrong.some((message) => /HYPERSWITCH_CLIENT_URL/.test(message)))
+    t('Hyperswitch remains selected when its profile declaration is malformed', (() => {
+      const r = checkDeploy({ ...base, ...hyperswitch }, hyperswitchSale, {}, [], null, [], undefined, {
+        payments: { provider: 'hyperswitch' },
+      })
+      return r.wrong.some((message) => /profileCapabilities/.test(message)) &&
+        !keys(r).includes('STRIPE_SECRET_KEY')
+    })())
+    const customPaymentSite = { payments: { provider: 'site-mock' } }
+    const customPaymentCheck = checkDeploy(
+      base,
+      { ...none, offers: [{ sku: 'x', kind: 'membership' }] },
+      {},
+      [],
+      null,
+      [],
+      customProviderManifests,
+      customPaymentSite,
+    )
+    t('a site-owned provider asks for only its declared secrets',
+      keys(customPaymentCheck).includes('SITE_MOCK_PAYMENT_SECRET') &&
+      !keys(customPaymentCheck).includes('STRIPE_SECRET_KEY') &&
+      !customPaymentCheck.wrong.length)
+    t('a supplied site-owned provider secret passes deploy validation',
+      checkDeploy(
+        { ...base, SITE_MOCK_PAYMENT_SECRET: 'site-secret' },
+        { ...none, offers: [{ sku: 'x', kind: 'membership' }] },
+        {},
+        [],
+        null,
+        [],
+        customProviderManifests,
+        customPaymentSite,
+      ).ok)
+    t('Stripe local-mock settings do not reject a different selected provider',
+      checkDeploy(
+        { ...base, SITE_MOCK_PAYMENT_SECRET: 'site-secret', STRIPE_MOCK: '1' },
+        { ...none, offers: [{ sku: 'x', kind: 'membership' }] },
+        {},
+        [],
+        null,
+        [],
+        customProviderManifests,
+        customPaymentSite,
+      ).ok)
+    t('an unregistered payment provider is refused',
+      checkDeploy(base, none, {}, [], null, [], customProviderManifests, {
+        payments: { provider: 'missing-provider' },
+      }).wrong.some((message) => /not registered by an enabled site module/.test(message)))
+    t('a provider from a disabled module is refused',
+      checkDeploy(base, none, { 'site-mock-payments': false }, [], null, [], customProviderManifests, customPaymentSite)
+        .wrong.some((message) => /not registered by an enabled site module/.test(message)))
     t('a zero-base metered offer asks for live Stripe credentials', (() => {
       const r = checkDeploy(base, meteredSale)
       return keys(r).includes('STRIPE_SECRET_KEY') && keys(r).includes('STRIPE_WEBHOOK_SECRET')
     })())
     t('a metered offer passes with live Stripe credentials', checkDeploy({ ...base, ...stripe }, meteredSale).ok)
+    t('a metered offer may omit its unit', checkDeploy({ ...base, ...stripe }, {
+      ...meteredSale,
+      offers: [{
+        ...meteredSale.offers[0],
+        usage: { meter: 'assistant_usage', overagePrice: 0.03 },
+      }],
+    }).ok)
+    t('incremental Stripe usage requires its publishable key',
+      keys(checkDeploy({ ...base, ...stripe }, incrementalSale)).includes('STRIPE_PUBLISHABLE_KEY'))
+    t('incremental Stripe usage passes with a live publishable key',
+      checkDeploy({ ...base, ...stripe, STRIPE_PUBLISHABLE_KEY: 'pk_live_x' }, incrementalSale).ok)
+    t('incremental Stripe usage refuses a non-live publishable key',
+      checkDeploy({ ...base, ...stripe, STRIPE_PUBLISHABLE_KEY: 'pk_test_x' }, incrementalSale).wrong
+        .some((message) => /STRIPE_PUBLISHABLE_KEY is not a live publishable key/.test(message)))
+    t('only opted-in Stripe usage adds the browser-authentication function secret',
+      conditionalPaymentSecrets('stripe', incrementalSale).includes('STRIPE_PUBLISHABLE_KEY') &&
+      conditionalPaymentSecrets('stripe', meteredSale).length === 0 &&
+      conditionalPaymentSecrets('hyperswitch', incrementalSale).length === 0)
     t('a metered offer with an invalid event name is refused', checkDeploy({ ...base, ...stripe }, {
       ...meteredSale, offers: [{ ...meteredSale.offers[0], usage: { ...meteredSale.offers[0].usage, meter: 'Not valid' } }],
     }).wrong.some((w) => /valid Stripe meter event name/.test(w)))
     t('metered offers cannot share an event name', checkDeploy({ ...base, ...stripe }, {
       ...meteredSale, offers: [meteredSale.offers[0], { ...meteredSale.offers[0], sku: 'other-plan' }],
     }).wrong.some((w) => /share Stripe meter event name/.test(w)))
+    t('a custom provider can use its own meter identifiers without Stripe credentials', (() => {
+      const r = checkDeploy(
+        { ...base, SITE_MOCK_PAYMENT_SECRET: 'site-secret' },
+        { ...none, offers: [{ sku: 'usage-plan', kind: 'form', usage: { unit: 'minute', meter: 'vendor.metric-1', overagePrice: 0.03 } }] },
+        {},
+        [],
+        null,
+        [],
+        customProviderManifests,
+        customPaymentSite,
+      )
+      return r.ok && !keys(r).includes('STRIPE_SECRET_KEY')
+    })())
     /* TAX IS A NOTE, NOT A REFUSAL: there is no key for Stripe Tax, so nothing here can verify it,
        and unconfigured Stripe returns no tax rather than an error — which is the silent failure the
        note exists to prevent. These two cases pin that it is said, and only when asked for. */

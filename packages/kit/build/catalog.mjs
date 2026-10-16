@@ -29,6 +29,7 @@ import { asStore } from './store/index.mjs'
 import { join } from 'node:path'
 import matter from 'gray-matter'
 import { formatOffers, spineWords, SPINE_MAX, printSpec, formatKey, FORMATS } from '../src/lib/print-offers.js'
+import { resolveUsageUnit } from '../src/lib/usage-unit.js'
 import { optionsOf, variantsOf } from './variants.mjs'
 import { checkBlueprint } from './kinds/apparel.js'
 
@@ -52,14 +53,13 @@ const OUT_AT = 'supabase/functions/_shared/catalog.json'
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const USAGE_SCALE = 1_000_000
 
-export function compileUsage(file, usage, billing, err) {
+export function compileUsage(file, usage, billing, currency, err) {
   if (usage == null) return null
   if (!usage || typeof usage !== 'object' || Array.isArray(usage)) {
     err(`${file}: usage must be a group of fields`)
     return null
   }
-  const unit = String(usage.unit || '').trim()
-  if (!unit) err(`${file}: usage.unit names the site's usage unit`)
+  const unit = resolveUsageUnit(usage.unit)
   const micros = (value, field, { positive = false } = {}) => {
     const n = Number(value)
     const scaled = Math.round(n * USAGE_SCALE)
@@ -75,7 +75,7 @@ export function compileUsage(file, usage, billing, err) {
   if (billing === 'once') {
     if (!Number.isInteger(usage.grant) || usage.grant < 1) err(`${file}: a one-time usage offer needs a whole-number usage.grant`)
     else out.grant_micros = usage.grant * USAGE_SCALE
-    for (const field of ['included', 'meter', 'overagePrice']) if (usage[field] != null) err(`${file}: usage.${field} is for a metered subscription, not a one-time offer`)
+    for (const field of ['included', 'meter', 'overagePrice', 'incrementalCharge']) if (usage[field] != null) err(`${file}: usage.${field} is for a metered subscription, not a one-time offer`)
     return out
   }
 
@@ -87,6 +87,25 @@ export function compileUsage(file, usage, billing, err) {
   if (!Number.isInteger(included) || included < 0 || !Number.isSafeInteger(included * USAGE_SCALE)) err(`${file}: usage.included must be a non-negative whole number of units`)
   else out.included_micros = included * USAGE_SCALE
   out.overage_price_micros = micros(usage.overagePrice, 'overagePrice', { positive: true })
+  if (usage.incrementalCharge != null) {
+    let fractionDigits
+    try {
+      fractionDigits = new Intl.NumberFormat('en', { style: 'currency', currency: String(currency).toUpperCase() })
+        .resolvedOptions().maximumFractionDigits
+    } catch {
+      err(`${file}: usage.incrementalCharge needs a valid offer currency`)
+      return out
+    }
+    const amount = Number(usage.incrementalCharge)
+    const scale = 10 ** fractionDigits
+    const minor = Math.round(amount * scale)
+    if (!Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(minor) ||
+        Math.abs(minor / scale - amount) > 1e-9) {
+      err(`${file}: usage.incrementalCharge must be positive and use at most ${fractionDigits} decimal places in the offer currency`)
+    } else {
+      out.incremental_charge_minor = minor
+    }
+  }
   return out
 }
 
@@ -183,7 +202,7 @@ for (const { file, data: d } of files('content/store/products')) {
     else tiers[d.tier] = d.rank
   } else if (d.tier || d.rank != null) err(`${file}: only a membership has a tier and rank`)
   if (d.kind === 'book' && !d.book) err(`${file}: a book unlock names its book`)
-  const usage = compileUsage(file, d.usage, billing, err)
+  const usage = compileUsage(file, d.usage, billing, String(d.currency || 'usd'), err)
   /*
    * A GARMENT'S PRODUCT TYPE IS ITS SUPPLIER'S FACT. The build is the first of the three places a
    * file can reach the shop, and all three refuse it with the same words from the same function

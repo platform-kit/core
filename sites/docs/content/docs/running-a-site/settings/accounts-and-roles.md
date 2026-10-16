@@ -23,7 +23,7 @@ sources:
     packages/movable-types/src/components/admin/PeopleAdmin.vue,
     packages/kit/build/dev-account.mjs,
   ]
-reviewed: 2026-10-11
+reviewed: 2026-10-14
 ---
 
 Use **People → People** to find an account, review its purchases and bookings, and assign staff roles. A reader's access to paid content is separate from staff permissions; do not grant a staff role just to unlock a purchase.
@@ -84,7 +84,7 @@ Search by name, email, or username. Filter the list to all accounts, staff, prov
 | Purchases    | Purchases and refunds, including amounts.                                                 |
 | Subscription | Current plan and status, paid-through date, and any scheduled plan change.                |
 | Bookings     | Past and upcoming sessions.                                                               |
-| Invoices     | A link to that customer's page in Stripe.                                                 |
+| Invoices     | A link to that customer's Stripe record when a Stripe billing id is available.            |
 | Traits       | The traits configured for staff review.                                                   |
 
 Use the role switches on this page to assign or remove staff roles. People is read-only for profile, membership, and purchase data; it does not expose payment-card or bank details. The last administrator cannot be demoted or removed.

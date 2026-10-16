@@ -43,7 +43,7 @@
  */
 
 /* every field a manifest may carry, so a typo is refused rather than ignored */
-export const FIELDS = ['key', 'what', 'needs', 'requires', 'static', 'git', 'cloud', 'owns']
+export const FIELDS = ['key', 'what', 'needs', 'requires', 'static', 'git', 'cloud', 'owns', 'paymentProviders']
 export const OWNS = ['routes', 'admin', 'schema', 'functions', 'cron', 'steps', 'env']
 /* what exactly one module may claim. Everything a switch takes away with it — and not `env`, which
    is the deployment's and is shared: see the collision check in readManifests for why. */
@@ -140,6 +140,72 @@ function validCronCommand(value) {
   return !structural.includes(';')
 }
 
+function paymentProvidersOf(value, owns, where, faults) {
+  if (value == null) return []
+  if (!Array.isArray(value)) {
+    faults.push(`${where}: \`paymentProviders\` must be a list`)
+    return []
+  }
+  const seen = new Set()
+  return value.flatMap((provider, index) => {
+    const label = `${where}: \`paymentProviders[${index}]\``
+    if (!provider || typeof provider !== 'object' || Array.isArray(provider)) {
+      faults.push(`${label} must be a provider registration`)
+      return []
+    }
+    for (const field of Object.keys(provider)) {
+      if (!['id', 'adapter', 'capabilities', 'secrets', 'webhookPath'].includes(field)) {
+        faults.push(`${label}: \`${field}\` is not a provider registration field`)
+      }
+    }
+    const { id, adapter, capabilities, secrets, webhookPath } = provider
+    if (typeof id !== 'string' || !/^[a-z][a-z0-9-]*$/.test(id)) faults.push(`${label}.id must be a lower-case provider name`)
+    else if (id === 'stripe' || id === 'hyperswitch') faults.push(`${label}.id "${id}" is reserved for the built-in provider`)
+    else if (seen.has(id)) faults.push(`${where}: payment provider \`${id}\` is declared more than once by this module`)
+    else seen.add(id)
+    if (typeof adapter !== 'string' || path.posix.isAbsolute(adapter) ||
+        path.posix.normalize(adapter) !== adapter || adapter.split('/').some((part) => part === '.' || part === '..') ||
+        !/\.(?:mjs|js|ts)$/.test(adapter)) {
+      faults.push(`${label}.adapter must be a relative JavaScript or TypeScript module path under the site's Edge Function _shared directory`)
+    }
+    if (!Array.isArray(capabilities) || !capabilities.length) faults.push(`${label}.capabilities must be a non-empty list`)
+    else {
+      const capabilitySet = new Set()
+      for (const capability of capabilities) {
+        if (!PAYMENT_CAPABILITIES.includes(capability)) faults.push(`${label} declares unknown capability ${JSON.stringify(capability)}`)
+        if (capabilitySet.has(capability)) faults.push(`${label} repeats capability ${JSON.stringify(capability)}`)
+        capabilitySet.add(capability)
+      }
+    }
+    if (!Array.isArray(secrets)) faults.push(`${label}.secrets must be a list`)
+    else {
+      const secretSet = new Set()
+      for (const secret of secrets) {
+        if (typeof secret !== 'string' || !/^[A-Z][A-Z0-9_]*$/.test(secret)) faults.push(`${label}.secrets must contain environment variable names`)
+        else if (secretSet.has(secret)) faults.push(`${label}.secrets repeats ${secret}`)
+        else if (!Array.isArray(owns?.env) || !owns.env.includes(secret)) faults.push(`${label} secret ${secret} must also be declared in owns.env`)
+        secretSet.add(secret)
+      }
+    }
+    if (webhookPath !== PAYMENT_PROVIDER_WEBHOOK_PATH) {
+      faults.push(`${label}.webhookPath must be ${PAYMENT_PROVIDER_WEBHOOK_PATH}`)
+    }
+    if (typeof id !== 'string' || !/^[a-z][a-z0-9-]*$/.test(id) ||
+        typeof adapter !== 'string' || path.posix.isAbsolute(adapter) ||
+        path.posix.normalize(adapter) !== adapter || adapter.split('/').some((part) => part === '.' || part === '..') ||
+        !/\.(?:mjs|js|ts)$/.test(adapter) ||
+        !Array.isArray(capabilities) || !capabilities.length ||
+        !Array.isArray(secrets) || webhookPath !== PAYMENT_PROVIDER_WEBHOOK_PATH) return []
+    return [{
+      id,
+      adapter,
+      capabilities: [...capabilities],
+      secrets: [...secrets],
+      webhookPath,
+    }]
+  })
+}
+
 /*
  * READ ONE. Every fault is collected rather than thrown on the first, because somebody writing a
  * manifest wants to be told everything that is wrong with it, not one thing at a time.
@@ -203,12 +269,14 @@ export function readManifest(m, where = 'a manifest') {
       }
     }
   }
+  const paymentProviders = paymentProvidersOf(m.paymentProviders, owns, where, faults)
 
   return {
     manifest: faults.length ? null : {
       key, what: m.what, needs: m.needs || null,
       static: m.static, git: m.git, cloud: m.cloud, requires: reqs,
       owns: Object.fromEntries(OWNS.map((k) => [k, owns[k] || []])),
+      paymentProviders,
     },
     faults,
   }
@@ -230,6 +298,11 @@ export function readManifests(entries) {
   }
   /* a module that needs one nobody declares can never be satisfied */
   for (const m of by.values()) for (const r of m.requires) if (!by.has(r.module)) faults.push(`\`${m.key}\` requires \`${r.module}\`, which no manifest declares`)
+  const providers = new Map()
+  for (const m of by.values()) for (const provider of m.paymentProviders) {
+    if (providers.has(provider.id)) faults.push(`payment provider \`${provider.id}\` is declared by two modules: \`${providers.get(provider.id)}\` and \`${m.key}\``)
+    else providers.set(provider.id, m.key)
+  }
 
   /*
    * TWO MODULES CLAIMING ONE THING. A route, an admin section or a build step belongs to exactly
@@ -282,3 +355,5 @@ export function unmetRequirements(modules, config = {}) {
   }
   return out
 }
+import path from 'node:path'
+import { PAYMENT_CAPABILITIES, PAYMENT_PROVIDER_WEBHOOK_PATH } from '../../src/payment-provider.mjs'

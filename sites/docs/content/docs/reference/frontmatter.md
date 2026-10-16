@@ -103,7 +103,9 @@ The body is the text, split into chapters at `# ` headings, with `==marks=={colo
 
 An optional `usage` block names a billable unit and its provider-cost rate. One-time offers may
 also set `grant` (prepaid whole units); subscriptions may set `included`, a unique `meter` event
-name, and `overagePrice` per unit. `speechCostPerSecond` declares endpoint speech cost when used.
+name, and `overagePrice` per unit. A subscription may also set `incrementalCharge` to collect each
+full currency threshold as a separate charge, with the period-end remainder collected once.
+`speechCostPerSecond` declares endpoint speech cost when used.
 The offer's stable `key` remains the billing identity across changes to its sku or price.
 
 **What Stripe already does, declared per offer.** Four parameters, each off unless a file asks:

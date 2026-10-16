@@ -24,6 +24,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
+import { loadDotEnv, serviceKey, supabaseUrl } from './tts/storage.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -33,8 +34,20 @@ console.log('\nTHE DOORS THAT FACE THE INTERNET\n')
 
 const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The unsigned-webhook and overwrite refusals are NOT covered by this run.\n'); process.exit(0) }
 let cfg = null
-try { cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) }
-catch { skip('no local stack is up (npx supabase start)') }
+loadDotEnv()
+const localUrl = supabaseUrl()
+const functionsUrl = process.env.PLATFORMKIT_TEST_FUNCTIONS_URL || (localUrl ? `${localUrl}/functions/v1` : '')
+if (functionsUrl) {
+  cfg = {
+    FUNCTIONS_URL: functionsUrl.replace(/\/+$/, ''),
+    API_URL: process.env.PLATFORMKIT_TEST_API_URL || localUrl,
+    ANON_KEY: process.env.PLATFORMKIT_TEST_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '',
+    SERVICE_ROLE_KEY: process.env.PLATFORMKIT_TEST_SERVICE_ROLE_KEY || serviceKey(),
+  }
+} else {
+  try { cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) }
+  catch { skip('no local stack is up (npx supabase start)') }
+}
 if (!cfg || !cfg.FUNCTIONS_URL) skip('the stack did not report a functions url')
 
 /* Is anything serving the functions? `supabase start` does not, on its own. A 503 is NOT "unserved"

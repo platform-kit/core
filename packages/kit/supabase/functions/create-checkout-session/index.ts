@@ -3,39 +3,49 @@
  * `country` is where a cart that ships goes (chosen on the site first, since Checkout prices a
  * rate by a flat list, not by the address it collects): the session allows that country alone
  * and offers the store's methods priced for it.
- * to send the buyer to Stripe Checkout. Paid, they land on the app (`success`, a
+ * to send the buyer to the selected provider's checkout. Paid, they land on the app (`success`, a
  * path on this site, else /app; with ?checkout=success — the client reads it,
  * refreshes the entitlements and says thank you); cancelled, back where they
  * started (`return`, likewise, else the pricing page). `booking` — { event, start,
  * timeZone, notes } — is a session paid as it is booked: it rides in the session's
- * metadata, and the Stripe webhook books it through cal.com the moment the
+ * metadata, and the selected provider's webhook books it through cal.com the moment the
  * payment lands.
  *
  * Sign-in is required (a purchase always attaches to a known user). Every sku is
  * looked up in OUR catalog (catalog.json, from the product files) — amounts and
  * products are never taken from the client, and nothing can be bought that a file
- * does not declare. Stripe is then made to match the file (offers.ts): the price
- * Checkout charges is the one the markdown says, created on the spot if Stripe
- * has never seen it. The mode follows the offers: subscriptions go one at a time
+ * does not declare. The selected provider is then made to match the file (offers.ts):
+ * the price Checkout charges is the one the markdown says. The mode follows the offers: subscriptions go one at a time
  * through subscription mode, everything else together through payment mode. The
- * Stripe customer is created once and remembered on the profile (service role),
+ * selected provider customer is created once and remembered in provider-scoped references,
  * so subscriptions, the Billing Portal and later purchases all share it. Physical
  * goods add address capture. A subscriber choosing another membership is SWITCHED —
  * the live subscription's price changed in place, prorated — and answered
  * { switched }, never sent to Checkout for a second subscription; the webhook's
  * customer.subscription.updated then moves the tier.
  */
-import { stripe, stripeConfigured, stripeMock, isMockId, stripeUnconfigured, admin, json, preflight, getUser, appUrl } from '../_shared/lib.ts'
+import { stripeConfigured, stripeMock, isMockId, stripeUnconfigured, admin, json, preflight, getUser, appUrl, getPaymentProvider } from '../_shared/lib.ts'
 import { sessionParams, lineQuantity, trialDaysFor } from '../_shared/checkout-params.js'
+import {
+  assertPaymentCapabilities,
+  normalizePaymentCheckoutResult,
+  normalizePaymentSubscriptionChange,
+  PaymentProviderError,
+  paymentCapabilitiesForCheckout,
+  paymentCapabilitiesForSubscriptionChange,
+  providerScopedId,
+} from '../_shared/payment-provider.mjs'
+import type { PaymentCheckoutLine, PaymentProviderAdapter } from '../_shared/payment-provider.d.ts'
 import { checkVariant } from '../_shared/variants.js'
 import { offer, offerByKey, ensureOffer, offerMetadata, ships, printVariant, TIERS, WORDS, LISTS, PROMOTIONS } from '../_shared/offers.ts'
-import { meteredCheckoutLine, usageStripeMetadata } from '../_shared/usage-stripe.mjs'
+import { usageStripeMetadata } from '../_shared/usage-stripe.mjs'
 import { shipsTo, ratesFor } from '../_shared/shipping.ts'
 import { buyable, stockKey } from '../_shared/stock.js'   /* the one sold-out rule, the page's own */
 import { guestSessionSku, mayBookAsGuest } from '../_shared/sessions/guest-booking.js'
 import { priceOf } from '../_shared/prices.js'            /* and the one price rule, likewise */
 import { apply as applyPromotions } from '../_shared/promotions.js'   /* and the one discount rule */
-import { checkoutCompleted, subscriptionChanged, subscriptionDeleted, iso, idOf } from '../_shared/ledger.ts'
+import { checkoutCompleted, subscriptionChanged, subscriptionDeleted, iso } from '../_shared/ledger.ts'
+import { findProviderExternalIds, linkProviderEntity } from '../_shared/payment-provider-refs.ts'
 import { judge } from '../_shared/cal.ts'
 import { coaching as siteCoaching } from '../_shared/pipe/site.js'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
@@ -67,8 +77,8 @@ Deno.serve(async (req) => {
    * offering itself: a client never sends an amount, exactly as it never does for anything else.
    *
    * Everything after this treats it as an offer like any other: one line, one purchase, one credit,
-   * and book-session spends that credit. The one difference is that Stripe is given the price
-   * inline (price_data) rather than a catalog price id, since there is no catalog entry to make.
+   * and book-session spends that credit. The provider receives the price inline rather than a
+   * catalog price id, since there is no catalog entry to make.
    */
   const dynamic = new Map<string, any>()
   for (const it of items) {
@@ -162,59 +172,131 @@ Deno.serve(async (req) => {
   const country = String(body?.country ?? '').toUpperCase()
   if (needsShipping && !shipsTo(country)) return json({ error: country ? `we do not ship to ${country}` : 'choose where it ships', code: 'ship_to' }, 400)
   const rates = needsShipping ? ratesFor(country) : []
-
+  const inCart = [...merged.keys()].map((sku) => offerOf(sku)).filter(Boolean) as any[]
+  const { trial: offered, automaticTax: wantsAutoTax, taxId: wantsTaxId, methods } = sessionParams(inCart, mode)
+  let trialDays = offered
+  if (offered && user) {
+    const { data: past } = await admin.from('subscriptions').select('key').eq('user_id', user.id).eq('trialed', true)
+    const taken = (past || []).map((r: any) => r.key).filter(Boolean)
+    const withTrial = inCart.find((o) => o?.trial)
+    trialDays = trialDaysFor(withTrial, taken, (k) => (offerByKey(k)?.tier ?? null))
+  }
+  let selectedPaymentProvider: PaymentProviderAdapter
+  try {
+    selectedPaymentProvider = await getPaymentProvider()
+    assertPaymentCapabilities(selectedPaymentProvider, paymentCapabilitiesForCheckout({
+      mode,
+      trialDays,
+      automaticTax: wantsAutoTax,
+      collectTaxId: wantsTaxId,
+      allowedPaymentMethods: methods,
+      lines: [...merged.keys()].map((sku) => ({ adjustable: !!lineQuantity(offerOf(sku)) })),
+      ...(needsShipping ? { shippingAddress: 'required', shippingOptions: rates } : {}),
+    }))
+  } catch (error) {
+    if (error instanceof PaymentProviderError) {
+      return json({ error: error.message, code: error.code }, error.status)
+    }
+    throw error
+  }
   /* already a subscriber: the plan is switched, not doubled */
   let { data: live } = mode === 'subscription' && user
-    ? await admin.from('subscriptions').select('id, sku, key, next_sku, next_key, current_period_end').eq('user_id', user.id).in('status', ['active', 'trialing', 'past_due']).order('updated_at', { ascending: false }).limit(1).maybeSingle()
+    ? await admin.from('subscriptions').select('id, sku, key, next_sku, next_key, plan_amount, current_period_start, current_period_end').eq('user_id', user.id).in('status', ['active', 'trialing', 'past_due']).order('updated_at', { ascending: false }).limit(1).maybeSingle()
     : { data: null }
+  if (live && user) {
+    const targetSku = [...merged.keys()][0]
+    const target = offer(targetSku)!
+    const from = (live.key ? offerByKey(live.key) : null) ?? offer(live.sku)
+    const up = !from?.tier || !target.tier || (TIERS[target.tier] ?? 0) >= (TIERS[from.tier] ?? 0)
+    try {
+      assertPaymentCapabilities(selectedPaymentProvider, paymentCapabilitiesForSubscriptionChange({
+        proration: from?.key === target.key ? 'none' : up ? 'immediate' : 'next-cycle',
+      }))
+    } catch (error) {
+      if (error instanceof PaymentProviderError) {
+        return json({ error: error.message, code: error.code }, error.status)
+      }
+      throw error
+    }
+  }
+  if (selectedPaymentProvider.id === 'stripe' && !stripeConfigured) return stripeUnconfigured()
   /* a subscription the mock made, met with Stripe switched on: Stripe never heard of it,
      so it is ended in the ledger here and the person subscribes for real */
-  if (live && !stripeMock && isMockId(live.id)) { await subscriptionDeleted(live.id); live = null }
+  if (selectedPaymentProvider.id === 'stripe' && live && !stripeMock && isMockId(live.id)) { await subscriptionDeleted(live.id, 'stripe'); live = null }
   if (live && user) {
     const sku = [...merged.keys()][0]
-    if (!stripeConfigured) return stripeUnconfigured()
     const o = offer(sku)!, from = (live.key ? offerByKey(live.key) : null) ?? offer(live.sku)
     /* up or down: by the tiers' ranks (a switch between offers of one tier counts as up — now, prorated) */
     const up = !from?.tier || !o.tier || (TIERS[o.tier] ?? 0) >= (TIERS[from.tier] ?? 0)
     /* their own plan again while a step down is pending: the step down is called off */
     const keep = from?.key === o.key
     if (keep && !live.next_key) return json({ error: 'already on this plan', code: 'same-plan' }, 400)
-    if (stripeMock) {
+    if (selectedPaymentProvider.id === 'stripe' && stripeMock) {
       if (keep || !up) { await admin.from('subscriptions').update(keep ? { next_sku: null, next_key: null, next_at: null } : { next_sku: sku, next_key: o.key, next_at: live.current_period_end }).eq('id', live.id); return json({ switched: true, from: live.sku, to: sku, kept: keep, at: keep ? null : live.current_period_end, mock: true }) }
-      await subscriptionChanged({ id: live.id, status: 'active', customer: 'cus_mock_' + user.id.slice(0, 8), metadata: { user_id: user.id }, items: { data: [{ quantity: 1, price: { id: 'price_mock_' + sku, lookup_key: o.key, unit_amount: o.unit_amount, currency: o.currency, metadata: { key: o.key, sku, tier: o.tier } } }] }, current_period_end: Math.floor(Date.now() / 1000) + (o.period === 'weekly' ? 7 : 30) * 86400, cancel_at_period_end: false })
+      await subscriptionChanged({ id: live.id, status: 'active', customer: 'cus_mock_' + user.id.slice(0, 8), metadata: { user_id: user.id }, items: { data: [{ quantity: 1, price: { id: 'price_mock_' + sku, lookup_key: o.key, unit_amount: o.unit_amount, currency: o.currency, metadata: { key: o.key, sku, tier: o.tier } } }] }, current_period_end: Math.floor(Date.now() / 1000) + (o.period === 'weekly' ? 7 : 30) * 86400, cancel_at_period_end: false }, 'stripe')
       return json({ switched: true, from: live.sku, to: sku, mock: true })
     }
     try {
-      const sub: any = await stripe.subscriptions.retrieve(live.id)
-      const item = sub.items.data[0]
-      /* whatever step down was waiting is dropped first: one pending switch at most */
-      if (sub.schedule) await stripe.subscriptionSchedules.release(idOf(sub.schedule))
+      if (selectedPaymentProvider.capabilities.includes('catalog.sync')) await ensureOffer(sku)
+      if (!selectedPaymentProvider.changeSubscription) {
+        throw new PaymentProviderError('subscription_change_unavailable', `Payment provider "${selectedPaymentProvider.id}" does not implement subscription changes.`, 500)
+      }
+      const linkedSubscriptions = await findProviderExternalIds(
+        selectedPaymentProvider.id, 'subscription', 'subscriptions', live.id,
+      )
+      if (linkedSubscriptions.length > 1) {
+        throw new PaymentProviderError('subscription_reference_ambiguous', `Payment provider "${selectedPaymentProvider.id}" has multiple subscription references for this membership.`, 409)
+      }
+      const providerSubscriptionId = linkedSubscriptions[0] ??
+        (selectedPaymentProvider.id === 'stripe' ? live.id : null)
+      if (!providerSubscriptionId) {
+        throw new PaymentProviderError('subscription_reference_missing', `Payment provider "${selectedPaymentProvider.id}" has no external subscription reference for this membership.`, 409)
+      }
+      const changed = normalizePaymentSubscriptionChange(selectedPaymentProvider.id, await selectedPaymentProvider.changeSubscription({
+        subscriptionId: providerSubscriptionId,
+        offerKey: o.key,
+        offer: {
+          offerKey: o.key,
+          sku: o.sku,
+          name: o.title,
+          kind: 'subscription',
+          currency: o.currency,
+          unitAmountMinor: o.unit_amount,
+          interval: o.period === 'weekly' ? 'week' : 'month',
+          metadata: offerMetadata(o),
+        },
+        ...(live.plan_amount != null ? { currentAmountMinor: Number(live.plan_amount) } : {}),
+        ...(live.current_period_start ? { currentPeriodStart: Math.floor(new Date(live.current_period_start).getTime() / 1000) } : {}),
+        ...(live.current_period_end ? { currentPeriodEnd: Math.floor(new Date(live.current_period_end).getTime() / 1000) } : {}),
+        proration: keep ? 'none' : up ? 'immediate' : 'next-cycle',
+        idempotencyKey: `subscription-change:${providerSubscriptionId}:${live.current_period_end ?? 'current'}:${o.key}`,
+        userId: user.id,
+      }))
       if (keep) {
         await admin.from('subscriptions').update({ next_sku: null, next_key: null, next_at: null }).eq('id', live.id)
         return json({ switched: true, from: live.sku, to: sku, kept: true })
       }
-      const { price } = await ensureOffer(sku)
       if (up) {
         /* now: the rest of the period on the new plan, less the rest on the old, invoiced and
            charged at once; a card that fails leaves the plan as it was */
-        const updated = await stripe.subscriptions.update(live.id, { items: [{ id: item.id, price }], proration_behavior: 'always_invoice', payment_behavior: 'error_if_incomplete', metadata: { user_id: user.id } })
-        await subscriptionChanged(updated)   /* the webhook says the same a moment later */
+        await subscriptionChanged(changed.subscription, selectedPaymentProvider.id)
         return json({ switched: true, from: live.sku, to: sku })
       }
-      /* down: the plan already paid for runs to the end of its period, then the new one
-         begins — a schedule of two phases, released once the second has begun */
-      const sched: any = await stripe.subscriptionSchedules.create({ from_subscription: live.id })
-      await stripe.subscriptionSchedules.update(sched.id, {
-        end_behavior: 'release',
-        phases: [
-          { items: [{ price: item.price.id, quantity: item.quantity ?? 1 }], start_date: sched.phases[0].start_date, end_date: sub.current_period_end, proration_behavior: 'none' },
-          { items: [{ price, quantity: 1 }], iterations: 1, proration_behavior: 'none', metadata: { user_id: user.id } },
-        ],
-      })
-      const at = iso(sub.current_period_end)
+      /* down: the paid period runs to its end, then the new plan begins */
+      if (!changed.nextAt) {
+        throw new PaymentProviderError('subscription_schedule_missing', 'Payment provider did not return the scheduled change time.', 502)
+      }
+      const at = iso(changed.nextAt)
       await admin.from('subscriptions').update({ next_sku: sku, next_key: o.key, next_at: at }).eq('id', live.id)
       return json({ switched: true, from: live.sku, to: sku, at })
-    } catch (e) { return json({ error: `Stripe: ${(e as any)?.message ?? e}` }, 502) }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
+      const status = e instanceof PaymentProviderError ? e.status : 502
+      return json({
+        error: `${selectedPaymentProvider.id}: ${message}`,
+        ...(e instanceof PaymentProviderError ? { code: e.code } : {}),
+      }, status)
+    }
   }
 
   /* a session paid as it is booked is judged BEFORE anyone pays — the tier, the
@@ -313,19 +395,16 @@ Deno.serve(async (req) => {
   const paid = (sku: string, variant: string, quantity: number) => {
     const line = discounted.lines.find((l: any) => l.sku === sku && (l.variant || '') === (variant || ''))
     if (!line) return standing(sku, variant, quantity)
-    /* the discount is on the LINE; Stripe charges a unit price and multiplies, so it is spread
+    /* the discount is on the LINE; the provider charges a unit price and multiplies, so it is spread
        back over the units and the remainder goes nowhere a buyer can see it */
     const q = Math.max(1, Number(quantity) || 1)
     return Math.max(0, Math.round((line.subtotal - line.discount) / q))
   }
 
-  /* the cart is valid — from here on we need Stripe itself */
-  if (!stripeConfigured) return stripeUnconfigured()
-
   /* the mock: the purchase completes here, written by the same ledger code the
      webhook runs, with Stripe's objects made up; the buyer lands where a paid
      checkout would (and a mock subscription runs for a period from now) */
-  if (stripeMock) {
+  if (selectedPaymentProvider.id === 'stripe' && stripeMock) {
     const id = 'cs_mock_' + crypto.randomUUID().replace(/-/g, '').slice(0, 24)
     const customer = user ? 'cus_mock_' + user.id.slice(0, 8) : 'cus_mock_guest'
     const skus = [...merged.keys()]
@@ -335,7 +414,7 @@ Deno.serve(async (req) => {
     const email = user ? user.email ?? null : 'guest@example.com'
     await checkoutCompleted({ id, mode, customer, client_reference_id: user?.id ?? null, metadata: { ...(user ? { user_id: user.id } : { guest: '1' }), skus: skus.join(','), ...(variants.length ? { variants: variants.join(', ').slice(0, 500) } : {}), ...(booking ? { booking } : {}) }, line_items: { data: lines }, amount_total: total, currency: lines[0]?.price.currency ?? 'usd', customer_details: { email, name: user?.user_metadata?.full_name ?? null }, customer_email: email, payment_intent: 'pi_mock_' + id.slice(8),
       /* something ships: the address Checkout would have collected, the first method at its price */
-      ...(needsShipping ? { shipping_details: { name: user?.user_metadata?.full_name ?? 'Example Buyer', address: { line1: '1 Example Street', line2: '', city: 'Anytown', state: 'NY', postal_code: '10001', country } }, shipping_level: rates[0]?.level ?? 'standard', shipping_cost: { amount_total: rates[0]?.amount ?? 0 } } : {}) })
+      ...(needsShipping ? { shipping_details: { name: user?.user_metadata?.full_name ?? 'Example Buyer', address: { line1: '1 Example Street', line2: '', city: 'Anytown', state: 'NY', postal_code: '10001', country } }, shipping_level: rates[0]?.level ?? 'standard', shipping_cost: { amount_total: rates[0]?.amount ?? 0 } } : {}) }, 'stripe')
     if (mode === 'subscription' && user) {
       const o = offerOf(skus[0])!
       const days = o.period === 'weekly' ? 7 : 30
@@ -347,18 +426,29 @@ Deno.serve(async (req) => {
         },
       } : null
       const now = Math.floor(Date.now() / 1000)
-      await subscriptionChanged({ id: 'sub_mock_' + id.slice(8), status: 'active', customer, metadata: { user_id: user.id }, items: { data: [lines[0], ...(usageLine ? [usageLine] : [])] }, current_period_start: now, current_period_end: now + days * 86400, cancel_at_period_end: false })
+      await subscriptionChanged({ id: 'sub_mock_' + id.slice(8), status: 'active', customer, metadata: { user_id: user.id }, items: { data: [lines[0], ...(usageLine ? [usageLine] : [])] }, current_period_start: now, current_period_end: now + days * 86400, cancel_at_period_end: false }, 'stripe')
     }
     return json({ url: `${appUrl()}${done}${done.includes('?') ? '&' : '?'}checkout=success`, mock: true })
   }
 
   try {
-    /* Stripe made to match the files, then the price ids Checkout wants */
-    const line_items: Array<{ price?: string; price_data?: any; quantity: number; adjustable_quantity?: { enabled: boolean; minimum: number; maximum: number } }> = []
+    const lines: PaymentCheckoutLine[] = []
     for (const [sku, quantity] of merged) {
-      /* an offering has no catalog entry to make a price from, so Stripe is given the amount inline */
+      /* a provider offering has no Markdown catalog entry, so it is priced inline */
       const d = dynamic.get(sku)
-      if (d) { line_items.push({ price_data: { currency: d.currency, unit_amount: d.unit_amount, product_data: { name: d.title, metadata: { sku, kind: 'session' } } }, quantity }); continue }
+      if (d) {
+        lines.push({
+          offerKey: d.key,
+          sku,
+          name: d.title,
+          currency: d.currency,
+          billing: 'once',
+          unitAmountMinor: d.unit_amount,
+          quantity,
+          metadata: { sku, kind: 'session' },
+        })
+        continue
+      }
       /*
        * THE PRICE THE PAGE SHOWED, resolved again here by the same function over the same
        * lists. Not because the client is not trusted with an amount — it never sends one — but
@@ -370,98 +460,117 @@ Deno.serve(async (req) => {
       const v = variantOfSku(variants, sku)
       const amount = paid(sku, v, quantity)
       /*
-       * A LIST PRICE IS CHARGED INLINE, and the catalog price is used where no list moved it.
-       *
-       * Stripe has one price per offer and we keep it that way — it is the identity every
-       * purchase, subscription and lookup key hangs off, and minting a second price per sale
-       * would scatter that. So a line the lists re-priced is `price_data` carrying the SAME
-       * metadata the catalog price carries, and `offerOfLine` finds the offer by it exactly as
-       * it finds one by a lookup key. Nothing downstream can tell the difference, which is the
-       * point: the ledger must not learn about pricing.
+       * A list price is a checkout-line amount; the site's catalog identity remains the
+       * offer key regardless of whether the provider uses its synchronized price or inline data.
        */
-      const { price, usage_price } = await ensureOffer(sku)
-      if (amount !== o.unit_amount) {
-        const marks = offerMetadata(o)
-        line_items.push({ price_data: {
-          currency: o.currency, unit_amount: amount, metadata: marks,
-          ...(o.billing === 'subscription' ? { recurring: { interval: o.period === 'weekly' ? 'week' : 'month' } } : {}),
-          product_data: { name: o.title ?? sku, metadata: marks },
-        }, quantity })
-      } else {
-        /* the buyer's to change, where the offer says so and within its own bounds */
-        const adjustable = lineQuantity(o)
-        line_items.push({ price, quantity, ...(adjustable ? { adjustable_quantity: adjustable } : {}) })
-      }
-      const usageLine = meteredCheckoutLine(o, usage_price)
-      if (usageLine) line_items.push(usageLine)
+      const synced = selectedPaymentProvider.capabilities.includes('catalog.sync')
+        ? await ensureOffer(sku)
+        : null
+      const adjustable = amount === o.unit_amount ? lineQuantity(o) : null
+      lines.push({
+        offerKey: o.key,
+        sku: o.sku,
+        name: o.title,
+        currency: o.currency,
+        billing: o.billing === 'subscription' ? 'subscription' : 'once',
+        ...(o.period ? { interval: o.period === 'weekly' ? 'week' as const : 'month' as const } : {}),
+        unitAmountMinor: amount,
+        quantity,
+        ...(amount === o.unit_amount && synced ? { providerPriceId: synced.price } : {}),
+        ...(synced?.usage_price ? { providerUsagePriceId: synced.usage_price } : {}),
+        ...(adjustable ? { adjustableQuantity: adjustable } : {}),
+        metadata: offerMetadata(o),
+      })
     }
 
-    /* the Stripe customer, created once and remembered; a guest has none — Checkout asks
+    /* The provider customer, created once and remembered; a guest has none — Checkout asks
        their email, and the ledger keeps it on the purchase for the account that claims it */
-    let customer: string | null = null
+    let customerId: string | undefined
+    let customerEmail: string | undefined
     if (user) {
-      const { data: prof } = await admin.from('profiles').select('stripe_customer_id, email').eq('id', user.id).maybeSingle()
-      customer = prof?.stripe_customer_id as string | null
-      if (!customer || isMockId(customer)) {   /* none yet, or the mock's — Stripe gets a real one */
-        const c = await stripe.customers.create({ email: user.email ?? prof?.email ?? undefined, metadata: { user_id: user.id } })
-        customer = c.id
-        await admin.from('profiles').update({ stripe_customer_id: customer }).eq('id', user.id)
+      const { data: prof, error: profileError } = await admin.from('profiles')
+        .select('stripe_customer_id, email').eq('id', user.id).maybeSingle()
+      if (profileError) throw new Error(`could not load customer profile: ${profileError.message}`)
+      customerEmail = user.email ?? prof?.email ?? undefined
+      const linkedCustomers = await findProviderExternalIds(selectedPaymentProvider.id, 'customer', 'profiles', user.id)
+      if (linkedCustomers.length > 1) {
+        throw new PaymentProviderError('customer_reference_ambiguous', `Payment provider "${selectedPaymentProvider.id}" has multiple customer accounts for this user.`, 409)
+      }
+      customerId = linkedCustomers[0] ??
+        (selectedPaymentProvider.id === 'stripe' ? prof?.stripe_customer_id ?? undefined : undefined)
+      if (!customerId || (selectedPaymentProvider.id === 'stripe' && isMockId(customerId))) {
+        if (!selectedPaymentProvider.createCustomer) {
+          throw new PaymentProviderError('customer_creation_unavailable', `Payment provider "${selectedPaymentProvider.id}" does not implement customer creation.`, 500)
+        }
+        const created = await selectedPaymentProvider.createCustomer({
+          userId: user.id,
+          ...(customerEmail ? { email: customerEmail } : {}),
+        })
+        customerId = created.customerId
+        if (selectedPaymentProvider.id === 'stripe') {
+          const { error } = await admin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id)
+          if (error) throw new Error(`Stripe customer reference was not recorded: ${error.message}`)
+        }
+      }
+      if (!customerId) throw new Error(`payment provider "${selectedPaymentProvider.id}" returned no customer id`)
+      if (!linkedCustomers.length) {
+        await linkProviderEntity(selectedPaymentProvider.id, 'customer', customerId, 'profiles', user.id)
       }
     }
-    /* the four, resolved from the offers in this cart by the one pure module the kit's test reads
-       too (_shared/checkout-params.js — the cart decisions and why they went that way are there) */
-    const inCart = [...merged.keys()].map((sku) => offerOf(sku)).filter(Boolean) as any[]
-    const { trial: offered, automaticTax: wantsAutoTax, taxId: wantsTaxId, methods } = sessionParams(inCart, mode)
-    /* ONE TRIAL PER PERSON PER TIER: the keys of this person's subscriptions that ever had one.
-       A guest cannot be subscribing, so there is nobody to have trialled before. */
-    let trialDays = offered
-    if (offered && user) {
-      const { data: past } = await admin.from('subscriptions').select('key').eq('user_id', user.id).eq('trialed', true)
-      const taken = (past || []).map((r: any) => r.key).filter(Boolean)
-      const withTrial = inCart.find((o) => o?.trial)
-      trialDays = trialDaysFor(withTrial, taken, (k) => (offerByKey(k)?.tier ?? null))
+    const metadata = {
+      ...(user ? { user_id: user.id } : { guest: '1' }),
+      skus: [...merged.keys()].join(',').slice(0, 500),
+      ...(variants.length ? { variants: variants.join(', ').slice(0, 500) } : {}),
+      ...(booking ? { booking } : {}),
+      ...(took.length ? { promos: took.join(','), hold: sessionAbout } : {}),
     }
-
-    const session = await stripe.checkout.sessions.create({
-      mode,
-      ...(customer ? { customer } : {}),
-      line_items,
-      ...(user ? { client_reference_id: user.id } : {}),
-      metadata: { ...(user ? { user_id: user.id } : { guest: '1' }), skus: [...merged.keys()].join(',').slice(0, 500), ...(variants.length ? { variants: variants.join(', ').slice(0, 500) } : {}), ...(booking ? { booking } : {}), ...(took.length ? { promos: took.join(','), hold: sessionAbout } : {}) },
-      /* Stripe fills in the session's id, and the client confirms it on landing (confirm-checkout) */
-      success_url: `${appUrl()}${done}${done.includes('?') ? '&' : '?'}checkout=success&session={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl()}${back}${back.includes('?') ? '&' : '?'}checkout=cancel`,
-      allow_promotion_codes: true,
-      ...(mode === 'subscription' && (user || trialDays)
-        ? { subscription_data: { ...(user ? { metadata: { user_id: user.id } } : {}), ...(trialDays ? { trial_period_days: trialDays } : {}) } }
-        : {}),
-      /* tax: automatic_tax needs an address to work from, and with a remembered customer Stripe
-         refuses unless it is allowed to update that customer's address from the session */
-      ...(wantsAutoTax ? { automatic_tax: { enabled: true }, ...(customer ? { customer_update: { address: 'auto' } } : {}) } : {}),
-      ...(wantsTaxId ? { tax_id_collection: { enabled: true } } : {}),
-      /* and the methods, only where every offer in the cart accepts them */
-      ...(methods.length ? { payment_method_types: methods } : {}),
-      /* something ships: the store's own line under the pay button — made to order, all sales final */
-      ...(needsShipping && WORDS.final ? { custom_text: { submit: { message: WORDS.final.slice(0, 1200) } } } : {}),
-      /* something ships: the address in the chosen country alone, the phone (the printer's
-         carrier wants one), and the store's methods priced for that country — each rate
-         carrying the printer's shipping level, which the ledger reads back for the order */
-      ...(needsShipping ? {
-        shipping_address_collection: { allowed_countries: [country] as any },
-        phone_number_collection: { enabled: true },
-        shipping_options: rates.map((r) => ({ shipping_rate_data: {
-          type: 'fixed_amount' as const, display_name: r.label, fixed_amount: { amount: r.amount, currency: offer([...merged.keys()][0])!.currency },
-          metadata: { level: r.level },
-          ...(r.min_days && r.max_days ? { delivery_estimate: { minimum: { unit: 'business_day' as const, value: r.min_days }, maximum: { unit: 'business_day' as const, value: r.max_days } } } : {}),
-        } })),
+    const shippingCurrency = inCart.find((o) => ships(o))?.currency ?? 'usd'
+    if (!selectedPaymentProvider.createCheckout) {
+      throw new PaymentProviderError('checkout_creation_unavailable', `Payment provider "${selectedPaymentProvider.id}" does not implement checkout creation.`, 500)
+    }
+    const session = normalizePaymentCheckoutResult(selectedPaymentProvider.id, await selectedPaymentProvider.createCheckout({
+      idempotencyKey: `checkout:${crypto.randomUUID()}`,
+      ...(user && customerId ? {
+        customer: {
+          userId: user.id,
+          ...(customerEmail ? { email: customerEmail } : {}),
+          providerCustomerId: customerId,
+        },
       } : {}),
-    })
+      ...(!user && customerEmail ? { customerEmail } : {}),
+      mode,
+      lines,
+      metadata,
+      successUrl: `${appUrl()}${done}${done.includes('?') ? '&' : '?'}checkout=success&session={CHECKOUT_ID}`,
+      cancelUrl: `${appUrl()}${back}${back.includes('?') ? '&' : '?'}checkout=cancel`,
+      ...(selectedPaymentProvider.id === 'stripe' ? { allowPromotionCodes: true } : {}),
+      ...(mode === 'subscription' && trialDays ? { trialDays } : {}),
+      automaticTax: wantsAutoTax,
+      collectTaxId: wantsTaxId,
+      ...(methods.length ? { allowedPaymentMethods: methods } : {}),
+      ...(needsShipping ? {
+        shippingAddress: 'required',
+        shippingCountry: country,
+        collectPhone: true,
+        shippingOptions: rates.map((rate) => ({
+          id: String(rate.level),
+          label: rate.label,
+          amountMinor: rate.amount,
+          currency: shippingCurrency,
+          metadata: { level: String(rate.level) },
+          ...(rate.min_days && rate.max_days ? {
+            deliveryEstimate: { minimumDays: rate.min_days, maximumDays: rate.max_days },
+          } : {}),
+        })),
+        ...(WORDS.final ? { shippingSubmitMessage: WORDS.final.slice(0, 1200) } : {}),
+      } : {}),
+    }))
     /*
-     * THE UNITS ARE HELD FOR THIS SESSION, and Stripe will tell us when to let them go.
+     * THE UNITS ARE HELD FOR THIS SESSION, and the provider will tell us when to let them go.
      *
      * Checkout holds nothing for us. Without a reservation the last unit stays sellable while
      * somebody is typing their card in, and two people buy it; with one and no release, an
-     * abandoned basket holds it until the session expires a day later. Stripe emits
+     * abandoned basket holds it until the session expires a day later. The provider emits
      * `checkout.session.expired`, which is the hook, and the webhook releases on it.
      *
      * A reservation that cannot be taken does NOT fail the checkout here: the count may have
@@ -469,11 +578,40 @@ Deno.serve(async (req) => {
      * refused — `inventory_take` with `sold` does that atomically when the payment lands. This
      * is a hold, and a hold that cannot be placed simply is not placed.
      */
-    await reserve(session.id, merged, variants)
-    return json({ url: session.url })
+    await reserve(providerScopedId(selectedPaymentProvider.id, session.checkoutId), merged, variants)
+     const amountTotalMinor = lines.reduce(
+       (sum, line) => sum + line.unitAmountMinor * line.quantity,
+       0,
+     )
+     const summary = session.client ? {
+       currency: lines[0]!.currency.toUpperCase(),
+       mode,
+       items: lines.map((line) => ({
+         name: line.name,
+         quantity: line.quantity,
+         unitAmountMinor: line.unitAmountMinor,
+         amountMinor: line.unitAmountMinor * line.quantity,
+         billing: line.billing,
+         ...(line.interval ? { interval: line.interval } : {}),
+       })),
+       amountTotalMinor,
+       amountDueMinor: mode === 'subscription' && trialDays ? 0 : amountTotalMinor,
+       ...(trialDays ? { trialDays } : {}),
+     } : undefined
+     return json({
+       provider: session.provider,
+       url: session.url,
+       checkoutId: session.checkoutId,
+       ...(session.client ? { client: session.client } : {}),
+       ...(summary ? { summary } : {}),
+     })
   } catch (e) {
-    /* a Stripe-side failure (bad key, declined config, outage) — say so, don't 500 */
-    return json({ error: `Stripe: ${(e as any)?.message ?? e}` }, 502)
+    const message = e instanceof Error ? e.message : String(e)
+    const status = e instanceof PaymentProviderError ? e.status : 502
+    return json({
+      error: `${selectedPaymentProvider.id}: ${message}`,
+      ...(e instanceof PaymentProviderError ? { code: e.code } : {}),
+    }, status)
   }
 })
 

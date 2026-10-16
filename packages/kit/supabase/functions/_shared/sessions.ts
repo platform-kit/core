@@ -103,13 +103,16 @@ export async function typeFor(event: string | null, opts: { any?: boolean } = {}
 
 /* the row, from the API's own answer, so the sheet shows the session the moment
    it is made; the webhook's fuller projection lands over it a moment later */
-export async function mirror(b: any, user_id: string | null, s: Session | null, credit_id: string | null = null, stripeCheckoutSessionId: string | null = null) {
+export async function mirror(b: any, user_id: string | null, s: Session | null, credit_id: string | null = null, checkoutIdentity: string | null = null, stripeCheckoutSessionId: string | null = null) {
   /* cal.com's answer; a native booking is written by its scheduler and never comes here */
   const host = (b.hosts ?? [])[0] ?? {}
   const att = (b.attendees ?? [])[0] ?? {}
   const { data: coach } = host.email ? await admin.from('profiles').select('id').ilike('email', host.email).maybeSingle() : { data: null }
   await admin.from('bookings').upsert({
-    uid: b.uid, user_id, stripe_checkout_session_id: stripeCheckoutSessionId ?? b.metadata?.stripe_checkout_session_id ?? null, email: att.email ?? null, name: att.name ?? null,
+    uid: b.uid, user_id,
+    checkout_identity: checkoutIdentity ?? b.metadata?.checkout_identity ?? b.metadata?.stripe_checkout_session_id ?? null,
+    stripe_checkout_session_id: stripeCheckoutSessionId ?? b.metadata?.stripe_checkout_session_id ?? null,
+    email: att.email ?? null, name: att.name ?? null,
     provider_id: coach?.id ?? null, provider_email: host.email ? String(host.email).toLowerCase() : null,
     attendee_emails: (b.attendees ?? []).map((a: any) => String(a.email || '').toLowerCase()).filter(Boolean),
     title: b.title ?? s?.title ?? null, event: b.eventType?.slug ?? s?.event ?? null,

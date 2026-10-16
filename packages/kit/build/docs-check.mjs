@@ -233,7 +233,10 @@ const walk2 = (d, exts) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes:
 {
   const doc = page('reference/environment-variables')
   if (doc) {
-    const code = readAll(['packages/kit/build', 'packages/kit/src', 'packages/kit/vite', 'packages/kit/bin', 'packages/kit/agent', 'packages/kit/supabase/functions', 'packages/movable-types/src'], ['.mjs', '.js', '.ts', '.vue'])
+    const codeFiles = ['packages/kit/build', 'packages/kit/src', 'packages/kit/vite', 'packages/kit/bin', 'packages/kit/agent', 'packages/kit/supabase/functions', 'packages/movable-types/src']
+      .flatMap((dir) => walk2(path.join(ROOT, dir), ['.mjs', '.js', '.ts', '.vue']))
+      .filter((file) => !file.endsWith('.integration.mjs'))
+    const code = codeFiles.map((file) => fs.readFileSync(file, 'utf8')).join('\n')
     const read = new Set([...code.matchAll(/(?:process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g)].map((m) => m[1]))
     for (const m of code.matchAll(/need\('([A-Z_]+)'|has\(env, '([A-Z_]+)'\)|\['([A-Z_]{4,})', "|\benv\.([A-Z][A-Z0-9_]{3,})/g)) read.add(m[1] || m[2] || m[3] || m[4])
     for (const m of code.matchAll(/Deno\.env\.get\(['"]([A-Z_][A-Z0-9_]*)['"]\)/g)) read.add(m[1])

@@ -7,6 +7,8 @@ sources:
     packages/kit/supabase/functions/create-checkout-session,
     packages/kit/supabase/functions/_shared/ledger.ts,
     packages/kit/supabase/functions/_shared/ledger-rules.js,
+    packages/kit/supabase/functions/_shared/payment-provider.mjs,
+    packages/kit/src/payment-provider.d.ts,
     packages/kit/build/ledger.test.mjs,
     packages/movable-types/src/components/landing/LandingPricing.vue,
     packages/kit/src/lib/auth.js,
@@ -30,6 +32,10 @@ The ledger writes what somebody owns after they have paid, and **what it decides
 
 `ledger.test.mjs` pins all of it. Before this the most consequential file in the kit had no test of its own, for a structural reason rather than a careless one: every decision sat between two database writes.
 
+Stripe is the compatibility default, but a site may register its own payment adapter for the
+checkout, subscription changes, and customer portal operations it supports. Shared membership
+tiers and entitlement rules remain the same; see [Payment providers](/content/docs/building-a-site/payment-providers).
+
 ## The tiers
 
 Each membership offer is a product of kind `membership` with a **tier** slug, a **rank**, a **billing** of `subscription`, a **period** (weekly or monthly) and a **price**. `chat-hours` on it promises a coach's reply time (72 / 48 / 24 hours across three tiers, say), which the coaching inbox counts against.
@@ -42,7 +48,7 @@ The pricing page is a landing page with a **Pricing** section: rows you write in
 
 ## What a member gets
 
-Every rule that reads "subscribed" — a book's chapters for members, an article's access level, the coaching chat, the sessions a tier includes — reads the live membership. The header's account menu offers **Manage membership** (Stripe's billing portal) to a subscriber.
+Every rule that reads "subscribed" — a book's chapters for members, an article's access level, the coaching chat, the sessions a tier includes — reads the live membership. The header's account menu offers **Manage membership** through the selected provider's customer portal when that adapter supports it.
 
 ## One subscription per person, and switching
 
@@ -51,7 +57,7 @@ A person holds one subscription. The pricing page marks their rung **Subscribed*
 - **Up** (a higher rank, or another offer of the same tier) happens now: the rest of the period on the new plan less the rest on the old, charged at once. A card that fails leaves the plan as it was.
 - **Down** takes effect at the renewal: the paid-for plan runs to the end of its period, and the lower one begins then. The page marks the coming rung with the date; pressing the current rung again calls the step down off.
 
-Checkout returns to the app with a toast saying what happened; the purchase is theirs on landing whether or not Stripe's webhook has arrived yet.
+Checkout returns to the app with a toast saying what happened; the purchase is theirs on landing whether or not the provider's webhook has arrived yet.
 
 ## Coaching sessions and memberships
 

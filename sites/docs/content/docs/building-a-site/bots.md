@@ -53,7 +53,7 @@ sources:
     packages/kit/build/social-automation-admin.test.mjs,
     packages/movable-types/src/components/admin/social,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-12
 ---
 
 A bot here is not a chat window bolted to a model. It is an **agent**: it can look things up, call
@@ -182,7 +182,7 @@ limits: { steps: 12, spend: 0.50, minutes: 10 }
 You are a study buddy for people reading the wisdom classics…
 ```
 
-A bot may also name a usage offer by its stable key with `billing`. The same server-side gate reserves or verifies usage before paid provider work and attributes completed calls to the verified person the bot serves, whether they use voice, a private conversation or a shared channel. The offer can be a prepaid pack or a Stripe-metered subscription; unbilled bots keep their existing behavior. Readers review balances and manage top-up independently at `/app/usage`, not in conversation history. See [Usage billing](/content/docs/running-a-site/selling/usage-billing) for the offer fields and operating rules.
+A bot may also name a usage offer by its stable key with `billing`. The same server-side gate reserves or verifies usage before paid provider work and attributes completed calls to the verified person the bot serves, whether they use voice, a private conversation or a shared channel. The offer can be a prepaid pack or a metered subscription through the selected payment provider; unbilled bots keep their existing behavior. Readers review balances and manage top-up in the Usage section of `/billing`, not in conversation history. See [Usage billing](/content/docs/running-a-site/selling/usage-billing) for the offer fields and operating rules.
 
 ## Social automations
 

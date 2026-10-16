@@ -294,7 +294,8 @@ try {
   })
   assert.equal(preference.error, null, preference.error?.message)
   assert.equal(preference.data, true, 'the server saves the reader-owned top-up preference')
-  const topupInput = (attemptRef, siteEnabled, amountMinor = 500) => admin.rpc('usage_topup_begin', {
+  const topupInput = (attemptRef, siteEnabled, amountMinor = 500, providerId = 'stripe') => admin.rpc('usage_topup_begin', {
+    p_provider_id: providerId,
     p_user_id: users[0].id, p_attempt_ref: attemptRef, p_offer_key: offerKey,
     p_currency: 'usd', p_amount_minor: amountMinor, p_units_micros: 25_000_000,
     p_site_enabled: siteEnabled, p_usage_unit: 'minute', p_rate_micros: 10_000,
@@ -310,7 +311,7 @@ try {
   ])
   for (const result of concurrentTopups) assert.equal(result.error, null, result.error?.message)
   assert.equal(concurrentTopups.filter((result) => result.data?.started).length, 2,
-    'racing low-balance requests join the same pending Stripe payment')
+    'racing low-balance requests join the same pending provider payment')
   const topupRef = concurrentTopups[0].data?.attempt?.attempt_ref
   assert.ok(topupRefs.includes(topupRef), 'the winning concurrent request owns the shared pending attempt')
   assert.equal(concurrentTopups[1].data?.attempt?.attempt_ref, topupRef)
@@ -346,6 +347,24 @@ try {
   })
   assert.equal(attemptGranted.error, null, attemptGranted.error?.message)
   assert.equal(attemptGranted.data, true)
+  const customTopupRef = `${source}:custom-provider-topup`
+  const customTopup = await topupInput(customTopupRef, true, 500, 'custom')
+  assert.equal(customTopup.error, null, customTopup.error?.message)
+  assert.equal(customTopup.data?.started, true, 'a provider has an independent monthly top-up budget')
+  const customPayment = await admin.rpc('usage_topup_finish', {
+    p_attempt_ref: customTopupRef,
+    p_status: 'succeeded',
+    p_payment_intent_id: `pi_${suffix}`,
+    p_error: null,
+    p_provider_id: 'custom',
+  })
+  assert.equal(customPayment.error, null, customPayment.error?.message)
+  assert.equal(customPayment.data, true, 'the same external payment id is independent across provider namespaces')
+  const paymentRefs = await admin.from('payment_provider_refs').select('provider,external_id')
+    .eq('object_type', 'payment').eq('external_id', `pi_${suffix}`)
+    .in('entity_type', ['usage_topup_attempts'])
+  assert.equal(paymentRefs.error, null, paymentRefs.error?.message)
+  assert.deepEqual(paymentRefs.data.map((reference) => reference.provider).sort(), ['custom', 'stripe'])
   const overCap = await topupInput(`${source}:topup-over-cap`, true, 1)
   assert.equal(overCap.error, null, overCap.error?.message)
   assert.equal(overCap.data?.reason, 'topup_monthly_cap', 'the reader’s own calendar-month cap blocks another charge')
@@ -433,9 +452,15 @@ try {
   assert.equal(meteredSettlement.error, null, meteredSettlement.error?.message)
   assert.equal(meteredSettlement.data?.included_micros, 2_000_000)
   assert.equal(meteredSettlement.data?.metered_micros, 1_000_000)
-  const report = await admin.from('usage_meter_reports').select('identifier,event_name,value_micros')
+  const usageEvent = await admin.from('usage_events').select('subscription_id')
+    .eq('id', meteredSettlement.data.usage_event_id).single()
+  assert.equal(usageEvent.error, null, usageEvent.error?.message)
+  assert.equal(usageEvent.data.subscription_id, `sub_usage_${suffix}`,
+    'metered events retain their local subscription for Hyperswitch period-end billing')
+  const report = await admin.from('usage_meter_reports').select('user_id,identifier,event_name,value_micros')
     .eq('usage_event_id', meteredSettlement.data.usage_event_id).single()
   assert.equal(report.error, null, report.error?.message)
+  assert.equal(report.data.user_id, users[1].id, 'meter reports retain the reader id for provider-scoped customer lookup')
   assert.equal(report.data.event_name, 'usage_db_probe')
   assert.equal(report.data.value_micros, 1_000_000)
   const meteredReplay = await admin.rpc('usage_settle', {

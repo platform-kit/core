@@ -33,7 +33,7 @@ sources:
     packages/kit/build/steps.mjs,
     packages/kit/build/steps.test.mjs,
   ]
-reviewed: 2026-10-12
+reviewed: 2026-10-13
 ---
 
 Content authors edit Markdown files under `content/`. During the build, Velite validates those files, renders their Markdown, and writes one JSON file per collection plus an `index.js` under `.velite/`. The app imports the generated collections through `#content`. The kit defines this pipeline in `packages/kit/build/velite.mjs`; a site's `velite.config.js` calls `kitConfig()`.
@@ -103,7 +103,7 @@ During `prepare`, the site's UI strings are merged over the theme defaults by sc
 
 ## The post-steps
 
-After Velite, the Vite plugin runs additional build steps that consume compiled content. These include generating the icon list used by the bundle, the book-search embeddings, the sales report, and the compiled funnels used by support prompts. During development, the steps rerun when Velite clears and regenerates `.velite/`. The icon check also rejects names that are not provided by the theme, Lucide, or a section's own icon set.
+After Velite, the Vite plugin runs additional build steps that consume compiled content. These include generating the icon list used by the bundle, the book-search embeddings, the sales report, and the compiled funnels used by support prompts. Catalog synchronization runs only when the selected payment provider declares that capability; Stripe remains the default provider. During development, the steps rerun when Velite clears and regenerates `.velite/`. The icon check also rejects names that are not provided by the theme, Lucide, or a section's own icon set.
 
 ## A site's own collections
 

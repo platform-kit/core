@@ -20,9 +20,10 @@
  */
 
 /* the prefixes nothing may appear over. `/app` is the reader's own instrument; `/spaces` a
-   workspace; `/admin` the site's own machinery; `/embed/` is a frame inside SOMEBODY ELSE'S page,
-   where the site turning up with a chat launcher would be the site turning up uninvited. */
-export const QUIET = ['/admin', '/app', '/spaces', '/feed', '/p', '/__preview', '/__share', '/api', '/form/', '/to/', '/book/', '/cart/c/', '/support', '/embed/']
+   workspace; `/admin` the site's own machinery; `/checkout/` is the payment flow; `/embed/` is a
+   frame inside SOMEBODY ELSE'S page, where the site turning up with a chat launcher would be the
+   site turning up uninvited. */
+export const QUIET = ['/admin', '/app', '/spaces', '/feed', '/p', '/__preview', '/__share', '/api', '/form/', '/to/', '/book/', '/cart/c/', '/checkout/', '/support', '/embed/']
 
 export function mayInterrupt(path, communityRoutes = []) {
   const p = String(path || '')

@@ -17,11 +17,18 @@
  *
  * Everything it makes is removed at the end. Skipped with a note when the stack is down.
  */
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { balanceOf } from '../src/lib/payouts.js'
 
 const note = (m) => console.log('payouts-db: ' + m)
+const payoutSource = await readFile(new URL('../supabase/functions/_shared/payouts.ts', import.meta.url), 'utf8')
+const sendDueSource = payoutSource.slice(payoutSource.indexOf('export async function sendDue'))
+const capabilityCheck = sendDueSource.indexOf("assertPaymentCapabilities(provider, ['payouts.connected-accounts'])")
+const ledgerClaim = sendDueSource.indexOf('update({ payout_ref: ref })')
+assert.ok(capabilityCheck >= 0 && capabilityCheck < ledgerClaim, 'unsupported providers are refused before payout lines are claimed')
 if (process.env.PAYOUTS_TEST === '0') { note('skipped (PAYOUTS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''

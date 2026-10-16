@@ -15,11 +15,13 @@ sources:
     package.json,
     packages/kit/build/sites.mjs,
     packages/kit/build/runtime-paths.mjs,
+    packages/kit/build/hyperswitch-test-stack.mjs,
+    packages/kit/build/hyperswitch-v2-test.compose.yml,
     packages/kit/bin/platformkit.mjs,
     sites/docs/package.json,
     sites/docs/platformkit.config.js,
   ]
-reviewed: 2026-10-11
+reviewed: 2026-10-14
 ---
 
 PlatformKit sites use three packages. Before changing code, identify which package owns the behavior:
@@ -57,6 +59,11 @@ deploy/                       shared hosting and deployment configuration
 Imports between the kit and theme use package specifiers such as `@platform-kit/kit/lib/...` and `@platform-kit/movable-types/components/...`. The theme may import the kit; the kit must not depend on the theme or on a site. A site supplies its choices through `platformkit.config.js` and the registrations documented in [Configuration](/content/docs/building-a-site/configuration).
 
 Some enabled features need extra packages at build time, such as `mjml`, the Typst compiler, or `onnxruntime-node`. Declare these in the site package that enables the feature. The build-step checks report missing packages.
+
+The workspace root also provides an opt-in Docker-backed Hyperswitch v2 integration stack for
+PlatformKit development. It builds from a local Hyperswitch checkout and is separate from site
+builds and the default unit-test suite; the [payment-provider guide](/content/docs/building-a-site/payment-providers)
+documents its setup and commands.
 
 ## Reader state
 

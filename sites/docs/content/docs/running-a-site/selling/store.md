@@ -1,6 +1,6 @@
 ---
 title: The store
-description: The storefront, products, collections, shipping, guest checkout, and how Stripe is kept in step with the files.
+description: The storefront, products, collections, shipping, guest checkout, and how the selected payment provider follows the files.
 order: 20
 sources:
   [
@@ -23,18 +23,26 @@ sources:
     packages/kit/supabase/functions/_shared/offers.ts,
     packages/kit/supabase/functions/_shared/ledger.ts,
     packages/kit/supabase/functions/_shared/ledger-rules.js,
+    packages/kit/supabase/functions/_shared/payment-provider.mjs,
+    packages/kit/src/payment-provider.d.ts,
+    packages/kit/build/payment-provider-registry.mjs,
+    packages/kit/build/steps/push-catalog.mjs,
     packages/kit/supabase/functions/_shared/sessions/guest-booking.js,
     packages/kit/supabase/schemas/40-commerce.sql,
     packages/kit/build/usage.test.mjs,
     packages/kit/build/velite.mjs,
     packages/kit/supabase/schemas/55-sessions.sql,
   ]
-reviewed: 2026-10-11
+reviewed: 2026-10-12
 ---
 
 The store sells book unlocks, printed books and downloads, memberships, and goods. It is enabled by the `store` module; when the module is off, store pages, checkout, and store administration are unavailable. For membership offers and tiers, see [Memberships and pricing](/content/docs/running-a-site/selling/memberships-and-pricing). For prepaid allowances and metered assistant services, see [Usage billing](/content/docs/running-a-site/selling/usage-billing).
 
 Provider offerings are booked rather than added to the store bag. See [Providers and payouts](/content/docs/running-a-site/selling/providers-and-payouts).
+
+Stripe is the built-in payment provider and the default for existing sites. A site can register its own adapter for checkout and other payment operations; the shared offer files and order rules remain authoritative. See [Payment providers](/content/docs/building-a-site/payment-providers) for the site extension contract.
+
+The checkout function checks the selected adapter's required capabilities before making a provider request, then sends it a normalized checkout built from the site's offer and shipping data. A purchase keeps a provider-scoped checkout identity for fulfillment, so matching ids from different providers cannot collide.
 
 ## The storefront
 
@@ -51,7 +59,7 @@ Sales → **Products**: one file per thing a person can buy, and the file is the
 | Field                                                     | What it is                                                                                                                                                                                                                                                                                                                                                                                              |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **sku**                                                   | The product's slug and address (`/store/products/<sku>`); what pricing rows and session records point at                                                                                                                                                                                                                                                                                                |
-| **key**                                                   | Its identity: eight characters given once on first save, shown read-only, never edited. Stripe and every purchase are attributed by it, so a sku may be renamed after it has sold and nothing is lost                                                                                                                                                                                                   |
+| **key**                                                   | Its identity: eight characters given once on first save, shown read-only, never edited. The payment provider and every purchase are attributed by it, so a sku may be renamed after it has sold and nothing is lost                                                                                                                                                                                     |
 | **kind**                                                  | `book` (an unlock — opens the book online), `good`, `membership`, `session` (a paid coaching call), `form` (an answer somebody pays to have looked at, which a form names by sku — see [Forms](/content/docs/running-a-site/marketing/forms)). Two more are DERIVED and never written in a product file: `print` and `download` come from a book's print block, and `event` from a paid event's `cost:` |
 | **billing / period**                                      | `once`, or `subscription` with `weekly` or `monthly`                                                                                                                                                                                                                                                                                                                                                    |
 | **price / currency**                                      | In dollars as written (10 or 10.00)                                                                                                                                                                                                                                                                                                                                                                     |
@@ -88,11 +96,11 @@ In Store → Products the editor shows the options as rows — a name, and the v
 add, reorder by dragging and remove — and beneath them a table of every shape that follows,
 with three things you may set on each:
 
-|                 |                                                                                                                                                                           |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Price**       | Blank means the offer’s own price, which the field shows you in grey. Fill it in only where that shape costs something different                                          |
-| **Its own sku** | Blank means the one made from the product’s (`notebook-leather-lined`), which is what Stripe and a warehouse see. Fill it in where you already have a code for that shape |
-| **Sold**        | Turn it off for a combination you do not make. It stays on the page, struck through, rather than disappearing                                                             |
+|                 |                                                                                                                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Price**       | Blank means the offer’s own price, which the field shows you in grey. Fill it in only where that shape costs something different                                                        |
+| **Its own sku** | Blank means the one made from the product’s (`notebook-leather-lined`), which is what the payment provider and a warehouse see. Fill it in where you already have a code for that shape |
+| **Sold**        | Turn it off for a combination you do not make. It stays on the page, struck through, rather than disappearing                                                                           |
 
 ### Sync options from a supplier
 
@@ -168,9 +176,9 @@ at the checkout, which is Stripe’s limit rather than ours.
 > any one line. Storing the discounted price instead meant the bag discounted it a second time,
 > which is the kind of error that costs money and shows nothing.
 
-## Sync offers with Stripe
+## Sync offers with the payment provider
 
-Stripe is kept in step _from_ the files, never the other way round. At deploy, and again just before every checkout, the offers are pushed: a Stripe product is found by the offer's key or created, its price found by the same key or created. A changed price makes a new Stripe price under the same key and retires the old — an existing subscriber stays on what they signed up at. The shopper's browser sends skus, never amounts, and a sku the files do not declare is refused.
+The offer files stay authoritative; provider catalog data never sets the site's prices or access rules. With the default Stripe provider, a product and price are found or created by the offer's stable key, and a changed price retires the old one without changing an existing subscription. A site adapter may synchronize a provider catalog when it declares that capability; providers that do not need a mirrored catalog skip that step. The shopper's browser sends skus, never amounts, and a sku the files do not declare is refused. See [Payment providers](/content/docs/building-a-site/payment-providers).
 
 ## Organize products into collections
 
@@ -186,7 +194,7 @@ Where the store ships and what it charges are the storefront's **shipping** sett
 
 ## Checkout, guest purchases, and downloads
 
-A bag of printed copies and files alone checks out **without an account**: Stripe asks the email itself, the purchase and the print order are written under that address, and when an account is later made with it, the purchases move onto the account. A paid session may also be booked as a guest when the site opts out of sign-in with `coaching.requireAuthToBook: false` and that session admits `anyone` or `guest`; Checkout must contain only that one session and its selected time. Its booking uses the email Stripe returns, not an address supplied by the browser. A verified account with that same address can later claim its booking and any unused session credit. Other session bookings, memberships, and online unlocks still require sign-in.
+A bag of printed copies and files alone checks out **without an account**: the selected provider asks for the email itself, the purchase and the print order are written under that address, and when an account is later made with it, the purchases move onto the account. A paid session may also be booked as a guest when the site opts out of sign-in with `coaching.requireAuthToBook: false` and that session admits `anyone` or `guest`; Checkout must contain only that one session and its selected time. Its booking uses the email the provider returns, not an address supplied by the browser. A verified account with that same address can later claim its booking and any unused session credit. Other session bookings, memberships, and online unlocks still require sign-in.
 
 A buyer of a download — or of a printed copy whose format includes the files — gets **every** edition of that file, whichever they chose at print time; the store page and the person's cover page show them under _Your files_, as links good for an hour, minted on request.
 
@@ -196,7 +204,7 @@ The buyer gets the order's confirmation email (with the files' letter when a fil
 
 ## Test checkout locally
 
-With `STRIPE_MOCK=1` in the local settings, every buying path completes on the spot with no Stripe account: a purchase, a subscription, a switch of plan, a cancellation. The deploy refuses a mock switched on. A mock purchase differs from a real one only by its ids.
+With `STRIPE_MOCK=1` and Stripe selected, every buying path completes on the spot with no Stripe account: a purchase, a subscription, a switch of plan, a cancellation. The deploy refuses this Stripe-only test switch when Stripe is selected. A site-owned adapter controls its own local test behavior. A mock purchase differs from a real one only by its ids.
 
 ## Product comments
 

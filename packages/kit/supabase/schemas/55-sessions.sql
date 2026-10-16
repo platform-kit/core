@@ -182,6 +182,7 @@ $$;
 CREATE TABLE IF NOT EXISTS "public"."bookings" (
     "uid" "text" NOT NULL,
     "user_id" "uuid",
+    "checkout_identity" "text",
     "stripe_checkout_session_id" "text",
     "email" "text",
     "name" "text",
@@ -235,8 +236,8 @@ CREATE TABLE IF NOT EXISTS "public"."bookings" (
     CONSTRAINT "bookings_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'accepted'::"text", 'rescheduled'::"text", 'cancelled'::"text", 'rejected'::"text", 'ended'::"text"])))
 );
 
--- One paid checkout may fulfil a booking only once, even when Stripe's webhook and the
--- buyer's success-page confirmation arrive together or are replayed.
+-- One paid checkout may fulfil a booking only once, even when the provider webhook and the
+-- buyer's success-page confirmation arrive together or are replayed. The key is provider-scoped.
 CREATE TABLE IF NOT EXISTS "public"."booking_checkout_fulfilments" (
     "checkout_session_id" "text" NOT NULL,
     "status" "text" DEFAULT 'processing'::"text" NOT NULL,
@@ -334,6 +335,9 @@ ALTER TABLE ONLY "public"."bookings"
 CREATE UNIQUE INDEX IF NOT EXISTS "bookings_checkout_session_idx"
     ON "public"."bookings" USING "btree" ("stripe_checkout_session_id")
     WHERE ("stripe_checkout_session_id" IS NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS "bookings_checkout_identity_idx"
+    ON "public"."bookings" USING "btree" ("checkout_identity")
+    WHERE ("checkout_identity" IS NOT NULL);
 
 CREATE INDEX "bookings_attendees_idx" ON "public"."bookings" USING "gin" ("attendee_emails");
 

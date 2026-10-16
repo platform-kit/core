@@ -1,92 +1,143 @@
 /*
- * The reconciliation engine. Stripe is the ledger of record for money; this
- * projects its events into our tables — purchases, subscriptions — and, from
+ * The reconciliation engine. The selected provider's verified events are
+ * projected into our tables — purchases, subscriptions — and, from
  * them, the entitlements ledger the app actually reads. What was bought is read
  * by sku (the price's lookup key) from our own catalog (offers.ts), never from
- * Stripe's product objects; a membership's tier is the price's metadata.tier,
- * which every price of a tier carries, so a subscriber on a retired price still
+ * provider product objects; a membership's tier comes from the normalized
+ * subscription snapshot, so a subscriber on a retired price still
  * holds it.
  *
  * No user JWT (verify_jwt is off for this function); trust comes only from the
- * Stripe signature. Idempotent on the event id (stripe_events), so retries are
- * acknowledged without being re-applied. Every grant carries the Stripe id that
+ * adapter's verification. Idempotent on the provider-scoped event id, so retries are
+ * acknowledged without being re-applied. Every grant carries the provider id that
  * caused it as source_id, which is how a cancellation or refund revokes exactly
  * what it granted and nothing else.
  */
-import { stripe, admin, json } from '../_shared/lib.ts'
-import { checkoutCompleted, subscriptionChanged, subscriptionDeleted, grantUsage, iso, idOf } from '../_shared/ledger.ts'
+import { admin, getPaymentProvider, json } from '../_shared/lib.ts'
+import { checkoutCompleted, subscriptionChanged, subscriptionDeleted, grantUsage, iso } from '../_shared/ledger.ts'
 import { includedGrantForInvoice } from '../_shared/usage-stripe.mjs'
+import { findProviderEntity, findProviderEntities, findProviderExternalIds } from '../_shared/payment-provider-refs.ts'
+import { assertPaymentCapabilities, normalizePaymentEvent, normalizePaymentCheckout, PaymentProviderError, providerScopedId } from '../_shared/payment-provider.mjs'
+import type { PaymentProviderAdapter, PaymentProviderEvent } from '../_shared/payment-provider.d.ts'
 
-const SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET') ?? ''
-
-async function handle(event: any) {
-  const o = event.data.object
+async function handle(event: PaymentProviderEvent, provider: PaymentProviderAdapter) {
   switch (event.type) {
-    case 'checkout.session.completed': await checkoutCompleted(o); break
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated': await subscriptionChanged(o); break
-    case 'customer.subscription.deleted': await subscriptionDeleted(o.id); break
-    case 'invoice.paid': {
-      const subId = idOf(o.subscription); if (!subId) break
-      let { data: subscription } = await admin.from('subscriptions').select('user_id, key, usage_price_id, usage_meter, usage_unit, usage_rate_micros, usage_included_micros, usage_overage_price_micros, usage_speech_cost_per_second_micros, current_period_start, current_period_end').eq('id', subId).maybeSingle()
-      if (!subscription) {
-        const current = await stripe.subscriptions.retrieve(subId, { expand: ['items.data.price'] })
-        await subscriptionChanged(current)
-        ;({ data: subscription } = await admin.from('subscriptions').select('user_id, key, usage_price_id, usage_meter, usage_unit, usage_rate_micros, usage_included_micros, usage_overage_price_micros, usage_speech_cost_per_second_micros, current_period_start, current_period_end').eq('id', subId).maybeSingle())
+    case 'checkout.completed': {
+      if (!event.checkoutId || !provider.retrieveCheckout) {
+        throw new Error(`payment provider "${provider.id}" cannot retrieve a completed checkout`)
       }
-      const lines = o.lines?.data ?? []
-      const meteredLine = lines.find((line: any) =>
-        line.price?.metadata?.usage === 'metered' ||
-        String(line.price?.lookup_key ?? '').endsWith('_usage') ||
-        idOf(line.price ?? line.pricing?.price_details?.price) === subscription?.usage_price_id)
-      const periodLine = meteredLine ?? lines.find((line: any) => line.period?.start && line.period?.end)
-      const start = iso(periodLine?.period?.start) ?? subscription?.current_period_start ?? null
-      const end = iso(periodLine?.period?.end) ?? subscription?.current_period_end ?? null
+      const checkout = normalizePaymentCheckout(provider.id, await provider.retrieveCheckout(event.checkoutId))
+      await checkoutCompleted(checkout, provider.id)
+      if (checkout.mode === 'subscription' && checkout.subscription) {
+        await subscriptionChanged(checkout.subscription, provider.id)
+      }
+      break
+    }
+    case 'subscription.created':
+    case 'subscription.updated':
+      if (!event.subscription) throw new Error(`payment provider "${provider.id}" returned no subscription snapshot`)
+      await subscriptionChanged(event.subscription, provider.id)
+      break
+    case 'subscription.deleted':
+      if (event.subscriptionId) await subscriptionDeleted(event.subscriptionId, provider.id)
+      break
+    case 'invoice.paid': {
+      const invoice = event.invoice
+      const subscriptionId = event.subscriptionId ?? invoice?.subscriptionId
+      if (!invoice || !subscriptionId) throw new Error(`payment provider "${provider.id}" returned an incomplete paid invoice`)
+      const invoiceHasUsage = invoice.lines.some((line) =>
+        line.metadata?.usage === 'metered' || String(line.offerKey ?? '').endsWith('_usage'))
+      const subscriptionHasUsage = event.subscription?.items.some((item) =>
+        item.metadata.usage === 'metered' || String(item.offerKey ?? '').endsWith('_usage')) ?? false
+      if (invoiceHasUsage || subscriptionHasUsage) {
+        assertPaymentCapabilities(provider, ['usage.metered'])
+      }
+      const subscriptionIdLocal = await findProviderEntity(provider.id, 'subscription', subscriptionId, 'subscriptions')
+        ?? providerScopedId(provider.id, subscriptionId)
+      const selectSubscription = () => admin.from('subscriptions')
+        .select('user_id, key, usage_price_id, usage_meter, usage_unit, usage_rate_micros, usage_included_micros, usage_overage_price_micros, usage_speech_cost_per_second_micros, current_period_start, current_period_end')
+        .eq('id', subscriptionIdLocal).maybeSingle()
+      let { data: subscription, error: subscriptionError } = await selectSubscription()
+      if (subscriptionError) throw new Error(`subscription invoice lookup failed: ${subscriptionError.message}`)
+      if (!subscription && event.subscription) {
+        if (event.subscription.items.some((item) =>
+          item.metadata.usage === 'metered' || String(item.offerKey ?? '').endsWith('_usage'))) {
+          assertPaymentCapabilities(provider, ['usage.metered'])
+        }
+        await subscriptionChanged(event.subscription, provider.id)
+        ;({ data: subscription, error: subscriptionError } = await selectSubscription())
+        if (subscriptionError) throw new Error(`subscription invoice lookup failed: ${subscriptionError.message}`)
+      }
+      if (!subscription) throw new Error(`payment provider "${provider.id}" invoice refers to an unknown subscription`)
+      if (subscription.usage_meter) assertPaymentCapabilities(provider, ['usage.metered'])
+      const meteredLine = invoice.lines.find((line) =>
+        line.metadata?.usage === 'metered' ||
+        String(line.offerKey ?? '').endsWith('_usage') ||
+        line.priceId === subscription.usage_price_id)
+      const periodLine = meteredLine ?? invoice.lines.find((line) => line.periodStart != null && line.periodEnd != null)
+      const start = iso(periodLine?.periodStart) ?? subscription.current_period_start ?? null
+      const end = iso(periodLine?.periodEnd) ?? subscription.current_period_end ?? null
       if (start || end) {
         const { error } = await admin.from('subscriptions').update({
           ...(start ? { current_period_start: start } : {}),
           ...(end ? { current_period_end: end } : {}),
           status: 'active', updated_at: new Date().toISOString(),
-        }).eq('id', subId)
+        }).eq('id', subscriptionIdLocal)
         if (error) throw new Error(`subscription invoice period was not recorded: ${error.message}`)
-        if (end) await admin.from('entitlements').update({ expires_at: end, active: true }).eq('source_id', subId)
+        if (end) {
+          const { error: entitlementError } = await admin.from('entitlements').update({ expires_at: end, active: true })
+            .eq('source_id', providerScopedId(provider.id, subscriptionId))
+          if (entitlementError) throw new Error(`subscription invoice entitlement was not updated: ${entitlementError.message}`)
+        }
       }
-      const priceId = idOf(meteredLine?.price ?? meteredLine?.pricing?.price_details?.price)
-      const inlineMetadata = meteredLine?.price?.metadata
-      const priceMetadata = inlineMetadata?.usage_offer_key
-        ? inlineMetadata
-        : priceId ? (await stripe.prices.retrieve(priceId)).metadata ?? {} : {}
-      const usageGrant = includedGrantForInvoice(subscription, o, start, end, priceMetadata)
+      const usageGrant = includedGrantForInvoice(
+        subscription,
+        { id: invoice.invoiceId, billing_reason: invoice.billingReason },
+        start,
+        end,
+        meteredLine?.metadata ?? {},
+      )
       if (usageGrant) await grantUsage(
         usageGrant.user_id, usageGrant.offer_key, usageGrant.source, usageGrant.source_id,
         usageGrant.units_micros, usageGrant.period_start, usageGrant.expires_at,
-        usageGrant,
+        usageGrant, provider.id,
       )
       break
     }
-    case 'invoice.payment_failed': {
-      const subId = idOf(o.subscription); if (!subId) break
-      await admin.from('subscriptions').update({ status: 'past_due', updated_at: new Date().toISOString() }).eq('id', subId)
+    case 'invoice.payment-failed':
+    case 'payment.failed': {
+      if (!event.subscriptionId) break
+      const subscriptionId = await findProviderEntity(provider.id, 'subscription', event.subscriptionId, 'subscriptions')
+        ?? providerScopedId(provider.id, event.subscriptionId)
+      const { error } = await admin.from('subscriptions')
+        .update({ status: 'past_due', updated_at: new Date().toISOString() }).eq('id', subscriptionId)
+      if (error) throw new Error(`subscription payment failure was not recorded: ${error.message}`)
       break
     }
-    /*
-     * THE BASKET THAT WAS ABANDONED. Stripe expires a session (30 minutes to 24 hours, 24 by
-     * default) and says so, and that event is the only thing that can tell us a hold is dead.
-     * Without this one case a single abandoned checkout holds the last unit all day.
-     */
-    case 'checkout.session.expired': {
-      await releaseHolds(String(o.id ?? ""))
-      await releaseBudgets(o)
+    case 'checkout.expired':
+      if (event.checkoutId) await releaseHolds(providerScopedId(provider.id, event.checkoutId))
+      if (event.metadata) await releaseBudgets({ metadata: event.metadata })
       break
-    }
-    case 'charge.refunded': {
-      const pi = idOf(o.payment_intent); if (!pi) break
-      /* a payment is one row PER LINE, so a refund marks them all and the session is read off
-         the first — maybeSingle here threw the moment anybody bought two things at once */
-      const { data: rows } = await admin.from('purchases').update({ status: 'refunded' })
-        .eq('stripe_payment_intent_id', pi).select('stripe_checkout_session_id')
-      const sess = rows?.[0]?.stripe_checkout_session_id
-      if (sess) await admin.from('entitlements').update({ active: false }).eq('source_id', sess)
+    case 'payment.refunded': {
+      if (!event.paymentId) break
+      const purchaseIds = await findProviderEntities(provider.id, 'payment', event.paymentId, 'purchases')
+      if (!purchaseIds.length && provider.id !== 'stripe') break
+      let query = admin.from('purchases').update({ status: 'refunded' })
+      if (purchaseIds.length) query = query.in('id', purchaseIds)
+      else query = query.eq('stripe_payment_intent_id', event.paymentId)
+      const { data: rows, error } = await query.select('id, stripe_checkout_session_id')
+      if (error) throw new Error(`refunded ${provider.id} purchases were not reconciled: ${error.message}`)
+      for (const row of rows ?? []) {
+        let checkoutIds = await findProviderExternalIds(provider.id, 'checkout', 'purchases', row.id)
+        if (!checkoutIds.length && provider.id === 'stripe' && row.stripe_checkout_session_id) {
+          checkoutIds = [row.stripe_checkout_session_id]
+        }
+        for (const checkoutId of checkoutIds) {
+          const { error: entitlementError } = await admin.from('entitlements').update({ active: false })
+            .eq('source_id', providerScopedId(provider.id, checkoutId))
+          if (entitlementError) throw new Error(`refunded ${provider.id} purchase entitlement was not revoked: ${entitlementError.message}`)
+        }
+      }
       break
     }
   }
@@ -129,7 +180,7 @@ async function releaseHolds(sessionId: string): Promise<void> {
  * What was taken rides on the session’s own metadata, so this needs no second table and a
  * retry of the event is harmless: `promotion_give` floors at nothing.
  */
-async function releaseBudgets(session: any): Promise<void> {
+async function releaseBudgets(session: { metadata?: Readonly<Record<string, string>> }): Promise<void> {
   const promos = String(session?.metadata?.promos ?? "")
   if (!promos) return
   for (const part of promos.split(',').filter(Boolean)) {
@@ -141,24 +192,41 @@ async function releaseBudgets(session: any): Promise<void> {
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
-  /* no signing secret → nothing can be trusted; say so rather than guess */
-  if (!SECRET) return json({ error: 'Webhook not configured in this environment (no STRIPE_WEBHOOK_SECRET).', code: 'stripe_unconfigured' }, 503)
-  const raw = await req.text()
-  let event: any
+  let provider: PaymentProviderAdapter
+  let events: readonly PaymentProviderEvent[]
   try {
-    event = await stripe.webhooks.constructEventAsync(raw, req.headers.get('stripe-signature') ?? '', SECRET)
-  } catch (e) {
-    return json({ error: 'bad signature' }, 400)
+    provider = await getPaymentProvider()
+    events = (await provider.verifyWebhook(req)).map((event) => normalizePaymentEvent(provider.id, event))
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    const status = error instanceof PaymentProviderError ? error.status : 502
+    return json({ error: message, ...(error instanceof PaymentProviderError ? { code: error.code } : {}) }, status)
   }
-  const { data: seen } = await admin.from('stripe_events').select('id').eq('id', event.id).maybeSingle()
-  if (seen) return json({ ok: true, duplicate: true })
-  await admin.from('stripe_events').insert({ id: event.id, type: event.type })
-  try {
-    await handle(event)
-  } catch (e) {
-    /* let Stripe retry: forget the id so the retry isn't treated as a duplicate */
-    await admin.from('stripe_events').delete().eq('id', event.id)
-    return json({ error: String((e as any)?.message ?? e) }, 500)
+  let duplicates = 0
+  let applied = 0
+  for (const event of events) {
+    const { data: seen, error: lookupError } = await admin.from('payment_events').select('event_id')
+      .eq('provider', provider.id).eq('event_id', event.eventId).maybeSingle()
+    if (lookupError) return json({ error: `Payment event lookup failed: ${lookupError.message}` }, 500)
+    if (seen) { duplicates++; continue }
+    const { error: insertError } = await admin.from('payment_events').insert({
+      provider: provider.id, event_id: event.eventId, type: event.type,
+    })
+    if (insertError?.code === '23505') { duplicates++; continue }
+    if (insertError) return json({ error: `Payment event was not recorded: ${insertError.message}` }, 500)
+    try {
+      await handle(event, provider)
+      applied++
+    } catch (error) {
+      /* let the provider retry: forget the id so the retry isn't treated as a duplicate */
+      const { error: deleteError } = await admin.from('payment_events').delete()
+        .eq('provider', provider.id).eq('event_id', event.eventId)
+      if (deleteError) {
+        console.error('payment-provider-webhook: failed to clear retryable event', event.eventId, deleteError.message)
+        return json({ error: `event failed and its retry marker could not be cleared: ${deleteError.message}` }, 500)
+      }
+      return json({ error: error instanceof Error ? error.message : String(error) }, 500)
+    }
   }
-  return json({ ok: true })
+  return json({ ok: true, ...(events.length > 0 && duplicates === events.length && applied === 0 ? { duplicate: true } : {}) })
 })

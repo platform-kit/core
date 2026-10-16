@@ -8,8 +8,14 @@
  * session must be theirs: its metadata names the user, and only that user may
  * confirm it.
  */
-import { stripe, stripeConfigured, stripeMock, isMockId, stripeUnconfigured, json, preflight, getUser } from '../_shared/lib.ts'
+import { stripeConfigured, stripeMock, isMockId, stripeUnconfigured, json, preflight, getUser, getPaymentProvider } from '../_shared/lib.ts'
 import { checkoutCompleted, subscriptionChanged } from '../_shared/ledger.ts'
+import {
+  assertPaymentCapabilities,
+  normalizePaymentCheckout,
+  PaymentProviderError,
+} from '../_shared/payment-provider.mjs'
+import type { PaymentCheckoutSnapshot, PaymentProviderAdapter } from '../_shared/payment-provider.d.ts'
 
 Deno.serve(async (req) => {
   const pre = preflight(req); if (pre) return pre
@@ -17,20 +23,35 @@ Deno.serve(async (req) => {
   /* a guest's session (metadata.guest) is confirmed with no user: the ledger's writes are
      idempotent and say only what Stripe says was paid */
   const user = await getUser(req)
-  if (!stripeConfigured) return stripeUnconfigured()
   const body = await req.json().catch(() => ({}))
-  const id = String(body?.session ?? '')
-  if (!/^cs_[A-Za-z0-9_]+$/.test(id)) return json({ error: 'no session' }, 400)
-  if (stripeMock || isMockId(id)) return json({ ok: true, mock: true })   /* the mock wrote the ledger as it answered */
+  const id = typeof body?.session === 'string' ? body.session.trim() : ''
+  if (!id || id.length > 255 || /[\u0000-\u001f\u007f]/.test(id)) return json({ error: 'no session' }, 400)
   try {
-    const s: any = await stripe.checkout.sessions.retrieve(id, { expand: ['subscription', 'line_items'] })
-    const owner = s.metadata?.user_id ?? s.client_reference_id ?? null
-    if (owner ? !user || owner !== user.id : s.metadata?.guest !== '1') return json({ error: user ? 'not your session' : 'sign in first' }, user ? 403 : 401)
-    if (s.status !== 'complete' || (s.mode === 'payment' && s.payment_status !== 'paid')) return json({ pending: true, status: s.status, payment_status: s.payment_status })
-    await checkoutCompleted(s)
-    if (s.mode === 'subscription' && s.subscription && typeof s.subscription === 'object') await subscriptionChanged(s.subscription)
-    return json({ ok: true, mode: s.mode })
+    const provider: PaymentProviderAdapter = await getPaymentProvider()
+    assertPaymentCapabilities(provider, ['checkout.confirm'])
+    if (provider.id === 'stripe' && !stripeConfigured) return stripeUnconfigured()
+    if (provider.id === 'stripe' && (stripeMock || isMockId(id))) {
+      return json({ ok: true, mock: true })   /* the mock wrote the ledger as it answered */
+    }
+    if (!provider.retrieveCheckout) {
+      throw new PaymentProviderError('checkout_confirmation_unavailable', `Payment provider "${provider.id}" does not implement checkout confirmation.`, 500)
+    }
+    const snapshot: PaymentCheckoutSnapshot = normalizePaymentCheckout(provider.id, await provider.retrieveCheckout(id))
+    const owner = snapshot.userId ?? snapshot.metadata.user_id ?? null
+    if (owner ? !user || owner !== user.id : snapshot.metadata.guest !== '1') {
+      return json({ error: user ? 'not your session' : 'sign in first' }, user ? 403 : 401)
+    }
+    if (snapshot.status !== 'complete' || (snapshot.mode === 'payment' && snapshot.paymentStatus !== 'paid')) {
+      return json({ pending: true, status: snapshot.status, payment_status: snapshot.paymentStatus })
+    }
+    await checkoutCompleted(snapshot, provider.id)
+    if (snapshot.mode === 'subscription' && snapshot.subscription) {
+      await subscriptionChanged(snapshot.subscription, provider.id)
+    }
+    return json({ ok: true, mode: snapshot.mode })
   } catch (e) {
-    return json({ error: `Stripe: ${(e as any)?.message ?? e}` }, 502)
+    const message = e instanceof Error ? e.message : String(e)
+    const status = e instanceof PaymentProviderError ? e.status : 502
+    return json({ error: message }, status)
   }
 })

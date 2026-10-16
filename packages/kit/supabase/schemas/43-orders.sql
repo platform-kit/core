@@ -535,11 +535,11 @@ AS $$
             'id', p.id, 'sku', p.sku, 'variant', p.variant, 'title', p.title,
             'amount_total', p.amount_total, 'currency', p.currency, 'status', p.status,
             'email', p.email, 'user_id', p.user_id, 'created_at', p.created_at,
-            'quantity', p.quantity, 'session', p.stripe_checkout_session_id)
+            'quantity', p.quantity, 'session', coalesce(p.checkout_identity, p.stripe_checkout_session_id))
             order by p.created_at desc)
           from public.purchases p
-         where p.stripe_checkout_session_id is null
-            or not exists (select 1 from public.orders o where o.checkout_session = p.stripe_checkout_session_id)), '[]'::jsonb)
+         where coalesce(p.checkout_identity, p.stripe_checkout_session_id) is null
+            or not exists (select 1 from public.orders o where o.checkout_session = coalesce(p.checkout_identity, p.stripe_checkout_session_id))), '[]'::jsonb)
     )
   end
 $$;

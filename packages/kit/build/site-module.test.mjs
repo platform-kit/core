@@ -49,11 +49,20 @@ const { loadSite, deploymentShape } = await import('./site.mjs')
 const { loadSteps, whyOff, moduleSet, needsOf } = await import('./steps.mjs')
 const { checkDeploy, surfaces } = await import('./deploy-checks.mjs')
 const { unmetRequirements, SHAPES } = await import('./modules/manifest.mjs')
+const {
+  paymentProviderRegistrySource,
+  STRIPE_PAYMENT_PROVIDER_REGISTRATION,
+} = await import('./payment-provider-registry.mjs')
 const KIT_KEYS = (await import('./modules/kit.mjs')).MODULES.map((m) => m.key)
 
 const site = await loadSite(ROOT)
 const steps = await loadSteps(site)
 const MODULES = await moduleSet(site)
+const PAYMENT_MODULE = path.resolve(new URL('./fixtures/site-payment-provider/module.mjs', import.meta.url).pathname)
+const WITH_PAYMENT_PROVIDER = await moduleSet({
+  ...site,
+  build: { ...site.build, modules: [...site.build.modules, PAYMENT_MODULE] },
+})
 const S = surfaces(ROOT)
 /* a fixed environment, so the only thing that varies between passes is the switch */
 const ENV = { VITE_APP_URL: 'https://stockistshouse.example.com' }
@@ -82,6 +91,24 @@ t('it answers for all three shapes, like any module', () => {
 })
 t('and it says in one line what it is', () => {
   assert.ok((MODULES.get('stockists').what || '').length > 8)
+})
+t('a site module registers a provider through the same manifest loader', () => {
+  const module = WITH_PAYMENT_PROVIDER.get('site-mock-payments')
+  assert.ok(module, 'the site-owned payment module did not resolve')
+  assert.deepEqual(module.paymentProviders[0], {
+    id: 'site-mock',
+    adapter: 'payment-providers/mock.mjs',
+    capabilities: ['checkout.one-time'],
+    secrets: ['SITE_MOCK_PAYMENT_SECRET'],
+    webhookPath: '/functions/v1/payment-provider-webhook',
+  })
+})
+t('the assembled provider registry carries its adapter, capabilities, route and secret', () => {
+  const registration = WITH_PAYMENT_PROVIDER.get('site-mock-payments').paymentProviders
+  const source = paymentProviderRegistrySource([STRIPE_PAYMENT_PROVIDER_REGISTRATION, ...registration], 'site-mock')
+  assert.match(source, /from '\.\/payment-providers\/mock\.mjs'/)
+  assert.match(source, /SITE_MOCK_PAYMENT_SECRET/)
+  assert.match(source, /\/functions\/v1\/payment-provider-webhook/)
 })
 
 /* ─── ON ─── */

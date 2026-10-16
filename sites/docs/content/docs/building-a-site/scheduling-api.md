@@ -2,8 +2,18 @@
 title: The Scheduling API, cal.com's
 description: A site's sessions served as cal.com's API v2 — event types, slots, bookings, schedules, webhooks — a booking page for cal.com's embed, and the kit's own cal.com client pointed at the site; the guide. The reference lists every route, argument and field.
 order: 56.96
-sources: [packages/kit/supabase/functions/scheduling-api, packages/kit/supabase/functions/_shared/api/cal, packages/kit/supabase/functions/_shared/scheduling-events.ts, packages/kit/supabase/functions/_shared/booking.ts, packages/kit/supabase/functions/_shared/schedulers/cal.js, packages/kit/src/lib/cal-embed.js, packages/movable-types/src/pages/BookPage.vue, packages/kit/build/scheduling-api.test.mjs]
-reviewed: 2026-10-08
+sources:
+  [
+    packages/kit/supabase/functions/scheduling-api,
+    packages/kit/supabase/functions/_shared/api/cal,
+    packages/kit/supabase/functions/_shared/scheduling-events.ts,
+    packages/kit/supabase/functions/_shared/booking.ts,
+    packages/kit/supabase/functions/_shared/schedulers/cal.js,
+    packages/kit/src/lib/cal-embed.js,
+    packages/movable-types/src/pages/BookPage.vue,
+    packages/kit/build/scheduling-api.test.mjs,
+  ]
+reviewed: 2026-10-12
 ---
 
 ## What it is
@@ -40,9 +50,9 @@ The booking page at `/book/<slug>` is the booker the Coaching tab shows, on its 
 <div id="my-cal"></div>
 <!-- cal.com's own loader snippet, as its embed docs give it (it loads https://app.cal.com/embed/embed.js) -->
 <script>
-  Cal("init", { origin: "https://northlight.example.com" })
-  Cal("inline", { elementOrSelector: "#my-cal", calLink: "book/intro-call" })
-  Cal("on", { action: "bookingSuccessfulV2", callback: (e) => console.log(e.detail.data.uid) })
+  Cal('init', { origin: 'https://northlight.example.com' })
+  Cal('inline', { elementOrSelector: '#my-cal', calLink: 'book/intro-call' })
+  Cal('on', { action: 'bookingSuccessfulV2', callback: (e) => console.log(e.detail.data.uid) })
 </script>
 ```
 

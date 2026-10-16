@@ -74,6 +74,312 @@ try {
   let p = await apply()
   ok('a fresh database: the plan creates', diffOf(p).length > 1000 && /CREATE TABLE/.test(p.parts.diff) && p.verdict.ok)
   ok('the kit\'s tables are there', (await rows("select count(*)::int as n from pg_tables where schemaname = 'public'"))[0].n >= 26)
+  const paymentSuffix = Math.random().toString(36).slice(2, 10)
+  const paymentExternalId = `collision-${paymentSuffix}`
+  const paymentEventId = `event-${paymentSuffix}`
+  await db.query(
+    `insert into public.payment_provider_refs (provider, object_type, external_id, entity_type, entity_id)
+     values ('provider-a', 'checkout', $1, 'purchases', $2), ('provider-b', 'checkout', $1, 'purchases', $3)`,
+    [paymentExternalId, `purchase-a-${paymentSuffix}`, `purchase-b-${paymentSuffix}`],
+  )
+  const providerACollision = await rows(
+    `select entity_id from public.payment_provider_refs
+      where provider = 'provider-a' and object_type = 'checkout' and external_id = $1 and entity_type = 'purchases'`,
+    [paymentExternalId],
+  )
+  const providerBCollision = await rows(
+    `select entity_id from public.payment_provider_refs
+      where provider = 'provider-b' and object_type = 'checkout' and external_id = $1 and entity_type = 'purchases'`,
+    [paymentExternalId],
+  )
+  ok('the same external object id resolves to provider-specific local records',
+    providerACollision.length === 1 && providerACollision[0].entity_id === `purchase-a-${paymentSuffix}`
+      && providerBCollision.length === 1 && providerBCollision[0].entity_id === `purchase-b-${paymentSuffix}`)
+  let duplicateReferenceRejected = false
+  try {
+    await db.query(
+      `insert into public.payment_provider_refs (provider, object_type, external_id, entity_type, entity_id)
+       values ('provider-a', 'checkout', $1, 'purchases', $2)`,
+      [paymentExternalId, `purchase-a-${paymentSuffix}`],
+    )
+  } catch (error) { duplicateReferenceRejected = error.code === '23505' }
+  ok('an identical provider reference link is unique', duplicateReferenceRejected)
+  await db.query(
+    `insert into public.payment_events (provider, event_id, type)
+     values ('provider-a', $1, 'checkout.completed'), ('provider-b', $1, 'checkout.completed')`,
+    [paymentEventId],
+  )
+  ok('an event id can be replay-tracked independently per provider',
+    (await rows('select provider from public.payment_events where event_id = $1', [paymentEventId])).length === 2)
+  let duplicateEventRejected = false
+  try {
+    await db.query(
+      "insert into public.payment_events (provider, event_id, type) values ('provider-a', $1, 'checkout.completed')",
+      [paymentEventId],
+    )
+  } catch (error) { duplicateEventRejected = error.code === '23505' }
+  ok('a provider event replay is unique', duplicateEventRejected)
+  await db.query('delete from public.payment_provider_refs where external_id = $1', [paymentExternalId])
+  await db.query('delete from public.payment_events where event_id = $1', [paymentEventId])
+  const usageClaimSuffix = crypto.randomUUID().replaceAll('-', '')
+  const usageClaimUserId = crypto.randomUUID()
+  await db.query(
+    'insert into auth.users (id, email, encrypted_password) values ($1, $2, $3)',
+    [usageClaimUserId, `usage-claim-${usageClaimSuffix}@example.invalid`, ''],
+  )
+  const incrementalSubscriptionId = `sub_incremental_${usageClaimSuffix}`
+  const regularSubscriptionId = `sub_regular_${usageClaimSuffix}`
+  const regularEventId = crypto.randomUUID()
+  const usagePeriodStart = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+  await db.query(
+    `insert into public.subscriptions
+       (id, user_id, status, key, usage_incremental_charge_minor, usage_incremental_charge_currency,
+        current_period_start, current_period_end, usage_meter, usage_unit, usage_rate_micros,
+        usage_overage_price_micros)
+     values ($1, $3, 'active', 'incremental-plan', 10000, 'usd', $4, now() + interval '30 days',
+             'usage-incremental-test', 'request', 1000000, 100000000),
+            ($2, $3, 'active', 'regular-plan', null, null, $4, now() + interval '30 days',
+             'usage-regular-test', 'request', 1000000, 100000000)`,
+    [incrementalSubscriptionId, regularSubscriptionId, usageClaimUserId, usagePeriodStart],
+  )
+  const recordedIncrementalUsage = await rows(
+    `select public.usage_record($1, $2, null, 'incremental-plan', 'model',
+       0, 0, 1000000, true, 'request', 1000000, 'usage-incremental-test',
+       100000000, 0, null) as result`,
+    [`usage-incremental-${usageClaimSuffix}`, usageClaimUserId],
+  )
+  const incrementalEventId = recordedIncrementalUsage[0].result.usage_event_id
+  const incrementalSnapshot = await rows(
+    `select usage_incremental_charge_minor, usage_incremental_charge_currency
+       from public.usage_events where id = $1`,
+    [incrementalEventId],
+  )
+  ok('usage recording snapshots the threshold and currency that applied to the event',
+    Number(incrementalSnapshot[0].usage_incremental_charge_minor) === 10000
+      && incrementalSnapshot[0].usage_incremental_charge_currency === 'usd')
+  await db.query(
+    `insert into public.usage_events
+       (id, source_ref, user_id, subscription_id, offer_key, kind, units_micros, metered_micros,
+        period_start, overage_price_micros, usage_incremental_charge_minor, usage_incremental_charge_currency)
+       values ($1, $2, $3, $4, 'regular-plan', 'model', 1000000, 1000000, $5, 100000000, null, null)`,
+    [
+      regularEventId,
+      `usage-regular-${usageClaimSuffix}`,
+      usageClaimUserId,
+      regularSubscriptionId,
+      usagePeriodStart,
+    ],
+  )
+  await db.query(
+    `insert into public.usage_meter_reports
+       (usage_event_id, identifier, event_name, value_micros)
+       values ($1, $2, 'usage-regular-test', 1000000)`,
+    [
+      regularEventId,
+      `regular-${usageClaimSuffix}`,
+    ],
+  )
+  const incrementalClaims = await rows(
+    'select usage_event_id from public.usage_incremental_meter_claim(10)',
+  )
+  const regularClaims = await rows('select usage_event_id from public.usage_meter_claim(10)')
+  ok('incremental and native usage claims cannot starve or double-claim one another',
+    incrementalClaims.length === 1 && incrementalClaims[0].usage_event_id === incrementalEventId
+      && regularClaims.length === 1 && regularClaims[0].usage_event_id === regularEventId)
+  const incrementalCompleted = await rows(
+    'select public.usage_meter_complete($1, true) as completed',
+    [incrementalEventId],
+  )
+  const regularCompleted = await rows(
+    'select public.usage_meter_complete($1, true) as completed',
+    [regularEventId],
+  )
+  ok('both usage claim paths acknowledge their own reports',
+    incrementalCompleted[0].completed && regularCompleted[0].completed)
+  const migrationSuffix = crypto.randomUUID().replaceAll('-', '')
+  const migrationUserId = crypto.randomUUID()
+  const migrationEmail = `provider-migration-${migrationSuffix}@example.invalid`
+  const customerId = `cus_${migrationSuffix}`
+  const checkoutId = `cs_${migrationSuffix}`
+  const paymentId = `pi_${migrationSuffix}`
+  const priceId = `price_${migrationSuffix}`
+  const productId = `prod_${migrationSuffix}`
+  const subscriptionId = `sub_${migrationSuffix}`
+  const usagePriceId = `price_usage_${migrationSuffix}`
+  const meterId = `meter_${migrationSuffix}`
+  const invoiceId = `in_${migrationSuffix}`
+  const eventId = `evt_${migrationSuffix}`
+  const usageIdentifier = `us_${migrationSuffix}`
+  const usageEventId = crypto.randomUUID()
+  const purchaseId = crypto.randomUUID()
+  const orderId = crypto.randomUUID()
+  const transactionId = crypto.randomUUID()
+  const bookingId = `booking-${migrationSuffix}`
+  const topupId = crypto.randomUUID()
+  const grantId = crypto.randomUUID()
+  const entitlementId = crypto.randomUUID()
+  await db.query(
+    'insert into auth.users (id, email, encrypted_password) values ($1, $2, $3)',
+    [migrationUserId, migrationEmail, ''],
+  )
+  await db.query('update public.profiles set stripe_customer_id = $1 where id = $2', [customerId, migrationUserId])
+  await db.query(
+    `insert into public.purchases (id, stripe_checkout_session_id, stripe_payment_intent_id, price_id, product_id)
+     values ($1, $2, $3, $4, $5)`,
+    [purchaseId, checkoutId, paymentId, priceId, productId],
+  )
+  await db.query(
+    `insert into public.subscriptions (id, user_id, status, price_id, usage_price_id, usage_meter)
+     values ($1, $2, 'active', $3, $4, $5)`,
+    [subscriptionId, migrationUserId, priceId, usagePriceId, meterId],
+  )
+  await db.query('insert into public.stripe_events (id, type) values ($1, $2)', [eventId, 'checkout.completed'])
+  await db.query(
+    'insert into public.orders (id, checkout_session, shipping_total) values ($1, $2, 100)',
+    [orderId, checkoutId],
+  )
+  await db.query(
+    `insert into public.order_transactions (id, order_id, amount, reference, reason)
+     values ($1, $2, 100, $3, 'payment')`,
+    [transactionId, orderId, paymentId],
+  )
+  await db.query(
+    'insert into public.bookings (uid, stripe_checkout_session_id) values ($1, $2)',
+    [bookingId, checkoutId],
+  )
+  await db.query(
+    'insert into public.booking_checkout_fulfilments (checkout_session_id) values ($1)',
+    [`cs_booking_${migrationSuffix}`],
+  )
+  await db.query(
+    `insert into public.payout_accounts (user_id, provider, account_id)
+     values ($1, 'stripe', $2)`,
+    [migrationUserId, `acct_${migrationSuffix}`],
+  )
+  await db.query(
+    `insert into public.usage_events (id, source_ref, user_id, offer_key, kind)
+     values ($1, $2, $3, 'migration-test', 'model')`,
+    [usageEventId, `migration-${migrationSuffix}`, migrationUserId],
+  )
+  await db.query(
+    `insert into public.usage_meter_reports (usage_event_id, identifier, event_name, stripe_customer_id, value_micros)
+     values ($1, $2, 'migration-meter', $3, 1)`,
+    [usageEventId, usageIdentifier, customerId],
+  )
+  await db.query(
+    `insert into public.usage_topup_attempts
+       (id, attempt_ref, user_id, offer_key, currency, amount_minor, units_micros, period_start, stripe_payment_intent_id)
+     values ($1, $2, $3, 'migration-test', 'usd', 100, 1, current_date, $4)`,
+    [topupId, `attempt-${migrationSuffix}`, migrationUserId, `pi_topup_${migrationSuffix}`],
+  )
+  await db.query(
+    `insert into public.usage_grants (id, user_id, offer_key, source, source_id, units_micros)
+     values ($1, $2, 'migration-test', 'subscription', $3, 1)`,
+    [grantId, migrationUserId, `invoice:${invoiceId}`],
+  )
+  await db.query(
+    `insert into public.entitlements (id, user_id, kind, key, source, source_id)
+     values ($1, $2, 'class', 'paid', 'purchase', $3)`,
+    [entitlementId, migrationUserId, checkoutId],
+  )
+  const migrationExternalIds = [
+    customerId, checkoutId, paymentId, priceId, productId, subscriptionId, usagePriceId, meterId,
+    invoiceId, eventId, usageIdentifier, `cs_booking_${migrationSuffix}`, `acct_${migrationSuffix}`,
+    `pi_topup_${migrationSuffix}`,
+  ]
+  const dataFile = path.join(SCR, 'supabase', 'data.sql')
+  fs.appendFileSync(dataFile, '\n-- populated provider-reference migration, first pass\n')
+  p = await apply()
+  const genericIdentities = await rows(
+    `select
+       (select checkout_identity from public.purchases where id = $1) as purchase,
+       (select checkout_identity from public.bookings where uid = $2) as booking`,
+    [purchaseId, bookingId],
+  )
+  ok('populated Stripe purchases and bookings keep their raw id as the generic checkout identity',
+    genericIdentities[0].purchase === checkoutId && genericIdentities[0].booking === checkoutId)
+  const migratedStripePurchase = await rows(
+    'select public.purchase_write($1::jsonb)::text as id',
+    [JSON.stringify({ checkout_identity: checkoutId, stripe_checkout_session_id: checkoutId, price_id: priceId })],
+  )
+  const customIdentity = `provider-a:${checkoutId}`
+  const customPurchase = await rows(
+    'select public.purchase_write($1::jsonb)::text as id',
+    [JSON.stringify({ checkout_identity: customIdentity, price_id: priceId })],
+  )
+  const customPurchaseReplay = await rows(
+    'select public.purchase_write($1::jsonb)::text as id',
+    [JSON.stringify({ checkout_identity: customIdentity, price_id: priceId })],
+  )
+  ok('provider-scoped purchase writes keep colliding checkout and price ids separate and idempotent',
+    migratedStripePurchase[0].id === purchaseId
+      && customPurchase[0].id !== purchaseId
+      && customPurchaseReplay[0].id === customPurchase[0].id)
+  const customPriceStripeRefs = await rows(
+    `select count(*)::int as n from public.payment_provider_refs
+      where provider = 'stripe' and object_type = 'price'
+        and external_id = $1 and entity_type = 'purchases' and entity_id = $2`,
+    [priceId, customPurchase[0].id],
+  )
+  ok('repeatable Stripe backfill does not misattribute custom-provider prices',
+    customPriceStripeRefs[0].n === 0)
+  const migratedRefs = await rows(
+    `select object_type, external_id, entity_type, entity_id
+       from public.payment_provider_refs
+      where provider = 'stripe' and external_id = any($1::text[])`,
+    [migrationExternalIds],
+  )
+  const migratedKeys = new Set(migratedRefs.map((row) =>
+    [row.object_type, row.external_id, row.entity_type, row.entity_id].join('|')))
+  const expectedMigratedRefs = [
+    ['customer', customerId, 'profiles', migrationUserId],
+    ['checkout', checkoutId, 'purchases', purchaseId],
+    ['payment', paymentId, 'purchases', purchaseId],
+    ['price', priceId, 'purchases', purchaseId],
+    ['product', productId, 'purchases', purchaseId],
+    ['subscription', subscriptionId, 'subscriptions', subscriptionId],
+    ['price', usagePriceId, 'subscriptions', subscriptionId],
+    ['meter', meterId, 'subscriptions', subscriptionId],
+    ['checkout', checkoutId, 'orders', orderId],
+    ['payment', paymentId, 'order_transactions', transactionId],
+    ['checkout', checkoutId, 'bookings', bookingId],
+    ['checkout', `cs_booking_${migrationSuffix}`, 'booking_checkout_fulfilments', `cs_booking_${migrationSuffix}`],
+    ['payout_account', `acct_${migrationSuffix}`, 'payout_accounts', migrationUserId],
+    ['customer', customerId, 'usage_meter_reports', usageEventId],
+    ['usage_event', usageIdentifier, 'usage_meter_reports', usageEventId],
+    ['payment', `pi_topup_${migrationSuffix}`, 'usage_topup_attempts', topupId],
+    ['invoice', invoiceId, 'usage_grants', grantId],
+    ['checkout', checkoutId, 'entitlements', entitlementId],
+  ]
+  ok('populated legacy Stripe references are backfilled across commerce and usage',
+    expectedMigratedRefs.every((entry) => migratedKeys.has(entry.join('|'))))
+  ok('the legacy Stripe webhook id is copied into provider-scoped idempotency',
+    (await rows('select event_id from public.payment_events where provider = $1 and event_id = $2', ['stripe', eventId])).length === 1)
+  const originalRows = await rows(
+    `select
+       (select count(*)::int from public.purchases where id = $1) as purchases,
+       (select count(*)::int from public.subscriptions where id = $2) as subscriptions,
+       (select count(*)::int from public.orders where id = $3) as orders,
+       (select count(*)::int from public.order_transactions where id = $4) as transactions,
+       (select count(*)::int from public.entitlements where id = $5 and user_id = $6) as entitlements,
+       (select count(*)::int from public.usage_grants where id = $7 and user_id = $6) as usage_grants`,
+    [purchaseId, subscriptionId, orderId, transactionId, entitlementId, migrationUserId, grantId],
+  )
+  ok('backfill preserves the original ledger and ownership rows',
+    originalRows[0].purchases === 1 && originalRows[0].subscriptions === 1 && originalRows[0].orders === 1
+      && originalRows[0].transactions === 1 && originalRows[0].entitlements === 1 && originalRows[0].usage_grants === 1)
+  fs.appendFileSync(dataFile, '\n-- populated provider-reference migration, replay pass\n')
+  p = await apply()
+  const replayRefs = await rows(
+    `select object_type, external_id, entity_type, entity_id
+       from public.payment_provider_refs
+      where provider = 'stripe' and external_id = any($1::text[])`,
+    [migrationExternalIds],
+  )
+  const replayEvents = await rows('select event_id from public.payment_events where provider = $1 and event_id = $2', ['stripe', eventId])
+  ok('repeat backfill creates no duplicate references or webhook events',
+    replayRefs.length === migratedRefs.length && replayEvents.length === 1)
+  ok('the repeat backfill keeps the declaration converged', (await plan()).empty && p.verdict.ok)
   const storagePolicies = new Set((await rows("select policyname from pg_policies where schemaname = 'storage'")).map((row) => row.policyname))
   const requiredStoragePolicies = [
     'social_media_publisher_read',

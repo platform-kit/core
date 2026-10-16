@@ -10,7 +10,7 @@ import { ref, computed, inject } from 'vue'
 import { us } from '@platform-kit/kit/lib/content.js'
 import { tiers, arrange, products, bookHref } from '@platform-kit/kit/lib/storefront.js'
 import { money, subscribe, openPortal } from '@platform-kit/kit/lib/commerce.js'
-import { isSignedIn, userClass, checkoutResult, hasTier } from '@platform-kit/kit/lib/auth.js'
+import { isSignedIn, userClass, checkoutResult, checkoutMode, hasTier } from '@platform-kit/kit/lib/auth.js'
 import { capture } from '@platform-kit/kit/lib/analytics.js'
 import Carousel from './Carousel.vue'
 import ProductCard from './ProductCard.vue'
@@ -42,6 +42,9 @@ const fromPrice = computed(() => { const ps = products.value.filter((p) => p.kin
 const heroPoints = computed(() => [fromPrice.value ? fill(HR.from, { price: fromPrice.value }) : '', HR.files, HR.ships].filter(Boolean))
 
 const isMember = computed(() => userClass.value === 'subscribed')
+const checkoutSuccessSubtitle = computed(() => checkoutMode.value === 'payment'
+  ? (HD['success-subtitle-purchase'] || HD['success-subtitle'])
+  : HD['success-subtitle'])
 const busy = ref(false)
 const error = ref('')
 const errorCode = ref('')
@@ -63,10 +66,12 @@ const shelf = (c) => c.items.slice(0, 12)
     <div class="lpbg"></div>
     <div class="lpblobs"><span class="lpblob lpb1"></span><span class="lpblob lpb2"></span><span class="lpblob lpb3"></span></div>
     <div class="lpgrain"></div>
-    <!-- back from Stripe -->
-    <div v-if="checkoutResult === 'success' || checkoutResult === 'cancel'" class="wrapwide">
-      <div v-if="checkoutResult === 'success'" class="sf-notice ok"><b>{{ HD['success-heading'] }}</b><p>{{ HD['success-subtitle'] }}</p></div>
-      <div v-else class="sf-notice"><b>{{ HD['cancel-heading'] }}</b><p>{{ HD['cancel-subtitle'] }}</p></div>
+    <!-- provider checkout returns are confirmed by the server before success is shown -->
+    <div v-if="['success', 'cancel', 'pending', 'error'].includes(checkoutResult)" class="wrapwide">
+      <div v-if="checkoutResult === 'success'" class="sf-notice ok"><b>{{ HD['success-heading'] }}</b><p>{{ checkoutSuccessSubtitle }}</p></div>
+      <div v-else-if="checkoutResult === 'cancel'" class="sf-notice"><b>{{ HD['cancel-heading'] }}</b><p>{{ HD['cancel-subtitle'] }}</p></div>
+      <div v-else-if="checkoutResult === 'pending'" class="sf-notice"><b>{{ HD['checkout-pending-heading'] }}</b><p>{{ HD['checkout-pending-subtitle'] }}</p></div>
+      <div v-else class="sf-notice"><b>{{ HD['checkout-unverified-heading'] }}</b><p>{{ HD['checkout-unverified-subtitle'] }}</p></div>
     </div>
 
     <!-- hero: its own colour scheme, so the front of the store opens with a beat -->

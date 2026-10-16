@@ -77,6 +77,7 @@ const B = us('store').cart.ui
 
 /* the account affordance: a sign-in link, or the user's initial with a small menu */
 const A = us('auth').modal.buttons
+const BILLING_LABEL = ((us('usage').page || {}).main || {})['billing-nav'] || 'Billing'
 const acctOpen = ref(false)
 const initial = computed(() => ((user.value && user.value.email) || '?').charAt(0).toUpperCase())
 /* the face they designed, worn here. The initial stays as what shows before the profile has been
@@ -348,7 +349,7 @@ const props = defineProps({
           <div v-if="acctOpen" class="siteacct-menu" role="menu">
             <span class="siteacct-email">{{ user.email }}</span>
             <a class="siteacct-out siteacct-admin" role="menuitem" :href="ROUTES.account" @click="acctOpen = false">{{ A.account }}</a>
-            <a class="siteacct-out siteacct-admin" role="menuitem" :href="ROUTES.diagnostics + '/usage'" @click="acctOpen = false">{{ A.usage }}</a>
+            <a class="siteacct-out siteacct-admin" :class="{ on: current === ROUTES.billing }" :aria-current="current === ROUTES.billing ? 'page' : undefined" role="menuitem" :href="ROUTES.billing" @click="acctOpen = false">{{ BILLING_LABEL }}</a>
             <a v-if="isStaff" class="siteacct-out siteacct-admin" role="menuitem" :href="ROUTES.admin" @click="acctOpen = false">{{ A.admin }}</a>
             <!-- a subscriber's billing: the portal (cards, invoices, cancel) -->
             <button v-if="plan" type="button" class="siteacct-out" role="menuitem" @click="acctOpen = false; openPortal()">{{ A.manage }}</button>
@@ -387,7 +388,7 @@ const props = defineProps({
     </div>
     <nav class="navmodal-links">
       <a v-for="l in menuLinks" :key="l.href + (l.key || l.label)" class="navmodal-link" :class="{ on: linkOn(l) }" :href="l.href" @click="menuOpen = false">{{ linkWord(l) }}</a>
-      <a v-if="isSignedIn" class="navmodal-link" :class="{ on: current === ROUTES.diagnostics + '/usage' }" :href="ROUTES.diagnostics + '/usage'" @click="menuOpen = false">{{ A.usage }}</a>
+      <a v-if="isSignedIn" class="navmodal-link" :class="{ on: current === ROUTES.billing }" :aria-current="current === ROUTES.billing ? 'page' : undefined" :href="ROUTES.billing" @click="menuOpen = false">{{ BILLING_LABEL }}</a>
       <a v-if="chatOn" class="navmodal-link" :class="{ on: current.startsWith(appPath('chat')) }" :href="appPath('chat')" @click="menuOpen = false"><span>{{ t('nav.chat') }}<span v-if="unread" class="sitebag-n sitebag-n-inline">{{ unread }}</span></span><svg class="navmodal-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5.5A2 2 0 0 1 5.5 3.5h9a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H8.5L4.5 17v-3.5h1a2 2 0 0 1-2-2z" /></svg></a>
       <a v-if="networkOn" class="navmodal-link" :class="{ on: current.startsWith(ROUTES.feed) }" :href="ROUTES.feed" @click="menuOpen = false"><span>{{ NW.title }}<span v-if="netUnread" class="sitebag-n sitebag-n-inline">{{ netUnread }}</span></span><svg class="navmodal-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 9 10 3.5 16.5 9v7.5h-13z" /><path d="M8 16.5v-4h4v4" /></svg></a>
       <a v-if="spacesOn" class="navmodal-link" :class="{ on: current.startsWith(ROUTES.spaces) }" :href="ROUTES.spaces" @click="menuOpen = false"><span>{{ t('nav.spaces') }}<span v-if="spaceWaiting" class="sitebag-n sitebag-n-inline">{{ spaceWaiting }}</span></span><svg class="navmodal-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.6 6.8a2.6 2.6 0 1 1-5.2 0 2.6 2.6 0 0 1 5.2 0M3 16.5v-1a3.5 3.5 0 0 1 3.5-3.5h3a3.5 3.5 0 0 1 3.5 3.5v1M13.4 4.6a2.6 2.6 0 0 1 0 4.4M17.5 16.5v-1a3.5 3.5 0 0 0-2.6-3.4" /></svg></a>
@@ -464,5 +465,6 @@ const props = defineProps({
 .siteacct-out { display: block; width: 100%; text-align: left; font: inherit; font-size: 13.5px; color: var(--ink); background: none;
   border: 0; border-radius: 8px; padding: 8px 10px; cursor: pointer }
 .siteacct-out:hover { background: color-mix(in srgb, var(--ink) 6%, transparent) }
+.siteacct-out.on { background: color-mix(in srgb, var(--ink) 6%, transparent) }
 .siteacct-admin { text-decoration: none; box-sizing: border-box }
 </style>

@@ -160,6 +160,10 @@ export function usageStripeMetadata(offer, metadata) {
     usage_rate_micros: String(usage.rate_micros),
     usage_included_micros: String(usage.included_micros ?? 0),
     usage_overage_price_micros: String(usage.overage_price_micros),
+    ...(usage.incremental_charge_minor == null ? {} : {
+      usage_incremental_charge_minor: String(usage.incremental_charge_minor),
+      usage_incremental_charge_currency: offer.currency.toLowerCase(),
+    }),
     usage_speech_cost_per_second_micros: String(usage.speech_cost_per_second_micros ?? 0),
   }
 }
@@ -173,6 +177,7 @@ function meterPriceMatches(price, offer, productId, meterId, amount, metadata) {
     price.unit_amount_decimal === amount &&
     price.recurring?.interval === (offer.period === 'weekly' ? 'week' : 'month') &&
     (price.recurring?.interval_count ?? 1) === 1 &&
+    price.recurring?.usage_type === 'metered' &&
     String(price.recurring?.meter?.id ?? price.recurring?.meter) === meterId &&
     Object.entries(metadata).every(([key, value]) => price.metadata?.[key] === value)
 }
@@ -201,10 +206,11 @@ export async function ensureUsageBilling(stripe, offer, productId, metadata) {
     metadata: snapshot,
     recurring: {
       interval: offer.period === 'weekly' ? 'week' : 'month',
+      usage_type: 'metered',
       meter: meter.id,
     },
   }, {
-    idempotencyKey: `usage-price:${offer.key}:${meter.id}:${offer.currency}:${amount}:${offer.period}:${offer.usage.unit}:${offer.usage.rate_micros}:${offer.usage.included_micros ?? 0}:${offer.usage.speech_cost_per_second_micros ?? 0}`,
+    idempotencyKey: `usage-price:${offer.key}:${meter.id}:${offer.currency}:${amount}:${offer.period}:${offer.usage.unit}:${offer.usage.rate_micros}:${offer.usage.included_micros ?? 0}:${offer.usage.speech_cost_per_second_micros ?? 0}:${offer.usage.incremental_charge_minor ?? 0}`,
   })
   if (current) await stripe.prices.update(current.id, { active: false })
   return { price: price.id, meter: meter.id, made: true }

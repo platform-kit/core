@@ -44,7 +44,7 @@ sources:
     packages/movable-types/src/content/ui/library.md,
     packages/kit/src/lib/call,
   ]
-reviewed: 2026-10-12
+reviewed: 2026-10-13
 ---
 
 This guide covers booking setup, provider availability, and the coaching chat. A provider has the `provider` role; older accounts with the `coach` role are still recognized. Administrators can manage bookings and assign provider roles. The booking rules below apply whether a type is scheduled by the site or by cal.com.
@@ -61,7 +61,7 @@ A type may also declare default availability in its `hours` field. Provider-spec
 
 In Sales → **Booking types**, create one type for each appointment or group session. Set its title, description, price, eligibility (`requires`), optional membership-tier cutoff (`below`), weekly or monthly booking limits, publication status, and scheduler.
 
-Whether sign-in is required to book is controlled by `coaching.requireAuthToBook` in `platformkit.config.js`; it defaults to `true`, so existing sites remain sign-in-only. When a site sets it to `false`, a signed-out visitor may book only a session whose `requires` rule is `anyone` or `guest`. `session-slots` returns availability only for those types without a JWT; provider-specific and member-specific reads remain authenticated. A free guest booking asks for a valid email and records the booking under that address. A paid guest booking goes through Checkout with one paid session and the selected time; fulfillment uses the email returned by Stripe, never a typed email. The same judge still enforces session eligibility and allowances. A slot is not held while Checkout is open. If it is taken before payment completes, the payment remains recorded and its unused credit can be claimed by an account only after that account verifies the same email address. Moving or cancelling a booking remains an account action.
+Whether sign-in is required to book is controlled by `coaching.requireAuthToBook` in `platformkit.config.js`; it defaults to `true`, so existing sites remain sign-in-only. When a site sets it to `false`, a signed-out visitor may book only a session whose `requires` rule is `anyone` or `guest`. `session-slots` returns availability only for those types without a JWT; provider-specific and member-specific reads remain authenticated. A free guest booking asks for a valid email and records the booking under that address. A paid guest booking goes through the configured provider's checkout with one paid session and the selected time; fulfillment uses the email from its verified checkout result, never a typed email. The same judge still enforces session eligibility and allowances. A slot is not held while Checkout is open. If it is taken before payment completes, the payment remains recorded and its unused credit can be claimed by an account only after that account verifies the same email address. Moving or cancelling a booking remains an account action.
 
 **Scheduled by this site** (the default): set the session length, hosts, seats for group sessions (use 0 for one-to-one), buffer time, minimum notice, and location. Locations can be a site video room, a link, an address, a phone number, or none. Available times are calculated from host hours and existing bookings. If two people try to book the last slot, the first booking succeeds and the other is told that the slot is no longer available.
 
@@ -347,7 +347,7 @@ People book on the Coaching tab of the app, never on cal.com's own page: a month
 
 ## A paid session
 
-A session record may name a **sku** — a product of kind `session`, billed once. It is paid as it is booked: the picker sends the chosen time with the checkout, the payment grants one credit and books the time with it. If the time went meanwhile, the credit stays and the picker says "Paid — pick a time". Cancelling gives the credit back (a refund is a person's decision in Stripe). A paid session comes with **a week of chat** with that session's coach, from the booking until a week after the session ends. It is read from the booking itself, so moving the session moves the week and cancelling it ends it — and it is not a membership: it opens that one conversation and nothing else in the community.
+A session record may name a **sku** — a product of kind `session`, billed once. It is paid as it is booked: the picker sends the chosen time with the checkout, the payment grants one credit and books the time with it. If the time went meanwhile, the credit stays and the picker says "Paid — pick a time". Cancelling gives the credit back; any refund is a separate action through the configured payment provider. A paid session comes with **a week of chat** with that session's coach, from the booking until a week after the session ends. It is read from the booking itself, so moving the session moves the week and cancelling it ends it — and it is not a membership: it opens that one conversation and nothing else in the community.
 
 ## Connect cal.com
 

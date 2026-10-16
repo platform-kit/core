@@ -47,12 +47,16 @@ export function cal(env) {
       return { slots: out, minutes: t.minutes }
     },
     /* a booking made as the reader; cal.com sends the invites and makes the room. Answers cal.com's booking. */
-    async book(s, { start, attendee, user_id, notes, stripe_checkout_session_id }) {
+    async book(s, { start, attendee, user_id, notes, checkout_identity, stripe_checkout_session_id }) {
       const t = await eventTypeOf(s)
       return await call('/bookings', '2024-08-13', { method: 'POST', body: JSON.stringify({
         start, eventTypeId: t.id,
         attendee: { name: attendee.name || attendee.email, email: attendee.email, timeZone: attendee.timeZone, language: 'en' },
-        metadata: { user_id, app: 'platformkit', ...(stripe_checkout_session_id ? { stripe_checkout_session_id } : {}) },
+        metadata: {
+          user_id, app: 'platformkit',
+          ...(checkout_identity ? { checkout_identity } : {}),
+          ...(stripe_checkout_session_id ? { stripe_checkout_session_id } : {}),
+        },
         ...(notes ? { bookingFieldsResponses: { notes } } : {}),
       }) })
     },

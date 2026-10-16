@@ -10,6 +10,8 @@ import { pcmSecondsMicros, speechCostMicros, speechUsageRecord, speechTelemetryR
 import { readBots } from './bots.mjs'
 import { inferenceOf, usageOf } from './site.mjs'
 import { createUsageTopUp } from '../supabase/functions/_shared/usage-topup.mjs'
+import { incrementalUsageAmount, incrementalUsagePlan } from '../supabase/functions/_shared/usage-incremental.mjs'
+import { meteredUsageAmountMinor } from '../supabase/functions/_shared/hyperswitch-billing.mjs'
 import { createUsageGate, resolveUsageOperation } from '../supabase/functions/_shared/usage-gate.mjs'
 import { billableInferenceAttempts, boundedInferenceUsage, customerCostMicros, normalizeProviderUsage, providerCostMicros, tariffFor } from '../supabase/functions/_shared/inference-meter.mjs'
 import { ask, providersFrom } from '../supabase/functions/_shared/agents/provider.js'
@@ -157,7 +159,7 @@ const topupRunner = (paymentIntentCreate) => createUsageTopUp({
     enabled: true, offer_key: topupPack.key, currency: topupPack.currency,
     off_session_consent_at: '2026-10-01T00:00:00.000Z',
   }),
-  paymentMethod: async () => ({ customer: 'cus_1', paymentMethod: 'pm_1' }),
+  paymentMethod: async () => ({ customerId: 'cus_1', paymentMethodId: 'pm_1' }),
   begin: async (input) => {
     let attempt = topupAttempts.get(input.attemptRef)
     if (!attempt) {
@@ -176,6 +178,7 @@ const topupRunner = (paymentIntentCreate) => createUsageTopUp({
   finish: async ({ attemptRef, status, paymentIntentId, error }) => {
     const attempt = topupAttempts.get(attemptRef)
     attempt.status = status
+    attempt.provider_payment_intent_id = paymentIntentId || attempt.provider_payment_intent_id
     attempt.stripe_payment_intent_id = paymentIntentId || attempt.stripe_payment_intent_id
     attempt.last_error = error
     topupEvents.push({ type: 'finish', attemptRef, status })
@@ -187,7 +190,11 @@ const topupRunner = (paymentIntentCreate) => createUsageTopUp({
     topupEvents.push({ type: 'grant', sourceId })
     return topupGrants.size > count
   },
-  stripe: { paymentIntents: { create: async (...args) => { topupPaymentCalls++; return paymentIntentCreate(...args) }, retrieve: async (id) => ({ id, status: 'succeeded' }) } },
+  provider: {
+    id: 'stripe',
+    createPaymentIntent: async (input) => { topupPaymentCalls++; return paymentIntentCreate(input) },
+    retrievePaymentIntent: async (paymentIntentId) => ({ paymentIntentId, status: 'succeeded' }),
+  },
 })
 const disabledTopup = createUsageTopUp({
   config: { enabled: false, packs: [topupPack] },
@@ -203,14 +210,36 @@ const actionAttempt = await topupRunner(async () => { throw Object.assign(new Er
 })
 assert.deepEqual(actionAttempt, { granted: false, reason: 'topup_requires_action' })
 assert.equal(topupGrants.size, 0, 'failed and action-required top-ups grant no units')
-const successfulTopup = topupRunner(async (_params, options) => {
-  assert.match(options.idempotencyKey, /^usage-topup:ut_[a-f0-9]{64}$/)
-  return { id: 'pi_confirmed', status: 'succeeded' }
+const successfulTopup = topupRunner(async (input) => {
+  assert.match(input.idempotencyKey, /^usage-topup:ut_[a-f0-9]{64}$/)
+  return { paymentIntentId: 'pi_confirmed', status: 'succeeded' }
 })
 assert.equal((await successfulTopup({ userId: 'user-1', invocationRef: 'success-work' })).granted, true)
 assert.equal((await successfulTopup({ userId: 'user-1', invocationRef: 'success-work' })).granted, true)
 assert.equal(topupPaymentCalls, 3, 'one charge is created for each distinct declined, action-required, or successful attempt')
 assert.equal(topupGrants.size, 1, 'replaying a confirmed payment grants the pack once')
+let customTopupSource = ''
+const customTopUp = createUsageTopUp({
+  config: { enabled: true, packs: [topupPack] },
+  preference: async () => ({
+    enabled: true, offer_key: topupPack.key, currency: topupPack.currency,
+    off_session_consent_at: '2026-10-01T00:00:00.000Z',
+  }),
+  paymentMethod: async () => ({ customerId: 'customer_custom', paymentMethodId: 'method_custom' }),
+  begin: async (input) => ({ started: true, attempt: { attempt_ref: input.attemptRef, status: 'pending' } }),
+  finish: async () => true,
+  grant: async ({ sourceId }) => { customTopupSource = sourceId; return true },
+  provider: {
+    id: 'site-pay',
+    createPaymentIntent: async (input) => {
+      assert.equal(input.customerId, 'customer_custom')
+      assert.equal(input.paymentMethodId, 'method_custom')
+      return { paymentIntentId: 'payment_1', status: 'succeeded' }
+    },
+  },
+})
+assert.equal((await customTopUp({ userId: 'user-1', invocationRef: 'custom-work' })).granted, true)
+assert.equal(customTopupSource, 'topup:site-pay:payment_1', 'custom provider payment IDs use provider-scoped grant identities')
 
 let nonBotProviderCalls = 0
 const operationPolicies = {
@@ -338,7 +367,7 @@ const pack = compileUsage('pack.md', {
   rate: 0.01,
   grant: 25,
   speechCostPerSecond: 0.0002,
-}, 'once', fail)
+}, 'once', 'usd', fail)
 assert.deepEqual(pack, {
   unit: 'minute',
   rate_micros: 10_000,
@@ -352,17 +381,43 @@ const metered = compileUsage('metered.md', {
   included: 100,
   meter: 'assistant_usage',
   overagePrice: 0.03,
-}, 'subscription', fail)
+  incrementalCharge: 100,
+}, 'subscription', 'usd', fail)
 assert.deepEqual(metered, {
   unit: 'minute',
   rate_micros: 20_000,
   meter: 'assistant_usage',
   included_micros: 100_000_000,
   overage_price_micros: 30_000,
+  incremental_charge_minor: 10_000,
 })
+assert.equal(compileUsage('pack-default-unit.md', {
+  rate: 0.01,
+  grant: 25,
+}, 'once', 'usd', fail).unit, 'credits')
+assert.equal(compileUsage('meter-default-unit.md', {
+  rate: 0.02,
+  meter: 'assistant_usage',
+  overagePrice: 0.03,
+}, 'subscription', 'usd', fail).unit, 'credits')
+assert.equal(compileUsage('yen-meter.md', {
+  unit: 'request', rate: 0.01, meter: 'requests', overagePrice: 0.02, incrementalCharge: 100,
+}, 'subscription', 'jpy', fail).incremental_charge_minor, 100)
+assert.throws(() => compileUsage('fractional-yen.md', {
+  unit: 'request', rate: 0.01, meter: 'requests', overagePrice: 0.02, incrementalCharge: 0.5,
+}, 'subscription', 'jpy', (message) => { throw new Error(message) }), /at most 0 decimal places/)
+assert.throws(() => compileUsage('one-time-increment.md', {
+  unit: 'request', rate: 0.01, grant: 1, incrementalCharge: 100,
+}, 'once', 'usd', (message) => { throw new Error(message) }), /metered subscription/)
 assert.equal(meterUnitAmountDecimal(30_000, 'usd'), '0.000003')
 assert.equal(meterUnitAmountDecimal(30_000, 'jpy'), '0.00000003')
-assert.equal(compileUsage('legacy.md', undefined, 'once', fail), null)
+assert.deepEqual(incrementalUsagePlan(9_999, 10_000), { thresholdCount: 0, remainderMinor: 9_999 })
+assert.deepEqual(incrementalUsagePlan(20_001, 10_000), { thresholdCount: 2, remainderMinor: 1 })
+assert.throws(() => incrementalUsagePlan(1, 0), /threshold must be positive/)
+assert.equal(incrementalUsageAmount([
+  { id: 'usage-1', metered_micros: 1_000_000, overage_price_micros: 1_000_000 },
+], 'usd', meteredUsageAmountMinor), 100)
+assert.equal(compileUsage('legacy.md', undefined, 'once', 'usd', fail), null)
 assert.equal(unitsForCost(20_000, 20_000), 1_000_000)
 assert.equal(unitsForCost(1, 20_000), 50)
 assert.equal(unitsForCost(0, 20_000), 0)
@@ -522,7 +577,7 @@ assert.equal(interruptedSpeech?.kind, 'tts', 'an interrupted endpoint stream sti
 assert.equal(interruptedSpeech?.secondsMicros, 500_000, 'interruption records only the PCM bytes delivered')
 assert.equal(interruptedSpeech?.costMicros, 100, 'the site retains the cost of interrupted endpoint audio')
 assert.equal(interruptedSpeech?.unitsMicros, 0, 'interrupted endpoint audio is not billed to the reader')
-const meteredOffer = { sku: 'metered', usage: metered }
+const meteredOffer = { sku: 'metered', currency: 'usd', usage: metered }
 assert.deepEqual(meteredCheckoutLine(meteredOffer, 'price_usage'), { price: 'price_usage', quantity: 1 })
 assert.equal(meteredCheckoutLine({ sku: 'legacy' }, null), null)
 assert.throws(() => meteredCheckoutLine(meteredOffer, null), /no reconciled Stripe usage price/)
@@ -530,6 +585,8 @@ assert.deepEqual(usageStripeMetadata(meteredOffer, { key: 'abcdef12', sku: 'mete
   key: 'abcdef12', sku: 'metered', usage: 'metered', usage_offer_key: 'abcdef12',
   usage_meter: 'assistant_usage', usage_unit: 'minute', usage_rate_micros: '20000',
   usage_included_micros: '100000000', usage_overage_price_micros: '30000',
+  usage_incremental_charge_minor: '10000',
+  usage_incremental_charge_currency: 'usd',
   usage_speech_cost_per_second_micros: '0',
 })
 const usageSubscriptionSnapshot = {
@@ -586,7 +643,7 @@ assert.deepEqual(eventCalls[0].options, { idempotencyKey: 'usage-meter-event:us_
 assert.equal([...acceptedEvents.values()].reduce((sum, value) => sum + value, 0), 1_250_000)
 
 const errors = []
-compileUsage('bad.md', { unit: 'minute', rate: 0.01, grant: 1 }, 'subscription', (message) => errors.push(message))
+compileUsage('bad.md', { unit: 'minute', rate: 0.01, grant: 1 }, 'subscription', 'usd', (message) => errors.push(message))
 assert.equal(errors.length, 3)
 assert.equal(compileUsage('meter-limit.md', {
   unit: 'minute',
@@ -594,7 +651,7 @@ assert.equal(compileUsage('meter-limit.md', {
   meter: 'a'.repeat(100),
   included: 0,
   overagePrice: 0.01,
-}, 'subscription', fail).meter.length, 100)
+}, 'subscription', 'usd', fail).meter.length, 100)
 const invalidMeterErrors = []
 compileUsage('meter-too-long.md', {
   unit: 'minute',
@@ -602,7 +659,7 @@ compileUsage('meter-too-long.md', {
   meter: 'a'.repeat(101),
   included: 0,
   overagePrice: 0.01,
-}, 'subscription', (message) => invalidMeterErrors.push(message))
+}, 'subscription', 'usd', (message) => invalidMeterErrors.push(message))
 assert.equal(invalidMeterErrors.length, 1)
 
 function stripeMock() {
@@ -667,6 +724,7 @@ const usageOffer = {
   usage: {
     unit: 'minute', meter: 'assistant_usage', rate_micros: 20_000,
     included_micros: 0, overage_price_micros: 30_000,
+    incremental_charge_minor: 10_000,
   },
 }
 const { stripe, state: stripeState } = stripeMock()
@@ -678,12 +736,15 @@ assert.deepEqual(stripeState.meterCreates[0].params.customer_mapping, { type: 'b
 assert.equal(stripeState.meterCreates[0].options.idempotencyKey, 'usage-meter:assistant_usage')
 assert.equal(stripeState.priceCreates[0].params.unit_amount_decimal, '0.000003')
 assert.equal(stripeState.priceCreates[0].params.recurring.meter, 'mtr_1')
+assert.equal(stripeState.priceCreates[0].params.recurring.usage_type, 'metered')
 assert.equal(stripeState.priceCreates[0].params.lookup_key, 'abcdef12_usage')
 assert.equal(stripeState.priceCreates[0].params.metadata.key, usageOffer.key)
 assert.equal(stripeState.priceCreates[0].params.metadata.usage_offer_key, usageOffer.key)
 assert.equal(stripeState.priceCreates[0].params.metadata.usage_meter, usageOffer.usage.meter)
 assert.equal(stripeState.priceCreates[0].params.metadata.usage_rate_micros, '20000')
-assert.equal(stripeState.priceCreates[0].options.idempotencyKey, 'usage-price:abcdef12:mtr_1:usd:0.000003:monthly:minute:20000:0:0')
+assert.equal(stripeState.priceCreates[0].params.metadata.usage_incremental_charge_minor, '10000')
+assert.equal(stripeState.priceCreates[0].params.metadata.usage_incremental_charge_currency, 'usd')
+assert.equal(stripeState.priceCreates[0].options.idempotencyKey, 'usage-price:abcdef12:mtr_1:usd:0.000003:monthly:minute:20000:0:0:10000')
 assert.deepEqual(await ensureUsageBilling(stripe, usageOffer, 'prod_usage', { key: usageOffer.key, sku: usageOffer.sku }), {
   price: 'price_1',
   meter: 'mtr_1',
@@ -830,6 +891,9 @@ Metered plan
     sku: 'metered-plan',
     key: 'abcdef03',
     kind: 'form',
+    billing: 'subscription',
+    trial: false,
+    paymentMethods: [],
     usage: { unit: 'minute', meter: 'assistant_usage', overagePrice: 0.03 },
   })
   await mkdir(join(root, 'content/bots'), { recursive: true })

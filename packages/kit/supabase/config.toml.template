@@ -444,6 +444,9 @@ verify_jwt = false
 [functions.stripe-webhook]
 verify_jwt = false
 
+[functions.payment-provider-webhook]
+verify_jwt = false
+
 [functions.cal-webhook]
 verify_jwt = false
 

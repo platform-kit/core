@@ -154,15 +154,15 @@ Verified by: `build/usage.test.mjs` with declined and authentication-required pa
 
 ### Requirement: Readers manage usage outside chatbot conversations
 
-The platform SHALL provide a dedicated reader usage page at `/app/usage` for balance,
-cross-operation usage history, purchases, and automatic top-up preferences. The page SHALL
-work independently of any bot or conversation and SHALL show only the signed-in reader's
-own usage. Assistant conversation-history surfaces SHALL retain their conversation controls
-and SHALL NOT be replaced by usage statistics.
+The platform SHALL provide signed-in readers with balance, cross-operation usage history,
+purchases, and automatic top-up preferences in the Usage section of `/billing`, independently
+of any bot or conversation and showing only the reader's own usage. Assistant conversation-history
+surfaces SHALL retain their conversation controls and SHALL NOT be replaced by usage statistics.
+The former `/app/usage` address SHALL redirect to `/billing#usage`, preserving query parameters.
 
 #### Scenario: a reader with usage from multiple operations checks their balance
 
-- **WHEN** a reader opens `/app/usage`
+- **WHEN** a reader opens `/billing#usage` or follows the former `/app/usage` address
 - **THEN** they see their own balance and usage history across all billable operations, with no chatbot required
 
 Verified by: `build/usage.test.mjs` and the reader-page browser probe
@@ -170,6 +170,6 @@ Verified by: `build/usage.test.mjs` and the reader-page browser probe
 #### Scenario: usage management is opened from an assistant conversation surface
 
 - **WHEN** a reader follows a usage link from an assistant
-- **THEN** the link opens the dedicated `/app/usage` page while past conversations remain available in the assistant's history
+- **THEN** the link opens `/billing#usage` while past conversations remain available in the assistant's history
 
 Verified by: the reader-page browser probe

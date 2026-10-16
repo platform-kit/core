@@ -18,6 +18,8 @@ import { session, signInWithPassword, signUpWithPassword, signInWithMagicLink, s
 import { LOCKDOWN, notice as lockdownNotice } from '@platform-kit/kit/lib/lockdown.js'
 
 const M = us('auth').modal
+const props = defineProps({ inline: { type: Boolean, default: false } })
+const inline = props.inline
 
 const open = ref(false)
 const tab = ref('password')    /* 'password' | 'magic' (magic only when enabled) */
@@ -128,14 +130,20 @@ watch(session, (s) => {
 })
 
 function onKey(e) { if (e.key === 'Escape' && open.value) hide() }
-onMounted(() => { window.DLauth = { open: show, close: hide }; document.addEventListener('keydown', onKey) })
-onBeforeUnmount(() => { document.removeEventListener('keydown', onKey); if (window.DLauth) delete window.DLauth })
+onMounted(() => { if (!inline) window.DLauth = { open: show, close: hide }; document.addEventListener('keydown', onKey) })
+onBeforeUnmount(() => { document.removeEventListener('keydown', onKey); if (!inline && window.DLauth) delete window.DLauth })
 </script>
 
 <template>
-  <div v-if="open" class="au-veil" @click.self="hide">
-    <div class="au-card" role="dialog" aria-modal="true" :aria-label="heading">
-      <button type="button" class="au-x" :aria-label="M.buttons.close" @click="hide">
+  <div v-if="inline || open" class="au-veil" :class="{ 'au-veil-inline': inline }" @click.self="!inline && hide()">
+    <div
+      class="au-card"
+      :class="{ 'au-card-inline': inline }"
+      :role="inline ? undefined : 'dialog'"
+      :aria-modal="inline ? undefined : 'true'"
+      :aria-label="inline ? undefined : heading"
+    >
+      <button v-if="!inline" type="button" class="au-x" :aria-label="M.buttons.close" @click="hide">
         <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15" /></svg>
       </button>
 
@@ -206,9 +214,11 @@ onBeforeUnmount(() => { document.removeEventListener('keydown', onKey); if (wind
 <style scoped>
 .au-veil { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 20px;
   background: #0a0d0b66; backdrop-filter: blur(6px) }
+.au-veil.au-veil-inline { position: static; inset: auto; z-index: auto; display: block; padding: 0; background: none; backdrop-filter: none }
 .au-card { position: relative; width: 100%; max-width: 420px; background: var(--paper); color: var(--ink);
   border: 1px solid var(--hair); border-radius: 22px; padding: 34px 32px 28px;
   box-shadow: 0 30px 80px -30px #000c, 0 1px 2px #0000000d }
+.au-card.au-card-inline { max-width: none; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none }
 .au-x { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
   color: var(--ink3); background: none; border: 0; border-radius: 8px; cursor: pointer }
 .au-x:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 7%, transparent) }

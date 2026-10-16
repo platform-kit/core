@@ -11,6 +11,8 @@
  */
 import Stripe from 'npm:stripe@17'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createSitePaymentProvider } from './payment-provider-registry.ts'
+import type { PaymentProviderAdapter } from './payment-provider.d.ts'
 
 /* Stripe is OPTIONAL in local dev: with no STRIPE_SECRET_KEY the store, cart,
    gating and everything else still work; only a real Checkout / Portal / catalog
@@ -30,9 +32,14 @@ export const stripeConfigured = STRIPE_KEY.length > 0 || stripeMock
    mock on purpose. */
 export const stripeLive = STRIPE_KEY.length > 0 && !stripeMock
 export const stripe = new Stripe(STRIPE_KEY || 'sk_test_unconfigured', {
-  apiVersion: '2024-06-20',
+  apiVersion: '2024-06-20' as Stripe.LatestApiVersion,
   httpClient: Stripe.createFetchHttpClient(),
 })
+let paymentProviderPromise: Promise<PaymentProviderAdapter> | null = null
+export const getPaymentProvider = () => {
+  paymentProviderPromise ??= createSitePaymentProvider(Deno.env.toObject(), { stripe })
+  return paymentProviderPromise
+}
 export const stripeUnconfigured = () =>
   json({ error: 'Payments are not configured in this environment (no STRIPE_SECRET_KEY).', code: 'stripe_unconfigured' }, 503)
 

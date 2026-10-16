@@ -84,6 +84,12 @@ export async function loadSteps(site) {
   const known = await moduleSet(c)
   const strange = out.filter((s) => s.module && !known.has(s.module))
   if (strange.length) throw new Error('a build step is gated on a module no manifest declares:\n  ' + strange.map((s) => `${s.key} → ${s.module} (${s.from})`).join('\n  '))
+  Object.defineProperty(c, '_paymentProviderRegistrations', {
+    configurable: true,
+    value: [...known.values()]
+      .filter((module) => c.modules?.[module.key] !== false)
+      .flatMap((module) => module.paymentProviders || []),
+  })
   return out
 }
 

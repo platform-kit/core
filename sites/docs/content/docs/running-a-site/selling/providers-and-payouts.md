@@ -10,6 +10,8 @@ sources:
     packages/kit/supabase/functions/providers,
     packages/kit/supabase/functions/payouts,
     packages/kit/supabase/functions/_shared/payouts.ts,
+    packages/kit/supabase/functions/_shared/payment-provider.mjs,
+    packages/kit/src/payment-provider.d.ts,
     packages/kit/supabase/schemas/57-providers.sql,
   ]
 reviewed: 2026-10-10
@@ -22,6 +24,10 @@ A provider is a person who offers their own service through the site. It is diff
 The site-wide provider policy is kept in the provider settings record. Its terms are shown to providers before they offer services. When the terms change, the new version is kept as a separate agreement; a version someone has already accepted is not silently rewritten. If offering services requires approval, a new offer remains unavailable until staff approve it.
 
 Providers connect their own payout account through the payment processor. The account belongs to the provider; staff can review payout status but cannot send that person's earnings to themselves. Sites can use managed or provider-owned account connections according to their policy.
+
+Stripe is the built-in default. A site-owned adapter can provide these flows through the
+`payouts.connected-accounts` capability; an adapter without it is refused before payout lines are
+claimed. See [Payment providers](/content/docs/building-a-site/payment-providers).
 
 ## Earnings and payout status
 

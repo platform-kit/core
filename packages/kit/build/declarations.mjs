@@ -92,7 +92,7 @@ export const STATE = {
   entitlements: 'what that got them',
   usage_events: 'what a person and an assistant spent, in measured usage',
   usage_grants: 'the units a payment or subscription period gave somebody',
-  usage_meter_reports: 'whether recorded overage reached Stripe, and when safe retries end',
+  usage_meter_reports: 'whether recorded overage reached the selected provider or was settled with a PlatformKit renewal, and when safe retries end',
   usage_reservations: 'prepaid units held for in-progress billable work',
   usage_topup_preferences: 'a reader’s own automatic top-up choices and consent',
   usage_topup_attempts: 'idempotent automatic top-up charges and their grant state',

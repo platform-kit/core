@@ -25,7 +25,7 @@ sources:
     packages/kit/build/runtime-paths.test.mjs,
     packages/movable-types/src/pages/AdminPage.vue,
   ]
-reviewed: 2026-10-12
+reviewed: 2026-10-13
 ---
 
 ## Module switches
@@ -51,13 +51,13 @@ With only `docs` enabled and no account-dependent modules, the theme serves docu
 
 ## The features
 
-Booking authentication has two checks: `coaching.requireAuthToBook` defaults to `true`; when set to `false`, the session's `requires` rule still controls whether a guest may book. A paid guest booking carries the selected time through Stripe Checkout and is fulfilled using the email returned by Stripe.
+Booking authentication has two checks: `coaching.requireAuthToBook` defaults to `true`; when set to `false`, the session's `requires` rule still controls whether a guest may book. A paid guest booking carries the selected time through the configured payment provider's checkout and is fulfilled using the email from its verified checkout result.
 
 | Module              | On, it gives                                                                                                                                                                                                                                                                                                                                                                      | The deploy then needs                                                                                                                                                                                  |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `store`             | `/store`, the bag and its drawer, product pages, checkout, the Storefront · Products · Collections admin views, the store's share of the sitemap                                                                                                                                                                                                                                  | Stripe's live secret key and webhook secret, when something is for sale                                                                                                                                |
+| `store`             | `/store`, the bag and its drawer, product pages, checkout, the Storefront · Products · Collections admin views, the store's share of the sitemap                                                                                                                                                                                                                                  | The selected payment provider's credentials and webhook setup, when something is for sale; Stripe is the default. See [Payment providers](/content/docs/building-a-site/payment-providers)             |
 | `print`             | Books in print: editions generated during deploy only with `PRINT_BUILD=1`, the printed book on the store, Print Products · Print Orders                                                                                                                                                                                                                                          | A printer with keys for every printed format a book sells (the one its block names; at least one for _auto_; Bookvault for premium); `LULU_SANDBOX=1` allowed                                          |
-| `memberships`       | Tiers, the store's membership band, the pricing page's buying rows, the billing portal                                                                                                                                                                                                                                                                                            | Stripe, as above                                                                                                                                                                                       |
+| `memberships`       | Tiers, the store's membership band, the pricing page's buying rows, the billing portal and membership renewals                                                                                                                                                                                                                                                                    | The selected payment provider; see above                                                                                                                                                               |
 | `sessions`          | Session records, the Coaching tab's booker, the cal.com functions, Booking types and Bookings in the admin                                                                                                                                                                                                                                                                        | cal.com's webhook secret and API key, when a session is published                                                                                                                                      |
 | `coaching`          | The members' chat with the coaches: the Chat tab, the header's chat button, the coach's inbox                                                                                                                                                                                                                                                                                     | —                                                                                                                                                                                                      |
 | `support`           | The support widget on every public page, the staff's inbox, the escalation digest, the chat prompts                                                                                                                                                                                                                                                                               | — (`SUPPORT_EMAIL` is a note, never a refusal)                                                                                                                                                         |
@@ -138,7 +138,7 @@ The demo was verified with each of nine modules off in turn: the site builds, th
 
 A module that needs recurring database work declares each job beside its other owned resources: a stable `name`, a pg_cron `schedule` and one SQL `command`. Kit declarations live in `build/modules/kit.mjs`; site modules use the same manifest shape, and theme modules may contribute declarations too. Assembly resolves the enabled module set and generates reconciliation SQL after the kit and site row scripts. This is build-time registration: modules do not edit a separate cron list or register jobs dynamically at runtime.
 
-The generated reconciliation remembers only PlatformKit-owned names in `app_settings.platformkit_cron_jobs`. It updates a declared job by its stable name, removes jobs no longer declared by enabled modules, adopts the known legacy declared names on first application, and refuses a same-named job it does not own. Unrelated operator jobs are left alone. Reset and deploy apply the same assembled declaration.
+The generated reconciliation remembers only PlatformKit-owned names in `app_settings.platformkit_cron_jobs`. It updates a declared job by its stable name, removes jobs no longer declared by enabled modules, adopts the known legacy declared names on first application, and refuses a same-named job it does not own. Unrelated operator jobs are left alone. Reset and deploy apply the same assembled declaration. For example, memberships declares a renewal job for Hyperswitch subscriptions; it runs every 15 minutes. Stripe subscriptions renew through Stripe's own recurring-billing service.
 
 ## A site adds a module of its own
 
@@ -206,11 +206,11 @@ A manifest's `owns.env` names the variables the module can ask the deploy for. W
 carry is the condition, and that split is deliberate: a manifest is a fact about a module, and
 almost none of these are wanted merely because a module is on.
 
-|               | asked for                                                                                                                                                               |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Stripe's keys | only where the content actually has something for sale — a published priced offer, a book in print, a pricing row. The store on with nothing for sale asks for nothing. |
-| LiveKit's     | only where a session type **records**, or seats more than five. Otherwise the call is made browser to browser and demanding an account would be wrong.                  |
-| a printer's   | only the printers the books' own `print:` blocks name.                                                                                                                  |
+|                                 | asked for                                                                                                                                                                                                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Selected provider's credentials | only where the content actually has something for sale — a published priced offer, a book in print, a pricing row. The store on with nothing for sale asks for nothing. Stripe is the default; see [Payment providers](/content/docs/building-a-site/payment-providers). |
+| LiveKit's                       | only where a session type **records**, or seats more than five. Otherwise the call is made browser to browser and demanding an account would be wrong.                                                                                                                   |
+| a printer's                     | only the printers the books' own `print:` blocks name.                                                                                                                                                                                                                   |
 
 "A published priced offer exists" is a fact about the site's **content**, not about the module.
 Putting it in the manifest would mean growing the manifest a condition language over content, and
@@ -220,8 +220,9 @@ each is really owed — and says the reason in the refusal ("for sale: the-kybal
 is where you read the condition from in practice.
 
 A **secret may be shared**, unlike everything else a module owns: the mail relay is needed by any of
-several modules and Stripe's keys by any of three, so switching one off takes nothing away while
-another still needs it. Every other kind of ownership is exclusive (above).
+several modules and a payment provider's credentials may serve several commerce surfaces, so
+switching one off takes nothing away while another still needs them. Every other kind of ownership
+is exclusive (above).
 
 A handful belong to no module at all — the anon key, the service-role key, the two database urls,
 the site's own address. There is no module called "having a database", so those are held as the

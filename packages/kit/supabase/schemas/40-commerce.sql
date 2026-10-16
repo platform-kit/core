@@ -1,4 +1,4 @@
--- commerce: purchases, subscriptions, entitlements, Stripe's events and the print orders
+-- commerce: purchases, subscriptions, entitlements, payment-provider references and print orders
 -- The declared schema of this module. Declarative: the file says what exists, and a plan brings a
 -- database to it (platformkit migrate --plan). Never a migration. Edit here; never a copy under supabase/.
 SET check_function_bodies = false;
@@ -22,13 +22,13 @@ begin
   get diagnostics n = row_count;
   if n > 0 then
     insert into public.entitlements (user_id, kind, key, source, source_id)
-    select uid, 'class', 'paid', 'purchase', p.stripe_checkout_session_id
+    select uid, 'class', 'paid', 'purchase', coalesce(p.checkout_identity, p.stripe_checkout_session_id)
     from public.purchases p where p.user_id = uid and p.status = 'paid'
-      and p.kind is distinct from 'session' and p.stripe_checkout_session_id is not null
+      and p.kind is distinct from 'session' and coalesce(p.checkout_identity, p.stripe_checkout_session_id) is not null
     on conflict (user_id, kind, key, source_id) do nothing;
     update public.orders o set user_id = uid
       where o.user_id is null and o.checkout_session in (
-        select p.stripe_checkout_session_id from public.purchases p where p.user_id = uid
+        select coalesce(p.checkout_identity, p.stripe_checkout_session_id) from public.purchases p where p.user_id = uid
       );
   end if;
   if verified then
@@ -37,24 +37,24 @@ begin
     insert into public.entitlements (user_id, kind, key, source, source_id, active)
     select uid, 'product',
       case when p.sku like 'offering:%' then 'session:' || p.sku else 'session:' || p.key end,
-      'purchase', p.stripe_checkout_session_id || ':' || units.i::text,
+      'purchase', coalesce(p.checkout_identity, p.stripe_checkout_session_id) || ':' || units.i::text,
       not exists (
         select 1 from public.bookings b
-        where b.stripe_checkout_session_id = p.stripe_checkout_session_id
+        where coalesce(b.checkout_identity, b.stripe_checkout_session_id) = coalesce(p.checkout_identity, p.stripe_checkout_session_id)
           and b.status in ('pending', 'accepted', 'ended')
       )
     from public.purchases p
     cross join lateral generate_series(0, greatest(coalesce(p.quantity, 1), 1) - 1) as units(i)
     where p.user_id = uid and p.kind = 'session' and p.status = 'paid'
-      and p.stripe_checkout_session_id is not null and (p.key is not null or p.sku like 'offering:%')
+      and coalesce(p.checkout_identity, p.stripe_checkout_session_id) is not null and (p.key is not null or p.sku like 'offering:%')
     on conflict (user_id, kind, key, source_id) do nothing;
     update public.bookings b set credit_id = e.id
       from public.purchases p
       join public.entitlements e on e.user_id = uid
         and e.kind = 'product'
-        and e.source_id = p.stripe_checkout_session_id || ':0'
+        and e.source_id = coalesce(p.checkout_identity, p.stripe_checkout_session_id) || ':0'
       where p.user_id = uid and p.kind = 'session'
-        and p.stripe_checkout_session_id = b.stripe_checkout_session_id
+        and coalesce(p.checkout_identity, p.stripe_checkout_session_id) = coalesce(b.checkout_identity, b.stripe_checkout_session_id)
         and b.credit_id is null
         and b.status in ('pending', 'accepted', 'ended');
   end if;
@@ -116,6 +116,9 @@ CREATE TABLE IF NOT EXISTS "public"."purchases" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid",
     "email" "text",
+    -- stable local identity for the checkout; Stripe keeps its historical raw session id,
+    -- while other providers use a provider-prefixed value
+    "checkout_identity" "text",
     "stripe_checkout_session_id" "text",
     "stripe_payment_intent_id" "text",
     "price_id" "text",
@@ -146,6 +149,32 @@ CREATE TABLE IF NOT EXISTS "public"."stripe_events" (
     "received_at" timestamp with time zone DEFAULT "now"() NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS "public"."payment_provider_refs" (
+    "provider" "text" NOT NULL,
+    "object_type" "text" NOT NULL,
+    "external_id" "text" NOT NULL,
+    "entity_type" "text" NOT NULL,
+    "entity_id" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "payment_provider_refs_provider_check" CHECK (("provider" ~ '^[a-z][a-z0-9-]*$'::"text")),
+    CONSTRAINT "payment_provider_refs_pkey" PRIMARY KEY ("provider", "object_type", "external_id", "entity_type", "entity_id")
+);
+
+CREATE INDEX IF NOT EXISTS "payment_provider_refs_entity_idx"
+    ON "public"."payment_provider_refs" USING "btree" ("provider", "entity_type", "entity_id", "object_type");
+
+CREATE INDEX IF NOT EXISTS "payment_provider_refs_external_idx"
+    ON "public"."payment_provider_refs" USING "btree" ("provider", "object_type", "external_id");
+
+CREATE TABLE IF NOT EXISTS "public"."payment_events" (
+    "provider" "text" NOT NULL,
+    "event_id" "text" NOT NULL,
+    "type" "text" NOT NULL,
+    "received_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "payment_events_provider_check" CHECK (("provider" ~ '^[a-z][a-z0-9-]*$'::"text")),
+    CONSTRAINT "payment_events_pkey" PRIMARY KEY ("provider", "event_id")
+);
+
 CREATE TABLE IF NOT EXISTS "public"."subscriptions" (
     "id" "text" NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -168,6 +197,8 @@ CREATE TABLE IF NOT EXISTS "public"."subscriptions" (
     "usage_rate_micros" bigint,
     "usage_included_micros" bigint DEFAULT 0 NOT NULL,
     "usage_overage_price_micros" bigint,
+    "usage_incremental_charge_minor" bigint,
+    "usage_incremental_charge_currency" "text",
     "usage_speech_cost_per_second_micros" bigint DEFAULT 0 NOT NULL,
     -- WHETHER THIS SUBSCRIPTION EVER HAD A TRIAL, so one person cannot have a tier's trial twice by
     -- cancelling and rejoining. Sticky: set the first time Stripe says trialing (or hands back a
@@ -177,6 +208,27 @@ CREATE TABLE IF NOT EXISTS "public"."subscriptions" (
     -- a tier renamed in a file does not strand the fact.
     "trialed" boolean DEFAULT false NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS "public"."payment_subscription_renewals" (
+    "provider" "text" NOT NULL,
+    "subscription_id" "text" NOT NULL,
+    "period_end" timestamp with time zone NOT NULL,
+    "status" "text" DEFAULT 'processing'::"text" NOT NULL,
+    "attempts" integer DEFAULT 1 NOT NULL,
+    "claimed_until" timestamp with time zone,
+    "retry_at" timestamp with time zone,
+    "payment_id" "text",
+    "last_error" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "payment_subscription_renewals_provider_check" CHECK (("provider" ~ '^[a-z][a-z0-9-]*$'::"text")),
+    CONSTRAINT "payment_subscription_renewals_status_check" CHECK (("status" = ANY (ARRAY['processing'::"text", 'failed'::"text", 'paid'::"text", 'exhausted'::"text"]))),
+    CONSTRAINT "payment_subscription_renewals_attempts_check" CHECK (("attempts" > 0)),
+    CONSTRAINT "payment_subscription_renewals_pkey" PRIMARY KEY ("provider", "subscription_id", "period_end")
+);
+
+CREATE INDEX IF NOT EXISTS "payment_subscription_renewals_retry_idx"
+    ON "public"."payment_subscription_renewals" USING "btree" ("status", "retry_at", "claimed_until");
 
 ALTER TABLE ONLY "public"."entitlements"
     ADD CONSTRAINT "entitlements_pkey" PRIMARY KEY ("id");
@@ -199,12 +251,17 @@ ALTER TABLE ONLY "public"."purchases"
 --   purchase that never came from a Stripe checkout collided with every other one. There are
 --   such rows — a hand-written sale, a fixture — and they are not lines of anything.
 --
--- So: within one checkout session a line is written once, and a purchase outside a checkout is
--- not a line and is not constrained.
+-- The Stripe index is retained for legacy writes. The generic checkout-identity index is the
+-- idempotency key for all providers: within one checkout a line is written once, and a purchase
+-- outside a checkout is not a line and is not constrained.
 CREATE UNIQUE INDEX IF NOT EXISTS "purchases_session_price_key"
     ON "public"."purchases" USING "btree" ("stripe_checkout_session_id", "price_id")
     NULLS NOT DISTINCT
     WHERE ("stripe_checkout_session_id" IS NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS "purchases_checkout_identity_price_key"
+    ON "public"."purchases" USING "btree" ("checkout_identity", "price_id")
+    NULLS NOT DISTINCT
+    WHERE ("checkout_identity" IS NOT NULL);
 
 -- WRITING A LINE OF A PAYMENT, in one named place.
 --
@@ -221,15 +278,22 @@ CREATE OR REPLACE FUNCTION "public"."purchase_write"("p" "jsonb") RETURNS "uuid"
     AS $fn$
 declare out_id uuid;
 begin
+  if nullif(p->>'stripe_checkout_session_id', '') is not null then
+    update public.purchases
+       set checkout_identity = stripe_checkout_session_id
+     where checkout_identity is null
+       and stripe_checkout_session_id = p->>'stripe_checkout_session_id';
+  end if;
   insert into public.purchases (
-    user_id, email, stripe_checkout_session_id, stripe_payment_intent_id, price_id, product_id,
+    user_id, email, checkout_identity, stripe_checkout_session_id, stripe_payment_intent_id, price_id, product_id,
     sku, key, kind, variant, title, variant_title, options, unit_price, quantity, amount_total, currency, status
   )
-  select (p->>'user_id')::uuid, p->>'email', p->>'stripe_checkout_session_id', p->>'stripe_payment_intent_id',
+  select (p->>'user_id')::uuid, p->>'email', coalesce(p->>'checkout_identity', p->>'stripe_checkout_session_id'),
+         p->>'stripe_checkout_session_id', p->>'stripe_payment_intent_id',
          p->>'price_id', p->>'product_id', p->>'sku', p->>'key', p->>'kind', p->>'variant', p->>'title', p->>'variant_title',
          p->'options', (p->>'unit_price')::integer, coalesce((p->>'quantity')::integer, 1),
          (p->>'amount_total')::integer, p->>'currency', coalesce(p->>'status', 'paid')
-  on conflict ("stripe_checkout_session_id", "price_id") where ("stripe_checkout_session_id" is not null)
+  on conflict ("checkout_identity", "price_id") where ("checkout_identity" is not null)
   do update set
     user_id = coalesce(excluded.user_id, public.purchases.user_id),
     email = coalesce(excluded.email, public.purchases.email),
@@ -289,9 +353,15 @@ CREATE POLICY "purchases_select_own" ON "public"."purchases" FOR SELECT USING ((
 
 ALTER TABLE "public"."stripe_events" ENABLE ROW LEVEL SECURITY;
 
+ALTER TABLE "public"."payment_provider_refs" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."payment_events" ENABLE ROW LEVEL SECURITY;
+
 ALTER TABLE "public"."subscriptions" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "subscriptions_select_own" ON "public"."subscriptions" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+ALTER TABLE "public"."payment_subscription_renewals" ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON FUNCTION "public"."claim_guest_purchases"("uuid", "text") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."claim_guest_purchases"("uuid", "text") FROM "anon", "authenticated";
@@ -313,9 +383,18 @@ GRANT ALL ON TABLE "public"."stripe_events" TO "anon";
 GRANT ALL ON TABLE "public"."stripe_events" TO "authenticated";
 GRANT ALL ON TABLE "public"."stripe_events" TO "service_role";
 
+REVOKE ALL ON TABLE "public"."payment_provider_refs" FROM "anon", "authenticated";
+GRANT ALL ON TABLE "public"."payment_provider_refs" TO "service_role";
+
+REVOKE ALL ON TABLE "public"."payment_events" FROM "anon", "authenticated";
+GRANT ALL ON TABLE "public"."payment_events" TO "service_role";
+
 GRANT ALL ON TABLE "public"."subscriptions" TO "anon";
 GRANT ALL ON TABLE "public"."subscriptions" TO "authenticated";
 GRANT ALL ON TABLE "public"."subscriptions" TO "service_role";
+
+REVOKE ALL ON TABLE "public"."payment_subscription_renewals" FROM "anon", "authenticated", "service_role";
+GRANT SELECT ON TABLE "public"."payment_subscription_renewals" TO "service_role";
 
 -- the desk's Orders page follows purchases as they land
 ALTER PUBLICATION "supabase_realtime" ADD TABLE "public"."purchases";
@@ -324,6 +403,7 @@ CREATE TABLE IF NOT EXISTS "public"."usage_events" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "source_ref" "text" NOT NULL,
     "user_id" "uuid" NOT NULL,
+    "subscription_id" "text",
     "bot_id" "text",
     "offer_key" "text" NOT NULL,
     "kind" "text" NOT NULL,
@@ -338,6 +418,8 @@ CREATE TABLE IF NOT EXISTS "public"."usage_events" (
     "speech_cost_per_second_micros" bigint,
     "meter" text,
     "overage_price_micros" bigint,
+    "usage_incremental_charge_minor" bigint,
+    "usage_incremental_charge_currency" "text",
     "operation_id" text,
     "sponsor" text,
     "customer_cost_micros" bigint,
@@ -357,6 +439,9 @@ CREATE TABLE IF NOT EXISTS "public"."usage_events" (
       AND ("measurement_status" IS NULL OR "measurement_status" = ANY (ARRAY['measured'::"text", 'estimated'::"text"]))
     )
 );
+
+ALTER TABLE "public"."usage_events"
+    ADD COLUMN IF NOT EXISTS "subscription_id" "text";
 
 CREATE TABLE IF NOT EXISTS "public"."usage_inference_attempts" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
@@ -420,9 +505,10 @@ CREATE TABLE IF NOT EXISTS "public"."usage_grants" (
 
 CREATE TABLE IF NOT EXISTS "public"."usage_meter_reports" (
     "usage_event_id" "uuid" NOT NULL,
+    "user_id" "uuid",
     "identifier" "text" NOT NULL,
     "event_name" "text" NOT NULL,
-    "stripe_customer_id" "text" NOT NULL,
+    "stripe_customer_id" "text",
     "value_micros" bigint NOT NULL,
     "status" "text" DEFAULT 'pending'::"text" NOT NULL,
     "first_attempt_at" timestamp with time zone,
@@ -433,6 +519,37 @@ CREATE TABLE IF NOT EXISTS "public"."usage_meter_reports" (
     CONSTRAINT "usage_meter_reports_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'reported'::"text", 'expired'::"text"]))),
     CONSTRAINT "usage_meter_reports_value_check" CHECK (("value_micros" > 0))
 );
+
+ALTER TABLE "public"."usage_meter_reports"
+    ADD COLUMN IF NOT EXISTS "user_id" "uuid";
+ALTER TABLE "public"."usage_meter_reports"
+    ALTER COLUMN "stripe_customer_id" DROP NOT NULL;
+
+CREATE TABLE IF NOT EXISTS "public"."usage_incremental_settlements" (
+    "provider" "text" NOT NULL,
+    "subscription_id" "text" NOT NULL,
+    "period_start" timestamp with time zone NOT NULL,
+    "settlement_key" "text" NOT NULL,
+    "amount_minor" bigint NOT NULL,
+    "currency" "text" NOT NULL,
+    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
+    "attempt_number" integer DEFAULT 1 NOT NULL,
+    "payment_intent_id" "text",
+    "last_error" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "usage_incremental_settlements_provider_check" CHECK (("provider" ~ '^[a-z][a-z0-9-]*$'::"text")),
+    CONSTRAINT "usage_incremental_settlements_amount_check" CHECK (("amount_minor" > 0)),
+    CONSTRAINT "usage_incremental_settlements_currency_check" CHECK (("currency" ~ '^[a-z]{3}$'::"text")),
+    CONSTRAINT "usage_incremental_settlements_attempt_check" CHECK (("attempt_number" >= 1)),
+    CONSTRAINT "usage_incremental_settlements_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'failed'::"text", 'requires_action'::"text", 'succeeded'::"text"])))
+);
+ALTER TABLE "public"."usage_incremental_settlements"
+    ADD COLUMN IF NOT EXISTS "attempt_number" integer DEFAULT 1 NOT NULL;
+DO $$ BEGIN
+    ALTER TABLE ONLY "public"."usage_incremental_settlements"
+        ADD CONSTRAINT "usage_incremental_settlements_attempt_check" CHECK (("attempt_number" >= 1));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 CREATE TABLE IF NOT EXISTS "public"."usage_reservations" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
@@ -498,6 +615,8 @@ CREATE TABLE IF NOT EXISTS "public"."usage_topup_attempts" (
     "rate_micros" bigint,
     "speech_cost_per_second_micros" bigint DEFAULT 0 NOT NULL,
     "period_start" date NOT NULL,
+    "payment_provider_id" "text" DEFAULT 'stripe'::"text" NOT NULL,
+    "provider_payment_intent_id" "text",
     "stripe_payment_intent_id" "text",
     "status" "text" DEFAULT 'pending'::"text" NOT NULL,
     "last_error" "text",
@@ -507,6 +626,11 @@ CREATE TABLE IF NOT EXISTS "public"."usage_topup_attempts" (
     CONSTRAINT "usage_topup_attempts_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'requires_action'::"text", 'failed'::"text", 'succeeded'::"text", 'granted'::"text"]))),
     CONSTRAINT "usage_topup_attempts_currency_check" CHECK (("currency" ~ '^[a-z]{3}$'))
 );
+
+ALTER TABLE "public"."usage_topup_attempts"
+    ADD COLUMN IF NOT EXISTS "payment_provider_id" "text" DEFAULT 'stripe'::"text" NOT NULL;
+ALTER TABLE "public"."usage_topup_attempts"
+    ADD COLUMN IF NOT EXISTS "provider_payment_intent_id" "text";
 
 ALTER TABLE ONLY "public"."usage_events"
     ADD CONSTRAINT "usage_events_pkey" PRIMARY KEY ("id");
@@ -532,6 +656,9 @@ ALTER TABLE ONLY "public"."usage_meter_reports"
 ALTER TABLE ONLY "public"."usage_meter_reports"
     ADD CONSTRAINT "usage_meter_reports_identifier_key" UNIQUE ("identifier");
 
+ALTER TABLE ONLY "public"."usage_incremental_settlements"
+    ADD CONSTRAINT "usage_incremental_settlements_pkey" PRIMARY KEY ("provider", "subscription_id", "period_start", "settlement_key");
+
 ALTER TABLE ONLY "public"."usage_reservations"
     ADD CONSTRAINT "usage_reservations_pkey" PRIMARY KEY ("id");
 
@@ -549,6 +676,10 @@ ALTER TABLE ONLY "public"."usage_topup_attempts"
 
 ALTER TABLE ONLY "public"."usage_topup_attempts"
     ADD CONSTRAINT "usage_topup_attempts_payment_intent_key" UNIQUE ("stripe_payment_intent_id");
+
+CREATE UNIQUE INDEX IF NOT EXISTS "usage_topup_provider_payment_intent_key"
+    ON "public"."usage_topup_attempts" USING "btree" ("payment_provider_id", "provider_payment_intent_id")
+    WHERE "provider_payment_intent_id" IS NOT NULL;
 
 ALTER TABLE ONLY "public"."usage_events"
     ADD CONSTRAINT "usage_events_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
@@ -572,6 +703,7 @@ ALTER TABLE ONLY "public"."usage_topup_attempts"
     ADD CONSTRAINT "usage_topup_attempts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 CREATE INDEX "usage_events_user_offer_period_idx" ON "public"."usage_events" USING "btree" ("user_id", "offer_key", "period_start", "created_at" DESC);
+CREATE INDEX "usage_events_subscription_period_idx" ON "public"."usage_events" USING "btree" ("subscription_id", "period_start") WHERE ("subscription_id" IS NOT NULL);
 
 CREATE INDEX "usage_inference_attempts_created_at_idx" ON "public"."usage_inference_attempts" USING "btree" ("created_at" DESC);
 
@@ -580,6 +712,8 @@ CREATE INDEX "usage_inference_attempts_operation_provider_idx" ON "public"."usag
 CREATE INDEX "usage_grants_user_offer_expiry_idx" ON "public"."usage_grants" USING "btree" ("user_id", "offer_key", "expires_at");
 
 CREATE INDEX "usage_meter_reports_pending_idx" ON "public"."usage_meter_reports" USING "btree" ("status", "first_attempt_at");
+
+CREATE INDEX "usage_incremental_settlements_payment_idx" ON "public"."usage_incremental_settlements" USING "btree" ("provider", "payment_intent_id") WHERE ("payment_intent_id" IS NOT NULL);
 
 CREATE INDEX "usage_reservations_user_offer_status_idx" ON "public"."usage_reservations" USING "btree" ("user_id", "offer_key", "status", "expires_at");
 
@@ -596,6 +730,8 @@ ALTER TABLE "public"."usage_grants" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "usage_grants_select_own" ON "public"."usage_grants" FOR SELECT TO "authenticated" USING (("auth"."uid"() = "user_id"));
 
 ALTER TABLE "public"."usage_meter_reports" ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE "public"."usage_incremental_settlements" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."usage_reservations" ENABLE ROW LEVEL SECURITY;
 
@@ -617,6 +753,8 @@ REVOKE ALL ON TABLE "public"."usage_grants" FROM "anon", "authenticated", "servi
 
 REVOKE ALL ON TABLE "public"."usage_meter_reports" FROM "anon", "authenticated", "service_role";
 
+REVOKE ALL ON TABLE "public"."usage_incremental_settlements" FROM "anon", "authenticated", "service_role";
+
 REVOKE ALL ON TABLE "public"."usage_reservations" FROM "anon", "authenticated", "service_role";
 
 REVOKE ALL ON TABLE "public"."usage_topup_preferences" FROM "anon", "authenticated", "service_role";
@@ -634,6 +772,8 @@ GRANT SELECT ON TABLE "public"."usage_inference_attempts" TO "service_role";
 GRANT SELECT ON TABLE "public"."usage_grants" TO "service_role";
 
 GRANT SELECT ON TABLE "public"."usage_meter_reports" TO "service_role";
+
+GRANT SELECT, INSERT, UPDATE ON TABLE "public"."usage_incremental_settlements" TO "service_role";
 
 GRANT SELECT ON TABLE "public"."usage_reservations" TO "authenticated", "service_role";
 
@@ -820,6 +960,7 @@ CREATE OR REPLACE FUNCTION "public"."usage_record"(
 declare
   sub record;
   customer text;
+  subscription_id text;
   v_period_start timestamptz;
   meter_name text;
   granted bigint := 0;
@@ -833,6 +974,8 @@ declare
   speech_rate_snapshot bigint := p_speech_cost_per_second_micros;
   meter_snapshot text := p_meter;
   overage_price_snapshot bigint := p_overage_price_micros;
+  incremental_charge_snapshot bigint;
+  incremental_currency_snapshot text;
 begin
   if nullif(btrim(p_source_ref), '') is null or p_user_id is null
      or nullif(btrim(p_offer_key), '') is null or p_kind not in ('model', 'stt', 'tts')
@@ -853,14 +996,27 @@ begin
     if p_authorized_period_start is not null and p_meter is not null then
       meter_name := p_meter;
       v_period_start := p_authorized_period_start;
+      select s.id, s.usage_incremental_charge_minor, s.usage_incremental_charge_currency
+        into sub
+        from public.subscriptions s
+       where s.user_id = p_user_id and s.key = p_offer_key
+         and s.current_period_start is not distinct from p_authorized_period_start
+         and s.usage_meter = p_meter
+       order by s.updated_at desc
+       limit 1;
+      subscription_id := sub.id;
+      incremental_charge_snapshot := sub.usage_incremental_charge_minor;
+      incremental_currency_snapshot := sub.usage_incremental_charge_currency;
       usage_unit_snapshot := p_usage_unit;
       rate_snapshot := p_rate_micros;
       speech_rate_snapshot := p_speech_cost_per_second_micros;
       meter_snapshot := p_meter;
       overage_price_snapshot := p_overage_price_micros;
     else
-      select s.usage_meter, s.current_period_start, s.usage_included_micros,
-             s.usage_unit, s.usage_rate_micros, s.usage_overage_price_micros, s.usage_speech_cost_per_second_micros
+      select s.id, s.usage_meter, s.current_period_start, s.usage_included_micros,
+             s.usage_unit, s.usage_rate_micros, s.usage_overage_price_micros,
+             s.usage_speech_cost_per_second_micros, s.usage_incremental_charge_minor,
+             s.usage_incremental_charge_currency
         into sub
         from public.subscriptions s
        where s.user_id = p_user_id and s.key = p_offer_key
@@ -875,16 +1031,16 @@ begin
       end if;
       meter_name := sub.usage_meter;
       v_period_start := sub.current_period_start;
+      subscription_id := sub.id;
       usage_unit_snapshot := sub.usage_unit;
       rate_snapshot := sub.usage_rate_micros;
       speech_rate_snapshot := sub.usage_speech_cost_per_second_micros;
       meter_snapshot := sub.usage_meter;
       overage_price_snapshot := sub.usage_overage_price_micros;
+      incremental_charge_snapshot := sub.usage_incremental_charge_minor;
+      incremental_currency_snapshot := sub.usage_incremental_charge_currency;
     end if;
     select stripe_customer_id into customer from public.profiles where id = p_user_id;
-    if nullif(customer, '') is null then
-      raise exception 'metered subscription has no Stripe customer';
-    end if;
   end if;
 
   select coalesce(sum(g.units_micros), 0) into granted
@@ -904,20 +1060,22 @@ begin
     overage := 0;
   end if;
   insert into public.usage_events (
-    source_ref, user_id, bot_id, offer_key, kind, cost_micros, seconds_micros,
+    source_ref, user_id, subscription_id, bot_id, offer_key, kind, cost_micros, seconds_micros,
     units_micros, included_micros, metered_micros, period_start,
-    usage_unit, rate_micros, speech_cost_per_second_micros, meter, overage_price_micros
+    usage_unit, rate_micros, speech_cost_per_second_micros, meter, overage_price_micros,
+    usage_incremental_charge_minor, usage_incremental_charge_currency
   ) values (
-    p_source_ref, p_user_id, p_bot_id, p_offer_key, p_kind, p_cost_micros, p_seconds_micros,
+    p_source_ref, p_user_id, subscription_id, p_bot_id, p_offer_key, p_kind, p_cost_micros, p_seconds_micros,
     p_units_micros, included, overage, v_period_start,
-    usage_unit_snapshot, rate_snapshot, speech_rate_snapshot, meter_snapshot, overage_price_snapshot
+    usage_unit_snapshot, rate_snapshot, speech_rate_snapshot, meter_snapshot, overage_price_snapshot,
+    incremental_charge_snapshot, incremental_currency_snapshot
   ) returning id into event_id;
 
   if overage > 0 then
     report_id := 'us_' || md5(p_source_ref);
     insert into public.usage_meter_reports (
-      usage_event_id, identifier, event_name, stripe_customer_id, value_micros
-    ) values (event_id, report_id, meter_name, customer, overage);
+      usage_event_id, user_id, identifier, event_name, stripe_customer_id, value_micros
+    ) values (event_id, p_user_id, report_id, meter_name, customer, overage);
   end if;
   return jsonb_build_object(
     'admitted', true, 'duplicate', false, 'usage_event_id', event_id,
@@ -1435,6 +1593,8 @@ begin
 end;
 $$;
 
+DROP FUNCTION IF EXISTS "public"."usage_topup_begin"("uuid", "text", "text", "text", bigint, bigint, boolean, text, bigint, bigint);
+
 CREATE OR REPLACE FUNCTION "public"."usage_topup_begin"(
     "p_user_id" "uuid",
     "p_attempt_ref" "text",
@@ -1445,7 +1605,8 @@ CREATE OR REPLACE FUNCTION "public"."usage_topup_begin"(
     "p_site_enabled" boolean,
     "p_usage_unit" "text",
     "p_rate_micros" bigint,
-    "p_speech_cost_per_second_micros" bigint
+    "p_speech_cost_per_second_micros" bigint,
+    "p_provider_id" "text" DEFAULT 'stripe'::"text"
 ) RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1461,7 +1622,9 @@ begin
      or nullif(btrim(p_offer_key), '') is null or p_amount_minor <= 0
      or p_units_micros <= 0 or p_currency !~ '^[a-z]{3}$'
      or nullif(btrim(p_usage_unit), '') is null or p_rate_micros <= 0
-     or p_speech_cost_per_second_micros < 0 then
+     or p_speech_cost_per_second_micros < 0
+     or nullif(btrim(p_provider_id), '') is null
+     or p_provider_id !~ '^[a-z][a-z0-9-]*$' then
     raise exception 'invalid automatic top-up attempt';
   end if;
   if auth.uid() is not null and auth.uid() <> p_user_id then
@@ -1480,7 +1643,8 @@ begin
   select * into v_existing from public.usage_topup_attempts
    where attempt_ref = p_attempt_ref for update;
   if found then
-    if v_existing.user_id <> p_user_id or v_existing.offer_key <> p_offer_key then
+    if v_existing.user_id <> p_user_id or v_existing.offer_key <> p_offer_key
+       or v_existing.payment_provider_id <> p_provider_id then
       raise exception 'automatic top-up reference reused with different terms';
     end if;
     return jsonb_build_object(
@@ -1502,10 +1666,14 @@ begin
             where g.user_id = p_user_id
               and g.offer_key = p_offer_key
               and g.source = 'purchase'
-              and g.source_id = 'topup:' || a.stripe_payment_intent_id
+              and g.source_id = 'topup:' || case
+                when a.payment_provider_id = 'stripe' then coalesce(a.provider_payment_intent_id, a.stripe_payment_intent_id)
+                else a.payment_provider_id || ':' || a.provider_payment_intent_id
+              end
          )
        )
      )
+     and a.payment_provider_id = p_provider_id
    order by a.created_at desc limit 1 for update;
   if found then
     return jsonb_build_object(
@@ -1525,26 +1693,30 @@ begin
     from public.usage_topup_attempts a
    where a.user_id = p_user_id and a.currency = p_currency
      and a.period_start = v_month
+     and a.payment_provider_id = p_provider_id
      and a.status in ('pending', 'requires_action', 'succeeded', 'granted');
   if v_spent + p_amount_minor > v_pref.monthly_cap_minor then
     return jsonb_build_object('started', false, 'reason', 'topup_monthly_cap');
   end if;
   insert into public.usage_topup_attempts (
     attempt_ref, user_id, offer_key, currency, amount_minor, units_micros,
-    usage_unit, rate_micros, speech_cost_per_second_micros, period_start
+    usage_unit, rate_micros, speech_cost_per_second_micros, period_start, payment_provider_id
   ) values (
     p_attempt_ref, p_user_id, p_offer_key, p_currency, p_amount_minor, p_units_micros,
-    p_usage_unit, p_rate_micros, p_speech_cost_per_second_micros, v_month
+    p_usage_unit, p_rate_micros, p_speech_cost_per_second_micros, v_month, p_provider_id
   ) returning * into v_existing;
   return jsonb_build_object('started', true, 'duplicate', false, 'period_start', v_month, 'attempt', to_jsonb(v_existing));
 end;
 $$;
 
+DROP FUNCTION IF EXISTS "public"."usage_topup_finish"("text", "text", "text", "text");
+
 CREATE OR REPLACE FUNCTION "public"."usage_topup_finish"(
     "p_attempt_ref" "text",
     "p_status" "text",
     "p_payment_intent_id" "text" DEFAULT NULL,
-    "p_error" "text" DEFAULT NULL
+    "p_error" "text" DEFAULT NULL,
+    "p_provider_id" "text" DEFAULT 'stripe'::"text"
 ) RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1553,23 +1725,40 @@ declare
   v_updated integer;
 begin
   if p_status not in ('requires_action', 'failed', 'succeeded', 'granted')
-     or nullif(btrim(p_attempt_ref), '') is null then
+     or nullif(btrim(p_attempt_ref), '') is null
+     or nullif(btrim(p_provider_id), '') is null
+     or p_provider_id !~ '^[a-z][a-z0-9-]*$' then
     raise exception 'invalid automatic top-up result';
   end if;
   update public.usage_topup_attempts
      set status = p_status,
-         stripe_payment_intent_id = coalesce(p_payment_intent_id, stripe_payment_intent_id),
+         provider_payment_intent_id = coalesce(p_payment_intent_id, provider_payment_intent_id),
+         stripe_payment_intent_id = case
+           when p_provider_id = 'stripe' then coalesce(p_payment_intent_id, stripe_payment_intent_id)
+           else stripe_payment_intent_id
+         end,
          last_error = left(p_error, 1000),
          updated_at = now()
    where attempt_ref = p_attempt_ref
+     and payment_provider_id = p_provider_id
      and (status = 'pending' or (status = 'succeeded' and p_status = 'granted')
           or (status = 'requires_action' and p_status in ('failed', 'succeeded')));
   get diagnostics v_updated = row_count;
+  if v_updated > 0 and p_payment_intent_id is not null then
+    insert into public.payment_provider_refs (
+      provider, object_type, external_id, entity_type, entity_id
+    )
+    select p_provider_id, 'payment', p_payment_intent_id, 'usage_topup_attempts', id::text
+      from public.usage_topup_attempts
+     where attempt_ref = p_attempt_ref and payment_provider_id = p_provider_id
+    on conflict do nothing;
+  end if;
   if v_updated = 0 then
     return exists (
       select 1 from public.usage_topup_attempts
        where attempt_ref = p_attempt_ref and status = p_status
-         and (p_payment_intent_id is null or stripe_payment_intent_id = p_payment_intent_id)
+         and payment_provider_id = p_provider_id
+         and (p_payment_intent_id is null or provider_payment_intent_id = p_payment_intent_id)
     );
   end if;
   return true;
@@ -1608,13 +1797,13 @@ REVOKE ALL ON FUNCTION "public"."usage_topup_save"("uuid", boolean, "text", bigi
 REVOKE ALL ON FUNCTION "public"."usage_topup_save"("uuid", boolean, "text", bigint, bigint, "text", timestamp with time zone) FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."usage_topup_save"("uuid", boolean, "text", bigint, bigint, "text", timestamp with time zone) TO "service_role";
 
-REVOKE ALL ON FUNCTION "public"."usage_topup_begin"("uuid", "text", "text", "text", bigint, bigint, boolean, text, bigint, bigint) FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."usage_topup_begin"("uuid", "text", "text", "text", bigint, bigint, boolean, text, bigint, bigint) FROM "anon", "authenticated";
-GRANT EXECUTE ON FUNCTION "public"."usage_topup_begin"("uuid", "text", "text", "text", bigint, bigint, boolean, text, bigint, bigint) TO "service_role";
+REVOKE ALL ON FUNCTION "public"."usage_topup_begin"("uuid", "text", "text", "text", bigint, bigint, boolean, text, bigint, bigint, "text") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."usage_topup_begin"("uuid", "text", "text", "text", bigint, bigint, boolean, text, bigint, bigint, "text") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."usage_topup_begin"("uuid", "text", "text", "text", bigint, bigint, boolean, text, bigint, bigint, "text") TO "service_role";
 
-REVOKE ALL ON FUNCTION "public"."usage_topup_finish"("text", "text", "text", "text") FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."usage_topup_finish"("text", "text", "text", "text") FROM "anon", "authenticated";
-GRANT EXECUTE ON FUNCTION "public"."usage_topup_finish"("text", "text", "text", "text") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."usage_topup_finish"("text", "text", "text", "text", "text") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."usage_topup_finish"("text", "text", "text", "text", "text") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."usage_topup_finish"("text", "text", "text", "text", "text") TO "service_role";
 
 CREATE OR REPLACE FUNCTION "public"."usage_meter_claim"("p_limit" integer DEFAULT 100)
 RETURNS SETOF "public"."usage_meter_reports"
@@ -1622,10 +1811,17 @@ RETURNS SETOF "public"."usage_meter_reports"
     SET "search_path" TO 'public'
     AS $$
 begin
-  update public.usage_meter_reports
+  update public.usage_meter_reports r
      set status = 'expired', claimed_until = null,
          last_error = coalesce(last_error, 'automatic retry window expired; reconcile manually')
-   where status = 'pending' and first_attempt_at < now() - interval '24 hours';
+   where r.status = 'pending'
+     and r.first_attempt_at < now() - interval '24 hours'
+     and not exists (
+       select 1
+         from public.usage_events e
+        where e.id = r.usage_event_id
+          and e.usage_incremental_charge_minor > 0
+     );
 
   return query
     with picked as (
@@ -1634,9 +1830,55 @@ begin
        where r.status = 'pending'
          and (r.claimed_until is null or r.claimed_until <= now())
          and (r.first_attempt_at is null or r.first_attempt_at >= now() - interval '24 hours')
+         and not exists (
+           select 1
+             from public.usage_events e
+            where e.id = r.usage_event_id
+              and e.usage_incremental_charge_minor > 0
+         )
        order by r.created_at
        limit greatest(1, least(p_limit, 500))
-       for update skip locked
+       for update of r skip locked
+    )
+    update public.usage_meter_reports r
+       set first_attempt_at = coalesce(r.first_attempt_at, now()),
+           claimed_until = now() + interval '1 minute'
+      from picked
+     where r.usage_event_id = picked.usage_event_id
+     returning r.*;
+end;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."usage_incremental_meter_claim"("p_limit" integer DEFAULT 100)
+RETURNS SETOF "public"."usage_meter_reports"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+begin
+  update public.usage_meter_reports r
+     set status = 'expired', claimed_until = null,
+         last_error = coalesce(last_error, 'automatic retry window expired; reconcile manually')
+   where r.status = 'pending'
+     and r.first_attempt_at < now() - interval '24 hours'
+     and exists (
+       select 1
+         from public.usage_events e
+        where e.id = r.usage_event_id
+          and e.usage_incremental_charge_minor > 0
+     );
+
+  return query
+    with picked as (
+      select r.usage_event_id
+        from public.usage_meter_reports r
+        join public.usage_events e on e.id = r.usage_event_id
+       where r.status = 'pending'
+         and e.usage_incremental_charge_minor > 0
+         and (r.claimed_until is null or r.claimed_until <= now())
+         and (r.first_attempt_at is null or r.first_attempt_at >= now() - interval '24 hours')
+       order by r.created_at
+       limit greatest(1, least(p_limit, 500))
+       for update of r skip locked
     )
     update public.usage_meter_reports r
        set first_attempt_at = coalesce(r.first_attempt_at, now()),
@@ -1676,6 +1918,9 @@ $$;
 REVOKE ALL ON FUNCTION "public"."usage_meter_claim"(integer) FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."usage_meter_claim"(integer) FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."usage_meter_claim"(integer) TO "service_role";
+REVOKE ALL ON FUNCTION "public"."usage_incremental_meter_claim"(integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."usage_incremental_meter_claim"(integer) FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."usage_incremental_meter_claim"(integer) TO "service_role";
 REVOKE ALL ON FUNCTION "public"."usage_meter_complete"("uuid", boolean, "text") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."usage_meter_complete"("uuid", boolean, "text") FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."usage_meter_complete"("uuid", boolean, "text") TO "service_role";
@@ -1700,6 +1945,226 @@ $$;
 REVOKE ALL ON FUNCTION "public"."run_usage_meter_reports"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."run_usage_meter_reports"() FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."run_usage_meter_reports"() TO "service_role";
+
+CREATE OR REPLACE FUNCTION "public"."payment_subscription_renewal_claim"("p_limit" integer DEFAULT 50)
+RETURNS TABLE (
+    "subscription_id" "text",
+    "user_id" "uuid",
+    "period_start" timestamp with time zone,
+    "period_end" timestamp with time zone,
+    "plan_amount" integer,
+    "sku" "text",
+    "plan_key" "text",
+    "next_sku" "text",
+    "next_key" "text",
+    "attempts" integer
+)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+begin
+  return query
+    with due as (
+      select s.id, s.user_id, s.current_period_start, s.current_period_end,
+             s.plan_amount, s.sku, s.key, s.next_sku, s.next_key
+        from public.subscriptions s
+       where s.status in ('active', 'trialing', 'past_due')
+         and s.current_period_end <= now()
+         and not s.cancel_at_period_end
+         and exists (
+           select 1 from public.payment_provider_refs r
+            where r.provider = 'hyperswitch'
+              and r.object_type = 'subscription'
+              and r.entity_type = 'subscriptions'
+              and r.entity_id = s.id
+         )
+         and not exists (
+           select 1 from public.payment_subscription_renewals old
+            where old.provider = 'hyperswitch'
+              and old.subscription_id = s.id
+              and old.period_end = s.current_period_end
+              and old.status in ('paid', 'exhausted')
+         )
+       order by s.current_period_end, s.id
+       limit greatest(1, least(coalesce(p_limit, 50), 250))
+       for update of s skip locked
+    ),
+    claimed as (
+      insert into public.payment_subscription_renewals as renewal (
+        provider, subscription_id, period_end, status, attempts, claimed_until, updated_at
+      )
+      select 'hyperswitch', due.id, due.current_period_end, 'processing', 1,
+             now() + interval '5 minutes', now()
+        from due
+      on conflict (provider, subscription_id, period_end) do update
+         set status = 'processing',
+             attempts = renewal.attempts + 1,
+             claimed_until = now() + interval '5 minutes',
+             retry_at = null,
+             last_error = null,
+             updated_at = now()
+       where renewal.attempts < 5
+         and (
+           renewal.status = 'failed' and renewal.retry_at <= now()
+           or renewal.status = 'processing' and renewal.claimed_until <= now()
+         )
+      returning renewal.subscription_id, renewal.period_end, renewal.attempts
+    )
+    select due.id, due.user_id, due.current_period_start, due.current_period_end,
+           due.plan_amount, due.sku, due.key, due.next_sku, due.next_key, claimed.attempts
+      from due
+      join claimed on claimed.subscription_id = due.id
+                 and claimed.period_end = due.current_period_end;
+end;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."payment_subscription_renewal_complete"(
+    "p_subscription_id" "text",
+    "p_period_end" timestamp with time zone,
+    "p_payment_id" "text",
+    "p_period_start" timestamp with time zone,
+    "p_next_period_end" timestamp with time zone,
+    "p_offer_key" "text",
+    "p_sku" "text",
+    "p_amount" integer,
+    "p_price_id" "text",
+    "p_tier" "text",
+    "p_usage" "jsonb"
+) RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+declare changed integer;
+begin
+  if p_subscription_id is null or p_period_end is null or p_payment_id is null
+     or p_period_start is null or p_next_period_end <= p_period_start
+     or p_offer_key is null or p_sku is null or p_amount < 0 or p_price_id is null then
+    raise exception 'subscription renewal completion arguments are invalid';
+  end if;
+  update public.subscriptions
+     set status = 'active',
+         current_period_start = p_period_start,
+         current_period_end = p_next_period_end,
+         key = p_offer_key,
+         sku = p_sku,
+         plan_amount = p_amount,
+         price_id = p_price_id,
+         usage_price_id = null,
+         usage_meter = nullif(p_usage ->> 'meter', ''),
+         usage_unit = nullif(p_usage ->> 'unit', ''),
+         usage_rate_micros = nullif(p_usage ->> 'rate_micros', '')::bigint,
+         usage_included_micros = coalesce(nullif(p_usage ->> 'included_micros', '')::bigint, 0),
+         usage_overage_price_micros = nullif(p_usage ->> 'overage_price_micros', '')::bigint,
+         usage_speech_cost_per_second_micros = coalesce(nullif(p_usage ->> 'speech_cost_per_second_micros', '')::bigint, 0),
+         cancel_at_period_end = false,
+         next_key = null,
+         next_sku = null,
+         next_at = null,
+         updated_at = now()
+   where id = p_subscription_id and current_period_end = p_period_end
+     and exists (
+       select 1 from public.payment_subscription_renewals r
+        where r.provider = 'hyperswitch'
+          and r.subscription_id = p_subscription_id
+          and r.period_end = p_period_end
+          and r.status = 'processing'
+     );
+  get diagnostics changed = row_count;
+  if changed <> 1 then return false; end if;
+
+  update public.entitlements
+     set active = true, expires_at = p_next_period_end, tier = p_tier,
+         plan_amount = p_amount
+   where source = 'subscription'
+     and source_id = 'hyperswitch:' || p_subscription_id
+     and kind = 'class' and key = 'subscribed';
+  get diagnostics changed = row_count;
+  if changed <> 1 then
+    raise exception 'subscription renewal entitlement was not found';
+  end if;
+
+  insert into public.payment_provider_refs (
+    provider, object_type, external_id, entity_type, entity_id
+  ) values ('hyperswitch', 'payment', p_payment_id, 'subscriptions', p_subscription_id)
+  on conflict (provider, object_type, external_id, entity_type, entity_id) do nothing;
+
+  update public.payment_subscription_renewals
+     set status = 'paid', payment_id = p_payment_id, claimed_until = null,
+         retry_at = null, last_error = null, updated_at = now()
+   where provider = 'hyperswitch' and subscription_id = p_subscription_id
+     and period_end = p_period_end and status = 'processing';
+  return true;
+end;
+$$;
+
+CREATE OR REPLACE FUNCTION "public"."payment_subscription_renewal_failed"(
+    "p_subscription_id" "text",
+    "p_period_end" timestamp with time zone,
+    "p_error" "text"
+) RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+declare changed integer;
+begin
+  update public.payment_subscription_renewals
+     set status = case when attempts >= 5 then 'exhausted' else 'failed' end,
+         retry_at = case when attempts >= 5 then null else now() + interval '1 hour' end,
+         claimed_until = null,
+         last_error = left(coalesce(p_error, 'subscription renewal failed'), 1000),
+         updated_at = now()
+   where provider = 'hyperswitch' and subscription_id = p_subscription_id
+     and period_end = p_period_end and status = 'processing';
+  get diagnostics changed = row_count;
+  if changed <> 1 then return false; end if;
+  update public.subscriptions
+     set status = 'past_due', updated_at = now()
+   where id = p_subscription_id and current_period_end = p_period_end;
+  return true;
+end;
+$$;
+
+REVOKE ALL ON FUNCTION "public"."payment_subscription_renewal_claim"(integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."payment_subscription_renewal_claim"(integer) FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."payment_subscription_renewal_claim"(integer) TO "service_role";
+REVOKE ALL ON FUNCTION "public"."payment_subscription_renewal_complete"("text", timestamp with time zone, "text", timestamp with time zone, timestamp with time zone, "text", "text", integer, "text", "text", "jsonb") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."payment_subscription_renewal_complete"("text", timestamp with time zone, "text", timestamp with time zone, timestamp with time zone, "text", "text", integer, "text", "text", "jsonb") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."payment_subscription_renewal_complete"("text", timestamp with time zone, "text", timestamp with time zone, timestamp with time zone, "text", "text", integer, "text", "text", "jsonb") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."payment_subscription_renewal_failed"("text", timestamp with time zone, "text") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."payment_subscription_renewal_failed"("text", timestamp with time zone, "text") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."payment_subscription_renewal_failed"("text", timestamp with time zone, "text") TO "service_role";
+
+CREATE OR REPLACE FUNCTION "public"."run_hyperswitch_subscription_renewal"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+declare url text; secret text;
+begin
+  if not exists (
+    select 1 from public.subscriptions s
+     where s.status in ('active', 'trialing', 'past_due')
+       and s.current_period_end <= now()
+       and exists (
+         select 1 from public.payment_provider_refs r
+          where r.provider = 'hyperswitch'
+            and r.object_type = 'subscription'
+            and r.entity_type = 'subscriptions'
+            and r.entity_id = s.id
+       )
+  ) then return; end if;
+  select value into url from public.app_settings where key = 'functions_url';
+  select value into secret from public.app_settings where key = 'functions_secret';
+  if url is null or secret is null then return; end if;
+  perform net.http_post(
+    url := rtrim(url, '/') || '/hyperswitch-subscription-renewal',
+    headers := jsonb_build_object('content-type', 'application/json', 'authorization', 'Bearer ' || secret),
+    body := '{}'::jsonb);
+end;
+$$;
+
+REVOKE ALL ON FUNCTION "public"."run_hyperswitch_subscription_renewal"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."run_hyperswitch_subscription_renewal"() FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."run_hyperswitch_subscription_renewal"() TO "service_role";
 
 CREATE OR REPLACE FUNCTION "public"."admin_usage"("p_days" integer DEFAULT 30)
 RETURNS "jsonb"

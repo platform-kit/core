@@ -2,8 +2,8 @@
 /*
  * The bag, as a drawer that slides in from the right on any page — mounted once
  * in App.vue and opened from the header's bag button or by adding something.
- * Lines, quantities, the subtotal, and the way to checkout, which is Stripe's
- * and needs a sign-in. Copy lives in content/app/ui/store.md.
+ * Lines, quantities, the subtotal, and the selected provider's checkout.
+ * Copy lives in content/app/ui/store.md.
  */
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { us } from '@platform-kit/kit/lib/content.js'
@@ -15,6 +15,7 @@ import { apply as applyPromotions } from '@platform-kit/kit/lib/promotions.js'
 import { promotions as promoList, priceContext } from '@platform-kit/kit/lib/storefront.js'
 import { capture } from '@platform-kit/kit/lib/analytics.js'
 import { ROUTES } from '../../router.js'
+import site from '#site'
 import ShipTo from './ShipTo.vue'
 import { lineShips } from '@platform-kit/kit/lib/shipto.js'
 
@@ -38,6 +39,7 @@ const cutNames = computed(() => {
 })
 const C = us('store').cart.ui
 const S = us('store').page.head
+const paymentProvider = site.payments?.provider || 'stripe'
 const busy = ref(false)
 const error = ref('')
 const errorCode = ref('')
@@ -110,7 +112,7 @@ const goShop = () => { cart.closeCart(); if (location.pathname !== ROUTES.store)
           <!-- STRIPE TAKES ONE CODE. Our own discounts apply by themselves and stack; a code typed
                on Stripe’s page is one more, and only one. Said here because a shopper who expects
                to add three finds out at the worst moment. -->
-          <p v-if="cut" class="bag-note">{{ C["one-code"] }}</p>
+          <p v-if="cut && paymentProvider === 'stripe'" class="bag-note">{{ C["one-code"] }}</p>
           <p class="bag-note">{{ C.note }}</p>
           <p v-if="error" class="bag-err">{{ errorCode === 'stripe_unconfigured' ? S['unconfigured-heading'] : error }}</p>
           <button type="button" class="bag-cta" :disabled="busy" @click="doCheckout">{{ busy ? C.working : (isSignedIn ? C.checkout : asGuest ? C['checkout-guest'] : C['signin-to-checkout']) }}</button>

@@ -353,7 +353,7 @@ export function native({ db, env }) {
       return { slots: byDay(runnable.map((s) => s.start), timeZone), minutes: type.duration, ...(type.repeat ? { run: runs } : {}), ...(Object.keys(seatsAt).length ? { left: seatsAt } : {}), ...(why ? { why } : {}) }
     },
     /* attendees: every address on the booking (the first the row's own); made_by: a host booking for them; host: the host asked for, when among the type's */
-    async book(type, { start, attendee, attendees, user_id, notes, phone, credit_id, made_by, made_by_name, host: wanted, minutes, count, stripe_checkout_session_id }) {
+    async book(type, { start, attendee, attendees, user_id, notes, phone, credit_id, made_by, made_by_name, host: wanted, minutes, count, checkout_identity, stripe_checkout_session_id }) {
       const startMs = Date.parse(start)
       const day = new Date(startMs).toISOString().slice(0, 10)
       const { hosts, slots } = await offerOf(type, day, day, Date.now())
@@ -395,6 +395,7 @@ export function native({ db, env }) {
            else. A host booking for people never waits on themselves. */
         start_at: new Date(startMs).toISOString(), end_at: end, status: waits ? 'pending' : 'accepted', where, join_url: joinOf(where),
         followup_at: new Date(Date.parse(end) + 5 * 6e4).toISOString(),
+        ...(checkout_identity ? { checkout_identity } : {}),
         ...(stripe_checkout_session_id ? { stripe_checkout_session_id } : {}),
         /* a collective type's OTHER hosts, so the booker, the emails and the room know who is
            coming. The host_id stays one person — somebody owns every booking — and the time is
@@ -421,7 +422,7 @@ export function native({ db, env }) {
         try {
           await db.from('bookings').update({ run_of: data.uid }).eq('uid', data.uid)
           for (const at of when.slice(1)) {
-            const r2 = { ...rec, uid: 'ns_' + hex(), run_of: data.uid, stripe_checkout_session_id: null, start_at: new Date(at).toISOString(), end_at: new Date(at + chosen.minutes * 6e4).toISOString(), followup_at: new Date(at + chosen.minutes * 6e4 + 5 * 6e4).toISOString() }
+            const r2 = { ...rec, uid: 'ns_' + hex(), run_of: data.uid, checkout_identity: null, stripe_checkout_session_id: null, start_at: new Date(at).toISOString(), end_at: new Date(at + chosen.minutes * 6e4).toISOString(), followup_at: new Date(at + chosen.minutes * 6e4 + 5 * 6e4).toISOString() }
             const { data: d2, error: e2 } = await db.rpc('book_native', { p: r2, p_seats: 0, p_hosts: taking.map((h) => h.id) })
             if (e2) throw Object.assign(new Error(e2.message), { code: 'taken' })
             made.push(d2.uid)

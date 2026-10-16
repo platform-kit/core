@@ -40,6 +40,140 @@ insert into public.app_settings (key, value) values
   ('functions_secret', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU')
 on conflict (key) do nothing;
 
+-- Provider-scoped commerce identities preserve the historical Stripe id as-is. Non-Stripe
+-- checkout identities are provider-prefixed by the shared ledger at write time.
+update public.purchases
+   set checkout_identity = stripe_checkout_session_id
+ where checkout_identity is null and nullif(btrim(stripe_checkout_session_id), '') is not null;
+
+update public.bookings
+   set checkout_identity = stripe_checkout_session_id
+ where checkout_identity is null and nullif(btrim(stripe_checkout_session_id), '') is not null;
+
+update public.usage_meter_reports r
+   set user_id = p.id
+  from public.profiles p
+ where r.user_id is null
+   and nullif(btrim(r.stripe_customer_id), '') = p.stripe_customer_id;
+
+update public.usage_topup_attempts
+   set payment_provider_id = 'stripe',
+       provider_payment_intent_id = stripe_payment_intent_id
+ where stripe_payment_intent_id is not null
+   and provider_payment_intent_id is null;
+
+-- Existing Stripe-shaped columns are kept for compatibility. Copy their external IDs into the
+-- provider-scoped index without rewriting purchases, subscriptions, orders, grants, or ownership.
+-- Every insert is repeatable: a plan runs this data script on populated databases as well as reset.
+insert into public.payment_provider_refs (provider, object_type, external_id, entity_type, entity_id)
+select 'stripe', 'customer', p.stripe_customer_id, 'profiles', p.id::text
+  from public.profiles p
+ where nullif(btrim(p.stripe_customer_id), '') is not null
+union all
+select 'stripe', 'checkout', p.stripe_checkout_session_id, 'purchases', p.id::text
+  from public.purchases p
+ where nullif(btrim(p.stripe_checkout_session_id), '') is not null
+union all
+select 'stripe', 'payment', p.stripe_payment_intent_id, 'purchases', p.id::text
+  from public.purchases p
+ where nullif(btrim(p.stripe_payment_intent_id), '') is not null
+union all
+select 'stripe', 'price', p.price_id, 'purchases', p.id::text
+  from public.purchases p
+ where p.stripe_checkout_session_id is not null and nullif(btrim(p.price_id), '') is not null
+union all
+select 'stripe', 'product', p.product_id, 'purchases', p.id::text
+  from public.purchases p
+ where p.stripe_checkout_session_id is not null and nullif(btrim(p.product_id), '') is not null
+union all
+select 'stripe', 'subscription', s.id, 'subscriptions', s.id
+  from public.subscriptions s
+ where position(':' in s.id) = 0
+union all
+select 'stripe', 'price', s.price_id, 'subscriptions', s.id
+  from public.subscriptions s
+ where position(':' in s.id) = 0 and nullif(btrim(s.price_id), '') is not null
+union all
+select 'stripe', 'price', s.usage_price_id, 'subscriptions', s.id
+  from public.subscriptions s
+ where position(':' in s.id) = 0 and nullif(btrim(s.usage_price_id), '') is not null
+union all
+select 'stripe', 'meter', s.usage_meter, 'subscriptions', s.id
+  from public.subscriptions s
+ where position(':' in s.id) = 0 and nullif(btrim(s.usage_meter), '') is not null
+union all
+select 'stripe', 'checkout', o.checkout_session, 'orders', o.id::text
+  from public.orders o
+ where position(':' in o.checkout_session) = 0 and nullif(btrim(o.checkout_session), '') is not null
+union all
+select 'stripe',
+       case t.reason when 'refund' then 'refund' when 'chargeback' then 'chargeback' else 'payment' end,
+       t.reference, 'order_transactions', t.id::text
+  from public.order_transactions t
+ where t.reason <> 'credit' and position(':' in t.reference) = 0 and nullif(btrim(t.reference), '') is not null
+union all
+select 'stripe', 'checkout', b.stripe_checkout_session_id, 'bookings', b.uid
+  from public.bookings b
+ where nullif(btrim(b.stripe_checkout_session_id), '') is not null
+union all
+select 'stripe', 'checkout', f.checkout_session_id, 'booking_checkout_fulfilments', f.checkout_session_id
+  from public.booking_checkout_fulfilments f
+ where position(':' in f.checkout_session_id) = 0 and nullif(btrim(f.checkout_session_id), '') is not null
+union all
+select a.provider, 'payout_account', a.account_id, 'payout_accounts', a.user_id::text
+  from public.payout_accounts a
+ where nullif(btrim(a.account_id), '') is not null
+union all
+select 'stripe', 'customer', r.stripe_customer_id, 'usage_meter_reports', r.usage_event_id::text
+  from public.usage_meter_reports r
+ where nullif(btrim(r.stripe_customer_id), '') is not null
+union all
+select 'stripe', 'usage_event', r.identifier, 'usage_meter_reports', r.usage_event_id::text
+  from public.usage_meter_reports r
+ where nullif(btrim(r.identifier), '') is not null
+union all
+select 'stripe', 'payment', a.stripe_payment_intent_id, 'usage_topup_attempts', a.id::text
+  from public.usage_topup_attempts a
+ where nullif(btrim(a.stripe_payment_intent_id), '') is not null
+union all
+select a.payment_provider_id, 'payment', a.provider_payment_intent_id, 'usage_topup_attempts', a.id::text
+  from public.usage_topup_attempts a
+ where nullif(btrim(a.provider_payment_intent_id), '') is not null
+union all
+select 'stripe', 'invoice', split_part(g.source_id, ':', 2), 'usage_grants', g.id::text
+  from public.usage_grants g
+ where g.source = 'subscription' and g.source_id like 'invoice:%'
+   and nullif(btrim(split_part(g.source_id, ':', 2)), '') is not null
+union all
+select 'stripe', 'payment', split_part(g.source_id, ':', 2), 'usage_grants', g.id::text
+  from public.usage_grants g
+ where g.source = 'purchase' and g.source_id like 'topup:%'
+   and nullif(btrim(split_part(g.source_id, ':', 2)), '') is not null
+union all
+select 'stripe',
+       'checkout', split_part(e.source_id, ':', 1), 'entitlements', e.id::text
+  from public.entitlements e
+ where e.source = 'purchase'
+   and nullif(btrim(split_part(e.source_id, ':', 1)), '') is not null
+   and not exists (
+     select 1 from public.payment_provider_refs r
+      where r.provider <> 'stripe'
+        and r.object_type = 'checkout'
+        and r.entity_type = 'entitlements'
+        and r.entity_id = e.id::text
+   )
+union all
+select 'stripe', 'subscription', e.source_id, 'entitlements', e.id::text
+  from public.entitlements e
+ where e.source = 'subscription'
+   and position(':' in e.source_id) = 0
+on conflict do nothing;
+
+insert into public.payment_events (provider, event_id, type, received_at)
+select 'stripe', e.id, e.type, e.received_at
+  from public.stripe_events e
+on conflict do nothing;
+
 -- the spaces' memberships re-read against what fills them, hourly: a tier that lapsed takes its
 -- rooms with it without anybody having to do anything.
 -- the agent loop: the sweep picks up a run whose worker died (the worker asks for itself while it

@@ -20,6 +20,8 @@ export const ROUTES = {
   preview: '/__preview',   /* dev only: the page inside the admin's live-preview frame */
   share: '/__share',       /* the share cards the build photographs (build/share-images.mjs); never linked */
   store: '/store',
+  billing: '/billing',
+  hyperswitchCheckout: '/checkout/hyperswitch',
   docs: '/docs',           /* a docs-only site: the docs at the root of the address space (see DOCS_ONLY) */
   form: '/form',           /* a form on its own page, no chrome: /form/<slug> (the forms module) */
   to: '/to',               /* the same page under Typeform's address shape, /to/<slug> — where Typeform's embed looks (forms-api) */
@@ -58,6 +60,9 @@ export const ROUTES = {
   entries: '/c',           /* a content model's pages: /c/<key> the index, /c/<key>/<slug> an entry (the models module) — one prefix, so no key can meet a fixed route */
 }
 export const INTERRUPT_ROUTES = [ROUTES.feed, ROUTES.spaces, ROUTES.people]
+const LEGACY_USAGE_PATH = ROUTES.diagnostics + '/usage'
+const isLegacyUsagePath = (pathname) =>
+  (pathname || '').replace(/\/+$/, '') === LEGACY_USAGE_PATH
 
 /* The working document is local-dev only — never part of a production build, its
    route resolves to / off localhost. /admin is the content CMS in dev and the
@@ -112,6 +117,7 @@ const CLAIMS = [
 ]
 const KNOWN = [ROUTES.home, ROUTES.diagnostics, ROUTES.admin]
   .concat(DOCS_ONLY ? [ROUTES.docs] : [ROUTES.content])
+  .concat([ROUTES.hyperswitchCheckout, ROUTES.billing])
   .concat(STORE_ON ? [ROUTES.store] : [])
   .concat(CMS ? [ROUTES.preview] : [])
 
@@ -126,6 +132,8 @@ function normalise(pathname) {
   const moved = NETWORK_ON ? forwardOf(p, CLAIMS, ROUTES.feed) : null
   if (moved) p = moved
   if (p === '/diagnostics') p = ROUTES.diagnostics /* the old address still works */
+  if (p === LEGACY_USAGE_PATH) p = ROUTES.billing
+  if (p === ROUTES.diagnostics + '/billing') p = ROUTES.billing
   if (DOCS_ONLY) {
     /* the library's address for the docs still works, as an alias; the hub and the other kinds go to the docs */
     if (p === ROUTES.content + '/docs' || p.startsWith(ROUTES.content + '/docs/')) p = ROUTES.docs + p.slice((ROUTES.content + '/docs').length)
@@ -138,6 +146,8 @@ function normalise(pathname) {
   }
   /* the app carries the open page of the results sheet (/app/diagnostics) */
   if (p === ROUTES.diagnostics || p.startsWith(ROUTES.diagnostics + '/')) return p
+  if (p === ROUTES.hyperswitchCheckout) return p
+  if (p === ROUTES.billing) return p
   /* a share card names its kind and id (/__share/books/the-kybalion) */
   if (p === ROUTES.share || p.startsWith(ROUTES.share + '/')) return p
   /* the admin carries its place in the path (/admin/books/slug) so a refresh keeps it */
@@ -168,7 +178,9 @@ function normalise(pathname) {
 
 const initialPath = typeof location === 'undefined' ? '/' : location.pathname
 const current = ref(normalise(initialPath))
-if (typeof window !== 'undefined' && site && site.community && site.community.layout === 'social'
+if (typeof window !== 'undefined' && isLegacyUsagePath(initialPath)) {
+  history.replaceState(null, '', `${ROUTES.billing}${location.search}#usage`)
+} else if (typeof window !== 'undefined' && site && site.community && site.community.layout === 'social'
   && initialPath.replace(/\/+$/, '') === ROUTES.spaces && current.value !== initialPath) {
   history.replaceState(null, '', `${current.value}${location.search}${location.hash}`)
 }
@@ -176,10 +188,23 @@ if (typeof window !== 'undefined' && site && site.community && site.community.la
 export const route = readonly(current)
 
 export function navigate(path) {
-  const next = normalise(path)
-  if (next !== location.pathname) history.pushState(null, '', next)
+  const url = new URL(path, location.origin)
+  const legacyUsage = isLegacyUsagePath(url.pathname)
+  const next = normalise(url.pathname)
+  const hash = legacyUsage ? '#usage' : url.hash
+  const destination = `${next}${url.search}${hash}`
+  if (destination !== location.pathname + location.search + location.hash) {
+    history.pushState(null, '', destination)
+  }
   current.value = next
-  window.scrollTo(0, 0)
+  window.dispatchEvent(new Event('platformkit:navigate'))
+  if (hash === '#usage') {
+    window.scrollTo(0, 0)
+  } else if (hash) {
+    requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView())
+  } else {
+    window.scrollTo(0, 0)
+  }
 }
 /* the same without a history entry: for making an address canonical in place */
 export function replace(path) {
@@ -215,7 +240,10 @@ if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
     const path = location.pathname
     current.value = normalise(path)
-    if (site && site.community && site.community.layout === 'social'
+    if (isLegacyUsagePath(path)) {
+      history.replaceState(null, '', `${current.value}${location.search}#usage`)
+      window.scrollTo(0, 0)
+    } else if (site && site.community && site.community.layout === 'social'
       && path.replace(/\/+$/, '') === ROUTES.spaces && current.value !== path) {
       history.replaceState(null, '', `${current.value}${location.search}${location.hash}`)
     }
@@ -238,11 +266,11 @@ if (typeof window !== 'undefined') {
     if (KNOWN.indexOf(target) < 0 && !target.startsWith(ROUTES.content) && !target.startsWith(ROUTES.diagnostics + '/') && !(NETWORK_ON && (target === ROUTES.feed || target.startsWith(ROUTES.feed + '/'))) &&
         !target.startsWith(ROUTES.admin) && !(STORE_ON && target.startsWith(ROUTES.store)) && !(FORMS_ON && (target.startsWith(ROUTES.form + '/') || target.startsWith(ROUTES.to + '/'))) && !(SESSIONS_ON && target.startsWith(ROUTES.book + '/')) && !(STORE_ON && target.startsWith(ROUTES.cart + '/c/')) && !(moduleOn('support') && target === ROUTES.support) && !entryRoute(target) && !PAGE_ROUTES.has(target) && !siteRouteOf(target)) return
     e.preventDefault()
-    navigate(a.pathname)
+    navigate(href)
   })
 
   /* a bookmarked trailing slash or an unknown path becomes / without a reload */
   if (location.pathname !== current.value && !location.pathname.startsWith(current.value)) {
-    history.replaceState(null, '', current.value + location.hash)
+    history.replaceState(null, '', current.value + location.search + location.hash)
   }
 }

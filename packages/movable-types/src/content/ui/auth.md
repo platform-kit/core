@@ -86,6 +86,15 @@ support: Sign in so we can reply by email, and your conversation follows you to 
 comment: Sign in to join the conversation. Your name is what people will see beside what you say.
 book: Sign in to book: every session is an account's, so it shows in your sessions wherever you sign in.
 
+## page
+
+### main
+
+form-label: Sign in
+pending: Checking your sign-in…
+home-aria: Return to {site}
+back-home: Back to site
+
 ## lockdown
 
 ### notice

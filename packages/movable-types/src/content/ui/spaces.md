@@ -610,7 +610,7 @@ stop: Stop
 stopped: Stopped.
 draft: Draft — review before sending.
 failed: Something went wrong.
-usage: You're out of units. [Buy more](/app/usage).
+usage: You're out of units. [Buy more](/billing#usage).
 could-not: {name} could not answer.
 why: Why: {reason}
 dismiss: Dismiss

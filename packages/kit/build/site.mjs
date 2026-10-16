@@ -6,6 +6,7 @@ import { DEPLOYMENT_DEFAULTS, modeOf } from './modes.mjs'
 import { MODULES } from './modules/kit.mjs'
 import { readManifests } from './modules/manifest.mjs'
 import { inferenceOf } from './inference-config.mjs'
+import { paymentProviderPublicSettingsOf } from './payment-provider-registry.mjs'
 
 /*
  * THE RESOLVED MODULE SET. The manifests are the kit's own for now; a site's own module joins them
@@ -264,7 +265,7 @@ export const networkOf = (c) => {
   }
 }
 /* what the browser may know: no paths */
-export const publicSite = (c) => ({ name: c.name, theme: c.theme, modules: c.modules, deployment: deploymentOf(c), looks: Object.keys(c.looks), defaultLook: c.defaultLook, languages: c.languages, api: apiOf(c), spaces: spacesOf(c), coaching: coachingOf(c), network: networkOf(c), community: communityOf(c) })
+export const publicSite = (c) => ({ name: c.name, theme: c.theme, modules: c.modules, deployment: deploymentOf(c), looks: Object.keys(c.looks), defaultLook: c.defaultLook, languages: c.languages, api: apiOf(c), spaces: spacesOf(c), coaching: coachingOf(c), network: networkOf(c), community: communityOf(c), payments: paymentProviderPublicSettingsOf(c) })
 /* how the community shows in the site's header. A site whose community is the point of it wants the
    word — "Community", "Forum", "The Guild" — and a site where it is one thing among many wants the
    icon back. The WORD itself is never here: it is nav.spaces in the strings, like every other visible

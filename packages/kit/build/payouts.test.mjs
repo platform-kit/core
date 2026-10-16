@@ -17,6 +17,7 @@
  * build/payouts-db.test.mjs against the local stack.
  */
 import { TRIGGERS, AMOUNTS, ruleFault, amountOf, payableAt, reversalOf, balanceOf, linesFor, spanMinutes } from '../src/lib/payouts.js'
+import { payoutStatusIsSettled } from '../supabase/functions/_shared/payment-provider.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -59,6 +60,13 @@ const collected = '2026-09-01T12:00:00.000Z'
 ok('a 30-day delay is 30 days', payableAt(collected, 30 * 1440) === '2026-10-01T12:00:00.000Z')
 ok('no delay is at once', payableAt(collected, 0) === collected)
 ok('the clock runs from the money, not the call', payableAt(collected, 1440) === '2026-09-02T12:00:00.000Z')
+
+/* --- an initiated payout is not a completed payout --- */
+ok('a successful payout is settled', payoutStatusIsSettled('success'))
+ok('a succeeded payout is settled', payoutStatusIsSettled('SUCCEEDED'))
+ok('an initiated payout remains unsettled', !payoutStatusIsSettled('initiated'))
+ok('a pending payout remains unsettled', !payoutStatusIsSettled('pending'))
+ok('a processing payout remains unsettled', !payoutStatusIsSettled('processing'))
 
 /* --- a refund reverses in proportion and never more --- */
 const line = { amount: 1000 }

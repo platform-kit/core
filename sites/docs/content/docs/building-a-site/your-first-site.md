@@ -1,10 +1,18 @@
 ---
-
 title: Your first site
 description: Create a PlatformKit site, install its dependencies, and run it locally or from its own repository.
 order: 41
-sources: [.nvmrc, sites/demo/platformkit.config.js, sites/docs/platformkit.config.js, packages/kit/bin/platformkit.mjs, sites/demo/package.json, package.json, packages/kit/build/sites.mjs]
-reviewed: 2026-10-11
+sources:
+  [
+    .nvmrc,
+    sites/demo/platformkit.config.js,
+    sites/docs/platformkit.config.js,
+    packages/kit/bin/platformkit.mjs,
+    sites/demo/package.json,
+    package.json,
+    packages/kit/build/sites.mjs,
+  ]
+reviewed: 2026-10-14
 ---
 
 A site is an independently configured project built with PlatformKit. It contains its own package manifest and lockfile, `platformkit.config.js`, content, and any code or data it registers. The PlatformKit workspace also contains generic example sites; copy one as a starting point, then keep the new project's code and content in its own repository.
@@ -30,6 +38,11 @@ my-site/
 
 `package.json` carries an imports map so the same code runs under Node and Vite: `#content` and `#site/*` resolve to the kit's Node fallbacks outside Vite. Declare optional peer packages needed by enabled modules in the site manifest. For example, email templates need `mjml`, print production needs `@myriaddreamin/typst-ts-node-compiler`, and spoken books need `onnxruntime-node` and `ffmpeg-static`. `platformkit test` and `platformkit steps --check` report missing packages for enabled features.
 
+The PlatformKit workspace has a separate, opt-in Docker-backed Hyperswitch v2 integration stack
+for provider development. It is not needed to build a site or run its regular `platformkit test`;
+see the [payment-provider guide](/content/docs/building-a-site/payment-providers) if you are
+working on that integration.
+
 ## The config
 
 ```js
@@ -37,13 +50,30 @@ export default {
   name: 'My Site',
   theme: '@platform-kit/movable-types',
   modules: {
-    store: true, print: false, memberships: true, sessions: false, coaching: false, support: true,
-    funnels: true, emails: true, forms: false, instrument: false, recommendations: false,
-    translation: false, tts: false, enrichment: false, push: false,
+    store: true,
+    print: false,
+    memberships: true,
+    sessions: false,
+    coaching: false,
+    support: true,
+    funnels: true,
+    emails: true,
+    forms: false,
+    instrument: false,
+    recommendations: false,
+    translation: false,
+    tts: false,
+    enrichment: false,
+    push: false,
   },
   looks: { mine: { css: './src/looks/mine.css' } },
   defaultLook: 'mine',
-  nav: { links: [{ key: 'content', href: '/content', prefix: true }, { key: 'store', href: '/store' }] },
+  nav: {
+    links: [
+      { key: 'content', href: '/content', prefix: true },
+      { key: 'store', href: '/store' },
+    ],
+  },
   languages: ['en'],
   data: { ports: 54360 },
 }

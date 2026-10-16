@@ -1,6 +1,6 @@
 ---
 title: Commerce internals
-description: The offers as files, Stripe made to match, the checkout, the ledger, the mock, guest checkout, memberships' switching, and print orders.
+description: The payment-provider contract foundation, offers as files, Stripe checkout, the ledger, the mock, guest checkout, memberships' switching, and print orders.
 order: 54
 sources:
   [
@@ -42,6 +42,8 @@ sources:
     packages/kit/supabase/functions/usage-meter-report,
     packages/kit/build/usage.test.mjs,
     packages/kit/src/lib/commerce.js,
+    packages/kit/src/payment-provider.mjs,
+    packages/kit/src/payment-provider.d.ts,
     packages/kit/supabase/schemas/40-commerce.sql,
     packages/kit/build/policies.test.mjs,
     packages/movable-types/src/components/Orders.vue,
@@ -53,9 +55,14 @@ sources:
     packages/kit/supabase/functions/_shared/shipping.ts,
     packages/kit/supabase/functions/_shared/checkout-params.js,
     packages/kit/build/checkout-params.test.mjs,
+    packages/kit/build/payment-providers.test.mjs,
   ]
 reviewed: 2026-10-08
 ---
+
+## The payment-provider contract foundation
+
+The public `@platform-kit/kit/payment-provider` entry point defines the adapter operations, capability names, and normalized payment-event shape. Its capability checks refuse unsupported features, and its event validator rejects malformed or mismatched provider events. This is contract groundwork: the checkout, portal, catalog, usage, webhook, and payout flows described below still use Stripe; the contract alone does not register another provider or route those workflows through an adapter.
 
 The catalog carries a session type whole, including the hours it is bookable at by default — so the scheduler has an answer before any host has set their own.
 

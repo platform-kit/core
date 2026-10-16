@@ -12,7 +12,7 @@ sources:
     packages/kit/src/lib/router.js,
     packages/movable-types/src/instrument/ui/results/tabs.js,
   ]
-reviewed: 2026-10-12
+reviewed: 2026-10-13
 ---
 
 ## The manifest
@@ -62,4 +62,4 @@ The mark is drawn rather than linked, because the build photographs it for the f
 
 ## The router
 
-`@platform-kit/kit/lib/router.js` owns the routes (`ROUTES`), `navigate()`, the page-route test, the app's page slugs (`APP_PAGES`), the site's own routes from `#site/routes`, and the three rules the switches make — `KINDS_ON`, `ACCOUNTS_ON`, `DOCS_ONLY` (with `DOCS_BASE`, where the docs are addressed); the theme re-exports it. `/content` carries nested paths; the admin and the share cards carry their place in the path; a kind switched off falls to the hub; on a docs-only site `/content/docs/…` is an alias of `/docs/…`. With the social community layout, bare `/spaces` resolves to the configured community home; `/spaces/<slug>` remains the route for an individual space.
+`@platform-kit/kit/lib/router.js` owns the routes (`ROUTES`), `navigate()`, the page-route test, the app's page slugs (`APP_PAGES`), the site's own routes from `#site/routes`, and the three rules the switches make — `KINDS_ON`, `ACCOUNTS_ON`, `DOCS_ONLY` (with `DOCS_BASE`, where the docs are addressed); the theme re-exports it. `/content` carries nested paths; the admin and the share cards carry their place in the path; a kind switched off falls to the hub; on a docs-only site `/content/docs/…` is an alias of `/docs/…`. `/billing` and `/checkout/hyperswitch` are also recognized payment pages. With the social community layout, bare `/spaces` resolves to the configured community home; `/spaces/<slug>` remains the route for an individual space.

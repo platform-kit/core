@@ -18,7 +18,7 @@ sources:
     packages/movable-types/src/pages/EntriesPage.vue,
     packages/movable-types/src/components/landing/LandingEntries.vue,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-12
 ---
 
 The models module is a content type defined as data rather than code: one record, derived once into everything the kit needs. This page is how it is put together; [Content models](/docs/running-a-site/content/content-models) is what it does.

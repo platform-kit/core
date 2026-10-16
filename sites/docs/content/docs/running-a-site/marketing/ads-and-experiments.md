@@ -2,8 +2,17 @@
 title: Ads and experiments
 description: Calls to action in three placements, chosen by audience and topic; A/B tests as their own records.
 order: 37
-sources: [packages/kit/src/lib/interrupt.js, packages/kit/src/lib/ads.js, packages/kit/src/lib/experiments.js, packages/movable-types/src/components/admin/ExperimentsAdmin.vue, packages/movable-types/src/components/CtaHost.vue, packages/movable-types/src/components/AdCard.vue, packages/movable-types/src/components/SiteClose.vue]
-reviewed: 2026-10-09
+sources:
+  [
+    packages/kit/src/lib/interrupt.js,
+    packages/kit/src/lib/ads.js,
+    packages/kit/src/lib/experiments.js,
+    packages/movable-types/src/components/admin/ExperimentsAdmin.vue,
+    packages/movable-types/src/components/CtaHost.vue,
+    packages/movable-types/src/components/AdCard.vue,
+    packages/movable-types/src/components/SiteClose.vue,
+  ]
+reviewed: 2026-10-14
 ---
 
 ## Ads
@@ -12,7 +21,7 @@ An **ad** (Marketing → Ads) is a call to action: an internal title, a **button
 
 **Placements:**
 
-- **modal** — a card at the bottom right of any page (never inside the app, the admin, an article, a form on its own page — `/form/…` or `/to/…` — a booking page — `/book/…` — or the API reference);
+- **modal** — a card at the bottom right of any eligible page (never inside the app, the admin, an article, checkout — `/checkout/…` — a form on its own page — `/form/…` or `/to/…` — a booking page — `/book/…` — or the API reference);
 - **inline** — at the foot of an article's body;
 - **both** — modal and inline;
 - **footer** — the close at the foot of every article and the store's home (the question, the button, the glow on the ground). The footer shows the headline and the button only.
@@ -43,3 +52,5 @@ Two things put themselves over a page uninvited — an ad and the support chat �
 **In one page view the corner belongs to whoever takes it first**, and to nobody else. If an ad is going to show, the chat's pop-up is off for that page view; if the chat is already saying something, the ad waits for another page rather than stacking on it. The claim is dropped when the person goes somewhere else, because that is a new page view — and dismissing either gives the corner back, so the other may still speak later on the same page.
 
 The rules are pure and pinned by `build/interrupt.test.mjs`, which is where to add a path that should be left alone. After an asynchronous ad lookup, the current route and the shared quiet-route predicate are checked again before the ad claims the corner, so navigation to an ineligible page cannot reveal a late card.
+
+Checkout pages (`/checkout/…`) are also quiet: neither ads nor the support launcher appears over payment-entry controls.

@@ -36,6 +36,8 @@ PlatformKit is configurable: the generic demo exercises the built modules it ena
 - Review and guard destructive database changes before applying a plan.
 - Assemble and deploy the Edge Functions used by enabled features, along with the generated catalogs, strings, templates, and other data they need.
 - Provide API surfaces for content, forms, commerce, scheduling, support, community/Matrix, and the site's social network/AT Protocol, subject to the matching modules being enabled.
+- Keep Stripe as the built-in compatibility default while allowing a site to register its own server-side payment adapter, secrets, webhook verification, and supported capabilities.
+- Apply the same shared checkout, order, subscription, usage, and payout rules to normalized events from the selected provider; refuse unsupported operations before provider side effects.
 - Provide shared request handling, authentication, permissions, webhooks, and mock providers for supported integrations.
 
 ### Admin and CMS
@@ -183,7 +185,7 @@ PlatformKit is configurable: the generic demo exercises the built modules it ena
 - Publish products and collections, with product pages, collection pages, and store listings.
 - Offer one-time purchases, digital products, memberships, paid forms, paid sessions, and other site-defined offer kinds.
 - Provide a shopping bag, quantity controls, checkout, purchase confirmation, and an order ledger.
-- Synchronize declared offers with Stripe, and create or update checkout prices from the site's offers.
+- Keep Markdown offers authoritative and synchronize the Stripe catalog by default; a site-owned adapter may provide catalog synchronization when it declares that capability.
 - Sell product variants with named options and prices, including options refreshed from a supplier's catalogue and combinations a site defines.
 - Apply configured promotions to eligible products or variants, with rules, limits, and budgets; track stock availability and hold stock during checkout.
 - Fulfill physical goods and books through configured suppliers, and provide files or track print orders and delivery status where the offer requires them.
@@ -363,4 +365,4 @@ For the project's objectives and intended audience, see [PURPOSE.md](./PURPOSE.m
 
 ---
 
-**Sources:** `openspec/specs`, `packages/kit/build/modules/kit.mjs`, `packages/kit/build/modes.mjs`, `packages/kit/build`, `packages/kit/supabase`, `packages/kit/src/lib`, `packages/movable-types/src`, `sites/demo/platformkit.config.js`
+**Sources:** `openspec/specs`, `packages/kit/build/modules/kit.mjs`, `packages/kit/build/modes.mjs`, `packages/kit/build`, `packages/kit/supabase`, `packages/kit/src/lib`, `packages/kit/src/payment-provider.mjs`, `packages/kit/src/payment-provider.d.ts`, `packages/movable-types/src`, `sites/demo/platformkit.config.js`

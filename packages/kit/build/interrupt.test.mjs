@@ -11,7 +11,8 @@ console.log('\nINTERRUPT\n')
 /* --- where nothing may appear --- */
 for (const p of ['/admin', '/admin/support', '/app', '/app/chat', '/app/quiz/teachings', '/spaces', '/spaces/the-team/general',
   '/feed', '/feed/notifications', '/p/example',
-  '/__preview', '/__share/default', '/api', '/form/a-form', '/to/a-form', '/book/one-to-one', '/cart/c/abc', '/support']) {
+  '/__preview', '/__share/default', '/api', '/form/a-form', '/to/a-form', '/book/one-to-one', '/cart/c/abc',
+  '/checkout/hyperswitch', '/support']) {
   ok('nothing over ' + p, mayInterrupt(p) === false)
 }
 for (const p of ['/', '/content', '/content/articles/one', '/content/books/tao-te-ching', '/store', '/store/products/x', '/pricing']) {
@@ -20,7 +21,7 @@ for (const p of ['/', '/content', '/content/articles/one', '/content/books/tao-t
 ok('a path that is not a path is never interrupted', mayInterrupt('') === false && mayInterrupt(null) === false && mayInterrupt('nonsense') === false)
 ok('a page merely beginning with a quiet word is not quiet', mayInterrupt('/applications') === true && mayInterrupt('/apps') === true)
 ok('and /spaces-of-the-sea is a page like any other', mayInterrupt('/spaces-of-the-sea') === true)
-ok('the quiet list is the one the module publishes', QUIET.includes('/admin') && QUIET.includes('/app') && QUIET.includes('/spaces') && QUIET.includes('/feed') && QUIET.includes('/p'))
+ok('the quiet list is the one the module publishes', QUIET.includes('/admin') && QUIET.includes('/app') && QUIET.includes('/spaces') && QUIET.includes('/feed') && QUIET.includes('/p') && QUIET.includes('/checkout/'))
 ok('the configured community prefix is quiet', mayInterrupt('/community/coaching', ['/community']) === false)
 ok('a configured community prefix does not catch a neighboring route', mayInterrupt('/community-life/story', ['/community']) === true)
 ok('a custom community path is quiet', mayInterrupt('/our-community/social/notifications', ['/our-community']) === false)

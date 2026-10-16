@@ -9,14 +9,14 @@ sources:
     packages/movable-types/src/components/Orders.vue,
     packages/kit/supabase/functions/_shared/ledger.ts,
   ]
-reviewed: 2026-10-12
+reviewed: 2026-10-13
 ---
 
 A purchase says what somebody bought. An **order** is the thing that has a life after that: an
 address that may be corrected, two parcels against one basket, money going back, something coming
 back.
 
-A paid session can be booked as the buyer checks out. The ledger takes the attendee email from Stripe's Checkout Session, then claims its id in the service-role-only `booking_checkout_fulfilments` table before contacting the scheduler. The claim records `processing`, then `booked`, `unavailable` or `failed`; a duplicate webhook or success-page confirmation cannot claim the same session again. A successful booking stores the Checkout Session id on `bookings` under a unique index as a second safeguard.
+A paid session can be booked as the buyer checks out. The verified result from the selected payment provider supplies the attendee email, and the ledger claims a provider-scoped checkout reference before contacting the scheduler. The claim records `processing`, then `booked`, `unavailable` or `failed`; a duplicate notification or success-page confirmation cannot claim the same session again. The booking keeps that checkout reference as a second safeguard.
 
 **Sales → Orders** is every sale and what has happened to it since. The printed copies are a
 _filter_ of that page rather than a page of their own — a parcel from a printer and a parcel off

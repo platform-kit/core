@@ -21,18 +21,26 @@ const ofNative = (b: any): Made => ({ uid: b.uid, start_at: b.start_at, end_at: 
 export type Attendee = { email: string; name: string; timeZone: string; user_id?: string | null }
 /* a host's booking for others: `for` names the invitees (the first is the row's own), made_by the host, and nothing is judged, spent or charged */
 export type ForOthers = { attendees: Attendee[]; made_by: string; made_by_name: string; host?: string | null }
-export async function makeBooking(s: Session, o: { start: string; attendee: Attendee; user_id: string | null; notes: string; phone?: string; credit: string | null; forOthers?: ForOthers; response?: string | null; minutes?: number; count?: number; stripeCheckoutSessionId?: string }): Promise<Made> {
+export async function makeBooking(s: Session, o: { start: string; attendee: Attendee; user_id: string | null; notes: string; phone?: string; credit: string | null; forOthers?: ForOthers; response?: string | null; minutes?: number; count?: number; checkoutIdentity?: string; stripeCheckoutSessionId?: string }): Promise<Made> {
   const sch = schedulerOf(s) as any
   let made: Made
   const f = o.forOthers
   if (schedulerIdOf(s) === 'cal') {
-    const b = await sch.book(s, { start: o.start, attendee: o.attendee, user_id: o.user_id, notes: o.notes, stripe_checkout_session_id: o.stripeCheckoutSessionId })
+    const b = await sch.book(s, {
+      start: o.start, attendee: o.attendee, user_id: o.user_id, notes: o.notes,
+      checkout_identity: o.checkoutIdentity, stripe_checkout_session_id: o.stripeCheckoutSessionId,
+    })
     if (o.credit) await spendCredit(o.credit)
-    await mirror(b, o.user_id, s, o.credit, o.stripeCheckoutSessionId)
+    await mirror(b, o.user_id, s, o.credit, o.checkoutIdentity, o.stripeCheckoutSessionId)
     if (f) await admin.from('bookings').update({ attendee_emails: [...new Set(f.attendees.map((a) => a.email.toLowerCase()))], made_by: f.made_by, made_by_name: f.made_by_name }).eq('uid', b.uid)
     made = ofCal(b)
   } else {
-    const b = await sch.book(s, { start: o.start, attendee: o.attendee, attendees: f?.attendees, user_id: o.user_id, notes: o.notes, phone: o.phone, credit_id: o.credit, made_by: f?.made_by, made_by_name: f?.made_by_name, host: f?.host, minutes: o.minutes, count: o.count, stripe_checkout_session_id: o.stripeCheckoutSessionId })
+    const b = await sch.book(s, {
+      start: o.start, attendee: o.attendee, attendees: f?.attendees, user_id: o.user_id, notes: o.notes,
+      phone: o.phone, credit_id: o.credit, made_by: f?.made_by, made_by_name: f?.made_by_name,
+      host: f?.host, minutes: o.minutes, count: o.count, checkout_identity: o.checkoutIdentity,
+      stripe_checkout_session_id: o.stripeCheckoutSessionId,
+    })
     if (o.credit) await spendCredit(o.credit)
     /* a video room on this site: the provider names the room and the row's Join opens the call page; every other kind of place asks nothing */
     const v = videoOf(s) as any
