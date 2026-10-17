@@ -140,8 +140,11 @@ card fields render, the card is vaulted, and the page calls `confirm-intent` wit
 Router sends the payment to the Stripe connector, which Stripe then refuses until raw card handling is
 enabled. A V2 payment on the same Stripe test connector confirmed with a Stripe test token succeeded,
 retrieved as paid, and refunded, but that run used a payload the product does not ship, so it only
-shows that the Router, retrieval, and refund paths work. An accepted card payment through the
-documented SDK path is not yet verified. Do not treat unit tests or the card-free Router smoke test
+shows that the Router, retrieval, and refund paths work. **A Stripe connector behind Hyperswitch
+needs the Stripe account to accept card data from Hyperswitch** — Hyperswitch's Stripe connector guide
+lists it as a prerequisite, and the account owner asks Stripe to enable it. That is an operator
+prerequisite outside PlatformKit, so PlatformKit's browser verification is the fake-processor run
+above, and a Stripe-accepted card through the documented SDK path is not claimed. Do not treat unit tests or the card-free Router smoke test
 as proof of a successful payment. The configured Stripe connector must use a test key before any
 paid test.
 Compare the official [React demo client](https://github.com/juspay/hyperswitch-web/blob/b7ee7e48bf1e55036ffaa3bad313aab8a9df2ab7/Hyperswitch-React-Demo-App/src/Payment.js),

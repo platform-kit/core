@@ -45,12 +45,13 @@ Verified by: `build/hyperswitch-payment-provider-adapter.test.ts` request-path a
 
 Verified by: `build/hyperswitch-payment-provider.test.mjs` capability checks and `build/hyperswitch-payment-provider-adapter.test.ts` no-side-effect assertions
 
-#### Scenario: Stripe checkout uses the V2 browser flow
+#### Scenario: A card checkout uses the V2 browser flow
 
-- **WHEN** a customer completes a Stripe test payment through the Hyperswitch checkout page
+- **WHEN** a customer pays with a test card through the Hyperswitch checkout page on a V2 Router
 - **THEN** card entry remains inside the V2-compatible Hyperswitch SDK's secure fields, PlatformKit does not receive card data, and access is granted only after the V2 Router confirms the payment through retrieval or an authenticated webhook
+- **AND** a declined card leaves the customer on the checkout page with its error
 
-Verified by: the real-browser V2 Stripe integration test, including V2 request-path capture, server-side status verification, and refund
+Verified by: `build/hyperswitch-browser.integration.mjs` in a real browser against a local V2 Router, Card Vault and self-hosted SDK, with `build/hyperswitch-fake-processor.mjs` as the processor: V2 request-path capture, no card number in any request to the site, server-side paid status, saved-card cleanup, refund, and a declined card. A Stripe connector behind the Router additionally requires the Stripe account to accept card data from Hyperswitch, which the account owner enables with Stripe; that is an operator prerequisite outside PlatformKit, documented on the payment providers page, and is not part of this verification.
 
 #### Scenario: A self-hosted Web SDK can be selected
 
