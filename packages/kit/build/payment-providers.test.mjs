@@ -279,9 +279,12 @@ const hyperswitchClientCheckout = normalizePaymentCheckoutResult('hyperswitch', 
   client: {
     provider: 'hyperswitch',
     apiBaseUrl: 'https://sandbox.hyperswitch.io',
-    clientUrl: 'https://beta.hyperswitch.io/v1',
+    clientUrl: 'https://beta.hyperswitch.io/v2',
     publishableKey: 'pk_test',
     clientSecret: 'pay_123_secret_test',
+    paymentMethodSessionId: 'pms_123',
+    sdkAuthorization: 'sdk_auth_123',
+    profileId: 'pro_123',
     successUrl: 'https://example.test/app?checkout=success&session=pay_123',
     cancelUrl: 'https://example.test/cart',
   },
@@ -406,7 +409,7 @@ assert.match(hyperswitchRegistry, /from '\.\/hyperswitch-payment-provider\.ts'/)
 assert.match(hyperswitchRegistry, /id: "hyperswitch"/)
 assert.match(hyperswitchRegistry, /HYPERSWITCH_API_KEY/)
 assert.match(hyperswitchRegistry, /"profileCapabilities"/)
-assert.match(hyperswitchRegistry, /optionalSecrets: \["HYPERSWITCH_CLIENT_URL"\]/)
+assert.match(hyperswitchRegistry, /optionalSecrets: \["HYPERSWITCH_CLIENT_URL","HYPERSWITCH_PAYMENT_METHODS_PREFIX"\]/)
 assert.match(hyperswitchRegistry, /createPaymentProvider1\(providerSecrets, registration\.configuration, runtime\)/)
 const typedHyperswitchRegistry = paymentProviderRegistrySource(
   [STRIPE_PAYMENT_PROVIDER_REGISTRATION, HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION],

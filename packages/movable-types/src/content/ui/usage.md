@@ -62,6 +62,7 @@ payment-missing: Add a saved payment method before enabling automatic top-up.
 manage-payment: Manage saved payment method
 payment-method-required: Add a saved payment method before enabling automatic top-up.
 payment-settings-error: Payment settings could not be opened.
+hyperswitch-v2-browser-unavailable: The secure V2 payment form could not be loaded. No card details were submitted.
 payment-method-management-title: Manage saved payment methods
 payment-method-management-help: Add or remove a saved payment method securely with Hyperswitch.
 payment-method-save: Save payment method

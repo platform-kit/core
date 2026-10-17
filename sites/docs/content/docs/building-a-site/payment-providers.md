@@ -39,6 +39,8 @@ sources:
     packages/movable-types/src/pages/BillingPortalPage.vue,
     packages/movable-types/src/pages/HyperswitchCheckoutPage.vue,
     packages/movable-types/src/components/UsagePanel.vue,
+    packages/kit/build/hyperswitch-sdk.test.mjs,
+    sites/demo/supabase/config.toml,
     packages/movable-types/src/content/ui/usage.md,
     packages/movable-types/src/pages/AdminPage.vue,
     packages/movable-types/src/components/admin/PaymentsAdmin.vue,
@@ -51,6 +53,9 @@ sources:
     packages/kit/build/hyperswitch-local.integration.test.ts,
     packages/kit/build/hyperswitch-test-stack.mjs,
     packages/kit/build/hyperswitch-v2-test.compose.yml,
+    packages/kit/build/hyperswitch-fake-processor.mjs,
+    packages/kit/build/hyperswitch-browser.integration.mjs,
+    packages/kit/build/hyperswitch-browser.steps.ts,
     packages/kit/build/test.mjs,
     package.json,
     packages/kit/build/payment-provider-adapters.test.mjs,
@@ -63,7 +68,7 @@ sources:
     packages/kit/supabase/functions/push-catalog,
     packages/kit/supabase/functions/stripe-webhook,
   ]
-reviewed: 2026-10-13
+reviewed: 2026-10-16
 ---
 
 PlatformKit keeps one payment provider active per site. Stripe is the built-in provider and the
@@ -72,11 +77,85 @@ speaks the provider's protocol, while PlatformKit continues to decide what the s
 orders and subscriptions, grant access, and make webhook processing idempotent. There is no
 processor combining, fallback, or automatic migration of customers between providers.
 
-The core includes the existing Stripe adapter and a built-in Hyperswitch adapter. Hyperswitch
-supports one-time and subscription checkout through a generic PlatformKit page using its Web SDK.
-Subscription checkout requests an off-session saved payment method (including zero-amount trials);
-PlatformKit confirms the result through provider retrieval or a verified webhook. The server API
-key and webhook signing key never enter browser code.
+The core includes the existing Stripe adapter and a built-in Hyperswitch adapter. Its browser flow
+uses the official Hyperswitch Web SDK's secure card fields: card details go straight from the
+customer's browser to Hyperswitch's Vault and never reach PlatformKit. The SDK returns a short-lived
+payment-method token, and the checkout page confirms the payment with
+`/v2/payments/{id}/confirm-intent` using that token (`payment_token` plus a vaulted `card_token`).
+The adapter does not use the SDK's V1 payment-confirm helper and does not accept Stripe.js tokens.
+The adapter calls the Router's V2 API: `/v2/payments` and `/v2/refunds` for payments and refunds.
+Customers, payment-method sessions, and saved methods belong to the Router's payment-method service
+group, which the Router serves under one configurable prefix (`payment_methods_prefix`).
+Hyperswitch's [Vault SDK guide](https://docs.hyperswitch.io/integration-guide/payment-experience/vault-then-pay/web/vault-sdk-js-with-rest-api-integration.md)
+creates the session at `/v1/payment-method-sessions`, and the Web SDK addresses that same path, so the
+adapter defaults to `v1` (`/v1/customers`, `/v1/payment-method-sessions`, and saved methods) and the
+Router must be configured to match: `ROUTER__MICRO_SERVICES__PAYMENT_METHODS_PREFIX=v1`. A Router left
+on its stock `v2` prefix needs `HYPERSWITCH_PAYMENT_METHODS_PREFIX=v2`, but the SDK's card fields
+then have nothing to call, so that setting is only for non-card use.
+
+With the SDK's card fields, checkout sessions are persistent, for one-time purchases as well as subscriptions. The V2 Router
+resolves a payment token from its database, so a volatile (Redis-only) session cannot be confirmed
+with `confirm-intent`. A persistent session needs a running Hyperswitch Card Vault (`locker.host`),
+because the Router vaults the card there. A one-time purchase would therefore leave the vaulted card
+on the customer record, so once such a purchase is retrieved as paid the adapter deletes the card
+saved during that checkout. It never deletes a card that existed before the payment, subscription
+checkouts keep theirs, and a failed deletion is retried on the next retrieval.
+
+A self-hosted Router needs a Web SDK built for it: the SDK's content-security policy only allows
+the backend origins it was built with (its build-time backend URL setting), and `HYPERSWITCH_CLIENT_URL` points at
+that build. The hosted SDK cannot call a private Router.
+
+**Stripe-backed profiles need Stripe's approval.** With the Hyperswitch SDK's card fields the Router
+sends the card number to Stripe. Stripe rejects that ("Sending credit card numbers directly to the
+Stripe API is generally unsafe") until raw card data APIs are enabled for the account, which only
+Stripe support can do ([Enabling access to raw card data APIs](https://support.stripe.com/questions/enabling-access-to-raw-card-data-apis)).
+For testing only, support enables it without compliance documents; for live mode Stripe asks for
+documentation, and Hyperswitch's [PCI compliance page](https://docs.hyperswitch.io/other-features/security-and-compliance/pci-compliance.md)
+says to share Hyperswitch's PCI Attestation of Compliance. Hyperswitch's [Stripe connector guide](https://docs.hyperswitch.io/other-features/connectors/available-connectors/stripe.md)
+lists this as a prerequisite. PlatformKit has no workaround for this. The Router has no input for a Stripe-issued token
+(`pm_...` or `tok_...`); a payload that disguises one as another payment method would misrepresent
+the payment, so it is not offered. Hyperswitch documents Stripe.js tokens only for Prism, its stateless
+connector library
+([Connector Token](https://docs.hyperswitch.io/integrations/prism/prism/payment-methods/connector-token.md)),
+which has no routing, vault, retries, or stored state, calls Stripe with a Stripe secret key that
+PlatformKit would then hold, and, because its Node package loads a native library through FFI, would
+have to run as its standalone gRPC microservice to be called from the Supabase Edge Functions. That
+would be a separate adapter, not a change to this one.
+
+**A local fake processor for end-to-end tests.** The Router's built-in test connectors (fauxpay and
+friends) are not served by a V2 build, so `packages/kit/build/hyperswitch-fake-processor.mjs` is a small
+Stripe-shaped test double: run it (`node packages/kit/build/hyperswitch-fake-processor.mjs 12111`), point
+the Router's `stripe.base_url` at it, and the whole card path runs without Stripe's raw-card approval.
+It accepts card numbers, declines `4000000000000002`, and supports retrieval and refunds. It proves
+the Router, SDK, Card Vault, adapter, retrieval, one-time card cleanup, and refund paths work together; it
+says nothing about Stripe, and a result from it must never be reported as a Stripe result. Run against
+it in a real browser, a card entered in the SDK fields was vaulted and paid, retrieved as paid through
+V2, its saved card deleted, and then refunded; the declined card showed the checkout's error message
+and stayed on the checkout page. That run is `node packages/kit/build/hyperswitch-browser.integration.mjs
+<private.json>`, where the private file names the running Router, its profile keys, and the SDK URL and
+never leaves the machine; it also asserts that no request to the site carried the card number.
+
+Verified in a real browser against a local V2 Router, Card Vault, and self-hosted SDK: the secure
+card fields render, the card is vaulted, and the page calls `confirm-intent` with the token, so the
+Router sends the payment to the Stripe connector, which Stripe then refuses until raw card handling is
+enabled. A V2 payment on the same Stripe test connector confirmed with a Stripe test token succeeded,
+retrieved as paid, and refunded, but that run used a payload the product does not ship, so it only
+shows that the Router, retrieval, and refund paths work. An accepted card payment through the
+documented SDK path is not yet verified. Do not treat unit tests or the card-free Router smoke test
+as proof of a successful payment. The configured Stripe connector must use a test key before any
+paid test.
+Compare the official [React demo client](https://github.com/juspay/hyperswitch-web/blob/b7ee7e48bf1e55036ffaa3bad313aab8a9df2ab7/Hyperswitch-React-Demo-App/src/Payment.js),
+[demo server](https://github.com/juspay/hyperswitch-web/blob/b7ee7e48bf1e55036ffaa3bad313aab8a9df2ab7/Hyperswitch-React-Demo-App/server.js),
+[SDK card-confirm helper](https://github.com/juspay/hyperswitch-web/blob/b7ee7e48bf1e55036ffaa3bad313aab8a9df2ab7/src/Utilities/PaymentHelpers.res),
+and [SDK payment-element renderer](https://github.com/juspay/hyperswitch-web/blob/b7ee7e48bf1e55036ffaa3bad313aab8a9df2ab7/src/PaymentElementRenderer.res).
+Also see Hyperswitch's [Headless SDK guide](https://docs.hyperswitch.io/integration-guide/payment-experience/pay-then-vault/web/headless-sdk.md),
+[SDK payment-flow overview](https://docs.hyperswitch.io/about-hyperswitch/sdk-payment-flows.md),
+[Token Led Payment guide](https://docs.hyperswitch.io/integration-guide/payment-suite/payment-method-card/payments.md),
+and [server-to-server payments guide](https://docs.hyperswitch.io/integration-guide/payment-suite/server-to-server-payments.md).
+The Token Led guide's payment confirmation is V1; PlatformKit does not use that confirmation path.
+The V2 `payment_link_enabled` flag still returns no hosted URL from the tested Router, and the V2
+`card_token` variant refers to Hyperswitch-vaulted data rather than a Stripe.js token. Server API
+and webhook signing keys remain server-side.
 
 PlatformKit manages Hyperswitch subscription changes, recurring periods, cancellation-at-period-end,
 and the `/billing` self-service page (also available at `/app/billing`), linked from the signed-in
@@ -90,23 +169,43 @@ billing. Hyperswitch does not document a native metered-usage event API, so
 `usage.metered` is a PlatformKit capability and is not required in the Hyperswitch profile's
 connector capability declaration. The
 billing page supports plan changes, cancellation, and resuming a scheduled cancellation, but does
-not replace a saved payment method. Customers can manage Hyperswitch saved methods in the Usage
-section of `/billing` (`/billing#usage`). PlatformKit creates an authenticated payment-method
-session on the server and mounts Hyperswitch's Vault management widget in the browser. The server API key remains private, and
-Hyperswitch handles sensitive card details and any required authentication.
+not replace a saved payment method. The Usage section of `/billing` (`/billing#usage`) has a Hyperswitch saved-method flow that creates
+an authenticated payment-method session on the server and mounts the SDK's payment-method fields.
+Saved-method management needs the same Router, Vault, and SDK setup as checkout and has not been
+verified end to end.
 
-Unsettled incremental charges appear in the authenticated Usage section of `/billing`. If a saved
-card needs additional verification, the page completes it with the selected provider's browser SDK; only a
-server-verified successful payment clears the outstanding amount. A declined attempt remains
-unsettled and can be retried after the saved payment method is corrected. Stripe requires
-`STRIPE_PUBLISHABLE_KEY` only for sites with an offer that opts into incremental usage; ordinary
-Stripe checkout does not need it.
+Unsettled incremental charges appear in the authenticated Usage section of `/billing`. A saved card
+that needs additional verification requires a compatible provider browser SDK; this recovery step
+is not verified for Hyperswitch V2. Only a server-verified successful payment clears an outstanding
+amount. Stripe requires `STRIPE_PUBLISHABLE_KEY` only for sites with an offer that opts into
+incremental usage; ordinary Stripe checkout does not need it.
 
 The adapter rejects tax and tax-ID collection, adjustable quantities, and shipping collection before
 creating a payment. PlatformKit owns the offer catalog and does not create Hyperswitch products or
-prices. The local Hyperswitch integration runner creates a customer, creates and confirms a
-test-card payment for that customer, verifies the normalized payment status, and refunds it against
-a locally running service. The repository includes an opt-in Docker Compose override that builds
+prices. The local Hyperswitch runner is a V2 API smoke test: it creates a customer, optionally creates a
+payment-method session, creates an unpaid checkout intent, and retrieves its status. It does not
+submit card data, authorize a payment, or issue a refund. Passing this smoke test does not verify
+Stripe card acceptance or browser checkout. The previous API-only runner that posted raw card data
+has been removed. A successful Stripe payment, V2 status retrieval, and refund remain
+unverified. The V2 health endpoint confirms that the Router is running; it does not confirm that
+the Card Vault and its JWE keys are configured. Run the Hyperswitch Card Vault (its `/api/v2/vault`
+routes), set `locker.host` to it, and use one RSA key pair for the Router's `jwekey` and the vault's
+`locker_private_key`/tenant `public_key`, with the vault tenant named `public`, before testing
+payment-method sessions.
+
+As of 2026-10-16, the published SDK's payment-method code is named for V2 but addresses
+`/v1/payment-method-sessions/...`, which a V2 Router serves when its payment-method prefix is `v1`.
+V2 intent creation returns a `cs_...` client secret. Enabling `payment_link_enabled` on V2 intent
+creation does not return a hosted checkout URL, and V2 create-and-confirm requires payment-method
+data. Neither path is a card-free hosted-checkout fallback.
+
+The separate Hyperswitch Vault/Payment Methods SDK flow uses payment-method sessions and payment
+tokens; it is not the same integration as Prism's Stripe.js connector-token flow. In the V1 Router
+API, `payment_token` is a Hyperswitch vault reference, not a Stripe `pm_...` ID, and the Stripe
+connector does not implement the hosted `PaymentSession` operation. Do not substitute a Stripe.js
+token or assume a hosted Stripe Checkout fallback for this Router flow.
+
+The repository includes an opt-in Docker Compose override that builds
 the router with Hyperswitch v2, OLTP, payout, and tokenization features, runs v2 migrations, and
 checks the v2 health endpoint. It uses the Hyperswitch source checkout's Compose dependencies so
 the normal unit suite does not need to build or start the service. For the source revision validated
@@ -296,10 +395,10 @@ connector or hold its credentials.
 Select Hyperswitch as the site's one payment provider and list the capabilities verified for its
 business profile. The built-in adapter implements checkout and PlatformKit-managed subscription
 billing, but the Hyperswitch sandbox, multi-connector routing, and production profile have not been
-verified. Complete those checks before using it for production sales. For provider offerings, add
-`customer.create` and `payouts.connected-accounts` only after configuring payout processors and
-supported payout methods in the Hyperswitch profile; a saved method alone does not prove that the
-profile can execute a payout.
+verified. Complete those checks before using it for production sales. Hyperswitch's documented V2
+API does not include connected-account payout operations, so the built-in adapter does not expose
+`payouts.connected-accounts`; configuring a payout connector or saved payment method does not make
+that capability available.
 
 ```js
 export default {
@@ -328,16 +427,31 @@ native Hyperswitch features. Hyperswitch does not provide an aggregate capabilit
 profile. PlatformKit keeps its catalog and offer files authoritative and does not create
 Hyperswitch products or prices.
 
-Set `HYPERSWITCH_BASE_URL`, `HYPERSWITCH_API_KEY`, `HYPERSWITCH_PROFILE_ID`, and
-`HYPERSWITCH_PUBLISHABLE_KEY` and `HYPERSWITCH_WEBHOOK_SECRET` in the server environment. The API
-key and webhook signing key never enter browser assets; the publishable key and one payment's client
-secret are used only on the checkout page. By default, the page loads the hosted Hyperswitch Web
-SDK. Optionally set `HYPERSWITCH_CLIENT_URL` to use a self-hosted Web SDK; local development may use
-a loopback HTTP URL, while deployed sites require HTTPS. The webhook secret is the profile's
+Set `HYPERSWITCH_BASE_URL`, `HYPERSWITCH_API_KEY`, `HYPERSWITCH_PROFILE_ID`,
+`HYPERSWITCH_PUBLISHABLE_KEY`, and `HYPERSWITCH_WEBHOOK_SECRET` in the server environment. The API
+key and webhook signing key never enter browser assets. The publishable key, payment client secret,
+payment-method session authorization, and session ID are returned only for the checkout tab.
+`HYPERSWITCH_CLIENT_URL` is optional; the default is Hyperswitch's hosted V2 SDK base. A custom URL
+must end in `/v2` (or be a loopback URL for local development), and the browser loads
+`HyperLoader.js` from it directly. The webhook secret is the profile's
 `payment_response_hash_key`. Do not set Stripe credentials for a Hyperswitch site. The adapter
 authenticates the raw webhook body before normalizing events. Checkout is a focused, branded page
-with an order summary and secure payment form; invalid or expired links provide a clear return to
-the store.
+with an order summary and provider-controlled secure card fields; invalid or expired links provide
+a clear return to the store.
+
+The official Web SDK loader still contains V1 payment-method-session paths, and the Token-Led guide
+documents V1 payment confirmation. PlatformKit uses the SDK only for provider-controlled card
+entry and V2 session confirmation; it then sends the returned Hyperswitch session token to V2
+`confirm-intent` with a scoped publishable key and client secret. This keeps card data out of
+PlatformKit and avoids the V1 payment-confirm helper. The V2 session-token flow is wired but has
+not yet passed a real browser payment and issuer-authentication test. A successful paid-status
+retrieval and refund are also unverified. Do not treat unit tests, the SDK asset check, or the
+card-free Router smoke test as proof of a successful payment. The configured Stripe connector must
+be verified as test mode before any paid test. See the
+[Token-Led Payment guide](https://docs.hyperswitch.io/integration-guide/payment-suite/payment-method-card/payments.md),
+[V2 payment-method-session confirmation](https://api-reference.hyperswitch.io/v2/payment-method-session/payment-method-session--confirm-a-payment-method-session),
+[V2 payment confirmation](https://api-reference.hyperswitch.io/v2/payments/payments--confirm-intent), and the
+[official Web SDK session helper](https://github.com/juspay/hyperswitch-web/blob/b7ee7e48bf1e55036ffaa3bad313aab8a9df2ab7/src/Utilities/PaymentHelpersV2.res).
 
 ## Payment controls in admin
 

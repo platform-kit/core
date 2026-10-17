@@ -6,16 +6,16 @@ The built-in Hyperswitch provider lets a site keep PlatformKit's complete shared
 
 ## ADDED Requirements
 
-### Requirement: Hyperswitch implements the complete built-in payment contract
+### Requirement: Hyperswitch exposes documented V2 payment capabilities only
 
-The built-in Hyperswitch provider SHALL preserve every payment capability exposed by PlatformKit's built-in Stripe provider: one-time and subscription checkout; checkout confirmation; trials, tax, payment-method selection, adjustable quantities, and shipping terms; subscription changes and proration; customer creation and portal sessions; catalog synchronization; refunds; metered usage and prepaid top-ups; and connected-account payout operations. Payment, refund, and payout movement SHALL use Hyperswitch as the sole processor. PlatformKit MAY provide offer/catalog management, recurring billing state, usage accounting, and customer self-service through its shared commerce layer where Hyperswitch does not document a native equivalent. It SHALL NOT silently claim those PlatformKit-managed operations as Hyperswitch profile capabilities, nor omit them from the site-facing contract.
+The built-in Hyperswitch provider SHALL use the documented Router APIs of a V2 Router for every Hyperswitch operation it exposes: `/v2` routes for payments and refunds, and the Router's payment-method service group (customers, payment-method sessions, saved methods) under the prefix that Hyperswitch's Vault SDK guide and the Web SDK use, `v1` by default: the adapter's `HYPERSWITCH_PAYMENT_METHODS_PREFIX` and the Router's `payment_methods_prefix` must match, and neither moves payments or refunds. It SHALL NOT call the V1 Router's payment, refund, or payout APIs or fall back to a different API version when a route is unavailable. PlatformKit MAY provide offer/catalog management, recurring billing state, usage accounting, and customer self-service through its shared commerce layer where Hyperswitch does not document a native equivalent. An operation that lacks a documented V2 payment API SHALL NOT be advertised as a Hyperswitch capability and SHALL fail explicitly before creating a payment or changing commerce state. In particular, connected-account payouts remain unavailable until Hyperswitch documents a V2 payout API.
 
-#### Scenario: Full provider contract is available
+#### Scenario: V2-backed provider capabilities are available
 
 - **WHEN** a site selects and configures the built-in Hyperswitch provider
-- **THEN** every capability provided by the built-in Stripe provider is available with the same PlatformKit-level behavior, using Hyperswitch for payment movement and the shared commerce layer for PlatformKit-managed behavior
+- **THEN** every V2-backed capability declared for the configured profile is available with the same PlatformKit-level behavior, using Hyperswitch for payment movement and the shared commerce layer for PlatformKit-managed behavior
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs` capability-contract matrix and Hyperswitch sandbox integration coverage
+Verified by: `build/hyperswitch-payment-provider.test.mjs` capability-contract matrix, V2 adapter tests, and V2 Router integration coverage
 
 #### Scenario: Checkout preserves the site's requested terms
 
@@ -29,7 +29,28 @@ Verified by: `build/hyperswitch-payment-provider.test.mjs` checkout capability c
 - **WHEN** a Hyperswitch checkout is created
 - **THEN** PlatformKit renders Hyperswitch's documented Web SDK with the returned client secret, provides an explicit site-owned cancel action, and treats payment as complete only after provider retrieval or an authenticated webhook confirms it
 
-Verified by: Hyperswitch adapter and checkout-page tests, plus Hyperswitch sandbox integration coverage
+Verified by: V2 adapter and checkout-page tests, plus the V2 Router browser integration test
+
+#### Scenario: Every provider request uses V2 without fallback
+
+- **WHEN** PlatformKit creates, confirms, retrieves, refunds, or manages a Hyperswitch payment method or customer
+- **THEN** the operation uses its documented route on the V2 Router (`/v2` for payments and refunds; customers, sessions, and saved methods use the configured payment-method prefix, `v1` by default), and an unavailable route produces an explicit error without retrying through a different API version
+
+Verified by: `build/hyperswitch-payment-provider-adapter.test.ts` request-path assertions and the V2 Router integration suite
+
+#### Scenario: A capability without a V2 API is not exposed
+
+- **WHEN** a site enables connected-account payouts through Hyperswitch while the documented V2 API has no payout operation
+- **THEN** Hyperswitch does not declare that capability and refuses the request before any provider or commerce side effect
+
+Verified by: `build/hyperswitch-payment-provider.test.mjs` capability checks and `build/hyperswitch-payment-provider-adapter.test.ts` no-side-effect assertions
+
+#### Scenario: Stripe checkout uses the V2 browser flow
+
+- **WHEN** a customer completes a Stripe test payment through the Hyperswitch checkout page
+- **THEN** card entry remains inside the V2-compatible Hyperswitch SDK's secure fields, PlatformKit does not receive card data, and access is granted only after the V2 Router confirms the payment through retrieval or an authenticated webhook
+
+Verified by: the real-browser V2 Stripe integration test, including V2 request-path capture, server-side status verification, and refund
 
 #### Scenario: A self-hosted Web SDK can be selected
 
@@ -40,9 +61,9 @@ Verified by: Hyperswitch adapter and checkout-page tests, plus Hyperswitch sandb
 
 Verified by: Hyperswitch SDK URL and adapter contract tests and deploy checks; the configured local SDK browser journey remains pending task 3.9
 
-#### Scenario: Recurring and post-purchase operations use the same provider
+#### Scenario: Recurring and post-purchase operations use the same V2 provider
 
-- **WHEN** a site changes or cancels a subscription, opens a customer portal, synchronizes its catalog, refunds a payment, reports usage, performs a prepaid top-up, or creates or pays a connected account
+- **WHEN** a site changes or cancels a subscription, opens a customer portal, synchronizes its catalog, refunds a payment, reports usage, or performs a prepaid top-up
 - **THEN** payment movement is performed through Hyperswitch and other behavior is performed through Hyperswitch or PlatformKit's shared commerce layer, returning the corresponding normalized result without changing the site's source-of-truth offers or ledger rules
 
 Verified by: `build/hyperswitch-payment-provider.test.mjs` operation matrix and Hyperswitch sandbox integration coverage

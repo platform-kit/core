@@ -6,6 +6,7 @@ import { resolveUsageUnit } from '@platform-kit/kit/lib/usage-unit.js'
 import { us } from '@platform-kit/kit/lib/content.js'
 import { products } from '#content'
 import {
+  HYPERSWITCH_V2_BROWSER_UNAVAILABLE_CODE,
   confirmPaymentMethodManagementSession,
   createHyperswitchClient,
   createPaymentMethodManagementWidget,
@@ -40,6 +41,13 @@ const monthlyCap = ref('20')
 const consent = ref(false)
 let authListener
 let stripeScriptPromise
+
+function hyperswitchV2UnavailableMessage(error) {
+  return error?.code === HYPERSWITCH_V2_BROWSER_UNAVAILABLE_CODE
+    ? W.value['hyperswitch-v2-browser-unavailable'] ||
+      'The secure V2 payment form could not be loaded. No card details were submitted.'
+    : ''
+}
 
 const usageOffers = computed(() => (products || []).filter((offer) => offer.published !== false && offer.usage))
 const usagePacks = computed(() => usageOffers.value.filter((offer) =>
@@ -327,7 +335,7 @@ async function beginIncrementalPayment(settlement) {
     }
   } catch (error) {
     console.error('Unable to prepare incremental usage payment', error)
-    incrementalFault.value = W.value['incremental-action-error']
+    incrementalFault.value = hyperswitchV2UnavailableMessage(error) || W.value['incremental-action-error']
   } finally {
     busy.value = false
   }
@@ -519,8 +527,11 @@ async function managePayment(forPayout = false) {
     }
   } catch (error) {
     console.error('Unable to open payment settings', error)
-    paymentMethodFault.value = W.value['payment-settings-error']
-    if (incrementalAttention.value.length) incrementalFault.value = W.value['payment-settings-error']
+    const unavailable = hyperswitchV2UnavailableMessage(error)
+    paymentMethodFault.value = unavailable || W.value['payment-settings-error']
+    if (incrementalAttention.value.length) {
+      incrementalFault.value = unavailable || W.value['payment-settings-error']
+    }
   } finally {
     busy.value = false
   }

@@ -144,6 +144,9 @@ export interface PaymentCheckoutResult {
     clientUrl: string
     publishableKey: string
     clientSecret: string
+    paymentMethodSessionId: string
+    sdkAuthorization: string
+    profileId: string
     successUrl: string
     cancelUrl: string
   }
@@ -287,7 +290,8 @@ export interface PaymentProviderAdapter {
   createPaymentMethodSession?(input: {
     customerId: string
     returnUrl: string
-  }): Promise<{ sdkAuthorization: string; profileId: string }>
+    storageType?: 'volatile' | 'persistent'
+  }): Promise<{ id: string; sdkAuthorization: string; profileId: string }>
   syncCatalog?(offers: readonly PaymentCatalogOffer[]): Promise<PaymentCatalogResult>
   refund?(input: { paymentId: string; amountMinor?: number; idempotencyKey: string }): Promise<{ refundId: string; status: string }>
   reportUsage?(input: PaymentUsageReport): Promise<{ reportId: string }>

@@ -506,12 +506,17 @@ export function checkDeploy(env, s, modules = {}, stepNeeds = [], shape = null, 
       !/^pk_(?:dev|snd|prd)_[^\s]+$/.test(env.HYPERSWITCH_PUBLISHABLE_KEY)) {
     wrong.push('HYPERSWITCH_PUBLISHABLE_KEY must use a Web SDK key issued with the pk_dev_, pk_snd_, or pk_prd_ prefix')
   }
+  if (has(env, 'HYPERSWITCH_PAYMENT_METHODS_PREFIX') &&
+      !['v1', 'v2'].includes(env.HYPERSWITCH_PAYMENT_METHODS_PREFIX)) {
+    wrong.push('HYPERSWITCH_PAYMENT_METHODS_PREFIX must be v1 or v2')
+  }
   if (selectedPaymentProvider === 'hyperswitch' && has(env, 'HYPERSWITCH_CLIENT_URL')) {
     try {
       const clientUrl = new URL(env.HYPERSWITCH_CLIENT_URL)
+      const sdkPath = clientUrl.pathname.replace(/\/+$/, '')
       if (clientUrl.protocol !== 'https:' || clientUrl.username || clientUrl.password ||
-          clientUrl.search || clientUrl.hash) {
-        wrong.push('HYPERSWITCH_CLIENT_URL must be an https SDK base URL without credentials, query, or fragment')
+          clientUrl.search || clientUrl.hash || sdkPath.endsWith('/v1') || !sdkPath.endsWith('/v2')) {
+        wrong.push('HYPERSWITCH_CLIENT_URL must be an https V2 SDK base URL without credentials, query, or fragment')
       }
     } catch {
       wrong.push('HYPERSWITCH_CLIENT_URL is not a valid https SDK base URL')
@@ -709,8 +714,18 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       undefined,
       hyperswitchSite,
     ).wrong.some((message) => /HYPERSWITCH_PUBLISHABLE_KEY.*pk_dev_.*pk_snd_.*pk_prd_/.test(message)))
-    t('Hyperswitch deployment accepts a configured HTTPS Web SDK URL', !checkDeploy(
-      { ...base, ...hyperswitch, HYPERSWITCH_CLIENT_URL: 'https://sdk.example.test/v1' },
+    t('Hyperswitch deployment rejects an unknown payment-method prefix', checkDeploy(
+      { ...base, ...hyperswitch, HYPERSWITCH_PAYMENT_METHODS_PREFIX: 'v3' },
+      hyperswitchSale,
+      {},
+      [],
+      null,
+      [],
+      undefined,
+      hyperswitchSite,
+    ).wrong.some((message) => /HYPERSWITCH_PAYMENT_METHODS_PREFIX/.test(message)))
+    t('Hyperswitch deployment accepts a configured HTTPS V2 Web SDK URL', !checkDeploy(
+      { ...base, ...hyperswitch, HYPERSWITCH_CLIENT_URL: 'https://sdk.example.test/v2' },
       hyperswitchSale,
       {},
       [],
@@ -720,7 +735,17 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       hyperswitchSite,
     ).wrong.some((message) => /HYPERSWITCH_CLIENT_URL/.test(message)))
     t('Hyperswitch deployment rejects a configured HTTP Web SDK URL', checkDeploy(
-      { ...base, ...hyperswitch, HYPERSWITCH_CLIENT_URL: 'http://sdk.example.test/v1' },
+      { ...base, ...hyperswitch, HYPERSWITCH_CLIENT_URL: 'http://sdk.example.test/v2' },
+      hyperswitchSale,
+      {},
+      [],
+      null,
+      [],
+      undefined,
+      hyperswitchSite,
+    ).wrong.some((message) => /HYPERSWITCH_CLIENT_URL/.test(message)))
+    t('Hyperswitch deployment rejects the V1 Web SDK URL', checkDeploy(
+      { ...base, ...hyperswitch, HYPERSWITCH_CLIENT_URL: 'https://sdk.example.test/v1' },
       hyperswitchSale,
       {},
       [],

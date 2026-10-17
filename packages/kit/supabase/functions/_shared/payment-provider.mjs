@@ -395,6 +395,9 @@ export function normalizePaymentCheckoutResult(providerId, result) {
         !isHttpUrl(result.client.clientUrl) ||
         !NONEMPTY(result.client.publishableKey) ||
         !NONEMPTY(result.client.clientSecret) ||
+        !NONEMPTY(result.client.paymentMethodSessionId) ||
+        !NONEMPTY(result.client.sdkAuthorization) ||
+        !NONEMPTY(result.client.profileId) ||
         !isHttpUrl(result.client.successUrl) ||
         !isHttpUrl(result.client.cancelUrl))) ||
       (result.customerId != null && !NONEMPTY(result.customerId)) ||
@@ -412,6 +415,9 @@ export function normalizePaymentCheckoutResult(providerId, result) {
         clientUrl: result.client.clientUrl,
         publishableKey: result.client.publishableKey,
         clientSecret: result.client.clientSecret,
+        paymentMethodSessionId: result.client.paymentMethodSessionId,
+        sdkAuthorization: result.client.sdkAuthorization,
+        profileId: result.client.profileId,
         successUrl: result.client.successUrl,
         cancelUrl: result.client.cancelUrl,
       }),

@@ -19,7 +19,7 @@ const EVENT_TYPES = Object.freeze({
 })
 
 const CHECKOUT_EXPIRATION_EVENTS = new Set(['payment_cancelled', 'payment_expired'])
-export const HYPERSWITCH_DEFAULT_CLIENT_URL = 'https://beta.hyperswitch.io/v1'
+export const HYPERSWITCH_DEFAULT_CLIENT_URL = 'https://beta.hyperswitch.io/v2'
 const PAYOUT_STATUSES = Object.freeze({
   payout_success: 'success',
   payout_failed: 'failed',
@@ -47,11 +47,13 @@ export function hyperswitchClientUrl(value) {
   }
   const localHttp = url.protocol === 'http:' &&
     ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+  const path = url.pathname.replace(/\/+$/, '')
   if ((url.protocol !== 'https:' && !localHttp) ||
-      url.username || url.password || url.search || url.hash) {
+      url.username || url.password || url.search || url.hash ||
+      path.endsWith('/v1') || (!localHttp && !path.endsWith('/v2'))) {
     throw new PaymentProviderError(
       'hyperswitch_configuration_invalid',
-      'HYPERSWITCH_CLIENT_URL must be an HTTPS URL, or a loopback HTTP URL for local development, without credentials, query, or fragment.',
+      'HYPERSWITCH_CLIENT_URL must be a V2 HTTPS SDK URL, or a loopback HTTP URL for local development, without credentials, query, or fragment.',
       503,
     )
   }
@@ -78,6 +80,10 @@ export function createHyperswitchApi(secrets, configuration, runtime = {}) {
   const baseUrl = requiredText(secrets.HYPERSWITCH_BASE_URL, 'HYPERSWITCH_BASE_URL')
   const apiKey = requiredText(secrets.HYPERSWITCH_API_KEY, 'HYPERSWITCH_API_KEY')
   const profileId = requiredText(secrets.HYPERSWITCH_PROFILE_ID, 'HYPERSWITCH_PROFILE_ID')
+  const publishableKey = requiredText(
+    secrets.HYPERSWITCH_PUBLISHABLE_KEY,
+    'HYPERSWITCH_PUBLISHABLE_KEY',
+  )
   let parsedBaseUrl
   try {
     parsedBaseUrl = new URL(baseUrl)
@@ -97,9 +103,14 @@ export function createHyperswitchApi(secrets, configuration, runtime = {}) {
     throw new PaymentProviderError('hyperswitch_profile_invalid', 'Hyperswitch requires a unique profile capability list.', 500)
   }
 
-  const requestWithAuth = async (method, path, body, idempotencyKey, apiVersion) => {
-    if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
-      throw new PaymentProviderError('hyperswitch_path_invalid', 'Hyperswitch API paths must be absolute paths on the configured instance.', 500)
+  const requestWithAuth = async (method, path, body, idempotencyKey, authorization) => {
+    // The V2 Router serves its payment-method service group (customers, payment-method
+    // sessions, saved methods) under a configurable prefix; the Web SDK requires `v1`.
+    const paymentMethodServicePath = typeof path === 'string' &&
+      /^\/v1\/(customers|payment-method-sessions|payment-methods)(\/|$)/.test(path)
+    if (typeof path !== 'string' || path.startsWith('//') ||
+        (!path.startsWith('/v2/') && !paymentMethodServicePath)) {
+      throw new PaymentProviderError('hyperswitch_path_invalid', 'Hyperswitch API paths must use a V2 Router route on the configured instance.', 500)
     }
     if (idempotencyKey != null && (typeof idempotencyKey !== 'string' || !idempotencyKey.trim())) {
       throw new PaymentProviderError('invalid_idempotency_key', 'Hyperswitch requests require a non-empty idempotency key when supplied.', 422)
@@ -107,9 +118,7 @@ export function createHyperswitchApi(secrets, configuration, runtime = {}) {
     const headers = {
       'content-type': 'application/json',
       'x-profile-id': profileId,
-      ...(apiVersion === 'v2'
-        ? { Authorization: `api-key=${apiKey}` }
-        : { 'api-key': apiKey }),
+      Authorization: authorization,
     }
     if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey
     const basePath = parsedBaseUrl.pathname.replace(/\/+$/, '')
@@ -158,17 +167,30 @@ export function createHyperswitchApi(secrets, configuration, runtime = {}) {
     }
     return payload
   }
-
   const request = (method, path, body, idempotencyKey) =>
-    requestWithAuth(method, path, body, idempotencyKey, 'v1')
-  const requestV2 = (method, path, body, idempotencyKey) =>
-    requestWithAuth(method, path, body, idempotencyKey, 'v2')
+    requestWithAuth(method, path, body, idempotencyKey, `api-key=${apiKey}`)
+  const requestWithClientSecret = (method, path, body, idempotencyKey, clientSecret) => {
+    if (typeof clientSecret !== 'string' || !clientSecret.trim()) {
+      throw new PaymentProviderError(
+        'hyperswitch_client_secret_missing',
+        'Hyperswitch V2 SDK authorization requires a client secret.',
+        422,
+      )
+    }
+    return requestWithAuth(
+      method,
+      path,
+      body,
+      idempotencyKey,
+      `publishable-key=${publishableKey},client-secret=${clientSecret.trim()}`,
+    )
+  }
 
   return Object.freeze({
     profileId,
     profileCapabilities: Object.freeze([...profileCapabilities]),
     request,
-    requestV2,
+    requestWithClientSecret,
   })
 }
 

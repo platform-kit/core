@@ -31,8 +31,23 @@ const HYPERSWITCH_CAPABILITIES: readonly PaymentCapability[] = [
   'catalog.sync',
   'refunds',
   'usage.prepaid-top-up',
-  'payouts.connected-accounts',
 ]
+const V2_PAYMENT_METHOD_TYPES = new Set(
+  `ach affirm afterpay_clearpay alfamart ali_pay ali_pay_hk alma amazon_pay paysera apple_pay atome bacs bancontact_card becs benefit bizum blik bluecode boleto bca_bank_transfer bni_va breadpay bri_va bhn_card_network card_redirect cimb_va classic credit crypto_currency cashapp dana danamon_va debit duit_now efecty eft eft_debit_order eps flexiti fps evoucher giropay givex google_pay go_pay gcash ideal indomaret klarna kakao_pay local_bank_redirect mandiri_va knet mb_way mobile_pay momo momo_atm multibanco neteller online_banking_thailand online_banking_czech_republic online_banking_finland online_banking_fpx online_banking_poland online_banking_slovakia oxxo pago_efectivo permata_bank_transfer open_banking_uk pay_bright payjustnow paypal paze pix pix_key pix_emv pix_automatico_qr pix_automatico_push pay_safe_card przelewy24 prompt_pay pse qris red_compra red_pagos samsung_pay sepa sepa_bank_transfer sepa_guarenteed_debit skrill sofort swish touch_n_go trustly twint upi_collect upi_intent upi_qr vipps viet_qr venmo walley wero we_chat_pay seven_eleven lawson mini_stop family_mart seicomart pay_easy local_bank_transfer mifinity open_banking_pis direct_carrier_billing instant_bank_transfer instant_bank_transfer_finland instant_bank_transfer_poland revolut_pay indonesian_bank_transfer open_banking network_token payshap payshap_proxy ted`,
+)
+
+function allowedPaymentMethodTypes(methods: readonly string[]): string[] {
+  return [...new Set(methods.flatMap((method) => {
+    const normalized = method.toLowerCase()
+    if (normalized === 'card') return ['credit', 'debit']
+    if (V2_PAYMENT_METHOD_TYPES.has(normalized)) return [normalized]
+    throw new PaymentProviderError(
+      'hyperswitch_checkout_term_unavailable',
+      `Hyperswitch V2 does not support the requested payment method "${method}"; no payment was created.`,
+      422,
+    )
+  }))]
+}
 
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== 'string' || !value.trim()) {
@@ -91,28 +106,11 @@ function assertProfileCapability(
   }
 }
 
-async function stablePaymentId(idempotencyKey: string): Promise<string> {
+async function stableMerchantReference(prefix: 'cus' | 'pay' | 'ref', idempotencyKey: string): Promise<string> {
   const bytes = new TextEncoder().encode(idempotencyKey)
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
-  const suffix = [...digest.slice(0, 16)].map((part) => part.toString(16).padStart(2, '0')).join('')
-  return `pay_${suffix}`
-}
-
-async function stablePayoutId(idempotencyKey: string): Promise<string> {
-  const bytes = new TextEncoder().encode(idempotencyKey)
-  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
-  const suffix = [...digest].map((part) => part.toString(16).padStart(2, '0')).join('')
-  return `po_${suffix.slice(0, 27)}`
-}
-
-function payoutType(method: HyperswitchPayload): 'card' | 'bank' | 'wallet' | null {
-  const type = typeof method.payment_method === 'string'
-    ? method.payment_method.toLowerCase()
-    : ''
-  if (type === 'card') return 'card'
-  if (type === 'bank_transfer' || type === 'bank_debit') return 'bank'
-  if (type === 'wallet') return 'wallet'
-  return null
+  const suffix = [...digest.slice(0, 13)].map((part) => part.toString(16).padStart(2, '0')).join('')
+  return `${prefix}_${suffix}`
 }
 
 function parseOrderDetails(
@@ -183,6 +181,118 @@ export function createPaymentProvider(
   }
   const baseUrl = requiredString(secrets.HYPERSWITCH_BASE_URL, 'HYPERSWITCH_BASE_URL').replace(/\/+$/, '')
   const clientUrl = hyperswitchClientUrl(secrets.HYPERSWITCH_CLIENT_URL)
+  // The Router serves customers, payment-method sessions, and saved methods under one configurable
+  // prefix (`payment_methods_prefix`). The Hyperswitch Web SDK, and Hyperswitch's Vault SDK guide,
+  // use `v1`, so that is the default here and on the Router; `v2` is for a stock Router.
+  const paymentMethodsPrefix = typeof secrets.HYPERSWITCH_PAYMENT_METHODS_PREFIX === 'string' &&
+      secrets.HYPERSWITCH_PAYMENT_METHODS_PREFIX.trim()
+    ? secrets.HYPERSWITCH_PAYMENT_METHODS_PREFIX.trim()
+    : 'v1'
+  if (paymentMethodsPrefix !== 'v1' && paymentMethodsPrefix !== 'v2') {
+    throw new PaymentProviderError(
+      'hyperswitch_configuration_invalid',
+      'HYPERSWITCH_PAYMENT_METHODS_PREFIX must be v1 or v2.',
+      503,
+    )
+  }
+  const createCustomerRecord = async (
+    email: string,
+    merchantReferenceId: string,
+    idempotencyKey: string,
+  ): Promise<string> => {
+    assertProfileCapability(profileCapabilities, 'customer.create')
+    if (!email.trim()) {
+      throw new PaymentProviderError(
+        'hyperswitch_customer_email_required',
+        'Hyperswitch V2 customer creation requires an email address.',
+        422,
+      )
+    }
+    const customer = await api.request('POST', `/${paymentMethodsPrefix}/customers`, {
+      email,
+      name: email,
+      merchant_reference_id: merchantReferenceId,
+    }, idempotencyKey)
+    return requiredString(customer.id, 'customer id')
+  }
+
+  const createMethodSession = async (
+    customerId: string,
+    returnUrl: string,
+    storageType: 'volatile' | 'persistent',
+  ) => {
+    const session = await api.request('POST', `/${paymentMethodsPrefix}/payment-method-sessions`, {
+      customer_id: customerId,
+      storage_type: storageType,
+      return_url: returnUrl,
+      keep_alive: storageType === 'persistent',
+    })
+    return {
+      id: requiredString(session.id, 'payment-method session id'),
+      sdkAuthorization: requiredString(session.sdk_authorization, 'sdk_authorization'),
+      profileId: api.profileId,
+    }
+  }
+
+  const getDefaultSavedPaymentMethod = async (customerId: string): Promise<string | null> => {
+    const response = await api.request(
+      'GET',
+      `/${paymentMethodsPrefix}/customers/${encodeURIComponent(customerId)}/saved-payment-methods`,
+    )
+    if (!Array.isArray(response.customer_payment_methods)) {
+      throw new PaymentProviderError(
+        'hyperswitch_invalid_response',
+        'Hyperswitch returned an invalid saved-payment-method list.',
+        502,
+      )
+    }
+    const selected = (response.customer_payment_methods as HyperswitchPayload[])
+      .find((method) => method.is_default === true)
+    return selected && typeof selected.id === 'string' ? selected.id : null
+  }
+
+  const createOffSessionPayment = async (input: {
+    amountMinor: number
+    currency: string
+    customerId: string
+    paymentMethodId: string
+    description: string
+    metadata: Readonly<Record<string, string>>
+    idempotencyKey: string
+  }) => {
+    const merchantReferenceId = await stableMerchantReference('pay', input.idempotencyKey)
+    const intent = await api.request('POST', '/v2/payments/create-intent', {
+      amount_details: {
+        currency: input.currency.toUpperCase(),
+        order_amount: input.amountMinor,
+      },
+      merchant_reference_id: merchantReferenceId,
+      customer_id: input.customerId,
+      customer_present: 'absent',
+      authentication_type: 'no_three_ds',
+      capture_method: 'automatic',
+      description: input.description,
+      metadata: input.metadata,
+    }, input.idempotencyKey)
+    const paymentId = requiredString(intent.id, 'payment id')
+    const clientSecret = requiredString(intent.client_secret, 'client secret')
+    const confirmation = await api.requestWithClientSecret(
+      'POST',
+      `/v2/payments/${encodeURIComponent(paymentId)}/confirm-intent`,
+      {
+        payment_method_data: {},
+        payment_method_type: 'card',
+        payment_method_id: input.paymentMethodId,
+      },
+      input.idempotencyKey,
+      clientSecret,
+    )
+    return {
+      paymentIntentId: requiredString(confirmation.id ?? paymentId, 'payment id'),
+      status: requiredString(confirmation.status, 'payment status'),
+      clientSecret,
+    }
+  }
 
   const retrievePayment = async (paymentId: string) => {
     if (!paymentId || paymentId.length > 255) {
@@ -190,33 +300,27 @@ export function createPaymentProvider(
     }
     return api.request(
       'GET',
-      `/payments/${encodeURIComponent(paymentId)}?force_sync=true`,
+      `/v2/payments/${encodeURIComponent(paymentId)}/get-intent`,
     )
   }
 
-  const listPayoutMethods = async (customerId: string): Promise<HyperswitchPayload[]> => {
-    const response = await api.request(
-      'GET',
-      `/customers/${encodeURIComponent(customerId)}/payment_methods`,
-    )
-    if (!Array.isArray(response.customer_payment_methods)) {
-      throw new PaymentProviderError(
-        'hyperswitch_invalid_response',
-        'Hyperswitch returned an invalid payout-method list.',
-        502,
-      )
+  // The SDK saves the card it collects, even for a one-time purchase. Once such a purchase is paid,
+  // delete the card that was saved during this checkout. A card the customer already had (created
+  // before the payment) is never touched, and any failure leaves it for the next retrieval.
+  const removeOneTimePaymentMethod = async (paymentId: string) => {
+    try {
+      const payment = await api.request('GET', `/v2/payments/${encodeURIComponent(paymentId)}`)
+      const methodId = typeof payment.payment_method_id === 'string' ? payment.payment_method_id : ''
+      const paymentCreated = Date.parse(String(payment.created))
+      if (!methodId || !Number.isFinite(paymentCreated)) return
+      const path = `/${paymentMethodsPrefix}/payment-methods/${encodeURIComponent(methodId)}`
+      const method = await api.request('GET', path)
+      const methodCreated = Date.parse(String(method.created))
+      if (!Number.isFinite(methodCreated) || methodCreated < paymentCreated) return
+      await api.request('DELETE', path)
+    } catch {
+      // best effort
     }
-    return (response.customer_payment_methods as HyperswitchPayload[]).filter((method) =>
-      typeof method.payment_token === 'string' &&
-      method.payment_token.trim().length > 0 &&
-      payoutType(method) !== null
-    )
-  }
-
-  const selectedPayoutMethod = (methods: HyperswitchPayload[]): HyperswitchPayload | null => {
-    const defaultMethod = methods.find((method) => method.is_default === true)
-    if (defaultMethod) return defaultMethod
-    return methods.length === 1 ? methods[0] : null
   }
 
   return {
@@ -228,27 +332,16 @@ export function createPaymentProvider(
       if (!input.email) {
         throw new PaymentProviderError(
           'hyperswitch_customer_email_required',
-          'Hyperswitch customer creation requires an email address.',
+          'Hyperswitch V2 customer creation requires an email address.',
           422,
         )
       }
-      let customer: HyperswitchPayload
-      try {
-        customer = await api.requestV2('POST', '/v2/customers', {
-          email: input.email,
-          name: input.email,
-          merchant_reference_id: input.userId,
-        }, `customer:${input.userId}`)
-      } catch (error) {
-        if (!(error instanceof PaymentProviderError) || error.status !== 404) throw error
-        customer = await api.request('POST', '/customers', {
-          email: input.email,
-          name: input.email,
-          merchant_reference_id: input.userId,
-        }, `customer:${input.userId}`)
-      }
       return {
-        customerId: requiredString(customer.id ?? customer.customer_id, 'customer_id'),
+        customerId: await createCustomerRecord(
+          input.email,
+          input.userId,
+          `customer:${input.userId}`,
+        ),
       }
     },
 
@@ -299,6 +392,9 @@ export function createPaymentProvider(
           'the requested payment-method selection',
         )
       }
+      const paymentMethodTypes = input.allowedPaymentMethods?.length
+        ? allowedPaymentMethodTypes(input.allowedPaymentMethods)
+        : undefined
       if (input.lines.some((line) => line.adjustableQuantity)) {
         assertProfileCapability(
           profileCapabilities,
@@ -347,13 +443,12 @@ export function createPaymentProvider(
           !Number.isSafeInteger(chargeAmount) || (chargeAmount <= 0 && input.mode !== 'subscription')) {
         throw new PaymentProviderError('invalid_checkout_amount', 'Hyperswitch checkout amount must be a positive safe integer except for a zero-amount subscription trial.', 422)
       }
-      const paymentId = await stablePaymentId(input.idempotencyKey)
-      const successUrl = input.successUrl.replaceAll('{CHECKOUT_ID}', paymentId)
+      const merchantReferenceId = await stableMerchantReference('pay', input.idempotencyKey)
       let cancelUrl: URL
       let parsedSuccessUrl: URL
       try {
         cancelUrl = new URL(input.cancelUrl)
-        parsedSuccessUrl = new URL(successUrl)
+        parsedSuccessUrl = new URL(input.successUrl.replaceAll('{CHECKOUT_ID}', 'checkout'))
       } catch {
         throw new PaymentProviderError('invalid_checkout', 'Hyperswitch checkout requires absolute site success and cancel URLs.', 422)
       }
@@ -381,22 +476,35 @@ export function createPaymentProvider(
           ...(input.trialDays ? { platformkit_trial_days: String(input.trialDays) } : {}),
         } : {}),
       }
-      const customerId = input.customer?.providerCustomerId
-      const response = await api.request('POST', '/payments', {
-        profile_id: api.profileId,
-        payment_id: paymentId,
-        amount: chargeAmount,
-        currency: [...currencies][0],
-        confirm: false,
+      let customerId = input.customer?.providerCustomerId
+      if (!customerId) {
+        const email = input.customer?.email ?? input.customerEmail
+        if (!email) {
+          throw new PaymentProviderError(
+            'hyperswitch_customer_email_required',
+            'Hyperswitch V2 checkout requires a customer email before creating a payment.',
+            422,
+          )
+        }
+        const customerReferenceId = await stableMerchantReference(
+          'cus',
+          `checkout:${input.idempotencyKey}`,
+        )
+        customerId = await createCustomerRecord(
+          email,
+          customerReferenceId,
+          `customer:${customerReferenceId}`,
+        )
+      }
+      const response = await api.request('POST', '/v2/payments/create-intent', {
+        amount_details: {
+          order_amount: chargeAmount,
+          currency: [...currencies][0],
+        },
+        merchant_reference_id: merchantReferenceId,
+        customer_id: customerId,
         capture_method: 'automatic',
-        return_url: successUrl,
-        ...(customerId ? { customer_id: customerId } : {}),
-        ...((input.customer?.email ?? input.customerEmail)
-          ? { email: input.customer?.email ?? input.customerEmail }
-          : {}),
-        ...(input.allowedPaymentMethods?.length
-          ? { allowed_payment_method_types: [...input.allowedPaymentMethods] }
-          : {}),
+        ...(paymentMethodTypes ? { allowed_payment_method_types: paymentMethodTypes } : {}),
         ...(input.mode === 'subscription' ? { setup_future_usage: 'off_session' } : {}),
         order_details: input.lines.map((line) => ({
           product_id: line.offerKey,
@@ -407,16 +515,17 @@ export function createPaymentProvider(
         })),
         metadata,
       }, input.idempotencyKey)
-      const returnedId = requiredString(response.payment_id, 'payment_id')
+      const returnedId = requiredString(response.id, 'id')
       const clientSecret = requiredString(response.client_secret, 'client_secret')
-      if (returnedId !== paymentId) {
-        throw new PaymentProviderError(
-          'hyperswitch_payment_id_mismatch',
-          'Hyperswitch returned a different payment id than the idempotent checkout request.',
-          502,
-        )
-      }
-      const customer = typeof response.customer_id === 'string' ? response.customer_id : customerId
+      const resolvedCustomerId = requiredString(response.customer_id ?? customerId, 'customer_id')
+      const successUrl = input.successUrl.replaceAll('{CHECKOUT_ID}', returnedId)
+      const paymentMethodSession = await createMethodSession(
+        resolvedCustomerId,
+        `${cancelUrl.origin}/checkout/hyperswitch?session=${encodeURIComponent(returnedId)}&payment_action=return`,
+        // The V2 Router's confirm-intent resolves a payment token from the database, so a
+        // volatile (Redis-only) payment method cannot be confirmed; use a persistent session.
+        'persistent',
+      )
       return {
         provider: 'hyperswitch',
         checkoutId: returnedId,
@@ -427,10 +536,13 @@ export function createPaymentProvider(
           clientUrl,
           publishableKey,
           clientSecret,
+          paymentMethodSessionId: paymentMethodSession.id,
+          sdkAuthorization: paymentMethodSession.sdkAuthorization,
+          profileId: paymentMethodSession.profileId,
           successUrl,
           cancelUrl: input.cancelUrl,
         },
-        ...(customer ? { customerId: customer } : {}),
+        customerId: resolvedCustomerId,
       }
     },
 
@@ -450,11 +562,20 @@ export function createPaymentProvider(
       const status = normalizedPaymentStatus(payment.status)
       const paymentState = status === 'complete'
         ? 'paid'
-        : status === 'expired' ? 'unpaid' : 'unpaid'
+        : 'unpaid'
+      if (status === 'complete' && metadata.platformkit_checkout_mode === 'payment') {
+        await removeOneTimePaymentMethod(checkoutId)
+      }
       const customer = typeof payment.customer_id === 'string' ? payment.customer_id : undefined
       const email = typeof payment.email === 'string' ? payment.email : undefined
-      const currency = typeof payment.currency === 'string' ? payment.currency : undefined
-      const amount = Number(payment.amount)
+      const amountDetails = payment.amount_details && typeof payment.amount_details === 'object' &&
+          !Array.isArray(payment.amount_details)
+        ? payment.amount_details as HyperswitchPayload
+        : {}
+      const currency = typeof amountDetails.currency === 'string'
+        ? amountDetails.currency
+        : typeof payment.currency === 'string' ? payment.currency : undefined
+      const amount = Number(amountDetails.order_amount ?? payment.amount)
       const lines = parseOrderDetails(payment.order_details, metadata, currency)
       const mode = metadata.platformkit_checkout_mode === 'subscription' ? 'subscription' : 'payment'
       let subscription: PaymentCheckoutSnapshot['subscription']
@@ -463,13 +584,13 @@ export function createPaymentProvider(
         if (!line) {
           throw new PaymentProviderError('hyperswitch_invalid_response', 'Hyperswitch subscription checkout has no valid order line.', 502)
         }
-        const currentPeriodStart = epochSeconds(payment.created)
+        const currentPeriodStart = epochSeconds(payment.created_at ?? payment.created)
         const trialDays = Number(metadata.platformkit_trial_days)
         const trialEnd = Number.isSafeInteger(trialDays) && trialDays > 0
           ? currentPeriodStart + trialDays * 86400
           : undefined
-        const paymentMethodId = typeof payment.payment_method_id === 'string'
-          ? payment.payment_method_id
+        const paymentMethodId = customer
+          ? await getDefaultSavedPaymentMethod(customer) ?? ''
           : ''
         if (status === 'complete' && (!customer || !paymentMethodId)) {
           throw new PaymentProviderError(
@@ -482,7 +603,7 @@ export function createPaymentProvider(
           const periodEnd = trialEnd ?? paymentPeriodEnd(currentPeriodStart, line.interval ?? 'month')
           subscription = {
             provider: 'hyperswitch',
-            subscriptionId: requiredString(payment.payment_id, 'payment_id'),
+            subscriptionId: requiredString(payment.id, 'id'),
             customerId: customer,
             paymentMethodId,
             status: trialEnd ? 'trialing' : status === 'complete' ? 'active' : paymentStatus(payment.status),
@@ -504,12 +625,12 @@ export function createPaymentProvider(
       }
       return {
         provider: 'hyperswitch',
-        checkoutId: requiredString(payment.payment_id, 'payment_id'),
+        checkoutId: requiredString(payment.id, 'id'),
         status,
         paymentStatus: paymentState,
         mode,
         ...(customer ? { customerId: customer } : {}),
-        paymentId: requiredString(payment.payment_id, 'payment_id'),
+        paymentId: requiredString(payment.id, 'id'),
         ...(subscription ? { subscriptionId: subscription.subscriptionId, subscription } : {}),
         ...(metadata.user_id ? { userId: metadata.user_id } : {}),
         ...(email ? { customerEmail: email } : {}),
@@ -530,13 +651,16 @@ export function createPaymentProvider(
           422,
         )
       }
-      const refund = await api.request('POST', '/refunds', {
+      const refundReferenceId = await stableMerchantReference('ref', input.idempotencyKey)
+      const refund = await api.request('POST', '/v2/refunds', {
         payment_id: input.paymentId,
+        merchant_reference_id: refundReferenceId,
         ...(input.amountMinor == null ? {} : { amount: input.amountMinor }),
+        refund_type: 'instant',
         metadata: { platformkit_idempotency_key: input.idempotencyKey },
       }, input.idempotencyKey)
       return {
-        refundId: requiredString(refund.refund_id, 'refund_id'),
+        refundId: requiredString(refund.id, 'refund id'),
         status: requiredString(refund.status, 'refund status'),
       }
     },
@@ -550,31 +674,7 @@ export function createPaymentProvider(
           422,
         )
       }
-      let response: HyperswitchPayload
-      try {
-        response = await api.requestV2(
-          'GET',
-          `/v2/customers/${encodeURIComponent(customerId)}/saved-payment-methods`,
-        )
-      } catch (error) {
-        if (!(error instanceof PaymentProviderError) || error.status !== 404) throw error
-        response = await api.request(
-          'GET',
-          `/customers/${encodeURIComponent(customerId)}/payment_methods`,
-        )
-      }
-      if (!Array.isArray(response.customer_payment_methods)) {
-        throw new PaymentProviderError(
-          'hyperswitch_invalid_response',
-          'Hyperswitch returned an invalid saved-payment-method list.',
-          502,
-        )
-      }
-      const methods = response.customer_payment_methods as HyperswitchPayload[]
-      const selected = methods.find((method) => method.is_default === true)
-      return {
-        paymentMethodId: selected && typeof selected.id === 'string' ? selected.id : null,
-      }
+      return { paymentMethodId: await getDefaultSavedPaymentMethod(customerId) }
     },
 
     async createPaymentIntent(input) {
@@ -594,33 +694,13 @@ export function createPaymentProvider(
           422,
         )
       }
-      const payment = await api.request('POST', '/payments', {
-        profile_id: api.profileId,
-        amount: input.amountMinor,
-        currency: input.currency.toUpperCase(),
-        customer_id: input.customerId,
-        confirm: true,
-        off_session: true,
-        authentication_type: 'no_three_ds',
-        payment_method: 'card',
-        recurring_details: {
-          type: 'payment_method_id',
-          data: input.paymentMethodId,
-        },
-        description: input.description,
-        metadata: input.metadata,
-      }, input.idempotencyKey)
-      return {
-        paymentIntentId: requiredString(payment.payment_id, 'payment_id'),
-        status: requiredString(payment.status, 'payment status'),
-        ...(typeof payment.client_secret === 'string' ? { clientSecret: payment.client_secret } : {}),
-      }
+      return createOffSessionPayment(input)
     },
 
     async retrievePaymentIntent(paymentIntentId: string) {
       const payment = await retrievePayment(paymentIntentId)
       return {
-        paymentIntentId: requiredString(payment.payment_id, 'payment_id'),
+        paymentIntentId: requiredString(payment.id, 'id'),
         status: requiredString(payment.status, 'payment status'),
         ...(typeof payment.client_secret === 'string' ? { clientSecret: payment.client_secret } : {}),
       }
@@ -656,8 +736,10 @@ export function createPaymentProvider(
         throw new PaymentProviderError('hyperswitch_subscription_not_found', 'The Hyperswitch payment is not a PlatformKit-managed subscription.', 404)
       }
       const customerId = typeof current.customer_id === 'string' ? current.customer_id : ''
-      const paymentMethodId = typeof current.payment_method_id === 'string' ? current.payment_method_id : ''
-      const paymentCreated = epochSeconds(current.created)
+      const paymentMethodId = customerId
+        ? await getDefaultSavedPaymentMethod(customerId) ?? ''
+        : ''
+      const paymentCreated = epochSeconds(current.created_at ?? current.created)
       const periodStart = input.currentPeriodStart ?? paymentCreated
       const periodEnd = input.currentPeriodEnd ??
         paymentPeriodEnd(periodStart, metadata.platformkit_subscription_interval ?? 'month')
@@ -722,23 +804,19 @@ export function createPaymentProvider(
         const remaining = Math.max(0, Math.min(1, (periodEnd - now) / (periodEnd - periodStart)))
         const amount = Math.ceil(Math.max(0, input.offer.unitAmountMinor - currentAmount) * remaining)
         if (amount > 0) {
-          const payment = await api.request('POST', '/payments', {
-            profile_id: api.profileId,
-            amount,
-            currency: input.offer.currency.toUpperCase(),
-            customer_id: customerId,
-            confirm: true,
-            off_session: true,
-            authentication_type: 'no_three_ds',
-            payment_method: 'card',
-            recurring_details: { type: 'payment_method_id', data: paymentMethodId },
+          const payment = await createOffSessionPayment({
+            amountMinor: amount,
+            currency: input.offer.currency,
+            customerId,
+            paymentMethodId,
             description: `Subscription plan change to ${input.offer.name}`,
             metadata: {
               platformkit_subscription_id: input.subscriptionId,
               platformkit_subscription_change: input.idempotencyKey,
               platformkit_offer_key: input.offerKey,
             },
-          }, input.idempotencyKey)
+            idempotencyKey: input.idempotencyKey,
+          })
           if (paymentStatus(payment.status) !== 'succeeded') {
             throw new PaymentProviderError('hyperswitch_subscription_proration_failed', `Hyperswitch could not collect the prorated plan change (status: ${paymentStatus(payment.status) || 'unknown'}).`, 409)
           }
@@ -788,151 +866,15 @@ export function createPaymentProvider(
           422,
         )
       }
-      let session: HyperswitchPayload
-      try {
-        session = await api.requestV2('POST', '/v2/payment-method-sessions', {
-          customer_id: input.customerId,
-          storage_type: 'persistent',
-          return_url: input.returnUrl,
-          keep_alive: true,
-        })
-      } catch (error) {
-        if (!(error instanceof PaymentProviderError) || error.status !== 404) throw error
-        session = await api.request('POST', '/v1/payment-method-sessions', {
-          customer_id: input.customerId,
-          storage_type: 'persistent',
-          return_url: input.returnUrl,
-          keep_alive: true,
-        })
-      }
+      const session = await createMethodSession(
+        input.customerId,
+        input.returnUrl,
+        input.storageType ?? 'persistent',
+      )
       return {
-        sdkAuthorization: requiredString(session.sdk_authorization, 'sdk_authorization'),
-        profileId: api.profileId,
-      }
-    },
-
-    async createPayoutAccount(input) {
-      assertProfileCapability(profileCapabilities, 'payouts.connected-accounts')
-      assertProfileCapability(profileCapabilities, 'customer.create')
-      const returnUrl = new URL(input.returnUrl)
-      const refreshUrl = new URL(input.refreshUrl)
-      if (returnUrl.origin !== refreshUrl.origin) {
-        throw new PaymentProviderError(
-          'invalid_payout_return_url',
-          'Hyperswitch payout setup return URLs must share the site origin.',
-          422,
-        )
-      }
-      let customerId = input.accountId
-      if (!customerId) {
-        if (!input.email) {
-          throw new PaymentProviderError(
-            'hyperswitch_payout_email_required',
-            'A recipient email is required to create a Hyperswitch payout profile.',
-            422,
-          )
-        }
-        const customer = await api.request('POST', '/customers', {
-          email: input.email,
-          name: input.email,
-          merchant_reference_id: `platformkit:payout:${input.userId}`,
-          metadata: { platformkit_payout_recipient: input.userId },
-        }, `payout-customer:${input.userId}`)
-        customerId = requiredString(customer.customer_id, 'payout customer_id')
-      }
-      const onboardingUrl = new URL('/billing#usage', returnUrl.origin)
-      onboardingUrl.searchParams.set('payout_setup', '1')
-      onboardingUrl.searchParams.set('payout_return', `${returnUrl.pathname}${returnUrl.search}`)
-      onboardingUrl.searchParams.set('payout_cancel', `${refreshUrl.pathname}${refreshUrl.search}`)
-      const method = selectedPayoutMethod(await listPayoutMethods(customerId))
-      return {
-        accountId: customerId,
-        onboardingUrl: onboardingUrl.toString(),
-        ready: !!method,
-      }
-    },
-
-    async retrievePayoutAccount(accountId) {
-      assertProfileCapability(profileCapabilities, 'payouts.connected-accounts')
-      if (!accountId.trim()) {
-        throw new PaymentProviderError('invalid_payout_account', 'Hyperswitch payout customer id is required.', 422)
-      }
-      const method = selectedPayoutMethod(await listPayoutMethods(accountId))
-      return {
-        accountId,
-        ready: !!method,
-        detailsSubmitted: !!method,
-      }
-    },
-
-    async createPayout(input) {
-      assertProfileCapability(profileCapabilities, 'payouts.connected-accounts')
-      if (!input.accountId.trim() ||
-          !Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0 ||
-          !/^[A-Za-z]{3}$/.test(input.currency) ||
-          !input.idempotencyKey.trim()) {
-        throw new PaymentProviderError(
-          'invalid_payout',
-          'Hyperswitch payout requires a recipient, positive amount, currency, and idempotency key.',
-          422,
-        )
-      }
-      const methods = await listPayoutMethods(input.accountId)
-      const method = selectedPayoutMethod(methods)
-      if (!method) {
-        throw new PaymentProviderError(
-          'hyperswitch_payout_method_unavailable',
-          methods.length
-            ? 'Choose a default Hyperswitch payout method before sending funds. No payout was sent.'
-            : 'This recipient has no eligible Hyperswitch payout method. No payout was sent.',
-          409,
-        )
-      }
-      const type = payoutType(method)
-      if (!type || typeof method.payment_token !== 'string') {
-        throw new PaymentProviderError(
-          'hyperswitch_payout_method_unavailable',
-          'The saved Hyperswitch method is not eligible for payouts. No payout was sent.',
-          409,
-        )
-      }
-      const payoutId = await stablePayoutId(input.idempotencyKey)
-      let payout: HyperswitchPayload | null = null
-      try {
-        payout = await api.request(
-          'GET',
-          `/payouts/${encodeURIComponent(payoutId)}?force_sync=true`,
-        )
-      } catch (error) {
-        if (!(error instanceof PaymentProviderError) || error.status !== 404) throw error
-      }
-      if (!payout) {
-        payout = await api.request('POST', '/payouts/create', {
-          payout_id: payoutId,
-          amount: input.amountMinor,
-          currency: input.currency.toUpperCase(),
-          customer: { id: input.accountId },
-          payout_token: method.payment_token,
-          payout_type: type,
-          confirm: true,
-          auto_fulfill: true,
-          recurring: false,
-          profile_id: api.profileId,
-          merchant_order_reference_id: input.idempotencyKey,
-          metadata: input.metadata,
-        }, input.idempotencyKey)
-      }
-      const status = requiredString(payout.status, 'payout status').toLowerCase()
-      if (!['success', 'succeeded', 'initiated', 'pending', 'processing'].includes(status)) {
-        throw new PaymentProviderError(
-          'hyperswitch_payout_failed',
-          `Hyperswitch did not accept the payout (status: ${status}).`,
-          409,
-        )
-      }
-      return {
-        payoutId: requiredString(payout.payout_id, 'payout_id'),
-        status,
+        id: session.id,
+        sdkAuthorization: session.sdkAuthorization,
+        profileId: session.profileId,
       }
     },
 

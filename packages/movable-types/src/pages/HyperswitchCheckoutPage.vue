@@ -6,9 +6,12 @@ import { us } from '@platform-kit/kit/lib/content.js'
 import { money } from '@platform-kit/kit/lib/commerce.js'
 import { site as SITE_RAW } from '#content'
 import {
+  HYPERSWITCH_V2_BROWSER_UNAVAILABLE_CODE,
+  confirmV2CheckoutPayment,
   createHyperswitchClient,
-  hyperswitchLoaderUrl,
+  createPaymentMethodManagementWidget,
   loadHyperswitchSdk,
+  retrieveV2CheckoutPayment,
 } from '../lib/hyperswitch-sdk.js'
 import SiteMark from '../components/SiteMark.vue'
 
@@ -21,8 +24,8 @@ const title = computed(() => state.value === 'failed'
   ? W.value['checkout-unavailable-title'] || 'Checkout unavailable'
   : W.value['checkout-title'] || 'Complete your payment')
 let hyper
-let widgets
-let unifiedCheckout
+let paymentMethodElements
+let paymentMethodWidget
 
 watch(title, (value) => setHead({ title: value, description: '', path: ROUTES.hyperswitchCheckout, noindex: true }), { immediate: true })
 
@@ -60,11 +63,13 @@ function validCheckout(value) {
       typeof value.apiBaseUrl !== 'string' ||
       typeof value.publishableKey !== 'string' ||
       typeof value.clientSecret !== 'string' ||
+      typeof value.paymentMethodSessionId !== 'string' ||
+      typeof value.sdkAuthorization !== 'string' ||
+      typeof value.profileId !== 'string' ||
       typeof value.successUrl !== 'string' ||
       typeof value.cancelUrl !== 'string') return false
   try {
     const apiUrl = new URL(value.apiBaseUrl)
-    hyperswitchLoaderUrl(value.clientUrl)
     const successUrl = new URL(value.successUrl)
     const cancelUrl = new URL(value.cancelUrl)
     return ['https:', 'http:'].includes(apiUrl.protocol) &&
@@ -102,7 +107,13 @@ function safePaymentError(error) {
 
 async function loadSdk(data) {
   const Hyper = await loadHyperswitchSdk(data.clientUrl)
-  return createHyperswitchClient(Hyper, data.publishableKey, data.apiBaseUrl)
+  return createHyperswitchClient(Hyper, data.publishableKey, data.apiBaseUrl, data.profileId)
+}
+
+function paymentReturnUrl() {
+  const url = new URL(window.location.href)
+  url.searchParams.set('payment_action', 'return')
+  return url.href
 }
 
 async function initialize() {
@@ -126,19 +137,44 @@ async function initialize() {
     return
   }
   checkout.value = { ...data, sessionId }
+  let returnStatus = ''
+  let returnError = null
+  if (new URLSearchParams(window.location.search).get('payment_action') === 'return') {
+    try {
+      returnStatus = await retrieveV2CheckoutPayment({
+        apiBaseUrl: data.apiBaseUrl,
+        paymentId: sessionId,
+        publishableKey: data.publishableKey,
+        clientSecret: data.clientSecret,
+        profileId: data.profileId,
+      })
+      if (returnStatus === 'succeeded' || returnStatus === 'processing') {
+        finishReturn()
+        return
+      }
+    } catch (error) {
+      returnError = error
+    } finally {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('payment_action')
+      window.history.replaceState(null, '', url.href)
+    }
+  }
   try {
     hyper = await loadSdk(data)
-    widgets = hyper.widgets({ clientSecret: data.clientSecret })
-    unifiedCheckout = widgets.create('payment', {
-      layout: 'accordion',
-      wallets: { walletReturnUrl: data.successUrl },
-    })
+    const management = createPaymentMethodManagementWidget(hyper, data.sdkAuthorization)
+    paymentMethodElements = management.elements
+    paymentMethodWidget = management.widget
     state.value = 'ready'
     await nextTick()
-    unifiedCheckout.mount('#hyperswitch-payment')
-  } catch {
+    paymentMethodWidget.mount('#hyperswitch-payment')
+    if (returnError || returnStatus) message.value = safePaymentError(returnError || { code: returnStatus })
+  } catch (error) {
     state.value = 'failed'
-    message.value = W.value['checkout-error'] || 'Your payment could not be completed. Check your details and try again.'
+    message.value = error?.code === HYPERSWITCH_V2_BROWSER_UNAVAILABLE_CODE
+      ? W.value['checkout-v2-unavailable'] ||
+        'The secure V2 payment form could not be loaded. No card details were submitted and the payment was not confirmed. Return to the store and try again later.'
+      : W.value['checkout-error'] || 'Your payment could not be completed. Check your details and try again.'
   }
 }
 
@@ -149,26 +185,29 @@ function finishReturn() {
 }
 
 async function submitPayment() {
-  if (state.value !== 'ready' || !hyper || !unifiedCheckout || !checkout.value) return
+  if (state.value !== 'ready' || !hyper || !paymentMethodElements || !checkout.value) return
   state.value = 'submitting'
   message.value = ''
   try {
-    const result = await hyper.confirmPayment({
-      widgets,
-      confirmParams: { return_url: checkout.value.successUrl },
-      redirect: 'always',
+    const result = await confirmV2CheckoutPayment({
+      hyper,
+      elements: paymentMethodElements,
+      returnUrl: paymentReturnUrl(),
+      apiBaseUrl: checkout.value.apiBaseUrl,
+      paymentId: checkout.value.sessionId,
+      publishableKey: checkout.value.publishableKey,
+      clientSecret: checkout.value.clientSecret,
+      profileId: checkout.value.profileId,
     })
-    if (result?.error) {
-      message.value = safePaymentError(result.error)
-      state.value = 'ready'
+    if (result.redirectUrl) {
+      window.location.assign(result.redirectUrl)
       return
     }
-    const status = String(result?.status ?? result?.paymentIntent?.status ?? '').toLowerCase()
-    if (status === 'succeeded' || status === 'processing') {
+    if (result.status === 'succeeded' || result.status === 'processing') {
       finishReturn()
       return
     }
-    message.value = safePaymentError({ code: status })
+    message.value = safePaymentError({ code: result.status })
     state.value = 'ready'
   } catch (error) {
     message.value = safePaymentError(error)

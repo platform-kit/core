@@ -36,7 +36,7 @@ PlatformKit is configurable: the generic demo exercises the built modules it ena
 - Review and guard destructive database changes before applying a plan.
 - Assemble and deploy the Edge Functions used by enabled features, along with the generated catalogs, strings, templates, and other data they need.
 - Provide API surfaces for content, forms, commerce, scheduling, support, community/Matrix, and the site's social network/AT Protocol, subject to the matching modules being enabled.
-- Keep Stripe as the built-in compatibility default while allowing a site to register its own server-side payment adapter, secrets, webhook verification, and supported capabilities.
+- Keep Stripe as the built-in compatibility default while allowing a site to register its own server-side payment adapter, secrets, webhook verification, and supported capabilities. A built-in Hyperswitch adapter uses a V2 Router and the Hyperswitch Web SDK's secure card fields, so card details never reach the site; a real Stripe payment through it is not yet verified.
 - Apply the same shared checkout, order, subscription, usage, and payout rules to normalized events from the selected provider; refuse unsupported operations before provider side effects.
 - Provide shared request handling, authentication, permissions, webhooks, and mock providers for supported integrations.
 
@@ -366,3 +366,4 @@ For the project's objectives and intended audience, see [PURPOSE.md](./PURPOSE.m
 ---
 
 **Sources:** `openspec/specs`, `packages/kit/build/modules/kit.mjs`, `packages/kit/build/modes.mjs`, `packages/kit/build`, `packages/kit/supabase`, `packages/kit/src/lib`, `packages/kit/src/payment-provider.mjs`, `packages/kit/src/payment-provider.d.ts`, `packages/movable-types/src`, `sites/demo/platformkit.config.js`
+**Reviewed:** `2026-10-16`

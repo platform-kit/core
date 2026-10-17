@@ -21,7 +21,7 @@ sources:
     sites/docs/package.json,
     sites/docs/platformkit.config.js,
   ]
-reviewed: 2026-10-14
+reviewed: 2026-10-16
 ---
 
 PlatformKit sites use three packages. Before changing code, identify which package owns the behavior:
@@ -63,7 +63,7 @@ Some enabled features need extra packages at build time, such as `mjml`, the Typ
 The workspace root also provides an opt-in Docker-backed Hyperswitch v2 integration stack for
 PlatformKit development. It builds from a local Hyperswitch checkout and is separate from site
 builds and the default unit-test suite; the [payment-provider guide](/content/docs/building-a-site/payment-providers)
-documents its setup and commands.
+documents its setup and commands, including the Router prefix and Card Vault the Hyperswitch SDK's card fields need.
 
 ## Reader state
 

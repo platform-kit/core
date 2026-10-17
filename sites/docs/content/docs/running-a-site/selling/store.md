@@ -33,7 +33,7 @@ sources:
     packages/kit/build/velite.mjs,
     packages/kit/supabase/schemas/55-sessions.sql,
   ]
-reviewed: 2026-10-12
+reviewed: 2026-10-16
 ---
 
 The store sells book unlocks, printed books and downloads, memberships, and goods. It is enabled by the `store` module; when the module is off, store pages, checkout, and store administration are unavailable. For membership offers and tiers, see [Memberships and pricing](/content/docs/running-a-site/selling/memberships-and-pricing). For prepaid allowances and metered assistant services, see [Usage billing](/content/docs/running-a-site/selling/usage-billing).

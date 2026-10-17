@@ -20,6 +20,8 @@ for (const invalidClientUrl of [
   'http://sdk.example.test',
   'https://user:password@sdk.example.test',
   'https://sdk.example.test?v=1',
+  'https://sdk.example.test/v1',
+  'https://sdk.example.test',
 ]) {
   assert.throws(
     () => hyperswitchClientUrl(invalidClientUrl),
@@ -34,15 +36,20 @@ const api = createHyperswitchApi(secrets, configuration, {
     return Response.json({ payment_id: 'pay_test', status: 'succeeded' })
   },
 })
-const payment = await api.request('POST', '/payments', { amount: 2500, currency: 'USD' }, 'payment:test')
+const payment = await api.request(
+  'POST',
+  '/v2/payments/create-intent',
+  { amount_details: { order_amount: 2500, currency: 'USD' } },
+  'payment:test',
+)
 assert.equal(payment.payment_id, 'pay_test')
-assert.equal(calls[0].url, 'https://sandbox.hyperswitch.io/payments')
-assert.equal(calls[0].init.headers['api-key'], 'server-secret')
+assert.equal(calls[0].url, 'https://sandbox.hyperswitch.io/v2/payments/create-intent')
+assert.equal(calls[0].init.headers.Authorization, 'api-key=server-secret')
+assert.equal(calls[0].init.headers['api-key'], undefined)
 assert.equal(calls[0].init.headers['x-profile-id'], 'pro_test')
 assert.equal(calls[0].init.headers['Idempotency-Key'], 'payment:test')
 assert.deepEqual(JSON.parse(calls[0].init.body), {
-  amount: 2500,
-  currency: 'USD',
+  amount_details: { order_amount: 2500, currency: 'USD' },
 })
 
 let attempt = 0
@@ -55,21 +62,26 @@ const retriedApi = createHyperswitchApi(secrets, configuration, {
       : Response.json({ refund_id: 're_test' })
   },
 })
-assert.equal((await retriedApi.request('POST', '/refunds', { payment_id: 'pay_test' }, 'refund:stable')).refund_id, 're_test')
+assert.equal((await retriedApi.request(
+  'POST',
+  '/v2/refunds',
+  { payment_id: 'pay_test' },
+  'refund:stable',
+)).refund_id, 're_test')
 assert.equal(attempt, 2)
 
 const malformedApi = createHyperswitchApi(secrets, configuration, {
   fetch: async () => new Response('not-json', { status: 200 }),
 })
 await assert.rejects(
-  malformedApi.request('GET', '/payments/pay_test'),
+  malformedApi.request('GET', '/v2/payments/pay_test/get-intent'),
   (error) => error instanceof PaymentProviderError && error.code === 'hyperswitch_invalid_response',
 )
 const rejectedApi = createHyperswitchApi(secrets, configuration, {
   fetch: async () => Response.json({ error_message: 'profile access denied' }, { status: 401 }),
 })
 await assert.rejects(
-  rejectedApi.request('GET', '/payments/pay_test'),
+  rejectedApi.request('GET', '/v2/payments/pay_test/get-intent'),
   (error) => error instanceof PaymentProviderError && error.code === 'hyperswitch_request_failed' &&
     error.status === 401 && /profile access denied/.test(error.message),
 )
@@ -77,6 +89,43 @@ await assert.rejects(
   api.request('GET', '//other.example/payments'),
   (error) => error instanceof PaymentProviderError && error.code === 'hyperswitch_path_invalid',
 )
+await assert.rejects(
+  api.request('GET', '/v1/payments/pay_test'),
+  (error) => error instanceof PaymentProviderError && error.code === 'hyperswitch_path_invalid',
+)
+let missingV2RouteCalls = 0
+const missingV2RouteApi = createHyperswitchApi(secrets, configuration, {
+  fetch: async (url) => {
+    missingV2RouteCalls++
+    assert.equal(String(url), 'https://sandbox.hyperswitch.io/v2/customers')
+    return Response.json({ message: 'route not found' }, { status: 404 })
+  },
+})
+await assert.rejects(
+  missingV2RouteApi.request('POST', '/v2/customers', { email: 'buyer@example.test', name: 'Buyer' }),
+  (error) => error instanceof PaymentProviderError &&
+    error.code === 'hyperswitch_request_failed' && error.status === 404,
+)
+assert.equal(missingV2RouteCalls, 1)
+let clientAuthorizedCall
+const clientAuthorizedApi = createHyperswitchApi(secrets, configuration, {
+  fetch: async (url, init) => {
+    clientAuthorizedCall = { url: String(url), init }
+    return Response.json({ id: 'pay_client' })
+  },
+})
+await clientAuthorizedApi.requestWithClientSecret(
+  'POST',
+  '/v2/payments/pay_client/confirm-intent',
+  { payment_method_data: {}, payment_method_type: 'card' },
+  'payment:confirm',
+  'pay_client_secret',
+)
+assert.equal(
+  clientAuthorizedCall.init.headers.Authorization,
+  'publishable-key=pk_snd_test,client-secret=pay_client_secret',
+)
+assert.equal(clientAuthorizedCall.init.headers['x-profile-id'], 'pro_test')
 
 const signingKey = 'test-webhook-signing-key'
 const envelope = {

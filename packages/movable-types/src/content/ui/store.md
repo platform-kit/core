@@ -33,6 +33,7 @@ checkout-secure: Secure checkout
 checkout-loading: Loading secure payment form…
 checkout-unavailable-title: Checkout unavailable
 checkout-return: Return to the store
+checkout-v2-unavailable: The secure V2 payment form could not be loaded. No card details were submitted and the payment was not confirmed. Return to the store and try again later.
 checkout-error: Your payment could not be completed. Check your details and try again.
 checkout-declined: The payment method was declined. Try another payment method or check with your bank.
 checkout-action-required: Complete the additional verification in the secure payment form.
