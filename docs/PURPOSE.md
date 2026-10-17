@@ -20,7 +20,7 @@ That separation is meant to work in both directions: the framework should not ac
 
 A site chooses the capabilities it needs. Publishing, a store, memberships, sessions, support, community, and other modules are not a mandatory bundle; turning a capability off should remove its related experience rather than leave a dormant feature in the product.
 
-When capabilities are combined, they should behave as parts of one site. Accounts, content, administration, and deployment provide shared context, while each feature keeps its own purpose and rules. For example, a paid membership can govern access to both content and a community, instead of those areas maintaining unrelated accounts and entitlements. Billing and inference providers can be configured for the site and for individual services, so different features need not share one price or provider policy.
+When capabilities are combined, they should behave as parts of one site. Accounts, content, administration, and deployment provide shared context, while each feature keeps its own purpose and rules. For example, a paid membership can govern access to both content and a community, instead of those areas maintaining unrelated accounts and entitlements. A site chooses its payment and inference providers once, and can price individual services separately, so different features need not share one price.
 
 ## Product and design decisions
 
@@ -68,4 +68,4 @@ For the built capabilities and their sub-features, see [FEATURES.md](./FEATURES.
 
 **Sources:** `openspec/specs/kit-principles/spec.md`, `packages/kit/build/modules/kit.mjs`, `packages/kit/build/site.mjs`
 
-**Reviewed:** 2026-10-12
+**Reviewed:** 2026-10-17

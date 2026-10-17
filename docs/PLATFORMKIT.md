@@ -37,7 +37,7 @@ documents setup, private test profiles, and cleanup.
 
 A production build runs from the site's repository and uses that repository's dependency installation and lockfile. A site may use published PlatformKit packages or invoke the CLI from GitHub source; the latter installs the matching kit and theme into local `node_modules` without saving package entries. Package publication and deployment remain explicit release operations; a local site registry is only a development convenience.
 
-PlatformKit maintainers own package releases. The kit CI tests both workspaces before a `kit-v<version>` tag publishes the core and theme packages to npm and GitHub Packages. npm publication requires the core repository's `NPM_TOKEN`; the workflow's GitHub token publishes to GitHub Packages. A tag is not a usable release until both publication steps have succeeded.
+PlatformKit maintainers own package releases. The kit CI runs the kit's tests against the demo and documentation sites, and builds and checks both, before a `kit-v<version>` tag publishes the core and theme packages to npm and GitHub Packages. npm publication requires the core repository's `NPM_TOKEN`; the workflow's GitHub token publishes to GitHub Packages. A tag is not a usable release until both publication steps have succeeded. A maintainer can also publish to npm alone by running the manual Publish workflow with an exact version, which first checks that both packages declare that version.
 
 Site maintainers own the site repository and its lockfile. When a site consumes npm-published PlatformKit packages, its maintainers pin exact versions and commit the matching lockfile. Alternatively, the production host can run `npx --yes --package=github:platform-kit/core platformkit deploy` from the site checkout; that sources the kit and theme from Core without requiring npm publication or changing the site's manifest and lockfile. In either case, the host checks out the site's selected commit and builds from that repository, not from PlatformKit's local site registry or a sibling site. Git-backed publishing returns edits to the same site repository, keeping it the source of truth.
 
@@ -45,5 +45,5 @@ The maintained reference documentation is in the documentation site. The OpenSpe
 
 ---
 
-**Sources:** `package.json`, `packages/kit/package.json`, `packages/movable-types/package.json`, `packages/kit/bin/platformkit.mjs`, `packages/kit/build/sites.mjs`, `packages/kit/build/dev-workspace.mjs`, `.github/workflows/kit.yml`
-**Reviewed:** `2026-10-14`
+**Sources:** `package.json`, `packages/kit/package.json`, `packages/movable-types/package.json`, `packages/kit/bin/platformkit.mjs`, `packages/kit/build/sites.mjs`, `packages/kit/build/dev-workspace.mjs`, `.github/workflows/kit.yml`, `.github/workflows/publish.yml`
+**Reviewed:** `2026-10-17`
