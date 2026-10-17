@@ -63,6 +63,9 @@ sources:
     packages/kit/build/stripe-payment-provider.test.ts,
     packages/kit/build/stripe-testmode.integration.mjs,
     packages/kit/build/stripe-testmode.integration.test.ts,
+    packages/kit/build/stripe-usage-recovery.integration.mjs,
+    packages/kit/build/stripe-usage-recovery.integration.test.ts,
+    packages/kit/build/stripe-3ds-complete.mjs,
     packages/kit/build/usage.test.mjs,
     packages/kit/supabase/functions/payment-provider-webhook,
     packages/kit/supabase/functions/push-catalog,
@@ -259,6 +262,24 @@ catalog products. Stripe does not allow archiving a product's current default pr
 test-only price remains attached to the archived product. Connected-account payout integration is
 reported as not verified when the Stripe test account has not enabled Connect; the adapter's
 deterministic suite still verifies the payout request mapping.
+
+An incremental usage charge's recovery has its own run against Stripe test mode, with the same
+private file:
+
+```sh
+node packages/kit/build/stripe-usage-recovery.integration.mjs /path/to/private-stripe-test.env
+```
+
+It charges a saved card off-session the way the settlement does. A card that needs 3-D Secure comes
+back as action required with the client secret the usage page uses, and a retry under the same
+idempotency key returns the same PaymentIntent rather than a second charge. The customer's
+verification is played on Stripe's test 3-D Secure page in a headless Chromium
+(`stripe-3ds-complete.mjs`; set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` when Playwright's own build is not
+installed), after which retrieval reports the charge paid. A card that saves but declines when
+charged is a declined attempt, its key does not charge again, and the retry under a new key with
+another card succeeds once. Every charge is refunded and the customer deleted. The verification here
+confirms the PaymentIntent server-side; on the usage page Stripe.js does that step with
+`STRIPE_PUBLISHABLE_KEY`.
 
 Hyperswitch payout setup uses a dedicated Hyperswitch customer for each recipient. The recipient
 adds a supported payout destination through an authenticated payment-method management session
