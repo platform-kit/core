@@ -11,9 +11,12 @@
  * functions and the site's side by side, `_shared` the kit's; the seed the kit's shape followed by the
  * site's rows. Files, never cross-package imports: Deno sees one directory.
  *
- * The assembled tree is committed, so the supabase CLI works from a checkout and `db reset` needs no
- * step — and it is checked: `--check` (in npm test) refuses a tree that differs from what its sources
- * assemble to, so nothing is ever edited in supabase/ by hand. What the build writes into the tree —
+ * The assembled tree is GENERATED, NEVER COMMITTED: dev, migrate, test and deploy each assemble it
+ * before they use it, so a site repository holds its db/ and supabase/config.toml and ignores the rest.
+ * A committed copy only records the kit it was assembled from, and drifts from the next one. `--check`
+ * refuses a tree that differs from what its sources assemble to, and what no assembly fixes — a file
+ * neither owner declared, a migrations folder, an unresolved import — so nothing is edited in supabase/
+ * by hand; `platformkit test` assembles first, so there it catches only those. What the build writes into the tree —
  * the catalog, the compiled emails, the funnels, the strings — is the site's and is left alone.
  * A site that declares no backend (deployment.backend: false) has no data layer: the assembler does
  * nothing for it, and neither does the deploy, so no supabase/ tree is ever written or checked.
@@ -50,7 +53,7 @@ const c = await loadSite(ROOT)
  * `npm test` did not, so running either in sites/docs or sites/brochure wrote a 6 MB supabase/
  * tree — a declared schema, every Edge Function, a config.toml naming ports — for a database that
  * site has declared it does not have. The decision belongs here, once, so all three agree, and
- * --check passes for such a site rather than demanding a committed tree it should never hold.
+ * --check passes for such a site rather than demanding a tree it should never hold.
  */
 if (deploymentShape(c).backend === false) {
   console.log('supabase/: nothing to assemble — this site declares no backend (deployment.backend: false)')
@@ -395,7 +398,7 @@ if (check) {
   for (const u of unresolved(plan)) bad.push(`unresolved ${u} — the edge runtime resolves every literal specifier it sees, so this is the whole runtime refusing to boot, not one function failing`)
   if (migrations.length) bad.push(`supabase/migrations/ holds ${migrations.length} file(s) — nothing reads a migration now: the declaration is supabase/schemas/, and git keeps the history; delete the folder`)
   if (fs.existsSync(cfg) && withSeed(fs.readFileSync(cfg, 'utf8')) !== fs.readFileSync(cfg, 'utf8')) bad.push('config.toml: [db.seed] does not name the declaration, the rows and the seed')
-  if (bad.length) { console.error('✖ supabase/ is not what its sources assemble to — node packages/kit/build/assemble.mjs, then commit:\n  ' + bad.join('\n  ')); process.exit(1) }
+  if (bad.length) { console.error('✖ supabase/ is not what its sources assemble to — run node packages/kit/build/assemble.mjs; the tree is generated, never edited or committed:\n  ' + bad.join('\n  ')); process.exit(1) }
   console.log(`✔ supabase/ assembled: ${kitSchemas.length} kit + ${siteSchemas.length} site schema file(s), the rows, ${new Set([...plan.keys()].filter((k) => k.startsWith('functions/')).map((k) => k.split('/')[1])).size} function dir(s), the seed`)
   process.exit(0)
 }

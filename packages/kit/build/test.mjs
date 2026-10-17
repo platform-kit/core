@@ -20,9 +20,11 @@ const c = await loadSite(ROOT)
 const on = (m) => c.modules[m] !== false
 
 /* the kit's checks, each behind the module it belongs to */
-/* the site's supabase/ tree: checked against its sources where it is committed, assembled where it is not yet */
+/* the site's supabase/ tree is generated, never committed: assembled fresh, then checked for what an
+   assembly cannot fix (a hand-added file, a migrations folder, an unresolved import, the seed line) */
 const KIT_TESTS = [
-  fs.existsSync(path.join(ROOT, 'supabase', '.assembled.json')) ? ['assemble.mjs', '--check'] : ['assemble.mjs'],
+  ['assemble.mjs'],
+  ['assemble.mjs', '--check'],
   on('store') && ['product-keys.mjs', '--check'],
   /* the data the functions import is generated, not committed: made first, so a fresh clone has
      every one of them before a test reads one and before any function is served */
@@ -206,6 +208,7 @@ const KIT_TESTS = [
   ['steps.mjs', '--check'],   /* every build step's needs — a package a module needs and the site has not installed */
   ['deploy-checks.mjs', '--test'],
   ['overrides.test.mjs'],
+  ['assembled-tree.test.mjs'],   /* the assembled supabase/ tree is generated: the step passes on a fresh checkout and a stale copy, and refuses a file neither owner declared */
   ['site-modules.test.mjs'],   /* the #site/* modules are files the dependency scan follows: a package only the site imports is pre-bundled at startup, not found mid-request */
   ['sections.test.mjs'],   /* the landing catalogue: registry ↔ schemas, defaults valid, no one site's vocabulary, the embed patterns */
   ['site-nav.test.mjs'],   /* who the community link is for: shown to a visitor when there is a room to walk into, a word while it is a way in */
