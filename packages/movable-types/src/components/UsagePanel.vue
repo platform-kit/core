@@ -242,6 +242,9 @@ async function loadTopup() {
     hasPaymentMethod.value = result.has_payment_method === true
     canManagePaymentMethod.value = result.can_manage_payment_method === true
     incrementalAttention.value = Array.isArray(result.incremental_attention) ? result.incremental_attention : []
+    /* the site-wide banner (UsagePaymentAlert.vue) follows what this view now knows, so a payment settled
+       here takes the banner away without asking the server again */
+    try { window.dispatchEvent(new CustomEvent('pk:usage-attention', { detail: incrementalAttention.value.map((settlement) => settlement.status) })) } catch (e) { /* no window */ }
     topupEnabled.value = result.preferences?.enabled === true
     selectedPack.value = result.preferences?.offer_key || eligiblePacks.value[0]?.key || ''
     if (result.preferences?.threshold_micros != null) {

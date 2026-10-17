@@ -6,6 +6,10 @@ import { us } from '@platform-kit/kit/lib/strings.js'
  * Announcement: the slim strip at the top of a page — a badge, a line, a link, a coupon code to copy
  * — dismissible with a × (remembered for the session, by the line's words), sticky when asked. A
  * tone makes it a band. The one section that is a line, not a block.
+ *
+ * Two props are for code, not the page builder's editor: `tone: 'alert'` makes it the red band of an
+ * error the customer must act on (UsagePaymentAlert.vue), and `remember: false` makes the × last for
+ * this page view only, so the strip is back on the next page until its cause is gone.
  */
 const props = defineProps({
   badge: { type: String, default: '' },
@@ -14,17 +18,21 @@ const props = defineProps({
   code: { type: String, default: '' },        /* a coupon, copied on a click */
   sticky: { type: Boolean, default: false },
   dismiss: { type: Boolean, default: true },
+  tone: { type: String, default: '' },          /* 'alert': the red band of an error */
+  remember: { type: Boolean, default: true },   /* false: the × lasts this page view, nothing stored */
 })
 const W = (us('sections').announcement || {}).bar || {}
 const key = computed(() => 'lp.ann.' + String(props.text).slice(0, 40))
-const gone = ref((() => { try { return props.dismiss && sessionStorage.getItem(key.value) === '1' } catch (e) { return false } })())
-function close() { gone.value = true; try { sessionStorage.setItem(key.value, '1') } catch (e) { /* private */ } }
+const gone = ref((() => { try { return props.dismiss && props.remember && sessionStorage.getItem(key.value) === '1' } catch (e) { return false } })())
+function close() { gone.value = true; if (!props.remember) return; try { sessionStorage.setItem(key.value, '1') } catch (e) { /* private */ } }
 const copied = ref(false)
 /* the site's header sits over the landing (absolute, at the top): a bar that is the page's first section hands
    it its own height, so the header comes below the bar rather than across it, and takes it back when dismissed */
 const el = ref(null)
 let ro = null
-const offset = (h) => { try { document.documentElement.style.setProperty('--sitehead-top', h ? h + 'px' : '') } catch (e) { /* no document */ } }
+/* the offset is the first section's to give and take back: a strip further down never clears one it did not set */
+let held = false
+const offset = (h) => { if (!h && !held) return; held = !!h; try { document.documentElement.style.setProperty('--sitehead-top', h ? h + 'px' : '') } catch (e) { /* no document */ } }
 const first = () => el.value && el.value.parentElement && el.value.parentElement.querySelector('section, .lpwrap') === el.value
 function measure() { if (!el.value || gone.value || !first()) return offset(0); offset(el.value.offsetHeight) }
 onMounted(() => { measure(); if (typeof ResizeObserver !== 'undefined' && el.value) { ro = new ResizeObserver(measure); ro.observe(el.value) } })
@@ -33,7 +41,7 @@ onBeforeUnmount(() => { offset(0); if (ro) ro.disconnect() })
 async function copy() { try { await navigator.clipboard.writeText(props.code); copied.value = true; setTimeout(() => { copied.value = false }, 1600) } catch (e) { /* no clipboard */ } }
 </script>
 <template>
-  <section v-if="!gone" ref="el" class="lpsec lpann" :class="{ 'lpann-sticky': sticky }">
+  <section v-if="!gone" ref="el" class="lpsec lpann" :class="{ 'lpann-sticky': sticky, 'lpann-alert': tone === 'alert' }" :role="tone === 'alert' ? 'alert' : null">
     <div class="lpwrap lpann-in">
       <span v-if="badge" class="lpann-badge" v-html="md(badge)"></span>
       <span class="lpann-text" v-html="md(text)"></span>
@@ -54,4 +62,10 @@ async function copy() { try { await navigator.clipboard.writeText(props.code); c
 .lpann-link { color: var(--accent2); font-weight: 600; text-decoration: none; white-space: nowrap }
 .lpann-x { position: absolute; right: 14px; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: var(--ink3); background: none; border: 0; cursor: pointer } .lpann-x:hover { color: var(--ink); background: var(--card) }
 .lpann-in { position: relative; padding-right: 44px }
+/* the alert tone: the red the checkout and billing pages use for an error, white on it in either theme */
+.lpann-alert { background: var(--danger, #a32222); border-bottom-color: transparent; color: #fff }
+.lpann-alert .lpann-text, .lpann-alert .lpann-link { color: #fff }
+.lpann-alert .lpann-badge { color: var(--danger, #a32222); background: #fff }
+.lpann-alert .lpann-link { text-decoration: underline; text-underline-offset: 3px }
+.lpann-alert .lpann-x { color: rgba(255, 255, 255, .85) } .lpann-alert .lpann-x:hover { color: #fff; background: rgba(255, 255, 255, .16) }
 </style>

@@ -208,6 +208,7 @@ const KIT_TESTS = [
   ['steps.mjs', '--check'],   /* every build step's needs — a package a module needs and the site has not installed */
   ['deploy-checks.mjs', '--test'],
   ['overrides.test.mjs'],
+  ['usage-alert.test.mjs'],   /* which usage payments raise the site-wide banner, and the pages it keeps off */
   ['assembled-tree.test.mjs'],   /* the assembled supabase/ tree is generated: the step passes on a fresh checkout and a stale copy, and refuses a file neither owner declared */
   ['site-modules.test.mjs'],   /* the #site/* modules are files the dependency scan follows: a package only the site imports is pre-bundled at startup, not found mid-request */
   ['sections.test.mjs'],   /* the landing catalogue: registry ↔ schemas, defaults valid, no one site's vocabulary, the embed patterns */

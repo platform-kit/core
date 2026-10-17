@@ -9,6 +9,7 @@ import AuthModal from './components/AuthModal.vue'
 import CtaHost from './components/CtaHost.vue'
 import CartDrawer from './components/store/CartDrawer.vue'
 import SiteToast from './components/SiteToast.vue'
+import UsagePaymentAlert from './components/UsagePaymentAlert.vue'
 import SupportWidget from './components/support/SupportWidget.vue'
 import { pageview } from '@platform-kit/kit/lib/analytics.js'
 import siteConfig, { modules } from '#site'   /* the module switches (platformkit.config.js) */
@@ -81,6 +82,8 @@ watch(route, (path) => { applyRouteMeta(path); if (path !== ROUTES.preview) page
 </script>
 
 <template>
+  <!-- a usage payment that needs the customer, said above every page until it is settled -->
+  <UsagePaymentAlert />
   <!-- a docs-only site whose root no landing page claims opens on the docs -->
   <ContentPage v-if="DOCS_ONLY && route === ROUTES.home && !isPageRoute(ROUTES.home)" />
   <LandingPage v-else-if="route === ROUTES.home" />

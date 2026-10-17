@@ -109,3 +109,10 @@ billing-saved: Your membership settings were updated.
 billing-load-error: We couldn't check whether you have an active membership. Try again.
 billing-error: Your membership settings could not be updated. Try again.
 billing-manage-error: Membership management could not be opened. Try again.
+
+### alert
+
+badge: Payment needed
+requires_action: Your saved payment method needs verification to pay for your usage.
+failed: A payment for your usage didn't go through.
+link: Review payment

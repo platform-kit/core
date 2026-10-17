@@ -59,9 +59,29 @@ Deno.serve(async (req) => {
   try {
     await fresh()
     const provider = await getPaymentProvider()
+    const body = await req.json().catch(() => ({}))
+    /* the site-wide banner's question (UsagePaymentAlert.vue): does a usage payment need this customer?
+       Answered from their own subscriptions alone, before any catalog or payment-method work, with one
+       status word — the settlement records never reach the browser */
+    if (body.action === 'attention') {
+      const owned = await query(
+        admin.from('subscriptions').select('id').eq('user_id', user.id),
+        'usage subscriptions could not be loaded',
+      )
+      const ids = (owned ?? []).map((subscription: any) => subscription.id)
+      const open = ids.length
+        ? await query(
+          admin.from('usage_incremental_settlements').select('status')
+            .eq('provider', provider.id).in('subscription_id', ids)
+            .in('status', ['requires_action', 'failed']),
+          'usage payments could not be loaded',
+        )
+        : []
+      const statuses = new Set((open ?? []).map((settlement: any) => settlement.status))
+      return json({ attention: statuses.has('requires_action') ? 'requires_action' : statuses.has('failed') ? 'failed' : null })
+    }
     if (provider.id === 'stripe' && !stripeConfigured) return stripeUnconfigured()
     const config = of<AutoTopUpConfig>('catalog').usage_auto_topup || { enabled: false, currency: null, packs: [] }
-    const body = await req.json().catch(() => ({}))
 
     if (body.action === 'read') {
       const prefs = await query(

@@ -37,7 +37,7 @@ sources:
     packages/kit/supabase/functions,
     package.json,
   ]
-reviewed: 2026-10-16
+reviewed: 2026-10-17
 ---
 
 Local values belong in ignored `.env` files: workspace-wide settings live at the workspace root, and site-specific settings live beside the selected site package. The root `.env.example` indexes every environment name read by Core, separates operator settings from test controls and internal markers, and leaves credentials blank; `sites/demo/.env.example` shows the demo site's local settings. A site-owned payment module declares its own server secret names in `paymentProviders[].secrets` and `owns.env`; those values stay outside browser bundles and the deploy sends the selected provider's declared secrets to the functions. The docs check verifies the root example against Core's environment reads and source-tracks the repository's purpose and feature overviews separately from this settings reference. Production values live only in the deploy environment and the functions' secrets.

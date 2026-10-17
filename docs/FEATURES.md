@@ -200,6 +200,7 @@ PlatformKit is configurable: the generic demo exercises the built modules it ena
 - Let readers join, manage billing, and open the billing portal.
 - Change an existing subscription in place: upgrades and same-tier plan changes take effect now; downgrades can be scheduled for renewal.
 - Keep membership status and pending plan changes available to the site and its access rules.
+- Warn a signed-in reader with a red banner on every page while a usage payment needs verification or has failed, linking to the usage page, until it is settled.
 
 ### Printed books and downloads (`print`)
 

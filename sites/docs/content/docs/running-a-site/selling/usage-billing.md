@@ -51,6 +51,9 @@ sources:
     packages/movable-types/src/components/UsageAdmin.vue,
     packages/movable-types/src/components/AnalyticsAdmin.vue,
     packages/movable-types/src/content/ui/usage.md,
+    packages/movable-types/src/components/UsagePaymentAlert.vue,
+    packages/kit/src/lib/usage-alert.js,
+    packages/kit/build/usage-alert.test.mjs,
     packages/movable-types/src/content/ui/auth.md,
     packages/movable-types/src/content/ui/analytics.md,
     packages/movable-types/src/content/ui/copilot.md,
@@ -104,6 +107,14 @@ through the selected provider or retry a declined charge after correcting the sa
 An uncertain or still-processing payment keeps the same idempotent attempt until its provider
 result is known. Stripe customers can use its billing portal to update the saved method;
 Hyperswitch customers can manage saved methods securely from this page using Hyperswitch Vault.
+
+**The reader is told on every page.** While an incremental charge needs verification or has failed, a
+signed-in reader sees a red banner at the top of every page — "Payment needed", what is wrong, and
+**Review payment**, linking to Billing → Usage. Its × hides it for that page only; the next page
+brings it back, until the charge is settled. A charge that is only processing raises no banner, and
+the banner stays off the checkout, embeds, and preview and share renders. It asks the usage function
+whether a payment needs the reader once when the site opens and again on sign-in, and the Usage tab
+updates it as soon as a payment settles. Its words are the `alert` group of the `usage` strings.
 
 `usage.speechCostPerSecond` is optional. It records the site's declared cost for endpoint speech
 without asking the browser to report money. The `usage` block belongs on the offer that pays for
