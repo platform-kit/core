@@ -206,6 +206,7 @@ const KIT_TESTS = [
   ['steps.mjs', '--check'],   /* every build step's needs — a package a module needs and the site has not installed */
   ['deploy-checks.mjs', '--test'],
   ['overrides.test.mjs'],
+  ['site-modules.test.mjs'],   /* the #site/* modules are files the dependency scan follows: a package only the site imports is pre-bundled at startup, not found mid-request */
   ['sections.test.mjs'],   /* the landing catalogue: registry ↔ schemas, defaults valid, no one site's vocabulary, the embed patterns */
   ['site-nav.test.mjs'],   /* who the community link is for: shown to a visitor when there is a room to walk into, a word while it is a way in */
   ['icons.mjs', '--check'],   /* every glyph a page names is one something can draw: an unknown name used to be skipped in silence and drew a hole */

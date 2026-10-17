@@ -7,12 +7,13 @@ sources:
     packages/kit/src/lib/nav.js,
     packages/movable-types/src/theme.js,
     packages/kit/vite/index.mjs,
+    packages/kit/build/site-modules.test.mjs,
     packages/kit/build/theme.mjs,
     packages/kit/build/site.mjs,
     packages/kit/src/lib/router.js,
     packages/movable-types/src/instrument/ui/results/tabs.js,
   ]
-reviewed: 2026-10-13
+reviewed: 2026-10-16
 ---
 
 ## The manifest
@@ -39,6 +40,10 @@ The Vite plugin (`packages/kit/vite/index.mjs`, `platformkit()` in a two-line `v
 | `#site/admin`                   | `sections`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `admin.sections`               |
 | `#content`                      | the compiled content (`.velite`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | velite                         |
 | `#content/*`, `#site/content/*` | one compiled file; one raw file of the site's                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | aliases                        |
+
+Every `#site/*` module that imports the site's code is also written to `.platformkit/site/` when the config is read, and each specifier resolves to its file; only `#site/strings-default`, which imports nothing, stays virtual. Vite's dependency scan does not follow a virtual module, so answered only in memory, a package that only the site's own code imports — an admin field's editor extension, say — would be found on the first visit to its page and bundled mid-request. As files, the scan follows them at startup like any other code, and what it finds is exactly what the site has switched on, because the files hold the same code the plugin serves: a route whose module is off is in neither. The files import the site's code by relative path: the scan takes an import already written as its resolved path for an external one and follows it no further. The folder is regenerated on each start and carries its own `.gitignore` of everything, so it is never committed in whichever repository the site lives in. `site-modules.test.mjs` pins all three — each module resolves to its file, the file is what the plugin serves, and its imports are relative — and runs in `platformkit test`.
+
+Because the scan now reads the site's code, a construct esbuild refuses there (assigning to an imported binding, for one) stops the startup scan, and Vite falls back to finding every package on first visit.
 
 The public `#site` config also carries the community, network and coaching settings used by the theme; the assembled function-side config preserves the network access and coaching booking preferences needed by server-side flows. The CMS is compiled into production when the resolved content store is rows; a backend and repository alone do not turn it on when content is file-backed.
 
