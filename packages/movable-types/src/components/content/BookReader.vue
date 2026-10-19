@@ -7,7 +7,8 @@ import { loadDoc, bookShelf, bookCard, coverTint, us } from '@platform-kit/kit/l
 import Book3D from '../Book3D.vue'
 import { inject } from 'vue'
 import { get as stored, set as store } from '@platform-kit/kit/lib/store.js'
-import { companionFor, chapterCompanion, insightFor, summaryTime } from '@platform-kit/kit/lib/companions.js'
+import { companionFor, chapterCompanion, insightFor, summaryTime, useCompanion } from '@platform-kit/kit/lib/companions.js'
+import { readerBook } from '@platform-kit/kit/lib/gated.js'
 import { masteryOf, chapterResult, masteryRev } from '@platform-kit/kit/lib/mastery.js'
 /* the words a chapter is read with, and the name its recording has — shared with
    build/tts.mjs, so a recording made here has the name the script would give it */
@@ -140,6 +141,7 @@ function setFont(k) { state.value.font = k; saveState() }
 
 /* ---- the book ---- */
 async function load() {
+  gatedState.value = ''
   const d = preview
     ? (preview.value ? { data: preview.value, body: preview.value.raw || '' } : null)
     : await loadDoc('books', props.slug)
@@ -152,6 +154,7 @@ async function load() {
      recording by INTRO_KEY rather than its editable label */
   if (fm.value.introduction) chapters.value.unshift({ key: INTRO_KEY, title: R.intro.label, md: String(fm.value.introduction).trim(), intro: true })
   ch.value = Math.min(state.value.ch || 0, chapters.value.length - 1)
+  fetchGated()
   prepareSpeech().catch(() => {})
 
   /* pull every baked-in mark out of the raw markdown for the cover teaser */
@@ -337,6 +340,37 @@ const firstLocked = computed(() => { if (!bookAllowed.value) return 0; const n =
 const isLocked = (i) => i >= firstLocked.value
 const gate = ref(null)   /* null, or { required, teaser } while the current chapter is locked */
 
+/* ---- the chapters the bundle could not carry. The published book is the one a guest may read
+   (_shared/gate.js): from gatedFrom on, a chapter is its title and teaser. A reader allowed further is
+   sent the rest by reader-content, once per book; until it arrives such a chapter says it is opening,
+   and if it cannot be fetched it says so with a retry — never the paywall, which would tell somebody who
+   has paid that they have not. ---- */
+const gatedState = ref('')   /* '' | 'loading' | 'error' | 'done' */
+const waitingFor = (i) => typeof fm.value.gatedFrom === 'number' && !isLocked(i) && !(chapters.value[i] && chapters.value[i].intro)
+  && i - introOffset.value >= fm.value.gatedFrom && gatedState.value !== 'done'
+async function fetchGated() {
+  if (preview || typeof fm.value.gatedFrom !== 'number') return
+  if (!(firstLocked.value - introOffset.value > fm.value.gatedFrom)) return
+  if (gatedState.value === 'loading' || gatedState.value === 'done') return
+  gatedState.value = 'loading'
+  try {
+    const r = await readerBook(props.slug)
+    const intro = chapters.value[0] && chapters.value[0].intro ? chapters.value[0] : null
+    const next = bookChapters(r.raw)
+    if (intro) next.unshift(intro)
+    chapters.value = next
+    useCompanion(props.slug, r.companion)
+    gatedState.value = 'done'
+  } catch (e) {
+    gatedState.value = 'error'
+  }
+  repaint()
+}
+function retryGated() { gatedState.value = ''; fetchGated() }
+watch(firstLocked, () => fetchGated())
+/* somebody else signed in, or nobody: the book as published again, then whatever this reader may have */
+watch(isSignedIn, () => { if (gatedState.value) { gatedState.value = ''; load() } })
+
 const html = ref('')
 /* v-html with an unchanged string never patches the DOM, so painted marks
    would survive their own deletion — blank it for a tick to force the patch */
@@ -362,6 +396,7 @@ async function render() {
     return
   }
   gate.value = null
+  if (waitingFor(ch.value)) { html.value = ''; return }
   const cc = inSummary.value && !c.intro ? chapterCompanion(props.slug, c.title) : null
   if (c.intro) {
     html.value = marked.parse(c.md)   /* the introduction: the same page whichever way the book is read */
@@ -721,6 +756,10 @@ onBeforeUnmount(() => {
       </div>
       <BookQuiz v-else-if="quizOpen" :slug="props.slug" :chapter="{ title: chapters[ch].title, quiz: chapterQuiz(ch) }"
                 :next-title="ch < chapters.length - 1 && !isLocked(ch + 1) ? chapters[ch + 1].title : ''" @close="quizOpen = false" @next="quizNext" />
+      <div v-else-if="waitingFor(ch)" class="rd-body rd-wait" :style="{ fontSize: SIZES[state.size] + 'px', fontFamily: fontStack }" role="status">
+        <p class="rd-wait-line">{{ gatedState === 'error' ? R.gated.error : R.gated.loading }}</p>
+        <button v-if="gatedState === 'error'" type="button" class="rd-wait-retry" @click="retryGated">{{ R.gated.retry }}</button>
+      </div>
       <template v-else>
         <div ref="body" class="rd-body" :style="{ fontSize: SIZES[state.size] + 'px', fontFamily: fontStack }"
              v-html="html" @click="onBodyClick" />
@@ -979,6 +1018,11 @@ onBeforeUnmount(() => {
 .rd-ess li::before { content: ''; position: absolute; left: 14px; top: 1.1em; width: 9px; height: 9px; border-radius: 50%; background: var(--accent, #0e8c8c) }
 .rd-essmore { margin-top: 12px; font: inherit; font-size: 13px; color: var(--pgink2); background: none; border: 1px solid var(--pghair); border-radius: 999px; padding: 6px 14px; cursor: pointer }
 .rd-essmore:hover { color: var(--pgink); border-color: var(--pgink2) }
+/* a chapter on its way from reader-content, or one that could not be fetched */
+.rd-wait { min-height: 40vh }
+.rd-wait-line { color: var(--pgink2); margin: 0 }
+.rd-wait-retry { margin-top: 14px; font: inherit; font-size: 14px; font-weight: 600; color: var(--pgink); background: none; border: 1.5px solid var(--pgink); border-radius: 999px; padding: 8px 18px; cursor: pointer }
+.rd-wait-retry:hover { background: var(--pgink); color: var(--pg) }
 .rd-quizpanel { margin: 44px 0 0; padding: 22px 0 0; border-top: 1px solid var(--pghair); max-width: 56ch }
 .rd-quizpanel p { margin: 6px 0 14px; color: var(--pgink2); font-size: 15px }
 .rd-quizrow { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap }

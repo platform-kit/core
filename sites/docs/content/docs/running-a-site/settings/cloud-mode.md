@@ -4,6 +4,7 @@ description: Store editable content in Supabase, publish it from the live admin,
 order: 43
 sources:
   [
+    packages/kit/supabase/functions/reader-content/index.ts,
     packages/kit/src/lib/content-live.js,
     packages/kit/src/lib/print-index.js,
     packages/kit/src/lib/bucket-host.js,
@@ -22,7 +23,7 @@ sources:
     packages/kit/supabase/functions/_shared/mjml.ts,
     packages/kit/build/emails-compile.mjs,
   ]
-reviewed: 2026-10-14
+reviewed: 2026-10-18
 ---
 
 Cloud mode stores editable content in Supabase instead of relying on files in a checkout. Use it when editors need to change published content from the live site. It requires a backend and the live admin at `/admin`; a static site cannot use it.
@@ -41,7 +42,7 @@ Sign in at the live site's `/admin` with an account allowed to edit content. In 
 
 There is one draft per record. Saving again replaces that record's previous draft. Publishing a single record makes just that record live; Content → Publishing lets an editor review and publish all pending changes together.
 
-When a visitor loads or refreshes the live site, the app reads published content from the database, so the edit does not require a site build. A page that was already open may need a refresh. A small number of machine-only tasks, such as generating spoken-book recordings, still need a checkout or deploy process; the admin indicates when an action cannot run there.
+When a visitor loads or refreshes the live site, the app reads published content from the database, so the edit does not require a site build. A visitor receives it through a function that leaves out gated text; only administrators read the content rows whole. A page that was already open may need a refresh. A small number of machine-only tasks, such as generating spoken-book recordings, still need a checkout or deploy process; the admin indicates when an action cannot run there.
 
 ## What the functions read, where nothing rebuilds
 

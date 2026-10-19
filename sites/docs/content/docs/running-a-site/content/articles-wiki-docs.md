@@ -2,7 +2,7 @@
 title: Articles, wiki and docs
 description: The three prose collections — a magazine, a canon, and a manual — and how each is arranged.
 order: 13
-reviewed: 2026-10-11
+reviewed: 2026-10-18
 sources:
   [
     packages/movable-types/src/components/content/TreeSection.vue,
@@ -31,6 +31,8 @@ Files live under `content/wiki/`, and a folder becomes a section whose title is 
 A manual, at `/content/docs` — the same shell as the wiki with denser content and a **search** that opens the site-wide palette narrowed to the docs. Pages under `content/docs/`, folders as sections, `order` within a folder, the landing page of the docs grouping its cards by section. (You are reading one.)
 
 Every docs page carries: title, description, order, tags, an optional cover, author, date and updated dates, related pages, media, and an access level.
+
+A page above a guest's access level is published with its title, description and excerpt only; a reader allowed to read it is sent the body when they open it.
 
 ## A docs-only site
 

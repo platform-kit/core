@@ -12,6 +12,8 @@ import { collectionOf } from './store/index.mjs'
 import { toEntry, targetOf } from '../src/lib/entry.js'
 import { renderer } from '../src/lib/markdown.js'
 import { plain } from '../src/lib/markdown.js'
+import { publicRow } from '../supabase/functions/_shared/gate.js'
+import { parseCompanionBody, serialiseCompanionBody } from '../src/lib/companion-body.js'
 
 const ROOT = process.cwd(), V = path.join(ROOT, '.velite')
 if (!fs.existsSync(path.join(V, 'articles.json'))) { console.log('entry: skipped — no .velite here (build the content first)'); process.exit(0) }
@@ -34,6 +36,10 @@ const fileOf = (target, e) => {
   if (target === 'sessions') return `content/sessions/${e.slug}.md`
   return `content/${e.path}.md`
 }
+/* velite writes what a guest may read (_shared/gate.js), and in cloud mode the adapter is sent rows cut the same way
+   (reader-content): so each row is cut as the server cuts it before it is compared */
+const COMPANION = { parseCompanionBody, serialiseCompanionBody }
+const BOOKS = new Map((fs.existsSync(path.join(ROOT, 'content/books')) ? fs.readdirSync(path.join(ROOT, 'content/books')) : []).filter((f) => f.endsWith('.md')).map((f) => [f.replace(/\.md$/, ''), matter(fs.readFileSync(path.join(ROOT, 'content/books', f), 'utf8')).data]))
 const IGNORE = new Set(['coverSource'])   /* the build's own note for the adapter */
 let n = 0, bad = 0, seen = 0, stale = 0
 for (const [target, built] of Object.entries(bundle)) {
@@ -46,9 +52,9 @@ for (const [target, built] of Object.entries(bundle)) {
     const text = fs.readFileSync(path.join(ROOT, file), 'utf8')
     const { data, content } = matter(text)
     const { collection, slug } = collectionOf(file)
-    const row = { path: file, collection, slug, published: data.published !== false, data: JSON.parse(JSON.stringify(data)), body: content, text }
+    const row = publicRow({ path: file, collection, slug, published: data.published !== false, data: JSON.parse(JSON.stringify(data)), body: content, text }, BOOKS, COMPANION)
     /* a file edited since the content was built is not the entry's source any more: left out, and said */
-    if (typeof e.raw === 'string' && e.raw.trim() !== content.trim()) { stale++; continue }
+    if (typeof e.raw === 'string' && e.raw.trim() !== String(row.body || '').trim()) { stale++; continue }
     const t = targetOf(row)
     n++
     if (t !== target) { bad++; console.log(`  FAIL ${file}: the row targets ${t}, velite built it under ${target}`); continue }

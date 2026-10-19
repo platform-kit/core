@@ -4,13 +4,14 @@ description: The Published switch, titles and descriptions for search, share ima
 order: 11
 sources:
   [
+    packages/kit/supabase/functions/_shared/gate.js,
     packages/kit/build/velite.mjs,
     packages/kit/src/lib/seo.js,
     packages/kit/src/lib/seo-head.js,
     packages/kit/src/lib/access.js,
     packages/movable-types/src/pages/SharePage.vue,
   ]
-reviewed: 2026-10-12
+reviewed: 2026-10-18
 ---
 
 Use the Published switch to control whether a record is available to visitors. Set titles, descriptions, and images so search results and shared links describe the right page. This guide covers the shared rules; each editor has its own fields and validation.
@@ -38,6 +39,8 @@ Long titles are reduced to fit the card instead of running beyond its frame. A s
 ## Who can read what
 
 Articles, wiki pages, and docs may be limited to **guest**, **authenticated** (signed in), **paid** (has a qualifying purchase), or **subscribed** (has a live membership) readers. A visitor below the required level sees the page title and an access prompt instead of the protected content. Books can set chapter allowances by reader class; a blank allowance means the full book is available to that class. The book's introduction is outside the chapter count.
+
+Text a visitor may not read is never published to them. The site's published files carry each gated record's title, description and a short opening; a book carries its free chapters and, for each locked chapter, its title and first lines. A reader with access is sent the rest when they open it, after the server checks their own account. A static site has no server to ask, so it does not publish gated text at all.
 
 ## Writing in the editor
 

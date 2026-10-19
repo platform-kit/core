@@ -16,6 +16,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { loadEnv } from 'vite'
 import { PRINTER_IDS, FORMATS_PRINTED } from '../supabase/functions/_shared/suppliers/index.js'
+import { publicBook, publicPage, publicCompanion } from '../supabase/functions/_shared/gate.js'
 
 
 /* The spoken books: the repository's own store, audio/books/<slug>/, holds the
@@ -1475,6 +1476,24 @@ export async function kitConfig() {
     if (!storeOn) collections.storefront = (Array.isArray(collections.storefront) && collections.storefront[0]) || { heroTitle: '', collections: [], featured: [], shelves: [], heroBooks: [], showMembership: false, showEditions: false, showCollections: false, showFeatured: false, showOnline: false }
     const live = new Set((collections.books || []).map((b) => b.slug || b.id))
     if (Array.isArray(collections.companions)) collections.companions = collections.companions.filter((c) => live.has(c.book))
+    /* WHAT IS PUBLISHED IS WHAT A GUEST MAY READ (_shared/gate.js). Everything velite writes reaches the bundle,
+       the pre-rendered pages and both search indexes, so the gated part of a record stops here: a locked
+       chapter keeps its title and teaser, a gated page its hero and excerpt, a locked chapter's companion its
+       title. A reader with access fetches the rest from reader-content, which reads the source (content-json,
+       or the rows), never this. Print, the spoken books and enrichment read the source too. */
+    const bySlug = new Map((collections.books || []).map((b) => [b.slug || b.id, b]))
+    if (Array.isArray(collections.companions)) collections.companions = collections.companions.map((c) => publicCompanion(c, bySlug.get(c.book)))
+    if (Array.isArray(collections.books)) collections.books = collections.books.map(publicBook)
+    for (const key of ['articles', 'wiki', 'docs']) if (Array.isArray(collections[key])) collections[key] = collections[key].map(publicPage)
+    /* a static site has no server to send the rest to anyone, so its gated text is not published at all: said
+       here, by name, rather than discovered by a reader who paid */
+    if (c.deployment && c.deployment.backend === false) {
+      const held = [
+        ...(collections.books || []).filter((b) => typeof b.gatedFrom === 'number').map((b) => `books/${b.slug} (from chapter ${b.gatedFrom + 1})`),
+        ...['articles', 'wiki', 'docs'].flatMap((k) => (collections[k] || []).filter((e) => e && e.gated).map((e) => `${k}/${e.id}`)),
+      ]
+      if (held.length) console.log(`[gate] a static site publishes no gated text — ${held.length} record(s) left out past their free part: ${held.join(', ')}`)
+    }
     /* the content models: the parsed records in place of the files, each model's entries in its order and checked —
        required, the rules, unique, a reference that exists, shown-when honoured — with the models scope's words;
        a failing entry refuses the build with its file, its field and the line */

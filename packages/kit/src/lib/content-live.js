@@ -2,8 +2,9 @@
  * Cloud mode's live layer: before the app's modules are evaluated, the rows of public.content are loaded and
  * put into the bundled collections in place — `#content`'s arrays emptied and refilled, its single records
  * reassigned key by key — so every importer of `#content`, and every list a module makes of one at import
- * time, sees the content as the editors left it a moment ago, not as the last deploy built it. Anyone sees
- * the published rows; an administrator's session sees the drafts too (the table's policies). Each row goes
+ * time, sees the content as the editors left it a moment ago, not as the last deploy built it. A reader is
+ * sent the published rows as a guest may read them (functions/reader-content); an administrator's session is
+ * sent every row whole, drafts too. Each row goes
  * through the one adapter (lib/entry.js) with the shared renderer; the palette's rows are made again from
  * what was loaded, a built row keeping its vector while its words have not changed. In git mode, or when the
  * query fails or takes too long, nothing moves and the bundle stands as built — the site is never worse
@@ -32,10 +33,12 @@ export async function load({ timeout = 8000 } = {}) {
   const { searchRows } = await import('./search-rows.js')
   let rows
   try {
-    const q = supabase.from('content').select('collection, slug, path, published, data, body, text').is('deleted_at', null).order('path')
+    /* through reader-content, not the table: a reader is sent the published rows cut to what a guest may read
+       (_shared/gate.js), an administrator every row whole for the preview; nobody else reads the table */
+    const q = supabase.functions.invoke('reader-content', { body: { action: 'rows' } })
     const r = await Promise.race([q, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeout))])
     if (r.error) throw r.error
-    rows = r.data || []
+    rows = (r.data && r.data.rows) || []
   } catch (e) { loaded.error = String(e.message || e); return null }
   /*
    * AND THE DERIVED JSONS THAT ARE ALSO ROWS. `content/store/print.json` carries every book's set

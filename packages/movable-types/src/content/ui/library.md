@@ -566,6 +566,14 @@ aria-read: read
 
 ## reader
 
+### gated
+
+loading: Opening this chapter…
+error: This chapter couldn't be opened. Check your connection and try again.
+retry: Try again
+page-loading: Opening this page…
+page-error: This page couldn't be opened. Check your connection and try again.
+
 ### bar
 
 comments: Comments

@@ -34,6 +34,8 @@ function longDate(d) {
   )
 }
 import { allowedBy, requiredBy } from '@platform-kit/kit/lib/access.js'
+import { useGatedPage } from '@platform-kit/kit/lib/gated.js'
+import { us } from '@platform-kit/kit/lib/content.js'
 
 const props = defineProps({ id: { type: String, required: true } })
 /* the admin's live preview provides a draft entry in place of the compiled one */
@@ -46,6 +48,9 @@ const a = computed(() =>
    The answer is the ladder's — permissions.test.mjs pins the two together — and a site that narrows
    what may be read narrows this with it. */
 const allowed = computed(() => can('read', entrySubject({ kind: 'articles', slug: a.value && a.value.slug, canAccess: a.value && a.value.data.canAccess })))
+/* a gated article ships without its body (_shared/gate.js); a reader who may read it is sent it by reader-content */
+const GW = us('library').reader.gated || {}
+const body = useGatedPage('articles', () => !preview && a.value && { id: a.value.id, html: a.value.html, gated: a.value.data.gated }, () => allowed.value)
 watch(
   a,
   (v) => {
@@ -104,7 +109,11 @@ const badge = computed(() => {
         <MediaBlock :media="a.data.media" />
       </div>
       <div class="art-col">
-        <div v-if="allowed" class="art-prose"><MarkdownDoc :html="a.html" /></div>
+        <div v-if="allowed && body.waiting.value" class="art-prose art-wait" role="status">
+          <p class="art-wait-line">{{ body.state.value === 'error' ? GW['page-error'] : GW['page-loading'] }}</p>
+          <button v-if="body.state.value === 'error'" type="button" class="art-wait-retry" @click="body.retry">{{ GW.retry }}</button>
+        </div>
+        <div v-else-if="allowed" class="art-prose"><MarkdownDoc :html="preview ? a.html : body.html.value" /></div>
         <Gate v-else kind="doc" :required="requiredBy(a.data.canAccess)" />
         <!-- the targeted call to action, as the organic end of the piece -->
         <ArticleCta v-if="allowed" :key="a.id" :topics="a.data.tags || []" />
@@ -276,6 +285,10 @@ const badge = computed(() => {
 }
 
 /* ===================== body ===================== */
+/* a gated body on its way from reader-content, or one that could not be fetched */
+.art-wait-line { color: var(--ink3); margin: 0 }
+.art-wait-retry { margin-top: 14px; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink); background: none; border: 1.5px solid var(--ink); border-radius: 999px; padding: 8px 18px; cursor: pointer }
+.art-wait-retry:hover { background: var(--ink); color: var(--paper) }
 .art-body {
   position: relative;
   z-index: 2;

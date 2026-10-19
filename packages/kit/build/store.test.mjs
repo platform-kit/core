@@ -123,7 +123,7 @@ else {
     await ta('the row store on the local stack', async () => { await exercise(rows, 'rows') })
     await ta('the library over the bucket', async () => { await browse(rows, 'rows') })
     await ta('a file in use is kept, over the rows', async () => { await kept(rows, 'rows') })
-    await ta('a reader sees the published live rows and none of the drafts', async () => {
+    await ta('a reader reads no row directly — the published rows reach them through reader-content, cut to what a guest may read', async () => {
       await rows.write('content/articles/probe-pub.md', '---\ntitle: P\n---\n', { collection: 'articles', slug: 'probe-pub', published: true, live: true })
       await rows.write('content/articles/probe-draft.md', '---\ntitle: D\npublished: false\n---\n', { collection: 'articles', slug: 'probe-draft', published: false, live: true })
       await rows.write('content/articles/probe-fresh.md', '---\ntitle: F\n---\n', { collection: 'articles', slug: 'probe-fresh' })   /* a first save: a draft, no live version */
@@ -131,12 +131,11 @@ else {
       const { createClient } = await import('@supabase/supabase-js')
       const anon = createClient(url, anonKey, { auth: { persistSession: false } })
       const seen = (await anon.from('content').select('path, text').like('path', 'content/articles/probe-%')).data
-      assert.deepEqual(seen.map((r) => r.path), ['content/articles/probe-pub.md'], 'the live published row alone')
-      assert.equal(seen[0].text, '---\ntitle: P\n---\n', 'the live version, not the draft')
+      assert.deepEqual(seen, [], 'no row is a reader\'s to read from the table (reader-content.test.mjs holds what they are sent)')
       const leak = await anon.from('content_drafts').select('path').eq('path', 'content/articles/probe-pub.md')
       assert.ok(!leak.error && leak.data.length === 0, 'a draft is not a reader\'s to read (RLS on, no policy)')
       const leak2 = await anon.from('content').select('path, content_drafts(text)').eq('path', 'content/articles/probe-pub.md')
-      assert.ok(!leak2.error && !leak2.data[0].content_drafts, 'nor through the join (a one-to-one: null for a reader)')
+      assert.ok(!leak2.error && !leak2.data.length, 'nor through the join')
       const ins = await anon.from('content').insert({ path: 'content/articles/probe-x.md', text: 'x' })
       assert.ok(ins.error, 'a client cannot write')
     })

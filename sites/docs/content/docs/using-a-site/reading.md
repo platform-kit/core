@@ -4,6 +4,7 @@ description: The library, the reader, summaries, highlights, the quiz, the spoke
 order: 30
 sources:
   [
+    packages/kit/src/lib/gated.js,
     packages/movable-types/src/components/content,
     packages/kit/src/lib/tts,
     packages/kit/src/lib/interests.js,
@@ -11,7 +12,7 @@ sources:
     packages/kit/src/lib/records.js,
     packages/movable-types/src/pages/DiagnosticsPage.vue,
   ]
-reviewed: 2026-10-10
+reviewed: 2026-10-18
 ---
 
 For anyone helping a reader, or writing the words a reader sees — this is what the reading side of a site does.
@@ -28,7 +29,7 @@ A book opens on its cover page — the title, the author, the description, the c
 - **Highlights**: the editors' marks are coloured wavy underlines; a reader's own highlights are background washes, made by selecting text, kept on the account.
 - **Test yourself**: the chapter's five-question quiz. Passing is four of five; a bronze trophy for the first chapter, silver for half the book, gold for all.
 - **Listen**: where a recording exists, a player above the chapter bar — waveform, play, time, speed. On a desktop browser a chapter without one can be **generated** on the reader's own machine (the first time downloads the voice, about 400 MB, once); a signed-in reader's generation is shared for everyone after.
-- **Free chapters**: a guest reads the first few chapters, a signed-in reader a few more, a member the whole book — as the book's settings say. The paywall page offers the ways up.
+- **Free chapters**: a guest reads the first few chapters, a signed-in reader a few more, a member the whole book — as the book's settings say. The paywall page offers the ways up. A chapter a reader may read but a visitor may not takes a moment to open the first time.
 
 ## An article, a wiki page, a doc
 

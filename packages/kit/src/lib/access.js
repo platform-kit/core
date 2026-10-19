@@ -10,32 +10,17 @@
  *     Unset = the whole book for that class. A higher class never gets fewer
  *     chapters than a lower one.
  *
- * This is the cosmetic (v1) gate: the text still ships in the bundle, these
- * rules only decide what the reader is shown. See the plan's "Deferred" note for
- * the server-enforced split.
+ * These rules decide what the reader is SHOWN. What they are SENT is _shared/gate.js:
+ * the published bundle carries only what a guest may read, and a reader with more
+ * access fetches the rest from the server (reader-content), which asks the same rules.
  */
 import { CLASSES, allowedBy, requiredBy } from '../../supabase/functions/_shared/access.js'   /* the bar and the ladder, shared with the functions (the content API asks the same rule) */
 export { allowedBy, requiredBy }
 
-const rank = (c) => Math.max(0, CLASSES.indexOf(c))
-
-const KEYS = {
-  guest: 'guestChapters',
-  authenticated: 'authenticatedChapters',
-  paid: 'paidChapters',
-  subscribed: 'subscribedChapters',
-}
-
-/* how many chapters a class may read (Infinity = all) */
-export function chapterAllowance(fm, cls) {
-  let best = -1
-  for (const c of CLASSES) {
-    if (rank(c) > rank(cls)) break
-    const v = fm && fm[KEYS[c]]
-    best = Math.max(best, typeof v === 'number' ? v : Infinity)
-  }
-  return best < 0 ? Infinity : best
-}
+/* how many chapters a class may read (Infinity = all): the server's rule too, so the paywall drawn here
+   matches what reader-content will send (_shared/gate.js) */
+import { chapterAllowance } from '../../supabase/functions/_shared/gate.js'
+export { chapterAllowance }
 
 /* the lowest class whose allowance reaches chapter index i */
 export function requiredForChapter(fm, i) {

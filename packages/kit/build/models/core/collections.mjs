@@ -52,7 +52,7 @@ async function validateExperiment(data, field, store) {
 
 /* who may open a document — a subset of the class ladder; empty = everyone */
 const ACCESS = z.array(z.enum(['guest', 'authenticated', 'paid', 'subscribed']))
-  .meta({ label: 'Access', help: 'who can open this — leave empty for everyone' }).optional()
+  .meta({ label: 'Access', help: 'who can open this — leave empty for everyone. Gated content needs a backend: on a static site, gated text isn\'t published at all.' }).optional()
 /*
  * WHO MAY SAY SOMETHING UNDER THIS, and where the conversation lives.
  *

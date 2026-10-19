@@ -14,7 +14,7 @@ sources:
     packages/movable-types/src/pages/AdminPage.vue,
     packages/kit/src/lib/look.js,
   ]
-reviewed: 2026-10-17
+reviewed: 2026-10-18
 ---
 
 ## Site settings

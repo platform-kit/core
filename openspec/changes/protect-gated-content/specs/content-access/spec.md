@@ -6,21 +6,21 @@ Decide who may read a record's text on the site's own pages, and guarantee that 
 
 ### Requirement: Gated text never reaches a reader without access
 
-A record's text SHALL be readable on the site's pages only by a reader the access rule admits: the record's access bar (`canAccess`) against the reader's class, a book's chapter allowance for that class, and a book the reader has bought, which admits them as a paying reader of that book. Text the rule does not admit a guest to SHALL NOT appear in any published file — pages, scripts, data, pre-rendered HTML, search data, share images or sitemaps — nor in content a visitor can read from the backend. Titles, descriptions, covers, chapter titles, free chapters and records with no access bar SHALL remain public.
+A record's text SHALL be readable on the site's pages only by a reader the access rule admits: the record's access bar (`canAccess`) against the reader's class, a book's chapter allowance for that class, and a book the reader has bought, which admits them as a paying reader of that book. Text the rule does not admit a guest to SHALL NOT appear in any published file — pages, scripts, data, pre-rendered HTML, search data, share images or sitemaps — nor in content a visitor can read from the backend. Titles, descriptions, covers, chapter titles, free chapters, records with no access bar, and a short opening of each locked chapter and gated page — the teaser the paywall shows, never more than half of it — SHALL remain public.
 
 #### Scenario: a guest scans everything the site publishes
 
 - **WHEN** the demo is built with a members-only article and a book whose later chapters are gated, and every published file is read as a guest
-- **THEN** no sentence from a gated chapter or the gated article appears in any of them, while their titles, descriptions, free chapters and chapter titles do
+- **THEN** no sentence past a teaser — from a locked chapter, a short locked chapter, a locked chapter's summary, the gated article or a gated wiki page — appears in any of them, while their titles, the free chapter and the locked chapters' titles do
 
-Verified by: `node build/gated-content.test.mjs`, which builds the demo with gated fixtures and searches every file in its output, its pre-rendered pages and its search data for each gated sentence
+Verified by: `node build/gated-content.test.mjs`, which builds a copy of the demo with gated fixtures carrying marker sentences and searches every file in its output, its pre-rendered pages and its search data for each marker
 
 #### Scenario: readers of the same book
 
-- **WHEN** a guest, a signed-in non-member, a buyer of the book and a member ask for a gated chapter of a book gated to members, whose chapter allowance lets guests read one chapter and signed-in readers three
-- **THEN** the guest gets chapter one only, the signed-in reader chapters one to three, and the buyer and the member every chapter; each refusal returns no text
+- **WHEN** a guest, a signed-in non-member, the buyer of a book and a member ask for a gated book
+- **THEN** each is sent exactly the chapters their class allows — one chapter where a guest's allowance is one, more for a higher class, every chapter for a member, a bought book lifting its buyer to paying for that book (never past a members-only bar) — and a refusal returns no text
 
-Verified by: `node build/reader-content.test.mjs` against the local stack, with seeded accounts for each class and a seeded purchase
+Verified by: `node build/gate.test.mjs` (the allowance for every class, the lift, the bars) and `node build/reader-content.test.mjs` against the local stack (the demo's members-only book for a guest, `free@example.com`, a buyer and a member)
 
 #### Scenario: a request without sign-in or with a forged class
 
@@ -61,6 +61,6 @@ A site whose deployment shape has no backend SHALL NOT publish gated text, becau
 #### Scenario: a static build with a gated record
 
 - **WHEN** a static site declares a members-only article
-- **THEN** the build succeeds without the article's text, names the article in its report, and the admin shows the static-site notice on it
+- **THEN** the build succeeds without the article's text and names the article in its report, and the record editor's access field says gated content needs a backend
 
-Verified by: `node build/gated-content.test.mjs` in the static shape, and the rendered admin record editor
+Verified by: `node build/gated-content.test.mjs` in the static shape; the access field's help in `build/models/core/collections.mjs`

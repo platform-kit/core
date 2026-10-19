@@ -55,7 +55,7 @@ sources:
     packages/kit/build/source-install.mjs,
     packages/kit/build/runtime-paths.mjs,
   ]
-reviewed: 2026-10-17
+reviewed: 2026-10-18
 ---
 
 ## A proposal promises nothing it does not require

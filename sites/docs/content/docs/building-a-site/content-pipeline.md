@@ -4,6 +4,7 @@ description: How markdown becomes the site — velite, the collections and their
 order: 44
 sources:
   [
+    packages/kit/supabase/functions/_shared/gate.js,
     packages/kit/build/velite.mjs,
     packages/kit/build/content-node.mjs,
     packages/kit/src/lib/content.js,
@@ -33,7 +34,7 @@ sources:
     packages/kit/build/steps.mjs,
     packages/kit/build/steps.test.mjs,
   ]
-reviewed: 2026-10-16
+reviewed: 2026-10-18
 ---
 
 Content authors edit Markdown files under `content/`. During the build, Velite validates those files, renders their Markdown, and writes one JSON file per collection plus an `index.js` under `.velite/`. The app imports the generated collections through `#content`. The kit defines this pipeline in `packages/kit/build/velite.mjs`; a site's `velite.config.js` calls `kitConfig()`.
@@ -111,7 +112,9 @@ Set `collections` in `platformkit.config.js` to a module that exports Velite `co
 
 ## Cloud mode: the rows through one adapter
 
-With `CONTENT_STORE=cloud`, `main.js` loads rows from `public.content` before evaluating app modules. `lib/entry.js` converts each row into the same collection shape Velite produces: it applies collection defaults, renders the body, derives excerpts and tables of contents, and parses structured content such as companion chapters and form models. The adapter also restores build-generated fields, such as processed covers and book audio, from the bundled entry with the same slug. The app then reads these updated collections through its normal `#content` imports.
+With `CONTENT_STORE=cloud`, `main.js` loads the published rows before evaluating app modules, through the `reader-content` function: a visitor is sent each row cut to what a guest may read, and an administrator's session every row whole, drafts included. Visitors cannot read `public.content` directly. `lib/entry.js` converts each row into the same collection shape Velite produces: it applies collection defaults, renders the body, derives excerpts and tables of contents, and parses structured content such as companion chapters and form models. The adapter also restores build-generated fields, such as processed covers and book audio, from the bundled entry with the same slug. The app then reads these updated collections through its normal `#content` imports.
+
+Whatever Velite writes is what a guest may read. Its `prepare` step cuts every gated record with the shared rule in `functions/_shared/gate.js` before anything is written: a book keeps its free chapters and each locked chapter's title and opening lines, a gated page its title, description and excerpt, and a companion its free chapters and whether each locked chapter has a quiz. The bundle, the pre-rendered pages and both search indexes are made from that output, so none of them carries gated text. Print, the spoken books and enrichment read the source files and are unaffected.
 
 This live replacement applies only to collections included in the bundle. Site-defined collections and new content models require a deploy. If the database query fails or times out, the app keeps the bundled content. `build/entry.test.mjs` compares the adapter's output with Velite's output field by field. Cloud-mode admin previews use the same adapter to display drafts.
 

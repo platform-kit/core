@@ -9,7 +9,7 @@ sources:
     packages/kit/src/lib/strings.js,
     packages/kit/build/strings-admin.mjs,
   ]
-reviewed: 2026-10-17
+reviewed: 2026-10-18
 ---
 
 Use the UI strings files for text shown in the app: headings, labels, prompts, button text, empty states, placeholders, and visible accessibility labels. Do not hardcode reader-facing copy in Vue or JavaScript components.

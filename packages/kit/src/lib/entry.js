@@ -30,12 +30,12 @@ const KEYS = {
   pages: ['published', 'title', 'route', 'seoTitle', 'description', 'image', 'sections', 'progress', 'footer', 'owner'],
   sessions: ['title', 'sub', 'price', 'url', 'scheduler', 'repeats', 'duration', 'hosts', 'team', 'assign', 'seats', 'buffer', 'schedule', 'interval', 'offset', 'window', 'repeat', 'lengths', 'name', 'confirm', 'form', 'page', 'limits', 'hours', 'notice', 'where', 'link', 'place', 'address', 'phone', 'record', 'requires', 'below', 'sku', 'weekly', 'monthly', 'order', 'published'],
   site: ['name', 'tagline', 'description', 'url', 'image', 'twitter', 'look', 'tokens', 'fonts', 'nav', 'footer'],
-  companions: ['published', 'book', 'insight', 'statement', 'statementArea', 'statementLevel', 'generated'],
+  companions: ['published', 'book', 'insight', 'statement', 'statementArea', 'statementLevel', 'generated', 'quizzed', 'summaryWords', 'gatedFrom'],
   achievements: ['published', 'title', 'sub', 'icon', 'colour', 'cover', 'canAccess', 'shown', 'order', 'when', 'media'],
   experiments: ['title', 'kind', 'active', 'goal', 'ends', 'winner', 'variants'],
   storefront: ['heroEyebrow', 'heroTitle', 'heroSubtitle', 'heroImage', 'heroTheme', 'heroCta', 'heroHref', 'heroCta2', 'heroHref2', 'collections', 'featured', 'shelves', 'showMembership', 'heroBooks', 'showEditions', 'showCollections', 'showFeatured', 'showOnline', 'shipping'],
   collections: ['published', 'title', 'subtitle', 'image', 'order', 'featured', 'products'],
-  books: ['published', 'title', 'author', 'cover', 'share', 'description', 'introduction', 'introduced', 'date', 'year', 'difficulty', 'canAccess', 'print', 'guestChapters', 'authenticatedChapters', 'paidChapters', 'subscribedChapters', 'tags', 'book_id', 'topics', 'concepts', 'comments'],
+  books: ['published', 'title', 'author', 'cover', 'share', 'description', 'introduction', 'introduced', 'date', 'year', 'difficulty', 'canAccess', 'print', 'guestChapters', 'authenticatedChapters', 'paidChapters', 'subscribedChapters', 'tags', 'book_id', 'topics', 'concepts', 'comments', 'gatedFrom'],
 }
 const pick = (d, keys) => { const o = {}; for (const k of keys) if (d[k] !== undefined) o[k] = d[k]; return o }
 /*
@@ -178,15 +178,21 @@ export function toEntry(collection, row, ctx) {
     case 'companions': {
       const { chapters } = parseCompanionBody(md)
       const out = chapters.map((c) => ({ title: c.title, summaryMd: c.summaryMd, summary: c.summaryMd ? ctx.render(c.summaryMd) : '', essence: c.essence, quiz: c.quiz, words: c.summaryMd.split(/\s+/).filter(Boolean).length }))
-      const words = out.reduce((n, c) => n + c.words, 0)
+      /* a row reader-content cut for a guest (_shared/gate.js) names its quizzed chapters and its whole length,
+         so mastery and the summary's reading time are counted over the whole book, not the free chapters */
+      const quizzed = new Set(arr(d.quizzed))
+      if (typeof d.gatedFrom === 'number') out.forEach((c, i) => { if (i >= d.gatedFrom) out[i] = { title: c.title, gated: true, hasQuiz: quizzed.has(c.title) } })
+      const words = typeof d.summaryWords === 'number' ? d.summaryWords : out.reduce((n, c) => n + c.words, 0)
+      const rest = { ...d }; delete rest.quizzed; delete rest.gatedFrom
       /* no `raw`: the body is what `chapters` was parsed from, and velite does not keep it either */
-      return opt({ ...d, published: bool(d.published, true), path, id: d.book, chapters: out, summaryWords: words, summaryReadingTime: words ? Math.max(1, Math.round(words / 200)) : 0 })
+      return opt({ ...rest, published: bool(d.published, true), path, id: d.book, chapters: out, summaryWords: words, summaryReadingTime: words ? Math.max(1, Math.round(words / 200)) : 0 })
     }
     case 'books': {
       const slug = id(path, 'books')
       const was = bundle('books').find((b) => b.slug === slug) || {}
       const raw = md
       const e = { ...document(d, { dates: ['date'] }), tags: arr(d.tags), topics: arr(d.topics), concepts: arr(d.concepts), path, raw, metadata: metadata(raw), slug, chapters: raw.split(/^(?=# )/m).filter((s) => s.trim()).length, audio: was.audio || null }
+      if (typeof d.gatedFrom === 'number') e.gatedFrom = d.gatedFrom   /* a row reader-content cut for a guest: where the reader asks for the rest */
       if (d.print) e.print = { ebook: true, contents: ['parts'], formats: {}, includes: [], files: [], cloth: 'black', foil: 'gold', trim: '6x9', paper: 'cream', currency: 'usd', ...d.print }
       e.cover = coverOf(d, was)
       return opt(e)

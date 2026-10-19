@@ -44,7 +44,7 @@ sources:
     packages/movable-types/src/content/ui/library.md,
     packages/kit/src/lib/call,
   ]
-reviewed: 2026-10-13
+reviewed: 2026-10-18
 ---
 
 This guide covers booking setup, provider availability, and the coaching chat. A provider has the `provider` role; older accounts with the `coach` role are still recognized. Administrators can manage bookings and assign provider roles. The booking rules below apply whether a type is scheduled by the site or by cal.com.

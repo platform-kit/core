@@ -103,7 +103,7 @@ export const articleView = (a) => ({
   html: a.body, excerpt: a.excerpt, tags: a.tags || [],
   readingTime: a.metadata && a.metadata.readingTime,
   data: { media: a.media || null, image: a.image || null, author: a.author || null,
-    tags: a.tags || [], date: day(a.date), canAccess: a.canAccess },
+    tags: a.tags || [], date: day(a.date), canAccess: a.canAccess, gated: !!a.gated },
 })
 export function articleIndex() {
   return ARTICLES.slice()

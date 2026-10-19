@@ -8,6 +8,7 @@ import { navigate, DOCS_BASE, ROUTES } from '../../router.js'
 import { can, entrySubject } from '@platform-kit/kit/lib/auth.js'
 import { allowedBy, requiredBy } from '@platform-kit/kit/lib/access.js'
 import { contentView } from '@platform-kit/kit/lib/analytics.js'
+import { useGatedPage } from '@platform-kit/kit/lib/gated.js'
 
 /* Wiki and docs share this layout — an editorial article page: a full-bleed
    hero (optional cover), a floating reading panel, a navigation tree and an
@@ -79,6 +80,10 @@ const allowed = computed(() => can('read', entrySubject({ kind: props.kind, slug
 
 /* the admin's live preview provides a draft entry in place of the compiled one */
 const preview = inject('dl-preview', null)
+/* a gated page ships without its body (_shared/gate.js); a reader who may read it is sent it by reader-content */
+const GW = us('library').reader.gated || {}
+const page = useGatedPage(props.collection, () => !preview && doc.value && { id: currentId.value, html: doc.value.html, gated: fm.value.gated }, () => allowed.value)
+watch(() => page.state.value, (st) => { if (st === 'done') nextTick(() => setupSpy()) })
 async function show(id) {
   missing.value = false; doc.value = null
   if (preview) {
@@ -312,7 +317,11 @@ onBeforeUnmount(() => io && io.disconnect())
             </header>
             <p v-if="fm.description" class="wk-lead">{{ fm.description }}</p>
             <div v-if="fm.media && allowed" class="wk-media"><MediaBlock :media="fm.media" /></div>
-            <div v-if="allowed" ref="docEl" class="wk-prose"><MarkdownDoc :html="doc.html" /></div>
+            <div v-if="allowed && page.waiting.value" class="wk-prose wk-wait" role="status">
+              <p class="wk-wait-line">{{ page.state.value === 'error' ? GW['page-error'] : GW['page-loading'] }}</p>
+              <button v-if="page.state.value === 'error'" type="button" class="wk-wait-retry" @click="page.retry">{{ GW.retry }}</button>
+            </div>
+            <div v-else-if="allowed" ref="docEl" class="wk-prose"><MarkdownDoc :html="preview ? doc.html : page.html.value" /></div>
             <Gate v-else kind="doc" :required="requiredBy(fm.canAccess)" />
 
             <footer v-if="related.length" class="wk-related">
@@ -509,6 +518,10 @@ onBeforeUnmount(() => io && io.disconnect())
 .onpage-link.on { color: var(--accent2); border-left-color: var(--accent); font-weight: 500 }
 
 /* editorial typography inside the panel — larger serif headings, roomy body */
+/* a gated page on its way from reader-content, or one that could not be fetched */
+.wk-wait-line { color: var(--ink3); margin: 0 }
+.wk-wait-retry { margin-top: 14px; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink); background: none; border: 1.5px solid var(--ink); border-radius: 999px; padding: 8px 18px; cursor: pointer }
+.wk-wait-retry:hover { background: var(--ink); color: var(--paper) }
 .wk-prose :deep(.purpose) { padding: 0; margin: 0 }
 .wk-prose :deep(.purpose > :first-child) { margin-top: 0; padding-top: 0 }
 .wk-prose :deep(.purpose p) { font-size: 17.5px; line-height: 1.8; color: var(--ink2); max-width: 66ch; margin: 0 0 20px }

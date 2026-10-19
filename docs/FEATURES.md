@@ -156,7 +156,8 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - A "For You" view of personal recommendations, shown only when there is something to recommend.
 - "Find your book": a reader describes their problem in their own words and gets three matching books.
 - Articles, wiki and docs pages can carry featured audio or video, a single track or a playlist, including YouTube and Vimeo.
-- Access rules decide who sees what, by visitor class: guest, signed-in reader, buyer or member. The site's own pages hide gated content from readers without access, but the gated text is still present in the site's published files; the content API withholds it.
+- Access rules decide who sees what, by visitor class: guest, signed-in reader, buyer or member.
+- Gated text is never sent to someone who may not read it: published pages carry only titles, descriptions, free chapters and a short opening, and a reader with access is sent the rest after the server checks their account. A static site doesn't publish gated text at all.
 
 ### Articles (`articles`)
 

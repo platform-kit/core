@@ -208,6 +208,9 @@ const KIT_TESTS = [
   ['steps.mjs', '--check'],   /* every build step's needs — a package a module needs and the site has not installed */
   ['deploy-checks.mjs', '--test'],
   ['overrides.test.mjs'],
+  ['gate.test.mjs'],   /* what of a record a reader is sent: each class's chapters, a bought book's lift, a teaser never the whole chapter */
+  ['reader-content.test.mjs'],   /* the same, against the local stack: a guest, a non-member, a buyer and a member sent only their own; no visitor reads the content table; skipped when the stack is down or READER_CONTENT_TEST=0 */
+  ['gated-content.test.mjs'],   /* a whole build of the demo with gated fixtures publishes no gated sentence, pre-rendered pages included; slow, GATED_CONTENT_TEST=0 skips it */
   ['usage-alert.test.mjs'],   /* which usage payments raise the site-wide banner, and the pages it keeps off */
   ['assembled-tree.test.mjs'],   /* the assembled supabase/ tree is generated: the step passes on a fresh checkout and a stale copy, and refuses a file neither owner declared */
   ['site-modules.test.mjs'],   /* the #site/* modules are files the dependency scan follows: a package only the site imports is pre-bundled at startup, not found mid-request */

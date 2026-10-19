@@ -39,8 +39,12 @@ CREATE INDEX "content_pending_idx" ON "public"."content" USING "btree" ("updated
 
 ALTER TABLE "public"."content" ENABLE ROW LEVEL SECURITY;
 
--- what the site reads: published rows with a live version, for anyone; every row for an administrator
-CREATE POLICY "content_select_published" ON "public"."content" FOR SELECT USING ((("published" = true) AND ("deleted_at" IS NULL) AND ("text" IS NOT NULL)));
+-- WHO READS A ROW: an administrator, whole, for the admin and the preview. Nobody else reads the table:
+-- a row holds a record's whole text, gated chapters and gated pages included, so a reader's site gets the
+-- published rows from functions/reader-content, cut to what a guest may read (_shared/gate.js), and a reader
+-- with more access asks the same function for their own text. Until 2026-10 published rows were readable by
+-- anyone, which put every gated chapter one query away from a visitor.
+DROP POLICY IF EXISTS "content_select_published" ON "public"."content";
 
 CREATE POLICY "content_select_admin" ON "public"."content" FOR SELECT USING ("public"."is_admin"());
 

@@ -4,6 +4,7 @@ description: A book's file, its chapters, the editorial highlights, the introduc
 order: 15
 sources:
   [
+    packages/kit/src/lib/gated.js,
     packages/movable-types/src/components/content/BookReader.vue,
     packages/movable-types/src/components/admin/ChapterEditor.vue,
     packages/movable-types/src/components/admin/CompanionEditor.vue,
@@ -22,7 +23,7 @@ sources:
     packages/kit/src/lib/finding-score.js,
     packages/movable-types/src/pages/AdminPage.vue,
   ]
-reviewed: 2026-10-14
+reviewed: 2026-10-18
 ---
 
 ## A book is one file, edited by chapter
@@ -38,6 +39,8 @@ The thesis of the whole book, as its own page before chapter one, the same in ei
 ## Free chapters
 
 Four fields say how many chapters a guest, a signed-in reader, a paying customer and a member may read before the paywall. A blank field means the whole book for that class. The allowance starts counting after the introduction. Whatever is set, the store's _unlock_ for a book opens it whole.
+
+Locked chapters are not published. A visitor's copy of the book holds each locked chapter's title and its first lines, which the paywall shows, and a locked chapter's summary, key points and quiz are left out too. A reader allowed further is sent the rest when they open the book; until it arrives the chapter says "Opening this chapter…", and if it can't be fetched it says so with a retry rather than showing the paywall.
 
 ## Highlights — the editorial marks
 
