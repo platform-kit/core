@@ -87,6 +87,7 @@ begin
   return query select s, h;
 end;
 $$;
+REVOKE ALL ON FUNCTION "public"."api_rate_take"("text", timestamp with time zone) FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."api_rate_take"("text", timestamp with time zone) FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."api_rate_take"("text", timestamp with time zone) TO "service_role";
 
@@ -100,5 +101,6 @@ CREATE OR REPLACE FUNCTION "public"."api_rate_sweep"() RETURNS void
     AS $$
   delete from public.api_rate where started < now() - interval '2 hours'
 $$;
+REVOKE ALL ON FUNCTION "public"."api_rate_sweep"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."api_rate_sweep"() FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."api_rate_sweep"() TO "service_role";

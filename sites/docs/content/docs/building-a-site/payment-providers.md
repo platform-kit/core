@@ -161,7 +161,9 @@ and [server-to-server payments guide](https://docs.hyperswitch.io/integration-gu
 The Token Led guide's payment confirmation is V1; PlatformKit does not use that confirmation path.
 The V2 `payment_link_enabled` flag still returns no hosted URL from the tested Router, and the V2
 `card_token` variant refers to Hyperswitch-vaulted data rather than a Stripe.js token. Server API
-and webhook signing keys remain server-side.
+and webhook signing keys remain server-side. A Hyperswitch event is verified over its raw bytes and
+refused when it is dated more than three days before it arrives (`HYPERSWITCH_WEBHOOK_TOLERANCE_S`):
+its event id is forgotten when handling fails, so an old event replayed later is refused by its date.
 
 PlatformKit manages Hyperswitch subscription changes, recurring periods, cancellation-at-period-end,
 and the `/billing` self-service page (also available at `/app/billing`), linked from the signed-in

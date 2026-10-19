@@ -57,7 +57,8 @@ export async function makeBooking(s: Session, o: { start: string; attendee: Atte
      anybody can type. It must be theirs, and of the form this type actually asks. */
   if (o.response && (s as any).form) {
     const { data: resp } = await admin.from('form_responses').select('id, form, user_id').eq('id', o.response).maybeSingle()
-    const theirs = resp && resp.form === (s as any).form && (!resp.user_id || !o.user_id || resp.user_id === o.user_id)
+    /* the same account on both, or a guest on both: a signed-in reader's answers never ride on a guest booking, nor a guest's on an account's */
+    const theirs = resp && resp.form === (s as any).form && (resp.user_id ?? null) === (o.user_id ?? null)
     if (theirs) await admin.from('bookings').update({ response_id: resp.id }).eq('uid', made.uid)
     else console.warn('booking: a response that is not this booking\'s was offered and ignored')
   }

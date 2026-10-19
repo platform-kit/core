@@ -2,8 +2,21 @@
 title: The Forms API, Typeform's
 description: A site's forms served as Typeform's Create (read, and written in cloud mode), Responses, Webhooks and Insights APIs, and Typeform's embed pointed at the site — the guide; the reference lists every route, argument and field.
 order: 56.95
-sources: [packages/kit/supabase/functions/forms-api, packages/kit/supabase/functions/_shared/api/typeform, packages/kit/supabase/functions/form, packages/kit/build/forms.mjs, packages/kit/build/steps/forms.mjs, packages/kit/src/lib/forms/api-shape.js, packages/kit/supabase/functions/_shared/forms-live.ts, packages/kit/src/lib/forms/typeform-embed.js, packages/kit/build/forms-api.test.mjs, packages/movable-types/src/components/forms/FormRun.vue, packages/movable-types/src/components/admin/FormBuilder.vue]
-reviewed: 2026-09-30
+sources:
+  [
+    packages/kit/supabase/functions/forms-api,
+    packages/kit/supabase/functions/_shared/api/typeform,
+    packages/kit/supabase/functions/form,
+    packages/kit/build/forms.mjs,
+    packages/kit/build/steps/forms.mjs,
+    packages/kit/src/lib/forms/api-shape.js,
+    packages/kit/supabase/functions/_shared/forms-live.ts,
+    packages/kit/src/lib/forms/typeform-embed.js,
+    packages/kit/build/forms-api.test.mjs,
+    packages/movable-types/src/components/forms/FormRun.vue,
+    packages/movable-types/src/components/admin/FormBuilder.vue,
+  ]
+reviewed: 2026-10-19
 ---
 
 ## What it is
@@ -14,11 +27,20 @@ A site with the forms module on serves its forms the way **Typeform** serves the
 
 ```js
 import { createClient } from '@typeform/api-client'
-const client = createClient({ token: '<a forms key>', apiBaseUrl: 'https://northlight.example.com/api/forms' })
+const client = createClient({
+  token: '<a forms key>',
+  apiBaseUrl: 'https://northlight.example.com/api/forms',
+})
 const { items } = await client.forms.list()
 const form = await client.forms.get({ uid: 'contact' })
 const responses = await client.responses.list({ uid: 'contact', pageSize: 100, completed: 'true' })
-await client.webhooks.create({ uid: 'contact', tag: 'crm', url: 'https://crm.example.com/hook', enabled: true, secret: 'shh' })
+await client.webhooks.create({
+  uid: 'contact',
+  tag: 'crm',
+  url: 'https://crm.example.com/hook',
+  enabled: true,
+  secret: 'shh',
+})
 ```
 
 The key is of kind **Forms**, made under Settings → API. There is no public reading, whatever `api.public` says: responses are people's answers. A key of another kind at this door is `FORBIDDEN`.
@@ -48,7 +70,11 @@ In cloud mode (`CONTENT_STORE=cloud`) the Create API writes too: `forms.create({
 The form's page answers at `/to/<slug>` as well as `/form/<slug>` — Typeform's address shape — and, opened inside Typeform's embed, speaks its messages (`form-ready`, `form-theme`, `form-started`, `form-screen-changed`, `form-height-changed`, `form-submit` with the response's token, `form-close`), so `@typeform/embed` shows the site's form on an outside page, sized as it would size Typeform's, with its callbacks firing:
 
 ```html
-<div data-tf-widget="contact" data-tf-domain="northlight.example.com" style="width:100%;height:600px"></div>
+<div
+  data-tf-widget="contact"
+  data-tf-domain="northlight.example.com"
+  style="width:100%;height:600px"
+></div>
 <script src="//embed.typeform.com/next/embed.js"></script>
 ```
 
@@ -57,7 +83,7 @@ import { createWidget } from '@typeform/embed'
 createWidget('contact', { container, domain: 'northlight.example.com', onSubmit: ({ responseId }) => … })
 ```
 
-The popup, the slider and the side tab work the same way. The form's Share tab in the admin shows the snippet. The origin rule holds: a page on an origin the form does not list under *Sites that may embed it* sees the form refuse. (The library builds `https://` addresses from a domain; on a local dev server give it the whole address as the form id instead, `createWidget('http://localhost:5173/to/contact', …)`.)
+The popup, the slider and the side tab work the same way. The form's Share tab in the admin shows the snippet. The origin rule holds: a page on an origin the form does not list under _Sites that may embed it_ sees the form refuse. (The library builds `https://` addresses from a domain; on a local dev server give it the whole address as the form id instead, `createWidget('http://localhost:5173/to/contact', …)`.)
 
 ## Where the shapes are, and what checks them
 

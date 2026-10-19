@@ -442,10 +442,22 @@ GRANT ALL ON TABLE "public"."fulfilments" TO "anon", "authenticated", "service_r
 GRANT ALL ON TABLE "public"."fulfilment_items" TO "anon", "authenticated", "service_role";
 GRANT ALL ON TABLE "public"."returns" TO "anon", "authenticated", "service_role";
 GRANT ALL ON TABLE "public"."return_items" TO "anon", "authenticated", "service_role";
-GRANT ALL ON FUNCTION "public"."order_lines"("uuid", integer) TO "anon", "authenticated", "service_role";
-GRANT ALL ON FUNCTION "public"."order_total"("uuid", integer) TO "anon", "authenticated", "service_role";
-GRANT ALL ON FUNCTION "public"."order_payment"("uuid") TO "anon", "authenticated", "service_role";
-GRANT ALL ON FUNCTION "public"."order_fulfilment"("uuid") TO "anon", "authenticated", "service_role";
+-- read for an order by id, with no check of who asks: the desk (admin_orders), the ledger and the guards call it as the owner
+REVOKE ALL ON FUNCTION "public"."order_lines"("uuid", integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."order_lines"("uuid", integer) FROM "anon", "authenticated";
+GRANT ALL ON FUNCTION "public"."order_lines"("uuid", integer) TO "service_role";
+-- read for an order by id, with no check of who asks: the desk (admin_orders), the ledger and the guards call it as the owner
+REVOKE ALL ON FUNCTION "public"."order_total"("uuid", integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."order_total"("uuid", integer) FROM "anon", "authenticated";
+GRANT ALL ON FUNCTION "public"."order_total"("uuid", integer) TO "service_role";
+-- read for an order by id, with no check of who asks: the desk (admin_orders), the ledger and the guards call it as the owner
+REVOKE ALL ON FUNCTION "public"."order_payment"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."order_payment"("uuid") FROM "anon", "authenticated";
+GRANT ALL ON FUNCTION "public"."order_payment"("uuid") TO "service_role";
+-- read for an order by id, with no check of who asks: the desk (admin_orders), the ledger and the guards call it as the owner
+REVOKE ALL ON FUNCTION "public"."order_fulfilment"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."order_fulfilment"("uuid") FROM "anon", "authenticated";
+GRANT ALL ON FUNCTION "public"."order_fulfilment"("uuid") TO "service_role";
 GRANT ALL ON FUNCTION "public"."order_edit"("uuid", "jsonb") TO "authenticated", "service_role";
 
 -- ─────────────── a line of an order, written once however often the event arrives ───────────────

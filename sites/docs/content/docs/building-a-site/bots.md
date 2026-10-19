@@ -53,7 +53,7 @@ sources:
     packages/kit/build/social-automation-admin.test.mjs,
     packages/movable-types/src/components/admin/social,
   ]
-reviewed: 2026-10-18
+reviewed: 2026-10-19
 ---
 
 A bot here is not a chat window bolted to a model. It is an **agent**: it can look things up, call

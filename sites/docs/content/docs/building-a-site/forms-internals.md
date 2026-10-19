@@ -2,14 +2,30 @@
 title: Forms internals
 description: The document, the parser and its model, the vendored parts of forms.md, the runner, the function, the embed, the builder's writer.
 order: 56.5
-sources: [packages/kit/src/lib/forms, packages/kit/vendor/formsmd, packages/kit/build/forms.mjs, packages/kit/build/form-io.mjs, packages/kit/build/form-embed.mjs, packages/kit/build/forms.test.mjs, packages/kit/supabase/functions/form, packages/kit/supabase/functions/_shared/forms/score.js, packages/kit/supabase/schemas/25-forms.sql, packages/movable-types/src/instrument/ui/screens/form, packages/movable-types/src/components/forms, packages/movable-types/src/components/landing/LandingForm.vue, packages/movable-types/src/embed.js, packages/movable-types/src/pages/FormPage.vue, packages/kit/build/embed-content.mjs]
+sources:
+  [
+    packages/kit/src/lib/forms,
+    packages/kit/vendor/formsmd,
+    packages/kit/build/forms.mjs,
+    packages/kit/build/form-io.mjs,
+    packages/kit/build/form-embed.mjs,
+    packages/kit/build/forms.test.mjs,
+    packages/kit/supabase/functions/form,
+    packages/kit/supabase/functions/_shared/forms/score.js,
+    packages/kit/supabase/schemas/25-forms.sql,
+    packages/movable-types/src/instrument/ui/screens/form,
+    packages/movable-types/src/components/forms,
+    packages/movable-types/src/components/landing/LandingForm.vue,
+    packages/movable-types/src/embed.js,
+    packages/movable-types/src/pages/FormPage.vue,
+    packages/kit/build/embed-content.mjs,
+  ]
 reviewed: 2026-10-01
 ---
 
 The forms module is forms.md's language on the kit's own runner, with the backend forms.md lacks. This page is how it is put together; [Forms](/docs/running-a-site/marketing/forms) is what it does.
 
 A form's webhook subscriptions carry a **source**: one made through the Forms API is `hand` and is the subscriber's, and one a deployment ships declared in `platformkit.config.js` is `file` and is replaced by the projection on every deploy — see [Declarations and state](/content/docs/building-a-site/declarations-and-state).
-
 
 > The compile (`build/forms.mjs`) runs **over the store**, so the same code answers from a checkout on a
 > machine and from the rows in an Edge Function — which is what lets a publish make this artefact
@@ -19,15 +35,15 @@ A form's webhook subscriptions carry a **source**: one made through the Forms AP
 
 `content/forms/<slug>.md` is a [forms.md](https://docs.forms.md) document, exactly — no frontmatter of the kit's own. Its `#! key = value` settings are the frontmatter: forms.md's (`title`, `page`, `page-progress`, `slide-controls`, `restart-button`, `submit-button-text`, `autofocus`, `button-alignment`, `dir`, `slide-delimiter`, `form-delimiter`…) and the kit's few:
 
-| Setting | Meaning |
-| --- | --- |
-| `published` | `false` keeps the form off the site (the function answers *closed*) |
-| `once` | `true`: one response per person; a second is refused |
-| `respond` | `anyone` (default) or `authenticated` |
-| `embed-origins` | the origins another site may embed it from, comma-separated |
-| `webhook` | a url every finished response is posted to |
-| `pass` | a quiz's pass mark, in right answers |
-| `score` | the right answers, `field: answer, field: answer` (a choice allowing several: `field: a \| b`) |
+| Setting         | Meaning                                                                                        |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `published`     | `false` keeps the form off the site (the function answers _closed_)                            |
+| `once`          | `true`: one response per person; a second is refused                                           |
+| `respond`       | `anyone` (default) or `authenticated`                                                          |
+| `embed-origins` | the origins another site may embed it from, comma-separated                                    |
+| `webhook`       | a url every finished response is posted to                                                     |
+| `pass`          | a quiz's pass mark, in right answers                                                           |
+| `score`         | the right answers, `field: answer, field: answer` (a choice allowing several: `field: a \| b`) |
 
 forms.md's theming settings (`accent`, `color`, `font-family`, `rounded`…) are read and ignored: the site's design draws the form. `post-url`, `get-url` and `post-sheet-name` are refused — the kit's backend is where the data goes.
 
@@ -35,7 +51,7 @@ A document begins with `#!` lines, never with `---` (velite would read a leading
 
 ## The vendored parts
 
-`packages/kit/vendor/formsmd` holds the separable parts of `formsmd@1.1.3` (Apache-2.0; `NOTICE` names every change): `settings-parse.js` (the sixty settings and their validation), `attrs-parse.js` (the `[#id .class attr="v"]` grammar), `data-blocks-parse.js` (the ```` ```data ```` JSON blocks), `phone-numbers.js` (placeholders and calling codes by country), `composer.js` (the Composer: a document written from calls) and `field-parse.js` — the field-line pattern and every kind's parameter parsing factored out of the original `form-field-create.js` as a pure function, the HTML it emitted left behind. Their own tests are under `vendor/formsmd/tests`, run as they were written by `build/forms.test.mjs` over a small Jest shim. Not vendored: the renderer, the stylesheet, the translations (a form's words are the kit's `forms` strings scope), the Google Apps Script, the CLI.
+`packages/kit/vendor/formsmd` holds the separable parts of `formsmd@1.1.3` (Apache-2.0; `NOTICE` names every change): `settings-parse.js` (the sixty settings and their validation), `attrs-parse.js` (the `[#id .class attr="v"]` grammar), `data-blocks-parse.js` (the ` ```data ` JSON blocks), `phone-numbers.js` (placeholders and calling codes by country), `composer.js` (the Composer: a document written from calls) and `field-parse.js` — the field-line pattern and every kind's parameter parsing factored out of the original `form-field-create.js` as a pure function, the HTML it emitted left behind. Their own tests are under `vendor/formsmd/tests`, run as they were written by `build/forms.test.mjs` over a small Jest shim. Not vendored: the renderer, the stylesheet, the translations (a form's words are the kit's `forms` strings scope), the Google Apps Script, the CLI.
 
 ## The parser and the model
 
@@ -46,7 +62,7 @@ The language is read as forms.md's docs describe it: a slide boundary is the del
 The compiled entry (`.velite/forms.json`) is the model without its source lines, plus `slug`, `title`, `published` and the fields' questions. `build/forms.mjs` writes `supabase/functions/_shared/forms.json` — per form, the field contract the function checks a post against (name, **question**, kind, required, a choice's values, the slide) with the kit's settings — run by deploy, by the admin's save, by `npm test --check`.
 
 The **question** is in the contract, and not only in the document, because anything that reads an
-answer *back* needs it: a booking's answers on the desk, the same answers in a host's letter. A
+answer _back_ needs it: a booking's answers on the desk, the same answers in a host's letter. A
 field's key is not a question, and `working_on` in front of somebody who has to act on the answer
 is a small daily insult to whoever wrote the form. forms.md's own `...` — its placeholder for a
 field never given one — counts as no question, and then the key is all there is.
@@ -63,7 +79,7 @@ One runner: `Typeform.vue` gained the `form` kind and a `back()`; the instrument
 
 `schemas/25-forms.sql`: `form_responses` (a row per person per form — somebody by `user_id`, a guest by `anon_id` — started, completed, a quiz's score, the webhook's delivery) and `form_answers` (a row per field, unique per response, replaced when answered again, with its slide and time; a file's path in the private `forms` bucket). Somebody reads their own rows and the staff every row under RLS; nothing is written from a client. `admin_forms(days)` is the analytics, answered for whoever may see the figures (`may_see_figures()` — an administrator or an analyst): per form, started, finished, completion, passed, the average time to complete, the last response, a series a day, each slide's reach and each field's answers counted by value (a string over sixty characters never counted) — what Forms → Form analytics draws one form at a time.
 
-The `form` function (no JWT required): a multipart POST is a slide — `_form`, `_slide`, `_end`, the fields by name, a file as itself — checked against `forms.json` (an unknown field, a value not among the choices, a file on a field that is not one: refused), written to the open response (found or made; a `once` form with a completed response refuses), `_end` closing it, grading the quiz (`_shared/forms/score.js`, shared with the runner) and delivering the response once to every webhook — the subscriptions the Forms API keeps (`form_webhooks`) and the document's own `webhook` — as Typeform's `form_response` payload under `Typeform-Signature` (base64 HMAC-SHA256; the document's subscriber also gets the `X-Form-Signature` hex it always had, keyed by `FORMS_WEBHOOK_SECRET`, else derived from the service key), a failure kept on the row per subscriber and tried again on the form's next completion (see [the Forms API](/content/docs/building-a-site/forms-api)). The row keeps what the Responses API says of a visit (`meta`: the user agent, the referer, the page's query as `hidden`). `{ action: 'get', form }` is what this person has answered so far. The identity is the JWT, else `X-Form-Anon` (the analytics' anonymous id). An embed's page says where it is (the request's Origin), checked against `embed-origins`; the site's own origin — and locally any localhost port — always passes.
+The `form` function (no JWT required): a multipart POST is a slide — `_form`, `_slide`, `_end`, the fields by name, a file as itself — checked against `forms.json` (an unknown field, a value not among the choices, a file on a field that is not one: refused), written to the open response (found or made; a `once` form with a completed response refuses), `_end` closing it, grading the quiz (`_shared/forms/score.js`, shared with the runner) and delivering the response once to every webhook — the subscriptions the Forms API keeps (`form_webhooks`) and the document's own `webhook` — as Typeform's `form_response` payload under `Typeform-Signature` (base64 HMAC-SHA256; the document's subscriber also gets the `X-Form-Signature` hex it always had, keyed by `FORMS_WEBHOOK_SECRET`, else derived from the service key), a failure kept on the row per subscriber and tried again on the form's next completion (see [the Forms API](/content/docs/building-a-site/forms-api)). The row keeps what the Responses API says of a visit (`meta`: the user agent, the referer, the page's query as `hidden`). `{ action: 'get', form }` is what this person has answered so far. The identity is the JWT, else `X-Form-Anon` (the analytics' anonymous id). One visitor's requests are limited per hour by the site's `limit-forms` (300 when the policy says nothing), counted by address rather than by that id, which is the caller's to choose (`_shared/doors.ts`). A response and its files are read by the person who gave it and by an administrator; no other role reads them. An embed's page says where it is (the request's Origin), checked against `embed-origins`; the site's own origin — and locally any localhost port — always passes.
 
 ## The doors
 

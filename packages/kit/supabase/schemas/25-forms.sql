@@ -131,14 +131,16 @@ ALTER TABLE "public"."form_answers" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."form_responses" ENABLE ROW LEVEL SECURITY;
 
--- a reader reads their own responses; the staff read every one; nothing is written from a client (the function writes)
-CREATE POLICY "form_responses_own_select" ON "public"."form_responses" FOR SELECT TO "authenticated" USING ((("user_id" = "auth"."uid"()) OR "public"."is_staff"()));
+-- a reader reads their own responses; an administrator reads every one (the Forms section is theirs; the
+-- desk reads a ticket's through ticket_answers); nothing is written from a client (the function writes).
+-- Not is_staff(): that is any role, and a provider or an analyst is not who a customer answered.
+CREATE POLICY "form_responses_own_select" ON "public"."form_responses" FOR SELECT TO "authenticated" USING ((("user_id" = "auth"."uid"()) OR "public"."is_admin"()));
 
 CREATE POLICY "form_answers_own_select" ON "public"."form_answers" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."form_responses" "r"
-  WHERE (("r"."id" = "form_answers"."response_id") AND (("r"."user_id" = "auth"."uid"()) OR "public"."is_staff"())))));
+  WHERE (("r"."id" = "form_answers"."response_id") AND (("r"."user_id" = "auth"."uid"()) OR "public"."is_admin"())))));
 
-CREATE POLICY "form_responses_staff_delete" ON "public"."form_responses" FOR DELETE TO "authenticated" USING ("public"."is_staff"());
+CREATE POLICY "form_responses_staff_delete" ON "public"."form_responses" FOR DELETE TO "authenticated" USING ("public"."is_admin"());
 
 GRANT ALL ON FUNCTION "public"."admin_forms"("days" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."admin_forms"("days" integer) TO "authenticated";
@@ -157,7 +159,7 @@ GRANT ALL ON TABLE "public"."form_responses" TO "authenticated";
 GRANT ALL ON TABLE "public"."form_responses" TO "service_role";
 
 -- the files a form's answers carry, read by the staff alone (a reader's are handed back through the function, signed)
-CREATE POLICY "forms staff read files" ON "storage"."objects" FOR SELECT TO "authenticated" USING (bucket_id = 'forms' and public.is_staff());
+CREATE POLICY "forms staff read files" ON "storage"."objects" FOR SELECT TO "authenticated" USING (bucket_id = 'forms' and public.is_admin());
 
 -- webhook subscriptions on a form, as the Forms API (Typeform's Webhooks API) keeps them: any number per form, each
 -- a tag and a url with the secret that signs its deliveries (kept whole, since it is what signs; the service role's

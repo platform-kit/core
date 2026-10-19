@@ -11,7 +11,7 @@ sources:
     packages/kit/build/webhooks-push.mjs,
     packages/kit/build/webhooks.test.mjs,
   ]
-reviewed: 2026-10-13
+reviewed: 2026-10-19
 ---
 
 Use this rule to decide whether information belongs in a content file or in the database:

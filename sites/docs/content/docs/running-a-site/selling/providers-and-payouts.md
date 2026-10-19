@@ -14,7 +14,7 @@ sources:
     packages/kit/src/payment-provider.d.ts,
     packages/kit/supabase/schemas/57-providers.sql,
   ]
-reviewed: 2026-10-16
+reviewed: 2026-10-19
 ---
 
 A provider is a person who offers their own service through the site. It is different from a store product: the offering belongs to the provider, is booked rather than added to the shopping bag, and its money is tracked against the person who earned it. The site may turn provider offerings on or off, require approval before they appear, set a delay before earnings become payable, and choose how providers connect a payout account.

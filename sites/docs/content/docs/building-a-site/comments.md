@@ -2,8 +2,24 @@
 title: Comments
 description: One conversation system for anything — an article, a wiki page, a book, a product, an event — on the page, in the community as a forum thread, or embedded on somebody else's site at Disqus's own address.
 order: 56.5
-sources: [packages/kit/supabase/schemas/97-comments.sql, packages/kit/supabase/schemas/99-reactions.sql, packages/kit/src/lib/desk/comments.js, packages/movable-types/src/components/CommentsAdmin.vue, packages/kit/build/models/core/comments.mjs, packages/kit/src/lib/comments.js, packages/kit/src/lib/comments/model.js, packages/kit/build/comments-push.mjs, packages/kit/build/comments-sdk.mjs, packages/kit/build/steps/comments.mjs, packages/kit/build/steps/comments-sdk.mjs, packages/movable-types/src/components/content/CommentThread.vue, packages/movable-types/src/comments-embed.js, packages/movable-types/src/pages/CommentsEmbedPage.vue]
-reviewed: 2026-10-01
+sources:
+  [
+    packages/kit/supabase/schemas/97-comments.sql,
+    packages/kit/supabase/schemas/99-reactions.sql,
+    packages/kit/src/lib/desk/comments.js,
+    packages/movable-types/src/components/CommentsAdmin.vue,
+    packages/kit/build/models/core/comments.mjs,
+    packages/kit/src/lib/comments.js,
+    packages/kit/src/lib/comments/model.js,
+    packages/kit/build/comments-push.mjs,
+    packages/kit/build/comments-sdk.mjs,
+    packages/kit/build/steps/comments.mjs,
+    packages/kit/build/steps/comments-sdk.mjs,
+    packages/movable-types/src/components/content/CommentThread.vue,
+    packages/movable-types/src/comments-embed.js,
+    packages/movable-types/src/pages/CommentsEmbedPage.vue,
+  ]
+reviewed: 2026-10-19
 ---
 
 People want to say something under an article, a wiki page, a book, a product and an event. That is
@@ -17,12 +33,12 @@ Off unless the file says otherwise, because a site that has not thought about mo
 wake up to a comment section.
 
 ```yaml
-comments: members                                  # off · everyone · members · hosts
+comments: members # off · everyone · members · hosts
 comments: { allow: members, space: the-practice, channel: the-books }
 ```
 
-**In the admin it is three controls**, on every kind that can be commented on: *Who may comment*
-(off · anybody signed in · members · hosts) and, once somebody may, a *Space* and a *Room* — the
+**In the admin it is three controls**, on every kind that can be commented on: _Who may comment_
+(off · anybody signed in · members · hosts) and, once somebody may, a _Space_ and a _Room_ — the
 site's own spaces, and its **forum** rooms only, because a stream is not a thread and cannot hold
 one. Leave both blank and the conversation stays on the page. Nobody types the block.
 
@@ -41,23 +57,23 @@ a subject no file declares any more is removed. Two things it never touches: the
 So a book that takes comments gets one subject **per chapter** — `the-kybalion/chapters/4` — and no
 book-level thread at all. In the person a **Comments** button opens a drawer beside the page showing
 that chapter's thread and no other, so somebody in the middle of reading can look, say something and
-carry on from the same line. On the community's board they read as *The Kybalion — 4. The Principle
-of Polarity*, which is a list of things people are actually talking about rather than a row of book
+carry on from the same line. On the community's board they read as _The Kybalion — 4. The Principle
+of Polarity_, which is a list of things people are actually talking about rather than a row of book
 titles.
 
 ## A reply may answer a reply; the indent is what is capped
 
-`parent_id` was capped at one level, with a reason beside it: *a thread that nests forever is a
-thread nobody reads to the end of*. That reason is about **reading**, and it was answered by
+`parent_id` was capped at one level, with a reason beside it: _a thread that nests forever is a
+thread nobody reads to the end of_. That reason is about **reading**, and it was answered by
 forbidding the **reply** — which is not the same thing. Somebody answering the third comment in a
-run is answering *that* comment, and flattening it to the top loses who they were talking to.
+run is answering _that_ comment, and flattening it to the top loses who they were talking to.
 
 So a comment may reply to any comment, to any depth, and the depth is kept. What is bounded is the
 **drawing**, by two numbers on the subject:
 
-| | |
-| --- | --- |
-| `depth` | how far replies indent before the rest continue in one flat run (3 by default; **1 for the embed**) |
+|            |                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------ |
+| `depth`    | how far replies indent before the rest continue in one flat run (3 by default; **1 for the embed**)    |
 | `collapse` | how many replies under one comment are shown before the rest fold behind a control saying how many (5) |
 
 `src/lib/comments/model.js` works it out — pure, so the page and `build/comments.test.mjs` read the
@@ -94,10 +110,10 @@ measure nor rule: a column inside a column is an indent nobody asked for.
 
 A subject carries an **approval** setting:
 
-| | |
-| --- | --- |
-| `none` | everything appears at once — the default |
-| `all` | everything waits for a person |
+|           |                                                               |
+| --------- | ------------------------------------------------------------- |
+| `none`    | everything appears at once — the default                      |
+| `all`     | everything waits for a person                                 |
 | `trusted` | everything waits except from somebody the site already trusts |
 
 **Trusted** is a standing the site can already answer, true before anybody typed anything: staff, a
@@ -134,7 +150,7 @@ Three details decide whether the filter is useful or a nuisance:
 
 `comment_approve` and `comment_refuse` are the moderator's two acts, and each writes a row of
 `space_moderation` like any other removal — a person's name, a moment, a reason where one is given,
-and a record nobody can edit. It is the only act that happens *before* anybody else reads the
+and a record nobody can edit. It is the only act that happens _before_ anybody else reads the
 words, which is exactly why it is written down.
 
 ## Votes and reactions
@@ -161,7 +177,7 @@ answers for every kind:
 
 ## One conversation, two doors
 
-Where a subject names a forum **channel**, its comments *are* a post in that channel. The first
+Where a subject names a forum **channel**, its comments _are_ a post in that channel. The first
 comment opens the post — so the board is not full of empty posts for every book in the library —
 and after that the page and the board are two views of one thread. Say something on the book's page
 and it is in `#the-books`; say it in `#the-books` and it is on the book's page.
@@ -193,7 +209,7 @@ So there are two surfaces, and they are not the same list:
 - **The desk's Comments queue** (`src/lib/desk/comments.js`) — the unattached ones that are waiting
   to be decided, in the staff's one list beside the support desk and the clients' threads. The
   source is a file and a line, so it needed no change to the desk itself.
-- **The admin's Comments section** (`/admin/comments`) — *every* comment on the site, narrowed by
+- **The admin's Comments section** (`/admin/comments`) — _every_ comment on the site, narrowed by
   state (waiting · live · removed), by where it is, and by kind.
 
 Both offer **Publish it** and **Refuse it** by name. Neither uses the desk's tick for it, and neither
@@ -209,7 +225,7 @@ that says nothing takes reactions and not votes, like everything else.
 ```yaml
 # content/spaces/the-practice/the-books.md
 name: The books
-votes: true          # this room scores its posts; the others do not
+votes: true # this room scores its posts; the others do not
 ```
 
 A comment subject is set apart from this and inherits nothing from it, because wanting a scored
@@ -239,11 +255,11 @@ nowhere, which is the right default.
 
 A caller decides three things and nothing else — and it may NAME a thread, never rename one:
 
-| | | |
-| --- | --- | --- |
-| **slug** | its identity, and so the subject | `/content/articles/listening-back` |
-| **title** | what a person reads, in the board and in the queue | `Listening Back` |
-| **url** | where the page actually is, shown as the way back | `https://example.com/blog/listening-back` |
+|           |                                                    |                                           |
+| --------- | -------------------------------------------------- | ----------------------------------------- |
+| **slug**  | its identity, and so the subject                   | `/content/articles/listening-back`        |
+| **title** | what a person reads, in the board and in the queue | `Listening Back`                          |
+| **url**   | where the page actually is, shown as the way back  | `https://example.com/blog/listening-back` |
 
 Two pages with the same slug are one conversation, and a page that changes its address keeps its
 comments. Declare none and the slug is the page's path and the title its document title, so a
@@ -259,13 +275,14 @@ the conversation moves here:
 <div id="disqus_thread"></div>
 <script>
   var disqus_config = function () {
-    this.page.identifier = '/content/articles/listening-back'   // the slug, and so the thread
-    this.page.title = 'Listening Back'                          // what a person reads
-    this.page.url = 'https://their-site/blog/listening-back'    // the way back
+    this.page.identifier = '/content/articles/listening-back' // the slug, and so the thread
+    this.page.title = 'Listening Back' // what a person reads
+    this.page.url = 'https://their-site/blog/listening-back' // the way back
   }
-  var disqus_kind = 'page'          // ours: which kind of thing this is
+  var disqus_kind = 'page' // ours: which kind of thing this is
   ;(function () {
-    var d = document, s = d.createElement('script')
+    var d = document,
+      s = d.createElement('script')
     s.src = 'https://<this-site>/packs/js/comments.js'
     ;(d.head || d.body).appendChild(s)
   })()
@@ -276,7 +293,7 @@ the conversation moves here:
 
 The script draws an **iframe of a page of ours** (`/embed/comments`) and sizes it from what that
 page reports. It used to mount the thread into the host page, and that could only ever be **read**:
-a script in somebody else's page runs on *their* origin, and the person's session lives on *ours* —
+a script in somebody else's page runs on _their_ origin, and the person's session lives on _ours_ —
 so everybody in it was a guest, and a guest may not comment. A thread nobody can join is half a
 comment system.
 
@@ -295,16 +312,20 @@ under one publisher's article has not signed in everywhere the embed appears.
 It is a URL, so nobody has to run a script at all:
 
 ```html
-<iframe src="https://<this-site>/embed/comments?kind=page&subject=/a-post&title=A%20post"
-        style="width:100%;border:0" height="600" loading="lazy"></iframe>
+<iframe
+  src="https://<this-site>/embed/comments?kind=page&subject=/a-post&title=A%20post"
+  style="width:100%;border:0"
+  height="600"
+  loading="lazy"
+></iframe>
 ```
 
-| | |
-| --- | --- |
-| `kind` | which kind of thing this is; the site must have declared it open |
-| `subject` | the slug, and so the thread's identity |
-| `title` | what a person reads, in the board and in the desk's queue |
-| `url` | where the page actually is, kept as the way back |
+|           |                                                                  |
+| --------- | ---------------------------------------------------------------- |
+| `kind`    | which kind of thing this is; the site must have declared it open |
+| `subject` | the slug, and so the thread's identity                           |
+| `title`   | what a person reads, in the board and in the desk's queue        |
+| `url`     | where the page actually is, kept as the way back                 |
 
 The frame says how tall it has become on every change (`postMessage`, `{ platformkitComments: true,
 height }`), and grows while the sign-in is open — a modal mostly below the fold of a 200-pixel frame
@@ -336,8 +357,7 @@ on `/embed/*`. Set both: the header stops the frame loading at all, the list in 
 changed without a deploy and says why in words.
 
 **Not** honoured, and it says so in the console rather than pretending: the Disqus shortname (this
-site *is* the forum, so there is nothing to name), SSO, and the moderation API.
+site _is_ the forum, so there is nothing to name), SSO, and the moderation API.
 
 The `.disqus-comment-count` spans still work and are not framed — a number inside somebody's
 sentence cannot be. They are a plain read of a public count.
-

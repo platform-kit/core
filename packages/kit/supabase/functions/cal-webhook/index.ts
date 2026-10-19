@@ -35,6 +35,13 @@ import strings from './strings.json' with { type: 'json' }
 import { judge, cancel as cancelOnCalApi } from '../_shared/cal.ts'
 import { pull } from '../_shared/recordings.ts'
 import { deliverSchedulingEvent } from '../_shared/scheduling-events.ts'
+import { appMark } from '../_shared/schedulers/cal.js'
+
+/* how old a signed event may be: cal.com sends at once and retries within minutes, so a day is generous,
+   and an event replayed after it is refused rather than applied again */
+const TOLERANCE_MS = 24 * 3600e3
+/* where a booking has ended up, which a late or replayed "created" must never undo */
+const SETTLED = ['cancelled', 'rejected', 'rescheduled', 'ended']
 
 const SECRET = Deno.env.get('CAL_WEBHOOK_SECRET') ?? ''
 const REFUSAL: Record<string, string> = ((strings as any).refusal ?? {}) as Record<string, string>
@@ -68,7 +75,12 @@ async function verify(raw: string, sig: string | null) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
   const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(raw))
   const hex = Array.from(new Uint8Array(mac)).map((b) => b.toString(16).padStart(2, '0')).join('')
-  return hex === sig.trim().toLowerCase()
+  const got = sig.trim().toLowerCase()
+  /* compared in constant time: how far a guess matched must not show in how long the answer took */
+  if (got.length !== hex.length) return false
+  let diff = 0
+  for (let i = 0; i < hex.length; i++) diff |= hex.charCodeAt(i) ^ got.charCodeAt(i)
+  return diff === 0
 }
 
 async function userByEmail(email: string | null): Promise<string | null> {
@@ -123,6 +135,7 @@ async function handle(evt: any) {
     payload: p, updated_at: new Date().toISOString(),
   }
   const upsert = (extra: Record<string, unknown>) => admin.from('bookings').upsert({ ...base, ...extra }, { onConflict: 'uid' })
+  const settled = async () => { const { data } = await admin.from('bookings').select('status').eq('uid', uid).maybeSingle(); return !!data && SETTLED.includes(data.status) }
   /* a patch on a row that may not be here yet (an event for a booking made before the
      webhook was wired): the row is made, as ended, and patched */
   const patch = async (fields: Record<string, unknown>, fallbackStatus = 'ended') => {
@@ -138,14 +151,18 @@ async function handle(evt: any) {
     /* the booking's life */
     case 'BOOKING_REQUESTED':
     case 'BOOKING_PAYMENT_INITIATED':
+      if (await settled()) break
       await upsert({ status: 'pending' }); break
     case 'BOOKING_CREATED':
     case 'BOOKING_PAID': {
+      /* a booking already cancelled, refused or moved stays so: a late or replayed "created" is not a revival */
+      if (await settled()) break
       await upsert({ status: 'accepted' })
       /* not the attendee's to book? cancelled, marked, and said — once */
       const { data: row } = await admin.from('bookings').select('refused, status').eq('uid', uid).maybeSingle()
       if (row?.refused) break
-      if (p.metadata?.app === 'platformkit') break   /* made by the app, judged before it was made */
+      /* made by the app, judged before it was made — known by its mark, never by a word anybody can write */
+      if (p.metadata?.pk && p.metadata.pk === (await appMark(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', p.metadata?.user_id, p.startTime))) break
       const tz = (p.attendees ?? [])[0]?.timeZone ?? p.organizer?.timeZone ?? null
       const refusal = await refusalFor(uid, base.event, user_id, who.email, base.start_at, tz)
       if (refusal) {
@@ -214,6 +231,10 @@ Deno.serve(async (req) => {
   if (!(await verify(raw, req.headers.get('x-cal-signature-256')))) return json({ error: 'bad signature' }, 401)
   let evt: any
   try { evt = JSON.parse(raw) } catch { return json({ error: 'bad json' }, 400) }
+  /* signed but stale: cal.com dates every event it sends, under the signature, so a captured one replayed
+     later carries its old date and is refused */
+  const at = Date.parse(evt?.createdAt ?? '')
+  if (Number.isFinite(at) && Date.now() - at > TOLERANCE_MS) return json({ error: 'stale event' }, 400)
   try { await handle(evt) } catch (e) { console.error('cal-webhook', e); return json({ error: 'failed' }, 500) }
   return json({ ok: true })
 })

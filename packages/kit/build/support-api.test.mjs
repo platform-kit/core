@@ -60,7 +60,10 @@ const service = createClient(url, serviceKey(), { auth: { persistSession: false,
 const sha256 = async (s) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
 const made = []
 const makeKey = async (kind) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: admin } = await service.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await service.from('api_keys').insert({ name: 'support-api test', kind, gated: false, prefix: key.slice(0, 12), hash: await sha256(key), created_by: admin ? admin.id : null }); if (error) throw new Error(error.message); made.push(key); return key }
-const call = async (p, { method = 'GET', body = null, headers = {} } = {}) => { const r = await fetch(FN + p, { method, headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined }); return { status: r.status, body: await r.json().catch(() => null) } }
+/* this run's calls come from one visitor of their own, as the proxy would say (cf-connecting-ip): the guest
+   limit counts new contacts per address, and every run on one machine is otherwise the same address */
+const VISITOR = `198.51.100.${Math.floor(Math.random() * 250) + 1}`
+const call = async (p, { method = 'GET', body = null, headers = {} } = {}) => { const r = await fetch(FN + p, { method, headers: { 'cf-connecting-ip': VISITOR, ...(body ? { 'Content-Type': 'application/json' } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined }); return { status: r.status, body: await r.json().catch(() => null) } }
 const INBOX = (await import('./content-json.mjs')).contentIndex ? String((await (await import('./content-json.mjs')).contentIndex({ root: ROOT })).space) : ''
 const PUB = `/public/api/v1/inboxes/${INBOX}`
 const ids = { contacts: [], convs: [], hooks: [] }

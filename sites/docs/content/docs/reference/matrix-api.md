@@ -2,8 +2,15 @@
 title: The Matrix API reference
 description: Every endpoint, id shape, error code and table of the Matrix Client-Server API a site serves — the reference; the guide is under Building a site.
 order: 85.9
-sources: [packages/kit/supabase/functions/matrix-api/index.ts, packages/kit/supabase/functions/_shared/matrix, packages/kit/supabase/schemas/91-matrix.sql, packages/kit/supabase/functions/_shared/api/keys.ts, packages/kit/build/matrix-api.test.mjs]
-reviewed: 2026-10-02
+sources:
+  [
+    packages/kit/supabase/functions/matrix-api/index.ts,
+    packages/kit/supabase/functions/_shared/matrix,
+    packages/kit/supabase/schemas/91-matrix.sql,
+    packages/kit/supabase/functions/_shared/api/keys.ts,
+    packages/kit/build/matrix-api.test.mjs,
+  ]
+reviewed: 2026-10-19
 ---
 
 The guide is [The community as a Matrix homeserver](/content/docs/building-a-site/matrix-api). This page says exactly what is there. Modules: `spaces` and `api`; with either off nothing answers.
@@ -12,58 +19,58 @@ The guide is [The community as a Matrix homeserver](/content/docs/building-a-sit
 
 All under the site's own host. A client that reads `/.well-known/matrix/client` finds the same address.
 
-| Method | Path | What |
-| --- | --- | --- |
-| GET | `/_matrix/client/versions` | the specification versions spoken |
-| GET | `/_matrix/client/v3/login` | the flows — `m.login.password` and nothing else |
-| POST | `/_matrix/client/v3/login` | the site's own email and password; answers a token of ours |
-| POST | `/_matrix/client/v3/logout` | ends our row and the auth server's session |
-| POST | `/_matrix/client/v3/logout/all` | the same |
-| POST | `/_matrix/client/v3/register` | refused, with where to sign up instead |
-| GET | `/_matrix/client/v3/capabilities` | and what is absent, each with its reason |
-| GET | `/_matrix/client/v3/account/whoami` | the person and the device |
-| GET | `/_matrix/client/v3/devices` | this account's Matrix clients |
-| GET | `/_matrix/client/v3/sync?since=` | the rooms, the timeline, the state |
-| GET | `/_matrix/client/v3/joined_rooms` | the rooms and Spaces that are theirs |
-| GET | `/_matrix/client/v3/rooms/{id}/messages?from=&dir=&limit=` | paging, both directions |
-| PUT | `/_matrix/client/v3/rooms/{id}/send/{type}/{txn}` | a message, a thread reply, an edit |
-| PUT | `/_matrix/client/v3/rooms/{id}/redact/{event}/{txn}` | a withdrawal |
-| GET | `/_matrix/client/v3/rooms/{id}/state` | the room's state events |
-| PUT | `/_matrix/client/v3/rooms/{id}/state/{type}/{key}` | **refused** — see below |
-| GET | `/_matrix/client/v3/rooms/{id}/members` | the space's members |
-| GET | `/_matrix/client/v3/rooms/{id}/joined_members` | the same, as a map |
-| PUT | `/_matrix/client/v3/rooms/{id}/typing/{user}` | the typing stamp |
-| POST | `/_matrix/client/v3/rooms/{id}/receipt/{type}/{event}` | where this client has read to |
-| POST | `/_matrix/client/v3/rooms/{id}/read_markers` | the same |
-| GET | `/_matrix/client/v3/profile/{user}` | the display name |
-| GET | `/_matrix/client/v1/rooms/{id}/hierarchy` | a Space and the channels in it, so a client draws the site's arrangement |
-| GET | `/_matrix/client/v1/rooms/{id}/relations/{event}[/{type}]` | a thread's replies |
-| GET | `/_matrix/client/v3/pushrules/` | an empty ruleset: this site notifies its own way |
-| POST | `/_matrix/client/v3/user/{id}/filter` | accepted, never applied — a sync here is already only theirs |
-| GET | `/_matrix/client/v3/user/{id}/filter/{id}` | the empty filter back |
-| PUT | `/_matrix/client/v3/user/{id}/account_data/{type}` | taken and dropped: a reader's settings are the site's |
-| POST | `/_matrix/client/v3/keys/upload` | the device's public keys and its one-time keys, with the real counts back |
-| POST | `/_matrix/client/v3/keys/query` | the devices and cross-signing keys of people sharing a room |
-| POST | `/_matrix/client/v3/keys/claim` | a one-time key, claimable exactly once; the fallback when they run out |
-| POST | `/_matrix/client/v3/keys/device_signing/upload` | the three cross-signing keys, stored and served |
-| POST | `/_matrix/client/v3/keys/signatures/upload` | signatures merged in, and only the caller's own |
-| PUT | `/_matrix/client/v3/sendToDevice/{type}/{txn}` | queued per device, delivered in the next sync |
-| GET\|POST\|PUT\|DELETE | `/_matrix/client/v3/room_keys/*` | the key backup: version, store, fetch, and delete a version — `M_NOT_FOUND` until there is one |
-| GET | `/_matrix/client/v3/thirdparty/protocols` | empty: no bridges |
-| GET | `/_matrix/media/v3/config`, `/_matrix/client/v1/media/config` | the largest file taken |
-| POST | `/_matrix/media/v3/upload` | into the site's own bucket; 10 MB |
-| GET | `/_matrix/media/v3/download/{server}/{id}` | signed as the person, so a room they cannot read refuses |
-| GET | `/_matrix/client/v1/media/download/{server}/{id}` | the same, fetched with the token as a current client does |
+| Method                 | Path                                                          | What                                                                                           |
+| ---------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| GET                    | `/_matrix/client/versions`                                    | the specification versions spoken                                                              |
+| GET                    | `/_matrix/client/v3/login`                                    | the flows — `m.login.password` and nothing else                                                |
+| POST                   | `/_matrix/client/v3/login`                                    | the site's own email and password; answers a token of ours                                     |
+| POST                   | `/_matrix/client/v3/logout`                                   | ends our row and the auth server's session                                                     |
+| POST                   | `/_matrix/client/v3/logout/all`                               | the same                                                                                       |
+| POST                   | `/_matrix/client/v3/register`                                 | refused, with where to sign up instead                                                         |
+| GET                    | `/_matrix/client/v3/capabilities`                             | and what is absent, each with its reason                                                       |
+| GET                    | `/_matrix/client/v3/account/whoami`                           | the person and the device                                                                      |
+| GET                    | `/_matrix/client/v3/devices`                                  | this account's Matrix clients                                                                  |
+| GET                    | `/_matrix/client/v3/sync?since=`                              | the rooms, the timeline, the state                                                             |
+| GET                    | `/_matrix/client/v3/joined_rooms`                             | the rooms and Spaces that are theirs                                                           |
+| GET                    | `/_matrix/client/v3/rooms/{id}/messages?from=&dir=&limit=`    | paging, both directions                                                                        |
+| PUT                    | `/_matrix/client/v3/rooms/{id}/send/{type}/{txn}`             | a message, a thread reply, an edit                                                             |
+| PUT                    | `/_matrix/client/v3/rooms/{id}/redact/{event}/{txn}`          | a withdrawal                                                                                   |
+| GET                    | `/_matrix/client/v3/rooms/{id}/state`                         | the room's state events                                                                        |
+| PUT                    | `/_matrix/client/v3/rooms/{id}/state/{type}/{key}`            | **refused** — see below                                                                        |
+| GET                    | `/_matrix/client/v3/rooms/{id}/members`                       | the space's members                                                                            |
+| GET                    | `/_matrix/client/v3/rooms/{id}/joined_members`                | the same, as a map                                                                             |
+| PUT                    | `/_matrix/client/v3/rooms/{id}/typing/{user}`                 | the typing stamp                                                                               |
+| POST                   | `/_matrix/client/v3/rooms/{id}/receipt/{type}/{event}`        | where this client has read to                                                                  |
+| POST                   | `/_matrix/client/v3/rooms/{id}/read_markers`                  | the same                                                                                       |
+| GET                    | `/_matrix/client/v3/profile/{user}`                           | the display name                                                                               |
+| GET                    | `/_matrix/client/v1/rooms/{id}/hierarchy`                     | a Space and the channels in it, so a client draws the site's arrangement                       |
+| GET                    | `/_matrix/client/v1/rooms/{id}/relations/{event}[/{type}]`    | a thread's replies                                                                             |
+| GET                    | `/_matrix/client/v3/pushrules/`                               | an empty ruleset: this site notifies its own way                                               |
+| POST                   | `/_matrix/client/v3/user/{id}/filter`                         | accepted, never applied — a sync here is already only theirs                                   |
+| GET                    | `/_matrix/client/v3/user/{id}/filter/{id}`                    | the empty filter back                                                                          |
+| PUT                    | `/_matrix/client/v3/user/{id}/account_data/{type}`            | taken and dropped: a reader's settings are the site's                                          |
+| POST                   | `/_matrix/client/v3/keys/upload`                              | the device's public keys and its one-time keys, with the real counts back                      |
+| POST                   | `/_matrix/client/v3/keys/query`                               | the devices and cross-signing keys of people sharing a room                                    |
+| POST                   | `/_matrix/client/v3/keys/claim`                               | a one-time key, claimable exactly once; the fallback when they run out                         |
+| POST                   | `/_matrix/client/v3/keys/device_signing/upload`               | the three cross-signing keys, stored and served                                                |
+| POST                   | `/_matrix/client/v3/keys/signatures/upload`                   | signatures merged in, and only the caller's own                                                |
+| PUT                    | `/_matrix/client/v3/sendToDevice/{type}/{txn}`                | queued per device, delivered in the next sync                                                  |
+| GET\|POST\|PUT\|DELETE | `/_matrix/client/v3/room_keys/*`                              | the key backup: version, store, fetch, and delete a version — `M_NOT_FOUND` until there is one |
+| GET                    | `/_matrix/client/v3/thirdparty/protocols`                     | empty: no bridges                                                                              |
+| GET                    | `/_matrix/media/v3/config`, `/_matrix/client/v1/media/config` | the largest file taken                                                                         |
+| POST                   | `/_matrix/media/v3/upload`                                    | into the site's own bucket; 10 MB                                                              |
+| GET                    | `/_matrix/media/v3/download/{server}/{id}`                    | signed as the person, so a room they cannot read refuses                                       |
+| GET                    | `/_matrix/client/v1/media/download/{server}/{id}`             | the same, fetched with the token as a current client does                                      |
 
 ## Identifiers
 
 A uuid with its hyphens removed, behind one letter that says what it names, at the site's host. Total and reversible, with no table of correspondences to go out of step.
 
-| Thing | Shape |
-| --- | --- |
-| a channel | `!c<32 hex>:host` |
-| a space | `!s<32 hex>:host` |
-| a person | `@<32 hex>:host` |
+| Thing     | Shape                                            |
+| --------- | ------------------------------------------------ |
+| a channel | `!c<32 hex>:host`                                |
+| a space   | `!s<32 hex>:host`                                |
+| a person  | `@<32 hex>:host`                                 |
 | a message | `$m<32 hex>` — no host, as room version 4 onward |
 
 The sync token is base64 of `channel:seq` pairs — `space_messages.seq`, which the timeline is already indexed by.
@@ -80,24 +87,24 @@ Power levels are **derived** from `space_grants`: 0 a member, 25 `voice` · `fil
 
 Every refusal carries Matrix's `errcode` and an `error` sentence naming the reason — never a bare code.
 
-| Code | When |
-| --- | --- |
-| `M_MISSING_TOKEN` | no access token on the request |
-| `M_UNKNOWN_TOKEN` | not ours, signed out, or the account ended the session |
-| `M_FORBIDDEN` | wrong password; not in the room; read-only state; registration; encryption; a key of the wrong kind or without the grant |
-| `M_LIMIT_EXCEEDED` | past the sign-in cap, with `retry_after_ms` |
-| `M_NOT_FOUND` | no room with that id here |
-| `M_TOO_LARGE` | a file past the limit |
-| `M_BAD_JSON` | a body this endpoint cannot read |
-| `M_UNRECOGNIZED` | an endpoint this server does not implement |
+| Code               | When                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `M_MISSING_TOKEN`  | no access token on the request                                                                                           |
+| `M_UNKNOWN_TOKEN`  | not ours, signed out, or the account ended the session                                                                   |
+| `M_FORBIDDEN`      | wrong password; not in the room; read-only state; registration; encryption; a key of the wrong kind or without the grant |
+| `M_LIMIT_EXCEEDED` | past the sign-in cap, with `retry_after_ms`                                                                              |
+| `M_NOT_FOUND`      | no room with that id here                                                                                                |
+| `M_TOO_LARGE`      | a file past the limit                                                                                                    |
+| `M_BAD_JSON`       | a body this endpoint cannot read                                                                                         |
+| `M_UNRECOGNIZED`   | an endpoint this server does not implement                                                                               |
 
 ## Tables
 
-| Table | What | Policies |
-| --- | --- | --- |
-| `matrix_sessions` | a client's token hash, its device, and the auth server's refresh token | RLS on, **no policies** — only the service role reaches it |
-| `matrix_read` | where a Matrix client has read to, per room | the person's own |
-| `matrix_login_attempts` | the sign-in cap's counter | the service role's |
+| Table                   | What                                                                   | Policies                                                   |
+| ----------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `matrix_sessions`       | a client's token hash, its device, and the auth server's refresh token | RLS on, **no policies** — only the service role reaches it |
+| `matrix_read`           | where a Matrix client has read to, per room                            | the person's own                                           |
+| `matrix_login_attempts` | the sign-in cap's counter                                              | the service role's                                         |
 
 `matrix_session_claim(hash)` takes the row `for update`, so two requests cannot spend one refresh token at once.
 

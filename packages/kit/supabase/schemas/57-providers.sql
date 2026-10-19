@@ -297,24 +297,29 @@ CREATE OR REPLACE FUNCTION "public"."guard_offering_edit"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
+declare
+  /* AN OFFERING MADE LIVE is held to the same rules as one moved there: the insert is guarded too,
+     or a provider could skip the reading and the terms by creating it already on sale */
+  was_live boolean := tg_op = 'UPDATE' and old.state = 'live';
 begin
   if auth.role() in ('anon', 'authenticated') then
     /* whose it is never moves, and releasing is an act with a name on it (provider_release) */
-    if new.provider_id is distinct from old.provider_id then raise exception 'an offering belongs to one person'; end if;
-    if (new.released_by is distinct from old.released_by or new.released_at is distinct from old.released_at)
+    if tg_op = 'UPDATE' and new.provider_id is distinct from old.provider_id then raise exception 'an offering belongs to one person'; end if;
+    if (case when tg_op = 'UPDATE' then new.released_by is distinct from old.released_by or new.released_at is distinct from old.released_at
+             else new.released_by is not null or new.released_at is not null end)
        and coalesce(current_setting('app.releasing', true), '') <> '1' then
       raise exception 'releasing is an act, and goes through provider_release';
     end if;
     /* a provider may put their own into any state but LIVE; a site that reads new ones first is
        read by a person, and letting the author set it would be letting them approve themselves */
-    if new.state = 'live' and old.state <> 'live' and not public.is_admin()
+    if new.state = 'live' and not was_live and not public.is_admin()
        and coalesce(public.provider_policy('approve'), 'off') = 'on' then
       raise exception 'this site reads a new offering before it can be bought';
     end if;
     /* AND NOTHING GOES ON SALE UNDER TERMS NOBODY HAS AGREED TO. This is the only thing failing to
        sign stops: a draft stays editable, what is live stays live, earnings are still paid, and calls
        already booked still happen — what cannot be done is put something NEW on sale. */
-    if new.state = 'live' and old.state <> 'live' and not public.provider_may_sell(new.provider_id) then
+    if new.state = 'live' and not was_live and not public.provider_may_sell(new.provider_id) then
       raise exception 'the current terms have not been agreed to';
     end if;
   end if;
@@ -322,7 +327,7 @@ begin
   return new;
 end;
 $$;
-CREATE OR REPLACE TRIGGER "trg_provider_offerings_guard" BEFORE UPDATE ON "public"."provider_offerings"
+CREATE OR REPLACE TRIGGER "trg_provider_offerings_guard" BEFORE INSERT OR UPDATE ON "public"."provider_offerings"
   FOR EACH ROW EXECUTE FUNCTION "public"."guard_offering_edit"();
 
 -- RELEASING ONE IS AN ACT, recorded like every other act a person takes about somebody else's work.

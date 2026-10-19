@@ -35,7 +35,8 @@ export function sessionParams(offers = [], mode = 'payment') {
    is `adjustable`, not `quantity`: a content file may never carry a count of anything, and
    declarations.test.mjs refuses a field that reads like one — correctly, since stock is a row. */
 export function lineQuantity(offer) {
-  if (!offer || !offer.adjustable) return null
+  /* a tracked offer is held for the count asked for; one raised on the provider's page would sell past it */
+  if (!offer || !offer.adjustable || offer.tracked === true) return null
   const min = Number(offer.adjustable.min ?? 1)
   const max = Number(offer.adjustable.max ?? 99)
   if (!(min >= 1) || !(max >= min)) return null

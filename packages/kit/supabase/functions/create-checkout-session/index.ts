@@ -40,6 +40,7 @@ import { checkVariant } from '../_shared/variants.js'
 import { offer, offerByKey, ensureOffer, offerMetadata, ships, printVariant, TIERS, WORDS, LISTS, PROMOTIONS } from '../_shared/offers.ts'
 import { usageStripeMetadata } from '../_shared/usage-stripe.mjs'
 import { shipsTo, ratesFor } from '../_shared/shipping.ts'
+import { throughDoor } from '../_shared/doors.ts'
 import { buyable, stockKey } from '../_shared/stock.js'   /* the one sold-out rule, the page's own */
 import { guestSessionSku, mayBookAsGuest } from '../_shared/sessions/guest-booking.js'
 import { priceOf } from '../_shared/prices.js'            /* and the one price rule, likewise */
@@ -58,6 +59,8 @@ Deno.serve(async (req) => {
   /* a guest may buy print or downloads, or one public paid session when this site opted in;
      an account made later can claim the purchase only after proving its email. */
   const user = await getUser(req)
+  /* checkouts from one visitor in an hour: each makes a provider session and holds stock and promotion budget */
+  { const d = await throughDoor(req, 'checkout', user?.id); if (d.over) return json({ error: 'slow down', code: 'rate' }, 429) }
 
   let body: any
   try { body = await req.json() } catch { return json({ error: 'bad request' }, 400) }
@@ -98,6 +101,7 @@ Deno.serve(async (req) => {
      for the order to be fulfilled from */
   const merged = new Map<string, number>()
   const variants: string[] = []
+  const shapes = new Map<string, string>()
   let needsShipping = false, subscriptions = 0, once = 0
   for (const it of items) {
     const sku = String(it.sku ?? '')
@@ -109,7 +113,12 @@ Deno.serve(async (req) => {
     const qty = goods ? Math.max(1, Math.min(10, Number(it.quantity) || 1)) : 1
     merged.set(sku, goods ? Math.min(10, (merged.get(sku) ?? 0) + qty) : 1)
     /* a book in print: the choices on the line must be ones the offer sells */
-    if (o.kind === 'print' || o.kind === 'download') { const v = printVariant(o, String(it.variant ?? '')); if (!v) return json({ error: `${sku}: not offered that way` }, 400); variants.push(`${sku}:${[v.contents, v.cloth, v.foil].filter(Boolean).join('.')}x${qty}`); continue }
+    if (o.kind === 'print' || o.kind === 'download') {
+      const v = printVariant(o, String(it.variant ?? '')); if (!v) return json({ error: `${sku}: not offered that way` }, 400)
+      const key = [v.contents, v.cloth, v.foil].filter(Boolean).join('.')
+      if (shapes.has(sku) && shapes.get(sku) !== key) return json({ error: `${sku}: one choice of this per order — check out the other on its own`, code: 'one_shape', sku }, 400)
+      shapes.set(sku, key); variants.push(`${sku}:${key}x${qty}`); continue
+    }
     /*
      * A GARMENT: its product type is its supplier's fact, so an offer that names none, or whose
      * axes were typed rather than taken from a catalogue, has had its type invented somewhere and
@@ -119,10 +128,14 @@ Deno.serve(async (req) => {
     if (o.kind === 'apparel') {
       if (!o.blueprint) return json({ error: `${sku}: no product type — it has to come from the supplier's catalogue` }, 400)
       if (!(o.options ?? []).some((x: any) => x && x.from)) return json({ error: `${sku}: its shapes were not taken from the supplier's catalogue` }, 400)
-      const v = checkVariant(o.options ?? [], String(it.variant ?? ''))
-      if (!v) return json({ error: `${sku}: not made in that` }, 400)
     }
-    if (it.variant) variants.push(`${sku}:${String(it.variant).replace(/[^\w.-]/g, '').slice(0, 24)}x${qty}`)
+    const key = shapeOf(o, String(it.variant ?? ''))
+    if (key === null) return json({ error: o.kind === 'apparel' ? `${sku}: not made in that` : `${sku}: not offered that way` }, 400)
+    /* ONE SHAPE OF A THING PER CHECKOUT: the line is priced, held and fulfilled per sku, so a second shape
+       of the same sku would be charged and shipped as the first */
+    if (shapes.has(sku) && shapes.get(sku) !== key) return json({ error: `${sku}: one choice of this per order — check out the other on its own`, code: 'one_shape', sku }, 400)
+    shapes.set(sku, key)
+    if (key) variants.push(`${sku}:${key}x${qty}`)
   }
   /*
    * AND THE SHOP MUST STILL HAVE IT. The page already refused — the button is dead and the chip
@@ -136,11 +149,8 @@ Deno.serve(async (req) => {
    * row — all sell, as they do everywhere else.
    */
   /* the shape a sku was added at, out of the metadata line the cart built ("sku:variantxN") */
-  const variantOfSku = (list: string[], sku: string) => {
-    const m = new RegExp(sku.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\  {
-    const tracked = [...merged.keys()].filter((sku) => offerOf(sku)?.tracked === true)`) + String.raw`:([\w.-]+?)x\d+`).exec(list.join(', '))
-    return m ? m[1] : ''
-  }
+  /* the shape a sku was added at, out of the metadata line the cart built ("sku:variantxN") */
+  const variantOfSku = (list: string[], sku: string) => variantIn(list, sku)
 
   {
     const tracked = [...merged.keys()].filter((sku) => offerOf(sku)?.tracked === true)
@@ -150,8 +160,7 @@ Deno.serve(async (req) => {
       for (const r of rows ?? []) counts[stockKey(r.sku, r.variant)] = { stocked: r.stocked, reserved: r.reserved }
       for (const sku of tracked) {
         const o = offerOf(sku)!
-        const m = new RegExp(sku.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\  if (!user && (booking || items.some((it) => {`) + String.raw`:([\w.-]+?)x\d+`).exec(variants.join(', '))
-        if (!buyable(o, m ? m[1] : '', counts)) return json({ error: `${sku}: sold out`, code: 'sold_out', sku }, 409)
+        if (!buyable(o, variantOfSku(variants, sku), counts)) return json({ error: `${sku}: sold out`, code: 'sold_out', sku }, 409)
       }
     }
   }
@@ -338,7 +347,8 @@ Deno.serve(async (req) => {
   })()
   const who = {
     customer: { class: user ? (myTiers.length ? 'subscribed' : 'authenticated') : 'guest', tiers: myTiers },
-    shipping_address: { country },
+    /* where it ships is asked only of a cart that ships: claimed for a download, it would buy a country's price */
+    shipping_address: { country: needsShipping ? country : '' },
   }
 
   /* WHAT EACH LINE STANDS AT, before any discount: the price lists, by the same rule the page
@@ -543,7 +553,9 @@ Deno.serve(async (req) => {
       metadata,
       successUrl: `${appUrl()}${done}${done.includes('?') ? '&' : '?'}checkout=success&session={CHECKOUT_ID}`,
       cancelUrl: `${appUrl()}${back}${back.includes('?') ? '&' : '?'}checkout=cancel`,
-      ...(selectedPaymentProvider.id === 'stripe' ? { allowPromotionCodes: true } : {}),
+      /* Stripe's own codes only where the site gave nothing off: a code typed there would stack on a discount
+         already worked into these amounts */
+      ...(selectedPaymentProvider.id === 'stripe' && !discounted.lines.some((l: any) => l.discount > 0) ? { allowPromotionCodes: true } : {}),
       ...(mode === 'subscription' && trialDays ? { trialDays } : {}),
       automaticTax: wantsAutoTax,
       collectTaxId: wantsTaxId,
@@ -615,14 +627,44 @@ Deno.serve(async (req) => {
   }
 })
 
+/*
+ * THE SHAPE A SKU WAS ADDED AT, out of the metadata the cart built ("sku:variantxN, …"). One helper, with
+ * its escapes: three copies of this pattern had been mangled by an edit that read `$\`` in a replacement
+ * as "the text before the match", and one had lost its backslashes, so per-variant stock holds went to
+ * no variant at all.
+ */
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, (c) => '\\' + c)
+function variantIn(list: string[], sku: string): string {
+  const m = new RegExp('(?:^|, )' + escapeRe(sku) + ':([\\w.-]+?)x\\d+(?:,|$)').exec(list.join(', '))
+  return m ? m[1] : ''
+}
+
+/*
+ * WHAT SHAPE A LINE IS, checked against what the offer sells: a key its options make (filled with the
+ * first of each where a part was left out, as a cart line naming none always meant) and a combination
+ * the shop sells — never an invented one, which would miss the price list and be charged the base
+ * price, and miss the stock and pass as available. An offer with no shapes takes none. null refuses.
+ */
+function shapeOf(o: any, raw: string): string | null {
+  const opts = Array.isArray(o?.options) ? o.options : []
+  const listed = Array.isArray(o?.variants) ? o.variants : []
+  const sold = (k: string) => listed.some((v: any) => v && v.variant === k && v.sold !== false)
+  if (opts.length) {
+    const chosen = checkVariant(opts, raw)
+    if (!chosen) return null
+    const key = Object.values(chosen).join('.')
+    return !listed.length || sold(key) ? key : null
+  }
+  if (listed.length) return sold(raw) ? raw : null
+  return raw ? null : ''
+}
+
 /* hold what is tracked for this session; a shape with no count is not tracked and is skipped */
 async function reserve(sessionId: string, merged: Map<string, number>, variants: string[]): Promise<void> {
   for (const [sku, quantity] of merged) {
     const o = offer(sku)
     if (!o || o.tracked !== true) continue
-    const m = new RegExp(sku.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`) + String.raw`:([w.-]+?)x(d+)`).exec(variants.join(
-))
-    const variant = m ? m[1] : ''
+    const variant = variantIn(variants, sku)
     try {
       await admin.rpc('inventory_take', { p_sku: sku, p_variant: variant, p_qty: quantity, p_reason: 'reserved', p_about: sessionId })
     } catch (e) {

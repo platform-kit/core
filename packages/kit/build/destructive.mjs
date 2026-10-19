@@ -71,6 +71,8 @@ export function destructive(sql, { generated } = {}) {
     : new Set((generated || []).map((x) => String(x).toLowerCase()))
   const hits = []
   for (const s of statements(sql)) {
+    /* a privilege loses no data: `GRANT … TRUNCATE ON t` names the word and truncates nothing */
+    if (/^(?:grant|revoke)\b/i.test(s.text)) continue
     /* a dollar-quoted body inside a statement is scanned as its own text too, so `do $$ … $$` is not hidden */
     for (const shape of SHAPES) {
       const m = shape.re.exec(s.text)

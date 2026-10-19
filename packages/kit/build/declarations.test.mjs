@@ -150,7 +150,10 @@ if (waiting.length) {
  * all — decorative, every one of them. None leaked, because each gates on auth.uid() or is_admin()
  * inside; the danger is the next one, written the same way, that does not.
  *
- * So: a function that names who may call it must first take the default back BY NAME.
+ * So: a function that names who may call it must first take the default back BY NAME. `GRANT ALL` names
+ * them as surely as `GRANT EXECUTE`: `book_native`, `agent_claim` and `agent_run_state` were granted
+ * to the service role alone that way, read here as saying nothing, and were open to every visitor.
+ * The database itself is asked the same question in ownership.test.mjs.
  */
 {
   const dir = join(KIT, 'supabase', 'schemas')
@@ -161,10 +164,14 @@ if (waiting.length) {
     for (const m of t.matchAll(/^REVOKE ALL ON FUNCTION (.+) FROM "anon", "authenticated";$/gm)) said.add(m[1])
     /* a function DELIBERATELY open to a visitor grants anon by name, and needs nothing taken back */
     const open_on_purpose = new Set()
-    for (const m of t.matchAll(/^GRANT EXECUTE ON FUNCTION (.+) TO ([^;]+);$/gm)) if (/"anon"/.test(m[2])) open_on_purpose.add(m[1])
+    for (const m of t.matchAll(/^GRANT (?:EXECUTE|ALL) ON FUNCTION (.+) TO ([^;]+);$/gm)) if (/"anon"/.test(m[2])) open_on_purpose.add(m[1])
     for (const m of t.matchAll(/^(?:REVOKE ALL|GRANT EXECUTE) ON FUNCTION (.+?) (?:FROM PUBLIC|TO [^;]+);$/gm)) {
       if (!said.has(m[1]) && !open_on_purpose.has(m[1])) open.push(f + ': ' + m[1])
     }
+    /* a GRANT ALL to the service role and nobody else reads as closed; without the revoke it is open to all */
+    const allTo = new Map()
+    for (const m of t.matchAll(/^GRANT ALL ON FUNCTION (.+) TO ([^;]+);$/gm)) allTo.set(m[1], (allTo.get(m[1]) || '') + m[2])
+    for (const [fn, to] of allTo) if (!/"anon"|"authenticated"/.test(to) && !said.has(fn) && !t.includes(`REVOKE ALL ON FUNCTION ${fn.replace(/"(\w+)" (?="\w+")/g, '')} FROM "anon", "authenticated";`)) open.push(f + ': ' + fn + ' (service role only, never revoked)')
   }
   ok('every function that says who may call it takes the default grant back by name first', open.length === 0, open.slice(0, 6).join('; ') + (open.length > 6 ? ` (+${open.length - 6})` : ''))
 }

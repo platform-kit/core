@@ -18,6 +18,9 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Check every public page at phone width for content that runs off the screen.
 - Run the site's own tests and specifications alongside PlatformKit's checks, including a separate check of each deployment shape.
 - Refuse a deploy until it is confirmed and every setting the site's enabled features need is present, naming everything missing at once.
+- Readers, staff and visitors reach only what is theirs or what their role allows: another person's orders, bookings, tickets, files, recordings, earnings and form answers stay hidden, and nobody can give themselves a staff role, a membership or an approval.
+- Guest checkout, sign-up, form answers, analytics and the support widget each limit how much one visitor can send, without slowing anyone else; the limits are set in the site's policy.
+- Keep server keys on the server: the site's published files are checked to carry none of its secret keys, only the public ones the browser needs.
 - Deploy to Netlify, Render, an nginx container, Apache, Vercel or Cloudflare Pages with ready-made routing setups.
 - In cloud mode, show search engines and link previews pages published since the last build.
 - Close the whole site to everyone except administrators while it is being worked on (lockdown).
@@ -45,6 +48,8 @@ A feature listed here is available to a site, not switched on everywhere. A site
 
 - Take payments through Stripe (the default) or Hyperswitch, or through a payment provider the site adds itself.
 - Card details are entered in the payment provider's own secure form and never reach the site.
+- What a buyer pays is worked out by the site's server from its own prices, discounts and shipping rates; nothing a buyer's browser sends can change it.
+- Payment, booking, video and printer notifications are checked as genuine before anything is done with them; forged, altered, out-of-date or repeated ones change nothing.
 - If the chosen provider can't do something an offer needs, the purchase is refused before anyone is charged.
 - Stripe buyers pay on Stripe's hosted checkout; Hyperswitch buyers pay on the site's own checkout page, with an order summary, trial and renewal lines, and clear decline and verification messages.
 - On Hyperswitch, PlatformKit renews memberships itself by charging the saved card.
@@ -272,7 +277,8 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Shipping rates per country, extra shipping methods with surcharges and delivery estimates, and sales only to listed countries.
 - Per-offer checkout terms: automatic tax, collecting a business tax number, accepted payment methods, and buyer-adjustable quantities.
 - Clear outcomes after checkout: paid, cancelled ("no charge was made"), still processing, or couldn't be confirmed; a practice mode when payment keys are missing.
-- Guest checkout for print and file purchases; a guest who later signs up with the same email finds their order and files.
+- Guest checkout for print and file purchases; a guest who later signs up with the same email finds their order and files once they confirm that address by its emailed link or a sign-in provider, so nobody can claim another person's order by typing their email.
+- One order holds one choice of each product; a second size or colour of the same thing is checked out on its own.
 - Receipt, "your files are ready" and "shipped" emails with tracking.
 - A refund removes the access it bought.
 - Fulfilment through Printify print-on-demand, through the shop's own packing room (staff mark orders sent), by download, or by book printers (see `print`).

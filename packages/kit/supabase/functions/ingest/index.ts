@@ -22,6 +22,7 @@
  * the country and the rate limit are the one code path.
  */
 import { admin, getUser } from '../_shared/lib.ts'
+import { throughDoor } from '../_shared/doors.ts'
 import config from '../_shared/analytics.json' with { type: 'json' }
 import { kindOf, decodeBody, decode, toRow, FLAGS, remoteConfigJs } from '../_shared/posthog-wire.js'
 
@@ -136,6 +137,8 @@ Deno.serve(async (req) => {
     anonForRate = anon
   }
   if (!rateOk(anonForRate, rows.length)) return reply({ error: 'rate' }, 429, origin)
+  /* and per visitor, where every isolate counts: the id above is the caller's to choose, the address is not */
+  if ((await throughDoor(req, 'analytics')).over) return reply({ error: 'rate' }, 429, origin)
   const { error } = await admin.from('events').insert(rows)
   if (error) { console.warn('ingest:', error.message); return reply({ error: 'write' }, 500, origin) }
   return reply(posthog ? { status: 1 } : { ok: true, n: rows.length }, 200, origin)

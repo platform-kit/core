@@ -29,6 +29,7 @@ import { formsNow } from '../_shared/forms-live.ts'   /* forms.json in git mode;
 import { grade } from '../_shared/forms/score.js'
 import { definitionOf } from '../_shared/api/typeform/definition.js'
 import { itemOf, webhookPayloadOf, fileUrlOf } from '../_shared/api/typeform/response.js'
+import { throughDoor } from '../_shared/doors.ts'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
 type Field = { name: string; kind: string; required: boolean; multiple: boolean; values?: string[]; slide: number }
@@ -156,6 +157,8 @@ Deno.serve(async (req) => {
   await fresh()
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
+  /* answers from one visitor in an hour: the anonymous id is theirs to choose, so it is the address that is counted */
+  { const d = await throughDoor(req, 'forms'); if (d.over) return json({ error: 'slow down', code: 'rate' }, 429) }
   const multipart = (req.headers.get('content-type') ?? '').includes('multipart/form-data')
   let fd: FormData | null = null
   let body: any = {}

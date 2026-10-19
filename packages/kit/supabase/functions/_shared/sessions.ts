@@ -14,6 +14,7 @@ import { admin } from './lib.ts'
 import { offer } from './offers.ts'
 import { of, onRefresh } from './compiled.ts'
 import { admits } from './sessions/admits.js'
+import { lengthChosen } from './sessions/page.js'
 
 export type Where = { kind: 'video' | 'link' | 'place' | 'phone' | 'none'; url?: string; name?: string; address?: string; number?: string }
 export type Session = { title: string; slug: string; event: string; scheduler: 'native' | 'cal'; username: string | null; requires: string | string[]; below: string | null; weekly: number; monthly: number; sku: string | null; duration: number; hosts: string[]; seats: number; buffer: number; notice: number; where: Where; record: boolean; hours?: any; repeats?: any }
@@ -155,7 +156,7 @@ export async function credits(user_id: string, sku: string) {
 export type Verdict = { ok: true; session: Session; credit: string | null } | { ok: false; reason: 'unknown' | 'guest' | 'not-included' | 'over' | 'unpaid'; session: Session | null; next?: string; allowance?: string }
 /* may this reader book (or keep) this event type now? `except` is a booking of
    theirs not to count (the one being judged, or the one being rescheduled) */
-export async function judge(event: string | null, user_id: string | null, email: string | null, except: string | null): Promise<Verdict> {
+export async function judge(event: string | null, user_id: string | null, email: string | null, except: string | null, minutes = 0): Promise<Verdict> {
   const s = await typeFor(event)
   if (!s) return { ok: false, reason: 'unknown', session: null }
   const { rank, tiers } = await tiersOf(user_id)
@@ -184,8 +185,11 @@ export async function judge(event: string | null, user_id: string | null, email:
     if (counted.length >= n) return { ok: false, reason: 'over', session: s, next: new Date(new Date(counted[0].start_at).getTime() + ms).toISOString(), allowance: n === 1 ? word : `${n} a ${word.split(' ').pop()}` }
   }
   /* a paid session is booked with a credit — unless the reader's tier includes it */
-  if (s.sku && !al) {
-    const have = user_id ? await credits(user_id, s.sku) : []
+  /* at the length being booked: a length may carry a price of its own, and a credit for the type's
+     default is not a credit for a dearer length */
+  const sku = lengthChosen(s, minutes).sku || s.sku
+  if (sku && !al) {
+    const have = user_id ? await credits(user_id, sku) : []
     if (!have.length) return { ok: false, reason: 'unpaid', session: s }
     return { ok: true, session: s, credit: have[0] }
   }

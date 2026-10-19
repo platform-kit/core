@@ -7,6 +7,7 @@
 import { admin, json, getUser, appUrl } from './lib.ts'
 import { isSupport } from './roles.ts'
 import { sendEmail, WORDS } from './email.ts'
+import { addressOf } from './doors.ts'
 import { PROMPTS, POLICY, type Choice } from './marketing.ts'
 export { PROMPTS, POLICY, WORDS }
 export type { Choice }
@@ -40,7 +41,9 @@ export const firstName = (s: string | null | undefined) => String(s || '').trim(
    a copy of findChoice here was the beginning of two grammars that agree until they do not */
 export { findChoice } from './choices.js'
 /* the caller's address, for the guards */
-export const ipOf = (req: Request) => (req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? '').split(',')[0].trim().slice(0, 64) || null
+/* the address the platform's proxy wrote, never the first x-forwarded-for entry (the caller's own); with none,
+   every such caller shares one count rather than having no limit (_shared/doors.ts) */
+export const ipOf = (req: Request) => addressOf(req)
 /* how many of a thing this address has made in the last hour */
 export async function madeLately(ip: string | null, what: 'guests' | 'threads' | 'uploads'): Promise<number> {
   if (!ip) return 0

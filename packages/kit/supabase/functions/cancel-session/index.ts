@@ -8,7 +8,7 @@
  * `too-soon`), by its host or an administrator at any time.
  */
 import { admin, json, preflight, getUser } from '../_shared/lib.ts'
-import { rolesOf, isProvider } from '../_shared/roles.ts'
+import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { typeFor, schedulerIdOf } from '../_shared/cal.ts'
 import { mayReader } from '../_shared/sessions/page.js'
 import { cancelBooking } from '../_shared/booking.ts'
@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
   const uid = String(body?.uid ?? '')
   const { data: row } = await admin.from('bookings').select('uid, user_id, host_id, provider_id, event, status, credit_id, start_at, end_at, run_of').eq('uid', uid).maybeSingle()
   const callerRoles = await rolesOf(user.id)
-  const role: 'reader' | 'host' | 'admin' | null = !row ? null : row.user_id === user.id ? 'reader' : row.host_id === user.id || row.provider_id === user.id ? 'host' : isProvider(callerRoles) ? 'admin' : null
+  const role: 'reader' | 'host' | 'admin' | null = !row ? null : row.user_id === user.id ? 'reader' : row.host_id === user.id || row.provider_id === user.id ? 'host' : isAdmin(callerRoles) ? 'admin' : null
   if (!row || !role) return json({ error: 'not your booking' }, 403)
   const s = await typeFor(row.event, { any: true })
   if (body?.action === 'no-show') {

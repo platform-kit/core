@@ -20,11 +20,16 @@ Deno.serve(async (req) => {
   const uid = String(body?.uid ?? ''); if (!uid) return json({ error: 'uid' }, 400)
   /* the row as the caller may see it */
   const mine = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
-  const { data: row } = await mine.from('bookings').select('uid, recording_path, transcript_path, recording_state, recording_error, recording_at').eq('uid', uid).maybeSingle()
+  const { data: row } = await mine.from('bookings').select('uid, seat_of, room, recording_path, transcript_path, recording_state, recording_error, recording_at').eq('uid', uid).maybeSingle()
   if (!row) return json({ error: 'not yours' }, 403)
   const { data: prof } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()
   const isAdmin = isProvider(await rolesOf(user.id))
   const path = (u: string | null | undefined) => (u ? u.replace(/^https?:\/\/[^/]+/, '') : null)
+  /* only under this booking's own folders (its uid, its group's seat, its room): the path is a column, and a
+     link is signed with the service key, so a row made to name another's film must not be a key to it */
+  const own = (p: string | null) => !!p && !p.includes('..') && [row.uid, row.seat_of, row.room].some((f) => f && p.startsWith(f + '/'))
+  if (!own(row.recording_path)) row.recording_path = null
+  if (!own(row.transcript_path)) row.transcript_path = null
   const out: Record<string, unknown> = { uid, state: row.recording_state, error: row.recording_error, at: row.recording_at, recording: null, transcript: null }
   if (row.recording_path) {
     const { data } = await admin.storage.from(BUCKET).createSignedUrl(row.recording_path, 3600, isAdmin ? { download: `${uid}.mp4` } : undefined)

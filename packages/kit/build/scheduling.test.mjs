@@ -325,12 +325,19 @@ try {
       const tos = booked.map((m) => m.To[0].Address).sort()
       assert.deepEqual(tos, ['coach@example.com', 'free@example.com', 'guest.person@example.org'], JSON.stringify(tos))
     }
-    /* an invitee with no account yet: signing up with that address finds the booking by email — no linking step */
+    /* an invitee with no account yet: an account with that address finds the booking by email — no linking step —
+       once it has PROVEN the address (a sign-up is confirmed at once, so until then the address is only a claim) */
     const { data: made2, error: mkErr } = await admin.auth.admin.createUser({ email: 'guest.person@example.org', password: 'password123', email_confirm: true, user_metadata: { full_name: 'Guest Person' } })
     assert.ok(!mkErr, mkErr && mkErr.message); newUsers.push(made2.user.id)
     const guestSb = await as('guest.person@example.org')
-    const { data: seen } = await guestSb.from('bookings').select('uid, made_by_name').eq('uid', r.booking.uid)
-    assert.equal((seen || []).length, 1, 'the invitee sees the booking once signed up with that address')
+    const { data: early } = await guestSb.from('bookings').select('uid').eq('uid', r.booking.uid)
+    assert.equal((early || []).length, 0, 'an address not yet proven finds no booking by it')
+    const { data: link } = await admin.auth.admin.generateLink({ type: 'magiclink', email: 'guest.person@example.org' })
+    const proven = createClient(url, anonKey, { auth: { persistSession: false } })
+    await proven.auth.verifyOtp({ token_hash: link.properties.hashed_token, type: 'magiclink' })
+    assert.equal((await proven.rpc('mark_email_verified')).data, true, 'signing in by the emailed link proves the address')
+    const { data: seen } = await proven.from('bookings').select('uid, made_by_name').eq('uid', r.booking.uid)
+    assert.equal((seen || []).length, 1, 'the invitee sees the booking once their account has proven that address')
     const seats = await fn(host, 'book-session', { event: (group || one).event, start: t, timeZone: 'UTC', for: ['a@example.org', 'b@example.org', 'c@example.org', 'd@example.org'], notes: 'probe-sched' })
     if (group && group.seats < 4) { assert.equal(seats.status, 400); assert.equal(seats.code, 'seats') } else if (seats.status === 200) made.push(seats.booking.uid)
   })

@@ -50,7 +50,9 @@ async function hmac(purpose: string, id: string) {
   return [...new Uint8Array(sig)].slice(0, 16).map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 export const unsubscribeUrl = async (userId: string) => `${publicFunctionsUrl()}/email-unsubscribe?u=${encodeURIComponent(userId)}&t=${await hmac('unsubscribe', userId)}`
-export const unsubscribeOk = async (userId: string, t: string) => /^[0-9a-f-]{36}$/.test(userId) && t === await hmac('unsubscribe', userId)
+/* compared in constant time, so how much of a guess matched never shows in how long the answer took */
+const same = (a: string, b: string) => { if (typeof a !== 'string' || a.length !== b.length) return false; let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0 }
+export const unsubscribeOk = async (userId: string, t: string) => /^[0-9a-f-]{36}$/.test(userId) && same(t, await hmac('unsubscribe', userId))
 /* the tracking: every link and the pixel as a row under a random token — ten characters of
    base62 from the system's randomness (~60 bits), the whole url */
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'

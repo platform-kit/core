@@ -130,6 +130,66 @@ for (const [what, headers] of Object.entries(CAL)) {
   await admin.from('entitlements').delete().like('source_id', 'cs_forged_%')
 }
 
+/* ─── signed, but altered, stale or replayed ─── */
+/*
+ * A signature over the bytes is not the whole of trust: a body changed by one byte after signing, an event
+ * signed long ago and sent again, and a "created" replayed after the booking was cancelled must each change
+ * nothing. Run with the stack's own CAL_WEBHOOK_SECRET (the functions' env); without it the door refuses
+ * every body, which the checks above already hold.
+ */
+{
+  const { createHmac, createHash } = await import('node:crypto')
+  const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+  const secret = process.env.CAL_WEBHOOK_SECRET || ''
+  const cal = async (raw, sig) => {
+    const r = await fetch(`${cfg.FUNCTIONS_URL}/cal-webhook`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-cal-signature-256': sig ?? createHmac('sha256', secret).update(raw).digest('hex') }, body: raw })
+    return { status: r.status, body: await r.text() }
+  }
+  if (!secret) note('⚠ no CAL_WEBHOOK_SECRET in this environment — the altered, stale and replayed cal.com checks are skipped')
+  else {
+    const uid = 'forged-replay-' + Date.now()
+    const created = (at) => JSON.stringify({ triggerEvent: 'BOOKING_CREATED', createdAt: at, payload: { uid, title: 'probe', startTime: new Date(Date.now() + 864e5).toISOString(), endTime: new Date(Date.now() + 9e7).toISOString(), attendees: [{ email: 'probe@example.test', name: 'Probe' }], organizer: { email: 'host@example.test' } } })
+    const fresh = created(new Date().toISOString())
+    const altered = fresh.replace('"probe"', '"probf"')
+    const a = await cal(altered, createHmac('sha256', secret).update(fresh).digest('hex'))
+    ok('cal-webhook refuses a signed body altered by one byte', a.status === 401, `answered ${a.status} ${a.body.slice(0, 80)}`)
+    const old = await cal(created(new Date(Date.now() - 2 * 864e5).toISOString()))
+    ok('cal-webhook refuses a correctly signed event older than a day', old.status === 400 && /stale/.test(old.body), `answered ${old.status} ${old.body.slice(0, 80)}`)
+    const { count: none } = await admin.from('bookings').select('uid', { count: 'exact', head: true }).eq('uid', uid)
+    ok('  and wrote nothing for either', none === 0, `${none} rows`)
+    /* the booking cancelled, then its signed "created" sent again: it stays cancelled */
+    await admin.from('bookings').insert({ uid, email: 'probe@example.test', status: 'cancelled', event: 'probe', start_at: new Date(Date.now() + 864e5).toISOString() })
+    const again = await cal(fresh)
+    const { data: row } = await admin.from('bookings').select('status').eq('uid', uid).maybeSingle()
+    ok('a replayed "created" does not revive a cancelled booking', row?.status === 'cancelled', `answered ${again.status}; the row is ${row?.status}`)
+    await admin.from('bookings').delete().eq('uid', uid)
+  }
+
+  /* LiveKit: with no account the development secret (which is public) signs nothing */
+  if (!process.env.LIVEKIT_URL && process.env.LIVEKIT_MOCK !== '1') {
+    const raw = JSON.stringify({ event: 'room_finished', room: { name: 'forged-room' } })
+    const b64 = (x) => Buffer.from(typeof x === 'string' ? x : JSON.stringify(x)).toString('base64url')
+    const head = b64({ alg: 'HS256', typ: 'JWT' }), claims = b64({ iss: 'devkey', nbf: Math.floor(Date.now() / 1000) - 10, exp: Math.floor(Date.now() / 1000) + 600, sha256: createHash('sha256').update(raw).digest('base64') })
+    const jwt = `${head}.${claims}.${createHmac('sha256', 'secretsecretsecretsecretsecretsecret').update(`${head}.${claims}`).digest('base64url')}`
+    const r = await fetch(`${cfg.FUNCTIONS_URL}/livekit-webhook`, { method: 'POST', headers: { 'content-type': 'application/webhook+json', authorization: jwt }, body: raw })
+    const said = await r.text()
+    ok('livekit-webhook refuses an event signed with the development secret when LiveKit is not configured', r.status === 400 && /not configured/.test(said), `answered ${r.status} ${said.slice(0, 80)}`)
+  } else note('⚠ LiveKit is configured here — the unconfigured-secret check is skipped (meetings.test.mjs signs with the real pair)')
+
+  /* the social platforms' door: nothing unsigned is read */
+  {
+    const r = await fetch(`${cfg.FUNCTIONS_URL}/social-webhook?provider=threads`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ object: 'page', entry: [{ id: 'forged', changes: [] }] }) })
+    ok('social-webhook refuses an unsigned body', r.status === 401 || r.status === 404, `answered ${r.status}`)
+  }
+
+  /* a printer with no keys has nobody to call it; each read of a mock job would walk it toward shipped */
+  if (!process.env.LULU_CLIENT_KEY) {
+    const r = await fetch(`${cfg.FUNCTIONS_URL}/print-webhook?provider=lulu`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ topic: 'PRINT_JOB_STATUS_CHANGED', data: { id: 123456 } }) })
+    const said = await r.text()
+    ok('print-webhook ignores a call to a mocked printer', r.status === 200 && /mock printer/.test(said), `answered ${r.status} ${said.slice(0, 80)}`)
+  }
+}
+
 /* ─── the audio bucket: a reader may add, and may not replace ─── */
 {
   const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })

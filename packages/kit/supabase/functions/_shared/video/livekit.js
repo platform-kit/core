@@ -81,6 +81,9 @@ export function livekit({ db, env }) {
     },
     /* the room's notification, its signature checked by the SDK (the Authorization header a JWT over the body's sha256) */
     async event(req) {
+      /* the mock's secret is public (it is in this file): with no account it verifies nothing, unless the
+         mock was asked for by name, which the deploy refuses */
+      if (!configured() && env('LIVEKIT_MOCK') !== '1') return { refused: 'livekit is not configured' }
       const raw = await req.text()
       const receiver = new WebhookReceiver(key(), secret())
       let ev

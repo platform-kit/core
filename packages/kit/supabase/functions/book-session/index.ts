@@ -11,15 +11,26 @@
  * minimum notice (403 `too-soon`); a host or an administrator may move at any time.
  */
 import { admin, json, preflight, getUser } from '../_shared/lib.ts'
-import { rolesOf, isProvider } from '../_shared/roles.ts'
+import { rolesOf, isProvider, isAdmin } from '../_shared/roles.ts'
 import { judge, schedulerIdOf, typeFor, forRank, videoOf } from '../_shared/cal.ts'
 import { sessionMail } from '../_shared/session-mail.ts'
 import { deliverSchedulingEvent } from '../_shared/scheduling-events.ts'
-import { mayReader, pageOf } from '../_shared/sessions/page.js'
+import { mayReader, pageOf, lengthChosen } from '../_shared/sessions/page.js'
 import { guestEmail, mayBookAsGuest } from '../_shared/sessions/guest-booking.js'
 import { makeBooking, moveBooking } from '../_shared/booking.ts'
 import { coaching as siteCoaching } from '../_shared/pipe/site.js'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
+
+/* whether this account is one of a type's hosts: named by its address, or a member of its team */
+async function hostsType(s: any, userId: string): Promise<boolean> {
+  const emails = (s.hosts || []).map((e: unknown) => String(e).toLowerCase()).filter(Boolean)
+  if (emails.length) {
+    const { data } = await admin.from('profiles').select('id').eq('id', userId).in('email', emails).maybeSingle()
+    return !!data
+  }
+  if (s.team) { const { data } = await admin.from('team_members').select('user_id').eq('team', s.team).eq('user_id', userId).maybeSingle(); return !!data }
+  return false
+}
 
 Deno.serve(async (req) => {
   await fresh()
@@ -87,7 +98,8 @@ Deno.serve(async (req) => {
     if (!v.ok) return json({ error: v.reason, code: v.reason, next: (v as any).next ?? null, allowance: (v as any).allowance ?? null, sku: v.session?.sku ?? null }, v.reason === 'unpaid' ? 402 : 403)
     const s = v.session
     if (!mayBookAsGuest(siteCoaching.requireAuthToBook, s.requires)) return json({ error: 'this session is not available to guests', code: 'guest' }, 403)
-    if (s.sku) return json({ error: 'a paid session is booked through checkout', code: 'checkout', sku: s.sku }, 402)
+    const priced = lengthChosen(s, minutesIn).sku || s.sku
+    if (priced) return json({ error: 'a paid session is booked through checkout', code: 'checkout', sku: priced }, 402)
     if (schedulerIdOf(s) === 'native') {
       if ((!s.hosts?.length && !s.team) || !(s.duration > 0)) return json({ error: 'this type has no host or no length yet', code: 'no-host' }, 503)
       if (s.where?.kind === 'phone' && !s.where.number && !phone) return json({ error: 'a phone number', code: 'phone' }, 400)
@@ -111,10 +123,14 @@ Deno.serve(async (req) => {
   /* a host books for people: the invitees by email, no judge, no credit, nothing charged; the row says who made it */
   const forList: string[] = Array.isArray(body?.for) ? body.for.map((e: unknown) => String(e || '').trim().toLowerCase()).filter((e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) : []
   if (Array.isArray(body?.for)) {
-    if (!isProvider(await rolesOf(user.id))) return json({ error: 'a host books for people', code: 'not-host' }, 403)
+    const callerRoles = await rolesOf(user.id)
+    if (!isProvider(callerRoles)) return json({ error: 'a host books for people', code: 'not-host' }, 403)
     if (moving) return json({ error: 'a move is the booking\'s own', code: 'for' }, 400)
     const s = await typeFor(event)
     if (!s) return json({ error: 'unknown session', code: 'unknown' }, 404)
+    /* A HOST BOOKS FOR PEOPLE ON THEIR OWN TYPES: no judge and no credit is a host's gift of their own
+       time, not a way for any provider to hand out another host's paid sessions */
+    if (!isAdmin(callerRoles) && !(await hostsType(s, user.id))) return json({ error: 'a host books for people', code: 'not-host' }, 403)
     const invitees = [...new Set(forList)]
     if (!invitees.length) return json({ error: 'someone to book for', code: 'for' }, 400)
     if (s.seats > 0 && invitees.length > s.seats) return json({ error: 'more than the seats', code: 'seats', seats: s.seats }, 400)
@@ -140,13 +156,13 @@ Deno.serve(async (req) => {
     if (!row) return json({ error: 'not your booking' }, 403)
     if (row.user_id === user.id) role = 'reader'
     else if (row.host_id === user.id || row.provider_id === user.id) role = 'host'
-    else if (isProvider(await rolesOf(user.id))) role = 'admin'
+    else if (isAdmin(await rolesOf(user.id))) role = 'admin'
     else return json({ error: 'not your booking' }, 403)
     if (row.event !== event) return json({ error: 'a booking is moved, not changed' }, 400)
     if (!['accepted', 'pending'].includes(row.status)) return json({ error: 'that booking is over', code: 'over-with' }, 400)
     owner = row.user_id ?? user.id
   }
-  const v = await judge(event, owner, email, moving)
+  const v = await judge(event, owner, email, moving, minutesIn)
   if (!v.ok) return json({ error: v.reason, code: v.reason, next: (v as any).next ?? null, allowance: (v as any).allowance ?? null, sku: v.session?.sku ?? null }, v.reason === 'unpaid' ? 402 : 403)
   const s = v.session
   if (schedulerIdOf(s) === 'native') {
@@ -161,7 +177,7 @@ Deno.serve(async (req) => {
   }
   try {
     /* a move spends nothing: the credit that made the booking stays spent */
-    const made = moving ? await moveBooking(s, moving, start, { email, role }, owner) : await makeBooking(s, { start, attendee: { email, name, timeZone }, user_id: user.id, notes, phone, credit: v.credit, response: responseIn, minutes: minutesIn, count: countIn })
+    const made = moving ? await moveBooking(s, moving, start, { email, role }, owner) : await makeBooking(s, { start, attendee: { email, name, timeZone }, user_id: user.id, notes, phone, credit: v.credit, response: responseIn, minutes: minutesIn, count: v.credit ? 0 : countIn })
     return json({ booking: { uid: made.uid, start: made.start_at, end: made.end_at, title: made.title, join_url: made.join_url, where: made.where } })
   } catch (e) {
     /* a time that went while they chose: the scheduler's own word says so; anything else is its failure */

@@ -9,7 +9,7 @@ sources:
     packages/movable-types/src/components/Orders.vue,
     packages/kit/supabase/functions/_shared/ledger.ts,
   ]
-reviewed: 2026-10-13
+reviewed: 2026-10-19
 ---
 
 A purchase says what somebody bought. An **order** is the thing that has a life after that: an

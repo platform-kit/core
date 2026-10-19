@@ -1069,8 +1069,9 @@ GRANT ALL ON FUNCTION "public"."experiment_variants"("name" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."experiment_variants"("name" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."experiment_variants"("name" "text") TO "service_role";
 
-GRANT ALL ON FUNCTION "public"."find_words"("k" "text", "since" timestamp with time zone, "lim" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."find_words"("k" "text", "since" timestamp with time zone, "lim" integer) TO "authenticated";
+-- the words people searched for: admin_find (the figures) asks it, as the owner
+REVOKE ALL ON FUNCTION "public"."find_words"("k" "text", "since" timestamp with time zone, "lim" integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."find_words"("k" "text", "since" timestamp with time zone, "lim" integer) FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."find_words"("k" "text", "since" timestamp with time zone, "lim" integer) TO "service_role";
 
 GRANT ALL ON SEQUENCE "public"."events_id_seq" TO "anon";

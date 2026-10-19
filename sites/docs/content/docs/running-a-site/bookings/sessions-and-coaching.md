@@ -95,7 +95,7 @@ hold stops is something _else_ taking that hour.
 
 ## A host books for people
 
-A host — any account that gives appointments, and an administrator — can book a session for other people: on the Coaching page's **Settings** tab (**Book for someone**, beside _Your hours_) and from Sales → Bookings (the same booker), choose a type (every published one, whatever the host's own tier), name the invitees by email — accounts or plain addresses, as many as the type seats — pick a time from the host's hours, and book. Nothing is judged, no credit is spent and nothing is charged: it is the host's courtesy (a client who missed a paid call, rebooked without paying again) or the record of a sale made elsewhere. Every invitee is on the booking — it is on their Coaching tab marked _Booked by …_, they get the booked email with the invitation, they enter the room when there is one — and it counts against no one's allowance. A cal.com type is booked the same way through cal.com, as the first invitee.
+A host can book a session for other people on the types they give, and an administrator on any type: on the Coaching page's **Settings** tab (**Book for someone**, beside _Your hours_) and from Sales → Bookings (the same booker), choose a type (one they host — any published one, for an administrator — whatever the host's own tier), name the invitees by email — accounts or plain addresses, as many as the type seats — pick a time from the host's hours, and book. Nothing is judged, no credit is spent and nothing is charged: it is the host's courtesy (a client who missed a paid call, rebooked without paying again) or the record of a sale made elsewhere. Every invitee is on the booking — it is on their Coaching tab marked _Booked by …_, they get the booked email with the invitation, they enter the room when there is one — and it counts against no one's allowance. A cal.com type is booked the same way through cal.com, as the first invitee.
 
 ## Include sessions in a membership
 
@@ -121,7 +121,8 @@ A membership product may carry **Sessions included**: rows of a booking type wit
 A type may be booked as a **run** — six weekly sittings, say, all at once. (That is `repeat`, the
 reader choosing how many; `repeats` is the other thing, where the type happens at a fixed time
 whether anybody books or not. A type cannot be both.) It says how many, how far apart — a week, a
-month, a year — and the most anybody may ask for.
+month, a year — and the most anybody may ask for. A run paid with a credit is the type's own number
+of sittings; choosing more is for a run the reader's membership includes, or a free one.
 
 **A run is offered only where every one of its sessions is free.** Offering the first and finding
 out at the sixth that the host is away is the worst way to learn it, so the whole run is checked
@@ -149,7 +150,8 @@ while anybody is still in it.
 
 A type may offer **several lengths**. The first is the default and must be the type's own length, so
 a type with one length and a type with none behave the same. Each may carry a price and a sku of its
-own, for a type paid at the length chosen. The calendar is asked at the length being chosen, because
+own, for a type paid at the length chosen, and the credit spent must be the one for that length:
+a credit bought for the hour does not book the ninety minutes. The calendar is asked at the length being chosen, because
 a ninety-minute session fits in fewer places than an hour and showing the hour's times would offer
 what cannot be booked. A length the type does not offer falls back to its default rather than
 booking whatever was asked for.
@@ -220,7 +222,8 @@ defaults to yes, so a type that says nothing behaves exactly as every type did b
   unpublished: it books exactly as any other does, for anybody with the link who passes its gate.
 
 A **host is not held to these**: they are the person's page's switches, and a host cancels or moves
-a session they are giving whenever they need to.
+a session they are giving whenever they need to. Another host's session is not theirs to move,
+cancel or mark a no-show — only an administrator's, here and through the Scheduling API.
 
 ## Set booking windows and limits
 

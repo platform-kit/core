@@ -103,6 +103,20 @@ A function that is open on purpose — somebody's public page, the site's own cl
 granting `anon` by name, and needs nothing taken back. `build/declarations.test.mjs` refuses any
 that does neither, so a new function cannot quietly inherit the default again.
 
+A `GRANT ALL … TO "service_role"` with no revoke reads as closed and is open to everybody — that is
+how the native scheduler's `book_native`, the agent worker's claim and the order reads were reachable
+by a signed-out visitor — so the file check refuses that too. And the database is asked as well:
+`build/ownership.test.mjs` lists every `SECURITY DEFINER` function a visitor or a reader can call on the
+running stack and fails on any whose body does not ask who is calling (`auth.uid()`, `is_admin()` and
+the other role helpers), unless it is on the test's reviewed list of public reads, each with why.
+
+A reader's own row is not all theirs to write. `guard_profile_privileged` refuses a change to a
+profile's roles, its payment customer, its proven flag and its **address** — the account's own, which
+guest purchases are claimed by and session hosts are named by. A member's `channel_members` row takes
+updates to how the room tells them things (a column grant), never to which room it is or how they came
+to be in it. `comments` is read, never written, from a client: `comment_say` and the moderators' functions
+write it. A provider's offering is guarded on insert as on update, so it cannot be created already on sale.
+
 ## Membership is the only gate a space has
 
 The spaces module is worth reading as an example of the shape the kit prefers for anything with rooms in it. **Visibility is scoped to a space and never to the site**: a channel marked open is open _within its space_, and there is no query, view or policy by which a signed-in person reaches a channel of a space they are not a member of. Every policy is written against a membership set and nothing else — never a role at the site's level, never "signed in". **And the structure is a file.** A space, its rooms, its roles and the grants a site ships are declared under `content/spaces` and projected into those five tables by the build; there is no insert, update or delete policy on any of them for a signed-in role, so an admin screen cannot author the declaration into the database. What an administrator still writes is the acts — a membership, a role given, a capability handed to one person — because those name a person. See [Declarations and state](/content/docs/building-a-site/declarations-and-state). A private channel stays invisible to anybody outside it, an administrator included, and they cannot add themselves to one either — which is the same hole by a longer path. Moderation is therefore over the rooms they can already read, and it is a withdrawal and never a rewrite: the edit guard refuses a body change by anybody but the author.

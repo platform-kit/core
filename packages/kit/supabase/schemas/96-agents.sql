@@ -260,8 +260,9 @@ CREATE POLICY "bots_select" ON "public"."bots" FOR SELECT TO "authenticated", "a
   USING (("published" = true) AND "public"."event_for_me"("audience"));
 CREATE POLICY "agent_runs_select" ON "public"."agent_runs" FOR SELECT TO "authenticated"
   USING (("asked_by" = ( SELECT "auth"."uid"())) OR "public"."is_staff"());
+-- what the tools answered — orders, tickets, transcripts — is the desk's, not every role's
 CREATE POLICY "agent_steps_select_staff" ON "public"."agent_steps" FOR SELECT TO "authenticated"
-  USING ("public"."is_staff"());
+  USING ("public"."is_support"());
 
 GRANT SELECT ON TABLE "public"."bots" TO "anon", "authenticated";
 GRANT ALL ON TABLE "public"."bots" TO "service_role";
@@ -270,7 +271,13 @@ GRANT ALL ON TABLE "public"."agent_runs" TO "service_role";
 GRANT SELECT ON TABLE "public"."agent_steps" TO "authenticated";
 GRANT ALL ON TABLE "public"."agent_steps" TO "service_role";
 
+-- the worker's (agent-run): a run carries the customer's records it was asked about
+REVOKE ALL ON FUNCTION "public"."agent_claim"("text", integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."agent_claim"("text", integer) FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."agent_claim"("text", integer) TO "service_role";
+-- the worker's too; a person reads their own run through agent_runs, under its policy
+REVOKE ALL ON FUNCTION "public"."agent_run_state"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."agent_run_state"("uuid") FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."agent_run_state"("uuid") TO "service_role";
 GRANT ALL ON FUNCTION "public"."agent_cancel"("uuid") TO "authenticated", "service_role";
 GRANT ALL ON FUNCTION "public"."agent_runs_here"("uuid") TO "authenticated", "service_role";
@@ -299,6 +306,9 @@ begin
 end;
 $$;
 
+-- the schedule's (pg_cron, as the owner): it posts to a function with the service secret, so a visitor calling it would run the job
+REVOKE ALL ON FUNCTION "public"."run_agents"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."run_agents"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."run_agents"() TO "service_role";
 
 -- WHAT THE CLOCK IS OWED. A bot may wake on a schedule, and something has to ask whether the time
@@ -322,6 +332,9 @@ begin
 end;
 $$;
 
+-- the schedule's (pg_cron, as the owner): it posts to a function with the service secret, so a visitor calling it would run the job
+REVOKE ALL ON FUNCTION "public"."run_agent_schedules"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."run_agent_schedules"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."run_agent_schedules"() TO "service_role";
 
 -- ---------------------------------------------------------------------------------------------

@@ -7,6 +7,10 @@ CREATE OR REPLACE FUNCTION "public"."claim_guest_purchases"("uid" "uuid", "addr"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
+-- `uid` is the parameter wherever it is unqualified: bookings has a column of that name, and without
+-- this the claim failed as ambiguous the first time it reached the bookings — taking mark_email_verified
+-- down with it, so an address proven by its link was never marked
+#variable_conflict use_variable
 declare
   n integer := 0;
   verified boolean := false;
@@ -15,10 +19,11 @@ begin
   if auth.uid() is not null and auth.uid() <> uid then return 0; end if;
   select email_verified_at is not null into verified
     from public.profiles where id = uid and lower(btrim(email)) = lower(btrim(addr));
-  if not found then return 0; end if;
+  -- nothing is claimed by an address the account hasn't proven: sign-ups are confirmed at once, so
+  -- an unproven address is only somebody's word, and a guest's orders carry where they live
+  if not found or not verified then return 0; end if;
   update public.purchases set user_id = uid
-    where user_id is null and lower(btrim(email)) = lower(btrim(addr))
-      and (kind is distinct from 'session' or verified);
+    where user_id is null and lower(btrim(email)) = lower(btrim(addr));
   get diagnostics n = row_count;
   if n > 0 then
     insert into public.entitlements (user_id, kind, key, source, source_id)

@@ -37,11 +37,25 @@ function asUuid(v) {
   return `${a}-${b.slice(0, 4)}-4${b.slice(5, 8)}-8${c.slice(1, 4)}-${c.slice(4, 8)}${d}`
 }
 
+/* the most a compressed body may open to: a batch is fifty rows of 8 KB at most, and a few KB of gzip can
+   otherwise open to gigabytes */
+export const MAX_DECODED = 1 << 20
+
 /* the JSON of a PostHog body, whatever its encoding; `body` is the raw bytes, `contentType` and `query` the request's */
 export async function decodeBody(body, { contentType = '', query = {}, contentEncoding = '' } = {}) {
   let bytes = body instanceof Uint8Array ? body : new Uint8Array(body)
   const gz = query.compression === 'gzip-js' || /gzip/i.test(contentEncoding) || (bytes.length > 2 && bytes[0] === 0x1f && bytes[1] === 0x8b)
-  if (gz) { const ds = new DecompressionStream('gzip'); const out = new Response(new Blob([bytes]).stream().pipeThrough(ds)); bytes = new Uint8Array(await out.arrayBuffer()) }
+  if (gz) {
+    const reader = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip')).getReader()
+    const parts = []; let size = 0
+    for (;;) {
+      const { done, value } = await reader.read(); if (done) break
+      size += value.length
+      if (size > MAX_DECODED) { await reader.cancel().catch(() => {}); throw new Error('body too large') }
+      parts.push(value)
+    }
+    bytes = new Uint8Array(size); let at = 0; for (const p of parts) { bytes.set(p, at); at += p.length }
+  }
   let text = new TextDecoder().decode(bytes)
   if (/x-www-form-urlencoded/i.test(contentType) || /^data=/.test(text)) {
     const data = new URLSearchParams(text).get('data') || ''

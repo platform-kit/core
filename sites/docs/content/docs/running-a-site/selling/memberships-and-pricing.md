@@ -24,7 +24,7 @@ A **membership** is a tier — a level — and any number of offers may belong t
 
 The ledger writes what somebody owns after they have paid, and **what it decides** is apart from the writing of it, in `_shared/ledger-rules.js` — plain JavaScript over plain objects, so it can be read and checked without a database. The rules, each of which somebody can lose money or access by:
 
-- **the buyer** is what the checkout carried, then Stripe's own reference, then the customer the payment was made under. A guest has none of them: the purchase is written against the address Stripe collected and claimed when an account is made with it.
+- **the buyer** is what the checkout carried, then Stripe's own reference, then the customer the payment was made under. A guest has none of them: the purchase is written against the address Stripe collected and claimed once an account proves it owns that address.
 - **which offer a line is** — the price's lookup key, which is the offer's identity and survives a rename, before the sku, which may have been reused.
 - **a book unlock opens that book. A printed copy and a file open nothing online** — somebody who bought the paperback has not bought the right to read it here.
 - **a session, an offering or a form is one credit PER UNIT**, each its own row: three bought is three owed, and sharing a source id would collide on the upsert and quietly make three into one.

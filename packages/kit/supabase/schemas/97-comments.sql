@@ -283,7 +283,11 @@ DROP POLICY IF EXISTS "comments_update" ON "public"."comments";
 CREATE POLICY "comments_update" ON "public"."comments" FOR UPDATE TO "authenticated"
   USING ("author_id" = (SELECT "auth"."uid"()) OR "public"."is_staff"());
 
-GRANT SELECT, INSERT, UPDATE ON TABLE "public"."comments" TO "authenticated";
+-- READ, NEVER WRITTEN, from a client: comment_say holds and flags, comment_approve and comment_refuse are a
+-- moderator's, and an author who could write the row could approve themselves (approved_at is what makes
+-- them trusted), undo a removal, or move it under another subject. The policies above stay as the second fence.
+REVOKE INSERT, UPDATE ON TABLE "public"."comments" FROM "authenticated";
+GRANT SELECT ON TABLE "public"."comments" TO "authenticated";
 GRANT SELECT ON TABLE "public"."comments" TO "anon";
 GRANT ALL ON TABLE "public"."comments" TO "service_role";
 

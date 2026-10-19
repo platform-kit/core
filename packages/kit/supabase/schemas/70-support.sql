@@ -415,12 +415,14 @@ GRANT ALL ON FUNCTION "public"."guard_support_message_edit"() TO "anon";
 GRANT ALL ON FUNCTION "public"."guard_support_message_edit"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."guard_support_message_edit"() TO "service_role";
 
-GRANT ALL ON FUNCTION "public"."run_support_escalation"() TO "anon";
-GRANT ALL ON FUNCTION "public"."run_support_escalation"() TO "authenticated";
+-- the schedule's (pg_cron, as the owner): it posts to a function with the service secret, so a visitor calling it would run the job
+REVOKE ALL ON FUNCTION "public"."run_support_escalation"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."run_support_escalation"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."run_support_escalation"() TO "service_role";
 
-GRANT ALL ON FUNCTION "public"."run_support_retention"() TO "anon";
-GRANT ALL ON FUNCTION "public"."run_support_retention"() TO "authenticated";
+-- the schedule's (pg_cron, as the owner): it posts to a function with the service secret, so a visitor calling it would run the job
+REVOKE ALL ON FUNCTION "public"."run_support_retention"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."run_support_retention"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."run_support_retention"() TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."support_agents"() TO "anon";

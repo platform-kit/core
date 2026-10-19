@@ -127,8 +127,9 @@ CREATE POLICY "push_subscriptions_own_select" ON "public"."push_subscriptions" F
 
 CREATE POLICY "push_subscriptions_own_update" ON "public"."push_subscriptions" FOR UPDATE TO "authenticated" USING (("user_id" = "auth"."uid"())) WITH CHECK ((("user_id" = "auth"."uid"()) AND "public"."is_staff"()));
 
-GRANT ALL ON FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") TO "anon";
-GRANT ALL ON FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") TO "authenticated";
+-- it posts with the service secret, worded by its caller: only the push triggers above (definer) call it
+REVOKE ALL ON FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."push_on_booking"() TO "anon";

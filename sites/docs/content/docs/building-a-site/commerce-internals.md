@@ -74,7 +74,7 @@ The catalog carries a session type whole, including the hours it is bookable at 
 
 The ledger writes what somebody owns once Stripe says they have paid. **What it decides** is apart from the writing of it, in `_shared/ledger-rules.js` — plain functions over plain objects, no client and no network, so the decisions can be read and checked on their own:
 
-- `buyerOf(session)` — the checkout's own `user_id`, then Stripe's `client_reference_id`, then the customer the payment was made under. A guest has none of the three: the purchase is written against the address Stripe collected, and claimed when an account is later made with it.
+- `buyerOf(session)` — the checkout's own `user_id`, then Stripe's `client_reference_id`, then the customer the payment was made under. A guest has none of the three: the purchase is written against the address Stripe collected, and claimed once an account proves it owns that address.
 - `offerOfLine(line)` — a line is matched by the price's **lookup key**, which is the offer's identity and survives a rename, before its sku, which may have been reused.
 - `grantsOf(...)` — what the payment gives. A book unlock opens that book; **a printed copy and a file open nothing online**. A session, an offering or a form is one credit **per unit**, each its own row, because three bought is three owed and a shared source id would collide on the upsert and quietly make three into one.
 - `ships`, `carriesFiles`, `opensOnline` — the three questions the ledger asks of an offer afterwards.
@@ -381,7 +381,7 @@ A subscriber choosing another plan is switched by `create-checkout-session`, nev
 
 ## Guests
 
-A bag of print and download lines alone checks out with no JWT (`guestCart` in `lib/shipto.js` is the client's side of the rule): no Stripe customer, Checkout asks the email, the ledger writes the purchase and the print order with that email and no user, `confirm-checkout` accepts a guest's session. `claim_guest_purchases`, called from `handle_new_user`, puts a guest's purchases and orders on an account later made with that address and grants the paid class.
+A bag of print and download lines alone checks out with no JWT (`guestCart` in `lib/shipto.js` is the client's side of the rule): no Stripe customer, Checkout asks the email, the ledger writes the purchase and the print order with that email and no user, `confirm-checkout` accepts a guest's session. `claim_guest_purchases` puts a guest's purchases, orders and bookings on an account with that address and grants the paid class — once the account has **proven** the address: `mark_email_verified` after a sign-in by the emailed link or a provider, or `handle_new_user` for a provider sign-up, whose address is proven at once. Sign-ups by password are confirmed at once, so an address is only somebody's word until then, and nothing is claimed by it. The address is the account's own (`auth.users`): `profiles.email` is not the reader's to write.
 
 ## Print orders
 

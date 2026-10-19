@@ -7,7 +7,7 @@
  */
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { json, preflight, getUser, admin } from '../_shared/lib.ts'
-import { rolesOf, isProvider } from '../_shared/roles.ts'
+import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { deliverSchedulingEvent } from '../_shared/scheduling-events.ts'
 import { typeFor, videoOf, videoIdOf } from '../_shared/cal.ts'
 
@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
   if (!['accepted', 'pending', 'ended'].includes(b.status)) return json({ error: 'this session is cancelled', code: 'over' }, 410)
   const { data: prof } = await admin.from('profiles').select('role, display_name, email').eq('id', user.id).maybeSingle()
   const callerRoles = await rolesOf(user.id)
-  const role: 'host' | 'attendee' = b.host_id === user.id || b.provider_id === user.id || (isProvider(callerRoles) && b.user_id !== user.id) ? 'host' : 'attendee'
+  const role: 'host' | 'attendee' = b.host_id === user.id || b.provider_id === user.id || (isAdmin(callerRoles) && b.user_id !== user.id) ? 'host' : 'attendee'
   if (action === 'record' || action === 'end') {
     if (role !== 'host') return json({ error: 'the host\'s alone', code: 'not-host' }, 403)
     if (action === 'record') { try { return json({ ok: true, ...(await v.record(b)) }) } catch (e) { return json({ error: String((e as any)?.message ?? e), code: 'record' }, 502) } }

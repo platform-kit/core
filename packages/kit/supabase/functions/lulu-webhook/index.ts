@@ -7,9 +7,13 @@ import { printer, refreshPrintOrder } from '../_shared/print.ts'
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
+  const p = printer('lulu')
+  /* a mocked printer has nobody to call it, and each read of a mock job moves it on a step: a call here
+     could only be somebody walking a pretend order to "shipped" */
+  if (p.mock()) return json({ ok: true, ignored: 'mock printer' })
   let body: any
   try { body = await req.json() } catch { return json({ error: 'bad request' }, 400) }
-  const jobId = printer('lulu').webhook(body)
+  const jobId = p.webhook(body)
   if (!jobId) return json({ ok: true, ignored: 'no job' })
   const { data: row } = await admin.from('fulfilments').select('*').eq('supplier_job', jobId).maybeSingle()
   if (!row) return json({ ok: true, ignored: 'unknown job' })

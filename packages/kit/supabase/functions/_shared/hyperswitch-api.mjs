@@ -231,7 +231,11 @@ function stringMetadata(value) {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => typeof item === 'string'))
 }
 
-export async function verifyHyperswitchWebhook(request, secret) {
+/* how old a signed event may be: Hyperswitch retries a failed delivery over hours, so three days is
+   generous, and an event replayed after it — the event id's record is gone once handling failed — is refused */
+export const HYPERSWITCH_WEBHOOK_TOLERANCE_S = 3 * 86400
+
+export async function verifyHyperswitchWebhook(request, secret, { now = Date.now() } = {}) {
   const signingKey = requiredText(secret, 'HYPERSWITCH_WEBHOOK_SECRET')
   const rawBody = new Uint8Array(await request.arrayBuffer())
   const supplied = request.headers.get('X-Webhook-Signature-512') ?? ''
@@ -257,6 +261,10 @@ export async function verifyHyperswitchWebhook(request, secret) {
       !envelope.content.object || typeof envelope.content.object !== 'object' ||
       Array.isArray(envelope.content.object)) {
     throw new PaymentProviderError('invalid_webhook', 'Hyperswitch webhook envelope is incomplete.', 400)
+  }
+  const sent = epochSeconds(envelope.timestamp)
+  if (sent !== null && Math.floor(now / 1000) - sent > HYPERSWITCH_WEBHOOK_TOLERANCE_S) {
+    throw new PaymentProviderError('invalid_webhook', 'Hyperswitch webhook event is older than the tolerance.', 400)
   }
 
   const object = envelope.content.object

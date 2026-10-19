@@ -9,6 +9,20 @@
  */
 const DEFAULT_API = 'https://api.cal.com/v2'
 
+/*
+ * THE APP'S OWN MARK on a booking it made (metadata.pk): an HMAC of who and when under a key only the
+ * server holds. A booking the app made was judged before it was made, so the webhook does not judge it
+ * again — and a word in the metadata (`app: 'platformkit'`) is something cal.com's public booking page
+ * may let anybody set, which would let a member book past their allowance straight on cal.com.
+ */
+export async function appMark(secret, user_id, start) {
+  if (!secret || !user_id || !start) return null
+  const at = Date.parse(start); if (!Number.isFinite(at)) return null
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode('platformkit-cal-mark:' + secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(user_id + '|' + new Date(at).toISOString()))
+  return Array.from(new Uint8Array(mac)).map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 export function cal(env) {
   /* the base is cal.com's unless CAL_API_BASE says another — a site's own Scheduling API (scheduling-api), for one: the
      same client, pointed at the site, books on the native calendar (the closed loop the test runs) */
@@ -53,7 +67,7 @@ export function cal(env) {
         start, eventTypeId: t.id,
         attendee: { name: attendee.name || attendee.email, email: attendee.email, timeZone: attendee.timeZone, language: 'en' },
         metadata: {
-          user_id, app: 'platformkit',
+          user_id, app: 'platformkit', pk: await appMark(env('SUPABASE_SERVICE_ROLE_KEY'), user_id, start),
           ...(checkout_identity ? { checkout_identity } : {}),
           ...(stripe_checkout_session_id ? { stripe_checkout_session_id } : {}),
         },

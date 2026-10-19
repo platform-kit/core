@@ -11,6 +11,8 @@ ok('drop table if exists', hit('drop table if exists public.bookings cascade;').
 ok('drop schema', hit('DROP SCHEMA "site" CASCADE;').join() === 'drop schema site')
 ok('truncate', hit('truncate table public.events;').join() === 'truncate public.events')
 ok('truncate only', hit('TRUNCATE ONLY "public"."events" RESTART IDENTITY;').join() === 'truncate public.events')
+ok('a grant that names truncate truncates nothing', hit('GRANT DELETE, SELECT, TRUNCATE ON TABLE "public"."comments" TO "authenticated";').length === 0)
+ok('nor does a revoke', hit('REVOKE TRUNCATE ON TABLE public.events FROM anon;').length === 0)
 ok('drop column', hit('ALTER TABLE "public"."profiles"\n  DROP COLUMN "scratch_col";').join() === 'drop column public.profiles.scratch_col')
 ok('drop column bare', hit('alter table public.profiles drop scratch_col;').join() === 'drop column public.profiles.scratch_col')
 ok('drop not null is not a dropped column', hit('ALTER TABLE "public"."content"\n  ALTER COLUMN "text" DROP NOT NULL;').length === 0)

@@ -536,7 +536,7 @@ GRANT ALL ON FUNCTION "public"."admin_funnels"("days" integer, "goals" "jsonb") 
 
 REVOKE ALL ON FUNCTION "public"."email_audience"("rules" "jsonb") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."email_audience"("rules" "jsonb") FROM "anon", "authenticated";
-GRANT ALL ON FUNCTION "public"."email_audience"("rules" "jsonb") TO "authenticated";
+-- every member's address: the senders (service) and email_audience_count (an administrator's) ask, never a person
 GRANT ALL ON FUNCTION "public"."email_audience"("rules" "jsonb") TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."email_audience_count"("rules" "jsonb") TO "anon";
@@ -545,7 +545,7 @@ GRANT ALL ON FUNCTION "public"."email_audience_count"("rules" "jsonb") TO "servi
 
 REVOKE ALL ON FUNCTION "public"."email_audience_match"("uid" "uuid", "rules" "jsonb") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."email_audience_match"("uid" "uuid", "rules" "jsonb") FROM "anon", "authenticated";
-GRANT ALL ON FUNCTION "public"."email_audience_match"("uid" "uuid", "rules" "jsonb") TO "authenticated";
+-- about any account by id: a person asks about themselves through email_audience_me
 GRANT ALL ON FUNCTION "public"."email_audience_match"("uid" "uuid", "rules" "jsonb") TO "service_role";
 
 GRANT ALL ON FUNCTION "public"."email_audience_me"("rules" "jsonb") TO "anon";
@@ -564,8 +564,9 @@ GRANT ALL ON FUNCTION "public"."email_stats"() TO "anon";
 GRANT ALL ON FUNCTION "public"."email_stats"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."email_stats"() TO "service_role";
 
-GRANT ALL ON FUNCTION "public"."run_email_funnels"() TO "anon";
-GRANT ALL ON FUNCTION "public"."run_email_funnels"() TO "authenticated";
+-- the schedule's (pg_cron, as the owner): it posts to a function with the service secret, so a visitor calling it would run the job
+REVOKE ALL ON FUNCTION "public"."run_email_funnels"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."run_email_funnels"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."run_email_funnels"() TO "service_role";
 
 GRANT ALL ON TABLE "public"."email_events" TO "anon";

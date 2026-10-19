@@ -14,6 +14,9 @@ Deno.serve(async (req) => {
   const id = new URL(req.url).searchParams.get('provider') || 'lulu'
   let p: any
   try { p = printer(id) } catch { return json({ error: 'unknown printer' }, 400) }
+  /* a mocked printer has nobody to call it, and each read of a mock job moves it on a step: a call here
+     could only be somebody walking a pretend order to "shipped" */
+  if (p.mock()) return json({ ok: true, ignored: 'mock printer' })
   let body: any
   try { body = await req.json() } catch { return json({ error: 'bad request' }, 400) }
   const jobId = p.webhook(body)

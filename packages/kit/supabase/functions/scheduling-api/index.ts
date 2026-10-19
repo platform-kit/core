@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
   const key = await keyOf(token, ['scheduling'])
   if (key === 'other-kind') return err(403, 'This key does not open the Scheduling API: make one of kind scheduling under Settings → API.')
   if (key) caller = { kind: 'key', id: key.id ?? 'key' }
-  else if (token) { const user = await getUser(req); if (user) { const { data: prof } = await admin.from('profiles').select('email, display_name, role, roles').eq('id', user.id).maybeSingle(); caller = { kind: 'jwt', id: user.id, email: (user.email ?? prof?.email ?? '').toLowerCase(), role: (Array.isArray(prof?.roles) && (prof.roles.includes('provider') || prof.roles.includes('coach') || prof.roles.includes('admin'))) || prof?.role === 'admin' ? 'admin' : 'user', name: (user.user_metadata?.full_name ?? user.user_metadata?.name ?? prof?.display_name ?? '') as string } } }
+  else if (token) { const user = await getUser(req); if (user) { const { data: prof } = await admin.from('profiles').select('email, email_verified_at, display_name, role, roles').eq('id', user.id).maybeSingle(); caller = { kind: 'jwt', id: user.id, email: prof?.email_verified_at ? (prof?.email ?? '').toLowerCase() : '', role: (Array.isArray(prof?.roles) && prof.roles.includes('admin')) || prof?.role === 'admin' ? 'admin' : 'user', name: (user.user_metadata?.full_name ?? user.user_metadata?.name ?? prof?.display_name ?? '') as string } } }
   if (!caller) return err(401, 'A key of kind scheduling, or a signed-in reader.')
   const rl = await rateLimit(caller.id); extra = rl.headers
   if (rl.over) return reply(fail(429, 'TOO_MANY_REQUESTS', 'Rate limit exceeded.').body, 429, { 'Retry-After': String(rl.reset) })

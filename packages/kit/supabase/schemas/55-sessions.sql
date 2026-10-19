@@ -399,7 +399,9 @@ CREATE POLICY "provider_overrides_own" ON "public"."provider_overrides" USING ((
 CREATE POLICY "provider_overrides_admin_read" ON "public"."provider_overrides" FOR SELECT USING ("public"."is_admin"());
 
 -- the people on the booking, and an administrator (the desk's Bookings page)
-CREATE POLICY "bookings_select_party" ON "public"."bookings" FOR SELECT USING (("public"."is_admin"() OR ("auth"."uid"() = "user_id") OR ("auth"."uid"() = "provider_id") OR ("lower"(COALESCE(("auth"."jwt"() ->> 'email'::"text"), ''::"text")) = ANY ("attendee_emails")) OR (("email" IS NOT NULL) AND ("lower"("email") = "lower"(COALESCE(("auth"."jwt"() ->> 'email'::"text"), ''::"text")))) OR (("provider_email" IS NOT NULL) AND ("lower"("provider_email") = "lower"(COALESCE(("auth"."jwt"() ->> 'email'::"text"), ''::"text"))))));
+-- by address only once the account has PROVEN it (my_proven_email): sign-ups are confirmed at once, so the
+-- address in a token is only what somebody typed, and a guest's booking carries its join link and recording
+CREATE POLICY "bookings_select_party" ON "public"."bookings" FOR SELECT USING (("public"."is_admin"() OR ("auth"."uid"() = "user_id") OR ("auth"."uid"() = "provider_id") OR ("public"."my_proven_email"() = ANY ("attendee_emails")) OR (("email" IS NOT NULL) AND ("lower"("email") = "public"."my_proven_email"())) OR (("provider_email" IS NOT NULL) AND ("lower"("provider_email") = "public"."my_proven_email"()))));
 
 REVOKE ALL ON FUNCTION "public"."refuse_booking"("p_uid" "text", "p_reason" "text", "p_body" "text") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."refuse_booking"("p_uid" "text", "p_reason" "text", "p_body" "text") FROM "anon", "authenticated";
@@ -409,19 +411,25 @@ REVOKE ALL ON FUNCTION "public"."send_booking_followups"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."send_booking_followups"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."send_booking_followups"() TO "service_role";
 
-GRANT ALL ON FUNCTION "public"."run_session_recordings"() TO "anon";
-GRANT ALL ON FUNCTION "public"."run_session_recordings"() TO "authenticated";
+-- the schedule's (pg_cron, as the owner): it posts to a function with the service secret, so a visitor calling it would run the job
+REVOKE ALL ON FUNCTION "public"."run_session_recordings"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."run_session_recordings"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."run_session_recordings"() TO "service_role";
 
-GRANT ALL ON FUNCTION "public"."run_session_recordings_retain"() TO "anon";
-GRANT ALL ON FUNCTION "public"."run_session_recordings_retain"() TO "authenticated";
+-- the schedule's (pg_cron, as the owner): it posts to a function with the service secret, so a visitor calling it would run the job
+REVOKE ALL ON FUNCTION "public"."run_session_recordings_retain"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."run_session_recordings_retain"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."run_session_recordings_retain"() TO "service_role";
 
+-- the native scheduler's write (book-session, after the judge): it takes a whole row, so nobody else may call it
+REVOKE ALL ON FUNCTION "public"."book_native"("p" "jsonb", "p_seats" integer, "p_hosts" "uuid"[]) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."book_native"("p" "jsonb", "p_seats" integer, "p_hosts" "uuid"[]) FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."book_native"("p" "jsonb", "p_seats" integer, "p_hosts" "uuid"[]) TO "service_role";
 REVOKE ALL ON TABLE "public"."booking_checkout_fulfilments" FROM PUBLIC, "anon", "authenticated";
 GRANT ALL ON TABLE "public"."booking_checkout_fulfilments" TO "service_role";
-GRANT ALL ON FUNCTION "public"."run_session_reminders"() TO "anon";
-GRANT ALL ON FUNCTION "public"."run_session_reminders"() TO "authenticated";
+-- the schedule's (pg_cron, as the owner): it posts to a function with the service secret, so a visitor calling it would run the job
+REVOKE ALL ON FUNCTION "public"."run_session_reminders"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."run_session_reminders"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."run_session_reminders"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."admin_hosts"() TO "anon";
 GRANT ALL ON FUNCTION "public"."admin_hosts"() TO "authenticated";

@@ -57,7 +57,7 @@ Content gates use these reader classes:
 | **paid**          | Has made a purchase that qualifies for the specific gated content.                      |
 | **subscribed**    | Has a live membership. A paid session separately grants a week of coaching-chat access. |
 
-Higher classes include the access of lower classes. A printed copy or file does not, by itself, unlock a book online; only the book's online offer does. A guest purchase can be claimed when an account is later made with the same email address.
+Higher classes include the access of lower classes. A printed copy or file does not, by itself, unlock a book online; only the book's online offer does. A guest purchase is claimed by an account with the same email address once that account proves it owns the address, by signing in through the emailed link or with a provider. Until then the purchase stays with the address, so somebody who signs up with another person's address gets nothing of theirs.
 
 ## Staff roles
 

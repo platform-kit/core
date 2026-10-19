@@ -2,11 +2,29 @@
 title: Emails and funnels internals
 description: The designs' compile and fill, the auth emails, the funnel grammar, the audience query, the runner, identity and tracking, and chat prompts.
 order: 55
-sources: [packages/kit/build/emails.mjs, packages/kit/build/funnels.mjs, packages/kit/build/funnel-io.mjs, packages/kit/build/auth-config.mjs, packages/kit/build/emails.mjs, packages/kit/supabase/functions/_shared/emails, packages/kit/supabase/functions/_shared/marketing.ts, packages/kit/supabase/functions/funnels-run, packages/kit/supabase/functions/email-track, packages/kit/supabase/functions/email-unsubscribe, packages/kit/src/lib/support/when.js, packages/kit/src/lib/support/prompts.js, packages/kit/build/chat-email-strings.mjs, packages/kit/supabase/functions/send-email, packages/kit/supabase/functions/social, packages/kit/supabase/functions/session-reminders, packages/kit/supabase/functions/_shared/session-mail.ts, packages/kit/supabase/functions/_shared/ics.js]
+sources:
+  [
+    packages/kit/build/emails.mjs,
+    packages/kit/build/funnels.mjs,
+    packages/kit/build/funnel-io.mjs,
+    packages/kit/build/auth-config.mjs,
+    packages/kit/build/emails.mjs,
+    packages/kit/supabase/functions/_shared/emails,
+    packages/kit/supabase/functions/_shared/marketing.ts,
+    packages/kit/supabase/functions/funnels-run,
+    packages/kit/supabase/functions/email-track,
+    packages/kit/supabase/functions/email-unsubscribe,
+    packages/kit/src/lib/support/when.js,
+    packages/kit/src/lib/support/prompts.js,
+    packages/kit/build/chat-email-strings.mjs,
+    packages/kit/supabase/functions/send-email,
+    packages/kit/supabase/functions/social,
+    packages/kit/supabase/functions/session-reminders,
+    packages/kit/supabase/functions/_shared/session-mail.ts,
+    packages/kit/supabase/functions/_shared/ics.js,
+  ]
 reviewed: 2026-10-09
 ---
-
-
 
 > The compile (`build/funnels.mjs`) runs **over the store**, so the same code answers from a checkout on a
 > machine and from the rows in an Edge Function — which is what lets a publish make this artefact
@@ -26,7 +44,7 @@ The confirmation (also the magic-link sign-in), recovery and recipient-bound Soc
 
 ## The funnel grammar
 
-The policy (`content/emails/policy.md`, `normalizePolicy` in `_shared/emails/rules.js`) carries the counts, the desk's clocks (`support-wait`, `support-presence`, `support-keep-files`) and `recordings-keep` — the days a coaching call's recording is kept, 0 forever, read by the `session-recordings` function's nightly retain — and `session-reminders`, the hours before a native session the person is reminded (a list, largest first; `[24, 1]` when absent, `[]` for none), read by the `session-reminders` function pg_cron calls every five minutes. The four `session-*` kinds are filled by `_shared/session-mail.ts` from the booking (`name` the recipient's first name, `with` the other side, `when` in each person's zone, `where` from `_shared/session-mail.ts`'s `placeOf`, `join`, `manage`, the reminder's `in`) and sent with an invitation from `_shared/ics.js` (pure; `build/ics.test.mjs` pins it) as nodemailer's `icalEvent` — `sendEmail`'s `ical` option; a filled subject is unescaped (`unescapeText` in `fill.js`), since it is plain text. `content/funnels/<name>.md`: frontmatter `title`, `published`, `design`, `cooldown`, `audience` (the rules), then a step per `# ` heading with `after`, `subject` and the email's markdown — or `channel: chat`, `when`, an optional `teaser` and `image`, and a closing `- ` list of choices (nested by two spaces, up to three deep). `content/blasts/<name>.md`: `title`, `subject`, `design`, `audience`, `respect-cooldown`, the markdown, and what the send wrote back (`status: sent`, `sent_at`, `sent`). `content/emails/policy.md`: `daily`, `weekly`, `monthly`, `blasts-respect-cooldown`, `support-wait`, `support-presence`, `support-keep-files`.
+The policy (`content/emails/policy.md`, `normalizePolicy` in `_shared/emails/rules.js`) carries the counts, the desk's clocks (`support-wait`, `support-presence`, `support-keep-files`) and `recordings-keep` — the days a coaching call's recording is kept, 0 forever, read by the `session-recordings` function's nightly retain — and `session-reminders`, the hours before a native session the person is reminded (a list, largest first; `[24, 1]` when absent, `[]` for none), read by the `session-reminders` function pg_cron calls every five minutes — and the public doors' limits, what one visitor may send in an hour (`limit-checkout` 30, `limit-forms` 300, `limit-analytics` 1200 when absent; `_shared/doors.ts`). The four `session-*` kinds are filled by `_shared/session-mail.ts` from the booking (`name` the recipient's first name, `with` the other side, `when` in each person's zone, `where` from `_shared/session-mail.ts`'s `placeOf`, `join`, `manage`, the reminder's `in`) and sent with an invitation from `_shared/ics.js` (pure; `build/ics.test.mjs` pins it) as nodemailer's `icalEvent` — `sendEmail`'s `ical` option; a filled subject is unescaped (`unescapeText` in `fill.js`), since it is plain text. `content/funnels/<name>.md`: frontmatter `title`, `published`, `design`, `cooldown`, `audience` (the rules), then a step per `# ` heading with `after`, `subject` and the email's markdown — or `channel: chat`, `when`, an optional `teaser` and `image`, and a closing `- ` list of choices (nested by two spaces, up to three deep). `content/blasts/<name>.md`: `title`, `subject`, `design`, `audience`, `respect-cooldown`, the markdown, and what the send wrote back (`status: sent`, `sent_at`, `sent`). `content/emails/policy.md`: `daily`, `weekly`, `monthly`, `blasts-respect-cooldown`, `support-wait`, `support-presence`, `support-keep-files`, `recordings-keep`, `session-reminders`, `limit-checkout`, `limit-forms`, `limit-analytics`.
 
 `build/funnel-io.mjs` is the grammar (read and written by the admin); `build/funnels.mjs` compiles all three into `supabase/functions/_shared/emails/funnels.json` — each step's and blast's markdown as email html with the styles inline (`_shared/emails/markdown.js`, under _shared because the providers function turns the terms into a letter with the same styles), each audience as the query's rules, a book's slug widened to its skus by the catalog, the chat steps apart as `prompts` (and, for the widget, into `.velite/support-prompts.json`; the policy's two desk clocks into `.velite/desk-policy.json`, which is how the staff's desk says what a support thread is owed without a second copy of the number; for the admin's funnel analytics, the funnels' shape — names, steps with their ids and delays, goals, audiences, never a body — into `.velite/funnels-index.json`) — run by the deploy, by every admin save, and by `platformkit test`, which refuses a step with no subject, an `after` that is not a span, a rule that is not one of `RULE_KEYS`, a design that is not compiled, or a `goal` that is not a path beginning with `/`.
 

@@ -14,6 +14,12 @@ begin
     if new.stripe_customer_id is distinct from old.stripe_customer_id then
       raise exception 'profiles.stripe_customer_id is not user-writable';
     end if;
+    -- the address is the account's own (auth.users), which only a confirmed change moves: guest
+    -- purchases are claimed by it and session hosts are named by it, so a profile that could name
+    -- any address could take a stranger's orders or their place on a host's calendar
+    if new.email is distinct from old.email then
+      raise exception 'profiles.email is not user-writable';
+    end if;
     -- only set_roles() may change these, and it says so for its transaction
     if new.roles is distinct from old.roles
        and coalesce(current_setting('app.setting_roles', true), '') <> '1' then
@@ -154,6 +160,10 @@ begin
   if not (want <@ array['admin', 'provider', 'editor', 'support', 'analyst']) then
     return jsonb_build_object('ok', false, 'why', 'a role this site has never heard of');
   end if;
+  -- ONE ROLE CHANGE AT A TIME: two administrators taking each other's role at the same moment would
+  -- each count the other and both succeed, leaving none. The lock is the transaction's, so the second
+  -- counts after the first has committed.
+  perform pg_advisory_xact_lock(hashtext('platformkit.set_roles'));
   if 'admin' <> all(want) then
     select count(*) into admins from public.profiles where 'admin' = any(roles) and id <> p_user;
     if admins = 0 then return jsonb_build_object('ok', false, 'why', 'last-admin'); end if;
@@ -314,6 +324,20 @@ CREATE OR REPLACE FUNCTION "public"."is_subscribed"() RETURNS boolean
   );
 $$;
 
+-- the signed-in account's address, lower-cased, once it has proven it (mark_email_verified) — null otherwise;
+-- what a policy matches a guest's records by, never the address a token merely carries
+CREATE OR REPLACE FUNCTION "public"."my_proven_email"() RETURNS "text"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  select lower(btrim(u.email)) from auth.users u join public.profiles p on p.id = u.id
+   where u.id = auth.uid() and p.email_verified_at is not null and lower(btrim(p.email)) = lower(btrim(u.email));
+$$;
+
+REVOKE ALL ON FUNCTION "public"."my_proven_email"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."my_proven_email"() FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."my_proven_email"() TO "anon", "authenticated", "service_role";
+
 CREATE OR REPLACE FUNCTION "public"."mark_email_verified"() RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -332,7 +356,8 @@ begin
   end if;
   perform set_config('app.verifying_email', '1', true);
   update public.profiles set email_verified_at = coalesce(email_verified_at, now()) where id = auth.uid();
-  select email into addr from public.profiles where id = auth.uid();
+  -- the address the token proved, which is the account's, never a field on the profile
+  select email into addr from auth.users where id = auth.uid();
   perform public.claim_guest_purchases(auth.uid(), addr);
   return true;
 end;

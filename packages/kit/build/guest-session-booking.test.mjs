@@ -38,8 +38,9 @@ ok('guest Checkout refuses absent booking details, mixed lines, multiple units, 
     && guestSessionSku([{ sku: 'public-session' }], {}, true, offerOf) === null)
 const commerceSchema = fs.readFileSync(new URL('../supabase/schemas/40-commerce.sql', import.meta.url), 'utf8')
 const sessionSchema = fs.readFileSync(new URL('../supabase/schemas/55-sessions.sql', import.meta.url), 'utf8')
-ok('session purchases do not receive the generic paid-class entitlement before email verification',
-  /p\.kind is distinct from 'session'/.test(commerceSchema) && /or verified\)/.test(commerceSchema))
+/* nothing at all is claimed by an address the account has not proven (ownership.test.mjs asks it of the stack) */
+ok('no purchase, session or otherwise, is claimed before email verification',
+  /if not found or not verified then return 0;/.test(commerceSchema) && /p\.kind is distinct from 'session'/.test(commerceSchema))
 ok('email claiming compares normalized addresses and waits for verification for session rows',
   /lower\(btrim\(email\)\) = lower\(btrim\(addr\)\)/.test(commerceSchema)
     && /if verified then\s+update public\.bookings/.test(commerceSchema))

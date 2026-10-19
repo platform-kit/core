@@ -450,6 +450,10 @@ verify_jwt = false
 [functions.cal-webhook]
 verify_jwt = false
 
+# Meta, LinkedIn and Zernio call with their own signature, checked over the raw body before anything is read
+[functions.social-webhook]
+verify_jwt = false
+
 [functions.lulu-webhook]
 verify_jwt = false
 

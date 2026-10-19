@@ -2060,6 +2060,11 @@ REVOKE ALL ON FUNCTION "public"."run_spaces_sweep"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."run_spaces_sweep"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."run_spaces_sweep"() TO "service_role";
 
+-- a broadcast on any room's topic: the message triggers and the call's end (the server) send it, never a visitor
+REVOKE ALL ON FUNCTION "public"."space_wake"("p_channel" "uuid", "p_event" "text", "p_payload" "jsonb") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."space_wake"("p_channel" "uuid", "p_event" "text", "p_payload" "jsonb") FROM "anon", "authenticated";
+GRANT ALL ON FUNCTION "public"."space_wake"("p_channel" "uuid", "p_event" "text", "p_payload" "jsonb") TO "service_role";
+
 -- Somebody who was not here to see it is told by email, under the restraint the chats keep: one per
 -- burst, and never before they have read what the last one was about. The function does the sending;
 -- this decides whether there is anything to send and stamps that it was.
@@ -3079,7 +3084,12 @@ GRANT SELECT ON TABLE "public"."space_members" TO "authenticated";
 GRANT ALL ON TABLE "public"."space_members" TO "service_role";
 GRANT SELECT ON TABLE "public"."channels" TO "authenticated";
 GRANT ALL ON TABLE "public"."channels" TO "service_role";
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "public"."channel_members" TO "authenticated";
+-- A MEMBER'S OWN ROW, BUT NOT ALL OF IT: they choose how the room tells them things; which room it is,
+-- whose row it is, and how they came to be there (the sweep takes back only what a rule gave) are
+-- never theirs to change, or one update moves them into a private room or past a lapsed membership
+REVOKE UPDATE ON TABLE "public"."channel_members" FROM "authenticated";
+GRANT SELECT, INSERT, DELETE ON TABLE "public"."channel_members" TO "authenticated";
+GRANT UPDATE ("last_read_seq", "mention_count", "notify", "muted_until", "starred") ON TABLE "public"."channel_members" TO "authenticated";
 GRANT ALL ON TABLE "public"."channel_members" TO "service_role";
 GRANT SELECT, INSERT, UPDATE ON TABLE "public"."space_messages" TO "authenticated";
 GRANT ALL ON TABLE "public"."space_messages" TO "service_role";
@@ -3199,7 +3209,8 @@ REVOKE ALL ON FUNCTION "public"."space_banned"("uuid", "uuid") FROM "anon", "aut
 GRANT ALL ON FUNCTION "public"."space_banned"("uuid", "uuid") TO "authenticated", "service_role";
 REVOKE ALL ON FUNCTION "public"."space_shadowed"("uuid", "uuid") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."space_shadowed"("uuid", "uuid") FROM "anon", "authenticated";
-GRANT ALL ON FUNCTION "public"."space_shadowed"("uuid", "uuid") TO "authenticated", "service_role";
+-- whether somebody is shadowed is the moderators' to know (space_mark_shadowed asks it, as the owner): told to anybody, it tells the shadowed
+GRANT ALL ON FUNCTION "public"."space_shadowed"("uuid", "uuid") TO "service_role";
 REVOKE ALL ON FUNCTION "public"."space_sees"(boolean, "uuid", "uuid") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."space_sees"(boolean, "uuid", "uuid") FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."space_sees"(boolean, "uuid", "uuid") TO "authenticated", "service_role";
@@ -3245,7 +3256,9 @@ GRANT ALL ON FUNCTION "public"."space_activity"(integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."space_unseen"(integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."space_later"(integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."space_fill_values"("jsonb", "text") TO "authenticated", "anon", "service_role";
-GRANT ALL ON FUNCTION "public"."space_fill_set_matches"("uuid", "jsonb") TO "authenticated";
+-- about any account by id (whether it has paid, which tiers it holds): space_fill_matches asks it, as the owner
+REVOKE ALL ON FUNCTION "public"."space_fill_set_matches"("uuid", "jsonb") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."space_fill_set_matches"("uuid", "jsonb") FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."space_fill_set_matches"("uuid", "jsonb") TO "service_role";
 GRANT ALL ON FUNCTION "public"."may_see_member"("uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."may_see_member"("uuid") TO "service_role";

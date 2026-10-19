@@ -2,8 +2,14 @@
 title: The community as a Matrix homeserver
 description: The site's spaces and channels served as Matrix's Client-Server API, so Element and every other Matrix client works against it — how it is built, how a session stays the person's own, and what is deliberately absent.
 order: 56.99
-sources: [packages/kit/supabase/functions/matrix-api, packages/kit/supabase/functions/_shared/matrix, packages/kit/supabase/schemas/91-matrix.sql, packages/kit/build/matrix-api.test.mjs]
-reviewed: 2026-10-02
+sources:
+  [
+    packages/kit/supabase/functions/matrix-api,
+    packages/kit/supabase/functions/_shared/matrix,
+    packages/kit/supabase/schemas/91-matrix.sql,
+    packages/kit/build/matrix-api.test.mjs,
+  ]
+reviewed: 2026-10-19
 ---
 
 The community — spaces, channels, threads, direct messages — is served as a **Matrix homeserver's Client-Server API**. Element, FluffyChat, Nheko, Cinny and every other Matrix client signs in and reads the site's rooms with the host swapped, on iOS, Android, macOS, Windows and Linux, without this platform shipping an application of its own. Modules: `spaces` and `api`.
@@ -14,20 +20,20 @@ It is the same move the Chatwoot, Shopify, cal.com, Typeform and Contentful surf
 
 There is no event graph, no room DAG, no state resolution, no second copy of a message.
 
-| Matrix | Here |
-| --- | --- |
-| room | a `channels` row |
-| Space | a `spaces` row, its channels the children |
-| event id | the message's own id |
-| sync position | `space_messages.seq`, per channel |
-| `m.room.message` | a message of kind text, voice or file |
-| thread | `thread_root_id` |
-| replacement (an edit) | `edited_at` on the row |
-| redaction (a withdrawal) | `deleted_at` on the row |
-| membership | `space_members` |
-| power levels | derived from `space_grants`, and read-only |
+| Matrix                   | Here                                       |
+| ------------------------ | ------------------------------------------ |
+| room                     | a `channels` row                           |
+| Space                    | a `spaces` row, its channels the children  |
+| event id                 | the message's own id                       |
+| sync position            | `space_messages.seq`, per channel          |
+| `m.room.message`         | a message of kind text, voice or file      |
+| thread                   | `thread_root_id`                           |
+| replacement (an edit)    | `edited_at` on the row                     |
+| redaction (a withdrawal) | `deleted_at` on the row                    |
+| membership               | `space_members`                            |
+| power levels             | derived from `space_grants`, and read-only |
 
-The parts of Matrix that are hard — state resolution, the event DAG, signing — exist to reconcile *several* homeservers. With one they are not needed, and building them would be building a distributed database to serve a Postgres table that is already right.
+The parts of Matrix that are hard — state resolution, the event DAG, signing — exist to reconcile _several_ homeservers. With one they are not needed, and building them would be building a distributed database to serve a Postgres table that is already right.
 
 `seq` already exists, is per channel and monotonic, and is what the site's own client pages by. It is therefore the sync token, which means `/sync` is a query the database already has an index for.
 
@@ -43,7 +49,7 @@ So a Matrix access token is a token of **ours**, opaque to the client, backed by
 2. Each request exchanges that for a short-lived access token and builds a client carrying it.
 3. `auth.uid()` is then the person, and every guard applies with nothing re-implemented.
 
-**Minting our own JWT was rejected**, and the reasons are worth keeping: the project has no such secret, so it would be a new one to hold and rotate; a function that can sign a session can forge *any* identity, which is a far larger thing to protect than a token table; and a minted token outlives the account's own decisions, so revocation would become this surface's problem to reimplement — the same mistake as reimplementing the read rules.
+**Minting our own JWT was rejected**, and the reasons are worth keeping: the project has no such secret, so it would be a new one to hold and rotate; a function that can sign a session can forge _any_ identity, which is a far larger thing to protect than a token table; and a minted token outlives the account's own decisions, so revocation would become this surface's problem to reimplement — the same mistake as reimplementing the read rules.
 
 Keeping the auth server's own session means **revocation belongs to the account**. A password change, a ban or a sign-out-everywhere ends every Matrix client of that person without this surface being told anything.
 
@@ -73,7 +79,7 @@ A bot named in a message is asked by the **database**, not by the client that wr
 
 ## Pointing a client at it
 
-The homeserver address is the site's own. In Element, *Sign in* → *Edit* the homeserver → the site's URL; then the email and password of a site account. A client that reads `/.well-known/matrix/client` finds the same address.
+The homeserver address is the site's own. In Element, _Sign in_ → _Edit_ the homeserver → the site's URL; then the email and password of a site account. A client that reads `/.well-known/matrix/client` finds the same address.
 
 A key of kind `matrix`, made under Settings → API, is for a script or a bridge: it acts as the key's maker, reaches what it is granted, and is refused elsewhere. No key reaches the coaching chat or the desk, which are not this surface.
 

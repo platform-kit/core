@@ -114,6 +114,7 @@ RETURNS TABLE("id" "uuid", "user_id" "uuid", "refresh_token" "text", "device_id"
    where s.token_hash = p_hash
      for update
 $$;
+REVOKE ALL ON FUNCTION "public"."matrix_session_claim"("text") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."matrix_session_claim"("text") FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."matrix_session_claim"("text") TO "service_role";
 

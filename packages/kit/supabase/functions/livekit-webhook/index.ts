@@ -15,6 +15,8 @@ Deno.serve(async (req) => {
   if (!ev) return json({ ok: true, ignored: true })
   if (ev.refused) return json({ error: ev.refused }, 400)
   if (!ev.ref) return json({ ok: true, ignored: true })
+  /* a room is named by a booking: a name that is not one is not put into a filter */
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(String(ev.ref))) return json({ ok: true, ignored: true })
   /* the room is the booking's uid, or a group's seat: every booking of that room moves together */
   const { data: rows } = await admin.from('bookings').select('uid, status, started_at, end_at, event, seat_of, followup_at').or(`uid.eq.${ev.ref},seat_of.eq.${ev.ref},room.eq.${ev.ref}`)
   if (!rows?.length) return json({ ok: true, ignored: true })
@@ -24,7 +26,9 @@ Deno.serve(async (req) => {
     if (ev.kind === 'ended' && b.status !== 'cancelled') await admin.from('bookings').update({ status: 'ended', ...(b.followup_at ? {} : { followup_at: new Date(Date.now() + 5 * 6e4).toISOString() }), updated_at: now }).eq('uid', b.uid)
     if (ev.kind === 'ended' && b.status !== 'cancelled') await deliverSchedulingEvent('MEETING_ENDED', b.uid).catch((e) => console.warn('scheduling webhook', String(e)))
     if (ev.kind === 'recording') {
-      const path = ev.path || `${b.uid}/recording.mp4`
+      /* under the room's own folder or the booking's, never a path the event names elsewhere */
+      const named = typeof ev.path === 'string' && !ev.path.includes('..') && (ev.path.startsWith(ev.ref + '/') || ev.path.startsWith(b.uid + '/')) ? ev.path : null
+      const path = named || `${b.uid}/recording.mp4`
       if (ev.failure) await admin.from('bookings').update({ recording_state: 'failed', recording_error: ev.failure, updated_at: now }).eq('uid', b.uid)
       else { const { error } = await admin.from('bookings').update({ recording_path: path, recording_at: now, recording_state: null, recording_error: null, updated_at: now }).eq('uid', b.uid); if (error) console.warn('livekit-webhook: the recording row', error.message) }
     }

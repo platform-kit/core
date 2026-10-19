@@ -128,11 +128,13 @@ assert.equal(
 assert.equal(clientAuthorizedCall.init.headers['x-profile-id'], 'pro_test')
 
 const signingKey = 'test-webhook-signing-key'
+/* a delivery is dated now: an old one is refused (below) */
+const SENT = new Date().toISOString()
 const envelope = {
   merchant_id: 'merchant_test',
   event_id: 'evt_payment',
   event_type: 'payment_succeeded',
-  timestamp: '2026-10-12T12:00:00.000Z',
+  timestamp: SENT,
   content: {
     type: 'payment_details',
     object: {
@@ -202,7 +204,7 @@ const payoutEvents = await verifyEnvelope({
   merchant_id: 'merchant_test',
   event_id: 'evt_payout',
   event_type: 'payout_failed',
-  timestamp: '2026-10-12T12:00:00.000Z',
+  timestamp: SENT,
   content: {
     type: 'payout_details',
     object: { payout_id: 'po_test', status: 'failed', amount: 2500, currency: 'USD' },
@@ -212,7 +214,7 @@ assert.deepEqual(payoutEvents, [{
   provider: 'hyperswitch',
   eventId: 'evt_payout',
   type: 'payout.updated',
-  occurredAt: Math.floor(Date.parse('2026-10-12T12:00:00.000Z') / 1000),
+  occurredAt: Math.floor(Date.parse(SENT) / 1000),
   payoutId: 'po_test',
   status: 'failed',
   amountMinor: 2500,
@@ -320,6 +322,18 @@ await assert.rejects(
   }), signingKey),
   (error) => error instanceof PaymentProviderError && error.code === 'invalid_webhook',
 )
+/* a correctly signed event older than the tolerance is a replay, and refused */
+{
+  const stale = JSON.stringify({ ...JSON.parse(rawBody), timestamp: new Date(Date.now() - 4 * 86400e3).toISOString() })
+  await assert.rejects(
+    verifyHyperswitchWebhook(new Request('https://site.test/hook', {
+      method: 'POST',
+      headers: { 'X-Webhook-Signature-512': createHmac('sha512', signingKey).update(stale).digest('hex') },
+      body: stale,
+    }), signingKey),
+    (error) => error instanceof PaymentProviderError && error.code === 'invalid_webhook' && /older than the tolerance/.test(error.message),
+  )
+}
 const malformedBody = '{"event_id":'
 const malformedSignature = createHmac('sha512', signingKey).update(malformedBody).digest('hex')
 await assert.rejects(

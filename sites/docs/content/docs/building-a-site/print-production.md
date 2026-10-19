@@ -2,12 +2,28 @@
 title: Print production
 description: From a book's block to files at the printer — the editions, the typesetting, the covers, the EPUB, the printers behind one shape, the registry, and the store's pictures.
 order: 57
-sources: [packages/kit/build/suppliers.test.mjs, packages/kit/build/print.mjs, packages/kit/build/print, packages/kit/src/lib/print, packages/movable-types/src/components/admin/pdf-pages.js, packages/kit/supabase/functions/print-render, packages/kit/build/models/core/print.mjs, packages/kit/supabase/functions/_shared/suppliers, packages/kit/supabase/functions/_shared/print.ts, packages/movable-types/src/components/Book3D.vue, packages/movable-types/src/components/admin/PrintAdmin.vue, packages/kit/build/git-push.mjs, packages/kit/supabase/functions/print-order, packages/kit/supabase/functions/print-webhook, packages/kit/supabase/functions/lulu-webhook]
+sources:
+  [
+    packages/kit/build/suppliers.test.mjs,
+    packages/kit/build/print.mjs,
+    packages/kit/build/print,
+    packages/kit/src/lib/print,
+    packages/movable-types/src/components/admin/pdf-pages.js,
+    packages/kit/supabase/functions/print-render,
+    packages/kit/build/models/core/print.mjs,
+    packages/kit/supabase/functions/_shared/suppliers,
+    packages/kit/supabase/functions/_shared/print.ts,
+    packages/movable-types/src/components/Book3D.vue,
+    packages/movable-types/src/components/admin/PrintAdmin.vue,
+    packages/kit/build/git-push.mjs,
+    packages/kit/supabase/functions/print-order,
+    packages/kit/supabase/functions/print-webhook,
+    packages/kit/supabase/functions/lulu-webhook,
+  ]
 reviewed: 2026-10-05
 ---
 
 Editors' view: [Print editions](/content/docs/running-a-site/selling/print-editions). This page is the machinery.
-
 
 ## The printer seam, and what holds it
 
@@ -28,7 +44,9 @@ what to run, which is retryable, where a guess bills the wrong account.
 
 The two webhook paths still name Lulu and are a listed exception rather than an oversight: Lulu is
 the only printer that posts to a url registered once, Mixam is given its callback per order, and
-Bookvault sends none.
+Bookvault sends none. A call is never believed: the job it names is read back from the printer. A
+mocked printer (no keys, or `PRINT_MOCK`) has nobody to call it and moves its pretend job a step on
+every read, so its webhook is ignored.
 
 > **A printer is a SUPPLIER, and the interface says nothing about books.** A supplier makes a
 > VARIANT out of ARTEFACTS: `chosen` is what the buyer picked, `artefacts` is whatever the kind
@@ -42,29 +60,27 @@ Bookvault sends none.
 
 Typst is behind **`build/print/typeset/compiler.js`** — `create`, `pdf`, `svg`, `query` — and nothing else under `build/print/` imports it. There are two drivers:
 
-| driver | where | what it is |
-| --- | --- | --- |
+| driver | where                      | what it is                                                                                                                                          |
+| ------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `node` | a machine with a build box | `@myriaddreamin/typst-ts-node-compiler`, a native binary of about 44 MB — an optional peer, so a site with the print module off installs none of it |
-| `wasm` | an Edge Function | the same compiler built for WebAssembly, because a cloud-only site has nothing else and could otherwise not set a book at all |
+| `wasm` | an Edge Function           | the same compiler built for WebAssembly, because a cloud-only site has nothing else and could otherwise not set a book at all                       |
 
 They are the same program built twice, and that is the point. An **edition** is a hash of the source, the templates and the trim, and `print.json` says which file a printer has — so if the two paths could diverge, nobody could tell which edition a printed book actually is. `PRINT_DRIVER=wasm` sets a book with the other one, and `build/print-parity.test.mjs` holds them to the same bytes.
 
 The seam exists because of a measurement, not a hope: the largest book in the library — 424 pages — is **88ms** of Typst, against the 2000ms of CPU an Edge Function gets. A book is compiled in one call. There is no job queue, no piece planner and no PDF merge, and the proposal that assumed there would have to be is in `openspec/changes/print-on-demand/` with the numbers that deleted it.
 
-
 ### What a cloud-only site does not get
 
 Two things in print production need a native program, and a function has neither. Both degrade the **listing** and never the book — an edition set without them is the same edition, byte for byte, with the same id.
 
-| | on a machine | in a function |
-| --- | --- | --- |
+|                                                               | on a machine                                                                                                                        | in a function                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | the pages shown on the listing, and the cover the store draws | photographed from the printer's own PDF by pdf.js in a headless Chromium; the cover written straight out as SVG by the same compile | **drawn by the administrator's browser**, from the PDFs the function made, at the moment an edition is set — and posted back against that edition. There is no Chromium in a function and no way to put one there; there is one in front of whoever pressed the button |
-| the paperback's picture, sized for the printer | `sharp` | Storage's own image transform, which does the same two operations — honour the orientation, cap the height — and is part of Supabase |
+| the paperback's picture, sized for the printer                | `sharp`                                                                                                                             | Storage's own image transform, which does the same two operations — honour the orientation, cap the height — and is part of Supabase                                                                                                                                   |
 
-The page pictures are skipped **deliberately and with a line that says so**, not caught as a failure. A machine that *has* a browser and still cannot photograph a page is a fault and is warned about, because there they were expected. `PRINT_NO_SHOTS=1` skips them anywhere.
+The page pictures are skipped **deliberately and with a line that says so**, not caught as a failure. A machine that _has_ a browser and still cannot photograph a page is a fault and is warned about, because there they were expected. `PRINT_NO_SHOTS=1` skips them anywhere.
 
 Deploy generation is separate and opt-in: only `PRINT_BUILD=1` runs the print step that renders and uploads editions and updates the print index and printer registry. When a deploy leaves generated art absent, `Book3D.vue` layers the ordinary markdown cover beneath the printed cover art, and the product gallery uses bounded Vue/CSS chapter previews where page images are missing. Generated page images remain preferred.
-
 
 ## Setting a book with no machine: `print-render`
 
@@ -76,7 +92,7 @@ The edition id is the shared rule (`build/print/edition.mjs`), which is the clai
 
 It finishes the job: the printers validate the files from the bucket and quote them, a printer that keeps a title is asked for ours by SKU before one is ever made (and what is made is written to the bucket's `<slug>/registry.json` and to `print.json` the same moment, since a setup fee paid twice is money gone), the EPUB is made from the same words by the same module, and `print.json` is written **through the store** — a file in a checkout, a row of `public.content` here, and the code does not know which. A cloud render carries forward the store art and the page pictures a machine made for the same edition rather than emptying a gallery it cannot draw itself.
 
-One rule decides whether a printer is asked anything at all: **can it fetch the file?** A printer downloads the signed url from its own machines, so what matters is not whether this process can open it but whether a stranger could. A local stack's `127.0.0.1` is obviously private; less obviously, a function signs urls against its own `SUPABASE_URL`, which locally is the stack's *inner* host (`http://kong:8000`) — not loopback, so a check written against loopback waved it through and Lulu answered "received a None status code" after a timeout. `reachableToPrinter` is therefore positive rather than a blacklist: a public host has a dot in it and is not a private address. Where it says no, the files are kept and costed and nothing is checked, given a title or submitted.
+One rule decides whether a printer is asked anything at all: **can it fetch the file?** A printer downloads the signed url from its own machines, so what matters is not whether this process can open it but whether a stranger could. A local stack's `127.0.0.1` is obviously private; less obviously, a function signs urls against its own `SUPABASE_URL`, which locally is the stack's _inner_ host (`http://kong:8000`) — not loopback, so a check written against loopback waved it through and Lulu answered "received a None status code" after a timeout. `reachableToPrinter` is therefore positive rather than a blacklist: a public host has a dot in it and is not a private address. Where it says no, the files are kept and costed and nothing is checked, given a title or submitted.
 
 **What it cannot draw, and who draws it instead.** A listing needs pictures — the cover sheet the
 shelves wear, and three pages of the interior — and both want a raster or an SVG out of a PDF. The
@@ -117,8 +133,7 @@ A rendered file is in the print bucket rather than on a disk, so `pipe.fileUrl(c
 Two things have to be in place before it will work at all, and it says which is missing rather than failing obscurely:
 
 - **The type.** An Edge Function has no fonts. The deploy's `print-type` step uploads them to the `print` bucket (`node packages/kit/build/print/templates.mjs --fonts` does it by hand — a local stack loses them on every `supabase start`), and the function refuses to set anything without them. A book set in a fallback face is wrong in a way nobody notices until it is printed.
-- **Storage's image transform**, for a paperback only — its front *is* the e-book's picture, and there is no `sharp` in a function. It is a Pro-plan feature on the hosted platform and off by default locally (`[storage.image_transformation]` in `config.toml`). Without it the paperback is **left unset and said so** (`incomplete` in the answer), never drawn blank: a cover without its picture would be a different sheet under the same edition id, which is the one thing this whole path exists to make impossible. A hardcover is set in type and needs none of it.
-
+- **Storage's image transform**, for a paperback only — its front _is_ the e-book's picture, and there is no `sharp` in a function. It is a Pro-plan feature on the hosted platform and off by default locally (`[storage.image_transformation]` in `config.toml`). Without it the paperback is **left unset and said so** (`incomplete` in the answer), never drawn blank: a cover without its picture would be a different sheet under the same edition id, which is the one thing this whole path exists to make impossible. A hardcover is set in type and needs none of it.
 
 ## The block and the offers
 
@@ -130,11 +145,11 @@ A book's `print:` block (its schema is in `velite.mjs`; `lib/print-offers.js` re
 
 1. **Typeset** (`typeset.mjs` into `book.typ`, compiled through the typesetting seam, `build/print/typeset/compiler.js`; the fonts under `build/print/fonts`): a blank first leaf, the title on a recto, the colophon, the contents on a recto, the publisher's note (two-part editions), the introduction, each chapter on a page of its own (a recto in a book of long chapters, either side in a book of short ones; the first of each part on a recto) with its companion after it on a tinted ground, every mark as one pale yellow highlight, gathered at the back one run per part in the heading face with each line's page beneath. One page rule for the whole book, set before the front matter; running heads and numbers suppressed by physical page on openers and skipped versos; the count padded even. Hard breaks kept for verse and flowed where a book was typed with one at every line; a stack of short unpunctuated paragraphs set as verse; asterisks as a dinkus; a line in capitals as a subhead; OCR faults fixed in the markdown, never worked around in the typesetter. The printer binds 24 to 800 pages; a short book is padded with blank leaves.
 2. **The cover** (`cover.typ`) to each printer's dimensions: a paperback's front is the book's own picture (the cover field's address resolved to its file by `build/assets.mjs`, decoded by sharp, cropped as the shelves crop it, never letterboxed) with the mark and the edition line on a scrim; a hardcover's is set in type on the cloth — the title in the foil's colour over an ornament, the author in spaced capitals, the mark at the foot; the spine says Title · Edition (`spineWords`: 25 characters, one rule everywhere); the back the companion's insight over the blurb; a jacket's flaps. Per cloth × foil the buyer may pick, filed under `<format>-<printer>[-cloth-foil]`; for a format stamped with our own foil, the foil layer beside it. Every cover also as SVG for the store.
-The edition's own words — the eyebrow, the edition line, the part names, the highlights page — are
-`## print / ### book` in the **library** strings scope, read through `build/print/words.mjs` the
-way every other scope is read: the theme’s defaults with the site’s merged over them, through the
-store rather than off the disk, so the admin's server reads them in cloud mode too. There is no
-English in that module and no site's name in it; a site that says nothing gets the theme's word.
+   The edition's own words — the eyebrow, the edition line, the part names, the highlights page — are
+   `## print / ### book` in the **library** strings scope, read through `build/print/words.mjs` the
+   way every other scope is read: the theme’s defaults with the site’s merged over them, through the
+   store rather than off the disk, so the admin's server reads them in cloud mode too. There is no
+   English in that module and no site's name in it; a site that says nothing gets the theme's word.
 3. **The EPUB** (`epub.mjs`: EPUB 3 from the same words, one XHTML per chapter, the key insights after each, the highlights at the back with links, the site's cover art).
 4. **The pictures** (`raster.mjs`, pdf.js in the build's headless Chromium at 144 dpi, one crop box for every page): the pages `pages.mjs` picks from what the document says about itself — the fullest chapter opening, the same chapter in the other text, the page with the most highlights — into `public/print/<slug>/<edition>/`.
 
@@ -146,6 +161,7 @@ English in that module and no site's name in it; a site that says nothing gets t
    pictures are drawn at the moment an edition is set, by the browser that already has the interior
    PDF in hand — and they have to be cropped by the same rule as a machine-set book's or a gallery
    would show the difference.
+
 5. For that page count, per printed format: the printer (named, or the cheapest quoted), the quote, the check, and for a printer that keeps a title, the title.
 
 An **edition** is the hash of the source, the templates, the trim, the bindings and colours, and the paperback's picture byte for byte, so nothing is set twice and a changed word is a new one. Its files go to the private `print` bucket as `<slug>/<edition>/{interior.pdf, cover-<key>.pdf, book.epub, manifest.json}`; `content/store/print.json` (committed) indexes every book's editions — pages, printers, covers, art, shots, titles — which the store reads and catalog.json carries as `editions` for the functions. **A change to the typesetting is checked by looking at every page** (`pdftoppm` + `montage`), never by a page count.
