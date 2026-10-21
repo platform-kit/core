@@ -396,11 +396,15 @@ export function createPaymentProvider(
       }
     },
     async retrieveCheckout(checkoutId: string): Promise<PaymentCheckoutSnapshot> {
+      /* a session Stripe has never heard of is the caller's mistake, not a fault upstream */
       const session = await stripe.checkout.sessions.retrieve(checkoutId, {
         expand: [
           'line_items.data.price.product',
           'shipping_cost.shipping_rate',
         ],
+      }).catch((e: any) => {
+        if (e?.code === 'resource_missing' || e?.statusCode === 404) throw new PaymentProviderError('checkout_not_found', 'No such checkout.', 404)
+        throw e
       })
       const status = session.status
       const mode = session.mode

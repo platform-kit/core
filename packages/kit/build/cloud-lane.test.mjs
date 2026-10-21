@@ -26,6 +26,7 @@ import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { statusOf, leave } from './test-stack.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const WORKSPACE = resolve(HERE, '..', '..', '..')
@@ -37,12 +38,12 @@ const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.lo
 
 console.log('\nTHE CLOUD LANE — content in rows, and nothing that rebuilds\n')
 
-const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The cloud shape is NOT covered by this run.\n'); process.exit(0) }
+const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The cloud shape is NOT covered by this run.\n'); leave(0) }
 if (process.env.PLATFORMKIT_SKIP_CLOUD_LANE === '1') skip('PLATFORMKIT_SKIP_CLOUD_LANE=1')
 
 /* the stack this project's config names, read the way build/dev.mjs reads it */
 let cfg = null
-try { cfg = JSON.parse(execSync('npx supabase status -o json', { cwd: SITE, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) }
+try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service key')
 

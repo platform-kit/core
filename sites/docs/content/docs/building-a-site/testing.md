@@ -5,6 +5,17 @@ order: 52
 sources:
   [
     packages/kit/build/browser.mjs,
+    packages/kit/build/e2e.mjs,
+    packages/kit/build/test-stack.mjs,
+    packages/kit/build/reset-seed.mjs,
+    packages/kit/build/e2e-runner.test.mjs,
+    packages/kit/build/fixtures/e2e-probe.mjs,
+    packages/kit/build/test-coverage.test.mjs,
+    packages/kit/build/test-stack.test.mjs,
+    packages/kit/build/function-bodies.test.mjs,
+    packages/kit/build/function-doors.test.mjs,
+    packages/kit/build/functions-data.mjs,
+    sites/club/platformkit.config.js,
     packages/kit/build/manifests.test.mjs,
     packages/kit/build/modules/manifest.mjs,
     packages/kit/build/modules-off.test.mjs,
@@ -55,7 +66,7 @@ sources:
     packages/kit/build/source-install.mjs,
     packages/kit/build/runtime-paths.mjs,
   ]
-reviewed: 2026-10-18
+reviewed: 2026-10-20
 ---
 
 ## A proposal promises nothing it does not require
@@ -170,6 +181,38 @@ The `content-refresh.test.mjs`, `steps.test.mjs` and `projection-safety.test.mjs
 4. **The specs** — `openspec validate --all --strict`, where an `openspec/` exists.
 
 A failure stops the run and exits non-zero. Each test is a plain Node script that prints `N passed, M failed` and exits accordingly; no test framework.
+
+## `platformkit test --e2e`
+
+The checks that need a database, the functions or a browser run here, never against a developer's stack. `npm run test:e2e` at the workspace root (`platformkit test --e2e`) takes every registered site with a backend — `--only demo,club` for some, `--jobs` for how many at once (two by default), `--keep` to leave everything up afterwards for a look, `--run <script>` to put one script in place of the suite — and gives each one a stack of its own, side by side, as `npm run dev` does.
+
+Before any stack, the run asks for what every site needs: Docker answering, and a browser for the page checks (Playwright's, or the one `PLAYWRIGHT_CHROMIUM_PATH` names). Without either it stops at once, naming it. Then, for each site:
+
+1. The site's declared dependencies must be installed (a fetched site is not a workspace: its checkout needs its own install), or the run stops naming them. The site is assembled, and the data its functions import (the catalog, the compiled emails, the bots, the spaces…) is made from its content (`build/functions-data.mjs`) — never a file an earlier build left. A module that is off gets an empty file in its own shape, since the functions import every one.
+2. Any stack an earlier run left (`pk_<site>_e2e`) is stopped without its backup, so nothing survives into this one.
+3. A runtime project is made the way the dev workspace makes one, with its own project id and ports from 40000 up, never a dev port. Two sites prepared at once are never given the same port.
+4. The stack starts on an empty volume — the site's declaration, data and seed — and the reset's seed steps run (`build/reset-seed.mjs`, the same list `platformkit migrate reset` runs).
+5. The functions are served with an environment the run writes: the site's own settings, a known test value for every webhook secret, a web-push key pair of the run's own, and mail to that stack's own catcher at the address the run reads from the container it just started. A live payment key refuses the run. A site with no cal.com key of its own is given a test one (the recordings test answers for cal.com itself). A site that takes payments through Stripe needs a test key (`sk_test_…`) — from the run's environment, the site's `.env` or the workspace's — and without one it fails rather than passing with its payments unchecked.
+6. Every function is called once before the tests, and one that does not boot is named.
+7. The drop-in scripts the app serves — the analytics, the support widget, the comments — are built against this stack into the run's own folder (`PLATFORMKIT_DIST`), never the dev build's `dist/`. The site's app is served on a test port, and `test.mjs --e2e` runs the site's stack checks: every test that imports `build/test-stack.mjs`, the site's own among them, the cloud lane and the schema check. **A check that skips is a failure** — a skip, an act reported `NOT RUN`, an early exit; the one accepted stand-down is `notHere()`, a fact about the site (`not on this site`).
+8. **The coverage gate:** every function any site served must have been called by some site's tests during the run, read from the functions' own log. A module one site has off is another's to exercise, so the gate is the run's, not a site's. A function nothing called fails a run over every site with a backend by name; a run over some of them (`--only`) reports it.
+9. Everything is stopped and its data removed, on success, failure or a signal, unless `--keep`.
+
+Each site's run writes `node_modules/.cache/platformkit/e2e/<site>.log` as it goes, with the functions and the app in their own logs beside it. CI runs the same command over the demo and `sites/club` — a members' club with a backend and few modules, so two stacks are built side by side and a module that is off is exercised — and then the runner's own test (`build/e2e-runner.test.mjs`): a stand-in dev database left untouched, two sites isolated, a schema change seen, a kept stack replaced, a live key refused, a withheld service failing, an interrupted run torn down. It uses `--run` with `build/fixtures/e2e-probe.mjs` in place of the suite.
+
+### Nothing untested by construction
+
+`npm test` runs `build/test-coverage.test.mjs`, which fails, by name, on:
+
+- a function under `supabase/functions` that no test names;
+- a stack test that leaves early with a pass other than through `skip()` (a failure in the end-to-end run) or after `notHere()`;
+- a test that reaches a stack — a client, Postgres, a function's URL — without taking it from `build/test-stack.mjs`, which is how the run finds it; and a stack test that reads `supabase status` or falls back to a dev port (543xx, 5173);
+- a Deno test that `test.mjs` does not run;
+- a specification's "Verified by" naming a test that does not exist or is not registered. A claim no test can back is listed in the file's `KNOWN_GAPS` with what decides it, and printed on every run.
+
+In the run itself, `build/function-bodies.test.mjs` compiles every SQL function in the declaration against the tables as built: the schema loads with `check_function_bodies` off, so a body naming a column that is not there would otherwise fail only when called.
+
+`npm test` keeps the quick checks and ends by naming the stack-backed ones, so nobody reads its result as covering them.
 
 ## Who is here, told once
 

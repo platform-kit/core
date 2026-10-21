@@ -24,6 +24,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import { execSync } from 'node:child_process'
+import { statusOf } from './test-stack.mjs'
 
 let n = 0, bad = 0
 const t = async (name, fn) => { n++; try { await fn() } catch (e) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
@@ -43,7 +44,8 @@ await t('with no database in reach there is no best seller, and it says why', as
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sales-noenv-'))
   try {
     const r = execSync(`${process.execPath} -e "import(process.argv[1]).then(m => m.salesReport()).then(r => console.log(JSON.stringify(r)))" ${JSON.stringify(salesModule)}`,
-      { cwd: tmp, encoding: 'utf8' })
+      /* and with no stack in its environment either: the end-to-end run hands every test one */
+      { cwd: tmp, encoding: 'utf8', env: Object.fromEntries(Object.entries(process.env).filter(([k]) => !/SUPABASE|PLATFORMKIT_TEST_|DB_URL/.test(k))) })
     const out = JSON.parse(r.trim().split('\n').pop())
     assert.equal(out.bestseller, null, 'a site with no database named a best seller')
     assert.deepEqual(out.books, {})
@@ -53,7 +55,7 @@ await t('with no database in reach there is no best seller, and it says why', as
 
 /* ─── against the stack: what it reports must follow from the rows ─── */
 let cfg = null
-try { cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) } catch { /* down */ }
+try { cfg = statusOf(); if (!cfg) throw new Error('no stack') } catch { /* down */ }
 if (!cfg || !cfg.API_URL) note('⚠ no local stack — the best seller is only checked on the no-database path in this run')
 else {
   const { createClient } = await import('@supabase/supabase-js')

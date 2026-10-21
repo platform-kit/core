@@ -51,7 +51,7 @@ Verified by: `build/social-publishing.test.mjs` against the served local functio
 - **WHEN** `social-webhook` receives an event with a missing, invalid, or unsupported signature mechanism
 - **THEN** it refuses the event and writes no webhook inbox row or provider state
 
-Verified by: `build/social-webhook.test.mjs` against the served local Supabase function
+Verified by: `build/social-webhooks.test.mjs` against the served local Supabase function
 
 #### Scenario: a publish by a reader
 

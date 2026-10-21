@@ -17,7 +17,7 @@ The API SHALL answer under **`/api`** and never under `/spaces`, which is the co
 - **WHEN** `/spaces/the-practice` is requested of the site
 - **THEN** the app answers, never the content API — whether or not the host has declared the rewrite
 
-Verified by: `content-api.test.mjs` and `routes.test.mjs`
+Verified by: `content-api.test.mjs` and `rewrites.test.mjs` (the served rules: `/spaces/<space>` answered by the app)
 
 #### Scenario: the official client, one host changed
 

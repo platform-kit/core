@@ -8,15 +8,16 @@
    Skipped with a note when the stack is down (SPACES_TEST=0 skips it too). */
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const note = (m) => console.log('spaces-db: ' + m)
 if (process.env.SPACES_TEST === '0') { note('skipped (SPACES_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
-if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); process.exit(0) }
+if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
-if (!up) { note('skipped — the local stack is not up'); process.exit(0) }
+if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }

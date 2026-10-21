@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { localStack, loadDotEnv, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const note = (message) => console.log('payment-provider-db: ' + message)
 const schema = readFileSync(new URL('../supabase/schemas/40-commerce.sql', import.meta.url), 'utf8')
@@ -47,7 +48,7 @@ loadDotEnv()
 const url = supabaseUrl()
 if (!url || !localStack()) {
   note('skipped database checks — local Supabase credentials are unavailable')
-  process.exit(0)
+  leave(0)
 }
 try {
   if (!(await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok) {
@@ -55,7 +56,7 @@ try {
   }
 } catch {
   note('skipped database checks — local Supabase is not running')
-  process.exit(0)
+  leave(0)
 }
 
 const admin = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })

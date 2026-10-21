@@ -8,6 +8,8 @@
  */
 import path from 'node:path'
 import fs from 'node:fs'
+/* where the drop-in scripts go: the site's dist/, or the end-to-end run's own (PLATFORMKIT_DIST), so a run never rewrites a dev build's */
+const DIST = process.env.PLATFORMKIT_DIST || 'dist'
 import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 import { gzipSync } from 'node:zlib'
@@ -19,13 +21,13 @@ await build({
   configFile: false, root, logLevel: 'warn',
   define: { 'process.env.NODE_ENV': '"production"' },
   build: {
-    outDir: 'dist', emptyOutDir: false, sourcemap: false, minify: 'esbuild', target: 'es2018',
+    outDir: DIST, emptyOutDir: false, sourcemap: false, minify: 'esbuild', target: 'es2018',
     lib: { entry, name: 'posthog', formats: ['iife'], fileName: () => 'analytics.js' },
     rollupOptions: { output: { inlineDynamicImports: true } },
   },
 })
-const out = path.join(root, 'dist/analytics.js')
-fs.mkdirSync(path.join(root, 'dist/static'), { recursive: true })
-fs.copyFileSync(out, path.join(root, 'dist/static/array.js'))
+const out = path.resolve(root, DIST, 'analytics.js')
+fs.mkdirSync(path.resolve(root, DIST, 'static'), { recursive: true })
+fs.copyFileSync(out, path.resolve(root, DIST, 'static/array.js'))
 const bytes = fs.statSync(out).size, gz = gzipSync(fs.readFileSync(out)).length
 console.log(`✔ analytics sdk: dist/analytics.js and dist/static/array.js — ${(bytes / 1024).toFixed(0)} KB, ${(gz / 1024).toFixed(0)} KB gzipped`)

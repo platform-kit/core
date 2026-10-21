@@ -10,6 +10,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { createHmac, createHash } from 'node:crypto'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { notHere, leave } from './test-stack.mjs'
 
 let n = 0, bad = 0
 const ta = async (name, fn) => { n++; try { await fn() } catch (e) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
@@ -18,10 +19,10 @@ let up = false
 try { up = url && localStack() && (await fetch(url + '/rest/v1/', { headers: { apikey: anonKey }, signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
 let served = false
 if (up) { try { served = (await fetch(url + '/functions/v1/session-room', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* not served */ } }
-if (!up || !served) { console.log(`meetings: skipped — ${!up ? 'the local stack is not up' : 'the functions are not served (npm run dev serves them)'}`); process.exit(0) }
+if (!up || !served) { console.log(`meetings: skipped — ${!up ? 'the local stack is not up' : 'the functions are not served (npm run dev serves them)'}`); leave(0) }
 const catalog = JSON.parse(fs.readFileSync('supabase/functions/_shared/catalog.json', 'utf8'))
 const type = (catalog.sessions || []).find((s) => s.scheduler === 'native' && s.where?.kind === 'video')
-if (!type) { console.log('meetings: skipped — this site has no native booking type in a video room (the demo has)'); process.exit(0) }
+if (!type) { notHere('meetings', 'the site has no native booking type in a video room (the demo has)'); process.exit(0) }
 /* AND THE SITE MUST HAVE A LIVEKIT ACCOUNT. With none, a native video room is the mesh — browser to
    browser, no account, nothing recorded (build/huddle.test.mjs is its own probe) — and every door
    here would answer no-room. The dev server is the account to point at locally:
@@ -29,7 +30,7 @@ if (!type) { console.log('meetings: skipped — this site has no native booking 
      --keys "devkey: secretsecretsecretsecretsecretsecret" --node-ip 127.0.0.1
    with LIVEKIT_URL=ws://127.0.0.1:7880 and that pair in .env. */
 const { videoIdOf } = await import('../supabase/functions/_shared/video/choose.js')
-if (videoIdOf(type, (k) => process.env[k] || '') !== 'livekit') { console.log('meetings: skipped — this site has no LiveKit account, so a room here is the mesh (set LIVEKIT_URL and the dev pair to run this)'); process.exit(0) }
+if (videoIdOf(type, (k) => process.env[k] || '') !== 'livekit') { notHere('meetings', 'the site has no LiveKit account, so a room here is the mesh'); process.exit(0); console.log('meetings: skipped — this site has no LiveKit account, so a room here is the mesh (set LIVEKIT_URL and the dev pair to run this)'); process.exit(0) }
 
 const { createClient } = await import('@supabase/supabase-js')
 const admin = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })

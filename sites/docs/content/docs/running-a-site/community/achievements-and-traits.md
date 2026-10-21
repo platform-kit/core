@@ -2,8 +2,18 @@
 title: Achievements and traits
 description: Two things out of one stream — what somebody has done that is worth saying out loud, and what the site has come to believe about them.
 order: 31
-sources: [packages/kit/supabase/schemas/98-achievements.sql, packages/kit/build/achievements-push.mjs, packages/kit/build/steps/achievements.mjs, packages/kit/src/lib/awards.js, packages/movable-types/src/pages/AwardPage.vue, packages/movable-types/src/components/AwardBadge.vue, packages/movable-types/src/content/ui/awards.md, packages/kit/build/awards-db.test.mjs]
-reviewed: 2026-10-01
+sources:
+  [
+    packages/kit/supabase/schemas/98-achievements.sql,
+    packages/kit/build/achievements-push.mjs,
+    packages/kit/build/steps/achievements.mjs,
+    packages/kit/src/lib/awards.js,
+    packages/movable-types/src/pages/AwardPage.vue,
+    packages/movable-types/src/components/AwardBadge.vue,
+    packages/movable-types/src/content/ui/awards.md,
+    packages/kit/build/awards-db.test.mjs,
+  ]
+reviewed: 2026-10-20
 ---
 
 The site already records what people do. Every user-facing act is an event — a piece read, a book chosen, a button pressed — and has been since the first analytics. So neither of these invents a second way of noticing; they both read that stream and nothing else.
@@ -18,13 +28,13 @@ sub: Every book in the library.
 icon: star
 colour: '#6a4b8a'
 when:
-  event: content_read          # an analytics event type
-  where: { kind: book }        # the props that must agree (a subset; may be omitted)
-  count: 11                    # how many it takes (default 1)
-  distinct: id                 # count DIFFERENT values of this prop, not rows
+  event: content_read # an analytics event type
+  where: { kind: book } # the props that must agree (a subset; may be omitted)
+  count: 11 # how many it takes (default 1)
+  distinct: id # count DIFFERENT values of this prop, not rows
 ```
 
-`distinct` is the difference between *eleven books* and *one book eleven times*, and it is the field most rules want. Without it a `count` counts events.
+`distinct` is the difference between _eleven books_ and _one book eleven times_, and it is the field most rules want. Without it a `count` counts events.
 
 **Nothing is awarded by a client.** One trigger on the event stream decides, running as the definer — a browser can no more ask for a badge than it can ask for a role. `build/awards-db.test.mjs` asks each way: the rule met and not met, the same thing twice, the third different one, awarding twice, and a client trying to insert its own.
 
@@ -48,7 +58,7 @@ rules:
   - id: interest-from-reading
     event: content_read
     key: interest
-    value: prop:kind      # taken from the event, so a new topic needs no new rule
+    value: prop:kind # taken from the event, so a new topic needs no new rule
 ```
 
 A trait is a **key and a value** — `interest` and `manifestation` — not one string somebody will end up parsing. `value: prop:<name>` takes it from the event itself, which is how one rule covers every topic a library has. The row counts how many times it has been seen, which is the difference between a glance and an interest.

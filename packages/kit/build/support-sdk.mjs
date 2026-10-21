@@ -7,6 +7,8 @@
  * `platformkit build` with the support module on (the support-sdk step), and by hand: node build/support-sdk.mjs
  */
 import path from 'node:path'
+/* where the drop-in scripts go: the site's dist/, or the end-to-end run's own (PLATFORMKIT_DIST), so a run never rewrites a dev build's */
+const DIST = process.env.PLATFORMKIT_DIST || 'dist'
 import { existsSync } from 'node:fs'
 import { build } from 'vite'
 import { fileURLToPath } from 'node:url'
@@ -83,7 +85,7 @@ export const places = ${JSON.stringify(places)}`
   define: { 'process.env.NODE_ENV': '"production"' },
   publicDir: false,   /* the site's public/ is the site's: nothing copied beside the script */
   build: {
-    outDir: 'dist/packs/js', emptyOutDir: false, cssCodeSplit: false, sourcemap: false,
+    outDir: path.join(DIST, 'packs/js'), emptyOutDir: false, cssCodeSplit: false, sourcemap: false,
     lib: { entry, name: 'PlatformKitSupport', formats: ['iife'], fileName: () => 'sdk.js' },
     rollupOptions: { output: { assetFileNames: 'sdk-[name][extname]', inlineDynamicImports: true } },
   },

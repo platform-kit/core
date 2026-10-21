@@ -22,6 +22,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
+import { statusOf, leave, notHere } from './test-stack.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -29,9 +30,9 @@ const note = (s) => console.log('  ' + s)
 
 console.log('\nA DRY RUN SENDS NOTHING\n')
 
-const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    That "see who would get this" sends nothing is NOT covered by this run.\n'); process.exit(0) }
+const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    That "see who would get this" sends nothing is NOT covered by this run.\n'); leave(0) }
 let cfg = null
-try { cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) }
+try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.FUNCTIONS_URL) skip('the stack did not report a functions url')
 
@@ -73,7 +74,7 @@ if (before.log < 0 || before.members < 0) skip('the email tables could not be co
      nothing whatever the guards do. welcome.md is compiled but published: false, which is exactly
      the case that made the first version of this check pass while testing nothing. */
   const live = funnels.filter((f) => f.published !== false && f.steps.length > 0)
-  if (!live.length) skip(`no PUBLISHED funnel on this site has an email step (${funnels.length} compiled; ${funnels.filter((f) => f.steps.length > 0).length} with steps, all unpublished) — a dry run here moves nothing whatever the guards do, so it would prove nothing`)
+  if (!live.length) { notHere('dryrun-db', `no PUBLISHED funnel on this site has an email step (${funnels.length} compiled; ${funnels.filter((f) => f.steps.length > 0).length} with steps, all unpublished) — a dry run here moves nothing whatever the guards do, so it would prove nothing (the demo has one)`); process.exit(0) }
 }
 
 const r = await call({ dry: true })
@@ -99,6 +100,19 @@ ok('and moves nobody through a funnel', after.members === before.members, `${bef
     ok('and a dry run carries the `would` list a real run does not', withWould.every((x) => Array.isArray(x.would)))
     ok('whose length matches what it says it would send', withWould.every((x) => x.would.length === x.sent), withWould.map((x) => `${x.would.length}/${x.sent}`).join(' '))
   }
+}
+
+
+/* THE AUDIENCE ITSELF, every rule a funnel or a blast may name: the base it filters lacked `roles`, and because a SQL
+   function's columns are found when it runs, every audience on every site failed — the dry run above answered 500 */
+{
+  const rules = { role: ['admin'], inactive: { min: 0 }, signed_up: { min: 0 }, since_purchase: { none: true }, subscription: ['none', 'any'], bought: ['x'], not_bought: ['x'] }
+  for (const [rule, value] of Object.entries(rules)) {
+    const { error } = await admin.rpc('email_audience', { rules: { [rule]: value } })
+    ok(`an audience by ${rule} is answered`, !error, error && error.message)
+  }
+  const { data: admins } = await admin.rpc('email_audience', { rules: { role: ['admin'] } })
+  ok('an audience by role finds the administrator', (admins || []).some((r) => r.email === 'admin@example.com'), JSON.stringify(admins))
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)

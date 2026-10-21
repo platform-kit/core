@@ -2,7 +2,7 @@
 title: The Forms API reference
 description: Every route, argument, field, header and error of the Typeform-compatible Forms API a site serves — the reference; the guide is under Building a site.
 order: 85.5
-reviewed: 2026-10-19
+reviewed: 2026-10-21
 sources:
   [
     packages/kit/supabase/functions/forms-api/index.ts,

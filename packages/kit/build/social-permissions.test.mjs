@@ -2,13 +2,14 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const note = (message) => console.log('social-permissions: ' + message)
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
 if (!url || !anon || !localStack()) {
   note('skipped — no local Supabase stack in .env')
-  process.exit(0)
+  leave(0)
 }
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* local stack is unavailable */ }

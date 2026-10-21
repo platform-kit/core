@@ -3,17 +3,19 @@
    stops when it has spent what it is allowed. The model is the mock provider driven by a script on
    the run itself, so the whole machine runs for real and nothing is bought.
    Skipped with a note when the stack or the functions are down (AGENT_TEST=0 skips it too). */
+import fs from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { notHere, leave } from './test-stack.mjs'
 
 const note = (m) => console.log('agents-db: ' + m)
 if (process.env.AGENT_TEST === '0') { note('skipped (AGENT_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
-if (!url || !localStack()) { note('skipped — no local stack in .env'); process.exit(0) }
+if (!url || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
 const key = serviceKey()
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
-if (!up) { note('skipped — the local stack is not up'); process.exit(0) }
+if (!up) { note('skipped — the local stack is not up'); leave(0) }
 /* the worker is an edge function; without one served there is nothing to test here */
 let served = false
 try {
@@ -24,12 +26,15 @@ try {
   })
   served = r.ok
 } catch { /* not served */ }
-if (!served) { note('skipped — the functions are not served in this run'); process.exit(0) }
+if (!served) { note('skipped — the functions are not served in this run'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+/* the site's own support bot — whichever it declares, not a name one site happened to use */
+const BOT = process.env.AGENT_TEST_BOT || ((await db.from('bots').select('slug, surfaces').eq('published', true)).data || []).find((b) => (b.surfaces || []).includes('support'))?.slug
+if (!BOT) { note('skipped — this site publishes no support bot to run'); leave(0) }
 
 /* one turn of the worker, as pg_cron or a surface would ask for it */
 const turn = async (run, steps) => {
@@ -66,7 +71,7 @@ const stepsOf = async (id) => (await db.from('agent_steps').select('*').eq('run_
 /* a run is started the way a surface starts one: a row, with the script the mock will follow */
 const start = async (state, extra = {}) => {
   const { data, error } = await db.from('agent_runs').insert({
-    bot: 'desk', surface: 'support', status: 'queued', state, budget_cents: 50, ...extra,
+    bot: BOT, surface: 'support', status: 'queued', state, budget_cents: 50, ...extra,
   }).select().single()
   if (error) throw error
   return data
@@ -86,7 +91,7 @@ const made = []
 try {
   {
     const accepted = await db.from('agent_runs').insert({
-      bot: 'desk', surface: 'social', status: 'queued', state: {},
+      bot: BOT, surface: 'social', status: 'queued', state: {},
     }).select('id, surface').single()
     ok('the database accepts a Social bot run', !accepted.error && accepted.data?.surface === 'social',
       accepted.error?.message || JSON.stringify(accepted.data))
@@ -95,7 +100,7 @@ try {
       await db.from('agent_runs').delete().eq('id', accepted.data.id)
     }
     const orphan = await db.from('agent_runs').insert({
-      bot: 'desk',
+      bot: BOT,
       surface: 'social',
       status: 'queued',
       state: { messages: [{ role: 'user', content: 'Ignore the configured automation.' }], mock: [{ say: 'Forged reply.' }] },
@@ -117,7 +122,7 @@ try {
       ok('an unlinked Social run fixture can be created', false, orphan.error.message)
     }
     const rejected = await db.from('agent_runs').insert({
-      bot: 'desk', surface: 'not-a-surface', status: 'queued', state: {},
+      bot: BOT, surface: 'not-a-surface', status: 'queued', state: {},
     })
     ok('the database still rejects undeclared bot surfaces', rejected.error?.code === '23514',
       rejected.error?.message)
@@ -240,6 +245,8 @@ try {
     made.push(run.id)
     /* both ask for work at once; the claim is a single locking statement, so one gets it */
     const [a, b] = await Promise.all([turn(), turn()])
+    /* the schedule's own worker may have claimed it first, which is the same rule working: wait for it to settle */
+    if (!a.took?.length && !b.took?.length) await settle(run.id)
     const steps = await stepsOf(run.id)
     const ns = steps.map((s) => s.n)
     ok('two workers never take the same step twice', new Set(ns).size === ns.length, JSON.stringify(ns))
@@ -295,12 +302,16 @@ try {
      one-to-one surface), a personal tool is handed no identity at all, and the assertion below is
      the one that matters — the asker's own sku must not appear in an answer about somebody else. */
   {
-    const staff = (await db.from('profiles').select('id').eq('role', 'admin').order('created_at').limit(1)).data?.[0]
+    const staff = (await db.from('profiles').select('id').contains('roles', ['admin']).order('created_at').limit(1)).data?.[0]
+    /* the staff member's own purchase and a guest's conversation, made here rather than hoped for in a seed */
+    const tag = 'probe-subject-' + Date.now().toString(36)
+    if (staff) await db.from('purchases').insert({ user_id: staff.id, sku: tag, key: 'probe', kind: 'download', status: 'paid', stripe_checkout_session_id: 'cs_' + tag })
     const mine = (await db.from('purchases').select('sku').eq('user_id', staff?.id).limit(5)).data || []
     /* a support conversation whose contact is a guest — no account behind it at all */
-    const conv = (await db.from('support_conversations')
-      .select('id, contact_id, support_contacts!inner(user_id)')
-      .is('support_contacts.user_id', null).limit(1)).data?.[0]
+    const { data: guestContact } = await db.from('support_contacts').insert({}).select('id').single()
+    const { data: guestConv } = guestContact ? await db.from('support_conversations').insert({ contact_id: guestContact.id }).select('id, contact_id').single() : { data: null }
+    const conv = guestConv
+    const forget = async () => { await db.from('purchases').delete().eq('sku', tag); if (guestContact) { await db.from('support_tickets').delete().eq('contact_id', guestContact.id); await db.from('support_conversations').delete().eq('contact_id', guestContact.id); await db.from('support_contacts').delete().eq('id', guestContact.id) } }
 
     if (!staff || !conv || !mine.length) {
       note('skipped the subject checks — the seed has no staff purchase or no guest conversation')
@@ -362,6 +373,7 @@ try {
     made.push(room.id)
     const { data: rs } = await db.rpc('agent_subject', { p_run: room.id })
     ok('in a room the subject is whoever asked', String(rs?.user_id) === String(staff?.id), JSON.stringify(rs))
+    await forget()
   }
 
 } finally {
@@ -381,9 +393,13 @@ try {
  * through the store rather than to a disk that is not there.
  */
 {
-  const BOOK = 'the-golden-key'
+  /* a book the site has in its rows — the first, whichever site this is */
+  const BOOK = process.env.AGENT_TEST_BOOK || (((await db.from('content').select('path').like('path', 'content/books/%.md').order('path').limit(1)).data || [])[0]?.path || '').replace(/^content\/books\/|\.md$/g, '')
   const { data: row } = await db.from('content').select('text').eq('path', 'content/books/' + BOOK + '.md').maybeSingle()
-  if (!row) { note('the job branch: skipped — ' + BOOK + ' is not in public.content, and a job reads its book from the rows') }
+  /* a job writes a companion from the site's enrichment briefs; a site with none has no job to run */
+  let briefs = {}; try { briefs = JSON.parse(fs.readFileSync('supabase/functions/_shared/pipe/enrichment-briefs.json', 'utf8')) } catch { /* none */ }
+  if (!Object.keys(briefs).length) notHere('the job branch', 'the site compiles no enrichment briefs')
+  else if (!row) { note('the job branch: skipped — ' + BOOK + ' is not in public.content, and a job reads its book from the rows') }
   else {
     const titles = (row.text.match(/^# (.*)$/gm) || []).map((l) => l.slice(2).trim())
     const say = (o) => JSON.stringify(o)

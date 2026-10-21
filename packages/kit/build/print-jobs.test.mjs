@@ -106,6 +106,18 @@ const ch = (title, pages) => ({ title, pages })
   ok('and one already on four is left alone', padFor(100, { step: 4 }) === 0)
   ok('nothing at all still meets the minimum', boundPages(0, {}) === BIND_MIN)
   ok('rubbish does not throw', padFor(null) >= 0 && padFor(undefined, { min: 0, step: 0 }) >= 0)
+  /* the minimum and the step, one rule for the build and the function: each printer asked for the FORMAT it would make
+     (the function's own copy asked without one, and bound 77 pages to 80 where the build bound them to 78) */
+  const { bindingFor } = await import('../build/print/plan-pieces.mjs')
+  const asked = []
+  const printer = (id, byFormat) => ({ id, product: ({ chosen }) => { asked.push(id + ':' + (chosen && chosen.format)); return byFormat[chosen && chosen.format] || {} } })
+  const lulu = printer('lulu', { softcover: { minPages: 32, pageStep: 2 }, hardcover: { minPages: 24, pageStep: 2 } })
+  const vault = printer('bookvault', { hardcover: { minPages: 24, pageStep: 4 } })
+  const cands = (spec, f) => (f === 'softcover' ? [lulu] : [lulu, vault])
+  const b = bindingFor({ trim: '6x9' }, ['softcover', 'hardcover'], cands)
+  ok('the binding is the largest minimum and step of every printer that may make each format', b.min === 32 && b.step === 4, JSON.stringify(b))
+  ok('…each asked for the format it would make', asked.join(' ') === 'lulu:softcover lulu:hardcover bookvault:hardcover', asked.join(' '))
+  ok('…and with none to ask, the kit\'s own floor', JSON.stringify(bindingFor({}, ['softcover'], () => [])) === JSON.stringify({ min: BIND_MIN, step: 2 }))
   /* THE WHOLE POINT: the two paths agree. This is the arithmetic that made one path say 26 and
      the other 32 for the same book, when each computed it for itself. */
   ok('the same book binds the same either way', boundPages(26, { min: 32, step: 2 }) === boundPages(26, { min: 32, step: 2 }))

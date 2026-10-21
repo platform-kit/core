@@ -11,6 +11,7 @@
   "workspaces": [
     "packages/*",
     "sites/brochure",
+    "sites/club",
     "sites/demo",
     "sites/docs"
   ],
@@ -22,6 +23,7 @@
     "build:spa": "platformkit site-run build:spa",
     "preview": "platformkit site-run preview",
     "test": "platformkit test",
+    "test:e2e": "platformkit test --e2e",
     "test:hyperswitch:local": "node packages/kit/build/hyperswitch-local.integration.mjs",
     "test:hyperswitch:stack": "node packages/kit/build/hyperswitch-test-stack.mjs up",
     "test:hyperswitch:stack:down": "node packages/kit/build/hyperswitch-test-stack.mjs down",

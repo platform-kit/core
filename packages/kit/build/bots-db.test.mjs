@@ -20,13 +20,14 @@ import { join } from 'node:path'
 import assert from 'node:assert/strict'
 import { projectBots } from './bots-db.mjs'
 import { compileBots } from './bots.mjs'
+import { statusOf, leave } from './test-stack.mjs'
 
 const SITE = process.cwd()
 let pass = 0, fail = 0
 const ok = (n, c, d) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + n + (d ? ' — ' + d : '')) } }
 
 console.log('\nBOTS, PROJECTED WITH NO MACHINE\n')
-const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n'); process.exit(0) }
+const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n'); leave(0) }
 
 /* A failed read or write must stop before the sweep. Otherwise a transient database error can look
    like an empty projection and delete rows, or leave a half-projected declaration looking done. */
@@ -93,7 +94,7 @@ console.log('  ✔ projection read/write failures stop before unsafe cleanup')
 console.log('  ✔ invalid bot declarations fail before generated files are written')
 
 let cfg = null
-try { cfg = JSON.parse(execSync('npx supabase status -o json', { cwd: SITE, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) } catch { skip('no local stack') }
+try { cfg = statusOf(); if (!cfg) throw new Error('no stack') } catch { skip('no local stack') }
 if (!cfg || !cfg.SERVICE_ROLE_KEY) skip('the stack reported no service key')
 const db = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 { const { error } = await db.from('bots').select('id', { head: true, count: 'exact' }); if (error) skip('the bots table is not there — npm run db:reset (' + error.message + ')') }

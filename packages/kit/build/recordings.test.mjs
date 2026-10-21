@@ -14,6 +14,7 @@
 import assert from 'node:assert/strict'
 import http from 'node:http'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 let n = 0, bad = 0
 const ta = async (name, fn) => { n++; try { await fn() } catch (e) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
@@ -22,7 +23,7 @@ let up = false
 try { up = url && localStack() && (await fetch(url + '/rest/v1/', { headers: { apikey: anonKey }, signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
 let served = false
 if (up) { try { served = (await fetch(url + '/functions/v1/session-recordings', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* not served */ } }
-if (!up || !served) { console.log(`recordings: skipped — ${!up ? 'the local stack is not up' : 'the function is not served (npm run dev serves it)'}`); process.exit(0) }
+if (!up || !served) { console.log(`recordings: skipped — ${!up ? 'the local stack is not up' : 'the function is not served (npm run dev serves it)'}`); leave(0) }
 
 const { createClient } = await import('@supabase/supabase-js')
 const admin = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })

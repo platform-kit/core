@@ -10,7 +10,7 @@ sources:
     packages/kit/supabase/functions/_shared/api/keys.ts,
     packages/kit/build/matrix-api.test.mjs,
   ]
-reviewed: 2026-10-19
+reviewed: 2026-10-21
 ---
 
 The guide is [The community as a Matrix homeserver](/content/docs/building-a-site/matrix-api). This page says exactly what is there. Modules: `spaces` and `api`; with either off nothing answers.

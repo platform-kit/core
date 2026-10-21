@@ -25,7 +25,7 @@ sources:
     packages/kit/build/runtime-paths.test.mjs,
     packages/movable-types/src/pages/AdminPage.vue,
   ]
-reviewed: 2026-10-19
+reviewed: 2026-10-21
 ---
 
 ## Module switches
@@ -138,7 +138,7 @@ The demo was verified with each of nine modules off in turn: the site builds, th
 
 A module that needs recurring database work declares each job beside its other owned resources: a stable `name`, a pg_cron `schedule` and one SQL `command`. Kit declarations live in `build/modules/kit.mjs`; site modules use the same manifest shape, and theme modules may contribute declarations too. Assembly resolves the enabled module set and generates reconciliation SQL after the kit and site row scripts. This is build-time registration: modules do not edit a separate cron list or register jobs dynamically at runtime.
 
-The generated reconciliation remembers only PlatformKit-owned names in `app_settings.platformkit_cron_jobs`. It updates a declared job by its stable name, removes jobs no longer declared by enabled modules, adopts the known legacy declared names on first application, and refuses a same-named job it does not own. Unrelated operator jobs are left alone. Reset and deploy apply the same assembled declaration. For example, memberships declares a renewal job for Hyperswitch subscriptions; it runs every 15 minutes. Stripe subscriptions renew through Stripe's own recurring-billing service.
+The generated reconciliation remembers only PlatformKit-owned names in `app_settings.platformkit_cron_jobs`. It updates a declared job by its stable name, removes jobs no longer declared by enabled modules, adopts the known legacy declared names on first application, and refuses a same-named job it does not own. Unrelated operator jobs are left alone. A job is unscheduled only when it is there, so a fresh database with a scheduled module off resets cleanly. Reset and deploy apply the same assembled declaration. For example, memberships declares a renewal job for Hyperswitch subscriptions; it runs every 15 minutes. Stripe subscriptions renew through Stripe's own recurring-billing service.
 
 ## A site adds a module of its own
 

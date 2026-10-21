@@ -154,9 +154,10 @@ const pipeImportMaps = [...plan]
     const imports = JSON.parse(content.toString()).imports || {}
     return Object.entries(imports).map(([key, target]) => ({ file, key, target }))
   })
-const sharedSpecifier = (specifier, importer) => {
+const sharedSpecifier = (specifier, importer, { lenient = false, only = null } = {}) => {
   if (/^(?:\.{1,2}\/|\/|npm:|jsr:|node:|https?:|data:)/.test(specifier)) return specifier
-  const matches = pipeImportMaps.filter(({ key }) => specifier === key || specifier.startsWith(key.endsWith('/') ? key : key + '/'))
+  const matches = pipeImportMaps.filter(({ file }) => !only || file === only).filter(({ key }) => specifier === key || specifier.startsWith(key.endsWith('/') ? key : key + '/'))
+  if (!matches.length && lenient) return specifier
   if (!matches.length) throw new Error(`assemble: shared Edge module ${importer} imports "${specifier}" but no function deno.json maps it`)
   const longest = Math.max(...matches.map(({ key }) => key.length))
   const resolved = new Set(matches.filter(({ key }) => key.length === longest).map(({ file, key, target }) => {
@@ -251,9 +252,26 @@ if (c.admin && c.admin.models) {
   }
   plan.set('functions/_shared/pipe/site/index.js', { from: c.admin.models, content: Buffer.from(`export { models } from './${entry}'\n`) })
 } else plan.set('functions/_shared/pipe/site/index.js', { from: 'platformkit.config.js', content: Buffer.from('export const models = []\n') })
+/* AND THE REST OF THE SHARED TREE, for the same reason: `_shared/api/richtext.js` and `_shared/emails/markdown.js`
+   import `marked` bare (Node reads them too, through node_modules), and no function's deno.json reaches them, so every
+   function that imported either failed to boot — content, storefront-api, agent-run, admin, providers. Outside the
+   pipe a bare import no function maps is left as written: only Node and the browser read such a module. */
 for (const [target, entry] of plan) {
-  if (!target.startsWith('functions/_shared/pipe/') || !/\.(?:[cm]?js|ts)$/.test(target)) continue
-  const rewrite = (_, prefix, quote, specifier) => `${prefix}${quote}${sharedSpecifier(specifier, target)}${quote}`
+  if (!target.startsWith('functions/_shared/') || !/\.(?:[cm]?js|ts)$/.test(target)) continue
+  const lenient = !target.startsWith('functions/_shared/pipe/')
+  const rewrite = (_, prefix, quote, specifier) => `${prefix}${quote}${sharedSpecifier(specifier, target, { lenient })}${quote}`
+  const content = entry.content.toString('utf8')
+    .replace(sharedStaticImportPattern, rewrite)
+    .replace(sharedDynamicImportPattern, rewrite)
+  plan.set(target, { ...entry, content: Buffer.from(content) })
+}
+/* AND EVERY FUNCTION'S OWN FILES, through its own deno.json: the local runtime applies no function's import map at all
+   (images failed on its own `@cf-wasm/photon/others`, which its deno.json maps), and a written-out npm: target needs
+   none — so what boots does not depend on how a runtime reads deno.json, here or deployed. */
+for (const [target, entry] of plan) {
+  const fn = /^functions\/([^/_][^/]*)\/.+\.(?:[cm]?js|ts)$/.exec(target)?.[1]
+  if (!fn || !plan.has(`functions/${fn}/deno.json`)) continue
+  const rewrite = (_, prefix, quote, specifier) => `${prefix}${quote}${sharedSpecifier(specifier, target, { lenient: true, only: `functions/${fn}/deno.json` })}${quote}`
   const content = entry.content.toString('utf8')
     .replace(sharedStaticImportPattern, rewrite)
     .replace(sharedDynamicImportPattern, rewrite)
@@ -388,6 +406,19 @@ function unresolved(plan) {
   return bad
 }
 
+/*
+ * THE FUNCTIONS THE GATEWAY MUST LET THROUGH WITHOUT A SUPABASE JWT — a webhook, a Matrix or atproto client, a page's
+ * own form — are named by the kit's template (`verify_jwt = false`). A site's config.toml is its own and is written
+ * once, so a function added to the kit after it was written was never let through: the gateway answered 401 to every
+ * Matrix client and to every payment provider's webhook, before the function ever ran. Each one the tree serves is
+ * kept in the site's file here, as [db.seed] is; a section the site wrote itself is left as it is.
+ */
+const PUBLIC_FUNCTIONS = [...fs.readFileSync(path.join(KIT, 'config.toml.template'), 'utf8').matchAll(/^\[functions\.([a-z0-9-]+)\]\s*\nverify_jwt = false/gm)].map((m) => m[1])
+function withPublicFunctions(toml) {
+  const missing = PUBLIC_FUNCTIONS.filter((fn) => plan.has(`functions/${fn}/index.ts`) && !new RegExp(`^\\[functions\\.${fn}\\]`, 'm').test(toml))
+  return { toml: missing.length ? toml.trimEnd() + '\n' + missing.map((fn) => `\n[functions.${fn}]\nverify_jwt = false\n`).join('') : toml, missing }
+}
+
 const manifest = { assembled: [...plan.keys()].sort(), sha: Object.fromEntries([...plan].map(([k, v]) => [k, sha(v.content)])) }
 const migrations = walk(path.join(OUT, 'migrations')).filter((f) => f.endsWith('.sql'))
 
@@ -398,6 +429,8 @@ if (check) {
   for (const u of unresolved(plan)) bad.push(`unresolved ${u} — the edge runtime resolves every literal specifier it sees, so this is the whole runtime refusing to boot, not one function failing`)
   if (migrations.length) bad.push(`supabase/migrations/ holds ${migrations.length} file(s) — nothing reads a migration now: the declaration is supabase/schemas/, and git keeps the history; delete the folder`)
   if (fs.existsSync(cfg) && withSeed(fs.readFileSync(cfg, 'utf8')) !== fs.readFileSync(cfg, 'utf8')) bad.push('config.toml: [db.seed] does not name the declaration, the rows and the seed')
+  if (fs.existsSync(cfg)) for (const fn of withPublicFunctions(fs.readFileSync(cfg, 'utf8')).missing) bad.push(`config.toml: [functions.${fn}] verify_jwt = false is missing — the gateway refuses its callers before it runs`)
+  for (const d of fs.existsSync(path.join(OUT, 'functions')) ? fs.readdirSync(path.join(OUT, 'functions')) : []) { const dir = path.join(OUT, 'functions', d); if (fs.statSync(dir).isDirectory() && !walk(dir).length) bad.push(`stray functions/${d}/ — an empty directory a removed function left`) }
   if (bad.length) { console.error('✖ supabase/ is not what its sources assemble to — run node packages/kit/build/assemble.mjs; the tree is generated, never edited or committed:\n  ' + bad.join('\n  ')); process.exit(1) }
   console.log(`✔ supabase/ assembled: ${kitSchemas.length} kit + ${siteSchemas.length} site schema file(s), the rows, ${new Set([...plan.keys()].filter((k) => k.startsWith('functions/')).map((k) => k.split('/')[1])).size} function dir(s), the seed`)
   process.exit(0)
@@ -410,9 +443,13 @@ if (check) {
 let wrote = 0
 for (const [k, v] of plan) { const f = path.join(OUT, k); fs.mkdirSync(path.dirname(f), { recursive: true }); if (!fs.existsSync(f) || !fs.readFileSync(f).equals(v.content)) { fs.writeFileSync(f, v.content); wrote++ } }
 for (const k of current.assembled || []) if (!plan.has(k) && !BUILT.test(k)) { const f = path.join(OUT, k); if (fs.existsSync(f)) { fs.unlinkSync(f); console.log('  removed ' + k) } }
+/* and the directories a removed function leaves empty: the runtime serves a directory as a function, and the run's
+   coverage gate counted one (wp-json) that had not existed for a month */
+for (const d of fs.existsSync(path.join(OUT, 'functions')) ? fs.readdirSync(path.join(OUT, 'functions')) : []) { const dir = path.join(OUT, 'functions', d); if (fs.statSync(dir).isDirectory() && !walk(dir).length) { fs.rmSync(dir, { recursive: true }); console.log('  removed functions/' + d + '/ (empty)') } }
 const migDir = path.join(OUT, 'migrations')
 if (fs.existsSync(migDir) && !walk(migDir).length) fs.rmSync(migDir, { recursive: true })
 if (walk(migDir).length) console.warn(`  ! supabase/migrations/ still holds ${walk(migDir).length} file(s) nothing reads — delete the folder (git keeps the history); --check refuses it`)
 { const t = fs.readFileSync(cfg, 'utf8'); const u = withSeed(t); if (u !== t) { fs.writeFileSync(cfg, u); console.log('  config.toml: [db.seed] names the declaration, the rows and the seed') } }
+{ const { toml, missing } = withPublicFunctions(fs.readFileSync(cfg, 'utf8')); if (missing.length) { fs.writeFileSync(cfg, toml); console.log(`  config.toml: the gateway lets ${missing.join(', ')} through without a Supabase JWT, as the kit's template does`) } }
 fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
 console.log(`supabase/ ← the kit's data layer + ${D.schemas}, ${D.rows}, ${D.functions}, ${D.seed}: ${plan.size} file(s), ${wrote} written`)

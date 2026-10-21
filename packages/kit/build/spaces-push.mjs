@@ -186,7 +186,7 @@ export async function pushSpaces({ check = false, seed = false, root = ROOT, dec
       const row = { capability: g.capability, scope: g.scope, space_id: sid, source: 'file', note: g.note || null }
       if (g.channel) { const id = chId.get(g.channel); if (!id) continue; row.channel_id = id }
       if (g.scope === 'tier') row.tier = g.tier
-      if (g.scope === 'product') row.product_key = g.product_key
+      if (g.scope === 'product') { if (!g.product_key) throw new Error(`spaces: ${s.slug}: the grant to bought:${g.sku} names no offer key — the catalog holds no offer "${g.sku}" (or was not read)`); row.product_key = g.product_key }
       if (g.scope === 'role') { const id = roleId.get(g.role); if (!id) continue; row.role_id = id }
       if (Number.isFinite(g.days)) row.days = g.days
       grantRows.push(row)

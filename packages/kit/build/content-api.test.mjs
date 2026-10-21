@@ -20,6 +20,7 @@ import { richTextFromMarkdown } from '../supabase/functions/_shared/api/richtext
 import { entryId, assetId } from '../supabase/functions/_shared/api/ids.js'
 import { openapiFor } from '../supabase/functions/_shared/api/openapi.js'
 import { loadSite } from './site.mjs'
+import { leave, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('content-api: ' + m)
 if (process.env.CONTENT_API_TEST === '0') { note('skipped (CONTENT_API_TEST=0)'); process.exit(0) }
@@ -27,7 +28,7 @@ const ROOT = process.cwd()
 let pass = 0, fail = 0
 const ok = async (name, fn) => { try { await fn(); pass++ } catch (e) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 const c = await loadSite(ROOT)
-if (c.modules && c.modules.api === false) { note('skipped — the api module is off'); process.exit(0) }
+if (c.modules && c.modules.api === false) { notHere('content-api.test.mjs', 'the api module is off'); process.exit(0) }
 
 /* ---- (1) the index ---- */
 const index = await contentIndex({ root: ROOT })
@@ -166,7 +167,7 @@ await ok('the OpenAPI document: valid 3.1, one schema per content type, content_
 const url = supabaseUrl(), anon = process.env.VITE_SUPABASE_ANON_KEY || ''
 let served = false
 try { served = !!(url && anon && localStack()) && (await fetch(url + '/functions/v1/content/spaces/' + index.space, { signal: AbortSignal.timeout(4000) })).ok } catch { /* down */ }
-if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the index and the shapes — the local stack is not up or the content function is not served)`); process.exit(fail ? 1 : 0) }
+if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the index and the shapes — the local stack is not up or the content function is not served)`); leave(fail ? 1 : 0) }
 execFileSync(process.execPath, [new URL('./content-json.mjs', import.meta.url).pathname], { stdio: 'ignore' })   /* the served function answers this checkout's content */
 /* the functions server reloads on the index's write: wait for it to answer again before asking anything */
 for (let i = 0; i < 20; i++) { await new Promise((r) => setTimeout(r, 500)); try { const r = await fetch(url + '/functions/v1/content/spaces/' + index.space, { signal: AbortSignal.timeout(4000) }); if (r.ok && (await r.json()).sys) { await new Promise((x) => setTimeout(x, 1000)); break } } catch { /* reloading */ } }

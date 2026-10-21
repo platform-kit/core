@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict'
 import { createClient } from '@supabase/supabase-js'
 import { localStack, loadDotEnv, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const note = (message) => console.log('usage-db: ' + message)
 loadDotEnv()
@@ -13,13 +14,13 @@ const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
 if (!url || !localStack() || !anonKey) {
   note('skipped — local Supabase credentials are unavailable; usage grants, balances, and reader policies were not covered')
-  process.exit(0)
+  leave(0)
 }
 try {
   if (!(await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok) throw new Error('health check failed')
 } catch {
   note('skipped — local Supabase is not running; usage grants, balances, and reader policies were not covered')
-  process.exit(0)
+  leave(0)
 }
 
 const admin = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })

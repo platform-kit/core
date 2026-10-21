@@ -12,17 +12,26 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
+import { requireStack, skip, leave, notHere } from './test-stack.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nPRINT IN THE CLOUD\n')
 
-const API = process.env.SUPABASE_URL || 'http://127.0.0.1:54321'
-const ANON = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
-const BOOK = process.env.PRINT_TEST_BOOK || 'the-golden-key'
-
-const off = (why) => { console.log(`  ${why} — skipped\n`); process.exit(0) }
+const STACK = requireStack('print-cloud')
+const API = STACK.api
+const ANON = STACK.anon
+/* a book the site prints: the one named, or the first of the site's own with a print block */
+const BOOK = process.env.PRINT_TEST_BOOK || (() => {
+  const dir = path.join(process.cwd(), 'content', 'books')
+  const f = fs.existsSync(dir) ? fs.readdirSync(dir).sort().find((n) => n.endsWith('.md') && /^print:/m.test(fs.readFileSync(path.join(dir, n), 'utf8'))) : null
+  return f ? f.replace(/\.md$/, '') : ''
+})()
+/* the book's own first edition (print.contents): parts, full or summary */
+const CONTENTS = BOOK ? ((/^print:[\s\S]*?\n  contents:\s*\n\s+- (\w+)/m.exec(fs.readFileSync(path.join(process.cwd(), 'content', 'books', BOOK + '.md'), 'utf8')) || [])[1] || 'parts') : 'parts'
+const off = (why) => skip('print-cloud', why)
+if (!BOOK) off('the site has the print module on and no book with a print block — give one a print edition')
 
 /*
  * THE ROWS THIS NEEDS, PUT THERE BY THIS. Content in cloud mode is rows, and the function reads
@@ -36,8 +45,7 @@ const off = (why) => { console.log(`  ${why} — skipped\n`); process.exit(0) }
  * front is that picture. Everything else in the stack is left exactly as it is.
  */
 async function seed() {
-  const { serviceKey } = await import('./tts/storage.mjs')
-  const key = serviceKey()
+  const key = STACK.service
   if (!key) return false
   const { createClient } = await import('@supabase/supabase-js')
   const sb = createClient(API, key, { auth: { persistSession: false } })
@@ -64,6 +72,15 @@ async function seed() {
     }
   } catch { /* a book with no picture prints in type */ }
   return true
+}
+/* print.json AS IT WAS, put back at the end: this test sets a book and posts pictures under made-up names (chapter "X",
+   page-9.jpg), and on a site's own stack those were left in its print.json — DharmaLab's carried them into its repository */
+const { createClient: cc } = await import('@supabase/supabase-js')
+const restoreDb = cc(API, STACK.service, { auth: { persistSession: false } })
+const { data: printedBefore } = await restoreDb.from('content').select('*').eq('path', 'content/store/print.json').maybeSingle()
+const putBack = async () => {
+  if (printedBefore) await restoreDb.from('content').upsert(printedBefore)
+  else await restoreDb.from('content').delete().eq('path', 'content/store/print.json')
 }
 if (!(await seed())) off(`${BOOK} could not be put in public.content — this is the cloud path, and content there is rows`)
 
@@ -131,7 +148,7 @@ const call = async (body, tries = 3) => {
 }
 
 /* --- and the book itself --- */
-const set = await call({ book: BOOK, contents: 'parts' })
+const set = await call({ book: BOOK, contents: CONTENTS })
 if (set.body && /no book called/.test(String(set.body.error || ''))) {
   off(`${BOOK} is not in public.content — this is the cloud path, and content there is rows`)
 }
@@ -146,10 +163,10 @@ if (set.body && /no book called/.test(String(set.body.error || ''))) {
      printer and not another fails at the moment of ordering */
   const { boundPages } = await import('../build/print/plan-pieces.mjs')
   const bare = Number(set.body.pages) - Number(set.body.padded)
+  /* against the binding the function says it used (the printers' own minimum and step, shared with the build) */
   ok('the padding is the binding rule, not a number of its own',
-    Number(set.body.pages) === boundPages(bare, { min: Number(set.body.pages) - Number(set.body.padded) + Number(set.body.padded) >= 32 ? 32 : 24 })
-    || Number(set.body.padded) === 0,
-    `bare ${bare} → ${set.body.pages}`)
+    !!set.body.binding && Number(set.body.pages) === boundPages(bare, set.body.binding),
+    `bare ${bare} → ${set.body.pages} under ${JSON.stringify(set.body.binding)}`)
   ok('an even number of pages, because a leaf has two sides', Number(set.body.pages) % 2 === 0)
 
   /* THE PAGE PICTURES ARE NOT DRAWN HERE, and the answer carries what a browser needs to draw
@@ -182,7 +199,7 @@ if (set.body && set.body.ok) {
   ok('and says which folder the PDFs to draw them from are in', typeof set.body.folder === 'string' && set.body.folder.startsWith(BOOK + '/'), String(set.body.folder))
   ok('naming a cover PDF for every printed format it set',
     Object.keys(set.body.covers || {}).length > 0 && Object.values(set.body.covers).every((n) => String(n).endsWith('.pdf')),
-    JSON.stringify(set.body.covers))
+    JSON.stringify(set.body.covers) + (set.body.notes && set.body.notes.length ? ' — the function noted: ' + set.body.notes.join(' | ') : '') + (set.body.incomplete && set.body.incomplete.length ? ' — left unset: ' + set.body.incomplete.join(', ') : ''))
 }
 
 /* --- THE PICTURES COME BACK FROM THE BROWSER, and are recorded against an edition.
@@ -201,26 +218,25 @@ if (set.body && set.body.ok) {
   const coverKey = Object.keys(set.body.covers || {}).find((k) => k.startsWith('softcover')) || 'softcover-lulu'
   const coverPic = 'cover-' + coverKey + '.jpg'
   const pictures = { 'page-9.jpg': JPEG, [coverPic]: JPEG }
-  const shots = { chapter: 'X', edition: { contents: 'parts', page: 9, art: 'page-9.jpg' } }
+  const shots = { chapter: 'X', edition: { contents: CONTENTS, page: 9, art: 'page-9.jpg' } }
   const art = { [coverKey]: coverPic }
 
-  const stale = await call({ book: BOOK, contents: 'parts', edition: 'deadbeefdeadbeef', pictures, shots, art })
+  const stale = await call({ book: BOOK, contents: CONTENTS, edition: 'deadbeefdeadbeef', pictures, shots, art })
   ok('pictures drawn from another edition are refused', stale.status === 409 && /another edition/.test(String(stale.body.error || '')), JSON.stringify(stale.body).slice(0, 140))
   ok('and it says which edition is actually set', stale.body && stale.body.set === set.body.edition, JSON.stringify(stale.body.set))
 
-  const bad = await call({ book: BOOK, contents: 'parts', edition: set.body.edition, pictures: { '../../escape.jpg': JPEG } })
+  const bad = await call({ book: BOOK, contents: CONTENTS, edition: set.body.edition, pictures: { '../../escape.jpg': JPEG } })
   ok('a picture name that is a path is refused outright', bad.status === 400 && /not a picture name/.test(String(bad.body.error || '')), JSON.stringify(bad.body).slice(0, 120))
 
-  const good = await call({ book: BOOK, contents: 'parts', edition: set.body.edition, pictures, shots, art })
+  const good = await call({ book: BOOK, contents: CONTENTS, edition: set.body.edition, pictures, shots, art })
   ok('pictures for the edition that is set are recorded', good.body && good.body.ok === true, JSON.stringify(good.body).slice(0, 160))
   ok('and it says how many it stored', good.body && good.body.pictures === 2, JSON.stringify(good.body.pictures))
 
   const { createClient } = await import('@supabase/supabase-js')
-  const { serviceKey } = await import('./tts/storage.mjs')
-  const sb2 = createClient(API, serviceKey(), { auth: { persistSession: false } })
+  const sb2 = createClient(API, STACK.service, { auth: { persistSession: false } })
   const { data: row2 } = await sb2.from('content').select('text').eq('path', 'content/store/print.json').maybeSingle()
   let idx2 = null; try { idx2 = JSON.parse(row2.text) } catch { /* not written */ }
-  const ed2 = idx2 && idx2[BOOK] && idx2[BOOK].editions && idx2[BOOK].editions.parts
+  const ed2 = idx2 && idx2[BOOK] && idx2[BOOK].editions && idx2[BOOK].editions[CONTENTS]
   ok('print.json holds the page picture', ed2 && ed2.shots && ed2.shots.edition && Number(ed2.shots.edition.page) === 9, JSON.stringify(ed2 && ed2.shots))
   /* the address is the FUNCTION'S, built from the name — never the caller's */
   const shotUrl = ed2 && ed2.shots && ed2.shots.edition && ed2.shots.edition.art
@@ -235,6 +251,8 @@ if (set.body && set.body.ok) {
    * `reachableToPrinter` is written around; it is not something to work around here, so the fetch is
    * made against the host this machine knows, exactly as a browser normalises one.
    */
+  /* the address recorded is the one a reader's browser fetches: never the runtime's own name for the gateway */
+  if (shotUrl) ok('the address it records is one a reader can reach', !/\/\/kong[:/]/.test(shotUrl), shotUrl)
   if (shotUrl) {
     const here = shotUrl.replace(/^https?:\/\/[^/]+/, API)
     const r = await fetch(here)
@@ -249,9 +267,9 @@ if (set.body && set.body.ok) {
 
   /* setting the book again must not wipe them: mergeIndex carries the listing's art forward for a
      matching edition, which is the whole reason a cloud render may draw none */
-  const re = await call({ book: BOOK, contents: 'parts' })
+  const re = await call({ book: BOOK, contents: CONTENTS })
   const { data: row3 } = await sb2.from('content').select('text').eq('path', 'content/store/print.json').maybeSingle()
-  const ed3 = JSON.parse(row3.text)[BOOK].editions.parts
+  const ed3 = JSON.parse(row3.text)[BOOK].editions[CONTENTS]
   ok('and a later render of the same edition keeps them', re.body.ok && ed3.shots && Number((ed3.shots.edition || {}).page) === 9, JSON.stringify(ed3.shots))
   const softcoverKey = Object.keys(set.body.covers || {}).find((key) => key.startsWith('softcover'))
   ok('and keeps the cover pictures too', re.body.ok && !!(softcoverKey && ed3.art && ed3.art[softcoverKey]), JSON.stringify(ed3.art))
@@ -277,11 +295,10 @@ if (set.body && set.body.ok) {
 /* --- WHAT IT WROTE DOWN: print.json, through the store, and the files beside the book --- */
 if (set.body && set.body.ok) {
   const { createClient } = await import('@supabase/supabase-js')
-  const { serviceKey } = await import('./tts/storage.mjs')
-  const sb = createClient(API, serviceKey(), { auth: { persistSession: false } })
+  const sb = createClient(API, STACK.service, { auth: { persistSession: false } })
   const { data: row } = await sb.from('content').select('text').eq('path', 'content/store/print.json').maybeSingle()
   let idx = null; try { idx = JSON.parse(row.text) } catch { /* not written */ }
-  const ed = idx && idx[BOOK] && idx[BOOK].editions && idx[BOOK].editions.parts
+  const ed = idx && idx[BOOK] && idx[BOOK].editions && idx[BOOK].editions[CONTENTS]
   /* print.json is DERIVED and lives under content/ — so in cloud mode it is a row like every
      other file, and the function writes it through the store rather than reaching for a disk */
   ok('it writes print.json where the store keeps content', !!ed, 'no row')
@@ -300,7 +317,7 @@ if (set.body && set.body.ok) {
 
 /* --- and the same book, twice, is the same book --- */
 {
-  const again = await call({ book: BOOK, contents: 'parts' })
+  const again = await call({ book: BOOK, contents: CONTENTS })
   ok('setting it again gives the same page count', again.body.pages === set.body.pages, `${set.body.pages} then ${again.body.pages}`)
   ok('and the same edition', again.body.edition === set.body.edition, `${set.body.edition} then ${again.body.edition}`)
   /* THE TYPE IS FETCHED ONCE PER WORKER — 1.7 MB of it, and most of a cold call. The wall clock of
@@ -312,7 +329,7 @@ if (set.body && set.body.ok) {
      two cold calls in a row is the cache not working; one is the runtime moving house. */
   const seen = new Map([[set.body.worker, set.body.warm], [again.body.worker, again.body.warm]])
   let warm = again.body.warm, third = null
-  if (warm !== true) { third = (await call({ book: BOOK, contents: 'parts' })).body; warm = third.warm; seen.set(third.worker, warm) }
+  if (warm !== true) { third = (await call({ book: BOOK, contents: CONTENTS })).body; warm = third.warm; seen.set(third.worker, warm) }
   const says = `${set.body.worker}:${set.body.warm} ${again.body.worker}:${again.body.warm}${third ? ` ${third.worker}:${third.warm}` : ''}`
   if (warm === true) ok('and the worker did not fetch the type again', true)
   else if (seen.size >= (third ? 3 : 2)) {
@@ -327,8 +344,12 @@ if (set.body && set.body.ok) {
   const idx = path.join(process.cwd(), 'content/store/print.json')
   if (fs.existsSync(idx)) {
     const j = JSON.parse(fs.readFileSync(idx, 'utf8'))
-    const ed = j[BOOK] && j[BOOK].editions && j[BOOK].editions.parts
-    if (ed && ed.pages) {
+    const ed = j[BOOK] && j[BOOK].editions && j[BOOK].editions[CONTENTS]
+    /* the same book binds alike only before the same printers: the build's print.json was set wherever it was set, with
+       the printers that machine had keys for, and a run with another set binds to theirs (Bookvault counts in fours) */
+    const providersOf = (ps) => JSON.stringify(Object.fromEntries(Object.entries(ps || {}).map(([k, v]) => [k, v && v.provider]).sort()))
+    if (ed && ed.pages && providersOf(ed.printers) !== providersOf(set.body.printers)) notHere('print-cloud: the build\'s count', `the build set this edition with other printers (${providersOf(ed.printers)}; here ${providersOf(set.body.printers)})`)
+    else if (ed && ed.pages) {
       ok('the function binds the same book the build does', Number(ed.pages) === Number(set.body.pages),
         `build ${ed.pages}, function ${set.body.pages}`)
       /*
@@ -344,7 +365,7 @@ if (set.body && set.body.ok) {
       if (ed.edition && set.body.edition) {
         if (ed.edition === set.body.edition) ok('and it is the same edition', true)
         else {
-          const { body: p } = await call({ book: BOOK, contents: 'parts', parts: true })
+          const { body: p } = await call({ book: BOOK, contents: CONTENTS, parts: true })
           const mine = p.parts || {}
           const theirs = ed.parts || null
           console.log(`  (the ids differ: build ${ed.edition}, function ${set.body.edition}` +
@@ -361,8 +382,10 @@ if (exhausted) {
   console.log('    that has been answering all day cannot hold another one. Restart it — stop and start')
   console.log('    `npm run dev`, or `supabase functions serve` — and run this again.')
   console.log('    If it still says this on a fresh runtime, the book really has grown too heavy.\n')
-  process.exit(0)
+  await putBack()
+  leave(0)
 }
 
+await putBack()
 console.log(`\n${pass} passed, ${fail} failed\n`)
 if (fail) process.exit(1)

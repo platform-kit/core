@@ -8,14 +8,15 @@ import { createClient } from '@supabase/supabase-js'
 import { writeFileSync, readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave, stackOf } from './test-stack.mjs'
 
 const note = (m) => console.log('webhooks: ' + m)
 if (process.env.WEBHOOKS_TEST === '0') { note('skipped (WEBHOOKS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
-if (!url || !localStack()) { note('skipped — no local stack in .env'); process.exit(0) }
+if (!url || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
-if (!up) { note('skipped — the local stack is not up'); process.exit(0) }
+if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (m, c, d) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
@@ -38,7 +39,7 @@ const F = join(process.cwd(), 'supabase/functions/_shared/webhooks.json')
  */
 async function settle(ms = 30000) {
   /* the same default the other stack tests take, since a test run does not carry VITE_* */
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'http://127.0.0.1:54321'
+  const url = stackOf()?.api || ''
   const alive = async () => {
     try { const r = await fetch(url + '/functions/v1/print-render', { method: 'POST', body: '{}', signal: AbortSignal.timeout(3000) }); return r.status !== 502 && r.status !== 503 }
     catch { return false }

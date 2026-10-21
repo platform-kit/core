@@ -11,15 +11,16 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave, moduleOn, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('people-db: ' + m)
 if (process.env.PEOPLE_TEST === '0') { note('skipped (PEOPLE_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
-if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); process.exit(0) }
+if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
-if (!up) { note('skipped — the local stack is not up'); process.exit(0) }
+if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
@@ -70,7 +71,9 @@ try {
   const buyer = (await admin.sb.rpc('admin_everybody', { p_q: 'buyer@example.com', p_limit: 1, p_offset: 0 })).data.people[0]
   ok('a customer is found by address', !!buyer)
   const one = (await admin.sb.rpc('admin_person', { p_user: buyer.id })).data
-  ok('their purchases are there', Array.isArray(one.purchases) && one.purchases.length > 0)
+  /* the seed's buyer bought something where the site sells; a site with no store has nothing for them to have bought */
+  if (await moduleOn('store')) ok('their purchases are there', Array.isArray(one.purchases) && one.purchases.length > 0)
+  else { ok('their purchases are a list, empty where nothing is sold', Array.isArray(one.purchases)); notHere('people-db: a customer\'s purchases', 'the store module is off') }
   ok('with what each cost', one.purchases.every((p) => p.amount != null && p.sku))
   ok('their live entitlements are there', Array.isArray(one.entitlements))
   ok('their bookings are there', Array.isArray(one.bookings))

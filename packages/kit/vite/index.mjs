@@ -348,7 +348,8 @@ function velite(c) {
       server.middlewares.use((req, res, next) => {
         const u = (req.url || '').split('?')[0]
         if (!PACKS[u]) return next()
-        const f = path.resolve(c.root, PACKS[u])
+        /* the end-to-end run builds its own (PLATFORMKIT_DIST), against its own stack, and serves those */
+        const f = path.resolve(c.root, process.env.PLATFORMKIT_DIST ? PACKS[u].replace(/^dist\//, process.env.PLATFORMKIT_DIST.replace(/\/$/, '') + '/') : PACKS[u])
         if (!fs.existsSync(f)) return next()
         /* an embed is read from another origin by design: that is what an embed is */
         res.setHeader('access-control-allow-origin', '*')

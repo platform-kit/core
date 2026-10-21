@@ -27,12 +27,13 @@ import { summaryOf } from '../supabase/functions/_shared/api/typeform/insights.j
 import { modelFromDefinition, applyPatch } from '../supabase/functions/_shared/api/typeform/document.js'
 import { serialiseForm } from './form-io.mjs'
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
+import { leave, notHere, stackOf } from './test-stack.mjs'
 
 const note = (m) => console.log('forms-api: ' + m)
 if (process.env.FORMS_API_TEST === '0') { note('skipped (FORMS_API_TEST=0)'); process.exit(0) }
 const ROOT = process.cwd()
 const c = await loadSite(ROOT)
-if (c.modules.forms === false || c.modules.api === false) { note('the forms or the api module is off — nothing to check'); process.exit(0) }
+if (c.modules.forms === false || c.modules.api === false) { note('the forms or the api module is off — nothing to check'); { notHere('forms-api.test.mjs', 'its module is off'); process.exit(0) } }
 let pass = 0, fail = 0
 const ok = async (name, fn) => { try { await fn(); pass++ } catch (e) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 
@@ -204,13 +205,13 @@ await ok('a definition → the builder\'s model → a forms.md document → the 
 const url = supabaseUrl(), anon = process.env.VITE_SUPABASE_ANON_KEY || ''
 let served = false
 try { served = !!(url && anon && localStack()) && (await fetch(url + '/functions/v1/forms-api/forms', { signal: AbortSignal.timeout(4000) })).status === 401 } catch { /* down */ }
-if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the shapes — the local stack is not up or the forms-api function is not served)`); process.exit(fail ? 1 : 0) }
+if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the shapes — the local stack is not up or the forms-api function is not served)`); leave(fail ? 1 : 0) }
 execFileSync(process.execPath, [new URL('./forms.mjs', import.meta.url).pathname], { stdio: 'ignore' })
 /* the functions server reloads on the file's write: wait for it to answer again before asking anything */
 for (let i = 0; i < 20; i++) { await new Promise((r) => setTimeout(r, 500)); try { const r = await fetch(url + '/functions/v1/forms-api/forms', { signal: AbortSignal.timeout(4000) }); if (r.status === 401) { await new Promise((x) => setTimeout(x, 1000)); break } } catch { /* reloading */ } }
 const FORMS = JSON.parse(fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/forms.json'), 'utf8'))
 const live = Object.entries(FORMS).filter(([, f]) => f.kit?.published !== false && f.settings?.page === 'form-slides').map(([k]) => k)
-if (!live.length) { note(`${pass} passed — no published form on this site; the door is checked on the demo`); process.exit(fail ? 1 : 0) }
+if (!live.length) { note(`${pass} passed — no published form on this site; the door is checked on the demo`); leave(fail ? 1 : 0) }
 const { createClient } = await import('@supabase/supabase-js')
 const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const API = url + '/functions/v1/forms-api'
@@ -297,7 +298,7 @@ try {
   })
   /* ---- (3) the embed on Playwright ---- */
   await ok('@typeform/embed on another origin: the widget shows the site\'s form, reports ready and the screens, and finishing reports the response', async () => {
-    const appUrl = (process.env.VITE_APP_URL || 'http://localhost:5173').replace(/\/+$/, '')
+    const appUrl = (stackOf()?.app || '').replace(/\/+$/, '')
     let up = false; try { up = (await fetch(appUrl + '/to/' + slug, { signal: AbortSignal.timeout(3000) })).ok } catch { /* down */ }
     if (!up) { note('the dev server is not up at ' + appUrl + ' — the embed is checked by hand'); return }
     const embedJs = fs.readFileSync(new URL(import.meta.resolve('@typeform/embed/build/embed.js')), 'utf8')
@@ -358,7 +359,7 @@ try {
       const badLogic = await get('/forms/' + probe, { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, { method: 'PUT', body: JSON.stringify({ title: 'x', fields: [{ ref: 'a', type: 'short_text', title: 'A' }, { ref: 'b', type: 'short_text', title: 'B' }, { ref: 'c', type: 'short_text', title: 'C' }], logic: [{ type: 'field', ref: 'a', actions: [{ action: 'jump', details: { to: { type: 'field', value: 'c' } }, condition: { op: 'begins_with', vars: [{ type: 'field', value: 'a' }, { type: 'constant', value: 'x' }] } }] }] }) }); assert.equal(badLogic.status, 400); assert.match(badLogic.body.description, /begins_with/)
       const still = await client.forms.get({ uid: probe }); assert.equal(still.title, 'Probe ' + probe + ' patched', 'a refused write changes nothing')
       /* the runner shows it, live from the rows */
-      const appUrl = (process.env.VITE_APP_URL || 'http://localhost:5173').replace(/\/+$/, '')
+      const appUrl = (stackOf()?.app || '').replace(/\/+$/, '')
       let up = false; try { up = (await fetch(appUrl + '/to/' + probe, { signal: AbortSignal.timeout(3000) })).ok } catch { /* down */ }
       if (up) {
         try {

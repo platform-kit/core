@@ -12,6 +12,8 @@
  * Run by the build (the comments-sdk step), and by hand: node build/comments-sdk.mjs
  */
 import path from 'node:path'
+/* where the drop-in scripts go: the site's dist/, or the end-to-end run's own (PLATFORMKIT_DIST), so a run never rewrites a dev build's */
+const DIST = process.env.PLATFORMKIT_DIST || 'dist'
 import { build } from 'vite'
 import { loadSite, loadTheme } from '../vite/index.mjs'
 
@@ -26,7 +28,7 @@ await build({
   define: { 'process.env.NODE_ENV': '"production"' },
   publicDir: false,   /* the site's public/ is the site's: nothing copied beside the script */
   build: {
-    outDir: 'dist/packs/js', emptyOutDir: false, cssCodeSplit: false, sourcemap: false,
+    outDir: path.join(DIST, 'packs/js'), emptyOutDir: false, cssCodeSplit: false, sourcemap: false,
     lib: { entry: path.join(theme.src, 'comments-embed.js'), name: 'PlatformKitComments', formats: ['iife'], fileName: () => 'comments.js' },
     rollupOptions: { output: { inlineDynamicImports: true } },
   },

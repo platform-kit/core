@@ -13,7 +13,7 @@ sources:
     packages/movable-types/src/pages/BookPage.vue,
     packages/kit/build/scheduling-api.test.mjs,
   ]
-reviewed: 2026-10-19
+reviewed: 2026-10-21
 ---
 
 ## What it is

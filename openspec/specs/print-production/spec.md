@@ -91,7 +91,7 @@ Each printer (`lulu`, `mixam`, `bookvault`) SHALL be one module on fetch alone s
 - **WHEN** a printer module is added and named in `PRINTER_IDS`
 - **THEN** the admin's Printers panel, `auto`, the deploy checks and the order path all know it with no other code
 
-Verified by: `build/printers.test.mjs` — every id in `PRINTER_IDS` answers the whole interface, makes only our formats, speaks all three shipping words, maps its statuses into ours and nothing else, and `product()` is pure with a minimum page count; and no module outside `_shared/printers/` chooses a printer by name (the two webhook paths are the one named exception, since Lulu alone posts to a registered url)
+Verified by: `build/suppliers.test.mjs` — every id in `PRINTER_IDS` answers the whole interface, makes only our formats, speaks all three shipping words, maps its statuses into ours and nothing else, and `product()` is pure with a minimum page count; and no module outside `_shared/printers/` chooses a printer by name (the two webhook paths are the one named exception, since Lulu alone posts to a registered url)
 
 ### Requirement: A sale is an order, followed to the door
 
@@ -102,7 +102,7 @@ A paid `print` line SHALL become a `print_orders` row sent to its printer at onc
 - **WHEN** a request hits `print-webhook` claiming a job shipped
 - **THEN** the row moves only if the printer's own API says so
 
-Verified by: `build/printers.test.mjs` — every printer handed null, an empty body, a stranger’s JSON and a plain string yields no job id, so `print-webhook` has nothing to look up and never trusts the body
+Verified by: `build/suppliers.test.mjs` — every printer handed null, an empty body, a stranger’s JSON and a plain string yields no job id, so `print-webhook` has nothing to look up and never trusts the body
 
 ### Requirement: The store art is gitignored and drawn on every box
 

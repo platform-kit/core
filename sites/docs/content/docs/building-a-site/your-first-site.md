@@ -96,7 +96,7 @@ npx platformkit test
 npx platformkit build
 ```
 
-`platformkit dev` assembles the local Supabase project when the site needs a backend. `platformkit test` runs the kit checks relevant to the site's modules, the site's own tests, and its OpenSpec validation. `platformkit build` compiles content and produces the site's bundle and prerendered pages. Deploy only from the configured deployment environment, after its checks pass.
+`platformkit dev` assembles the local Supabase project when the site needs a backend. `platformkit test` runs the kit checks relevant to the site's modules, the site's own tests, and its OpenSpec validation; `platformkit test --e2e` runs the checks that need a database, the functions or a browser, on a stack built from the site's files for the run. `platformkit build` compiles content and produces the site's bundle and prerendered pages. Deploy only from the configured deployment environment, after its checks pass.
 
 For a deployment, the site repository can invoke the Core CLI directly from GitHub:
 

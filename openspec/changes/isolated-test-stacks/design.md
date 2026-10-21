@@ -16,7 +16,7 @@ See proposal.md — Why. What exists to build on:
 
 **From scratch means from scratch.** Before starting, the runner stops any leftover `pk_<site>_e2e` stack with `--no-backup` (the Supabase CLI otherwise restores the last volume), then `supabase start` and `supabase db reset` — the vendor's own route, which applies the declaration, the data and the seed — and then the seed steps. The fourteen steps move out of `bin/platformkit.mjs` into one function both `migrate reset` and the runner call, so they cannot drift.
 
-**Each stack gets a test environment file made for the run.** It is the site's own settings over a fixed set of test values the run owns: a known secret for every webhook (`CAL_WEBHOOK_SECRET`, `STRIPE_WEBHOOK_SECRET`, `HYPERSWITCH_WEBHOOK_SECRET` and the rest the deploy checks name), mail to that stack's own Mailpit **by container name** on its Docker network (an address goes stale when a container restarts; a name does not), and no live key ever — a `sk_live_` or any production URL in the site's environment refuses the run. The functions are served with that file.
+**Each stack gets a test environment file made for the run.** It is the site's own settings over a fixed set of test values the run owns: a known secret for every webhook (`CAL_WEBHOOK_SECRET`, `STRIPE_WEBHOOK_SECRET`, `HYPERSWITCH_WEBHOOK_SECRET` and the rest the deploy checks name), mail to that stack's own Mailpit at its address on the stack's Docker network, read from the container the run has just started — so it cannot be stale, and a name would not do: the functions runtime resolves names itself, not through Docker's DNS, and no live key ever — a `sk_live_` or any production URL in the site's environment refuses the run. The functions are served with that file.
 
 **Provider services run inside the environment.** Where a site's configuration selects Hyperswitch, the runner starts the router through the existing test stack; where it names LiveKit, a LiveKit dev server container. Where it names neither, the tests of the no-account path run instead.
 
@@ -30,7 +30,7 @@ See proposal.md — Why. What exists to build on:
 
 **Teardown always happens.** On success, failure or a signal, every stack the run started is stopped with `--no-backup` and its provider services brought down; `--keep` leaves them up and prints their addresses.
 
-**The schema check uses the site's fresh database** rather than its own container.
+**The schema check runs in this run, on a throwaway database of its own.** It tests the planner by renaming tables, dropping columns and refusing destructive plans, so it would wreck a site's stack mid-run; it gets its own disposable database in the same Docker, made and removed by the same command, and leaves `npm test`. *Alternative:* the site's stack — rejected for that reason.
 
 **CI runs the same command.** `kit.yml` gains an e2e job: the demo, and a second, minimal fixture site with a different module selection, so two stacks side by side are exercised on every push. A fetched site runs `platformkit test --e2e` in its own repository's CI.
 

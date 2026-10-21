@@ -7,16 +7,17 @@
    (AWARDS_TEST=0 skips it too). */
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('awards-db: ' + m)
 if (process.env.AWARDS_TEST === '0') { note('skipped (AWARDS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
 const key = serviceKey()
-if (!url || !anon || !key || !localStack()) { note('skipped — no local stack in .env'); process.exit(0) }
+if (!url || !anon || !key || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
-if (!up) { note('skipped — the local stack is not up'); process.exit(0) }
+if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
@@ -34,7 +35,7 @@ const who = (await db.from('profiles').select('id, email').in('email', ['member@
 const uid = Object.fromEntries(who.map((p) => [p.email, p.id]))
 const mine = uid['member@example.com']
 const other = uid['free@example.com']
-if (!mine || !other) { note('skipped — the seed accounts are not here'); process.exit(0) }
+if (!mine || !other) { note('skipped — the seed accounts are not here'); leave(0) }
 
 const sweep = async () => {
   await db.from('user_achievements').delete().in('slug', [A, B])
@@ -118,15 +119,18 @@ await sweep()
 {
   const { pushAchievements } = await import('./achievements-push.mjs')
   const { gitStore } = await import('./store/git.mjs')
-  const REPO = new URL('../../../', import.meta.url).pathname.replace(/\/$/, '')
+  /* the site the run is for — the workspace root is not a site, and has no achievements to declare */
+  const REPO = process.cwd()
   const store = gitStore(REPO)
 
   const dry = await pushAchievements({ store, db, quiet: true, check: true })
-  ok('the declaration reads', dry.achievements > 0, JSON.stringify(dry))
-  const rows = ((await db.from('achievements').select('slug')).data || []).map((r) => r.slug)
   const names = (await store.list('content/achievements')) || []
+  /* a site that declares no achievements has nothing to project; the demo's run covers the projection */
+  if (!names.length) notHere('awards-db: the projection', 'the site declares no achievements (content/achievements)')
+  else ok('the declaration reads', dry.achievements > 0, JSON.stringify(dry))
+  const rows = ((await db.from('achievements').select('slug')).data || []).map((r) => r.slug)
   const safe = names.length > 0 && rows.every((s) => names.includes(s))
-  ok('the table holds nothing the files do not declare, so projecting is safe', safe,
+  if (names.length) ok('the table holds nothing the files do not declare, so projecting is safe', safe,
     rows.filter((s) => !names.includes(s)).join(', '))
 
   if (safe) {

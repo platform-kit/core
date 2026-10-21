@@ -9,7 +9,9 @@
  *   node build/product-keys.mjs          key every file that has none
  *   node build/product-keys.mjs --check  say which lack one or share one; exit 1 if any
  */
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { readdirSync as readAll, existsSync, readFileSync, writeFileSync } from 'node:fs'
+/* a site with no books (or no products) has an empty folder's worth of files, not a crash */
+const readdirSync = (d) => (existsSync(d) ? readAll(d) : [])
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 

@@ -12,6 +12,7 @@
  * caught here in milliseconds rather than in a client three steps later.
  */
 import { createRequire } from 'node:module'
+import { stackOf, leave } from './test-stack.mjs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -210,7 +211,7 @@ console.log(`\nmatrix (the translation): ${pass} passed${fail ? `, ${fail} FAILE
  * passes quietly when it ran nothing is worse than a lane that fails: it reports a shape of the
  * product as checked when nothing touched it.
  * ============================================================================================= */
-const FN = process.env.MATRIX_FN_URL || 'http://127.0.0.1:54321/functions/v1/matrix-api'
+const FN = process.env.MATRIX_FN_URL || (stackOf() ? stackOf().functions + '/matrix-api' : '')
 const SKIP = process.env.MATRIX_API_TEST === '0'
 
 async function served() {
@@ -226,8 +227,7 @@ if (!(await served())) {
   console.log('    Not covered by this run: a real client signing in, /sync, paging a room, sending,')
   console.log('    threads, edits, redactions, Spaces, the media repository, the guards, the session')
   console.log('    ending with the account, the sign-in cap, and a mention waking a bot.')
-  if (fail) process.exit(1)
-  process.exit(0)
+  leave(fail ? 1 : 0)
 }
 
 console.log('\nTHE MATRIX SURFACE — a real client\n')

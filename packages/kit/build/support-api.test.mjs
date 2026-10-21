@@ -17,12 +17,13 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { loadSite } from './site.mjs'
 import { messageOf, conversationOf, contactOf, clientContactOf, clientConversationOf, inboxOf, agentOf, webhookPayload, webhookOf, EVENTS, TYPE_WORD } from '../supabase/functions/_shared/api/chatwoot/shapes.js'
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
+import { leave, notHere, stackOf } from './test-stack.mjs'
 
 const note = (m) => console.log('support-api: ' + m)
 if (process.env.SUPPORT_API_TEST === '0') { note('skipped (SUPPORT_API_TEST=0)'); process.exit(0) }
 const ROOT = process.cwd()
 const c = await loadSite(ROOT)
-if ((c.modules && c.modules.support === false) || (c.modules && c.modules.api === false)) { note('skipped — the support or the api module is off'); process.exit(0) }
+if ((c.modules && c.modules.support === false) || (c.modules && c.modules.api === false)) { note('skipped — the support or the api module is off'); { notHere('support-api.test.mjs', 'its module is off'); process.exit(0) } }
 let pass = 0, fail = 0
 const ok = async (name, fn) => { try { await fn(); pass++ } catch (e) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 
@@ -54,7 +55,7 @@ const url = supabaseUrl(), anon = process.env.VITE_SUPABASE_ANON_KEY || ''
 const FN = url + '/functions/v1/support-api'
 let served = false
 try { served = !!(url && anon && localStack()) && (await fetch(FN + '/api/v1/profile', { signal: AbortSignal.timeout(4000) })).status === 401 } catch { /* down */ }
-if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the shapes — the local stack is not up or the support-api function is not served)`); process.exit(fail ? 1 : 0) }
+if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the shapes — the local stack is not up or the support-api function is not served)`); leave(fail ? 1 : 0) }
 const { createClient } = await import('@supabase/supabase-js')
 const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const sha256 = async (s) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
@@ -146,7 +147,7 @@ try {
   })
   /* ---- (3) Chatwoot's snippet on another origin ---- */
   await ok('Chatwoot\'s snippet on a page of another origin: the launcher, both ready events, $chatwidget.toggle opens the panel (and $chatwoot is the same object), a line lands as a guest\'s, reset drops the token; a wrong websiteToken refuses', async () => {
-    const appUrl = (process.env.VITE_APP_URL || 'http://localhost:5173').replace(/\/+$/, '')
+    const appUrl = (stackOf()?.app || '').replace(/\/+$/, '')
     let sdk = null
     try {
       const r = await fetch(appUrl + '/packs/js/sdk.js', { signal: AbortSignal.timeout(5000) })
@@ -172,6 +173,8 @@ try {
       for (const scheme of ['light', 'dark']) {
         const p = await (await browserContext(b, { viewport: { width: 1280, height: 800 }, colorScheme: scheme })).newPage()
         const errs = []; p.on('pageerror', (e) => errs.push(e.message))
+        /* what the page asked for and was refused, for a failure to name */
+        const refusedReqs = []; p.on('response', (r) => { if (r.status() >= 400) refusedReqs.push(r.status() + ' ' + r.request().method() + ' ' + r.url().slice(0, 140)) }); p.on('requestfailed', (r) => refusedReqs.push('failed ' + r.method() + ' ' + r.url().slice(0, 140) + ' ' + (r.failure()?.errorText || '')))
         await p.goto(origin + '/', { waitUntil: 'load' })
         await p.waitForFunction(() => window.events.includes('ready') && window.events.includes('ready-alias') && !!window.$chatwidget, null, { timeout: 30000 })
         assert.equal(await p.evaluate(() => window.$chatwoot === window.$chatwidget), true, '$chatwoot is the same object, not a copy')
@@ -195,7 +198,7 @@ try {
         if (scheme === 'light') {
           /* a line from the panel: the start view's box, the guest's first line */
           const box = p.locator('.sp textarea').first(); await box.waitFor({ timeout: 20000 }); await box.fill('Hello from another site'); await box.press('Enter')
-          await p.waitForFunction(() => document.body.innerText.includes('Hello from another site'), null, { timeout: 20001 }).catch((e) => { throw new Error('the line shown: ' + e.message.split('\n')[0]) })
+          await p.waitForFunction(() => document.body.innerText.includes('Hello from another site'), null, { timeout: 20001 }).catch((e) => { throw new Error('the line shown: ' + e.message.split('\n')[0] + (refusedReqs.length ? ' — refused: ' + refusedReqs.slice(-6).join(' ; ') : '') + (errs.length ? ' — page errors: ' + errs.slice(-3).join(' ; ') : '')) })
           await p.waitForFunction(() => !!localStorage.getItem('dl.support.token'), null, { timeout: 20002 }).catch((e) => { throw new Error('the token kept: ' + e.message.split('\n')[0]) })
           const token = await p.evaluate(() => localStorage.getItem('dl.support.token'))
           const { data: k } = await service.from('support_contacts').select('id, user_id').eq('token_hash', await sha256(token)).maybeSingle(); assert.ok(k && !k.user_id, 'a guest of the desk'); ids.contacts.push(k.id)

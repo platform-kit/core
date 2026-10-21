@@ -17,13 +17,14 @@ import { fileURLToPath } from 'node:url'
 import pg from 'pg'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const note = (m) => console.log('abuse-limits: ' + m)
 if (process.env.ABUSE_LIMITS_TEST === '0') { note('skipped (ABUSE_LIMITS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
-if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the environment'); process.exit(0) }
-try { const r = await fetch(`${url}/functions/v1/ingest`, { method: 'OPTIONS', signal: AbortSignal.timeout(4000) }); if (r.status >= 500) throw new Error() } catch { note('skipped — the functions are not served'); process.exit(0) }
+if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the environment'); leave(0) }
+try { const r = await fetch(`${url}/functions/v1/ingest`, { method: 'OPTIONS', signal: AbortSignal.timeout(4000) }); if (r.status >= 500) throw new Error() } catch { note('skipped — the functions are not served'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }

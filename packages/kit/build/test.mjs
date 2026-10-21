@@ -45,6 +45,17 @@ const KIT_TESTS = [
   ['checkout-params.test.mjs'],  /* a trial, tax, the payment methods accepted and a quantity the buyer may change — four things Stripe always offered and the store never passed; and the assertion that an offer declaring none of them resolves to exactly what it did before */
   ['payment-provider-adapters.test.mjs'], /* every declared provider operation is mapped by the Stripe and Hyperswitch adapter contracts */
   ['hyperswitch-sdk.test.mjs'],
+  ['hyperswitch-payment-provider.test.mjs'],   /* the Hyperswitch adapter against its API's shapes: checkout, refunds, payouts, and its webhook signature and age */
+  ['payment-providers.test.mjs'],
+  ['inference-config.test.mjs'],   /* each site's inference: its own providers, tariffs and markup, validated, and never in the browser */
+  /* the live Stripe test-mode journeys, where the run has a test key (the end-to-end run's, from the site's own .env) */
+  /* in the end-to-end run, on a site that pays through Stripe (the runner says, and has refused a run without a test key) */
+  process.env.PLATFORMKIT_E2E_STRIPE === '1' && ['stripe-testmode.integration.mjs'],
+  process.env.PLATFORMKIT_E2E_STRIPE === '1' && ['stripe-usage-recovery.integration.mjs'],   /* the provider contract every adapter is held to */
+  ['payment-provider-registry.test.mjs'],   /* which provider a site selects, what is assembled for it, and that its secrets stay server-side */
+  ['site-payment-provider.test.mjs'],   /* a site's own adapter, registered through its own module and selected, with no change to the kit */
+  on('store') && ['payment-provider-db.test.mjs'],   /* provider references and event ids kept apart by provider, against the stack */
+  process.env.HYPERSWITCH_BROWSER_INTEGRATION_CONFIG && ['hyperswitch-browser.integration.mjs', process.env.HYPERSWITCH_BROWSER_INTEGRATION_CONFIG],
   process.env.HYPERSWITCH_LOCAL_INTEGRATION_CONFIG &&
     ['hyperswitch-local.integration.mjs', process.env.HYPERSWITCH_LOCAL_INTEGRATION_CONFIG],
   on('store') && ['usage.test.mjs'],
@@ -174,9 +185,13 @@ const KIT_TESTS = [
   ['signed-in-as.test.mjs'],   /* the same kinds of person as who-can.test.mjs, but signed in through a real browser: the set of admin sections each one reaches BY ADDRESS (a missing link proves nothing about a missing lock), and one thing their role exists for actually carried out. Skips loudly with no dev server. */
   ['theme-look.test.mjs'],   /* a palette is complete or it is not a palette: every colour the theme reads, against every colour each look defines. An incomplete palette does not look broken in review — it looks right on every page somebody opened and wrong on the one they did not, which is how the theme came to ship a button with its text the same colour as its background. */
   ['webhook-doors.test.mjs'],   /* the doors that face the internet: every inbound webhook refuses an unsigned, wrongly signed, altered or stale body and a replayed cal.com "created" revives nothing; LiveKit's development secret signs nothing without an account; a mocked printer is not walked to shipped; and a reader who may add a recording nobody has made and may never replace one — against the functions and the storage API as they are actually served */
+  ['test-coverage.test.mjs'],   /* nothing untested by construction: every function named by a test, no early exit but through the helper, every claim naming a test that runs */
+  ['test-stack.test.mjs'],   /* where a stack test reads its stack: the run's own addresses, a skip that fails under the end-to-end run, and the one marker for a fact about the site */
+  ['function-doors.test.mjs'],   /* the functions nothing else called: each door refusing the wrong caller and answering the right one, against the stack */
+  ['function-bodies.test.mjs'],   /* every SQL function in the declaration compiles against the tables as built — the schema loads with the check off, so a body naming a column that is not there fails only when called */
   ['ownership.test.mjs'],   /* an account reaches only its own records: no definer function a visitor may call goes unchecked; a profile's address is not its own to write and claims nothing until proven; another account's orders, bookings, tickets, payouts, usage and answers come back as nothing; staff within their roles; links an hour at most and only to a booking's own folder — skipped when the stack is down or OWNERSHIP_TEST=0 */
   ['roles.test.mjs'],   /* roles granted only by administrators: no reader, editor or provider writes themselves a role, a class, an entitlement or a membership, an offering already on sale, or an approved comment; the last administrator always remains, even two removing each other at once — skipped when the stack is down or ROLES_TEST=0 */
-  ['checkout-tamper.test.mjs'],   /* the server decides what a buyer pays: a tampered checkout read back from Stripe's test mode — price, currency, discount, class, quantity, shape and shipping all the server's — skipped without a test-mode key or CHECKOUT_TAMPER_TEST=0 */
+  on('store') && ['checkout-tamper.test.mjs'],   /* the server decides what a buyer pays: a tampered checkout read back from Stripe's test mode — price, currency, discount, class, quantity, shape and shipping all the server's — skipped without a test-mode key or CHECKOUT_TAMPER_TEST=0 */
   ['abuse-limits.test.mjs'],   /* one visitor's flood refused and another still served at guest checkout, form answers, analytics intake and the support widget, counted by the address the proxy wrote; a compressed body opened only to a megabyte — skipped when the stack is down or ABUSE_LIMITS_TEST=0 */
   ['doors-db.test.mjs'],   /* the refusals to somebody who is NEARLY allowed: a password session claiming a confirmed address, a member asking for the figures, a membership that lapsed yesterday, a forged tracking token — the boundary a change quietly moves */
   on('store') && ['money-db.test.mjs'],   /* the database half of a payment arriving twice: one session is one purchase, one grant is one row, and three credits from one payment are THREE — the per-unit source id exists because a shared one folds them into one and nobody is told */
@@ -208,12 +223,14 @@ const KIT_TESTS = [
   ['bootstrap-env.test.mjs'],
   ['workspace-root.test.mjs'],
   ['site-boundary.test.mjs'],
+  ['cron-registration.test.mjs'],   /* every scheduled job declared by a module, registered once, unscheduled when its module goes off */
+  ['assets.test.mjs'],   /* where a picture is kept and how its address is written, the media library's rule */
   ['rewrites.test.mjs'],   /* the nginx instance in Docker against the local stack: every rewrite reaches its function, every other path the app; skipped when Docker or the stack is down */
   ['steps.mjs', '--check'],   /* every build step's needs — a package a module needs and the site has not installed */
   ['deploy-checks.mjs', '--test'],
   ['overrides.test.mjs'],
   ['gate.test.mjs'],   /* what of a record a reader is sent: each class's chapters, a bought book's lift, a teaser never the whole chapter */
-  ['reader-content.test.mjs'],   /* the same, against the local stack: a guest, a non-member, a buyer and a member sent only their own; no visitor reads the content table; skipped when the stack is down or READER_CONTENT_TEST=0 */
+  on('books') && ['reader-content.test.mjs'],   /* the same, against the local stack: a guest, a non-member, a buyer and a member sent only their own; no visitor reads the content table; skipped when the stack is down or READER_CONTENT_TEST=0 */
   ['gated-content.test.mjs'],   /* a whole build of the demo with gated fixtures publishes no gated sentence, pre-rendered pages included; slow, GATED_CONTENT_TEST=0 skips it */
   ['bundle-secrets.test.mjs'],  /* a whole build of the demo with every server secret planted publishes none of them; slow, BUNDLE_SECRETS_TEST=0 skips it */
   ['usage-alert.test.mjs'],   /* which usage payments raise the site-wide banner, and the pages it keeps off */
@@ -234,14 +251,65 @@ const KIT_TESTS = [
   fs.existsSync(path.join(WORKSPACE_ROOT, 'sites', 'docs', 'content', 'docs')) && ['docs-check.mjs'],   /* the docs agree with the code (the reference pages exactly; every page's sources exist) */
 ].filter(Boolean)
 
+/*
+ * WHICH CHECKS NEED A STACK — read from each one's own source rather than kept as a list: a test that asks
+ * for a stack's address needs one, and a new one is classified the moment it is written. Those run in the
+ * end-to-end run (build/e2e.mjs → `test.mjs --e2e`), on a stack built for it from the site's files, where
+ * a skip is a failure. `npm test` still runs them for the parts that need nothing, and says plainly at the
+ * end that their stack parts are the other run's.
+ */
+/* a stack test is one that takes its stack from build/test-stack.mjs — the import is the mark, and test-coverage.test.mjs
+   fails any test that reaches a stack without it (a pattern guessed from the source let fifteen tests drop out of the run) */
+const STACK_SOURCE = /from '\.\/test-stack\.mjs'|supabaseUrl\(\)|localStack\(\)/
+const needsStack = (file) => { try { return STACK_SOURCE.test(fs.readFileSync(file, 'utf8')) } catch { return false } }
+const E2E = process.argv.includes('--e2e')
+/* the checks that make databases of their own, which only the end-to-end run's Docker should be asked for */
+const E2E_ALSO = ['schema.test.mjs', 'cloud-lane.test.mjs', 'stripe-testmode.integration.mjs', 'stripe-usage-recovery.integration.mjs']
+
+if (E2E) {
+  /* every stack check this site's modules switch on, the site's own among them; each runs whatever came before */
+  const kit = KIT_TESTS.filter(([f]) => needsStack(KIT(f)) || E2E_ALSO.includes(f)).map(([f, ...a]) => [`kit: ${f}`, KIT(f), a])
+  const own = ((c.build && c.build.tests) || []).filter((t) => needsStack(path.resolve(ROOT, t))).map((t) => [`site: ${t}`, path.resolve(ROOT, t), []])
+  const cloud = [['lane: cloud', KIT('cloud-lane.test.mjs'), []]]
+  const failed = []
+  /* THE FUNCTIONS ANSWERING before each test: a test that writes into the functions tree (webhooks.json, a step's
+     data) makes the runtime reload, and the next test's first calls met a 502 — a failure of the order, not the code */
+  const FUNCTIONS = process.env.PLATFORMKIT_TEST_FUNCTIONS_URL || ''
+  const settled = async () => {
+    if (!FUNCTIONS) return
+    for (let i = 0; i < 60; i++) {
+      try { const r = await fetch(FUNCTIONS + '/cal-webhook', { method: 'OPTIONS', signal: AbortSignal.timeout(5000) }); if (r.status !== 502 && r.status !== 503) return } catch { /* reloading */ }
+      await new Promise((r) => setTimeout(r, 1000))
+    }
+  }
+  for (const [label, file, a] of [...kit, ...own, ...cloud]) {
+    console.log(`\n▸ ${label}`)
+    await settled()
+    const r = spawnSync(process.execPath, [file, ...a], { cwd: ROOT, env: process.env, encoding: 'utf8', maxBuffer: 1 << 28 })
+    const out = (r.stdout || '') + (r.stderr || '')
+    process.stdout.write(out)
+    /* a check that could not run is not a check that passed */
+    /* the one accepted stand-down is a fact about the site (test-stack.mjs notHere: 'not on this site'); everything else that did not run is a failure */
+    const skipped = out.split('\n').filter((l) => !/not on this site/i.test(l) && /\b(skipped|NOT covered|NOT RUN|not looked at|not served|is not up|could not run)\b/i.test(l))
+    if (r.status !== 0) { failed.push(label); console.log(`✗ ${label} failed`) }
+    else if (skipped.length) { failed.push(label); console.log(`✗ ${label} could not run in full — ${skipped.slice(0, 3).map((l) => l.trim()).join(' | ').slice(0, 300)}`) }
+  }
+  console.log(failed.length ? `\n✖ ${failed.length} of ${kit.length + own.length + 1} end-to-end check(s) failed or could not run` : `\n✔ every end-to-end check passed (${kit.length + own.length + 1})`)
+  process.exit(failed.length ? 1 : 0)
+}
+
 const run = (label, cmd, args) => {
   console.log(`\n▸ ${label}`)
   const r = spawnSync(cmd, args, { cwd: ROOT, stdio: 'inherit', env: process.env })
   if (r.status !== 0) { console.error(`\n✗ ${label} failed`); process.exit(r.status || 1) }
 }
 console.log('\n══ lane: git — a checkout with a backend ══')
-for (const [f, ...args] of KIT_TESTS) run(`kit: ${f}${args.length ? ' ' + args.join(' ') : ''}`, process.execPath, [KIT(f), ...args])
+/* the schema check makes and breaks a database of its own in Docker: the end-to-end run's, not this one's */
+for (const [f, ...args] of KIT_TESTS.filter(([f]) => f !== 'schema.test.mjs')) run(`kit: ${f}${args.length ? ' ' + args.join(' ') : ''}`, process.execPath, [KIT(f), ...args])
 for (const t of (c.build && c.build.tests) || []) run(`site: ${t}`, process.execPath, [path.resolve(ROOT, t)])
+/* the adapters' Deno tests, run as Deno runs them (the functions are Deno's); test-coverage holds that every one is listed here */
+export const DENO_TESTS = ['stripe-payment-provider.test.ts', 'hyperswitch-payment-provider-adapter.test.ts']
+for (const t of DENO_TESTS) run(`kit: ${t} (deno)`, 'deno', ['test', '--no-lock', '-A', KIT(t)])
 /* the specs, where a site keeps them */
 if (fs.existsSync(path.join(WORKSPACE_ROOT, 'openspec'))) run('openspec validate', 'npx', ['openspec', 'validate', '--all', '--strict'])
 
@@ -269,4 +337,7 @@ if (skipped.length) {
   console.log('\n⚠ ' + skipped.length + ' lane(s) skipped — these shapes are NOT covered by this run:')
   for (const s of skipped) console.log('   ' + s)
 }
-console.log('\n✔ every check passed')
+{
+  const stackChecks = KIT_TESTS.filter(([f]) => needsStack(KIT(f)) || E2E_ALSO.includes(f)).map(([f]) => f)
+  console.log(`\n✔ every check passed — ${stackChecks.length} of them need a stack, and their stack parts are NOT covered here: they run under \`platformkit test --e2e\` (${stackChecks.join(', ')})`)
+}

@@ -36,7 +36,7 @@ import { printedOf, candidatesOf, chooseProvider, reachableToPrinter } from './p
 import { editionFor, editionId, pictureId, partsOf } from './print/edition.mjs'
 import { mergeIndex, mergeRegistry, registryOf as registryIn, withTitles, titleKey } from './print/index-io.mjs'
 import { sizePicture, MAX_HEIGHT } from './print/picture.js'
-import { padFor } from './print/plan-pieces.mjs'
+import { padFor, bindingFor } from './print/plan-pieces.mjs'
 import { printWords, SPINE_EDITION } from './print/words.mjs'
 import { spineWords, SPINE_MAX, printSpec, PRINTED, costUsd, proofState } from '../src/lib/print-offers.js'
 import { parseCompanion } from './companion-io.mjs'
@@ -185,8 +185,7 @@ export async function printBook(slug, { local = false, force = false, keepTyp = 
          gets blank leaves at the end; and a book has an even number of pages, so an odd count
          gets one more blank */
       /* every printer that may make a format binds a minimum, and some count in fours */
-      let min = 24, step = 2
-      for (const f of printed) for (const p of candidates(spec, f)) { const pr = p.product({ chosen: { format: f, trim, paper, cloth: spec.cloth, foil: spec.foil }, options: spec.providers[p.id] || {} }); min = Math.max(min, pr.minPages || 24); step = Math.max(step, pr.pageStep || 2) }
+      const { min, step } = bindingFor(spec, printed, candidates, { trim, paper })
       const pad = padFor(pages, { min, step })
       if (pad) { fs.writeFileSync(mainTyp, source + `\n#blank-pages(${pad})\n`); interior = compile(c, mainTyp); pages = pageCount(interior) }
     } finally { if (keepTyp) fs.copyFileSync(mainTyp, path.join(outDir, 'interior.typ')); fs.unlinkSync(mainTyp) }

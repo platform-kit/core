@@ -10,13 +10,14 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('roles: ' + m)
 if (process.env.ROLES_TEST === '0') { note('skipped (ROLES_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
-if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the environment'); process.exit(0) }
-try { await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(4000) }) } catch { note('skipped — the stack is not answering'); process.exit(0) }
+if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the environment'); leave(0) }
+try { await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(4000) }) } catch { note('skipped — the stack is not answering'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
@@ -29,9 +30,10 @@ const refused = (r) => !!r.error || (Array.isArray(r.data) && !r.data.length) ||
 const stamp = Date.now().toString(36)
 
 const reader = await as('member@example.com'), editor = await as('editor@example.com'), provider = await as('coach@example.com'), admin = await as('admin@example.com')
-if (!reader || !editor || !provider || !admin) { note('skipped — the seed\'s member@, editor@, coach@ or admin@ does not sign in'); process.exit(0) }
+if (!reader || !editor || !provider || !admin) { note('skipped — the seed\'s member@, editor@, coach@ or admin@ does not sign in'); leave(0) }
 const people = [['a reader', reader], ['an editor', editor], ['a provider', provider]]
-const { data: space } = await service.from('spaces').select('id').limit(1).single()
+const { data: space } = await service.from('spaces').select('id').limit(1).maybeSingle()
+if (!space) notHere('roles: a space\'s membership rows', 'the site has no space')
 const { data: rooms } = await service.from('channels').select('id, space_id').eq('kind', 'channel').limit(2)
 
 for (const [who, c] of people) {
@@ -48,8 +50,8 @@ for (const [who, c] of people) {
     ['entitlements', { user_id: id, kind: 'class', key: 'subscribed', source: 'grant', source_id: 'probe-' + stamp }],
     ['purchases', { user_id: id, sku: 'member-monthly', status: 'paid', stripe_checkout_session_id: 'cs_probe_' + stamp }],
     ['subscriptions', { id: 'sub_probe_' + stamp, user_id: id, status: 'active' }],
-    ['space_members', { space_id: space.id, user_id: id }],
-    ['space_member_roles', { space_id: space.id, user_id: id, role: 'moderator' }],
+    /* a space's rows where the site has one (the spaces module) */
+    ...(space ? [['space_members', { space_id: space.id, user_id: id }], ['space_member_roles', { space_id: space.id, user_id: id, role: 'moderator' }]] : []),
     ['team_members', { team: 'the-coaches', user_id: id }],
   ]) {
     const r = await c.from(table).insert(row).select()
@@ -65,6 +67,10 @@ for (const [who, c] of people) {
 /* a room a member is in: they choose how it tells them things, never which room it is or how they came to be there */
 if (rooms?.length === 2) {
   const id = await idOf(reader)
+  /* a member of the room's space too, as the fill makes one: a room's membership is read through its space's, and on a
+     site whose rooms keep their members to the space the row was otherwise invisible to its own member */
+  const hadSpace = (await service.from('space_members').select('user_id').eq('space_id', rooms[0].space_id).eq('user_id', id).maybeSingle()).data
+  if (!hadSpace) await service.from('space_members').insert({ space_id: rooms[0].space_id, user_id: id })
   await service.from('channel_members').upsert({ channel_id: rooms[0].id, user_id: id, source: 'fill' })
   await service.from('channel_members').delete().eq('channel_id', rooms[1].id).eq('user_id', id)
   const moved = await reader.from('channel_members').update({ channel_id: rooms[1].id }).eq('channel_id', rooms[0].id).eq('user_id', id).select()
@@ -76,7 +82,8 @@ if (rooms?.length === 2) {
   const { data: row } = await service.from('channel_members').select('source').eq('channel_id', rooms[0].id).eq('user_id', id).single()
   ok('…and the row is still the rule\'s', row?.source === 'fill', JSON.stringify(row))
   await service.from('channel_members').delete().eq('channel_id', rooms[0].id).eq('user_id', id)
-}
+  if (!hadSpace) await service.from('space_members').delete().eq('space_id', rooms[0].space_id).eq('user_id', id)
+} else notHere('roles: moving between rooms', 'the site has fewer than two rooms')
 
 /* an offering is put on sale by the site's reading, never by its author writing it live */
 {
@@ -86,7 +93,9 @@ if (rooms?.length === 2) {
   const released = await provider.from('provider_offerings').insert({ provider_id: pid, slug: 'probe-r-' + stamp, title: 'Probe', state: 'draft', minutes: 30, price_cents: 1000, currency: 'usd', released_at: new Date().toISOString(), released_by: pid }).select()
   ok('…nor one marked released', refused(released), JSON.stringify(released.data))
   const draft = await provider.from('provider_offerings').insert({ provider_id: pid, slug: 'probe-d-' + stamp, title: 'Probe', state: 'draft', minutes: 30, price_cents: 1000, currency: 'usd' }).select()
-  ok('…but does make a draft', !draft.error && draft.data?.length === 1, draft.error?.message)
+  /* a draft is theirs to make only where the site takes offerings at all (its provider policy) */
+  if ((await provider.rpc('providers_may_offer')).data === true) ok('…but does make a draft', !draft.error && draft.data?.length === 1, draft.error?.message)
+  else { ok('…and with offerings off, not even a draft', !!draft.error); notHere('roles: a provider\'s draft offering', 'the site takes no offerings (its provider policy)') }
   await service.from('provider_offerings').delete().like('slug', `probe-%${stamp}`)
 }
 
@@ -104,7 +113,7 @@ if (rooms?.length === 2) {
       await service.from('comments').delete().eq('id', mine.id)
     }
     await service.from('comments').delete().like('body', `probe%${stamp}`)
-  } else note('⚠ no comment subject in the seed — the comment checks are skipped')
+  } else notHere('roles: a comment\'s own approval', 'nothing on the site takes comments (no comment subject)')
 }
 
 /* ─── the last administrator ─── */

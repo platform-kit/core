@@ -276,3 +276,22 @@ function valueForUnits(units, rate) {
   if (value > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error('inference retail value exceeds the safe integer range')
   return Number(value)
 }
+
+/* THE MARKUP AN OPERATION'S READER PAYS AT, as a multiplier in millionths: the operation's own, else its offer's, else the
+   site's default; null for a site-funded operation, which consumes no reader units. Shared by the build's config check
+   (build/inference-config.mjs re-exports it) and the agent worker, which imported it from here before it lived here. */
+export function markupFor(inference, usage, operationId) {
+  const policy = usage?.operations?.[operationId]
+  if (!policy) throw new Error(`usage operation "${operationId}" has no site policy`)
+  if (policy.mode === 'site-funded') return null
+  if (policy.mode !== 'offer' || !/^[0-9a-f]{8}$/.test(String(policy.offerKey || ''))) {
+    throw new Error(`usage operation "${operationId}" has an invalid offer policy`)
+  }
+  const multiplier = policy.markup_micros
+    ?? inference?.markup?.offers?.[policy.offerKey]
+    ?? inference?.markup?.default
+  if (!Number.isSafeInteger(multiplier) || multiplier < 1) {
+    throw new Error(`usage operation "${operationId}" has no valid markup multiplier`)
+  }
+  return multiplier
+}

@@ -28,6 +28,7 @@ import THEME_SKILLS from '../_shared/pipe/theme-skills.json' with { type: 'json'
 import THEME_BRAND from '../_shared/pipe/theme-brand.json' with { type: 'json' }
 import { deliverContentEvent } from '../_shared/api/manage.ts'
 import { printSpec } from '../_shared/pipe/src/lib/print-offers.js'
+import { of } from '../_shared/compiled.ts'
 
 /*
  * THE ACTIONS THAT STILL NEED A MACHINE. Two of them, and they are the ones that run a program
@@ -129,6 +130,8 @@ Deno.serve(async (req) => {
   const site = { root: '', modules: SITE.modules, admin: {}, usage: SITE.usage }
   const env = {
     root: '', store, by, site, theme: THEME, themeSkills: THEME_SKILLS, brand: THEME_BRAND, only,
+    /* the catalog as the functions hold it (live after a publish): a model that checks a sku against it has no disk here */
+    catalog: () => of('catalog'),
     models: () => registry('', { site, siteModels: SITE_MODELS, store }),
     describe,
     /*

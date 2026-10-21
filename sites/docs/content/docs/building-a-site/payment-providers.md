@@ -7,6 +7,8 @@ sources:
     packages/kit/src/payment-provider.d.ts,
     packages/kit/src/payment-provider.mjs,
     packages/kit/build/payment-provider-registry.mjs,
+    packages/kit/build/payment-provider-registry.test.mjs,
+    packages/kit/build/site-payment-provider.test.mjs,
     packages/kit/build/modules/manifest.mjs,
     packages/kit/build/assemble.mjs,
     packages/kit/build/deploy.mjs,
@@ -71,7 +73,7 @@ sources:
     packages/kit/supabase/functions/push-catalog,
     packages/kit/supabase/functions/stripe-webhook,
   ]
-reviewed: 2026-10-18
+reviewed: 2026-10-20
 ---
 
 PlatformKit keeps one payment provider active per site. Stripe is the built-in provider and the

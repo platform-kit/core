@@ -12,6 +12,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { openStarts, byDay, wallToUtc, dayOf } from '../supabase/functions/_shared/schedulers/times.js'
+import { leave, notHere } from './test-stack.mjs'
 
 let n = 0, bad = 0
 const ta = async (name, fn) => { n++; try { await fn() } catch (e) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
@@ -20,7 +21,7 @@ let up = false
 try { up = url && localStack() && (await fetch(url + '/rest/v1/', { headers: { apikey: anonKey }, signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
 let served = false
 if (up) { try { served = (await fetch(url + '/functions/v1/session-slots', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* not served */ } }
-if (!up || !served) { console.log(`scheduling: skipped — ${!up ? 'the local stack is not up' : 'the functions are not served (npm run dev serves them)'}`); process.exit(0) }
+if (!up || !served) { console.log(`scheduling: skipped — ${!up ? 'the local stack is not up' : 'the functions are not served (npm run dev serves them)'}`); leave(0) }
 const catalog = JSON.parse(fs.readFileSync('supabase/functions/_shared/catalog.json', 'utf8'))
 const types = (catalog.sessions || []).filter((s) => s.scheduler === 'native')
 const one = types.find((s) => !s.sku && !(s.seats > 0) && s.duration === 60 && s.hosts.includes('coach@example.com'))   /* an hour long: the overlaps below are counted for an hour */
@@ -29,13 +30,16 @@ const paidType = (catalog.sessions || []).find((s) => s.scheduler === 'native' &
 const allowances = catalog.allowances || {}
 const linked = types.find((s) => !s.sku && !(s.seats > 0) && s.where?.kind === 'link' && s.hosts.includes('coach@example.com'))
 /* Mailpit takes the local stack's mail (npm run dev points SMTP_HOST at it): its API on the stack's inbucket port */
-const MAIL = url.replace(/:\d+$/, ':54324')
+/* the stack's own mail catcher, as the end-to-end run names it; the CLI's default port otherwise */
+const MAIL = process.env.PLATFORMKIT_TEST_MAIL_URL || url.replace(/:\d+$/, ':54324')
 const mail = { async up() { try { return (await fetch(MAIL + '/api/v1/messages?limit=1', { signal: AbortSignal.timeout(1500) })).ok } catch { return false } }, async clear() { await fetch(MAIL + '/api/v1/messages', { method: 'DELETE' }) }, async list() { const r = await fetch(MAIL + '/api/v1/messages?limit=50'); return (await r.json()).messages || [] }, async raw(id) { return await (await fetch(MAIL + '/api/v1/message/' + id + '/raw')).text() } }
 /* IS THE SITE'S MAIL GOING TO THE LOCAL MAILPIT? Only then are the letters safe to read — Mailpit
    answers on every machine that has the stack running, and on one whose SMTP_HOST is a real relay
    the letters go there instead, so asking Mailpit whether it is awake and then reading nothing is a
    failure about somebody's .env rather than about the code. */
 const toMailpit = () => {
+  /* the end-to-end run sends this stack's mail to its own catcher, which it names */
+  if (process.env.PLATFORMKIT_TEST_MAIL_URL) return true
   let h = process.env.SMTP_HOST || ''
   if (!h) { try { h = (fs.readFileSync('.env', 'utf8').match(/^SMTP_HOST=(.*)$/m) || [, ''])[1].trim().replace(/^["']|["']$/g, '') } catch { h = '' } }
   return /^(127\.|localhost$|0\.0\.0\.0$|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h)
@@ -66,7 +70,7 @@ if (publicType) {
     }
   })
 } else console.log('scheduling: no public session type to test anonymous availability')
-if (!one) { console.log('scheduling: skipped — this site has no native 60-minute one-to-one type hosted by coach@example.com (the demo has)'); process.exit(0) }
+if (!one) { notHere('scheduling', 'the site has no native 60-minute one-to-one type hosted by coach@example.com (the demo has)'); process.exit(0) }
 
 const { createClient } = await import('@supabase/supabase-js')
 const admin = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })

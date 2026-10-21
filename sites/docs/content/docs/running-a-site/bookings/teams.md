@@ -2,12 +2,26 @@
 title: Teams
 description: A group of people the site can point work at — declared as a file, with who is in it kept as rows.
 order: 27
-sources: [packages/kit/build/teams-io.mjs, packages/kit/build/models/core/teams.mjs, packages/kit/build/teams.mjs, packages/kit/build/teams-push.mjs, packages/kit/build/steps/teams.mjs, packages/kit/supabase/schemas/56-teams.sql, packages/kit/build/teams.test.mjs, packages/kit/build/teams-db.test.mjs, packages/kit/src/lib/teams.js, packages/movable-types/src/components/admin/TeamMembers.vue, packages/movable-types/src/content/ui/teams.md, packages/movable-types/src/pages/PersonPage.vue]
-reviewed: 2026-10-07
+sources:
+  [
+    packages/kit/build/teams-io.mjs,
+    packages/kit/build/models/core/teams.mjs,
+    packages/kit/build/teams.mjs,
+    packages/kit/build/teams-push.mjs,
+    packages/kit/build/steps/teams.mjs,
+    packages/kit/supabase/schemas/56-teams.sql,
+    packages/kit/build/teams.test.mjs,
+    packages/kit/build/teams-db.test.mjs,
+    packages/kit/src/lib/teams.js,
+    packages/movable-types/src/components/admin/TeamMembers.vue,
+    packages/movable-types/src/content/ui/teams.md,
+    packages/movable-types/src/pages/PersonPage.vue,
+  ]
+reviewed: 2026-10-21
 ---
 
 A **team** is a group of people the site can point work at: the practice, the front desk, the coaches
-who take discovery calls. It exists so a booking type can be *the team's* rather than one person's,
+who take discovery calls. It exists so a booking type can be _the team's_ rather than one person's,
 and so who is in it can change without anything that points at it being edited. Module: `sessions`.
 
 ## A team is a file; who is in it is not
@@ -19,7 +33,6 @@ position: 1
 fill:
   role: provider
 ---
-
 Everybody who gives sessions here.
 ```
 
@@ -30,14 +43,14 @@ beside the name. If the repository were deleted and redeployed, every team would
 as it was.
 
 **The file never names a member**, and there is no key for it. A declaration names classes of people
-and never a person, so who is *in* a team is rows — `team_members`, each saying how that person came
+and never a person, so who is _in_ a team is rows — `team_members`, each saying how that person came
 to be there:
 
-| `source` | |
-| --- | --- |
-| `fill` | the rule swept them in |
+| `source` |                             |
+| -------- | --------------------------- |
+| `fill`   | the rule swept them in      |
 | `invite` | an administrator asked them |
-| `manual` | put there by hand |
+| `manual` | put there by hand           |
 
 The sweep adds everybody the rule matches and removes **only what it put there**, so somebody
 invited stays through any change to the rule. That is the whole reason the column exists. It is the
@@ -70,8 +83,8 @@ says so rather than offering a control that would write against a slug that does
 
 **In cloud mode this is the ordinary state for a while.** A save is a draft, a publish is a commit,
 and the projection is the deploy's — so between publishing a new team and the next deploy it exists
-as a file and as nothing else. The panel asks whether the row is there and says *This team is saved
-but is not in the database yet* rather than *Nobody is in this team*, which would be false, and it
+as a file and as nothing else. The panel asks whether the row is there and says _This team is saved
+but is not in the database yet_ rather than _Nobody is in this team_, which would be false, and it
 withholds **Add somebody**, which the foreign key would refuse when pressed. An administrator reads
 every team, published or not, which is what makes the question answerable.
 

@@ -25,6 +25,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
+import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -32,9 +33,9 @@ const note = (s) => console.log('  ' + s)
 
 console.log('\nWHO CAN DO WHAT\n')
 
-const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    What each kind of person may DO is NOT covered by this run.\n'); process.exit(0) }
+const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    What each kind of person may DO is NOT covered by this run.\n'); leave(0) }
 let cfg = null
-try { cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) }
+try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service-role key')
 
@@ -65,7 +66,14 @@ for (const [who, email] of Object.entries(WHO)) {
   if (email && !SESSION[who]) note(`⚠ ${who} (${email}) does not sign in — every cell for them is skipped`)
 }
 const me = async (who) => (WHO[who] ? (await admin.from('profiles').select('id').eq('email', WHO[who]).maybeSingle()).data?.id : null)
+const STORE = await moduleOn('store')
 const ID = Object.fromEntries(await Promise.all(Object.keys(WHO).map(async (w) => [w, await me(w)])))
+
+/* something on the desk to read — the member writing in — made here and removed at the end: a seed with no
+   conversation made "nobody can read the desk" the honest answer and the check meaningless */
+const { data: deskContact } = await admin.from('support_contacts').insert({ user_id: ID.member, last_path: '/who-can' }).select().single()
+if (deskContact) await admin.from('support_conversations').insert({ contact_id: deskContact.id, path: '/who-can' })
+else note('⚠ a support contact could not be made — the desk rows below have nothing to read')
 
 /*
  * THE ACTIONS. Each is a thing somebody tries, answered by the database. `can` lists everybody
@@ -75,12 +83,14 @@ const ID = Object.fromEntries(await Promise.all(Object.keys(WHO).map(async (w) =
 const ACTIONS = [
   {
     name: 'read the support desk',
+    module: 'support',
     can: ['support', 'admin'],
     why: 'a contact writes in confidence; an analyst has the figures and a provider sells here, and neither is the desk',
     run: async (c) => { const r = await c.from('support_conversations').select('id').limit(1); return !r.error && Array.isArray(r.data) && r.data.length > 0 },
   },
   {
     name: 'read who wrote to the desk',
+    module: 'support',
     can: ['support', 'admin'],
     why: 'a contact row is a person who asked for help',
     run: async (c) => { const r = await c.from('support_contacts').select('id').limit(1); return !r.error && (r.data || []).length > 0 },
@@ -111,13 +121,14 @@ const ACTIONS = [
       const r = await c.rpc('get_my_entitlements', {})
       if (r.error || !r.data) return false
       const cls = r.data.class
-      const expect = who === 'guest' ? 'guest' : who === 'member' ? 'subscribed' : who === 'buyer' ? 'paid' : null
+      const expect = who === 'guest' ? 'guest' : who === 'member' ? 'subscribed' : who === 'buyer' && STORE ? 'paid' : null
       /* where the seed pins what they hold, the answer must match it; otherwise any class will do */
       return expect ? cls === expect : typeof cls === 'string'
     },
   },
   {
     name: 'open a coaching thread with a coach',
+    module: 'coaching',
     can: ['member', 'admin', 'provider'],
     why: 'the chat is the membership’s; a provider is one of the two ends of it',
     run: async (c, who) => {
@@ -143,6 +154,7 @@ const ACTIONS = [
   },
   {
     name: 'read somebody else’s purchases',
+    module: 'store',
     can: ['admin'],
     why: 'what a person bought is theirs; a buyer sees their own and nobody else’s',
     run: async (c, who) => {
@@ -159,6 +171,8 @@ const ACTIONS = [
 
 const width = Math.max(...ACTIONS.map((a) => a.name.length))
 const able = {}
+/* an action of a module the site has off is not this site's to check: another site's run covers it */
+for (const a of [...ACTIONS]) if (a.module && !(await moduleOn(a.module))) { notHere(`who-can: ${a.name}`, `the ${a.module} module is off`); ACTIONS.splice(ACTIONS.indexOf(a), 1) }
 for (const a of ACTIONS) {
   able[a.name] = []
   for (const who of Object.keys(WHO)) {
@@ -187,5 +201,6 @@ for (const a of ACTIONS) {
 console.log('\n  ' + 'action'.padEnd(width) + '   who could')
 for (const a of ACTIONS) console.log('  ' + a.name.padEnd(width) + '   ' + (able[a.name].join(', ') || '(nobody)'))
 
+if (deskContact) { await admin.from('support_conversations').delete().eq('contact_id', deskContact.id); await admin.from('support_contacts').delete().eq('id', deskContact.id) }
 console.log(`\n  ${pass} passed, ${fail} failed — ${Object.keys(WHO).length} kinds of person × ${ACTIONS.length} actions\n`)
 process.exit(fail ? 1 : 0)

@@ -26,12 +26,13 @@ import { cal as calClient } from '../supabase/functions/_shared/schedulers/cal.j
 import { dayOf } from '../supabase/functions/_shared/schedulers/times.js'
 import { native as nativeScheduler } from '../supabase/functions/_shared/schedulers/native.js'
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
+import { leave, notHere, stackOf } from './test-stack.mjs'
 
 const note = (m) => console.log('scheduling-api: ' + m)
 if (process.env.SCHEDULING_API_TEST === '0') { note('skipped (SCHEDULING_API_TEST=0)'); process.exit(0) }
 const ROOT = process.cwd()
 const c = await loadSite(ROOT)
-if (c.modules.sessions === false || c.modules.api === false) { note('the sessions or the api module is off — nothing to check'); process.exit(0) }
+if (c.modules.sessions === false || c.modules.api === false) { note('the sessions or the api module is off — nothing to check'); { notHere('scheduling-api.test.mjs', 'its module is off'); process.exit(0) } }
 let pass = 0, fail = 0
 const ok = async (name, fn) => { try { await fn(); pass++ } catch (e) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 
@@ -78,12 +79,12 @@ await ok('a schedule from a host\'s hours, and the webhook payload as the kit\'s
 const url = supabaseUrl(), anon = process.env.VITE_SUPABASE_ANON_KEY || ''
 let served = false
 try { served = !!(url && anon && localStack()) && (await fetch(url + '/functions/v1/scheduling-api/v2/me', { signal: AbortSignal.timeout(4000) })).status === 401 } catch { /* down */ }
-if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the shapes — the local stack is not up or the scheduling-api function is not served)`); process.exit(fail ? 1 : 0) }
+if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the shapes — the local stack is not up or the scheduling-api function is not served)`); leave(fail ? 1 : 0) }
 const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8'))
 const types = (catalog.sessions || []).filter((s) => s.scheduler === 'native')
 const one = types.find((s) => !s.sku && !(s.seats > 0) && s.duration === 60 && s.hosts.includes('coach@example.com'))
 const paidType = types.find((s) => s.sku && s.hosts.includes('coach@example.com'))
-if (!one) { note(`${pass} passed — this site has no native 60-minute one-to-one type hosted by coach@example.com (the demo has); the door is checked there`); process.exit(fail ? 1 : 0) }
+if (!one) { note(`${pass} passed`); notHere('scheduling-api: the booking door', 'the site has no native 60-minute one-to-one type hosted by coach@example.com (the demo has)'); process.exit(fail ? 1 : 0) }
 const { createClient } = await import('@supabase/supabase-js')
 const admin = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const API = url + '/functions/v1/scheduling-api'
@@ -112,7 +113,7 @@ const tier = ['anyone', 'guest', 'authenticated'].includes(one.requires) ? null 
 /* the reader the run books with: of the seed's two members, one with no accepted booking of the type this month */
 let reader = null
 for (const e of ['member2@example.com', 'member@example.com']) { const { data } = await admin.from('bookings').select('uid').eq('user_id', ids[e]).eq('event', one.event).in('status', ['accepted', 'pending', 'ended']).gte('start_at', new Date(Date.now() - 31 * 864e5).toISOString()); if (!(data || []).length) { reader = e; break } }
-if (!reader) { note('every seeded member already holds a booking of the type this month — the door is checked by hand'); process.exit(fail ? 1 : 0) }
+if (!reader) { note('every seeded member already holds a booking of the type this month — the door is checked by hand'); leave(fail ? 1 : 0) }
 try {
   await admin.from('provider_schedules').upsert({ user_id: coach, ...HOURS }, { onConflict: 'user_id,name' }); await admin.from('provider_overrides').delete().eq('user_id', coach)
   if (tier) { await grant(reader, tier); await grant('member@example.com' === reader ? 'member2@example.com' : 'member@example.com', tier) }
@@ -302,7 +303,7 @@ try {
   })
   /* ---- (3) cal.com's embed on Playwright ---- */
   await ok('cal.com\'s embed on another origin: the booking page inline, the reader signs in inside it and books a time, bookingSuccessfulV2 on the parent', async () => {
-    const appUrl = (process.env.VITE_APP_URL || 'http://localhost:5173').replace(/\/+$/, '')
+    const appUrl = (stackOf()?.app || '').replace(/\/+$/, '')
     let up = false; try { up = (await fetch(appUrl + '/book/' + one.slug, { signal: AbortSignal.timeout(3000) })).ok } catch { /* down */ }
     if (!up) { note('the dev server is not up at ' + appUrl + ' — the embed is checked by hand'); return }
     const embedJs = fs.readFileSync(new URL(import.meta.resolve('@calcom/embed-core/dist/embed/embed.js')), 'utf8')

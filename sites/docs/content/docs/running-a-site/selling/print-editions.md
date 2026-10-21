@@ -11,7 +11,7 @@ sources:
     packages/kit/build/print/block.mjs,
     packages/kit/src/lib/print-offers.js,
   ]
-reviewed: 2026-10-14
+reviewed: 2026-10-21
 ---
 
 A book is sold in print — and as PDF and EPUB — by a block of settings on the book itself, edited on **Store → Print editions**. There is no separate product file: the offers are derived from the book, one store page per book, one line per format.
@@ -50,7 +50,7 @@ no longer has and are thrown away rather than kept.
 
 ## What the build does with a book
 
-For every contents on offer it typesets the book and its companion — a blank first leaf, the title page, the colophon, the contents, the publisher's note (two-part editions only), the introduction, each chapter opening on a page of its own with its companion after it on a tinted ground, every highlight gathered at the back with its page — draws the cover to the printer's dimensions (a paperback's front is the book's own cover picture; a hardcover's is set in type on the cloth with the title in the foil's colour; the spine says Title · Edition), makes the EPUB, and for the store draws the printed book as an object and three pages of the print file as pictures (the fullest chapter opening, the same chapter in the other text, the page with the most highlights). Which pages are shown is decided from the file, never picked by hand.
+For every contents on offer it typesets the book and its companion — a blank first leaf, the title page, the colophon, the contents, the publisher's note (two-part editions only), the introduction, each chapter opening on a page of its own with its companion after it on a tinted ground, every highlight gathered at the back with its page — draws the cover to the printer's dimensions (a paperback's front is the book's own cover picture; a hardcover's is set in type on the cloth with the title in the foil's colour; the spine says Title · Edition), makes the EPUB, and for the store draws the printed book as an object and three pages of the print file as pictures (the fullest chapter opening, the same chapter in the other text, the page with the most highlights). Which pages are shown is decided from the file, never picked by hand. The interior is padded with blank leaves to what every printer that may make the book will bind (the largest minimum and page step among them, so a printer counting in fours gets a count it accepts), by the same rule the cloud path uses.
 
 A change to how books are typeset is checked by looking at every page of a rendered book, not by a page count.
 

@@ -18,12 +18,13 @@ import { optionsOf, variantsOf } from './variants.mjs'
 import { execute, schemaOf } from '../supabase/functions/_shared/api/shopify/schema.js'
 import { linesIn, linesUpdated, cartOf } from '../supabase/functions/_shared/api/shopify/cart.js'
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
+import { leave, notHere, stackOf } from './test-stack.mjs'
 
 const note = (m) => console.log('storefront-api: ' + m)
 if (process.env.STOREFRONT_API_TEST === '0') { note('skipped (STOREFRONT_API_TEST=0)'); process.exit(0) }
 const ROOT = process.cwd()
 const c = await loadSite(ROOT)
-if ((c.modules && c.modules.store === false) || (c.modules && c.modules.api === false)) { note('skipped — the store or the api module is off'); process.exit(0) }
+if ((c.modules && c.modules.store === false) || (c.modules && c.modules.api === false)) { note('skipped — the store or the api module is off'); { notHere('storefront-api.test.mjs', 'its module is off'); process.exit(0) } }
 let pass = 0, fail = 0
 const ok = async (name, fn) => { try { await fn(); pass++ } catch (e) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 
@@ -123,7 +124,7 @@ const url = supabaseUrl(), anon = process.env.VITE_SUPABASE_ANON_KEY || ''
 const FN = url + '/functions/v1/storefront-api'
 let served = false
 try { served = !!(url && anon && localStack()) && (await fetch(FN + '/api/2024-10/graphql.json', { method: 'POST', body: '{}', signal: AbortSignal.timeout(4000) })).status === 401 } catch { /* down */ }
-if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the shapes — the local stack is not up or the storefront-api function is not served)`); process.exit(fail ? 1 : 0) }
+if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the shapes — the local stack is not up or the storefront-api function is not served)`); leave(fail ? 1 : 0) }
 const { createClient } = await import('@supabase/supabase-js')
 const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const sha256 = async (s) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
@@ -132,7 +133,7 @@ const makeKey = async (kind) => { const key = `pk_${kind}_probe${Date.now().toSt
 const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8'))
 const offers = Object.values(catalog.offers || {})
 const sellable = offers.filter((o) => ['good', 'book', 'print', 'download'].includes(o.kind))
-if (!sellable.length) { note(`${pass} passed — nothing the bag sells on this site; the door is checked on the demo and the root`); process.exit(fail ? 1 : 0) }
+if (!sellable.length) { note(`${pass} passed — nothing the bag sells on this site; the door is checked on the demo and the root`); leave(fail ? 1 : 0) }
 /* the official client: storeDomain the site; its https-only url mapped onto the stack's function address, as the host's /api/* rewrite carries it in production */
 const { createStorefrontApiClient } = await import('@shopify/storefront-api-client')
 
@@ -156,9 +157,11 @@ try {
     const { data: shop, errors } = await client.request('{ shop { name primaryDomain { url } paymentSettings { currencyCode } } }'); assert.ok(!errors, JSON.stringify(errors)); assert.ok(shop.shop.name)
     const { data: list } = await client.request('{ products(first: 50) { nodes { id handle title productType vendor featuredImage { url } options { name values } variants(first: 50) { nodes { id sku title price { amount currencyCode } requiresShipping selectedOptions { name value } } } priceRange { minVariantPrice { amount } } } } }')
     assert.ok(list.products.nodes.length >= 1, 'products')
-    for (const p of list.products.nodes) for (const v of p.variants.nodes) { const o = offers.find((x) => x.sku === v.sku); assert.ok(o, v.sku + ' is an offer'); assert.equal(Number(v.price.amount) * 100, o.unit_amount, v.id + ' at the catalog\'s price'); assert.equal(v.price.currencyCode, o.currency.toUpperCase()); assert.equal(v.requiresShipping, o.kind === 'good' || o.kind === 'print') }
+    /* a variant's sku is its offer's, or one of the offer's shapes with a sku of its own (notebook-linen-lined), priced as that shape */
+    const shapeOf = (sku) => { for (const x of offers) { if (x.sku === sku) return { o: x, amount: x.unit_amount }; const sh = (x.variants || []).find((y) => y.sku === sku); if (sh) return { o: x, amount: sh.unit_amount } } return null }
+    for (const p of list.products.nodes) for (const v of p.variants.nodes) { const found = shapeOf(v.sku); assert.ok(found, v.sku + ' is an offer or one of its shapes'); const o = found.o; assert.equal(Math.round(Number(v.price.amount) * 100), found.amount, v.id + ' at the catalog\'s price'); assert.equal(v.price.currencyCode, o.currency.toUpperCase()); assert.equal(v.requiresShipping, o.kind === 'good' || o.kind === 'print') }
     const bookProduct = list.products.nodes.find((p) => p.productType === 'book'); if (bookProduct) assert.ok(bookProduct.options[0].name === 'Format' && bookProduct.variants.nodes.length >= 1)
-    const sized = list.products.nodes.find((p) => p.options.some((o) => o.name === 'Size')); if (sized) assert.equal(sized.variants.nodes.length, sized.options.find((o) => o.name === 'Size').values.length, 'a variant per size')
+    const sized = list.products.nodes.find((p) => p.options.some((o) => o.name === 'Size')); if (sized) assert.equal(sized.variants.nodes.length, sized.options.reduce((n, o) => n * o.values.length, 1), 'a variant per combination of its options (colour × size)')
     const first = list.products.nodes[0]
     const { data: one } = await client.request('query($h: String!) { product(handle: $h) { id handle } productByHandle(handle: $h) { title } }', { variables: { h: first.handle } }); assert.equal(one.product.id, first.id); assert.equal(one.productByHandle.title, first.title)
     const { data: cols } = await client.request('{ collections(first: 10) { nodes { handle title products(first: 20) { nodes { handle } } } } }')
@@ -202,7 +205,7 @@ try {
 
   /* ---- (3) the checkout url, followed ---- */
   await ok('the checkout url followed: a guest\'s paperback paid under the mock; a book online on the bag with the sign-in; an unknown token expired', async () => {
-    const appUrl = (process.env.VITE_APP_URL || 'http://localhost:5173').replace(/\/+$/, '')
+    const appUrl = (stackOf()?.app || '').replace(/\/+$/, '')
     let up = false; try { up = (await fetch(appUrl + '/store', { signal: AbortSignal.timeout(3000) })).ok } catch { /* down */ }
     if (!up) { note('the dev server is not up at ' + appUrl + ' — the handoff is checked by hand'); return }
     const mock = process.env.STRIPE_MOCK === '1' || (fs.existsSync(path.join(ROOT, '.env.dev')) && /^STRIPE_MOCK=1/m.test(fs.readFileSync(path.join(ROOT, '.env.dev'), 'utf8')))   /* the functions must run under the mock too (their env file) */
@@ -227,7 +230,7 @@ try {
         if (printOffer.kind === 'print') { const { data: po } = await service.from('fulfilments').select('id, user_id').order('created_at', { ascending: false }).limit(1); assert.ok(po && po.length && !po[0].user_id, 'a guest\'s print order') }
         const bag = await pg.evaluate(() => { try { return localStorage.getItem('dl.cart.v2') } catch { return null } })
         note('a guest\'s ' + printOffer.kind + ' paid through the handoff' + (bag && JSON.parse(bag).length ? '' : ' (the bag emptied)'))
-      } else note(printOffer ? 'no Stripe mock (STRIPE_MOCK=1 in .env) — the paid handoff is checked by hand' : 'no printed or downloadable offer on this site — the paid handoff is checked on the root')
+      } else note(printOffer ? 'no Stripe mock (STRIPE_MOCK=1 in .env) — the paid handoff is checked by hand' : 'no printed or downloadable offer: the paid handoff is ' + 'not on this site')
       if (unlock) {
         const { data: pl } = await client.request('query($h: String!) { productByHandle(handle: $h) { title } }', { variables: { h: unlock.sku } })
         const cart = await mk('gid://shopify/ProductVariant/' + unlock.sku, null)

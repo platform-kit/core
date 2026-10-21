@@ -151,7 +151,7 @@ The site's Markdown product and offer files SHALL remain authoritative for Strip
 - **WHEN** a Stripe site deploys or updates its catalog
 - **THEN** the existing catalog build compiles the Markdown offers and the Stripe push creates or updates their Stripe products and prices by stable offer identity
 
-Verified by: `build/catalog.test.mjs`, `build/steps/push-catalog.mjs` tests, and `build/payment-providers.test.mjs`
+Verified by: `build/catalog.mjs --check` (the offers compile), `build/stripe-testmode.integration.mjs` (the push against Stripe's test mode, by stable offer identity), and `build/payment-providers.test.mjs`
 
 #### Scenario: A site-owned adapter synchronizes Markdown offers
 

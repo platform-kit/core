@@ -44,3 +44,11 @@ export async function launch(opts = {}) {
   const { chromium } = await import('playwright')
   return chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined, ...opts })
 }
+
+/* where that browser is, and whether it is there — the end-to-end run asks before it builds a stack, so a machine
+   without one fails at the start naming it, not as a dozen page checks that could not launch */
+export async function browserPath() {
+  const { chromium } = await import('playwright')
+  const at = process.env.PLAYWRIGHT_CHROMIUM_PATH || chromium.executablePath()
+  return { at, there: !!at && (await import('node:fs')).existsSync(at) }
+}

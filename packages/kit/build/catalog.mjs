@@ -288,6 +288,8 @@ for (const { file, data: d } of files('content/books')) {
   /* no rights line yet: the block is the jacket's copy, and the book is not for sale */
   if (!spec.rights) { console.log(`  ${file}: print has no rights: line — not on sale until it says on what footing the text is printed and sold`); continue }
   if (!spec.key) { err(`${file}: print needs a key (node build/product-keys.mjs gives it one)`); continue }
+  /* an edition the typesetter does not know is set as nothing at all (the demo's `chapters` was, silently) */
+  { const unknown = (spec.contents || []).filter((c) => !['parts', 'full', 'summary'].includes(c)); if (unknown.length) { err(`${file}: print contents ${unknown.join(', ')} is not an edition — parts, full or summary`); continue } }
   const sp = spineWords(d.title, spec.spine, SPINE_EDITION(PRINT_WORDS))
   if (!sp.fits) { err(`${file}: the spine holds ${SPINE_MAX} characters of "${sp.title}" and "${sp.edition}" together — give the print block a spine: of ${sp.room} or fewer`); continue }
   /* the functions need the book's title and each format's key whether or not the format is on

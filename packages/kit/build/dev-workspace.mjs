@@ -51,8 +51,11 @@ async function canBind(port) {
 
 export async function findFreePort(start, reserved = new Set()) {
   for (let port = start; port < 65536; port++) {
-    if (reserved.has(port) || await tcpConnects(port) || !await canBind(port)) continue
+    /* claimed before the checks, which await: two sites prepared at once would otherwise both see a port free and
+       both take it (the end-to-end run's two stacks were both given 40000…). A busy port stays claimed — it is busy. */
+    if (reserved.has(port)) continue
     reserved.add(port)
+    if (await tcpConnects(port) || !await canBind(port)) continue
     return port
   }
   throw new Error(`no free port remains at or above ${start}`)
@@ -110,7 +113,7 @@ export function runtimeSupabaseConfig(config, { siteName, projectId, domain, fro
   return setAuthSiteUrl(output, `http://${siteName}.${domain}:${frontDoorPort}`)
 }
 
-export async function prepareRuntimeProject({ source, runtimeRoot, siteName, projectId, domain, frontDoorPort, reservedPorts }) {
+export async function prepareRuntimeProject({ source, runtimeRoot, siteName, projectId, domain, frontDoorPort, reservedPorts, portStart = 20000 }) {
   const sourceSupabase = path.join(source, 'supabase')
   const configPath = path.join(sourceSupabase, 'config.toml')
   if (!fs.existsSync(configPath)) throw new Error(`site ${siteName} has no supabase/config.toml`)
@@ -131,7 +134,8 @@ export async function prepareRuntimeProject({ source, runtimeRoot, siteName, pro
   const originalConfig = fs.readFileSync(configPath, 'utf8')
   const portCount = [...originalConfig.matchAll(PORT_LINE)].length
   const ports = []
-  for (let index = 0; index < portCount; index++) ports.push(await findFreePort(20000, reservedPorts))
+  /* the dev runs start at 20000; the end-to-end runs at their own range (build/e2e.mjs), so neither takes the other's */
+  for (let index = 0; index < portCount; index++) ports.push(await findFreePort(portStart, reservedPorts))
   const config = runtimeSupabaseConfig(originalConfig, {
     siteName, projectId, domain, frontDoorPort, ports,
   })

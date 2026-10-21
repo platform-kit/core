@@ -24,6 +24,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { randomUUID as uuid } from 'node:crypto'
+import { statusOf, leave } from './test-stack.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -31,9 +32,9 @@ const note = (s) => console.log('  ' + s)
 
 console.log('\nONE READ IS ONE READ\n')
 
-const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    How reads and sign-ups are counted is NOT covered by this run.\n'); process.exit(0) }
+const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    How reads and sign-ups are counted is NOT covered by this run.\n'); leave(0) }
 let cfg = null
-try { cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) }
+try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service-role key')
 const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })

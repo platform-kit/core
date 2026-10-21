@@ -17,6 +17,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
+import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -24,9 +25,9 @@ const note = (s) => console.log('  ' + s)
 
 console.log('\nWHO GETS IN\n')
 
-const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The doors are NOT covered by this run.\n'); process.exit(0) }
+const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The doors are NOT covered by this run.\n'); leave(0) }
 let cfg = null
-try { cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) }
+try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service-role key')
 
@@ -98,7 +99,8 @@ for (const fn of FIGURES) {
       const write = await lapsed.from('messages').insert({ conversation_id: conv.id, sender_id: me.id, kind: 'text', body: 'a probe from doors-db' })
       ok('and cannot write to it', !!write.error, 'the message went through')
       if (!write.error) await admin.from('messages').delete().eq('body', 'a probe from doors-db')
-    } else note('⚠ the member has no coaching thread — the lapse check is skipped')
+    } else if (!(await moduleOn('coaching'))) notHere('doors-db: a lapsed member\'s coaching thread', 'the coaching module is off')
+    else note('⚠ the member has no coaching thread — the lapse check is skipped')
     for (const e of was) await admin.from('entitlements').update({ expires_at: e.expires_at }).eq('id', e.id)
   }
 }

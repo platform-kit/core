@@ -14,17 +14,27 @@
  * Run from a site's root with the stack's env; skipped with a note when the stack is down, when Stripe is
  * not the test-mode provider here, or CHECKOUT_TAMPER_TEST=0. Every session it makes is expired after.
  */
+import fs from 'node:fs'
+import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack } from './tts/storage.mjs'
+import { leave, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('checkout-tamper: ' + m)
 if (process.env.CHECKOUT_TAMPER_TEST === '0') { note('skipped (CHECKOUT_TAMPER_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
 const sk = process.env.STRIPE_SECRET_KEY || ''
-if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the environment'); process.exit(0) }
-if (!/^sk_test_/.test(sk) || /^(1|true|yes|on)$/i.test(process.env.STRIPE_MOCK || '')) { note('skipped — Stripe test mode is not this stack\'s provider (STRIPE_SECRET_KEY sk_test_…, STRIPE_MOCK off)'); process.exit(0) }
+if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the environment'); leave(0) }
+if (!/^sk_test_/.test(sk) || /^(1|true|yes|on)$/i.test(process.env.STRIPE_MOCK || '')) { note('skipped — Stripe test mode is not this stack\'s provider (STRIPE_SECRET_KEY sk_test_…, STRIPE_MOCK off)'); leave(0) }
 
+/* its product is the demo's notebook, whose variants it reads one by one (a stopped one, an invented one); a site that
+   does not sell it stands down, and the demo's run covers the server's pricing */
+{
+  let offers = {}
+  try { offers = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'supabase/functions/_shared/catalog.json'), 'utf8')).offers || {} } catch { /* none */ }
+  if (!offers.notebook) { notHere('checkout-tamper', 'the site does not sell the demo\'s notebook, whose variants these checks read'); process.exit(0) }
+}
 let pass = 0, fail = 0
 const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
@@ -41,8 +51,8 @@ const stripe = async (path, method = 'GET') => (await fetch('https://api.stripe.
 const sessionOf = (id) => stripe(`checkout/sessions/${id}?expand[]=line_items&expand[]=shipping_options.shipping_rate`)
 
 const member = await as('member@example.com'), free = await as('free@example.com')
-if (!member || !free) { note('skipped — the seed has no member@ or free@'); process.exit(0) }
-try { const r = await fetch(`${url}/functions/v1/create-checkout-session`, { method: 'OPTIONS', signal: AbortSignal.timeout(4000) }); if (r.status >= 500) throw new Error() } catch { note('skipped — the functions are not served'); process.exit(0) }
+if (!member || !free) { note('skipped — the seed has no member@ or free@'); leave(0) }
+try { const r = await fetch(`${url}/functions/v1/create-checkout-session`, { method: 'OPTIONS', signal: AbortSignal.timeout(4000) }); if (r.status >= 500) throw new Error() } catch { note('skipped — the functions are not served'); leave(0) }
 
 try {
   /* everything a request could say about money, said */

@@ -2,13 +2,14 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
 const key = serviceKey()
 if (!url || !anonKey || !key || !localStack()) {
   console.log('social-delivery: skipped — local Supabase credentials are unavailable')
-  process.exit(0)
+  leave(0)
 }
 
 const health = await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2_000) })

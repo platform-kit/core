@@ -19,7 +19,14 @@ const SCR = path.join(ROOT, 'node_modules', '.cache', 'platformkit', 'schema-tes
 /* RESERVED: this scratch project binds PORT and PORT-1 for the length of the run, so 54381 and
    54382 are not available to a site's own base (data.ports in platformkit.config.js). A site given
    54380 took them and the whole suite went red on "port is already allocated". */
-const PORT = 54382
+/* its own in the end-to-end run, per site: two sites run this at once, and one fixed name and port had each tear the
+   other's database down mid-check ("terminating connection due to administrator command") */
+const RUN_SITE = (process.env.PLATFORMKIT_E2E === '1' && process.env.PLATFORMKIT_TEST_SITE || '').replace(/[^a-z0-9]+/gi, '-').toLowerCase()
+const START = 43000 + ([...RUN_SITE].reduce((n, ch) => n + ch.charCodeAt(0), 0) % 50) * 20   /* a block per site, so two processes do not race for one */
+const { findFreePort } = await import('./dev-workspace.mjs')
+const PORT = RUN_SITE ? await findFreePort(START) : 54382
+const PROJECT = 'pk-schema-test' + (RUN_SITE ? '-' + RUN_SITE : '')
+const SHADOW = RUN_SITE ? await findFreePort(PORT + 1) : PORT - 1
 const TARGET = `postgresql://postgres:postgres@127.0.0.1:${PORT}/postgres?sslmode=disable`
 const note = (m) => console.log('schema: ' + m)
 if (process.env.SCHEMA_TEST === '0') { note('skipped (SCHEMA_TEST=0)'); process.exit(0) }
@@ -44,7 +51,7 @@ fs.mkdirSync(path.join(SCR, 'supabase', 'migrations'), { recursive: true })
 fs.cpSync(path.join(KIT, 'schemas'), path.join(SCR, 'supabase', 'schemas'), { recursive: true })
 fs.copyFileSync(path.join(KIT, 'data.sql'), path.join(SCR, 'supabase', 'data.sql'))
 const major = (/major_version\s*=\s*(\d+)/.exec(fs.existsSync(path.join(ROOT, 'supabase', 'config.toml')) ? fs.readFileSync(path.join(ROOT, 'supabase', 'config.toml'), 'utf8') : '') || [])[1] || '17'
-fs.writeFileSync(path.join(SCR, 'supabase', 'config.toml'), `project_id = "pk-schema-test"\n[db]\nport = ${PORT}\nshadow_port = ${PORT - 1}\nmajor_version = ${major}\n[db.seed]\nenabled = true\nsql_paths = ["./schemas/*.sql", "./schemas/site/*.sql", "./data.sql"]\n`)
+fs.writeFileSync(path.join(SCR, 'supabase', 'config.toml'), `project_id = "${PROJECT}"\n[db]\nport = ${PORT}\nshadow_port = ${SHADOW}\nmajor_version = ${major}\n[db.seed]\nenabled = true\nsql_paths = ["./schemas/*.sql", "./schemas/site/*.sql", "./data.sql"]\n`)
 sb(['stop', '--no-backup'], { stdio: 'ignore' })
 const started = sb(['db', 'start'])
 if (started.status !== 0) { console.log(started.stdout, started.stderr); console.log('schema: the scratch database did not start'); process.exit(1) }
@@ -494,6 +501,9 @@ try {
 } finally {
   try { await db.end() } catch {}
   sb(['stop', '--no-backup'], { stdio: 'ignore' })
+  /* and the networks it made: `stop` leaves the shadow database's behind, one a run, until Docker has no addresses left
+     to give ("all predefined address pools have been fully subnetted") */
+  for (const n of [`supabase_network_${PROJECT}`, `supabase_network_${PROJECT}-shadow`]) spawnSync('docker', ['network', 'rm', n], { stdio: 'ignore' })
 }
 console.log(`schema: ${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

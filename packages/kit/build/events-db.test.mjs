@@ -14,16 +14,17 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
+import { statusOf, leave, notHere } from './test-stack.mjs'
 
 const SITE = process.cwd()
 let pass = 0, fail = 0
 const ok = (n, c, d) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + n + (d ? ' — ' + d : '')) } }
 
 console.log('\nEVENTS, PROJECTED WITH NO MACHINE\n')
-const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n'); process.exit(0) }
+const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n'); leave(0) }
 
 let cfg = null
-try { cfg = JSON.parse(execSync('npx supabase status -o json', { cwd: SITE, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) } catch { skip('no local stack') }
+try { cfg = statusOf(); if (!cfg) throw new Error('no stack') } catch { skip('no local stack') }
 if (!cfg || !cfg.SERVICE_ROLE_KEY) skip('the stack reported no service key')
 const db = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 { const { error } = await db.from('calendar_events').select('id', { head: true, count: 'exact' }); if (error) skip('calendar_events is not there — npm run db:reset (' + error.message + ')') }
@@ -36,7 +37,7 @@ const { gitStore } = await import('./store/git.mjs')
 const store = gitStore(SITE)
 const { events, rows } = await compileEvents({ store, write: false })
 /* a site that declares no events has nothing to project, and says so rather than failing the run */
-if (Array.isArray(rows) && rows.length === 0) skip('this site declares no events — the projection is NOT covered by this run')
+if (Array.isArray(rows) && rows.length === 0) { notHere('events-db', 'the site declares no events (the demo does)'); process.exit(0) }
 ok('the declaration compiles', Array.isArray(rows) && rows.length > 0, String(rows && rows.length))
 
 /* --- a publish moves the rows, and does it from the declaration alone --- */

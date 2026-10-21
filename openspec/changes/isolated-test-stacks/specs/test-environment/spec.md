@@ -94,3 +94,35 @@ When the run ends, by success, failure or interruption, every stack and service 
 - **THEN** its stacks and services are stopped and their data removed
 
 Verified by: the runner's own test
+
+### Requirement: Nothing is untested by construction
+
+The kit SHALL make an untested function or a silently skipped check a failure rather than a convention to remember: every Edge Function SHALL be named by at least one test; every function SHALL be called during an end-to-end run over every site with a backend; a test SHALL leave before its end only by the helper's skip (a failure in the end-to-end run) or its declared not-on-this-site; and every "Verified by" in a specification SHALL name a test that exists and is run.
+
+#### Scenario: a new function with no test
+
+- **WHEN** a function is added under the kit's or a site's functions and no test names it
+- **THEN** `npm test` fails, naming the function
+
+Verified by: `build/test-coverage.test.mjs`
+
+#### Scenario: a function no test calls
+
+- **WHEN** an end-to-end run over every site with a backend finishes and a function any site served was never called by any site's tests
+- **THEN** the run fails, naming the function; a run over some of the sites names it without failing, since the others' tests are the ones that call it
+
+Verified by: the runner's coverage gate, read from the functions' own log
+
+#### Scenario: a test that stops early with a pass
+
+- **WHEN** a test exits successfully before its end other than through the helper's skip or not-on-this-site
+- **THEN** `npm test` fails, naming the test and the line
+
+Verified by: `build/test-coverage.test.mjs`
+
+#### Scenario: a claim with no test behind it
+
+- **WHEN** a specification's scenario names a test that does not exist or is not run
+- **THEN** `npm test` fails, naming the scenario
+
+Verified by: `build/test-coverage.test.mjs`

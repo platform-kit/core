@@ -30,6 +30,7 @@
  */
 import { execSync } from 'node:child_process'
 import { launch, context as browserContext, WAIT } from './browser.mjs'
+import { statusOf, leave, stackOf } from './test-stack.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) { pass++; console.log('  ✔ ' + name) } else { fail++; console.log('  ✖ ' + name + (detail ? '\n      ' + detail : '')) } }
@@ -38,12 +39,12 @@ console.log('\nSIGNED IN AS EACH KIND OF PERSON\n')
 
 const args = process.argv.slice(2)
 const argOf = (n, d) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
-const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    What each kind of person SEES AND DOES in the site is NOT covered by this run.\n'); process.exit(0) }
+const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    What each kind of person SEES AND DOES in the site is NOT covered by this run.\n'); leave(0) }
 
-const BASE = argOf('--url', process.env.INTERACTION_URL || 'http://localhost:5173')
+const BASE = argOf('--url', process.env.INTERACTION_URL || stackOf()?.app || '')
 try { const r = await fetch(BASE, { signal: AbortSignal.timeout(4000) }); if (!r.ok) throw new Error(String(r.status)) }
 catch { skip(`nothing is serving the site at ${BASE} (npm run dev)`) }
-try { execSync('npx supabase status -o json', { stdio: 'ignore' }) } catch { skip('no local stack is up (npx supabase start)') }
+try { if (!statusOf()) throw new Error('no stack') } catch { skip('no local stack is up (npx supabase start)') }
 
 /* the addresses a staff member might type. `people` is an administrator's alone; `notifications`
    every staff member's, which is what makes a diversion visible rather than a refusal */
@@ -143,8 +144,9 @@ for (const p of PEOPLE) {
 
     /* whoever they are, they are still a reader: the site itself works for them */
     await ready(page, '/content')
-    await page.waitForFunction(() => /Library|Everything/i.test(document.body.innerText), { timeout: WAIT }).catch(() => {})
-    ok(`${p.who}: can still read the library`, await page.evaluate(() => /Everything/i.test(document.body.innerText)))
+    /* the library's own links, as the guest's check below reads it: an Everything tab is drawn only where a site has several collections */
+    await page.waitForFunction(() => document.querySelectorAll('a[href*="/content/"]').length > 0, { timeout: WAIT }).catch(() => {})
+    ok(`${p.who}: can still read the library`, await page.evaluate(() => document.querySelectorAll('a[href*="/content/"]').length > 0))
 
     ok(`${p.who}: nothing threw while they used the site`, errs.length === 0, errs.slice(0, 2).join(' | '))
   } catch (e) {

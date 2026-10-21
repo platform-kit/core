@@ -61,7 +61,7 @@ export async function adminRequest(env, { method, seg, q, body }) {
   /* `editions` is how a caller with no machine sets a printed book: the Edge Function hands the
      print model a renderer and a way to fetch a rendered file, and where it is absent the model
      runs Typst itself (build/models/core/print.mjs) */
-  const extra = { store, by: env.by, site: env.site, theme: env.theme, themeSkills: env.themeSkills, brand: env.brand, validateSections: env.validateSections, editions: env.editions }
+  const extra = { store, by: env.by, site: env.site, theme: env.theme, themeSkills: env.themeSkills, brand: env.brand, validateSections: env.validateSections, editions: env.editions, catalog: env.catalog }
   const models = () => env.models()
   const modelOf = async (col) => { const m = byKey(await models(), String(col || '')); if (!m) throw new Refusal(400, 'unknown collection'); return m }
   const get = (k) => (q && typeof q.get === 'function' ? q.get(k) : (q || {})[k])

@@ -42,7 +42,7 @@ const result = spawnSync('deno', [
     HTTP_PROXY: process.env.HTTP_PROXY,
     ALL_PROXY: process.env.ALL_PROXY,
     NO_PROXY: process.env.NO_PROXY,
-    PLAYWRIGHT_CHROMIUM_EXECUTABLE: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,
+    PLAYWRIGHT_CHROMIUM_EXECUTABLE: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || process.env.PLAYWRIGHT_CHROMIUM_PATH,
     STRIPE_SECRET_KEY: secretKey,
   },
   stdio: 'inherit',

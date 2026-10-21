@@ -30,6 +30,8 @@
  */
 import { runPhase, loadSteps } from './steps.mjs'
 import { loadSite } from './site.mjs'
+import fs from 'node:fs'
+import path from 'node:path'
 
 /* the steps that write a file the functions import, and nothing else */
 export const DATA_STEPS = {
@@ -37,6 +39,11 @@ export const DATA_STEPS = {
   functions: null,   /* all of them but these: */
 }
 export const NOT_DATA = ['print', 'print-type', 'lulu-webhook']
+/* an empty file in each one's own shape: a list is read with .find and .map, the funnels by their sections */
+const EMPTY = {
+  'functions/_shared/webhooks.json': [], 'functions/_shared/bots.json': [], 'functions/_shared/commands.json': [], 'functions/_shared/spaces.json': [],
+  'functions/_shared/emails/funnels.json': { policy: {}, funnels: {}, blasts: {}, prompts: {} },
+}
 
 export async function functionsData({ site, env = process.env, log = () => {}, changed = null, phases = ['prepare', 'functions'] } = {}) {
   const c = site || await loadSite()
@@ -47,6 +54,17 @@ export async function functionsData({ site, env = process.env, log = () => {}, c
     if (!pick && pick !== null) throw new Error(`functionsData: unknown phase "${phase}"`)
     const only = all.filter((s) => s.phase === phase && (pick ? pick.includes(s.key) : !NOT_DATA.includes(s.key))).map((s) => s.key)
     if (only.length) ran.push(...await runPhase(phase, { site: c, env, changed, only, log }))
+  }
+  /* A MODULE THAT IS OFF WRITES NO FILE, but the functions import every one statically (_shared/compiled.ts takes the
+     emails' designs and funnels whatever the site has on) — so a site with emails off had no function sharing that
+     module boot at all. Each the build did not make is written empty: the module is off, so there is nothing in it.
+     The list is assemble.mjs's BUILT_PATHS, read rather than imported (importing assemble runs it). */
+  const root = (c && c.root) || process.cwd()
+  const listed = /export const BUILT_PATHS = \[([\s\S]*?)\]/.exec(fs.readFileSync(new URL('./assemble.mjs', import.meta.url), 'utf8'))
+  for (const rel of listed ? [...listed[1].matchAll(/'([^']+)'/g)].map((m) => m[1]) : []) {
+    const f = path.join(root, 'supabase', rel)
+    if (fs.existsSync(f) || !fs.existsSync(path.dirname(path.dirname(f)))) continue
+    fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, JSON.stringify(EMPTY[rel] ?? {}) + '\n'); log(`${rel}: empty (its module is off)`)
   }
   return ran
 }

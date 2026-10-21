@@ -61,7 +61,7 @@ sources:
     deploy/prerender,
     deploy/relay,
   ]
-reviewed: 2026-10-19
+reviewed: 2026-10-21
 ---
 
 ## Restarting development
@@ -133,7 +133,7 @@ hundred lines of regenerated JSON that no one can review and two branches cannot
 `build/functions-data.mjs` makes all thirteen, from nothing, in about a second. It runs in the
 three places that matter: `npm run dev` calls it after assembling `supabase/` and before
 `supabase functions serve`; `platformkit test` calls it first, so a fresh clone has them before
-any test reads one; and the deploy already ran those steps before `supabase functions deploy`.
+any test reads one; and the deploy already ran those steps before `supabase functions deploy`. A file whose module is off is written empty, in its own shape (a list or an object), since the functions import every one whether or not the module is on.
 
 It runs the steps that write those files and no others — not a whole phase, since `prepare` holds
 the search index and `functions` holds three steps that are not data at all (`print` renders

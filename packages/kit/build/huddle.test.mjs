@@ -7,6 +7,7 @@
  * code or in a variable it reads.
  */
 import { createHmac } from 'node:crypto'
+import { stackOf } from './test-stack.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -161,7 +162,7 @@ console.log('\nHUDDLE\n')
 /* --- two browsers, one huddle, no account anywhere --- */
 /* Skipped unless a dev server is up: this is the one part that cannot be proven without two real
    browsers exchanging real media. Chromium's fake devices stand in for a camera and a microphone. */
-const APP = process.env.HUDDLE_APP || 'http://localhost:5173'
+const APP = process.env.HUDDLE_APP || stackOf()?.app || ''
 /* THE ROOM IS THE SITE'S, not this file's: every site names its spaces itself, and a path written
    here would only ever open on one of them. The staff space is the one both of these accounts are
    in — its fill is roles — so it is the room, and HUDDLE_ROOM overrides for a site with none. */
@@ -181,7 +182,7 @@ if (process.env.HUDDLE_LIVE === '0' || !appUp) {
   console.log('  (the two-browser call is skipped \u2014 no dev server on ' + APP + ')')
 } else {
   const { chromium } = await import('playwright')
-  const browser = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] })
+  const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] })
   const foreign = []
   const sign = async (page, who) => {
     page.on('request', (r) => { const u = new URL(r.url()); if (!['localhost', '127.0.0.1', 'host.docker.internal'].includes(u.hostname)) foreign.push(u.host) })
@@ -211,7 +212,8 @@ if (process.env.HUDDLE_LIVE === '0' || !appUp) {
     await a.waitForFunction(() => document.querySelectorAll('.sq-tiles li').length >= 1, null, { timeout: 30000 })
     ok('alone in a huddle, the reader sees themselves', (await a.locator('.sq-tiles li').count()) === 1)
     ok('and is told the call is not recorded', /not recorded/i.test(await a.locator('.sq-fine').first().innerText()))
-    ok('and how many it carries', new RegExp('carries ' + MESH_MAX, 'i').test(await a.locator('.sq-fine').first().innerText()))
+    /* the number, not the wording: the words are the site's to change (spaces.md: carries) */
+    ok('and how many it carries', new RegExp('\\b' + MESH_MAX + '\\b').test(await a.locator('.sq-fine').first().innerText()))
     ok('and the huddle is a panel rather than the whole screen', (await a.locator('.sq.big').count()) === 0)
 
     /* from here on, anything the call reaches for would show. The page's own errands — the web

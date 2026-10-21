@@ -18,6 +18,7 @@
  *   node packages/kit/build/encryption-db.test.mjs
  */
 import { createClient } from '@supabase/supabase-js'
+import { leave } from './test-stack.mjs'
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
@@ -28,7 +29,7 @@ if (process.env.ENCRYPTION_TEST === '0') { console.log('  ⚠ SKIPPED — ENCRYP
 
 const { supabaseUrl, serviceKey } = await import('./tts/storage.mjs')
 const url = supabaseUrl(), key = serviceKey()
-if (!url || !key) { console.log('  ⚠ SKIPPED — no local stack in the environment\n'); process.exit(0) }
+if (!url || !key) { console.log('  ⚠ SKIPPED — no local stack in the environment\n'); leave(0) }
 const db = createClient(url, key, { auth: { persistSession: false } })
 /*
  * …and a client that IS somebody, because a moderator read asks `auth.uid()` and the service role
@@ -45,7 +46,7 @@ const as = async (email) => {
 try {
   const { error } = await db.from('channels').select('id').limit(1)
   if (error) throw error
-} catch (e) { console.log(`  ⚠ SKIPPED — the stack did not answer (${String(e.message || e).slice(0, 80)})\n`); process.exit(0) }
+} catch (e) { console.log(`  ⚠ SKIPPED — the stack did not answer (${String(e.message || e).slice(0, 80)})\n`); leave(0) }
 
 /* ---- the four tables are there, and are state ---- */
 for (const t of ['space_devices', 'space_one_time_keys', 'space_to_device', 'space_key_backups']) {
@@ -55,7 +56,7 @@ for (const t of ['space_devices', 'space_one_time_keys', 'space_to_device', 'spa
 
 /* ---- a room of our own to seal ---- */
 const { data: space } = await db.from('spaces').select('id').limit(1).maybeSingle()
-if (!space) { console.log('  ⚠ SKIPPED — the seed has no space to put a room in\n'); process.exit(0) }
+if (!space) { console.log('  ⚠ SKIPPED — the seed has no space to put a room in\n'); leave(0) }
 const slug = 'enc-test-' + Math.random().toString(16).slice(2, 8)
 const mk = async (encrypted) => {
   const { data, error } = await db.from('channels')
@@ -67,7 +68,7 @@ const mk = async (encrypted) => {
 const cleanup = async (id) => { await db.from('space_messages').delete().eq('channel_id', id); await db.from('channels').delete().eq('id', id) }
 
 let ch
-try { ch = await mk(true) } catch (e) { console.log(`  ⚠ SKIPPED — could not make a channel (${String(e.message).slice(0, 110)})\n`); process.exit(0) }
+try { ch = await mk(true) } catch (e) { console.log(`  ⚠ SKIPPED — could not make a channel (${String(e.message).slice(0, 110)})\n`); leave(0) }
 ok('a channel can be declared encrypted', ch.encrypted === true)
 
 try {
@@ -422,7 +423,9 @@ try {
   const A2 = await as('member@example.com')
   const B2 = await as('member2@example.com')
   if (!served || !A2 || !B2) {
-    console.log('  ⚠ not covered by this run: a real Matrix client with crypto, either way through a sealed room')
+    /* the boundary of this test, said once: it drives a sealed room through the API; a real Matrix client with its own
+       crypto, either way through one, is outside it — no test drives one yet */
+    console.log('  (outside this test: a real Matrix client with its own crypto, either way through a sealed room)')
     ok('a real Matrix client exchanges a sealed message with the site (skipped: nothing is serving ' + FN + ')', true)
   } else {
     const { data: a2 } = await db.from('profiles').select('id').eq('email', 'member@example.com').single()

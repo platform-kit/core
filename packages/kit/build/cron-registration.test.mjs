@@ -84,10 +84,14 @@ await check('all legacy kit jobs are represented once and retain their original 
     ['content-push', '* * * * *', 'select public.run_content_push()', 'api'],
     ['email-funnels', '7 * * * *', 'select public.run_email_funnels()', 'funnels'],
     ['event-reminders', '*/5 * * * *', 'select public.run_event_reminders()', 'events'],
+    ['hyperswitch-subscription-renewal', '*/15 * * * *', 'select public.run_hyperswitch_subscription_renewal()', 'memberships'],
+    ['network-crawl', '17 3 * * *', 'select public.run_network_crawl();', 'network'],
+    ['network-project', '*/5 * * * *', 'select public.run_network_project();', 'network'],
     ['payouts-sweep', '15 * * * *', 'select public.payouts_sweep()', 'store'],
     ['session-recordings', '*/10 * * * *', 'select public.run_session_recordings()', 'sessions'],
     ['session-recordings-retain', '40 4 * * *', 'select public.run_session_recordings_retain()', 'sessions'],
     ['session-reminders', '*/5 * * * *', 'select public.run_session_reminders()', 'sessions'],
+    ['social-automation-recovery', '* * * * *', 'select public.run_social_automation()', 'social-publishing'],
     ['social-metrics', '*/10 * * * *', 'select public.run_social_metrics()', 'social-publishing'],
     ['social-publishing', '* * * * *', 'select public.run_social_publishing()', 'social-publishing'],
     ['spaces-later', '* * * * *', 'select public.run_space_scheduled();', 'spaces'],
@@ -96,6 +100,7 @@ await check('all legacy kit jobs are represented once and retain their original 
     ['support-escalate', '*/5 * * * *', 'select public.run_support_escalation()', 'support'],
     ['support-retain', '20 4 * * *', 'select public.run_support_retention()', 'support'],
     ['sweep-uploads', '50 4 * * *', 'select public.sweep_uploads()', 'api'],
+    ['usage-meter-reports', '*/5 * * * *', 'select public.run_usage_meter_reports()', 'store'],
   ].map(([name, schedule, command, module]) => ({ name, schedule, command, module }))
   assert.deepEqual(actual, baseline)
 })
@@ -106,7 +111,7 @@ await check('generated reconciliation schedules enabled declarations and records
   assert.match(sql, /cron\.unschedule\(job_name\)/)
   assert.match(sql, /cron\.schedule\('chat-followups', '\* \* \* \* \*', 'select public\.send_booking_followups\(\)'\)/)
   assert.doesNotMatch(sql, /cron\.schedule\('support-escalate'/)
-  assert.match(sql, /ARRAY\['agents-schedule'.*'sweep-uploads'\]::text\[\]/s)
+  assert.match(sql, /ARRAY\['agents-schedule'.*'usage-meter-reports'\]::text\[\]/s)
 })
 
 let dbNote = 'Docker unavailable'
@@ -201,8 +206,16 @@ sql_paths = ["./schemas/*.sql", "./data.sql"]
     await assert.rejects(db.query(cronSql(colliding, { support: false })), /collides with an untracked cron\.job/)
     assert.equal((await getJob('cron-test-collision')).schedule, '19 * * * *')
     assert.ok(await getJob('operator-owned-job'))
+
+    /* a fresh database with a module off: no registry and nothing scheduled, so nothing to unschedule — the club
+       fixture's first reset failed here, cron.unschedule raising on a job that was never made */
+    await db.query("delete from public.app_settings where key = 'platformkit_cron_jobs'")
+    await db.query('select cron.unschedule(jobid) from cron.job')
+    await db.query(cronSql(kitModules, { support: false }))
+    assert.equal(await getJob('support-escalate'), null)
+    assert.ok(await getJob('chat-followups'))
     passed += 1
-    dbNote = 'passed reset, repeat, cadence update, module disable, declaration removal, and collision preservation'
+    dbNote = 'passed reset, repeat, cadence update, module disable, declaration removal, collision preservation, and a fresh database with a module off'
   } catch (error) {
     failed++
     dbNote = error.message

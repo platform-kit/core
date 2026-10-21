@@ -22,6 +22,7 @@ import { readFile } from 'node:fs/promises'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { balanceOf } from '../src/lib/payouts.js'
+import { leave } from './test-stack.mjs'
 
 const note = (m) => console.log('payouts-db: ' + m)
 const payoutSource = await readFile(new URL('../supabase/functions/_shared/payouts.ts', import.meta.url), 'utf8')
@@ -32,10 +33,10 @@ assert.ok(capabilityCheck >= 0 && capabilityCheck < ledgerClaim, 'unsupported pr
 if (process.env.PAYOUTS_TEST === '0') { note('skipped (PAYOUTS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
-if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); process.exit(0) }
+if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
-if (!up) { note('skipped — the local stack is not up'); process.exit(0) }
+if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
@@ -259,10 +260,13 @@ try {
 
     /* connecting: the mock finishes in one step so every surface can be walked with no account */
     const connected = await call(asProvider, { action: 'connect' })
-    ok('connecting an account answers either a link or the mock', connected.status === 200 && (connected.body.url || connected.body.mock))
+    ok('connecting an account answers either a link or the mock', connected.status === 200 && (connected.body.url || connected.body.mock), JSON.stringify(connected).slice(0, 300))
+    /* A STRIPE TEST ACCOUNT WITHOUT CONNECT cannot open a provider's account at all: say that, rather than fall over
+       on the next line — it is the account's setting (dashboard.stripe.com/connect, in test mode), not the code */
+    if (connected.status !== 200 && /signed up for Connect/i.test(JSON.stringify(connected.body))) console.log('  ⚠ not covered: this Stripe test account has not signed up for Connect, so payouts cannot be walked live — enable Connect in the Stripe dashboard (test mode), or run with STRIPE_MOCK=1')
     const acctRow = await service.from('payout_accounts').select('*').eq('user_id', providerId).maybeSingle()
     ok('and the site keeps the processor\'s reference and nothing else', !!acctRow.data && !!acctRow.data.account_id)
-    ok('no card and no bank detail anywhere in the row', !Object.keys(acctRow.data).some((k) => /card|bank|iban|routing|account_number|sort/.test(k)))
+    ok('no card and no bank detail anywhere in the row', !Object.keys(acctRow.data || {}).some((k) => /card|bank|iban|routing|account_number|sort/.test(k)))
     made.accounts.push(providerId)
 
     /* --- who is due, and sending it --- */

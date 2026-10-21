@@ -11,7 +11,7 @@ sources:
     packages/kit/supabase/schemas/55-sessions.sql,
     packages/kit/build/scheduling-api.test.mjs,
   ]
-reviewed: 2026-10-19
+reviewed: 2026-10-21
 ---
 
 The guide is [The Scheduling API, cal.com's](/content/docs/building-a-site/scheduling-api). This page says exactly what is there.

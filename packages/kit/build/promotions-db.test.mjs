@@ -12,14 +12,15 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const note = (m) => console.log('promotions-db: ' + m)
 if (process.env.PROMO_TEST === '0') { note('skipped (PROMO_TEST=0) — nothing about budgets or overspending was covered'); process.exit(0) }
 const url = supabaseUrl()
-if (!url || !localStack()) { note('skipped — no local stack in .env; nothing about budgets or overspending was covered'); process.exit(0) }
+if (!url || !localStack()) { note('skipped — no local stack in .env; nothing about budgets or overspending was covered'); leave(0) }
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
-if (!up) { note('skipped — the local stack is not up; nothing about budgets or overspending was covered'); process.exit(0) }
+if (!up) { note('skipped — the local stack is not up; nothing about budgets or overspending was covered'); leave(0) }
 
 const db = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 let pass = 0, fail = 0

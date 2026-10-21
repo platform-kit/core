@@ -19,7 +19,7 @@ sources:
     packages/kit/build/hyperswitch-test-stack.mjs,
     packages/kit/build/hyperswitch-v2-test.compose.yml,
   ]
-reviewed: 2026-10-16
+reviewed: 2026-10-20
 ---
 
 ## A site

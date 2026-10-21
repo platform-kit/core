@@ -150,18 +150,5 @@ export function inferenceOf(config = {}) {
   }
 }
 
-export function markupFor(inference, usage, operationId) {
-  const policy = usage?.operations?.[operationId]
-  if (!policy) throw new Error(`usage operation "${operationId}" has no site policy`)
-  if (policy.mode === 'site-funded') return null
-  if (policy.mode !== 'offer' || !/^[0-9a-f]{8}$/.test(String(policy.offerKey || ''))) {
-    throw new Error(`usage operation "${operationId}" has an invalid offer policy`)
-  }
-  const multiplier = policy.markup_micros
-    ?? inference?.markup?.offers?.[policy.offerKey]
-    ?? inference?.markup?.default
-  if (!Number.isSafeInteger(multiplier) || multiplier < 1) {
-    throw new Error(`usage operation "${operationId}" has no valid markup multiplier`)
-  }
-  return multiplier
-}
+/* the markup an operation's reader pays at — in the functions' shared meter, where the worker reads it too */
+export { markupFor } from '../supabase/functions/_shared/inference-meter.mjs'

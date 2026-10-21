@@ -24,7 +24,7 @@ sources:
     packages/kit/build/network-keys.mjs,
     packages/movable-types/src/components/network/NetJoin.vue,
   ]
-reviewed: 2026-10-08
+reviewed: 2026-10-21
 ---
 
 The `network` module is the site's own social network: every member may have a page, follow other members, post, and read a timeline of the people they follow. It is what Bluesky and Mastodon do for strangers, and what Circle, Mighty Networks and Skool do for a paid community, kept on the site and under its own rules. Module: `network`, for the git and cloud shapes; a static site has nowhere to keep a post and is refused with it on. Like every module it is on unless the site's config says `network: false`.

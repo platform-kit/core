@@ -11,7 +11,7 @@ sources:
     packages/kit/build/payment-provider-registry.mjs,
     packages/kit/build/modules/manifest.mjs,
   ]
-reviewed: 2026-10-19
+reviewed: 2026-10-21
 ---
 
 | Key                                                     | Type                                                                                     | Default                                       | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |

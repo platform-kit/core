@@ -67,7 +67,7 @@ const READ = `({
 })`
 const ROUTES = (process.env.IDENTITY_PROBE_ROUTES || '/spaces,/app,/app/chat,/content,/store').split(',').filter(Boolean)
 
-const browser = await chromium.launch()
+const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined })
 const fresh = async () => (await browserContext(browser, { viewport: { width: 1280, height: 900 } })).newPage()
 
 /*

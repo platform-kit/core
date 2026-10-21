@@ -3,28 +3,29 @@ import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
 if (!url || !anonKey || !localStack()) {
   console.log('social-publishing: skipped — no local Supabase stack in .env')
-  process.exit(0)
+  leave(0)
 }
 
 const localAuth = await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2_000) })
 if (!localAuth.ok) {
   console.log('social-publishing: skipped — the local Supabase stack is not up')
-  process.exit(0)
+  leave(0)
 }
 
 const localConfig = fs.readFileSync('supabase/config.toml', 'utf8')
 if (!/\[local_smtp\][\s\S]*?^\s*enabled\s*=\s*true\s*$/m.test(localConfig) ||
     /^\s*\[auth\.email\.smtp\]\s*$/m.test(localConfig)) {
   console.log('social-publishing: skipped — Supabase Auth is not safely routed to local Mailpit')
-  process.exit(0)
+  leave(0)
 }
 
-const mailUrl = process.env.SOCIAL_TEST_MAILPIT_URL || url.replace(/:\d+$/, ':54324')
+const mailUrl = process.env.SOCIAL_TEST_MAILPIT_URL || process.env.PLATFORMKIT_TEST_MAIL_URL || url.replace(/:\d+$/, ':54324')
 const mailHealth = await fetch(mailUrl + '/api/v1/messages?limit=1', { signal: AbortSignal.timeout(2_000) })
 if (!mailHealth.ok) {
   console.log('social-publishing: skipped — local Mailpit is not up')

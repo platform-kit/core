@@ -9,15 +9,16 @@ import fs from 'node:fs'
 import { createHmac } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const note = (m) => console.log('funnels-analytics: ' + m)
 if (process.env.FUNNELS_TEST === '0') { note('skipped (FUNNELS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
-if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); process.exit(0) }
+if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
-if (!up) { note('skipped — the local stack is not up'); process.exit(0) }
+if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg, cond) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
@@ -35,7 +36,7 @@ const log = (await service.from('email_log').select('id, user_id, kind, name, st
 const byName = {}
 for (const r of log) if (r.kind === 'funnel') byName[r.name] = (byName[r.name] || 0) + 1
 const name = Object.keys(byName).sort((a, b) => byName[b] - byName[a])[0]
-if (!name || !funnels.funnels[name]) { note('the seed holds no funnel sends here — skipped'); process.exit(0) }
+if (!name || !funnels.funnels[name]) { note('the seed holds no funnel sends here — skipped'); leave(0) }
 const f = funnels.funnels[name]
 const steps = f.steps.map((s) => ({ id: s.id, after: s.after, channel: 'email' }))
 const DAYS = 90, DAY = 86400e3

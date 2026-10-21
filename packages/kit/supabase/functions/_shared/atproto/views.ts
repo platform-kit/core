@@ -368,7 +368,9 @@ export async function generatorView(ctx: Ctx, s: any) {
     $type: 'app.bsky.feed.defs#generatorView',
     uri: generatorUri(ctx, s.slug), cid: await cidOf(ctx, 'g' + s.space_id, generatorRecord(ctx, s)),
     did: ctx.serviceDid,
-    creator: { $type: 'app.bsky.actor.defs#profileView', did: ctx.serviceDid, handle: ctx.domain || 'handle.invalid', labels: [] },
+    /* the site's own handle is its domain — where that is a handle at all: a bare `localhost` is one label, and a client
+       that validates against the lexicon refuses the whole answer for it (handle.invalid is the lexicon's own stand-in) */
+    creator: { $type: 'app.bsky.actor.defs#profileView', did: ctx.serviceDid, handle: /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(ctx.domain || '') ? ctx.domain : 'handle.invalid', labels: [] },
     displayName: s.name, description: '', likeCount: 0, acceptsInteractions: false, labels: [],
     viewer: {}, indexedAt: new Date().toISOString(),
   }

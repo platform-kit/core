@@ -14,6 +14,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import { supabaseUrl, localStack } from './tts/storage.mjs'
 import { loadSite } from './site.mjs'
 import { FILE, PLACEHOLDER, NEEDS, needsFor, parseRedirects, fillRedirects, renderNginx, checkRules, siteRules } from './rewrites.mjs'
+import { leave, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('rewrites: ' + m)
 if (process.env.REWRITES_TEST === '0') { note('skipped (REWRITES_TEST=0)'); process.exit(0) }
@@ -96,7 +97,9 @@ const url = supabaseUrl()
 let up = false
 try { up = !!(url && localStack()) && (await retryGateway(url + '/functions/v1/content/openapi.json', { signal: AbortSignal.timeout(4000) })).status < 500 } catch { /* down */ }
 const has = fs.existsSync(path.join(ROOT, FILE))
-if (!docker || !up || !has) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the rules — ${!has ? 'this site keeps no ' + FILE : !docker ? 'Docker is not running' : 'the local stack is not up or the functions are not served'}; the instance is not run)`); process.exit(fail ? 1 : 0) }
+/* no rules of the site's own is a fact about the site; Docker or the stack not there is a check that did not run */
+if (!has) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the rules)`); notHere('rewrites: the nginx instance', 'the site keeps no ' + FILE); process.exit(fail ? 1 : 0) }
+if (!docker || !up) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the rules — ${!docker ? 'Docker is not running' : 'the local stack is not up or the functions are not served'}; the instance is not run)`); leave(fail ? 1 : 0) }
 const rules = parseRedirects(fs.readFileSync(path.join(ROOT, FILE), 'utf8'))
 const hasRule = (source) => rules.some((r) => r.source === source)
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'rewrites-'))
@@ -146,6 +149,8 @@ try {
     const nope = await get('/api/content/spaces/not-this-space'); assert.equal(nope.status, 404)
     assert.equal(JSON.parse(nope.text).sys.id, 'NotFound', 'the function\'s own refusal, not nginx\'s')
     const gql = await get('/api/content/content/v1/openapi.json'); assert.equal(gql.status, 200, 'the doubled word is kept')
+    /* and the community's own address is the app's, never the API's, whatever the rules say about /api/content */
+    const app = await get('/spaces/' + space); assert.equal(app.status, 200, 'the app answers /spaces/<space>'); assert.ok(!app.type.includes('json'), 'the app, not the content API: ' + app.type)
   })
   if (hasRule('/api/media/*')) await ok('/api/media — the images door', async () => {
     const r = await get('/api/media/x/y/z/w.png'); assert.ok([400, 404].includes(r.status), String(r.status))

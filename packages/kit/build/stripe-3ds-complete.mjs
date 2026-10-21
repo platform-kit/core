@@ -18,7 +18,7 @@ if (!redirectUrl?.startsWith('https://hooks.stripe.com/') || !returnPrefix) {
 }
 const require = createRequire(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'package.json'))
 const { chromium } = require('playwright-core')
-const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined
+const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined
 const browser = await chromium.launch({ executablePath })
 try {
   const page = await browser.newPage()

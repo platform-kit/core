@@ -2,11 +2,12 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const url = supabaseUrl()
 if (!url || !localStack()) {
   console.log('social-metrics-db: skipped — no local Supabase stack in .env')
-  process.exit(0)
+  leave(0)
 }
 
 try {
@@ -14,7 +15,7 @@ try {
   if (!health.ok) throw new Error('local Supabase stack is not running')
 } catch {
   console.log('social-metrics-db: skipped — the local Supabase stack is not running')
-  process.exit(0)
+  leave(0)
 }
 
 const service = createClient(url, serviceKey(), {
@@ -23,7 +24,7 @@ const service = createClient(url, serviceKey(), {
 const { data: users, error: userError } = await service.auth.admin.listUsers({ page: 1, perPage: 1 })
 if (userError || !users?.users?.[0]) {
   console.log('social-metrics-db: skipped — a local Auth user is needed for isolated fixture rows')
-  process.exit(0)
+  leave(0)
 }
 
 const { data: existingDue, error: dueError } = await service
@@ -34,7 +35,7 @@ const { data: existingDue, error: dueError } = await service
   .limit(1000)
 if (dueError) {
   console.log(`social-metrics-db: skipped — cannot inspect due rows (${dueError.code})`)
-  process.exit(0)
+  leave(0)
 }
 const now = Date.now()
 const otherDue = (existingDue || []).filter((row) => {

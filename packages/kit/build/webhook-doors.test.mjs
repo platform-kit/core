@@ -25,6 +25,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { loadDotEnv, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { statusOf, leave } from './test-stack.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -32,7 +33,7 @@ const note = (s) => console.log('  ' + s)
 
 console.log('\nTHE DOORS THAT FACE THE INTERNET\n')
 
-const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The unsigned-webhook and overwrite refusals are NOT covered by this run.\n'); process.exit(0) }
+const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The unsigned-webhook and overwrite refusals are NOT covered by this run.\n'); leave(0) }
 let cfg = null
 loadDotEnv()
 const localUrl = supabaseUrl()
@@ -45,7 +46,7 @@ if (functionsUrl) {
     SERVICE_ROLE_KEY: process.env.PLATFORMKIT_TEST_SERVICE_ROLE_KEY || serviceKey(),
   }
 } else {
-  try { cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) }
+  try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
   catch { skip('no local stack is up (npx supabase start)') }
 }
 if (!cfg || !cfg.FUNCTIONS_URL) skip('the stack did not report a functions url')
@@ -140,6 +141,26 @@ for (const [what, headers] of Object.entries(CAL)) {
 {
   const { createHmac, createHash } = await import('node:crypto')
   const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+  /* Stripe, with the run's own STRIPE_WEBHOOK_SECRET: Stripe's scheme is an HMAC of "<t>.<body>" with the time in
+     the header, and its SDK refuses a time more than five minutes from now. A correctly signed event is ACCEPTED,
+     so the refusals beside it are of the signature and not of everything. */
+  const whsec = process.env.STRIPE_WEBHOOK_SECRET || ''
+  /* both doors Stripe may be pointed at: its own name, and the provider-neutral one a site registers once whatever
+     the provider (payment-provider-webhook serves the same handler) */
+  if (whsec) for (const door of ['stripe-webhook', 'payment-provider-webhook']) {
+    const stripe = async (raw, header) => { const r = await fetch(`${cfg.FUNCTIONS_URL}/${door}`, { method: 'POST', headers: { 'content-type': 'application/json', 'stripe-signature': header }, body: raw }); return { status: r.status, body: await r.text() } }
+    const sign = (raw, t, key = whsec) => `t=${t},v1=${createHmac('sha256', key).update(`${t}.${raw}`).digest('hex')}`
+    const now = () => Math.floor(Date.now() / 1000)
+    const ev = JSON.stringify({ id: 'evt_e2e_' + door + Date.now(), object: 'event', type: 'customer.created', created: now(), data: { object: { id: 'cus_e2e', object: 'customer' } } })
+    const good = await stripe(ev, sign(ev, now()))
+    ok(`${door} accepts an event signed with its secret (so the refusals are of the signature)`, good.status === 200, `answered ${good.status} ${good.body.slice(0, 120)}`)
+    const wrong = await stripe(ev, sign(ev, now(), 'whsec_not_the_secret'))
+    ok(`${door} refuses an event signed with another secret`, wrong.status === 400, `answered ${wrong.status}`)
+    const altered = await stripe(ev.replace('cus_e2e', 'cus_e2f'), sign(ev, now()))
+    ok(`${door} refuses a signed event altered by one byte`, altered.status === 400, `answered ${altered.status}`)
+    const stale = await stripe(ev, sign(ev, now() - 3600))
+    ok(`${door} refuses a correctly signed event an hour old`, stale.status === 400, `answered ${stale.status}`)
+  } else note('⚠ no STRIPE_WEBHOOK_SECRET in this environment — the signed Stripe checks are skipped (the end-to-end run supplies one)')
   const secret = process.env.CAL_WEBHOOK_SECRET || ''
   const cal = async (raw, sig) => {
     const r = await fetch(`${cfg.FUNCTIONS_URL}/cal-webhook`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-cal-signature-256': sig ?? createHmac('sha256', secret).update(raw).digest('hex') }, body: raw })

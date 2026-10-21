@@ -127,8 +127,9 @@ file_size_limit = "512MiB"
 enabled = true
 
 # Image transformation API is available to Supabase Pro plan.
-# [storage.image_transformation]
-# enabled = true
+# the cover of a printed book is sized through it where there is no machine (print-render); a hosted project has it on the Pro plan
+[storage.image_transformation]
+enabled = true
 
 # Store analytical data in S3 for running ETL jobs over Iceberg Catalog
 # This feature is only available on the hosted platform.

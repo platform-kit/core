@@ -816,7 +816,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
   ok('the mutation the check is measured against applies', unplugged !== src)
 
   let browser = null
-  try { const { chromium } = await import('playwright'); browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] }) } catch { /* no browser here */ }
+  try { const { chromium } = await import('playwright'); browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined, args: ['--autoplay-policy=no-user-gesture-required'] }) } catch { /* no browser here */ }
   if (!browser) {
     console.log('  (the audio graph is skipped — no browser)')
   } else {

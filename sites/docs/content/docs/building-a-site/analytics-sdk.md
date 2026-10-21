@@ -13,7 +13,7 @@ sources:
     packages/kit/build/analytics-sdk.test.mjs,
     packages/kit/supabase/functions/_shared/posthog-wire.js,
   ]
-reviewed: 2026-09-30
+reviewed: 2026-10-21
 ---
 
 ## One door for events
@@ -58,7 +58,7 @@ The door's routes and shapes are in the site's OpenAPI document and on its refer
 
 ## The script
 
-`<domain>/analytics.js` — built by `node build/analytics-sdk.mjs` (the `analytics-sdk` step of `platformkit build`; the dev server serves it from `dist/` once built) — exposes `window.posthog` with **posthog-js's public surface, name for name**: every method its type declarations list on the `PostHog` class (`init`, `capture`, `identify`, `alias`, `reset`, `register` / `register_once` / `unregister`, `get_distinct_id`, `get_session_id`, `opt_in_capturing` / `opt_out_capturing` / `has_opted_out_capturing`, `setPersonProperties`, `people.set`, `group`, `captureException`, the flags, surveys, recording and the rest), and the queue of calls made before `init`. The test reads the installed `posthog-js` declarations and checks each name is there, so a method PostHog adds fails the build until it is added. The same file is served at `/static/array.js`, where PostHog's own snippet looks.
+`<domain>/analytics.js` — built by `node build/analytics-sdk.mjs` (the `analytics-sdk` step of `platformkit build`; the dev server serves it from `dist/` once built, or from `PLATFORMKIT_DIST` where that is set — the end-to-end run builds its own there against its stack) — exposes `window.posthog` with **posthog-js's public surface, name for name**: every method its type declarations list on the `PostHog` class (`init`, `capture`, `identify`, `alias`, `reset`, `register` / `register_once` / `unregister`, `get_distinct_id`, `get_session_id`, `opt_in_capturing` / `opt_out_capturing` / `has_opted_out_capturing`, `setPersonProperties`, `people.set`, `group`, `captureException`, the flags, surveys, recording and the rest), and the queue of calls made before `init`. The test reads the installed `posthog-js` declarations and checks each name is there, so a method PostHog adds fails the build until it is added. The same file is served at `/static/array.js`, where PostHog's own snippet looks.
 
 A page that wants no dependency at all loads the site's own file instead — PostHog's surface, name for name, in 20 KB:
 

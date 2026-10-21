@@ -128,8 +128,9 @@ file_size_limit = "512MiB"
 enabled = true
 
 # Image transformation API is available to Supabase Pro plan.
-# [storage.image_transformation]
-# enabled = true
+# the cover of a printed book is sized through it where there is no machine (print-render); a hosted project has it on the Pro plan
+[storage.image_transformation]
+enabled = true
 
 # Store analytical data in S3 for running ETL jobs over Iceberg Catalog
 # This feature is only available on the hosted platform.
@@ -524,3 +525,12 @@ verify_jwt = false   # the Support API (Chatwoot's): the Client API a contact's 
 
 [functions.atproto]
 verify_jwt = false   # the social network as an atproto server: a client holds tokens of OURS (an app password's session), exchanged inside for the person's own session — the platform's JWT check would refuse every real client
+
+[functions.payment-provider-webhook]
+verify_jwt = false
+
+[functions.social-oauth]
+verify_jwt = false
+
+[functions.matrix-api]
+verify_jwt = false

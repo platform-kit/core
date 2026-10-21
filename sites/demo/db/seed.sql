@@ -525,6 +525,11 @@ begin
   if exists (select 1 from public.purchases where user_id = b) then return; end if;
   insert into public.purchases (user_id, email, stripe_checkout_session_id, sku, key, amount_total, currency, status, created_at)
   values (b, 'buyer@example.com', 'cs_seed_buyer_1', 'the-field-guide', 'a1b2c3d4', 500, 'usd', 'paid', now() - interval '14 days');
+  /* and what a purchase grants (ledger-rules.js grantsOf): the paid class and the book — a purchase row alone told the
+     buyer they held nothing, which no real checkout ever does */
+  insert into public.entitlements (user_id, kind, key, source, source_id, active)
+  values (b, 'class', 'paid', 'purchase', 'cs_seed_buyer_1', true),
+         (b, 'product', 'the-field-guide', 'purchase', 'cs_seed_buyer_1', true);
 end $$;
 
 -- THE COACHING CHAT, so a coach opening the tab after a reset finds somebody to answer. A thread

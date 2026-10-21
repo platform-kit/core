@@ -1,6 +1,6 @@
-# The kit's CI: the kit's checks and the phone probe against the demo on every push and pull request,
+# The kit's CI: the kit's checks, the phone probe against the demo and the end-to-end run on every push and pull request,
 # and, on a tag `kit-v<version>`, both packages published to npm and to GitHub Packages.
-# Secrets: NPM_TOKEN (npm, publish rights on @platform-kit); GITHUB_TOKEN is the runner's own.
+# Secrets: NPM_TOKEN (npm, publish rights on @platform-kit); STRIPE_TEST_SECRET_KEY (the e2e job); GITHUB_TOKEN is the runner's own.
 name: kit
 on:
   push:
@@ -64,8 +64,32 @@ jobs:
           (npx vite preview --port 5173 --strictPort &) && sleep 5
           npx platformkit probe --url http://localhost:5173 --routes /,/content,/content/books/the-field-guide,/store,/pricing,/app
         working-directory: sites/demo
+  # every test that needs a database, the functions or a browser, against stacks built for this run from the files —
+  # the demo and the club fixture side by side (build/e2e.mjs) — then the runner's own test. The same command as locally.
+  # Secret: STRIPE_TEST_SECRET_KEY (a Stripe test-mode key, sk_test_…); without it the run fails, as it should.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: denoland/setup-deno@v2
+        with: { deno-version: v2.x }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: the end-to-end run over the demo and the club
+        run: npx platformkit test --e2e --only demo,club
+        env: { STRIPE_SECRET_KEY: '${{ secrets.STRIPE_TEST_SECRET_KEY }}' }
+      - name: the runner's own test
+        run: node packages/kit/build/e2e-runner.test.mjs
+        env: { STRIPE_SECRET_KEY: '${{ secrets.STRIPE_TEST_SECRET_KEY }}' }
+      - name: the run's logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: e2e-logs, path: node_modules/.cache/platformkit/e2e/*.log }
   publish:
-    needs: test
+    needs: [test, e2e]
     if: startsWith(github.ref, 'refs/tags/kit-v')
     runs-on: ubuntu-latest
     permissions: { contents: read, packages: write, id-token: write }

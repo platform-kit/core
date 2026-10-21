@@ -3,13 +3,14 @@ import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { resolveSocialOutcome } from '../supabase/functions/_shared/social/outcome.mjs'
 import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
 const key = serviceKey()
 if (!url || !anonKey || !key || !localStack()) {
   console.log('social-managed: skipped — local Supabase credentials are unavailable')
-  process.exit(0)
+  leave(0)
 }
 
 const health = await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2_000) })

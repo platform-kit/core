@@ -109,5 +109,20 @@ export function padFor(pages, { min = BIND_MIN, step = BIND_STEP } = {}) {
   return Math.ceil(want / s) * s - n
 }
 
+/*
+ * THE MINIMUM AND THE STEP, from every printer that may make each printed format: the largest of each. ONE place for both
+ * paths — the function computed this for itself, asked each printer for its product without saying which format, and
+ * bound a 77-page book to 80 where the build bound it to 78.
+ */
+export function bindingFor(spec, formats, candidates, { trim, paper } = {}) {
+  let min = BIND_MIN, step = BIND_STEP
+  for (const format of formats) for (const p of candidates(spec, format)) {
+    const pr = p.product({ chosen: { format, trim: trim ?? spec.trim ?? '6x9', paper: paper ?? spec.paper ?? 'cream', cloth: spec.cloth, foil: spec.foil }, options: (spec.providers || {})[p.id] || {} }) || {}
+    min = Math.max(min, Number(pr.minPages) || BIND_MIN)
+    step = Math.max(step, Number(pr.pageStep) || BIND_STEP)
+  }
+  return { min, step }
+}
+
 /* the count a printer will actually bind, which is what everything downstream should quote on */
 export const boundPages = (pages, opts) => (Number(pages) || 0) + padFor(pages, opts)

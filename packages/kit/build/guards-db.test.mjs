@@ -22,6 +22,7 @@ import { execSync } from 'node:child_process'
 import { loadSite } from './site.mjs'
 import { moduleSet } from './steps.mjs'
 import { activeCronJobs } from './cron.mjs'
+import { statusOf, leave } from './test-stack.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -29,9 +30,9 @@ const note = (s) => console.log('  ' + s)
 
 console.log('\nWHAT A CLIENT MAY CHANGE\n')
 
-const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The guards, the pair rule and the scheduled jobs are NOT covered by this run.\n'); process.exit(0) }
+const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The guards, the pair rule and the scheduled jobs are NOT covered by this run.\n'); leave(0) }
 let cfg = null
-try { cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) }
+try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service-role key')
 
@@ -48,8 +49,17 @@ if (!support || !member) skip('the seed\'s accounts do not sign in (npx supabase
 
 /* ─── the support desk's guard trigger: three columns are the agent's, the rest are the record ─── */
 
-const { data: conv } = await admin.from('support_conversations').select('*').limit(1).maybeSingle()
-if (!conv) note('⚠ no support conversation in the seed — the guard checks below are skipped')
+/* a conversation of the test's own, the member's, removed at the end: a seed with none is not a reason to check nothing */
+let made = null
+{
+  const { data: users } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const uid = (users?.users || []).find((u) => u.email === 'member@example.com')?.id || null
+  const { data: contact, error: ce } = await admin.from('support_contacts').insert({ user_id: uid, last_path: '/guards-db' }).select().single()
+  if (ce) skip('a support contact could not be made: ' + ce.message)
+  made = contact
+}
+const { data: conv, error: convErr } = await admin.from('support_conversations').insert({ contact_id: made.id, path: '/guards-db' }).select().single()
+if (!conv) skip('a support conversation could not be made: ' + (convErr && convErr.message))
 else {
   /* what an agent IS allowed to change, so a guard that refused everything would not pass */
   const { error: allowed } = await support.from('support_conversations').update({ status: 'pending' }).eq('id', conv.id)
@@ -149,6 +159,8 @@ else {
   for (const job of expected) ok(`the ${job.name} job is scheduled after a reset`, names.includes(job.name), `scheduled: ${names.join(', ') || 'none'}`)
   ok('and no job is scheduled twice', new Set(names).size === names.length, names.join(', '))
 }
+
+if (made) { await admin.from('support_conversations').delete().eq('contact_id', made.id); await admin.from('support_contacts').delete().eq('id', made.id) }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 process.exit(fail ? 1 : 0)

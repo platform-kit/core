@@ -269,7 +269,7 @@ CREATE OR REPLACE FUNCTION "public"."email_audience_match"("uid" "uuid", "rules"
     SET "search_path" TO 'public'
     AS $$
   with b as (
-    select p.id, p.created_at, p.email_verified_at,
+    select p.id, p.created_at, p.email_verified_at, case when coalesce(array_length(p.roles, 1), 0) > 0 then p.roles when p.role is not null and p.role <> 'user' then array[p.role] else array[]::text[] end as roles,
       greatest(p.updated_at, p.created_at,
         coalesce((select max(e.occurred_at) from public.events e where e.user_id = p.id), p.created_at),
         coalesce((select max(a.answered_at) from public.answers a where a.user_id = p.id), p.created_at)) as last_active,

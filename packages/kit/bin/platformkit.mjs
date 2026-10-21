@@ -12,7 +12,8 @@
  *   deploy      the environment checks first, then the database, the functions' steps, the functions, the after steps, the site
  *   steps       every build step — the kit's, the theme's, the site's — its phase, on or off and why, its needs (`--check` exits 1 on a missing need)
  *   run <key>   one build step alone
- *   test        the kit's checks (behind their module switches), the site's, the specs
+ *   test        the kit's checks (behind their module switches), the site's, the specs; --e2e the stack-backed
+ *               ones, on a stack built from each site's files for the run (--only, --jobs, --keep, --run)
  *   migrate     assemble supabase/ and bring the local database to the declaration (`--plan` shows and applies
  *               nothing; `--linked` plans against SUPABASE_DB_URL; `migrate reset` resets, seeds, and puts
  *               the developer's own account back — DEV_ACCOUNT in .env — which the reset emptied)
@@ -212,7 +213,8 @@ switch (cmd) {
   case 'steps': node('steps.mjs', rest); break
   case 'run': node('steps.mjs', ['--only', ...rest]); break
   case 'deploy': node('deploy.mjs', rest); break
-  case 'test': node('test.mjs', rest); break
+  /* --e2e: every stack-backed check, on stacks built for it from each site's files (build/e2e.mjs) */
+  case 'test': if (rest.includes('--e2e')) node('e2e.mjs', rest.filter((x) => x !== '--e2e')); else node('test.mjs', rest); break
   case 'assemble': node('assemble.mjs', rest); break
   /* a reset brings the database to the declaration — the schema, the rows, the seed — and then to
      the CONTENT that is a declaration too: the spaces are files, so they are compiled and projected
@@ -228,7 +230,7 @@ switch (cmd) {
      one layer over — a reset empties the buckets as well as the tables, and a typesetter with no
      fonts fails with "there is no type in the bucket", which reads as a broken build rather than
      an emptied bucket. If a new projection is added to the `after` phase, it is added here too. */
-  case 'migrate': node('assemble.mjs'); if (rest[0] === 'reset') { npx(['supabase', 'db', 'reset', ...rest.slice(1)]); node('spaces.mjs'); node('spaces-push.mjs', ['--seed']); node('teams.mjs'); node('teams-push.mjs'); node('events.mjs'); node('events-push.mjs'); node('comments-push.mjs'); node('providers-push.mjs'); node('achievements-push.mjs'); node('bots.mjs'); node('bots-push.mjs'); node('search-push.mjs'); node('print/templates.mjs', ['--fonts']); node('dev-account.mjs') } else node('plan.mjs', rest); break
+  case 'migrate': node('assemble.mjs'); if (rest[0] === 'reset') { npx(['supabase', 'db', 'reset', ...rest.slice(1)]); const { runSeedSteps } = await import(pathToFileURL(KIT('reset-seed.mjs')).href); const seeded = runSeedSteps({ cwd: site }); if (!seeded.ok) { console.error(`✖ the reset's seed step ${seeded.step} failed`); process.exit(1) } } else node('plan.mjs', rest); break
   /* the same by hand, for an account lost to a reset run some other way */
   case 'dev-account': node('dev-account.mjs'); break
   case 'functions': node('assemble.mjs'); npx(rest[0] === 'deploy' ? ['supabase', 'functions', 'deploy', ...rest.slice(1)] : ['supabase', 'functions', 'serve', '--env-file', '.env', ...rest]); break

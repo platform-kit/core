@@ -53,7 +53,7 @@ const PROBE = ([ALLOWED, RAILS]) => {
 }
 const prime = () => document.fonts.ready.then(async () => { const H = document.documentElement.scrollHeight; for (let y = 0; y < H; y += 700) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 60)) } window.scrollTo(0, 0) })
 
-const b = await chromium.launch()
+const b = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined })
 const ctx = await browserContext(b, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
 const g = await ctx.newPage()
 if (AS) {

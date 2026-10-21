@@ -21,7 +21,7 @@ sources:
     sites/docs/package.json,
     sites/docs/platformkit.config.js,
   ]
-reviewed: 2026-10-17
+reviewed: 2026-10-20
 ---
 
 PlatformKit sites use three packages. Before changing code, identify which package owns the behavior:

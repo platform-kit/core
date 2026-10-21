@@ -20,7 +20,8 @@
  *   node packages/kit/build/interaction.test.mjs [--url http://localhost:5173] [--keep]
  */
 import { execSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
+import path from 'node:path'
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
 
 let pass = 0, fail = 0
@@ -36,12 +37,12 @@ console.log('\nTHE INTERACTION LANE — a browser that uses the site\n')
 
 const args = process.argv.slice(2)
 const argOf = (n, d) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
-const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    Nothing that needs a hand on the site is covered by this run.\n'); process.exit(0) }
+const skip = (why) => { console.log('  ⚠ SKIPPED — ' + why + '\n    Nothing that needs a hand on the site is covered by this run.\n'); leave(0) }
 
 let chromium
 try { ({ chromium } = await import('playwright')) } catch { skip('playwright is not installed') }
 
-const BASE = argOf('--url', process.env.INTERACTION_URL || 'http://localhost:5173')
+const BASE = argOf('--url', process.env.INTERACTION_URL || stackOf()?.app || '')
 /*
  * ONE BUDGET, AND A GENEROUS ONE. This lane runs a real browser against a real site while the rest
  * of the suite is loading the same machine — builds, renders, a database, an edge runtime. A
@@ -52,11 +53,12 @@ const BASE = argOf('--url', process.env.INTERACTION_URL || 'http://localhost:517
 /* the one number, from build/browser.mjs — which also sets it as the floor on every context,
    so a call this file forgot to give a budget no longer runs at Playwright's 30 */
 import { WAIT } from './browser.mjs'
+import { statusOf, leave, stackOf, moduleOn, siteUnderTest, notHere } from './test-stack.mjs'
 try { const r = await fetch(BASE, { signal: AbortSignal.timeout(4000) }); if (!r.ok) throw new Error(String(r.status)) }
 catch { skip(`nothing is serving the site at ${BASE} (npm run dev)`) }
-try { execSync('npx supabase status -o json', { stdio: 'ignore' }) } catch { skip('no local stack is up (npx supabase start)') }
+try { if (!statusOf()) throw new Error('no stack') } catch { skip('no local stack is up (npx supabase start)') }
 
-const browser = await chromium.launch()
+const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined })
 
 /*
  * One page per act, because an act that leaves a modal open or a thread half-written would make
@@ -67,7 +69,9 @@ async function act(name, fn, { theme = 'light', size = { width: 1280, height: 90
   const ctx = await browserContext(browser, { viewport: size, colorScheme: theme })
   const page = await ctx.newPage()
   const errs = []
-  page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text().slice(0, 200)) })
+  /* a resource that would not load names its address: the console's own line does not, and a failure that cannot say
+     which request it was is one nobody can act on */
+  page.on('console', (m) => { if (m.type() === 'error') errs.push((m.text() + (/Failed to load resource/.test(m.text()) && m.location()?.url ? ' — ' + m.location().url : '')).slice(0, 300)) })
   const ours = () => errs.filter((e) => !(emptyBucket.length && /Failed to load resource/.test(e)))
   page.on('pageerror', (e) => errs.push('PAGEERROR ' + String(e.message || e).slice(0, 200)))
   /* A 429 from our own doors is a GUARD doing its job, not the surface being broken — the support
@@ -203,7 +207,7 @@ await act('a guest opens the support panel and sends a line', async ({ page, cle
    * touched. A test that makes a row in a rate-limited table removes it.
    */
   const { createClient } = await import('@supabase/supabase-js')
-  const cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
+  const cfg = statusOf()
   const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
   const { data: msg } = await admin.from('support_messages').select('conversation_id').eq('body', SAID).limit(1).maybeSingle()
   if (msg) {
@@ -216,26 +220,57 @@ await act('a guest opens the support panel and sends a line', async ({ page, cle
 
 await act('a resolved thread reopens when the contact writes again', async ({ page, clear }) => {
   const { createClient } = await import('@supabase/supabase-js')
-  const cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
+  const cfg = statusOf()
   const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
   const { data: conv } = await admin.from('support_conversations').select('id, status').order('last_message_at', { ascending: false }).limit(1).maybeSingle()
-  if (!conv) cannot('the seed has no support thread to resolve and reopen')
-  await admin.from('support_conversations').update({ status: 'resolved' }).eq('id', conv.id)
-  await admin.from('support_messages').insert({ conversation_id: conv.id, author: 'contact', body: 'One more thing.' })
+  /* a thread of the act's own where the seed has none, removed after */
+  let made = null, thread = conv
+  if (!thread) {
+    const { data: contact } = await admin.from('support_contacts').insert({ last_path: '/interaction' }).select().single()
+    const { data: t } = await admin.from('support_conversations').insert({ contact_id: contact.id, status: 'open' }).select('id, status').single()
+    made = contact; thread = t
+  }
+  const conv2 = thread
+  await admin.from('support_conversations').update({ status: 'resolved' }).eq('id', conv2.id)
+  await admin.from('support_messages').insert({ conversation_id: conv2.id, author: 'contact', body: 'One more thing.' })
   await page.waitForTimeout(600)
-  const { data: after } = await admin.from('support_conversations').select('status').eq('id', conv.id).maybeSingle()
+  const { data: after } = await admin.from('support_conversations').select('status').eq('id', conv2.id).maybeSingle()
   await admin.from('support_messages').delete().eq('body', 'One more thing.')
-  await admin.from('support_conversations').update({ status: conv.status }).eq('id', conv.id)
+  if (made) { await admin.from('support_conversations').delete().eq('contact_id', made.id); await admin.from('support_contacts').delete().eq('id', made.id) }
+  else await admin.from('support_conversations').update({ status: conv2.status }).eq('id', conv2.id)
   if (after?.status === 'resolved') throw new Error('a resolved thread stayed resolved after the contact wrote')
 })
 
 /* ─── the library: a reader turns a page and searches inside a book ─── */
 
-await act('a word searched inside a book finds it', async ({ page, clear }) => {
+/* the site's own books (its .velite), never one site's title: the first with more chapters than a guest may read, for the
+   gate; and the first book at all, with a word from its own text, for the search */
+/* the book this act uses, and the numbers that make the assertion meaningful */
+const BOOK = (() => {
+  try {
+    const all = JSON.parse(readFileSync(path.join(process.cwd(), '.velite', 'books.json'), 'utf8'))
+    const b = all.find((x) => (x.canAccess || []).length > 0 && (x.chapters || 0) > (x.guestChapters ?? 3))   /* a gated book: a free one has no gate to stop at */
+    return b ? { slug: b.slug, chapters: b.chapters, guestChapters: b.guestChapters ?? 3 } : null
+  } catch { return null }
+})()
+const FIRST = (() => {
+  try {
+    const dir = path.join(process.cwd(), 'content', 'books')
+    const f = readdirSync(dir).filter((n) => n.endsWith('.md')).sort()[0]
+    if (!f) return null
+    const body = readFileSync(path.join(dir, f), 'utf8').split(/^---$/m).slice(2).join('---')
+    const word = (body.match(/\b[a-z]{6,}\b/) || [])[0]
+    return word ? { slug: f.replace(/\.md$/, ''), word } : null
+  } catch { return null }
+})()
+const BOOKS_ON = await moduleOn('books')
+
+if (!BOOKS_ON || !FIRST) notHere('interaction: a word searched inside a book', BOOKS_ON ? 'the site has no book' : 'the books module is off')
+else await act('a word searched inside a book finds it', async ({ page, clear }) => {
   /* The reader opens on the book's COVER page — its chrome, and so its search, exist only once
      somebody starts reading. The first version of this act looked for the search button on the
      cover, did not find it, and returned quietly as a pass: it had never run once. */
-  await go(page, '/content/books/it-works', clear, '.rd-coverpage')
+  await go(page, '/content/books/' + FIRST.slug, clear, '.rd-coverpage')
   const open = page.locator('.rd-coverpage button:visible, .rd-coverpage a:visible').first()
   await open.waitFor({ state: 'visible', timeout: 30000 }).catch(() => { const e = new Error('the cover page offers no way into the book'); e.undone = true; throw e })
   await open.click({ force: true })
@@ -246,14 +281,18 @@ await act('a word searched inside a book finds it', async ({ page, clear }) => {
   await search.click()
   const box = page.locator('.rd-srch input, .rd-search input, input:visible').first()
   await box.waitFor({ state: 'visible', timeout: 15000 }).catch(() => { throw new Error('the search opened with nowhere to type') })
-  await box.fill('plan')
+  await box.fill(FIRST.word)
   /* a word that IS in this book must find something — an empty answer is the failure that matters */
-  await page.waitForFunction(() => /plan/i.test(document.body.innerText), { timeout: WAIT })
+  await page.waitForFunction((w) => new RegExp(w, 'i').test(document.body.innerText), FIRST.word, { timeout: WAIT })
 })
 
 /* ─── the diagnostic: a reader answers a screen ─── */
 
-await act('a reader signs in and answers a diagnostic screen', async ({ page, clear }) => {
+/* the diagnostic is the instrument's own rounds, which only a site that names its instrument (instrument.module) has —
+   elsewhere /app is the shell, and its first button is not a round */
+const QUIZ = !!((await siteUnderTest()).instrument && (await siteUnderTest()).instrument.module) && await moduleOn('instrument')
+if (!QUIZ) notHere('interaction: a reader signs in and answers a diagnostic screen', 'the site names no instrument of its own (instrument.module)')
+else await act('a reader signs in and answers a diagnostic screen', async ({ page, clear }) => {
   await go(page, '/', clear)
   await signIn(page, clear, 'member@example.com')
   await go(page, '/app/quiz/teachings', clear)
@@ -269,7 +308,8 @@ await act('a reader signs in and answers a diagnostic screen', async ({ page, cl
 
 /* ─── the store: the bag takes a line and asks where it ships ─── */
 
-await act('the bag opens and asks where it ships', async ({ page, clear }) => {
+if (!(await moduleOn('store'))) notHere('interaction: the bag', 'the store module is off')
+else await act('the bag opens and asks where it ships', async ({ page, clear }) => {
   await go(page, '/store', clear, 'a[href*="/store/products/"]')
   const card = page.locator('a[href*="/store/products/"]').first()
   if (!(await card.isVisible().catch(() => false))) cannot('no product on the storefront')
@@ -293,7 +333,7 @@ await act('the bag opens and asks where it ships', async ({ page, clear }) => {
  */
 await act('a guest who signs in keeps their thread, and stops being a guest', async ({ page, clear }) => {
   const { createClient } = await import('@supabase/supabase-js')
-  const cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
+  const cfg = statusOf()
   const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
   const LINE = 'A probe written before signing in.'
 
@@ -333,7 +373,7 @@ await act('a guest who signs in keeps their thread, and stops being a guest', as
  */
 await act('an agent\u2019s reply reaches an open panel', async ({ page, clear }) => {
   const { createClient } = await import('@supabase/supabase-js')
-  const cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
+  const cfg = statusOf()
   const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
   const MINE = 'A probe awaiting an answer.'
   const REPLY = 'A probe answer from the desk.'
@@ -398,17 +438,11 @@ await act('the dashboard remembers which view was open', async ({ page, clear })
  * must NOT be shown behind it. A gate drawn over readable text is not a gate, and nothing about
  * the page looks wrong when that happens.
  */
-/* the book this act uses, and the numbers that make the assertion meaningful */
-const BOOK = (() => {
-  try {
-    const all = JSON.parse(readFileSync(new URL('../../../.velite/books.json', import.meta.url), 'utf8'))
-    const b = all.find((x) => x.slug === 'it-works') || all.find((x) => (x.chapters || 0) > (x.guestChapters ?? 3))
-    return b ? { slug: b.slug, chapters: b.chapters, guestChapters: b.guestChapters ?? 3 } : null
-  } catch { return null }
-})()
-await act('a guest is stopped past the free chapters, and the text is not behind the gate', async ({ page, clear }) => {
+
+if (!BOOKS_ON || !BOOK) notHere('interaction: a guest stopped past the free chapters', BOOKS_ON ? 'no book here has more chapters than a guest may read' : 'the books module is off')
+else await act('a guest is stopped past the free chapters, and the text is not behind the gate', async ({ page, clear }) => {
   if (!BOOK || BOOK.chapters <= BOOK.guestChapters) { const e = new Error('no book here has more chapters than a guest is allowed'); e.undone = true; throw e }
-  await go(page, '/content/books/it-works', clear, '.rd-coverpage')
+  await go(page, '/content/books/' + BOOK.slug, clear, '.rd-coverpage')
   const open = page.locator('.rd-coverpage button:visible, .rd-coverpage a:visible').first()
   await open.waitFor({ state: 'visible', timeout: WAIT }).catch(() => { const e = new Error('the cover offers no way in'); e.undone = true; throw e })
   await open.click({ force: true })
@@ -480,9 +514,10 @@ await act('signing out leaves the device a fresh guest', async ({ page, clear })
  * rather than from the database. Whether a fresh browser has hydrated enough for it to be true is
  * timing this cannot steer from outside, so a check built on it would pass or fail by luck.
  */
-await act('an unconfirmed reader can still take the quiz', async ({ page, clear }) => {
+if (!QUIZ) notHere('interaction: an unconfirmed reader can still take the quiz', 'the site names no instrument of its own (instrument.module)')
+else await act('an unconfirmed reader can still take the quiz', async ({ page, clear }) => {
   const { createClient } = await import('@supabase/supabase-js')
-  const cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
+  const cfg = statusOf()
   const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
   const { data: me } = await admin.from('profiles').select('id, email_verified_at').eq('email', 'member@example.com').maybeSingle()
   if (!me) { const e = new Error('no member@example.com in the seed'); e.undone = true; throw e }
@@ -512,9 +547,11 @@ await act('an unconfirmed reader can still take the quiz', async ({ page, clear 
  * choices is not saying something, and acknowledging it there would promise a person an answer to
  * a menu they are still working through.
  */
-await act('picking a branch writes no acknowledgement until the reader has said something', async ({ page, clear }) => {
+/* the desk's prompts are written by the emails module (funnels.json: prompts), on the store's page */
+if (!(await moduleOn('emails')) || !(await moduleOn('store'))) notHere('interaction: picking a branch on the desk\'s prompt', 'the site has no desk prompt (the emails or store module is off)')
+else await act('picking a branch writes no acknowledgement until the reader has said something', async ({ page, clear }) => {
   const { createClient } = await import('@supabase/supabase-js')
-  const cfg = JSON.parse(execSync('npx supabase status -o json', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }))
+  const cfg = statusOf()
   const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 
   await go(page, '/store', clear, '.sw-btn')
@@ -556,4 +593,6 @@ await act('picking a branch writes no acknowledgement until the reader has said 
 await browser.close()
 console.log(`\n  ${pass} passed, ${fail} failed${undone.length ? ', ' + undone.length + ' NOT RUN' : ''}\n`)
 if (undone.length) { console.log('  what this run did not cover:'); for (const u of undone) console.log('    · ' + u); console.log() }
-process.exit(fail ? 1 : 0)
+/* in the end-to-end run an act that did not run is a check that did not run: a fact about the site stands down by
+   notHere() before the act, and anything left here is a failure */
+process.exit(fail || (process.env.PLATFORMKIT_E2E === '1' && undone.length) ? 1 : 0)

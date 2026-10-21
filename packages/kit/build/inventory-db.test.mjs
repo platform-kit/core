@@ -13,15 +13,16 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const note = (m) => console.log('inventory-db: ' + m)
 if (process.env.INVENTORY_TEST === '0') { note('skipped (INVENTORY_TEST=0) — nothing about stock, reservations or overselling was covered'); process.exit(0) }
 const url = supabaseUrl()
-if (!url || !localStack()) { note('skipped — no local stack in .env; nothing about stock, reservations or overselling was covered'); process.exit(0) }
+if (!url || !localStack()) { note('skipped — no local stack in .env; nothing about stock, reservations or overselling was covered'); leave(0) }
 const key = serviceKey()
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
-if (!up) { note('skipped — the local stack is not up; nothing about stock, reservations or overselling was covered'); process.exit(0) }
+if (!up) { note('skipped — the local stack is not up; nothing about stock, reservations or overselling was covered'); leave(0) }
 
 const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 let pass = 0, fail = 0

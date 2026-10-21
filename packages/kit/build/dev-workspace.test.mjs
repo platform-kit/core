@@ -5,7 +5,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { spawn, spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { prepareRuntimeProject, runtimeSupabaseConfig, runWorkspace } from './dev-workspace.mjs'
+import { prepareRuntimeProject, runtimeSupabaseConfig, runWorkspace, findFreePort } from './dev-workspace.mjs'
 import { signalGroup, spawnGroup, stableProjectId } from './dev-runtime.mjs'
 import { takeOver } from './dev-owner.mjs'
 
@@ -54,7 +54,14 @@ additional_redirect_urls = ["http://localhost:*", "http://*.localhost:*"]
 `
 
 try {
-  await test('stable Supabase project IDs default to site slugs and allow exact configured overrides', () => {
+  await test('two sites prepared at once are given different ports', async () => {
+  /* the end-to-end run prepares its sites concurrently; a port is claimed before the checks that await, or both take it */
+  const reserved = new Set()
+  const got = await Promise.all(Array.from({ length: 6 }, () => findFreePort(47000, reserved)))
+  assert.equal(new Set(got).size, got.length, `ports given twice: ${got.join(', ')}`)
+})
+
+await test('stable Supabase project IDs default to site slugs and allow exact configured overrides', () => {
     assert.equal(stableProjectId({}, 'example-site'), 'pk_example_site_local')
     assert.equal(stableProjectId({}, 'my-site'), 'pk_my_site_local')
     assert.equal(stableProjectId({ dev: { projectId: 'pk_custom_local' } }, 'example-site'), 'pk_custom_local')

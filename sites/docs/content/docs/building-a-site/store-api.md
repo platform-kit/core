@@ -11,7 +11,7 @@ sources:
     packages/kit/src/lib/cart.js,
     packages/kit/src/lib/shipto.js,
   ]
-reviewed: 2026-10-01
+reviewed: 2026-10-20
 ---
 
 ## What it is

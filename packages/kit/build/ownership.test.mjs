@@ -23,13 +23,14 @@
 import pg from 'pg'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const note = (m) => console.log('ownership: ' + m)
 if (process.env.OWNERSHIP_TEST === '0') { note('skipped (OWNERSHIP_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
-if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the environment'); process.exit(0) }
-try { await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(4000) }) } catch { note('skipped — the stack is not answering'); process.exit(0) }
+if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the environment'); leave(0) }
+try { await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(4000) }) } catch { note('skipped — the stack is not answering'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
@@ -84,12 +85,16 @@ const CLOSED = ['book_native', 'agent_claim', 'agent_run_state', 'order_lines', 
 const CHECKS = /is_admin|is_staff|is_support|is_provider|auth\.uid|auth\.role|auth\.jwt|service_role|may_edit|is_editor|can_moderate|is_space|space_role|is_moderator|current_setting|may_see_figures|may_see_traits|can_read_channel|comment_may_|space_may|space_sees|social_can|my_readable_channel_ids|providers_may_offer|has_role|my_class|event_for_me|in_conversation|my_proven_email/i
 {
   const db = new pg.Client({ connectionString: DB_URL })
-  let rows = null
+  let rows = null, preds = []
   try {
     await db.connect()
     rows = (await db.query(`select p.proname as name, p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')' as sig, p.prosrc as body,
         has_function_privilege('anon', p.oid, 'execute') as anon, has_function_privilege('authenticated', p.oid, 'execute') as auth
       from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prosecdef and p.prorettype <> 'trigger'::regtype`)).rows
+    /* the PREDICATES that check who is asking — a list kept by hand missed the kit's own may_see_member, and so called
+       three of a site's functions that ask it first unchecked: a true/false function is a guard when its body checks the
+       caller, or asks another guard */
+    preds = (await db.query(`select p.proname as name, p.prosrc as body from pg_proc p where p.pronamespace = 'public'::regnamespace and p.prorettype = 'boolean'::regtype`)).rows
   } catch (e) { note('⚠ the database did not answer (' + e.message + ') — the definer checks are skipped') }
   finally { await db.end().catch(() => {}) }
   if (rows) {
@@ -97,7 +102,10 @@ const CHECKS = /is_admin|is_staff|is_support|is_provider|auth\.uid|auth\.role|au
       const open = rows.filter((r) => r.name === name && (r.anon || r.auth))
       ok(`${name} is not a visitor's or a reader's to call`, rows.some((r) => r.name === name) && !open.length, open.map((r) => r.sig).join(', ') || 'no such function')
     }
-    const unchecked = rows.filter((r) => (r.anon || r.auth) && !CHECKS.test(r.body) && !PUBLIC[r.sig] && !r.name.startsWith('seed_'))
+    const guards = new Set(preds.filter((p) => CHECKS.test(p.body)).map((p) => p.name))
+    for (let grew = true; grew;) { grew = false; for (const p of preds) if (!guards.has(p.name) && [...guards].some((g) => new RegExp('\\b' + g + '\\s*\\(').test(p.body))) { guards.add(p.name); grew = true } }
+    const asks = (body) => CHECKS.test(body) || [...guards].some((g) => new RegExp('\\b' + g + '\\s*\\(').test(body))
+    const unchecked = rows.filter((r) => (r.anon || r.auth) && !asks(r.body) && !PUBLIC[r.sig] && !r.name.startsWith('seed_'))
     ok('every definer function open to callers checks who is asking, or is a reviewed public read', !unchecked.length, unchecked.map((r) => r.sig).join('; '))
   }
 }
@@ -105,7 +113,7 @@ const CHECKS = /is_admin|is_staff|is_support|is_provider|auth\.uid|auth\.role|au
 /* ─── 2. the address ─── */
 
 const member = await as('member@example.com'), member2 = await as('member2@example.com')
-if (!member || !member2) { note('skipped the rest — the seed has no member@ or member2@ (platformkit migrate reset)'); console.log(`${fail ? fail + ' failed, ' : ''}${pass} passed`); process.exit(fail ? 1 : 0) }
+if (!member || !member2) { note('skipped the rest — the seed has no member@ or member2@ (platformkit migrate reset)'); console.log(`${fail ? fail + ' failed, ' : ''}${pass} passed`); leave(fail ? 1 : 0) }
 const memberId = await idOf(member), member2Id = await idOf(member2)
 const victim = `probe-victim-${stamp}@example.test`
 const made = { purchases: [], bookings: [], users: [], orders: [], subscriptions: [], entitlements: [], payout_accounts: [], payout_lines: [], usage_events: [], form_responses: [], agent_runs: [], support_contacts: [] }

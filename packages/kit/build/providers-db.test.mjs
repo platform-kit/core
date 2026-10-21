@@ -22,12 +22,15 @@ import { readFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { policyOf, POLICY, delayMinutes } from './providers-push.mjs'
+import { leave, stackOf, moduleOn, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('providers-db: ' + m)
 /* IS THE SITE'S MAIL GOING TO THE LOCAL MAILPIT? Only then are the letters safe to read — and only
    then were they safe to send. A relay that delivers is a relay that delivers, whoever the address
    belongs to. */
 function toMailpit() {
+  /* the end-to-end run sends this stack's mail to its own catcher, which it names */
+  if (process.env.PLATFORMKIT_TEST_MAIL_URL) return true
   let host = process.env.SMTP_HOST || ''
   if (!host) { try { host = (readFileSync('.env', 'utf8').match(/^SMTP_HOST=(.*)$/m) || [, ''])[1].trim().replace(/^["']|["']$/g, '') } catch { host = '' } }
   return /^(127\.|localhost$|0\.0\.0\.0$|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host)
@@ -50,10 +53,10 @@ ok('and a delay that is not a span falls back to the default', policyOf({ 'payou
 if (process.env.PROVIDERS_TEST === '0') { note('the stack half skipped (PROVIDERS_TEST=0)'); console.log('\n  ' + pass + ' passed'); process.exit(fail ? 1 : 0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
-if (!url || !anon || !localStack()) { note('the stack half skipped — no local stack in .env'); console.log('\n  ' + pass + ' passed'); process.exit(fail ? 1 : 0) }
+if (!url || !anon || !localStack()) { note('the stack half skipped — no local stack in .env'); console.log('\n  ' + pass + ' passed'); leave(fail ? 1 : 0) }
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
-if (!up) { note('the stack half skipped — the local stack is not up'); console.log('\n  ' + pass + ' passed'); process.exit(fail ? 1 : 0) }
+if (!up) { note('the stack half skipped — the local stack is not up'); console.log('\n  ' + pass + ' passed'); leave(fail ? 1 : 0) }
 
 const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const tag = 'p' + Math.random().toString(36).slice(2, 8)
@@ -222,8 +225,10 @@ try {
        letters go there instead — so asking Mailpit whether it is awake and then reading nothing is
        a failure about somebody's .env rather than about the code. */
     let mail = null
-    if (toMailpit()) { try { mail = await (await fetch('http://127.0.0.1:54324/api/v1/messages?limit=30', { signal: AbortSignal.timeout(1500) })).json() } catch { /* not up */ } }
-    if (!mail) console.log('  (the site\'s relay is not the local Mailpit — the letters are not looked at)')
+    if (toMailpit() && stackOf()?.mail) { try { mail = await (await fetch(stackOf().mail + '/api/v1/messages?limit=30', { signal: AbortSignal.timeout(1500) })).json() } catch { /* not up */ } }
+    /* the letters are the emails module's (its designs and its send); a site with it off sends none, by declaration */
+    if (!(await moduleOn('emails'))) { notHere('providers-db: the booking letters', 'the emails module is off'); mail = null }
+    else if (!mail) console.log('  (the site\'s relay is not the local Mailpit — the letters are not looked at)')
     else {
       const to = (a) => (mail.messages || []).filter((m) => (m.To || []).some((x) => x.Address === a))
       const reader = to(tag + '-reader@example.com'), host = to(tag + '-prov@example.com')

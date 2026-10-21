@@ -2,6 +2,7 @@
 title: The Field Guide
 author: The Northlight Editors
 difficulty: beginner
+guestChapters: 2
 canAccess:
   - subscribed
 cover: /uploads/books/the-field-guide.png
@@ -19,6 +20,21 @@ concepts:
   - attention
 introduction: |
   This is a small book about a small practice. It asks for ten minutes a day and promises nothing it cannot keep: that a thing done daily becomes a thing you are.
+print:
+  key: 509db32e
+  ebook: false
+  main: softcover
+  contents:
+    - full
+  formats:
+    softcover:
+      markup: 8
+  printers:
+    softcover: auto
+  trim: 6x9
+  paper: cream
+  blurb: |-
+    Ten minutes a day, and a notebook where you will trip over it. A short book about doing one small thing every day, and what happens when you keep doing it.
 ---
 
 # Starting small

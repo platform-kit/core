@@ -4,15 +4,16 @@
    the seed's accounts — and is skipped with a note when it is not up (POLICY_TEST=0 skips it too). */
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave, moduleOn, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('policies: ' + m)
 if (process.env.POLICY_TEST === '0') { note('skipped (POLICY_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
-if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); process.exit(0) }
+if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
 let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
-if (!up) { note('skipped — the local stack is not up'); process.exit(0) }
+if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg, cond) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
@@ -28,7 +29,9 @@ const purchases = (await admin.sb.from('purchases').select('id, user_id')).data 
 const bookings = (await admin.sb.from('bookings').select('uid, user_id, provider_id')).data || []
 /* the read-through is measured where the site's seed holds rows to read (the root site's does; the kit's accounts alone hold none) */
 const seeded = purchases.length >= 1 && bookings.length >= 1
-if (!seeded) note('the seed holds no purchases or bookings here — the read-through checks are skipped')
+/* a site that neither sells nor books has nothing of either to read through; one that does, and whose seed holds none, fails */
+if (!seeded && !((await moduleOn('store')) && (await moduleOn('sessions')))) notHere('policies: the administrator\'s read-through', 'the site has the store or sessions module off')
+else if (!seeded) note('the seed holds no purchases or bookings here — the read-through checks are skipped')
 if (seeded) ok('the administrator reads every purchase (the seed holds some)', purchases.some((p) => p.user_id !== admin.id))
 if (seeded) ok('the administrator reads every booking (the seed holds some)', bookings.some((b) => b.user_id !== admin.id && b.provider_id !== admin.id))
 const ids = [...new Set(purchases.map((p) => p.user_id).concat(bookings.map((b) => b.user_id)).filter(Boolean))]
@@ -74,7 +77,8 @@ ok('admin_people answers a member nothing', none.data === null)
 
   /* and what that means for what they can read */
   const inboxOf = async (who) => ((await who.sb.rpc('chat_inbox')).data || [])
-  ok('a coach is given the threads waiting on them', (await inboxOf(coach)).length > 0)
+  if (await moduleOn('coaching')) ok('a coach is given the threads waiting on them', (await inboxOf(coach)).length > 0)
+  else notHere('policies: a coach\'s inbox', 'the coaching module is off')
   ok('and somebody on the support desk is given none of them', (await inboxOf(support)).length === 0)
   /* A COACH ANSWERS whether or not they hold a membership themselves (community-access-by-entitlement): the
      seed's coach holds provider and nothing bought, and their reply is a row */
@@ -87,10 +91,17 @@ ok('admin_people answers a member nothing', none.data === null)
   /* and a reader with no membership and no session opens no thread with a coach */
   const freeOpen = await free.sb.rpc('chat_open', { peer: coach.id })
   ok('a reader on nothing opens no thread with a coach', !!freeOpen.error)
+  /* somebody else's purchase for the coach not to see, made here where the seed has none (a site that sells nothing) */
+  let probePurchase = null
+  if (!(((await service.from('purchases').select('id').limit(1)).data || []).length)) {
+    const { data: mem } = await service.from('profiles').select('id').eq('email', 'member@example.com').maybeSingle()
+    probePurchase = (await service.from('purchases').insert({ user_id: mem?.id, sku: 'policies-probe', status: 'paid', stripe_checkout_session_id: 'cs_policies_probe_' + Date.now() }).select('id').single()).data
+  }
   const allPurchases = ((await service.from('purchases').select('id')).data || []).length
   const coachSees = ((await coach.sb.from('purchases').select('id, user_id')).data || [])
   ok('a coach reads their own purchases and nobody else\'s',
     coachSees.every((r) => r.user_id === coach.id) && coachSees.length < allPurchases, coachSees.length + ' of ' + allPurchases)
+  if (probePurchase) await service.from('purchases').delete().eq('id', probePurchase.id)
   ok('and is refused who a set of accounts are', (await coach.sb.rpc('admin_people', { ids })).data === null)
 
   /* nobody writes their own roles, whatever they already hold */

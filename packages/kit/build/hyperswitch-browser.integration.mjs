@@ -85,12 +85,12 @@ const deno = (args) => {
   return JSON.parse(result.stdout.trim().split('\n').pop())
 }
 
-const { chromium } = await import('playwright')
-const browser = await chromium.launch()
+const { launch, context: browserContext } = await import('./browser.mjs')
+const browser = await launch()
 
 async function checkout(card) {
   const seeded = deno(['seed'])
-  const context = await browser.newContext()
+  const context = await browserContext(browser)
   const page = await context.newPage()
   const siteBodies = []
   context.on('request', (request) => {

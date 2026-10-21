@@ -23,15 +23,18 @@ import { IdResolver, MemoryCache } from '@atproto/identity'
 import { verifyJwt } from '@atproto/xrpc-server'
 import { AtpAgent } from '@atproto/api'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave, siteUnderTest, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('atproto-interop: ' + m)
 if (process.env.ATPROTO_INTEROP_TEST === '0') { note('skipped (ATPROTO_INTEROP_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
-if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); process.exit(0) }
+if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
 const FN = url + '/functions/v1/atproto'
 const PORT = Number(process.env.ATPROTO_PLC_PORT || 2582)
 
+/* whether the site lets other apps sign in at all (network.apps, off by default) */
+const APPS = ((await siteUnderTest()).network || {}).apps === true
 let pass = 0, fail = 0
 const ok = (msg, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -102,7 +105,7 @@ let A = null, M = null, before = null, identity = null
 
 try {
   const probe = await fetch(FN + '/xrpc/com.atproto.sync.listRepos').then((r) => r.json()).catch(() => null)
-  if (!probe || probe.error) { note('skipped — the function does not federate here (serve it with NETWORK_FEDERATE=1)'); plc.close(); appview.close(); process.exit(0) }
+  if (!probe || probe.error) { note('skipped — the function does not federate here (serve it with NETWORK_FEDERATE=1)'); plc.close(); appview.close(); leave(0) }
 
   A = await site('member@example.com'); M = await site('admin@example.com')
   before = (await service.from('profiles').select('username, public_profile').eq('id', A.id).single()).data
@@ -175,6 +178,9 @@ try {
   ok('…and nothing of the post to the people here', !seen.some((s) => s.path === `app.bsky.feed.post/${ph.rkey}`))
 
   /* ------------------------------------------------------------ the world outside */
+  /* other apps sign in only where the site lets them (network.apps); the demo does */
+  if (!APPS) notHere('atproto-interop: another app signing in', 'the site does not let other apps sign in (network.apps)')
+  else {
   const made = await fetch(FN + '/xrpc/com.atproto.server.createAppPassword', { method: 'POST', headers: { Authorization: 'Bearer ' + A.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'interop' }) }).then((r) => r.json())
   const viaFn = (input, init) => { const u = new URL(String(input instanceof Request ? input.url : input)); const to = FN + u.pathname + u.search; return input instanceof Request ? fetch(new Request(to, input), init) : fetch(to, init) }
   const a = new AtpAgent({ service: 'http://site.test', fetch: viaFn })
@@ -217,6 +223,7 @@ try {
   const again = await fetch(FN + '/network/join', { method: 'POST', headers: { Authorization: 'Bearer ' + A.token } }).then((r) => r.json())
   ok('joining again is the same identity', again.did === identity, JSON.stringify(again))
   await fetch(FN + '/network/leave', { method: 'POST', headers: { Authorization: 'Bearer ' + A.token } })
+  }
 } catch (e) {
   fail++
   console.log('  FAIL  the run — ' + (e && (e.message || e)))

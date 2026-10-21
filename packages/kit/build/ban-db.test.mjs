@@ -13,17 +13,15 @@
  *   a lift is a row, not an edit, and it puts things back.
  */
 import pg from 'pg'
-const URL = process.env.SUPABASE_DB_URL || 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+import { requireStack, skip } from './test-stack.mjs'
+const URL = requireStack('ban').db
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nBAN\n')
 const client = new pg.Client({ connectionString: URL })
-try { await client.connect() } catch (e) {
-  console.log('  the stack is not up — skipped (' + e.message.slice(0, 60) + ')\n')
-  process.exit(0)
-}
+try { await client.connect() } catch (e) { skip('ban', 'the stack\'s database does not answer (' + e.message.slice(0, 60) + ')') }
 
 const q = (sql, args = []) => client.query(sql, args).then((r) => r.rows)
 /* Run a statement as a given person, the way the app does — inside a savepoint, because half of

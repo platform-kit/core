@@ -29,7 +29,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { cors, json, preflight, getUser, isServiceBearer } from '../_shared/lib.ts'
 import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { typeset } from '../_shared/print/typeset.js'
-import { planRuns, PAGES_PER_RUN, padFor } from '../_shared/print/plan-pieces.js'
+import { planRuns, PAGES_PER_RUN, padFor, bindingFor } from '../_shared/print/plan-pieces.js'
 import { coverSource, coverName, foilName, coversOf } from '../_shared/print/cover-source.js'
 import { printedOf, candidatesOf, chooseProvider, reachableToPrinter } from '../_shared/print/provider.js'
 import { editionFor, pictureId, partsOf } from '../_shared/print/edition.js'
@@ -61,7 +61,16 @@ const BUCKET = 'print'
  * already keeps its uploads and covers in, under the same path shape.
  */
 const ART_BUCKET = 'content-assets'
-const artAt = (at: string) => `${url}/storage/v1/object/public/${ART_BUCKET}/${at}`
+/* a picture's format from its first bytes, whatever its name says */
+const kindOf = (b: Uint8Array) =>
+  b[0] === 0xff && b[1] === 0xd8 ? { ext: 'jpg', type: 'image/jpeg' }
+  : b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 ? { ext: 'webp', type: 'image/webp' }
+  : b[0] === 0x47 && b[1] === 0x49 ? { ext: 'gif', type: 'image/gif' }
+  : { ext: 'png', type: 'image/png' }
+/* an address a READER fetches, so the public one (as social-oauth takes it): inside the local functions runtime
+   SUPABASE_URL is the gateway's own name on Docker's network (http://kong:8000), which no browser resolves */
+const publicUrl = (Deno.env.get('VITE_SUPABASE_URL') || url).replace(/\/+$/, '')
+const artAt = (at: string) => `${publicUrl}/storage/v1/object/public/${ART_BUCKET}/${at}`
 /* the printers read their keys through a function, not an object; bound once, for every call */
 type Bound = { providersFor: (f: string) => any[]; printer: (id: string) => any; costUsd: (q: unknown) => number | null }
 const { providersFor, printer } = printers((k: string) => Deno.env.get(k) ?? '')
@@ -123,31 +132,6 @@ async function bookOf(slug: string) {
   const book = toEntry('books', b, ctx)
   if (!book) throw new Error(`print: ${slug} is not a book this site can set`)
   return { book: { ...book, slug }, companion: c ? toEntry('companions', c, ctx) : null }
-}
-
-/*
- * WHAT WILL BIND THIS BOOK. Every printer that might make one of the formats the block sells, and
- * the LARGEST minimum and step among them — a page count that suits one printer and not another is
- * a page count that fails at the moment of ordering, which is the worst moment to find out.
- *
- * The printers are the same modules the build uses: plain JavaScript on fetch alone, which is why
- * they run here unchanged, and WHICH of them may make a format is the shared rule (provider.js) —
- * the one the block names, and every one with keys only where it says `auto`.
- */
-function bindingFor(spec: Record<string, unknown>, bound: Bound) {
-  const formats = Object.keys((spec.formats ?? {}) as Record<string, unknown>).filter((f) => FORMATS_PRINTED.includes(f))
-  let min = 0, step = 0
-  for (const format of formats) {
-    for (const p of candidatesOf(spec, format, bound)) {
-      const pr = p.product({
-        format, trim: String(spec.trim ?? '6x9'), paper: String(spec.paper ?? 'cream'),
-        cloth: spec.cloth, foil: spec.foil, options: ((spec.providers ?? {}) as Record<string, unknown>)[p.id] ?? {},
-      })
-      min = Math.max(min, Number(pr?.minPages) || 0)
-      step = Math.max(step, Number(pr?.pageStep) || 0)
-    }
-  }
-  return { min: min || undefined, step: step || undefined }
 }
 
 const pageCount = (pdf: Uint8Array) => {
@@ -303,7 +287,9 @@ Deno.serve(async (req) => {
         if (!raw.ok) throw new Error(`HTTP ${raw.status}`)
         pictureHash = pictureId(new Uint8Array(await raw.arrayBuffer()))
         pictureBytes = await sizePicture(at, { driver: 'storage', height: MAX_HEIGHT })
-        picture = '/picture.png'
+        /* named by what the bytes ARE: Storage's transform keeps the original's format (a machine's sharp makes PNG),
+           and a WebP saved as .png was read by the typesetter as a PNG and refused */
+        picture = '/picture.' + kindOf(pictureBytes).ext
       } catch (e) { notes.push(`the paperback's picture could not be read — ${(e as Error).message}`) }
     }
 
@@ -333,7 +319,7 @@ Deno.serve(async (req) => {
      * The minimum belongs to whoever might make the book: the printer the block names, or every
      * one with keys where it says `auto` — the shared rule, so this path and the build pad alike.
      */
-    const { min, step } = bindingFor(spec, bound)
+    const { min, step } = bindingFor(spec, Object.keys((spec.formats ?? {}) as Record<string, unknown>).filter((f) => FORMATS_PRINTED.includes(f)), (s: any, format: string) => candidatesOf(s, format, bound), { trim: String(spec.trim ?? '6x9'), paper: String(spec.paper ?? 'cream') })
     const pad = padFor(pages, { min, step })
     let compiled = source
     if (pad) {
@@ -403,7 +389,7 @@ Deno.serve(async (req) => {
     const wantEpub = !!(spec.formats as Record<string, unknown>).epub || ((spec.includes as string[]) ?? []).includes('epub')
     if (wantEpub) {
       try {
-        const art = pictureBytes ? { name: 'cover.png', data: pictureBytes, type: 'image/png' } : null
+        const art = pictureBytes ? { name: 'cover.' + kindOf(pictureBytes).ext, data: pictureBytes, type: kindOf(pictureBytes).type } : null
         const epub = await makeEpub({ book, companion, contents, note: contents === 'parts' ? String(spec.note ?? '') : '', words: W, art })
         await put(`${at0}/book.epub`, epub, 'application/epub+zip')
       } catch (e) { notes.push(`the EPUB could not be made — ${(e as Error).message}`); incomplete.push('epub') }
@@ -568,7 +554,7 @@ Deno.serve(async (req) => {
     if (!draft) await writeIndex(store, withTitles(mergeIndex(idx, [manifest]), slug, titles), { live: true, pending: true, published: true })
 
     return json({
-      ok: true, book: slug, contents, pages: seen, padded: pad, validated, /* typeset counts them; it does not hand back a list */
+      ok: true, book: slug, contents, pages: seen, padded: pad, binding: { min, step }, validated, /* typeset counts them; it does not hand back a list */
       chapters: Number(chapters) || 0, edition, draft, epub: manifest.epub, at: `${at0}/interior.pdf`, ms: Date.now() - began, warm, worker: workerId,
       printers: printersOut, covers, foils, dims, spine,
       /* WHAT THE CALLER MUST DRAW. Empty from here — see the note above the declaration: the WASM

@@ -3,6 +3,7 @@ import { createHmac, randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { normalizeSocialAutomationEvents } from '../supabase/functions/_shared/social/automation-events.mjs'
 import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { leave } from './test-stack.mjs'
 
 const threadBody = (accountId, commentId, text = 'Please send the guide') => Buffer.from(JSON.stringify({
   values: {
@@ -55,13 +56,13 @@ const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
 if (!url || !anonKey || !localStack()) {
   console.log('social-webhooks: integration skipped — no local Supabase stack credentials')
-  process.exit(0)
+  leave(0)
 }
 
 const health = await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2_000) })
 if (!health.ok) {
   console.log('social-webhooks: integration skipped — the local Supabase stack is not up')
-  process.exit(0)
+  leave(0)
 }
 const functionHealth = await fetch(url + '/functions/v1/social-webhook', {
   method: 'OPTIONS',

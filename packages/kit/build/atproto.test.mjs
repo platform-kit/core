@@ -11,16 +11,19 @@
 import { createClient } from '@supabase/supabase-js'
 import { AtpAgent } from '@atproto/api'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { leave, siteUnderTest, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('atproto: ' + m)
 if (process.env.ATPROTO_TEST === '0') { note('skipped (ATPROTO_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
-if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); process.exit(0) }
+if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
 const FN = url + '/functions/v1/atproto'
+/* this whole test is another app signing in, which a site allows only by saying so (network.apps); the demo does */
+if (((await siteUnderTest()).network || {}).apps !== true) { notHere('atproto', 'the site does not let other apps sign in (network.apps)'); process.exit(0) }
 let up = false
 try { up = (await fetch(FN + '/xrpc/com.atproto.server.describeServer', { signal: AbortSignal.timeout(60000) })).ok } catch { /* down */ }
-if (!up) { note('skipped — the atproto function is not served on the local stack'); process.exit(0) }
+if (!up) { note('skipped — the atproto function is not served on the local stack'); leave(0) }
 /* the handle domain is the function's own answer, never a guess here */
 const DOMAIN = (await (await fetch(FN + '/xrpc/com.atproto.server.describeServer')).json()).availableUserDomains[0].slice(1)
 
@@ -134,7 +137,8 @@ try {
   ok('…and it is in nobody\'s author feed, being no record of theirs', !(await authorHas(b)))
 
   /* the space's feed, as a feed generator */
-  const gens = (await b.app.bsky.feed.getSuggestedFeeds()).data.feeds
+  /* the client validates the answer against the lexicon; when it refuses, what the function said is the evidence */
+  const gens = (await b.app.bsky.feed.getSuggestedFeeds().catch(async (e) => { const raw = await xrpc('app.bsky.feed.getSuggestedFeeds', { token: b.session?.accessJwt }); throw new Error(`${e.message} — getSuggestedFeeds answered ${JSON.stringify(raw.data).slice(0, 900)}`) })).data.feeds
   const gen = gens.find((x) => x.displayName === 'An atproto test space'.slice(0, 24) || x.uri.endsWith('/' + SLUG))
   ok('a member is offered the space\'s feed', !!gen, JSON.stringify(gens.map((x) => x.uri)))
   if (gen) {
@@ -209,7 +213,9 @@ try {
   ok('revoking an app password ends the sessions made with it', after_ !== 'still signed in', after_)
 } catch (e) {
   fail++
-  console.log('  FAIL  the run — ' + (e && (e.message || e.error) || e))
+  /* with the line of this file that made the call, since the client's message never names the method */
+  const at = String(e && e.stack || '').split('\n').find((l) => l.includes('atproto.test.mjs')) || ''
+  console.log('  FAIL  the run — ' + (e && (e.message || e.error) || e) + (at ? ' (' + at.trim() + ')' : ''))
 } finally {
   if (people.length) {
     await service.from('network_app_passwords').delete().in('user_id', people)

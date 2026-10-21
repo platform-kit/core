@@ -20,7 +20,7 @@ sources:
     packages/kit/supabase/functions/print-webhook,
     packages/kit/supabase/functions/lulu-webhook,
   ]
-reviewed: 2026-10-05
+reviewed: 2026-10-21
 ---
 
 Editors' view: [Print editions](/content/docs/running-a-site/selling/print-editions). This page is the machinery.
@@ -113,7 +113,9 @@ So the function hands out what a browser needs and takes back what it drew:
   page from the text it can see. Plus `folder`, where the PDFs are, and `covers`, what they are called.
 - **coming back**: `POST { book, contents, edition, shots, art }` — the pictures, uploaded to the
   public `content-assets` bucket, recorded under the same cover keys the dimensions and the printers
-  use, so `coverFor()` finds a browser's raster exactly as it finds a machine's sheet.
+  use, so `coverFor()` finds a browser's raster exactly as it finds a machine's sheet. Each is recorded at
+  the public address a reader's browser fetches (`VITE_SUPABASE_URL`), never the functions runtime's own
+  name for the gateway, which no browser outside Docker resolves.
 
 It is recorded **against the edition**, and refused for any other. A page number means nothing
 without the exact text it came from: change a word and the openers fall elsewhere, so a picture of
@@ -133,7 +135,7 @@ A rendered file is in the print bucket rather than on a disk, so `pipe.fileUrl(c
 Two things have to be in place before it will work at all, and it says which is missing rather than failing obscurely:
 
 - **The type.** An Edge Function has no fonts. The deploy's `print-type` step uploads them to the `print` bucket (`node packages/kit/build/print/templates.mjs --fonts` does it by hand — a local stack loses them on every `supabase start`), and the function refuses to set anything without them. A book set in a fallback face is wrong in a way nobody notices until it is printed.
-- **Storage's image transform**, for a paperback only — its front _is_ the e-book's picture, and there is no `sharp` in a function. It is a Pro-plan feature on the hosted platform and off by default locally (`[storage.image_transformation]` in `config.toml`). Without it the paperback is **left unset and said so** (`incomplete` in the answer), never drawn blank: a cover without its picture would be a different sheet under the same edition id, which is the one thing this whole path exists to make impossible. A hardcover is set in type and needs none of it.
+- **Storage's image transform**, for a paperback only — its front _is_ the e-book's picture, and there is no `sharp` in a function. It is a Pro-plan feature on the hosted platform, and the kit's `config.toml` template turns it on locally (`[storage.image_transformation]`). The transform keeps the original's format, so the picture is named by what its bytes are (PNG, JPEG, WebP or GIF), never by its file name: a WebP saved as `.png` is still set. Without it the paperback is **left unset and said so** (`incomplete` in the answer), never drawn blank: a cover without its picture would be a different sheet under the same edition id, which is the one thing this whole path exists to make impossible. A hardcover is set in type and needs none of it.
 
 ## The block and the offers
 
