@@ -26,6 +26,9 @@
  *   share-images photograph the site's share cards and favicon (build/share-images.mjs)
  *   probe       the phone probe (build/phone-probe.mjs)
  *   spec        OpenSpec validate over the site's specs (and the kit's, where they are)
+ *   check       every problem with the machine, the site, its settings and its database, at once
+ *               (`--production` checks .env.production as the deploy will; `--db` compares the schema;
+ *               `--online` asks each configured service whether it accepts its key)
  */
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -118,7 +121,8 @@ if (!['help', '--help', 'sites', 'stop'].includes(cmd)) {
   }
 }
 
-const run = (cmdline, a = [], opts = {}) => { const r = spawnSync(cmdline, a, { cwd: site, stdio: 'inherit', env: process.env, ...opts }); if (r.status !== 0) process.exit(r.status || 1) }
+/* dev and test failing to start is most often the machine or a setting: say where to look, once, at the end */
+const run = (cmdline, a = [], opts = {}) => { const r = spawnSync(cmdline, a, { cwd: site, stdio: 'inherit', env: process.env, ...opts }); if (r.status !== 0) { if (['dev', 'test'].includes(cmd)) console.error('\nIf it could not start, `platformkit check` lists everything that is missing.'); process.exit(r.status || 1) } }
 const node = (script, a = []) => run(process.execPath, [KIT(script), ...a])
 const npx = (a) => run('npx', a)
 /*
@@ -238,6 +242,7 @@ switch (cmd) {
   case 'enrich': node('enrich.mjs', rest); break
   case 'share-images': node('share-images.mjs', rest); break
   case 'probe': node('phone-probe.mjs', rest); break
+  case 'check': node('check.mjs', rest); break
   case 'spec': { if (!fs.existsSync(path.join(site, 'openspec'))) { console.log('no openspec/ here'); break } npx(['openspec', 'validate', '--all', '--strict', ...rest]); break }
   default: console.error(`✖ unknown command "${cmd}"\n`); usage()
 }

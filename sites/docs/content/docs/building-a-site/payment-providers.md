@@ -73,7 +73,7 @@ sources:
     packages/kit/supabase/functions/push-catalog,
     packages/kit/supabase/functions/stripe-webhook,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-22
 ---
 
 PlatformKit keeps one payment provider active per site. Stripe is the built-in provider and the

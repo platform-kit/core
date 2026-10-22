@@ -2,11 +2,18 @@
 
 ### Requirement: Check reports every problem with a site's setup at once
 
-`platformkit check` SHALL check the machine (Node version, Docker, the Supabase CLI, the test browser), the site (its config loads, every switched-on module is known, PlatformKit's version matches the site's pin), its settings (every key its switched-on modules need, from the deploy check's own derivation) and its local database (up, and matching the declaration). It SHALL run every check without stopping at the first failure, print failures first with the command or setting that fixes each, and exit non-zero when any check fails.
+`platformkit check` SHALL check the machine (Node version, Docker, the Supabase CLI, the test browser), the site (its config loads, every switched-on module is known, PlatformKit's version matches the site's pin), its settings (every key its switched-on features need, from the deploy check's own derivation) and its local database (it answers; with `--db`, the plan between it and the declaration is empty). On the developer's machine a missing setting SHALL be a warning, since a feature without its key runs in practice mode or not at all, and the rules only production has (a live key, an https origin) SHALL not apply; with `--production` the deploy check SHALL run whole against `.env.production` and every gap SHALL fail. It SHALL run every check without stopping at the first failure, print failures first, then warnings, each with the command or setting that fixes it, and exit non-zero when any check fails.
+
+#### Scenario: a key missing locally and in production
+
+- **WHEN** a build step's key is unset
+- **THEN** `check` warns about it and exits zero, and `check --production` fails on it
+
+Verified by: `build/check.test.mjs`
 
 #### Scenario: two problems at once
 
-- **WHEN** the test browser is missing and a key the store needs is unset
+- **WHEN** Docker is not running and the test browser is missing
 - **THEN** both are reported in one run, each with its fix, and the command exits non-zero
 
 Verified by: `build/check.test.mjs`

@@ -4,6 +4,7 @@ description: The dev server and the local stack, the production build, and the d
 order: 51
 sources:
   [
+    packages/kit/build/check.mjs,
     packages/kit/build/dev-directory.mjs,
     packages/kit/build/dev-directory.css,
     packages/kit/build/dev-directory.test.mjs,
@@ -61,7 +62,7 @@ sources:
     deploy/prerender,
     deploy/relay,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-22
 ---
 
 ## Restarting development
@@ -105,6 +106,10 @@ What quiet may never abbreviate is the part somebody has to act on: a refusal, a
 ## The environment
 
 The project is developed and built inside `.devcontainer/`: a Dockerfile on the devcontainers Ubuntu base with Node 22, ffmpeg and Chromium's system libraries, plus docker-in-docker for local Supabase stacks. `post-create.sh` runs `npm ci` at the workspace root, installs the headless browser and fetches the text-to-speech weights. Workspace-wide values belong in the root `.env`; each site keeps its own ignored `.env` beside its package. Nothing a script needs may depend on the host machine: no Homebrew, no system Python, no path outside the repo. A new tool goes in the Dockerfile or `post-create`. Ports 5173 and the stack's range are forwarded. The repository's `.nvmrc` selects Node 22 for nvm users, and the `platformkit` CLI automatically restarts under Node 22 through nvm when available; otherwise it explains how to select or install Node 22 before running.
+
+## `platformkit check`
+
+`check.mjs` asks everything a site needs in one pass and prints every problem with its fix, failures first: Node 22, Docker, the Supabase CLI and the test browser; the site's config, its modules and the PlatformKit version it pins; the settings its switched-on features need, from the deploy check's own derivation; and whether the local database answers. On a development machine a missing setting is a warning, because the feature runs in practice mode or not at all; `--production` reads `.env.production` and fails on every gap, as the deploy will. `--db` compares the database with its declaration through `migrate --plan`, and `--online` asks Stripe, the mail relay and the AI providers whether they accept their keys, with read-only calls. When `dev` or `test` fails, the CLI points to it.
 
 ## `platformkit dev`
 

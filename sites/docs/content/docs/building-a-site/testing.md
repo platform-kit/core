@@ -5,6 +5,7 @@ order: 52
 sources:
   [
     packages/kit/build/one-package.test.mjs,
+    packages/kit/build/check.test.mjs,
     packages/kit/build/browser.mjs,
     packages/kit/build/e2e.mjs,
     packages/kit/build/test-stack.mjs,
@@ -67,7 +68,7 @@ sources:
     packages/kit/build/source-install.mjs,
     packages/kit/build/runtime-paths.mjs,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-22
 ---
 
 ## A proposal promises nothing it does not require

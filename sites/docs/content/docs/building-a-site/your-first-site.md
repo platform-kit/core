@@ -8,11 +8,12 @@ sources:
     sites/demo/platformkit.config.js,
     sites/docs/platformkit.config.js,
     packages/kit/bin/platformkit.mjs,
+    packages/kit/build/check.mjs,
     sites/demo/package.json,
     package.json,
     packages/kit/build/sites.mjs,
   ]
-reviewed: 2026-10-14
+reviewed: 2026-10-22
 ---
 
 A site is an independently configured project built with PlatformKit. It contains its own package manifest and lockfile, `platformkit.config.js`, content, and any code or data it registers. The PlatformKit workspace also contains generic example sites; copy one as a starting point, then keep the new project's code and content in its own repository.
@@ -91,12 +92,13 @@ From an independent site checkout, install the committed lockfile and run the si
 
 ```sh
 npm ci
+npx platformkit check
 npx platformkit dev
 npx platformkit test
 npx platformkit build
 ```
 
-`platformkit dev` assembles the local Supabase project when the site needs a backend. `platformkit test` runs the kit checks relevant to the site's modules, the site's own tests, and its OpenSpec validation; `platformkit test --e2e` runs the checks that need a database, the functions or a browser, on a stack built from the site's files for the run. `platformkit build` compiles content and produces the site's bundle and prerendered pages. Deploy only from the configured deployment environment, after its checks pass.
+`platformkit check` lists everything the machine or the site is missing, each with its fix, before you start. `platformkit dev` assembles the local Supabase project when the site needs a backend. `platformkit test` runs the kit checks relevant to the site's modules, the site's own tests, and its OpenSpec validation; `platformkit test --e2e` runs the checks that need a database, the functions or a browser, on a stack built from the site's files for the run. `platformkit build` compiles content and produces the site's bundle and prerendered pages. Deploy only from the configured deployment environment, after its checks pass.
 
 For a deployment, the site repository can invoke the Core CLI directly from GitHub:
 

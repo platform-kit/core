@@ -16,10 +16,11 @@ See proposal.md for why. Today:
 
 ## Decisions
 
-1. **One list of needs.** The settings check calls the deploy check's derivation with the local environment. Alternative: a list of its own. Rejected because two lists drift.
-2. **Each check is a record:** a name, a test, and a fix line. The command runs them all, never stopping at the first failure, and prints failures first. A site can add its own checks through its config, like build steps.
+1. **One list of needs, read two ways.** The settings check calls the deploy check's derivation. On the developer's machine its gaps are warnings and its production-only rules (live keys, an https origin, the shadow database) are skipped: run on the demo, the strict reading reported 14 missing keys and 2 wrong settings on a machine that runs fine. `--production` reads `.env.production` and fails on every gap, as the deploy would. Alternative: a list of its own. Rejected because two lists drift.
+2. **Each check is a record:** a name, a test, and a fix line. The command runs them all, never stopping at the first failure, and prints failures first.
 3. **Online is opt-in.** `--online` adds one read-only call per configured service (for example, Stripe's account lookup). Without it the command makes no network call, so it runs offline and costs nothing.
-4. **Dev and test point to it.** When `dev` or `test` can't start, the error ends with "Run `platformkit check` to see everything that's missing."
+4. **Dev and test point to it.** When `dev` or `test` fails, the CLI ends with "If it could not start, `platformkit check` lists everything that is missing."
+5. **The schema comparison is opt-in.** `--db` runs `migrate --plan`, which builds a shadow database (about a minute) and applies nothing. By default the check only confirms the database answers.
 
 ## Risks / Trade-offs
 

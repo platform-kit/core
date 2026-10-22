@@ -9,9 +9,9 @@ When a site won't start, the cause shows up one failure at a time: Docker not ru
 - A new command, `platformkit check`, checks everything a site needs and lists every problem at once, each with the fix:
   - **The machine:** Node version, Docker running, the Supabase CLI, the test browser.
   - **The site:** the config loads, every module switched on is known, and PlatformKit's version is the one the site pins.
-  - **Settings:** every key the site's switched-on modules need is present, using the deploy check's own list.
-  - **The database:** the local stack is up, and its schema matches the declaration.
-  - **Outside services**, with `--online` only: each configured key is accepted by its service (Stripe, the mail relay, printers, AI providers), using read-only calls that change nothing.
+  - **Settings:** every key the site's switched-on features need, from the deploy check's own list. On a development machine a missing key is a warning; `--production` checks `.env.production` exactly as the deploy will, and every gap fails.
+  - **The database:** the local database answers; `--db` also compares its schema with the declaration, which takes about a minute.
+  - **Outside services**, with `--online` only: each configured key is accepted by its service (Stripe, the mail relay and AI providers), using read-only calls that change nothing.
 - It exits non-zero when anything fails, so CI can run it.
 - `platformkit dev` and `platformkit test` point to it when they fail to start.
 
