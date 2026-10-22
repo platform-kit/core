@@ -25,6 +25,31 @@ Verified by: `build/generate.test.mjs`
 
 Verified by: `build/generate.test.mjs`, comparing the config before and after
 
+### Requirement: Generate writes at the site level by default, or in PlatformKit itself
+
+Generate SHALL take `--level site` or `--level core`, defaulting to `site`. At the site level it SHALL write into the site's repository and register every kind through the site config, with no change to PlatformKit. At the core level it SHALL write into `packages/kit` in PlatformKit's own form, including a stub docs page naming the new sources, and every file SHALL pass the kit's checks and the docs check with no edit. The core level SHALL be refused, writing nothing, outside a PlatformKit checkout.
+
+#### Scenario: no level given
+
+- **WHEN** `platformkit generate page about` runs in a site
+- **THEN** the page is written in the site and registered in its config, and PlatformKit's files are unchanged
+
+Verified by: `build/generate.test.mjs`
+
+#### Scenario: every kind at the core level
+
+- **WHEN** each kind is generated with `--level core` into a copy of `packages/kit`
+- **THEN** the kit's structural checks and the docs check pass on the copy with nothing edited by hand
+
+Verified by: `build/generate.test.mjs`
+
+#### Scenario: the core level in a site installed from npm
+
+- **WHEN** `platformkit generate module stockists --level core` runs where there is no PlatformKit checkout
+- **THEN** nothing is written, and the refusal says to leave the flag off to add to the site
+
+Verified by: `build/generate.test.mjs`
+
 ### Requirement: Generate never overwrites
 
 Generate SHALL refuse, writing nothing, when a file it would write already exists or a module name is already declared, and SHALL name the file or the module. With `--dry-run` it SHALL list the files and config entries it would write and change nothing. When the config is not an object literal it can edit, it SHALL write the files, leave the config alone and print the entries to add by hand.

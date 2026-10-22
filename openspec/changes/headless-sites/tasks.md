@@ -3,11 +3,11 @@
 ## 1. The answers
 
 - [ ] 1.1 Add a `headless` answer to every kit manifest, and to the demo's `stockists`, with the derivation in `modes.test.mjs`. Verified by `modes.test.mjs`: a missing answer refused; a `true` claim with only reader routes refused.
-- [ ] 1.2 Mark staff and developer routes (the admin, `/api`, the auth callbacks the admin needs). Verified by `manifests.test.mjs`.
+- [ ] 1.2 Mark every route `reader`, `staff`, `developer`, `embed` or `hosted`. Verified by `manifests.test.mjs`: an unmarked route refused.
 
 ## 2. The build and dev
 
-- [ ] 2.1 `headless: true` in the config: the router registers only marked routes plus the root notice; prerender, sitemap, share images and the phone probe skip; refused with `deployment: static`. Verified by `headless.test.mjs` on a copy of the demo.
+- [ ] 2.1 `headless: true` in the config: the router registers every route not marked `reader`, plus the root notice; embeds, hosted pages and the scripts other websites load are built; prerender, sitemap, share images and the phone probe skip; refused with `deployment: static`. Verified by `headless.test.mjs` on a copy of the demo.
 - [ ] 2.2 The build refuses switched-on modules that answer `false`, all named at once, and prints exceptions. Verified by `headless.test.mjs`.
 - [ ] 2.3 `platformkit dev` serves the same set. Verified by `headless.test.mjs` starting dev on the copy.
 

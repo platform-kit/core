@@ -9,6 +9,7 @@
 
 - [ ] 2.1 Templates for module, page, content type, function, test and step under `packages/kit/build/generators/`. Verified by `generate.test.mjs`: each kind generated into a copy of the demo, then the build and the structural checks pass on the copy.
 - [ ] 2.2 Site overrides from `generators/<kind>/`. Verified by `generate.test.mjs` with a site page template.
+- [ ] 2.3 Core-level templates writing into `packages/kit` with a stub docs page, and the refusal outside a PlatformKit checkout. Verified by `generate.test.mjs`: every kind generated into a copy of `packages/kit` passes the structural and docs checks; `--level core` with no checkout writes nothing.
 
 ## 3. Docs and verification
 

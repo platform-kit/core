@@ -2,7 +2,7 @@
 
 ### Requirement: The commands
 
-`platformkit` SHALL offer `dev` (the site on one held port with its stack and functions), `build`, `deploy` (with the environment checks first), `test` (the kit's tests plus the site's), `migrate` (assemble and apply; `reset`), `functions` (assemble and serve or deploy), `print`, `tts`, `enrich`, `probe` (the phone probe), `spec` (OpenSpec validate over both roots) and `generate` (a site's new module, page, content type, function, test or build step), each taking `--site <path>` and defaulting to the current directory.
+`platformkit` SHALL offer `dev` (the site on one held port with its stack and functions), `build`, `deploy` (with the environment checks first), `test` (the kit's tests plus the site's), `migrate` (assemble and apply; `reset`), `functions` (assemble and serve or deploy), `print`, `tts`, `enrich`, `probe` (the phone probe), `spec` (OpenSpec validate over both roots) and `generate` (a new module, page, content type, function, test or build step, in the site by default or in PlatformKit with `--level core`), each taking `--site <path>` and defaulting to the current directory.
 
 #### Scenario: a site with no code
 
