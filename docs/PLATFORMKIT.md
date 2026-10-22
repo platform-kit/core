@@ -1,6 +1,6 @@
 # PlatformKit
 
-PlatformKit is a reusable publishing platform made of a core package and a default theme. A site supplies its own content and configuration, then selects the modules and visual choices it needs.
+PlatformKit is a full-stack TypeScript framework for building and deploying a complete online business: content and publishing, payments, subscriptions and memberships, a store, bookings and video sessions, forms, email marketing, customer support, community, analytics and AI assistants. The engine and its default theme ship as one package; a site supplies its own content and configuration, then selects the modules and visual choices it needs.
 
 ## The platform and a site
 
@@ -48,4 +48,4 @@ The maintained reference documentation is in the documentation site. The OpenSpe
 ---
 
 **Sources:** `package.json`, `packages/kit/package.json`, `packages/kit/bin/platformkit.mjs`, `packages/kit/build/sites.mjs`, `packages/kit/build/dev-workspace.mjs`, `.github/workflows/kit.yml`, `.github/workflows/publish.yml`
-**Reviewed:** `2026-10-20`
+**Reviewed:** `2026-10-22`

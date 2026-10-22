@@ -2,13 +2,13 @@
 title: What PlatformKit is
 description: How PlatformKit combines a framework, theme, and site-specific content and modules, with example configurations and product comparisons.
 order: 2
-reviewed: 2026-10-12
+reviewed: 2026-10-22
 sources: [openspec/specs/kit-principles/spec.md, packages/kit/src/lib/router.js]
 ---
 
 ## What it is
 
-PlatformKit is an open-source platform for building and operating a website with its business features in one application. It includes a content system, a theme, an admin, and optional modules for selling, memberships, bookings, forms, community, support, and marketing.
+PlatformKit is a full-stack TypeScript framework for building and deploying a complete online business: content and publishing, payments, subscriptions and memberships, a store, bookings and video sessions, forms, email marketing, customer support, community, analytics and AI assistants. Each area is a module a site switches on, and the engine, its default theme and its admin ship as one package.
 
 A site chooses modules in `platformkit.config.js` and supplies its own content, business rules, and visual design. For example, a publisher can enable books, print sales, memberships, and email; a practice can enable bookings, paid sessions, and member chat. These are configurations of one platform, not separate product forks.
 

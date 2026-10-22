@@ -1,6 +1,6 @@
 # PlatformKit
 
-PlatformKit is a reusable publishing platform: a core package for content, builds, and backend services, paired with a theme for reader and editor interfaces. Independently owned sites add their own content, configuration, and registrations.
+PlatformKit is a full-stack TypeScript framework for building and deploying a complete online business: content and publishing, payments, subscriptions and memberships, a store, bookings and video sessions, forms, email marketing, customer support, community, analytics and AI assistants. The engine and its default theme ship as one package; independently owned sites add their own content, configuration, and code.
 
 ## Workspace
 

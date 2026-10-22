@@ -1,7 +1,7 @@
 {
   "name": "platformkit",
   "version": "0.1.0",
-  "description": "PlatformKit: the engine and its default theme (Movable Types), one package. A site depends on it alone.",
+  "description": "A full-stack TypeScript framework for building and deploying a complete online business: content, payments, subscriptions, a store, bookings, forms, email, support, community, analytics and AI.",
   "type": "module",
   "license": "MIT",
   "repository": "github:platform-kit/core",
