@@ -111,6 +111,16 @@ const assembleOnly = (...args) => { const r = spawnSync(process.execPath, [path.
   ok('…and the assembly removed it', !fs.existsSync(gone))
 }
 
+/* 8. a site's schema that redefines a kit function is refused, by name, before anything is written */
+{
+  const own = path.join(WORK, 'db', 'schemas', 'zz-redefines.sql')
+  fs.mkdirSync(path.dirname(own), { recursive: true })
+  fs.writeFileSync(own, 'CREATE OR REPLACE FUNCTION "public"."may_see_member"("p_user" "uuid") RETURNS boolean LANGUAGE sql AS $ select true $;\n')
+  const refused = assembleOnly()
+  ok('a site schema redefining a kit function is refused', refused.status !== 0 && /public\.may_see_member in db\/schemas\/zz-redefines\.sql/.test(refused.out), refused.out)
+  fs.rmSync(own, { force: true })
+}
+
 fs.rmSync(WORK, { recursive: true, force: true })
 console.log(fail ? `${fail} failed, ${pass} passed` : `all ${pass} checks passed (the assembled tree is generated)`)
 process.exit(fail ? 1 : 0)

@@ -8,7 +8,7 @@ sources:
     packages/kit/src/lib/router.js,
     packages/kit/theme/src/pages/AdminPage.vue,
   ]
-reviewed: 2026-10-13
+reviewed: 2026-10-21
 ---
 
 **Site.** One PlatformKit website and its configuration, content, visual design, and site-specific features. The generic demo and this documentation site are separate sites.

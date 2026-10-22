@@ -27,7 +27,8 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
-import { loadSite, publicSite, communityOf, avatarsOf, INSTRUMENT, RECOMMENDATIONS, MEMBER, PERMISSIONS, DESK, deskSourcesOf, navOf, ctaOf } from '../build/site.mjs'
+import { gatesOf } from '../src/lib/member-panels.js'
+import { loadSite, publicSite, communityOf, avatarsOf, INSTRUMENT, RECOMMENDATIONS, PERMISSIONS, DESK, deskSourcesOf, navOf, ctaOf } from '../build/site.mjs'
 import { loadTheme, resolveOverrides } from '../build/theme.mjs'
 export { loadSite, publicSite, loadTheme, resolveOverrides }
 import vue from '@vitejs/plugin-vue'
@@ -153,7 +154,15 @@ function site(c, theme, keys = []) {
     if (id === V['#site/recommendations']) return contract(c.modules.recommendations && c.recommendations && c.recommendations.module, RECOMMENDATIONS)
     /* the site's own permission rules, run after the kit's (build/permissions.js) */
     if (id === V['#site/permissions']) return contract(c.permissions, PERMISSIONS)
-    if (id === V['#site/member']) return contract(c.modules.spaces && c.spaces && c.spaces.member, MEMBER)
+    /* THE MEMBER CARD'S PRIVATE HALF: the kit's panels whose module the site has on (Working with its own instrument,
+       Read with a library, Bought with the store), then the site's own module, if it names one (spaces.member), turning
+       kit panels off, adding its own and setting the order */
+    if (id === V['#site/member']) {
+      const site = c.modules.spaces && c.spaces && c.spaces.member
+      return `import { kitPanels } from 'platformkit/theme/components/spaces/panels/index.js'\nimport { arrange } from 'platformkit/lib/member-panels.js'\n`
+        + (site ? `import * as M from ${J(from(site))}\n` : 'const M = {}\n')
+        + `export const panels = arrange(kitPanels, ${JSON.stringify(gatesOf(c))}, M)\n`
+    }
     if (id === V['#site/desk']) return contract(deskSourcesOf(c).sources, DESK)
     /*
      * THE THEME'S OWN WORDS, as the fallback under every string the app reads.

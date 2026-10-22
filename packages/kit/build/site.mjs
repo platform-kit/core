@@ -154,9 +154,8 @@ export const INSTRUMENT = { Instrument: 'null', TYPEN: '{}', DOMAINS: '[]', LEVE
  * its own now (lib/rank.js, profileText), out of the reader's own tags.
  */
 export const RECOMMENDATIONS = { signals: '() => null', readerSignals: '() => null', topicByKey: '() => null', invites: '() => false' }
-/* the panels a site puts on the private half of a member's card. The kit cannot know what a business
-   means by what somebody has read or scored, so it draws what the site registered and nothing else;
-   a site that registers none has a card with a public half and no more. */
+/* the member card's private-half panels, under Node: none (the card is drawn in a browser). In the app they are the
+   kit's Working, Read and Bought where their modules are on, then the site's own (vite's #site/member, src/lib/member-panels.js). */
 export const MEMBER = { panels: '[]' }
 /* optional staff Desk sources registered by the site */
 export const DESK = { sources: '[]' }

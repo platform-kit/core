@@ -2244,3 +2244,24 @@ $$;
 REVOKE ALL ON FUNCTION "public"."admin_usage"(integer) FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."admin_usage"(integer) FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."admin_usage"(integer) TO "authenticated", "service_role";
+
+-- A PERSON'S PURCHASES, ONE SOURCE: the member card's Bought panel and the admin's person page read the same rows in the
+-- same order, so the two never disagree. Newest first; a limit, and paid only, for the card; every status for the admin.
+-- No payment provider's reference and nothing of any card. Called only from inside the functions that decide who may
+-- ask (member_bought, admin_person), never by a client.
+CREATE OR REPLACE FUNCTION "public"."person_purchases"("p_user" "uuid", "p_lim" integer DEFAULT NULL::integer, "p_paid_only" boolean DEFAULT false) RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    SET "search_path" TO 'public'
+    AS $$
+  select coalesce((
+    select jsonb_agg(jsonb_build_object('id', p.id, 'sku', p.sku, 'key', p.key, 'variant', p.variant, 'amount', p.amount_total,
+             'currency', p.currency, 'status', p.status, 'at', p.created_at) order by p.created_at desc)
+      from (select * from public.purchases q
+             where q.user_id = p_user and (not p_paid_only or q.status = 'paid')
+             order by q.created_at desc
+             limit case when p_lim is null then null else least(greatest(p_lim, 1), 50) end) p
+  ), '[]'::jsonb)
+$$;
+REVOKE ALL ON FUNCTION "public"."person_purchases"("uuid", integer, boolean) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."person_purchases"("uuid", integer, boolean) FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."person_purchases"("uuid", integer, boolean) TO "service_role";

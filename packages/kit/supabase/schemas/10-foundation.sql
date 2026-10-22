@@ -285,11 +285,8 @@ CREATE OR REPLACE FUNCTION "public"."admin_person"("p_user" "uuid") RETURNS "jso
                  'source', e.source, 'expires_at', e.expires_at) order by e.created_at desc)
           from public.entitlements e where e.user_id = p.id and e.active
             and (e.expires_at is null or e.expires_at > now())), '[]'::jsonb),
-      'purchases', coalesce((
-        select jsonb_agg(jsonb_build_object('id', pu.id, 'sku', pu.sku, 'key', pu.key,
-                 'amount', pu.amount_total, 'currency', pu.currency, 'status', pu.status,
-                 'at', pu.created_at) order by pu.created_at desc)
-          from public.purchases pu where pu.user_id = p.id), '[]'::jsonb),
+      /* the one source the member card's Bought panel reads too (40-commerce.sql) */
+      'purchases', public.person_purchases(p.id),
       'subscription', (
         select jsonb_build_object('sku', s.sku, 'key', s.key, 'status', s.status,
                  'period_end', s.current_period_end, 'next_sku', s.next_sku, 'next_at', s.next_at)

@@ -90,6 +90,22 @@ const kitSchemas = walk(path.join(KIT, 'schemas')).filter((f) => f.endsWith('.sq
 const siteSchemas = walk(path.resolve(ROOT, D.schemas)).filter((f) => f.endsWith('.sql')).sort()
 for (const f of kitSchemas) put('schemas/' + path.basename(f), f)
 for (const f of siteSchemas) put('schemas/site/' + path.basename(f), f)
+/*
+ * A SITE'S SCHEMA REDEFINES NO KIT FUNCTION. The site's files load after the kit's, so a function of the same name in
+ * both is replaced without a word — whichever loads last wins, and the kit's own callers then run the site's version.
+ * When the kit took the member card's three readings in, a site still carrying its own copies would have been exactly
+ * that. A function the site needs is named for the site; one the kit has is the kit's.
+ */
+{
+  const FN = /create\s+(?:or\s+replace\s+)?function\s+(?:"?public"?\.)?"?([a-z_][a-z0-9_]*)"?\s*\(/gi
+  const namesIn = (files) => { const m = new Map(); for (const f of files) for (const x of fs.readFileSync(f, 'utf8').matchAll(FN)) m.set(x[1].toLowerCase(), f); return m }
+  const kitFns = namesIn(kitSchemas)
+  const clash = [...namesIn(siteSchemas)].filter(([n]) => kitFns.has(n))
+  if (clash.length) {
+    console.error('✖ the site\'s schema redefines functions the kit already has — the site\'s file would replace the kit\'s without a word:\n  ' + clash.map(([n, f]) => `public.${n} in ${rel(ROOT, f)} (the kit's is in ${path.basename(kitFns.get(n))})`).join('\n  ') + '\n  Remove the site\'s copy, or give the site\'s function a name of its own.')
+    process.exit(1)
+  }
+}
 /* the rows: the kit's data script, the site's after it */
 const kitRows = fs.readFileSync(path.join(KIT, 'data.sql'), 'utf8')
 const siteRowsFile = path.resolve(ROOT, D.rows)

@@ -1479,6 +1479,54 @@ CREATE OR REPLACE FUNCTION "public"."may_see_member"("p_user" "uuid") RETURNS bo
   select p_user is not null and (p_user = auth.uid() or public.is_staff());
 $$;
 
+-- THE PRIVATE HALF OF A MEMBER'S CARD: what somebody has read, where the instrument placed them, what they have bought.
+-- Each asks may_see_member first (that person, or staff), and a refusal is the same shape as nothing to show, so a peer
+-- learns nothing from the difference. The theme draws one panel for each, where its module is on.
+
+-- What they have read: the books and articles they opened, most recent first, from the events their own browser
+-- recorded. The title travels on the event, so a book renamed or unpublished since still reads as it was.
+CREATE OR REPLACE FUNCTION "public"."member_read"("p_user" "uuid", "p_lim" integer DEFAULT 8) RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  select case when not public.may_see_member(p_user) then '[]'::jsonb else coalesce((
+    select jsonb_agg(x order by x.last_at desc) from (
+      select e.props ->> 'kind' as kind, e.props ->> 'id' as id, e.props ->> 'title' as title,
+             max(e.occurred_at) as last_at, count(*) as times
+        from public.events e
+       where e.user_id = p_user and e.type in ('content_view', 'content_read') and coalesce(e.props ->> 'id', '') <> ''
+       group by 1, 2, 3
+       order by max(e.occurred_at) desc
+       limit least(greatest(coalesce(p_lim, 8), 1), 50)
+    ) x
+  ), '[]'::jsonb) end
+$$;
+
+-- Where they are working: what the instrument's sheet placed them at, as their own browser wrote it to signals — the
+-- level, what is secure, the areas taken. A reading of their own result, never a second scoring of it.
+CREATE OR REPLACE FUNCTION "public"."member_working"("p_user" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  select case when not public.may_see_member(p_user) then null else (
+    select jsonb_build_object('working', s.working, 'secured', s.secured, 'areas', to_jsonb(s.areas), 'at', s.updated_at)
+      from public.signals s where s.user_id = p_user
+  ) end
+$$;
+
+-- What they have bought: their paid purchases, newest first, from the one source the admin reads too.
+CREATE OR REPLACE FUNCTION "public"."member_bought"("p_user" "uuid", "p_lim" integer DEFAULT 8) RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  select case when not public.may_see_member(p_user) then '[]'::jsonb
+              else public.person_purchases(p_user, coalesce(p_lim, 8), true) end
+$$;
+
+GRANT EXECUTE ON FUNCTION "public"."member_read"("uuid", integer) TO "authenticated", "service_role";
+GRANT EXECUTE ON FUNCTION "public"."member_working"("uuid") TO "authenticated", "service_role";
+GRANT EXECUTE ON FUNCTION "public"."member_bought"("uuid", integer) TO "authenticated", "service_role";
+
 -- The public half of a person's card: what the directory already says, and the line they wrote about
 -- themselves. Refused unless BOTH the caller and the subject are in that space — the fence
 -- space_people has, said about a pair rather than a list. Presence is not in it: it is already live

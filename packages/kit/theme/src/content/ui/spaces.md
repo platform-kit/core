@@ -315,6 +315,25 @@ line: A support thread has waited long enough to be escalated.
 
 line: Something happened that this site has no words for yet.
 
+## member-panels
+
+### main
+
+working-title: Where they are working
+working-title-own: Where you are working
+working-secured: secure at {name}
+working-areas: {n} areas taken
+working-none: They have not taken a diagnostic yet.
+working-none-own: You have not taken a diagnostic yet.
+read-title: What they have read
+read-title-own: What you have read
+read-none: They have not opened a book or an article yet.
+read-none-own: You have not opened a book or an article yet.
+bought-title: What they have bought
+bought-title-own: What you have bought
+bought-none: They have bought nothing yet.
+bought-none-own: You have bought nothing yet.
+
 ## call
 
 ### main
