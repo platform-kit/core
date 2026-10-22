@@ -1,0 +1,19 @@
+## MODIFIED Requirements
+
+### Requirement: The commands
+
+`platformkit` SHALL offer `dev` (the site on one held port with its stack and functions), `build`, `deploy` (with the environment checks first), `test` (the kit's tests plus the site's), `migrate` (assemble and apply; `reset`), `functions` (assemble and serve or deploy), `print`, `tts`, `enrich`, `probe` (the phone probe), `spec` (OpenSpec validate over both roots) and `generate` (a site's new module, page, content type, function, test or build step), each taking `--site <path>` and defaulting to the current directory.
+
+#### Scenario: a site with no code
+
+- **WHEN** `platformkit dev` runs in a directory holding only a config and content
+- **THEN** the site serves on the first free port from 5173 with its stack up and its functions served
+
+Verified by: the demo in the kit's CI
+
+#### Scenario: generate is a command
+
+- **WHEN** `platformkit generate` runs with no kind
+- **THEN** it lists the kinds and exits without writing anything
+
+Verified by: `build/generate.test.mjs`
