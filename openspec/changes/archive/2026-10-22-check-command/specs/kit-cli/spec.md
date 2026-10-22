@@ -17,3 +17,10 @@ Verified by: the demo in the kit's CI
 - **THEN** it reports every check passed and exits zero
 
 Verified by: `build/check.test.mjs`
+
+#### Scenario: generate is a command
+
+- **WHEN** `platformkit generate` runs with no kind
+- **THEN** it lists the kinds and exits without writing anything
+
+Verified by: `build/generate.test.mjs`
