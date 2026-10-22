@@ -12,7 +12,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Run several sites side by side in development, each on its own local address (`<site>.localhost`), with a directory page of every local site and a live preview of each.
 - Start a site with or without its database and backend functions; a new dev run cleans up after one that was closed abruptly, and one command stops everything a dev run started.
 - Fetch separately owned sites into the workspace at a pinned version, and move to a newer version on purpose.
-- Use exact published PlatformKit releases, or run PlatformKit straight from its public source.
+- Use exact published PlatformKit releases, or run PlatformKit straight from its public source; PlatformKit is one package with its default theme inside it, so the engine and the theme always match.
 - Add the site's own build steps beside PlatformKit's, list every step with whether it runs and why, and run one step on its own.
 - Generate the site's pages, search data, sitemap, robots file, share images and favicon at build time; publish every public page pre-rendered for search engines and link previews.
 - Check every public page at phone width for content that runs off the screen.
@@ -474,7 +474,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Search by who, where and when.
 - Personal views: threads, unread, mentions, saved, drafts and starred channels.
 - A space home with a greeting, recent activity, upcoming events and members; a community front page across all your spaces; a welcome room for newcomers to read first.
-- Member cards: what the space calls the person, join date, message count, bio, and private panels from the site (such as what they've read or bought) visible only to them and staff.
+- Member cards: what the space calls the person, join date, message count and bio, plus private panels visible only to them and staff: what they're working on, what they've read and what they've bought, each shown when the site has that module on. A site can reword, reorder or drop these panels and add its own.
 - Badges that moderators give, shown beside names.
 - Polls with single or multiple answers, closing, and who answered.
 - Voice notes and file attachments with size limits.
@@ -565,6 +565,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Bots remember within a conversation, across a person's past conversations, or long term, as the site chooses.
 - Limits per answer (steps, spending, time and tool calls) and spending caps per person by minute, hour, day, week and month; a bot stops before going over and says so in words the site can edit.
 - In a room, people see a bot thinking, can stop it, and see why an answer failed.
+- A bot's work survives a crash: if the worker carrying a conversation dies, another picks it up where it stopped, and two workers never answer the same conversation twice.
 - Bots are never offered in encrypted rooms.
 - Several AI providers in order, with fallbacks.
 
