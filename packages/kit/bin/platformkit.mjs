@@ -29,6 +29,8 @@
  *   check       every problem with the machine, the site, its settings and its database, at once
  *               (`--production` checks .env.production as the deploy will; `--db` compares the schema;
  *               `--online` asks each configured service whether it accepts its key)
+ *   generate    a new module, page, content-type, function, test or step, written and registered
+ *               (`<kind> <name>`; `--level core` writes into PlatformKit itself; `--module`, `--dry-run`)
  */
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -243,6 +245,7 @@ switch (cmd) {
   case 'share-images': node('share-images.mjs', rest); break
   case 'probe': node('phone-probe.mjs', rest); break
   case 'check': node('check.mjs', rest); break
+  case 'generate': node('generate.mjs', rest); break
   case 'spec': { if (!fs.existsSync(path.join(site, 'openspec'))) { console.log('no openspec/ here'); break } npx(['openspec', 'validate', '--all', '--strict', ...rest]); break }
   default: console.error(`✖ unknown command "${cmd}"\n`); usage()
 }

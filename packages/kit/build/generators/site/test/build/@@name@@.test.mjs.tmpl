@@ -1,0 +1,11 @@
+/*
+ * @@Title@@ — a check of this site's own, run by `platformkit test` after PlatformKit's (platformkit.config.js
+ * build.tests). Print a FAIL line and exit 1 for each thing that is wrong.
+ */
+let pass = 0, fail = 0
+const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+
+ok('@@title@@ holds', true)
+
+console.log(fail ? `@@name@@: ${fail} failed, ${pass} passed` : `@@name@@: all ${pass} checks passed`)
+process.exit(fail ? 1 : 0)

@@ -5,6 +5,9 @@ order: 43
 sources:
   [
     packages/kit/build/site-module.test.mjs,
+    packages/kit/build/generate.mjs,
+    packages/kit/build/generate.test.mjs,
+    packages/kit/build/generators,
     packages/kit/vite/index.mjs,
     packages/kit/src/lib/modules.js,
     packages/kit/src/lib/router.js,
@@ -148,6 +151,19 @@ its route answered and prerendered, its step run in its phase, its variable aske
 without editing a single file of the kit or the theme.
 
 `sites/demo` is the worked example, and `build/site-module.test.mjs` holds it to all of it Northlight Press — `sites/demo` — adds `stockists`, the shops that carry its books: a page, a build step that reads `content/stockists`, an admin section and a setting for the wholesaler, none of which the kit has ever heard of.
+
+**Start from the generator.** `platformkit generate <kind> <name>` writes a new module, page, content type, backend function, test or build step in exactly this shape and registers it in `platformkit.config.js`, inserting each entry where it belongs and leaving every comment and line already there untouched:
+
+```sh
+npx platformkit generate module gift-cards
+npx platformkit generate page gift-cards --module gift-cards   # its route, owned by the module
+npx platformkit generate content-type recipes                  # a model in admin.models
+npx platformkit generate function hello-world                  # db/functions/hello-world, with a test that calls it
+npx platformkit generate test sanity
+npx platformkit generate step tally
+```
+
+It writes into the site by default. `--level core` writes the same kinds into PlatformKit itself, in its own form (the module list, the steps' and models' indexes, the test list, `App.vue` for a page, and a docs page naming every new file), and is refused unless PlatformKit is a checkout rather than an installed package. It never overwrites: a file that exists or a module name that is taken writes nothing, and `--dry-run` lists what it would do. A site replaces the templates for a kind by putting its own in `generators/<kind>/` (files under `packages/kit/build/generators/site/<kind>/`, with `@@name@@`, `@@Name@@` and `@@title@@` filled in).
 
 **The manifest**, anywhere the config points at:
 

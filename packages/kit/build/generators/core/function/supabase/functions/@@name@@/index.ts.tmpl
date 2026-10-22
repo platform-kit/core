@@ -1,0 +1,10 @@
+/*
+ * @@Title@@ — one of PlatformKit's backend functions, owned by the @@module@@ module at /functions/v1/@@name@@.
+ * It answers a signed request; replace the body with what it does.
+ */
+import { cors, json } from '../_shared/lib.ts'
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  return json({ ok: true, function: '@@name@@' })
+})

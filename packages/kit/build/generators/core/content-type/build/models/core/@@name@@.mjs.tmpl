@@ -1,0 +1,17 @@
+/*
+ * @@Title@@ — one of PlatformKit's content types, edited in every site's admin (build/models/core/index.mjs).
+ * Each record is a file in a site's content/@@name@@/ (or a row, in cloud mode). Add fields as the type needs them.
+ */
+import { z } from 'zod/v4'
+
+export default {
+  key: '@@name@@',
+  name: '@@Title@@',
+  dir: 'content/@@name@@',
+  title: 'title',
+  body: true,
+  fields: z.object({
+    title: z.string().min(1).meta({ label: 'Title', grid: true }),
+    published: z.boolean().default(true).meta({ label: 'Published' }),
+  }),
+}

@@ -178,7 +178,8 @@ export function report(groups) {
   return { text: lines.join('\n'), ok: !fails.length }
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+/* run directly: compared as real paths, since /var on macOS is /private/var and a symlinked path would never match */
+if (process.argv[1] && fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url))) {
   const a = process.argv.slice(2)
   const groups = await runChecks({ production: a.includes('--production'), db: a.includes('--db'), online: a.includes('--online') })
   const { text, ok } = report(groups)

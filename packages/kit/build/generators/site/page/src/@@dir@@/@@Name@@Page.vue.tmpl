@@ -1,0 +1,20 @@
+<!--
+  @@Title@@ — a page of this site's own at /@@name@@ (platformkit.config.js routes).
+  Its words are in content/app/ui/@@name@@.md, like every other reader-facing string.
+-->
+<template>
+  <SiteLayout>
+    <div class="pageshell">
+      <h1>{{ W.head.title }}</h1>
+      <p>{{ W.head.sub }}</p>
+    </div>
+  </SiteLayout>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import { us } from 'platformkit/lib/content.js'
+import SiteLayout from 'platformkit/theme/layouts/SiteLayout.vue'
+
+const W = computed(() => us('@@name@@').page)
+</script>

@@ -1,0 +1,11 @@
+/*
+ * @@Title@@ — one of PlatformKit's build steps (build/steps/index.mjs), run in its phase beside a site's and a theme's
+ * own. `platformkit steps` lists it; `platformkit run @@name@@` runs it alone.
+ */
+export default {
+  key: '@@name@@',
+  title: '@@Title@@',
+  phase: 'prepare',
+  inputs: [],
+  run: async () => {},
+}

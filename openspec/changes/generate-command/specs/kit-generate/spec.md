@@ -7,14 +7,14 @@
 #### Scenario: a new module
 
 - **WHEN** `platformkit generate module stockists` runs in a site
-- **THEN** a manifest answering all three deployment shapes is written, `modules.stockists: true` is added to the config, and the site builds with the module on
+- **THEN** a manifest answering all three deployment shapes is written, `modules.stockists: true` is added to the config, and the site loads with the module on
 
 Verified by: `build/generate.test.mjs`, generating into a copy of `sites/demo`
 
 #### Scenario: every kind passes the checks as written
 
 - **WHEN** each kind is generated into a copy of the demo
-- **THEN** the build and the structural checks pass on the copy with nothing edited by hand
+- **THEN** the config loads with each piece registered, the page compiles, the steps pass the step check, the function is assembled and the test passes, with nothing edited by hand
 
 Verified by: `build/generate.test.mjs`
 

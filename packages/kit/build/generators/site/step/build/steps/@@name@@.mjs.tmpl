@@ -1,0 +1,11 @@
+/*
+ * @@Title@@ — a build step of this site's own (platformkit.config.js build.steps), run in its phase beside
+ * PlatformKit's. `platformkit steps` lists it; `platformkit run @@name@@` runs it alone.
+ */
+export default {
+  key: '@@name@@',
+  title: '@@Title@@',
+  phase: 'prepare',
+  inputs: [],
+  run: async () => {},
+}

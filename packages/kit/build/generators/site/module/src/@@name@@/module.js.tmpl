@@ -1,0 +1,14 @@
+/*
+ * @@Title@@ — this site's own module. Its switch is `modules.@@name@@` in platformkit.config.js, and
+ * switching it off takes away everything it owns. Add what it owns as you build it: its routes, build
+ * steps, admin sections and the settings it needs (`owns.env`), so the deploy asks for them.
+ */
+export default {
+  key: '@@name@@',
+  what: '@@title@@',
+  needs: 'nothing outside the checkout',
+  static: true,
+  git: true,
+  cloud: true,
+  owns: {},
+}

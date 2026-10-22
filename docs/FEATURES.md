@@ -14,6 +14,8 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Fetch separately owned sites into the workspace at a pinned version, and move to a newer version on purpose.
 - Use exact published PlatformKit releases, or run PlatformKit straight from its public source; PlatformKit is one package with its default theme inside it, so the engine and the theme always match.
 - Add the site's own build steps beside PlatformKit's, list every step with whether it runs and why, and run one step on its own.
+- Generate a new module, page, content type, backend function, test or build step with one command, written in the shape the checks accept and registered in the site's config without disturbing it; the same command adds them to PlatformKit itself when working on PlatformKit.
+- Check a machine and a site in one command: every missing tool, setting or database problem listed at once, each with its fix, and production settings checked exactly as the deploy will.
 - Generate the site's pages, search data, sitemap, robots file, share images and favicon at build time; publish every public page pre-rendered for search engines and link previews.
 - Check every public page at phone width for content that runs off the screen.
 - Run the site's own tests and specifications alongside PlatformKit's checks, including a separate check of each deployment shape.

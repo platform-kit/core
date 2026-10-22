@@ -1,0 +1,11 @@
+  {
+    key: '@@name@@',
+    name: '@@Title@@',
+    dir: 'content/@@name@@',
+    title: 'title',
+    body: true,
+    fields: z.object({
+      title: z.string().min(1).meta({ label: 'Title', grid: true }),
+      published: z.boolean().default(true).meta({ label: 'Published' }),
+    }),
+  },

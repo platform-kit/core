@@ -1,0 +1,11 @@
+/*
+ * @@Title@@ — the function at functions/v1/@@name@@ answers a signed request. Runs against the stack
+ * (`platformkit test --e2e`); with no stack it says so and stops.
+ */
+import { requireStack } from './test-stack.mjs'
+
+const S = requireStack('@@name@@')
+const r = await fetch(`${S.functions}/@@name@@`, { method: 'POST', headers: { authorization: `Bearer ${S.anon}`, 'content-type': 'application/json' }, body: '{}' })
+const body = await r.json().catch(() => null)
+if (!r.ok || !body || body.ok !== true) { console.log(`  FAIL  @@name@@ answered ${r.status}: ${JSON.stringify(body)}`); process.exit(1) }
+console.log('@@name@@: all 1 checks passed')

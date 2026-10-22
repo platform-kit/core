@@ -1,0 +1,20 @@
+<!--
+  @@Title@@ — one of PlatformKit's pages, at /@@name@@ (wired in App.vue).
+  Its words are in the theme's content/ui/@@name@@.md; a site rewords them in its own strings.
+-->
+<template>
+  <SiteLayout>
+    <div class="pageshell">
+      <h1>{{ W.head.title }}</h1>
+      <p>{{ W.head.sub }}</p>
+    </div>
+  </SiteLayout>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import { us } from 'platformkit/lib/content.js'
+import SiteLayout from '../layouts/SiteLayout.vue'
+
+const W = computed(() => us('@@name@@').page)
+</script>
