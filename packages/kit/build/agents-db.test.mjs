@@ -84,8 +84,15 @@ const settle = async (id, times = 8) => {
     await turn(id)
     await wait(120)
   }
-  return await get(id)
+  /* a run another worker holds is not taken from it (agent-run's claim), so the last word is waiting for it to end */
+  const until = Date.now() + 15000
+  let r = await get(id)
+  while (r && !['done', 'failed', 'cancelled'].includes(r.status) && Date.now() < until) { await wait(250); r = await get(id) }
+  return r
 }
+/* a run the test steps by hand: started held, so the insert's wake cannot carry it on, then let go for the test's own turn */
+const HELD = () => ({ lease_until: new Date(Date.now() + 600000).toISOString() })
+const letGo = (id) => db.from('agent_runs').update({ lease_until: null }).eq('id', id)
 
 const made = []
 try {
@@ -188,8 +195,9 @@ try {
     const run = await start({
       messages: [{ role: 'user', content: 'where is my order?' }],
       mock: [{ tool: 'get_events', args: {} }, { say: 'Answered after a resume.' }],
-    })
+    }, HELD())
     made.push(run.id)
+    await letGo(run.id)
     await turn(run.id, 1)                    /* ONE step, then we pretend the worker vanished */
     const half = await get(run.id)
     const before = (await stepsOf(run.id)).length
@@ -199,7 +207,7 @@ try {
     await db.from('agent_runs').update({ lease_until: new Date(Date.now() - 1000).toISOString(), worker: 'died' }).eq('id', run.id)
     const done = await settle(run.id)
     ok('…and a stale lease is picked up by somebody else and finished',
-      done.status === 'done' && /resume/i.test(done.said || ''), JSON.stringify({ s: done.status, said: done.said }))
+      done.status === 'done' && /resume/i.test(done.said || ''), JSON.stringify({ s: done.status, said: done.said, error: done.error, worker: done.worker, lease: done.lease_until, step: done.step, at: new Date().toISOString(), steps: (await stepsOf(run.id)).map((s) => s.n + s.kind) }))
     ok('…keeping every step the dead worker had taken', (await stepsOf(run.id)).length > before)
   }
 
@@ -210,8 +218,9 @@ try {
     const run = await start({
       messages: [{ role: 'user', content: 'refund my order' }],
       mock: [{ tool: 'raise_ticket', args: { title: 'Refund' } }, { say: 'Done.' }],
-    })
+    }, HELD())
     made.push(run.id)
+    await letGo(run.id)
     await turn(run.id, 1)
     const asked = await stepsOf(run.id)
     ok('the model asked for the tool', asked.some((s) => s.kind === 'model'), asked.map((s) => s.kind).join(','))
@@ -219,7 +228,7 @@ try {
     ok('anybody may call it off', said && (said.ok || said.error === 'not-yours'), JSON.stringify(said))
     await db.from('agent_runs').update({ cancel_at: new Date().toISOString(), lease_until: null }).eq('id', run.id)
     const done = await settle(run.id)
-    ok('…and the run stops', done.status === 'cancelled', JSON.stringify({ s: done.status }))
+    ok('…and the run stops', done.status === 'cancelled', JSON.stringify({ s: done.status, error: done.error }))
     const after = await stepsOf(run.id)
     ok('…without ever running the tool it had asked for',
       !after.some((s) => s.kind === 'tool'), after.map((s) => s.kind + ':' + (s.name || '')).join(','))

@@ -52,3 +52,18 @@ export async function browserPath() {
   const at = process.env.PLAYWRIGHT_CHROMIUM_PATH || chromium.executablePath()
   return { at, there: !!at && (await import('node:fs')).existsSync(at) }
 }
+
+/*
+ * A FIELD FILLED AND HELD. A form drawn again after it was filled (the auth panel remounts when the guest session
+ * lands, later on a loaded machine) comes back empty, and a single fill then waits on a value that never arrives —
+ * so the field is filled again until it holds both values, the one asked for in each, or WAIT runs out.
+ */
+export async function fillHeld(page, fields) {
+  const until = Date.now() + WAIT
+  for (;;) {
+    for (const [selector, value] of fields) await page.locator(selector).first().fill(value)
+    const held = await page.waitForFunction((fs) => fs.every(([s, v]) => document.querySelector(s)?.value === v), fields, { timeout: 2000 }).then(() => true, () => false)
+    if (held) return
+    if (Date.now() > until) throw new Error(`the form never held ${fields.map(([s]) => s).join(' and ')}`)
+  }
+}

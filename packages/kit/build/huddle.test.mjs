@@ -15,7 +15,7 @@ import { iceServers, hmacCredential } from '../supabase/functions/_shared/video/
 import { mesh, MESH_MAX, readToken } from '../supabase/functions/_shared/video/mesh.js'
 import { videoIdOf, VIDEO_IDS } from '../supabase/functions/_shared/video/choose.js'
 import { shouldOffer, shouldAnswer, livePeers, roomFull, tiles, layoutOf, stateOf, reachable } from '../src/lib/call/rules.js'
-import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
+import { context as browserContext, fillHeld } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -190,11 +190,8 @@ if (process.env.HUDDLE_LIVE === '0' || !appUp) {
     await page.waitForFunction(() => !!window.DLauth, null, { timeout: 25000 })
     await page.evaluate(() => window.DLauth.open({}))
     await page.waitForSelector('input[type=email]')
-    /* each value taken by Vue before the next is typed: filled back to back under load, the form went up half-empty */
-    await page.fill('input[type=email]', who)
-    await page.waitForFunction((v) => document.querySelector('input[type=email]')?.value === v, who)
-    await page.fill('input[type=password]', 'password123')
-    await page.waitForFunction(() => document.querySelector('input[type=password]')?.value === 'password123')
+    /* both values held before the form goes: under load it went up half-empty (build/browser.mjs) */
+    await fillHeld(page, [['input[type=email]', who], ['input[type=password]', 'password123']])
     await page.keyboard.press('Enter')
     await page.waitForFunction(() => Object.keys(localStorage).some((k) => k.includes('auth-token')), null, { timeout: 25000 })
     /* the room by its own address: a space opens on its home, so clicking about to find a room is

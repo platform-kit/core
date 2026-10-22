@@ -310,7 +310,7 @@ const toolStep = (name, result, call = 'c1') => ({ kind: 'tool', name, response:
   ok('billed agent calls settle through their reservation rather than legacy usage RPCs',
     think.includes('usageAuthorization.settle(') && !/usage_(?:admit|record)\(/.test(think))
   ok('the verified offer and reader stay attached to the reservation',
-    think.includes('offerKey: bot.billing') && think.includes('userId: usageUserId'))
+    /offerKey = operation\?\.offerKey \|\| bot\.billing/.test(think) && think.includes('userId: usageUserId'))
   const agentSql = readFileSync(join(HERE, '..', 'supabase', 'schemas', '96-agents.sql'), 'utf8')
   const summonSql = agentSql.slice(agentSql.indexOf('"public"."agent_summon"'), agentSql.indexOf('$$;', agentSql.indexOf('"public"."agent_summon"')))
   ok('agent_summon keeps the per-person ceiling and defers billable authorization to the worker',

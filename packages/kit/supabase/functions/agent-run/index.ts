@@ -120,13 +120,15 @@ Deno.serve(async (req) => {
    * Holding the run by its id is the same update without the where-clause that excludes us, so it
    * both re-reads the row (the spend, a cancel that has landed) and pushes the lease out.
    */
-  let run = await claim(body.run)
+  /* this invocation's own name: an isolate serves several requests, and a run is held by one of them */
+  const me = WORKER + '.' + crypto.randomUUID().slice(0, 6)
+  let run = await claim(me, body.run)
   while (run) {
     const more = await step(run)
     took.push(`${run.bot}:${run.id.slice(0, 8)}`)
     if (took.length >= most || Date.now() >= until) break
     /* finished: take the next one waiting, if there is one. Still going: stay with this one. */
-    run = more ? await claim(run.id) : await claim()
+    run = more ? await claim(me, run.id) : await claim(me)
   }
 
   /*
@@ -210,14 +212,17 @@ async function channelAt(path: string) {
 
 /* ------------------------------------------------------------------ one run, one step */
 
-async function claim(id?: string) {
+async function claim(me: string, id?: string) {
   if (id) {
+    /* a run named by id is taken only when nobody else holds it: the insert's wake and a direct call both name it, and
+       two workers on one run take the same step twice. Its own holder renews it, which is how a worker stays with it */
+    const now = new Date().toISOString()
     const { data } = await admin.from('agent_runs').update({
-      status: 'running', worker: WORKER, lease_until: new Date(Date.now() + LEASE * 1000).toISOString(), updated_at: new Date().toISOString(),
-    }).eq('id', id).in('status', ['queued', 'running']).select().maybeSingle()
+      status: 'running', worker: me, lease_until: new Date(Date.now() + LEASE * 1000).toISOString(), updated_at: now,
+    }).eq('id', id).in('status', ['queued', 'running']).or(`lease_until.is.null,lease_until.lt.${now},worker.eq.${me}`).select().maybeSingle()
     return data || null
   }
-  const { data } = await admin.rpc('agent_claim', { p_worker: WORKER, p_lease_seconds: LEASE })
+  const { data } = await admin.rpc('agent_claim', { p_worker: me, p_lease_seconds: LEASE })
   return data || null
 }
 
@@ -566,7 +571,7 @@ async function accountInferenceAttempts({
 async function think(run: any, bot: any, taken: any[], messages: any[]) {
   const tools = toolsFor({ bot, declared: bot.declared || {}, surface: run.surface, opened: openedSkills(taken), allowed: run.allowed })
   const began = Date.now()
-  let modelStepWritten = false
+  let modelStepWritten = false, superseded = false
   let usageAuthorization: any = null
   let inferenceAccounted = false
   let operation: any = null
@@ -699,13 +704,16 @@ async function think(run: any, bot: any, taken: any[], messages: any[]) {
       response: { message: out.message },
       tokens_in: out.usage.in, tokens_out: out.usage.out, cost_cents: cost, ms: Date.now() - began,
     }).select('id').single()
+    /* this step already recorded: another worker took the run when this one's lease ran out, and it carries on — so
+       this worker steps aside, and neither fails the run nor writes a second step */
+    if (stepError?.code === '23505') { superseded = true; throw new Error(`run ${run.id} step ${taken.length} was taken by another worker`) }
     if (stepError || !modelStep?.id) throw new Error(`completed model step could not be recorded: ${stepError?.message ?? 'missing step id'}`)
     modelStepWritten = true
     const { error: runError } = await admin.from('agent_runs').update({
-      step: taken.length + 1, spent_cents: Number(run.spent_cents || 0) + cost,
-      lease_until: new Date(Date.now() + LEASE * 1000).toISOString(), updated_at: new Date().toISOString(),
+      step: taken.length + 1, spent_cents: Number(run.spent_cents || 0) + cost, updated_at: new Date().toISOString(),
     }).eq('id', run.id)
     if (runError) throw new Error(`completed model cost could not be added to the run: ${runError.message}`)
+    await renew(run)
     if (usageOffer && usageAuthorization?.admitted && !SITE_INFERENCE) {
       const costMicros = Math.round(cost * 10_000)
       if (!Number.isSafeInteger(costMicros)) throw new Error('measured model cost exceeds the usage ledger range')
@@ -746,6 +754,8 @@ async function think(run: any, bot: any, taken: any[], messages: any[]) {
       try { await usageAuthorization.release() }
       catch (releaseError) { console.error(`agent usage reservation for run ${run.id} could not be released`, releaseError) }
     }
+    /* …and lets go of the lease it took, so whoever carries the run on is not kept waiting out ninety seconds */
+    if (superseded) { await admin.from('agent_runs').update({ lease_until: null }).eq('id', run.id).eq('worker', run.worker); return false }
     if (!modelStepWritten) await admin.from('agent_steps').insert({
       run_id: run.id, n: taken.length, kind: 'model', name: bot.model || null,
       error: String((e as Error).message || e), ms: Date.now() - began,
@@ -819,10 +829,15 @@ async function use(run: any, bot: any, taken: any[], what: any) {
     request: { args: what.args }, response: { call: what.call, result: error ? { error } : result },
     error, ms: Date.now() - began,
   })
-  await admin.from('agent_runs').update({
-    step: taken.length + 1, lease_until: new Date(Date.now() + LEASE * 1000).toISOString(), updated_at: new Date().toISOString(),
-  }).eq('id', run.id)
+  await admin.from('agent_runs').update({ step: taken.length + 1, updated_at: new Date().toISOString() }).eq('id', run.id)
+  await renew(run)
   return true
+}
+
+/* the lease pushed out by its holder only: a worker whose lease ran out and was taken must not hand the run a fresh
+   ninety seconds under somebody else's name, which leaves it held by nobody who is working on it */
+async function renew(run: any) {
+  await admin.from('agent_runs').update({ lease_until: new Date(Date.now() + LEASE * 1000).toISOString() }).eq('id', run.id).eq('worker', run.worker)
 }
 
 /* ------------------------------------------------------------------ who a tool answers for */

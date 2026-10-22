@@ -29,7 +29,7 @@
  *   node packages/kit/build/signed-in-as.test.mjs
  */
 import { execSync } from 'node:child_process'
-import { launch, context as browserContext, WAIT } from './browser.mjs'
+import { launch, context as browserContext, WAIT, fillHeld } from './browser.mjs'
 import { statusOf, leave, stackOf } from './test-stack.mjs'
 
 let pass = 0, fail = 0
@@ -65,12 +65,8 @@ const ready = async (page, path) => {
 const signIn = async (page, email) => {
   await page.evaluate(() => window.DLauth && window.DLauth.open({}))
   await page.locator('input[type="password"]').first().waitFor({ state: 'visible', timeout: WAIT })
-  /* each value taken by Vue before the next is typed, as interaction.test.mjs does: filled back to back under load, the
-     form went up with the email still empty and the password field never left (a minute's wait, then a failure) */
-  await page.locator('input[type="email"]').first().fill(email)
-  await page.waitForFunction((v) => document.querySelector('input[type="email"]')?.value === v, email, { timeout: WAIT })
-  await page.locator('input[type="password"]').first().fill('password123')
-  await page.waitForFunction(() => document.querySelector('input[type="password"]')?.value === 'password123', null, { timeout: WAIT })
+  /* both values held before the form goes: under load it went up half-empty, or was drawn again empty (build/browser.mjs) */
+  await fillHeld(page, [['input[type="email"]', email], ['input[type="password"]', 'password123']])
   await page.keyboard.press('Enter')
   await page.waitForFunction(() => !document.querySelector('input[type="password"]'), { timeout: WAIT })
 }

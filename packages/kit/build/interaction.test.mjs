@@ -52,7 +52,7 @@ const BASE = argOf('--url', process.env.INTERACTION_URL || stackOf()?.app || '')
  */
 /* the one number, from build/browser.mjs — which also sets it as the floor on every context,
    so a call this file forgot to give a budget no longer runs at Playwright's 30 */
-import { WAIT } from './browser.mjs'
+import { WAIT, fillHeld } from './browser.mjs'
 import { statusOf, leave, stackOf, moduleOn, siteUnderTest, notHere } from './test-stack.mjs'
 try { const r = await fetch(BASE, { signal: AbortSignal.timeout(4000) }); if (!r.ok) throw new Error(String(r.status)) }
 catch { skip(`nothing is serving the site at ${BASE} (npm run dev)`) }
@@ -141,11 +141,8 @@ const signIn = async (page, clear, email, password = 'password123') => {
   const emailField = page.locator('.au-form input[type="email"]').first()
   const passwordField = page.locator('.au-form input[type="password"]').first()
   await passwordField.waitFor({ state: 'visible', timeout: 30000 })
-  await emailField.fill(email)
-  /* Let Vue commit the first v-model update before filling the next control. */
-  await page.waitForFunction((value) => document.querySelector('.au-form input[type="email"]')?.value === value, email, { timeout: WAIT })
-  await passwordField.fill(password)
-  await page.waitForFunction((value) => document.querySelector('.au-form input[type="password"]')?.value === value, password, { timeout: WAIT })
+  await emailField.waitFor({ state: 'visible', timeout: WAIT })
+  await fillHeld(page, [['.au-form input[type="email"]', email], ['.au-form input[type="password"]', password]])
   await page.locator('.au-form button[type="submit"]').click()
   /* The account menu is the user-visible proof that the session arrived. */
   await page.locator('.siteavatar').first().waitFor({ state: 'visible', timeout: WAIT })
@@ -296,7 +293,7 @@ else await act('a reader signs in and answers a diagnostic screen', async ({ pag
   await go(page, '/', clear)
   await signIn(page, clear, 'member@example.com')
   await go(page, '/app/quiz/teachings', clear)
-  const begin = page.locator('button:not([aria-label]):visible').first()
+  const begin = page.locator('button.qopt:visible').first()   /* the round's own choice: the community's sidebar comes first on the page */
   await begin.waitFor({ state: 'visible', timeout: 30000 }).catch(() => { throw new Error('the round did not open') })
   await begin.click({ force: true })
   const field = page.locator('input.qwordin:visible, input.qblankin:visible, textarea:visible').first()
@@ -531,7 +528,7 @@ else await act('an unconfirmed reader can still take the quiz', async ({ page, c
     if (check && check.email_verified_at) throw new Error('signing in confirmed the address by itself — a password session must not')
 
     await go(page, '/app/quiz/teachings', clear, '.pageshell')
-    const begin = page.locator('button:not([aria-label]):visible').first()
+    const begin = page.locator('button.qopt:visible').first()   /* the round's own choice: the community's sidebar comes first on the page */
     await begin.waitFor({ state: 'visible', timeout: WAIT }).catch(() => { throw new Error('an unconfirmed reader cannot start a round — they are stopped at the worst moment') })
     await begin.click({ force: true })
     const field = page.locator('input.qwordin:visible, input.qblankin:visible, textarea:visible').first()
