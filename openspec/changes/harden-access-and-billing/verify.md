@@ -55,3 +55,17 @@ Every finding in `review.md` is marked there as fixed, proposed separately, or n
 - **Local database:** the demo's dev database was months behind its schema (F9) and was reset to the declaration, with the seed steps re-run. The dev servers were restarted afterwards.
 - **Hosted address header:** the limits trust `cf-connecting-ip`, which Cloudflare sets in front of a hosted Supabase project. On a host without Cloudflare, they fall back to `x-real-ip` and then the last `x-forwarded-for` entry. Watch the counts on the first deploy.
 - **Downstream site:** a downstream site's own `.env` ships a `VITE_` password hash that doesn't match its comment. That's the site's to fix, not PlatformKit's.
+
+## Re-proved under the end-to-end run (2026-10-21)
+
+When this was first verified, the stack-backed tests below skipped their live parts without failing whenever no stack answered, so a pass did not prove they had run. They were re-run against a fresh demo stack built by `platformkit test --e2e`, where a skip fails:
+
+| Test | Result |
+| --- | --- |
+| `ownership.test.mjs` | all 75 checks passed |
+| `roles.test.mjs` | all 53 checks passed |
+| `checkout-tamper.test.mjs` | all 14 checks passed (5 test-mode sessions made and expired) |
+| `abuse-limits.test.mjs` | all 13 checks passed |
+| `webhook-doors.test.mjs` | 39 passed, 0 failed, every signed check run with the stack's own secrets |
+
+Every scenario above still stands. One correction to the test, not the code: `ownership.test.mjs` recognised a guard only from a hand-kept list of names, and now derives the guards from the database.

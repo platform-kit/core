@@ -27,3 +27,15 @@ The test was run against a server forced to send every chapter: it failed on the
 - **Local database:** the declaration drops the old "anyone reads published rows" policy. The running local demo database had it dropped by hand to test; any other running database gets it at its next `platformkit migrate`.
 - **Unrelated, pre-existing:** `store.test.mjs` passes 12 of 15. The three failures are `42P10` from the local Supabase Storage service on any upload with upsert, reproduced with a plain upload outside this change. The edited scenario (no visitor reads the content table) passes.
 - **Unrelated, noticed:** the books docs say the store's unlock "opens it whole"; the reader lifts a buyer to paying for that book, which is the whole book only when no paid allowance is set.
+
+## Re-proved under the end-to-end run (2026-10-21)
+
+When this was first verified, `reader-content.test.mjs` and the stack parts of `store.test.mjs` skipped without failing whenever no stack answered. They were re-run against a fresh demo stack built by `platformkit test --e2e`, where a skip fails:
+
+| Test | Result |
+| --- | --- |
+| `reader-content.test.mjs` | all 17 checks passed. It now takes the site's own first gated book and that book's guest and signed-in allowances, rather than one book and an allowance of none. |
+| `gated-content.test.mjs` | all 15 checks passed |
+| `store.test.mjs` | 16 of 16 passed: the three Storage upload failures noted above (`42P10`) were a stale local database, gone on a stack built from the files |
+
+Every scenario above still stands.

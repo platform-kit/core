@@ -194,7 +194,7 @@ try {
     const half = await get(run.id)
     const before = (await stepsOf(run.id)).length
     ok('a run in flight is held by a worker', !!half.lease_until && half.status === 'running',
-      JSON.stringify({ s: half.status, lease: half.lease_until }))
+      JSON.stringify({ s: half.status, lease: half.lease_until, error: half.error }))
     /* the worker is gone and its lease is stale — which is exactly what a crash looks like */
     await db.from('agent_runs').update({ lease_until: new Date(Date.now() - 1000).toISOString(), worker: 'died' }).eq('id', run.id)
     const done = await settle(run.id)
