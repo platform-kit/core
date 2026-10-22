@@ -4,6 +4,7 @@ description: What platformkit test runs, the phone probe, screenshots before rep
 order: 52
 sources:
   [
+    packages/kit/build/one-package.test.mjs,
     packages/kit/build/browser.mjs,
     packages/kit/build/e2e.mjs,
     packages/kit/build/test-stack.mjs,

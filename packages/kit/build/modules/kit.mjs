@@ -280,7 +280,10 @@ export const MODULES = [
   {
     key: 'print', what: 'books in print: editions, covers, quotes, orders', needs: 'an order has nowhere to go and no printer to go to',
     static: false, git: true, cloud: true,
-    owns: { steps: ['lulu-webhook', 'print-type', 'print'], env: ['LULU_CLIENT_KEY', 'LULU_CLIENT_SECRET', 'MIXAM_USER', 'MIXAM_PASS', 'BOOKVAULT_API_KEY', 'PRINT_MOCK'], },
+    owns: { steps: ['lulu-webhook', 'print-type', 'print'], env: ['LULU_CLIENT_KEY', 'LULU_CLIENT_SECRET', 'MIXAM_USER', 'MIXAM_PASS', 'BOOKVAULT_API_KEY', 'PRINT_MOCK'],
+      /* a set is a job that outlives its request: the rows, their lease, and the sweep that picks up a lapsed one */
+      schema: ['44-print-jobs.sql'],
+      cron: [{ name: 'print-jobs', schedule: '* * * * *', command: 'select public.run_print_jobs();' }], },
   },
   /*
    * SPOKEN BOOKS WORK IN THE CLOUD, and this claim was wrong before.

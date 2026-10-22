@@ -140,6 +140,32 @@ const pageCount = (pdf: Uint8Array) => {
   return m ? Math.max(...m.map((x) => Number(x.replace(/\D/g, '')))) : 0
 }
 
+/*
+ * A SET IS A JOB (print_jobs, 44-print-jobs.sql): a row per request, leased to one worker, with what it has finished. A
+ * call cut off part-way — two seconds of CPU, and a cold worker spends most of them loading the compiler — leaves its
+ * lease to lapse, and the sweep asks again with { job }: the next worker takes back the interior and the covers already
+ * in the bucket for this edition and carries on. Between steps it looks for a cancel, and stops.
+ */
+class Cancelled extends Error {}
+class Refused extends Error { constructor(message: string, public status = 400) { super(message) } }
+const LEASE_SECONDS = 150
+function jobOf(row: Record<string, any>) {
+  const job = {
+    id: row.id as string,
+    done: { ...(row.done ?? {}) } as Record<string, unknown>,
+    /* what is finished, written as soon as it is, with the lease renewed: a worker still working keeps the job */
+    async keep(patch: Record<string, unknown>) {
+      job.done = { ...job.done, ...patch }
+      await admin.from('print_jobs').update({ done: job.done, updated_at: new Date().toISOString(), lease_until: new Date(Date.now() + LEASE_SECONDS * 1000).toISOString() }).eq('id', job.id)
+    },
+    async stopIfCancelled() {
+      const { data } = await admin.from('print_jobs').select('cancel_at').eq('id', job.id).maybeSingle()
+      if (data?.cancel_at) throw new Cancelled('cancelled')
+    },
+  }
+  return job
+}
+
 Deno.serve(async (req) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'POST' }, 405)
@@ -159,6 +185,21 @@ Deno.serve(async (req) => {
 
   let call: Record<string, unknown> = {}
   try { call = await req.json() } catch { return json({ error: 'bad json' }, 400) }
+
+  /* A NAMED JOB: the sweep carrying one on, an administrator asking where it is, or cancelling it */
+  let row: Record<string, any> | null = null
+  if (call.job) {
+    const { data } = await admin.from('print_jobs').select('*').eq('id', String(call.job)).maybeSingle()
+    if (!data) return json({ error: 'no such job' }, 404)
+    row = data
+    if (call.cancel) {
+      await admin.from('print_jobs').update({ cancel_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', data.id).in('state', ['queued', 'running'])
+      return json({ job: data.id, cancelling: true })
+    }
+    if (data.state === 'done') return json({ ...(data.result ?? {}), job: data.id, state: data.state })
+    if (data.state === 'failed' || data.state === 'cancelled') return json({ error: data.error ?? data.state, job: data.id, state: data.state, book: data.book, contents: data.contents }, data.state === 'failed' ? 500 : 200)
+    call = { ...(data.request ?? {}), book: data.book, contents: data.contents }
+  }
   const slug = String(call.book ?? '')
   const contents = String(call.contents ?? 'parts')
   /* a draft: the files and the quotes, nothing bought and nothing published (see below) */
@@ -232,7 +273,30 @@ Deno.serve(async (req) => {
     }
   }
 
+  /* a cancel by book: whatever set of it is open */
+  if (!row && call.cancel) {
+    const { data } = await admin.from('print_jobs').update({ cancel_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq('book', slug).eq('contents', contents).in('state', ['queued', 'running']).select('id')
+    return json({ cancelling: (data ?? []).map((r: any) => r.id) })
+  }
+  /* a new set opens a job, or joins the one already open for this book and edition */
+  if (!row) {
+    const request = { draft, typ: !!call.typ, parts: !!call.parts }
+    const { data: made } = await admin.from('print_jobs').insert({ book: slug, contents, request, requested_by: user ? user.id : null }).select('*').maybeSingle()
+    row = made ?? (await admin.from('print_jobs').select('*').eq('book', slug).eq('contents', contents).in('state', ['queued', 'running']).maybeSingle()).data
+    if (!row) return json({ error: 'print: the job could not be opened', book: slug, contents }, 500)
+  }
+  const { data: claimed } = await admin.rpc('print_job_claim', { p_id: row.id, p_worker: workerId, p_seconds: LEASE_SECONDS })
+  const held = Array.isArray(claimed) ? claimed[0] : claimed
+  if (!held) {
+    const { data: now } = await admin.from('print_jobs').select('state, error').eq('id', row.id).maybeSingle()
+    if (now?.state === 'failed') return json({ error: now.error, job: row.id, state: 'failed', book: slug, contents }, 500)
+    return json({ job: row.id, state: now?.state ?? row.state, running: true, note: 'another worker is setting this book; ask again with { job }' }, 202)
+  }
+  const job = jobOf(held)
+
   try {
+    await job.stopIfCancelled()
     const { book, companion } = await bookOf(slug)
     /* whether this worker already had the type: the thing that makes a second call cheap, and the
        only honest way to say so — the wall clock of a whole call is mostly the printers' quotes */
@@ -247,7 +311,7 @@ Deno.serve(async (req) => {
      * bug, it is a book nobody put in print.
      */
     const spec = printSpec((book as Record<string, unknown>).print) as Record<string, unknown> | null
-    if (!spec) return json({ error: `print: ${slug} has no print block — nothing says what is sold or who makes it`, book: slug, contents }, 400)
+    if (!spec) throw new Refused(`print: ${slug} has no print block — nothing says what is sold or who makes it`)
 
     const store = rowsStore({ client: admin, by: user ? user.id : 'print-render', url: '', key: '' })
     const W0 = await printWords(store, { theme: THEME })
@@ -304,63 +368,6 @@ Deno.serve(async (req) => {
          text alone and the edition alone open without it */
       note: contents === 'parts' ? String(spec.note ?? '') : '', words: W })
 
-    const files: Record<string, string> = { ...TEMPLATES, 'interior.typ': source }
-    const c = await wasmCompiler({ files, fonts })
-    if (pictureBytes) c.bytes(picture, pictureBytes)
-    let pdf = c.pdf('interior.typ')
-    let pages = pageCount(pdf)
-
-    /*
-     * WHAT A PRINTER WILL BIND. A printer binds nothing under its minimum and a book has an even
-     * number of pages, so a short one gets blank leaves at the end. The rule is padFor, shared
-     * with the build — computing it here for itself is how this path said 26 pages where the
-     * native one said 32 for the same book, with nothing to say which was right.
-     *
-     * The minimum belongs to whoever might make the book: the printer the block names, or every
-     * one with keys where it says `auto` — the shared rule, so this path and the build pad alike.
-     */
-    const { min, step } = bindingFor(spec, Object.keys((spec.formats ?? {}) as Record<string, unknown>).filter((f) => FORMATS_PRINTED.includes(f)), (s: any, format: string) => candidatesOf(s, format, bound), { trim: String(spec.trim ?? '6x9'), paper: String(spec.paper ?? 'cream') })
-    const pad = padFor(pages, { min, step })
-    let compiled = source
-    if (pad) {
-      compiled = source + `\n#blank-pages(${pad})\n`
-      c.put('interior.typ', compiled)
-      pdf = c.pdf('interior.typ')
-      pages = pageCount(pdf)
-    }
-
-    /*
-     * WHAT THE DOCUMENT SAYS ABOUT ITSELF — its openers and its highlights, read back out of the
-     * compiled file by the same query the build makes (readback, in the shared compiler seam).
-     *
-     * IT IS READ HERE BECAUSE THIS IS WHERE THE COMPILER IS. The pictures are drawn by the
-     * administrator's browser, which has the PDF but not Typst, and the alternative is asking it to
-     * guess which page a chapter opens on from the text it can see. So the answer carries the
-     * record and the browser is told rather than left to infer.
-     *
-     * It is never a reason to fail: a query that does not answer costs the pictures, not the book.
-     */
-    let where: unknown[] = [], marks: unknown[] = []
-    try { const me = readback(c, 'interior.typ'); where = me.where; marks = me.marks }
-    catch (e) { notes.push(`the document's own openers could not be read, so the listing gets no page pictures — ${(e as Error).message}`) }
-
-    /* WHERE IT GOES. The same place and the same name the native path uses, so a book set here and
-       a book set on a machine are interchangeable to everything downstream. */
-    const dims: Record<string, unknown> = {}
-    /*
-     * THE LISTING'S ART IS NOT DRAWN HERE, and it took a real attempt to find out why. A cover is a
-     * PDF for the printer and a picture for the store, and on a machine both come out of the same
-     * compile: Typst writes SVG with every glyph as a path, so the page needs no fonts and a browser
-     * can wear it. The WASM compiler cannot. `svg` is on the seam and the web build answers
-     * `Unsupported fmt` — SVG in typst.ts is the RENDERER's job, from a vector artifact, and that is
-     * a second wasm module and a second megabyte in a function that is already fetching the type.
-     *
-     * So the pictures a listing needs — the covers and the three pages of the interior — are all
-     * drawn by the administrator's browser from the PDFs this function made, and posted back. One
-     * mechanism for all of them rather than two, and the browser is the only party in cloud mode
-     * that can raster a page at all.
-     */
-    const art: Record<string, string> = {}
     /*
      * WHICH EDITION THIS IS, by the shared rule (edition.js) — the same sixteen characters the
      * build would give the same book, so a book set here and a book set on a machine land in the
@@ -379,7 +386,84 @@ Deno.serve(async (req) => {
       const { error } = await admin.storage.from(BUCKET).upload(at, bytes, { contentType: type, upsert: true })
       if (error) throw new Error(`print: ${at} could not be stored — ${error.message}`)
     }
-    await put(`${at0}/interior.pdf`, pdf, 'application/pdf')
+    /* the compiler, made when a step needs it: a job resumed past the interior may not */
+    const files: Record<string, string> = { ...TEMPLATES, 'interior.typ': source }
+    let compilerHeld: any = null
+    const compiler = async () => {
+      if (!compilerHeld) { compilerHeld = await wasmCompiler({ files, fonts }); if (pictureBytes) compilerHeld.bytes(picture, pictureBytes) }
+      return compilerHeld
+    }
+
+    /* WHERE IT GOES. The same place and the same name the native path uses, so a book set here and
+       a book set on a machine are interchangeable to everything downstream. */
+    const dims: Record<string, unknown> = {}
+    /*
+     * THE LISTING'S ART IS NOT DRAWN HERE, and it took a real attempt to find out why. A cover is a
+     * PDF for the printer and a picture for the store, and on a machine both come out of the same
+     * compile: Typst writes SVG with every glyph as a path, so the page needs no fonts and a browser
+     * can wear it. The WASM compiler cannot. `svg` is on the seam and the web build answers
+     * `Unsupported fmt` — SVG in typst.ts is the RENDERER's job, from a vector artifact, and that is
+     * a second wasm module and a second megabyte in a function that is already fetching the type.
+     *
+     * So the pictures a listing needs — the covers and the three pages of the interior — are all
+     * drawn by the administrator's browser from the PDFs this function made, and posted back. One
+     * mechanism for all of them rather than two, and the browser is the only party in cloud mode
+     * that can raster a page at all.
+     */
+    const art: Record<string, string> = {}
+    /* THE INTERIOR, ONCE PER EDITION: a job that already set it (this edition, in the bucket) takes it back rather than
+       compiling it again — the most expensive thing a set does, and the step a cold worker is likeliest to be cut off in */
+    await job.stopIfCancelled()
+    const doneInterior = (job.done.interior ?? null) as Record<string, any> | null
+    let pdf: Uint8Array, pages: number, pad: number, min: number | undefined, step: number | undefined, compiled = source
+    let where: unknown[] = [], marks: unknown[] = []
+    const heldPdf = doneInterior && doneInterior.edition === edition
+      ? await admin.storage.from(BUCKET).download(`${at0}/interior.pdf`).then(({ data }) => (data ? data.arrayBuffer() : null)).catch(() => null)
+      : null
+    if (doneInterior && heldPdf) {
+      pdf = new Uint8Array(heldPdf); pages = doneInterior.pages; pad = doneInterior.pad; min = doneInterior.min; step = doneInterior.step
+      where = doneInterior.where ?? []; marks = doneInterior.marks ?? []
+      if (doneInterior.compiled) compiled = doneInterior.compiled
+    } else {
+      const c = await compiler()
+      pdf = c.pdf('interior.typ')
+      pages = pageCount(pdf)
+
+      /*
+       * WHAT A PRINTER WILL BIND. A printer binds nothing under its minimum and a book has an even
+       * number of pages, so a short one gets blank leaves at the end. The rule is padFor, shared
+       * with the build — computing it here for itself is how this path said 26 pages where the
+       * native one said 32 for the same book, with nothing to say which was right.
+       *
+       * The minimum belongs to whoever might make the book: the printer the block names, or every
+       * one with keys where it says `auto` — the shared rule, so this path and the build pad alike.
+       */
+      ;({ min, step } = bindingFor(spec, Object.keys((spec.formats ?? {}) as Record<string, unknown>).filter((f) => FORMATS_PRINTED.includes(f)), (s: any, format: string) => candidatesOf(s, format, bound), { trim: String(spec.trim ?? '6x9'), paper: String(spec.paper ?? 'cream') }))
+      pad = padFor(pages, { min, step })
+      if (pad) {
+        compiled = source + `\n#blank-pages(${pad})\n`
+        c.put('interior.typ', compiled)
+        pdf = c.pdf('interior.typ')
+        pages = pageCount(pdf)
+      }
+
+      /*
+       * WHAT THE DOCUMENT SAYS ABOUT ITSELF — its openers and its highlights, read back out of the
+       * compiled file by the same query the build makes (readback, in the shared compiler seam).
+       *
+       * IT IS READ HERE BECAUSE THIS IS WHERE THE COMPILER IS. The pictures are drawn by the
+       * administrator's browser, which has the PDF but not Typst, and the alternative is asking it to
+       * guess which page a chapter opens on from the text it can see. So the answer carries the
+       * record and the browser is told rather than left to infer.
+       *
+       * It is never a reason to fail: a query that does not answer costs the pictures, not the book.
+       */
+      try { const me = readback(c, 'interior.typ'); where = me.where; marks = me.marks }
+      catch (e) { notes.push(`the document's own openers could not be read, so the listing gets no page pictures — ${(e as Error).message}`) }
+
+      await put(`${at0}/interior.pdf`, pdf, 'application/pdf')
+      await job.keep({ edition, interior: { edition, pages, pad, min, step, where, marks, compiled: pad ? compiled : undefined } })
+    }
 
     /*
      * THE EPUB, from the same words — the same module the build uses, which needed one change to
@@ -387,11 +471,13 @@ Deno.serve(async (req) => {
      * the bytes now, which this already has (it sized them for the paperback).
      */
     const wantEpub = !!(spec.formats as Record<string, unknown>).epub || ((spec.includes as string[]) ?? []).includes('epub')
-    if (wantEpub) {
+    if (wantEpub && job.done.epub !== edition) {
+      await job.stopIfCancelled()
       try {
         const art = pictureBytes ? { name: 'cover.' + kindOf(pictureBytes).ext, data: pictureBytes, type: kindOf(pictureBytes).type } : null
         const epub = await makeEpub({ book, companion, contents, note: contents === 'parts' ? String(spec.note ?? '') : '', words: W, art })
         await put(`${at0}/book.epub`, epub, 'application/epub+zip')
+        await job.keep({ epub: edition })
       } catch (e) { notes.push(`the EPUB could not be made — ${(e as Error).message}`); incomplete.push('epub') }
     }
     /* `typ: true` keeps the Typst source beside the book, as `--typ` does on a machine: it is what
@@ -432,6 +518,11 @@ Deno.serve(async (req) => {
         const d = await p.measure({ product: v.product, artefacts: { pages } })
         const draw = async (foilOnly: boolean) => {
           const name = foilOnly ? foilName(v.key) : coverName(v.key)
+          /* a cover this job already drew for this edition is in the bucket: recorded, not drawn again */
+          const drawn = ((job.done.covers ?? {}) as Record<string, string>)[name]
+          if (drawn === edition) { if (foilOnly) foils[v.key] = name; else covers[v.key] = name; return }
+          await job.stopIfCancelled()
+          const c = await compiler()
           const typ = '/' + name.replace(/\.pdf$/, '.typ')
           const src = coverSource({
             d, trim, cloth: v.cloth, foil: v.foil, foilOnly, paperback: format === 'softcover',
@@ -442,7 +533,7 @@ Deno.serve(async (req) => {
           await put(`${at0}/${name}`, pdf, 'application/pdf')
           if (call.typ) await put(`${at0}${typ}`, new TextEncoder().encode(src), 'text/plain')
           if (foilOnly) foils[v.key] = name; else covers[v.key] = name
-
+          await job.keep({ covers: { ...((job.done.covers ?? {}) as Record<string, string>), [name]: edition } })
         }
         await draw(false)
         if (v.product.artFoil) await draw(true)
@@ -469,6 +560,7 @@ Deno.serve(async (req) => {
       if (error || !data) throw new Error(`print: ${name} could not be signed — ${error?.message ?? 'no url'}`)
       return data.signedUrl
     }
+    await job.stopIfCancelled()
     const interiorUrl = await signed('interior.pdf')
     const reachable = reachableToPrinter(interiorUrl)
     if (!reachable) notes.push('the bucket is not one a printer can reach from here, so nothing was checked or given a title')
@@ -548,12 +640,13 @@ Deno.serve(async (req) => {
       title: (book as Record<string, unknown>).title, author: (book as Record<string, unknown>).author ?? '',
       made: new Date().toISOString(), sells: spec.contents,
     }
+    await job.stopIfCancelled()
     await put(`${at0}/manifest.json`, new TextEncoder().encode(JSON.stringify(manifest, null, 2)), 'application/json')
     /* a draft is not what the store sells: the files are in the bucket to be looked at, and
        print.json still says whatever was last SET */
     if (!draft) await writeIndex(store, withTitles(mergeIndex(idx, [manifest]), slug, titles), { live: true, pending: true, published: true })
 
-    return json({
+    const result = {
       ok: true, book: slug, contents, pages: seen, padded: pad, binding: { min, step }, validated, /* typeset counts them; it does not hand back a list */
       chapters: Number(chapters) || 0, edition, draft, epub: manifest.epub, at: `${at0}/interior.pdf`, ms: Date.now() - began, warm, worker: workerId,
       printers: printersOut, covers, foils, dims, spine,
@@ -572,9 +665,30 @@ Deno.serve(async (req) => {
       shots: false, where, marks,
       notes,
       runs: planRuns([{ title: 'whole', pages }], { budget: PAGES_PER_RUN }).length,
-    })
+    }
+    await admin.from('print_jobs').update({ state: 'done', result, error: null, finished_at: new Date().toISOString(), updated_at: new Date().toISOString(), lease_until: null, leased_by: null }).eq('id', job.id)
+    return json({ ...result, job: job.id, attempts: held.attempts })
 
   } catch (e) {
-    return json({ error: String((e as Error).message ?? e), book: slug, contents, ms: Date.now() - began }, 500)
+    const now = new Date().toISOString()
+    if (e instanceof Cancelled) {
+      /* its part-made files go, unless this edition is the one the store already sells (a set of the same text) */
+      const edition = String(job.done.edition ?? '')
+      if (edition) {
+        const store = rowsStore({ client: admin, by: 'print-render', url: '', key: '' })
+        const idx = (await readIndex(store).catch(() => ({}))) as Record<string, any>
+        const live = idx?.[slug]?.editions?.[contents]?.edition === edition
+        if (!live) {
+          const { data: files } = await admin.storage.from(BUCKET).list(`${slug}/${edition}`)
+          if (files?.length) await admin.storage.from(BUCKET).remove(files.map((f: any) => `${slug}/${edition}/${f.name}`))
+        }
+      }
+      await admin.from('print_jobs').update({ state: 'cancelled', finished_at: now, updated_at: now, lease_until: null, leased_by: null }).eq('id', job.id)
+      return json({ job: job.id, state: 'cancelled', book: slug, contents })
+    }
+    /* a refusal or an error the code raised is an answer, not a stall: the job is failed, not tried again */
+    const message = String((e as Error).message ?? e)
+    await admin.from('print_jobs').update({ state: 'failed', error: message, finished_at: now, updated_at: now, lease_until: null, leased_by: null }).eq('id', job.id)
+    return json({ error: message, job: job.id, book: slug, contents, ms: Date.now() - began }, e instanceof Refused ? e.status : 500)
   }
 })

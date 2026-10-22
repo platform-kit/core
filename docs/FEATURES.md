@@ -330,7 +330,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Compare quotes from Lulu, Mixam and Bookvault, and choose a printer per format or let the site choose.
 - Order one proof copy to the admin's address; only proofed editions can go on sale, and an unchanged book isn't typeset again.
 - Print orders go to the printer automatically, with a staff screen (open, shipped, needs attention) to resend and check status.
-- In cloud mode, set an edition from the admin with progress shown piece by piece.
+- In cloud mode, set an edition from the admin; a set that runs past one request carries on by itself from the steps it finished, and can be cancelled.
 
 ### Sessions and scheduling (`sessions`)
 
@@ -624,4 +624,4 @@ For the project's objectives and intended audience, see [PURPOSE.md](./PURPOSE.m
 ---
 
 **Sources:** `openspec/specs`, `packages/kit/build/modules/kit.mjs`, `packages/kit/build/modes.mjs`, `packages/kit/build`, `packages/kit/supabase`, `packages/kit/src/lib`, `packages/kit/src/payment-provider.mjs`, `packages/kit/src/payment-provider.d.ts`, `packages/kit/theme/src`, `sites/demo/platformkit.config.js`
-**Reviewed:** `2026-10-17`
+**Reviewed:** `2026-10-21`

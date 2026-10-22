@@ -109,7 +109,6 @@ const claims = []
    printed on every run so it is never forgotten. Nothing goes here to make the check pass; it goes here because
    the remedy is a decision rather than a test. */
 const KNOWN_GAPS = {
-  'openspec/specs/print-production/spec.md: print-jobs-db.test.mjs does not exist': 'the spec requires print_jobs rows with a lease and cancellation; print-render renders in runs and has neither — build the job design, or correct the spec to the runs as built (James decides)',
 }
 /* a change not yet started is a plan — the tests it names are still to be written; once any of its tasks is done, its
    claims count like the specs' */

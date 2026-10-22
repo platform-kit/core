@@ -4,6 +4,8 @@ description: From a book's block to files at the printer — the editions, the t
 order: 57
 sources:
   [
+    packages/kit/supabase/schemas/44-print-jobs.sql,
+    packages/kit/build/print-jobs-db.test.mjs,
     packages/kit/build/suppliers.test.mjs,
     packages/kit/build/print.mjs,
     packages/kit/build/print,
@@ -67,7 +69,7 @@ Typst is behind **`build/print/typeset/compiler.js`** — `create`, `pdf`, `svg`
 
 They are the same program built twice, and that is the point. An **edition** is a hash of the source, the templates and the trim, and `print.json` says which file a printer has — so if the two paths could diverge, nobody could tell which edition a printed book actually is. `PRINT_DRIVER=wasm` sets a book with the other one, and `build/print-parity.test.mjs` holds them to the same bytes.
 
-The seam exists because of a measurement, not a hope: the largest book in the library — 424 pages — is **88ms** of Typst, against the 2000ms of CPU an Edge Function gets. A book is compiled in one call. There is no job queue, no piece planner and no PDF merge, and the proposal that assumed there would have to be is in `openspec/changes/print-on-demand/` with the numbers that deleted it.
+The seam exists because of a measurement, not a hope: the largest book in the library — 424 pages — is **88ms** of Typst, against the 2000ms of CPU an Edge Function gets. A book's interior is compiled in one step: it is typeset as one document, so its contents page and highlights index can name every page, and there is no piece planner or PDF merge. But a cold worker can spend much of its budget loading the compiler, so **a set is a job that outlives its request** (`print_jobs`, `supabase/schemas/44-print-jobs.sql`): a row per set, leased to one worker at a time, with each step written down as it finishes — the interior, each cover, the EPUB. A set cut off part-way leaves its lease to lapse; a sweep every minute (`print-jobs`, owned by the print module) asks `print-render` again with `{ job }`, and the next worker takes the finished steps back from the bucket and carries on. The caller gets the same answer when a set finishes in its own request, with the `job` it ran as, and asks `{ job }` for it when the answer was lost. `{ job, cancel: true }` stops a set at its next step and removes the files it made for an edition the store does not sell. A job that cannot finish is failed with its reason after five attempts.
 
 ### What a cloud-only site does not get
 

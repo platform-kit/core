@@ -88,6 +88,7 @@ await check('all legacy kit jobs are represented once and retain their original 
     ['network-crawl', '17 3 * * *', 'select public.run_network_crawl();', 'network'],
     ['network-project', '*/5 * * * *', 'select public.run_network_project();', 'network'],
     ['payouts-sweep', '15 * * * *', 'select public.payouts_sweep()', 'store'],
+    ['print-jobs', '* * * * *', 'select public.run_print_jobs();', 'print'],
     ['session-recordings', '*/10 * * * *', 'select public.run_session_recordings()', 'sessions'],
     ['session-recordings-retain', '40 4 * * *', 'select public.run_session_recordings_retain()', 'sessions'],
     ['session-reminders', '*/5 * * * *', 'select public.run_session_reminders()', 'sessions'],

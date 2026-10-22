@@ -23,7 +23,7 @@ sources:
     package.json,
     packages/kit/package.json,
   ]
-reviewed: 2026-10-19
+reviewed: 2026-10-21
 ---
 
 Run `platformkit` from a site directory for site commands, or pass `--site <path>` to select a site explicitly. At the workspace root, site commands and root npm shortcuts use `PLATFORMKIT_DEFAULT_SITE`, which defaults to `sites/docs`; it may be a site name or a path to a tracked or separately linked site. `--site` takes precedence. Workspace `dev` uses that default unless `PLATFORMKIT_SITES` explicitly selects multiple sites; `sites` and `stop` operate on the workspace. The root registry is `platformkit.sites.json`; fetched repositories live in `sites/external/<name>`, outside the tracked fixture sites and npm workspaces.
