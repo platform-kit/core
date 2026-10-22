@@ -107,15 +107,13 @@ if (!['help', '--help', 'sites', 'stop'].includes(cmd)) {
   if (sourceRoot && !usesWorkspaceSource) {
     try {
       installPlatformKitSource(site, sourceRoot)
-      kitRoot = path.join(site, 'node_modules', '@platform-kit', 'kit')
+      kitRoot = path.join(site, 'node_modules', 'platformkit')
     }
     catch (error) { console.error(`✖ ${error.message}`); process.exit(1) }
   } else if (!sourceRoot) {
-    for (const packageName of ['kit', 'movable-types']) {
-      if (!fs.existsSync(path.join(site, 'node_modules', '@platform-kit', packageName, 'package.json'))) {
-        console.error(`✖ ${site} is missing @platform-kit/${packageName}; run "npm run setup" from the site root`)
-        process.exit(1)
-      }
+    if (!fs.existsSync(path.join(site, 'node_modules', 'platformkit', 'package.json'))) {
+      console.error(`✖ ${site} is missing platformkit; run "npm run setup" from the site root`)
+      process.exit(1)
     }
   }
 }

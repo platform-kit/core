@@ -5,7 +5,7 @@ order: 46
 reviewed: 2026-10-10
 sources:
   [
-    packages/movable-types/src/components/landing/LandingAnnouncement.vue,
+    packages/kit/theme/src/components/landing/LandingAnnouncement.vue,
     packages/kit/build/typefaces.mjs,
     packages/kit/build/google-fonts.mjs,
     packages/kit/build/google-font.mjs,
@@ -14,14 +14,14 @@ sources:
     packages/kit/src/lib/share-card.js,
     packages/kit/src/lib/seo.js,
     packages/kit/src/lib/seo-head.js,
-    packages/movable-types/src/pages/SharePage.vue,
-    packages/movable-types/src/looks,
+    packages/kit/theme/src/pages/SharePage.vue,
+    packages/kit/theme/src/looks,
     packages/kit/build/tokens.mjs,
-    packages/movable-types/src/components/admin/TokensField.vue,
-    packages/movable-types/src/tokens.css,
+    packages/kit/theme/src/components/admin/TokensField.vue,
+    packages/kit/theme/src/tokens.css,
     packages/kit/src/lib/look.js,
-    packages/movable-types/src/components/landing,
-    packages/movable-types/src/pages/SharePage.vue,
+    packages/kit/theme/src/components/landing,
+    packages/kit/theme/src/pages/SharePage.vue,
     packages/kit/build/share-images.mjs,
     packages/kit/build/theme-look.test.mjs,
     packages/kit/supabase/functions/share-image,
@@ -92,7 +92,7 @@ Three things follow from how it is stored:
 
 ## One design, many looks
 
-The site wears one **look** at a time — `look` in `content/site.md`, chosen in Site settings. Every look shares **one design**: `packages/movable-types/src/looks/design.css`, the rules under `[data-look]` — the landing's ground as an arc from dusk to light, paper cards, the two materials (the library as paper, the instrument as the lab), the primitives. A look is **only a palette**: one CSS file of tokens under `[data-look="<name>"]`, each with a night variant:
+The site wears one **look** at a time — `look` in `content/site.md`, chosen in Site settings. Every look shares **one design**: `packages/kit/theme/src/looks/design.css`, the rules under `[data-look]` — the landing's ground as an arc from dusk to light, paper cards, the two materials (the library as paper, the instrument as the lab), the primitives. A look is **only a palette**: one CSS file of tokens under `[data-look="<name>"]`, each with a night variant:
 
 - site-wide on `:root` — `--paper`, `--ink`, `--ink2`, `--ink3`, `--hair`, `--card`, `--accent`, `--accent2`, `--accentbg`, `--sun`, the ramps `--c1…--c4`, the fonts `--f`, `--fd`, `--m`;
 - the landing's own on `.lproot` — its light (`--sun`, `--sunbg`), its dusk (`--dusk`), the close's glow (`--closeglow`);

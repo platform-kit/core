@@ -8,9 +8,9 @@ sources:
     packages/kit/build/achievements-push.mjs,
     packages/kit/build/steps/achievements.mjs,
     packages/kit/src/lib/awards.js,
-    packages/movable-types/src/pages/AwardPage.vue,
-    packages/movable-types/src/components/AwardBadge.vue,
-    packages/movable-types/src/content/ui/awards.md,
+    packages/kit/theme/src/pages/AwardPage.vue,
+    packages/kit/theme/src/components/AwardBadge.vue,
+    packages/kit/theme/src/content/ui/awards.md,
     packages/kit/build/awards-db.test.mjs,
   ]
 reviewed: 2026-10-20

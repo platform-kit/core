@@ -901,7 +901,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   const { join, dirname } = await import('node:path')
   const { fileURLToPath } = await import('node:url')
   const HERE = dirname(fileURLToPath(import.meta.url))
-  const dir = join(HERE, '..', '..', 'movable-types', 'src', 'components', 'spaces')
+  const dir = join(HERE, '..', 'theme', 'src', 'components', 'spaces')
   let art = ''
   try { art = readFileSync(join(dir, 'SpaceIcon.vue'), 'utf8') } catch { /* no theme in this checkout */ }
   if (!art) { ok('the icon set is where it was', false, 'SpaceIcon.vue not found') }

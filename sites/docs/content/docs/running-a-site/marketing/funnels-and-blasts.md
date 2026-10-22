@@ -9,9 +9,9 @@ sources:
     packages/kit/supabase/functions/_shared/emails/rules.js,
     packages/kit/supabase/functions/funnels-run,
     packages/kit/supabase/functions/email-blast,
-    packages/movable-types/src/components/admin/FunnelsAdmin.vue,
-    packages/movable-types/src/components/admin/BlastsAdmin.vue,
-    packages/movable-types/src/components/admin/AudienceEditor.vue,
+    packages/kit/theme/src/components/admin/FunnelsAdmin.vue,
+    packages/kit/theme/src/components/admin/BlastsAdmin.vue,
+    packages/kit/theme/src/components/admin/AudienceEditor.vue,
   ]
 reviewed: 2026-10-01
 ---

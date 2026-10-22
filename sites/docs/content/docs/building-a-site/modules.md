@@ -23,7 +23,7 @@ sources:
     packages/kit/build/test.mjs,
     packages/kit/build/source-cli.test.mjs,
     packages/kit/build/runtime-paths.test.mjs,
-    packages/movable-types/src/pages/AdminPage.vue,
+    packages/kit/theme/src/pages/AdminPage.vue,
   ]
 reviewed: 2026-10-21
 ---
@@ -88,7 +88,7 @@ Every module is a key of `modules` in the config, on unless it says `false`. Tha
 **one** place — `lib/modules.js` — and `moduleOn('store')` is how anything asks:
 
 ```js
-import { moduleOn, anyModuleOn } from '@platform-kit/kit/lib/modules.js'
+import { moduleOn, anyModuleOn } from 'platformkit/lib/modules.js'
 
 if (moduleOn('store')) {
   /* … */

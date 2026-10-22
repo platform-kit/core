@@ -6,7 +6,7 @@
  */
 export default {
   name: 'Northlight Press',
-  theme: '@platform-kit/movable-types',
+  theme: 'platformkit/theme',
   deployment: { content: 'rows' },
   modules: {
     /* THE PRESS'S OWN. Nothing in the kit declares this name; src/stockists/module.js does, and

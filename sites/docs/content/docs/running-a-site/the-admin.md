@@ -4,12 +4,12 @@ description: Where everything is edited, how a change becomes live, and what the
 order: 10
 sources:
   [
-    packages/movable-types/src/pages/AdminPage.vue,
-    packages/movable-types/src/components/admin/PaymentsAdmin.vue,
-    packages/movable-types/src/components/admin/PeopleAdmin.vue,
+    packages/kit/theme/src/pages/AdminPage.vue,
+    packages/kit/theme/src/components/admin/PaymentsAdmin.vue,
+    packages/kit/theme/src/components/admin/PeopleAdmin.vue,
     packages/kit/build/admin-server.mjs,
-    packages/movable-types/src/components/Orders.vue,
-    packages/movable-types/src/components/Bookings.vue,
+    packages/kit/theme/src/components/Orders.vue,
+    packages/kit/theme/src/components/Bookings.vue,
   ]
 reviewed: 2026-10-14
 ---

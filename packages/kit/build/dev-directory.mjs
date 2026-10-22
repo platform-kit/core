@@ -6,7 +6,7 @@ import { parseFile } from './strings-io.mjs'
 import { context as browserContext, launch as launchBrowser } from './browser.mjs'
 
 const KIT = path.dirname(fileURLToPath(import.meta.url))
-const UI_FILE = path.resolve(KIT, '../../movable-types/src/content/ui/site-directory.md')
+const UI_FILE = path.resolve(KIT, '../theme/src/content/ui/site-directory.md')
 const CSS_FILE = path.join(KIT, 'dev-directory.css')
 const PREVIEW_WIDTH = 1200
 const PREVIEW_HEIGHT = 675

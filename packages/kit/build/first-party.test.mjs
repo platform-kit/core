@@ -35,7 +35,7 @@ const VENDOR = [
 const RUNTIME = [
   'packages/kit/src',
   'packages/kit/supabase/functions',
-  'packages/movable-types/src',
+  'packages/kit/theme/src',
   'src',
   'sites/demo/src',
   'sites/docs/src',
@@ -75,7 +75,7 @@ ok('nothing that runs imports the client of a product we stand in for', () => {
 
 ok('and none of them is a runtime dependency of any package', () => {
   const wrong = []
-  for (const f of ['package.json', 'packages/kit/package.json', 'packages/movable-types/package.json', 'sites/demo/package.json', 'sites/docs/package.json']) {
+  for (const f of ['package.json', 'packages/kit/package.json', 'packages/kit/theme/package.json', 'sites/demo/package.json', 'sites/docs/package.json']) {
     const p = path.join(REPO, f)
     if (!fs.existsSync(p)) continue
     const j = JSON.parse(fs.readFileSync(p, 'utf8'))

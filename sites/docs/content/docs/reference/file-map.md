@@ -5,8 +5,7 @@ order: 84
 sources:
   [
     packages/kit/package.json,
-    packages/movable-types/package.json,
-    packages/movable-types/src/theme.js,
+    packages/kit/theme/src/theme.js,
     package.json,
     packages/kit/bin/platformkit.mjs,
     packages/kit/build/sites.mjs,
@@ -92,7 +91,7 @@ supabase/
   config.toml.template
 ```
 
-## The theme — `packages/movable-types`
+## The theme — `packages/kit/theme`
 
 ```
 src/theme.js                   the manifest, including optional theme-owned module declarations

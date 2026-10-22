@@ -1,2 +1,2 @@
 /* the demo's entry: the theme's */
-import '@platform-kit/movable-types/main.js'
+import 'platformkit/theme/main.js'

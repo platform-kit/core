@@ -10,8 +10,8 @@ sources:
     packages/kit/src/lib/seo-head.js,
     packages/kit/src/lib/seo.js,
     packages/kit/vite/index.mjs,
-    packages/movable-types/src/content/ui/site-directory.md,
-    packages/movable-types/src/pages/SharePage.vue,
+    packages/kit/theme/src/content/ui/site-directory.md,
+    packages/kit/theme/src/pages/SharePage.vue,
     packages/kit/build/sites.mjs,
     packages/kit/build/hosts.mjs,
     packages/kit/build/dev.mjs,
@@ -82,4 +82,4 @@ A production build starts from the site's own repository and commit. Install the
 
 For a multi-site host, build each selected site from its own repository, then configure the host with `PLATFORMKIT_DOMAIN`, `PLATFORMKIT_SITES`, and `PLATFORMKIT_SITES_MODE=files`. Backend URLs are supplied per site using `SUPABASE_URL_<SITE>`; replace hyphens in the site name with underscores and uppercase it. A selected site that requires a backend but has no URL is refused before nginx starts. Each server block serves that site's build and generated rewrites. `PLATFORMKIT_APEX` optionally names the site that also answers on the bare domain. TLS certificates are mounted at `/etc/nginx/certs/fullchain.pem` and `/etc/nginx/certs/privkey.pem`; the host, not the image, obtains them.
 
-A single-site host can continue to build and deploy directly from that site's repository with the site's own deployment settings. The selected payment provider and its server secrets are resolved from that site's config and environment; one site's provider selection is not shared with another. Package publication is a PlatformKit release action; it is not triggered by a site fetch, pin update, or site deployment. After the kit CI passes, a `kit-v<version>` tag publishes both `@platform-kit/kit` and `@platform-kit/movable-types` to npm and GitHub Packages; a site updates both exact pins and its lockfile in a separate change.
+A single-site host can continue to build and deploy directly from that site's repository with the site's own deployment settings. The selected payment provider and its server secrets are resolved from that site's config and environment; one site's provider selection is not shared with another. Package publication is a PlatformKit release action; it is not triggered by a site fetch, pin update, or site deployment. After the kit CI passes, a `kit-v<version>` tag publishes both `platformkit` and `platformkit/theme` to npm and GitHub Packages; a site updates both exact pins and its lockfile in a separate change.

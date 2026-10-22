@@ -15,8 +15,8 @@ sources:
     packages/kit/vite/index.mjs,
     packages/kit/src/lib/router.js,
     packages/kit/build/routes.mjs,
-    packages/movable-types/src/pages/EntriesPage.vue,
-    packages/movable-types/src/components/landing/LandingEntries.vue,
+    packages/kit/theme/src/pages/EntriesPage.vue,
+    packages/kit/theme/src/components/landing/LandingEntries.vue,
   ]
 reviewed: 2026-10-21
 ---

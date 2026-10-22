@@ -12,7 +12,7 @@ import { createRequire } from 'node:module'
 const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
 
 export async function loadTheme(c) {
-  const name = (c && c.theme) || '@platform-kit/movable-types'
+  const name = (c && c.theme) || 'platformkit/theme'
   /* resolved from the site's root, the way Node resolves a package for it (createRequire, so Node 18 serves too) */
   const file = createRequire(path.join((c && c.root) || process.cwd(), 'package.json')).resolve(name + '/theme.js')
   const m = (await import(/* @vite-ignore */ file)).default

@@ -10,7 +10,7 @@ sources:
     packages/kit/supabase/functions/_shared/payment-provider.mjs,
     packages/kit/src/payment-provider.d.ts,
     packages/kit/build/ledger.test.mjs,
-    packages/movable-types/src/components/landing/LandingPricing.vue,
+    packages/kit/theme/src/components/landing/LandingPricing.vue,
     packages/kit/src/lib/auth.js,
   ]
 reviewed: 2026-10-16

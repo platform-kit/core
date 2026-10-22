@@ -5,12 +5,12 @@ order: 30
 sources:
   [
     packages/kit/src/lib/gated.js,
-    packages/movable-types/src/components/content,
+    packages/kit/theme/src/components/content,
     packages/kit/src/lib/tts,
     packages/kit/src/lib/interests.js,
     packages/kit/src/lib/rank.js,
     packages/kit/src/lib/records.js,
-    packages/movable-types/src/pages/DiagnosticsPage.vue,
+    packages/kit/theme/src/pages/DiagnosticsPage.vue,
   ]
 reviewed: 2026-10-18
 ---

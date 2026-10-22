@@ -6,7 +6,7 @@ export default {
   key: 'books-csv', title: 'The books as CSV', phase: 'site', after: ['models-json'],
   inputs: ['content/books/**'],
   run: async ({ site, log }) => {
-    const { books } = await import('@platform-kit/kit/build/content-node.mjs')
+    const { books } = await import('platformkit/build/content-node.mjs')
     const q = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"'
     const rows = [['slug', 'title', 'author', 'chapters'].join(',')]
     for (const b of books || []) rows.push([b.slug || b.id, b.title, b.author || '', b.chapters ?? ''].map(q).join(','))

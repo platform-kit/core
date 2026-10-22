@@ -18,9 +18,9 @@ import { computed } from 'vue'
 import { sessions as SESSIONS, products as PRODUCTS } from '#content'
 import { user, memberTiers, creditsFor } from './auth.js'
 import { tierRank, memberships } from './storefront.js'
-import { admits } from '@platform-kit/kit/supabase/functions/_shared/sessions/admits.js'
+import { admits } from 'platformkit/supabase/functions/_shared/sessions/admits.js'
 import { supabase } from './supabase.js'
-import { offeringType } from '@platform-kit/kit/supabase/functions/_shared/sessions/offering.js'
+import { offeringType } from 'platformkit/supabase/functions/_shared/sessions/offering.js'
 
 /* a call to one of the booking functions; an answer with an error becomes one */
 async function call(name, body) {
@@ -113,9 +113,9 @@ const RANKS = computed(() => Object.fromEntries((memberships.value || []).filter
  * The shape is a booking type's, so sessionOptions has one kind of thing to sort and a surface has
  * one kind of thing to draw.
  */
-export { OFFERING, isOffering as isOfferingEvent, offeringId } from '@platform-kit/kit/supabase/functions/_shared/sessions/offering.js'
-import { managedFor } from '@platform-kit/kit/supabase/functions/_shared/sessions/managed.js'
-export { managedEvent, parseManaged } from '@platform-kit/kit/supabase/functions/_shared/sessions/managed.js'
+export { OFFERING, isOffering as isOfferingEvent, offeringId } from 'platformkit/supabase/functions/_shared/sessions/offering.js'
+import { managedFor } from 'platformkit/supabase/functions/_shared/sessions/managed.js'
+export { managedEvent, parseManaged } from 'platformkit/supabase/functions/_shared/sessions/managed.js'
 export async function loadOfferings() {
   const { data, error } = await supabase.rpc('provider_offerings_live')
   if (error || !Array.isArray(data)) return []

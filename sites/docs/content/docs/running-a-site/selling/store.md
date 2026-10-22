@@ -4,17 +4,17 @@ description: The storefront, products, collections, shipping, guest checkout, an
 order: 20
 sources:
   [
-    packages/movable-types/src/components/store,
-    packages/movable-types/src/assets/print-fonts,
-    packages/movable-types/src/components/admin/OptionsField.vue,
-    packages/movable-types/src/components/store/VariantPicker.vue,
+    packages/kit/theme/src/components/store,
+    packages/kit/theme/src/assets/print-fonts,
+    packages/kit/theme/src/components/admin/OptionsField.vue,
+    packages/kit/theme/src/components/store/VariantPicker.vue,
     packages/kit/supabase/functions/_shared/variants.js,
     packages/kit/src/lib/tint.js,
     packages/kit/src/lib/storefront.js,
     packages/kit/src/lib/shipping.js,
     packages/kit/supabase/functions/_shared/prices.js,
     packages/kit/supabase/functions/_shared/promotions.js,
-    packages/movable-types/src/components/store/CartDrawer.vue,
+    packages/kit/theme/src/components/store/CartDrawer.vue,
     packages/kit/supabase/schemas/41-inventory.sql,
     packages/kit/src/lib/shipto.js,
     packages/kit/src/lib/commerce.js,

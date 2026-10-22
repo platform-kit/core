@@ -11,55 +11,54 @@
     "test": "platformkit test"
   },
   "dependencies": {
-    "@platform-kit/kit": "*",
-    "@platform-kit/movable-types": "*"
+    "platformkit": "*"
   },
   "imports": {
     "#content": {
-      "node": "@platform-kit/kit/build/content-node.mjs",
+      "node": "platformkit/build/content-node.mjs",
       "default": "./.velite/index.js"
     },
     "#content/*": "./.velite/*",
     "#site/content/*": "./content/*",
     "#site": {
-      "node": "@platform-kit/kit/build/site-node.mjs",
-      "default": "@platform-kit/kit/build/site-node.mjs"
+      "node": "platformkit/build/site-node.mjs",
+      "default": "platformkit/build/site-node.mjs"
     },
     "#site/looks": {
-      "node": "@platform-kit/kit/build/site-looks-node.mjs",
-      "default": "@platform-kit/kit/build/site-looks-node.mjs"
+      "node": "platformkit/build/site-looks-node.mjs",
+      "default": "platformkit/build/site-looks-node.mjs"
     },
     "#site/landing": {
-      "node": "@platform-kit/kit/build/site-landing-node.mjs",
-      "default": "@platform-kit/kit/build/site-landing-node.mjs"
+      "node": "platformkit/build/site-landing-node.mjs",
+      "default": "platformkit/build/site-landing-node.mjs"
     },
     "#site/app": {
-      "node": "@platform-kit/kit/build/site-app-node.mjs",
-      "default": "@platform-kit/kit/build/site-app-node.mjs"
+      "node": "platformkit/build/site-app-node.mjs",
+      "default": "platformkit/build/site-app-node.mjs"
     },
     "#site/routes": {
-      "node": "@platform-kit/kit/build/site-routes-node.mjs",
-      "default": "@platform-kit/kit/build/site-routes-node.mjs"
+      "node": "platformkit/build/site-routes-node.mjs",
+      "default": "platformkit/build/site-routes-node.mjs"
     },
     "#site/nav": {
-      "node": "@platform-kit/kit/build/site-nav-node.mjs",
-      "default": "@platform-kit/kit/build/site-nav-node.mjs"
+      "node": "platformkit/build/site-nav-node.mjs",
+      "default": "platformkit/build/site-nav-node.mjs"
     },
     "#site/analytics": {
-      "node": "@platform-kit/kit/build/site-analytics-node.mjs",
-      "default": "@platform-kit/kit/build/site-analytics-node.mjs"
+      "node": "platformkit/build/site-analytics-node.mjs",
+      "default": "platformkit/build/site-analytics-node.mjs"
     },
     "#site/instrument": {
-      "node": "@platform-kit/kit/build/site-instrument-node.mjs",
-      "default": "@platform-kit/kit/build/site-instrument-node.mjs"
+      "node": "platformkit/build/site-instrument-node.mjs",
+      "default": "platformkit/build/site-instrument-node.mjs"
     },
     "#site/recommendations": {
-      "node": "@platform-kit/kit/build/site-recommendations-node.mjs",
-      "default": "@platform-kit/kit/build/site-recommendations-node.mjs"
+      "node": "platformkit/build/site-recommendations-node.mjs",
+      "default": "platformkit/build/site-recommendations-node.mjs"
     },
     "#site/admin": {
-      "node": "@platform-kit/kit/build/site-admin-node.mjs",
-      "default": "@platform-kit/kit/build/site-admin-node.mjs"
+      "node": "platformkit/build/site-admin-node.mjs",
+      "default": "platformkit/build/site-admin-node.mjs"
     }
   }
 }

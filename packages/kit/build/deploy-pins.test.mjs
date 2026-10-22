@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url'
 import { assertPlatformKitForDeploy, assertPlatformKitPins, platformKitPins } from './deploy-pins.mjs'
 import { installPlatformKitSource } from './source-install.mjs'
 
-const names = ['@platform-kit/kit', '@platform-kit/movable-types']
+/* one package: the engine with its theme inside it */
+const names = ['platformkit']
 
 function writeFixture(root, { versions = ['0.1.0', '0.1.0'], rootVersions = versions, lockVersions = versions, resolved = true, linked = false } = {}) {
   const dependencies = Object.fromEntries(names.map((name, index) => [name, versions[index]]))
@@ -16,7 +17,7 @@ function writeFixture(root, { versions = ['0.1.0', '0.1.0'], rootVersions = vers
     `node_modules/${name}`,
     {
       version: lockVersions[index],
-      ...(resolved ? { resolved: `https://registry.npmjs.org/${encodeURIComponent(name)}/-/${name.split('/')[1]}-${lockVersions[index]}.tgz` } : {}),
+      ...(resolved ? { resolved: `https://registry.npmjs.org/${encodeURIComponent(name)}/-/${name.split('/').at(-1)}-${lockVersions[index]}.tgz` } : {}),
       integrity: 'sha512-cGxhdGZvcm1raXQ=',
       ...(linked ? { link: true } : {}),
     },
@@ -56,30 +57,29 @@ try {
   assert.doesNotMatch(refusedDeploy.stdout, /Deploying to Supabase|npx supabase/)
 
   writeFixture(root, { versions: ['^0.1.0', '0.1.0'] })
-  assert.match(platformKitPins(root).errors.join('\n'), /@platform-kit\/kit must be a direct dependency pinned to an exact release version/)
+  assert.match(platformKitPins(root).errors.join('\n'), /platformkit must be a direct dependency pinned to an exact release version/)
 
   writeFixture(root, { versions: ['0.1.1', '0.1.0'], rootVersions: ['0.1.0', '0.1.0'], lockVersions: ['0.1.0', '0.1.0'] })
-  assert.match(platformKitPins(root).errors.join('\n'), /root dependency @platform-kit\/kit is 0\.1\.0, expected 0\.1\.1/)
+  assert.match(platformKitPins(root).errors.join('\n'), /root dependency platformkit is 0\.1\.0, expected 0\.1\.1/)
 
   writeFixture(root, { lockVersions: ['0.1.1', '0.1.0'] })
-  assert.match(platformKitPins(root).errors.join('\n'), /@platform-kit\/kit must resolve to the published version 0\.1\.0/)
+  assert.match(platformKitPins(root).errors.join('\n'), /platformkit must resolve to the published version 0\.1\.0/)
 
   writeFixture(root, { linked: true })
-  assert.match(platformKitPins(root).errors.join('\n'), /@platform-kit\/kit must resolve to the published version 0\.1\.0/)
+  assert.match(platformKitPins(root).errors.join('\n'), /platformkit must resolve to the published version 0\.1\.0/)
 
   writeFixture(root, { resolved: false })
-  assert.match(platformKitPins(root).errors.join('\n'), /@platform-kit\/kit@0\.1\.0 must resolve from an HTTPS package registry/)
+  assert.match(platformKitPins(root).errors.join('\n'), /platformkit@0\.1\.0 must resolve from an HTTPS package registry/)
 
   const source = path.join(root, 'source')
   fs.rmSync(path.join(root, 'node_modules'), { recursive: true, force: true })
   fs.mkdirSync(path.join(source, 'packages', 'kit'), { recursive: true })
-  fs.mkdirSync(path.join(source, 'packages', 'movable-types'), { recursive: true })
   fs.writeFileSync(path.join(source, 'package.json'), JSON.stringify({
     name: '@platform-kit/workspace',
     repository: 'github:platform-kit/core',
   }))
   for (const [index, name] of names.entries()) {
-    const packageDirectory = path.join(source, 'packages', name.split('/').at(-1))
+    const packageDirectory = path.join(source, 'packages', 'kit')
     fs.writeFileSync(path.join(packageDirectory, 'package.json'), JSON.stringify({ name, version: '0.1.0' }))
     fs.writeFileSync(path.join(packageDirectory, 'index.js'), `export const fixture = ${index}\n`)
   }
@@ -105,9 +105,9 @@ try {
   assert.equal(receipt.source.clean, true)
   assert.deepEqual(assertPlatformKitForDeploy(root), { kind: 'source', source: receipt.source })
 
-  const installedFile = path.join(root, 'node_modules', '@platform-kit', 'kit', 'index.js')
+  const installedFile = path.join(root, 'node_modules', 'platformkit', 'index.js')
   fs.appendFileSync(installedFile, '// changed after setup\n')
-  assert.throws(() => assertPlatformKitForDeploy(root), /@platform-kit\/kit differs from the recorded source installation/)
+  assert.throws(() => assertPlatformKitForDeploy(root), /platformkit differs from the recorded source installation/)
 
   console.log('deploy-pins.test.mjs: passed')
 } finally {

@@ -7,7 +7,7 @@ sources:
     packages/kit/supabase/functions/spaces,
     packages/kit/build/spaces-disk.mjs,
     packages/kit/src/lib/community,
-    packages/movable-types/src/pages/SpacesPage.vue,
+    packages/kit/theme/src/pages/SpacesPage.vue,
   ]
 reviewed: 2026-10-10
 ---

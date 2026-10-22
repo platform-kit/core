@@ -42,8 +42,8 @@
 
 <script setup>
 import { computed } from 'vue'
-import { us } from '@platform-kit/kit/lib/content.js'
-import SiteLayout from '@platform-kit/movable-types/layouts/SiteLayout.vue'
+import { us } from 'platformkit/lib/content.js'
+import SiteLayout from 'platformkit/theme/layouts/SiteLayout.vue'
 import stockists from '../../.velite/stockists.json'
 
 const W = computed(() => us('stockists').page)

@@ -7,15 +7,15 @@ sources:
     packages/kit/src/lib/account.js,
     packages/kit/src/lib/avatar.js,
     packages/kit/build/site-avatar-node.mjs,
-    packages/movable-types/src/pages/PersonPage.vue,
-    packages/movable-types/src/components/AvatarPicker.vue,
-    packages/movable-types/src/content/ui/account.md,
+    packages/kit/theme/src/pages/PersonPage.vue,
+    packages/kit/theme/src/components/AvatarPicker.vue,
+    packages/kit/theme/src/content/ui/account.md,
     packages/kit/build/admin-pipe.mjs,
     packages/kit/build/admin-fence.test.mjs,
     packages/kit/supabase/functions/admin,
     packages/kit/src/lib/auth.js,
     packages/kit/build/avatar.test.mjs,
-    packages/movable-types/src/components/spaces/SpaceAvatar.vue,
+    packages/kit/theme/src/components/spaces/SpaceAvatar.vue,
   ]
 reviewed: 2026-10-21
 ---

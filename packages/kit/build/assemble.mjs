@@ -247,7 +247,7 @@ if (c.admin && c.admin.models) {
   for (const [r, abs] of closure(siteBase, [entry], /^(node_modules|packages)\//)) {
     const depth = r.split('/').length - 1
     const up = '../'.repeat(depth + 1)   /* from pipe/site/<r> back to pipe/ */
-    const text = fs.readFileSync(abs, 'utf8').replace(/from '@platform-kit\/kit\/(build|src)\//g, `from '${up}$1/`).replace(/import\('@platform-kit\/kit\/(build|src)\//g, `import('${up}$1/`)
+    const text = fs.readFileSync(abs, 'utf8').replace(/from 'platformkit\/(build|src)\//g, `from '${up}$1/`).replace(/import\('platformkit\/(build|src)\//g, `import('${up}$1/`)
     plan.set('functions/_shared/pipe/site/' + r, { from: abs, content: Buffer.from(text) })
   }
   plan.set('functions/_shared/pipe/site/index.js', { from: c.admin.models, content: Buffer.from(`export { models } from './${entry}'\n`) })

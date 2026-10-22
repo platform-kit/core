@@ -2,7 +2,13 @@
 title: The support desk
 description: The support chat people see, the inbox the staff answer from, the prompts that start conversations, and the emails around it.
 order: 32
-sources: [packages/kit/supabase/functions/support, packages/kit/src/lib/support, packages/movable-types/src/components/support, packages/movable-types/src/components/SupportAdmin.vue]
+sources:
+  [
+    packages/kit/supabase/functions/support,
+    packages/kit/src/lib/support,
+    packages/kit/theme/src/components/support,
+    packages/kit/theme/src/components/SupportAdmin.vue,
+  ]
 reviewed: 2026-10-09
 ---
 
@@ -36,15 +42,15 @@ The inbox follows the tables live: a new line lands without a reload, and with *
 
 **The staff are never emailed per message.** They are told in the inbox, by the browser alert, and — with the push module on — by a [web push notification](/content/docs/running-a-site/settings/analytics-and-notifications) on a new conversation or a new line.
 
-Email is an **escalation** only: every five minutes the platform looks for threads that are open, unanswered for longer than the policy's *support wait* (minutes), while no agent has been in the inbox within the *presence* window, and sends one digest per recipient listing every thread due — the assignee's own to the assignee, the rest to the support address (else every staff address). Only a contact who can be answered by email (a confirmed account) counts; a guest never costs the staff an email. A thread is escalated once. The two clocks are in the emails policy file; the admin's policy panel edits the email counts and leaves the clocks as they are.
+Email is an **escalation** only: every five minutes the platform looks for threads that are open, unanswered for longer than the policy's _support wait_ (minutes), while no agent has been in the inbox within the _presence_ window, and sends one digest per recipient listing every thread due — the assignee's own to the assignee, the rest to the support address (else every staff address). Only a contact who can be answered by email (a confirmed account) counts; a guest never costs the staff an email. A thread is escalated once. The two clocks are in the emails policy file; the admin's policy panel edits the email counts and leaves the clocks as they are.
 
 **The contact** is emailed about a reply they were not there to see — nothing while they were on the site in the last two minutes, one per unread burst — with a link that opens the panel on the thread. Never a guest, never an unconfirmed address.
 
 ## Prompts: conversations that start themselves
 
-A **chat prompt** is a step of a funnel whose channel is *chat*: a line the browser shows as a card above the launcher when its triggers hold — so many seconds on the site, on such a page, so long on it, signed in or not, returning, with something in the cart. Nothing is sent; nothing is a thread until the person replies. A prompt may carry a picture (a gif — shown on the card above the launcher on a wide screen, and on a phone only once the panel is open, where it would otherwise fill the screen) and may end with **choices** — buttons the person picks from, which may nest into follow-ups up to three deep. A prompt is shown once, ever, per person; a thread per prompt per contact is unique. Prompts and the launcher use the same `mayInterrupt()` guard as ads: it blocks reserved work areas plus the site's configured feed, spaces and people routes. If the route changes or becomes ineligible while a prompt or default nudge is being resolved, the result is discarded before it can claim the corner.
+A **chat prompt** is a step of a funnel whose channel is _chat_: a line the browser shows as a card above the launcher when its triggers hold — so many seconds on the site, on such a page, so long on it, signed in or not, returning, with something in the cart. Nothing is sent; nothing is a thread until the person replies. A prompt may carry a picture (a gif — shown on the card above the launcher on a wide screen, and on a phone only once the panel is open, where it would otherwise fill the screen) and may end with **choices** — buttons the person picks from, which may nest into follow-ups up to three deep. A prompt is shown once, ever, per person; a thread per prompt per contact is unique. Prompts and the launcher use the same `mayInterrupt()` guard as ads: it blocks reserved work areas plus the site's configured feed, spaces and people routes. If the route changes or becomes ineligible while a prompt or default nudge is being resolved, the result is discarded before it can claim the corner.
 
-One prompt is **the desk's default** (`when: default`): not a trigger but the line the panel rests on at the top of every new conversation. It nudges once per visit with its short *teaser* line a few seconds after arrival, until the panel is opened or the card put away. Somebody may start as many threads on it as they like.
+One prompt is **the desk's default** (`when: default`): not a trigger but the line the panel rests on at the top of every new conversation. It nudges once per visit with its short _teaser_ line a few seconds after arrival, until the panel is opened or the card put away. Somebody may start as many threads on it as they like.
 
 **A choice may point somewhere.** An arrow at the end of one takes the person to a form or a page, and the choice is still recorded like any other:
 
@@ -66,7 +72,7 @@ The prompts' numbers are on the page of the funnel each belongs to, Marketing �
 
 ## Guards and housekeeping
 
-The anonymous door is rate-limited per address and hour (new guests, new threads, uploads). A nightly job removes files older than the policy's *keep files* days; the messages stay, their files gone. Under lockdown mode (a developer's switch) a sign-in from the chat is refused and a guest stays a guest.
+The anonymous door is rate-limited per address and hour (new guests, new threads, uploads). A nightly job removes files older than the policy's _keep files_ days; the messages stay, their files gone. Under lockdown mode (a developer's switch) a sign-in from the chat is refused and a guest stays a guest.
 
 ## Words
 

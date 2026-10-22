@@ -7,10 +7,10 @@ sources:
     packages/kit/src/lib/interrupt.js,
     packages/kit/src/lib/ads.js,
     packages/kit/src/lib/experiments.js,
-    packages/movable-types/src/components/admin/ExperimentsAdmin.vue,
-    packages/movable-types/src/components/CtaHost.vue,
-    packages/movable-types/src/components/AdCard.vue,
-    packages/movable-types/src/components/SiteClose.vue,
+    packages/kit/theme/src/components/admin/ExperimentsAdmin.vue,
+    packages/kit/theme/src/components/CtaHost.vue,
+    packages/kit/theme/src/components/AdCard.vue,
+    packages/kit/theme/src/components/SiteClose.vue,
   ]
 reviewed: 2026-10-14
 ---

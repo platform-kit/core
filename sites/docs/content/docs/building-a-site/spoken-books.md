@@ -9,8 +9,8 @@ sources:
     packages/kit/src/lib/speech.js,
     packages/kit/src/lib/speech/,
     packages/kit/src/lib/tts,
-    packages/movable-types/src/components/content/BookAudio.vue,
-    packages/movable-types/src/components/content/BookGenerate.vue,
+    packages/kit/theme/src/components/content/BookAudio.vue,
+    packages/kit/theme/src/components/content/BookGenerate.vue,
   ]
 reviewed: 2026-10-20
 ---

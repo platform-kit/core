@@ -5,9 +5,9 @@ order: 15
 sources:
   [
     packages/kit/src/lib/gated.js,
-    packages/movable-types/src/components/content/BookReader.vue,
-    packages/movable-types/src/components/admin/ChapterEditor.vue,
-    packages/movable-types/src/components/admin/CompanionEditor.vue,
+    packages/kit/theme/src/components/content/BookReader.vue,
+    packages/kit/theme/src/components/admin/ChapterEditor.vue,
+    packages/kit/theme/src/components/admin/CompanionEditor.vue,
     packages/kit/build/companion-io.mjs,
     packages/kit/src/lib/mastery.js,
     packages/kit/build/enrich.mjs,
@@ -21,7 +21,7 @@ sources:
     packages/kit/src/lib/finding.js,
     packages/kit/src/lib/finding-rows.js,
     packages/kit/src/lib/finding-score.js,
-    packages/movable-types/src/pages/AdminPage.vue,
+    packages/kit/theme/src/pages/AdminPage.vue,
   ]
 reviewed: 2026-10-18
 ---

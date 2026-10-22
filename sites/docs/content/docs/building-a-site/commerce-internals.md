@@ -21,7 +21,7 @@ sources:
     packages/kit/build/inventory-db.test.mjs,
     packages/kit/supabase/functions/_shared/variants.js,
     packages/kit/src/lib/variants.js,
-    packages/movable-types/src/components/store/VariantPicker.vue,
+    packages/kit/theme/src/components/store/VariantPicker.vue,
     packages/kit/build/variants.mjs,
     packages/kit/build/variants.test.mjs,
     packages/kit/build/store-kinds.test.mjs,
@@ -46,10 +46,10 @@ sources:
     packages/kit/src/payment-provider.d.ts,
     packages/kit/supabase/schemas/40-commerce.sql,
     packages/kit/build/policies.test.mjs,
-    packages/movable-types/src/components/Orders.vue,
+    packages/kit/theme/src/components/Orders.vue,
     packages/kit/build/product-keys.mjs,
     packages/kit/build/sales.mjs,
-    packages/movable-types/src/pages/StorePage.vue,
+    packages/kit/theme/src/pages/StorePage.vue,
     packages/kit/supabase/functions/create-portal-session,
     packages/kit/supabase/functions/push-catalog,
     packages/kit/supabase/functions/_shared/shipping.ts,
@@ -62,7 +62,7 @@ reviewed: 2026-10-21
 
 ## The payment-provider contract foundation
 
-The public `@platform-kit/kit/payment-provider` entry point defines the adapter operations, capability names, and normalized payment-event shape. Its capability checks refuse unsupported features, and its event validator rejects malformed or mismatched provider events. This is contract groundwork: the checkout, portal, catalog, usage, webhook, and payout flows described below still use Stripe; the contract alone does not register another provider or route those workflows through an adapter.
+The public `platformkit/payment-provider` entry point defines the adapter operations, capability names, and normalized payment-event shape. Its capability checks refuse unsupported features, and its event validator rejects malformed or mismatched provider events. This is contract groundwork: the checkout, portal, catalog, usage, webhook, and payout flows described below still use Stripe; the contract alone does not register another provider or route those workflows through an adapter.
 
 The catalog carries a session type whole, including the hours it is bookable at by default — so the scheduler has an answer before any host has set their own.
 

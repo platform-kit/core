@@ -24,7 +24,7 @@ function themeGlyphs(theme) {
   const own = new Set()
   /* the theme's own few, drawn by glyph() — its package exports its source as ./*, so this is the
      same path the app imports */
-  for (const spec of [theme && theme + '/components/landing/glyphs.js', '@platform-kit/movable-types/components/landing/glyphs.js']) {
+  for (const spec of [theme && theme + '/components/landing/glyphs.js', 'platformkit/theme/components/landing/glyphs.js']) {
     if (!spec) continue
     try {
       const src = fs.readFileSync(require.resolve(spec), 'utf8')
@@ -39,7 +39,7 @@ function themeGlyphs(theme) {
    * check that did not know them called four working icons broken and had them "fixed" into a
    * fallback dot. So the names a component compares against are read from the components.
    */
-  for (const spec of [theme && theme + '/components/landing/index.js', '@platform-kit/movable-types/components/landing/index.js']) {
+  for (const spec of [theme && theme + '/components/landing/index.js', 'platformkit/theme/components/landing/index.js']) {
     if (!spec) continue
     try {
       const home = path.dirname(require.resolve(spec))

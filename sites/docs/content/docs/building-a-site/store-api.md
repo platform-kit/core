@@ -6,7 +6,7 @@ sources:
   [
     packages/kit/supabase/functions/storefront-api,
     packages/kit/supabase/functions/_shared/api/shopify,
-    packages/movable-types/src/pages/CartHandoffPage.vue,
+    packages/kit/theme/src/pages/CartHandoffPage.vue,
     packages/kit/build/storefront-api.test.mjs,
     packages/kit/src/lib/cart.js,
     packages/kit/src/lib/shipto.js,

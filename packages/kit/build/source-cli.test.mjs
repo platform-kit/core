@@ -15,21 +15,18 @@ const gitSource = path.join(fixture, 'github-source')
 
 try {
   fs.mkdirSync(path.join(source, 'packages', 'kit'), { recursive: true })
-  fs.mkdirSync(path.join(source, 'packages', 'movable-types'), { recursive: true })
+  fs.mkdirSync(path.join(source, 'packages', 'kit', 'theme', 'src'), { recursive: true })
   fs.mkdirSync(path.join(source, 'sites'), { recursive: true })
   fs.mkdirSync(site, { recursive: true })
   fs.writeFileSync(path.join(source, 'package.json'), JSON.stringify({ name: '@platform-kit/workspace' }))
   fs.writeFileSync(path.join(source, 'packages', 'kit', 'package.json'), JSON.stringify({
-    name: '@platform-kit/kit',
+    name: 'platformkit',
     version: '0.1.0',
     type: 'module',
+    exports: { './theme/*': './theme/src/*', './*': './*' },
   }))
-  fs.writeFileSync(path.join(source, 'packages', 'movable-types', 'package.json'), JSON.stringify({
-    name: '@platform-kit/movable-types',
-    version: '0.1.0',
-    type: 'module',
-    dependencies: { '@platform-kit/kit': '0.1.0' },
-  }))
+  /* the theme inside the one package */
+  fs.writeFileSync(path.join(source, 'packages', 'kit', 'theme', 'src', 'theme.js'), 'export default { name: "movable-types" }\n')
   for (const file of [
     'packages/kit/bin/platformkit.mjs',
     'packages/kit/build/source-install.mjs',
@@ -61,11 +58,9 @@ try {
 
   assert.equal(fs.readFileSync(manifestPath, 'utf8'), manifest)
   assert.equal(fs.existsSync(path.join(site, 'package-lock.json')), false)
-  assert.equal(JSON.parse(fs.readFileSync(path.join(site, 'node_modules', '@platform-kit', 'kit', 'package.json'), 'utf8')).name, '@platform-kit/kit')
-  assert.equal(JSON.parse(fs.readFileSync(path.join(site, 'node_modules', '@platform-kit', 'movable-types', 'package.json'), 'utf8')).name, '@platform-kit/movable-types')
-  const themeManifest = path.join(site, 'node_modules', '@platform-kit', 'movable-types', 'package.json')
-  const kitManifest = createRequire(themeManifest).resolve('@platform-kit/kit/package.json')
-  assert.equal(JSON.parse(fs.readFileSync(kitManifest, 'utf8')).name, '@platform-kit/kit')
+  /* one package, platformkit, with the theme inside it */
+  assert.equal(JSON.parse(fs.readFileSync(path.join(site, 'node_modules', 'platformkit', 'package.json'), 'utf8')).name, 'platformkit')
+  assert.ok(fs.existsSync(createRequire(manifestPath).resolve('platformkit/theme/theme.js')), 'the theme resolves as platformkit/theme')
 
   const workspace = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
   assert.equal(workspace.repository, 'github:platform-kit/core')
@@ -96,7 +91,7 @@ registerHooks({
     encoding: 'utf8',
   })
   assert.equal(deploy.status, 0, deploy.stderr)
-  assert.ok(deploy.stdout.includes(pathToFileURL(fs.realpathSync(path.join(site, 'node_modules', '@platform-kit', 'kit', 'build', 'deploy.mjs'))).href), deploy.stdout)
+  assert.ok(deploy.stdout.includes(pathToFileURL(fs.realpathSync(path.join(site, 'node_modules', 'platformkit', 'build', 'deploy.mjs'))).href), deploy.stdout)
   assert.match(deploy.stdout, /site dependency resolved/)
 
   fs.mkdirSync(path.join(gitSource, 'bin'), { recursive: true })

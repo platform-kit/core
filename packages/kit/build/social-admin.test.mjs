@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
-const adminPage = fs.readFileSync(new URL('../../movable-types/src/pages/AdminPage.vue', import.meta.url), 'utf8')
-const adminHead = fs.readFileSync(new URL('../../movable-types/src/components/admin/AdminHead.vue', import.meta.url), 'utf8')
-const socialAdmin = fs.readFileSync(new URL('../../movable-types/src/components/admin/SocialAdmin.vue', import.meta.url), 'utf8')
-const socialWords = fs.readFileSync(new URL('../../movable-types/src/content/ui/social.md', import.meta.url), 'utf8')
+const adminPage = fs.readFileSync(new URL('../theme/src/pages/AdminPage.vue', import.meta.url), 'utf8')
+const adminHead = fs.readFileSync(new URL('../theme/src/components/admin/AdminHead.vue', import.meta.url), 'utf8')
+const socialAdmin = fs.readFileSync(new URL('../theme/src/components/admin/SocialAdmin.vue', import.meta.url), 'utf8')
+const socialWords = fs.readFileSync(new URL('../theme/src/content/ui/social.md', import.meta.url), 'utf8')
 
 assert.match(
   adminPage,

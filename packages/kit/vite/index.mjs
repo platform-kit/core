@@ -166,7 +166,7 @@ function site(c, theme, keys = []) {
      * without a single English word in a component.
      */
     if (id === V['#site/strings-default']) {
-      const { readScopes } = await import('@platform-kit/kit/build/strings-io.mjs')
+      const { readScopes } = await import('platformkit/build/strings-io.mjs')
       const scopes = readScopes(theme.strings)
       const out = {}
       for (const [k, v] of Object.entries(scopes)) out[k] = v.groups

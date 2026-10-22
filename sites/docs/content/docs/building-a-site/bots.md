@@ -5,8 +5,8 @@ order: 56.6
 sources:
   [
     packages/kit/src/lib/copilot,
-    packages/movable-types/src/pages/VoicePage.vue,
-    packages/movable-types/src/components/copilot,
+    packages/kit/theme/src/pages/VoicePage.vue,
+    packages/kit/theme/src/components/copilot,
     packages/kit/supabase/functions/copilot-speak,
     packages/kit/src/lib/copilot,
     packages/kit/supabase/functions/copilot-llm,
@@ -14,7 +14,7 @@ sources:
     packages/kit/build/copilot-db.test.mjs,
     packages/kit/supabase/functions/_shared/copilot,
     packages/kit/build/copilot.test.mjs,
-    packages/movable-types/src/content/skills,
+    packages/kit/theme/src/content/skills,
     packages/kit/src/lib/agents/loop.js,
     packages/kit/supabase/functions/_shared/usage-gate.mjs,
     packages/kit/supabase/functions/_shared/usage.ts,
@@ -38,20 +38,20 @@ sources:
     packages/kit/build/anthropic.test.mjs,
     packages/kit/supabase/functions/_shared/agents/tools.js,
     packages/kit/supabase/functions/_shared/choices.js,
-    packages/movable-types/src/components/chat/ChatChoices.vue,
+    packages/kit/theme/src/components/chat/ChatChoices.vue,
     packages/kit/supabase/schemas/13-search.sql,
     packages/kit/build/search-push.mjs,
     packages/kit/build/search-db.mjs,
     packages/kit/build/steps/search.mjs,
     packages/kit/supabase/functions/_shared/agents/desk-bot.js,
-    packages/movable-types/src/components/spaces/SpaceCommand.vue,
+    packages/kit/theme/src/components/spaces/SpaceCommand.vue,
     packages/kit/supabase/functions/social-automation,
     packages/kit/supabase/functions/social-webhook,
     packages/kit/supabase/schemas/99-social.sql,
     packages/kit/build/social-automation.test.mjs,
     packages/kit/build/social-automation-db.test.mjs,
     packages/kit/build/social-automation-admin.test.mjs,
-    packages/movable-types/src/components/admin/social,
+    packages/kit/theme/src/components/admin/social,
   ]
 reviewed: 2026-10-21
 ---

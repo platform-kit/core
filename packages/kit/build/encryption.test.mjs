@@ -150,7 +150,7 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
   const WORKSPACE = new URL('../../..', import.meta.url).pathname
   const SITE = process.cwd()
   const dirs = [
-    join(WORKSPACE, 'packages/movable-types/src'),
+    join(WORKSPACE, 'packages/kit/theme/src'),
     join(WORKSPACE, 'packages/kit/src'),
     join(SITE, 'src'),
   ].filter((d) => { try { return stat(d).isDirectory() } catch { return false } })
@@ -234,7 +234,7 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
   }
   const files = [
     ...walk(join(ROOT, 'packages/kit/src')),
-    ...walk(join(ROOT, 'packages/movable-types/src')),
+    ...walk(join(ROOT, 'packages/kit/theme/src')),
   ]
   const THE_ONE = join(ROOT, 'packages/kit/src/lib/spaces/crypto.js')
   ok('there is a module whose job this is', files.includes(THE_ONE))

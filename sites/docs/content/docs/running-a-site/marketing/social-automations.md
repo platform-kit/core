@@ -4,9 +4,9 @@ description: Configure staff-only, account-scoped bot replies to verified provid
 order: 50.1
 sources:
   [
-    packages/movable-types/src/components/admin/social,
-    packages/movable-types/src/components/admin/SocialAdmin.vue,
-    packages/movable-types/src/content/ui/social.md,
+    packages/kit/theme/src/components/admin/social,
+    packages/kit/theme/src/components/admin/SocialAdmin.vue,
+    packages/kit/theme/src/content/ui/social.md,
     packages/kit/supabase/functions/social,
     packages/kit/supabase/functions/social-webhook,
     packages/kit/supabase/functions/social-automation,

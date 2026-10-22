@@ -7,7 +7,7 @@ sources:
     packages/kit/supabase/schemas/97-comments.sql,
     packages/kit/supabase/schemas/99-reactions.sql,
     packages/kit/src/lib/desk/comments.js,
-    packages/movable-types/src/components/CommentsAdmin.vue,
+    packages/kit/theme/src/components/CommentsAdmin.vue,
     packages/kit/build/models/core/comments.mjs,
     packages/kit/src/lib/comments.js,
     packages/kit/src/lib/comments/model.js,
@@ -15,9 +15,9 @@ sources:
     packages/kit/build/comments-sdk.mjs,
     packages/kit/build/steps/comments.mjs,
     packages/kit/build/steps/comments-sdk.mjs,
-    packages/movable-types/src/components/content/CommentThread.vue,
-    packages/movable-types/src/comments-embed.js,
-    packages/movable-types/src/pages/CommentsEmbedPage.vue,
+    packages/kit/theme/src/components/content/CommentThread.vue,
+    packages/kit/theme/src/comments-embed.js,
+    packages/kit/theme/src/pages/CommentsEmbedPage.vue,
   ]
 reviewed: 2026-10-21
 ---

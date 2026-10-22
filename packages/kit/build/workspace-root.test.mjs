@@ -34,7 +34,7 @@ fs.writeFileSync(path.join(fixture, 'sites', 'reader-site', 'package.json'), JSO
 
 try {
   assert.equal(platformKitWorkspaceRoot(path.dirname(ROOT_PACKAGE)), path.dirname(ROOT_PACKAGE))
-  const installedKitBin = path.join(installedFixture, 'node_modules', '@platform-kit', 'kit', 'bin')
+  const installedKitBin = path.join(installedFixture, 'node_modules', 'platformkit', 'bin')
   fs.mkdirSync(installedKitBin, { recursive: true })
   assert.equal(platformKitWorkspaceRoot(installedKitBin), null)
 

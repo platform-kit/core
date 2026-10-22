@@ -4,18 +4,18 @@ description: The library — every picture and file the site uses in one place; 
 order: 14
 sources:
   [
-    packages/movable-types/src/components/MediaPage.vue,
-    packages/movable-types/src/components/admin/MediaPicker.vue,
-    packages/movable-types/src/lib/admin/media-driver.js,
-    packages/movable-types/src/lib/admin/media-pick.js,
-    packages/movable-types/src/content/ui/media.md,
+    packages/kit/theme/src/components/MediaPage.vue,
+    packages/kit/theme/src/components/admin/MediaPicker.vue,
+    packages/kit/theme/src/lib/admin/media-driver.js,
+    packages/kit/theme/src/lib/admin/media-pick.js,
+    packages/kit/theme/src/content/ui/media.md,
     packages/kit/build/assets.mjs,
     packages/kit/build/runtime-paths.mjs,
     packages/kit/build/migrate-assets.mjs,
-    packages/movable-types/src/components/admin/media,
+    packages/kit/theme/src/components/admin/media,
     packages/kit/build/admin-pipe.mjs,
     packages/kit/build/images,
-    packages/movable-types/src/components/admin/ImageSource.vue,
+    packages/kit/theme/src/components/admin/ImageSource.vue,
   ]
 reviewed: 2026-10-21
 ---

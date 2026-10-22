@@ -6,16 +6,16 @@ sources:
   [
     packages/kit/build/site.mjs,
     packages/kit/src/lib/router.js,
-    packages/movable-types/src/pages/AdminPage.vue,
+    packages/kit/theme/src/pages/AdminPage.vue,
   ]
 reviewed: 2026-10-13
 ---
 
 **Site.** One PlatformKit website and its configuration, content, visual design, and site-specific features. The generic demo and this documentation site are separate sites.
 
-**The kit.** `@platform-kit/kit` — shared code for content processing, the CLI, build and deploy, database declarations, APIs, and application services such as checkout, memberships, messaging, email, and print production.
+**The kit.** `platformkit` — shared code for content processing, the CLI, build and deploy, database declarations, APIs, and application services such as checkout, memberships, messaging, email, and print production.
 
-**The theme.** `@platform-kit/movable-types` — the pages, components, admin screens, and styles that users see. A site can replace a theme component by name.
+**The theme.** `platformkit/theme` — the pages, components, admin screens, and styles that users see. A site can replace a theme component by name.
 
 **Form.** A record under `content/forms/` that defines its questions, answer types, conditions, and completion behavior. A form can have its own page, appear on a landing page, or be embedded on another site. See [Forms](/content/docs/running-a-site/marketing/forms).
 

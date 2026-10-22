@@ -9,7 +9,7 @@ sources:
     packages/kit/build/dev-directory.test.mjs,
     packages/kit/src/lib/seo-head.js,
     packages/kit/src/lib/seo.js,
-    packages/movable-types/src/content/ui/site-directory.md,
+    packages/kit/theme/src/content/ui/site-directory.md,
     .nvmrc,
     packages/kit/build/dev.mjs,
     packages/kit/build/dev-workspace.mjs,
@@ -47,10 +47,10 @@ sources:
     packages/kit/build/hosts.mjs,
     packages/kit/src/lib/book-art.js,
     packages/kit/src/lib/storefront.js,
-    packages/movable-types/src/components/Book3D.vue,
-    packages/movable-types/src/components/store/StoreHome.vue,
-    packages/movable-types/src/components/store/ProductCard.vue,
-    packages/movable-types/src/components/store/ProductPage.vue,
+    packages/kit/theme/src/components/Book3D.vue,
+    packages/kit/theme/src/components/store/StoreHome.vue,
+    packages/kit/theme/src/components/store/ProductCard.vue,
+    packages/kit/theme/src/components/store/ProductPage.vue,
     packages/kit/vite/index.mjs,
     package.json,
     sites/docs/package.json,
@@ -166,11 +166,11 @@ The Apache example uses a `.htaccess` fallback so deep links reach the single-pa
 
 ## Package releases and site deployment ownership
 
-PlatformKit maintainers publish versioned core and theme packages from the PlatformKit repository. The manually triggered `Publish PlatformKit packages` workflow requires the exact version declared by both package manifests, runs the kit test suite, then publishes the core package before the theme to the public npm registry. It requires the repository secret `NPM_TOKEN`; it does not publish automatically on every commit. A site must not pin a version until both packages are available from npm.
+PlatformKit maintainers publish one package, `platformkit` (the engine with its theme inside it), from the PlatformKit repository. The manually triggered `Publish PlatformKit packages` workflow requires the exact version declared by `packages/kit/package.json`, runs the kit test suite, then publishes it to the public npm registry. It requires the repository secret `NPM_TOKEN`; it does not publish automatically on every commit. A site must not pin a version until it is available from npm. The same package runs from GitHub without a release: `npx github:platform-kit/core#<branch-or-tag> dev`.
 
 Each site maintainer owns the site repository, its exact PlatformKit package versions, and its committed lockfile. To upgrade, change the package versions and lockfile together, then run `npm ci`, `platformkit test`, and `platformkit build` from the site repository before merging. The production host checks out and builds the site repository commit; the machine-local site registry only supports developer workflows and is not part of production deployment. For a backend deployment, the host runs `platformkit deploy` from that same checkout with its production environment and explicit deployment confirmation.
 
-Before any production-facing deploy step, `platformkit deploy` checks that `package.json` directly pins both `@platform-kit/kit` and `@platform-kit/movable-types` to exact versions and that `package-lock.json` resolves those same versions from an HTTPS package registry with integrity hashes. A missing lockfile, range, stale resolution, workspace link, or local package source refuses the deploy; release the packages and regenerate the site's lockfile before trying again.
+Before any production-facing deploy step, `platformkit deploy` checks that `package.json` directly pins both `platformkit` and `platformkit/theme` to exact versions and that `package-lock.json` resolves those same versions from an HTTPS package registry with integrity hashes. A missing lockfile, range, stale resolution, workspace link, or local package source refuses the deploy; release the packages and regenerate the site's lockfile before trying again.
 
 ### Render build commands
 
@@ -195,7 +195,7 @@ For a production deployment, with the site's production environment configured, 
 DEPLOY=1 npx --yes --package=github:platform-kit/core platformkit deploy
 ```
 
-This avoids waiting for Core and theme releases on npm; npm is still used to install the site's dependencies and fetch the GitHub-hosted CLI. The source route installs the kit and theme into the site's `node_modules` without changing its manifest or lockfile.
+This avoids waiting for a release on npm; npm is still used to install the site's dependencies and fetch the GitHub-hosted CLI. The source route installs the kit and theme into the site's `node_modules` without changing its manifest or lockfile.
 
 ## `platformkit build`
 

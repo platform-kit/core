@@ -13,9 +13,9 @@ sources:
     packages/kit/build/teams.test.mjs,
     packages/kit/build/teams-db.test.mjs,
     packages/kit/src/lib/teams.js,
-    packages/movable-types/src/components/admin/TeamMembers.vue,
-    packages/movable-types/src/content/ui/teams.md,
-    packages/movable-types/src/pages/PersonPage.vue,
+    packages/kit/theme/src/components/admin/TeamMembers.vue,
+    packages/kit/theme/src/content/ui/teams.md,
+    packages/kit/theme/src/pages/PersonPage.vue,
   ]
 reviewed: 2026-10-21
 ---

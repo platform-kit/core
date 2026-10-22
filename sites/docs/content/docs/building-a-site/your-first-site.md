@@ -48,7 +48,7 @@ working on that integration.
 ```js
 export default {
   name: 'My Site',
-  theme: '@platform-kit/movable-types',
+  theme: 'platformkit/theme',
   modules: {
     store: true,
     print: false,
@@ -104,7 +104,7 @@ For a deployment, the site repository can invoke the Core CLI directly from GitH
 npx --yes --package=github:platform-kit/core platformkit deploy
 ```
 
-This sources the kit and theme from the Core repository, so npm publication is not required and the site's manifest and lockfile are not changed. When using npm-published PlatformKit packages instead, pin their exact versions and commit the matching `package-lock.json`. A standalone site build uses its own repository and dependencies; it does not need files from a sibling site. See [Dev, build and deploy](/content/docs/building-a-site/dev-build-and-deploy) and the [multi-site guide](/content/docs/running-a-site/multiple-sites) for local workspace development and repository fetches.
+This sources `platformkit` from the Core repository, so npm publication is not required and the site's manifest and lockfile are not changed. When using npm-published PlatformKit packages instead, pin their exact versions and commit the matching `package-lock.json`. A standalone site build uses its own repository and dependencies; it does not need files from a sibling site. See [Dev, build and deploy](/content/docs/building-a-site/dev-build-and-deploy) and the [multi-site guide](/content/docs/running-a-site/multiple-sites) for local workspace development and repository fetches.
 
 Use Node 22 for every command. The `platformkit` executable uses nvm to restart under Node 22 when available; otherwise install Node 22 or use the PlatformKit devcontainer.
 

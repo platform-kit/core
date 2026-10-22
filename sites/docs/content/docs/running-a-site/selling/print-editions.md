@@ -4,9 +4,9 @@ description: Putting a book on sale in print and as files — the block on the b
 order: 21
 sources:
   [
-    packages/movable-types/src/components/admin/PrintAdmin.vue,
-    packages/movable-types/src/components/PrintOrders.vue,
-    packages/movable-types/src/pages/AdminPage.vue,
+    packages/kit/theme/src/components/admin/PrintAdmin.vue,
+    packages/kit/theme/src/components/PrintOrders.vue,
+    packages/kit/theme/src/pages/AdminPage.vue,
     packages/kit/build/print.mjs,
     packages/kit/build/print/block.mjs,
     packages/kit/src/lib/print-offers.js,

@@ -30,7 +30,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
-const THEME = path.resolve(HERE, '../../movable-types/src')
+const THEME = path.resolve(HERE, '../theme/src')
 const SHEET = path.join(THEME, 'components/admin/admin-ui.css')
 
 let n = 0, bad = 0

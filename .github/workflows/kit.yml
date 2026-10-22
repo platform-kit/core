@@ -1,5 +1,5 @@
 # The kit's CI: the kit's checks, the phone probe against the demo and the end-to-end run on every push and pull request,
-# and, on a tag `kit-v<version>`, both packages published to npm and to GitHub Packages.
+# and, on a tag `kit-v<version>`, the one package (platformkit) published to npm.
 # Secrets: NPM_TOKEN (npm, publish rights on @platform-kit); STRIPE_TEST_SECRET_KEY (the e2e job); GITHUB_TOKEN is the runner's own.
 name: kit
 on:
@@ -96,17 +96,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, registry-url: 'https://registry.npmjs.org', scope: '@platform-kit' }
+        with: { node-version: 22, registry-url: 'https://registry.npmjs.org' }
       - run: npm ci
       - name: the version from the tag
         run: |
           V="${GITHUB_REF_NAME#kit-v}"
-          npm version "$V" --no-git-tag-version --workspace @platform-kit/kit --workspace @platform-kit/movable-types
+          npm version "$V" --no-git-tag-version --workspace platformkit
       - name: npm
-        run: npm publish --workspace @platform-kit/kit --workspace @platform-kit/movable-types --access public
+        run: npm publish --workspace platformkit --access public
         env: { NODE_AUTH_TOKEN: '${{ secrets.NPM_TOKEN }}' }
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, registry-url: 'https://npm.pkg.github.com', scope: '@platform-kit' }
-      - name: GitHub Packages
-        run: npm publish --workspace @platform-kit/kit --workspace @platform-kit/movable-types
-        env: { NODE_AUTH_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
+      # no GitHub Packages step: it takes scoped names only, and platformkit is unscoped; GitHub itself serves the
+      # package as github:platform-kit/core#<tag>, the other of the two ways to run it

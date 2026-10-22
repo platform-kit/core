@@ -6,7 +6,6 @@ sources:
   [
     docs/PLATFORMKIT.md,
     packages/kit/package.json,
-    packages/movable-types/package.json,
     packages/kit/src/lib/store.js,
     packages/kit/src/lib/store-light.js,
     packages/kit/src/lib/sync.js,
@@ -26,21 +25,21 @@ reviewed: 2026-10-20
 
 PlatformKit sites use three packages. Before changing code, identify which package owns the behavior:
 
-- **Kit** (`@platform-kit/kit`): shared libraries, build pipeline, database declarations and functions, CLI, and deployment tools.
-- **Theme** (`@platform-kit/movable-types`): pages, components, layouts, styles, instrument screens, and default interface text.
+- **Kit** (`platformkit`): shared libraries, build pipeline, database declarations and functions, CLI, and deployment tools.
+- **Theme** (`platformkit/theme`): pages, components, layouts, styles, instrument screens, and default interface text.
 - **Site** (for example, `sites/demo`): `platformkit.config.js`, content, site-specific code and styles, database declarations, and tests.
 
 Change a site's behavior through its config, content, or registered code. If a feature requires changing shared kit or theme behavior, make that change in the corresponding package rather than copying or patching the package inside a site.
 
 ## Repository layout
 
-The workspace root contains tooling and package links. `packages/` contains the reusable kit and theme; `sites/` contains runnable sites and fixtures.
+The workspace root contains tooling and package links. `packages/kit` is the one published package, `platformkit`: the reusable engine, with the default theme inside it at `packages/kit/theme`; `sites/` contains runnable sites and fixtures.
 
 ```text
 package.json                 workspace tooling and scripts
 openspec/                    capability specifications and proposed changes
 packages/kit/                shared libraries, build tools, database, CLI
-packages/movable-types/      theme components, pages, styles, default strings
+packages/kit/theme/      theme components, pages, styles, default strings
 sites/<site>/                a site's config, content, registrations, and tests
   platformkit.config.js      enabled modules and site registrations
   content/                   site records and pages
@@ -56,7 +55,7 @@ deploy/                       shared hosting and deployment configuration
 
 ## Package boundaries
 
-Imports between the kit and theme use package specifiers such as `@platform-kit/kit/lib/...` and `@platform-kit/movable-types/components/...`. The theme may import the kit; the kit must not depend on the theme or on a site. A site supplies its choices through `platformkit.config.js` and the registrations documented in [Configuration](/content/docs/building-a-site/configuration).
+Imports between the kit and theme use package specifiers such as `platformkit/lib/...` and `platformkit/theme/components/...`. The theme may import the kit; the kit must not depend on the theme or on a site. A site supplies its choices through `platformkit.config.js` and the registrations documented in [Configuration](/content/docs/building-a-site/configuration).
 
 Some enabled features need extra packages at build time, such as `mjml`, the Typst compiler, or `onnxruntime-node`. Declare these in the site package that enables the feature. The build-step checks report missing packages.
 

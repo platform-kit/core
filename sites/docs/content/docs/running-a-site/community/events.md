@@ -8,7 +8,7 @@ sources:
     packages/kit/build/events-push.mjs,
     packages/kit/supabase/schemas/95-events.sql,
     packages/kit/supabase/functions/event-reminders,
-    packages/movable-types/src/pages/SpacesPage.vue,
+    packages/kit/theme/src/pages/SpacesPage.vue,
   ]
 reviewed: 2026-10-10
 ---

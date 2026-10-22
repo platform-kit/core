@@ -6,19 +6,19 @@ reviewed: 2026-10-10
 sources:
   [
     packages/kit/src/lib/chrome.js,
-    packages/movable-types/src/components/admin/PageBuilder.vue,
-    packages/movable-types/src/components/admin/SectionFields.vue,
-    packages/movable-types/src/components/admin/SectionPicker.vue,
-    packages/movable-types/src/components/admin/GlyphPicker.vue,
-    packages/movable-types/src/components/landing/schemas.js,
-    packages/movable-types/src/components/landing/index.js,
-    packages/movable-types/src/components/landing/icons.js,
-    packages/movable-types/src/components/SiteClose.vue,
-    packages/movable-types/src/pages/LandingPage.vue,
+    packages/kit/theme/src/components/admin/PageBuilder.vue,
+    packages/kit/theme/src/components/admin/SectionFields.vue,
+    packages/kit/theme/src/components/admin/SectionPicker.vue,
+    packages/kit/theme/src/components/admin/GlyphPicker.vue,
+    packages/kit/theme/src/components/landing/schemas.js,
+    packages/kit/theme/src/components/landing/index.js,
+    packages/kit/theme/src/components/landing/icons.js,
+    packages/kit/theme/src/components/SiteClose.vue,
+    packages/kit/theme/src/pages/LandingPage.vue,
     packages/kit/build/icons.mjs,
     sites/demo/content/pages/sections.md,
     sites/demo/content/pages/shop.md,
-    packages/movable-types/src/pages/PreviewPage.vue,
+    packages/kit/theme/src/pages/PreviewPage.vue,
   ]
 ---
 

@@ -5,7 +5,7 @@ order: 45
 sources:
   [
     packages/kit/build/strings-io.mjs,
-    packages/movable-types/src/content/ui,
+    packages/kit/theme/src/content/ui,
     packages/kit/src/lib/strings.js,
     packages/kit/build/strings-admin.mjs,
   ]
@@ -16,7 +16,7 @@ Use the UI strings files for text shown in the app: headings, labels, prompts, b
 
 ## Where strings live
 
-The theme provides defaults in `packages/movable-types/src/content/ui/<scope>.md`. A site can override any of those values in `content/app/ui/<scope>.md`. The build merges them by scope, group, key, and field; a site value replaces the theme's value, and omitted values keep the theme default.
+The theme provides defaults in `packages/kit/theme/src/content/ui/<scope>.md`. A site can override any of those values in `content/app/ui/<scope>.md`. The build merges them by scope, group, key, and field; a site value replaces the theme's value, and omitted values keep the theme default.
 
 Scopes group text by interface area. Common examples include `library`, `store`, `forms`, and `analytics`. The `usage` scope also supplies copy for membership billing, including plan status, renewal, cancellation, and saved-payment readiness, and the site-wide banner for a usage payment that needs the reader (`alert`). The instrument scopes `glossary`, `topics`, `concepts`, and `patterns` belong to the site and have no theme defaults. Longer site copy belongs in `content/strings/<lang>/` and is read with i18next, not the UI strings helpers.
 
@@ -41,7 +41,7 @@ Put each `field: value` on one line. The parser does not join wrapped field valu
 
 ## Read strings in code
 
-In a component, use `us(scope).group.key.field` for a value or `ug(scope, group)` for the whole group. These helpers are exported by `@platform-kit/kit/lib/content.js`.
+In a component, use `us(scope).group.key.field` for a value or `ug(scope, group)` for the whole group. These helpers are exported by `platformkit/lib/content.js`.
 
 Build scripts should use `uiScope(scope)` from `strings-io.mjs` rather than reading a content file directly. Edge Functions receive their required copy as generated JSON during assembly.
 

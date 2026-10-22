@@ -5,13 +5,13 @@ order: 40
 sources:
   [
     packages/kit/build/strings-io.mjs,
-    packages/movable-types/src/components/admin/NavField.vue,
-    packages/movable-types/src/lib/theme-nav.js,
+    packages/kit/theme/src/components/admin/NavField.vue,
+    packages/kit/theme/src/lib/theme-nav.js,
     packages/kit/src/lib/nav.js,
-    packages/movable-types/src/content/ui,
-    packages/movable-types/src/components/admin/StringsEditor.vue,
-    packages/movable-types/src/components/admin/PaymentsAdmin.vue,
-    packages/movable-types/src/pages/AdminPage.vue,
+    packages/kit/theme/src/content/ui,
+    packages/kit/theme/src/components/admin/StringsEditor.vue,
+    packages/kit/theme/src/components/admin/PaymentsAdmin.vue,
+    packages/kit/theme/src/pages/AdminPage.vue,
     packages/kit/src/lib/look.js,
   ]
 reviewed: 2026-10-18

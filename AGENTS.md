@@ -6,7 +6,7 @@ OpenSpec specifications under `openspec/specs/` describe current platform behavi
 
 ## Repository boundaries
 
-PlatformKit owns `packages/kit`, `packages/movable-types`, shared workspace tooling, and the generic demo and documentation sites. A downstream site owns its content, configuration, site-specific code, tests, documentation, and product requirements. Do not add a downstream site's identity or product details to PlatformKit's maintained docs, configuration, or specifications.
+PlatformKit owns `packages/kit`, `packages/kit/theme`, shared workspace tooling, and the generic demo and documentation sites. A downstream site owns its content, configuration, site-specific code, tests, documentation, and product requirements. Do not add a downstream site's identity or product details to PlatformKit's maintained docs, configuration, or specifications.
 
 Separately owned sites are fetched into the local managed-site area. They are not npm workspaces, and package releases and production deployments run from the site's own repository.
 
@@ -34,7 +34,7 @@ The goal is the outcome the user asked for, not the design already in progress. 
 ## Workspace layout
 
 - `packages/kit` contains shared mechanics, build tooling, CLI, and backend declarations.
-- `packages/movable-types` contains the default theme and reusable interfaces.
+- `packages/kit/theme` contains the default theme and reusable interfaces.
 - `sites/demo` exercises the platform with generic content and enabled modules.
 - `sites/docs` is the standalone documentation site.
 

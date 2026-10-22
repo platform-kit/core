@@ -13,8 +13,8 @@ sources:
     packages/kit/supabase/functions/_shared/forms-live.ts,
     packages/kit/src/lib/forms/typeform-embed.js,
     packages/kit/build/forms-api.test.mjs,
-    packages/movable-types/src/components/forms/FormRun.vue,
-    packages/movable-types/src/components/admin/FormBuilder.vue,
+    packages/kit/theme/src/components/forms/FormRun.vue,
+    packages/kit/theme/src/components/admin/FormBuilder.vue,
   ]
 reviewed: 2026-10-21
 ---

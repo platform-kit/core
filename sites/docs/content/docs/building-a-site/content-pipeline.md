@@ -120,7 +120,7 @@ This live replacement applies only to collections included in the bundle. Site-d
 
 ## Reading content in code
 
-Read content through `@platform-kit/kit/lib/content.js` rather than importing generated `.velite` files. Its helpers include `article(id)`, `articleIndex()`, `docTree(collection)`, `loadDoc(collection, id)`, book and chapter accessors, UI-string helpers (`us(scope)`, `ug(scope, group)`, `t()`), and the site record.
+Read content through `platformkit/lib/content.js` rather than importing generated `.velite` files. Its helpers include `article(id)`, `articleIndex()`, `docTree(collection)`, `loadDoc(collection, id)`, book and chapter accessors, UI-string helpers (`us(scope)`, `ug(scope, group)`, `t()`), and the site record.
 
 ## A declaration that contradicts itself is refused
 

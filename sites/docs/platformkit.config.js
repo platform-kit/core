@@ -7,7 +7,7 @@
  */
 export default {
   name: 'PlatformKit Docs',
-  theme: '@platform-kit/movable-types',
+  theme: 'platformkit/theme',
   modules: {
     articles: false, books: false, wiki: false, docs: true,
     store: false, print: false, memberships: false, sessions: false, coaching: false, support: false,

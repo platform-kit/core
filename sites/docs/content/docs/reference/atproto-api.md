@@ -8,7 +8,7 @@ sources:
     packages/kit/supabase/functions/_shared/atproto,
     packages/kit/build/atproto.test.mjs,
     packages/kit/src/lib/network/apps.js,
-    packages/movable-types/src/components/network/NetApps.vue,
+    packages/kit/theme/src/components/network/NetApps.vue,
     deploy/_redirects,
     packages/kit/vite/index.mjs,
     packages/kit/supabase/functions/_shared/atproto/federation.ts,

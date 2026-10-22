@@ -4,10 +4,10 @@ description: Find what your account saves, how memberships and purchases work, a
 order: 31
 sources:
   [
-    packages/movable-types/src/components/AuthModal.vue,
-    packages/movable-types/src/pages/BillingPortalPage.vue,
-    packages/movable-types/src/pages/SignInPage.vue,
-    packages/movable-types/src/components/store/ProductPage.vue,
+    packages/kit/theme/src/components/AuthModal.vue,
+    packages/kit/theme/src/pages/BillingPortalPage.vue,
+    packages/kit/theme/src/pages/SignInPage.vue,
+    packages/kit/theme/src/components/store/ProductPage.vue,
     packages/kit/src/lib/downloads.js,
     packages/kit/src/lib/booking.js,
   ]

@@ -9,7 +9,7 @@
  */
 export default {
   name: 'Northlight Club',
-  theme: '@platform-kit/movable-types',
+  theme: 'platformkit/theme',
   modules: {
     /* a little writing, behind the membership */
     articles: true, wiki: false, books: false, docs: false,

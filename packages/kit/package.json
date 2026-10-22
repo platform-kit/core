@@ -1,7 +1,7 @@
 {
-  "name": "@platform-kit/kit",
+  "name": "platformkit",
   "version": "0.1.0",
-  "description": "PlatformKit core: the content system, the store, memberships and sessions, the chats, funnels and emails, auth, the data platform, the build and the deploy — everything with no pixels.",
+  "description": "PlatformKit: the engine and its default theme (Movable Types), one package. A site depends on it alone.",
   "type": "module",
   "license": "MIT",
   "repository": "github:platform-kit/core",
@@ -10,6 +10,8 @@
     "./build/*": "./build/*",
     "./supabase/*": "./supabase/*",
     "./vendor/*": "./vendor/*",
+    "./theme": "./theme/src/main.js",
+    "./theme/*": "./theme/src/*",
     "./*": "./src/*"
   },
   "imports": {
@@ -34,56 +36,56 @@
       "default": "./build/site-app-node.mjs"
     },
     "#site/routes": {
-      "node": "@platform-kit/kit/build/site-routes-node.mjs",
-      "default": "@platform-kit/kit/build/site-routes-node.mjs"
+      "node": "platformkit/build/site-routes-node.mjs",
+      "default": "platformkit/build/site-routes-node.mjs"
     },
     "#site/nav": {
-      "node": "@platform-kit/kit/build/site-nav-node.mjs",
-      "default": "@platform-kit/kit/build/site-nav-node.mjs"
+      "node": "platformkit/build/site-nav-node.mjs",
+      "default": "platformkit/build/site-nav-node.mjs"
     },
     "#site/analytics": {
-      "node": "@platform-kit/kit/build/site-analytics-node.mjs",
-      "default": "@platform-kit/kit/build/site-analytics-node.mjs"
+      "node": "platformkit/build/site-analytics-node.mjs",
+      "default": "platformkit/build/site-analytics-node.mjs"
     },
     "#site/instrument": {
-      "node": "@platform-kit/kit/build/site-instrument-node.mjs",
-      "default": "@platform-kit/kit/build/site-instrument-node.mjs"
+      "node": "platformkit/build/site-instrument-node.mjs",
+      "default": "platformkit/build/site-instrument-node.mjs"
     },
     "#site/content/*": {
-      "node": "@platform-kit/kit/build/content-file-node.mjs",
-      "default": "@platform-kit/kit/build/content-file-node.mjs"
+      "node": "platformkit/build/content-file-node.mjs",
+      "default": "platformkit/build/content-file-node.mjs"
     },
     "#content/*": {
-      "node": "@platform-kit/kit/build/content-file-node.mjs",
-      "default": "@platform-kit/kit/build/content-file-node.mjs"
+      "node": "platformkit/build/content-file-node.mjs",
+      "default": "platformkit/build/content-file-node.mjs"
     },
     "#site/recommendations": {
-      "node": "@platform-kit/kit/build/site-recommendations-node.mjs",
-      "default": "@platform-kit/kit/build/site-recommendations-node.mjs"
+      "node": "platformkit/build/site-recommendations-node.mjs",
+      "default": "platformkit/build/site-recommendations-node.mjs"
     },
     "#site/permissions": {
-      "node": "@platform-kit/kit/build/site-permissions-node.mjs",
-      "default": "@platform-kit/kit/build/site-permissions-node.mjs"
+      "node": "platformkit/build/site-permissions-node.mjs",
+      "default": "platformkit/build/site-permissions-node.mjs"
     },
     "#site/desk": {
-      "node": "@platform-kit/kit/build/site-desk-node.mjs",
-      "default": "@platform-kit/kit/build/site-desk-node.mjs"
+      "node": "platformkit/build/site-desk-node.mjs",
+      "default": "platformkit/build/site-desk-node.mjs"
     },
     "#site/avatar": {
-      "node": "@platform-kit/kit/build/site-avatar-node.mjs",
-      "default": "@platform-kit/kit/build/site-avatar-node.mjs"
+      "node": "platformkit/build/site-avatar-node.mjs",
+      "default": "platformkit/build/site-avatar-node.mjs"
     },
     "#site/member": {
-      "node": "@platform-kit/kit/build/site-member-node.mjs",
-      "default": "@platform-kit/kit/build/site-member-node.mjs"
+      "node": "platformkit/build/site-member-node.mjs",
+      "default": "platformkit/build/site-member-node.mjs"
     },
     "#site/strings-default": {
-      "node": "@platform-kit/kit/build/site-strings-default-node.mjs",
-      "default": "@platform-kit/kit/build/site-strings-default-node.mjs"
+      "node": "platformkit/build/site-strings-default-node.mjs",
+      "default": "platformkit/build/site-strings-default-node.mjs"
     },
     "#site/admin": {
-      "node": "@platform-kit/kit/build/site-admin-node.mjs",
-      "default": "@platform-kit/kit/build/site-admin-node.mjs"
+      "node": "platformkit/build/site-admin-node.mjs",
+      "default": "platformkit/build/site-admin-node.mjs"
     }
   },
   "dependencies": {
@@ -127,7 +129,40 @@
     "vite-plugin-wasm": "^3.6.0",
     "vue": "^3.5.13",
     "yaml": "^2.9.0",
-    "zod": "^4.5.4"
+    "zod": "^4.5.4",
+    "@primevue/themes": "^4.5.4",
+    "@scalar/api-reference": "^1.70.0",
+    "@templatical/editor": "^0.39.0",
+    "@tiptap/core": "^2.27.3",
+    "@tiptap/extension-bold": "^2.27.3",
+    "@tiptap/extension-document": "^2.27.3",
+    "@tiptap/extension-hard-break": "^2.27.3",
+    "@tiptap/extension-history": "^2.27.3",
+    "@tiptap/extension-image": "^2.27.3",
+    "@tiptap/extension-italic": "^2.27.3",
+    "@tiptap/extension-link": "^2.27.3",
+    "@tiptap/extension-paragraph": "^2.27.3",
+    "@tiptap/extension-placeholder": "^2.27.3",
+    "@tiptap/extension-text": "^2.27.3",
+    "@tiptap/extension-typography": "^2.27.3",
+    "@tiptap/starter-kit": "^2.27.3",
+    "@tiptap/vue-3": "^2.27.3",
+    "@uppy/core": "^6.0.1",
+    "@vueuse/core": "^14.4.0",
+    "ag-grid-community": "^36.1.0",
+    "ag-grid-vue3": "^36.1.0",
+    "echarts": "^6.1.0",
+    "livekit-client": "^2.22.3",
+    "lucide-vue-next": "^1.0.0",
+    "page-flip": "^2.0.7",
+    "pdfjs-dist": "^4.10.38",
+    "primevue": "^4.5.5",
+    "tiptap-markdown": "^0.8.10",
+    "vidstack": "^0.6.15",
+    "vue-echarts": "^8.3.0",
+    "vuedraggable": "^4.1.0",
+    "vuefinder": "^4.7.6",
+    "wavesurfer.js": "^7.12.12"
   },
   "peerDependencies": {
     "@myriaddreamin/typst-ts-node-compiler": "^0.7.0",
@@ -147,7 +182,9 @@
     "supabase",
     "vendor",
     "vite",
-    "README.md"
+    "README.md",
+    "theme/src",
+    "theme/README.md"
   ],
   "publishConfig": {
     "access": "public"
@@ -188,6 +225,8 @@
     "contentful": "^11.12.10",
     "contentful-management": "^11.76.0",
     "matrix-js-sdk": "^43.0.0",
-    "posthog-js": "^1.428.3"
+    "posthog-js": "^1.428.3",
+    "@calcom/embed-core": "^1.5.3",
+    "@typeform/embed": "^6.0.0"
   }
 }

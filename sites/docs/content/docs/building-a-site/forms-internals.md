@@ -13,11 +13,11 @@ sources:
     packages/kit/supabase/functions/form,
     packages/kit/supabase/functions/_shared/forms/score.js,
     packages/kit/supabase/schemas/25-forms.sql,
-    packages/movable-types/src/instrument/ui/screens/form,
-    packages/movable-types/src/components/forms,
-    packages/movable-types/src/components/landing/LandingForm.vue,
-    packages/movable-types/src/embed.js,
-    packages/movable-types/src/pages/FormPage.vue,
+    packages/kit/theme/src/instrument/ui/screens/form,
+    packages/kit/theme/src/components/forms,
+    packages/kit/theme/src/components/landing/LandingForm.vue,
+    packages/kit/theme/src/embed.js,
+    packages/kit/theme/src/pages/FormPage.vue,
     packages/kit/build/embed-content.mjs,
   ]
 reviewed: 2026-10-01

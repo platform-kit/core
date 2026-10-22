@@ -81,7 +81,7 @@ await ta('the route table: the pipe\'s endpoints and the three beside it, and no
   const src = fs.readFileSync(path.join(HERE, 'admin-server.mjs'), 'utf8') + fs.readFileSync(path.join(HERE, 'admin-pipe.mjs'), 'utf8')
   const routes = [...src.matchAll(/seg === '([a-z/-]+)'/g)].map((m) => m[1]).filter((v, i, a) => a.indexOf(v) === i).sort()
   assert.deepEqual(routes, ['action', 'asset', 'collections', 'drafts', 'file', 'images', 'keep', 'list', 'media', 'media-file', 'options', 'preview', 'publish', 'run', 'run/stop', 'upload', 'upload-image'])   /* drafts · publish · keep: cloud mode's, answered from the checkout as empty and no-ops */
-  const theme = path.join(HERE, '../../movable-types/src')
+  const theme = path.join(HERE, '../theme/src')
   const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
   const hits = walk(theme).filter((f) => /\.(vue|js)$/.test(f)).filter((f) => /__admin\/(forms|funnels|emails|strings|models|print|quiz|recommendations)\b/.test(fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))
   assert.deepEqual(hits.map((f) => path.relative(theme, f)), [])

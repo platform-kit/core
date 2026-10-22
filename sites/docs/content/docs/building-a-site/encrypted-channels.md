@@ -19,8 +19,8 @@ sources:
     packages/kit/src/lib/spaces/audio.js,
     packages/kit/src/lib/spaces/model.js,
     packages/kit/vite/index.mjs,
-    packages/movable-types/src/components/spaces/SpaceSealSetup.vue,
-    packages/movable-types/src/content/ui/spaces.md,
+    packages/kit/theme/src/components/spaces/SpaceSealSetup.vue,
+    packages/kit/theme/src/content/ui/spaces.md,
   ]
 reviewed: 2026-10-20
 ---

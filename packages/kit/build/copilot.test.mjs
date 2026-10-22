@@ -483,7 +483,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
 
 /* the component shows; lib decides */
 {
-  const sfc = fs.readFileSync(new URL('../../movable-types/src/components/copilot/VoiceVisual.vue', import.meta.url), 'utf8')
+  const sfc = fs.readFileSync(new URL('../theme/src/components/copilot/VoiceVisual.vue', import.meta.url), 'utf8')
   /* it may CHOOSE a renderer — the aura is a shader and the other four are drawn — but it must
      not contain drawing: no path commands, no arithmetic about shapes. That all lives in lib so
      every combination can be rendered headless and looked at. */

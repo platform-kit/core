@@ -15,12 +15,12 @@ sources:
     packages/kit/build/identity-probe.mjs,
     packages/kit/src/lib/provider.js,
     packages/kit/src/lib/lockdown.js,
-    packages/movable-types/src/components/AuthModal.vue,
+    packages/kit/theme/src/components/AuthModal.vue,
     packages/kit/supabase/seed.sql,
     packages/kit/supabase/schemas/10-foundation.sql,
     packages/kit/src/lib/auth-notices.js,
     packages/kit/supabase/functions/_shared/roles.ts,
-    packages/movable-types/src/components/admin/PeopleAdmin.vue,
+    packages/kit/theme/src/components/admin/PeopleAdmin.vue,
     packages/kit/build/dev-account.mjs,
   ]
 reviewed: 2026-10-20

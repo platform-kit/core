@@ -3,7 +3,9 @@ import fs from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 
-const PACKAGES = ['@platform-kit/kit', '@platform-kit/movable-types']
+/* one package, the engine with its theme inside it, from packages/kit */
+const PACKAGES = ['platformkit']
+const SOURCE_DIR = { platformkit: 'kit' }
 const RECEIPT = 'node_modules/.cache/platformkit/source-install.json'
 const CORE_REPOSITORY = 'https://github.com/platform-kit/core'
 
@@ -84,7 +86,7 @@ function sourcePackageHash(root) {
 function writeReceipt(site, sourceRoot) {
   const packages = {}
   for (const name of PACKAGES) {
-    const sourceDirectory = path.join(sourceRoot, 'packages', name.split('/').at(-1))
+    const sourceDirectory = path.join(sourceRoot, 'packages', SOURCE_DIR[name])
     const directory = path.join(site, 'node_modules', ...name.split('/'))
     const sourceManifest = JSON.parse(fs.readFileSync(path.join(sourceDirectory, 'package.json'), 'utf8'))
     const manifest = JSON.parse(fs.readFileSync(path.join(directory, 'package.json'), 'utf8'))
@@ -104,7 +106,7 @@ function writeReceipt(site, sourceRoot) {
   const sourceUrl = canonicalRepository(declaredRepository)
     || canonicalRepository(gitOutput(sourceRoot, 'remote', 'get-url', 'origin'))
   const sourceClean = sourceRef === null
-    || gitOutput(sourceRoot, 'status', '--porcelain', '--', 'packages/kit', 'packages/movable-types') === ''
+    || gitOutput(sourceRoot, 'status', '--porcelain', '--', 'packages/kit') === ''
   const treeHash = crypto.createHash('sha256')
   for (const name of PACKAGES) treeHash.update(`${name}\0${packages[name].sha256}\0`)
   const receipt = {
@@ -126,8 +128,8 @@ function writeReceipt(site, sourceRoot) {
 
 export function installPlatformKitSource(site, sourceRoot, { env = process.env } = {}) {
   for (const name of PACKAGES) {
-    if (!fs.existsSync(path.join(sourceRoot, 'packages', name.split('/').at(-1), 'package.json'))) {
-      throw new Error(`PlatformKit source checkout is missing packages/${name.split('/').at(-1)}`)
+    if (!fs.existsSync(path.join(sourceRoot, 'packages', SOURCE_DIR[name], 'package.json'))) {
+      throw new Error(`PlatformKit source checkout is missing packages/${SOURCE_DIR[name]}`)
     }
   }
   const result = spawnSync('npm', [
@@ -139,7 +141,6 @@ export function installPlatformKitSource(site, sourceRoot, { env = process.env }
     '--no-audit',
     '--no-fund',
     `file:${path.join(sourceRoot, 'packages', 'kit')}`,
-    `file:${path.join(sourceRoot, 'packages', 'movable-types')}`,
   ], { cwd: site, stdio: 'inherit', env })
   if (result.error) throw new Error(`could not install PlatformKit from its source checkout: ${result.error.message}`)
   if (result.status !== 0) throw new Error(`PlatformKit source installation failed${result.status === null ? '' : ` (npm exited ${result.status})`}`)

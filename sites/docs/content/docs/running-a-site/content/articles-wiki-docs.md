@@ -5,10 +5,10 @@ order: 13
 reviewed: 2026-10-18
 sources:
   [
-    packages/movable-types/src/components/content/TreeSection.vue,
-    packages/movable-types/src/components/content/ArticleView.vue,
-    packages/movable-types/src/components/content/ArticleIndex.vue,
-    packages/movable-types/src/pages/ContentPage.vue,
+    packages/kit/theme/src/components/content/TreeSection.vue,
+    packages/kit/theme/src/components/content/ArticleView.vue,
+    packages/kit/theme/src/components/content/ArticleIndex.vue,
+    packages/kit/theme/src/pages/ContentPage.vue,
   ]
 ---
 

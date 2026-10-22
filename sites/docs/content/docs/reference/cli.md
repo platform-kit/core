@@ -36,7 +36,7 @@ npx --yes --package=github:platform-kit/core platformkit build
 DEPLOY=1 npx --yes --package=github:platform-kit/core platformkit deploy
 ```
 
-Run these commands from the site's root. The GitHub source installs the kit and theme into the site's `node_modules` without changing its manifest or lockfile. The receipt compares the installed packages with the exact files npm packs from that source, excluding development-only checkout files; deploy preflight verifies the receipt before deployment steps begin. The site continues to own and install its other dependencies. This avoids publishing the Core packages to npm, but still uses npm to install dependencies and fetch the GitHub-hosted CLI.
+Run these commands from the site's root. The GitHub source installs `platformkit` into the site's `node_modules` without changing its manifest or lockfile. The receipt compares the installed packages with the exact files npm packs from that source, excluding development-only checkout files; deploy preflight verifies the receipt before deployment steps begin. The site continues to own and install its other dependencies. This avoids publishing the Core packages to npm, but still uses npm to install dependencies and fetch the GitHub-hosted CLI.
 
 | Command                                                 | What it does                                                                                                                                                                                                                                                                                                                                                 | Script                                      |
 | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
@@ -66,7 +66,7 @@ Run these commands from the site's root. The GitHub source installs the kit and 
 
 ## Other scripts
 
-Run a script from the site root with `node packages/kit/build/<script>` when using a PlatformKit workspace, or `node node_modules/@platform-kit/kit/build/<script>` from a standalone installation. Optional module tools are required only when the corresponding module is enabled. `platformkit test` reports missing requirements before the relevant build step.
+Run a script from the site root with `node packages/kit/build/<script>` when using a PlatformKit workspace, or `node node_modules/platformkit/build/<script>` from a standalone installation. Optional module tools are required only when the corresponding module is enabled. `platformkit test` reports missing requirements before the relevant build step.
 
 ## Installing a separately fetched site
 

@@ -14,8 +14,8 @@ A site chooses modules in `platformkit.config.js` and supplies its own content, 
 
 ## What comes in the platform
 
-- **Kit (`@platform-kit/kit`):** content processing, the CLI, build and deployment tools, database declarations, APIs, and shared services such as checkout and messaging.
-- **Theme (`@platform-kit/movable-types`):** the public pages, reader and admin interfaces, components, and styles.
+- **Kit (`platformkit`):** content processing, the CLI, build and deployment tools, database declarations, APIs, and shared services such as checkout and messaging.
+- **Theme (`platformkit/theme`):** the public pages, reader and admin interfaces, components, and styles.
 - **Site:** the configuration and content that select the modules, set the brand and policies, and add site-specific components, routes, data, or admin screens.
 
 The demo site enables modules to show how they work together. The docs site disables the application modules and serves documentation without sign-in.

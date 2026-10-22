@@ -73,7 +73,7 @@ ok(loopSrc(embedOf('https://vimeo.com/1')).includes('background=1'), 'a Vimeo lo
  * of missing it is a landing page that builds and renders a blank where a section should be.
  */
 {
-  const { validateSections } = await import('../../movable-types/src/components/landing/schemas.js')
+  const { validateSections } = await import('../theme/src/components/landing/schemas.js')
   const known = Object.keys(SECTION_SCHEMAS)[0]
   ok(validateSections([{ component: known, props: SECTION_SCHEMAS[known].defaults }]).length === 0, 'a known section with its own defaults is accepted')
   const unknown = validateSections([{ component: 'LandingNoSuchThing', props: {} }])

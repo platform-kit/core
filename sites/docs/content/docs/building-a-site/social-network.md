@@ -12,17 +12,17 @@ sources:
     packages/kit/build/network-db.test.mjs,
     packages/kit/src/lib/network,
     packages/kit/build/network.test.mjs,
-    packages/movable-types/src/pages/FeedPage.vue,
-    packages/movable-types/src/components/network,
-    packages/movable-types/src/content/ui/network.md,
-    packages/movable-types/src/pages/PersonPage.vue,
-    packages/movable-types/src/components/NetworkAdmin.vue,
+    packages/kit/theme/src/pages/FeedPage.vue,
+    packages/kit/theme/src/components/network,
+    packages/kit/theme/src/content/ui/network.md,
+    packages/kit/theme/src/pages/PersonPage.vue,
+    packages/kit/theme/src/components/NetworkAdmin.vue,
     packages/kit/src/lib/network/apps.js,
     packages/kit/supabase/functions/atproto,
     packages/kit/supabase/functions/_shared/atproto,
     packages/kit/build/atproto-interop.test.mjs,
     packages/kit/build/network-keys.mjs,
-    packages/movable-types/src/components/network/NetJoin.vue,
+    packages/kit/theme/src/components/network/NetJoin.vue,
   ]
 reviewed: 2026-10-21
 ---

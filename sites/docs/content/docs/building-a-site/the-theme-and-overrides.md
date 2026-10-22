@@ -5,20 +5,20 @@ order: 47
 sources:
   [
     packages/kit/src/lib/nav.js,
-    packages/movable-types/src/theme.js,
+    packages/kit/theme/src/theme.js,
     packages/kit/vite/index.mjs,
     packages/kit/build/site-modules.test.mjs,
     packages/kit/build/theme.mjs,
     packages/kit/build/site.mjs,
     packages/kit/src/lib/router.js,
-    packages/movable-types/src/instrument/ui/results/tabs.js,
+    packages/kit/theme/src/instrument/ui/results/tabs.js,
   ]
 reviewed: 2026-10-21
 ---
 
 ## The manifest
 
-`packages/movable-types/src/theme.js` names the theme's **entry** (`main.js`), its **design** stylesheet, its **strings** directory, its **section schemas**, its **build steps** (`steps`: modules exporting a step record each, run among the kit's — see [the build steps](/content/docs/building-a-site/dev-build-and-deploy#the-build-steps)), and what the phone probe lets run to the edge (`probe.allow`, and `probe.rails` for a scroller that may leave on the right while keeping its left gutter). The components are every `.vue` under `src`, registered by file name; the kit refuses a theme where two share one. `loadTheme()` in the kit reads the manifest, and a second theme meets the same shape.
+`packages/kit/theme/src/theme.js` names the theme's **entry** (`main.js`), its **design** stylesheet, its **strings** directory, its **section schemas**, its **build steps** (`steps`: modules exporting a step record each, run among the kit's — see [the build steps](/content/docs/building-a-site/dev-build-and-deploy#the-build-steps)), and what the phone probe lets run to the edge (`probe.allow`, and `probe.rails` for a scroller that may leave on the right while keeping its left gutter). The components are every `.vue` under `src`, registered by file name; the kit refuses a theme where two share one. `loadTheme()` in the kit reads the manifest, and a second theme meets the same shape.
 
 ## The virtual modules
 
@@ -67,4 +67,4 @@ The mark is drawn rather than linked, because the build photographs it for the f
 
 ## The router
 
-`@platform-kit/kit/lib/router.js` owns the routes (`ROUTES`), `navigate()`, the page-route test, the app's page slugs (`APP_PAGES`), the site's own routes from `#site/routes`, and the three rules the switches make — `KINDS_ON`, `ACCOUNTS_ON`, `DOCS_ONLY` (with `DOCS_BASE`, where the docs are addressed); the theme re-exports it. `/content` carries nested paths; the admin and the share cards carry their place in the path; a kind switched off falls to the hub; on a docs-only site `/content/docs/…` is an alias of `/docs/…`. `/billing` and `/checkout/hyperswitch` are also recognized payment pages. With the social community layout, bare `/spaces` resolves to the configured community home; `/spaces/<slug>` remains the route for an individual space.
+`platformkit/lib/router.js` owns the routes (`ROUTES`), `navigate()`, the page-route test, the app's page slugs (`APP_PAGES`), the site's own routes from `#site/routes`, and the three rules the switches make — `KINDS_ON`, `ACCOUNTS_ON`, `DOCS_ONLY` (with `DOCS_BASE`, where the docs are addressed); the theme re-exports it. `/content` carries nested paths; the admin and the share cards carry their place in the path; a kind switched off falls to the hub; on a docs-only site `/content/docs/…` is an alias of `/docs/…`. `/billing` and `/checkout/hyperswitch` are also recognized payment pages. With the social community layout, bare `/spaces` resolves to the configured community home; `/spaces/<slug>` remains the route for an individual space.

@@ -75,7 +75,7 @@ for (const t of Object.keys(DECLARED)) {
 }
 
 /* ---- 3. no client code writes a projected table ---- */
-const roots = [join(KIT, 'src'), join(REPO, 'packages', 'movable-types', 'src')].filter(existsSync)
+const roots = [join(KIT, 'src'), join(REPO, 'packages', 'kit', 'theme', 'src')].filter(existsSync)
 const files = []
 const walk = (d) => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) walk(p); else if (/\.(js|vue|ts)$/.test(e.name)) files.push(p) } }
 for (const r of roots) walk(r)

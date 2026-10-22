@@ -67,8 +67,8 @@ const READERS = [
   'supabase/functions/lulu-webhook/index.ts',
   'supabase/schemas/90-spaces.sql',
   'supabase/schemas/96-agents.sql',
-  '../movable-types/src/components/Orders.vue',
-  '../movable-types/src/components/PrintOrders.vue',
+  'theme/src/components/Orders.vue',
+  'theme/src/components/PrintOrders.vue',
 ]
 
 /* and the files that are allowed — required — to hold them */

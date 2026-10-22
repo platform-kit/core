@@ -42,7 +42,7 @@ console.log('\nA PALETTE IS COMPLETE\n')
 
 const HERE = path.dirname(new URL(import.meta.url).pathname)
 const REPO = path.resolve(HERE, '../../..')
-const THEME = path.join(REPO, 'packages/movable-types/src')
+const THEME = path.join(REPO, 'packages/kit/theme/src')
 if (!fs.existsSync(THEME)) { console.log('  ⚠ SKIPPED — the theme is not in this checkout\n'); process.exit(0) }
 
 const walk = (d, out = []) => {
@@ -177,7 +177,7 @@ t('the theme defines every non-colour token it reads', () => {
 /* ─── every look, held to the colours ─── */
 
 const LOOKS = [
-  ['the theme’s default', 'packages/movable-types/src/looks'],
+  ['the theme’s default', 'packages/kit/theme/src/looks'],
   ['the demo', 'sites/demo/src/looks'],
   ['the docs site', 'sites/docs/src/looks'],
 ]

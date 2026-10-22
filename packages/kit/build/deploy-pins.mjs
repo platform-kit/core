@@ -3,7 +3,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { platformKitPackageHash } from './source-install.mjs'
 
-const PACKAGES = ['@platform-kit/kit', '@platform-kit/movable-types']
+/* one package: the engine with its theme inside it */
+const PACKAGES = ['platformkit']
 const EXACT_VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
 const INTEGRITY = /^sha(?:1|256|384|512)-[A-Za-z0-9+/]+={0,2}$/
 const COMMIT = /^[a-f0-9]{40}$/i

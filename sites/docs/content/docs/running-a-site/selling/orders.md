@@ -6,7 +6,7 @@ sources:
   [
     packages/kit/supabase/schemas/43-orders.sql,
     packages/kit/build/orders-db.test.mjs,
-    packages/movable-types/src/components/Orders.vue,
+    packages/kit/theme/src/components/Orders.vue,
     packages/kit/supabase/functions/_shared/ledger.ts,
   ]
 reviewed: 2026-10-21

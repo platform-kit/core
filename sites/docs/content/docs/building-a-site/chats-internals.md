@@ -4,14 +4,14 @@ description: The coaching chat's tables and policies, the support desk's functio
 order: 56
 sources:
   [
-    packages/movable-types/src/components/chat/CoachingPanel.vue,
-    packages/movable-types/src/components/spaces/SpaceCoaching.vue,
+    packages/kit/theme/src/components/chat/CoachingPanel.vue,
+    packages/kit/theme/src/components/spaces/SpaceCoaching.vue,
     packages/kit/src/lib/desk,
     packages/kit/supabase/schemas/72-tickets.sql,
     packages/kit/build/tickets.test.mjs,
-    packages/movable-types/src/components/spaces/SpaceTickets.vue,
-    packages/movable-types/src/components/spaces/SpaceMyTickets.vue,
-    packages/movable-types/src/components/support/SupportTickets.vue,
+    packages/kit/theme/src/components/spaces/SpaceTickets.vue,
+    packages/kit/theme/src/components/spaces/SpaceMyTickets.vue,
+    packages/kit/theme/src/components/support/SupportTickets.vue,
     packages/kit/supabase/schemas/50-chat.sql,
     packages/kit/supabase/schemas/70-support.sql,
     packages/kit/supabase/schemas/80-push.sql,

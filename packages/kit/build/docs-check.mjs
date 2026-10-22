@@ -79,7 +79,7 @@ const SURFACES = [
   ['packages/kit/build/steps', (e) => e.isFile() && e.name.endsWith('.mjs') && e.name !== 'index.mjs'],
   ['packages/kit/src/lib', (e) => true],
   ['packages/kit/src/sdk', (e) => true],
-  ['packages/movable-types/src/pages', (e) => e.isFile()],
+  ['packages/kit/theme/src/pages', (e) => e.isFile()],
   ['deploy', (e) => true],
 ]
 /* a source covers an entry when it names it, something inside it, or a directory below the surface's root — the surface root
@@ -161,7 +161,7 @@ if (changed) {
  * Only the pages' own words count: a page edited only on its `reviewed:` line is a page re-read,
  * not a page written.
  */
-const KIT = ['packages/kit/', 'packages/movable-types/']
+const KIT = ['packages/kit/', 'packages/kit/theme/']
 /* what this commit will hold, as text, so a page edited only on its date can be told from a page
    whose words changed. --staged reads the index; --tree reads the working tree; a range reads the
    range. Anything else (npm test with no mode) knows no commit and does not ask. */
@@ -233,7 +233,7 @@ const walk2 = (d, exts) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes:
 {
   const doc = page('reference/environment-variables')
   if (doc) {
-    const codeFiles = ['packages/kit/build', 'packages/kit/src', 'packages/kit/vite', 'packages/kit/bin', 'packages/kit/agent', 'packages/kit/supabase/functions', 'packages/movable-types/src']
+    const codeFiles = ['packages/kit/build', 'packages/kit/src', 'packages/kit/vite', 'packages/kit/bin', 'packages/kit/agent', 'packages/kit/supabase/functions', 'packages/kit/theme/src']
       .flatMap((dir) => walk2(path.join(ROOT, dir), ['.mjs', '.js', '.ts', '.vue']))
       .filter((file) => !file.endsWith('.integration.mjs'))
     const code = codeFiles.map((file) => fs.readFileSync(file, 'utf8')).join('\n')
@@ -322,7 +322,7 @@ const walk2 = (d, exts) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes:
 /* string scopes: the theme's defaults */
 {
   const doc = page('running-a-site/settings/site-settings-and-strings')
-  const dir = path.join(ROOT, 'packages/movable-types/src/content/ui')
+  const dir = path.join(ROOT, 'packages/kit/theme/src/content/ui')
   if (doc && fs.existsSync(dir)) for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.md'))) { const scope = f.replace(/\.md$/, ''); if (!ticks(doc.text).has(scope)) fault(doc.file, `the theme ships the ${scope} scope and the page does not list it`) }
 }
 /* shared collection frontmatter fields: every schema key, on the page */

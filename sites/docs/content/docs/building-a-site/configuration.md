@@ -27,7 +27,7 @@ From the Core checkout, a site command reads this config from the selected site.
 ```js
 export default {
   name: 'Northlight Press',
-  theme: '@platform-kit/movable-types',
+  theme: 'platformkit/theme',
   modules: { store, print, memberships, sessions, coaching, support, funnels, emails, forms,
              instrument, recommendations, translation, tts, enrichment, push },   // true | false
   looks: { classic: { css: './src/looks/classic.css', skins: './src/components/landing/skins/index.js' } },

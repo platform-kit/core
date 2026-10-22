@@ -32,30 +32,19 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs'
-          const names = ['packages/kit/package.json', 'packages/movable-types/package.json']
-          const packages = names.map((file) => JSON.parse(fs.readFileSync(file, 'utf8')))
+          /* one package: the engine with its theme inside it */
+          const pkg = JSON.parse(fs.readFileSync('packages/kit/package.json', 'utf8'))
           const version = process.env.RELEASE_VERSION
           if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version ?? '')) {
             throw new Error('Release version must be an exact semver version')
           }
-          for (const pkg of packages) {
-            if (pkg.version !== version) {
-              throw new Error(`${pkg.name} declares ${pkg.version}; expected ${version}`)
-            }
-          }
-          if (packages[1].dependencies?.['@platform-kit/kit'] !== version) {
-            throw new Error(`@platform-kit/movable-types must depend on @platform-kit/kit@${version}`)
-          }
+          if (pkg.name !== 'platformkit') throw new Error(`packages/kit is ${pkg.name}; expected platformkit`)
+          if (pkg.version !== version) throw new Error(`platformkit declares ${pkg.version}; expected ${version}`)
           NODE
       - name: Verify release
         run: npm test
-      - name: Publish core package
+      - name: Publish platformkit
         working-directory: packages/kit
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Publish theme package
-        working-directory: packages/movable-types
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

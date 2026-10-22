@@ -22,7 +22,7 @@ import nodePath from 'node:path'
 import { fileURLToPath } from 'node:url'
 /* the kit's own src, the theme's beside it, and the site's — for the switch-reading seam below */
 const KIT_SRC = fileURLToPath(new URL('../src/', import.meta.url))
-const THEME_SRC = fileURLToPath(new URL('../../movable-types/src/', import.meta.url))
+const THEME_SRC = fileURLToPath(new URL('../theme/src/', import.meta.url))
 import { readManifest, readManifests, unmetRequirements, FIELDS, OWNS, SHAPES, KINDS } from './modules/manifest.mjs'
 import { loadSite } from './site.mjs'
 import { moduleSet } from './steps.mjs'

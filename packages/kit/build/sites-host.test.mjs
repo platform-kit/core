@@ -309,7 +309,7 @@ try {
         else if (/\.(?:js|mjs|ts|vue)$/.test(entry.name)) sourceFiles.push(target)
       }
     }
-    for (const directory of ['packages/kit/src', 'packages/movable-types/src']) visit(path.join(ROOT, directory))
+    for (const directory of ['packages/kit/src', 'packages/kit/theme/src']) visit(path.join(ROOT, directory))
     const parentDomain = /\bdomain\s*=\s*\.?[a-z0-9.-]+/i
     for (const file of sourceFiles) {
       const content = fs.readFileSync(file, 'utf8')

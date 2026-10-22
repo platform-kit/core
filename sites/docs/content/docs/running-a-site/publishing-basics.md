@@ -9,7 +9,7 @@ sources:
     packages/kit/src/lib/seo.js,
     packages/kit/src/lib/seo-head.js,
     packages/kit/src/lib/access.js,
-    packages/movable-types/src/pages/SharePage.vue,
+    packages/kit/theme/src/pages/SharePage.vue,
   ]
 reviewed: 2026-10-18
 ---

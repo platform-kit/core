@@ -7,7 +7,7 @@ import {
   HYPERSWITCH_V2_BROWSER_UNAVAILABLE_CODE,
   loadHyperswitchSdk,
   retrieveV2CheckoutPayment,
-} from '../../movable-types/src/lib/hyperswitch-sdk.js'
+} from '../theme/src/lib/hyperswitch-sdk.js'
 
 const savedMethodProfile = {
   profileId: 'pro_saved_methods_test',

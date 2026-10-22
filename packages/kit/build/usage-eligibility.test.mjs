@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { hasPublishedMeteredUsagePlan, isPublishedMeteredUsageOffer } from '../../movable-types/src/lib/usage-eligibility.js'
+import { hasPublishedMeteredUsagePlan, isPublishedMeteredUsageOffer } from '../theme/src/lib/usage-eligibility.js'
 
 test('a published metered subscription qualifies', () => {
   assert.equal(isPublishedMeteredUsageOffer({

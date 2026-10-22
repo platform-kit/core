@@ -5,7 +5,7 @@ PlatformKit is a reusable publishing platform: a core package for content, build
 ## Workspace
 
 - `packages/kit` — platform services, build tools, the CLI, and backend declarations.
-- `packages/movable-types` — reusable reader and admin interfaces, page sections, styles, and default language.
+- `packages/kit/theme` — reusable reader and admin interfaces, page sections, styles, and default language.
 - `sites/docs`, `sites/demo`, and `sites/brochure` — generic fixtures used to document and verify the platform.
 
 Separately owned sites are fetched into a local managed checkout and are not part of this repository's npm workspaces.

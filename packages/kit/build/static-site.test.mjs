@@ -99,7 +99,7 @@ for (const rel of SITES) {
    */
   let routes = []
   {
-    const code = "const { publicRoutes } = await import('@platform-kit/kit/build/routes.mjs'); console.log(JSON.stringify(publicRoutes()))"
+    const code = "const { publicRoutes } = await import('platformkit/build/routes.mjs'); console.log(JSON.stringify(publicRoutes()))"
     const r = spawnSync(process.execPath, ['--input-type=module', '-e', code], { cwd: root, env: cleanEnv(), encoding: 'utf8' })
     try { routes = JSON.parse((r.stdout || '').trim().split('\n').pop()) } catch { /* reported next */ }
     ok(rel + ' lists its routes', Array.isArray(routes) && routes.length > 0, (r.stderr || '').split('\n').filter(Boolean).slice(-2).join(' | '))

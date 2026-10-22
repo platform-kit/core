@@ -4,9 +4,9 @@ import { join } from 'node:path'
 import { parseGroups } from './strings-io.mjs'
 
 const WORKSPACE = new URL('../../..', import.meta.url).pathname
-const adminPath = join(WORKSPACE, 'packages/movable-types/src/components/admin/SocialAdmin.vue')
-const componentPath = join(WORKSPACE, 'packages/movable-types/src/components/admin/social/SocialAutomations.vue')
-const stringsPath = join(WORKSPACE, 'packages/movable-types/src/content/ui/social.md')
+const adminPath = join(WORKSPACE, 'packages/kit/theme/src/components/admin/SocialAdmin.vue')
+const componentPath = join(WORKSPACE, 'packages/kit/theme/src/components/admin/social/SocialAutomations.vue')
+const stringsPath = join(WORKSPACE, 'packages/kit/theme/src/content/ui/social.md')
 const admin = fs.readFileSync(adminPath, 'utf8')
 const component = fs.readFileSync(componentPath, 'utf8')
 const strings = parseGroups(fs.readFileSync(stringsPath, 'utf8')).automations

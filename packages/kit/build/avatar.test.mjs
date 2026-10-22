@@ -43,7 +43,7 @@ console.log('\nONE PERSON, ONE FACE\n')
 
 /* 3 · nothing draws a person from their NAME */
 {
-  const theme = join(KIT, '..', 'movable-types', 'src')
+  const theme = join(KIT, 'theme', 'src')
   const walk = (d, out = []) => {
     for (const e of readdirSync(d, { withFileTypes: true })) {
       if (e.name.startsWith('.') || e.name === 'node_modules') continue

@@ -27,7 +27,7 @@ let n = 0, bad = 0
 const t = (name, fn) => { n++; try { fn() } catch (e) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
 const ta = async (name, fn) => { n++; try { await fn() } catch (e) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
 /* the theme's words, so the messages under test are the real ones */
-const scopeFile = path.join(HERE, '../../movable-types/src/content/ui/models.md')
+const scopeFile = path.join(HERE, '../theme/src/content/ui/models.md')
 const { parseGroups } = await import('./strings-io.mjs')
 const words = parseGroups(readFileSync(scopeFile, 'utf8'))
 const fresh = () => { const d = mkdtempSync(path.join(tmpdir(), 'models-')); cpSync(path.join(FIX, 'site'), d, { recursive: true }); return d }

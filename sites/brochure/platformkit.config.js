@@ -16,7 +16,7 @@
  */
 export default {
   name: 'Northlight Brochure',
-  theme: '@platform-kit/movable-types',
+  theme: 'platformkit/theme',
   /* no Supabase at all: the deploy asks for nothing but the site's own address, and switching on any
      module below that needs a backend fails at the commit (build/modes.mjs says which do) */
   deployment: { backend: false },

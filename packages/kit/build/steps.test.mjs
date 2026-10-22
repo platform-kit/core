@@ -16,7 +16,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { loadSteps, order, whyOff, isOn, needsOf, missingNeeds, runPhase, resolvable, PHASES, listing } from './steps.mjs'
 import { STEPS } from './steps/index.mjs'
 /* the theme resolves from a site's root: a fixture site links the node_modules that holds it, wherever the test runs from (a site's folder in the workspace has none of its own) */
-const NM = (() => { const { existsSync } = fsMod; let d = path.dirname(new URL(import.meta.url).pathname); while (!existsSync(path.join(d, 'node_modules', '@platform-kit', 'movable-types')) && d !== path.dirname(d)) d = path.dirname(d); return path.join(d, 'node_modules') })()
+const NM = (() => { const { existsSync } = fsMod; let d = path.dirname(new URL(import.meta.url).pathname); while (!existsSync(path.join(d, 'node_modules', 'platformkit')) && d !== path.dirname(d)) d = path.dirname(d); return path.join(d, 'node_modules') })()
 
 let n = 0, bad = 0
 const t = (name, fn) => { n++; try { fn() } catch (e) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
@@ -97,8 +97,8 @@ await ta('a site step from a config is merged and ordered among the kit\'s; a du
   mkdirSync(path.join(d, 'build'), { recursive: true })
   writeFileSync(path.join(d, 'build', 'mine.mjs'), `export default { key: 'mine', title: 'Mine', phase: 'site', after: ['form-embed'], run: () => {} }\n`)
   writeFileSync(path.join(d, 'build', 'dup.mjs'), `export default { key: 'prerender', title: 'Dup', phase: 'site', run: () => {} }\n`)
-  const cfg = { root: d, modules: {}, theme: '@platform-kit/movable-types', build: { steps: ['./build/mine.mjs'] } }
-  writeFileSync(path.join(d, 'package.json'), JSON.stringify({ name: 'fixture', dependencies: { '@platform-kit/movable-types': '*' } }))
+  const cfg = { root: d, modules: {}, theme: 'platformkit/theme', build: { steps: ['./build/mine.mjs'] } }
+  writeFileSync(path.join(d, 'package.json'), JSON.stringify({ name: 'fixture', dependencies: { 'platformkit/theme': '*' } }))
   /* the theme resolves from the site's root: link the workspace's node_modules */
   const { symlinkSync } = await import('node:fs'); symlinkSync(NM, path.join(d, 'node_modules'))
   const steps = await loadSteps(cfg)
@@ -129,7 +129,7 @@ await ta('a failing step stops the phase naming itself; a change list runs the m
   for (const k of ['one', 'two', 'three', 'local-projection', 'remote-projection']) writeFileSync(path.join(d, 'build', k + '.mjs'), `import all from './s.mjs'\nexport default all.find((s) => s.key === '${k}')\n`)
   writeFileSync(path.join(d, 'package.json'), JSON.stringify({ name: 'fixture' }))
   const { symlinkSync } = await import('node:fs'); symlinkSync(NM, path.join(d, 'node_modules'))
-  const cfg = { root: d, modules: { forms: false, models: false }, theme: '@platform-kit/movable-types', build: { steps: ['./build/one.mjs', './build/two.mjs', './build/three.mjs', './build/local-projection.mjs', './build/remote-projection.mjs'] } }
+  const cfg = { root: d, modules: { forms: false, models: false }, theme: 'platformkit/theme', build: { steps: ['./build/one.mjs', './build/two.mjs', './build/three.mjs', './build/local-projection.mjs', './build/remote-projection.mjs'] } }
   /* prerender (the kit's) would run first in this phase: keep it out by a change list that matches only the fixture's `one` */
   const got = await rp('site', { site: cfg, changed: ['content/a/x.md'], log: (m) => log.push(m) })
   assert.deepEqual(got, ['one'])
