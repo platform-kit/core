@@ -3,10 +3,10 @@ title: Start here
 description: What PlatformKit is, who these docs are for, and where to begin.
 order: 1
 sources: [openspec/specs/kit-principles/spec.md]
-reviewed: 2026-10-11
+reviewed: 2026-10-22
 ---
 
-PlatformKit is an open-source web platform for operating a business from one site. A site's configuration selects the features it needs: for example, a shop can add subscriptions and bookings, while a publisher can combine a library, memberships, print sales, and newsletters. The site keeps its own content, business rules, and visual identity.
+PlatformKit is a full-stack TypeScript framework for building and deploying a complete online business. A site's configuration selects the features it needs: for example, a shop can add subscriptions and bookings, while a publisher can combine a library, memberships, print sales, and newsletters. The site keeps its own content, business rules, and visual identity.
 
 PlatformKit includes content pages and collections, a page builder, accounts, a store and checkout, memberships, bookings, forms, community features, support, email campaigns, analytics, and an admin. A site can enable these modules together or leave out the ones it does not use. The generic demo shows modules working together. This documentation site disables the application modules and serves docs without sign-in.
 

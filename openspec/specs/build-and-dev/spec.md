@@ -130,3 +130,336 @@ This capability SHALL land in the layers above, SHALL be switched by its module,
 - **THEN** it runs in `platformkit test` after the kit's
 
 Verified by: the kit's CI against the demo, and the representative site fixture remains visually unchanged after the change
+
+### Requirement: The default site can be selected by path
+
+When a command runs from the Core repository root, `PLATFORMKIT_DEFAULT_SITE` SHALL accept either a site name or a path to a site directory. An explicit `--site` selection SHALL take precedence. With neither provided, the default site SHALL be the tracked documentation site at `sites/docs`.
+
+#### Scenario: choose a site by path
+- **WHEN** `PLATFORMKIT_DEFAULT_SITE` names a valid site directory
+- **THEN** root-level PlatformKit commands use that site
+- **Verified by**: `packages/kit/build/site-repositories.test.mjs`
+
+#### Scenario: explicit site overrides the default
+- **WHEN** both `--site` and `PLATFORMKIT_DEFAULT_SITE` are provided
+- **THEN** the command uses the explicit `--site` value
+- **Verified by**: `packages/kit/build/site-repositories.test.mjs`
+
+#### Scenario: use the documentation site by default
+- **WHEN** a root-level command has no explicit site selection and no `PLATFORMKIT_DEFAULT_SITE`
+- **THEN** it uses `sites/docs`
+- **Verified by**: `packages/kit/build/site-repositories.test.mjs`
+
+### Requirement: Core runtime state does not create a hidden project directory
+
+PlatformKit SHALL keep transient development, asset, and database-shadow state in the conventional `node_modules/.cache/platformkit` cache and SHALL NOT create a `.platformkit` directory in the Core repository. The external-site checkout directory MAY be ignored, but the generic tracked sites SHALL remain part of the Core repository.
+
+#### Scenario: start and stop development
+- **WHEN** PlatformKit starts and stops a local development run
+- **THEN** its run records, port records, and generated runtime files are held in the conventional cache and no `.platformkit` directory is created
+- **Verified by**: `packages/kit/build/dev-workspace.test.mjs`
+
+#### Scenario: use the database shadow and asset cache
+- **WHEN** a build needs a database shadow or cached assets
+- **THEN** the transient data is stored under the conventional cache rather than `.platformkit`
+- **Verified by**: `packages/kit/build/schema.test.mjs` and `packages/kit/build/assets.test.mjs`
+
+### Requirement: Restarting the dev command always works
+
+A dev run SHALL take its servers down with it however it ends — Ctrl+C, a kill, a closed terminal, or its parent disappearing — and a new run SHALL stop whatever an earlier run of the same checkout left behind (site servers, function servers, the front door), saying what it stopped, before starting. It SHALL never signal a process or container it cannot prove belongs to this checkout's dev runs, and a living run attached to a terminal SHALL still refuse a second.
+
+#### Scenario: a closed terminal, then a new start
+
+- **WHEN** a workspace run's terminal is closed and `npm run dev` is run again
+- **THEN** the first run's servers and front door are already gone or are stopped by the new run, which names them, and the new run starts
+
+Verified by: `build/dev-workspace.test.mjs` (SIGHUP and SIGKILL of the parent, an abandoned run taken over); the closed tab itself by hand, NOT VERIFIED by a pinned test
+
+#### Scenario: a port held by something else
+
+- **WHEN** a port a run would use is held by a process that is not this checkout's dev run
+- **THEN** that process is not signalled, and the run moves to a free port or stops with the existing message
+
+Verified by: `build/dev-workspace.test.mjs`
+
+#### Scenario: two live runs
+
+- **WHEN** a run of this checkout is alive in a terminal and another is started
+- **THEN** the second is refused as today
+
+Verified by: `build/dev-workspace.test.mjs`
+
+### Requirement: Local development can use separately fetched sites
+
+Workspace development SHALL discover registered site checkouts fetched from their own repositories, alongside any local site fixtures explicitly kept by PlatformKit. A fetched site SHALL behave as a site selected by its declared name, without being tracked as PlatformKit source. The workspace SHALL report registered sites that have not yet been fetched rather than silently omitting them.
+
+#### Scenario: Start a fetched site
+
+- **WHEN** `platformkit dev` starts with a registered site checked out at its pinned revision
+- **THEN** the site is available by its declared local name and receives the same isolated development setup as other selected sites
+
+Verified by: `packages/kit/build/dev-workspace.test.mjs` and `packages/kit/build/site-repositories.test.mjs`
+
+#### Scenario: A registered site has not been fetched
+
+- **WHEN** the workspace lists sites and a registered site has no local checkout
+- **THEN** the listing identifies it as not fetched and provides the fetch command instead of implying it is running
+
+Verified by: `packages/kit/build/site-repositories.test.mjs`
+
+### Requirement: Workspace commands use a configurable default site
+
+When a PlatformKit site command or root npm site shortcut runs from the workspace root, it SHALL select the site named by `PLATFORMKIT_DEFAULT_SITE`, defaulting to `docs` when unset. The selected site MAY be a local `sites/<name>` directory or a fetched managed checkout. An explicit `--site <path>` selection and execution from within a site directory SHALL take precedence. An unfetched registered default SHALL fail with the command needed to fetch it. The workspace development command SHALL use the default site unless `PLATFORMKIT_SITES` explicitly selects a multi-site set.
+
+#### Scenario: The workspace default is unset
+
+- **WHEN** a site command runs from the workspace root without `PLATFORMKIT_DEFAULT_SITE`
+- **THEN** it runs against the local `docs` site
+
+Verified by: `packages/kit/build/workspace-root.test.mjs`
+
+#### Scenario: A local or fetched site is selected
+
+- **WHEN** `PLATFORMKIT_DEFAULT_SITE` names a local site or a fetched managed checkout
+- **THEN** root CLI commands and root npm site shortcuts run from that site directory
+
+Verified by: `packages/kit/build/workspace-root.test.mjs`
+
+#### Scenario: Explicit and multi-site selection take precedence
+
+- **WHEN** `--site <path>` is supplied, or `PLATFORMKIT_SITES` explicitly names multiple sites for workspace development
+- **THEN** the explicit selection is honored instead of the default site
+
+Verified by: `packages/kit/build/workspace-root.test.mjs` and `packages/kit/build/dev-workspace.test.mjs`
+
+#### Scenario: A registered default has not been fetched
+
+- **WHEN** `PLATFORMKIT_DEFAULT_SITE` names a registered checkout that is absent locally
+- **THEN** the command refuses to run and prints `platformkit sites fetch <name>`
+
+Verified by: `packages/kit/build/workspace-root.test.mjs`
+
+### Requirement: The workspace development root lists its selected sites
+
+When the workspace development server is running, its unqualified local front-door host SHALL show a directory with one card for each selected site package. Each card SHALL display that site's resolved homepage Open Graph image and a project title from optional `dev.projectName`, falling back to the site directory name when unset or blank. The complete card SHALL link to the site's named `.localhost` origin on the same front-door port, and SHALL NOT display the SEO description or a separate open-site action. The directory SHALL reflect the `PLATFORMKIT_SITES` selection when one is set.
+
+#### Scenario: Open the workspace root during development
+
+- **WHEN** the workspace development front door is running with multiple selected sites and a developer opens its unqualified local host
+- **THEN** the directory shows one uniformly sized image-and-title card per selected site, using its resolved homepage Open Graph image and configured project name (or directory name fallback), with the whole card linking to that site's named local origin and no description or separate action
+
+Verified by: `packages/kit/build/dev-workspace.test.mjs`; screenshots at 1280px and 390px
+
+#### Scenario: Select a subset of workspace sites
+
+- **WHEN** `PLATFORMKIT_SITES` selects only some site packages
+- **THEN** the directory lists only those selected sites and each card links to the corresponding named local origin
+
+Verified by: `packages/kit/build/dev-workspace.test.mjs`
+
+#### Scenario: Production keeps its configured apex behavior
+
+- **WHEN** the production host configuration is generated without an apex site
+- **THEN** the unqualified host retains its existing 404 behavior and does not serve the development directory
+
+Verified by: `packages/kit/build/sites-host.test.mjs`
+
+### Requirement: Development servers use predictable public ports
+
+Single-site development and the workspace development front door SHALL use port 3000 by default. If that requested public port is unavailable, the server SHALL fail with a clear port-conflict error instead of silently choosing another port. Automatic public-port selection SHALL require an explicit `auto` option. Ports used only for the workspace's internal site Vite servers MAY be allocated automatically.
+
+#### Scenario: Start a single-site development server with defaults
+
+- **WHEN** a developer starts a single-site development server without a port option and port 3000 is available
+- **THEN** the site listens on port 3000
+
+Verified by: `packages/kit/build/dev.test.mjs`
+
+#### Scenario: The default single-site port is occupied
+
+- **WHEN** a developer starts a single-site development server without a port option and port 3000 is occupied
+- **THEN** startup fails with an error identifying the requested port and does not silently select another port
+
+Verified by: `packages/kit/build/dev.test.mjs`
+
+#### Scenario: Explicitly request automatic single-site port selection
+
+- **WHEN** a developer starts a single-site development server with `--port:auto`
+- **THEN** the server selects and reports an available port
+
+Verified by: `packages/kit/build/dev.test.mjs`
+
+#### Scenario: Start the workspace front door with defaults
+
+- **WHEN** a developer starts workspace development without a front-door port option and port 3000 is available
+- **THEN** the directory and every named site origin are served through the front door on port 3000 while internal site Vite ports are allocated for the selected sites
+
+Verified by: `packages/kit/build/dev-workspace.test.mjs`
+
+#### Scenario: Workspace front-door port is occupied
+
+- **WHEN** a developer starts workspace development without a front-door port option and port 3000 is occupied
+- **THEN** startup fails with an error identifying the requested port and does not silently select another public port
+
+Verified by: `packages/kit/build/dev-workspace.test.mjs`
+
+#### Scenario: Explicitly request automatic workspace front-door port selection
+
+- **WHEN** a developer starts workspace development with `--front-door-port:auto`
+- **THEN** the directory and every named site origin use the same available front-door port, which is reported at startup
+
+Verified by: `packages/kit/build/dev-workspace.test.mjs`
+
+### Requirement: Workspace development reuses stable site-specific Supabase projects
+
+Each site's development configuration SHALL allow the developer to set the complete stable Supabase project ID with `dev.projectId`. If it is unset, the default SHALL be `pk_<site-folder-or-subdomain>_local`. Direct and workspace development SHALL use the same resolved project ID. Different site folders/subdomains SHALL have distinct defaults. A run identifier SHALL NOT be included in the project ID.
+
+#### Scenario: Restart a workspace site
+
+- **WHEN** a site is started in workspace development on multiple runs
+- **THEN** its local Supabase project ID remains the same and its stack is reused
+
+Verified by: `packages/kit/build/dev-workspace.test.mjs`
+
+#### Scenario: Run multiple workspace sites
+
+- **WHEN** two or more sites are selected for workspace development
+- **THEN** each site's local Supabase project ID is stable and distinct from the others, and each site keeps its own stack
+
+Verified by: `packages/kit/build/dev-workspace.test.mjs`
+
+#### Scenario: Override a site's Supabase project ID
+
+- **WHEN** a developer sets `dev.projectId` in that site's `platformkit.config.js`
+- **THEN** direct and workspace development use that exact stable project ID and do not append a per-run identifier
+
+Verified by: `packages/kit/build/dev-workspace.test.mjs`
+
+### Requirement: Developers can stop PlatformKit-managed dev processes safely
+
+The kit SHALL provide a `platformkit stop` command that stops PlatformKit-managed dev server process groups and the associated local Supabase projects for the current workspace. Dev runs SHALL record enough ownership information for the stop command to identify their processes and projects without relying on broad process-name matching. The command SHALL NOT signal unregistered processes or remove Supabase database volumes or Docker images. It SHALL be safe to run repeatedly and SHALL report what it stopped and any managed run it could not stop.
+
+#### Scenario: Stop active workspace dev services
+
+- **WHEN** `platformkit stop` is run in a workspace with active managed dev services
+- **THEN** its registered site servers and workspace front door stop, and the local Supabase projects associated with those site runs stop
+
+Verified by: `packages/kit/build/dev-stop.test.mjs`
+
+#### Scenario: Stop when no managed dev services are running
+
+- **WHEN** `platformkit stop` is run with no active managed dev services
+- **THEN** it exits successfully, reports that there is nothing to stop, and leaves unrelated processes and Supabase projects untouched
+
+Verified by: `packages/kit/build/dev-stop.test.mjs`
+
+#### Scenario: Stop is run more than once
+
+- **WHEN** `platformkit stop` is run again after all managed services have stopped
+- **THEN** it exits successfully without signaling a process whose recorded PID has exited or been reused
+
+Verified by: `packages/kit/build/dev-stop.test.mjs`
+
+### Requirement: A dev server is reachable by its site's name
+
+When `PLATFORMKIT_DOMAIN` is set, `platformkit dev` SHALL write the run's `VITE_APP_URL` as
+`http://<site>.<PLATFORMKIT_DOMAIN>:<front-door-port>` rather than as a Vite port address, and
+SHALL record the Vite port it took where the host generator can read it
+(`.platformkit/dev/<site>.port`), removing it when the server stops. The workspace front door SHALL
+route that hostname to the site's Vite port with the HMR websocket passed through and response
+buffering off. A site in the list whose dev server is not running SHALL be answered by a page naming
+the site and the command that starts it, rather than by a bare gateway error.
+
+**Intent.** A magic link, a checkout return, the Stripe mock's landing and the auth server's
+redirect all follow `VITE_APP_URL`; every one of them must come back to the host the browser is
+actually on, or the session is lost. The Vite and shared front-door ports are not known until the
+servers are up, so neither can be configured in advance.
+
+#### Scenario: the link comes back to the host
+
+- **WHEN** `PLATFORMKIT_DOMAIN=localhost npm run dev` runs in `sites/demo`
+- **THEN** `VITE_APP_URL` for the run is `http://demo.localhost:<front-door-port>`, and a magic link
+  sent from that run returns to the same host and port
+
+Verified by: by hand against the local stack, once per change to the dev server
+
+#### Scenario: the local auth server accepts the host
+
+- **WHEN** the local stack starts
+- **THEN** `additional_redirect_urls` in `config.toml` admits `http://*.localhost` on the
+  automatically selected front-door port as well as the existing localhost port patterns
+
+Verified by: `build/sites-host.test.mjs` and a sign-in through the workspace front door
+
+#### Scenario: a site that is not running
+
+- **WHEN** `docs.localhost` is asked for and no dev server has written `docs.port`
+- **THEN** the answer is a page naming the site and the command, not a 502
+
+Verified by: `build/sites-host.test.mjs`
+
+### Requirement: Workspace development starts every selected site with isolated automatic ports
+
+When `platformkit dev` runs at the workspace root, it SHALL discover every site through the
+workspace site registry and start all selected sites in one invocation. Unless narrowed by
+`PLATFORMKIT_SITES`, the selected list SHALL include the named root site and every site package
+under `sites/`. Each site's Vite server SHALL receive a distinct automatically selected port and
+the one development front door SHALL receive an automatically selected available host port; the
+command SHALL print each site's hostname and usable URL. No per-site port map SHALL be required.
+
+For every site whose resolved deployment shape has `backend: true`, workspace development SHALL
+start a separate Supabase stack with non-conflicting host ports for all configured services,
+provide that stack's API URL and keys only to that site's Vite and functions processes, and keep
+runtime port configuration outside the committed site files. A site with `backend: false` SHALL
+run without a Supabase stack. Starting dev from an individual site directory SHALL continue to
+start only that site.
+
+#### Scenario: one command starts the workspace
+
+- **WHEN** `npm run dev` runs at a workspace root containing the named root site and multiple
+  registered site packages
+- **THEN** every selected site is reachable by its own subdomain through the automatically
+  allocated front-door port, and each backend-enabled site uses its own running Supabase stack
+
+Verified by: `build/dev-workspace.test.mjs` with multiple synthetic sites and a browser run across
+the root site and at least one backend-enabled workspace site
+
+#### Scenario: backend ports do not collide
+
+- **WHEN** two or more selected sites each declare `backend: true` and their source Supabase
+  configurations use the same default ports
+- **THEN** workspace development assigns each stack non-conflicting ports without modifying the
+  committed `supabase/config.toml`, and each app and functions process talks only to its own stack
+
+Verified by: `build/dev-workspace.test.mjs` and a local-stack probe of each site's API URL
+
+#### Scenario: a backend-free site joins the workspace
+
+- **WHEN** a selected site declares `deployment.backend: false`
+- **THEN** its Vite server is started and routed by the front door without starting Supabase for it
+
+Verified by: `build/dev-workspace.test.mjs` with backend-enabled and backend-free sites
+
+#### Scenario: workspace shutdown or startup failure
+
+- **WHEN** the workspace dev process receives a stop signal or any child fails during startup
+- **THEN** it stops the front door, all child Vite and functions servers, and every Supabase stack it
+  started, and removes its runtime port files and temporary configuration
+
+Verified by: `build/dev-workspace.test.mjs` by exercising normal shutdown and a failed child start
+
+### Requirement: The list of sites is read in one place
+
+The sites a checkout holds SHALL be read by one function in the kit, used by the host generator,
+the dev server and the rewrites step alike, and exposed as `platformkit sites`.
+
+**Intent.** Three readings of a directory tree is how two of them come to agree and the third
+does not.
+
+#### Scenario: one list
+
+- **WHEN** `platformkit sites --json` runs in a checkout
+- **THEN** it names every site under `sites/` and the root site, with each one's directory, and
+  the host generator's own list is identical to it
+
+Verified by: `build/sites-host.test.mjs`

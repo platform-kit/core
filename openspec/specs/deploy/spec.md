@@ -8,7 +8,7 @@ What a production deploy must have, and what it must never do: refused whole bef
 
 ### Requirement: The deploy is refused before it runs anything
 
-The deploy SHALL check the environment against what the content switches on before it links, pushes, builds or deploys anything, and SHALL refuse with every missing or wrong setting named at once. Anything for sale needs Stripe's live key and webhook secret; a book in print needs a printer for every printed format it sells; a published booking type that cal.com schedules needs cal.com's webhook secret and API key — a site whose every type the site itself schedules needs nothing of cal.com's; a published type whose call happens in the site's video room needs LiveKit's address, key and secret, and — when the type records — the storage keys the room lands the film with; a site whose room types are all links needs nothing of LiveKit's; a mock switched on is refused. **A feature that is off asks for nothing, and that SHALL include the backend itself**: a site with no accounts, nothing for sale, nothing booked and nothing mailed SHALL be asked for no database, no mail relay and no push keys. A site that DOES switch on something needing a backend and has none SHALL be refused by what it has on, in those words, rather than by the name of a missing variable.
+The deploy SHALL check the environment against what the content switches on before it links, pushes, builds or deploys anything, and SHALL refuse with every missing or wrong setting named at once. Anything for sale needs the live credentials and webhook configuration for the selected payment provider; when no provider is selected, Stripe remains the default and requires its live key and webhook secret, while a selected Hyperswitch provider requires its instance URL, API key, business profile, and webhook signing key. A book in print needs a printer for every printed format it sells; a published booking type that cal.com schedules needs cal.com's webhook secret and API key — a site whose every type the site itself schedules needs nothing of cal.com's; a published type whose call happens in the site's video room needs LiveKit's address, key and secret, and — when the type records — the storage keys the room lands the film with; a site whose room types are all links needs nothing of LiveKit's; a mock switched on is refused. **A feature that is off asks for nothing, and that SHALL include the backend itself**: a site with no accounts, nothing for sale, nothing booked and nothing mailed SHALL be asked for no database, no mail relay and no push keys. A site that DOES switch on something needing a backend and has none SHALL be refused by what it has on, in those words, rather than by the name of a missing variable.
 
 #### Scenario: a bare environment
 
@@ -35,6 +35,39 @@ Verified by: `deploy-checks --test`, the case added for it
 
 - **WHEN** a site has the store on, or accounts, or a booking type, and no backend is configured
 - **THEN** the deploy is refused and says which feature needs one, not which variable is unset
+
+Verified by: `deploy-checks --test`
+
+#### Scenario: a Hyperswitch site does not need Stripe credentials
+
+- **WHEN** a site with something for sale selects Hyperswitch and has all required Hyperswitch settings but no Stripe settings
+- **THEN** the provider-specific payment check passes without asking for Stripe credentials
+
+Verified by: `deploy-checks --test`
+
+#### Scenario: a selected Hyperswitch site names every missing setting
+
+- **WHEN** a site with something for sale selects Hyperswitch and one or more required Hyperswitch settings are missing
+- **THEN** deployment refuses before running a command and names all missing Hyperswitch settings without asking for Stripe credentials
+
+#### Scenario: a selected Hyperswitch site requires its publishable key
+
+- **WHEN** a site selects Hyperswitch for an enabled commerce feature and its publishable key is missing
+- **THEN** deployment refuses before running a command and names `HYPERSWITCH_PUBLISHABLE_KEY`
+
+Verified by: `deploy-checks --test`
+
+#### Scenario: a selected Hyperswitch site has an unsupported publishable-key format
+
+- **WHEN** a site selects Hyperswitch and its publishable key does not use a Web SDK-issued `pk_dev_`, `pk_snd_`, or `pk_prd_` prefix
+- **THEN** deployment refuses before running a command and identifies the invalid Hyperswitch publishable key without printing its value
+
+Verified by: `deploy-checks --test`
+
+#### Scenario: a selected Hyperswitch site configures a client SDK URL
+
+- **WHEN** `HYPERSWITCH_CLIENT_URL` is configured for a selected Hyperswitch provider
+- **THEN** deployment accepts an HTTPS URL and refuses a non-HTTPS or invalid URL without printing the configured value
 
 Verified by: `deploy-checks --test`
 
@@ -213,3 +246,133 @@ Verified by: `build/share-cloud.test.mjs`
 - **THEN** no sidecar is started and every picture is the build's
 
 Verified by: `build/modes.test.mjs`, which asserts the commands each shape plans
+
+### Requirement: A deployment builds the checked-out site independently
+
+A production build SHALL use the site repository and commit selected by the deployment host. The existing PlatformKit deploy command SHALL be invocable from that repository through `npx --yes --package=github:platform-kit/core platformkit deploy` and SHALL install the kit and theme from the Core source without requiring package publication or modifying the site's manifest or lockfile. Before any production-facing step, deployment SHALL verify that the installed kit and theme match their recorded Core-source provenance and SHALL fail clearly if the receipt is missing or the installed contents differ. Deployment SHALL NOT depend on the Core workspace's site registry, local checkout cache, or another site's files. The deployment host's existing configuration remains unchanged.
+
+#### Scenario: A site commit is deployed through the existing command
+
+- **WHEN** the existing deploy command is invoked with the Core GitHub-source CLI from a standalone site repository
+- **THEN** the deployment uses that site's checked-out content, configuration, and code, with the kit and theme installed from Core source
+
+Verified by: `packages/kit/build/source-cli.test.mjs` and `packages/kit/build/deploy-pins.test.mjs`
+
+#### Scenario: Source provenance is absent or inconsistent
+
+- **WHEN** the deploy preflight finds no source-install receipt or finds that installed package contents no longer match it
+- **THEN** deployment fails with the missing or inconsistent source installation identified before production-facing steps begin
+
+Verified by: `packages/kit/build/deploy-pins.test.mjs`
+
+### Requirement: Several sites answer on one host, each on its own subdomain
+
+When `PLATFORMKIT_DOMAIN` is set the web server SHALL serve every named site on
+`<site>.<PLATFORMKIT_DOMAIN>`, one server block per site, generated from the sites the checkout
+holds rather than from a list anybody maintains. A site under `sites/<name>` SHALL be named
+`<name>`; the repository root site has no directory name and SHALL be named by
+`PLATFORMKIT_ROOT_SITE` or left out. A name that is not a legal DNS label SHALL be refused by
+name before the server starts, never skipped silently.
+
+With `PLATFORMKIT_DOMAIN` unset — the default — every generated file SHALL be byte-identical to
+what the single-site deployment produces today, and the one site SHALL answer on `server_name _`
+as it does now.
+
+`PLATFORMKIT_SITES` SHALL narrow the list to the sites named, so a fixture site in the tree
+(`sites/brochure`) is never published by existing.
+
+**Intent.** Two sites on one origin share `localStorage`, the Loro store, the session and the
+service worker, so a sign-in on one shows on the other. Separate hosts is the only thing that
+separates them.
+
+#### Scenario: the default is unchanged
+
+- **WHEN** the nginx image starts with `PLATFORMKIT_DOMAIN` unset
+- **THEN** `/etc/nginx/conf.d/default.conf` is byte-identical to the file the single-site image
+  writes today, and the site answers on any host
+
+Verified by: `build/sites-host.test.mjs` — the generator run both ways over the same tree
+
+#### Scenario: three sites, three hosts
+
+- **WHEN** the image starts with `PLATFORMKIT_DOMAIN=platformkit.com`, `PLATFORMKIT_SITES=demo,docs`
+  and `PLATFORMKIT_ROOT_SITE=brochure`
+- **THEN** there is a server block for each of `demo.platformkit.com`, `docs.platformkit.com` and
+  `brochure.platformkit.com`, each with its own root, and a request for `brochure.platformkit.com`
+  reaches none of them
+
+Verified by: `build/sites-host.test.mjs`, and by hand against a built image
+
+#### Scenario: a name that cannot be a subdomain
+
+- **WHEN** a directory under `sites/` is named with a character a DNS label cannot carry
+- **THEN** the entrypoint refuses to start, naming the directory and the rule
+
+Verified by: `build/sites-host.test.mjs`
+
+### Requirement: The bare domain is named, never guessed
+
+`PLATFORMKIT_APEX` SHALL name the site that also answers the bare domain. `www.<domain>` SHALL
+redirect to that site's own host rather than serving it, so one site has one address. With
+`PLATFORMKIT_APEX` unset the bare domain and `www` SHALL be answered by a server block that
+returns 404, never by whichever site's block was defined first.
+
+**Intent.** A wrong guess here shows somebody a site they did not ask for, from the address they
+are most likely to type.
+
+#### Scenario: no apex named
+
+- **WHEN** `PLATFORMKIT_DOMAIN` is set and `PLATFORMKIT_APEX` is not
+- **THEN** a request to the bare domain gets 404 from a block that exists, and no site's block
+  answers it
+
+Verified by: `build/sites-host.test.mjs`
+
+#### Scenario: www
+
+- **WHEN** `PLATFORMKIT_APEX=demo` and a request arrives for `www.<domain>`
+- **THEN** it is redirected to `demo.<domain>`, not served
+
+Verified by: `build/sites-host.test.mjs`
+
+### Requirement: A site never reaches another site's backend
+
+Each site SHALL have its own rewrites include, generated from its own `_redirects` and filled
+with its own `SUPABASE_URL`, and a site's server block SHALL include only its own. A site in the
+list with no Supabase address SHALL be refused before the server starts, with the variable's
+name in the message.
+
+**Intent.** Every rewrite proxies to `${SUPABASE_URL}`. One shared include would send one site's
+content API to another's project, and because both answer 200 with plausible JSON nothing would
+notice until somebody read the data.
+
+#### Scenario: two sites, two projects
+
+- **WHEN** two sites are served with different `SUPABASE_URL` values
+- **THEN** each site's `/api/content` proxies to its own project, and neither block names the
+  other's address
+
+Verified by: `build/sites-host.test.mjs`
+
+#### Scenario: a site with no backend named
+
+- **WHEN** a site is in `PLATFORMKIT_SITES` and its `SUPABASE_URL` is unset
+- **THEN** the entrypoint exits non-zero naming the site and the variable, and nginx does not start
+
+Verified by: `build/sites-host.test.mjs`
+
+### Requirement: A cookie belongs to its site, never to the parent domain
+
+Nothing the kit sets SHALL set a cookie on `.<PLATFORMKIT_DOMAIN>`; a cookie SHALL be set on the
+site's own host alone.
+
+**Intent.** A cookie on the parent is readable by every site under it, which undoes the
+separation this whole arrangement exists for. Nothing sets one today — the session is in
+`localStorage`, which is already per origin — so this is a line held before it is crossed.
+
+#### Scenario: no cookie on the parent
+
+- **WHEN** the kit's source is searched for a cookie whose domain attribute names a parent
+- **THEN** there is none
+
+Verified by: `build/sites-host.test.mjs`
