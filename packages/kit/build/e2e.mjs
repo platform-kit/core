@@ -278,6 +278,9 @@ async function runSite(site, reserved) {
     /* 6. the site's stack tests, where a skip is a failure */
     const testEnv = {
       ...process.env, ...parseEnv(base), ...stackEnv, ...secrets,
+      /* two sites' suites share the machine, and a page's first visit compiles it cold: the browser floor (browser.mjs,
+         BROWSER_WAIT_MS, meant for a slow machine) is doubled for the run, unless it was set */
+      BROWSER_WAIT_MS: process.env.BROWSER_WAIT_MS || '120000',
       PLATFORMKIT_E2E: '1', PLATFORMKIT_TEST_SITE: name, PLATFORMKIT_TEST_API_URL: st.API_URL, PLATFORMKIT_TEST_ANON_KEY: st.ANON_KEY,
       PLATFORMKIT_TEST_SERVICE_ROLE_KEY: st.SERVICE_ROLE_KEY, PLATFORMKIT_TEST_DB_URL: st.DB_URL, PLATFORMKIT_TEST_FUNCTIONS_URL: `${st.API_URL}/functions/v1`,
       PLATFORMKIT_TEST_MAIL_URL: mail, PLATFORMKIT_TEST_APP_URL: appUrl, SUPABASE_WORKDIR: runtimeRoot,

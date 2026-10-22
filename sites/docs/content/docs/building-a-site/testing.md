@@ -201,7 +201,7 @@ Before any stack, the run asks for what every site needs: Docker answering, and 
 
 Each site's run writes `node_modules/.cache/platformkit/e2e/<site>.log` as it goes, with the functions and the app in their own logs beside it. CI runs the same command over the demo and `sites/club` — a members' club with a backend and few modules, so two stacks are built side by side and a module that is off is exercised — and then the runner's own test (`build/e2e-runner.test.mjs`): a stand-in dev database left untouched, two sites isolated, a schema change seen, a kept stack replaced, a live key refused, a withheld service failing, an interrupted run torn down. It uses `--run` with `build/fixtures/e2e-probe.mjs` in place of the suite.
 
-A browser check fills a sign-in form one field at a time, waiting for the page to take each value before the next: filled back to back under load, the form submits half-empty.
+The run doubles the browser checks' wait (`BROWSER_WAIT_MS`, 120 s unless set): two sites' suites share the machine, and a page's first visit compiles it cold. A browser check fills a sign-in form one field at a time, waiting for the page to take each value before the next: filled back to back under load, the form submits half-empty.
 
 ### Nothing untested by construction
 
