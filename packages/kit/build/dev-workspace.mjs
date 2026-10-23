@@ -248,6 +248,7 @@ export async function runWorkspace({
   devScript = DEV,
   frontDoorAdapter,
   assembleSite,
+  startupLimits = { stackMs: 15 * 60000, viteMs: 180000 },
 } = {}) {
   root = path.resolve(root)
   const settings = { ...loadEnv('development', root, 'PLATFORMKIT_'), ...env }
@@ -383,26 +384,32 @@ export async function runWorkspace({
       children.push(record)
     }
 
-    /* each site's clock starts when its stack answers, not when it was spawned: a cold
-       `supabase start` (image pulls, a restore from backup) can take minutes on its own, and
-       one that fails ends the child, which the loop already reports */
-    const viteReadyMs = 180000
+    /* each site's Vite clock starts when its stack answers, not when it was spawned: a cold
+       `supabase start` (image pulls, a restore from backup) can take minutes on its own. One that
+       fails ends the child, which the loop reports; one that hangs is given up on at stackMs */
+    const stackDeadline = Date.now() + startupLimits.stackMs
+    const minutes = (ms) => `${Math.round(ms / 6000) / 10} min`
     for (const { site, child } of children) {
       const vitePort = vitePorts.get(site.name)
       const portFile = platformkitRuntimePath(root, 'dev', `${site.name}.port`)
       const stackReadyFile = platformkitRuntimePath(root, 'dev', `${site.name}.stack-ready`)
       const ownsFile = (file) => fs.existsSync(file) && Number(fs.readFileSync(file, 'utf8').trim()) === vitePort
-      let deadline = null
-      while (deadline === null || Date.now() < deadline) {
+      let viteDeadline = null
+      for (;;) {
         const record = children.find((candidate) => candidate.child === child)
         if (record?.error || child.exitCode !== null || child.signalCode !== null) {
           throw new Error(`${site.name} dev server exited during startup${record?.error ? `: ${record.error.message}` : ''}`)
         }
-        if (deadline === null && ownsFile(stackReadyFile)) deadline = Date.now() + viteReadyMs
-        if (deadline !== null && ownsFile(portFile) && await tcpConnects(vitePort)) break
+        if (viteDeadline === null) {
+          if (ownsFile(stackReadyFile)) viteDeadline = Date.now() + startupLimits.viteMs
+          else if (Date.now() >= stackDeadline) throw new Error(`${site.name} Supabase stack did not start within ${minutes(startupLimits.stackMs)}`)
+        }
+        if (viteDeadline !== null) {
+          if (ownsFile(portFile) && await tcpConnects(vitePort)) break
+          if (Date.now() >= viteDeadline) throw new Error(`${site.name} Vite server did not become ready within ${minutes(startupLimits.viteMs)} of its stack starting`)
+        }
         await new Promise((resolve) => setTimeout(resolve, 200))
       }
-      if (Date.now() >= deadline) throw new Error(`${site.name} Vite server did not become ready within ${viteReadyMs / 1000}s of its stack starting`)
     }
 
     composeAttempted = true

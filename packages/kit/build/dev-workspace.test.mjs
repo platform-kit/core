@@ -146,6 +146,8 @@ await test('stable Supabase project IDs default to site slugs and allow exact co
     await runWorkspaceWorker(process.argv[3])
   } else if (process.argv[2] === '--workspace-failure-worker') {
     await runWorkspaceFailureWorker(process.argv[3])
+  } else if (process.argv[2] === '--stack-hang-worker') {
+    await runStackHangWorker(process.argv[3])
   } else if (process.argv[2] === '--held-worker') {
     await runHeldWorker(process.argv[3], process.argv[4])
   } else {
@@ -202,6 +204,28 @@ await test('stable Supabase project IDs default to site slugs and allow exact co
       assert.equal(fs.existsSync(path.join(root, '.front-door-started')), false, 'front door is not started after a child fails')
       const port = Number(fs.readFileSync(path.join(root, '.alpha-port'), 'utf8'))
       assert.equal(await acceptsConnections(port), false, 'the already-started site server is stopped')
+    })
+
+    await test('a stack that never comes up ends the run at the stack limit and stops its servers', async () => {
+      const root = path.join(fixture, 'stack-hang-fixture')
+      for (const name of ['alpha']) {
+        const directory = path.join(root, 'sites', name)
+        fs.mkdirSync(directory, { recursive: true })
+        fs.writeFileSync(path.join(directory, 'package.json'), JSON.stringify({ name: `@fixture/${name}`, type: 'module' }))
+        fs.writeFileSync(path.join(directory, 'platformkit.config.js'), `export default { name: '${name}', deployment: { backend: false } }\n`)
+      }
+      const worker = spawn(process.execPath, [fileURLToPath(import.meta.url), '--stack-hang-worker', root], { stdio: ['ignore', 'pipe', 'pipe'] })
+      let output = ''
+      worker.stdout.on('data', (chunk) => { output += chunk })
+      worker.stderr.on('data', (chunk) => { output += chunk })
+      const result = await new Promise((resolve) => worker.once('exit', (code, signal) => resolve({ code, signal })))
+      assert.equal(result.code, 1, `${output}\nworker signal: ${result.signal}`)
+      assert.match(output, /alpha Supabase stack did not start within/)
+      const portDir = path.join(root, 'node_modules', '.cache', 'platformkit', 'dev')
+      assert.deepEqual(fs.existsSync(portDir) ? fs.readdirSync(portDir).filter((name) => name.endsWith('.port')) : [], [])
+      assert.equal(fs.existsSync(path.join(root, '.front-door-started')), false, 'front door is not started while a stack is down')
+      const port = Number(fs.readFileSync(path.join(root, '.alpha-port'), 'utf8'))
+      assert.equal(await acceptsConnections(port), false, 'the waiting site server is stopped')
     })
     /* RESTARTING ALWAYS WORKS (dev-restarts-cleanly): a run stops its servers however it ends, and a
        new run takes over from one that ended without cleaning up */
@@ -541,6 +565,36 @@ if (site === 'beta') {
     devScript,
     frontDoorAdapter: { async start() { fs.writeFileSync(path.join(root, '.front-door-started'), '') }, async stop() {} },
     assembleSite: async () => {},
+  })
+}
+
+async function runStackHangWorker(root) {
+  /* claims its port and listens, as a real child does before `supabase start`, and never says its stack is up */
+  const devScript = path.join(fixture, 'fake-stack-hang-dev.mjs')
+  fs.writeFileSync(devScript, `import fs from 'node:fs'
+import http from 'node:http'
+import path from 'node:path'
+const site = path.basename(process.cwd())
+const port = Number(process.argv[process.argv.indexOf('--port') + 1])
+const workspace = path.resolve(process.cwd(), '../..')
+fs.writeFileSync(path.join(workspace, '.alpha-port'), String(port))
+const portDir = path.join(workspace, 'node_modules', '.cache', 'platformkit', 'dev')
+fs.mkdirSync(portDir, { recursive: true })
+const portFile = path.join(portDir, site + '.port')
+fs.writeFileSync(portFile, String(port) + '\\n')
+const server = http.createServer((_req, res) => { res.end(site) })
+server.listen(port, '0.0.0.0')
+process.on('SIGTERM', () => server.close(() => { fs.rmSync(portFile, { force: true }); process.exit(0) }))
+`)
+
+  await runWorkspace({
+    root,
+    args: ['--front-door-port:auto'],
+    env: { ...process.env, PLATFORMKIT_SITES: 'alpha', PLATFORMKIT_ROOT_SITE: '', PLATFORMKIT_DOMAIN: 'localhost' },
+    devScript,
+    frontDoorAdapter: { async start() { fs.writeFileSync(path.join(root, '.front-door-started'), '') }, async stop() {} },
+    assembleSite: async () => {},
+    startupLimits: { stackMs: 1500, viteMs: 1500 },
   })
 }
 
