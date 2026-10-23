@@ -206,7 +206,7 @@ begin
     into lessons from public.course_lessons_for(p_course, uid) f;
   if e.id is not null then select id into cert from public.certificates where enrollment = e.id; end if;
   return jsonb_build_object(
-    'slug', c.slug, 'title', c.title, 'about', c.about, 'image', c.image, 'release', c.release, 'every_days', c.every_days,
+    'slug', c.slug, 'title', c.title, 'about', c.about, 'image', c.image, 'release', c.release, 'drip', c.drip, 'every_days', c.every_days,
     'in_order', c.in_order, 'certificate', c.certificate, 'free', coalesce((c.access ->> 'free')::boolean, false),
     'skus', coalesce(c.access -> 'skus', '[]'::jsonb), 'tiers', coalesce(c.access -> 'tiers', '[]'::jsonb),
     'access', public.course_has_access(uid, p_course), 'signed_in', uid is not null,

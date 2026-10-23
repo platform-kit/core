@@ -22,7 +22,7 @@
         <ul v-else-if="list.length" class="crs-grid">
           <li v-for="c in list" :key="c.slug">
             <a class="crs-card" :href="base + '/' + c.slug">
-              <span class="crs-card-img"><img v-if="c.image" :src="c.image" alt="" /></span>
+              <span v-if="c.image" class="crs-card-img"><img :src="c.image" alt="" /></span>
               <span class="crs-card-body">
                 <strong class="crs-card-title">{{ c.title }}</strong>
                 <span v-if="c.about" class="crs-card-about">{{ firstLine(c.about) }}</span>
