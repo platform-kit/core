@@ -27,6 +27,7 @@ section-starred: Starred
 section-drafts: Drafts
 directory: People
 events: Events
+courses: Courses
 keeping: Moderation
 find-space: Find a space
 browse-spaces: Browse spaces

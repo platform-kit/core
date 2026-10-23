@@ -154,6 +154,9 @@ async function load() {
      recording by INTRO_KEY rather than its editable label */
   if (fm.value.introduction) chapters.value.unshift({ key: INTRO_KEY, title: R.intro.label, md: String(fm.value.introduction).trim(), intro: true })
   ch.value = Math.min(state.value.ch || 0, chapters.value.length - 1)
+  /* ?chapter=N opens the Nth chapter (counted from 1, the introduction not counted): where a course lesson sends somebody */
+  const asked = Number(new URLSearchParams(location.search).get('chapter'))
+  if (Number.isInteger(asked) && asked >= 1) ch.value = Math.min(asked - 1 + (chapters.value[0] && chapters.value[0].intro ? 1 : 0), chapters.value.length - 1)
   fetchGated()
   prepareSpeech().catch(() => {})
 

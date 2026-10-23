@@ -178,6 +178,23 @@ export const MODULES = [
       cron: [{ name: 'event-reminders', schedule: '*/5 * * * *', command: 'select public.run_event_reminders()' }],
     },
   },
+  /*
+   * COURSES: sections and lessons in order, released over time, tracked to completion (openspec: courses). A course
+   * is a declaration (content/courses), projected into tables the database alone answers from — which lessons are
+   * open, and a lesson's text only when it is — so there is no static shape: enrolment and progress need somewhere to live.
+   */
+  {
+    key: 'courses', what: 'courses: lessons in order, released over time, tracked to completion, with certificates',
+    needs: 'there is nowhere to keep who is enrolled, how far they are, or what is open to them',
+    static: false, git: true, cloud: true,
+    owns: {
+      routes: ['/courses', '/certificates'],
+      steps: ['courses-push'],
+      functions: ['course-notify'],
+      schema: ['46-courses.sql'],
+      cron: [{ name: 'course-notices', schedule: '*/15 * * * *', command: 'select public.run_course_notices()' }],
+    },
+  },
   {
     key: 'forms', what: 'the builder, /form/<slug>, the responses', needs: 'there is nowhere to keep a response',
     static: false, git: true, cloud: true,

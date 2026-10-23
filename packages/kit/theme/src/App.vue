@@ -2,7 +2,7 @@
 import { moduleOn } from 'platformkit/lib/modules.js'
 import { mayInterrupt } from 'platformkit/lib/interrupt.js'
 import { watch, defineAsyncComponent } from 'vue'
-import { route, ROUTES, INTERRUPT_ROUTES, DEV, CMS, STORE_ON, DOCS_ONLY, FORMS_ON, API_ON, SESSIONS_ON, MODELS_ON, ENTRY_KEYS, isPageRoute, siteRouteOf } from './router.js'
+import { route, ROUTES, INTERRUPT_ROUTES, DEV, CMS, STORE_ON, DOCS_ONLY, FORMS_ON, API_ON, SESSIONS_ON, MODELS_ON, ENTRY_KEYS, isPageRoute, siteRouteOf, coursesRoute } from './router.js'
 import { warmSpeech } from 'platformkit/lib/tts/support.js'
 import LandingPage from './pages/LandingPage.vue'
 import AuthModal from './components/AuthModal.vue'
@@ -56,6 +56,8 @@ const COMMUNITY = !!(SpacesPage && FeedPage)
 const PersonPage = defineAsyncComponent(() => import('./pages/PersonPage.vue'))
 /* an achievement's own page */
 const AwardPage = defineAsyncComponent(() => import('./pages/AwardPage.vue'))
+/* the courses, a lesson and a certificate (the courses module) */
+const CoursesPage = moduleOn('courses') ? defineAsyncComponent(() => import('./pages/CoursesPage.vue')) : null
 /* a content model's pages (the models module; only a model with pages on has any) */
 const EntriesPage = MODELS_ON && ENTRY_KEYS.size ? defineAsyncComponent(() => import('./pages/EntriesPage.vue')) : null
 
@@ -108,6 +110,7 @@ watch(route, (path) => { applyRouteMeta(path); if (path !== ROUTES.preview) page
   <SpacesPage v-else-if="SpacesPage && (route === ROUTES.spaces || route.startsWith(ROUTES.spaces + '/') || (COMMUNITY && (route === ROUTES.feed || route.startsWith(ROUTES.feed + '/'))))" />
   <FeedPage v-else-if="FeedPage && (route === ROUTES.feed || route.startsWith(ROUTES.feed + '/'))" />
   <AwardPage v-else-if="route.startsWith(ROUTES.awards + '/')" :key="route" />
+  <CoursesPage v-else-if="CoursesPage && coursesRoute(route)" />
   <!-- a coach's own page is a landing page claiming this exact address, and it wins: the profile
        page is what stands there for somebody who has not built one -->
   <PersonPage v-else-if="(route === ROUTES.account || route.startsWith(ROUTES.people + '/')) && !isPageRoute(route)" :key="route" />

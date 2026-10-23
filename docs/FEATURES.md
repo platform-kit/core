@@ -187,6 +187,18 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Owners download their PDF and EPUB editions from the book page.
 - Listen to chapters where audio is available (see `tts`); buy printed editions where offered (see `print`).
 
+### Courses (`courses`)
+
+- Courses of sections and lessons in order, built in the admin by dragging lessons into place. A lesson is its own text with video, audio and downloads, or a book chapter, an article, a form or quiz, or a session to book.
+- Free to anyone signed in, sold in the store, or included in a membership tier; buying it or joining the tier enrolls somebody on the way in.
+- Released all at once, one lesson or section every few days, or from a cohort's start date, optionally only once the lesson before is finished. A closed lesson's text is never sent to the browser, and the page says when it opens.
+- A lesson finishes when it is marked done, read, answered (and passed, where scored) or booked; finishing every required lesson completes the course, awards an achievement that watches for it, and issues a certificate with a public address and a PDF.
+- An enrollment outlives a refund or a lapsed membership, and resumes where it stopped when access comes back.
+- Emails when a lesson opens (once per lesson, at most one a day to a person) and when somebody finishes.
+- An Enrollments screen for administrators: who is where, how many finish, and the lesson where most people stop.
+- A reader's courses in their app area and on their member card; a space can be filled by a course's people or one cohort.
+- On pages of their own at `/courses`, or as a place of the community, as in Circle (`courses.where`).
+
 ### Wiki (`wiki`)
 
 - Publish a wiki with folders, ordering, a wiki lane and listings.

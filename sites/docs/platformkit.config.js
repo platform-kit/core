@@ -19,6 +19,8 @@ export default {
     events: false, bots: false, api: false,
     /* the social network needs somewhere to keep a post — a documentation site has nowhere */
     network: false,
+    /* a course needs somewhere to keep who is enrolled and how far they are */
+    courses: false,
   },
   /* THE STATIC SHAPE: no Supabase at all. Nothing here needs one — the docs are files, the search
      index is built from them, and there is no sign-in — so the deploy asks for no database, no mail

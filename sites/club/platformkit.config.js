@@ -19,7 +19,7 @@ export default {
     store: false, print: false, sessions: false, coaching: false,
     funnels: false, emails: false, instrument: false, recommendations: false,
     translation: false, tts: false, enrichment: false, push: false, models: false, spaces: false, 'space-encryption': false,
-    events: false, bots: false, api: false, network: false,
+    events: false, bots: false, api: false, network: false, courses: false,
     'social-publishing': false, copilot: false,
   },
   languages: ['en'],

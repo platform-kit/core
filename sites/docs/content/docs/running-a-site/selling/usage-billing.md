@@ -58,7 +58,7 @@ sources:
     packages/kit/theme/src/content/ui/analytics.md,
     packages/kit/theme/src/content/ui/copilot.md,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-22
 ---
 
 Usage billing lets a site sell an allowance of a service or charge for measured use. It uses the

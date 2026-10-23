@@ -24,7 +24,7 @@ sources:
     packages/kit/supabase/functions/push,
     packages/kit/build/vapid.mjs,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-22
 ---
 
 ## Analytics

@@ -23,7 +23,7 @@ sources:
     packages/kit/supabase/functions/_shared/session-mail.ts,
     packages/kit/supabase/functions/_shared/ics.js,
   ]
-reviewed: 2026-10-09
+reviewed: 2026-10-22
 ---
 
 > The compile (`build/funnels.mjs`) runs **over the store**, so the same code answers from a checkout on a

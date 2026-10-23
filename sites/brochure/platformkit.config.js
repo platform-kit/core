@@ -27,7 +27,7 @@ export default {
     store: false, print: false, memberships: false, sessions: false, coaching: false, support: false,
     funnels: false, emails: false, forms: false, instrument: false, recommendations: false,
     translation: false, tts: false, enrichment: false, push: false, models: false, spaces: false, 'space-encryption': false,
-    events: false, bots: false, api: false, network: false,
+    events: false, bots: false, api: false, network: false, courses: false,
     'social-publishing': false, copilot: false,
   },
   languages: ['en'],

@@ -11,7 +11,7 @@
  * hands it compiled (auth-config.mjs on deploy, supabase/templates locally); their tags are Go
  * templates — `{{ .ConfirmationURL }}` — left intact by fill.js and filled by Supabase.
  */
-export const KINDS = ['order', 'shipped', 'files', 'chat', 'support', 'support-digest', 'magic-link', 'recovery', 'invitation', 'campaign', 'session-booked', 'session-held', 'session-to-confirm', 'session-declined', 'session-moved', 'session-cancelled', 'session-reminder', 'event-reminder', 'provider-terms']
+export const KINDS = ['order', 'shipped', 'files', 'chat', 'support', 'support-digest', 'magic-link', 'recovery', 'invitation', 'campaign', 'session-booked', 'session-held', 'session-to-confirm', 'session-declined', 'session-moved', 'session-cancelled', 'session-reminder', 'event-reminder', 'provider-terms', 'course-lesson', 'course-complete']
 /* the ones Supabase Auth sends, from the compiled design: never filled here */
 export const GOTRUE = ['magic-link', 'recovery', 'invitation']
 
@@ -94,6 +94,19 @@ export const TAGS = {
   'session-moved': null, 'session-cancelled': null, 'session-reminder': null,
   /* what is on, before it is on: for everybody who said they were coming */
   'event-reminder': null,
+  /* a course's lesson that has just opened, and a course finished (the courses module) */
+  'course-lesson': [
+    { label: 'First name', value: '{{name}}', group: 'Reader', sample: 'Ada' },
+    { label: 'The course', value: '{{course}}', group: 'Course', sample: 'Writing well' },
+    { label: 'The lesson', value: '{{lesson}}', group: 'Course', sample: 'Finding the first line' },
+    { label: 'Link to the lesson', value: '{{url}}', group: 'Course', sample: 'https://example.com/courses/writing-well/first-line' },
+  ],
+  'course-complete': [
+    { label: 'First name', value: '{{name}}', group: 'Reader', sample: 'Ada' },
+    { label: 'The course', value: '{{course}}', group: 'Course', sample: 'Writing well' },
+    { label: 'Link to the course', value: '{{url}}', group: 'Course', sample: 'https://example.com/courses/writing-well' },
+    { label: 'Link to the certificate', value: '{{certificate}}', group: 'Course', sample: 'https://example.com/certificates/3f2a9c', description: 'empty when the course gives none' },
+  ],
   /* the frame every funnel step and blast is piped through: the markdown's html goes into an html block as {{{body}}} */
   campaign: [
     { label: 'First name', value: '{{name}}', group: 'Reader', sample: 'Ada' },
@@ -146,6 +159,8 @@ export const PAIRS = {
     { label: 'Only with a link to join', before: '{{#if join}}', after: '{{/if}}', group: 'Show when' },
   ],
   'session-moved': null, 'session-cancelled': null, 'session-reminder': null,
+  'course-lesson': [],
+  'course-complete': [{ label: 'Only with a certificate', before: '{{#if certificate}}', after: '{{/if}}', group: 'Show when' }],
   'provider-terms': [{ label: 'Only for somebody who signed an earlier version', before: '{{#if signed}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only for somebody who has never signed', before: '{{#unless signed}}', after: '{{/unless}}', group: 'Show when' }],
 }
 /* the four session emails share their tags and pairs; the reminder adds how soon */
@@ -172,6 +187,8 @@ export const SAMPLES = {
   'session-cancelled': { name: 'Ada', title: 'One on one', when: 'Tuesday 7 July, 09:00 (Amsterdam)', with: 'Coach Person', where: 'In person at The studio, Keizersgracht 123, Amsterdam', join: '', manage: 'https://example.com/app/coaching' },
   'session-reminder': { ...{ name: 'Ada', title: 'One on one', when: 'Tuesday 7 July, 09:00 (Amsterdam)', with: 'Coach Person', where: 'In person at The studio, Keizersgracht 123, Amsterdam', join: '', manage: 'https://example.com/app/coaching' }, in: 'in 24 hours' },
   'event-reminder': { name: 'Ada', title: "The members' call", what: "The members' call", when: 'Tuesday 7 July, 18:00 (London)', with: 'Coach Person', where: 'Online', join: 'https://example.com/spaces/the-practice', manage: 'https://example.com/spaces/the-practice', in: 'in 24 hours' },
+  'course-lesson': { name: 'Ada', course: 'Writing well', lesson: 'Finding the first line', url: 'https://example.com/courses/writing-well/first-line' },
+  'course-complete': { name: 'Ada', course: 'Writing well', url: 'https://example.com/courses/writing-well', certificate: 'https://example.com/certificates/3f2a9c' },
   /* a Go token is filled from $go in a preview or a test; Supabase fills the real one */
   'magic-link': { $go: { ConfirmationURL: 'https://example.com/#confirmed', Email: 'ada@example.com' } },
   recovery: { $go: { ConfirmationURL: 'https://example.com/?recovery=1', Email: 'ada@example.com' } },

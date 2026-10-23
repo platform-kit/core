@@ -10,7 +10,7 @@ sources:
     packages/kit/theme/src/components/admin/EmailsAdmin.vue,
     packages/kit/build/auth-config.mjs,
   ]
-reviewed: 2026-10-01
+reviewed: 2026-10-22
 ---
 
 Every email the site sends is a **design** built in the admin, compiled at build time, and filled with the real facts when it is sent. Marketing → **Emails** is a rail of the designs, one open in a drag-and-drop editor mounted with the site's colours and fonts. Module: `emails`.
@@ -30,6 +30,8 @@ Every email the site sends is a **design** built in the admin, compiled at build
 | **campaign**                                                 | The frame every funnel step and blast is piped through: the written email in a block, the unsubscribe link                                                                                                                                                            |
 | **session-booked**, **session-moved**, **session-cancelled** | A session the site itself scheduled: to the person and the host alike when it is booked, moved or cancelled, each with a calendar invitation attached (the place in its location; a cancellation withdraws it) — never for a cal.com booking, which has cal.com's own |
 | **event-reminder**                                           | To everybody who said they were coming to an event, at the same hours                                                                                                                                                                                                 |
+| **course-lesson**                                            | To somebody taking a course, when a lesson opens for them after they started: once per lesson, and at most one a day (see [Courses](/content/docs/running-a-site/content/courses))                                                                                    |
+| **course-complete**                                          | To somebody who finished a course, with their certificate's address where the course gives one                                                                                                                                                                        |
 | **provider-terms**                                           | The moment a new version of the providers' terms is published — to every provider still on an earlier one, with the terms themselves in the letter                                                                                                                    |
 | **session-reminder**                                         | To the person, at each of the hours before the session the sending rules name (24 and 1 by default)                                                                                                                                                                   |
 

@@ -54,6 +54,7 @@ const asOwner = async (sql, args) => { const db = new pg.Client({ connectionStri
 /* reads the site shows anybody, each with why: booleans about a public thing, a page's own data, settings */
 const PUBLIC = {
   'agents_live()': 'whether the assistants are on, a site setting',
+  'certificate_public(p_id text)': 'a course certificate, for anybody holding its unguessable address: the name, the course and the date printed on it, which is what a certificate is for',
   'comment_domains()': 'which link domains comments may carry, a site setting',
   'comment_open_kind(p_kind text)': 'the open subject of a comment kind — its settings, no comments',
   'experiment_state(name text)': 'an experiment\'s variants and their counts, read by the page to choose one',

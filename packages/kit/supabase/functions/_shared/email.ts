@@ -20,7 +20,7 @@ import { of, onRefresh } from './compiled.ts'
 import strings from './emails/strings.json' with { type: 'json' }
 import { appUrl } from './lib.ts'
 
-export type EmailKind = 'order' | 'shipped' | 'files' | 'chat' | 'support' | 'support-digest' | 'magic-link' | 'recovery' | 'campaign' | 'session-booked' | 'session-held' | 'session-to-confirm' | 'session-declined' | 'session-moved' | 'session-cancelled' | 'session-reminder' | 'event-reminder' | 'provider-terms'
+export type EmailKind = 'order' | 'shipped' | 'files' | 'chat' | 'support' | 'support-digest' | 'magic-link' | 'recovery' | 'campaign' | 'session-booked' | 'session-held' | 'session-to-confirm' | 'session-declined' | 'session-moved' | 'session-cancelled' | 'session-reminder' | 'event-reminder' | 'provider-terms' | 'course-lesson' | 'course-complete'
 
 const SMTP = {
   host: Deno.env.get('SMTP_HOST') ?? '',

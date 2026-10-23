@@ -12,7 +12,7 @@ sources:
     packages/kit/src/lib/records.js,
     packages/kit/theme/src/pages/DiagnosticsPage.vue,
   ]
-reviewed: 2026-10-18
+reviewed: 2026-10-22
 ---
 
 For anyone helping a reader, or writing the words a reader sees — this is what the reading side of a site does.
@@ -23,7 +23,7 @@ For anyone helping a reader, or writing the words a reader sees — this is what
 
 ## A book
 
-A book opens on its cover page — the title, the author, the description, the companion's insight, the reader's progress and trophies, and _Your files_ for a buyer. The first page is the **introduction**, then the chapters, each on a page of its own with a chapter bar fixed at the foot.
+A book opens on its cover page — the title, the author, the description, the companion's insight, the reader's progress and trophies, and _Your files_ for a buyer. The first page is the **introduction**, then the chapters, each on a page of its own with a chapter bar fixed at the foot. A link can open a book at one chapter by adding `?chapter=3` to its address, counted from the first chapter; that is how a course's lesson points at one.
 
 - **Two modes**: the full text, or the **summary** (each chapter as its companion's summary and key ideas). The switch is in the chapter bar.
 - **Highlights**: the editors' marks are coloured wavy underlines; a reader's own highlights are background washes, made by selecting text, kept on the account.

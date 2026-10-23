@@ -3,7 +3,8 @@
  * member's card says about somebody"). Pure, so it is tested without a browser; vite's #site/member calls it.
  *
  *   gatesOf(site)                      which of the kit's panels the site's modules allow: Working with an instrument of
- *                                      the site's own (instrument.module), Read with a library, Bought with the store
+ *                                      the site's own (instrument.module), Read with a library, Bought with the store,
+ *                                      Courses with the courses module
  *   arrange(kitPanels, gates, mine)    the kit's allowed panels less the site's `off`, then the site's own `panels`, in the
  *                                      site's `order` where it gives one (anything it does not name keeps its place after)
  */
@@ -13,6 +14,7 @@ export function gatesOf(site) {
     working: on('instrument') && !!(site && site.instrument && site.instrument.module),
     read: on('books') || on('articles'),
     bought: on('store'),
+    courses: on('courses'),
   }
 }
 

@@ -8,7 +8,7 @@ sources:
     packages/kit/src/lib/router.js,
     packages/kit/theme/src/pages/AdminPage.vue,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-22
 ---
 
 **Site.** One PlatformKit website and its configuration, content, visual design, and site-specific features. The generic demo and this documentation site are separate sites.
@@ -28,6 +28,8 @@ reviewed: 2026-10-21
 **Module.** A feature group that a site enables or disables in `platformkit.config.js`, such as the store, forms, support desk, or email campaigns. A disabled module contributes no routes, navigation, admin screens, build steps, or deployment-secret requirements.
 
 **The admin.** The site's editing and operations interface at `/admin`. Local development exposes the CMS. Production exposes content editing for row-backed sites and operational screens according to the site's modules and the staff member's role. Static sites do not deploy an admin or authentication.
+
+**Course.** Sections and lessons in order that a reader works through and finishes, released all at once or over time, with an optional certificate. Somebody taking one has an **enrollment**, kept even if they lose access. See [Courses](/content/docs/running-a-site/content/courses).
 
 **Collection.** A group of records with the same fields, such as articles, books, products, pages, or email designs. File-backed collections are stored under `content/`.
 

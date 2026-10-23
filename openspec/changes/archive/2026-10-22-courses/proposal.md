@@ -11,9 +11,9 @@ PlatformKit sells memberships, books and coaching, but not a course: lessons in 
 - **Getting in:** a course is sold in the store, included in a membership tier, or free to signed-in readers. Getting in creates an enrollment, a record of its own.
 - **Release:** all at once, one lesson or section every N days after enrolling, or on fixed dates for a cohort. Optionally, a lesson stays locked until the one before it is complete.
 - **Completion:** a lesson completes when the reader marks it done, passes its quiz, or finishes the chapter or form it points at. The course completes when every required lesson does.
-- **Certificates:** an optional certificate on completion, with the reader's name, the course and the date, at a public address anyone can check, downloadable as a PDF.
-- **Reader screens:** a course page (outline, progress, "Continue"), a lesson page with the outline beside it, and the reader's courses in their app area.
-- **Staff screens:** a course builder in the admin (drag to reorder sections and lessons, release settings, cohorts) and an enrollments view (who is where, completion rates, where people stop).
+- **Certificates:** optional, at a public address anyone can check, downloadable as a PDF.
+- **Reader screens:** a course page (outline, progress, "Continue"), a lesson page with the outline beside it, and the reader's courses in their app area. On pages of their own at `/courses`, or as a place of the community, as Circle has them (`courses.where`).
+- **Staff screens:** a course builder (drag lessons into order, release, cohorts) and an enrollments view (who is where, completion rates, where people stop).
 - **Around it:**
   - Emails: "a new lesson is open" and "you finished".
   - An achievement on completion.
@@ -44,7 +44,7 @@ Enrollment as its own record, completion for lessons that point at existing cont
 
 ### Modified Capabilities
 
-None. The Kajabi comparison row is updated when this change is archived.
+- `kit-principles`: the Kajabi comparison row names courses.
 
 ## Impact
 

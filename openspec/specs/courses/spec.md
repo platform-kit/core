@@ -1,4 +1,9 @@
-## ADDED Requirements
+# courses Specification
+
+## Purpose
+Courses: sections and lessons in order, released over time and tracked to completion, with certificates — on pages of their own or as a place of the community. The database alone decides what is open to a reader and hands out a lesson's text.
+
+## Requirements
 
 ### Requirement: A course is sections and lessons in order
 
@@ -46,11 +51,29 @@ Verified by: `build/courses-db.test.mjs` and `build/courses.test.mjs` in a brows
 
 ### Requirement: Readers and staff see where everyone is
 
-A reader SHALL see a course page with its outline, their progress and "Continue"; a lesson page with the outline beside it, previous and next; and their courses in their app area. Staff SHALL see each course's enrollments, each person's progress, completion rates and the lesson where people stop most. Readers SHALL get an email when a lesson opens (once per lesson) and when they finish, within the site's email caps.
+A reader SHALL see a course page with its outline, their progress and "Continue"; a lesson page with the outline beside it, previous and next; and their courses in their app area. Administrators SHALL see each course's enrollments, each person's progress, completion rates and the lesson where people stop most. Readers SHALL get an email when a lesson opens after they started (once per lesson, and at most one lesson email a day to a person) and when they finish.
 
 #### Scenario: a new lesson opens
 
-- **WHEN** a drip course opens a lesson for 200 enrolled readers on the same day
-- **THEN** each gets one email for it, within the site's caps, and none gets a second
+- **WHEN** a drip course opens a lesson for somebody enrolled before it opened
+- **THEN** one email is owed for it, the next lesson waits until the following day, and no lesson is owed twice
 
 Verified by: `build/courses-db.test.mjs`
+
+### Requirement: Courses live on their own pages or as a place of the community
+
+A site SHALL choose where its courses live with `courses.where`: `standalone` (the default), pages of their own at `/courses`; or `community`, a place of the community's navigation at `<community>/courses`, registered as a site's own place is, with `/courses` and every address under it forwarding there. The list, course and lesson SHALL be the same component, the same data and the same rules in both. A certificate SHALL keep its public address in both. `community` SHALL be refused, by name, when the spaces or network module is off, and no site SHALL register a place of its own called `courses`.
+
+#### Scenario: a course in the community
+
+- **WHEN** a site sets `courses.where: community` and somebody opens `/courses/<slug>`
+- **THEN** it forwards to `<community>/courses/<slug>`, drawn in the community's frame with Courses selected in its navigation
+
+Verified by: `build/courses.test.mjs` (the place, its claim and the forward) and the demo rendered at 1280 and 390 px
+
+#### Scenario: a community with no network
+
+- **WHEN** a site sets `courses.where: community` with the network module off
+- **THEN** the build refuses it, saying the community needs the spaces and network modules
+
+Verified by: `build/courses.test.mjs`

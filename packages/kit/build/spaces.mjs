@@ -118,6 +118,8 @@ export function buildFill(raw, { bad, where, keyOf, tierOk, sessionOk, sells, bo
       else {
         const vals = (Array.isArray(v) ? v : [v]).map(String)
         if (k === 'tier') for (const t of vals) if (!tierOk(t)) bad(`${where(i)}: tier "${t}" is not one any membership declares`)
+        /* a cohort is one cohort OF a course: on its own it would name nobody */
+        if (k === 'cohort' && !('course' in set)) bad(`${where(i)}: a cohort is one of a course's — name the course too`)
         one[col] = Array.isArray(v) ? vals : vals[0]
       }
     }

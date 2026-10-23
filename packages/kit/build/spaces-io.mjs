@@ -12,7 +12,7 @@
  *
  * A space's frontmatter: `name`, `kind` (staff · community · server), `published`, `fill` (what
  * fills its membership — `role: [admin, support]` · `tier: <slug>` · `bought: <sku>` ·
- * `entitlement: <key>`; absent or empty means invitation only), `roles` (each a `slug`, `name`,
+ * `entitlement: <key>` · `course: <slug>` with `cohort: <key>` (enrolled in a course, or one cohort of it); absent or empty means invitation only), `roles` (each a `slug`, `name`,
  * `colour`, `rank` and optionally `can`, the capabilities holding it grants) and `grants` (the ones
  * that are about somebody's standing rather than their role). The body is what the place is, shown
  * wherever somebody is offered or invited to it.
@@ -87,7 +87,7 @@ export const CAPABILITIES = ['voice', 'file', 'mention-channel', 'moderate', 'in
 /* what the platform already knows and a room may be told (space_hook_post in 90-spaces.sql) */
 export const EVENTS = ['purchase.paid', 'subscription.started', 'print.failed', 'account.new', 'support.escalated']
 /* what may fill a membership, in the file's words → the column's */
-export const FILLS = { role: 'role', tier: 'tier', entitlement: 'entitlement', bought: 'product', booking: 'booking' }
+export const FILLS = { role: 'role', tier: 'tier', entitlement: 'entitlement', bought: 'product', booking: 'booking', course: 'course', cohort: 'cohort' }
 
 /*
  * A WINDOW ON A CONDITION, and why there are two words rather than one.

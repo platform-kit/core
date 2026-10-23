@@ -51,6 +51,10 @@ export const ROUTES = {
   /* an achievement's own page: /a/<slug>. It is a page anybody may read, earned or not — one
      nobody can read before they have earned it is one nobody knows to try for. */
   awards: '/a',
+  /* COURSES: /courses the list, /courses/<slug> a course, /courses/<slug>/<lesson> a lesson (the courses module) — and a
+     certificate at /certificates/<id>, a public address anyone given it can check */
+  courses: '/courses',
+  certificates: '/certificates',
   /* THE SOCIAL NETWORK: /feed the timeline, /feed/notifications what happened to the reader,
      /feed/post/<id> a thread (the network module). Not /home: the root is home, and a site's own
      landing page may already claim the word. The base is the site's to name (community.path) —
@@ -95,7 +99,7 @@ const entryRoute = (p) => { if (!MODELS_ON || !p.startsWith(ROUTES.entries + '/'
 export const KINDS_ON = { articles: moduleOn('articles'), books: moduleOn('books'), wiki: moduleOn('wiki'), docs: moduleOn('docs') }
 /* Accounts matter only where a module reads them — buying, membership, sessions, the chats, the desk, a
    reading. With none of those on, the header offers no sign-in and no call to action of its own. */
-export const ACCOUNTS_ON = anyModuleOn(['store', 'memberships', 'sessions', 'coaching', 'support', 'instrument', 'recommendations', 'network'])
+export const ACCOUNTS_ON = anyModuleOn(['store', 'memberships', 'sessions', 'coaching', 'support', 'instrument', 'recommendations', 'network', 'courses'])
 /* the social network: a page per person, follows, a timeline (lib/network) */
 export const NETWORK_ON = moduleOn('network')
 /* A site configured down to the docs alone — no other kind of content, nothing that needs an account — is a
@@ -115,6 +119,11 @@ const CLAIMS = [
   ...(((site && site.coaching) || {}).where === 'spaces' ? [{ key: 'coaching', claims: [ROUTES.diagnostics + '/coaching'] }] : []),
   ...(SITE_PLACES || []),
 ]
+/* a course, a lesson, the list or a certificate, where the courses module is on */
+/* where the courses live (courses.where): their own pages, or a place of the community */
+export const COURSES_IN_COMMUNITY = moduleOn('courses') && ((site && site.courses) || {}).where === 'community'
+export const COURSES_BASE = COURSES_IN_COMMUNITY ? COMMUNITY_PATH + '/courses' : '/courses'
+export const coursesRoute = (p) => moduleOn('courses') && ((!COURSES_IN_COMMUNITY && (p === ROUTES.courses || p.startsWith(ROUTES.courses + '/'))) || p.startsWith(ROUTES.certificates + '/'))
 const KNOWN = [ROUTES.home, ROUTES.diagnostics, ROUTES.admin]
   .concat(DOCS_ONLY ? [ROUTES.docs] : [ROUTES.content])
   .concat([ROUTES.hyperswitchCheckout, ROUTES.billing])
@@ -166,6 +175,7 @@ function normalise(pathname) {
   if (NETWORK_ON && (p === ROUTES.feed || p.startsWith(ROUTES.feed + '/'))) return p
   /* an achievement's page carries its slug */
   if (p.startsWith(ROUTES.awards + '/')) return p
+  if (coursesRoute(p)) return p
   /* a person's own page carries their username; /p alone is the reader's own settings */
   if (p === ROUTES.account || p.startsWith(ROUTES.people + '/')) return p
   if (entryRoute(p)) return p
@@ -216,7 +226,7 @@ export function replace(path) {
 /* The results sheet's pages, by their structural key, as they appear in the
    address: /app/<slug>. These are addresses, not labels — the words a reader
    sees on the tabs live in content/app/results.md. */
-export const APP_PAGES = { sum: 'overview', pairs: 'personality', areas: 'results', words: 'blockages', books: 'recommendations', trophies: 'accomplishments', coaching: 'coaching', chat: 'chat' }
+export const APP_PAGES = { sum: 'overview', pairs: 'personality', areas: 'results', words: 'blockages', books: 'recommendations', trophies: 'accomplishments', courses: 'courses', coaching: 'coaching', chat: 'chat' }
 /* WHERE THE APP'S PAGES LIVE: /app, unless a community place has claimed it — then the place's own
    address, so the sheet, a round and its tabs read and write addresses there and the instrument
    needs to know nothing about it. A video call and a voice
@@ -263,7 +273,7 @@ if (typeof window !== 'undefined') {
     if (!href || href[0] !== '/') return          /* anchors and absolute urls pass through */
     if (a.origin !== location.origin) return
     const target = normalise(a.pathname)
-    if (KNOWN.indexOf(target) < 0 && !target.startsWith(ROUTES.content) && !target.startsWith(ROUTES.diagnostics + '/') && !(NETWORK_ON && (target === ROUTES.feed || target.startsWith(ROUTES.feed + '/'))) &&
+    if (KNOWN.indexOf(target) < 0 && !target.startsWith(ROUTES.content) && !coursesRoute(target) && !target.startsWith(ROUTES.diagnostics + '/') && !(NETWORK_ON && (target === ROUTES.feed || target.startsWith(ROUTES.feed + '/'))) &&
         !target.startsWith(ROUTES.admin) && !(STORE_ON && target.startsWith(ROUTES.store)) && !(FORMS_ON && (target.startsWith(ROUTES.form + '/') || target.startsWith(ROUTES.to + '/'))) && !(SESSIONS_ON && target.startsWith(ROUTES.book + '/')) && !(STORE_ON && target.startsWith(ROUTES.cart + '/c/')) && !(moduleOn('support') && target === ROUTES.support) && !entryRoute(target) && !PAGE_ROUTES.has(target) && !siteRouteOf(target)) return
     e.preventDefault()
     navigate(href)

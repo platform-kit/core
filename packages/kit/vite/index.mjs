@@ -67,7 +67,8 @@ function site(c, theme, keys = []) {
      relatively, because Vite's dependency scan takes an import whose specifier is already its resolved path for an
      external one and follows it no further */
   const dir = path.join(c.root, '.platformkit', 'site')
-  const from = (p) => { const r = path.relative(dir, path.resolve(c.root, p)).split(path.sep).join('/'); return r.startsWith('.') ? r : './' + r }
+  /* a site's file, relative to the generated module; a package path (the kit's own place) as it is */
+  const from = (p) => { if (/^platformkit\//.test(p)) return p; const r = path.relative(dir, path.resolve(c.root, p)).split(path.sep).join('/'); return r.startsWith('.') ? r : './' + r }
   /* a contract module: every name the kit and the theme may import, from the site's module when it exports it, else the default */
   const contract = (mod, names) => (mod ? `import * as M from ${J(from(mod))}\n` : '') + Object.entries(names).map(([k, d]) => `export const ${k} = ${mod ? `M.${k} !== undefined ? M.${k} : (${d})` : d}`).join('\n') + '\n'
   /* what each virtual module is: the code its id is answered with, generated from the config */

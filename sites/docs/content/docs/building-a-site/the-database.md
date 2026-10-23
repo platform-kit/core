@@ -25,7 +25,7 @@ sources:
     packages/kit/supabase/schemas/20-instrument.sql,
     packages/kit/supabase/schemas/90-spaces.sql,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-22
 ---
 
 The platform runs on Supabase — Postgres with auth, storage and edge functions. Locally a copy runs in Docker (`supabase start`, which `platformkit dev` does for you). The kit ships the whole data layer; a site adds to it.
@@ -42,6 +42,7 @@ There is no migration anywhere: none shipped by the kit, none written by a site,
 25-forms.sql        a form's responses and answers, the analytics, the Forms API's webhook subscriptions
 30-analytics.sql    events (with `source` and `distinct_id` for another site's), experiments, the dashboards' reads (the channel rule, a session's facts and the filter predicate, the audience predicate, the KPIs and the registered goals, right now, a piece, the members, the events, the retention cohorts)
 40-commerce.sql     purchases (own, or every row as an administrator), subscriptions, entitlements, `payment_events` deduplicated by provider and event id, `payment_provider_refs` for provider-scoped external ids, the legacy Stripe event and identifier fields, print orders
+46-courses.sql      courses, course_lessons and course_cohorts (projected from content/courses by courses-push; no client writer), enrollments and lesson_progress (a person reads their own), course_notices, certificates; course_lessons_for decides what is open and why not, course_lesson is the one way a lesson's text leaves the database, course_complete checks what the server can see (a form passed, a session booked), and a trigger on purchases and entitlements enrolls a buyer or member on the way in
 50-chat.sql         the coaching chat
 55-sessions.sql     bookings (the people on one, or every row as an administrator; a row whether the site or cal.com made it — provider, type, host_id, where, a group's seat_of, room — the video provider's own name for the room), a host's SETS of hours and their exceptions (provider_schedules — any number per host, one theirs by default, each with its own week, buffers before and after, notice and caps — and provider_overrides, each day off belonging to the set it was written on; the host's own, an administrator reading), the hold a booking takes on each of its hosts (booking_holds: one per host, a GiST exclusion so nobody's time is taken twice, and for a collective type one per host of the same booking), the reminders sent, book_native (a native booking made whole under a lock on its time; btree_gist and an exclusion constraint on host × time so a one-to-one is never booked twice), admin_hosts, the follow-ups, the refusals, a call's recording (its path, when it was pulled, the pull's state) and the three crons' callers; the Scheduling API's webhook subscriptions (scheduling_webhooks)
 60-emails.sql       the audience, the log, the links, the funnel members, the funnel analytics reads

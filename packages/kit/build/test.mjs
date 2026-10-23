@@ -55,8 +55,10 @@ const KIT_TESTS = [
   ['payment-provider-registry.test.mjs'],   /* which provider a site selects, what is assembled for it, and that its secrets stay server-side */
   ['site-payment-provider.test.mjs'],
   ['one-package.test.mjs'],
-  ['check.test.mjs'],
-  ['generate.test.mjs'],      /* platformkit generate: every kind at both levels into copies, held to the real checks; never overwrites */         /* platformkit check: every problem at once, one list of needs, offline by default */
+  ['check.test.mjs'],         /* platformkit check: every problem at once, one list of needs, offline by default */
+  ['generate.test.mjs'],      /* platformkit generate: every kind at both levels into copies, held to the real checks; never overwrites */
+  on('courses') && ['courses.test.mjs'],       /* courses without a database: the file grammar, the builder's round trip, lesson links, the certificate PDF */
+  on('courses') && ['courses-db.test.mjs'],    /* and against the stack: who gets in, what opens when, completion, certificates, a refund and a return, the emails owed */
   ['member-panels.test.mjs'],   /* the member card's panels: the kit's three by module, a site's off, own panels and order, the theme's words, no site named */
   on('spaces') && ['member-panels-db.test.mjs'],   /* the card's readings through may_see_member, refused as empty to anybody else, and the card and the admin agreeing on purchases */   /* PlatformKit is one package, platformkit: the retired names gone, the command and the theme packed, the command running from the packed copy */   /* a site's own adapter, registered through its own module and selected, with no change to the kit */
   on('store') && ['payment-provider-db.test.mjs'],   /* provider references and event ids kept apart by provider, against the stack */

@@ -11,7 +11,7 @@ sources:
     packages/kit/build/print/block.mjs,
     packages/kit/src/lib/print-offers.js,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-22
 ---
 
 A book is sold in print — and as PDF and EPUB — by a block of settings on the book itself, edited on **Store → Print editions**. There is no separate product file: the offers are derived from the book, one store page per book, one line per format.

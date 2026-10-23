@@ -13,7 +13,7 @@ sources:
     packages/kit/src/lib/router.js,
     packages/kit/theme/src/instrument/ui/results/tabs.js,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-22
 ---
 
 ## The manifest
@@ -63,7 +63,7 @@ The mark is drawn rather than linked, because the build photographs it for the f
 
 ## The `/app` shell
 
-`tabs.js` in the theme lists the kit modules' tabs — accomplishments, coaching, chat — each under the module that switches it, coaching and chat also under `coaching.where` (with coaching in the community a member has neither — they are the coaching place there — and somebody who gives sessions keeps coaching). A site's own tabs come through `#site/app` with their components, their words, a `start()` for a page that starts a round, `props()` built once per sheet (several readings can share one results model), and `first: true` to lead. `ResultsSheet.vue` renders the registry alone. A site with no instrument gets `AppShell.vue`: the sheet with the kit's tabs.
+`tabs.js` in the theme lists the kit modules' tabs — accomplishments, courses, coaching, chat — each under the module that switches it, coaching and chat also under `coaching.where` (with coaching in the community a member has neither — they are the coaching place there — and somebody who gives sessions keeps coaching). A site's own tabs come through `#site/app` with their components, their words, a `start()` for a page that starts a round, `props()` built once per sheet (several readings can share one results model), and `first: true` to lead. `ResultsSheet.vue` renders the registry alone. A site with no instrument gets `AppShell.vue`: the sheet with the kit's tabs.
 
 ## The router
 

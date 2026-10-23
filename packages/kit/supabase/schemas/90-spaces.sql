@@ -706,6 +706,24 @@ CREATE OR REPLACE FUNCTION "public"."space_fill_values"("p_set" "jsonb", "p_key"
     else '{}'::text[] end;
 $$;
 
+-- A COURSE'S PEOPLE, for a space's rule: enrolled in one of the courses named, and in one of the cohorts where any are.
+-- plpgsql, so the query naming the enrolments is only planned where it runs: a site with the courses module off has no
+-- such table, and the rule then matches nobody rather than failing every sweep.
+CREATE OR REPLACE FUNCTION "public"."space_fill_course"("p_user" "uuid", "p_set" "jsonb") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $f$
+begin
+  if p_user is null or to_regclass('public.enrollments') is null then return false; end if;
+  return exists (select 1 from public.enrollments e
+                  where e.user_id = p_user and e.course = any(public.space_fill_values(p_set, 'course'))
+                    and (not (p_set ? 'cohort') or e.cohort = any(public.space_fill_values(p_set, 'cohort'))));
+end;
+$f$;
+REVOKE ALL ON FUNCTION "public"."space_fill_course"("uuid", "jsonb") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."space_fill_course"("uuid", "jsonb") FROM "anon", "authenticated";
+GRANT ALL ON FUNCTION "public"."space_fill_course"("uuid", "jsonb") TO "service_role";
+
 -- A WINDOW ON A CONDITION. `within_last` and `within_next` are whole minutes, written by the compile
 -- from the file's own `withinLast: 7d` / `withinNext: 7d`. They are QUALIFIERS: a set carrying one
 -- and nothing to hang it on is refused at the compile, so by the time a rule is here the window
@@ -740,6 +758,9 @@ CREATE OR REPLACE FUNCTION "public"."space_fill_set_matches"("p_user" "uuid", "p
       (not (p_set ? 'role') or exists (
         select 1 from public.profiles p
         where p.id = p_user and p.roles && public.space_fill_values(p_set, 'role')))
+    -- ENROLLED IN A COURSE (the courses module), and in one of its cohorts where the rule names any: asked through a
+    -- function of its own, which answers false where the courses module is off and there are no enrolments to ask
+    and (not (p_set ? 'course') or public.space_fill_course(p_user, p_set))
     and (not (p_set ? 'tier') or exists (
         select 1 from public.entitlements e
         where e.user_id = p_user and e.kind = 'class' and e.key = 'subscribed' and e.active

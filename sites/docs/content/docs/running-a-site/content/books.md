@@ -23,7 +23,7 @@ sources:
     packages/kit/src/lib/finding-score.js,
     packages/kit/theme/src/pages/AdminPage.vue,
   ]
-reviewed: 2026-10-18
+reviewed: 2026-10-22
 ---
 
 ## A book is one file, edited by chapter
@@ -31,6 +31,8 @@ reviewed: 2026-10-18
 Content → Books lists every book in a grid; one opens as a form above its **chapters**. The book is split at its top-level headings (`# Chapter title`), one chapter open at a time in the editor, and every other chapter kept exactly as it was until you open it. The file is put back together on save.
 
 The form holds: title, author, the **cover** (a picture — uploaded, or chosen from the [library](/content/docs/running-a-site/content/media); the field holds its address, `/uploads/books/<name>`), an optional share image, the description, the **introduction** (see below), a date, the reader level (beginner / intermediate / advanced), tags, the **topics** and **concepts** it files under (concepts are what the library's dropdown filters by; topics are the slots a site with recommendations uses), the **free chapters** per class of reader, and Published.
+
+A course's lesson can point at one chapter (`ref: <book>#<n>`); the reader then opens the book at that chapter. See [Courses](/content/docs/running-a-site/content/courses).
 
 ## The introduction
 

@@ -144,6 +144,18 @@ subject: New terms to agree to before your next sale
 
 subject: {{what}} is {{in}}
 
+## course-lesson
+
+### mail
+
+subject: A new lesson is open: {{lesson}}
+
+## course-complete
+
+### mail
+
+subject: You finished {{course}}
+
 ## session-held
 
 ### mail

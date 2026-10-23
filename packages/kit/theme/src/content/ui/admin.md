@@ -90,6 +90,7 @@ store: Store
 sales: Sales
 marketing: Marketing
 forms: Forms
+courses: Courses
 community: Community
 people: People
 settings: Settings
@@ -146,6 +147,8 @@ spaces: Spaces
 community: Community
 forms: Forms
 form-responses: Responses
+courses: Courses
+course-enrollments: Enrollments
 form-analytics: Form analytics
 storefront: Storefront
 products: Products
