@@ -41,12 +41,13 @@ start: Start the course
 continue: Continue
 review: Go over it again
 progress: {done} of {total} lessons
+progress-required: {done} of {total} required lessons
 complete: Course complete
 certificate: Your certificate
 outline: What's in it
 sign-in: Sign in to start
 buy: Get the course
-member: Included with membership
+member: See the memberships
 cohort: Your group starts {date}
 missing: There is no course at this address.
 
@@ -65,7 +66,7 @@ next: Next
 downloads: To download
 back: Back to the course
 not-yet: Opens {date}
-in-order: Finish the lesson before to open this one
+in-order: Finish the lesson before this one to open it
 no-access: This course isn't open to you yet
 not-enrolled: Start the course to open this lesson
 sign-in: Sign in to open this lesson

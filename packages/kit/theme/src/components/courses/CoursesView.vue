@@ -66,7 +66,7 @@
             <template v-if="state.enrollment">
               <div class="crs-panel-main">
                 <p class="crs-kicker">{{ K['your-progress'] }}</p>
-                <p class="crs-panel-line">{{ state.enrollment.completed_at ? K.complete : fill(K.progress, { done: state.done, total: state.total }) }}</p>
+                <p class="crs-panel-line">{{ state.enrollment.completed_at ? K.complete : fill(state.total < state.lessons.length ? K['progress-required'] : K.progress, { done: state.done, total: state.total }) }}</p>
                 <span class="crs-bar" :class="{ 'is-full': state.enrollment.completed_at }"><span :style="{ width: pct(state.done, state.total) + '%' }" /></span>
                 <p v-if="!state.enrollment.completed_at && !nextLesson && nextOpening" class="crs-quiet">{{ fill(K['next-opens'], { date: day(nextOpening.opens_at) }) }}</p>
                 <p v-if="cohortStart" class="crs-quiet">{{ fill(K.cohort, { date: day(cohortStart) }) }}</p>
