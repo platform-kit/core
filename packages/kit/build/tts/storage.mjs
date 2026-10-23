@@ -12,6 +12,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isTestProcess, testApi } from '../test-guard.mjs'
 
 const ROOT = process.cwd()   /* the site: its .env */
 let loaded = false
@@ -33,10 +34,12 @@ export const LOCAL_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 /* THE STACK THIS RUN MEANS. `SUPABASE_URL` first, then the Vite name — and `loadDotEnv` must
    never overwrite either, because in a checkout holding several sites the shared `.env` names
    one of them and the run names the right one. */
-export function supabaseUrl() { loadDotEnv(); return (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '') }
+/* in a test, only the end-to-end run's own verified stack, and nothing outside the run (test-guard.mjs): never the
+   dev stack or the .env's project, whatever the environment says */
+export function supabaseUrl() { if (isTestProcess()) return testApi() || ''; loadDotEnv(); return (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '') }
 export function isLocalSupabaseUrl(url) { return /^https?:\/\/(localhost|127\.0\.0\.1|host\.docker\.internal)(:\d+)?$/.test(String(url || '').replace(/\/+$/, '')) }
 export function localStack() { return isLocalSupabaseUrl(supabaseUrl()) }
-export function serviceKey() { loadDotEnv(); return process.env.SUPABASE_SERVICE_ROLE_KEY || (localStack() ? LOCAL_SERVICE_KEY : '') }
+export function serviceKey() { if (isTestProcess()) return testApi() ? (process.env.PLATFORMKIT_TEST_SERVICE_ROLE_KEY || LOCAL_SERVICE_KEY) : ''; loadDotEnv(); return process.env.SUPABASE_SERVICE_ROLE_KEY || (localStack() ? LOCAL_SERVICE_KEY : '') }
 
 let client = null
 /* a storage client for one bucket, or a clear reason there is none */

@@ -9,6 +9,7 @@ sources:
     packages/kit/build/browser.mjs,
     packages/kit/build/e2e.mjs,
     packages/kit/build/test-stack.mjs,
+    packages/kit/build/test-guard.mjs,
     packages/kit/build/reset-seed.mjs,
     packages/kit/build/e2e-runner.test.mjs,
     packages/kit/build/fixtures/e2e-probe.mjs,
@@ -203,6 +204,10 @@ Before any stack, the run asks for what every site needs: Docker answering, and 
 Each site's run writes `node_modules/.cache/platformkit/e2e/<site>.log` as it goes, with the functions and the app in their own logs beside it. CI runs the same command over the demo and `sites/club` — a members' club with a backend and few modules, so two stacks are built side by side and a module that is off is exercised — and then the runner's own test (`build/e2e-runner.test.mjs`): a stand-in dev database left untouched, two sites isolated, a schema change seen, a kept stack replaced, a live key refused, a withheld service failing, an interrupted run torn down. It uses `--run` with `build/fixtures/e2e-probe.mjs` in place of the suite.
 
 The run doubles the browser checks' wait (`BROWSER_WAIT_MS`, 120 s unless set): two sites' suites share the machine, and a page's first visit compiles it cold. A browser check fills a sign-in form one field at a time, waiting for the page to take each value before the next: filled back to back under load, the form submits half-empty.
+
+### A test never reaches your dev stack
+
+A test reaches a database only inside the end-to-end run, on the `pk_<site>_e2e` stack the run built for it, and only once Docker shows that the container answering on its API and database ports is an end-to-end one (`build/test-guard.mjs`). However a test is started, and whatever its environment names, a dev stack is never reached: outside the run, `stackOf()`, `supabaseUrl()` and `serviceKey()` give a test nothing and it skips; inside it, an address that is not the run's own ends the test, naming what answered. Run one test by itself on a fresh stack with `platformkit test --e2e --run <script>`.
 
 ### Nothing untested by construction
 

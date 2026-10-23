@@ -3,37 +3,51 @@
  * folder a test was started in happens to name (`supabase status`), and never a fixed port.
  *
  * Under the runner (PLATFORMKIT_E2E=1) every address is the run's own: the site's app, its API, its keys,
- * its database, its functions and its mail catcher. Outside it, a test run by hand reads the same names
- * from the environment it was given (the dev run's .env.dev, say), and answers "no stack" when there is
- * none — and then the test skips with a note, as it always has.
+ * its database, its functions and its mail catcher, on a fresh `pk_<site>_e2e` stack. Outside it there is no
+ * stack, whatever the environment names (a dev run's .env.dev included), and the test skips with a note. Run one
+ * by itself with `platformkit test --e2e --run <script>`. test-guard.mjs makes the same true of every other way a
+ * test could reach a database.
  *
  * A SKIP IN THE END-TO-END RUN IS A FAILURE. `skip()` exits non-zero there, naming what was missing: a
  * check that cannot run is not a check that passed.
  */
 import { LOCAL_SERVICE_KEY } from './tts/storage.mjs'
+import { notTheTestStack, refuse } from './test-guard.mjs'
 
 export const isE2E = () => process.env.PLATFORMKIT_E2E === '1'
 const env = (k) => (process.env[k] || '').trim()
 const trim = (u) => u.replace(/\/+$/, '')
 const isLocal = (u) => /^https?:\/\/(localhost|127\.0\.0\.1|host\.docker\.internal)(:\d+)?$/.test(trim(u))
 
-/* the site's stack, or null */
-export function stackOf() {
-  const api = trim(env('PLATFORMKIT_TEST_API_URL') || env('SUPABASE_URL') || env('VITE_SUPABASE_URL'))
-  if (!api || !isLocal(api)) return null
-  const anon = env('PLATFORMKIT_TEST_ANON_KEY') || env('VITE_SUPABASE_ANON_KEY') || env('SUPABASE_ANON_KEY')
-  if (!anon) return null
-  const port = Number(new URL(api).port || 54321)
+/* the run's stack as the runner wrote it, unverified: for this helper's own test of its shape, and nothing else
+   (test-coverage.test.mjs holds every other test to stackOf) */
+export function runStackFrom(e = process.env) {
+  const get = (k) => (e[k] || '').trim()
+  const api = trim(get('PLATFORMKIT_TEST_API_URL'))
+  const anon = get('PLATFORMKIT_TEST_ANON_KEY')
+  if (!api || !isLocal(api) || !anon) return null
   return {
-    site: env('PLATFORMKIT_TEST_SITE') || null,
+    site: get('PLATFORMKIT_TEST_SITE') || null,
     api,
     anon,
-    service: env('PLATFORMKIT_TEST_SERVICE_ROLE_KEY') || env('SUPABASE_SERVICE_ROLE_KEY') || LOCAL_SERVICE_KEY,
-    db: env('PLATFORMKIT_TEST_DB_URL') || `postgresql://postgres:postgres@127.0.0.1:${port + 1}/postgres`,
-    functions: trim(env('PLATFORMKIT_TEST_FUNCTIONS_URL') || api + '/functions/v1'),
-    mail: trim(env('PLATFORMKIT_TEST_MAIL_URL')) || null,
-    app: trim(env('PLATFORMKIT_TEST_APP_URL') || env('VITE_APP_URL') || env('APP_URL')) || null,
+    service: get('PLATFORMKIT_TEST_SERVICE_ROLE_KEY') || LOCAL_SERVICE_KEY,
+    db: get('PLATFORMKIT_TEST_DB_URL') || `postgresql://postgres:postgres@127.0.0.1:${Number(new URL(api).port || 54321) + 1}/postgres`,
+    functions: trim(get('PLATFORMKIT_TEST_FUNCTIONS_URL') || api + '/functions/v1'),
+    mail: trim(get('PLATFORMKIT_TEST_MAIL_URL')) || null,
+    app: trim(get('PLATFORMKIT_TEST_APP_URL')) || null,
   }
+}
+
+/* THE SITE'S STACK: only inside the end-to-end run, only the one it built, and only once Docker says both its API and its
+   database are end-to-end containers (test-guard.mjs). Outside the run there is none, so the test skips; a stack that
+   is not the run's own ends the test. A dev stack's address in the environment is never read. */
+export function stackOf() {
+  if (!isE2E()) return null
+  const s = runStackFrom()
+  if (!s) return null
+  const why = notTheTestStack(s.api) || notTheTestStack(s.db, { what: 'database' })
+  if (why) refuse(why)
+  return s
 }
 
 /* the shape `npx supabase status -o json` answered, for a test written against it */
@@ -51,7 +65,7 @@ export function skip(name, why) {
 /* the stack, or a skip that names it */
 export function requireStack(name) {
   const s = stackOf()
-  if (!s) skip(name, 'no local stack (run it under `platformkit test --e2e`, or with a dev stack\'s env)')
+  if (!s) skip(name, 'no stack: stack tests run only on the end-to-end run\'s own stack (`platformkit test --e2e`, or `--run <script>` for one)')
   return s
 }
 

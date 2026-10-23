@@ -5,11 +5,12 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const HELPER = fileURLToPath(new URL('./test-stack.mjs', import.meta.url))
+const STORAGE = fileURLToPath(new URL('./tts/storage.mjs', import.meta.url))
 let pass = 0, fail = 0
 const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const clean = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(PLATFORMKIT_|SUPABASE_|VITE_SUPABASE_|VITE_APP_URL|APP_URL)/.test(k)))
 const child = (code, env = {}) => {
-  const r = spawnSync(process.execPath, ['--input-type=module', '-e', `import * as t from ${JSON.stringify('file://' + HELPER)}\n${code}`], { env: { ...clean, ...env }, encoding: 'utf8' })
+  const r = spawnSync(process.execPath, ['--input-type=module', '-e', `import * as t from ${JSON.stringify('file://' + HELPER)}\nimport * as st from ${JSON.stringify('file://' + STORAGE)}\n${code}`], { env: { ...clean, ...env }, encoding: 'utf8' })
   return { status: r.status, out: (r.stdout || '') + (r.stderr || '') }
 }
 const RUN = {
@@ -21,7 +22,7 @@ const RUN = {
 }
 
 {
-  const r = child('console.log(JSON.stringify(t.stackOf()))', RUN)
+  const r = child('console.log(JSON.stringify(t.runStackFrom()))', RUN)
   const s = JSON.parse(r.out.trim().split('\n').pop())
   ok('under the run, the stack is the run\'s own — not the dev stack beside it', s.api === 'http://127.0.0.1:40000' && s.anon === 'anon', r.out)
   ok('…with its database, functions, mail and app', s.db.endsWith(':40001/postgres') && s.functions.endsWith('/functions/v1') && s.mail === 'http://127.0.0.1:40005' && s.app === 'http://localhost:40900' && s.site === 'demo', r.out)
@@ -31,6 +32,27 @@ const RUN = {
   ok('with nothing given, there is no stack', r.out.trim().split('\n').pop() === 'null', r.out)
   const remote = child('console.log(JSON.stringify(t.stackOf()))', { VITE_SUPABASE_URL: 'https://example.supabase.co', VITE_SUPABASE_ANON_KEY: 'x' })
   ok('and a hosted project is never a test stack', remote.out.trim().split('\n').pop() === 'null', remote.out)
+}
+/* A TEST NEVER REACHES ANY STACK BUT THE RUN'S OWN (test-guard.mjs) */
+{
+  const DEV = { SUPABASE_URL: 'http://127.0.0.1:20000', VITE_SUPABASE_URL: 'http://127.0.0.1:20000', VITE_SUPABASE_ANON_KEY: 'dev-anon', SUPABASE_SERVICE_ROLE_KEY: 'dev-service' }
+  const outside = child('console.log(JSON.stringify(t.stackOf()))', DEV)
+  ok('outside the run, a dev stack in the environment is no stack', outside.status === 0 && outside.out.trim().split('\n').pop() === 'null', outside.out)
+  const urls = child('console.log(JSON.stringify([st.supabaseUrl(), st.serviceKey(), st.localStack()]))', { ...DEV, PLATFORMKIT_TEST_PROCESS: '1' })
+  ok('…and a test asking the storage helpers for it gets nothing', urls.out.trim().split('\n').pop() === JSON.stringify(['', '', false]), urls.out)
+  /* a port nothing listens on (40000 itself may be a real end-to-end stack left running) */
+  const NOBODY = { ...RUN, PLATFORMKIT_TEST_API_URL: 'http://127.0.0.1:9', PLATFORMKIT_TEST_DB_URL: 'postgresql://postgres:postgres@127.0.0.1:10/postgres' }
+  const nobody = child('t.stackOf()', NOBODY)
+  ok('inside the run, an address no end-to-end container answers is refused, and the test ends', nobody.status !== 0 && /refused: nothing in Docker answers on port 9\b/.test(nobody.out), nobody.out)
+  const viaStorage = child('st.supabaseUrl()', { ...NOBODY, PLATFORMKIT_TEST_PROCESS: '1' })
+  ok('…and so is the storage helpers\' route to it', viaStorage.status !== 0 && /refused:/.test(viaStorage.out), viaStorage.out)
+  /* a dev stack running on this machine, where there is one: refused by name */
+  const strays = spawnSync('docker', ['ps', '--format', '{{.Names}} {{.Ports}}'], { encoding: 'utf8' }).stdout || ''
+  const dev = strays.split('\n').map((l) => /^(supabase_kong_\S+_local) .*?:(\d+)->8000/.exec(l)).find(Boolean)
+  if (dev) {
+    const r = child('t.stackOf()', { ...RUN, PLATFORMKIT_TEST_API_URL: `http://127.0.0.1:${dev[2]}`, PLATFORMKIT_TEST_DB_URL: `postgresql://postgres:postgres@127.0.0.1:${Number(dev[2]) + 1}/postgres` })
+    ok(`a dev stack named as the run's is refused by name (${dev[1]})`, r.status !== 0 && r.out.includes(dev[1]) && /not an end-to-end test stack/.test(r.out), r.out)
+  }
 }
 {
   const inRun = child('t.skip("probe", "no LiveKit dev server")', RUN)

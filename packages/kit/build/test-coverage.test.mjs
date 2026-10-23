@@ -9,6 +9,8 @@
  *      `skip()` (a failure in the end-to-end run) or after `notHere()` (a declared fact about the site), or for its
  *      own `<NAME>_TEST=0` switch. Any other early `process.exit` is a pass that checked nothing — storefront-api
  *      printed "2 passed (the shapes …)" and left, for as long as its function could not boot.
+ *   2c. NO TEST REACHES A STACK THE GUARD HAS NOT VERIFIED (test-guard.mjs): only the end-to-end run's own, never a
+ *      dev stack, whatever the environment names.
  *   2b. A TEST THAT REACHES A STACK TAKES IT FROM test-stack.mjs, and never from `supabase status` or a fixed port —
  *      the import is how the end-to-end run finds it, so one without it is never run there.
  *   3. EVERY CLAIM NAMES A TEST THAT RUNS. A specification's "Verified by" that names a test file names one that
@@ -97,6 +99,13 @@ ok('no stack test reads `supabase status` or falls back to a fixed port', !fixed
   const launches = fs.readdirSync(HERE).filter((f) => f.endsWith('.mjs') && f !== 'browser.mjs').flatMap((f) => fs.readFileSync(path.join(HERE, f), 'utf8').split('\n').map((l, i) => [f, l, i]).filter(([, l]) => /chromium\.launch\(/.test(l) && !/PLAYWRIGHT_CHROMIUM_PATH|executablePath: exe\b|\{ executablePath \}/.test(l)).map(([f, l, i]) => `${f}:${i + 1}  ${l.trim().slice(0, 100)}`))
   ok('every browser launch honours PLAYWRIGHT_CHROMIUM_PATH', !launches.length, launches.join('\n'))
 }
+
+/* ─── 2c. no test reaches a stack the guard has not verified ───
+   stackOf() and the storage helpers refuse anything but the end-to-end run's own stack (test-guard.mjs). The one
+   unverified reader, runStackFrom, is the helper's own test's, to check the shape: any other test using it would
+   be holding an address nothing has checked. */
+const unverified = Object.entries(source).filter(([f, s]) => f !== 'test-stack.test.mjs' && /runStackFrom\(/.test(s)).map(([f]) => f)
+ok('no test but the helper\'s own reads the run\'s stack unverified', !unverified.length, unverified.join(', '))
 
 /* ─── 3. every claim names a test that runs ─── */
 const runner = fs.readFileSync(path.join(HERE, 'test.mjs'), 'utf8')
