@@ -167,6 +167,17 @@ export function gitEnvironmentForRemote(remote, env = process.env) {
   }
 }
 
+/* is `older` the commit itself or one `newer` was built on? (git merge-base --is-ancestor: 0 yes, 1 no) */
+function isAncestor(directory, older, newer) {
+  const r = spawnSync('git', ['merge-base', '--is-ancestor', older, newer], { cwd: directory, encoding: 'utf8', stdio: 'ignore' })
+  return r.status === 0
+}
+
+/*
+ * A CHECKOUT AT ITS PIN, OR AHEAD OF IT. A site is worked on here before its commits are pushed: the checkout then sits
+ * on the pinned commit with local commits on top, and that is allowed — the listing says how many. A checkout anywhere
+ * else (behind the pin, or on another line) is refused, because nothing then says what the workspace is running.
+ */
 function verifyManagedCheckout(root, registration) {
   const { name, remote, ref } = registration
   const directory = checkoutPath(root, name)
@@ -174,9 +185,13 @@ function verifyManagedCheckout(root, registration) {
   const top = git(['rev-parse', '--show-toplevel'], { cwd: directory, operation: `verify checkout for site "${name}"` })
   if (path.resolve(top) !== fs.realpathSync(directory)) throw new Error(`managed site path is not the root of its Git checkout: ${directory}`)
   const actual = git(['rev-parse', 'HEAD'], { cwd: directory, operation: `read current revision for site "${name}"` })
-  if (actual !== ref) throw new Error(`managed site "${name}" is at ${actual}, but its registered pin is ${ref}; update the registration with "platformkit sites update ${name} --ref <commit>"`)
+  let ahead = 0
+  if (actual !== ref) {
+    if (!isAncestor(directory, ref, actual)) throw new Error(`managed site "${name}" is at ${actual}, which is neither its registered pin ${ref} nor a commit on top of it; check out the pin (or a commit built on it), or update the registration with "platformkit sites update ${name} --ref <commit>"`)
+    ahead = Number(git(['rev-list', '--count', `${ref}..${actual}`], { cwd: directory, operation: `count local commits in site "${name}"` })) || 0
+  }
   const dirty = Boolean(git(['status', '--porcelain=v1', '--untracked-files=all'], { cwd: directory, operation: `check local changes in site "${name}"` }))
-  return { ...siteEntry(root, name, remote, ref), dirty }
+  return { ...siteEntry(root, name, remote, ref), dirty, ahead, head: actual }
 }
 
 export function fetchSite(root, { name, remote, ref, env = process.env }) {
@@ -234,7 +249,8 @@ export function updateSite(root, { name, ref, env = process.env }) {
   const dirty = git(['status', '--porcelain=v1', '--untracked-files=all'], { cwd: destination, operation: `check local changes in site "${name}"` })
   if (dirty) throw new Error(`refusing to update site "${name}" because its checkout has local changes; preserve or resolve them first:\n${dirty}`)
   const current = git(['rev-parse', 'HEAD'], { cwd: destination, operation: `read current revision for site "${name}"` })
-  if (current !== registration.ref) throw new Error(`refusing to update site "${name}": checkout is at ${current}, but its registered pin is ${registration.ref}`)
+  /* a checkout ahead of its pin may be re-pinned forward — to the commit it is on or one after it — so no local commit is left behind */
+  if (current !== registration.ref && !isAncestor(destination, registration.ref, current)) throw new Error(`refusing to update site "${name}": checkout is at ${current}, which is neither its registered pin ${registration.ref} nor a commit on top of it`)
 
   git(['fetch', '--no-tags', 'origin', ref], { cwd: destination, operation: `fetch revision ${ref} for site "${name}"`, env: gitEnvironmentForRemote(registration.remote, env) })
   const resolvesToCommit = spawnSync('git', ['cat-file', '-e', `${ref}^{commit}`], { cwd: destination, encoding: 'utf8', stdio: 'ignore' })
@@ -245,7 +261,8 @@ export function updateSite(root, { name, ref, env = process.env }) {
     if (result.error) throw new Error(`could not verify ${entry} in revision ${ref} for site "${name}": ${result.error.message}`)
     if (result.status !== 0) throw new Error(`revision ${ref} for site "${name}" does not contain ${entry}`)
   }
-  git(['checkout', '--detach', ref], { cwd: destination, operation: `update site "${name}" to ${ref}` })
+  if (current !== ref && !isAncestor(destination, current, ref)) throw new Error(`refusing to update site "${name}" to ${ref}: the checkout's ${current} is not part of it, and its commits would be left behind; push them and pin the commit that contains them`)
+  if (current !== ref) git(['checkout', '--detach', ref], { cwd: destination, operation: `update site "${name}" to ${ref}` })
   const actual = git(['rev-parse', 'HEAD'], { cwd: destination, operation: `read updated revision for site "${name}"` })
   if (actual !== ref) throw new Error(`site "${name}" resolved to ${actual}, not the requested commit ${ref}`)
   registry.sites[index] = { ...registration, ref }
@@ -417,7 +434,7 @@ if (import.meta.url === new URL(process.argv[1], 'file:').href) {
       if (args.includes('--json')) console.log(JSON.stringify(result, null, 2))
       else for (const site of result) {
         if (site.fetched === false) console.log(`${site.name}\t${path.relative(root, site.directory)}\tnot fetched (${site.ref})\tRun: platformkit sites fetch ${site.name}`)
-        else console.log(`${site.name}\t${path.relative(root, site.directory) || '.'}\t${site.managed ? `${site.ref}${site.dirty ? ' (local changes)' : ''}` : path.relative(root, site.dist)}`)
+        else console.log(`${site.name}\t${path.relative(root, site.directory) || '.'}\t${site.managed ? `${site.ref}${site.ahead ? ` (${site.ahead} local commit${site.ahead === 1 ? '' : 's'} past the pin)` : ''}${site.dirty ? ' (local changes)' : ''}` : path.relative(root, site.dist)}`)
       }
     }
   } catch (error) {

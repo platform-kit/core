@@ -412,7 +412,7 @@ export async function runWorkspace({
     await docker.start({ port: frontDoorPort, domain, sites: siteList, directoryPort })
     await waitForSites(siteList, domain, frontDoorPort, children)
     say(`Workspace sites are running through the shared front door on port ${frontDoorPort}:`)
-    for (const site of preparedSites) say(`  ${site.name.padEnd(14)} http://${site.name}.${domain}:${frontDoorPort}  ·  Vite ${vitePorts.get(site.name)}${site.supabaseWorkdir ? ' · isolated Supabase' : site.shape.backend ? ' · no stack' : ' · no backend'}${site.dirty ? ' · local changes' : ''}`)
+    for (const site of preparedSites) say(`  ${site.name.padEnd(14)} http://${site.name}.${domain}:${frontDoorPort}  ·  Vite ${vitePorts.get(site.name)}${site.supabaseWorkdir ? ' · isolated Supabase' : site.shape.backend ? ' · no stack' : ' · no backend'}${site.ahead ? ` · ${site.ahead} local commit${site.ahead === 1 ? '' : 's'} past its pin` : ''}${site.dirty ? ' · local changes' : ''}`)
     say('Stop with Ctrl+C or `platformkit stop`; this run will stop its child servers, stacks and front door.')
 
     let onSignal

@@ -156,6 +156,34 @@ try {
     assert.equal(defaultSite(root, { PLATFORMKIT_DEFAULT_SITE: linked }).directory, linked)
   })
 
+
+  test('a checkout ahead of its pin runs and is reported; it re-pins forward once pushed; anything else is refused', () => {
+    const at = fetchSite(root, { name: 'ahead-site', remote: fileRemote, ref: first })
+    git(at.directory, ['config', 'user.name', 'PlatformKit Test'])
+    git(at.directory, ['config', 'user.email', 'platformkit-test@example.invalid'])
+    git(at.directory, ['checkout', '-q', '-b', 'work'])
+    fs.writeFileSync(path.join(at.directory, 'local.txt'), 'worked on here first\n')
+    git(at.directory, ['add', '.'])
+    git(at.directory, ['commit', '-qm', 'a local commit, not pushed'])
+    const local = git(at.directory, ['rev-parse', 'HEAD'])
+    const listed = sites(root).find(({ name }) => name === 'ahead-site')
+    assert.equal(listed.ahead, 1)
+    assert.equal(listed.ref, first)
+    /* a pin the local commit is not part of would strand it */
+    assert.throws(() => updateSite(root, { name: 'ahead-site', ref: second }), /would be left behind/)
+    assert.equal(git(at.directory, ['rev-parse', 'HEAD']), local)
+    /* pushed, it pins forward with the checkout untouched */
+    git(at.directory, ['push', '-q', fileRemote, 'work'])
+    const repinned = updateSite(root, { name: 'ahead-site', ref: local })
+    assert.equal(repinned.ref, local)
+    assert.equal(git(at.directory, ['rev-parse', 'HEAD']), local)
+    assert.equal(sites(root).find(({ name }) => name === 'ahead-site').ahead, 0)
+    /* a checkout off the pin's line is refused */
+    git(at.directory, ['checkout', '-q', '--orphan', 'elsewhere'])
+    git(at.directory, ['commit', '-qm', 'an unrelated line'])
+    assert.throws(() => sites(root), /neither its registered pin .* nor a commit on top of it/)
+    git(at.directory, ['checkout', '-q', '--detach', local])
+  })
   console.log(`site-repositories: ${pass} passed`)
 } finally {
   fs.rmSync(fixture, { recursive: true, force: true })
