@@ -38,7 +38,7 @@ sources:
     deploy/nginx,
     package.json,
   ]
-reviewed: 2026-10-22
+reviewed: 2026-10-23
 ---
 
 The workspace root contains PlatformKit's packages and generic fixtures. A separately owned site stays in its own Git repository; it is fetched to `sites/external/<name>` and is not part of the root npm workspaces. The root registry is `platformkit.sites.json`. `platformkit sites` lists both kinds of sites. Use `platformkit sites --json` for their full paths and pin information. A registered repository that has not been fetched is listed with the command needed to fetch it. Site names are DNS labels. `PLATFORMKIT_DEFAULT_SITE` selects the site used by root commands (default `sites/docs`) and accepts either a site name or a path. `PLATFORMKIT_SITES` explicitly selects one or more sites for multi-site development, taking precedence over the default; `PLATFORMKIT_ROOT_SITE` optionally names a configured site at the workspace root.
@@ -70,7 +70,7 @@ For a private GitHub HTTPS remote, provide `PLATFORMKIT_GITHUB_TOKEN` (or `GITHU
 
 Generic fixtures under `sites/` continue to work without a remote. A fetched site is discovered by its declared local name, receives its own development server and—when enabled—its isolated Supabase project, and remains outside the tracked `sites/*` npm workspace glob. This keeps the workspace lockfile independent of which repositories happen to be fetched on a developer's machine.
 
-`platformkit dev` routes the selected sites through one local front door, using each site name under `PLATFORMKIT_DOMAIN` (for example, `docs.localhost:3000`) while Vite serves the app. Docker must be running for this shared front door; a startup error from it means the named local URLs are not ready, even if a site's Vite server has started. The front-door container only needs the selected site names and their allocated Vite ports; a fetched site does not need to be copied into the container image.
+`platformkit dev` routes the selected sites through one local front door, using each site name under `PLATFORMKIT_DOMAIN` (for example, `docs.localhost:3000`) while Vite serves the app. Docker must be running for this shared front door; a startup error from it means the named local URLs are not ready, even if a site's Vite server has started. The front-door container only needs the selected site names and their allocated Vite ports; a fetched site does not need to be copied into the container image. Each site has three minutes for its Vite server to answer, counted from when its Supabase stack is up rather than from when the run began, so a first start that pulls images or restores a database from its backup takes as long as it needs. A stack that fails to start stops the run and names the site.
 
 If a run ends without its normal cleanup, the next `platformkit dev` takes over only resources recorded for this checkout. It waits for earlier site servers and their function servers to finish stopping, and its one line names each resource it clears: a site by its port, the front door by its port, or a stale run record if no live resource remains. A second attached run is refused, and any listener the kit cannot verify is left untouched.
 

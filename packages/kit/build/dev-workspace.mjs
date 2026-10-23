@@ -383,18 +383,26 @@ export async function runWorkspace({
       children.push(record)
     }
 
-    const deadline = Date.now() + 180000
+    /* each site's clock starts when its stack answers, not when it was spawned: a cold
+       `supabase start` (image pulls, a restore from backup) can take minutes on its own, and
+       one that fails ends the child, which the loop already reports */
+    const viteReadyMs = 180000
     for (const { site, child } of children) {
+      const vitePort = vitePorts.get(site.name)
       const portFile = platformkitRuntimePath(root, 'dev', `${site.name}.port`)
-      while (Date.now() < deadline) {
+      const stackReadyFile = platformkitRuntimePath(root, 'dev', `${site.name}.stack-ready`)
+      const ownsFile = (file) => fs.existsSync(file) && Number(fs.readFileSync(file, 'utf8').trim()) === vitePort
+      let deadline = null
+      while (deadline === null || Date.now() < deadline) {
         const record = children.find((candidate) => candidate.child === child)
         if (record?.error || child.exitCode !== null || child.signalCode !== null) {
           throw new Error(`${site.name} dev server exited during startup${record?.error ? `: ${record.error.message}` : ''}`)
         }
-        if (fs.existsSync(portFile) && Number(fs.readFileSync(portFile, 'utf8').trim()) === vitePorts.get(site.name) && await tcpConnects(vitePorts.get(site.name))) break
+        if (deadline === null && ownsFile(stackReadyFile)) deadline = Date.now() + viteReadyMs
+        if (deadline !== null && ownsFile(portFile) && await tcpConnects(vitePort)) break
         await new Promise((resolve) => setTimeout(resolve, 200))
       }
-      if (Date.now() >= deadline) throw new Error(`${site.name} Vite server did not become ready`)
+      if (Date.now() >= deadline) throw new Error(`${site.name} Vite server did not become ready within ${viteReadyMs / 1000}s of its stack starting`)
     }
 
     composeAttempted = true

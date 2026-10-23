@@ -48,4 +48,4 @@ The maintained reference documentation is in the documentation site. The OpenSpe
 ---
 
 **Sources:** `package.json`, `packages/kit/package.json`, `packages/kit/bin/platformkit.mjs`, `packages/kit/build/sites.mjs`, `packages/kit/build/dev-workspace.mjs`, `.github/workflows/kit.yml`, `.github/workflows/publish.yml`
-**Reviewed:** `2026-10-22`
+**Reviewed:** `2026-10-23`

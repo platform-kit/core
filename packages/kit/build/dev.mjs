@@ -97,6 +97,10 @@ if (requestedPort.auto) {
 const frontDoorPort = Number(opt('--front-door-port', 0)) || 0
 const appUrl = domain ? `http://${siteName}.${domain}${frontDoorPort ? `:${frontDoorPort}` : ''}` : `http://localhost:${port}`
 const portFile = siteName ? platformkitRuntimePath(workspace, 'dev', `${siteName}.port`) : null
+/* written once the stack answers: a workspace run times only what follows (the functions' data,
+   Vite) and leaves `supabase start` — image pulls, a restore from backup — to take what it takes */
+const stackReadyFile = siteName ? platformkitRuntimePath(workspace, 'dev', `${siteName}.stack-ready`) : null
+if (stackReadyFile) rmSync(stackReadyFile, { force: true })
 if (portFile && existsSync(portFile)) {
   const priorPort = Number(readFileSync(portFile, 'utf8').trim())
   if (Number.isInteger(priorPort) && !(await free(priorPort))) die(`${siteName} already has a dev server on port ${priorPort}; stop it before starting another`)
@@ -108,6 +112,7 @@ if (portFile) {
 }
 function cleanupPort() {
   if (portFile && existsSync(portFile) && readFileSync(portFile, 'utf8').trim() === String(port)) rmSync(portFile, { force: true })
+  if (stackReadyFile && existsSync(stackReadyFile) && readFileSync(stackReadyFile, 'utf8').trim() === String(port)) rmSync(stackReadyFile, { force: true })
 }
 process.on('exit', cleanupPort)
 
@@ -147,6 +152,7 @@ if (noStack) say(flag('--no-stack')
   ? 'No stack (--no-stack): the app alone, nothing that needs an account'
   : 'No stack: this site declares deployment.backend false — the app alone, nothing that needs an account')
 else say(`Supabase  ${api}  ·  Studio ${st.STUDIO_URL || ''}  ·  Mailpit ${st.MAILPIT_URL || st.INBUCKET_URL || ''}`)
+if (stackReadyFile) writeFileSync(stackReadyFile, `${port}\n`)
 
 /* the env every process gets: the stack's real address and keys, the app's real port */
 /*

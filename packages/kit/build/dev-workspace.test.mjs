@@ -373,11 +373,13 @@ const portDir = path.join(path.resolve(process.cwd(), '../..'), 'node_modules', 
 fs.mkdirSync(portDir, { recursive: true })
 const portFile = path.join(portDir, site + '.port')
 fs.writeFileSync(portFile, String(port) + '\\n')
+const stackReadyFile = path.join(portDir, site + '.stack-ready')
+fs.writeFileSync(stackReadyFile, String(port) + '\\n')
 const server = http.createServer((req, res) => res.end(site))
 server.listen(port, '0.0.0.0')
 /* stopping takes a moment, as a real one stopping its stack does */
 let stopping = false
-const stop = () => { if (stopping) return; stopping = true; server.closeAllConnections(); server.close(() => setTimeout(() => { fs.rmSync(portFile, { force: true }); process.exit(0) }, 1500)) }
+const stop = () => { if (stopping) return; stopping = true; server.closeAllConnections(); server.close(() => setTimeout(() => { fs.rmSync(portFile, { force: true }); fs.rmSync(stackReadyFile, { force: true }); process.exit(0) }, 1500)) }
 process.on('SIGTERM', stop)
 process.on('SIGHUP', stop)
 watchParent(stop, 2000, {
@@ -434,6 +436,8 @@ const portDir = path.join(workspace, 'node_modules', '.cache', 'platformkit', 'd
 fs.mkdirSync(portDir, { recursive: true })
 const portFile = path.join(portDir, site + '.port')
 fs.writeFileSync(portFile, String(port) + '\\n')
+const stackReadyFile = path.join(portDir, site + '.stack-ready')
+fs.writeFileSync(stackReadyFile, String(port) + '\\n')
 const server = http.createServer((req, res) => {
   if (req.url === '/__platformkit/site-meta') {
     res.setHeader('content-type', 'application/json')
@@ -448,7 +452,7 @@ const server = http.createServer((req, res) => {
   res.end(site)
 })
 server.listen(port, '0.0.0.0')
-process.on('SIGTERM', () => server.close(() => { fs.rmSync(portFile, { force: true }); process.exit(0) }))
+process.on('SIGTERM', () => server.close(() => { fs.rmSync(portFile, { force: true }); fs.rmSync(stackReadyFile, { force: true }); process.exit(0) }))
 `)
 
   const frontDoor = {
@@ -523,6 +527,7 @@ if (site === 'beta') {
   const portDir = path.join(workspace, 'node_modules', '.cache', 'platformkit', 'dev')
   fs.mkdirSync(portDir, { recursive: true })
   fs.writeFileSync(path.join(portDir, site + '.port'), String(port) + '\\n')
+  fs.writeFileSync(path.join(portDir, site + '.stack-ready'), String(port) + '\\n')
   const server = http.createServer((_req, res) => { res.end(site) })
   server.listen(port, '0.0.0.0')
   process.on('SIGTERM', () => server.close(() => process.exit(0)))

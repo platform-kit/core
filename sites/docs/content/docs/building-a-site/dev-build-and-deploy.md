@@ -62,7 +62,7 @@ sources:
     deploy/prerender,
     deploy/relay,
   ]
-reviewed: 2026-10-22
+reviewed: 2026-10-23
 ---
 
 ## Restarting development
@@ -77,7 +77,7 @@ velite compiles it by default and is the tested path. Three things can say other
 
 |                                                  |                                                                     |
 | ------------------------------------------------ | ------------------------------------------------------------------- |
-| `CONTENT_ENGINE=velite\|collections`             | the run's own say, for trying one against the other                 |
+| `CONTENT_ENGINE=velite\                          | collections`                                                        | the run's own say, for trying one against the other |
 | `content: { engine }` in `platformkit.config.js` | the site's: either of those names, or a path to a module of its own |
 | nothing                                          | velite                                                              |
 
