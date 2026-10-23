@@ -8,8 +8,8 @@
  * Drafts and a customer's own tickets, each only while it holds something and the site has not hidden
  * it. The second is the spaces (drawn by the navigation from the spaces themselves).
  *
- * THE INBOX is every kind of message somebody answers, in one place: their own Direct Messages first,
- * then the queues they answer (clients, comments, support, tickets, the social accounts). It is one row
+ * THE INBOX is every kind of message somebody answers, in one place: the queues they answer (clients,
+ * comments, support, tickets, the social accounts), then their own Direct Messages last. It is one row
  * whose count is the sum, unfolding to a row each. Somebody who answers no queue has only their Direct
  * Messages, and a fold of one row would be a menu for a single page: for them the Inbox is one plain row
  * that opens their Direct Messages, with no fold.
@@ -49,12 +49,12 @@ export function socialPlaces(ctx = {}) {
   /* a place the reader may not enter keeps its row — the way to what it costs — with nothing counted */
   const locked = new Set(ctx.locked || [])
   const shutOf = (x) => (locked.has(x.word) || (x.place && locked.has(x.key)) ? { ...x, locked: true, count: 0 } : x)
-  /* the reader's own Direct Messages (word: messages, so community.access's Messages rule still locks it),
-     then the queues they answer, in the order James set */
+  /* the queues the reader answers, in the order James set, then their own Direct Messages last (word:
+     messages, so community.access's Messages rule still locks it) */
   const dm = shutOf({ key: 'dms', icon: 'dm', word: 'messages', count: n(c.dms) })
   const queues = QUEUES.map((k) => (ctx.work || []).find((w) => w.key === k)).filter(Boolean).map((w) => ({ key: w.key, count: n(w.count) }))
   const INBOX = queues.length
-    ? { key: 'inbox', icon: 'inbox', word: 'inbox', group: true, count: [dm, ...queues].reduce((s, r) => s + r.count, 0), rows: [dm, ...queues] }
+    ? { key: 'inbox', icon: 'inbox', word: 'inbox', group: true, count: [dm, ...queues].reduce((s, r) => s + r.count, 0), rows: [...queues, dm] }
     : { ...dm, icon: 'inbox', word: 'inbox' }
   const first = [
     { key: ctx.network ? 'net' : 'index', icon: 'home', word: 'home' },
@@ -64,7 +64,7 @@ export function socialPlaces(ctx = {}) {
     /* COACHING, a place of its own where coaching lives in the community: sessions are public to
        discover, while the coaching conversation and its count belong to the signed-in reader. */
     ...(ctx.coaching || (signed && n(c.coaching) > 0) ? [{ key: 'coaching', icon: 'armchair', word: 'coaching', count: n(c.coaching) }] : []),
-    /* THE INBOX, where Messages stood: Direct Messages and the queues, one fold (INBOX, above) */
+    /* THE INBOX, where Messages stood: the queues and Direct Messages, one fold (INBOX, above) */
     ...(signed ? [INBOX] : []),
     /* THE PLACES A SITE REGISTERED (community.places), after the Inbox and before Notifications, in the order given:
        each with its word and icon, shown to whom its registration says, with the count it carries */

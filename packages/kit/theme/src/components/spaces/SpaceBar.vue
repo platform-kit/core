@@ -114,7 +114,7 @@ const MORE = computed(() => [
   { key: 'threads', icon: 'thread', word: W.value.threads },
   ...(!MINE.value.some((m) => m.key === 'saved') ? [{ key: 'saved', icon: 'star', word: W.value.saved }] : []),
 ])
-/* THE INBOX (Direct Messages and the queues) unfolds by hand, or while one of its rows is open */
+/* THE INBOX (the queues, then Direct Messages) unfolds by hand, or while one of its rows is open */
 const INBOX = computed(() => NAV.value.first.find((m) => m.group) || null)
 const readSet = (k) => { try { return JSON.parse(localStorage.getItem(k) || '[]') } catch { return [] } }
 const writeSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
@@ -153,7 +153,7 @@ const here = (s) => props.inSpace && s.id === props.openId
       <h3 class="sbar-title">{{ W['mine-title'] }}</h3>
       <ul class="sbar-list">
         <li v-for="m in SHOWN" :key="m.key">
-          <!-- THE INBOX: one row, one count; Direct Messages and the queues under it -->
+          <!-- THE INBOX: one row, one count; the queues and Direct Messages under it -->
           <template v-if="m.group">
             <button type="button" class="sbar-row sbar-work" :class="{ open: inboxOpen }" :aria-expanded="inboxOpen" aria-controls="sbar-inbox" @click="toggleInbox">
               <SpaceIcon name="inbox" :size="15" /><span class="sbar-label">{{ S.inbox }}</span>

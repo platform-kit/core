@@ -42,14 +42,14 @@ for (const [cname, cfg] of Object.entries(CONFIGS)) {
     ok(`${at}: Home first`, p.first[0].key === (cfg.network ? 'net' : 'index'))
     ok(`${at}: Explore only where For You is on`, p.first.some((x) => x.key === 'net-explore') === !!(cfg.forYou && cfg.network))
     ok(`${at}: Direct Messages and Notifications only for somebody signed in`, !!dmsOf(p) === !!person.signedIn && p.first.some((x) => x.word === 'notifications') === !!person.signedIn)
-    /* the Inbox: one row, the sum, Direct Messages then the queues in order, for whoever answers one;
+    /* the Inbox: one row, the sum, the queues in order then Direct Messages, for whoever answers one;
        somebody who answers none has Direct Messages alone, never a fold of one row */
     const queues = (person.work || [])
     const inbox = inboxOf(p)
     ok(`${at}: an Inbox only for whoever answers a queue`, !!inbox === (!!person.signedIn && queues.length > 0))
     if (inbox) {
       ok(`${at}: the Inbox's count is Direct Messages and the queues together`, inbox.count === queues.reduce((s, w) => s + w.count, 0) + ((person.counts || {}).dms || 0), String(inbox.count))
-      ok(`${at}: the Inbox unfolds to Direct Messages, then a row per queue in order`, inbox.rows.map((r) => r.key).join() === ['dms', ...QUEUES.filter((k) => queues.some((w) => w.key === k))].join())
+      ok(`${at}: the Inbox unfolds to a row per queue in order, then Direct Messages last`, inbox.rows.map((r) => r.key).join() === [...QUEUES.filter((k) => queues.some((w) => w.key === k)), 'dms'].join())
       ok(`${at}: Direct Messages is not also a row of its own`, !p.first.some((x) => x.key === 'dms'))
     }
     /* with no queue there is nothing to unfold: the Inbox is one row, and it opens Direct Messages */

@@ -116,7 +116,7 @@ watch(() => [props.network, isSignedIn.value], ([on, signed]) => { if (on && sig
       <!-- THE FIRST SECTION: no heading -->
       <ul class="sn-list">
         <li v-for="m in places.first" :key="m.key">
-          <!-- THE INBOX: one row, one count; Direct Messages and the queues under it -->
+          <!-- THE INBOX: one row, one count; the queues and Direct Messages under it -->
           <template v-if="m.group">
             <button type="button" class="sn-i sn-work" :class="{ open: inboxOpen }" :aria-expanded="inboxOpen" @click="toggleInbox">
               <span class="sn-ic"><SpaceIcon name="inbox" :size="20" /></span>
