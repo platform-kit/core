@@ -48,7 +48,7 @@ export function socialPlaces(ctx = {}) {
     ...(ctx.events !== false ? [{ key: 'events', icon: 'calendar', word: 'events' }] : []),
     /* COACHING, a place of its own where coaching lives in the community: sessions are public to
        discover, while the coaching conversation and its count belong to the signed-in reader. */
-    ...(ctx.coaching || (signed && n(c.coaching) > 0) ? [{ key: 'coaching', icon: 'talk', word: 'coaching', count: n(c.coaching) }] : []),
+    ...(ctx.coaching || (signed && n(c.coaching) > 0) ? [{ key: 'coaching', icon: 'armchair', word: 'coaching', count: n(c.coaching) }] : []),
     ...(signed ? [{ key: 'dms', icon: 'dm', word: 'messages', count: n(c.dms) }] : []),
     /* THE PLACES A SITE REGISTERED (community.places), after Messages and before Notifications, in the order given:
        each with its word and icon, shown to whom its registration says, with the count it carries */

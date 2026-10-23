@@ -33,8 +33,8 @@ const P = {
   pin: 'M7.2 3.2h5.6M10 3.2v4.1l2.6 3.1v1.4H7.4v-1.4L10 7.3M10 11.8V17',
   ticket: 'M3.5 7.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v1.2a1.4 1.4 0 0 0 0 2.6v1.2a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-1.2a1.4 1.4 0 0 0 0-2.6zM10 7v6',
   head: 'M4 12V9a6 6 0 0 1 12 0v3M3 12h3v5H4a1 1 0 0 1-1-1zM17 12h-3v5h2a1 1 0 0 0 1-1z',
-  /* two people facing each other, talking: coaching, a conversation rather than a headset */
-  talk: 'M4.2 7a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM1.2 18.2c0-2.7 1.3-4.5 3.2-4.5 1.2 0 2.1.6 2.7 1.5M15.8 7a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM18.8 18.2c0-2.7-1.3-4.5-3.2-4.5-1.2 0-2.1.6-2.7 1.5M8.2 1.6h3.6a1 1 0 0 1 1 1v2.4a1 1 0 0 1-1 1H9.7L8.2 7.4V6a1 1 0 0 1-1-1V2.6a1 1 0 0 1 1-1z',
+  /* coaching: the counsellor's armchair, Lucide's own drawing on its 24-unit grid (see GRID) */
+  armchair: { grid: 24, d: 'M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0zM5 18v2M19 18v2' },
   course: 'M2.5 7.5 10 4l7.5 3.5L10 11 2.5 7.5zM5.5 9v3.6c0 1.1 2 2.4 4.5 2.4s4.5-1.3 4.5-2.4V9M17.5 7.5v4',
   more: 'M10 5.5h.01M10 10h.01M10 14.5h.01',
   close: 'M5 5l10 10M15 5 5 15',
@@ -74,11 +74,16 @@ const P = {
   expand: 'M12 3.5h4.5V8M8 16.5H3.5V12M16.5 3.5 11.5 8.5M3.5 16.5l5-5',
   shrink: 'M16.5 7.5H12V3M3.5 12.5H8V17M11.5 8.5l5-5M8.5 11.5l-5 5',
 }
+/* A GLYPH TAKEN FROM LUCIDE keeps Lucide's drawing and its 24-unit grid ({ grid, d }); the line is
+   thickened in proportion, so it reads at the same weight as the 20-unit glyphs beside it */
+const entry = (n) => P[n] || ''
+const GRID = (n) => (typeof entry(n) === 'object' ? entry(n).grid : 20)
+const D = (n) => (typeof entry(n) === 'object' ? entry(n).d : entry(n))
 </script>
 
 <template>
-  <svg class="si" :width="size" :height="size" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-    <path :d="P[name] || ''" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+  <svg class="si" :width="size" :height="size" :viewBox="`0 0 ${GRID(name)} ${GRID(name)}`" fill="none" aria-hidden="true">
+    <path :d="D(name)" stroke="currentColor" :stroke-width="1.6 * GRID(name) / 20" stroke-linecap="round" stroke-linejoin="round" />
   </svg>
 </template>
 
