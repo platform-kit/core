@@ -39,9 +39,10 @@
           </p>
           <ol class="crs-plist">
             <li v-for="l in m.lessons" :key="l.key">
-              <a :href="courseHref + '/' + l.key" :class="{ 'is-here': l.key === lessonKey, 'is-closed': !l.open, 'is-done': l.done }" :aria-current="l.key === lessonKey ? 'page' : null">
+              <a :href="courseHref + '/' + l.key" :class="{ 'is-here': l.key === lessonKey, 'is-closed': !l.open, 'is-done': l.done, 'has-score': l.quiz && l.quiz.total }" :aria-current="l.key === lessonKey ? 'page' : null">
                 <CourseIcon :name="l.done ? 'done' : l.open ? 'open' : 'closed'" :size="18" class="crs-mark" />
                 <span class="crs-plist-title">{{ l.title }}</span>
+                <span v-if="l.quiz && l.quiz.total" class="crs-plist-score" :title="fill(S['quiz-best'], l.quiz)">{{ l.quiz.score }}/{{ l.quiz.total }}</span>
                 <CourseIcon :name="kindOf(l)" :size="14" class="crs-plist-kind" />
               </a>
             </li>
@@ -84,6 +85,19 @@
               </span>
               <span class="btn solid crs-btn-ico crs-pointer-go"><CourseIcon name="chapter" :size="15" />{{ S['read-chapter'] }}</span>
             </a>
+            <!-- a form lesson: the form itself, here, and its result in place of the form's own end -->
+            <div v-else-if="lesson.kind === 'form' && formDoc" class="crs-quiz">
+              <div v-if="result" class="crs-quiz-result" :class="{ 'is-passed': result.passed !== false }" role="status">
+                <span class="crs-quiz-badge"><CourseIcon :name="result.passed !== false ? 'done' : 'form'" :size="26" /></span>
+                <div class="crs-quiz-text">
+                  <strong>{{ result.passed !== false ? (result.total ? S['quiz-passed'] : S['form-done']) : S['quiz-failed'] }}</strong>
+                  <span v-if="result.total" class="crs-quiz-score">{{ fill(result.best ? S['quiz-best'] : S['quiz-score'], result) }}</span>
+                  <span v-if="result.passed === false && passMark" class="crs-quiz-need">{{ fill(S['quiz-need'], { pass: passMark, total: result.total }) }}</span>
+                </div>
+                <button type="button" class="btn" :class="{ solid: result.passed === false }" @click="again">{{ result.passed === false ? S['try-again'] : S.retake }}</button>
+              </div>
+              <FormRun v-else :key="lessonKey + ':' + runs" :form="formDoc" embed class="crs-quiz-run" @complete="onForm" />
+            </div>
             <a v-else-if="lesson.kind !== 'text'" class="crs-pointer" :href="pointerHref(lesson)">
               <span class="crs-pointer-ico"><CourseIcon :name="lesson.kind" :size="24" /></span>
               <span class="crs-pointer-text"><strong>{{ S['kind-' + lesson.kind] }}</strong></span>
@@ -108,7 +122,8 @@
                   <span class="crs-done-word"><CourseIcon name="done" :size="18" />{{ S.completed }}</span>
                   <a v-if="after && after.open" class="btn solid crs-btn-ico" :href="courseHref + '/' + after.key">{{ S['next-lesson'] }}<CourseIcon name="arrow" :size="15" /></a>
                 </template>
-                <button v-else-if="state.enrollment" type="button" class="btn solid crs-btn-ico" :disabled="busy" @click="emit('complete')">
+                <!-- a form lesson finishes itself when the form is passed; the button is only for one passed before it opened -->
+                <button v-else-if="state.enrollment && (lesson.kind !== 'form' || !formDoc || (here && here.quiz && here.quiz.passed))" type="button" class="btn solid crs-btn-ico" :disabled="busy" @click="emit('complete')">
                   {{ finishes ? S['complete-finish'] : S['complete-continue'] }}<CourseIcon name="arrow" :size="15" />
                 </button>
               </span>
@@ -142,8 +157,10 @@ import { computed, ref, watch } from 'vue'
 import { ROUTES } from 'platformkit/lib/router.js'
 import { bookShelf, coverTint } from 'platformkit/lib/content.js'
 import { bookCoverOf } from 'platformkit/lib/book-art.js'
+import { forms as FORMS } from '#content'
 import MarkdownDoc from '../MarkdownDoc.vue'
 import MediaBlock from '../content/MediaBlock.vue'
+import FormRun from '../forms/FormRun.vue'
 import CourseIcon from './CourseIcon.vue'
 import { words, fill, pct, day, modulesOf, kindOf, nextOpening, pointerHref } from './course-ui.js'
 
@@ -157,7 +174,7 @@ const props = defineProps({
   problem: { type: String, default: '' },
   outcome: { type: String, default: '' },   /* after Complete and continue: 'lesson-done' (nothing open next yet) · 'course-done' */
 })
-const emit = defineEmits(['enroll', 'sign-in', 'complete'])
+const emit = defineEmits(['enroll', 'sign-in', 'complete', 'form-done'])
 const { K, S } = words()
 
 const courseHref = computed(() => props.base + '/' + props.state.slug)
@@ -184,5 +201,21 @@ const chapterN = computed(() => String((props.lesson && props.lesson.ref) || '')
 const book = computed(() => bookShelf().find((b) => b.slug === bookSlug.value) || null)
 const bookCover = computed(() => (bookSlug.value ? bookCoverOf(bookSlug.value) : ''))
 const goWord = computed(() => ({ article: S.value['read-article'], form: S.value['answer-form'], session: S.value['book-session'] }[props.lesson && props.lesson.kind] || S.value.open))
+/* A FORM LESSON'S FORM, run here. Its result replaces the form's own end: the attempt just made, or, opening a lesson
+   already passed, the reader's best. Finishing it is recorded by the server as the response completes, so the course
+   is only asked again. Try again and Take it again start the form afresh; a retake never undoes the lesson. */
+const formDoc = computed(() => (props.lesson && props.lesson.kind === 'form' ? (FORMS || []).find((f) => f.slug === props.lesson.ref && f.published !== false) || null : null))
+const passMark = computed(() => (formDoc.value && formDoc.value.model.kit && formDoc.value.model.kit.pass) || 0)
+const result = ref(null), runs = ref(0)
+watch(() => [props.lessonKey, here.value && here.value.quiz && here.value.quiz.passed], ([, passed], was) => {
+  if (was && was[0] === props.lessonKey && result.value) return
+  const q = here.value && here.value.quiz
+  result.value = passed ? { ...q, best: true } : here.value && here.value.done && !q ? { passed: true } : null
+}, { immediate: true })
+function onForm({ grade }) {
+  result.value = grade ? { score: grade.score, total: grade.total, passed: grade.passed } : { passed: true }
+  emit('form-done')
+}
+function again() { result.value = null; runs.value++ }
 const whyWord = (l) => (l.why === 'not-yet' ? fill(S.value['not-yet'], { date: day(l.opens_at) }) : S.value[l.why] || '')
 </script>

@@ -18,7 +18,7 @@
       @enroll="enroll" @sign-in="signIn" />
     <CoursePlayer
       v-else :base="base" :state="state" :lesson-key="lessonKey" :lesson="lesson" :loading="loading" :busy="busy" :problem="problem" :outcome="outcome"
-      @enroll="enroll" @sign-in="signIn" @complete="complete" />
+      @enroll="enroll" @sign-in="signIn" @complete="complete" @form-done="formDone" />
   </div>
 </template>
 
@@ -90,6 +90,18 @@ async function enroll() {
     else { keepCourse(slug.value, r); capture('course_started', { course: slug.value }); if (view.value === 'lesson') await load() }
   } catch (e) { problem.value = String(e.message || e) }
   busy.value = false
+}
+/* A FORM LESSON'S FORM FINISHED: the server has recorded the lesson as the response completed (where it passed), so
+   the course is only read again; where that finished the course, the player says so */
+async function formDone() {
+  const at = lessonKey.value
+  const was = !!(state.value && state.value.enrollment && state.value.enrollment.completed_at)
+  try {
+    const s = await loadCourse(slug.value)
+    const l = s && (s.lessons || []).find((x) => x.key === at)
+    if (l && l.done) capture('lesson_completed', { course: slug.value, lesson: at })
+    if (s && s.enrollment && s.enrollment.completed_at && !was) outcome.value = 'course-done'
+  } catch (e) { problem.value = String(e.message || e) }
 }
 /* COMPLETE AND CONTINUE: the lesson is recorded done, then the next open lesson opens; where there is none yet, the
    player says when the next one opens; where that was the course, it says the course is finished */

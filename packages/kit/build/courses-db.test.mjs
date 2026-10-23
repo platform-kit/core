@@ -84,11 +84,21 @@ try {
   /* a form, and a session: the server checks */
   await backdate(FREE, memberId, 7)
   ok('a form lesson is not finished until the form is answered', (await call(member, 'course_complete', { p_course: FREE, p_lesson: 'c' })).error === 'form-not-finished')
-  const { data: resp } = await service.from('form_responses').insert({ form: `courses-db-form-${STAMP}`, user_id: memberId, completed_at: new Date().toISOString(), passed: false }).select('id').single()
-  ok('a scored form not passed does not finish it', (await call(member, 'course_complete', { p_course: FREE, p_lesson: 'c' })).error === 'form-not-finished')
-  await service.from('form_responses').update({ passed: true }).eq('id', resp.id)
-  const done = await call(member, 'course_complete', { p_course: FREE, p_lesson: 'c' })
+  /* A QUIZ FINISHES ITS OWN LESSON: the response completing is what records it, never a button */
+  const attempt = async (score, passed) => (await service.from('form_responses').insert({ form: `courses-db-form-${STAMP}`, user_id: memberId, completed_at: new Date().toISOString(), score, total: 5, passed }).select('id').single()).data.id
+  const tries = [await attempt(2, false)]
+  const failed = await call(member, 'course_state', { p_course: FREE })
+  ok('a scored form not passed does not finish it', failed.lessons[2].done === false && (await call(member, 'course_complete', { p_course: FREE, p_lesson: 'c' })).error === 'form-not-finished')
+  ok('…and the course shows the score', failed.lessons[2].quiz && failed.lessons[2].quiz.score === 2 && failed.lessons[2].quiz.total === 5 && failed.lessons[2].quiz.passed === false && failed.lessons[2].quiz.attempts === 1, failed.lessons[2].quiz)
+  tries.push(await attempt(4, true))
+  const done = await call(member, 'course_state', { p_course: FREE })
+  ok('passing the form finishes its lesson as the response completes', done.lessons[2].done === true)
+  ok('…keeping the best attempt and counting them', done.lessons[2].quiz && done.lessons[2].quiz.score === 4 && done.lessons[2].quiz.passed === true && done.lessons[2].quiz.attempts === 2, done.lessons[2].quiz)
+  tries.push(await attempt(1, false))
+  ok('a worse attempt afterwards undoes nothing', (await call(member, 'course_state', { p_course: FREE })).lessons[2].done === true)
   ok('every required lesson finished: the course is complete (the optional session not needed)', done.enrollment && done.enrollment.completed_at && done.done === done.total, done)
+  const scores = (await call(admin, 'admin_course_enrollments', { p_course: FREE })).people.find((p) => p.email === 'member@example.com')
+  ok('the staff see each person\'s best score and attempts', scores && scores.quizzes.length === 1 && scores.quizzes[0].lesson === 'c' && scores.quizzes[0].score === 4 && scores.quizzes[0].attempts === 3, scores && scores.quizzes)
   ok('…with a certificate', !!done.certificate_id)
   ok('a session lesson is not finished until one is booked', (await call(member, 'course_complete', { p_course: FREE, p_lesson: 'd' })).error === 'not-booked')
   const cert = await call(anon, 'certificate_public', { p_id: done.certificate_id })
@@ -101,7 +111,7 @@ try {
     const { data: won } = await service.from('user_achievements').select('slug').eq('user_id', memberId).eq('slug', rule.slug).maybeSingle()
     ok('…and a site\'s rule on it awards its achievement', !!won)
   }
-  await service.from('form_responses').delete().eq('id', resp.id)
+  await service.from('form_responses').delete().in('id', tries)
 
   /* a purchase gets somebody in on the way, a refund closes it, a second purchase resumes it */
   const buy = async () => { const { data } = await service.from('purchases').insert({ user_id: buyerId, email: 'buyer@example.com', sku: SKU, status: 'paid', checkout_identity: `cs_courses_db_${STAMP}_${purchases.length}`, amount_total: 100, currency: 'usd' }).select('id').single(); purchases.push(data.id); return data.id }

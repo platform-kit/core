@@ -1,4 +1,5 @@
 ---
+
 scope: courses
 ---
 
@@ -118,7 +119,15 @@ in-order: Finish the lesson before this one to open it
 no-access: This course isn't open to you yet
 not-enrolled: Start the course to open this lesson
 sign-in: Sign in to open this lesson
-form-not-finished: Answer it first, then mark it complete
+form-not-finished: Finish the quiz above first
+quiz-passed: Passed
+quiz-failed: Not passed yet
+form-done: Done
+quiz-score: You scored {score} of {total}
+quiz-best: Your best score: {score} of {total}
+quiz-need: You need {pass} of {total} to pass. Look back over the lessons and try again whenever you're ready.
+try-again: Try again
+retake: Take it again
 not-booked: Book it first, then mark it complete
 tag-chapter: Chapter
 tag-article: Article
@@ -169,6 +178,8 @@ cohort: Cohort
 started: Started
 progress: Progress
 at: Up to
+quizzes: Quiz scores
+attempts: Attempts: {n}
 done: Finished {date}
 none-title: No courses to show
 none-body: A course appears here once it is published. Write one under Courses.

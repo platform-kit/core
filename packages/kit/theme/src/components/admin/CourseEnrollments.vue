@@ -16,6 +16,8 @@ const pct = (d, t) => (t ? Math.round((100 * d) / t) : 0)
 
 const courses = ref([]), pick = ref(''), view = ref(null), loading = ref(true), error = ref('')
 const course = computed(() => courses.value.find((c) => c.slug === pick.value) || null)
+/* a course with a form lesson shows each person's scores */
+const quizzed = computed(() => !!(view.value && (view.value.people || []).some((p) => (p.quizzes || []).length)))
 const lessonTitle = (key) => { const s = view.value && view.value.lessons; return (s && s[key]) || key }
 
 onMounted(async () => {
@@ -66,13 +68,14 @@ watch(pick, async (slug) => {
         <h2>{{ fill(W['empty-title'], { course: course ? course.title : '' }) }}</h2>
         <p>{{ W['empty-body'] }}</p>
       </div>
-      <div v-else class="ce-table" role="table">
+      <div v-else class="ce-table" :class="{ 'has-quiz': quizzed }" role="table">
         <div class="ce-row ce-th" role="row">
           <span role="columnheader">{{ W.name }}</span>
           <span role="columnheader">{{ W.cohort }}</span>
           <span role="columnheader">{{ W.started }}</span>
           <span role="columnheader">{{ W.progress }}</span>
           <span role="columnheader">{{ W.at }}</span>
+          <span v-if="quizzed" role="columnheader">{{ W.quizzes }}</span>
         </div>
         <div v-for="p in view.people" :key="p.email + p.started_at" class="ce-row" role="row">
           <span class="ce-who" role="cell"><b>{{ p.name }}</b><i>{{ p.email }}</i></span>
@@ -83,6 +86,10 @@ watch(pick, async (slug) => {
             <em>{{ p.done }} / {{ view.total }}</em>
           </span>
           <span class="ce-cell" role="cell" :data-label="W.at">{{ p.completed_at ? fill(W.done, { date: day(p.completed_at) }) : lessonTitle(p.at) }}</span>
+          <!-- each quiz: the best score, and how many attempts it took -->
+          <span v-if="quizzed" class="ce-cell ce-quiz" role="cell" :data-label="W.quizzes">
+            <span v-for="q in p.quizzes || []" :key="q.lesson" class="ce-score" :class="{ 'is-passed': q.passed }" :title="q.title + ' · ' + fill(W.attempts, { n: q.attempts })">{{ q.attempts ? q.score + '/' + q.total : '—' }}</span>
+          </span>
         </div>
       </div>
     </template>
@@ -106,6 +113,10 @@ watch(pick, async (slug) => {
 .ce-table { border: 1px solid var(--hair); border-radius: 12px; background: var(--card); overflow: hidden }
 .ce-row { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, .9fr) minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.6fr); gap: 12px; align-items: center; padding: 11px 15px; border-top: 1px solid var(--hair); font-size: 13.5px; color: var(--ink2) }
 .ce-row:first-child { border-top: 0 }
+.has-quiz .ce-row { grid-template-columns: minmax(0, 2.2fr) minmax(0, .9fr) minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.6fr) minmax(0, 1.8fr) }
+.ce-quiz { display: flex; flex-wrap: wrap; gap: 4px }
+.ce-score { font-family: var(--m); font-size: 11.5px; padding: 2px 6px; border: 1px solid var(--hair); border-radius: 6px; color: var(--ink3); white-space: nowrap }
+.ce-score.is-passed { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 30%, transparent) }
 .ce-th { font-family: var(--m); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3); padding-top: 9px; padding-bottom: 9px }
 .ce-who { display: flex; flex-direction: column; min-width: 0 }
 .ce-who b { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
@@ -118,7 +129,8 @@ watch(pick, async (slug) => {
   .ce-nums { grid-template-columns: repeat(3, minmax(0, 1fr)) }
   .ce-nums .ce-wide { grid-column: 1 / -1 }
   .ce-th { display: none }
-  .ce-row { grid-template-columns: 1fr 1fr; gap: 6px 12px }
+  .ce-row, .has-quiz .ce-row { grid-template-columns: 1fr 1fr; gap: 6px 12px }
+  .ce-quiz { grid-column: 1 / -1 }
   .ce-who { grid-column: 1 / -1 }
   .ce-cell::before { content: attr(data-label); display: block; font-family: var(--m); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3) }
   .ce-prog { flex-wrap: wrap }

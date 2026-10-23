@@ -204,6 +204,8 @@ begin
   -- `has` is what kinds of media a lesson carries (video, audio, file) so the outline can mark it; never their addresses
   select coalesce(jsonb_agg(jsonb_build_object('key', f.key, 'section', f.section, 'title', f.title, 'kind', f.kind, 'ref', f.ref,
       'required', f.required, 'open', f.open, 'opens_at', f.opens_at, 'why', f.why, 'done', f.done,
+      -- a quiz's best attempt, the reader's own
+      'quiz', case when f.kind = 'form' and uid is not null then public.course_quiz_result(uid, f.ref) end,
       'has', coalesce((select jsonb_agg(distinct m ->> 'type') from public.course_lessons l, jsonb_array_elements(l.media) m
                         where l.course = p_course and l.key = f.key and m ->> 'type' is not null), '[]'::jsonb)) order by f.position), '[]'::jsonb)
     into lessons from public.course_lessons_for(p_course, uid) f;
@@ -379,6 +381,40 @@ begin
 end;
 $$;
 
+-- A FORM FINISHED FINISHES ITS LESSON. When somebody's response completes, and is passed where the form is scored,
+-- every open form lesson pointing at that form is recorded done for them, then the course is checked for completion.
+-- Nobody marks a quiz lesson by hand; a response that fails changes nothing, and a later pass still counts.
+CREATE OR REPLACE FUNCTION "public"."course_form_finished"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+declare e public.enrollments; f record;
+begin
+  if new.user_id is null or new.completed_at is null or new.passed is false then return new; end if;
+  if tg_op = 'UPDATE' and old.completed_at is not null and old.passed is not distinct from new.passed then return new; end if;
+  for e in select en.* from public.enrollments en where en.user_id = new.user_id
+             and exists (select 1 from public.course_lessons l where l.course = en.course and l.kind = 'form' and l.ref = new.form) loop
+    for f in select x.key from public.course_lessons_for(e.course, new.user_id) x where x.kind = 'form' and x.ref = new.form and x.open and not x.done loop
+      insert into public.lesson_progress (enrollment, lesson, how) values (e.id, f.key, 'form') on conflict do nothing;
+    end loop;
+    perform public.course_check_complete(e.id);
+  end loop;
+  return new;
+end;
+$$;
+
+CREATE OR REPLACE TRIGGER "trg_form_responses_course" AFTER INSERT OR UPDATE OF "completed_at", "passed" ON "public"."form_responses" FOR EACH ROW EXECUTE FUNCTION "public"."course_form_finished"();
+
+-- A QUIZ'S RESULT for one person: their best score on a scored form, whether any attempt passed, and how many they
+-- made. Every attempt is a form response of its own, so this reads them; nothing is copied. Null where none is scored.
+CREATE OR REPLACE FUNCTION "public"."course_quiz_result"("p_user" "uuid", "p_form" "text") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  select case when count(*) = 0 then null else jsonb_build_object('score', max(r.score), 'total', max(r.total), 'passed', bool_or(coalesce(r.passed, false)), 'attempts', count(*)) end
+  from public.form_responses r where r.user_id = p_user and r.form = p_form and r.completed_at is not null and r.total is not null;
+$$;
+
 -- a certificate, for anyone holding its address
 CREATE OR REPLACE FUNCTION "public"."certificate_public"("p_id" "text") RETURNS "jsonb"
     LANGUAGE "sql" STABLE SECURITY DEFINER
@@ -423,7 +459,10 @@ begin
       coalesce(nullif(p.display_name, ''), split_part(coalesce(p.email, ''), '@', 1)) as name, p.email,
       (select count(*) from public.lesson_progress lp join public.course_lessons l on l.course = e.course and l.key = lp.lesson and l.required where lp.enrollment = e.id) as done,
       (select l.key from public.course_lessons l where l.course = e.course and l.required
-        and not exists (select 1 from public.lesson_progress lp where lp.enrollment = e.id and lp.lesson = l.key) order by l.position limit 1) as at
+        and not exists (select 1 from public.lesson_progress lp where lp.enrollment = e.id and lp.lesson = l.key) order by l.position limit 1) as at,
+      -- each form lesson with this person's best attempt at it (attempts 0 where they have none)
+      (select coalesce(jsonb_agg(jsonb_build_object('lesson', l.key, 'title', l.title, 'attempts', 0) || coalesce(public.course_quiz_result(e.user_id, l.ref), '{}'::jsonb) order by l.position), '[]'::jsonb)
+        from public.course_lessons l where l.course = e.course and l.kind = 'form') as quizzes
     from public.enrollments e left join public.profiles p on p.id = e.user_id where e.course = p_course
   )
   select jsonb_build_object(
@@ -432,7 +471,7 @@ begin
     'total', (select count(*) from public.course_lessons l where l.course = p_course and l.required),
     'stuck', (select jsonb_build_object('lesson', at, 'title', (select title from public.course_lessons where course = p_course and key = at), 'people', n)
                 from (select at, count(*) as n from r where completed_at is null and at is not null group by at order by count(*) desc limit 1) s),
-    'people', coalesce((select jsonb_agg(jsonb_build_object('name', name, 'email', email, 'cohort', cohort, 'started_at', started_at, 'completed_at', completed_at, 'done', done, 'at', at) order by started_at desc) from r), '[]'::jsonb))
+    'people', coalesce((select jsonb_agg(jsonb_build_object('name', name, 'email', email, 'cohort', cohort, 'started_at', started_at, 'completed_at', completed_at, 'done', done, 'at', at, 'quizzes', quizzes) order by started_at desc) from r), '[]'::jsonb))
   into out;
   return out;
 end;
@@ -503,6 +542,11 @@ REVOKE ALL ON FUNCTION "public"."course_enroll_for"("uuid") FROM "anon", "authen
 GRANT ALL ON FUNCTION "public"."course_enroll_for"("uuid") TO "service_role";
 REVOKE ALL ON FUNCTION "public"."course_enroll_on_access"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."course_enroll_on_access"() FROM "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."course_form_finished"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."course_form_finished"() FROM "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."course_quiz_result"("uuid", "text") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."course_quiz_result"("uuid", "text") FROM "anon", "authenticated";
+GRANT ALL ON FUNCTION "public"."course_quiz_result"("uuid", "text") TO "service_role";
 REVOKE ALL ON FUNCTION "public"."course_check_complete"("uuid") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."course_check_complete"("uuid") FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."course_check_complete"("uuid") TO "service_role";

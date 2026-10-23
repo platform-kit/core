@@ -38,7 +38,7 @@ Each lesson is one of five kinds:
 - **Its own text**, with a video or audio track and files to download.
 - **A book chapter**, which opens the book at that chapter.
 - **An article**.
-- **A form or quiz**. It counts as finished when the reader has answered it, and passed it where it is scored.
+- **A form or quiz**. It runs inside the lesson. The lesson is finished the moment the reader completes it, and passes it where it is scored; nobody marks it by hand. The reader then sees their score: passed, with the way on to the next lesson, or the pass mark and **Try again**. A quiz already passed shows their best score and can be taken again without undoing the lesson. The curriculum shows each reader their best score, and the enrollments screen shows administrators every person's best score and how many attempts it took.
 - **A session to book**. It counts as finished once the reader has booked one.
 
 A lesson is required to finish the course unless it is marked optional.

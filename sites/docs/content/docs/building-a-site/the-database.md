@@ -25,7 +25,7 @@ sources:
     packages/kit/supabase/schemas/20-instrument.sql,
     packages/kit/supabase/schemas/90-spaces.sql,
   ]
-reviewed: 2026-10-22
+reviewed: 2026-10-23
 ---
 
 The platform runs on Supabase — Postgres with auth, storage and edge functions. Locally a copy runs in Docker (`supabase start`, which `platformkit dev` does for you). The kit ships the whole data layer; a site adds to it.
