@@ -201,8 +201,11 @@ begin
   select * into c from public.courses where slug = p_course and published;
   if c.slug is null then return null; end if;
   if uid is not null then select * into e from public.enrollments where user_id = uid and course = p_course; end if;
+  -- `has` is what kinds of media a lesson carries (video, audio, file) so the outline can mark it; never their addresses
   select coalesce(jsonb_agg(jsonb_build_object('key', f.key, 'section', f.section, 'title', f.title, 'kind', f.kind, 'ref', f.ref,
-      'required', f.required, 'open', f.open, 'opens_at', f.opens_at, 'why', f.why, 'done', f.done) order by f.position), '[]'::jsonb)
+      'required', f.required, 'open', f.open, 'opens_at', f.opens_at, 'why', f.why, 'done', f.done,
+      'has', coalesce((select jsonb_agg(distinct m ->> 'type') from public.course_lessons l, jsonb_array_elements(l.media) m
+                        where l.course = p_course and l.key = f.key and m ->> 'type' is not null), '[]'::jsonb)) order by f.position), '[]'::jsonb)
     into lessons from public.course_lessons_for(p_course, uid) f;
   if e.id is not null then select id into cert from public.certificates where enrollment = e.id; end if;
   return jsonb_build_object(
@@ -219,7 +222,9 @@ begin
 end;
 $$;
 
--- every published course, with the caller's progress where they are in one
+-- THE LIBRARY: every published course, with the caller's place in it where they are in one — what getting in takes,
+-- the next lesson open to them (its title only, from course_lessons_for, so nothing closed is told), when they were
+-- last in it and their certificate. The page orders and groups it; this only answers.
 CREATE OR REPLACE FUNCTION "public"."courses_list"() RETURNS "jsonb"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -227,9 +232,22 @@ CREATE OR REPLACE FUNCTION "public"."courses_list"() RETURNS "jsonb"
   select coalesce(jsonb_agg(jsonb_build_object(
       'slug', c.slug, 'title', c.title, 'about', c.about, 'image', c.image,
       'lessons', (select count(*) from public.course_lessons l where l.course = c.slug),
-      'enrolled', e.id is not null, 'completed_at', e.completed_at,
+      'sections', (select count(distinct coalesce(l.section, '')) from public.course_lessons l where l.course = c.slug),
+      'free', coalesce((c.access ->> 'free')::boolean, false),
+      'tiers', coalesce(c.access -> 'tiers', '[]'::jsonb), 'skus', coalesce(c.access -> 'skus', '[]'::jsonb),
+      'access', public.course_has_access(auth.uid(), c.slug),
+      'release', c.release, 'drip', c.drip, 'every_days', c.every_days, 'certificate', c.certificate,
+      'enrolled', e.id is not null, 'started_at', e.started_at, 'completed_at', e.completed_at,
+      'last_at', case when e.id is null then null else greatest(e.started_at,
+        (select max(p.completed_at) from public.lesson_progress p where p.enrollment = e.id)) end,
       'done', (select count(*) from public.lesson_progress p join public.course_lessons l on l.course = c.slug and l.key = p.lesson and l.required where p.enrollment = e.id),
-      'total', (select count(*) from public.course_lessons l where l.course = c.slug and l.required)
+      'total', (select count(*) from public.course_lessons l where l.course = c.slug and l.required),
+      'next', case when e.id is null or e.completed_at is not null then null else
+        (select jsonb_build_object('key', f.key, 'title', f.title, 'section', f.section)
+           from public.course_lessons_for(c.slug, auth.uid()) f where f.open and not f.done order by f.position limit 1) end,
+      'next_opens_at', case when e.id is null or e.completed_at is not null then null else
+        (select min(f.opens_at) from public.course_lessons_for(c.slug, auth.uid()) f where not f.open and f.why = 'not-yet') end,
+      'certificate_id', (select x.id from public.certificates x where x.enrollment = e.id)
     ) order by c.position, c.title), '[]'::jsonb)
   from public.courses c
   left join public.enrollments e on e.course = c.slug and e.user_id = auth.uid()

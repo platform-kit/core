@@ -1,6 +1,6 @@
 ---
 title: Courses
-description: Lessons in order, released over time and tracked to completion, with certificates — on pages of their own or as a place of the community.
+description: Lessons in order, released over time and tracked to completion, with certificates — a library, a course overview and a lesson player, on pages of their own and in the community.
 order: 16.5
 sources:
   [
@@ -14,9 +14,14 @@ sources:
     packages/kit/theme/src/pages/CoursesPage.vue,
     packages/kit/theme/src/components/courses/CoursesView.vue,
     packages/kit/theme/src/components/courses/CoursesPlace.vue,
+    packages/kit/theme/src/components/courses/CourseLibrary.vue,
+    packages/kit/theme/src/components/courses/CourseOverview.vue,
+    packages/kit/theme/src/components/courses/CoursePlayer.vue,
+    packages/kit/theme/src/components/courses/CourseCover.vue,
+    packages/kit/theme/src/components/courses/course-ui.js,
+    packages/kit/src/lib/courses-paths.js,
     packages/kit/theme/src/components/admin/CourseEnrollments.vue,
     packages/kit/theme/src/components/spaces/panels/MemberCourses.vue,
-    packages/kit/theme/src/instrument/ui/results/CoursesTab.vue,
     packages/kit/theme/src/content/ui/courses.md,
     packages/kit/build/courses.test.mjs,
     packages/kit/build/courses-db.test.mjs,
@@ -72,23 +77,24 @@ Where the course gives one, finishing also issues a certificate. It has a public
 
 Readers get an email when a lesson opens, and one when they finish. A lesson email is sent once per lesson, and at most one a day goes to any one person; a course released all at once sends none. The designs are **course-lesson** and **course-complete** under admin → Emails.
 
+## What readers see
+
+- **The library**, at `/courses`. The course a reader was last in comes first, with its next lesson and a Continue button. Their other courses in progress follow, then the ones they finished with their certificates, then every other course with what getting in takes: free, a membership or a purchase. A guest sees the catalogue. A course with no picture gets a cover drawn from its title.
+- **A course's overview.** The reader's card shows their progress, the next lesson and the course's facts. Beside it is the curriculum: each section is a module that folds, says how much of it is done and when it opens, and marks each lesson as a video, audio, reading, chapter, article, form or session.
+- **The lesson player.** A bar of its own holds the way back to the course, the progress, the curriculum and previous and next. The curriculum stands beside the lesson, or opens as a drawer on a phone. **Complete and continue** finishes the lesson and opens the next one. Where the next one isn't open yet, the player says when it opens. On the last required lesson, it says the course is complete and offers the certificate.
+
 ## Where the courses live
 
-By default, courses have pages of their own at `/courses`. A site with a community can put them in it instead, the way Circle does:
+Courses always have pages of their own at `/courses`. Where the site has a community (the `spaces` and `network` modules), they are also a place in it, the way Circle has them and the way Events are both. A Courses row sits in the community's navigation, and the same library, overview and player appear at `<community>/courses`. Neither address forwards to the other. There is nothing to configure: `courses.where`, which once chose between the two, is refused by name.
 
-```js
-// platformkit.config.js
-courses: { where: 'community' },
-```
-
-They then appear as a place in the community's navigation, at `<community>/courses`, and `/courses` forwards there. The lessons, progress and certificates are the same either way. Putting courses in the community needs the `spaces` and `network` modules on.
+`/app/courses`, where the app area once listed a reader's courses, goes to the library. That holds even on a site whose own community place claims `/app`.
 
 ## In the admin
 
 - **Courses** is the course builder. Write what the course is about, choose who gets in and how it is released, add cohorts, and add lessons, dragging them into order. A lesson's address stays the same once people have started it.
 - **Enrollments** shows each course's people, how far each has got, how many finish, and the lesson where most of those who haven't finished have stopped. It lists names and email addresses, so it is for administrators only.
 
-A reader's courses also appear in their app area, and on the private half of their member card in the community.
+A reader's courses also appear on the private half of their member card in the community.
 
 ## The file
 

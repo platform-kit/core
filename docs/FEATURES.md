@@ -196,8 +196,10 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - An enrollment outlives a refund or a lapsed membership, and resumes where it stopped when access comes back.
 - Emails when a lesson opens (once per lesson, at most one a day to a person) and when somebody finishes.
 - An Enrollments screen for administrators: who is where, how many finish, and the lesson where most people stop.
-- A reader's courses in their app area and on their member card; a space can be filled by a course's people or one cohort.
-- On pages of their own at `/courses`, or as a place of the community, as in Circle (`courses.where`).
+- A library at `/courses`: the course a reader was last in leads, with its next lesson; then their courses in progress, the ones they finished with their certificates, and every other course with what getting in takes. A course without a picture gets a cover drawn from its title.
+- A course overview with the reader's progress and next step beside the curriculum, whose modules fold and each say how much is done and when it opens; every lesson is marked with its kind.
+- A lesson player with its own bar (the course, progress, previous and next), the curriculum beside the lesson or in a drawer on a phone, and Complete and continue; finishing the course says so and offers the certificate.
+- On pages of their own at `/courses` and, where the site has a community, as its Courses place too, as in Circle. `/app/courses` goes to the library. A reader's courses are also on their member card; a space can be filled by a course's people or one cohort.
 
 ### Wiki (`wiki`)
 

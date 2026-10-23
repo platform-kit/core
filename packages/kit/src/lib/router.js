@@ -81,6 +81,7 @@ export const CMS = DEV || CLOUD
    are never picked, a gate stops offering it, and the prerender leaves it out of the sitemap. */
 import site, { modules, places as SITE_PLACES } from '#site'
 import { forwardOf, socialSpacesHome } from './community/places.js'
+import { libraryOf } from './courses-paths.js'
 /* the one reading of a switch (lib/modules.js): it refuses a name no manifest declares, because
    `modules.stor !== false` is TRUE and would switch a module on rather than off */
 import { moduleOn, anyModuleOn } from './modules.js'
@@ -119,11 +120,12 @@ const CLAIMS = [
   ...(((site && site.coaching) || {}).where === 'spaces' ? [{ key: 'coaching', claims: [ROUTES.diagnostics + '/coaching'] }] : []),
   ...(SITE_PLACES || []),
 ]
-/* a course, a lesson, the list or a certificate, where the courses module is on */
-/* where the courses live (courses.where): their own pages, or a place of the community */
-export const COURSES_IN_COMMUNITY = moduleOn('courses') && ((site && site.courses) || {}).where === 'community'
-export const COURSES_BASE = COURSES_IN_COMMUNITY ? COMMUNITY_PATH + '/courses' : '/courses'
-export const coursesRoute = (p) => moduleOn('courses') && ((!COURSES_IN_COMMUNITY && (p === ROUTES.courses || p.startsWith(ROUTES.courses + '/'))) || p.startsWith(ROUTES.certificates + '/'))
+/* THE COURSES: their own pages at /courses always (the library, a course, a lesson, a certificate), and the same in the
+   community's Courses place at <community>/courses where the site has one (openspec: courses) */
+export const COURSES_PLACE_BASE = COMMUNITY_PATH + '/courses'
+export const coursesRoute = (p) => moduleOn('courses') && (p === ROUTES.courses || p.startsWith(ROUTES.courses + '/') || p.startsWith(ROUTES.certificates + '/'))
+/* the app area once carried the reader's courses; that address is the library now, ahead of any place claiming /app */
+const appCourses = (p) => (moduleOn('courses') ? libraryOf(p, ROUTES.diagnostics, ROUTES.courses) : null)
 const KNOWN = [ROUTES.home, ROUTES.diagnostics, ROUTES.admin]
   .concat(DOCS_ONLY ? [ROUTES.docs] : [ROUTES.content])
   .concat([ROUTES.hyperswitchCheckout, ROUTES.billing])
@@ -137,6 +139,9 @@ function normalise(pathname) {
   /* the community's old base forwards to the one the site names */
   if (ROUTES.feed !== '/feed' && (p === '/feed' || p.startsWith('/feed/'))) p = ROUTES.feed + p.slice(5)
   p = socialSpacesHome(p, site && site.community && site.community.layout, ROUTES.spaces, ROUTES.feed)
+  /* /app/courses is the library */
+  const library = appCourses(p)
+  if (library) return library
   /* an address a community place has claimed lives there now (community.places claims) */
   const moved = NETWORK_ON ? forwardOf(p, CLAIMS, ROUTES.feed) : null
   if (moved) p = moved
@@ -226,7 +231,7 @@ export function replace(path) {
 /* The results sheet's pages, by their structural key, as they appear in the
    address: /app/<slug>. These are addresses, not labels — the words a reader
    sees on the tabs live in content/app/results.md. */
-export const APP_PAGES = { sum: 'overview', pairs: 'personality', areas: 'results', words: 'blockages', books: 'recommendations', trophies: 'accomplishments', courses: 'courses', coaching: 'coaching', chat: 'chat' }
+export const APP_PAGES = { sum: 'overview', pairs: 'personality', areas: 'results', words: 'blockages', books: 'recommendations', trophies: 'accomplishments', coaching: 'coaching', chat: 'chat' }
 /* WHERE THE APP'S PAGES LIVE: /app, unless a community place has claimed it — then the place's own
    address, so the sheet, a round and its tabs read and write addresses there and the instrument
    needs to know nothing about it. A video call and a voice

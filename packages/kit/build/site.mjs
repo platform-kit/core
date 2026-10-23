@@ -185,7 +185,7 @@ export const communityOf = (c) => {
   const hide = Array.isArray(m.hide) ? m.hide.map(String) : []
   const odd = hide.filter((h) => !COMMUNITY_HIDE.includes(h))
   if (odd.length) throw new Error(`community.hide: ${odd.map((h) => '"' + h + '"').join(', ')} is not something a site can hide — the choices are ${COMMUNITY_HIDE.join(', ')}`)
-  return { layout: m.layout === 'social' ? 'social' : 'chat', forYou: m.forYou === true, hide: [...new Set(hide)], places: [...placesOf(m.places), ...kitPlacesOf(c)], path: pathOf(m.path),
+  return { layout: m.layout === 'social' ? 'social' : 'chat', forYou: m.forYou === true, hide: [...new Set(hide)], places: [...kitPlacesOf(c), ...placesOf(m.places)], path: pathOf(m.path),
     /* members choose which spaces reach their Home (Pin to Home) — off: every space they are in does */
     pinning: m.pinning === true,
     /* the places that carry an entry rule (community.access, places[].access): their keys alone — the
@@ -250,24 +250,22 @@ export function placesOf(list) {
   })
 }
 /*
- * WHERE THE COURSES LIVE (courses.where): on pages of their own at /courses (`standalone`, the default), or as a place
- * of the community (`community`), the way Circle puts a course beside the conversation. The same course, lessons and
- * progress either way; only the frame changes. In the community they are a place like any a site registers: a row
- * of its navigation, its pages at <community>/courses, and /courses forwarding there. Certificates keep their public
- * address in both. The community's places need its own address space, so this asks for the spaces and the network.
+ * WHERE THE COURSES LIVE (openspec: courses): on pages of their own at /courses, always, and — where the site has a
+ * community (the spaces and the network) — in it as well, as Events are: a Courses row of its navigation with the same
+ * library, course and player at <community>/courses, the way Circle puts a course beside the conversation. Nothing is
+ * forwarded either way; a certificate keeps its public address. There is nothing to choose, so `courses.where`, which
+ * once chose between the two, is refused by name rather than quietly ignored.
  */
 export const coursesOf = (c) => {
   const m = c.courses || {}
-  const where = m.where == null ? 'standalone' : String(m.where)
-  if (!['standalone', 'community'].includes(where)) throw new Error(`courses.where: "${where}" is standalone or community`)
+  if (m.where != null) throw new Error('courses.where: removed — courses have their own pages at /courses and, where the community is on, a Courses place in it as well; take the key out')
   const on = (k) => (c.modules || {})[k] !== false
-  if (where === 'community' && on('courses') && (!on('spaces') || !on('network'))) throw new Error('courses.where: community needs the spaces and network modules on — the community is where the place would be drawn')
-  return { where: on('courses') ? where : 'standalone' }
+  return { place: on('courses') && on('spaces') && on('network') }
 }
-/* the kit's own places in the community, after the site's: Courses, where a site puts them there */
+/* the kit's own places in the community, before the site's: Courses, where the community is there to hold it */
 function kitPlacesOf(c) {
-  if (coursesOf(c).where !== 'community') return []
-  return [{ key: 'courses', word: 'courses', icon: 'course', component: 'platformkit/theme/components/courses/CoursesPlace.vue', wide: true, shows: 'everyone', claims: ['/courses'] }]
+  if (!coursesOf(c).place) return []
+  return [{ key: 'courses', word: 'courses', icon: 'course', component: 'platformkit/theme/components/courses/CoursesPlace.vue', wide: true, shows: 'everyone', claims: [] }]
 }
 export const networkOf = (c) => {
   const n = c.network || {}

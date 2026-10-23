@@ -99,7 +99,8 @@ ok('the people of a set of posts, once each', eq(peopleIn([{ author_id: 'a' }, {
   const refuses = (list) => { try { placesOf(list); return false } catch (e) { return true } }
   const pl = placesOf([{ key: 'journal', word: 'journal', icon: 'pencil', component: './src/J.vue', claims: ['/app', '!/app/call'] }])
   ok('a registered place is read with its defaults', pl.length === 1 && pl[0].key === 'journal' && pl[0].shows === 'signed-in' && pl[0].wide === false && pl[0].claims.join() === '/app,!/app/call')
-  ok('no places unless the config registers some', communityOf({}).places.length === 0)
+  ok('no places of a site\'s own unless the config registers some', communityOf({ modules: { courses: false } }).places.length === 0)
+  ok('…the kit\'s Courses is the one place it brings, where courses are on', communityOf({}).places.map((p) => p.key).join() === 'courses')
   ok('a key the community already uses is refused', refuses([{ key: 'events', component: './x.vue' }]) && refuses([{ key: 'coaching', component: './x.vue' }]))
   ok('a place with no page is refused', refuses([{ key: 'journal' }]))
   ok('two places claiming one address are refused, and so is the kit’s own claim', refuses([{ key: 'a', component: './a.vue', claims: ['/x'] }, { key: 'b', component: './b.vue', claims: ['/x'] }]) && refuses([{ key: 'a', component: './a.vue', claims: ['/app/coaching'] }]))

@@ -21,13 +21,10 @@ import { tabs as SITE_TABS } from '#site/app'
 import { ug } from '../strings.js'
 import CoachingPage from './CoachingPage.vue'
 import TrophiesPage from './TrophiesPage.vue'
-const CoursesTab = defineAsyncComponent(() => import('./CoursesTab.vue'))
 const ChatPage = defineAsyncComponent(() => import('./ChatPage.vue'))
 
 export const KIT_TABS = [
   { key: 'trophies', module: 'reader', component: TrophiesPage },
-  /* the courses the reader is taking, each with how far they are (the courses module) */
-  { key: 'courses', module: 'courses', component: CoursesTab },
   /* COACHING LIVES IN ONE PLACE (coaching.where; openspec: coaching-in-one-place). Where it is the
      community, a member's conversation and sessions are their coaching place there, and a tab here
      onto either would be a second door onto one thing. Somebody who gives sessions keeps Coaching here

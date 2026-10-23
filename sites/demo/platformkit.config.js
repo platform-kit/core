@@ -35,9 +35,6 @@ export default {
      social-network frame; the chat layout remains available as the default. */
   /* For You: Explore as a grid of the photo and video posts — the demo shows every feature */
   community: { layout: 'social', forYou: true },
-  /* THE COURSES IN THE COMMUNITY, beside the spaces and the feed, as Circle has them: a place of its navigation at
-     /feed/courses, and /courses forwarding there. A site with no community leaves this out and has /courses. */
-  courses: { where: 'community' },
   /* NO PALETTE OF ITS OWN: the demo wears the theme's default, because showing what the kit looks
      like out of the box is the whole job of a showcase. */
   /* The header: the theme's links and an About page of the site's own. A module having a page

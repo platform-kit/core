@@ -37,7 +37,7 @@ every: 2
 inOrder: true
 certificate: true
 lessons:
-  - { key: a, title: Lesson A }
+  - { key: a, title: Lesson A, media: { type: video, src: /courses-db/a.mp4 } }
   - { key: b, title: Lesson B }
   - { key: c, title: Lesson C, kind: form, ref: courses-db-form-${STAMP} }
   - { key: d, title: Lesson D, kind: session, ref: courses-db-type-${STAMP}, required: false }`, '## a\n\nThe words of A.\n\n## b\n\nThe words of B.\n')),
@@ -58,6 +58,7 @@ try {
   /* who gets in, and the outline anybody may read */
   const guest = await call(anon, 'course_state', { p_course: FREE })
   ok('a guest reads the outline, titles only', guest && guest.lessons.length === 4 && guest.lessons.every((l) => !('body' in l)) && guest.access === false)
+  ok('…with what each lesson carries, and never where it is', JSON.stringify(guest.lessons[0].has) === '["video"]' && !JSON.stringify(guest.lessons).includes('a.mp4'), guest.lessons[0])
   ok('…and is told to sign in', guest.lessons[0].why === 'sign-in')
   const closedForGuest = await call(anon, 'course_lesson', { p_course: FREE, p_lesson: 'a' })
   ok('a guest is sent no lesson text', closedForGuest.open === false && !('body' in closedForGuest))
@@ -115,6 +116,14 @@ try {
   await buy()
   const back = await call(buyer, 'course_state', { p_course: SOLD })
   ok('bought again: the same enrolment reopens, two lessons still done', back.access === true && back.done === 2 && back.lessons[2].open === true, back)
+  /* the library: where the reader is in each course, what is next, and what getting in takes */
+  const shelf = await call(buyer, 'courses_list')
+  const sold = shelf.find((c) => c.slug === SOLD), free = shelf.find((c) => c.slug === FREE)
+  ok('the library names the next open lesson of a course in progress', sold && sold.enrolled && sold.next && sold.next.key === 'three' && sold.done === 2 && !!sold.last_at, sold)
+  ok('…and, for a course they are not in, what getting in takes and no next lesson', free && !free.enrolled && free.free === true && free.next === null && free.sections === 1, free)
+  const finished = (await call(member, 'courses_list')).find((c) => c.slug === FREE)
+  ok('a finished course carries its certificate and nothing next', finished && !!finished.completed_at && !!finished.certificate_id && finished.next === null, finished)
+  ok('a guest has the catalogue, in nothing', (await call(anon, 'courses_list')).every((c) => !c.enrolled && c.access === false && c.next === null))
   ok('a course nobody gave them is refused, not enrolled', (await call(other, 'course_enroll', { p_course: SOLD })).error === 'no-access')
 
   /* the emails owed: a drip lesson that opened after somebody started, once, and a course finished, once */

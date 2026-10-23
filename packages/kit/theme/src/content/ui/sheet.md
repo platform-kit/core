@@ -15,11 +15,6 @@ card: Your Accomplishments
 label: {work}
 card: Work with {a-provider}
 
-### courses
-
-label: Courses
-card: Your courses
-
 ### chat
 
 label: Chat

@@ -1,8 +1,7 @@
 <!--
-  COURSES ON PAGES OF THEIR OWN (openspec: courses): /courses, a course, a lesson — CoursesView, framed by the site —
-  and a certificate at /certificates/<id>, a public address anyone given it can check. Where a site puts its courses
-  in the community (courses.where: community) the course addresses forward there (CoursesPlace) and only the
-  certificate is drawn here.
+  COURSES ON PAGES OF THEIR OWN (openspec: courses): /courses the library, a course's overview and the lesson player —
+  CoursesView, framed by the site — and a certificate at /certificates/<id>, a public address anyone given it can check.
+  The community's Courses place (CoursesPlace) draws the same, in its own frame.
 -->
 <template>
   <SiteLayout>

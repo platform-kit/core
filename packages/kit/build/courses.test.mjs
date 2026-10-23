@@ -11,6 +11,8 @@ import { gatesOf } from '../src/lib/member-panels.js'
 import { MODULES } from './modules/kit.mjs'
 import { coursesOf, communityOf, publicSite } from './site.mjs'
 import { forwardOf } from '../src/lib/community/places.js'
+import { libraryOf } from '../src/lib/courses-paths.js'
+import fs from 'node:fs'
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
@@ -106,24 +108,26 @@ const mod = MODULES.find((m) => m.key === 'courses')
 ok('courses is a module with no static shape', !!mod && mod.static === false && mod.git === true && mod.cloud === true)
 ok('…owning its schema, its push, its function, its routes and its sweep', mod && mod.owns.schema.includes('46-courses.sql') && mod.owns.steps.includes('courses-push') && mod.owns.functions.includes('course-notify') && mod.owns.routes.includes('/courses') && mod.owns.cron.some((c) => /run_course_notices/.test(c.command)))
 
-/* where the courses live: their own pages, or a place of the community */
+/* where the courses live: their own pages always, and a place of the community wherever it has one */
 {
-  const plain = { name: 'x', modules: {} }
-  ok('by default the courses have pages of their own', coursesOf(plain).where === 'standalone' && !communityOf(plain).places.some((p) => p.key === 'courses'))
-  const social = { name: 'x', modules: {}, courses: { where: 'community' }, community: { layout: 'social' } }
-  const place = communityOf(social).places.find((p) => p.key === 'courses')
-  ok('in the community they are one of its places, as a site\'s own would be', !!place && place.claims.includes('/courses') && place.wide && place.shows === 'everyone')
+  const plain = { name: 'x', modules: { network: false } }
+  ok('without a community they have pages of their own and no place', coursesOf(plain).place === false && !communityOf(plain).places.some((p) => p.key === 'courses'))
+  const social = { name: 'x', modules: {}, community: { layout: 'social', places: [{ key: 'diagnostics', word: 'diagnostics', component: './x.vue', claims: ['/app'] }] } }
+  const places = communityOf(social).places, place = places.find((p) => p.key === 'courses')
+  ok('with a community, Courses is one of its places, before the site\'s own', !!place && places[0] === place && place.wide && place.shows === 'everyone' && place.icon === 'course')
+  ok('…claiming nothing, so /courses stays the courses\' own pages', place && place.claims.length === 0 && forwardOf('/courses/writing-plainly', places, '/feed') === null)
   ok('…its page named by package, so no path of the build machine reaches the browser', place && place.component === 'platformkit/theme/components/courses/CoursesPlace.vue' && !JSON.stringify(publicSite({ ...social, looks: {} })).includes(process.cwd()))
-  ok('…and /courses and everything under it forward there', forwardOf('/courses/writing-plainly/welcome', [place], '/feed') === '/feed/courses/writing-plainly/welcome')
   let refused = ''
-  try { coursesOf({ modules: { network: false }, courses: { where: 'community' } }) } catch (e) { refused = e.message }
-  ok('the community needs the spaces and the network, and says so', /needs the spaces and network modules/.test(refused), refused)
-  try { coursesOf({ modules: {}, courses: { where: 'everywhere' } }); refused = '' } catch (e) { refused = e.message }
-  ok('a place that is neither is refused', /standalone or community/.test(refused))
-  ok('with the module off they are nowhere', coursesOf({ modules: { courses: false }, courses: { where: 'community' } }).where === 'standalone' && !communityOf({ modules: { courses: false }, courses: { where: 'community' } }).places.length)
+  try { coursesOf({ modules: {}, courses: { where: 'community' } }) } catch (e) { refused = e.message }
+  ok('courses.where is refused by name, saying what replaced it', /courses\.where: removed/.test(refused) && /Courses place/.test(refused), refused)
+  ok('with the module off there is no place', !communityOf({ modules: { courses: false }, community: {} }).places.length)
   let taken = ''
   try { communityOf({ modules: {}, community: { places: [{ key: 'courses', word: 'x', component: './x.vue' }] } }) } catch (e) { taken = e.message }
   ok('a site cannot register a place of its own called courses', /already has/.test(taken), taken)
+  /* the app area once held the reader's courses: that address is the library, ahead of a place claiming /app */
+  ok('/app/courses is the library', libraryOf('/app/courses') === '/courses' && libraryOf('/app/courses/writing-plainly') === '/courses/writing-plainly')
+  ok('…and nothing else in the app area moves', libraryOf('/app/coursework') === null && libraryOf('/app') === null && libraryOf('/app/results') === null)
+  ok('…a rule the router asks before any place\'s claim', (() => { const r = fs.readFileSync(new URL('../src/lib/router.js', import.meta.url), 'utf8'); return r.indexOf('appCourses(p)') > 0 && r.indexOf('appCourses(p)') < r.indexOf('forwardOf(p, CLAIMS') })())
 }
 
 console.log(fail ? `courses: ${fail} failed, ${pass} passed` : `courses: all ${pass} checks passed`)

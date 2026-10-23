@@ -12,14 +12,28 @@ empty-title: No courses yet
 empty-body: When a course opens it is listed here, with what it covers and how to start it.
 empty-staff: Write a course in the admin
 lessons: {n} lessons
+lesson: 1 lesson
+modules: {n} modules
+module: 1 module
 progress: {done} of {total} lessons
+percent: {n}% complete
 finished: Finished
-
-### mine
-
-empty-title: You haven't started a course yet
-empty-body: The courses you start are listed here, with how far you are in each.
-browse: See the courses
+continue-kicker: Continue where you left off
+continue: Continue
+start: Start
+overview: Course overview
+next: Next: {title}
+next-opens: Your next lesson opens {date}
+in-progress: In progress
+finished-title: Finished
+more: More courses
+all: All courses
+certificate: Certificate
+access-free: Free
+access-free-sign-in: Free with an account
+access-members: Included with membership
+access-yours: Included in your membership
+access-buy: Buy the course
 
 ### course
 
@@ -45,6 +59,19 @@ progress-required: {done} of {total} required lessons
 complete: Course complete
 certificate: Your certificate
 outline: What's in it
+curriculum: Curriculum
+about: About this course
+back: All courses
+module-n: Module {n}
+module-done: {done} of {total} done
+module-lessons: {n} lessons
+module-lesson: 1 lesson
+module-opens: Opens {date}
+module-complete: Complete
+expand: Expand all
+collapse: Collapse all
+percent: {n}%
+complete-line: You finished this course
 sign-in: Sign in to start
 buy: Get the course
 member: See the memberships
@@ -54,7 +81,28 @@ missing: There is no course at this address.
 ### lesson
 
 of: Lesson {n} of {total}
+module-of: Module {n}
 steps: Lessons
+show-lessons: Show the lessons
+hide-lessons: Hide the lessons
+close: Close
+complete-continue: Complete and continue
+complete-finish: Complete the course
+completed: Completed
+next-lesson: Next lesson
+lesson-done: Lesson complete
+next-opens: The next lesson opens {date}
+course-done-title: Course complete
+course-done-body: You finished {course}. Every required lesson is done.
+see-certificate: See your certificate
+chapter-n: Chapter {n}
+read-chapter: Read the chapter
+read-article: Read the article
+answer-form: Answer it
+book-session: Book a session
+kind-text: Reading
+kind-video: Video
+kind-audio: Audio
 mark: Mark complete
 read: I've read it
 answered: I've answered it
