@@ -35,7 +35,7 @@ A course is sections and lessons in order, which a reader works through and fini
 
 Each lesson is one of five kinds:
 
-- **Its own text**, with a video or audio track and files to download.
+- **Its own text**, with a video or audio track and files to download. The text can mark the lines a student must grasp the way the e-book does, `==You choose, and God does the work.=={sun}`: a wavy underline in sun, leaf, sky, ocean or ember (sun when no colour is given), with no background.
 - **A book chapter**, which opens the book at that chapter.
 - **An article**.
 - **A form or quiz**. It runs inside the lesson. The lesson is finished the moment the reader completes it, and passes it where it is scored; nobody marks it by hand. The reader then sees their score: passed, with the way on to the next lesson, or the pass mark and **Try again**. A quiz already passed shows their best score and can be taken again without undoing the lesson. The curriculum shows each reader their best score, and the enrollments screen shows administrators every person's best score and how many attempts it took.

@@ -5,21 +5,25 @@
  * from the file it claims to show.
  */
 import { computed } from 'vue'
-import { marked } from 'marked'
+import { marked, Marked } from 'marked'
+import { sysmark } from './content/marks.js'
 
 const props = defineProps({
   /* raw markdown (about pages, the purpose doc) — parsed here with marked */
   source: { type: String, default: '' },
   /* pre-rendered HTML (Velite documents) — used as-is */
   html: { type: String, default: '' },
+  /* the house marks, ==text=={colour}, as the e-book draws them (a course lesson's key ideas) */
+  marks: { type: Boolean, default: false },
 })
+const withMarks = new Marked(sysmark)
 
 /* An editor's markdown formatter keeps splitting hard-wrapped list items with a
    blank line before the indented continuation, which marked then renders as a
    broken list. Rejoin that exact shape before parsing, so the page survives a
    re-mangled save. */
 const rendered = computed(() => props.html
-  || marked.parse(props.source.replace(/\n[ \t]*\n(?= {1,3}\S)/g, '\n')))
+  || (props.marks ? withMarks : marked).parse(props.source.replace(/\n[ \t]*\n(?= {1,3}\S)/g, '\n')))
 </script>
 
 <template>

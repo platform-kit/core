@@ -12,7 +12,7 @@ sources:
     packages/kit/src/lib/records.js,
     packages/kit/theme/src/pages/DiagnosticsPage.vue,
   ]
-reviewed: 2026-10-22
+reviewed: 2026-10-23
 ---
 
 For anyone helping a reader, or writing the words a reader sees — this is what the reading side of a site does.

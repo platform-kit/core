@@ -3,6 +3,7 @@ import { ref, shallowRef, computed, watch, onMounted, onBeforeUnmount, nextTick,
 import CommentThread from './CommentThread.vue'
 import { commentSubject } from 'platformkit/lib/comments.js'
 import { marked } from 'marked'
+import { sysmark, MARK_COLORS as SUG_COLORS } from './marks.js'
 import { loadDoc, bookShelf, bookCard, coverTint, us } from 'platformkit/lib/content.js'
 import Book3D from '../Book3D.vue'
 import { inject } from 'vue'
@@ -27,29 +28,8 @@ const PROG = us('library').progress.label
 const TR = us('library').trophy.tier
 const TC = us('library').trophy.cover || {}
 
-/* System-authored (baked-in) marks: `==text==` in the book markdown becomes a
- * suggestion — a wavy coloured underline, deliberately NOT a background, so it
- * reads as "this line is worth noticing" without pre-empting the reader's own
- * highlighting. An optional colour tag follows the close: `==text=={ocean}`
- * (sun · leaf · sky · ocean · ember), default sun. It carries no `bk-hl` class,
- * so the highlight menu never treats it as one of the reader's own. */
-const SUG_COLORS = ['sun', 'leaf', 'sky', 'ocean', 'ember']
-marked.use({
-  extensions: [{
-    name: 'sysmark',
-    level: 'inline',
-    start(src) { const i = src.indexOf('=='); return i < 0 ? undefined : i },
-    tokenizer(src) {
-      const m = /^==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/.exec(src)
-      if (!m) return
-      const color = SUG_COLORS.includes(m[2]) ? m[2] : 'sun'
-      return { type: 'sysmark', raw: m[0], color, tokens: this.lexer.inlineTokens(m[1]) }
-    },
-    renderer(token) {
-      return `<mark class="sys-mark sug-${token.color}">${this.parser.parseInline(token.tokens)}</mark>`
-    },
-  }],
-})
+/* the house marks (marks.js): the reader registers them on its markdown */
+marked.use(sysmark)
 
 /* The same five colours as hex, so the element can be signalled outside the
    reader body (the cover-page teaser colours its quotation mark from these). */
@@ -1168,20 +1148,7 @@ onBeforeUnmount(() => {
 .rd-body :deep(mark.hl-sky) { background: var(--hl-sky) }
 .rd-body :deep(mark.hl-ocean) { background: var(--hl-ocean) }
 .rd-body :deep(mark.hl-ember) { background: var(--hl-ember) }
-/* system-suggested marks: a gentle long-wavelength coloured squiggle underneath
-   the words (a repeating SVG wave, not CSS `wavy`, so we control the wavelength),
-   with no background and no click behaviour — a hint, not a highlight. The wave
-   repeats per line fragment, so it survives wrapping. */
-.rd-body :deep(mark.sys-mark) {
-  background-color: transparent; background-image: var(--sug-wave);
-  background-repeat: repeat-x; background-position: left 100%; background-size: 20px 5px;
-  color: inherit; text-decoration: none; padding-bottom: 3px;
-}
-.rd-body :deep(mark.sug-sun) { --sug-wave: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='20'%20height='5'%3E%3Cpath%20d='M0%203%20Q5%200.7%2010%203%20T20%203'%20fill='none'%20stroke='%23E1A200'%20stroke-width='1.6'%20stroke-linecap='round'/%3E%3C/svg%3E") }
-.rd-body :deep(mark.sug-leaf) { --sug-wave: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='20'%20height='5'%3E%3Cpath%20d='M0%203%20Q5%200.7%2010%203%20T20%203'%20fill='none'%20stroke='%234CA646'%20stroke-width='1.6'%20stroke-linecap='round'/%3E%3C/svg%3E") }
-.rd-body :deep(mark.sug-sky) { --sug-wave: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='20'%20height='5'%3E%3Cpath%20d='M0%203%20Q5%200.7%2010%203%20T20%203'%20fill='none'%20stroke='%23EFAE7A'%20stroke-width='1.6'%20stroke-linecap='round'/%3E%3C/svg%3E") }
-.rd-body :deep(mark.sug-ocean) { --sug-wave: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='20'%20height='5'%3E%3Cpath%20d='M0%203%20Q5%200.7%2010%203%20T20%203'%20fill='none'%20stroke='%231785A0'%20stroke-width='1.6'%20stroke-linecap='round'/%3E%3C/svg%3E") }
-.rd-body :deep(mark.sug-ember) { --sug-wave: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='20'%20height='5'%3E%3Cpath%20d='M0%203%20Q5%200.7%2010%203%20T20%203'%20fill='none'%20stroke='%23DD802F'%20stroke-width='1.6'%20stroke-linecap='round'/%3E%3C/svg%3E") }
+/* the house marks' wave is marks.css */
 .rd-toolbar { position: absolute; transform: translateX(-50%); display: flex; gap: 7px;
   align-items: center; background: var(--pgink); border-radius: 999px; padding: 8px 12px;
   box-shadow: 0 8px 22px -8px #00000066; z-index: 30 }

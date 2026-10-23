@@ -70,7 +70,7 @@
             <p class="crs-kicker">{{ here && here.section ? here.section + ' · ' : '' }}{{ fill(S.of, { n: hereAt + 1, total: lessons.length }) }}</p>
             <h1 class="crs-ptitle">{{ lesson.title }}</h1>
             <MediaBlock v-if="tracks.length" :media="tracks" class="crs-media" />
-            <div v-if="lesson.body" class="crs-prose"><MarkdownDoc :source="lesson.body" /></div>
+            <div v-if="lesson.body" class="crs-prose"><MarkdownDoc :source="lesson.body" marks /></div>
 
             <!-- a lesson that is something the site already has: what it is, and the way to it -->
             <a v-if="lesson.kind === 'chapter'" class="crs-pointer" :href="pointerHref(lesson)">

@@ -116,7 +116,7 @@
 
           <div v-if="rest" class="crs-ov-about">
             <h2>{{ K.about }}</h2>
-            <div class="crs-prose"><MarkdownDoc :source="rest" /></div>
+            <div class="crs-prose"><MarkdownDoc :source="rest" marks /></div>
           </div>
         </div>
       </div>

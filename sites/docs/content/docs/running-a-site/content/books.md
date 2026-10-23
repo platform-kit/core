@@ -46,7 +46,7 @@ Locked chapters are not published. A visitor's copy of the book holds each locke
 
 ## Highlights — the editorial marks
 
-A book may carry marks baked into its text: a passage the editors think a reader should notice, drawn as a coloured wavy underline (a reader's own highlights are background washes, deliberately different). In the text a mark is `==the passage==`, optionally with a colour: `==the passage=={ocean}`.
+A book may carry marks baked into its text: a passage the editors think a reader should notice, drawn as a coloured wavy underline (a reader's own highlights are background washes, deliberately different). In the text a mark is `==the passage==`, optionally with a colour: `==the passage=={ocean}`. The same marks, in the same colours, mark a course lesson's key ideas ([Courses](/content/docs/running-a-site/content/courses)).
 
 The five colours are a code:
 
