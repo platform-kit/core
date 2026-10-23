@@ -4,10 +4,15 @@
  * kind of person and every configuration.
  *
  * The social layout's navigation has two sections. The first, with no heading: Home, Explore (only
- * where For You is on), Messages, Events, Notifications; then Saved, Drafts and a customer's own
- * tickets, each only while it holds something and the site has not hidden it; then Work, for whoever
- * answers a queue — one row whose count is the sum of the queues, unfolding to a row per queue. The
- * second is the spaces (drawn by the navigation from the spaces themselves).
+ * where For You is on), Events, Coaching, the Inbox, the site's places, Notifications; then Saved,
+ * Drafts and a customer's own tickets, each only while it holds something and the site has not hidden
+ * it. The second is the spaces (drawn by the navigation from the spaces themselves).
+ *
+ * THE INBOX is every kind of message somebody answers, in one place: their own Direct Messages first,
+ * then the queues they answer (clients, comments, support, tickets, the social accounts). It is one row
+ * whose count is the sum, unfolding to a row each. Somebody who answers no queue has only their Direct
+ * Messages, and a fold of one row would be a menu for a single page: for them the Inbox is one plain row
+ * that opens their Direct Messages, with no fold.
  *
  * Every place the chat layout offers is reachable from here or from a place here: REACH says where
  * each of the chat layout's places went, and the test refuses a chat place with no home.
@@ -41,6 +46,16 @@ export function socialPlaces(ctx = {}) {
   const hide = new Set(ctx.hide || [])
   const c = ctx.counts || {}
   const signed = !!ctx.signedIn
+  /* a place the reader may not enter keeps its row — the way to what it costs — with nothing counted */
+  const locked = new Set(ctx.locked || [])
+  const shutOf = (x) => (locked.has(x.word) || (x.place && locked.has(x.key)) ? { ...x, locked: true, count: 0 } : x)
+  /* the reader's own Direct Messages (word: messages, so community.access's Messages rule still locks it),
+     then the queues they answer, in the order James set */
+  const dm = shutOf({ key: 'dms', icon: 'dm', word: 'messages', count: n(c.dms) })
+  const queues = QUEUES.map((k) => (ctx.work || []).find((w) => w.key === k)).filter(Boolean).map((w) => ({ key: w.key, count: n(w.count) }))
+  const INBOX = queues.length
+    ? { key: 'inbox', icon: 'inbox', word: 'inbox', group: true, count: [dm, ...queues].reduce((s, r) => s + r.count, 0), rows: [dm, ...queues] }
+    : { ...dm, icon: 'inbox', word: 'inbox' }
   const first = [
     { key: ctx.network ? 'net' : 'index', icon: 'home', word: 'home' },
     ...(ctx.network && ctx.forYou ? [{ key: 'net-explore', icon: 'search', word: 'explore' }] : []),
@@ -49,8 +64,9 @@ export function socialPlaces(ctx = {}) {
     /* COACHING, a place of its own where coaching lives in the community: sessions are public to
        discover, while the coaching conversation and its count belong to the signed-in reader. */
     ...(ctx.coaching || (signed && n(c.coaching) > 0) ? [{ key: 'coaching', icon: 'armchair', word: 'coaching', count: n(c.coaching) }] : []),
-    ...(signed ? [{ key: 'dms', icon: 'dm', word: 'messages', count: n(c.dms) }] : []),
-    /* THE PLACES A SITE REGISTERED (community.places), after Messages and before Notifications, in the order given:
+    /* THE INBOX, where Messages stood: Direct Messages and the queues, one fold (INBOX, above) */
+    ...(signed ? [INBOX] : []),
+    /* THE PLACES A SITE REGISTERED (community.places), after the Inbox and before Notifications, in the order given:
        each with its word and icon, shown to whom its registration says, with the count it carries */
     ...(ctx.places || []).filter((x) => x.shows === 'everyone' || signed).map((x) => ({ key: x.key, icon: x.icon, word: x.word, count: n((c.places || {})[x.key]), place: true })),
     ...(signed ? [{ key: ctx.network ? 'net-notes' : 'mentions', icon: 'bell', word: 'notifications', count: ctx.network ? n(c.notes) : n(c.mentions) }] : []),
@@ -58,12 +74,7 @@ export function socialPlaces(ctx = {}) {
     ...(signed && n(c.drafts) > 0 && !hide.has('drafts') ? [{ key: 'drafts', icon: 'pencil', word: 'drafts', count: n(c.drafts) }] : []),
     ...(signed && n(c.tickets) > 0 && !hide.has('tickets') ? [{ key: 'my-tickets', icon: 'ticket', word: 'my-tickets', count: n(c.tickets) }] : []),
   ]
-  const rows = QUEUES.map((k) => (ctx.work || []).find((w) => w.key === k)).filter(Boolean).map((w) => ({ key: w.key, count: n(w.count) }))
-  const work = signed && rows.length ? { key: 'work', count: rows.reduce((s, r) => s + r.count, 0), rows } : null
-  /* a place the reader may not enter keeps its row — the way to what it costs — with nothing counted */
-  const locked = new Set(ctx.locked || [])
-  const shut = first.map((x) => (locked.has(x.word) || (x.place && locked.has(x.key)) ? { ...x, locked: true, count: 0 } : x))
-  return { first: shut, work }
+  return { first: first.map((x) => (x.group ? x : shutOf(x))) }
 }
 
 /*
@@ -107,8 +118,7 @@ export function chatPlaces(ctx = {}) {
   const c = ctx.counts || {}
   const navigation = chatNavigation(ctx)
   return [
-    ...navigation.first.map((place) => place.key),
-    ...(navigation.work ? navigation.work.rows.map((row) => row.key) : []),
+    ...navigation.first.flatMap((place) => (place.group ? place.rows.map((row) => row.key) : [place.key])),
     ...(n(c.unreads) > 0 ? ['unreads'] : []),
     ...(ctx.signedIn ? ['mentions', 'threads', 'saved', 'drafts'] : []),
     'discover',

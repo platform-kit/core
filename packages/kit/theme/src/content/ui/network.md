@@ -66,13 +66,13 @@ follow: Follow
 following: Following
 spaces-title: Your spaces
 spaces-none: Join a space and you can pin its feed here.
-messages: Messages
+messages: Direct Messages
 chat: Chat
 events: Events
 coming-up: Coming up
 aside-session: Your session
 aside-hosting: You are hosting
-work: Work
+inbox: Inbox
 more: More
 less: Less
 community: Community

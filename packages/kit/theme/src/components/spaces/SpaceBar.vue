@@ -95,7 +95,7 @@ const MINE = computed(() => [
   ...NAV.value.first,
   ...(props.unreads ? [{ key: 'unreads', icon: 'unread', word: 'unreads', count: props.unreads }] : []),
 ])
-const QUEUE_ICON = { support: 'inbox', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
+const QUEUE_ICON = { support: 'head', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
 const count = (n) => n > 99 ? '99+' : n || ''
 const wordOf = (m) => {
   if (m.key === 'index') return W.value.home
@@ -103,7 +103,7 @@ const wordOf = (m) => {
   if (m.place || ['saved', 'drafts', 'my-tickets', 'coaching', 'unreads'].includes(m.key)) return W.value[m.word] || m.word
   return S.value[m.word] || W.value[m.word] || m.word
 }
-const ALWAYS = ['index', 'net', 'net-explore', 'events', 'coaching', 'dms', 'net-notes', 'mentions']
+const ALWAYS = ['index', 'net', 'net-explore', 'events', 'coaching', 'dms', 'inbox', 'net-notes', 'mentions']
 const earned = (m) => ALWAYS.includes(m.key) || m.place || Number(m.count) > 0 || props.view === m.key
 const SHOWN = computed(() => MINE.value.filter(earned))
 const MORE = computed(() => [
@@ -114,12 +114,13 @@ const MORE = computed(() => [
   { key: 'threads', icon: 'thread', word: W.value.threads },
   ...(!MINE.value.some((m) => m.key === 'saved') ? [{ key: 'saved', icon: 'star', word: W.value.saved }] : []),
 ])
-const WORK = computed(() => NAV.value.work)
+/* THE INBOX (Direct Messages and the queues) unfolds by hand, or while one of its rows is open */
+const INBOX = computed(() => NAV.value.first.find((m) => m.group) || null)
 const readSet = (k) => { try { return JSON.parse(localStorage.getItem(k) || '[]') } catch { return [] } }
 const writeSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
-const workPinned = ref(readSet('pk.nav.work').length > 0)
-const workOpen = computed(() => workPinned.value || !!(WORK.value && WORK.value.rows.some((r) => r.key === props.view)))
-function toggleWork() { workPinned.value = !workOpen.value; writeSet('pk.nav.work', workPinned.value ? [1] : []) }
+const inboxPinned = ref(readSet('pk.nav.inbox').length > 0)
+const inboxOpen = computed(() => inboxPinned.value || !!(INBOX.value && INBOX.value.rows.some((r) => r.key === props.view)))
+function toggleInbox() { inboxPinned.value = !inboxOpen.value; writeSet('pk.nav.inbox', inboxPinned.value ? [1] : []) }
 const expanded = ref(false)
 /* a place somebody is actually looking at is never hidden behind More */
 const showMore = computed(() => expanded.value || MORE.value.some((m) => m.key === props.view))
@@ -152,30 +153,32 @@ const here = (s) => props.inSpace && s.id === props.openId
       <h3 class="sbar-title">{{ W['mine-title'] }}</h3>
       <ul class="sbar-list">
         <li v-for="m in SHOWN" :key="m.key">
-          <button type="button" class="sbar-row" :class="{ on: view === m.key }" @click="emit('view', m.key)">
+          <!-- THE INBOX: one row, one count; Direct Messages and the queues under it -->
+          <template v-if="m.group">
+            <button type="button" class="sbar-row sbar-work" :class="{ open: inboxOpen }" :aria-expanded="inboxOpen" aria-controls="sbar-inbox" @click="toggleInbox">
+              <SpaceIcon name="inbox" :size="15" /><span class="sbar-label">{{ S.inbox }}</span>
+              <span class="sbar-end">
+                <em v-if="m.count && !inboxOpen" class="sbar-badge">{{ count(m.count) }}</em>
+                <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 8 4 4 4-4" /></svg>
+              </span>
+            </button>
+            <div id="sbar-inbox" class="sbar-fold" :class="{ open: inboxOpen }">
+              <ul class="sbar-list sbar-fold-in" :inert="!inboxOpen || null">
+                <li v-for="row in m.rows" :key="row.key">
+                  <button type="button" class="sbar-row sbar-work-item" :class="{ on: view === row.key }" :aria-current="view === row.key ? 'page' : undefined" @click="emit('view', row.key)">
+                    <SpaceIcon :name="QUEUE_ICON[row.key] || 'dm'" :size="14" /><span class="sbar-label">{{ row.key === 'dms' ? S.messages : W[row.key] }}</span>
+                    <em v-if="row.count" class="sbar-badge">{{ count(row.count) }}</em>
+                    <span v-else-if="row.locked" class="sbar-lock" aria-hidden="true"><SpaceIcon name="lock" :size="14" /></span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </template>
+          <button v-else type="button" class="sbar-row" :class="{ on: view === m.key }" @click="emit('view', m.key)">
             <SpaceIcon :name="m.icon" :size="15" /><span class="sbar-label">{{ wordOf(m) }}</span>
             <em v-if="m.count" class="sbar-badge">{{ count(m.count) }}</em>
             <span v-else-if="m.locked" class="sbar-lock" aria-hidden="true"><SpaceIcon name="lock" :size="14" /></span>
           </button>
-        </li>
-        <li v-if="WORK">
-          <button type="button" class="sbar-row sbar-work" :class="{ open: workOpen }" :aria-expanded="workOpen" aria-controls="sbar-work" @click="toggleWork">
-            <SpaceIcon name="inbox" :size="15" /><span class="sbar-label">{{ S.work }}</span>
-            <span class="sbar-end">
-              <em v-if="WORK.count && !workOpen" class="sbar-badge">{{ count(WORK.count) }}</em>
-              <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 8 4 4 4-4" /></svg>
-            </span>
-          </button>
-          <div id="sbar-work" class="sbar-fold" :class="{ open: workOpen }">
-            <ul class="sbar-list sbar-fold-in" :inert="!workOpen || null">
-              <li v-for="row in WORK.rows" :key="row.key">
-                <button type="button" class="sbar-row sbar-work-item" :class="{ on: view === row.key }" :aria-current="view === row.key ? 'page' : undefined" @click="emit('view', row.key)">
-                  <SpaceIcon :name="QUEUE_ICON[row.key] || 'dm'" :size="14" /><span class="sbar-label">{{ W[row.key] }}</span>
-                  <em v-if="row.count" class="sbar-badge">{{ count(row.count) }}</em>
-                </button>
-              </li>
-            </ul>
-          </div>
         </li>
         <template v-if="showMore">
           <li v-for="m in MORE" :key="m.key">

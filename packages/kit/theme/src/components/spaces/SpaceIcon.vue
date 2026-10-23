@@ -34,8 +34,8 @@ const P = {
   ticket: 'M3.5 7.5a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v1.2a1.4 1.4 0 0 0 0 2.6v1.2a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-1.2a1.4 1.4 0 0 0 0-2.6zM10 7v6',
   head: 'M4 12V9a6 6 0 0 1 12 0v3M3 12h3v5H4a1 1 0 0 1-1-1zM17 12h-3v5h2a1 1 0 0 0 1-1z',
   /* coaching: the counsellor's armchair, Lucide's own drawing on its 24-unit grid (see GRID) */
-  /* a measure: where something stands on a scale (an assessment, its results), Lucide's gauge */
-  gauge: { grid: 24, d: 'm12 14 4-4M3.34 19a10 10 0 1 1 17.32 0' },
+  /* testing, diagnosing: a place that assesses where somebody stands (a quiz, its results), Lucide's conical flask */
+  flask: { grid: 24, d: 'M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2M6.453 15h11.094M8.5 2h7' },
   armchair: { grid: 24, d: 'M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3M3 16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0zM5 18v2M19 18v2' },
   course: 'M2.5 7.5 10 4l7.5 3.5L10 11 2.5 7.5zM5.5 9v3.6c0 1.1 2 2.4 4.5 2.4s4.5-1.3 4.5-2.4V9M17.5 7.5v4',
   more: 'M10 5.5h.01M10 10h.01M10 14.5h.01',

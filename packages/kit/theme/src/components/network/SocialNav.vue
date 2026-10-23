@@ -62,15 +62,16 @@ const places = computed(() => socialPlaces({
   locked: isSignedIn.value ? lockedPlaces({ home: !(props.network && net.access.known && !net.access.read), admitted: net.places }) : [],
 }))
 const wordOf = (m) => (m.place ? W.value[m.word] || m.word : m.word === 'saved' || m.word === 'drafts' || m.word === 'my-tickets' || m.word === 'coaching' ? W.value[m.word] : S.value[m.word])
-const QUEUE_ICON = { support: 'inbox', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
+const QUEUE_ICON = { support: 'head', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
 const isOn = (key) => props.view === key || (key === 'net' && props.view === 'net' && !props.channelId)
 
-/* WORK unfolds by hand, or while one of its queues is open; remembered per browser */
+/* THE INBOX unfolds by hand, or while one of its rows is open; remembered per browser */
 const readSet = (k) => { try { return JSON.parse(localStorage.getItem(k) || '[]') } catch { return [] } }
 const writeSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
-const workPinned = ref(readSet('pk.nav.work').length > 0)
-const workOpen = computed(() => workPinned.value || !!(places.value.work && places.value.work.rows.some((r) => r.key === props.view)))
-function toggleWork() { workPinned.value = !workOpen.value; writeSet('pk.nav.work', workPinned.value ? [1] : []) }
+const inbox = computed(() => places.value.first.find((m) => m.group) || null)
+const inboxPinned = ref(readSet('pk.nav.inbox').length > 0)
+const inboxOpen = computed(() => inboxPinned.value || !!(inbox.value && inbox.value.rows.some((r) => r.key === props.view)))
+function toggleInbox() { inboxPinned.value = !inboxOpen.value; writeSet('pk.nav.inbox', inboxPinned.value ? [1] : []) }
 
 /* THE SPACES fold unless the reader is in one or opened it themselves */
 const opened = ref(readSet('pk.nav.open'))
@@ -90,9 +91,9 @@ const PLACE_ICON = { events: 'calendar', people: 'people', keeping: 'shield' }
 const PLACE_WORD = { events: 'events', people: 'directory', keeping: 'keeping' }
 const placeOn = (id, key) => props.spaceId === id && props.view === (key === 'events' ? 'space-events' : key)
 /* a space of one room is lit while the reader is in it — never while one of the first section's places,
-   Work's queues, the index or Browse is open, though the page still remembers the space last read */
+   the Inbox's rows, the index or Browse is open, though the page still remembers the space last read */
 const spaceOnHere = (id) => props.spaceId === id && !foldsOf(id).length && !['index', 'discover'].includes(props.view)
-  && !places.value.first.some((m) => m.key === props.view) && !(places.value.work && places.value.work.rows.some((r) => r.key === props.view))
+  && !places.value.first.some((m) => m.key === props.view) && !(inbox.value && inbox.value.rows.some((r) => r.key === props.view))
 const rowOf = (id) => props.unread.find((r) => r.channel === id) || null
 const unreadIn = (id) => { const r = rowOf(id); return r ? unreadOf(r) : 0 }
 const spaceUnread = (id) => roomsOf(id).reduce((n, c) => n + unreadIn(c.id), 0)
@@ -115,33 +116,34 @@ watch(() => [props.network, isSignedIn.value], ([on, signed]) => { if (on && sig
       <!-- THE FIRST SECTION: no heading -->
       <ul class="sn-list">
         <li v-for="m in places.first" :key="m.key">
-          <button type="button" class="sn-i" :class="{ on: isOn(m.key) }" :aria-current="isOn(m.key) ? 'page' : null" @click="emit('view', m.key)">
+          <!-- THE INBOX: one row, one count; Direct Messages and the queues under it -->
+          <template v-if="m.group">
+            <button type="button" class="sn-i sn-work" :class="{ open: inboxOpen }" :aria-expanded="inboxOpen" @click="toggleInbox">
+              <span class="sn-ic"><SpaceIcon name="inbox" :size="20" /></span>
+              <span class="sn-w">{{ S.inbox }}</span>
+              <!-- the total says what is folded away; open, each row says its own -->
+              <em v-if="m.count && !inboxOpen" class="sn-c">{{ count(m.count) }}</em>
+              <svg class="sn-chev" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 8 4 4 4-4" /></svg>
+            </button>
+            <div class="sn-fold" :class="{ open: inboxOpen }">
+              <ul class="sn-list sn-fold-in sn-sub" :inert="!inboxOpen || null">
+                <li v-for="r in m.rows" :key="r.key">
+                  <button type="button" class="sn-i sn-small" :class="{ on: view === r.key }" :aria-current="view === r.key ? 'page' : null" @click="emit('view', r.key)">
+                    <span class="sn-ic"><SpaceIcon :name="QUEUE_ICON[r.key] || 'dm'" :size="17" /></span>
+                    <span class="sn-w">{{ r.key === 'dms' ? S.messages : W[r.key] }}</span>
+                    <em v-if="r.count" class="sn-c">{{ count(r.count) }}</em>
+                    <span v-else-if="r.locked" class="sn-lock" aria-hidden="true"><SpaceIcon name="lock" :size="14" /></span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </template>
+          <button v-else type="button" class="sn-i" :class="{ on: isOn(m.key) }" :aria-current="isOn(m.key) ? 'page' : null" @click="emit('view', m.key)">
             <span class="sn-ic"><SpaceIcon :name="m.icon" :size="20" /></span>
             <span class="sn-w">{{ wordOf(m) }}</span>
             <em v-if="m.count" class="sn-c">{{ count(m.count) }}</em>
             <span v-else-if="m.locked" class="sn-lock" aria-hidden="true"><SpaceIcon name="lock" :size="14" /></span>
           </button>
-        </li>
-        <!-- WORK: one row, one count; the queues under it -->
-        <li v-if="places.work">
-          <button type="button" class="sn-i sn-work" :class="{ open: workOpen }" :aria-expanded="workOpen" @click="toggleWork">
-            <span class="sn-ic"><SpaceIcon name="inbox" :size="20" /></span>
-            <span class="sn-w">{{ S.work }}</span>
-            <!-- the total says what is folded away; open, each row says its own -->
-            <em v-if="places.work.count && !workOpen" class="sn-c">{{ count(places.work.count) }}</em>
-            <svg class="sn-chev" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 8 4 4 4-4" /></svg>
-          </button>
-          <div class="sn-fold" :class="{ open: workOpen }">
-            <ul class="sn-list sn-fold-in sn-sub" :inert="!workOpen || null">
-              <li v-for="r in places.work.rows" :key="r.key">
-                <button type="button" class="sn-i sn-small" :class="{ on: view === r.key }" :aria-current="view === r.key ? 'page' : null" @click="emit('view', r.key)">
-                  <span class="sn-ic"><SpaceIcon :name="QUEUE_ICON[r.key] || 'dm'" :size="17" /></span>
-                  <span class="sn-w">{{ W[r.key] }}</span>
-                  <em v-if="r.count" class="sn-c">{{ count(r.count) }}</em>
-                </button>
-              </li>
-            </ul>
-          </div>
         </li>
       </ul>
 

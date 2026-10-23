@@ -1,6 +1,6 @@
 /* THE COMMUNITY'S NAVIGATION, AS ONE LIST (openspec: streamline-social-layout, community-layouts).
-   For every kind of person and every configuration: the social layout's two sections, Work as one
-   row whose count is the sum of the queues, Explore only where For You is on, Saved, Drafts and a
+   For every kind of person and every configuration: the social layout's two sections, the Inbox as
+   one row (Direct Messages and the queues) whose count is the sum, Explore only where For You is on, Saved, Drafts and a
    customer's tickets only while they hold something and only where the site has not hidden them,
    every place the chat layout offers reachable from the social layout, and the fold rule. Pure:
    no stack, no browser. */
@@ -10,7 +10,11 @@ import { communityAccessOf, accessOf } from './network-access.mjs'
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const keys = (p) => [...p.first.map((x) => x.key), ...(p.work ? p.work.rows.map((r) => r.key) : [])]
+const keys = (p) => p.first.flatMap((x) => (x.group ? x.rows.map((r) => r.key) : [x.key]))
+/* the Inbox where somebody answers a queue; their Direct Messages, inside it or standing alone */
+const inboxOf = (p) => p.first.find((x) => x.group) || null
+const dmsOf = (p) => { const i = inboxOf(p); return i ? i.rows.find((r) => r.key === 'dms') : p.first.find((x) => x.key === 'dms') }
+const slotOf = (p) => p.first.findIndex((x) => x.group || x.key === 'dms')
 
 const PEOPLE = {
   guest: { signedIn: false },
@@ -37,13 +41,21 @@ for (const [cname, cfg] of Object.entries(CONFIGS)) {
     ok(`${at}: no More, Profile or Post in the navigation`, !p.first.some((x) => ['more', 'profile', 'post', 'threads', 'unreads', 'discover'].includes(x.key)))
     ok(`${at}: Home first`, p.first[0].key === (cfg.network ? 'net' : 'index'))
     ok(`${at}: Explore only where For You is on`, p.first.some((x) => x.key === 'net-explore') === !!(cfg.forYou && cfg.network))
-    ok(`${at}: Messages and Notifications only for somebody signed in`, p.first.some((x) => x.key === 'dms') === !!person.signedIn && p.first.some((x) => x.word === 'notifications') === !!person.signedIn)
-    /* Work: one row, the sum, the queues in order, only for whoever answers one */
+    ok(`${at}: Direct Messages and Notifications only for somebody signed in`, !!dmsOf(p) === !!person.signedIn && p.first.some((x) => x.word === 'notifications') === !!person.signedIn)
+    /* the Inbox: one row, the sum, Direct Messages then the queues in order, for whoever answers one;
+       somebody who answers none has Direct Messages alone, never a fold of one row */
     const queues = (person.work || [])
-    ok(`${at}: Work only for whoever answers a queue`, !!p.work === (queues.length > 0))
-    if (p.work) {
-      ok(`${at}: Work's count is the sum of its queues`, p.work.count === queues.reduce((s, w) => s + w.count, 0), String(p.work.count))
-      ok(`${at}: Work unfolds to a row per queue, in order`, p.work.rows.map((r) => r.key).join() === QUEUES.filter((k) => queues.some((w) => w.key === k)).join())
+    const inbox = inboxOf(p)
+    ok(`${at}: an Inbox only for whoever answers a queue`, !!inbox === (!!person.signedIn && queues.length > 0))
+    if (inbox) {
+      ok(`${at}: the Inbox's count is Direct Messages and the queues together`, inbox.count === queues.reduce((s, w) => s + w.count, 0) + ((person.counts || {}).dms || 0), String(inbox.count))
+      ok(`${at}: the Inbox unfolds to Direct Messages, then a row per queue in order`, inbox.rows.map((r) => r.key).join() === ['dms', ...QUEUES.filter((k) => queues.some((w) => w.key === k))].join())
+      ok(`${at}: Direct Messages is not also a row of its own`, !p.first.some((x) => x.key === 'dms'))
+    }
+    /* with no queue there is nothing to unfold: the Inbox is one row, and it opens Direct Messages */
+    if (person.signedIn && !queues.length) {
+      const row = p.first.find((x) => x.key === 'dms')
+      ok(`${at}: with no queue, the Inbox is a plain row that opens Direct Messages`, !!row && !row.group && row.word === 'inbox' && row.icon === 'inbox')
     }
     /* Saved, Drafts, a customer's tickets: only while they hold something, never where hidden */
     const hidden = new Set(cfg.hide || [])
@@ -51,18 +63,18 @@ for (const [cname, cfg] of Object.entries(CONFIGS)) {
       const has = (person.counts || {})[count] > 0
       ok(`${at}: ${key} shown exactly while it holds something and is not hidden`, p.first.some((x) => x.key === key) === (has && !!person.signedIn && !hidden.has(word)))
     }
-    /* Messages counts the coach */
-    const dms = p.first.find((x) => x.key === 'dms')
-    if (dms) ok(`${at}: Messages counts direct messages`, dms.count === ((person.counts || {}).dms || 0))
+    /* Direct Messages counts direct messages */
+    const dms = dmsOf(p)
+    if (dms) ok(`${at}: Direct Messages counts direct messages`, dms.count === ((person.counts || {}).dms || 0))
     const co = p.first.find((x) => x.key === 'coaching')
     const hasCoachingPlace = !!ctx.coaching || (ctx.signedIn && ((person.counts || {}).coaching || 0) > 0)
     ok(`${at}: Coaching is a place whenever public sessions or a coaching conversation are available`,
       !!co === hasCoachingPlace && (!co || co.count === ((person.counts || {}).coaching || 0)))
-    if (co && dms) ok(`${at}: Coaching sits just before Messages`, p.first.indexOf(co) === p.first.indexOf(dms) - 1)
-    /* the order: Home (Explore), Events, Coaching, Messages, Notifications */
-    const order = p.first.map((x) => x.key).filter((k) => ['events', 'coaching', 'dms', 'net-notes', 'mentions'].includes(k))
+    if (co && dms) ok(`${at}: Coaching sits just before the Inbox`, p.first.indexOf(co) === slotOf(p) - 1)
+    /* the order: Home (Explore), Events, Coaching, the Inbox (or Direct Messages), Notifications */
+    const order = p.first.map((x) => (x.group ? 'dms' : x.key)).filter((k) => ['events', 'coaching', 'dms', 'net-notes', 'mentions'].includes(k))
     const want = ['events', 'coaching', 'dms', 'net-notes', 'mentions'].filter((k) => order.includes(k))
-    ok(`${at}: Home, Events, Coaching, Messages, Notifications in that order`, order.join() === want.join(), order.join())
+    ok(`${at}: Home, Events, Coaching, the Inbox, Notifications in that order`, order.join() === want.join(), order.join())
     /* every chat place is reachable here, or the site chose to hide it, or it is empty */
     const here = new Set(keys(p).concat(['spaces', 'browse-spaces']))
     const chat = chatNavigation(ctx)
@@ -72,8 +84,6 @@ for (const [cname, cfg] of Object.entries(CONFIGS)) {
       chat.first[0].key === (cfg.network ? 'net' : 'index')
         && chat.first[0].word === 'home'
         && !(cfg.network && chat.first.some((place) => place.key === 'index' || place.word === 'feed')))
-    ok(`${at}: chat Work has the same queues and aggregate badge as social Work`,
-      JSON.stringify(chat.work) === JSON.stringify(p.work))
     for (const k of chatPlaces(ctx)) {
       const word = k === 'my-tickets' ? 'tickets' : k
       const empty = ['saved', 'drafts', 'my-tickets'].includes(k) && !((person.counts || {})[k === 'my-tickets' ? 'tickets' : k] > 0)
@@ -85,8 +95,8 @@ for (const [cname, cfg] of Object.entries(CONFIGS)) {
   }
 }
 
-/* the order Work unfolds in, as James set it (2026-10-08) */
-ok('Work unfolds clients, comments, support chat, support tickets, social messages, social comments', QUEUES.join() === 'clients,comments,support,tickets,social-dms,social-comments', QUEUES.join())
+/* the order the Inbox's queues unfold in, as James set it (2026-10-08) */
+ok('the Inbox queues unfold clients, comments, support chat, support tickets, social messages, social comments', QUEUES.join() === 'clients,comments,support,tickets,social-dms,social-comments', QUEUES.join())
 
 /* following, hidden or not */
 ok('nothing is hidden by default: following shows', showsFollowing(undefined) && showsFollowing([]))
