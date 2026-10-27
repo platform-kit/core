@@ -34,16 +34,19 @@
         </div>
         <div v-for="m in modules" :key="m.n" class="crs-pmod">
           <p class="crs-pmod-head">
-            <span>{{ m.name || fill(K['module-n'], { n: m.n }) }}</span>
-            <span v-if="state.enrollment && m.total" class="crs-pmod-n" :class="{ 'is-done': m.finished }">{{ m.done }}/{{ m.total }}</span>
+            <span class="crs-pmod-name"><b class="crs-pmod-num" :class="{ 'is-done': m.finished }">{{ m.n }}</b>{{ m.name || fill(K['module-n'], { n: m.n }) }}</span>
+            <span v-if="state.enrollment && m.total" class="crs-pmod-n" :class="{ 'is-done': m.finished }"><CourseIcon v-if="m.finished" name="done" :size="13" />{{ m.done }}/{{ m.total }}</span>
           </p>
+          <!-- how far through the section: a bar under its name -->
+          <span v-if="state.enrollment && m.done > 0 && !m.finished" class="crs-pmod-bar" :class="{ 'is-done': m.finished }"><span :style="{ width: pct(m.done, m.total) + '%' }" /></span>
           <ol class="crs-plist">
             <li v-for="l in m.lessons" :key="l.key">
-              <a :href="courseHref + '/' + l.key" :class="{ 'is-here': l.key === lessonKey, 'is-closed': !l.open, 'is-done': l.done, 'has-score': l.quiz && l.quiz.total }" :aria-current="l.key === lessonKey ? 'page' : null">
-                <CourseIcon :name="l.done ? 'done' : l.open ? 'open' : 'closed'" :size="18" class="crs-mark" />
+              <a :href="courseHref + '/' + l.key" :class="['is-' + stateOf(l), { 'is-here': l.key === lessonKey, 'is-closed': !l.open, 'is-done': l.done, 'has-score': l.quiz && l.quiz.total }]" :aria-current="l.key === lessonKey ? 'page' : null">
+                <CourseIcon :name="markOf(l)" :size="18" class="crs-mark" />
                 <span class="crs-plist-title">{{ l.title }}</span>
-                <span v-if="l.quiz && l.quiz.total" class="crs-plist-score" :title="fill(S['quiz-best'], l.quiz)">{{ l.quiz.score }}/{{ l.quiz.total }}</span>
-                <CourseIcon :name="kindOf(l)" :size="14" class="crs-plist-kind" />
+                <!-- at the end: a quiz's score, else what kind of lesson it is where that is anything but reading -->
+                <span v-if="l.quiz && l.quiz.total" class="crs-plist-score" :title="(stateOf(l) === 'failed' ? S['quiz-not-passed'] + ' · ' : '') + fill(S['quiz-best'], l.quiz)">{{ l.quiz.score }}/{{ l.quiz.total }}</span>
+                <CourseIcon v-else-if="kindOf(l) !== 'text'" :name="kindOf(l)" :size="14" class="crs-plist-kind" />
               </a>
             </li>
           </ol>
@@ -67,7 +70,7 @@
           <div v-else-if="loading && !lesson" class="crs-ov-ghost" aria-hidden="true"><span class="crs-ghost-line is-short" /><span class="crs-ghost-line is-title" /><span class="crs-ghost-line" /><span class="crs-ghost-line" /></div>
 
           <template v-else-if="lesson && lesson.open">
-            <p class="crs-kicker">{{ here && here.section ? here.section + ' · ' : '' }}{{ fill(S.of, { n: hereAt + 1, total: lessons.length }) }}</p>
+            <p class="crs-kicker">{{ here && here.section ? here.section + ' · ' : '' }}{{ fill(S.of, hereIn) }}</p>
             <h1 class="crs-ptitle">{{ lesson.title }}</h1>
             <MediaBlock v-if="tracks.length" :media="tracks" class="crs-media" />
             <div v-if="lesson.body" class="crs-prose"><MarkdownDoc :source="lesson.body" marks /></div>
@@ -93,6 +96,8 @@
                   <strong>{{ result.passed !== false ? (result.total ? S['quiz-passed'] : S['form-done']) : S['quiz-failed'] }}</strong>
                   <span v-if="result.total" class="crs-quiz-score">{{ fill(result.best ? S['quiz-best'] : S['quiz-score'], result) }}</span>
                   <span v-if="result.passed === false && passMark" class="crs-quiz-need">{{ fill(S['quiz-need'], { pass: passMark, total: result.total }) }}</span>
+                  <!-- the achievement this quiz earns, once it is held -->
+                  <a v-if="earned && result.passed !== false" class="crs-quiz-award" :href="ROUTES.awards + '/' + earned.slug"><CourseIcon name="award" :size="15" />{{ S['achievement-earned'] }}: {{ earned.title }}</a>
                 </div>
                 <button type="button" class="btn" :class="{ solid: result.passed === false }" @click="again">{{ result.passed === false ? S['try-again'] : S.retake }}</button>
               </div>
@@ -134,7 +139,7 @@
           <!-- a closed lesson: why, and what opens it -->
           <div v-else-if="here" class="crs-locked">
             <span class="crs-locked-badge"><CourseIcon :name="here.why === 'not-yet' ? 'clock' : 'closed'" :size="26" /></span>
-            <p class="crs-kicker">{{ here.section ? here.section + ' · ' : '' }}{{ fill(S.of, { n: hereAt + 1, total: lessons.length }) }}</p>
+            <p class="crs-kicker">{{ here.section ? here.section + ' · ' : '' }}{{ fill(S.of, hereIn) }}</p>
             <h1 class="crs-ptitle">{{ here.title }}</h1>
             <p class="crs-locked-why">{{ whyWord(here) }}</p>
             <button v-if="here.why === 'not-enrolled' && state.access" type="button" class="btn solid" :disabled="busy" @click="emit('enroll')">{{ K.start }}</button>
@@ -162,7 +167,7 @@ import MarkdownDoc from '../MarkdownDoc.vue'
 import MediaBlock from '../content/MediaBlock.vue'
 import FormRun from '../forms/FormRun.vue'
 import CourseIcon from './CourseIcon.vue'
-import { words, fill, pct, day, modulesOf, kindOf, nextOpening, pointerHref } from './course-ui.js'
+import { words, fill, pct, day, modulesOf, kindOf, stateOf, markOf, nextOpening, pointerHref } from './course-ui.js'
 
 const props = defineProps({
   base: { type: String, required: true },
@@ -172,7 +177,9 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   busy: { type: Boolean, default: false },
   problem: { type: String, default: '' },
-  outcome: { type: String, default: '' },   /* after Complete and continue: 'lesson-done' (nothing open next yet) · 'course-done' */
+  outcome: { type: String, default: '' },
+  /* the achievement a passed quiz on this lesson has earned, where the reader holds it: { slug, title } */
+  earned: { type: Object, default: null },   /* after Complete and continue: 'lesson-done' (nothing open next yet) · 'course-done' */
 })
 const emit = defineEmits(['enroll', 'sign-in', 'complete', 'form-done'])
 const { K, S } = words()
@@ -181,6 +188,11 @@ const courseHref = computed(() => props.base + '/' + props.state.slug)
 const lessons = computed(() => (props.state.lessons || []).map((l, i) => ({ ...l, n: i + 1 })))
 const modules = computed(() => modulesOf(props.state.lessons || []))
 const hereAt = computed(() => lessons.value.findIndex((l) => l.key === props.lessonKey))
+/* where the lesson sits in its own module: "Lesson 2 of 5" counts within it, not across the course */
+const hereIn = computed(() => {
+  const m = modules.value.find((x) => x.lessons.some((l) => l.key === props.lessonKey))
+  return m ? { n: m.lessons.findIndex((l) => l.key === props.lessonKey) + 1, total: m.lessons.length } : { n: hereAt.value + 1, total: lessons.value.length }
+})
 const here = computed(() => lessons.value[hereAt.value] || null)
 const prev = computed(() => (hereAt.value > 0 ? lessons.value[hereAt.value - 1] : null))
 const after = computed(() => (hereAt.value >= 0 && hereAt.value < lessons.value.length - 1 ? lessons.value[hereAt.value + 1] : null))

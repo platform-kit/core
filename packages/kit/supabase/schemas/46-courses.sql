@@ -376,6 +376,11 @@ begin
     return jsonb_build_object('error', 'not-booked');
   end if;
   insert into public.lesson_progress (enrollment, lesson, how) values (e.id, p_lesson, how_) on conflict do nothing;
+  -- a quiz passed before its lesson opened, recorded now: its first pass, as the trigger records one
+  if found and f.kind = 'form' and exists (select 1 from public.form_responses r where r.user_id = me and r.form = f.ref and r.completed_at is not null and r.passed is true) then
+    insert into public.events (session_id, user_id, anon_id, type, props, occurred_at, source)
+      values (gen_random_uuid(), me, me, 'quiz_passed', jsonb_build_object('course', p_course, 'lesson', p_lesson), now(), 'server');
+  end if;
   perform public.course_check_complete(e.id);
   return public.course_state(p_course);
 end;
@@ -396,6 +401,11 @@ begin
              and exists (select 1 from public.course_lessons l where l.course = en.course and l.kind = 'form' and l.ref = new.form) loop
     for f in select x.key from public.course_lessons_for(e.course, new.user_id) x where x.kind = 'form' and x.ref = new.form and x.open and not x.done loop
       insert into public.lesson_progress (enrollment, lesson, how) values (e.id, f.key, 'form') on conflict do nothing;
+      -- a quiz passed, the first time: an event like any other, from which the achievements module awards that quiz's achievement
+      if found and new.passed is true then
+        insert into public.events (session_id, user_id, anon_id, type, props, occurred_at, source)
+          values (gen_random_uuid(), new.user_id, new.user_id, 'quiz_passed', jsonb_build_object('course', e.course, 'lesson', f.key, 'score', new.score, 'total', new.total), now(), 'server');
+      end if;
     end loop;
     perform public.course_check_complete(e.id);
   end loop;

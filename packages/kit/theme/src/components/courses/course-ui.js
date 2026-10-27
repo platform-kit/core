@@ -30,6 +30,16 @@ export const leadOf = (s) => (paras(s)[0] || '').replace(/[#*_>`]/g, '')
 export const restOf = (s) => paras(s).slice(1).join('\n\n')
 
 /* the outline, numbered and gathered under its modules in order, each knowing how much of it is done */
+/* WHERE A LESSON STANDS, as the curriculum shows it (openspec: courses): a quiz passed (with its score), a quiz tried and
+   not passed yet (with its best), done, open or closed. The icon follows: a not-passed quiz has its own. */
+export const stateOf = (l = {}) => {
+  const quiz = l.kind === 'form' && l.quiz && l.quiz.total ? l.quiz : null
+  if (l.done) return quiz ? 'passed' : 'done'
+  if (quiz && quiz.passed === false) return 'failed'
+  return l.open ? 'open' : 'closed'
+}
+export const markOf = (l) => ({ passed: 'done', done: 'done', failed: 'missed', open: 'open', closed: 'closed' })[stateOf(l)]
+
 export function modulesOf(lessons = []) {
   const out = []
   lessons.forEach((l, i) => {
@@ -45,6 +55,9 @@ export function modulesOf(lessons = []) {
     m.open = m.lessons.some((l) => l.open)
     m.opensAt = m.open ? null : (m.lessons.find((l) => l.why === 'not-yet' && l.opens_at) || {}).opens_at || null
     m.finished = m.total > 0 && m.done === m.total
+    /* the section's quiz, where it has one, and how it stands */
+    m.quiz = m.lessons.find((l) => l.kind === 'form' && l.required && l.quiz && l.quiz.total) || null
+    m.quizState = m.quiz ? stateOf(m.quiz) : null
   }
   return out
 }

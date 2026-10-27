@@ -48,6 +48,8 @@ Every achievement has a page at `/a/<slug>`: the badge, the title, whether the p
 
 On a profile its owner has made public, the badges appear as a gallery — earned ones filled in their own colour, the rest drawn quietly beside them, because a gallery that shows only what somebody has never says what else there is. `shown: false` keeps one off every profile: some are the site's own note.
 
+**A course's quizzes declare their own.** The achievements push also gives every scored form lesson of a published course an achievement, `quiz-<course>-<lesson>`, from the course file rather than a file here, matched on the `quiz_passed` event the course records the first time somebody passes it. A file here with the same slug replaces it. See [Courses](/content/docs/running-a-site/content/courses).
+
 ## A trait is what the site has come to believe
 
 `content/traits.md`, one file, because a trait is one line and fifty of them in fifty files is a directory nobody reads.

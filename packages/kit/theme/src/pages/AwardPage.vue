@@ -16,7 +16,7 @@
 import { computed, ref, watch } from 'vue'
 import { route, ROUTES } from 'platformkit/lib/router.js'
 import { us } from 'platformkit/lib/content.js'
-import { mine, loadMine, awardOf } from 'platformkit/lib/awards.js'
+import { mine, loadMine, awardOf, loadCatalogue } from 'platformkit/lib/awards.js'
 import { userClass } from 'platformkit/lib/auth.js'
 import { allowedBy, requiredBy } from 'platformkit/lib/access.js'
 import { setHead } from 'platformkit/lib/seo.js'
@@ -34,6 +34,8 @@ const held = computed(() => (mine.value || []).find((x) => x.slug === slug.value
 const allowed = computed(() => allowedBy(a.value && a.value.canAccess, userClass.value))
 
 loadMine()
+/* a quiz's achievement is declared from its course, not a file: the catalogue reads those from the database */
+if (!awardOf(slug.value)) loadCatalogue()
 watch(a, (x) => { if (x) setHead({ title: x.title, description: x.sub || '' }) }, { immediate: true })
 const when = (iso) => new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
 </script>

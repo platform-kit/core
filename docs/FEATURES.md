@@ -197,8 +197,9 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Emails when a lesson opens (once per lesson, at most one a day to a person) and when somebody finishes.
 - An Enrollments screen for administrators: who is where, how many finish, and the lesson where most people stop.
 - A library at `/courses`: the course a reader was last in leads, with its next lesson; then their courses in progress, the ones they finished with their certificates, and every other course with what getting in takes. A course without a picture gets a cover drawn from its title.
-- A course overview with the reader's progress and next step beside the curriculum, whose modules fold and each say how much is done and when it opens; every lesson is marked with its kind.
-- A lesson player with its own bar (the course, progress, previous and next), the curriculum beside the lesson or in a drawer on a phone, and Complete and continue; finishing the course says so and offers the certificate.
+- A course overview with the reader's progress and next step beside the curriculum, whose modules fold and each say how much is done and when it opens; every lesson shows where it stands (done, a quiz passed with its score, a quiz not passed yet with its best, open or closed), and its kind where it is anything but reading.
+- A lesson player with its own bar (the course, progress, previous and next), the curriculum beside the lesson or in a drawer on a phone, and Complete and continue; finishing the course says so and offers the certificate. A quiz runs inside its lesson, completes it when passed, and shows the score, the pass mark and Try again when not.
+- Every quiz passed earns an achievement of its own, declared from the course and titled after its section unless the course names it; the player names it as it is earned, and it has its own page.
 - On pages of their own at `/courses` and, where the site has a community, as its Courses place too, as in Circle. `/app/courses` goes to the library. A reader's courses are also on their member card; a space can be filled by a course's people or one cohort.
 
 ### Wiki (`wiki`)

@@ -22,7 +22,7 @@ import { me, loadMe, saveMe, nameFree, usernameOk, personOf, uploadAvatar } from
 import { faceOf } from 'platformkit/lib/avatar.js'
 import { offeringsOf, managedOf } from 'platformkit/lib/booking.js'
 import { myTeams } from 'platformkit/lib/teams.js'
-import { catalogue as ALL, awardsOf } from 'platformkit/lib/awards.js'
+import { allAwards, loadCatalogue, awardsOf } from 'platformkit/lib/awards.js'
 import AwardBadge from '../components/AwardBadge.vue'
 import { setHead } from 'platformkit/lib/seo.js'
 import SiteLayout from '../layouts/SiteLayout.vue'
@@ -113,9 +113,10 @@ const offers = ref([])
    earn, quietly, because a gallery that shows only what somebody has never says what else there is. */
 const awards = ref([])
 const locked = computed(() => {
-  if (!awards.value.length && !(ALL || []).length) return []
+  const ALL = allAwards()
+  if (!awards.value.length && !ALL.length) return []
   const got = new Set(awards.value.map((x) => x.slug))
-  return (ALL || []).filter((x) => x.shown !== false && !got.has(x.slug)).sort((a, b) => (a.order || 99) - (b.order || 99))
+  return ALL.filter((x) => x.shown !== false && !got.has(x.slug)).sort((a, b) => (a.order || 99) - (b.order || 99))
 })
 /* the username in the path, or nothing — which means the reader's own settings */
 const handle = computed(() => {
@@ -132,7 +133,7 @@ watch(handle, async (h) => {
   looking.value = true
   try {
     them.value = await personOf(h)
-    awards.value = them.value ? await awardsOf(them.value.id) : []
+    awards.value = them.value ? await awardsOf(them.value.id) : []; loadCatalogue()
     /* their own offerings, and their copies of the site's managed types — one list, because a
        reader choosing a time is not thinking about which of the two they are choosing from */
     offers.value = them.value
@@ -154,7 +155,7 @@ const nameState = ref('')   /* '' | checking | free | taken | bad */
 
 async function mineLoad() {
   if (!mine.value || !isSignedIn.value) return
-  try { await loadMe(); draft.value = { ...(me.value || {}) }; awards.value = me.value ? await awardsOf(me.value.id) : [] }
+  try { await loadMe(); draft.value = { ...(me.value || {}) }; awards.value = me.value ? await awardsOf(me.value.id) : []; loadCatalogue() }
   catch (e) { err.value = e.message || String(e) }
 }
 /* THE TEAMS THEY ARE IN — theirs, on their own account. A team is a group the site points work

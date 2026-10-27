@@ -128,6 +128,9 @@ quiz-best: Your best score: {score} of {total}
 quiz-need: You need {pass} of {total} to pass. Look back over the lessons and try again whenever you're ready.
 try-again: Try again
 retake: Take it again
+achievement-earned: Achievement earned
+see-achievement: See it
+quiz-not-passed: Not passed yet
 not-booked: Book it first, then mark it complete
 tag-chapter: Chapter
 tag-article: Article

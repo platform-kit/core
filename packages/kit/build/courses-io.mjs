@@ -93,14 +93,52 @@ export function parseCourse(slug, raw) {
     }
   })
   if (!lessons.length) problems.push('it has no lessons')
+  /* what each quiz earns, where the file names it (`achievement: { title, sub, icon, colour }`) or says `achievement: false`;
+     kept apart from the lesson, whose fields are the lesson table's */
+  const awards = {}
+  ;(Array.isArray(d.lessons) ? d.lessons : []).forEach((l) => {
+    if (!l || l.achievement === undefined || !l.key) return
+    if (l.achievement === false) awards[String(l.key)] = false
+    else if (l.achievement && typeof l.achievement === 'object') awards[String(l.key)] = { title: l.achievement.title ? String(l.achievement.title) : null, sub: l.achievement.sub ? String(l.achievement.sub) : null, icon: l.achievement.icon ? String(l.achievement.icon) : null, colour: l.achievement.colour ? String(l.achievement.colour) : null }
+    else problems.push(`lesson ${l.key}: achievement is an object (title, sub, icon, colour) or false`)
+  })
   return {
     slug, title, about: about || null, image: d.image ? String(d.image) : null,
     position: Number.isFinite(Number(d.position)) ? Number(d.position) : 99,
     published: d.published !== false,
     access, release, drip, every_days: Number.isInteger(every) && every >= 0 ? every : 7,
     in_order: d.inOrder === true, certificate: d.certificate === true,
-    cohorts, lessons, problems,
+    cohorts, lessons, awards, problems,
   }
+}
+
+/*
+ * THE ACHIEVEMENT EACH QUIZ EARNS (openspec: courses). One for every scored form lesson of a published course, declared
+ * here for the achievements push, which is the only writer of achievement rules; the course schema records the
+ * `quiz_passed` event the first time somebody passes the lesson, and the achievements trigger awards it. Titled after
+ * the lesson's section unless the file names it; `scored(ref)` says whether the form keeps a score.
+ */
+export const QUIZ_EVENT = 'quiz_passed'
+export const quizAwardSlug = (course, lesson) => `quiz-${course}-${lesson}`
+export function quizAchievements(courses, { scored = () => true } = {}) {
+  const out = []
+  for (const c of courses) {
+    if (c.problems.length || !c.published) continue
+    c.lessons.filter((l) => l.kind === 'form' && l.ref && scored(l.ref)).forEach((l, i) => {
+      const own = (c.awards || {})[l.key]
+      if (own === false) return
+      const named = own || {}
+      out.push({
+        slug: quizAwardSlug(c.slug, l.key),
+        title: named.title || l.section || l.title,
+        sub: named.sub || `Passed the quiz in ${c.title}.`,
+        icon: named.icon || 'star', colour: named.colour || null, cover: null, access: [],
+        event: QUIZ_EVENT, match: { course: c.slug, lesson: l.key }, count: 1, distinct_key: null, shown: true,
+        position: 50 + i,
+      })
+    })
+  }
+  return out
 }
 
 export async function readCourses(store) {

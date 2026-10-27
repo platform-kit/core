@@ -71,6 +71,8 @@ when:
 ---
 ```
 
+**Every quiz passed earns an achievement.** Each scored form lesson of a published course has one, declared by the achievements push from the course file and titled after the lesson's section. A lesson can name its own (`achievement: { title, sub, icon, colour }`) or have none (`achievement: false`). The first time a reader passes the quiz, the server records a `quiz_passed` event naming the course and the lesson, and the achievement is awarded from it; the lesson page names it as the quiz is passed, and it has its own page like any other.
+
 Where the course gives one, finishing also issues a certificate. It has a public address that anyone given it can open to check it, and it downloads as a PDF.
 
 ## Emails
@@ -80,8 +82,8 @@ Readers get an email when a lesson opens, and one when they finish. A lesson ema
 ## What readers see
 
 - **The library**, at `/courses`. The course a reader was last in comes first, with its next lesson and a Continue button. Their other courses in progress follow, then the ones they finished with their certificates, then every other course with what getting in takes: free, a membership or a purchase. A guest sees the catalogue. A course with no picture gets a cover drawn from its title.
-- **A course's overview.** The reader's card shows their progress, the next lesson and the course's facts. Beside it is the curriculum: each section is a module that folds, says how much of it is done and when it opens, and marks each lesson as a video, audio, reading, chapter, article, form or session.
-- **The lesson player.** A bar of its own holds the way back to the course, the progress, the curriculum and previous and next. The curriculum stands beside the lesson, or opens as a drawer on a phone. **Complete and continue** finishes the lesson and opens the next one. Where the next one isn't open yet, the player says when it opens. On the last required lesson, it says the course is complete and offers the certificate.
+- **A course's overview.** The reader's card shows their progress, the next lesson and the course's facts. Beside it is the curriculum: each section is a module that folds, says how much of it is done and when it opens, and shows where each lesson stands: done, a quiz passed with its score, a quiz tried and not passed yet with its best score, open, or closed. A lesson that is anything but reading says what it is: a video, audio, chapter, article, form or session.
+- **The lesson player.** A bar of its own holds the way back to the course, the progress, the curriculum and previous and next. The curriculum stands beside the lesson, or opens as a drawer on a phone. Each section in it shows its number, how many of its lessons are done, a bar of that, and a tick once it is complete; each lesson shows the same states as the overview. **Complete and continue** finishes the lesson and opens the next one. Where the next one isn't open yet, the player says when it opens. On the last required lesson, it says the course is complete and offers the certificate.
 
 ## Where the courses live
 

@@ -16,7 +16,22 @@ import { session } from './auth.js'
    of the two had to give, and it is this one — so nothing downstream ever has to remember which
    side of the wire it is looking at. */
 export const catalogue = (COMPILED || []).map((a) => ({ ...a, slug: a.slug || a.id }))
-export const awardOf = (slug) => catalogue.find((a) => a.slug === slug) || null
+/* AND THE RULES NO FILE DECLARES: every quiz in a course earns an achievement the achievements push declares from
+   the course itself (openspec: courses), so it is in the database and not among the compiled files. They are read
+   once, from the table anybody may read, and join the catalogue the pages and profiles show. */
+export const extra = ref([])
+let looked = false
+export async function loadCatalogue() {
+  if (looked || !configured) return extra.value
+  looked = true
+  const { data, error } = await supabase.from('achievements').select('slug, title, sub, icon, colour, cover, shown, position')
+  if (error) { looked = false; return extra.value }
+  const known = new Set(catalogue.map((a) => a.slug))
+  extra.value = (data || []).filter((a) => !known.has(a.slug)).map((a) => ({ ...a, order: a.position }))
+  return extra.value
+}
+export const allAwards = () => [...catalogue, ...extra.value]
+export const awardOf = (slug) => catalogue.find((a) => a.slug === slug) || extra.value.find((a) => a.slug === slug) || null
 
 export const mine = ref([])
 let asked = ''

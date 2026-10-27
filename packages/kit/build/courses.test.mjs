@@ -4,7 +4,7 @@
  * member card's Courses panel gated by the module, and the module's own declaration. The rules a reader meets — what is
  * open, who gets in, completion — are the database's, and courses-db.test.mjs holds them.
  */
-import { parseCourse, bodyParts, lessonHref, KINDS } from './courses-io.mjs'
+import { parseCourse, bodyParts, lessonHref, KINDS, quizAchievements } from './courses-io.mjs'
 import model, { courseFile } from './models/core/courses.mjs'
 import { certificatePdf } from '../src/lib/certificate-pdf.js'
 import { gatesOf } from '../src/lib/member-panels.js'
@@ -128,6 +128,18 @@ ok('…owning its schema, its push, its function, its routes and its sweep', mod
   ok('/app/courses is the library', libraryOf('/app/courses') === '/courses' && libraryOf('/app/courses/writing-plainly') === '/courses/writing-plainly')
   ok('…and nothing else in the app area moves', libraryOf('/app/coursework') === null && libraryOf('/app') === null && libraryOf('/app/results') === null)
   ok('…a rule the router asks before any place\'s claim', (() => { const r = fs.readFileSync(new URL('../src/lib/router.js', import.meta.url), 'utf8'); return r.indexOf('appCourses(p)') > 0 && r.indexOf('appCourses(p)') < r.indexOf('forwardOf(p, CLAIMS') })())
+}
+
+/* EVERY QUIZ PASSED EARNS AN ACHIEVEMENT (openspec: courses): declared from the course, one per scored form lesson */
+{
+  const quizzes = parseCourse('q', `---\ntitle: Q\naccess: { free: true }\nlessons:\n  - { key: one, section: First steps, kind: form, ref: f-one }\n  - { key: two, section: Going on, kind: form, ref: f-two, achievement: { title: Halfway there, icon: book } }\n  - { key: three, kind: form, ref: f-three, achievement: false }\n  - { key: four, kind: form, ref: f-survey }\n  - { key: five, title: A reading }\n---\n`)
+  const rules = quizAchievements([quizzes], { scored: (ref) => ref !== 'f-survey' })
+  const by = Object.fromEntries(rules.map((r) => [r.slug, r]))
+  ok('each scored form lesson has an achievement, titled after its section', by['quiz-q-one'] && by['quiz-q-one'].title === 'First steps' && by['quiz-q-one'].event === 'quiz_passed' && JSON.stringify(by['quiz-q-one'].match) === JSON.stringify({ course: 'q', lesson: 'one' }), rules)
+  ok('…one the course names uses its own title and icon', by['quiz-q-two'] && by['quiz-q-two'].title === 'Halfway there' && by['quiz-q-two'].icon === 'book')
+  ok('…`achievement: false` has none, nor does a form that keeps no score, nor a lesson that is not a form', rules.length === 2 && !by['quiz-q-three'] && !by['quiz-q-four'])
+  ok('…an unpublished course earns nothing', quizAchievements([{ ...quizzes, published: false }]).length === 0)
+  ok('…and a course with problems is refused', parseCourse('q', `---\ntitle: Q\naccess: { free: true }\nlessons:\n  - { key: one, kind: form, ref: f, achievement: yes }\n---\n`).problems.some((p) => /achievement is an object/.test(p)))
 }
 
 console.log(fail ? `courses: ${fail} failed, ${pass} passed` : `courses: all ${pass} checks passed`)

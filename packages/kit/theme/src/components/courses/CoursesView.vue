@@ -18,7 +18,7 @@
       @enroll="enroll" @sign-in="signIn" />
     <CoursePlayer
       v-else :base="base" :state="state" :lesson-key="lessonKey" :lesson="lesson" :loading="loading" :busy="busy" :problem="problem" :outcome="outcome"
-      @enroll="enroll" @sign-in="signIn" @complete="complete" @form-done="formDone" />
+      :earned="earned" @enroll="enroll" @sign-in="signIn" @complete="complete" @form-done="formDone" />
   </div>
 </template>
 
@@ -27,6 +27,7 @@ import { computed, ref, watch } from 'vue'
 import { navigate } from 'platformkit/lib/router.js'
 import { user } from 'platformkit/lib/auth.js'
 import { capture } from 'platformkit/lib/analytics.js'
+import { loadMine } from 'platformkit/lib/awards.js'
 import { setHead } from 'platformkit/lib/seo.js'
 import CourseLibrary from './CourseLibrary.vue'
 import CourseOverview from './CourseOverview.vue'
@@ -91,6 +92,20 @@ async function enroll() {
   } catch (e) { problem.value = String(e.message || e) }
   busy.value = false
 }
+/* THE ACHIEVEMENT A QUIZ EARNS (openspec: courses): awarded in the database as the quiz is passed, so this only looks
+   it up, by the slug the achievements push gives it. Where the achievements module is off there is none to find. */
+const earned = ref(null)
+async function lookUpEarned(force = false) {
+  earned.value = null
+  const l = state.value && lessonKey.value ? (state.value.lessons || []).find((x) => x.key === lessonKey.value) : null
+  if (!l || l.kind !== 'form' || !l.done) return
+  try {
+    const held = await loadMine(force)
+    earned.value = (held || []).find((a) => a.slug === `quiz-${slug.value}-${lessonKey.value}`) || null
+  } catch { /* no achievements here */ }
+}
+watch(() => [lessonKey.value, state.value && state.value.slug], () => lookUpEarned(), { immediate: true })
+
 /* A FORM LESSON'S FORM FINISHED: the server has recorded the lesson as the response completed (where it passed), so
    the course is only read again; where that finished the course, the player says so */
 async function formDone() {
@@ -99,7 +114,7 @@ async function formDone() {
   try {
     const s = await loadCourse(slug.value)
     const l = s && (s.lessons || []).find((x) => x.key === at)
-    if (l && l.done) capture('lesson_completed', { course: slug.value, lesson: at })
+    if (l && l.done) { capture('lesson_completed', { course: slug.value, lesson: at }); await lookUpEarned(true) }
     if (s && s.enrollment && s.enrollment.completed_at && !was) outcome.value = 'course-done'
   } catch (e) { problem.value = String(e.message || e) }
 }

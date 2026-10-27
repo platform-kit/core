@@ -17,7 +17,7 @@ sources:
     packages/kit/theme/src/content/ui/teams.md,
     packages/kit/theme/src/pages/PersonPage.vue,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-26
 ---
 
 A **team** is a group of people the site can point work at: the practice, the front desk, the coaches

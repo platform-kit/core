@@ -90,20 +90,22 @@
                 </span>
                 <span class="crs-module-state">
                   <template v-if="m.finished">{{ K['module-complete'] }}</template>
+                  <template v-else-if="state.enrollment && m.quizState === 'failed'"><CourseIcon name="missed" :size="14" />{{ S['quiz-not-passed'] }} · {{ fill(K['module-done'], { done: m.done, total: m.total }) }}</template>
                   <template v-else-if="state.enrollment && m.open">{{ fill(K['module-done'], { done: m.done, total: m.total }) }}</template>
                   <template v-else-if="state.enrollment && m.opensAt"><CourseIcon name="clock" :size="14" />{{ fill(K['module-opens'], { date: shortDay(m.opensAt) }) }}</template>
                   <template v-else>{{ m.lessons.length === 1 ? K['module-lesson'] : fill(K['module-lessons'], { n: m.lessons.length }) }}</template>
                 </span>
                 <CourseIcon name="down" :size="18" class="crs-module-chev" />
               </button>
-              <span v-if="state.enrollment && m.total && m.open" class="crs-module-bar"><span :style="{ width: pct(m.done, m.total) + '%' }" /></span>
+              <span v-if="state.enrollment && m.open && m.done > 0 && !m.finished" class="crs-module-bar"><span :style="{ width: pct(m.done, m.total) + '%' }" /></span>
               <ol v-show="isOpen(m)" class="crs-lessons">
                 <li v-for="l in m.lessons" :key="l.key">
-                  <a class="crs-lesson-row" :class="{ 'is-closed': !l.open, 'is-done': l.done, 'is-next': next && l.key === next.key }" :href="courseHref + '/' + l.key">
-                    <CourseIcon :name="l.done ? 'done' : l.open ? 'open' : 'closed'" :size="20" class="crs-mark" />
+                  <a class="crs-lesson-row" :class="['is-' + stateOf(l), { 'is-closed': !l.open, 'is-done': l.done, 'is-next': next && l.key === next.key }]" :href="courseHref + '/' + l.key">
+                    <CourseIcon :name="markOf(l)" :size="20" class="crs-mark" />
                     <span class="crs-lesson-text">
                       <span class="crs-lesson-title">{{ l.title }}</span>
-                      <span class="crs-lesson-kind"><CourseIcon :name="kindOf(l)" :size="14" />{{ kindWord(l) }}<template v-if="!l.required"> · {{ S.optional }}</template></span>
+                      <!-- a line under the title only where it says something: a kind other than reading, optional, a quiz's score -->
+                      <span v-if="kindOf(l) !== 'text' || !l.required || (l.quiz && l.quiz.total)" class="crs-lesson-kind"><template v-if="kindOf(l) !== 'text'"><CourseIcon :name="kindOf(l)" :size="14" />{{ kindWord(l) }}</template><template v-if="!l.required">{{ kindOf(l) !== 'text' ? ' · ' : '' }}{{ S.optional }}</template><template v-if="l.quiz && l.quiz.total"> · <b class="crs-lesson-score">{{ l.quiz.score }}/{{ l.quiz.total }}</b><template v-if="stateOf(l) === 'failed'"> · {{ S['quiz-not-passed'] }}</template></template></span>
                     </span>
                     <span v-if="next && l.key === next.key" class="crs-chip is-next">{{ K['up-next'] }}</span>
                     <span v-else-if="!l.open && l.why === 'not-yet' && l.opens_at" class="crs-lesson-when">{{ shortDay(l.opens_at) }}</span>
@@ -130,7 +132,7 @@ import { ROUTES } from 'platformkit/lib/router.js'
 import MarkdownDoc from '../MarkdownDoc.vue'
 import CourseCover from './CourseCover.vue'
 import CourseIcon from './CourseIcon.vue'
-import { words, fill, pct, day, shortDay, leadOf, restOf, modulesOf, kindOf, nextOpen, nextOpening, cadenceOf } from './course-ui.js'
+import { words, fill, pct, day, shortDay, leadOf, restOf, modulesOf, kindOf, stateOf, markOf, nextOpen, nextOpening, cadenceOf } from './course-ui.js'
 
 const props = defineProps({
   base: { type: String, required: true },

@@ -14,6 +14,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { asStore } from './store/index.mjs'
 import matter from 'gray-matter'
+import { readCourses, quizAchievements } from './courses-io.mjs'
 
 export const DIR = 'content/achievements'
 export const TRAITS = 'content/traits.md'
@@ -64,6 +65,15 @@ export async function pushAchievements({ check = false, root = process.cwd(), st
     if (!r.title || !r.event) { say(`! ${slug}: an achievement needs a title and a when.event`); continue }
     want.push(r)
   }
+
+  /* AND ONE FOR EVERY QUIZ (openspec: courses): each scored form lesson of a published course earns its own,
+     declared from the course file. A file in content/achievements with the same slug wins, so a site can write
+     one out in full. */
+  const fromFiles = new Set(want.map((r) => r.slug))
+  const courses = await readCourses(st).catch(() => [])
+  const scored = {}
+  for (const c of courses) for (const l of c.lessons) if (l.kind === 'form' && l.ref && !(l.ref in scored)) scored[l.ref] = /^#!\s*score\s*=\s*\S/m.test((await st.read(`content/forms/${l.ref}.md`)) || '')
+  for (const r of quizAchievements(courses, { scored: (ref) => scored[ref] })) if (!fromFiles.has(r.slug)) want.push(r)
 
   /* the traits file */
   let traits = [], visible = ['admin']
