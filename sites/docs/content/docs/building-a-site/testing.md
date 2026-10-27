@@ -8,6 +8,8 @@ sources:
     packages/kit/build/check.test.mjs,
     packages/kit/build/browser.mjs,
     packages/kit/build/e2e.mjs,
+    packages/kit/build/e2e-container.mjs,
+    packages/kit/docker/e2e.Dockerfile,
     packages/kit/build/test-stack.mjs,
     packages/kit/build/test-guard.mjs,
     packages/kit/build/reset-seed.mjs,
@@ -69,7 +71,7 @@ sources:
     packages/kit/build/source-install.mjs,
     packages/kit/build/runtime-paths.mjs,
   ]
-reviewed: 2026-10-22
+reviewed: 2026-10-27
 ---
 
 ## A proposal promises nothing it does not require
@@ -189,9 +191,16 @@ A failure stops the run and exits non-zero. Each test is a plain Node script tha
 
 The checks that need a database, the functions or a browser run here, never against a developer's stack. `npm run test:e2e` at the workspace root (`platformkit test --e2e`) takes every registered site with a backend — `--only demo,club` for some, `--jobs` for how many at once (two by default), `--keep` to leave everything up afterwards for a look, `--run <script>` to put one script in place of the suite — and gives each one a stack of its own, side by side, as `npm run dev` does.
 
-Before any stack, the run asks for what every site needs: Docker answering, and a browser for the page checks (Playwright's, or the one `PLAYWRIGHT_CHROMIUM_PATH` names). Without either it stops at once, naming it. Then, for each site:
+**The run happens in a container, never in your checkout** (`build/e2e-container.mjs`, `packages/kit/docker/e2e.Dockerfile`). The machine needs only Node and Docker:
 
-1. The site's declared dependencies must be installed (a fetched site is not a workspace: its checkout needs its own install), or the run stops naming them. The site is assembled, and the data its functions import (the catalog, the compiled emails, the bots, the spaces…) is made from its content (`build/functions-data.mjs`) — never a file an earlier build left. A module that is off gets an empty file in its own shape, since the functions import every one.
+- **The image is built from the project's files exactly as git lists them** — tracked and new, each fetched site's the same way, and the site registry — streamed to `docker build`. Nothing `.gitignore` names goes in: no `node_modules`, build, cache, generated data or settings file.
+- **It installs from scratch** (`npm ci`; what a fetched site needs beyond the workspace goes in beside it), on Playwright's browser image with Node as `.nvmrc` pins it and Deno.
+- **The container has a Docker daemon of its own**, so every stack the run starts lives inside it, never beside your dev stacks; the daemon's images are kept in a volume so they are pulled once. The `.env` files are mounted read-only, never built into the image.
+- **The run happens inside** (`docker exec`), its output streamed and its exit code returned. Afterwards its logs are copied to `node_modules/.cache/platformkit/e2e/` and the container is removed with everything in it — unless `--keep`, which leaves it up to look into (`docker exec -it platformkit-e2e-<id> bash`). A fetched site inside the container is files, not a checkout: the host verified its pin before building the image from it.
+
+Inside it, before any stack, the run asks for what every site needs: Docker answering, and a browser for the page checks (the image's, or the one `PLAYWRIGHT_CHROMIUM_PATH` names). Without either it stops at once, naming it. Then, for each site:
+
+1. The site's declared dependencies must be installed, or the run stops naming them. Its content is compiled and its prepare steps run (the search index among them), as `platformkit build` does — nothing an earlier build left stands in for it. The site is assembled, and the data its functions import (the catalog, the compiled emails, the bots, the spaces…) is made from its content (`build/functions-data.mjs`) — never a file an earlier build left. A module that is off gets an empty file in its own shape, since the functions import every one.
 2. Any stack an earlier run left (`pk_<site>_e2e`) is stopped without its backup, so nothing survives into this one.
 3. A runtime project is made the way the dev workspace makes one, with its own project id and ports from 40000 up, never a dev port. Two sites prepared at once are never given the same port.
 4. The stack starts on an empty volume — the site's declaration, data and seed — and the reset's seed steps run (`build/reset-seed.mjs`, the same list `platformkit migrate reset` runs).
@@ -201,7 +210,7 @@ Before any stack, the run asks for what every site needs: Docker answering, and 
 8. **The coverage gate:** every function any site served must have been called by some site's tests during the run, read from the functions' own log. A module one site has off is another's to exercise, so the gate is the run's, not a site's. A function nothing called fails a run over every site with a backend by name; a run over some of them (`--only`) reports it.
 9. Everything is stopped and its data removed, on success, failure or a signal, unless `--keep`.
 
-Each site's run writes `node_modules/.cache/platformkit/e2e/<site>.log` as it goes, with the functions and the app in their own logs beside it. CI runs the same command over the demo and `sites/club` — a members' club with a backend and few modules, so two stacks are built side by side and a module that is off is exercised — and then the runner's own test (`build/e2e-runner.test.mjs`): a stand-in dev database left untouched, two sites isolated, the tests and the functions running from the copy, a schema change seen, a kept stack replaced, a live key refused, a withheld service failing, an interrupted run torn down. It uses `--run` with `build/fixtures/e2e-probe.mjs` in place of the suite.
+Each site's run writes `node_modules/.cache/platformkit/e2e/<site>.log` (copied out of the container when it ends), with the functions and the app in their own logs beside it. CI runs the same command, in the same container, over the demo and `sites/club` — a members' club with a backend and few modules, so two stacks are built side by side and a module that is off is exercised — and then the runner's own test (`build/e2e-runner.test.mjs`): a stand-in dev database left untouched, two sites isolated, the tests and the functions running from the image's files with nothing of the checkout mounted but its settings and no Docker but the container's own, a schema change seen, a kept stack replaced, a live key refused, a withheld service failing, an interrupted run torn down. It uses `--run` with `build/fixtures/e2e-probe.mjs` in place of the suite.
 
 The run doubles the browser checks' wait (`BROWSER_WAIT_MS`, 120 s unless set): two sites' suites share the machine, and a page's first visit compiles it cold. A browser check fills a sign-in form one field at a time, waiting for the page to take each value before the next: filled back to back under load, the form submits half-empty.
 

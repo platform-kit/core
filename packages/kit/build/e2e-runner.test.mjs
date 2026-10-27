@@ -8,8 +8,8 @@
  *                             moment, holding the same rows, on the same ports after every run as before
  *   two sites isolated        the demo and the club fixture in one run: each its own stack and ports, each holding
  *                             its own seed and not the other's, a row one writes absent from the other
- *   the run's own code        the tests and the functions run from the run's copy of the checkout (git's files,
- *                             installed from scratch), never the checkout a running dev server rewrites
+ *   the run's own container   the tests and the functions run from the image's files: nothing of the checkout is
+ *                             mounted but its settings files, and the Docker the stacks run in is the container's own
  *   a schema change seen      a table added to the club's db/schemas is on its stack, with nothing run by hand
  *   a crashed run replaced    the kept stack of a run is replaced by the next, its marker row gone
  *   a live key refused        before any stack starts, naming the key
@@ -18,13 +18,16 @@
  *   an interrupted run        SIGINT mid-test, and every container of the run is gone
  *   no supabase status        held by test-coverage.test.mjs (no stack test reads `supabase status` or a fixed port)
  *
- * It starts several stacks, so it is CI's (the e2e job) and a developer's to run by hand — never inside the run it
- * tests. It leaves no stack behind.
+ * It starts several stacks, so it is CI's (the e2e job) and a developer's to run by hand. Like the run, it runs inside
+ * the run's container (build/e2e-container.mjs), and leaves no stack behind.
  */
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawn, spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { runInContainer } from './e2e-container.mjs'
+
+await runInContainer(fileURLToPath(import.meta.url), process.argv.slice(2))
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(HERE, '../../..')
@@ -43,7 +46,6 @@ const e2eContainers = (id) => docker('ps', '-a', '--filter', `name=_${id}`, '--f
 const runner = (a, env = {}) => spawnSync(process.execPath, [path.join(HERE, 'e2e.mjs'), ...a], { cwd: ROOT, env: { ...process.env, ...env }, encoding: 'utf8', timeout: 1800000, maxBuffer: 1 << 26 })
 const probes = (out) => [...String(out).matchAll(/PROBE (\{.*\})/g)].map((m) => JSON.parse(m[1]))
 const out = (r) => (r.stdout || '') + (r.stderr || '')
-const sourceOf = (text) => (/copying the code to (\S+)/.exec(String(text)) || [])[1]
 
 /* ─── the dev side, as it is before any run ─── */
 const SENTINEL = 'supabase_db_pk_runnertest_dev'
@@ -61,8 +63,10 @@ const devState = () => {
 let sentinelUp = false
 if (image) {
   docker('run', '-d', '--name', SENTINEL, '-p', '127.0.0.1:20322:5432', '-e', 'POSTGRES_PASSWORD=postgres', image)
-  for (let i = 0; i < 60 && !sentinelUp; i++) {
-    sentinelUp = docker('exec', SENTINEL, 'psql', '-U', 'postgres', '-c', 'select 1').status === 0
+  for (let i = 0; i < 180 && !sentinelUp; i++) {
+    /* healthy by the image's own check, not merely answering: psql answers the image's first-boot server too, and a table
+       written then collides with the image's own setup, which then stops the database */
+    sentinelUp = docker('inspect', SENTINEL, '-f', '{{.State.Health.Status}}').stdout.trim() === 'healthy' && docker('exec', SENTINEL, 'psql', '-U', 'postgres', '-c', 'select 1').status === 0
     if (!sentinelUp) await new Promise((r) => setTimeout(r, 1000))
   }
   docker('exec', SENTINEL, 'psql', '-U', 'postgres', '-c', `create schema if not exists auth; create table if not exists auth.users (id int); create table public.runner_sentinel (id int); insert into public.runner_sentinel values (1), (2), (3)`)
@@ -103,10 +107,14 @@ try {
       ok('…each with its own seed: the demo\'s buyer\'s purchase, and none in the club, which sells nothing', demo.purchases > 0 && club.purchases === 0, `demo ${demo.purchases}, club ${club.purchases}`)
       ok('a table added to the club\'s schema is on its stack, with nothing run by hand', club.tables.includes('e2e_probe') && club.columns.includes('probe_column'), club.columns.join(', '))
       ok('…and not on the demo\'s', !demo.tables.includes('e2e_probe'))
-      /* the probe says where it ran from; the functions are what each kept stack's runtime project serves */
-      const copy = sourceOf(out(r)), served = (site) => { try { return fs.realpathSync(path.join(copy, 'node_modules', '.cache', 'platformkit', 'e2e', site, 'supabase', 'functions')) } catch { return '' } }
+      /* the probe says where it ran from; the functions are what each kept stack's runtime project serves; and what the
+         container has mounted from outside it is its settings files and the daemon's own volume, nothing else */
+      const served = (site) => { try { return fs.realpathSync(path.join(ROOT, 'node_modules', '.cache', 'platformkit', 'e2e', site, 'supabase', 'functions')) } catch { return '' } }
       const at = [demo.code, club.code, served('demo'), served('club')]
-      ok('the tests and the functions run from the run\'s own copy of the code, not the checkout', !!copy && !copy.startsWith(ROOT + path.sep) && at.every((p) => p.startsWith(copy + path.sep)), `copy ${copy}\n${at.join('\n')}`)
+      const mounts = fs.readFileSync('/proc/self/mountinfo', 'utf8').split('\n').map((l) => l.split(' ')[4]).filter(Boolean)
+      const fromOutside = mounts.filter((m) => m === ROOT || m.startsWith(ROOT + path.sep) || m === '/var/run/docker.sock')
+      ok('the tests and the functions run from the image\'s files', process.env.PLATFORMKIT_E2E_IN_CONTAINER === '1' && at.every((p) => p.startsWith(ROOT + path.sep)), at.join('\n'))
+      ok('…with nothing of the checkout mounted but its settings files, and no Docker but the container\'s own', fromOutside.every((m) => /\/\.env(\.[^/]+)?$/.test(m)), fromOutside.join('\n'))
       ok('the club\'s row is in the club\'s database', club.marker === 1, club.marker)
     }
     ok('--keep leaves the stacks up', e2eContainers('pk_club_e2e').length > 0 && e2eContainers('pk_demo_e2e').length > 0)
@@ -133,8 +141,8 @@ try {
     const p = spawn(process.execPath, [path.join(HERE, 'e2e.mjs'), '--only', 'club', '--run', PROBE], { cwd: ROOT, env: { ...process.env, PROBE_SLEEP: '900' }, stdio: ['ignore', 'pipe', 'pipe'] })
     let text = ''
     p.stdout.on('data', (d) => { text += d }); p.stderr.on('data', (d) => { text += d })
-    const log = () => sourceOf(text) && path.join(sourceOf(text), 'node_modules', '.cache', 'platformkit', 'e2e', 'club.log')
-    const testing = () => /up — API/.test(text) && log() && fs.existsSync(log()) && /PROBE /.test(fs.readFileSync(log(), 'utf8'))
+    const log = path.join(ROOT, 'node_modules', '.cache', 'platformkit', 'e2e', 'club.log')
+    const testing = () => /up — API/.test(text) && fs.existsSync(log) && /PROBE /.test(fs.readFileSync(log, 'utf8'))
     for (let i = 0; i < 900 && !testing() && p.exitCode === null; i++) await new Promise((r) => setTimeout(r, 1000))
     ok('a run reaches its tests to be interrupted', testing(), text)
     p.kill('SIGINT')

@@ -38,7 +38,7 @@ sources:
     deploy/nginx,
     package.json,
   ]
-reviewed: 2026-10-23
+reviewed: 2026-10-27
 ---
 
 The workspace root contains PlatformKit's packages and generic fixtures. A separately owned site stays in its own Git repository; it is fetched to `sites/external/<name>` and is not part of the root npm workspaces. The root registry is `platformkit.sites.json`. `platformkit sites` lists both kinds of sites. Use `platformkit sites --json` for their full paths and pin information. A registered repository that has not been fetched is listed with the command needed to fetch it. Site names are DNS labels. `PLATFORMKIT_DEFAULT_SITE` selects the site used by root commands (default `sites/docs`) and accepts either a site name or a path. `PLATFORMKIT_SITES` explicitly selects one or more sites for multi-site development, taking precedence over the default; `PLATFORMKIT_ROOT_SITE` optionally names a configured site at the workspace root.
@@ -74,7 +74,7 @@ Generic fixtures under `sites/` continue to work without a remote. A fetched sit
 
 If a run ends without its normal cleanup, the next `platformkit dev` takes over only resources recorded for this checkout. It waits for earlier site servers and their function servers to finish stopping, and its one line names each resource it clears: a site by its port, the front door by its port, or a stale run record if no live resource remains. A second attached run is refused, and any listener the kit cannot verify is left untouched.
 
-The same goes for testing. `npm run test:e2e` gives every registered site with a backend a test stack of its own — built fresh from that site's files, on ports and project names that never meet the development ones — and runs its end-to-end checks there, several sites side by side (`--only <site>` for some). A site's checks reach only its own stack.
+The same goes for testing. `npm run test:e2e` gives every registered site with a backend a test stack of its own — built fresh from that site's files, on ports and project names that never meet the development ones — and runs its end-to-end checks there, several sites side by side (`--only <site>` for some). A site's checks reach only its own stack. The run happens in a container built from the workspace's files and each fetched site's, as git lists them: the fetched checkout's pin is verified on the host before the image is built, and inside the container the site is those files, not a checkout.
 
 ## Build and deploy a site independently
 

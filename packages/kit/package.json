@@ -178,6 +178,7 @@
   "files": [
     "bin",
     "build",
+    "docker",
     "src",
     "supabase",
     "vendor",

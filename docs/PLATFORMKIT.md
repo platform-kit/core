@@ -28,7 +28,7 @@ Use `platformkit sites` to list, fetch, and update separately owned site checkou
 
 Commands run from the workspace root select `PLATFORMKIT_DEFAULT_SITE`, defaulting to `sites/docs`. The setting accepts a site name or path; `--site <path>` takes precedence, and `PLATFORMKIT_SITES` selects a set for multi-site development. The root registry is `platformkit.sites.json`, and fetched site repositories live in `sites/external/`, separate from tracked fixture sites. A site outside the workspace can invoke the CLI with `npx --yes --package=github:platform-kit/core platformkit`; the kit and theme are sourced from that checkout without requiring their npm publication or changing the site's manifest and lockfile.
 
-`npm run test:e2e` runs every check that needs a database, the functions or a browser on test stacks of their own — one per site with a backend, built fresh from that site's files on every run, side by side, never the development stacks — and counts a check that cannot run, or a function no check called, as a failure. CI runs it over the demo and `sites/club`, a second fixture with a backend and few modules.
+`npm run test:e2e` runs every check that needs a database, the functions or a browser on test stacks of their own — one per site with a backend, built fresh from that site's files on every run, side by side, never the development stacks, inside a container built from the project's files as git lists them and installed from scratch, with a Docker of its own — and counts a check that cannot run, or a function no check called, as a failure. CI runs it, in the same container, over the demo and `sites/club`, a second fixture with a backend and few modules.
 
 The workspace root also provides opt-in Docker commands for Hyperswitch v2 integration testing.
 They build the router from a local Hyperswitch checkout and run separately from the default tests;
@@ -47,5 +47,5 @@ The maintained reference documentation is in the documentation site. The OpenSpe
 
 ---
 
-**Sources:** `package.json`, `packages/kit/package.json`, `packages/kit/bin/platformkit.mjs`, `packages/kit/build/sites.mjs`, `packages/kit/build/dev-workspace.mjs`, `.github/workflows/kit.yml`, `.github/workflows/publish.yml`
+**Sources:** `package.json`, `packages/kit/package.json`, `packages/kit/bin/platformkit.mjs`, `packages/kit/build/sites.mjs`, `packages/kit/build/dev-workspace.mjs`, `packages/kit/build/e2e-container.mjs`, `.github/workflows/kit.yml`, `.github/workflows/publish.yml`
 **Reviewed:** `2026-10-23`

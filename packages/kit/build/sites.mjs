@@ -309,7 +309,9 @@ export function sites(root = process.cwd(), env = process.env) {
       if (!fs.existsSync(config) || !fs.existsSync(packageJson)) {
         throw new Error(`registered checkout "${registered.name}" is incomplete at ${directory}; expected package.json and platformkit.config.js`)
       }
-      found.push(verifyManagedCheckout(root, registered))
+      /* inside the end-to-end run's container the site is files, not a checkout: the host verified it before building
+         the image from it (build/e2e-container.mjs) */
+      found.push(process.env.PLATFORMKIT_E2E_IN_CONTAINER === '1' ? { ...siteEntry(root, registered.name, registered.remote, registered.ref), dirty: false, ahead: 0, head: null } : verifyManagedCheckout(root, registered))
     } else {
       found.push({
         name: registered.name,

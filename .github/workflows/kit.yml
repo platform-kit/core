@@ -65,7 +65,9 @@ jobs:
           npx platformkit probe --url http://localhost:5173 --routes /,/content,/content/books/the-field-guide,/store,/pricing,/app
         working-directory: sites/demo
   # every test that needs a database, the functions or a browser, against stacks built for this run from the files —
-  # the demo and the club fixture side by side (build/e2e.mjs) — then the runner's own test. The same command as locally.
+  # the demo and the club fixture side by side (build/e2e.mjs) — then the runner's own test. The same command as locally,
+  # in the same container (docker/e2e.Dockerfile): the packages, the browser and Deno are the image's, so the machine
+  # needs only Node (to start it) and Docker.
   # Secret: STRIPE_TEST_SECRET_KEY (a Stripe test-mode key, sk_test_…); without it the run fails, as it should.
   e2e:
     runs-on: ubuntu-latest
@@ -73,13 +75,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: npm }
-      - uses: denoland/setup-deno@v2
-        with: { deno-version: v2.x }
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
+        with: { node-version: 22 }
       - name: the end-to-end run over the demo and the club
-        run: npx platformkit test --e2e --only demo,club
+        run: node packages/kit/build/e2e.mjs --only demo,club
         env: { STRIPE_SECRET_KEY: '${{ secrets.STRIPE_TEST_SECRET_KEY }}' }
       - name: the runner's own test
         run: node packages/kit/build/e2e-runner.test.mjs
