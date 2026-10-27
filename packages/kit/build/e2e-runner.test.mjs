@@ -8,6 +8,8 @@
  *                             moment, holding the same rows, on the same ports after every run as before
  *   two sites isolated        the demo and the club fixture in one run: each its own stack and ports, each holding
  *                             its own seed and not the other's, a row one writes absent from the other
+ *   the run's own code        the tests and the functions run from the run's copy of the checkout (git's files,
+ *                             installed from scratch), never the checkout a running dev server rewrites
  *   a schema change seen      a table added to the club's db/schemas is on its stack, with nothing run by hand
  *   a crashed run replaced    the kept stack of a run is replaced by the next, its marker row gone
  *   a live key refused        before any stack starts, naming the key
@@ -41,6 +43,7 @@ const e2eContainers = (id) => docker('ps', '-a', '--filter', `name=_${id}`, '--f
 const runner = (a, env = {}) => spawnSync(process.execPath, [path.join(HERE, 'e2e.mjs'), ...a], { cwd: ROOT, env: { ...process.env, ...env }, encoding: 'utf8', timeout: 1800000, maxBuffer: 1 << 26 })
 const probes = (out) => [...String(out).matchAll(/PROBE (\{.*\})/g)].map((m) => JSON.parse(m[1]))
 const out = (r) => (r.stdout || '') + (r.stderr || '')
+const sourceOf = (text) => (/copying the code to (\S+)/.exec(String(text)) || [])[1]
 
 /* ─── the dev side, as it is before any run ─── */
 const SENTINEL = 'supabase_db_pk_runnertest_dev'
@@ -100,6 +103,10 @@ try {
       ok('…each with its own seed: the demo\'s buyer\'s purchase, and none in the club, which sells nothing', demo.purchases > 0 && club.purchases === 0, `demo ${demo.purchases}, club ${club.purchases}`)
       ok('a table added to the club\'s schema is on its stack, with nothing run by hand', club.tables.includes('e2e_probe') && club.columns.includes('probe_column'), club.columns.join(', '))
       ok('…and not on the demo\'s', !demo.tables.includes('e2e_probe'))
+      /* the probe says where it ran from; the functions are what each kept stack's runtime project serves */
+      const copy = sourceOf(out(r)), served = (site) => { try { return fs.realpathSync(path.join(copy, 'node_modules', '.cache', 'platformkit', 'e2e', site, 'supabase', 'functions')) } catch { return '' } }
+      const at = [demo.code, club.code, served('demo'), served('club')]
+      ok('the tests and the functions run from the run\'s own copy of the code, not the checkout', !!copy && !copy.startsWith(ROOT + path.sep) && at.every((p) => p.startsWith(copy + path.sep)), `copy ${copy}\n${at.join('\n')}`)
       ok('the club\'s row is in the club\'s database', club.marker === 1, club.marker)
     }
     ok('--keep leaves the stacks up', e2eContainers('pk_club_e2e').length > 0 && e2eContainers('pk_demo_e2e').length > 0)
@@ -126,8 +133,8 @@ try {
     const p = spawn(process.execPath, [path.join(HERE, 'e2e.mjs'), '--only', 'club', '--run', PROBE], { cwd: ROOT, env: { ...process.env, PROBE_SLEEP: '900' }, stdio: ['ignore', 'pipe', 'pipe'] })
     let text = ''
     p.stdout.on('data', (d) => { text += d }); p.stderr.on('data', (d) => { text += d })
-    const log = path.join(ROOT, 'node_modules', '.cache', 'platformkit', 'e2e', 'club.log')
-    const testing = () => /up — API/.test(text) && fs.existsSync(log) && /PROBE /.test(fs.readFileSync(log, 'utf8'))
+    const log = () => sourceOf(text) && path.join(sourceOf(text), 'node_modules', '.cache', 'platformkit', 'e2e', 'club.log')
+    const testing = () => /up — API/.test(text) && log() && fs.existsSync(log()) && /PROBE /.test(fs.readFileSync(log(), 'utf8'))
     for (let i = 0; i < 900 && !testing() && p.exitCode === null; i++) await new Promise((r) => setTimeout(r, 1000))
     ok('a run reaches its tests to be interrupted', testing(), text)
     p.kill('SIGINT')

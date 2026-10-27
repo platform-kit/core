@@ -8,7 +8,10 @@
  * --run puts one script in place of the suite, against the same fresh stacks (the runner's own test uses it); the
  * coverage gate needs the whole suite, so a --run is never a passing end-to-end run of the site — it says so.
  *
- * For each site with a backend:
+ * First the run copies the checkout (git's files, each fetched site's, the .env files — never node_modules or anything
+ * else .gitignore names) outside it, installs it from scratch (npm ci) and runs again from inside the copy, so the code
+ * under test is never the developer's (openspec: e2e-runs-its-own-copy). Then, for each site with a backend:
+ *   0. its content compiled and its prepare steps run, as `platformkit build` does, and its functions' data made;
  *   1. any stack an earlier run left (`pk_<site>_e2e`) is stopped without its backup, so nothing survives;
  *   2. a runtime project is made the way the dev workspace makes one (prepareRuntimeProject) — its own
  *      project id, its ports from the test range (40000 up), never a dev port;
@@ -28,7 +31,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { spawn, spawnSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { sites as registeredSites, workspaceRoot } from './sites.mjs'
 import { loadSite } from './site.mjs'
 import { prepareRuntimeProject, findFreePort } from './dev-workspace.mjs'
@@ -57,6 +60,56 @@ if (!dockerUp()) die('Docker is not answering — the end-to-end run builds its 
   const { browserPath } = await import('./browser.mjs')
   const b = await browserPath()
   if (!b.there) die(`no browser for the page checks at ${b.at} — \`npx playwright install chromium\`, or PLAYWRIGHT_CHROMIUM_PATH naming one`)
+}
+
+/* ---- THE RUN'S OWN COPY OF THE CODE. The checkout is copied as git sees it — tracked files and new ones, never what
+   .gitignore names (node_modules, builds, caches, generated data) — each fetched site with it, and the settings files
+   (.env), which the tests need. The copy installs from scratch (npm ci) and the runner runs again from inside it, so
+   nothing a run reads or writes is the checkout's: a dev server rewriting a site's files mid-run cannot reach it. ---- */
+if (!process.env.PLATFORMKIT_E2E_SNAPSHOT) {
+  /* outside the checkout, so nothing in the copy resolves back into it; one place per checkout */
+  const os = await import('node:os')
+  const snap = path.join(os.homedir(), '.cache', 'platformkit', 'e2e-source', crypto.createHash('sha1').update(ROOT).digest('hex').slice(0, 10))
+  const listed = (dir, extra) => {
+    const r = spawnSync('git', ['ls-files', '-z', ...extra], { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 28 })
+    if (r.status !== 0) die(`could not list the files of ${dir} — the run copies a checkout as git sees it:\n${r.stderr}`)
+    return r.stdout.split('\0').filter(Boolean)
+  }
+  const copyCheckout = (from, to) => {
+    const files = [...listed(from, ['-co', '--exclude-standard']), ...listed(from, ['-oi', '--exclude-standard', '--', '.env', '.env.*', '**/.env', '**/.env.*']).filter((f) => !f.split('/').includes('node_modules'))]
+    for (const f of files) {
+      const src = path.join(from, f), dst = path.join(to, f)
+      let st; try { st = fs.lstatSync(src) } catch { continue } // tracked, deleted in the working tree
+      fs.mkdirSync(path.dirname(dst), { recursive: true })
+      if (st.isSymbolicLink()) fs.symlinkSync(fs.readlinkSync(src), dst)
+      else if (st.isFile()) fs.copyFileSync(src, dst)
+    }
+    return files.length
+  }
+  console.log(`\x1b[2m[e2e]\x1b[0m copying the code to ${snap}`) // the runner's own test reads this line
+  fs.rmSync(snap, { recursive: true, force: true })
+  copyCheckout(ROOT, snap)
+  const fetched = registeredSites(ROOT).filter((s) => s.fetched !== false && s.directory.startsWith(path.join(ROOT, 'sites', 'external') + path.sep) && fs.existsSync(s.directory))
+  for (const s of fetched) copyCheckout(s.directory, path.join(snap, path.relative(ROOT, s.directory)))
+  console.log('\x1b[2m[e2e]\x1b[0m installing from scratch (npm ci)')
+  const npm = (a) => spawnSync('npm', [...a, '--no-audit', '--no-fund', '--loglevel=error'], { cwd: snap, stdio: 'inherit', env: { ...process.env, HUSKY: '0' } }).status === 0 // the copy has no .git for git hooks
+  if (!npm(['ci'])) die('npm ci failed in the run\'s copy of the code')
+  /* a fetched site is not a workspace and has no lockfile of its own: what it needs beyond the workspace's install goes in
+     beside it, at the version its package.json asks for */
+  const extra = []
+  for (const s of fetched) {
+    const dir = path.join(snap, path.relative(ROOT, s.directory))
+    const deps = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')).dependencies || {}
+    for (const [dep, range] of Object.entries(deps)) if (dep !== 'platformkit' && !fs.existsSync(path.join(snap, 'node_modules', dep)) && !fs.existsSync(path.join(dir, 'node_modules', dep))) extra.push(`${dep}@${range}`)
+  }
+  if (extra.length && !npm(['install', '--no-save', ...new Set(extra)])) die(`could not install what the fetched sites need beyond the workspace: ${extra.join(', ')}`)
+  const inSnap = (p) => (p && (p === ROOT || p.startsWith(ROOT + path.sep)) ? path.join(snap, path.relative(ROOT, p)) : p)
+  const childArgs = args.map((a, i) => (args[i - 1] === '--run' ? inSnap(RUN) : a))
+  const child = spawn(process.execPath, [path.join(snap, 'packages', 'kit', 'build', 'e2e.mjs'), ...childArgs], { cwd: inSnap(process.cwd()), stdio: 'inherit', env: { ...process.env, PLATFORMKIT_E2E_SNAPSHOT: snap } })
+  for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => child.kill(sig))
+  const code = await new Promise((resolve) => child.on('exit', (c, sig) => resolve(c ?? (sig ? 130 : 1))))
+  if (!KEEP) fs.rmSync(snap, { recursive: true, force: true })
+  process.exit(code)
 }
 
 /* ---- the sites: every registered site with a backend, or the ones --only names ---- */
@@ -186,6 +239,13 @@ async function runSite(site, reserved) {
     /* 1. nothing an earlier run left */
     const assembled = spawnSync(process.execPath, [path.join(HERE, 'assemble.mjs')], { cwd: site.directory, encoding: 'utf8' })
     if (assembled.status !== 0) throw new Error('the site would not assemble:\n' + ((assembled.stdout || '') + (assembled.stderr || '')).trim().split('\n').slice(-8).join('\n'))
+    /* its content, compiled now and prepared as `platformkit build` does it (the engine the site asks for, then the
+       prepare steps — the search index among them): the drop-in scripts compile it in, and a copy of the code has none
+       an earlier build left */
+    for (const [what, a] of [['content', ['--input-type=module', '-e', `const { engineFor } = await import(${JSON.stringify(pathToFileURL(path.join(HERE, 'collections.mjs')).href)}); const e = await engineFor(process.cwd()); await e.build({ root: process.cwd(), log: () => {} })`]], ['prepare steps', [path.join(HERE, 'steps.mjs'), '--run', 'prepare']]]) {
+      const r = spawnSync(process.execPath, a, { cwd: site.directory, encoding: 'utf8', env: { ...process.env, ...parseEnv(base) } })
+      if (r.status !== 0) throw new Error(`its ${what} would not build:\n` + ((r.stdout || '') + (r.stderr || '')).trim().split('\n').slice(-8).join('\n'))
+    }
     /* and the data the functions import, made now from the site's content: a file an earlier build left (or none at
        all, on a site never built here) is not the site as it is — the club's stack would not start without them */
     const data = spawnSync(process.execPath, [path.join(HERE, 'functions-data.mjs')], { cwd: site.directory, encoding: 'utf8', env: { ...process.env, ...parseEnv(base) } })

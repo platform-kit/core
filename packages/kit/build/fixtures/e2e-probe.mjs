@@ -8,6 +8,7 @@
  *                        service would — the probe then needs it, and must fail
  *   PROBE_SLEEP=<s>      waits, so the runner test can interrupt a run mid-test
  */
+import { fileURLToPath } from 'node:url'
 import pg from 'pg'
 import { requireStack, stackOf, skip } from '../test-stack.mjs'
 
@@ -31,5 +32,6 @@ await db.end()
 console.log('PROBE ' + JSON.stringify({
   site: s.site, api: s.api, db: s.db.replace(/\/\/[^@]*@/, '//'), functions: s.functions, mail: s.mail, app: s.app,
   e2e: process.env.PLATFORMKIT_E2E, tables, columns, marker, purchases,
+  code: fileURLToPath(import.meta.url), // where the code under test is
 }))
 if (process.env.PROBE_SLEEP) await new Promise((r) => setTimeout(r, Number(process.env.PROBE_SLEEP) * 1000))
