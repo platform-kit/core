@@ -71,7 +71,8 @@ table names the content path that produces it. `build/declarations.test.mjs` che
 1. Each table appears in exactly one classification.
 2. Projected tables do not grant writes to signed-in clients.
 3. Kit and theme client code does not write to projected tables.
-4. Each projected table names a path produced by a content collection.
+4. Each projected table names a path produced by a content collection, or a content folder that a build script reads itself and `build/content-kinds.mjs` records with no collection. Courses are read that way, so a lesson's text never reaches the browser before it is open.
+5. The script that writes each projected table runs on a reset (`build/reset-seed.mjs`, the steps `platformkit migrate reset` and the end-to-end run share). A projection nothing restores is an empty table after a reset, and an empty table does not fail.
 
 Pending entries document an in-progress transition to file-backed declarations. Each names the
 change that will complete it; an entry whose change is no longer active fails the check. The
@@ -92,6 +93,7 @@ files or the classification lists.
 | Social     | provider applications, connections, posts and account-scoped automations                                          | publisher grants, verified inbound events, response deliveries and their outcomes                                                                             |
 | Spaces     | spaces, channels, roles, grants, what a room hears, whether a space is discoverable, its headings and its welcome | memberships, roles held, messages, counters, a grant given to one person, an invitation and who used it, every act of moderation, what the desk finished with |
 | Network    | nothing — no file declares a post, a follow or somebody's page                                                    | posts, likes, reposts, follows, blocks, mutes, pinned spaces, every act of moderation, an identity on the wider network, app passwords and sessions           |
+| Courses    | a course, its sections and lessons, its cohorts and how it is released                                            | enrollments, lessons finished, what each person was told, certificates                                                                                        |
 | Instrument | the three tests, the bank, the results copy                                                                       | answers, results, signals                                                                                                                                     |
 | API        | the subscriptions a deployment ships                                                                              | the keys' hashes, the subscriptions people make                                                                                                               |
 

@@ -567,6 +567,7 @@ REVOKE ALL ON FUNCTION "public"."run_course_notices"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."run_course_notices"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."run_course_notices"() TO "service_role";
 REVOKE ALL ON FUNCTION "public"."member_courses"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."member_courses"("uuid") FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."member_courses"("uuid") TO "authenticated", "service_role";
 GRANT ALL ON FUNCTION "public"."course_state"("text") TO "anon", "authenticated", "service_role";
 GRANT ALL ON FUNCTION "public"."courses_list"() TO "anon", "authenticated", "service_role";

@@ -26,7 +26,7 @@ const site = { root: process.cwd(), modules: {} }
 
 /* the count is pinned on purpose: a step quietly lost, or a key used twice, is a build that
    silently stops doing something. Adding one is meant to be a line in a diff. */
-const KIT_STEPS = 39   /* + teams, teams-push: a team's declaration compiled, then projected */
+const KIT_STEPS = 40   /* + teams, teams-push: a team's declaration compiled, then projected; + courses-push */
 t('the kit declares every step it should, keys unique, phases valid, run a function', () => {
   assert.equal(STEPS.length, KIT_STEPS)
   assert.equal(new Set(STEPS.map((s) => s.key)).size, KIT_STEPS)
@@ -40,7 +40,7 @@ t('every phase of the kit orders, and the order respects every after', () => {
     for (const s of o) for (const a of s.after) assert.ok(o.findIndex((x) => x.key === a) < o.indexOf(s), `${s.key} after ${a}`)
   }
   assert.deepEqual(order(all, 'site').map((s) => s.key), ['rewrites', 'form-embed', 'support-sdk', 'comments-sdk', 'analytics-sdk', 'models-json', 'prerender'])
-  assert.deepEqual(order(all, 'after').map((s) => s.key), ['auth-config', 'push-catalog', 'webhooks-push', 'spaces-push', 'teams-push', 'events-push', 'comments-push', 'achievements-push', 'bots-push', 'search-push', 'funnels-run', 'tts'])
+  assert.deepEqual(order(all, 'after').map((s) => s.key), ['auth-config', 'push-catalog', 'webhooks-push', 'spaces-push', 'teams-push', 'courses-push', 'events-push', 'comments-push', 'achievements-push', 'bots-push', 'search-push', 'funnels-run', 'tts'])
 })
 t('the declaration order is kept between unrelated steps; an edge moves a step only as far as it must', () => {
   const list = [{ key: 'a', phase: 'site' }, { key: 'b', phase: 'site', after: ['c'] }, { key: 'c', phase: 'site' }, { key: 'd', phase: 'site' }].map(norm)

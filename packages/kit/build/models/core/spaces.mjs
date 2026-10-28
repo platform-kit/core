@@ -95,9 +95,9 @@ export default {
     /* the catalog from the store, as the functions read it: without it a `bought:` grant has no offer key, and the
        database refuses a product grant with none (the cloud lane failed on the-workshop's coaching-session grant) */
     let catalog = typeof ctx.catalog === 'function' ? ctx.catalog() : ctx.catalog || null
-    /* in the Edge Function the admin hands it over; on a machine it is the site's assembled file */
+    /* in the Edge Function the admin hands it over; on a machine it is the site's assembled file, read through the checkout's store */
     if (!catalog || !catalog.offers) {
-      try { const fs = await import('node:fs'); const path = await import('node:path'); const f = path.join(ctx.root || process.cwd(), 'supabase', 'functions', '_shared', 'catalog.json'); catalog = fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null } catch { catalog = null }
+      try { const t = ctx.store && ctx.store.kind === 'git' ? await ctx.store.read('supabase/functions/_shared/catalog.json') : null; catalog = t ? JSON.parse(t) : null } catch { catalog = null }
     }
     const spaces = await compileSpaces({ store: ctx.store, write: false, catalog })
     if (!spaces) return

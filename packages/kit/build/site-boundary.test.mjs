@@ -38,6 +38,7 @@ const maintainedPaths = [
   'docs',
   'sites/docs/content/docs',
   'sites/brochure',
+  'sites/club',
   'sites/demo',
   'packages/kit',
   'openspec/specs',
@@ -67,6 +68,7 @@ const workspace = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'u
 assert.deepEqual(workspace.workspaces, [
   'packages/*',
   'sites/brochure',
+  'sites/club',
   'sites/demo',
   'sites/docs',
 ], 'PlatformKit workspaces must contain packages and generic fixtures only')

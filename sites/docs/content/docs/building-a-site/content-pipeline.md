@@ -34,7 +34,7 @@ sources:
     packages/kit/build/steps.mjs,
     packages/kit/build/steps.test.mjs,
   ]
-reviewed: 2026-10-22
+reviewed: 2026-10-27
 ---
 
 Content authors edit Markdown files under `content/`. During the build, Velite validates those files, renders their Markdown, and writes one JSON file per collection plus an `index.js` under `.velite/`. The app imports the generated collections through `#content`. The kit defines this pipeline in `packages/kit/build/velite.mjs`; a site's `velite.config.js` calls `kitConfig()`.
@@ -49,7 +49,7 @@ The browser bundle includes the collection fields imported by application code. 
 
 ## Adding a content type
 
-When you add a content directory or a file directly under `content/`, register it in `build/content-kinds.mjs` and provide the admin model that edits it. `content-kinds.test.mjs` checks that every content path has a matching admin model; without one, the type is not editable through the cloud CMS.
+When you add a content directory or a file directly under `content/`, register it in `build/content-kinds.mjs` and provide the admin model that edits it. `content-kinds.test.mjs` checks that every content path has a matching admin model; without one, the type is not editable through the cloud CMS. A folder that a build script reads itself, and that never becomes a Velite collection, is registered with `collection: null`. Teams and courses work this way; a course stays out of the browser bundle so that a lesson's text leaves the database only when the lesson is open.
 
 If a content declaration produces database rows, add a `projected(ctx)` action to its admin model. That action lets the content pipeline update projections when content is published in cloud mode, where no site build may run. The declarations checks require a projection source and ensure that clients cannot write projected tables directly. See [Declarations and state](/content/docs/building-a-site/declarations-and-state).
 

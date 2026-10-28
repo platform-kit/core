@@ -26,7 +26,7 @@ sources:
     packages/kit/build/courses.test.mjs,
     packages/kit/build/courses-db.test.mjs,
   ]
-reviewed: 2026-10-22
+reviewed: 2026-10-27
 ---
 
 A course is sections and lessons in order, which a reader works through and finishes. The `courses` module adds them: the course builder in the admin, the reader's pages, enrollments, release over time, completion, certificates and the emails that go with them.

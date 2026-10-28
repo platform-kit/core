@@ -16,6 +16,7 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { DECLARED, STATE, pendingOf, DERIVED } from './declarations.mjs'
+import { KINDS } from './content-kinds.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const KIT = join(HERE, '..')
@@ -95,6 +96,10 @@ for (const [t, d] of Object.entries(DECLARED)) {
      over the whole library is one table with five sources, not five lies about one */
   for (const one of Array.isArray(d.from) ? d.from : [d.from]) {
     const p = String(one || '').replace(/^content\//, '')
+    /* a folder a build script reads itself and no collection compiles (content-kinds.mjs: collection null), which
+       is how a course's lessons stay out of the browser: it is read from the folder that kind names */
+    const kind = KINDS['content/' + p.replace(/\/\*.*$/, '')]
+    if (kind && kind.collection === null) { ok('`' + t + '` comes from a content kind that exists', !!kind.model, p); continue }
     ok('`' + t + '` comes from a collection that exists', velite.includes("'" + p + "'"),
       p + ' — no collection in build/velite.mjs produces it')
   }
@@ -129,13 +134,16 @@ if (waiting.length) {
 {
   const cli = readFileSync(new URL('../bin/platformkit.mjs', import.meta.url), 'utf8')
   const line = (cli.match(/case 'migrate':[^\n]*/) || [''])[0]
-  ok('the reset line was found in the CLI', !!line && line.includes('supabase'), 'the shape of bin/platformkit.mjs changed')
+  /* the reset runs `supabase db reset`, then the seed steps (build/reset-seed.mjs), which the end-to-end runner runs too */
+  ok('the reset line was found in the CLI', !!line && line.includes('supabase') && line.includes('runSeedSteps'), 'the shape of bin/platformkit.mjs changed')
+  const { SEED_STEPS } = await import('./reset-seed.mjs')
+  const seeded = SEED_STEPS.map(([script]) => script)
   const scripts = [...new Set(Object.values(DECLARED).map((d) => d.by).filter(Boolean))].sort()
   ok('every projection says which script writes it',
     Object.entries(DECLARED).every(([, d]) => !!d.by),
     Object.entries(DECLARED).filter(([, d]) => !d.by).map(([t]) => t).join(', '))
   for (const s of scripts) {
-    ok('`' + s + '` runs on a reset', line.includes(`'${s}.mjs'`),
+    ok('`' + s + '` runs on a reset', seeded.includes(`${s}.mjs`),
       'a projection it writes would be empty after `platformkit migrate reset`, and nothing would say so')
   }
 }

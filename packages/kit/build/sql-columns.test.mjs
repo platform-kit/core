@@ -61,6 +61,8 @@ CREATE TRIGGER "t2" BEFORE INSERT ON "public"."widgets"
   ok('FROM binds an alias', b.get('e') === 'events')
   ok('JOIN ... AS binds an alias', b.get('p') === 'purchases')
   ok('a subquery alias binds to nothing', !b.get('z'))
+  const c = aliasBindings('with pending as (select 1 from public.profiles p where p.id = x) select p.due_at from pending p')
+  ok('an alias that is also a CTE\'s binds to nothing', !c.get('p'))
 }
 {
   /* a function attached to no trigger: NEW cannot be resolved, so it is counted and never blamed */

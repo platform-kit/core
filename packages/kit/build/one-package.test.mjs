@@ -17,9 +17,9 @@ const ROOT = path.resolve(KIT, '../..')
 let pass = 0, fail = 0
 const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(0, 12).join('\n        ') : '')) } }
 
-/* the retired names, outside history (the changes OpenSpec keeps, and the lockfile npm writes) */
+/* the retired names, outside history (the changes OpenSpec keeps, the lockfile npm writes) and the spec that forbids them by name */
 const old = ['@platform-kit/' + 'kit', '@platform-kit/' + 'movable-types', 'packages/' + 'movable-types']
-const grep = spawnSync('git', ['grep', '-n', '-I', ...old.flatMap((o) => ['-e', o]), '--', '.', ':!package-lock.json', ':!openspec/changes/**'], { cwd: ROOT, encoding: 'utf8' })
+const grep = spawnSync('git', ['grep', '-n', '-I', ...old.flatMap((o) => ['-e', o]), '--', '.', ':!package-lock.json', ':!openspec/changes/**', ':!openspec/specs/kit-cli/spec.md'], { cwd: ROOT, encoding: 'utf8' })
 ok('no import, dependency or configuration names the retired packages', grep.status === 1 && !grep.stdout.trim(), grep.stdout)
 
 const manifest = JSON.parse(fs.readFileSync(path.join(KIT, 'package.json'), 'utf8'))

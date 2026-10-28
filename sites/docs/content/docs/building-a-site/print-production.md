@@ -22,7 +22,7 @@ sources:
     packages/kit/supabase/functions/print-webhook,
     packages/kit/supabase/functions/lulu-webhook,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-27
 ---
 
 Editors' view: [Print editions](/content/docs/running-a-site/selling/print-editions). This page is the machinery.

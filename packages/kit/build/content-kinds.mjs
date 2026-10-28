@@ -41,6 +41,8 @@ export const KINDS = {
   'content/sessions':          { model: 'sessions', collection: 'sessions' },
   'content/spaces':            { model: 'spaces', collection: 'spaces' },
   'content/teams':             { model: 'teams', collection: null },
+  /* never compiled into the browser: a lesson's text leaves the database only when it is open (46-courses.sql) */
+  'content/courses':           { model: 'courses', collection: null },
   'content/store':             { model: 'storefront', collection: 'storefront' },
   'content/store/products':    { model: 'products', collection: 'products' },
   'content/store/collections': { model: 'collections', collection: 'collections' },

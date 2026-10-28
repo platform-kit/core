@@ -51,6 +51,9 @@ export const DECLARED = {
   bots:                 { by: 'bots-push', from: 'content/bots/*.md', note: 'the table exists so a surface can name the bots it may summon; the worker reads the compiled file rather than this, so there is one copy of what a bot is and it is the file' },
   calendar_events:      { by: 'events-push', from: 'content/events/*.md' },
   calendar_occurrences: { by: 'events-push', from: 'content/events/*.md', note: 'expanded from each event\'s repeat over a rolling year by build/events-push.mjs; one somebody is coming to, or one called off by hand, survives a rewrite because those are acts' },
+  courses:              { by: 'courses-push', from: 'content/courses/*.md', why: 'what a course is, what getting in takes and how it is released — a declaration, so a file' },
+  course_lessons:       { by: 'courses-push', from: 'content/courses/*.md', note: 'the sections and lessons in order, with each one\'s text; what a person has finished is lesson_progress, which is state' },
+  course_cohorts:       { by: 'courses-push', from: 'content/courses/*.md', note: 'the start dates a cohort course declares; who joined one is an enrollment' },
 }
 
 /* what people did, and what the machine keeps for itself */
@@ -136,6 +139,13 @@ export const STATE = {
   booking_holds: "whose time a booking takes — one row per person it takes, because a booking may take more than one and an exclusion constraint can only refuse what it can see in a row",
   session_reminders: 'what has already been sent',
   scheduling_webhooks: 'a subscription somebody made',
+  /* courses: what a person did in one */
+  enrollments: 'somebody got into a course — kept when they lose access, so coming back resumes it, and its release dates count from it',
+  lesson_progress: 'a lesson somebody finished',
+  course_notices: 'what each person has been told about a course, so nothing is told twice',
+  certificates: 'a course somebody finished, issued once with the name and title as they read at the time',
+  /* print production */
+  print_jobs: 'a book being set, leased to one worker at a time with what it has already finished — a request somebody made, and the machine\'s own progress on it',
   /* emails */
   email_log: 'what was sent to whom',
   email_links: 'the token a link is',

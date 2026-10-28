@@ -27,8 +27,10 @@ const call = async (body, bearer = S.service) => {
 }
 const rowOf = async (id) => (await service.from('print_jobs').select('*').eq('id', id).maybeSingle()).data
 const made = []
-/* a job's row once it is finished, waiting for the sweep or the worker still on it (a minute and a half at most) */
-const settled = async (id) => { for (let i = 0; i < 45; i++) { const r = await rowOf(id); if (r && !['queued', 'running'].includes(r.state)) return r; await new Promise((res) => setTimeout(res, 2000)) } return rowOf(id) }
+/* a job's row once it is finished, waiting for the sweep or the worker still on it: a worker cut off holds its lease
+   for LEASE_SECONDS (150, print-render), the sweep asks again within the minute after, and the set then runs — so up
+   to five minutes. Ninety seconds failed whenever the first worker was cut off with its lease still held. */
+const settled = async (id) => { for (let i = 0; i < 150; i++) { const r = await rowOf(id); if (r && !['queued', 'running'].includes(r.state)) return r; await new Promise((res) => setTimeout(res, 2000)) } return rowOf(id) }
 
 /* a book the site prints, from its rows (the content export put them there) */
 const { data: books } = await service.from('content').select('path, text').like('path', 'content/books/%').is('deleted_at', null)

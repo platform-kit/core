@@ -238,8 +238,9 @@ try {
   const seeded = tally[slug] ? null : await complete('seed@example.com')
 
   await ok('the official client, one base changed: forms, a definition, responses, me, workspaces', async () => {
-    const list = await client.forms.list()
-    assert.deepEqual(list.items.map((i) => i.id).sort(), live.sort()); assert.ok(list.items[0]._links.display.endsWith('/to/' + list.items[0].id))
+    /* a page holds ten by default, as Typeform's does: a site with more forms than that is asked for all of them */
+    const list = await client.forms.list({ pageSize: 200 })
+    assert.equal(list.total_items, live.length); assert.deepEqual(list.items.map((i) => i.id).sort(), live.sort()); assert.ok(list.items[0]._links.display.endsWith('/to/' + list.items[0].id))
     const form = await client.forms.get({ uid: slug })
     assert.equal(form.id, slug); assert.ok(Array.isArray(form.fields) && form.fields.length); assert.ok(form.fields.every((g) => g.type === 'group'))
     const mine = definitionOf(FORMS[slug], { site: 'x', apiBase: 'y' }); assert.equal(flatFields(form).length, flatFields(mine).length, 'the served definition is the shape\'s')

@@ -82,6 +82,7 @@ await check('all legacy kit jobs are represented once and retain their original 
     ['agents-sweep', '* * * * *', 'select public.run_agents();', 'bots'],
     ['chat-followups', '* * * * *', 'select public.send_booking_followups()', 'coaching'],
     ['content-push', '* * * * *', 'select public.run_content_push()', 'api'],
+    ['course-notices', '*/15 * * * *', 'select public.run_course_notices()', 'courses'],
     ['email-funnels', '7 * * * *', 'select public.run_email_funnels()', 'funnels'],
     ['event-reminders', '*/5 * * * *', 'select public.run_event_reminders()', 'events'],
     ['hyperswitch-subscription-renewal', '*/15 * * * *', 'select public.run_hyperswitch_subscription_renewal()', 'memberships'],
@@ -131,7 +132,8 @@ if (docker.status === 0) {
   const sb = (args, options = {}) => spawnSync('npx', ['supabase', '--workdir', scratch, ...args], {
     cwd: scratch, env, encoding: 'utf8', ...options,
   })
-  const major = (/major_version\s*=\s*(\d+)/.exec(fs.readFileSync(path.join(root, 'supabase', 'config.toml'), 'utf8')) || [])[1] || '17'
+  /* the scratch database is built from the kit's schemas, so it takes the kit's Postgres version: a site with no backend has no config.toml */
+  const major = (/major_version\s*=\s*(\d+)/.exec(fs.readFileSync(path.join(kitRoot, 'config.toml.template'), 'utf8')) || [])[1] || '17'
   const rowsFile = path.join(scratch, 'supabase', 'data.sql')
   let db
   try {

@@ -144,12 +144,15 @@ const safeToProject = async (m) => {
   return { ok: true, why: `${inRows} record(s) in rows` }
 }
 
-/* the hook reaches the database — which is what a publish calls, and the whole point of the shape */
+/* the hook reaches the database — which is what a publish calls, and the whole point of the shape. It is handed
+   what the admin function hands it (supabase/functions/admin): the catalog as the functions hold it, which before
+   any publish is the file the deploy shipped, because a model in the pipe has no disk to read one from */
+const shippedCatalog = JSON.parse((await git.read('supabase/functions/_shared/catalog.json')) || 'null')
 for (const m of models) {
   const safe = await safeToProject(m)
   if (!safe.ok) { console.log('  ⚠ ' + m.key + ' not projected — ' + safe.why); continue }
   let err = null
-  try { await m.projected({ store }) } catch (e) { err = e.message }
+  try { await m.projected({ store, catalog: () => shippedCatalog }) } catch (e) { err = e.message }
   ok('`' + m.key + '` projects with no machine, only a database (' + safe.why + ')', err === null, err)
 }
 

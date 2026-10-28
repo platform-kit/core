@@ -1544,8 +1544,14 @@ CREATE OR REPLACE FUNCTION "public"."member_bought"("p_user" "uuid", "p_lim" int
               else public.person_purchases(p_user, coalesce(p_lim, 8), true) end
 $$;
 
+REVOKE ALL ON FUNCTION "public"."member_read"("uuid", integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."member_read"("uuid", integer) FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."member_read"("uuid", integer) TO "authenticated", "service_role";
+REVOKE ALL ON FUNCTION "public"."member_working"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."member_working"("uuid") FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."member_working"("uuid") TO "authenticated", "service_role";
+REVOKE ALL ON FUNCTION "public"."member_bought"("uuid", integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."member_bought"("uuid", integer) FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."member_bought"("uuid", integer) TO "authenticated", "service_role";
 
 -- The public half of a person's card: what the directory already says, and the line they wrote about

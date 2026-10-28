@@ -166,6 +166,13 @@ export function aliasBindings(body) {
     if (b.has(alias) && b.get(alias) !== m[1].toLowerCase()) b.set(alias, null)
     else if (!b.has(alias)) b.set(alias, m[1].toLowerCase())
   }
+  /* nor is one also bound to a CTE or anything else outside public: `from public.profiles p` inside a CTE and
+     `from pending p` after it are two different things called p (60-emails.sql, admin_funnel) */
+  for (const m of clean.matchAll(new RegExp(`\\b(?:FROM|JOIN)\\s+(?!"?public"?\\.)${ident}(?:\\s+AS)?\\s+${ident}\\b(?!\\s*\\.)`, 'gi'))) {
+    const alias = m[2].toLowerCase()
+    if (KEYWORD.has(alias) || KEYWORD.has(m[1].toLowerCase()) || shadow.has(alias)) continue
+    if (b.has(alias)) b.set(alias, null)
+  }
   /* a table used without an alias answers to its own name */
   for (const m of clean.matchAll(new RegExp(`\\b(?:FROM|JOIN|UPDATE|INTO)\\s+"?public"?\\.${ident}`, 'gi'))) {
     const t = m[1].toLowerCase()
