@@ -28,7 +28,7 @@ try { const r = await fetch(`${url}/functions/v1/ingest`, { method: 'OPTIONS', s
 
 let pass = 0, fail = 0
 const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
-const DB_URL = process.env.PLATFORMKIT_TEST_DB_URL || `postgresql://postgres:postgres@127.0.0.1:${Number(new URL(url).port || 54321) + 1}/postgres`
+const DB_URL = process.env.PLATFORMKIT_TEST_DB_URL || `postgresql://postgres:postgres@${new URL(url).hostname}:${Number(new URL(url).port || 54321) + 1}/postgres`
 const sql = async (q, args) => { const db = new pg.Client({ connectionString: DB_URL }); await db.connect(); try { return (await db.query(q, args)).rows } finally { await db.end() } }
 /* the site's limits, as the functions read them (the policy record compiled beside them) */
 const funnels = path.join(process.cwd(), 'supabase/functions/_shared/emails/funnels.json')

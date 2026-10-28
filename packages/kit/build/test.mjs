@@ -317,7 +317,7 @@ for (const [f, ...args] of KIT_TESTS.filter(([f]) => f !== 'schema.test.mjs')) r
 for (const t of (c.build && c.build.tests) || []) run(`site: ${t}`, process.execPath, [path.resolve(ROOT, t)])
 /* the adapters' Deno tests, run as Deno runs them (the functions are Deno's); test-coverage holds that every one is listed here */
 export const DENO_TESTS = ['stripe-payment-provider.test.ts', 'hyperswitch-payment-provider-adapter.test.ts']
-for (const t of DENO_TESTS) run(`kit: ${t} (deno)`, 'deno', ['test', '--no-lock', '-A', KIT(t)])
+for (const t of DENO_TESTS) run(`kit: ${t} (deno)`, 'deno', ['test', '--no-lock', '--node-modules-dir=false', '-A', KIT(t)])
 /* the specs, where a site keeps them */
 if (fs.existsSync(path.join(WORKSPACE_ROOT, 'openspec'))) run('openspec validate', 'npx', ['openspec', 'validate', '--all', '--strict'])
 

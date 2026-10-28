@@ -1,6 +1,7 @@
 ---
 description: Current forecasts and active weather alerts from the National Weather Service.
-openapi: https://api.weather.gov/openapi.json
+# the National Weather Service's spec, kept here (a US government work) so a build never waits on its server
+openapi: content/tools/weather.openapi.json
 operations: [point, gridpoint_forecast, gridpoint_forecast_hourly, alerts_active]
 headers:
   User-Agent: "PlatformKit demo assistant (contact: hello@example.com)"

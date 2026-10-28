@@ -347,8 +347,13 @@ else {
       await sb.from('app_settings').upsert(['repo', 'branch', 'token', 'last_push', 'error'].map((k) => ({ key: 'github:' + k, value: was[k] || '', updated_at: new Date().toISOString() })), { onConflict: 'key' })
     })
     /* the function's door, when the stack serves it (npm run dev does): a guest, a reader and the desk refused; the administrator through */
+    /* the admin function is the largest, and a worker the runtime let go boots again on the next call: a cold boot answers
+       502/503 for a while, which is not the function missing */
     let served = false
-    try { served = (await fetch(url + '/functions/v1/admin', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* not served */ }
+    for (let i = 0; i < 30 && !served; i++) {
+      try { served = (await fetch(url + '/functions/v1/admin', { method: 'OPTIONS', signal: AbortSignal.timeout(10000) })).status < 500 } catch { /* not answering yet */ }
+      if (!served) await new Promise((r) => setTimeout(r, 2000))
+    }
     if (!served) console.log('store: the admin function skipped — not served (npm run dev serves it)')
     else await ta('the admin function: administrators only', async () => {
       const { createClient } = await import('@supabase/supabase-js')

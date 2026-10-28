@@ -6,10 +6,12 @@
  *      names (node_modules, builds, caches, generated data, settings) — with each fetched site's the same way and the
  *      site registry, streamed to `docker build` as a tar;
  *   2. the image installs the packages from scratch (npm ci) with Node and the browser pinned;
- *   3. a container of it starts with a Docker daemon of its own, so every stack the run starts lives inside it;
- *      the settings files (.env) are mounted read-only, never built into the image;
- *   4. the script runs inside (`docker exec`), its output streamed, its exit code returned; its logs are copied out to
- *      node_modules/.cache/platformkit/e2e/ and the container is removed, with everything in it — unless --keep.
+ *   3. two containers of it start on a network of their own: the tests' (the app, the browser, the tests), and beside it
+ *      the Docker daemon every stack the run starts lives in, the code shared between them at the same path; the
+ *      settings files (.env) are mounted read-only, never built into the image;
+ *   4. the script runs in the tests' container (`docker exec`), its output streamed, its exit code returned; its logs are
+ *      copied out to node_modules/.cache/platformkit/e2e/ and both containers are removed, with everything in them —
+ *      unless --keep.
  *
  * build/e2e.mjs and build/e2e-runner.test.mjs call runInContainer() before anything else; inside the container
  * (PLATFORMKIT_E2E_IN_CONTAINER=1) it returns and they run. Nothing here needs an installed package, so a fresh CI
@@ -103,33 +105,61 @@ export async function runInContainer(script, args) {
   const name = `platformkit-e2e-${id}`
   const image = `platformkit-e2e:${id}`
 
-  /* one run per checkout: an earlier run's container (kept, or left by a crash) goes first */
-  docker(['rm', '-f', name])
+  /* THE RUN'S TWO CONTAINERS, on a network of their own. The tests, the app and the browser run in one; the Docker daemon
+     the stacks start in runs in the other (the sidecar), with the code shared between them at the same path. Apart, because
+     a daemon changes the network around it every time a container or network comes or goes, and a browser in that same
+     network abandons every request in flight when it does (net::ERR_NETWORK_CHANGED): pages never drew. */
+  const parts = { tests: name, daemon: `${name}-docker`, net: `${name}-net`, work: `${name}-work`, sock: `${name}-sock`, cache: `${name}-images` }
+  const DAEMON_HOST = 'platformkit-docker'
+  const removeAll = () => {
+    docker(['rm', '-f', parts.tests, parts.daemon])
+    docker(['volume', 'rm', '-f', parts.work, parts.sock])
+    docker(['network', 'rm', parts.net])
+  }
+  /* one run per checkout: an earlier run's containers (kept, or left by a crash) go first */
+  removeAll()
   if (!(await buildImage(root, image))) die('the test image would not build (the output above says why)')
+  /* every build replaces the last, which is left nameless: those go now, or each run leaves gigabytes behind */
+  docker(['image', 'prune', '-f', '--filter', 'label=dev.platformkit.e2e=1'])
 
-  const run = docker(['run', '-d', '--privileged', '--name', name, '-v', `${name}-docker:/var/lib/docker`, ...settingsMounts(root), image])
-  if (run.status !== 0) die(`the test container would not start:\n${run.stderr}`)
-  const remove = () => { if (!keep) docker(['rm', '-f', name]) }
-  for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => { docker(['rm', '-f', name]); process.exit(130) })
+  const started = (what, r) => { if (r.status !== 0) { removeAll(); die(`the ${what} would not start:\n${r.stderr}`) } return r.stdout.trim() }
+  started('test network', docker(['network', 'create', parts.net]))
+  /* the tests' container first: the code volume is empty, so Docker fills it from the image's /work as it mounts it.
+     --init and --ipc=host as Playwright's Docker guide asks for Chrome: without the host's shared memory its pages
+     crashed mid-check ("Target crashed") */
+  started('test container', docker(['run', '-d', '--init', '--ipc=host', '--name', parts.tests, '--network', parts.net,
+    '-v', `${parts.work}:${WORK}`, '-v', `${parts.sock}:/var/run/platformkit`, ...settingsMounts(root),
+    '-e', 'DOCKER_HOST=unix:///var/run/platformkit/docker.sock',
+    /* where the daemon's published ports are, as the Supabase CLI names it (its documented setting for a daemon elsewhere) */
+    '-e', `SUPABASE_SERVICES_HOSTNAME=${DAEMON_HOST}`,
+    '--entrypoint', 'sleep', image, 'infinity']))
+  const testsIp = docker(['inspect', '-f', `{{(index .NetworkSettings.Networks "${parts.net}").IPAddress}}`, parts.tests]).stdout.trim()
+  /* the daemon: its images kept in a volume between runs; host.docker.internal, for a container it starts, is the tests'
+     container, where the servers a test stands up for the functions to call are */
+  started('Docker daemon', docker(['run', '-d', '--privileged', '--name', parts.daemon, '--network', parts.net, '--network-alias', DAEMON_HOST,
+    '-v', `${parts.cache}:/var/lib/docker`, '-v', `${parts.work}:${WORK}`, '-v', `${parts.sock}:/var/run/platformkit`,
+    '--entrypoint', 'dockerd', image, '--host=unix:///var/run/platformkit/docker.sock', `--host-gateway-ip=${testsIp}`]))
+  for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => { removeAll(); process.exit(130) })
 
   const env = Object.entries(process.env).filter(([k]) => PASS.test(k)).flatMap(([k, v]) => ['-e', `${k}=${v}`])
   const cwd = (() => { const rel = path.relative(root, process.cwd()); return rel.startsWith('..') ? WORK : path.posix.join(WORK, rel.split(path.sep).join('/')) })()
-  /* the daemon is up before the script starts: the container's own entry waits for it, an exec does not */
-  const wait = 'i=0; until docker info >/dev/null 2>&1; do i=$((i+1)); [ $i -gt 120 ] && { echo "the container\'s Docker daemon did not start" >&2; tail -20 /var/log/dockerd.log >&2; exit 1; }; sleep 1; done; exec "$@"'
+  /* the daemon answers before the script starts */
+  const wait = 'i=0; until docker info >/dev/null 2>&1; do i=$((i+1)); [ $i -gt 120 ] && { echo "the run\'s Docker daemon did not start" >&2; exit 1; }; sleep 1; done; exec "$@"'
   const code = await new Promise((resolve) => {
-    const p = spawn('docker', ['exec', ...env, '-w', cwd, name, 'sh', '-c', wait, 'sh', 'node', inside(path.resolve(script)), ...mapped], { stdio: 'inherit' })
+    const p = spawn('docker', ['exec', ...env, '-w', cwd, parts.tests, 'sh', '-c', wait, 'sh', 'node', inside(path.resolve(script)), ...mapped], { stdio: 'inherit' })
     p.on('exit', (c) => resolve(c ?? 1))
   })
+  if (code !== 0 && docker(['inspect', '-f', '{{.State.Running}}', parts.daemon]).stdout.trim() !== 'true') console.error(docker(['logs', '--tail', '20', parts.daemon]).stderr)
 
   /* the run's logs, out where they always were */
   const logs = path.join(root, 'node_modules', '.cache', 'platformkit', 'e2e')
   const out = fs.mkdtempSync(path.join(os.tmpdir(), 'platformkit-e2e-logs-'))
   fs.mkdirSync(logs, { recursive: true })
-  docker(['cp', `${name}:${WORK}/node_modules/.cache/platformkit/e2e/.`, out])
+  docker(['cp', `${parts.tests}:${WORK}/node_modules/.cache/platformkit/e2e/.`, out])
   for (const f of fs.readdirSync(out)) if (f.endsWith('.log')) fs.copyFileSync(path.join(out, f), path.join(logs, f))
   fs.rmSync(out, { recursive: true, force: true })
-  if (keep) say(`kept: the container ${name}, with every stack in it — docker exec -it ${name} bash; docker rm -f ${name} removes it`)
-  remove()
+  if (keep) say(`kept: the containers ${parts.tests} (the tests) and ${parts.daemon} (every stack) — docker exec -it ${parts.tests} bash; the next run removes them`)
+  else removeAll()
   process.exit(code)
 }
 

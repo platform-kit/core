@@ -37,7 +37,14 @@ export const LOCAL_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 /* in a test, only the end-to-end run's own verified stack, and nothing outside the run (test-guard.mjs): never the
    dev stack or the .env's project, whatever the environment says */
 export function supabaseUrl() { if (isTestProcess()) return testApi() || ''; loadDotEnv(); return (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '') }
-export function isLocalSupabaseUrl(url) { return /^https?:\/\/(localhost|127\.0\.0\.1|host\.docker\.internal)(:\d+)?$/.test(String(url || '').replace(/\/+$/, '')) }
+/* a stack on this machine — or on the end-to-end run's own Docker daemon, by the name the Supabase CLI is given for it
+   (SUPABASE_SERVICES_HOSTNAME, build/e2e-container.mjs) */
+export function isLocalSupabaseUrl(url) {
+  let x
+  try { x = new URL(String(url || '').replace(/\/+$/, '')) } catch { return false }
+  const daemon = (process.env.SUPABASE_SERVICES_HOSTNAME || '').trim()
+  return /^https?:$/.test(x.protocol) && (x.pathname === '/' || x.pathname === '') && ['localhost', '127.0.0.1', 'host.docker.internal', ...(daemon ? [daemon] : [])].includes(x.hostname)
+}
 export function localStack() { return isLocalSupabaseUrl(supabaseUrl()) }
 export function serviceKey() { if (isTestProcess()) return testApi() ? (process.env.PLATFORMKIT_TEST_SERVICE_ROLE_KEY || LOCAL_SERVICE_KEY) : ''; loadDotEnv(); return process.env.SUPABASE_SERVICE_ROLE_KEY || (localStack() ? LOCAL_SERVICE_KEY : '') }
 

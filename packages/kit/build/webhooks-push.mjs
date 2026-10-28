@@ -17,9 +17,10 @@ import { KINDS } from './webhooks-config.mjs'
 const ROOT = process.cwd()
 const FILE = join(ROOT, 'supabase/functions/_shared/webhooks.json')
 
-export async function pushWebhooks() {
-  if (!existsSync(FILE)) { console.log('webhooks: nothing declared'); return { pushed: 0 } }
-  const rows = JSON.parse(readFileSync(FILE, 'utf8'))
+/* `file`: the declaration to push — the site's, which its functions serve; a test gives its own */
+export async function pushWebhooks({ file = FILE } = {}) {
+  if (!existsSync(file)) { console.log('webhooks: nothing declared'); return { pushed: 0 } }
+  const rows = JSON.parse(readFileSync(file, 'utf8'))
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) { console.log('webhooks: no service key — the shipped subscriptions are not pushed'); return { pushed: 0 } }

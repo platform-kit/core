@@ -17,9 +17,10 @@ const DIR = '.velite'
 export const SALES_DAYS = 90
 const empty = (why) => ({ at: new Date().toISOString(), days: SALES_DAYS, books: {}, bestseller: null, note: why || '' })
 
-export async function salesReport() {
-  const out = path.join(DIR, 'sales.json')
-  const write = (r) => { fs.mkdirSync(DIR, { recursive: true }); fs.writeFileSync(out, JSON.stringify(r, null, 2) + '\n'); return r }
+/* `dir`: where the report goes — .velite, which the storefront reads; a test gives its own, so a running app's is never rewritten */
+export async function salesReport({ dir = DIR } = {}) {
+  const out = path.join(dir, 'sales.json')
+  const write = (r) => { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(out, JSON.stringify(r, null, 2) + '\n'); return r }
   const url = supabaseUrl(), key = serviceKey()
   if (!url || !key) return write(empty('no database in reach'))
   /* the offers' keys → the book each is of (the catalog the functions read; the unlocks name their book too) */

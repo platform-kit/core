@@ -8,7 +8,8 @@ The end-to-end run built fresh stacks but ran the code in the developer's checko
 
 - The run builds an image from the project's files exactly as git lists them — never `node_modules`, a build, a cache or a settings file — with each fetched site's files and the site registry.
 - The image installs the packages from scratch (`npm ci`) and pins Node, the browser and Deno.
-- The run and its tests happen inside a container of that image with a Docker daemon of its own: every stack it starts lives and is removed inside it. The settings files are mounted read-only, never built in.
+- The run and its tests happen inside a container of that image. The stacks run on a Docker daemon of the run's own in a second container of the image beside it, so they live and are removed with the run; the code is shared between the two at the same path. The daemon is apart from the tests because its network changes abort a browser's requests in flight. The settings files are mounted read-only, never built in.
+- A stack test never writes a file the running app or functions read; a build of a test fixture never waits on a third party's server.
 - The run compiles each site's content and runs its prepare steps itself, as `platformkit build` does.
 - The same image runs locally and in CI; CI needs only Node and Docker.
 

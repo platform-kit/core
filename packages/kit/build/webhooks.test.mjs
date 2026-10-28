@@ -5,10 +5,11 @@
    touched, a subscription that stays being updated rather than remade so what it has done survives
    a deploy, and one the file no longer names removed. Skipped with a note when the stack is down. */
 import { createClient } from '@supabase/supabase-js'
-import { writeFileSync, readFileSync, existsSync } from 'node:fs'
+import { writeFileSync, readFileSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
-import { leave, stackOf } from './test-stack.mjs'
+import { leave } from './test-stack.mjs'
 
 const note = (m) => console.log('webhooks: ' + m)
 if (process.env.WEBHOOKS_TEST === '0') { note('skipped (WEBHOOKS_TEST=0)'); process.exit(0) }
@@ -23,41 +24,10 @@ const ok = (m, c, d) => { if (c) pass++; else { fail++; console.log('  FAIL  ' +
 const svc = createClient(url, serviceKey(), { auth: { persistSession: false } })
 const rows = async (t) => ((await svc.from(t).select('*')).data) || []
 
-const F = join(process.cwd(), 'supabase/functions/_shared/webhooks.json')
-
-/*
- * WAIT FOR THE FUNCTIONS TO COME BACK.
- *
- * Writing this file is the point of the test — but where a dev server is running `functions
- * serve`, every write to the functions tree makes the edge runtime reload EVERY function, and the
- * next test in the run that calls one is answered "an invalid response was received from the
- * upstream server" by a runtime that is still starting. That is how this test silently broke
- * print-cloud in the full suite while passing on its own, and cost two suite runs before anybody
- * looked at which test ran before it.
- *
- * A test that disturbs the runtime settles it again before it returns.
- */
-async function settle(ms = 30000) {
-  /* the same default the other stack tests take, since a test run does not carry VITE_* */
-  const url = stackOf()?.api || ''
-  const alive = async () => {
-    try { const r = await fetch(url + '/functions/v1/print-render', { method: 'POST', body: '{}', signal: AbortSignal.timeout(3000) }); return r.status !== 502 && r.status !== 503 }
-    catch { return false }
-  }
-  /* First give the watcher time to NOTICE. Polling straight away sees a runtime that has not
-     started reloading yet, returns healthy, and the restart then lands on whatever test runs
-     next — which is the bug this function exists to stop, written once already. */
-  await new Promise((r) => setTimeout(r, 2500))
-  /* then wait for it to be healthy and STAY healthy, rather than for one lucky answer */
-  const until = Date.now() + ms
-  let run = 0
-  while (Date.now() < until) {
-    run = (await alive()) ? run + 1 : 0
-    if (run >= 4) return
-    await new Promise((r) => setTimeout(r, 500))
-  }
-}
-const had = existsSync(F) ? readFileSync(F, 'utf8') : '[]\n'
+/* the declaration goes to a file of the test's own: the site's webhooks.json is in the functions folder the stack
+   serves, and every write there reloaded every function mid-run */
+const SCRATCH = mkdtempSync(join(tmpdir(), 'webhooks-test-'))
+const F = join(SCRATCH, 'webhooks.json')
 const { pushWebhooks } = await import('./webhooks-push.mjs')
 process.env.SUPABASE_URL = url
 process.env.WH_TEST_SECRET = 'shhh-' + Math.random().toString(36).slice(2, 8)
@@ -72,7 +42,7 @@ try {
     { kind: 'support', url: 'https://ours.example/desk', subscriptions: [] },
     { kind: 'scheduling', url: 'https://ours.example/cal', triggers: [], secret_env: 'WH_TEST_SECRET' },
   ], null, 2) + '\n')
-  await pushWebhooks()
+  await pushWebhooks({ file: F })
 
   let c = await rows('content_webhooks')
   ok('a shipped subscription is there after a deploy', c.some((r) => r.url === 'https://ours.example/hook' && r.source === 'file'))
@@ -86,7 +56,7 @@ try {
   const before = (await rows('content_webhooks')).find((r) => r.source === 'file')
   await svc.from('content_webhooks').update({ last_at: new Date().toISOString() }).eq('id', before.id)
   writeFileSync(F, JSON.stringify([{ kind: 'content', name: 'Our indexer, renamed', url: 'https://ours.example/hook', topics: [] }], null, 2) + '\n')
-  await pushWebhooks()
+  await pushWebhooks({ file: F })
 
   c = await rows('content_webhooks')
   const after = c.find((r) => r.source === 'file')
@@ -97,8 +67,7 @@ try {
 } finally {
   if (mine) await svc.from('content_webhooks').delete().eq('id', mine.id)
   for (const t of ['content_webhooks', 'support_webhooks', 'scheduling_webhooks', 'form_webhooks']) await svc.from(t).delete().eq('source', 'file')
-  writeFileSync(F, had)
-  await settle()
+  rmSync(SCRATCH, { recursive: true, force: true })
 }
 
 console.log('\nwebhooks: ' + pass + ' passed' + (fail ? ', ' + fail + ' FAILED' : '') + '\n')

@@ -8,8 +8,9 @@
  *                             moment, holding the same rows, on the same ports after every run as before
  *   two sites isolated        the demo and the club fixture in one run: each its own stack and ports, each holding
  *                             its own seed and not the other's, a row one writes absent from the other
- *   the run's own container   the tests and the functions run from the image's files: nothing of the checkout is
- *                             mounted but its settings files, and the Docker the stacks run in is the container's own
+ *   the run's own container   the tests and the functions run from the image's files, in the run's own volume: nothing
+ *                             of the checkout is mounted but its settings files, and the stacks run on the run's own
+ *                             Docker daemon (a container beside the tests'), never the machine's
  *   a schema change seen      a table added to the club's db/schemas is on its stack, with nothing run by hand
  *   a crashed run replaced    the kept stack of a run is replaced by the next, its marker row gone
  *   a live key refused        before any stack starts, naming the key
@@ -111,10 +112,14 @@ try {
          container has mounted from outside it is its settings files and the daemon's own volume, nothing else */
       const served = (site) => { try { return fs.realpathSync(path.join(ROOT, 'node_modules', '.cache', 'platformkit', 'e2e', site, 'supabase', 'functions')) } catch { return '' } }
       const at = [demo.code, club.code, served('demo'), served('club')]
-      const mounts = fs.readFileSync('/proc/self/mountinfo', 'utf8').split('\n').map((l) => l.split(' ')[4]).filter(Boolean)
-      const fromOutside = mounts.filter((m) => m === ROOT || m.startsWith(ROOT + path.sep) || m === '/var/run/docker.sock')
+      /* what is mounted at the code, by where it comes from: the run's own volume (filled from the image) at the root, and
+         the settings files over it — never a folder of the checkout, and never the machine's Docker */
+      const mounts = fs.readFileSync('/proc/self/mountinfo', 'utf8').split('\n').filter(Boolean).map((l) => { const f = l.split(' '); return { from: f[3], at: f[4] } })
+      const here = mounts.filter((m) => m.at === ROOT || m.at.startsWith(ROOT + path.sep) || m.at === '/var/run/docker.sock')
+      const allowed = (m) => (m.at === ROOT && /\/volumes\/[^/]+-work\/_data$/.test(m.from)) || /\/\.env(\.[^/]+)?$/.test(m.at)
       ok('the tests and the functions run from the image\'s files', process.env.PLATFORMKIT_E2E_IN_CONTAINER === '1' && at.every((p) => p.startsWith(ROOT + path.sep)), at.join('\n'))
-      ok('…with nothing of the checkout mounted but its settings files, and no Docker but the container\'s own', fromOutside.every((m) => /\/\.env(\.[^/]+)?$/.test(m)), fromOutside.join('\n'))
+      ok('…in the run\'s own volume, with nothing of the checkout mounted but its settings files', here.length > 0 && here.every(allowed), here.map((m) => m.from + ' → ' + m.at).join('\n'))
+      ok('…and the stacks on the run\'s own Docker daemon, not the machine\'s', /^unix:\/\/\/var\/run\/platformkit\//.test(process.env.DOCKER_HOST || '') && !here.some((m) => m.at === '/var/run/docker.sock'), process.env.DOCKER_HOST)
       ok('the club\'s row is in the club\'s database', club.marker === 1, club.marker)
     }
     ok('--keep leaves the stacks up', e2eContainers('pk_club_e2e').length > 0 && e2eContainers('pk_demo_e2e').length > 0)

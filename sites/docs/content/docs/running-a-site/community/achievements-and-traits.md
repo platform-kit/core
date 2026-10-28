@@ -13,7 +13,7 @@ sources:
     packages/kit/theme/src/content/ui/awards.md,
     packages/kit/build/awards-db.test.mjs,
   ]
-reviewed: 2026-10-20
+reviewed: 2026-10-27
 ---
 
 The site already records what people do. Every user-facing act is an event — a piece read, a book chosen, a button pressed — and has been since the first analytics. So neither of these invents a second way of noticing; they both read that stream and nothing else.
@@ -38,7 +38,7 @@ when:
 
 **Nothing is awarded by a client.** One trigger on the event stream decides, running as the definer — a browser can no more ask for a badge than it can ask for a role. `build/awards-db.test.mjs` asks each way: the rule met and not met, the same thing twice, the third different one, awarding twice, and a client trying to insert its own.
 
-**The rule is a declaration; what somebody has earned is an act.** The files are projected into `public.achievements` by `build/achievements-push.mjs` on a machine, and by the `achievements` model's `projected()` on a **publish** where there is no machine to run a script on — the same writes either way, so a rule reaches the database on every deployment shape rather than only the ones that rebuild. Who holds what is a row nobody edits. Delete the database and redeploy and every rule comes back and nobody's badges do — which is the honest answer, because a badge is a fact about a person and the facts about people live where the people do. In local development, matching Markdown edits refresh the compile and explicitly safe local projection; remote or deployment-only work is not run by the watcher, and projection failures stop the refresh.
+**The rule is a declaration; what somebody has earned is an act.** The files are projected into `public.achievements` by `build/achievements-push.mjs` on a machine, and by the `achievements` model's `projected()` on a **publish** where there is no machine to run a script on — the same writes either way, so a rule reaches the database on every deployment shape rather than only the ones that rebuild. Who holds what is a row nobody edits. Delete the database and redeploy and every rule comes back and nobody's badges do — which is the honest answer, because a badge is a fact about a person and the facts about people live where the people do. In local development, matching Markdown edits refresh the compile and explicitly safe local projection; remote or deployment-only work is not run by the watcher, and projection failures stop the refresh. The projection also declares one achievement for every scored quiz in a course (`quiz-<course>-<lesson>`, from the course file) unless a file of the same slug says otherwise, and it reports every slug it declared; `build/awards-db.test.mjs` holds the table to that whole list, files and quizzes together.
 
 ### Its page, and the gallery
 

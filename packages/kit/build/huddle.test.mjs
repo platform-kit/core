@@ -7,7 +7,7 @@
  * code or in a variable it reads.
  */
 import { createHmac } from 'node:crypto'
-import { stackOf } from './test-stack.mjs'
+import { stackOf, dockerHost } from './test-stack.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -185,7 +185,7 @@ if (process.env.HUDDLE_LIVE === '0' || !appUp) {
   const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] })
   const foreign = []
   const sign = async (page, who) => {
-    page.on('request', (r) => { const u = new URL(r.url()); if (!['localhost', '127.0.0.1', 'host.docker.internal'].includes(u.hostname)) foreign.push(u.host) })
+    page.on('request', (r) => { const u = new URL(r.url()); if (!['localhost', '127.0.0.1', 'host.docker.internal', dockerHost()].includes(u.hostname)) foreign.push(u.host) })
     await page.goto(APP + '/', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !!window.DLauth, null, { timeout: 25000 })
     await page.evaluate(() => window.DLauth.open({}))

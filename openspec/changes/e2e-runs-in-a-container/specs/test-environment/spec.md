@@ -2,12 +2,12 @@
 
 ### Requirement: The end-to-end run happens in a container built from the project's files
 
-The end-to-end run SHALL build an image from the project's files as git lists them, with each fetched site's and the site registry, and none that `.gitignore` names. The image SHALL install the packages from scratch and pin the runtime and browser. The run and every test in it SHALL happen inside a container of that image, with a Docker daemon of the container's own for the stacks; nothing of the checkout SHALL be mounted into it but its settings files, read-only. The same image SHALL run locally and in CI.
+The end-to-end run SHALL build an image from the project's files as git lists them, with each fetched site's and the site registry, and none that `.gitignore` names. The image SHALL install the packages from scratch and pin the runtime and browser. The run and every test in it SHALL happen inside a container of that image, and the stacks SHALL run on a Docker daemon of the run's own, in a separate container on the run's own network, never the machine's; nothing of the checkout SHALL be mounted into either but its settings files, read-only. The same image SHALL run locally and in CI.
 
 #### Scenario: the code under test is the image's
 
 - **WHEN** a run over two sites probes each from its tests
-- **THEN** the probe and the functions each stack serves are the image's files, nothing of the checkout is mounted but settings files, and the stacks run on the container's own Docker
+- **THEN** the probe and the functions each stack serves are the image's files in the run's own volume, nothing of the checkout is mounted but settings files, and the stacks run on the run's own Docker daemon
 
 Verified by: `build/e2e-runner.test.mjs`
 

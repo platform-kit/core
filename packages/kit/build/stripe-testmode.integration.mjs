@@ -18,6 +18,8 @@ if (!secretKey?.startsWith('sk_test_')) {
 const testFile = path.join(buildRoot, 'stripe-testmode.integration.test.ts')
 const result = spawnSync('deno', [
   'test',
+  '--node-modules-dir=false', // npm: imports from Deno's own cache: Deno 2 otherwise looks for them in the package's node_modules
+  '--no-lock', // and writes no deno.lock into the checkout
   '--allow-net=api.stripe.com',
   '--allow-env=STRIPE_SECRET_KEY',
   testFile,
@@ -32,6 +34,9 @@ const result = spawnSync('deno', [
     HTTP_PROXY: process.env.HTTP_PROXY,
     ALL_PROXY: process.env.ALL_PROXY,
     NO_PROXY: process.env.NO_PROXY,
+    /* where the browser is, for the step that opens one (build/stripe-3ds-complete.mjs) */
+    PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH,
+    PLAYWRIGHT_CHROMIUM_PATH: process.env.PLAYWRIGHT_CHROMIUM_PATH,
     STRIPE_SECRET_KEY: secretKey,
   },
   stdio: 'inherit',

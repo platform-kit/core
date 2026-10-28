@@ -64,7 +64,9 @@ const DECLARATION = '00000000000000_declaration.sql'
 
 /* TLS for every database that is not on this machine (a hosted pooler insists on it and its url does not say so);
    none for a local stack, or wherever the url says sslmode=disable */
-const isLocal = (url) => /@(?:127\.0\.0\.1|localhost|\[::1\]|host\.docker\.internal)(?::\d+)?\//.test(url)
+const isLocal = (url) => /@(?:127\.0\.0\.1|localhost|\[::1\]|host\.docker\.internal)(?::\d+)?\//.test(url) ||
+  /* the end-to-end run's own Docker daemon, where its stacks are (build/e2e-container.mjs) */
+  (!!process.env.SUPABASE_SERVICES_HOSTNAME && url.includes('@' + process.env.SUPABASE_SERVICES_HOSTNAME.trim() + ':'))
 const sql = (url, tls) => new pg.Client({ connectionString: url, ssl: tls ? { rejectUnauthorized: false } : false })
 /* TLS first for a database elsewhere; a server that has none (a private-network Postgres) is met again without */
 const connect = async (url) => {

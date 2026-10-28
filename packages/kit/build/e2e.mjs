@@ -116,6 +116,14 @@ function background(name, cmd, cmdArgs, { log, ...opts }) {
   return p
 }
 const killGroup = (p) => { try { process.kill(-p.pid, 'SIGTERM') } catch { /* gone */ } }
+/* A KEPT RUN'S PROCESSES GO FIRST. Its apps and functions are still serving, and still watching the sites' compiled
+   content, which this run rebuilds: two content builds over one folder, and this run's app never came up */
+const KEPT = path.join(ROOT, 'node_modules', '.cache', 'platformkit', 'e2e', 'kept.pids')
+if (fs.existsSync(KEPT)) {
+  for (const pid of fs.readFileSync(KEPT, 'utf8').split('\n').map(Number).filter(Boolean)) killGroup({ pid })
+  fs.rmSync(KEPT, { force: true })
+  await new Promise((r) => setTimeout(r, 2000))
+}
 /* the tests, run so the run still hears a signal while they go (a spawnSync would hold it until the last test ended,
    and an interrupted run would leave its stacks up); they are stopped on every teardown, --keep or not */
 const running = new Set()
@@ -135,7 +143,13 @@ function teardown() {
   tornDown = true
   for (const p of running) killGroup(p)
   /* --keep leaves everything answering — the stacks, their functions and the apps — for a look */
-  if (KEEP) { for (const p of children) p.unref(); console.log('\n--keep: the stacks, functions and apps are left up (platformkit test --e2e again replaces them)'); return }
+  if (KEEP) {
+    for (const p of children) p.unref()
+    /* written down, so the next run can stop them before it rebuilds what they watch */
+    fs.writeFileSync(KEPT, [...children].map((p) => p.pid).join('\n') + '\n')
+    console.log('\n--keep: the stacks, functions and apps are left up (platformkit test --e2e again replaces them)')
+    return
+  }
   for (const p of children) killGroup(p)
   for (const w of stacks) stopStack(w)
 }

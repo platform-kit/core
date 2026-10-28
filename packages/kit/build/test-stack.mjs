@@ -17,7 +17,16 @@ import { notTheTestStack, refuse } from './test-guard.mjs'
 export const isE2E = () => process.env.PLATFORMKIT_E2E === '1'
 const env = (k) => (process.env[k] || '').trim()
 const trim = (u) => u.replace(/\/+$/, '')
-const isLocal = (u) => /^https?:\/\/(localhost|127\.0\.0\.1|host\.docker\.internal)(:\d+)?$/.test(trim(u))
+/* WHERE DOCKER'S PUBLISHED PORTS ARE: this machine, or — in the end-to-end run's container (build/e2e-container.mjs) — the
+   run's own Docker daemon beside it, by the name the Supabase CLI is given for it (SUPABASE_SERVICES_HOSTNAME, its
+   documented setting for a daemon elsewhere). A test that starts a container of its own reaches it here. */
+export const dockerHost = () => env('SUPABASE_SERVICES_HOSTNAME') || '127.0.0.1'
+const isLocal = (u) => {
+  try {
+    const x = new URL(trim(u))
+    return /^https?:$/.test(x.protocol) && (x.pathname === '/' || x.pathname === '') && ['localhost', '127.0.0.1', 'host.docker.internal', dockerHost()].includes(x.hostname)
+  } catch { return false }
+}
 
 /* the run's stack as the runner wrote it, unverified: for this helper's own test of its shape, and nothing else
    (test-coverage.test.mjs holds every other test to stackOf) */
@@ -31,7 +40,7 @@ export function runStackFrom(e = process.env) {
     api,
     anon,
     service: get('PLATFORMKIT_TEST_SERVICE_ROLE_KEY') || LOCAL_SERVICE_KEY,
-    db: get('PLATFORMKIT_TEST_DB_URL') || `postgresql://postgres:postgres@127.0.0.1:${Number(new URL(api).port || 54321) + 1}/postgres`,
+    db: get('PLATFORMKIT_TEST_DB_URL') || `postgresql://postgres:postgres@${new URL(api).hostname}:${Number(new URL(api).port || 54321) + 1}/postgres`,
     functions: trim(get('PLATFORMKIT_TEST_FUNCTIONS_URL') || api + '/functions/v1'),
     mail: trim(get('PLATFORMKIT_TEST_MAIL_URL')) || null,
     app: trim(get('PLATFORMKIT_TEST_APP_URL')) || null,

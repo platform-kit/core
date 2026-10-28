@@ -29,9 +29,16 @@ function say(message) {
   console.log(`\x1b[36m›\x1b[0m ${message}`)
 }
 
-function tcpConnects(port) {
+/* something answers on the port: on this machine, or where Docker publishes when that is elsewhere (the end-to-end
+   run's own daemon, SUPABASE_SERVICES_HOSTNAME) — a stack's port is taken there, not here */
+async function tcpConnects(port) {
+  const elsewhere = (process.env.SUPABASE_SERVICES_HOSTNAME || '').trim()
+  return await tcpConnectsAt('127.0.0.1', port) || (!!elsewhere && await tcpConnectsAt(elsewhere, port))
+}
+
+function tcpConnectsAt(host, port) {
   return new Promise((resolve) => {
-    const socket = connect({ host: '127.0.0.1', port })
+    const socket = connect({ host, port })
     socket.setTimeout(250)
     socket.once('connect', () => { socket.destroy(); resolve(true) })
     socket.once('timeout', () => { socket.destroy(); resolve(false) })

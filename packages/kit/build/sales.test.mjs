@@ -30,8 +30,9 @@ let n = 0, bad = 0
 const t = async (name, fn) => { n++; try { await fn() } catch (e) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
 const note = (s) => console.log('  ' + s)
 
-const OUT = path.join(process.cwd(), '.velite', 'sales.json')
-const had = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8') : null
+/* the report goes to a folder of the test's own: the site's .velite/sales.json is what its running app reads, and a
+   rewrite there reloaded every open page mid-run */
+const SCRATCH = fs.mkdtempSync(path.join((await import('node:os')).tmpdir(), 'sales-test-'))
 const salesModule = new URL('./sales.mjs', import.meta.url).href
 
 /* ─── the path a fresh clone takes: no database, and therefore no claim ─── */
@@ -61,7 +62,7 @@ else {
   const { createClient } = await import('@supabase/supabase-js')
   const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
   const env = { ...process.env, SUPABASE_URL: cfg.API_URL, SUPABASE_SERVICE_ROLE_KEY: cfg.SERVICE_ROLE_KEY }
-  const run = () => JSON.parse(execSync(`${process.execPath} -e "import(process.argv[1]).then(m => m.salesReport()).then(r => console.log(JSON.stringify(r)))" ${JSON.stringify(salesModule)}`,
+  const run = () => JSON.parse(execSync(`${process.execPath} -e "import(process.argv[1]).then(m => m.salesReport({ dir: process.argv[2] })).then(r => console.log(JSON.stringify(r)))" ${JSON.stringify(salesModule)} ${JSON.stringify(SCRATCH)}`,
     { cwd: process.cwd(), encoding: 'utf8', env }).trim().split('\n').pop())
 
   /* which offers name a book at all — without one, no purchase can be attributed */
@@ -120,13 +121,11 @@ else {
       }
     } finally {
       await clean()
-      run()   /* leave sales.json as the real rows say */
     }
   }
 }
 
-/* the checkout is left as it was found */
-if (had != null) fs.writeFileSync(OUT, had)
+fs.rmSync(SCRATCH, { recursive: true, force: true })
 
 console.log(bad ? `sales: ${n - bad} passed, ${bad} failed` : `sales: ${n} passed, 0 failed`)
 process.exit(bad ? 1 : 0)

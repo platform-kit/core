@@ -27,7 +27,9 @@ const { findFreePort } = await import('./dev-workspace.mjs')
 const PORT = RUN_SITE ? await findFreePort(START) : 54382
 const PROJECT = 'pk-schema-test' + (RUN_SITE ? '-' + RUN_SITE : '')
 const SHADOW = RUN_SITE ? await findFreePort(PORT + 1) : PORT - 1
-const TARGET = `postgresql://postgres:postgres@127.0.0.1:${PORT}/postgres?sslmode=disable`
+/* its database is where Docker publishes: this machine, or the end-to-end run's own daemon beside its container */
+const DOCKER_AT = (process.env.SUPABASE_SERVICES_HOSTNAME || '').trim() || '127.0.0.1'
+const TARGET = `postgresql://postgres:postgres@${DOCKER_AT}:${PORT}/postgres?sslmode=disable`
 const note = (m) => console.log('schema: ' + m)
 if (process.env.SCHEMA_TEST === '0') { note('skipped (SCHEMA_TEST=0)'); process.exit(0) }
 if (spawnSync('docker', ['info'], { stdio: 'ignore' }).status !== 0) { note('skipped — Docker is not running, and the plan needs a shadow'); process.exit(0) }

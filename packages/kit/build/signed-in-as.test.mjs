@@ -56,7 +56,12 @@ const open = async () => {
   const page = await ctx.newPage()
   const errs = []
   page.on('pageerror', (e) => errs.push(String(e.message || e).slice(0, 160)))
-  return { ctx, page, errs }
+  /* what the page met on the way, said only when a person's check stops: a page that never draws says why */
+  const seen = []
+  page.on('console', (m) => { if (m.type() === 'error') seen.push('console: ' + m.text().slice(0, 200)) })
+  page.on('requestfailed', (r) => seen.push('request failed: ' + r.url().replace(BASE, '') + ' — ' + (r.failure()?.errorText || '')))
+  page.on('response', (r) => { if (r.status() >= 500) seen.push(r.status() + ': ' + r.url().replace(BASE, '')) })
+  return { ctx, page, errs, seen }
 }
 const ready = async (page, path) => {
   await page.goto(BASE + path, { waitUntil: 'domcontentloaded' })
@@ -116,7 +121,7 @@ const PEOPLE = [
 ]
 
 for (const p of PEOPLE) {
-  const { ctx, page, errs } = await open()
+  const { ctx, page, errs, seen } = await open()
   try {
     await ready(page, '/')
     await signIn(page, p.email)
@@ -150,13 +155,13 @@ for (const p of PEOPLE) {
 
     ok(`${p.who}: nothing threw while they used the site`, errs.length === 0, errs.slice(0, 2).join(' | '))
   } catch (e) {
-    fail++; console.log(`  ✖ ${p.who} — ${String(e.message || e).split('\n')[0].slice(0, 200)}`)
+    fail++; console.log(`  ✖ ${p.who} — ${String(e.message || e).split('\n')[0].slice(0, 200)}` + `\n      at ${page.url().replace(BASE, '') || '(no page)'}${[...errs, ...seen].slice(-8).map((x) => '\n      ' + x).join('')}`)
   } finally { await ctx.close() }
 }
 
 /* ─── and a guest, who has no session at all ─── */
 {
-  const { ctx, page, errs } = await open()
+  const { ctx, page, errs, seen } = await open()
   try {
     const got = []
     for (const s of SECTIONS) got.push(await landed(page, s))
@@ -167,7 +172,7 @@ for (const p of PEOPLE) {
     ok('guest: can still read the library', await page.evaluate(() => document.querySelectorAll('a[href*="/content/"]').length > 0))
     ok('guest: nothing threw', errs.length === 0, errs.slice(0, 2).join(' | '))
   } catch (e) {
-    fail++; console.log(`  ✖ guest — ${String(e.message || e).split('\n')[0].slice(0, 200)}`)
+    fail++; console.log(`  ✖ guest — ${String(e.message || e).split('\n')[0].slice(0, 200)}` + `\n      at ${page.url().replace(BASE, '') || '(no page)'}${[...errs, ...seen].slice(-8).map((x) => '\n      ' + x).join('')}`)
   } finally { await ctx.close() }
 }
 

@@ -95,7 +95,7 @@ export async function pushAchievements({ check = false, root = process.cwd(), st
     const { supabaseUrl, serviceKey } = await import('./tts/storage.mjs')
     if (!supabaseUrl() || !serviceKey()) {
       if (!quiet) console.log('achievements: no service key — the declaration is not projected')
-      return { achievements: want.length, traits: traits.length }
+      return { achievements: want.length, traits: traits.length, slugs: want.map((r) => r.slug) }
     }
     db = createClient(supabaseUrl(), serviceKey(), { auth: { persistSession: false } })
   }
@@ -135,7 +135,7 @@ export async function pushAchievements({ check = false, root = process.cwd(), st
   }
 
   if (!quiet) console.log(`achievements: ${want.length} achievement(s), ${traits.length} trait rule(s)${check ? `, ${said.length} change(s) to make` : ''}`)
-  return { achievements: want.length, traits: traits.length, said }
+  return { achievements: want.length, traits: traits.length, slugs: want.map((r) => r.slug), said }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

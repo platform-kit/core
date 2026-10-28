@@ -9,7 +9,7 @@ const steps = [
   ['provider registry and capability declarations', 'node', [test('payment-providers.test.mjs')]],
   ['Hyperswitch API and webhook contract', 'node', [test('hyperswitch-payment-provider.test.mjs')]],
   ['Hyperswitch billing periods and rounding', 'node', [test('hyperswitch-billing.test.mjs')]],
-  ['Stripe adapter contract', 'deno', ['test', path.join(buildRoot, 'stripe-payment-provider.test.ts')]],
+  ['Stripe adapter contract', 'deno', ['test', '--node-modules-dir=false', path.join(buildRoot, 'stripe-payment-provider.test.ts')]],
   ['Hyperswitch adapter contract', 'deno', ['run', path.join(buildRoot, 'hyperswitch-payment-provider-adapter.test.ts')]],
 ]
 

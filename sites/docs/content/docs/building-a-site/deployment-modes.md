@@ -23,7 +23,7 @@ sources:
     packages/kit/theme/src/pages/AdminPage.vue,
     packages/kit/src/lib/router.js,
   ]
-reviewed: 2026-10-22
+reviewed: 2026-10-27
 ---
 
 A site built on the kit ships in one of three shapes, and the difference between them is not cosmetic: it decides which features exist at all.

@@ -73,7 +73,7 @@ sources:
     packages/kit/supabase/functions/push-catalog,
     packages/kit/supabase/functions/stripe-webhook,
   ]
-reviewed: 2026-10-22
+reviewed: 2026-10-27
 ---
 
 PlatformKit keeps one payment provider active per site. Stripe is the built-in provider and the
@@ -273,6 +273,8 @@ private file:
 ```sh
 node packages/kit/build/stripe-usage-recovery.integration.mjs /path/to/private-stripe-test.env
 ```
+
+Both runners, and the adapter contracts `platformkit test` runs in Deno, start Deno with `--node-modules-dir=false`, so the `npm:` imports come from Deno's own cache under Deno 1 and Deno 2 alike (Deno 2 otherwise looks for them in the package's `node_modules`), and the runners with `--no-lock`, so nothing is written into the checkout. The browser step that completes a 3-D Secure challenge is handed the browser's location (`PLAYWRIGHT_BROWSERS_PATH`, `PLAYWRIGHT_CHROMIUM_PATH`).
 
 It charges a saved card off-session the way the settlement does. A card that needs 3-D Secure comes
 back as action required with the client secret the usage page uses, and a retry under the same

@@ -128,10 +128,12 @@ await sweep()
   /* a site that declares no achievements has nothing to project; the demo's run covers the projection */
   if (!names.length) notHere('awards-db: the projection', 'the site declares no achievements (content/achievements)')
   else ok('the declaration reads', dry.achievements > 0, JSON.stringify(dry))
+  /* what the files declare: content/achievements, and one per scored quiz in a course (achievements-push) */
+  const declared = dry.slugs || []
   const rows = ((await db.from('achievements').select('slug')).data || []).map((r) => r.slug)
-  const safe = names.length > 0 && rows.every((s) => names.includes(s))
+  const safe = names.length > 0 && rows.every((s) => declared.includes(s))
   if (names.length) ok('the table holds nothing the files do not declare, so projecting is safe', safe,
-    rows.filter((s) => !names.includes(s)).join(', '))
+    rows.filter((s) => !declared.includes(s)).join(', '))
 
   if (safe) {
     /* the function's situation exactly: a store, a client, and no environment to fall back on */
@@ -142,7 +144,7 @@ await sweep()
     finally { if (had.u) process.env.SUPABASE_URL = had.u; if (had.k) process.env.SUPABASE_SERVICE_ROLE_KEY = had.k }
     ok('it projects with no environment at all', !threw && r && r.achievements === dry.achievements, threw || JSON.stringify(r))
     const after = ((await db.from('achievements').select('slug')).data || []).map((r2) => r2.slug)
-    ok('every declared achievement is a row', names.every((s) => after.includes(s)), names.filter((s) => !after.includes(s)).join(', '))
+    ok('every declared achievement is a row', declared.every((s) => after.includes(s)), declared.filter((s) => !after.includes(s)).join(', '))
     ok('and the trait rules with them', ((await db.from('trait_rules').select('id')).data || []).length === r.traits)
     const again = await pushAchievements({ store, db, quiet: true })
     ok('running it twice changes nothing', again.said.length === 0, (again.said || []).join('; '))

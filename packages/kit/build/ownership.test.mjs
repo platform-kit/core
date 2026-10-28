@@ -45,7 +45,7 @@ const fn = async (name, body, c) => {
   return { status: r.status, data: await r.json().catch(() => ({})) }
 }
 const stamp = Date.now().toString(36)
-const DB_URL = process.env.PLATFORMKIT_TEST_DB_URL || `postgresql://postgres:postgres@127.0.0.1:${Number(new URL(url).port || 54321) + 1}/postgres`
+const DB_URL = process.env.PLATFORMKIT_TEST_DB_URL || `postgresql://postgres:postgres@${new URL(url).hostname}:${Number(new URL(url).port || 54321) + 1}/postgres`
 /* a row only the usage functions write (the service role reads it), made as the owner */
 const asOwner = async (sql, args) => { const db = new pg.Client({ connectionString: DB_URL }); await db.connect(); try { return (await db.query(sql, args)).rows } finally { await db.end() } }
 
