@@ -28,7 +28,7 @@ sources:
     packages/kit/build/runtime-paths.test.mjs,
     packages/kit/theme/src/pages/AdminPage.vue,
   ]
-reviewed: 2026-10-29
+reviewed: 2026-10-30
 ---
 
 ## Module switches

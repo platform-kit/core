@@ -307,10 +307,21 @@ if (E2E) {
   process.exit(failed.length ? 1 : 0)
 }
 
+/*
+ * EVERY CHECK RUNS, AND EVERY FAILURE IS LISTED AT THE END. A run that stopped at its first failure showed one at a
+ * time: each fix revealed the next, and eleven failures sat queued behind one another for a week, four of them real
+ * bugs. `--bail` stops at the first, for someone fixing one thing.
+ */
+const BAIL = process.argv.includes('--bail')
+const lost = []
 const run = (label, cmd, args) => {
   console.log(`\n▸ ${label}`)
   const r = spawnSync(cmd, args, { cwd: ROOT, stdio: 'inherit', env: process.env })
-  if (r.status !== 0) { console.error(`\n✗ ${label} failed`); process.exit(r.status || 1) }
+  if (r.status !== 0) {
+    console.error(`\n✗ ${label} failed`)
+    lost.push(label)
+    if (BAIL) process.exit(r.status || 1)
+  }
 }
 console.log('\n══ lane: git — a checkout with a backend ══')
 /* the schema check makes and breaks a database of its own in Docker: the end-to-end run's, not this one's */
@@ -345,6 +356,11 @@ else { console.log('\n══ lane: cloud — content in rows, nothing that rebui
 if (skipped.length) {
   console.log('\n⚠ ' + skipped.length + ' lane(s) skipped — these shapes are NOT covered by this run:')
   for (const s of skipped) console.log('   ' + s)
+}
+if (lost.length) {
+  console.log(`\n✖ ${lost.length} check(s) failed:`)
+  for (const l of lost) console.log('   ' + l)
+  process.exit(1)
 }
 {
   const stackChecks = KIT_TESTS.filter(([f]) => needsStack(KIT(f)) || E2E_ALSO.includes(f)).map(([f]) => f)
