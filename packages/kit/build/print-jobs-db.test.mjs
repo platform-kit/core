@@ -3,7 +3,13 @@
  * against the stack: print-render opens a job per set, leases it to one worker, writes down what it has finished, and
  * a later call — the sweep's, with { job } — carries a cut-off set on from there.
  *
+ *   a set waits for its interior the function compiles no interior: the job waits, the sweep leaves it, and the
+ *                                administrator's browser sets it (build/print/typeset/interior.js — run here in Node,
+ *                                the same WebAssembly) and hands it back; an interior off the binding is refused
  *   a set that finishes          answers as before, with its job, and the row holds the result
+ *   the same edition again       takes the interior back from the bucket and never waits
+ *   in a browser                 the browser's half, loaded through the site's own Vite as the admin bundle loads it
+ *                                (the WebAssembly by its `?url`), finishes a waiting job to the same pages
  *   a worker cut off mid-book    a job left with its interior done and its lease lapsed is finished by the next call,
  *                                which takes the interior back from the bucket instead of compiling it again
  *   a lease still held           another worker leaves it alone, and says so
@@ -13,6 +19,8 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { requireStack, notHere, moduleOn } from './test-stack.mjs'
+import { fileURLToPath } from 'node:url'
+import { finishWaiting, setInterior } from './print/typeset/interior.js'
 
 const S = requireStack('print-jobs-db')
 if (!(await moduleOn('print'))) { notHere('print-jobs-db', 'the print module is off'); process.exit(0) }
@@ -40,9 +48,43 @@ const BOOK = printed.path.replace(/^content\/books\//, '').replace(/\.md$/, '')
 const CONTENTS = ((/\n  contents:\s*\n\s+- (\w+)/.exec(printed.text) || [])[1]) || 'parts'
 
 try {
-  /* ─── a set that finishes ─── */
+  /* ─── a set waits for its interior, which the browser sets ─── */
+  /* a run before this one may have set this edition already, and then nothing waits: its interior goes, so the wait is seen */
+  {
+    const { data: old } = await service.from('print_jobs').select('done').eq('book', BOOK).eq('contents', CONTENTS).not('done->>edition', 'is', null).limit(20)
+    for (const e of new Set((old ?? []).map((r) => r.done.edition))) await service.storage.from('print').remove([`${BOOK}/${e}/interior.json`])
+  }
   const began = new Date(Date.now() - 1000).toISOString()
   let first = await call({ book: BOOK, contents: CONTENTS, draft: true })
+  ok('a set with no interior for its edition waits for one', first.status === 202 && first.body?.state === 'waiting' && first.body?.waiting === 'interior' && typeof first.body?.job === 'string', JSON.stringify(first.body).slice(0, 300))
+  if (first.body?.job) {
+    made.push(first.body.job)
+    const again = await call({ job: first.body.job })
+    ok('…asked again without one, it still waits, and is not tried', again.status === 202 && again.body?.state === 'waiting' && (await rowOf(first.body.job)).attempts <= 1, JSON.stringify(again.body).slice(0, 200))
+    const swept = await service.rpc('run_print_jobs')
+    ok('…and the sweep leaves it alone', !swept.error && (await rowOf(first.body.job)).state === 'waiting', JSON.stringify(swept.error))
+    const joined = await call({ book: BOOK, contents: CONTENTS, draft: true })
+    ok('…a second set of the same book joins it', joined.body?.job === first.body.job && joined.body?.state === 'waiting', JSON.stringify(joined.body).slice(0, 200))
+
+    /* the browser's half, with an interior that is not what it says: two pages more than the file holds */
+    const h = (await call({ job: first.body.job, interior: 'handover' })).body
+    ok('the handover says what to compile: the source, the type, the binding, where to put it', !!h?.files?.['interior.typ'] && h.fonts?.length > 0 && Number(h.min) > 0 && typeof h.upload === 'string' && !/kong/.test(h.upload), JSON.stringify(h && { min: h.min, fonts: h.fonts && h.fonts.length, upload: h.upload }).slice(0, 200))
+    const fonts = []
+    for (const p of h?.fonts || []) fonts.push(new Uint8Array(await (await fetch(S.api + p)).arrayBuffer()))
+    const wrong = await setInterior({ files: h.files, fonts, min: h.min, step: h.step })
+    const put = await fetch(S.api + h.upload, { method: 'PUT', headers: { 'content-type': 'application/pdf', 'x-upsert': 'true' }, body: wrong.pdf })
+    ok('…and the interior goes up to the address it gave', put.ok, put.status)
+    const refused = await call({ job: first.body.job, interior: { edition: h.edition, pages: wrong.pages + 2, pad: wrong.pad + 2, where: [], marks: [] } })
+    ok('an interior that is not what it says is refused, and the job with it', refused.status === 422 && (await rowOf(first.body.job)).state === 'failed', JSON.stringify(refused.body).slice(0, 200))
+    first = await call({ book: BOOK, contents: CONTENTS, draft: true })
+    if (first.body?.job) made.push(first.body.job)
+    if (first.body?.state === 'waiting') {
+      const body = await finishWaiting({ job: first.body.job, ask: async (b) => (await call(b)).body, base: S.api })
+      first = { status: body && body.ok ? 200 : 500, body }
+    }
+  }
+
+  /* ─── a set that finishes ─── */
   /* A COLD WORKER MAY LOSE THE ANSWER — the gateway gives up on a first set while the compiler loads — and that is the
      case a job is for: the set goes on, and its row has the result. So the caller asks the job, not the request. */
   if (!(first.status === 200 && first.body?.ok)) {
@@ -56,6 +98,40 @@ try {
   if (done) made.push(done.id)
   ok('…and the job holds the result, done', done && done.state === 'done' && done.result && done.result.edition === first.body.edition, JSON.stringify(done && { state: done.state, error: done.error }))
   ok('…with the interior written down as finished, for its edition', !!done && done.done?.interior?.edition === first.body.edition && done.done.interior.pages > 0, JSON.stringify(done && done.done && done.done.interior && { edition: done.done.interior.edition, pages: done.done.interior.pages }))
+
+  /* ─── the same edition again ─── */
+  if (done && first.body?.edition) {
+    const second = await call({ book: BOOK, contents: CONTENTS, draft: true })
+    if (second.body?.job) made.push(second.body.job)
+    ok('the same edition set again takes its interior back and never waits', second.status === 200 && second.body?.ok === true && second.body.edition === first.body.edition && second.body.pages === first.body.pages, JSON.stringify(second.body).slice(0, 200))
+  }
+
+  /* ─── the browser's half, in a browser ─── */
+  if (done && first.body?.edition && S.app) {
+    await service.storage.from('print').remove([`${BOOK}/${first.body.edition}/interior.json`])
+    const w = await call({ book: BOOK, contents: CONTENTS, draft: true })
+    if (w.body?.job) made.push(w.body.job)
+    ok('with its interior gone, the same edition waits again', w.body?.state === 'waiting', JSON.stringify(w.body).slice(0, 200))
+    if (w.body?.state === 'waiting') {
+      const { launch, page: open } = await import('./browser.mjs')
+      const browser = await launch()
+      try {
+        const { page } = await open(browser)
+        await page.goto(S.app)
+        /* the admin bundle's own imports (fixtures/print-interior-browser.js): Vite resolves them, and the .wasm by its ?url */
+        const mod = '/@fs' + fileURLToPath(new URL('./fixtures/print-interior-browser.js', import.meta.url))
+        const out = await page.evaluate(async ({ mod, job, fns, api, key }) => {
+          try {
+            const { finishWaiting, wasm } = await import(mod)
+            const ask = async (body) => (await fetch(fns + '/print-render', { method: 'POST', headers: { authorization: 'Bearer ' + key, apikey: key, 'content-type': 'application/json' }, body: JSON.stringify(body) })).json()
+            const r = await finishWaiting({ job, ask, base: api, wasm })
+            return { ok: r.ok, pages: r.pages, edition: r.edition, error: r.error }
+          } catch (e) { return { thrown: String(e && e.message || e) } }
+        }, { mod, job: w.body.job, fns: S.functions, api: S.api, key: S.service })
+        ok('the browser\'s half, loaded as the admin bundle loads it, sets the same interior in a browser', out.ok === true && out.pages === first.body.pages && out.edition === first.body.edition, JSON.stringify(out).slice(0, 300))
+      } finally { await browser.close() }
+    }
+  }
 
   /* ─── a worker cut off after the interior ─── */
   if (done && first.body?.edition) {

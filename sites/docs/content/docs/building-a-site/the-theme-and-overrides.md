@@ -13,7 +13,7 @@ sources:
     packages/kit/src/lib/router.js,
     packages/kit/theme/src/instrument/ui/results/tabs.js,
   ]
-reviewed: 2026-10-22
+reviewed: 2026-10-29
 ---
 
 ## The manifest

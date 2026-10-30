@@ -17,12 +17,13 @@ sources:
     packages/kit/supabase/functions/_shared/print.ts,
     packages/kit/theme/src/components/Book3D.vue,
     packages/kit/theme/src/components/admin/PrintAdmin.vue,
+    packages/kit/build/print/typeset/interior.js,
     packages/kit/build/git-push.mjs,
     packages/kit/supabase/functions/print-order,
     packages/kit/supabase/functions/print-webhook,
     packages/kit/supabase/functions/lulu-webhook,
   ]
-reviewed: 2026-10-27
+reviewed: 2026-10-29
 ---
 
 Editors' view: [Print editions](/content/docs/running-a-site/selling/print-editions). This page is the machinery.
@@ -62,14 +63,16 @@ every read, so its webhook is ignored.
 
 Typst is behind **`build/print/typeset/compiler.js`** — `create`, `pdf`, `svg`, `query` — and nothing else under `build/print/` imports it. There are two drivers:
 
-| driver | where                      | what it is                                                                                                                                          |
-| ------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `node` | a machine with a build box | `@myriaddreamin/typst-ts-node-compiler`, a native binary of about 44 MB — an optional peer, so a site with the print module off installs none of it |
-| `wasm` | an Edge Function           | the same compiler built for WebAssembly, because a cloud-only site has nothing else and could otherwise not set a book at all                       |
+| driver | where                                            | what it is                                                                                                                                                                                           |
+| ------ | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `node` | a machine with a build box                       | `@myriaddreamin/typst-ts-node-compiler`, a native binary of about 44 MB — an optional peer, so a site with the print module off installs none of it                                                  |
+| `wasm` | the administrator's browser and an Edge Function | the same compiler built for WebAssembly, because a cloud-only site has nothing else: the browser sets the interior, the function the covers. An ordinary dependency, since the admin bundle needs it |
 
 They are the same program built twice, and that is the point. An **edition** is a hash of the source, the templates and the trim, and `print.json` says which file a printer has — so if the two paths could diverge, nobody could tell which edition a printed book actually is. `PRINT_DRIVER=wasm` sets a book with the other one, and `build/print-parity.test.mjs` holds them to the same bytes.
 
-The seam exists because of a measurement, not a hope: the largest book in the library — 424 pages — is **88ms** of Typst, against the 2000ms of CPU an Edge Function gets. A book's interior is compiled in one step: it is typeset as one document, so its contents page and highlights index can name every page, and there is no piece planner or PDF merge. But a cold worker can spend much of its budget loading the compiler, so **a set is a job that outlives its request** (`print_jobs`, `supabase/schemas/44-print-jobs.sql`): a row per set, leased to one worker at a time, with each step written down as it finishes — the interior, each cover, the EPUB. A set cut off part-way leaves its lease to lapse; a sweep every minute (`print-jobs`, owned by the print module) asks `print-render` again with `{ job }`, and the next worker takes the finished steps back from the bucket and carries on. The caller gets the same answer when a set finishes in its own request, with the `job` it ran as, and asks `{ job }` for it when the answer was lost. `{ job, cancel: true }` stops a set at its next step and removes the files it made for an edition the store does not sell. A job that cannot finish is failed with its reason after five attempts.
+The seam exists so the two can be held to each other, and a measurement decides where each piece runs. A book's interior is compiled in one step: it is typeset as one document, so its contents page and highlights index can name every page, and there is no piece planner or PDF merge. Natively that compile is quick, but as WebAssembly in an Edge Function a 164-page book's interior took **1.74 seconds** of the 2 seconds of CPU a request gets, before any of the work around it. A longer book could never be set there, however often it was retried. So **the function does not compile the interior; the administrator's browser does** (`build/print/typeset/interior.js`), with the same WebAssembly and the same type, and the function makes the covers and the EPUB, which fit.
+
+**A set is a job that outlives its request** (`print_jobs`, `supabase/schemas/44-print-jobs.sql`): a row per set, leased to one worker at a time, with each step written down as it finishes — the interior, each cover, the EPUB. A job whose edition has no interior yet **waits** (`state: 'waiting'`): the sweep and the lease leave it alone, and a second set of the same book joins it. The browser asks the job `{ job, interior: 'handover' }` for the source, the templates, the type and the binding rule as signed addresses, plus a signed address to upload to. It compiles, uploads the PDF and hands the job back with `{ job, interior: { edition, pages, pad, where, marks } }`. The function counts the pages off the file itself and holds the blank leaves to the binding rule before it takes the interior, and refuses one that is not what it says. A taken interior is kept beside the PDF (`interior.json`), so any later set of that edition takes it back and never waits. A set cut off part-way after that leaves its lease to lapse; a sweep every minute (`print-jobs`, owned by the print module) asks `print-render` again with `{ job }`, and the next worker takes the finished steps back from the bucket and carries on. The caller gets the same answer when a set finishes in its own request, with the `job` it ran as, and asks `{ job }` for it when the answer was lost. `{ job, cancel: true }` stops a set at its next step (a waiting one at once) and removes the files it made for an edition the store does not sell. A job that cannot finish is failed with its reason after five attempts.
 
 ### What a cloud-only site does not get
 
@@ -88,7 +91,7 @@ Deploy generation is separate and opt-in: only `PRINT_BUILD=1` runs the print st
 
 `supabase/functions/print-render` is the whole of print production in an Edge Function, for a site whose backend is Supabase and nothing else. `POST { book, contents }` with an administrator's JWT; it answers what it set, or why it could not.
 
-What it does, in order: reads the book and its companion from `public.content` **through `entry.js`** — the one adapter, so the function sees the same book the build does; reads the print words through the store, so a site's own `library.md` wins over the theme's; sizes the paperback's picture; typesets with `build/print/typeset.mjs` unchanged; compiles with Typst-as-WASM, the templates compiled in beside it (`_shared/print/templates.json`) and the type fetched from the `print` bucket once per worker; pads to what the printer the block **names** will bind (`padFor`, the shared rule); quotes the printers and draws a cover per printed format, and per cloth × foil for a linen, each to that printer's own dimensions; and stores everything under `<slug>/<edition>/` — the same names the native path uses.
+What it does, in order: reads the book and its companion from `public.content` **through `entry.js`** — the one adapter, so the function sees the same book the build does; reads the print words through the store, so a site's own `library.md` wins over the theme's; sizes the paperback's picture; typesets with `build/print/typeset.mjs` unchanged; works out what the printers will bind (`padFor`, the shared rule) and takes the interior back, or waits for the administrator's browser to set it (above), with the templates (`_shared/print/templates.json`) and the type from the `print` bucket; quotes the printers and draws a cover per printed format, and per cloth × foil for a linen, each to that printer's own dimensions; and stores everything under `<slug>/<edition>/` — the same names the native path uses.
 
 The edition id is the shared rule (`build/print/edition.mjs`), which is the claim worth stating plainly: **the function and the build give the same book the same edition.** The Golden Key comes out as `25e674ffcaa1d9cf` either way, with a byte-identical `interior.typ`. `build/print-cloud.test.mjs` runs the function against the stack and compares both, and when the ids differ it names the part that moved — because the hash has fifteen parts and guessing which one is a bad afternoon. `PRINT_PARTS=1` prints the same list on the build side, and a call with `parts: true` on the function side; a call with `typ: true` keeps the Typst sources in the bucket beside the PDFs, as `--typ` does on a machine.
 
@@ -128,7 +131,7 @@ the draw is refused with both ids named.
 
 The admin's print actions — `render`, `save`, `set`, `quote`, `pdf` — all run in the cloud. The model does not choose a renderer: the **caller hands it one**. `ctx.editions` (given by the admin's Edge Function, absent on a machine) is `{ render(slug, { draft }), file(book, edition, name) }`, and where it is absent the machine's path runs as it always has. That is why `build/models/core/print.mjs` can be part of the pipe at all — the module a bundler cannot follow is only imported when nothing else was offered.
 
-A render is a separate invocation of `print-render` on purpose: setting a book is most of a CPU budget, and the admin answers many other things in the same worker.
+A render is a separate invocation of `print-render` on purpose: setting a book is most of a CPU budget, and the admin answers many other things in the same worker. When a save, a render or a set comes back with interiors waiting, the admin function passes them through and the Print editions page sets each one in the browser, saying which step it is on (the theme's `orders` words, group `editions.interior`), then asks again. The second answer takes the interiors back from the bucket.
 
 **A draft buys nothing.** The admin renders on every save so the editor can turn the pages, and a title at a printer that keeps one costs a setup fee — so `draft: true` makes the files and the quotes but stops short of the registry and of `print.json`. Only Set the editions does the real thing.
 

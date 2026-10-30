@@ -95,6 +95,7 @@
     "@dicebear/core": "^10.7.0",
     "@dicebear/styles": "^10.6.0",
     "@fingerprintjs/fingerprintjs": "^5.2.0",
+    "@myriaddreamin/typst-ts-web-compiler": "0.7.0",
     "@opencoredev/social-sdk": "0.5.0",
     "@supabase/supabase-js": "^2.78.0",
     "@templatical/renderer": "^0.39.0",
@@ -166,7 +167,6 @@
   },
   "peerDependencies": {
     "@myriaddreamin/typst-ts-node-compiler": "^0.7.0",
-    "@myriaddreamin/typst-ts-web-compiler": "^0.7.0",
     "ffmpeg-static": "^5.3.0",
     "mjml": "^5.4.1",
     "onnxruntime-node": "^1.29.0",
@@ -201,9 +201,6 @@
       "optional": true
     },
     "@myriaddreamin/typst-ts-node-compiler": {
-      "optional": true
-    },
-    "@myriaddreamin/typst-ts-web-compiler": {
       "optional": true
     }
   },

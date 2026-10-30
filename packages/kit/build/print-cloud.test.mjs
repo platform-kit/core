@@ -13,6 +13,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { requireStack, skip, leave, notHere } from './test-stack.mjs'
+import { finishWaiting } from './print/typeset/interior.js'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -121,6 +122,12 @@ const call = async (body, tries = 3) => {
       body: JSON.stringify(body), signal: AbortSignal.timeout(300000),
     })
     const out = { status: r.status, body: await r.json().catch(() => ({})) }
+    /* A SET WHOSE INTERIOR WAITS FOR A BROWSER is finished the way the admin's page finishes it — the same module and
+       the same WebAssembly, run here in Node with this administrator's session */
+    if (out.body && out.body.state === 'waiting' && !body.job) {
+      const done = await finishWaiting({ job: out.body.job, ask: async (b) => (await call(b)).body, base: API })
+      return { status: done && done.ok ? 200 : 500, body: done }
+    }
     if (EXHAUSTED.test(JSON.stringify(out.body))) exhausted = true
     const restarting = r.status === 502 || r.status === 503 || RESTART.test(JSON.stringify(out.body))
     if (!restarting || i >= tries) return out

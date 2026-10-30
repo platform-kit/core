@@ -21,7 +21,9 @@ import { openPdf, shotsOf, coverArtOf } from './pdf-pages.js'
 import { printSpec, formatPrice, spineWords, PRICE_STEP, FORMATS, PRINTED, FILES, CONTENTS, PRINTERS, costUsd, proofState } from 'platformkit/lib/print-offers.js'
 import { us } from 'platformkit/lib/content.js'
 import { CLOUD } from 'platformkit/lib/router.js'
-import { supabase, configured as supabaseOn } from 'platformkit/lib/supabase.js'
+import { supabase, configured as supabaseOn, url as supabaseUrl } from 'platformkit/lib/supabase.js'
+import { finishWaiting } from 'platformkit/build/print/typeset/interior.js'
+import typstWasm from '@myriaddreamin/typst-ts-web-compiler/wasm?url'
 import { isSignedIn } from 'platformkit/lib/auth.js'
 import './admin-ui.css'
 
@@ -29,7 +31,36 @@ const props = defineProps({ book: { type: String, default: '' } })
 const emit = defineEmits(['open', 'back'])
 
 import pipe from '../../lib/admin/api.js'
-const post = ({ action, ...payload }) => pipe.action('print', action, payload)
+/*
+ * THE INTERIOR IS SET IN THIS BROWSER, in cloud mode. A book's interior is one Typst compile, and a long book's is past
+ * the two seconds of CPU a function has, so print-render answers a save, a render or a set whose interior it has not
+ * got with the jobs WAITING for one. This page compiles each with the same WebAssembly and the same type, puts it in
+ * the bucket, and asks again — and the second answer takes the interiors back and carries on (openspec:
+ * print-production). On a machine the native compiler sets everything, and nothing waits.
+ */
+const interiorStep = ref('')
+async function askPrintRender(body) {
+  const { data, error } = await supabase.functions.invoke('print-render', { body })
+  if (!error) return data
+  const said = await error.context?.json?.().catch(() => null)
+  throw new Error((said && said.error) || error.message)
+}
+async function setInteriors(waiting) {
+  for (const w of waiting) {
+    const name = CONTENTS_NAMES[w.contents] || w.contents
+    await finishWaiting({ job: w.job, ask: askPrintRender, base: supabaseUrl, wasm: typstWasm, onStep: (step) => { interiorStep.value = `${name}: ${((us('orders').editions || {}).interior || {})[step] || step}` } })
+  }
+  interiorStep.value = ''
+}
+const post = async ({ action, ...payload }) => {
+  for (let round = 0; ; round++) {
+    const j = await pipe.action('print', action, payload)
+    const waiting = ((j.set || j.draft || {}).waiting) || []
+    if (!waiting.length) return j
+    if (round) throw new Error('print: the interiors were set here and the editions still wait for them')
+    await setInteriors(waiting)
+  }
+}
 
 const books = ref([])
 const choices = ref({})
@@ -632,7 +663,7 @@ watchEffect(async () => {
           </div>
 
           <div class="ui-savebar">
-            <span class="ui-dirty" :class="{ 'ui-clean': !dirty }">{{ dirty ? 'Unsaved changes' : (msg || 'All changes saved') }}</span>
+            <span class="ui-dirty" :class="{ 'ui-clean': !dirty }">{{ interiorStep || (dirty ? 'Unsaved changes' : (msg || 'All changes saved')) }}</span>
             <span v-if="dirty && msg" class="ui-err">{{ msg }}</span>
             <span class="ui-grow" />
             <button type="button" class="ui-btn ui-ghost" :disabled="!dirty" @click="discard">Discard</button>

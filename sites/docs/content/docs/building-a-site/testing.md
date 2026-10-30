@@ -71,7 +71,7 @@ sources:
     packages/kit/build/source-install.mjs,
     packages/kit/build/runtime-paths.mjs,
   ]
-reviewed: 2026-10-27
+reviewed: 2026-10-29
 ---
 
 ## A proposal promises nothing it does not require
@@ -201,7 +201,7 @@ The checks that need a database, the functions or a browser run here, never agai
 Inside it, before any stack, the run asks for what every site needs: Docker answering, and a browser for the page checks (the image's, or the one `PLAYWRIGHT_CHROMIUM_PATH` names). Without either it stops at once, naming it. Then, for each site:
 
 1. The site's declared dependencies must be installed, or the run stops naming them. Its content is compiled and its prepare steps run (the search index among them), as `platformkit build` does — nothing an earlier build left stands in for it. The site is assembled, and the data its functions import (the catalog, the compiled emails, the bots, the spaces…) is made from its content (`build/functions-data.mjs`) — never a file an earlier build left. A module that is off gets an empty file in its own shape, since the functions import every one.
-2. Any stack an earlier run left (`pk_<site>_e2e`) is stopped without its backup, so nothing survives into this one.
+2. Any stack an earlier run left (`pk_<site>_e2e`) is stopped and every volume of it removed but one, so no data survives into this one. The one kept is the edge runtime's Deno cache, the imports the functions fetch as they boot, kept the way CI keeps a dependency cache: without it every run downloaded them all again, and on a slow connection the functions timed out booting before a test ran.
 3. A runtime project is made the way the dev workspace makes one, with its own project id and ports from 40000 up, never a dev port. Two sites prepared at once are never given the same port.
 4. The stack starts on an empty volume — the site's declaration, data and seed — and the reset's seed steps run (`build/reset-seed.mjs`, the same list `platformkit migrate reset` runs).
 5. The functions are served with an environment the run writes: the site's own settings, a known test value for every webhook secret, a web-push key pair of the run's own, and mail to that stack's own catcher at the address the run reads from the container it just started. A live payment key refuses the run. A site with no cal.com key of its own is given a test one (the recordings test answers for cal.com itself). A site that takes payments through Stripe needs a test key (`sk_test_…`) — from the run's environment, the site's `.env` or the workspace's — and without one it fails rather than passing with its payments unchecked.

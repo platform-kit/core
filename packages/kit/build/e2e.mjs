@@ -97,14 +97,28 @@ const parseEnv = (text) => Object.fromEntries(text.split('\n').map((l) => /^\s*(
 const children = new Set()
 const stacks = new Set()
 const sb = (workdir, a, opts = {}) => spawnSync('npx', ['supabase', ...a, '--workdir', workdir], { cwd: workdir, encoding: 'utf8', timeout: 600000, ...opts })
+/*
+ * EVERY RUN'S DATA IS NEW; ITS DEPENDENCIES ARE NOT. A stack is stopped with its volumes, and then every one of them is
+ * removed but the edge runtime's, which is the functions' Deno cache (/root/.cache/deno): the database, the storage and
+ * the mail are a new run's, as `--no-backup` made them, while the imports a function fetches at boot are kept the way
+ * CI keeps a dependency cache. Without it every run downloaded every function's imports again, and on a slow connection
+ * the workers timed out booting ("worker did not respond in time") before a single test ran.
+ */
+const dropData = (id) => {
+  spawnSync('npx', ['supabase', 'stop', '--project-id', id], { cwd: ROOT, stdio: 'ignore', timeout: 300000 })
+  const vols = spawnSync('docker', ['volume', 'ls', '-q', '--filter', `label=com.supabase.cli.project=${id}`], { encoding: 'utf8' }).stdout.split('\n').map((v) => v.trim()).filter(Boolean)
+  const data = vols.filter((v) => v !== `supabase_edge_runtime_${id}`)
+  if (data.length) spawnSync('docker', ['volume', 'rm', '-f', ...data], { stdio: 'ignore' })
+}
 /* a stack stopped, and its networks with it: `supabase stop` leaves the shadow database's network, and a run's worth of
    those exhausts Docker's address pools */
 const stopStack = (workdir) => {
   const cfg = path.join(workdir, 'supabase', 'config.toml')
   if (!fs.existsSync(cfg)) return
-  sb(workdir, ['stop', '--no-backup'])
   const id = (/^project_id\s*=\s*"([^"]+)"/m.exec(fs.readFileSync(cfg, 'utf8')) || [])[1]
-  if (id) for (const n of [`supabase_network_${id}`, `supabase_network_${id}-shadow`]) spawnSync('docker', ['network', 'rm', n], { stdio: 'ignore' })
+  if (!id) { sb(workdir, ['stop', '--no-backup']); return }
+  dropData(id)
+  for (const n of [`supabase_network_${id}`, `supabase_network_${id}-shadow`]) spawnSync('docker', ['network', 'rm', n], { stdio: 'ignore' })
 }
 /* a server the run starts, writing straight to its own log file: complete, and still writing after the run exits (--keep) */
 function background(name, cmd, cmdArgs, { log, ...opts }) {
@@ -220,7 +234,7 @@ async function runSite(site, reserved) {
     const data = spawnSync(process.execPath, [path.join(HERE, 'functions-data.mjs')], { cwd: site.directory, encoding: 'utf8', env: { ...process.env, ...parseEnv(base) } })
     if (data.status !== 0) throw new Error('the functions\' data could not be made:\n' + ((data.stdout || '') + (data.stderr || '')).trim().split('\n').slice(-8).join('\n'))
     stopStack(runtimeRoot)
-    spawnSync('npx', ['supabase', 'stop', '--project-id', projectId, '--no-backup'], { cwd: ROOT, stdio: 'ignore', timeout: 300000 })
+    dropData(projectId)
     fs.rmSync(runtimeRoot, { recursive: true, force: true })
 
     /* 2. the runtime project, as dev makes it, in the test range */

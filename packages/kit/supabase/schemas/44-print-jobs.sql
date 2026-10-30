@@ -8,6 +8,12 @@
 --
 -- Nothing here is a client's to write: print-render, with the service key, is the only writer, and an administrator
 -- reads the jobs to see where a book is.
+--
+-- THE INTERIOR IS SET IN THE ADMINISTRATOR'S BROWSER. Typesetting a whole book is one Typst compile, and a long book's
+-- compile is past two seconds of CPU on its own, so no number of retries could ever finish it in a function. A job with
+-- no interior for its edition is therefore WAITING: the sweep and the lease leave it alone, and the browser that asked
+-- for the set compiles the interior with the same WebAssembly and the same type, puts it in the bucket, and hands the
+-- job back to print-render for the EPUB and the covers, which fit.
 SET check_function_bodies = false;
 
 CREATE TABLE IF NOT EXISTS "public"."print_jobs" (
@@ -30,11 +36,11 @@ CREATE TABLE IF NOT EXISTS "public"."print_jobs" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "finished_at" timestamp with time zone,
-    CONSTRAINT "print_jobs_state_check" CHECK (("state" = ANY (ARRAY['queued'::"text", 'running'::"text", 'done'::"text", 'failed'::"text", 'cancelled'::"text"])))
+    CONSTRAINT "print_jobs_state_check" CHECK (("state" = ANY (ARRAY['queued'::"text", 'waiting'::"text", 'running'::"text", 'done'::"text", 'failed'::"text", 'cancelled'::"text"])))
 );
 ALTER TABLE ONLY "public"."print_jobs" ADD CONSTRAINT "print_jobs_pkey" PRIMARY KEY ("id");
 -- one set of a book's edition at a time: a second request for the same one joins the first
-CREATE UNIQUE INDEX IF NOT EXISTS "print_jobs_one_open" ON "public"."print_jobs" USING "btree" ("book", "contents") WHERE ("state" = ANY (ARRAY['queued'::"text", 'running'::"text"]));
+CREATE UNIQUE INDEX IF NOT EXISTS "print_jobs_one_open" ON "public"."print_jobs" USING "btree" ("book", "contents") WHERE ("state" = ANY (ARRAY['queued'::"text", 'waiting'::"text", 'running'::"text"]));
 CREATE INDEX IF NOT EXISTS "print_jobs_due" ON "public"."print_jobs" USING "btree" ("lease_until") WHERE ("state" = ANY (ARRAY['queued'::"text", 'running'::"text"]));
 
 ALTER TABLE "public"."print_jobs" ENABLE ROW LEVEL SECURITY;

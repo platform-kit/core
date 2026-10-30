@@ -38,7 +38,6 @@ import { sizePicture, MAX_HEIGHT } from '../_shared/print/picture.js'
 import { makeEpub } from '../_shared/print/epub.js'
 import { printers, FORMATS_PRINTED } from '../_shared/suppliers/index.js'
 import { create as wasmCompiler } from '../_shared/print/wasm-compiler.js'
-import { readback } from '../_shared/print/readback.js'
 import TEMPLATES from '../_shared/print/templates.json' with { type: 'json' }
 import { toEntry } from '../_shared/pipe/src/lib/entry.js'
 import { renderer } from '../_shared/pipe/src/lib/markdown.js'
@@ -193,13 +192,21 @@ Deno.serve(async (req) => {
     if (!data) return json({ error: 'no such job' }, 404)
     row = data
     if (call.cancel) {
-      await admin.from('print_jobs').update({ cancel_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', data.id).in('state', ['queued', 'running'])
+      const now = new Date().toISOString()
+      /* a job waiting on a browser has no worker to see the cancel, and nothing in the bucket of its own: it simply stops */
+      await admin.from('print_jobs').update({ state: 'cancelled', cancel_at: now, finished_at: now, updated_at: now }).eq('id', data.id).eq('state', 'waiting')
+      await admin.from('print_jobs').update({ cancel_at: now, updated_at: now }).eq('id', data.id).in('state', ['queued', 'running'])
       return json({ job: data.id, cancelling: true })
     }
     if (data.state === 'done') return json({ ...(data.result ?? {}), job: data.id, state: data.state })
     if (data.state === 'failed' || data.state === 'cancelled') return json({ error: data.error ?? data.state, job: data.id, state: data.state, book: data.book, contents: data.contents }, data.state === 'failed' ? 500 : 200)
-    call = { ...(data.request ?? {}), book: data.book, contents: data.contents }
+    /* a job waiting for its interior moves only when a browser asks what to compile, or hands one over */
+    if (data.state === 'waiting' && !call.interior) return json({ job: data.id, state: 'waiting', waiting: 'interior', book: data.book, contents: data.contents, edition: (data.done ?? {}).edition ?? null }, 202)
+    call = { ...(data.request ?? {}), book: data.book, contents: data.contents, interior: call.interior }
   }
+  /* the interior's two calls from a browser (build/print/typeset/interior.js): what to compile, and what it compiled */
+  const handover = call.interior === 'handover'
+  const given = call.interior && typeof call.interior === 'object' ? call.interior as Record<string, any> : null
   const slug = String(call.book ?? '')
   const contents = String(call.contents ?? 'parts')
   /* a draft: the files and the quotes, nothing bought and nothing published (see below) */
@@ -276,17 +283,25 @@ Deno.serve(async (req) => {
   /* a cancel by book: whatever set of it is open */
   if (!row && call.cancel) {
     const { data } = await admin.from('print_jobs').update({ cancel_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-      .eq('book', slug).eq('contents', contents).in('state', ['queued', 'running']).select('id')
+      .eq('book', slug).eq('contents', contents).in('state', ['queued', 'waiting', 'running']).select('id')
     return json({ cancelling: (data ?? []).map((r: any) => r.id) })
   }
   /* a new set opens a job, or joins the one already open for this book and edition */
   if (!row) {
     const request = { draft, typ: !!call.typ, parts: !!call.parts }
     const { data: made } = await admin.from('print_jobs').insert({ book: slug, contents, request, requested_by: user ? user.id : null }).select('*').maybeSingle()
-    row = made ?? (await admin.from('print_jobs').select('*').eq('book', slug).eq('contents', contents).in('state', ['queued', 'running']).maybeSingle()).data
+    row = made ?? (await admin.from('print_jobs').select('*').eq('book', slug).eq('contents', contents).in('state', ['queued', 'waiting', 'running']).maybeSingle()).data
     if (!row) return json({ error: 'print: the job could not be opened', book: slug, contents }, 500)
+    if (row.state === 'waiting') return json({ job: row.id, state: 'waiting', waiting: 'interior', book: slug, contents, edition: (row.done ?? {}).edition ?? null }, 202)
   }
-  const { data: claimed } = await admin.rpc('print_job_claim', { p_id: row.id, p_worker: workerId, p_seconds: LEASE_SECONDS })
+  /*
+   * THE HANDOVER takes no lease: it writes nothing but two signed addresses, and a browser may ask for it again. An
+   * interior handed back turns the job into an ordinary one again, its attempts counted from nothing — the waiting
+   * was nobody's failure.
+   */
+  if (handover && row.state !== 'waiting') return json({ error: 'print: this job is not waiting for an interior', job: row.id, state: row.state }, 409)
+  if (given && row.state === 'waiting') await admin.from('print_jobs').update({ state: 'queued', attempts: 0, lease_until: null, updated_at: new Date().toISOString() }).eq('id', row.id).eq('state', 'waiting')
+  const { data: claimed } = handover ? { data: [row] } : await admin.rpc('print_job_claim', { p_id: row.id, p_worker: workerId, p_seconds: LEASE_SECONDS })
   const held = Array.isArray(claimed) ? claimed[0] : claimed
   if (!held) {
     const { data: now } = await admin.from('print_jobs').select('state, error').eq('id', row.id).maybeSingle()
@@ -411,59 +426,69 @@ Deno.serve(async (req) => {
      * that can raster a page at all.
      */
     const art: Record<string, string> = {}
-    /* THE INTERIOR, ONCE PER EDITION: a job that already set it (this edition, in the bucket) takes it back rather than
-       compiling it again — the most expensive thing a set does, and the step a cold worker is likeliest to be cut off in */
+    /*
+     * THE INTERIOR IS NOT COMPILED HERE. It is one Typst compile — the book is one document, so its contents page and
+     * its highlights index can name every page — and a long book's compile is past two seconds of CPU on its own, so
+     * no number of retries could finish it in this function. The administrator's browser compiles it with the same
+     * WebAssembly and the same type (build/print/typeset/interior.js), puts it in the bucket and hands the job back.
+     *
+     * In order: an interior this job already has, or one any earlier job set for this edition (interior.json beside
+     * the PDF), is taken back; one a browser has just put in the bucket is checked and taken; a browser asking what to
+     * compile is told; and otherwise the job waits for one, where the sweep and the lease leave it alone.
+     *
+     * WHAT A PRINTER WILL BIND is worked out here either way, so the browser pads to this rule and the check below
+     * holds it to it: a printer binds nothing under its minimum and a book has an even number of pages. The rule is
+     * padFor, shared with the build — computing it separately is how this path once said 26 pages where the native
+     * one said 32 for the same book. The minimum belongs to whoever might make the book: the printer the block names,
+     * or every one with keys where it says `auto`.
+     */
     await job.stopIfCancelled()
-    const doneInterior = (job.done.interior ?? null) as Record<string, any> | null
-    let pdf: Uint8Array, pages: number, pad: number, min: number | undefined, step: number | undefined, compiled = source
-    let where: unknown[] = [], marks: unknown[] = []
-    const heldPdf = doneInterior && doneInterior.edition === edition
-      ? await admin.storage.from(BUCKET).download(`${at0}/interior.pdf`).then(({ data }) => (data ? data.arrayBuffer() : null)).catch(() => null)
-      : null
-    if (doneInterior && heldPdf) {
-      pdf = new Uint8Array(heldPdf); pages = doneInterior.pages; pad = doneInterior.pad; min = doneInterior.min; step = doneInterior.step
-      where = doneInterior.where ?? []; marks = doneInterior.marks ?? []
-      if (doneInterior.compiled) compiled = doneInterior.compiled
-    } else {
-      const c = await compiler()
-      pdf = c.pdf('interior.typ')
-      pages = pageCount(pdf)
-
-      /*
-       * WHAT A PRINTER WILL BIND. A printer binds nothing under its minimum and a book has an even
-       * number of pages, so a short one gets blank leaves at the end. The rule is padFor, shared
-       * with the build — computing it here for itself is how this path said 26 pages where the
-       * native one said 32 for the same book, with nothing to say which was right.
-       *
-       * The minimum belongs to whoever might make the book: the printer the block names, or every
-       * one with keys where it says `auto` — the shared rule, so this path and the build pad alike.
-       */
-      ;({ min, step } = bindingFor(spec, Object.keys((spec.formats ?? {}) as Record<string, unknown>).filter((f) => FORMATS_PRINTED.includes(f)), (s: any, format: string) => candidatesOf(s, format, bound), { trim: String(spec.trim ?? '6x9'), paper: String(spec.paper ?? 'cream') }))
-      pad = padFor(pages, { min, step })
-      if (pad) {
-        compiled = source + `\n#blank-pages(${pad})\n`
-        c.put('interior.typ', compiled)
-        pdf = c.pdf('interior.typ')
-        pages = pageCount(pdf)
-      }
-
-      /*
-       * WHAT THE DOCUMENT SAYS ABOUT ITSELF — its openers and its highlights, read back out of the
-       * compiled file by the same query the build makes (readback, in the shared compiler seam).
-       *
-       * IT IS READ HERE BECAUSE THIS IS WHERE THE COMPILER IS. The pictures are drawn by the
-       * administrator's browser, which has the PDF but not Typst, and the alternative is asking it to
-       * guess which page a chapter opens on from the text it can see. So the answer carries the
-       * record and the browser is told rather than left to infer.
-       *
-       * It is never a reason to fail: a query that does not answer costs the pictures, not the book.
-       */
-      try { const me = readback(c, 'interior.typ'); where = me.where; marks = me.marks }
-      catch (e) { notes.push(`the document's own openers could not be read, so the listing gets no page pictures — ${(e as Error).message}`) }
-
-      await put(`${at0}/interior.pdf`, pdf, 'application/pdf')
-      await job.keep({ edition, interior: { edition, pages, pad, min, step, where, marks, compiled: pad ? compiled : undefined } })
+    const { min, step } = bindingFor(spec, Object.keys((spec.formats ?? {}) as Record<string, unknown>).filter((f) => FORMATS_PRINTED.includes(f)), (s: any, format: string) => candidatesOf(s, format, bound), { trim: String(spec.trim ?? '6x9'), paper: String(spec.paper ?? 'cream') })
+    const blankLeaves = (n: number) => `\n#blank-pages(${n})\n`
+    const exists = async (name: string) => ((await admin.storage.from(BUCKET).list(at0, { search: name })).data ?? []).some((x: any) => x.name === name)
+    let interior = (job.done.interior ?? null) as Record<string, any> | null
+    if (interior && (interior.edition !== edition || !(await exists('interior.pdf')))) interior = null
+    if (!interior) {
+      const { data: kept } = await admin.storage.from(BUCKET).download(`${at0}/interior.json`)
+      const was = kept ? JSON.parse(await kept.text()) : null
+      if (was && was.edition === edition && (await exists('interior.pdf'))) { interior = was; await job.keep({ edition, interior }) }
     }
+    if (!interior && given) {
+      /* A BROWSER'S INTERIOR, HELD TO THIS EDITION AND THIS BINDING. Only an administrator can hand one over, which is
+         a reason to check it rather than a reason not to: the pages are counted here off the file itself, and the
+         blank leaves must be the ones the rule gives for the pages before them. */
+      if (given.edition !== edition) throw new Refused(`print: that interior was set from edition ${given.edition}, and the book is now ${edition} — ask for the handover again`, 409)
+      const { data: up } = await admin.storage.from(BUCKET).download(`${at0}/interior.pdf`)
+      if (!up) throw new Refused('print: there is no interior in the bucket for this edition — put it there first', 409)
+      const pages = pageCount(new Uint8Array(await up.arrayBuffer()))
+      const pad = Number(given.pad) || 0
+      if (pages !== Number(given.pages) || pad !== padFor(pages - pad, { min, step })) {
+        throw new Refused(`print: the interior in the bucket is ${pages} pages with ${pad} blank, which is not what this binding gives (${pages - pad} → ${padFor(pages - pad, { min, step })} blank)`, 422)
+      }
+      const list = (v: unknown) => (Array.isArray(v) ? v.slice(0, 2000) : [])
+      interior = { edition, pages, pad, min, step, where: list(given.where), marks: list(given.marks), compiled: pad ? source + blankLeaves(pad) : undefined }
+      await put(`${at0}/interior.json`, new TextEncoder().encode(JSON.stringify(interior)), 'application/json')
+      await job.keep({ edition, interior })
+    }
+    if (!interior && handover) {
+      const { data: type } = await admin.storage.from(BUCKET).list(FONT_PREFIX)
+      const names = (type ?? []).filter((x: any) => /\.(ttf|otf)$/i.test(x.name)).map((x: any) => `${FONT_PREFIX}/${x.name}`)
+      if (!names.length) throw new Error('print: there is no type in the bucket — the deploy uploads it (build/print/templates.mjs --fonts)')
+      const { data: urls, error: e1 } = await admin.storage.from(BUCKET).createSignedUrls(names, 3600)
+      const { data: upload, error: e2 } = await admin.storage.from(BUCKET).createSignedUploadUrl(`${at0}/interior.pdf`, { upsert: true })
+      if (e1 || e2 || !urls || !upload) throw new Error(`print: the handover could not be signed — ${(e1 ?? e2)?.message ?? 'no url'}`)
+      /* a path and its query, no host: inside this runtime the gateway's name is one no browser resolves */
+      const rel = (u: string) => { const x = new URL(u, 'http://x'); return x.pathname + x.search }
+      return json({ job: job.id, book: slug, contents, edition, min, step, files: { ...TEMPLATES, 'interior.typ': source },
+        fonts: urls.map((u: any) => rel(u.signedUrl)), upload: rel(upload.signedUrl) })
+    }
+    if (!interior) {
+      await admin.from('print_jobs').update({ state: 'waiting', done: { ...job.done, edition }, lease_until: null, leased_by: null, updated_at: new Date().toISOString() }).eq('id', job.id)
+      return json({ job: job.id, state: 'waiting', waiting: 'interior', book: slug, contents, edition }, 202)
+    }
+    const pages: number = interior.pages, pad: number = interior.pad
+    const where: unknown[] = interior.where ?? [], marks: unknown[] = interior.marks ?? []
+    const compiled = interior.compiled ?? source
 
     /*
      * THE EPUB, from the same words — the same module the build uses, which needed one change to

@@ -20,8 +20,9 @@
 
 let wasmReady = null
 
-/* the module, initialised once per worker */
-async function engine() {
+/* the module, initialised once per worker. A browser bundle hands over the .wasm's address (Vite's `?url`), because a
+   bundler cannot see the name the package works out for itself; Deno and Node find it beside the module */
+async function engine(wasm) {
   if (!wasmReady) {
     wasmReady = (async () => {
       /* Deno wants an npm: specifier and node wants the bare name; the same package either way,
@@ -30,7 +31,7 @@ async function engine() {
         .catch(() => import('@myriaddreamin/typst-ts-web-compiler'))
       /* wasm-bindgen's default export takes the module's bytes; in a worker it resolves the .wasm
          beside itself, which is what the bundler and the function both want */
-      if (typeof mod.default === 'function') await mod.default()
+      if (typeof mod.default === 'function') await mod.default(wasm ? { module_or_path: wasm } : undefined)
       return mod
     })()
   }
@@ -50,8 +51,8 @@ function must(out, file) {
   throw new Error('typst: ' + file + ' — ' + said)
 }
 
-export async function create({ files = {}, fonts = [] } = {}) {
-  const mod = await engine()
+export async function create({ files = {}, fonts = [], wasm } = {}) {
+  const mod = await engine(wasm)
   const builder = new mod.TypstCompilerBuilder()
   builder.set_dummy_access_model()          /* no filesystem: every source is added below */
   for (const font of fonts) {

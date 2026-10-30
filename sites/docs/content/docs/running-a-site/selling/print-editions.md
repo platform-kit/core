@@ -11,7 +11,7 @@ sources:
     packages/kit/build/print/block.mjs,
     packages/kit/src/lib/print-offers.js,
   ]
-reviewed: 2026-10-22
+reviewed: 2026-10-29
 ---
 
 A book is sold in print — and as PDF and EPUB — by a block of settings on the book itself, edited on **Store → Print editions**. There is no separate product file: the offers are derived from the book, one store page per book, one line per format.
@@ -40,7 +40,11 @@ Beside the panels, the book itself: the interior as a book to turn, page by page
 
 **Set the editions** does the real thing: the files go to the private print bucket, the printers quote and check them, a printer that keeps a title (Bookvault) is asked for one (the confirmation names it — a title costs a fee once), the store's index is updated, and the book is on sale. An edition is identified by a hash of the text, the templates, the trim, the colours and the cover picture, so an edition already set is never set twice, and a changed word is a new one. The deploy sets any book flagged since the last deploy, too.
 
-On a site with **no build box** — a cloud-only deployment, where nothing rebuilds — the pictures a
+On a site with **no build box** — a cloud-only deployment, where nothing rebuilds — the book's interior is
+typeset by _your own browser_: a whole book is more than the site's functions can set in one go, so
+after Save & render or Set the editions the page sets each interior itself, says which step it is on,
+and carries on. A long book takes a minute; keep the page open. The same edition is never typeset
+twice. The pictures a
 listing shows are drawn by _your own browser_, straight after the set, from the files that were just
 made: the cover the shop draws the book from, and three pages of the interior. It says how many it
 drew beside what it set. They are not a condition of the sale: the book is priced and orderable

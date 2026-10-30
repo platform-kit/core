@@ -63,6 +63,8 @@ async function callPrintRender(body: Record<string, unknown>) {
     body: JSON.stringify(body),
   })
   const out = await r.json().catch(() => ({}))
+  /* a set whose interior waits for the administrator's browser is an answer, not a failure: the page sets it there */
+  if (out.state === 'waiting') return out as Record<string, any>
   if (!r.ok || !out.ok) throw new Error(String(out.error ?? `print-render answered ${r.status}`))
   return out as Record<string, any>
 }
@@ -154,16 +156,19 @@ Deno.serve(async (req) => {
       render: async (slug: string, { draft }: { draft: boolean }) => {
         const spec = await contentsOf(slug)
         const editions: Record<string, unknown> = {}
+        /* the contents whose interior the browser has to set first (build/print/typeset/interior.js), by job */
+        const waiting: Array<Record<string, unknown>> = []
         const t0 = Date.now()
         for (const contents of spec) {
           const r = await callPrintRender({ book: slug, contents, draft })
+          if (r.state === 'waiting') { waiting.push({ contents, job: r.job, edition: r.edition }); continue }
           /* `where` and `marks` are the document's own account of itself, read back out of the
              compiled file by the function. They are carried to the browser because the browser is
              what draws the listing's pictures, and a chapter's page is not something to infer from
              the text when the document will say it outright. */
           editions[contents] = { edition: r.edition, pages: r.pages, covers: r.covers, epub: !!r.epub, printers: r.printers ?? {}, dims: r.dims ?? {}, notes: r.notes ?? [], incomplete: r.incomplete ?? [], where: r.where ?? [], marks: r.marks ?? [] }
         }
-        return { editions, ms: Date.now() - t0, at: new Date().toISOString() }
+        return { editions, ...(waiting.length ? { waiting } : {}), ms: Date.now() - t0, at: new Date().toISOString() }
       },
       /*
        * AND BACK THE OTHER WAY: the pictures the browser drew, as bytes. print-render makes the

@@ -517,12 +517,14 @@ export async function platformkit(opts = {}) {
          * `application/wasm`. A deep import of the file instead is refused: the package's exports
          * map has only one entry.
          */
-        optimizeDeps: { esbuildOptions: { target: 'esnext' }, exclude: ['onnxruntime-web', '@matrix-org/matrix-sdk-crypto-wasm'] },
+        optimizeDeps: { esbuildOptions: { target: 'esnext' }, exclude: ['onnxruntime-web', '@matrix-org/matrix-sdk-crypto-wasm', '@myriaddreamin/typst-ts-web-compiler'] },
         /* the in-browser voice runs in a module worker whose runtime is a dynamic import */
         worker: { format: 'es' },
         /* IN_BROWSER_TTS, LOCKDOWN_MODE and CONTENT_STORE are the client flags read by name */
         envPrefix: ['VITE_', 'IN_BROWSER_TTS', 'LOCKDOWN_MODE', 'CONTENT_STORE'],
-        resolve: { alias: { '#content': path.resolve(c.root, '.velite'), '#site/content': path.resolve(c.root, 'content'), '@': theme.src } },
+        /* the print compiler's Deno specifier (build/print/typeset/wasm-compiler.js), which the browser's half shares: here it is the
+           package itself, pinned to the same version */
+        resolve: { alias: { '#content': path.resolve(c.root, '.velite'), '#site/content': path.resolve(c.root, 'content'), '@': theme.src, 'npm:@myriaddreamin/typst-ts-web-compiler@0.7.0': '@myriaddreamin/typst-ts-web-compiler' } },
         /* Tailwind over the theme's sources and the site's, utilities only (the kit's tailwind.config.js); a site needs no postcss config */
         css: { postcss: { plugins: [tailwindcss(tailwindConfig(c, theme)), autoprefixer()] } },
         server: { host: '0.0.0.0', proxy: networkProxy(c, env && env.mode) },   /* the port is the CLI's (dev.mjs holds one strictly) */
