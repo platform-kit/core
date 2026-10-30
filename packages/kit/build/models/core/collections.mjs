@@ -166,6 +166,7 @@ export const COLLECTIONS = {
       date: z.string().meta({ label: 'Date', widget: 'date' }).optional(),
       book_id: z.string().meta({ label: 'Book id' }).optional(),
       published: z.boolean().meta({ label: 'Published', grid: true }).optional(),
+      fullText: z.boolean().meta({ label: 'Publish the full text', help: 'off: only the summaries are published, and the text is sent to nobody; keep the text here only while its summaries are written' }).optional(),
       tags: z.array(z.string()).meta({ label: 'Tags', widget: 'tags', options: 'tags', help: 'what this is about — chosen from the site\'s list under Tags' }).optional(),
       categories: z.array(z.string()).meta({ label: 'Categories' }).optional(),
       topics: z.array(z.string()).meta({ label: 'Topics', grid: true, widget: 'multiselect', options: 'topics', help: 'the recommendation categories this book serves' }).optional(),

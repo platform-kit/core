@@ -16,7 +16,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { loadEnv } from 'vite'
 import { PRINTER_IDS, FORMATS_PRINTED } from '../supabase/functions/_shared/suppliers/index.js'
-import { publicBook, publicPage, publicCompanion } from '../supabase/functions/_shared/gate.js'
+import { publicBook, publicPage, publicCompanion, holdsText } from '../supabase/functions/_shared/gate.js'
 
 
 /* The spoken books: the repository's own store, audio/books/<slug>/, holds the
@@ -1288,6 +1288,9 @@ export async function kitConfig() {
       pattern: 'books/*.md',
       schema: s.object({
         published: s.boolean().default(true),   /* false: kept on disk, edited in the admin, never in the bundle */
+        /* false: the book's summaries are published and its text never is, to anyone (_shared/gate.js) — its
+           chapters are their titles; the file may hold the text while the companion is written, and the build says so */
+        fullText: s.boolean().default(true),
         path: s.path(),
         title: s.string(),
         author: s.string().optional(),
@@ -1379,6 +1382,7 @@ export async function kitConfig() {
            it does at read time — so reading progress can be shown wherever a book
            is listed, without shipping the whole text to those surfaces */
         out.chapters = data.raw.split(/^(?=# )/m).filter((s) => s.trim()).length
+        if (data.fullText === false && holdsText(data.raw)) console.warn(`[velite] ${out.slug}: fullText is false and the file still holds the book's text — it is withheld, never published; remove it once the summaries are written`)
         /* The spoken book, when build/tts.mjs has made one: its manifest maps a
            chapter title to the recording of the text and of the summary. Read
            here into `audio` (title → { full, summary } as urls), so the reader

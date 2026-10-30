@@ -28,11 +28,16 @@ const MARK = {
   companion: 'GATECANARY the second summary is private.',
   article: 'GATECANARY the paid article ends privately.',
   wiki: 'GATECANARY the paid wiki page ends privately.',
+  withheld: 'GATECANARY the book whose text is withheld holds this.',
 }
+/* a book whose text is withheld (fullText: false) publishes its summaries: this one must be there */
+const SUMMARY = 'SUMMARYPUBLIC the withheld book\'s summary is published.'
 const filler = (word) => Array.from({ length: 30 }, (_, i) => `${word} filler sentence number ${i} keeps this chapter long.`).join(' ')
 const FIXTURES = {
   'content/books/gate-probe.md': `---\ntitle: Gate Probe\nauthor: Test\nbook_id: gate-probe\ndescription: A book for the gate test.\npublished: true\nguestChapters: 1\n---\n\n# One\n\n${FREE} ${filler('one')}\n\n# Two\n\n${filler('two')} ${MARK.bookEnd}\n\n# Three\n\n${MARK.bookShort}\n`,
   'content/companions/gate-probe.md': `---\nbook: gate-probe\ninsight: The probe's insight.\n---\n\n# One\n\n## Summary\n\nThe free summary.\n\n# Two\n\n## Summary\n\n${MARK.companion}\n\n## Quiz\n\n1. Which?\n   - [x] a\n   - [ ] b\n   - [ ] c\n   - [ ] d\n\n# Three\n\n## Summary\n\nThe third summary.\n`,
+  'content/books/summary-probe.md': `---\ntitle: Summary Probe\nauthor: Test\nbook_id: summary-probe\ndescription: A book whose text is withheld.\npublished: true\nfullText: false\n---\n\n# First Withheld\n\n${filler('withheld')} ${MARK.withheld}\n\n# Second Withheld\n\n${MARK.withheld}\n`,
+  'content/companions/summary-probe.md': `---\nbook: summary-probe\ninsight: The withheld probe's insight.\n---\n\n# First Withheld\n\n## Summary\n\n${SUMMARY}\n\n# Second Withheld\n\n## Summary\n\nThe second summary.\n`,
   'content/articles/gate-probe.md': `---\ntitle: Gate Probe Article\ndescription: A paid article.\ndate: 2026-10-01\npublished: true\ncanAccess:\n  - paid\n---\n\n${filler('article')} ${MARK.article}\n`,
   'content/wiki/gate-probe.md': `---\ntitle: Gate Probe Wiki\ndescription: A paid page.\npublished: true\ncanAccess:\n  - paid\n---\n\n${filler('wiki')} ${MARK.wiki}\n`,
 }
@@ -86,6 +91,7 @@ ok('static: no gated text in what the build wrote', !Object.keys(staticFound).le
 copyDemo()
 const v = velite()
 ok('the content builds', v.status === 0, v.out)
+ok('the build says the withheld book still holds its text', /summary-probe: fullText is false and the file still holds/.test(v.out), v.out.split('\n').filter((l) => /summary-probe/.test(l)).join('\n'))
 const prep = run([process.execPath, path.join(HERE, 'steps.mjs'), '--run', 'prepare'])
 ok('the prepare steps run (the search index among them)', prep.status === 0, prep.out)
 const b = run(['npx', 'vite', 'build', '--logLevel', 'warn'], { PLATFORMKIT_CONTENT_DONE: '1', NODE_OPTIONS: ((process.env.NODE_OPTIONS || '') + ' --max-old-space-size=4096').trim() })
@@ -98,6 +104,13 @@ const files = [...textFiles(path.join(WORK, 'dist')), ...textFiles(path.join(WOR
 ok('there is output to scan', files.length > 20, String(files.length))
 const found = scan(files)
 for (const k of Object.keys(MARK)) ok(`no ${k} marker in any published file`, !found[k], (found[k] || []).join(', '))
+ok('the withheld book\'s summary is published', files.some((f) => fs.readFileSync(f, 'utf8').includes(SUMMARY)))
+ok('…and its chapters keep their titles', (() => { const b3 = JSON.parse(fs.readFileSync(path.join(WORK, '.velite', 'books.json'), 'utf8')).find((x) => x.slug === 'summary-probe'); return b3 && b3.fullText === false && /^# First Withheld$/m.test(b3.raw) && /^# Second Withheld$/m.test(b3.raw) })())
+/* the server's content index (reader-content and the content API read it) holds the titles, never the text */
+const cj = run([process.execPath, path.join(HERE, 'content-json.mjs')])
+const indexFile = path.join(WORK, 'supabase', 'functions', '_shared', 'content', 'index.json')
+ok('the content index builds', cj.status === 0 && fs.existsSync(indexFile), cj.out)
+if (fs.existsSync(indexFile)) { const idx = fs.readFileSync(indexFile, 'utf8'); ok('the content index holds no withheld text', !idx.includes(MARK.withheld)); ok('…and the withheld book\'s titles', idx.includes('# First Withheld')) }
 ok('the free chapter is published', files.some((f) => fs.readFileSync(f, 'utf8').includes('GATEFREE chapter one')))
 ok('the locked chapters keep their titles', (() => { const b2 = JSON.parse(fs.readFileSync(path.join(WORK, '.velite', 'books.json'), 'utf8')).find((x) => x.slug === 'gate-probe'); return b2 && b2.gatedFrom === 1 && /^# Two$/m.test(b2.raw) && /^# Three$/m.test(b2.raw) })())
 

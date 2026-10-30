@@ -284,7 +284,10 @@ const PRINT_WORDS = await printWords(st, theme ? { theme } : {})
 for (const { file, data: d } of files('content/books')) {
   if (!d.print || d.published === false) continue
   const slug = file.split('/').pop().slice(0, -3)
-  const spec = printSpec(d.print)
+  /* a book whose text is withheld sells its summaries alone: a block that asks for the text is refused, by name */
+  if (d.fullText === false) { const asked = (printSpec(d.print) || { contents: [] }).contents.filter((c) => c !== 'summary'); if (asked.length) { err(`${file}: fullText is false, so the book has only a summary edition — print contents may not include ${asked.join(', ')}`); continue } }
+  const spec = printSpec(d.print, d)
+  if (!spec) continue
   /* no rights line yet: the block is the jacket's copy, and the book is not for sale */
   if (!spec.rights) { console.log(`  ${file}: print has no rights: line — not on sale until it says on what footing the text is printed and sold`); continue }
   if (!spec.key) { err(`${file}: print needs a key (node build/product-keys.mjs gives it one)`); continue }

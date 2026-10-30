@@ -44,6 +44,8 @@ Four fields say how many chapters a guest, a signed-in reader, a paying customer
 
 Locked chapters are not published. A visitor's copy of the book holds each locked chapter's title and its first lines, which the paywall shows, and a locked chapter's summary, key points and quiz are left out too. A reader allowed further is sent the rest when they open the book; until it arrives the chapter says "Opening this chapter…", and if it can't be fetched it says so with a retry rather than showing the paywall.
 
+A book can publish its companion without its text: with `fullText: false`, the chapters' text is sent to nobody, and readers read the summaries alone, with no switch to a full text. Its file needs only its `# Title` headings, which the companion matches by title. It may hold the text while the summaries are written, and the build warns until the text is removed. See [Publishing basics](/content/docs/running-a-site/publishing-basics).
+
 ## Highlights — the editorial marks
 
 A book may carry marks baked into its text: a passage the editors think a reader should notice, drawn as a coloured wavy underline (a reader's own highlights are background washes, deliberately different). In the text a mark is `==the passage==`, optionally with a colour: `==the passage=={ocean}`. The same marks, in the same colours, mark a course lesson's key ideas ([Courses](/content/docs/running-a-site/content/courses)).

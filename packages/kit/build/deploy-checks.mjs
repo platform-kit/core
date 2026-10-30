@@ -73,7 +73,7 @@ export function surfaces(root = '.') {
   const printed = []
   for (const b of md('content/books')) {
     if (!live(b) || !b.print || !String(b.print.rights || '').trim()) continue
-    const spec = printSpec(b.print)
+    const spec = printSpec(b.print, b)
     if (!spec) continue
     const printers = {}
     for (const f of PRINTED) if (spec.formats[f]) printers[f] = spec.printers[f] || (f === 'premium' ? 'bookvault' : 'auto')

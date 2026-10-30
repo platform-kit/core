@@ -34,6 +34,7 @@ import { asStore } from './store/index.mjs'
 import { contentTypes } from '../supabase/functions/_shared/api/types.js'
 import { modelOfPath, pathWithin, isPublished, isRecordModel } from '../supabase/functions/_shared/api/records.js'
 import { mimeOf } from '../supabase/functions/_shared/api/entry.js'
+import { textWithheld, titlesOnly } from '../supabase/functions/_shared/gate.js'
 
 const ROOT = process.cwd()
 export const OUT = 'supabase/functions/_shared/content/index.json'
@@ -87,7 +88,9 @@ export async function contentIndex({ root = ROOT } = {}) {
       let fm; try { fm = matter(text) } catch { continue }
       const t = times.get(file) || {}
       const data = fm.data || {}
-      records.push({ model: m.key, path: pathWithin(m, file), data, body: fm.content && fm.content.trim() ? fm.content : null, published: isPublished(data), created: data.date ? new Date(data.date).toISOString() : (t.created || now), updated: t.updated || data.updated || now, revision: t.revision || 1 })
+      /* a book whose text is withheld goes up as its chapters' titles: the server never holds what it may not send */
+      const content = m.key === 'books' && textWithheld(data) ? titlesOnly(fm.content) : fm.content
+      records.push({ model: m.key, path: pathWithin(m, file), data, body: content && content.trim() ? content : null, published: isPublished(data), created: data.date ? new Date(data.date).toISOString() : (t.created || now), updated: t.updated || data.updated || now, revision: t.revision || 1 })
     }
   }
   /* the library's files, both roots */

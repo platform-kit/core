@@ -190,7 +190,7 @@ function plainArt(b) {
     pages: Math.max(24, Math.round(chars / 1800)) }
 }
 export function bookArtOf(slug) {
-  const b = BOOKS.find((x) => x.slug === slug); const spec = b && printSpec(b.print)
+  const b = BOOKS.find((x) => x.slug === slug); const spec = b && printSpec(b.print, b)
   const ed = spec && editionsOf(slug); const e = ed && ed.editions && ed.editions[spec.contents[0]]
   /*
    * A BOOK STANDS AS A BOOK WHETHER OR NOT IT IS IN PRINT.

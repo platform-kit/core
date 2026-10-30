@@ -35,7 +35,7 @@ const KEYS = {
   experiments: ['title', 'kind', 'active', 'goal', 'ends', 'winner', 'variants'],
   storefront: ['heroEyebrow', 'heroTitle', 'heroSubtitle', 'heroImage', 'heroTheme', 'heroCta', 'heroHref', 'heroCta2', 'heroHref2', 'collections', 'featured', 'shelves', 'showMembership', 'heroBooks', 'showEditions', 'showCollections', 'showFeatured', 'showOnline', 'shipping'],
   collections: ['published', 'title', 'subtitle', 'image', 'order', 'featured', 'products'],
-  books: ['published', 'title', 'author', 'cover', 'share', 'description', 'introduction', 'introduced', 'date', 'year', 'difficulty', 'canAccess', 'print', 'guestChapters', 'authenticatedChapters', 'paidChapters', 'subscribedChapters', 'tags', 'book_id', 'topics', 'concepts', 'comments', 'gatedFrom'],
+  books: ['published', 'fullText', 'title', 'author', 'cover', 'share', 'description', 'introduction', 'introduced', 'date', 'year', 'difficulty', 'canAccess', 'print', 'guestChapters', 'authenticatedChapters', 'paidChapters', 'subscribedChapters', 'tags', 'book_id', 'topics', 'concepts', 'comments', 'gatedFrom'],
 }
 const pick = (d, keys) => { const o = {}; for (const k of keys) if (d[k] !== undefined) o[k] = d[k]; return o }
 /*

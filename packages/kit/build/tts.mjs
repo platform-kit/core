@@ -395,7 +395,10 @@ async function speakOne(pool, slug, held, text, label) {
 async function doBook(pool, slug) {
   const bookFile = path.join(ROOT, 'content/books', slug + '.md')
   if (!fs.existsSync(bookFile)) { log(slug + ': no such book'); return }
-  const { chapters, intro } = chaptersOf(fs.readFileSync(bookFile, 'utf8'))
+  const bookText = fs.readFileSync(bookFile, 'utf8')
+  const { chapters, intro } = chaptersOf(bookText)
+  /* a book whose text is withheld is spoken as its introduction and its summaries, never its chapters' text */
+  const withheld = matter(bookText).data.fullText === false
   const compFile = path.join(ROOT, 'content/companions', slug + '.md')
   const summaries = {}
   if (fs.existsSync(compFile)) for (const c of parseCompanionBody(matter(fs.readFileSync(compFile, 'utf8')).content).chapters) if (c.summaryMd) summaries[c.title] = c.summaryMd
@@ -409,7 +412,7 @@ async function doBook(pool, slug) {
   if (intro && (!CHAPTER || CHAPTER === INTRO_KEY) && ONLY !== 'summary') jobs.push({ title: INTRO_KEY, kind: 'full', text: chapterSpeech({ intro: true, md: intro }) })
   for (const c of chapters) {
     if (CHAPTER && c.title !== CHAPTER) continue
-    if (ONLY !== 'summary') jobs.push({ title: c.title, kind: 'full', text: chapterSpeech(c) })
+    if (ONLY !== 'summary' && !withheld) jobs.push({ title: c.title, kind: 'full', text: chapterSpeech(c) })
     if (ONLY !== 'full' && summaries[c.title]) jobs.push({ title: c.title, kind: 'summary', text: chapterSpeech(c, summaries[c.title]) })
   }
   /* --show: the words as they would be spoken, and nothing spoken */

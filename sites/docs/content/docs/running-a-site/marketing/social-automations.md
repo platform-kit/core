@@ -25,7 +25,7 @@ sources:
     packages/kit/supabase/functions/social-oauth,
     packages/kit/supabase/functions/social-publish,
   ]
-reviewed: 2026-10-27
+reviewed: 2026-10-29
 ---
 
 Social automations let authorized staff use a published bot to respond to supported incoming comments and direct messages. They are configured in **Social → Engage → Automations**, not in Spaces, and are never exposed to general app users. Both the records and the conversations stay behind Social's account-scoped staff permissions inside the application. The same Social area also connects external accounts and schedules posts to them.

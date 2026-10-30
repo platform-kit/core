@@ -25,7 +25,7 @@ For anyone helping a reader, or writing the words a reader sees — this is what
 
 A book opens on its cover page — the title, the author, the description, the companion's insight, the reader's progress and trophies, and _Your files_ for a buyer. The first page is the **introduction**, then the chapters, each on a page of its own with a chapter bar fixed at the foot. A link can open a book at one chapter by adding `?chapter=3` to its address, counted from the first chapter; that is how a course's lesson points at one.
 
-- **Two modes**: the full text, or the **summary** (each chapter as its companion's summary and key ideas). The switch is in the chapter bar.
+- **Two modes**: the full text, or the **summary** (each chapter as its companion's summary and key ideas). The switch is in the chapter bar. A book that publishes only its summaries (`fullText: false`) has no switch: it opens in the summary, and its cover gives the summaries' reading time.
 - **Highlights**: the editors' marks are coloured wavy underlines; a reader's own highlights are background washes, made by selecting text, kept on the account.
 - **Test yourself**: the chapter's five-question quiz. Passing is four of five; a bronze trophy for the first chapter, silver for half the book, gold for all.
 - **Listen**: where a recording exists, a player above the chapter bar — waveform, play, time, speed. On a desktop browser a chapter without one can be **generated** on the reader's own machine (the first time downloads the voice, about 400 MB, once); a signed-in reader's generation is shared for everyone after.

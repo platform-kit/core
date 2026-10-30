@@ -42,7 +42,7 @@ Sign in at the live site's `/admin` with an account allowed to edit content. In 
 
 There is one draft per record. Saving again replaces that record's previous draft. Publishing a single record makes just that record live; Content → Publishing lets an editor review and publish all pending changes together.
 
-When a visitor loads or refreshes the live site, the app reads published content from the database, so the edit does not require a site build. A visitor receives it through a function that leaves out gated text; only administrators read the content rows whole. A page that was already open may need a refresh. A small number of machine-only tasks, such as generating spoken-book recordings, still need a checkout or deploy process; the admin indicates when an action cannot run there.
+When a visitor loads or refreshes the live site, the app reads published content from the database, so the edit does not require a site build. A visitor receives it through a function that leaves out gated text, and the text of a book that publishes only its summaries; only administrators read the content rows whole. A page that was already open may need a refresh. A small number of machine-only tasks, such as generating spoken-book recordings, still need a checkout or deploy process; the admin indicates when an action cannot run there.
 
 ## What the functions read, where nothing rebuilds
 

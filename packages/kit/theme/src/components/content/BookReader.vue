@@ -194,8 +194,10 @@ const chapterCount = computed(() => chapters.value.length - introOffset.value)
 const summaryTimeLabel = computed(() => { const m = summaryTime(props.slug); return m ? R.time.about + ' ' + m + ' ' + (m === 1 ? R.time.minute : R.time.minutes) : '' })
 const mastery = computed(() => { void masteryRev.value; return preview ? { done: 0, total: 0, tier: null } : masteryOf(props.slug) })
 const quizResult = computed(() => { void masteryRev.value; return chapters.value[ch.value] ? chapterResult(props.slug, chapters.value[ch.value].title) : null })
-function setMode(m) { if (state.value.mode !== m) { state.value.mode = m; essOpen.value = false; saveState(); if (view.value === 'read') repaint() } }
-const inSummary = computed(() => state.value.mode === 'summary' && !!comp.value)
+/* a book whose text is withheld (fullText: false) is read in its summaries alone: there is no full text to switch to */
+const textless = computed(() => !!fm.value && fm.value.fullText === false)
+function setMode(m) { if (textless.value) return; if (state.value.mode !== m) { state.value.mode = m; essOpen.value = false; saveState(); if (view.value === 'read') repaint() } }
+const inSummary = computed(() => (state.value.mode === 'summary' || textless.value) && !!comp.value)
 /* The spoken chapter, if build/tts.mjs made one: the book's `audio` maps a
    chapter title to the file for its text and the file for its summary. The
    player follows the mode — the summary's recording in summary mode, the text's
@@ -223,6 +225,7 @@ const speechHash = ref({})        /* "<key>|<kind>" → hash, for every page in 
 function jobFor(i, summary) {
   const c = chapters.value[i]
   if (!c) return null
+  if (!summary && textless.value && !c.intro) return null   /* no text to read aloud: the summary is the page */
   const cc = summary && !c.intro ? chapterCompanion(props.slug, c.title) : null
   const kind = cc && cc.summaryMd ? 'summary' : 'full'
   return { index: i, key: c.key || c.title, kind, title: c.title, text: chapterSpeech(c, kind === 'summary' ? cc.summaryMd : undefined) }
@@ -388,7 +391,9 @@ async function render() {
        are not painted here. The bottom line follows the text in both modes. */
     html.value = '<div class="rd-sum">' + marked.parse(cc.summaryMd) + '</div>'   /* through the reader's own marked, so ==marks== render */
   } else {
-    html.value = (inSummary.value ? '<p class="rd-nosum">' + escapeHtml(R.mode['no-summary']) + '</p>' : '') + marked.parse(c.md)
+    /* a book whose text is withheld has only its summaries: a chapter without one says so, and nothing else */
+    html.value = textless.value ? '<p class="rd-nosum">' + escapeHtml(R.mode['no-summary']) + '</p>'
+      : (inSummary.value ? '<p class="rd-nosum">' + escapeHtml(R.mode['no-summary']) + '</p>' : '') + marked.parse(c.md)
   }
   state.value.ch = ch.value
   saveState()
@@ -614,7 +619,7 @@ onBeforeUnmount(() => {
         <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" fill="currentColor"><circle cx="4" cy="10" r="1.7"/><circle cx="10" cy="10" r="1.7"/><circle cx="16" cy="10" r="1.7"/></svg>
       </button>
       <div class="rd-tools" :class="{ open: toolsOpen }" v-if="view === 'read'" @click="toolsOpen = false">
-        <span v-if="comp" class="rd-mode" role="group">
+        <span v-if="comp && !textless" class="rd-mode" role="group">
           <button type="button" :class="{ on: !inSummary }" @click="setMode('full')">{{ R.mode.full }}</button>
           <button type="button" :class="{ on: inSummary }" @click="setMode('summary')">{{ R.mode.summary }}</button>
         </span>
@@ -698,13 +703,13 @@ onBeforeUnmount(() => {
             <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 8h11m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <!-- how to read it: the whole text, or the summary. A choice, not a second button -->
-          <div v-if="comp && summaryTimeLabel" class="rd-covmode" role="radiogroup" :aria-label="R.mode.full + ' / ' + R.mode.summary">
+          <div v-if="comp && summaryTimeLabel && !textless" class="rd-covmode" role="radiogroup" :aria-label="R.mode.full + ' / ' + R.mode.summary">
             <button type="button" role="radio" :aria-checked="!inSummary" :class="{ on: !inSummary }" @click="setMode('full')"><b>{{ R.mode.full }}</b><span>{{ readTime }}</span></button>
             <button type="button" role="radio" :aria-checked="inSummary" :class="{ on: inSummary }" @click="setMode('summary')"><b>{{ R.mode.summary }}</b><span>{{ summaryTimeLabel }}</span></button>
           </div>
         </div>
         <!-- a book without a companion still says how long it is -->
-        <p v-if="!comp || !summaryTimeLabel" class="rd-covstat"><span>{{ chapterCount }} {{ chapterCount === 1 ? 'chapter' : 'chapters' }}</span><span>{{ readTime }}</span></p>
+        <p v-if="!comp || !summaryTimeLabel || textless" class="rd-covstat"><span>{{ chapterCount }} {{ chapterCount === 1 ? 'chapter' : 'chapters' }}</span><span v-if="textless ? summaryTimeLabel : true">{{ textless ? R.mode.summary + ' · ' + summaryTimeLabel : readTime }}</span></p>
 
         <!-- the files a buyer of the printed edition holds: the PDF, the EPUB, each version -->
         <div v-if="files && files.length" class="rd-covfiles">

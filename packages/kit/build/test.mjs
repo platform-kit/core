@@ -217,6 +217,7 @@ const KIT_TESTS = [
   ['guards-db.test.mjs'],   /* what a signed-in client may change and what the database does on its own: the desk’s guard trigger column by column, one coaching thread per pair either way round, a member who cannot grant themselves a role, and every scheduled job present after a reset */
   on('books') && ['ranking.test.mjs'],   /* Find your book: the two best chapters rather than the plain best, both halves counting, and the pace a lean of at most 0.15 that never outweighs what somebody wrote — a ranking cannot fail visibly, it just returns the wrong three */
   ['unpublished.test.mjs'],   /* nothing unpublished reaches the bundle, checked against the compiled output rather than against a reading of the hook that drops it — and the same record published does appear, so a filter that dropped everything would not pass */
+  ['print-offers.test.mjs'],   /* a book whose text is withheld is in print as its summaries alone, and not at all without a summary edition */
   ['sell-rules.test.mjs'],   /* what the shop REFUSES: a cloth the book does not offer, a country outside the list, a spine past the foil, a proof gone stale — the decisions over plain data, and every one of them a refusal that renders nothing when it works */
   ['rewrites.mjs', '--check'],   /* deploy/_redirects covers the modules; the nginx template says what the file says */
   ['sites-host.test.mjs'],

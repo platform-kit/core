@@ -57,7 +57,7 @@ sources:
     packages/kit/build/checkout-params.test.mjs,
     packages/kit/build/payment-providers.test.mjs,
   ]
-reviewed: 2026-10-27
+reviewed: 2026-10-29
 ---
 
 ## The payment-provider contract foundation

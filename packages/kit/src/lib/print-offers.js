@@ -51,10 +51,16 @@ const num = (v) => (v == null || v === '' ? null : Number(v))
 /* the block as one shape, whatever was written: every list a list, every format a record with
    its price or markup, the linen's colour choices, the defaults filled in */
 import { modules as MODULES } from '#site'
-/* the print module's switch: off, no book is in print however its block reads */
-export function printSpec(pr) {
+/* the print module's switch: off, no book is in print however its block reads. Given the book, a book whose
+   text is withheld (`fullText: false`) keeps the summary edition alone, and is not in print without one */
+export function printSpec(pr, book = null) {
   if (MODULES.print === false) return null
   if (!pr || typeof pr !== 'object') return null
+  if (book && book.fullText === false) {
+    const spec = printSpec(pr)
+    const contents = spec ? spec.contents.filter((c) => c === 'summary') : []
+    return contents.length ? { ...spec, contents } : null
+  }
   const cloth = CLOTHS.includes(pr.cloth) ? pr.cloth : 'black', foil = FOILS.includes(pr.foil) ? pr.foil : 'gold'
   const formats = {}
   const given = { ...(pr.formats || {}) }
@@ -158,7 +164,7 @@ export const parseVariant = (v) => { const [contents, cloth, foil] = String(v ||
 /* every format a book sells, each as the catalog's offer: sku, key, kind (print ships, download
    does not), price, the choices the buyer may make on it — null price = not for sale yet */
 export function formatOffers(book, editions = null) {
-  const spec = printSpec(book && book.print)
+  const spec = printSpec(book && book.print, book)
   if (!spec || !spec.key || !spec.rights) return []
   return FORMATS.filter((f) => spec.formats[f]).map((f) => {
     const rec = spec.formats[f]
@@ -174,7 +180,7 @@ export function formatOffers(book, editions = null) {
 /* the store's page for a book in print: one product, its formats as the choice on it — the
    first priced format is what the page opens on; the page needs at least one */
 export function printOffer(book, words = {}, editions = null) {
-  const spec = printSpec(book && book.print)
+  const spec = printSpec(book && book.print, book)
   if (!spec) return null
   const formats = formatOffers(book, editions).filter((o) => o.price > 0)
   if (!formats.length) return null

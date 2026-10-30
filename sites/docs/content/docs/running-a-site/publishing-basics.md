@@ -42,6 +42,12 @@ Articles, wiki pages, and docs may be limited to **guest**, **authenticated** (s
 
 Text a visitor may not read is never published to them. The site's published files carry each gated record's title, description and a short opening; a book carries its free chapters and, for each locked chapter, its title and first lines. A reader with access is sent the rest when they open it, after the server checks their own account. A static site has no server to ask, so it does not publish gated text at all.
 
+### Summaries without the book
+
+A book can publish its summaries and never its text. Set `fullText: false` on the book (in the admin, turn off **Publish the full text**). Its title, description, cover, introduction, chapter titles and companion are published as usual, and its chapters' text is sent to nobody: not a guest, a member or a buyer. It never reaches the published files, the server's content index or the content rows either. Readers read it in summary mode only, print offers only its summary edition, and the spoken book records only its introduction and summaries.
+
+The book's file needs only its chapter headings, one `# Title` per chapter, so that the companion can match its chapters by title. While the summaries are being written, the file may hold the full text. The build warns that the text is still there, and it is still never published. Remove it once the summaries are done.
+
 ## Writing in the editor
 
 Use the rich-text editor for headings, paragraphs, emphasis, links, lists, quotes, code, and images. Books and companions are edited one chapter at a time; unopened chapters are left unchanged. Line breaks used for verse or other intentional line-by-line text are preserved. Printed books also preserve deliberate hard breaks, while ordinary prose broken at every source line is flowed for print.

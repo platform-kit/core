@@ -17,7 +17,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { admin, getUser, json, preflight } from '../_shared/lib.ts'
 import { contentIndexes } from '../_shared/content-index.ts'
 import { classOf, allowedBy } from '../_shared/access.js'
-import { readableChapters, bookTextFor, splitChapters, publicRow, companionTextFor } from '../_shared/gate.js'
+import { readableChapters, sentText, splitChapters, publicRow, companionTextFor } from '../_shared/gate.js'
 import { parseCompanionBody, serialiseCompanionBody } from '../_shared/pipe/src/lib/companion-body.js'
 
 const COMPANION = { parseCompanionBody, serialiseCompanionBody }
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       const raw = rec.body || ''
       const comp = live.records.find((r) => r.model === 'companions' && r.data && (r.data as any).book === slug && r.published)
       return json({
-        raw: bookTextFor(raw, n),
+        raw: sentText(fm, raw, n),   /* a book whose text is withheld sends its chapters' titles alone, to anyone */
         chapters: splitChapters(raw).length,
         readable: Number.isFinite(n) ? n : null,
         companion: comp ? companionTextFor(comp.body || '', n, COMPANION) : null,

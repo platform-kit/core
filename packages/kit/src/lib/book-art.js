@@ -18,7 +18,7 @@ export function bookCoverOf(slug) {
 }
 
 export function printedArtOf(slug, format = 'softcover') {
-  const b = BOOKS.find((x) => x.slug === slug); const spec = b && printSpec(b.print)
+  const b = BOOKS.find((x) => x.slug === slug); const spec = b && printSpec(b.print, b)
   const ed = spec && editionsOf(slug); const e = ed && ed.editions && ed.editions[spec.contents[0]]
   if (!e || !e.art || !e.dims) return null
   const cv = coverFor(e, format, spec.cloth, spec.foil)

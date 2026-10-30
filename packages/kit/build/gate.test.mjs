@@ -1,7 +1,7 @@
 /* What of a record a reader is sent (_shared/gate.js): the chapters each class may read, a bought book's
    lift, the teaser that is never the whole chapter, and the public record of a book, a page and a
    companion — the rule the build, the cloud loader and reader-content all apply. Pinned by npm test. */
-import { chapterAllowance, readableChapters, splitChapters, bookTextFor, teaserOf, publicBook, publicPage, publicCompanion, isGatedPage } from '../supabase/functions/_shared/gate.js'
+import { chapterAllowance, readableChapters, splitChapters, bookTextFor, teaserOf, publicBook, publicPage, publicCompanion, isGatedPage, textWithheld, titlesOnly, holdsText, sentText, publicRow } from '../supabase/functions/_shared/gate.js'
 
 let pass = 0, fail = 0
 const ok = (msg, cond) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
@@ -57,6 +57,19 @@ const pc = publicCompanion(comp, open)
 ok('a companion keeps the chapters a guest may read', pc.chapters[0].summaryMd === 'a')
 ok('…and only the titles of the rest', !('summaryMd' in pc.chapters[1]) && !('essence' in pc.chapters[1]) && !('quiz' in pc.chapters[1]))
 ok('…saying which have a quiz, so mastery counts them', pc.chapters[1].hasQuiz === true && pc.chapters[2].hasQuiz === false)
+
+/* a book whose text is withheld (fullText: false): its titles leave, its text never does — to a guest, a member or a row */
+const withheld = { ...open, fullText: false }
+ok('a book with fullText: false is withheld', textWithheld(withheld) && !textWithheld(open) && !textWithheld({ ...open, fullText: true }))
+ok('its titles alone are the text', titlesOnly(raw) === '# One\n\n# Two\n\n# Three\n\n# Four\n' && !holdsText(titlesOnly(raw)) && holdsText(raw))
+const pw = publicBook(withheld)
+ok('…its public record has every title and no sentence', splitChapters(pw.raw).length === 4 && !/alpha|bravo|charlie|Delta/.test(pw.raw) && !('gatedFrom' in pw))
+ok('…a member is sent the titles alone', sentText(withheld, raw, Infinity) === titlesOnly(raw))
+ok('…and a buyer, at any allowance', sentText(withheld, raw, readableChapters(withheld, 'authenticated', { owned: true })) === titlesOnly(raw))
+ok('…while a book with its text is sent as before', sentText(open, raw, 2) === bookTextFor(raw, 2))
+const wrow = publicRow({ collection: 'books', data: { fullText: false }, body: raw, text: '---\nfullText: false\n---\n' + raw }, new Map(), {})
+ok('…and its cloud row carries the titles alone', wrow.body === titlesOnly(raw) && !/alpha|Delta/.test(wrow.text) && /fullText: false/.test(wrow.text))
+ok('…while its companion is published as any book\'s', publicCompanion(comp, { ...withheld, guestChapters: undefined }).chapters[2].summaryMd === 'c')
 
 console.log(fail ? `${fail} failed, ${pass} passed` : `all ${pass} checks passed (what a reader is sent)`)
 process.exit(fail ? 1 : 0)

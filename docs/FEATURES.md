@@ -180,6 +180,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Read chapter by chapter with a contents list, next and previous, reading-time estimates, "Begin" and "Continue reading", and the reader's place saved.
 - Bookmarks, highlights in colours with margin notes, search inside the book, and typeface and size settings.
 - Read in full or in summary mode, with each chapter's bottom line and the book's introduction.
+- Publish a book's summaries without its text (`fullText: false`): the text is sent to nobody, the book reads in summary mode only, and print and the spoken book use the summaries alone.
 - Give each visitor class a set number of free chapters before the paywall.
 - Chapter quizzes: answering all but one question right masters the chapter. Mastery earns bronze, silver and gold trophies, shown on the book cover and in the reader's accomplishments.
 - Companion material per chapter where the site provides it: summaries, key points and quizzes.

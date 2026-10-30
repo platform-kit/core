@@ -124,7 +124,12 @@ export async function printBook(slug, { local = false, force = false, keepTyp = 
      it every book in the library went out under the same dc:identifier — one uuid for the whole
      shelf, which is exactly what that field exists not to be */
   const book = { ...fm.data, raw: fm.content, slug }
-  const spec = printSpec(book.print) || printSpec({})
+  /* a book whose text is withheld is set as its summaries and never as its text */
+  if (book.fullText === false) {
+    const asked = (printSpec(book.print) || { contents: [] }).contents.filter((c) => c !== 'summary')
+    if (asked.length || (only && only !== 'summary')) throw new Error(`${slug}: fullText is false, so the book has only a summary edition — not ${[...new Set([...asked, ...(only && only !== 'summary' ? [only] : [])])].join(', ')}`)
+  }
+  const spec = printSpec(book.print, book) || printSpec({})
   /* nothing is sent to a printer without a line saying on what footing the text is printed and
      sold; a local render (a look at the pages) needs none */
   if (!local && !spec.rights) throw new Error(`${slug}: the print block needs rights: — on what footing the text is printed and sold`)
@@ -224,8 +229,8 @@ export async function printBook(slug, { local = false, force = false, keepTyp = 
         if (contents === 'parts') {
           const twice = me.where.filter((w) => w.kind === 'chapter' && w.title === pick.chapter.title).map((w) => w.page).filter((p) => p !== pick.chapter.page)
           if (twice.length) shots.other = { contents: 'full', page: twice[0], art: await keep(interior, twice[0], `page-${twice[0]}.jpg`) }
-        } else {
-          /* the other edition, set for this alone — its print file is not kept */
+        } else if (book.fullText !== false) {
+          /* the other edition, set for this alone — its print file is not kept; a book whose text is withheld has none */
           const otherContents = contents === 'full' ? 'summary' : 'full'
           const other = typeset({ book, companion, trim, contents: otherContents, note: '', words: W })
           fs.writeFileSync(mainTyp, other.source)
@@ -402,7 +407,7 @@ export function proofReport(idx = readIndex()) {
   const out = []
   for (const slug of Object.keys(idx).sort()) {
     let spec = null
-    try { spec = printSpec(matter(fs.readFileSync(path.join(ROOT, 'content/books', slug + '.md'), 'utf8')).data.print) } catch (e) { continue }
+    try { const d = matter(fs.readFileSync(path.join(ROOT, 'content/books', slug + '.md'), 'utf8')).data; spec = printSpec(d.print, d) } catch (e) { continue }
     if (!spec) continue
     for (const c of spec.contents) { const st = proofState(spec, idx[slug], c); if (st === 'never' || st === 'stale') out.push({ slug, contents: c, edition: idx[slug].editions[c].edition, state: st, was: spec.proofed[c] || null }) }
   }

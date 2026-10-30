@@ -18,6 +18,8 @@
  *   splitChapters(raw)                 a book's chapters as the reader splits them
  *   bookTextFor(raw, n)                the book's text with every chapter from n on cut to its teaser
  *   isGatedPage(fm)                    whether a guest may not read a page
+ *   textWithheld(fm) / titlesOnly(raw) a book whose text is never published (`fullText: false`), and what of it is
+ *   sentText(fm, raw, n)               what a reader allowed n chapters is sent of a book
  *   publicBook / publicPage / publicCompanion   the public record of each
  */
 import { CLASSES, allowedBy } from './access.js'
@@ -70,9 +72,19 @@ export function bookTextFor(raw, n) {
 
 export const isGatedPage = (fm) => !allowedBy(fm && fm.canAccess, 'guest')
 
+/* A BOOK WHOSE TEXT IS NEVER PUBLISHED (`fullText: false`): its summaries are, its chapters' text is not — to
+   nobody, of any class, bought or not. What leaves is each chapter's title alone, so the reader still splits it
+   into chapters and the companion still finds its own. The file may hold the text while the summaries are written. */
+export const textWithheld = (fm) => !!fm && fm.fullText === false
+export const titlesOnly = (raw) => splitChapters(raw).map((p) => { const m = /^# .*$/m.exec(p); return m ? m[0] + '\n' : '' }).filter(Boolean).join('\n')
+export const holdsText = (raw) => splitChapters(raw).some((p) => p.replace(/^# .*$/m, '').trim())
+/* the text a reader allowed n chapters is sent: the chapters' titles alone for a book whose text is withheld */
+export const sentText = (fm, raw, n) => (textWithheld(fm) ? titlesOnly(raw) : bookTextFor(raw, n))
+
 /* a book as a guest may have it */
 export function publicBook(book) {
   if (!book || typeof book.raw !== 'string') return book
+  if (textWithheld(book)) return { ...book, raw: titlesOnly(book.raw) }
   const n = readableChapters(book, 'guest')
   if (!(n < splitChapters(book.raw).length)) return book
   return { ...book, raw: bookTextFor(book.raw, n), gatedFrom: n }
@@ -123,6 +135,7 @@ export function publicRow(row, books, lib) {
   if (row.collection === 'books') {
     const pub = publicBook({ ...fm, raw: row.body || '' })
     if (pub.raw === (row.body || '')) return row
+    if (textWithheld(fm)) return { ...row, body: pub.raw, text: withBody(row.text, row.body, pub.raw) }
     /* where the cut starts, as velite writes it: the reader asks for the rest from there */
     return { ...row, data: { ...fm, gatedFrom: pub.gatedFrom }, body: pub.raw, text: withBody(row.text, row.body, pub.raw) }
   }
