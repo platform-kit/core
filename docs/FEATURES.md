@@ -643,4 +643,4 @@ For the project's objectives and intended audience, see [PURPOSE.md](./PURPOSE.m
 ---
 
 **Sources:** `openspec/specs`, `packages/kit/build/modules/kit.mjs`, `packages/kit/build/modes.mjs`, `packages/kit/build`, `packages/kit/supabase`, `packages/kit/src/lib`, `packages/kit/src/payment-provider.mjs`, `packages/kit/src/payment-provider.d.ts`, `packages/kit/theme/src`, `sites/demo/platformkit.config.js`
-**Reviewed:** `2026-10-29`
+**Reviewed:** `2026-10-30`

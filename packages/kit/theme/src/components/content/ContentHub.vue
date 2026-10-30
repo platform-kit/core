@@ -224,7 +224,7 @@ const img = (a) => a.data.image || (Array.isArray(a.data.media) ? a.data.media.f
     <section class="lane" v-if="recBooks.length">
       <div class="lane-head"><h2>{{ HUB.lanes.books }}</h2></div>
       <div class="shelf">
-        <a v-for="b in recBooks" :key="b.slug" class="thumb" :href="b.href">
+        <a v-for="b in recBooks" :key="b.slug" class="thumb" :href="'/content/books/' + b.slug">
           <span class="thumb-img" :style="b.cover ? null : { backgroundImage: coverTint(b.slug) }">
             <Book3D v-if="b.cover" :slug="b.slug" :art="b.cover.src" :alt="b.title + ' cover'" :title="b.title" :author="b.author" mode="still" />
             <span v-else class="thumb-ph">{{ b.title }}</span>
