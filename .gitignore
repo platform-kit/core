@@ -95,3 +95,6 @@ public/__book3d.html
 
 # the candidate sheet the photo fetcher draws, to choose by looking
 sites/demo/build/.sheet.png
+# the TypeScript build: compiled beside the sources on pack and on a source install, and removed after (build/compile.mjs)
+packages/kit/.tsbuild/
+packages/kit/.compiled.json

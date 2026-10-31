@@ -83,7 +83,7 @@ function sourcePackageHash(root) {
   return hashPackageTree(root, crypto.createHash('sha256'), files)
 }
 
-function writeReceipt(site, sourceRoot) {
+function writeReceipt(site, sourceRoot, { sourceClean: cleanBefore } = {}) {
   const packages = {}
   for (const name of PACKAGES) {
     const sourceDirectory = path.join(sourceRoot, 'packages', SOURCE_DIR[name])
@@ -105,8 +105,9 @@ function writeReceipt(site, sourceRoot) {
   const declaredRepository = typeof rootManifest.repository === 'string' ? rootManifest.repository : rootManifest.repository?.url
   const sourceUrl = canonicalRepository(declaredRepository)
     || canonicalRepository(gitOutput(sourceRoot, 'remote', 'get-url', 'origin'))
-  const sourceClean = sourceRef === null
-    || gitOutput(sourceRoot, 'status', '--porcelain', '--', 'packages/kit') === ''
+  /* read before the compile where there is one: its output beside the sources is untracked, and is not a change */
+  const sourceClean = cleanBefore ?? (sourceRef === null
+    || gitOutput(sourceRoot, 'status', '--porcelain', '--', 'packages/kit') === '')
   const treeHash = crypto.createHash('sha256')
   for (const name of PACKAGES) treeHash.update(`${name}\0${packages[name].sha256}\0`)
   const receipt = {
@@ -132,6 +133,16 @@ export function installPlatformKitSource(site, sourceRoot, { env = process.env }
       throw new Error(`PlatformKit source checkout is missing packages/${SOURCE_DIR[name]}`)
     }
   }
+  /* the kit's TypeScript, compiled beside itself first: Node never strips types inside node_modules, and this install runs
+     no scripts, so prepack's compile would not happen (build/compile.mjs). A checkout from before the kit had any has none. */
+  const kitDir = path.join(sourceRoot, 'packages', 'kit')
+  const compiler = path.join(kitDir, 'build', 'compile.mjs')
+  const sourceClean = gitOutput(sourceRoot, 'rev-parse', '--verify', 'HEAD') === null
+    || gitOutput(sourceRoot, 'status', '--porcelain', '--', 'packages/kit') === ''
+  if (fs.existsSync(compiler)) {
+    const compiled = spawnSync(process.execPath, [compiler], { cwd: kitDir, stdio: 'inherit', env })
+    if (compiled.status !== 0) throw new Error('PlatformKit source installation failed: its TypeScript did not compile')
+  }
   const result = spawnSync('npm', [
     'install',
     '--no-save',
@@ -142,9 +153,15 @@ export function installPlatformKitSource(site, sourceRoot, { env = process.env }
     '--no-fund',
     `file:${path.join(sourceRoot, 'packages', 'kit')}`,
   ], { cwd: site, stdio: 'inherit', env })
-  if (result.error) throw new Error(`could not install PlatformKit from its source checkout: ${result.error.message}`)
-  if (result.status !== 0) throw new Error(`PlatformKit source installation failed${result.status === null ? '' : ` (npm exited ${result.status})`}`)
-  const receipt = writeReceipt(site, sourceRoot)
+  /* the receipt compares the installed package with the checkout, so it is taken while the compiled files are beside the
+     sources, and they are removed after it */
+  const cleanUp = () => { if (fs.existsSync(compiler)) spawnSync(process.execPath, [compiler, '--clean'], { cwd: kitDir, stdio: 'ignore', env }) }
+  let receipt
+  try {
+    if (result.error) throw new Error(`could not install PlatformKit from its source checkout: ${result.error.message}`)
+    if (result.status !== 0) throw new Error(`PlatformKit source installation failed${result.status === null ? '' : ` (npm exited ${result.status})`}`)
+    receipt = writeReceipt(site, sourceRoot, { sourceClean })
+  } finally { cleanUp() }
   console.log(`PlatformKit installed from source${receipt.source.ref ? ` at ${receipt.source.ref}` : ''}.`)
   return receipt
 }

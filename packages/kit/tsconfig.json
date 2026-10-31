@@ -1,0 +1,24 @@
+{
+  // The kit's TypeScript, checked by `npm run typecheck` (openspec: typescript-throughout).
+  // Node runs the source in the workspace through tsx; `tsc -p tsconfig.build.json` emits the JavaScript a site gets.
+  // JavaScript not yet converted is allowed and not checked; a converted directory is checked strictly. A test still in
+  // JavaScript is left out, since it is not checked and its imports reach packages that ship raw TypeScript.
+  // The Edge Functions, and the Deno tests beside them in build/, are Deno's and are checked by `deno check`, not here.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "noEmit": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["bin", "build", "src", "vite"],
+  "exclude": ["node_modules", "supabase/functions", "build/fixtures", "theme", "build/**/*.test.ts", "build/hyperswitch-browser.steps.ts", "build/**/*.test.mjs", "build/**/*.integration.mjs"]
+}

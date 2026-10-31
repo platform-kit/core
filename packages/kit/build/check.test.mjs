@@ -12,7 +12,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const DEMO = path.resolve(HERE, '../../../sites/demo')
 let pass = 0, fail = 0
 const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 400) : '')) } }
-const ran = (status, stdout = '') => () => ({ status, stdout })
+const ran = (status, stdout = '') => () => ({ status, stdout });
 
 /* two problems at once: Docker down and no browser, both reported, failures first, exit 1 */
 {

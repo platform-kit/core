@@ -1,0 +1,29 @@
+{
+  // The theme's TypeScript, checked by `vue-tsc` in `npm run typecheck` (openspec: typescript-throughout).
+  // A component converted to `<script setup lang="ts">` is checked strictly; one still in JavaScript is allowed and not checked.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "platformkit/theme/*": ["./src/*"],
+      "platformkit/*": ["../src/*"],
+      "#content": ["./src/content-types.d.ts"]
+    }
+  },
+  "include": ["src/**/*.vue", "src/**/*.ts", "src/**/*.js"],
+  "exclude": ["node_modules"]
+}

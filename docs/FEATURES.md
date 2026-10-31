@@ -18,6 +18,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Check a machine and a site in one command: every missing tool, setting or database problem listed at once, each with its fix, and production settings checked exactly as the deploy will.
 - Generate the site's pages, search data, sitemap, robots file, share images and favicon at build time; publish every public page pre-rendered for search engines and link previews.
 - Check every public page at phone width for content that runs off the screen.
+- Type-check the kit's engine and theme in one command, run by CI; a test run runs every check and lists every failure together.
 - Run the site's own tests and specifications alongside PlatformKit's checks, including a separate check of each deployment shape.
 - Run every end-to-end check — database, functions and browser — in a container built from the project's files and installed from scratch, on a test stack for each site built from its files for the run, several sites side by side, without touching the copies used for development and without any check rewriting a file the running app or functions read; a check that cannot run counts as a failure, and so does a function no check called.
 - Refuse, in the quick checks, a function no test names, a test that stops early with a pass, a test that reaches a database without taking the run's, and a specification claim whose test does not exist or never runs.
@@ -643,4 +644,4 @@ For the project's objectives and intended audience, see [PURPOSE.md](./PURPOSE.m
 ---
 
 **Sources:** `openspec/specs`, `packages/kit/build/modules/kit.mjs`, `packages/kit/build/modes.mjs`, `packages/kit/build`, `packages/kit/supabase`, `packages/kit/src/lib`, `packages/kit/src/payment-provider.mjs`, `packages/kit/src/payment-provider.d.ts`, `packages/kit/theme/src`, `sites/demo/platformkit.config.js`
-**Reviewed:** `2026-10-30`
+**Reviewed:** `2026-10-31`

@@ -17,6 +17,8 @@ jobs:
       - uses: denoland/setup-deno@v2
         with: { deno-version: v2.x }
       - run: npm ci
+      - name: the kit typechecks
+        run: npm run typecheck
       - name: the kit's checks against the demo
         run: npm test
         working-directory: sites/demo

@@ -54,7 +54,7 @@ const askedStep = (name, args, call = 'c1') => ({
   kind: 'model',
   response: { message: { role: 'assistant', content: null, tool_calls: [{ id: call, type: 'function', function: { name, arguments: JSON.stringify(args) } }] } },
 })
-const toolStep = (name, result, call = 'c1') => ({ kind: 'tool', name, response: { call, result } })
+const toolStep = (name, result, call = 'c1') => ({ kind: 'tool', name, response: { call, result } });
 
 /* ---- the first thing a run does is think ---- */
 {

@@ -10,7 +10,13 @@ import { workspaceRoot } from './sites.mjs'
 
 const ROOT = process.cwd()
 const WORKSPACE_ROOT = workspaceRoot(ROOT)
-const KIT = (f) => fileURLToPath(new URL('./' + f, import.meta.url))
+/* a converted script is .mts here and, once installed, the .mjs tsc emitted beside it: Node strips types, but never inside
+   node_modules (openspec: typescript-throughout) */
+const KIT = (f) => {
+  const at = fileURLToPath(new URL('./' + f, import.meta.url))
+  const js = at.replace(/\.mts$/, '.mjs')
+  return at.endsWith('.mts') && at.includes(`${path.sep}node_modules${path.sep}`) && fs.existsSync(js) ? js : at
+}
 const c = await loadSite(ROOT)
 /* A MODULE IS ON UNLESS IT SAYS false — the same reading as deploy-checks, steps.mjs and the
    router. This was `!!c.modules[m]`, which makes a module ABSENT from the config off: the root site
@@ -193,6 +199,8 @@ const KIT_TESTS = [
   ['signed-in-as.test.mjs'],   /* the same kinds of person as who-can.test.mjs, but signed in through a real browser: the set of admin sections each one reaches BY ADDRESS (a missing link proves nothing about a missing lock), and one thing their role exists for actually carried out. Skips loudly with no dev server. */
   ['theme-look.test.mjs'],   /* a palette is complete or it is not a palette: every colour the theme reads, against every colour each look defines. An incomplete palette does not look broken in review — it looks right on every page somebody opened and wrong on the one they did not, which is how the theme came to ship a button with its text the same colour as its background. */
   ['webhook-doors.test.mjs'],   /* the doors that face the internet: every inbound webhook refuses an unsigned, wrongly signed, altered or stale body and a replayed cal.com "created" revives nothing; LiveKit's development secret signs nothing without an account; a mocked printer is not walked to shipped; and a reader who may add a recording nobody has made and may never replace one — against the functions and the storage API as they are actually served */
+  ['ics.test.mjs'],   /* the calendar invitation: a booking, a move, a cancellation, the escaping and the folding */
+  ['typecheck.test.mts'],   /* the engine and the theme typecheck, and each config refuses a planted type error */
   ['test-coverage.test.mjs'],   /* nothing untested by construction: every function named by a test, no early exit but through the helper, every claim naming a test that runs */
   ['test-stack.test.mjs'],   /* where a stack test reads its stack: the run's own addresses, a skip that fails under the end-to-end run, and the one marker for a fact about the site */
   ['function-doors.test.mjs'],   /* the functions nothing else called: each door refusing the wrong caller and answering the right one, against the stack */

@@ -5,6 +5,11 @@ order: 51
 sources:
   [
     packages/kit/build/check.mjs,
+    packages/kit/build/compile.mjs,
+    packages/kit/build/typecheck.test.mts,
+    packages/kit/tsconfig.json,
+    packages/kit/tsconfig.build.json,
+    packages/kit/theme/tsconfig.json,
     packages/kit/build/dev-directory.mjs,
     packages/kit/build/dev-directory.css,
     packages/kit/build/dev-directory.test.mjs,
@@ -62,7 +67,7 @@ sources:
     deploy/prerender,
     deploy/relay,
   ]
-reviewed: 2026-10-30
+reviewed: 2026-10-31
 ---
 
 ## Restarting development
@@ -168,6 +173,15 @@ the remaining refresh phases for that edit.
 ## Optional host components
 
 The Apache example uses a `.htaccess` fallback so deep links reach the single-page app; backend sites also need the host rewrites described above. The optional prerender sidecar uses a browser to return rendered pages and fresh share cards for records published after a static build. Sites with calls that cannot connect directly may run an optional TURN relay; it is not required for most calls.
+
+## The kit's TypeScript
+
+The kit is being converted to TypeScript (openspec: `typescript-throughout`). A file that runs in Node is `.mts` and compiles to the `.mjs` name it had as JavaScript, so a published path does not change; a library shared with the browser is `.ts`; a component is `<script setup lang="ts">`. A converted source imports its neighbours by their `.mts` or `.ts` names.
+
+- **In the workspace, nothing is built.** Node 22 strips the types and runs the source as it is, and Vite compiles the theme.
+- **For a site, the JavaScript is emitted.** Node never strips types inside `node_modules`, so `build/compile.mjs` compiles the kit with `tsconfig.build.json` before it is packed (`prepack`) and before a source install, and copies the output beside each source: `x.mts` gives `x.mjs` and `x.d.mts`. Where TypeScript is not installed, as in a source install from GitHub, it strips each file with Node's own `module.stripTypeScriptTypes` instead. What it copied is listed in `.compiled.json`, and `--clean` (`postpack`) removes exactly that.
+- **`npm run typecheck`** runs `tsc` over the engine (`packages/kit/tsconfig.json`) and `vue-tsc` over the theme (`packages/kit/theme/tsconfig.json`), and CI runs it. JavaScript not yet converted is allowed and not checked. `typecheck.test.mts` runs both and hands each config a planted type error it must refuse: both once passed while reading nothing, because `npx` runs from the workspace package's root.
+- **New tests are `node:test` files** (`*.test.mts`), which run every case and report every failure.
 
 ## Package releases and site deployment ownership
 

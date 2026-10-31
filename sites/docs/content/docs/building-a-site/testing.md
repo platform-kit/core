@@ -71,7 +71,7 @@ sources:
     packages/kit/build/source-install.mjs,
     packages/kit/build/runtime-paths.mjs,
   ]
-reviewed: 2026-10-30
+reviewed: 2026-10-31
 ---
 
 ## A proposal promises nothing it does not require
@@ -185,7 +185,7 @@ The `content-refresh.test.mjs`, `steps.test.mjs` and `projection-safety.test.mjs
 3. **The site's own** — `build.tests` in the config. A site with an instrument runs its own: the reading rules, the word association, the charts, the results sheet with every test on, the copy, the mechanism, the bank lint, the complexes.
 4. **The specs** — `openspec validate --all --strict`, where an `openspec/` exists.
 
-Every check runs, and every failure is listed together at the end, then the run exits non-zero. A run that stopped at its first failure showed one at a time, and eleven failures once sat queued behind each other for a week. `platformkit test --bail` stops at the first failure, for someone fixing one thing. Each test is a Node script that prints `N passed, M failed` and exits accordingly; new tests use `node:test`, which also runs every case and reports every failure.
+Every check runs, and every failure is listed together at the end, then the run exits non-zero. A run that stopped at its first failure showed one at a time, and eleven failures once sat queued behind each other for a week. `platformkit test --bail` stops at the first failure, for someone fixing one thing. Among the checks, `typecheck.test.mts` runs `tsc` over the engine and `vue-tsc` over the theme, and hands each a planted type error it must refuse (see Dev, build and deploy). Each test is a Node script that prints `N passed, M failed` and exits accordingly; new tests use `node:test`, which also runs every case and reports every failure.
 
 ## `platformkit test --e2e`
 

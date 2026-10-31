@@ -1,0 +1,16 @@
+{
+  // The JavaScript a site gets, emitted by build/compile.mjs (openspec: typescript-throughout). Everything goes to .tsbuild/;
+  // compile.mjs then copies back only what came from TypeScript, beside its source: x.mts gives x.mjs and x.d.mts.
+  // Only TypeScript is compiled here, so JavaScript not yet converted is read as untyped. The checking is tsconfig.json's,
+  // run by `npm run typecheck`, which sees everything.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowJs": false,
+    "noImplicitAny": false,
+    "outDir": ".tsbuild",
+    "rootDir": ".",
+    "declaration": true,
+    "rewriteRelativeImportExtensions": true
+  }
+}

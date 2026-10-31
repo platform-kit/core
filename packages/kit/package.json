@@ -225,6 +225,12 @@
     "matrix-js-sdk": "^43.0.0",
     "posthog-js": "^1.428.3",
     "@calcom/embed-core": "^1.5.3",
-    "@typeform/embed": "^6.0.0"
+    "@typeform/embed": "^6.0.0",
+    "typescript": "5.9.3",
+    "vue-tsc": "3.3.14"
+  },
+  "scripts": {
+    "prepack": "node build/compile.mjs",
+    "postpack": "node build/compile.mjs --clean"
   }
 }

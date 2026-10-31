@@ -1,6 +1,6 @@
 ## Tasks
 
-- [ ] Foundation: `tsconfig.json`, `npm run typecheck` (`tsc --noEmit`, `vue-tsc`) in CI, `prepack`/`prepare` build to `dist/`, `exports` and `bin` on `dist/`
+- [x] Foundation: `tsconfig.json` for the engine and the theme, `npm run typecheck` in CI and in the test run, `build/compile.mjs` on `prepack` and before a source install (with Node's own stripping where TypeScript is not installed), and the first `node:test` file (`typecheck.test.mts`)
 - [ ] Public types: `defineSite`, manifests, registries, theme contract, payment and printer adapters
 - [ ] `src/lib` and the shared modules the functions copy
 - [ ] The engine and CLI, by directory, tests to `node:test`

@@ -32,12 +32,16 @@ const packDir = path.join(ROOT, 'node_modules', '.cache', 'platformkit', 'one-pa
 fs.rmSync(packDir, { recursive: true, force: true }); fs.mkdirSync(packDir, { recursive: true })
 const pack = spawnSync('npm', ['pack', '--json', '--pack-destination', packDir], { cwd: KIT, encoding: 'utf8', maxBuffer: 1 << 26 })
 let packed = null
-try { packed = JSON.parse(pack.stdout)[0] } catch { /* below */ }
+/* prepack compiles the kit's TypeScript (build/compile.mjs) and says so on the same stdout: the JSON is the array npm prints last */
+try { packed = JSON.parse(pack.stdout.slice(pack.stdout.indexOf('\n[') + 1))[0] } catch { /* below */ }
 ok('npm packs it', pack.status === 0 && !!packed, (pack.stderr || '').slice(-600))
 if (packed) {
   const files = new Set(packed.files.map((f) => f.path))
   ok('…with the command', files.has('bin/platformkit.mjs'))
   ok('…the theme', files.has('theme/src/main.js') && files.has('theme/src/theme.js'))
+  /* Node never strips types inside node_modules, so every TypeScript source arrives with the JavaScript compiled from it */
+  const uncompiled = [...files].filter((f) => /\.m?ts$/.test(f) && !/\.d\.m?ts$/.test(f) && /^(bin|build|src|vite)\//.test(f) && !/\.test\.ts$|hyperswitch-browser\.steps\.ts$/.test(f) && !files.has(f.replace(/\.(m?)ts$/, '.$1js')))
+  ok('…every TypeScript source with its compiled JavaScript', uncompiled.length === 0, uncompiled.join(', '))
   /* unpacked inside the workspace, so it resolves its dependencies from the workspace's node_modules as an installed copy would from its own */
   const tar = spawnSync('tar', ['-xzf', path.join(packDir, packed.filename), '-C', packDir], { encoding: 'utf8' })
   ok('…and unpacks', tar.status === 0, tar.stderr)

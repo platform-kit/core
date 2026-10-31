@@ -9,7 +9,7 @@ The kit's source SHALL be TypeScript, the published package SHALL ship compiled 
 - **WHEN** a site's `platformkit.config.ts` names a module or a registry field that does not exist
 - **THEN** `npm run typecheck` fails, naming the field
 
-Verified by: `build/typecheck.test.mjs`
+Verified by: `build/typecheck.test.mts`
 
 #### Scenario: installed from npm or GitHub
 

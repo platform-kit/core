@@ -13,7 +13,7 @@ const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.lo
 
 console.log('\nPRINT RUNS\n')
 
-const ch = (title, pages) => ({ title, pages })
+const ch = (title, pages) => ({ title, pages });
 
 /* --- a book that fits is one call --- */
 {

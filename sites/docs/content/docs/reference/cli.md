@@ -26,7 +26,7 @@ sources:
     package.json,
     packages/kit/package.json,
   ]
-reviewed: 2026-10-30
+reviewed: 2026-10-31
 ---
 
 Run `platformkit` from a site directory for site commands, or pass `--site <path>` to select a site explicitly. At the workspace root, site commands and root npm shortcuts use `PLATFORMKIT_DEFAULT_SITE`, which defaults to `sites/docs`; it may be a site name or a path to a tracked or separately linked site. `--site` takes precedence. Workspace `dev` uses that default unless `PLATFORMKIT_SITES` explicitly selects multiple sites; `sites` and `stop` operate on the workspace. The root registry is `platformkit.sites.json`; fetched repositories live in `sites/external/<name>`, outside the tracked fixture sites and npm workspaces.
@@ -39,7 +39,7 @@ npx --yes --package=github:platform-kit/core platformkit build
 DEPLOY=1 npx --yes --package=github:platform-kit/core platformkit deploy
 ```
 
-Run these commands from the site's root. The GitHub source installs `platformkit` into the site's `node_modules` without changing its manifest or lockfile. The receipt compares the installed packages with the exact files npm packs from that source, excluding development-only checkout files; deploy preflight verifies the receipt before deployment steps begin. The site continues to own and install its other dependencies. This avoids publishing the Core packages to npm, but still uses npm to install dependencies and fetch the GitHub-hosted CLI.
+Run these commands from the site's root. The GitHub source installs `platformkit` into the site's `node_modules` without changing its manifest or lockfile, compiling the kit's TypeScript to JavaScript first (`build/compile.mjs`), since Node does not strip types inside `node_modules`. The receipt compares the installed packages with the exact files npm packs from that source, excluding development-only checkout files; deploy preflight verifies the receipt before deployment steps begin. The site continues to own and install its other dependencies. This avoids publishing the Core packages to npm, but still uses npm to install dependencies and fetch the GitHub-hosted CLI.
 
 | Command                                                                    | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Script                                      |
 | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
