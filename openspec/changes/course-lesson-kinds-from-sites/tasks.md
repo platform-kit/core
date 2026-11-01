@@ -7,4 +7,4 @@
 - [x] Sidebar and outline: a section with a measured kind shows the measure; the course's overall percentage still counts lessons
 - [x] The demo registers a self-rating kind whose measure is the reader's rating; `build/courses.test.mjs` covers accept, refuse and remove; `build/courses-db.test.mjs` covers the write, the completion and the database's kind check
 - [x] Courses and extension-model pages of the documentation site
-- [ ] Seen in the player at 1280 px and 390 px
+- [x] Seen in the player at 1280 px and 390 px
