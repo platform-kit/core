@@ -1950,6 +1950,9 @@ RETURNS TABLE (
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
+-- the returned column subscription_id shares its name with the renewals' column, which the ON CONFLICT below names: the
+-- column is meant wherever it is written
+#variable_conflict use_column
 begin
   return query
     with due as (

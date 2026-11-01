@@ -25,7 +25,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { loadDotEnv, serviceKey, supabaseUrl } from './tts/storage.mjs'
-import { statusOf, leave } from './test-stack.mjs'
+import { statusOf, leave, served, notHere } from './test-stack.mjs'
+/* a door of a module the site has off is not served, and not this site's to check (openspec: module-switch-removes-backend) */
+const door = (fn) => served(fn) || (notHere(fn, 'its module is off'), false)
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -58,7 +60,7 @@ const answers = async (name) => {
   try { const r = await fetch(`${cfg.FUNCTIONS_URL}/${name}`, { method: 'POST', body: '{}' }); return r.status !== 404 }
   catch { return false }
 }
-if (!(await answers('cal-webhook'))) skip('the functions are not being served (npm run dev, or supabase functions serve)')
+if (!(await answers('stripe-webhook'))) skip('the functions are not being served (npm run dev, or supabase functions serve)')
 
 /* ─── an unsigned, misfigured or absent-signature body ─── */
 
@@ -99,7 +101,7 @@ const CAL = {
   'a signature that is not one': { 'x-cal-signature-256': 'nonsense' },
   'a well-shaped signature over other bytes': { 'x-cal-signature-256': 'b'.repeat(64) },
 }
-for (const [what, headers] of Object.entries(CAL)) {
+if (door('cal-webhook')) for (const [what, headers] of Object.entries(CAL)) {
   const body = JSON.stringify({ triggerEvent: 'BOOKING_CREATED', payload: { uid: 'forged-' + Date.now() } })
   const r = await fetch(`${cfg.FUNCTIONS_URL}/cal-webhook`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body })
   const said = await r.text()
@@ -107,7 +109,7 @@ for (const [what, headers] of Object.entries(CAL)) {
   ok(`  and names the signature (${what})`, /signature/i.test(said), said.slice(0, 80))
 }
 /* a forged CANCELLED is the one that takes something away rather than adding it */
-{
+if (served('cal-webhook')) {
   const body = JSON.stringify({ triggerEvent: 'BOOKING_CANCELLED', payload: { uid: 'forged-cancel' } })
   const r = await fetch(`${cfg.FUNCTIONS_URL}/cal-webhook`, { method: 'POST', headers: { 'content-type': 'application/json' }, body })
   ok('cal-webhook refuses an unsigned cancellation too', r.status >= 400 && r.status < 500, `answered ${r.status}`)
@@ -120,13 +122,15 @@ for (const [what, headers] of Object.entries(CAL)) {
      would otherwise report "nothing was written" about a table it never looked at */
   const p = await admin.from('purchases').select('id', { count: 'exact', head: true }).like('stripe_checkout_session_id', 'cs_forged_%')
   ok('and no purchase was written by any of them', p.count === 0, p.error ? p.error.message : `${p.count} purchases`)
-  const b = await admin.from('bookings').select('uid', { count: 'exact', head: true }).like('uid', 'forged-%')
-  ok('and no booking was written by any of them', b.count === 0, b.error ? b.error.message : `${b.count} bookings`)
+  if (served('cal-webhook')) {
+    const b = await admin.from('bookings').select('uid', { count: 'exact', head: true }).like('uid', 'forged-%')
+    ok('and no booking was written by any of them', b.count === 0, b.error ? b.error.message : `${b.count} bookings`)
+  }
   const e = await admin.from('entitlements').select('id', { count: 'exact', head: true }).like('source_id', 'cs_forged_%')
   ok('and nobody granted themselves an entitlement', e.count === 0, e.error ? e.error.message : `${e.count} entitlements`)
   /* and if any of that DID get through — which is what a broken signature check looks like — the
      forgeries are taken back out, so a failing run does not leave the database dirty for the next */
-  await admin.from('bookings').delete().like('uid', 'forged-%')
+  if (served('cal-webhook')) await admin.from('bookings').delete().like('uid', 'forged-%')
   await admin.from('purchases').delete().like('stripe_checkout_session_id', 'cs_forged_%')
   await admin.from('entitlements').delete().like('source_id', 'cs_forged_%')
 }
@@ -166,7 +170,8 @@ for (const [what, headers] of Object.entries(CAL)) {
     const r = await fetch(`${cfg.FUNCTIONS_URL}/cal-webhook`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-cal-signature-256': sig ?? createHmac('sha256', secret).update(raw).digest('hex') }, body: raw })
     return { status: r.status, body: await r.text() }
   }
-  if (!secret) note('⚠ no CAL_WEBHOOK_SECRET in this environment — the altered, stale and replayed cal.com checks are skipped')
+  if (!served('cal-webhook')) { /* the sessions module is off: no cal.com door */ }
+  else if (!secret) note('⚠ no CAL_WEBHOOK_SECRET in this environment — the altered, stale and replayed cal.com checks are skipped')
   else {
     const uid = 'forged-replay-' + Date.now()
     const created = (at) => JSON.stringify({ triggerEvent: 'BOOKING_CREATED', createdAt: at, payload: { uid, title: 'probe', startTime: new Date(Date.now() + 864e5).toISOString(), endTime: new Date(Date.now() + 9e7).toISOString(), attendees: [{ email: 'probe@example.test', name: 'Probe' }], organizer: { email: 'host@example.test' } } })
@@ -187,7 +192,8 @@ for (const [what, headers] of Object.entries(CAL)) {
   }
 
   /* LiveKit: with no account the development secret (which is public) signs nothing */
-  if (!process.env.LIVEKIT_URL && process.env.LIVEKIT_MOCK !== '1') {
+  if (!door('livekit-webhook')) { /* the sessions module is off */ }
+  else if (!process.env.LIVEKIT_URL && process.env.LIVEKIT_MOCK !== '1') {
     const raw = JSON.stringify({ event: 'room_finished', room: { name: 'forged-room' } })
     const b64 = (x) => Buffer.from(typeof x === 'string' ? x : JSON.stringify(x)).toString('base64url')
     const head = b64({ alg: 'HS256', typ: 'JWT' }), claims = b64({ iss: 'devkey', nbf: Math.floor(Date.now() / 1000) - 10, exp: Math.floor(Date.now() / 1000) + 600, sha256: createHash('sha256').update(raw).digest('base64') })
@@ -198,13 +204,14 @@ for (const [what, headers] of Object.entries(CAL)) {
   } else note('⚠ LiveKit is configured here — the unconfigured-secret check is skipped (meetings.test.mjs signs with the real pair)')
 
   /* the social platforms' door: nothing unsigned is read */
-  {
+  if (door('social-webhook')) {
     const r = await fetch(`${cfg.FUNCTIONS_URL}/social-webhook?provider=threads`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ object: 'page', entry: [{ id: 'forged', changes: [] }] }) })
     ok('social-webhook refuses an unsigned body', r.status === 401 || r.status === 404, `answered ${r.status}`)
   }
 
   /* a printer with no keys has nobody to call it; each read of a mock job would walk it toward shipped */
-  if (!process.env.LULU_CLIENT_KEY) {
+  if (!door('print-webhook')) { /* the print module is off */ }
+  else if (!process.env.LULU_CLIENT_KEY) {
     const r = await fetch(`${cfg.FUNCTIONS_URL}/print-webhook?provider=lulu`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ topic: 'PRINT_JOB_STATUS_CHANGED', data: { id: 123456 } }) })
     const said = await r.text()
     ok('print-webhook ignores a call to a mocked printer', r.status === 200 && /mock printer/.test(said), `answered ${r.status} ${said.slice(0, 80)}`)

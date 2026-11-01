@@ -24,12 +24,14 @@ import { mergeMessages, dividerSeq, unreadOf, mentionsOf, badgeOf, statusOf, myS
 import { voicePath, filePath, FILE_TYPES, FILE_MAX } from './audio.js'
 import { queryArgs } from './query.js'
 import { capture } from '../analytics.js'
+import { moduleOn } from '../modules.js'
 
 const PAGE = 50
 const TYPING_MS = 3000        /* a keystroke says so at most this often */
 const TYPING_FOR = 6000       /* and the dots fade this long after the last word */
 
-const on = () => !!(supabase && configured && session.value)
+/* and only where the site has the spaces: with the module off there is no backend to ask (module-switch-removes-backend) */
+const on = () => !!(supabase && configured && session.value) && moduleOn('spaces')
 const uid = () => (session.value && session.value.user && session.value.user.id) || null
 const topicOf = (channelId) => 'sp:' + channelId
 

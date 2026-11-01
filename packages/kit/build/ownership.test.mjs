@@ -23,7 +23,7 @@
 import pg from 'pg'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
-import { leave } from './test-stack.mjs'
+import { leave, declared, notHere, moduleOn } from './test-stack.mjs'
 
 const note = (m) => console.log('ownership: ' + m)
 if (process.env.OWNERSHIP_TEST === '0') { note('skipped (OWNERSHIP_TEST=0)'); process.exit(0) }
@@ -100,6 +100,11 @@ const CHECKS = /is_admin|is_staff|is_support|is_provider|auth\.uid|auth\.role|au
   finally { await db.end().catch(() => {}) }
   if (rows) {
     for (const name of CLOSED) {
+      /* a function of a module the site has off is not in its declaration (openspec: module-switch-removes-backend) */
+      if (!(await declared(name))) { notHere(name, 'its module is off'); continue }
+      /* a module's function that core declares answering nothing where the module is off (push_notify) is no definer
+         there, and guards nothing; the site with the module on checks it */
+      if (!rows.some((r) => r.name === name)) { notHere(name, 'its module is off, and core\'s stand-in does nothing'); continue }
       const open = rows.filter((r) => r.name === name && (r.anon || r.auth))
       ok(`${name} is not a visitor's or a reader's to call`, rows.some((r) => r.name === name) && !open.length, open.map((r) => r.sig).join(', ') || 'no such function')
     }
@@ -113,6 +118,12 @@ const CHECKS = /is_admin|is_staff|is_support|is_provider|auth\.uid|auth\.role|au
 
 /* ─── 2. the address ─── */
 
+/* the fixtures are a booking, an order, a payout, a form's response, a bot's run and a desk's contact: a site with any of
+   those modules off has no table to make one in, and the site with every module on runs this part */
+const FIXTURE_MODULES = ['sessions', 'store', 'forms', 'bots', 'support']
+const offHere = []
+for (const k of FIXTURE_MODULES) if (!(await moduleOn(k))) offHere.push(k)
+if (offHere.length) { notHere('the address checks', `${offHere.join(', ')} off`); console.log(`${fail ? fail + ' failed, ' : ''}${pass} passed`); process.exit(fail ? 1 : 0) }
 const member = await as('member@example.com'), member2 = await as('member2@example.com')
 if (!member || !member2) { note('skipped the rest — the seed has no member@ or member2@ (platformkit migrate reset)'); console.log(`${fail ? fail + ' failed, ' : ''}${pass} passed`); leave(fail ? 1 : 0) }
 const memberId = await idOf(member), member2Id = await idOf(member2)

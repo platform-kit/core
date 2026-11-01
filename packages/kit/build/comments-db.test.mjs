@@ -12,7 +12,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
-import { leave } from './test-stack.mjs'
+import { leave, moduleOn, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('comments-db: ' + m)
 if (process.env.COMMENTS_TEST === '0') { note('skipped (COMMENTS_TEST=0)'); process.exit(0) }
@@ -104,9 +104,13 @@ try {
   ok('a moderator releases it', done && done.ok === true, JSON.stringify(done))
   ok('and everybody sees it', (await readAs(member)).some((c) => c.id === free1.id))
   const after = (await service.from('space_moderation').select('id, actor_id, comment_id, reason').eq('kind', 'approve')).data || []
-  ok('the release is a record like any other act', after.length === before + 1)
-  ok('with the moderator, the comment and the reason on it',
-    after.some((r) => r.comment_id === free1.id && r.actor_id === admin.id && r.reason === 'fine'))
+  /* the moderation record is the spaces' table: a site without spaces keeps none */
+  if (!(await moduleOn('spaces'))) notHere('the release in the moderation record', 'the spaces module is off')
+  else {
+    ok('the release is a record like any other act', after.length === before + 1)
+    ok('with the moderator, the comment and the reason on it',
+      after.some((r) => r.comment_id === free1.id && r.actor_id === admin.id && r.reason === 'fine'))
+  }
   ok('and the same person is trusted afterwards',
     (await admin.sb.rpc('comment_trusted', { p_user: free.id })).data === true)
   const free2 = await say(free, 'And so this one goes straight up.')

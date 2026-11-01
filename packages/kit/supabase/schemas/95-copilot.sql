@@ -208,7 +208,7 @@ declare
   c public.copilot_sessions;
   sk text;
   spent_window text;
-  state jsonb;
+  turn_state jsonb;   -- not 'state': agent_runs has a column of that name, and a query naming it was ambiguous
   used numeric;
   turn_budget numeric;
   turn_deadline timestamp with time zone;
@@ -263,7 +263,7 @@ begin
   -- The agent worker reserves and settles each bounded provider call through the shared usage
   -- gate. This turn creator enforces the run's own ceilings, not a parallel balance-only gate.
 
-  state := jsonb_build_object(
+  turn_state := jsonb_build_object(
     'messages', case when coalesce(trim(p_ask), '') = '' then '[]'::jsonb
                 else jsonb_build_array(jsonb_build_object('role', 'user', 'content', p_ask)) end,
     'room', coalesce(p_room, ''));
@@ -277,7 +277,7 @@ begin
   -- `asked_by` is the subject: in a spoken conversation the person asking and the person answered
   -- for are the same, and saying so is what makes the run theirs to see and to stop.
   insert into public.agent_runs (bot, surface, asked_by, subject_key, status, state, budget_cents, deadline_at)
-       values (b.slug, 'voice', p_subject, sk, 'queued', state, turn_budget, turn_deadline)
+       values (b.slug, 'voice', p_subject, sk, 'queued', turn_state, turn_budget, turn_deadline)
   returning * into r;
   return jsonb_build_object('ok', true, 'id', r.id, 'bot', b.slug, 'name', b.name);
 end;

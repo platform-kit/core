@@ -23,6 +23,7 @@ import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { policyOf, POLICY, delayMinutes } from './providers-push.mjs'
 import { leave, stackOf, moduleOn, notHere } from './test-stack.mjs'
+if (!(await moduleOn('sessions'))) { notHere('providers-db', 'the sessions module is off'); process.exit(0) }
 
 const note = (m) => console.log('providers-db: ' + m)
 /* IS THE SITE'S MAIL GOING TO THE LOCAL MAILPIT? Only then are the letters safe to read — and only

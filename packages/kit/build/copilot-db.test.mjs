@@ -9,10 +9,11 @@
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
-import { leave } from './test-stack.mjs'
+import { leave, moduleOn, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('copilot-db: ' + m)
 if (process.env.COPILOT_TEST === '0') { note('skipped (COPILOT_TEST=0)'); process.exit(0) }
+if (!(await moduleOn('copilot'))) { notHere('copilot-db', 'the copilot module is off'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
 if (!url || !anon || !localStack()) { note('skipped — no local stack in .env'); leave(0) }

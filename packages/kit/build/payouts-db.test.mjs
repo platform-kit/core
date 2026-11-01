@@ -22,9 +22,10 @@ import { readFile } from 'node:fs/promises'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { balanceOf } from '../src/lib/payouts.js'
-import { leave } from './test-stack.mjs'
+import { leave, moduleOn, notHere } from './test-stack.mjs'
 
 const note = (m) => console.log('payouts-db: ' + m)
+if (!(await moduleOn('sessions'))) { notHere('payouts-db', 'the sessions module is off'); process.exit(0) }
 const payoutSource = await readFile(new URL('../supabase/functions/_shared/payouts.ts', import.meta.url), 'utf8')
 const sendDueSource = payoutSource.slice(payoutSource.indexOf('export async function sendDue'))
 const capabilityCheck = sendDueSource.indexOf("assertPaymentCapabilities(provider, ['payouts.connected-accounts'])")

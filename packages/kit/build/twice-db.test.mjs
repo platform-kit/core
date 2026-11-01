@@ -21,7 +21,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
-import { statusOf, leave } from './test-stack.mjs'
+import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -45,7 +45,9 @@ if (!coach || !member) skip('the seed\'s accounts are not there (npx supabase db
 
 const UID = 'twice-probe-' + Date.now()
 const cleanup = []
-{
+/* a booking and its coach's follow-up in the chat: the sessions' and the coaching's, together */
+if (!(await moduleOn('sessions')) || !(await moduleOn('coaching'))) notHere('a retried meeting end', 'it needs both sessions and coaching on')
+else {
   const { error } = await admin.from('bookings').insert({
     uid: UID, provider_id: coach.id, user_id: member.id, attendee_emails: [member.email.toLowerCase()],
     event: 'probe', status: 'accepted', start_at: new Date(Date.now() - 3600e3).toISOString(), end_at: new Date(Date.now() - 1800e3).toISOString(),
@@ -100,7 +102,8 @@ const cleanup = []
 
 /* ─── the week of chat: read from the booking, with that session's coach, and never a membership ───
    (openspec: community-access-by-entitlement) */
-{
+if (!(await moduleOn('sessions')) || !(await moduleOn('coaching'))) notHere('the week of chat', 'it needs both sessions and coaching on')
+else {
   const buyer = await who('buyer@example.com')
   const giver = await who('coach@example.com')
   const as = createClient(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })

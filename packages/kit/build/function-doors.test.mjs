@@ -7,11 +7,14 @@
  * Run by the end-to-end run (it reads its stack from test-stack.mjs, and every early exit there fails).
  */
 import { createClient } from '@supabase/supabase-js'
-import { requireStack } from './test-stack.mjs'
+import fs from 'node:fs'
+import { requireStack, served, notHere } from './test-stack.mjs'
 
 const S = requireStack('function-doors')
 let pass = 0, fail = 0
-const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 240) : '')) } }
+/* every check names its function first: one the site does not serve (its module is off) is not this site's to check */
+const KIT_FUNCTIONS = new Set(fs.readdirSync(new URL('../supabase/functions/', import.meta.url)).filter((d) => !d.startsWith('_')))
+const ok = (msg, cond, detail = '') => { const fn = msg.split(' ')[0]; if (KIT_FUNCTIONS.has(fn) && !served(fn)) { notHere(msg, 'its module is off'); return } if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 240) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
 const tokenOf = async (email) => { const c = createClient(S.api, S.anon, O); const { data } = await c.auth.signInWithPassword({ email, password: 'password123' }); return data?.session?.access_token || null }
 const call = async (fn, body = {}, bearer = null, init = {}) => {

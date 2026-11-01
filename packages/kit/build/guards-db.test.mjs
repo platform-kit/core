@@ -22,7 +22,7 @@ import { execSync } from 'node:child_process'
 import { loadSite } from './site.mjs'
 import { moduleSet } from './steps.mjs'
 import { activeCronJobs } from './cron.mjs'
-import { statusOf, leave } from './test-stack.mjs'
+import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
 
 let pass = 0, fail = 0
 const ok = (name, cond, detail) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -100,7 +100,8 @@ else {
 
 const { data: coach } = await admin.from('profiles').select('id, email').contains('roles', ['admin']).limit(1).maybeSingle()
 const { data: me } = await admin.from('profiles').select('id').eq('email', 'member@example.com').maybeSingle()
-if (!coach || !me) note('⚠ no coach or member in the seed — the pair rule is skipped')
+if (!(await moduleOn('coaching'))) notHere('one coaching thread per pair', 'the coaching module is off')
+else if (!coach || !me) note('⚠ no coach or member in the seed — the pair rule is skipped')
 else {
   const a = await member.rpc('chat_open', { peer: coach.id })
   const b = await member.rpc('chat_open', { peer: coach.id })

@@ -11,6 +11,8 @@
  * A SKIP IN THE END-TO-END RUN IS A FAILURE. `skip()` exits non-zero there, naming what was missing: a
  * check that cannot run is not a check that passed.
  */
+import fs from 'node:fs'
+import path from 'node:path'
 import { LOCAL_SERVICE_KEY } from './tts/storage.mjs'
 import { notTheTestStack, refuse } from './test-guard.mjs'
 
@@ -111,4 +113,19 @@ export async function siteUnderTest() {
 }
 export async function moduleOn(key) {
   return ((await siteUnderTest()).modules || {})[key] !== false
+}
+
+/*
+ * WHETHER THE SITE UNDER TEST SERVES A FUNCTION, OR DECLARES A DATABASE FUNCTION — for a check that sweeps every door or
+ * every guard: a module switched off takes its functions and its schema with it (openspec: module-switch-removes-
+ * backend), so a door of a module that is off is not this site's to check, and stands down by notHere(). Read from the
+ * site's assembled supabase/ tree, which is what its stack is made of.
+ */
+export function served(fn) {
+  return fs.existsSync(path.join(process.cwd(), 'supabase', 'functions', fn, 'index.ts'))
+}
+let declaredText = null
+export async function declared(name) {
+  if (declaredText == null) { const { readDeclaration } = await import('./plan.mjs'); declaredText = readDeclaration(process.cwd()).schema }
+  return new RegExp(`FUNCTION\\s+"?public"?\\."?${name}"?\\s*\\(`, 'i').test(declaredText)
 }

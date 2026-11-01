@@ -9,6 +9,7 @@
 import { ref, watch } from 'vue'
 import { supabase, configured } from '../supabase.js'
 import { session, isProvider, canAccess } from '../auth.js'
+import { moduleOn } from '../modules.js'
 
 export const unread = ref(0)
 
@@ -17,10 +18,11 @@ let started = false
 let timer = null
 
 /* whether the chat is for this reader at all: a coach, or a member */
-export const chatOn = () => !!session.value && (isProvider.value || canAccess('subscribed'))
+/* — and only where the site has the coaching chat: with the module off there is nothing to ask */
+export const chatOn = () => moduleOn('coaching') && !!session.value && (isProvider.value || canAccess('subscribed'))
 
 export async function refresh() {
-  if (!supabase || !configured || !session.value) { unread.value = 0; return }
+  if (!supabase || !configured || !session.value || !moduleOn('coaching')) { unread.value = 0; return }
   try {
     const { data, error } = await supabase.rpc('chat_unread')
     if (!error) unread.value = Number(data) || 0

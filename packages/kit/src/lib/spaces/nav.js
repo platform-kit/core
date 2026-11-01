@@ -8,6 +8,7 @@
 import { ref, watch } from 'vue'
 import { supabase, configured } from '../supabase.js'
 import { session } from '../auth.js'
+import { moduleOn } from '../modules.js'
 import { badgeOf, waitingOf } from './model.js'
 
 export const inSpaces = ref(false)   /* they are in at least one room */
@@ -17,7 +18,8 @@ export const waiting = ref(0)        /* ONE number for the header: DMs unread + 
 let started = false
 
 export async function refresh() {
-  if (!supabase || !configured || !session.value) { inSpaces.value = false; mentions.value = 0; waiting.value = 0; return }
+  /* and nothing to ask where the site has no spaces (module-switch-removes-backend) */
+  if (!supabase || !configured || !session.value || !moduleOn('spaces')) { inSpaces.value = false; mentions.value = 0; waiting.value = 0; return }
   try {
     const { data, error } = await supabase.rpc('space_unread')
     if (error) return

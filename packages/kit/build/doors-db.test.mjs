@@ -106,7 +106,8 @@ for (const fn of FIGURES) {
 }
 
 /* ─── a forged tracking token counts nothing ─── */
-{
+if (!(await moduleOn('funnels'))) notHere('the tracking token', 'the funnels module is off')
+else {
   const r = await admin.rpc('email_hit', { p_token: 'not-a-real-token-at-all', p_ua: 'probe' })
   const rows = Array.isArray(r.data) ? r.data : r.data ? [r.data] : []
   ok('a token that is not in email_links yields no destination', !r.error && rows.length === 0, r.error?.message || JSON.stringify(rows))
@@ -116,7 +117,8 @@ for (const fn of FIGURES) {
 }
 
 /* ─── the push topics a support agent may hold ─── */
-{
+if (!(await moduleOn('push'))) notHere('the push topics', 'the push module is off')
+else {
   const support = await asPerson('support@example.com')
   if (!support) note('⚠ no support account signs in — the push topics are skipped')
   else {
