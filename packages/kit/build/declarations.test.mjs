@@ -29,7 +29,9 @@ console.log('\nDECLARATIONS\n')
 
 /* ---- the tables the kit declares, read from the schemas themselves ---- */
 const schemaDir = join(KIT, 'supabase', 'schemas')
-const schemas = readdirSync(schemaDir).filter((f) => f.endsWith('.sql')).map((f) => ({ f, sql: readFileSync(join(schemaDir, f), 'utf8') }))
+/* the numbered files and the glue between modules (glue/<a>+<b>.sql), which declares tables too */
+const schemaFiles = (dir) => [...readdirSync(dir).filter((f) => f.endsWith('.sql')), ...readdirSync(join(dir, 'glue')).filter((f) => f.endsWith('.sql')).map((f) => 'glue/' + f)]
+const schemas = schemaFiles(schemaDir).map((f) => ({ f, sql: readFileSync(join(schemaDir, f), 'utf8') }))
 const tables = new Map()
 for (const { f, sql } of schemas) {
   for (const m of sql.matchAll(/CREATE TABLE IF NOT EXISTS "public"\."([a-z_]+)"/g)) tables.set(m[1], f)
@@ -166,7 +168,7 @@ if (waiting.length) {
 {
   const dir = join(KIT, 'supabase', 'schemas')
   const open = []
-  for (const f of readdirSync(dir).filter((x) => x.endsWith('.sql'))) {
+  for (const f of schemaFiles(dir)) {
     const t = readFileSync(join(dir, f), 'utf8')
     const said = new Set()
     for (const m of t.matchAll(/^REVOKE ALL ON FUNCTION (.+) FROM "anon", "authenticated";$/gm)) said.add(m[1])

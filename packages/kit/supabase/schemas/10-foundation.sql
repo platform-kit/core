@@ -266,6 +266,12 @@ $$;
 -- Their INVOICES are not here and never will be: they live at the payment processor, the site keeps
 -- a customer id and nothing else, and the page links out. Nothing about a card or a bank has ever
 -- been in this database and this is not the place to start.
+-- a person's bookings on their page: the sessions module's, none where it is off (glue/core+sessions.sql)
+CREATE OR REPLACE FUNCTION "public"."person_bookings"("p_user" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
+REVOKE ALL ON FUNCTION "public"."person_bookings"("uuid") FROM PUBLIC, "anon", "authenticated";
+
 CREATE OR REPLACE FUNCTION "public"."admin_person"("p_user" "uuid") RETURNS "jsonb"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -293,11 +299,7 @@ CREATE OR REPLACE FUNCTION "public"."admin_person"("p_user" "uuid") RETURNS "jso
           from public.subscriptions s where s.user_id = p.id
            and s.status in ('active', 'trialing', 'past_due')
          order by s.created_at desc limit 1),
-      'bookings', coalesce((
-        select jsonb_agg(jsonb_build_object('uid', b.uid, 'title', b.title,
-                 'type', coalesce(b.type, b.event), 'start_at', b.start_at, 'status', b.status)
-                 order by b.start_at desc nulls last)
-          from public.bookings b where b.user_id = p.id), '[]'::jsonb))
+      'bookings', public.person_bookings(p.id))
     from public.profiles p where p.id = p_user) end
 $$;
 
@@ -693,3 +695,15 @@ $$;
 REVOKE ALL ON FUNCTION "public"."my_profile"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."my_profile"() FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."my_profile"() TO "authenticated", "service_role";
+
+-- A NOTIFICATION TO THE STAFF'S BROWSERS, from whatever happened: a booking, a purchase, a mention, a message to the
+-- desk. Any module may ask; only the push module can deliver. So it is declared here doing nothing, and the push
+-- module's file (80-push.sql), which loads after this one, declares it again posting to the push function — a site
+-- with push off is asked nothing and sends nothing, and every caller is the same either way
+-- (openspec: module-switch-removes-backend).
+CREATE OR REPLACE FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") RETURNS "void"
+    LANGUAGE "sql"
+    AS $$ select $$;
+REVOKE ALL ON FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") FROM "anon", "authenticated";
+GRANT ALL ON FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") TO "service_role";

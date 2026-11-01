@@ -80,6 +80,7 @@ const NOT_A_STACK = {
   'site-payment-provider.test.mjs': 'a webhook path in a registration',
   'cron-registration.test.mjs': 'a throwaway Postgres container of its own',
   'schema.test.mjs': 'a throwaway database of its own, run by the end-to-end run (E2E_ALSO)',
+  'modules-off-db.test.mjs': 'a throwaway database of its own, run by the end-to-end run (E2E_ALSO)',
   'e2e-runner.test.mjs': 'runs the runner itself, which builds the stacks (CI\'s e2e job)',
 }
 /* the mark test.mjs finds stack tests by (STACK_SOURCE): the helper, or the storage helpers that read the run's SUPABASE_URL */

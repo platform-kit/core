@@ -251,7 +251,7 @@ CREATE OR REPLACE FUNCTION "public"."email_audience"("rules" "jsonb") RETURNS TA
   select p.id, p.email, p.display_name,
     greatest(p.updated_at, p.created_at,
       coalesce((select max(e.occurred_at) from public.events e where e.user_id = p.id), p.created_at),
-      coalesce((select max(a.answered_at) from public.answers a where a.user_id = p.id), p.created_at)) as last_active
+      coalesce(public.email_last_answer(p.id), p.created_at)) as last_active
   from public.profiles p
   where p.email is not null and p.email <> '' and p.email_opt_out_at is null
     and public.email_audience_match(p.id, rules)
@@ -264,6 +264,37 @@ CREATE OR REPLACE FUNCTION "public"."email_audience_count"("rules" "jsonb") RETU
   select case when public.is_admin() then (select count(*)::integer from public.email_audience(rules)) else null end
 $$;
 
+-- WHAT AN AUDIENCE ASKS OF OTHER MODULES. Most of a rule is the account, the ledger and the events, which every site
+-- has; four of its conditions are another module's — the last session (sessions), the readings and what they say
+-- (instrument), the capabilities granted (spaces). Each is a function declared here answering nothing, so a rule naming
+-- one matches nobody, and declared again reading the table in the glue the two modules share (glue/funnels+sessions.sql,
+-- glue/funnels+instrument.sql, glue/funnels+spaces.sql), which is there only while both are on
+-- (openspec: module-switch-removes-backend).
+CREATE OR REPLACE FUNCTION "public"."email_last_session"("p_user" "uuid") RETURNS timestamp with time zone
+    LANGUAGE "sql" STABLE
+    AS $$ select null::timestamptz $$;
+CREATE OR REPLACE FUNCTION "public"."email_last_answer"("p_user" "uuid") RETURNS timestamp with time zone
+    LANGUAGE "sql" STABLE
+    AS $$ select null::timestamptz $$;
+CREATE OR REPLACE FUNCTION "public"."email_working"("p_user" "uuid") RETURNS "text"
+    LANGUAGE "sql" STABLE
+    AS $$ select null::text $$;
+CREATE OR REPLACE FUNCTION "public"."email_interest_read"("p_user" "uuid", "p_topic" "text") RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$ select false $$;
+CREATE OR REPLACE FUNCTION "public"."email_answered"("p_user" "uuid", "p_rule" "jsonb") RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$ select false $$;
+CREATE OR REPLACE FUNCTION "public"."email_granted"("p_user" "uuid", "p_caps" "jsonb") RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$ select false $$;
+REVOKE ALL ON FUNCTION "public"."email_last_session"("uuid") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."email_last_answer"("uuid") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."email_working"("uuid") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."email_interest_read"("uuid", "text") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."email_answered"("uuid", "jsonb") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."email_granted"("uuid", "jsonb") FROM PUBLIC, "anon", "authenticated";
+
 CREATE OR REPLACE FUNCTION "public"."email_audience_match"("uid" "uuid", "rules" "jsonb") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -272,10 +303,10 @@ CREATE OR REPLACE FUNCTION "public"."email_audience_match"("uid" "uuid", "rules"
     select p.id, p.created_at, p.email_verified_at, case when coalesce(array_length(p.roles, 1), 0) > 0 then p.roles when p.role is not null and p.role <> 'user' then array[p.role] else array[]::text[] end as roles,
       greatest(p.updated_at, p.created_at,
         coalesce((select max(e.occurred_at) from public.events e where e.user_id = p.id), p.created_at),
-        coalesce((select max(a.answered_at) from public.answers a where a.user_id = p.id), p.created_at)) as last_active,
+        coalesce(public.email_last_answer(p.id), p.created_at)) as last_active,
       (select max(pu.created_at) from public.purchases pu where pu.user_id = p.id and pu.status = 'paid') as last_purchase,
-      (select max(bk.start_at) from public.bookings bk where bk.user_id = p.id and bk.status = 'accepted' and coalesce(bk.no_show, false) = false and bk.start_at < now()) as last_session,
-      (select s.working from public.signals s where s.user_id = p.id) as working,
+      public.email_last_session(p.id) as last_session,
+      public.email_working(p.id) as working,
       (select array_agg(distinct en.tier) from public.entitlements en where en.user_id = p.id and en.kind = 'class' and en.key = 'subscribed' and en.active and (en.expires_at is null or en.expires_at > now())) as tiers
     from public.profiles p where p.id = uid
   )
@@ -303,31 +334,18 @@ CREATE OR REPLACE FUNCTION "public"."email_audience_match"("uid" "uuid", "rules"
          or (t.v not in ('none', 'any') and t.v = any(coalesce(b.tiers, '{}')))))
     and (rules->'interest' is null or exists (
       select 1 from jsonb_array_elements_text(rules->'interest') t(v)
-      where exists (select 1 from public.answers a where a.user_id = b.id and a.test = 'diagnostics' and a.value->>'d' = t.v)
-         or exists (select 1 from public.events e where e.user_id = b.id and e.topic_slugs @> array[t.v])
-         or exists (select 1 from public.signals s where s.user_id = b.id and t.v = any(s.areas))))
+      where exists (select 1 from public.events e where e.user_id = b.id and e.topic_slugs @> array[t.v])
+         or public.email_interest_read(b.id, t.v)))
     and (rules->'level' is null or b.working is not null and b.working = any(array(select jsonb_array_elements_text(rules->'level'))))
     and (rules->'answered' is null or not exists (
       select 1 from jsonb_array_elements(rules->'answered') r
-      where not exists (
-        select 1 from public.answers a where a.user_id = b.id and a.item_id = r->>'item'
-          and (r->>'truth' is null or a.value->>'truth' = r->>'truth')
-          and (r->>'charge' is null or coalesce(a.value->>'charge', 'clear') = r->>'charge'))))
+      where not public.email_answered(b.id, r)))
     and (rules->'bought' is null or exists (
       select 1 from public.purchases pu where pu.user_id = b.id and pu.status = 'paid' and pu.sku = any(array(select jsonb_array_elements_text(rules->'bought')))))
     and (rules->'not_bought' is null or not exists (
       select 1 from public.purchases pu where pu.user_id = b.id and pu.status = 'paid' and pu.sku = any(array(select jsonb_array_elements_text(rules->'not_bought')))))
     and (rules->'role' is null or b.roles && array(select jsonb_array_elements_text(rules->'role')))
-    and (rules->'grant' is null or exists (
-      select 1 from public.space_grants g
-       where g.capability = any(array(select jsonb_array_elements_text(rules->'grant')))
-         and (g.scope = 'site'
-           or (g.scope = 'user' and g.user_id = b.id)
-           or (g.scope = 'role' and exists (select 1 from public.space_member_roles mr where mr.user_id = b.id and mr.role_id = g.role_id))
-           or (g.scope = 'space' and exists (select 1 from public.space_members m where m.user_id = b.id and m.space_id = g.space_id))
-           or (g.scope = 'channel' and exists (select 1 from public.channel_members cm where cm.user_id = b.id and cm.channel_id = g.channel_id))
-           or (g.scope = 'tier' and exists (select 1 from public.entitlements e where e.user_id = b.id and e.active and e.tier = g.tier))
-           or (g.scope = 'product' and exists (select 1 from public.purchases pu where pu.user_id = b.id and pu.status = 'paid' and pu.key = g.product_key)))))
+    and (rules->'grant' is null or public.email_granted(b.id, rules->'grant'))
     and (rules->'verified' is null or ((rules->>'verified')::boolean = (b.email_verified_at is not null)))
   from b), false)
 $$;

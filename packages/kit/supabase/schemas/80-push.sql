@@ -21,17 +21,6 @@ begin
 end;
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."push_on_booking"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-begin
-  if new.status <> 'accepted' or (tg_op = 'UPDATE' and old.status = 'accepted') then return null; end if;
-  perform public.push_notify('bookings', jsonb_build_object('title', new.title, 'name', new.name, 'email', new.email, 'start_at', new.start_at));
-  return null;
-end;
-$$;
-
 CREATE OR REPLACE FUNCTION "public"."push_on_profile"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -66,21 +55,6 @@ begin
 end;
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."push_on_support_message"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare
-  n integer;
-begin
-  if new.author <> 'contact' then return null; end if;
-  select count(*) into n from public.support_messages where conversation_id = new.conversation_id and author = 'contact' and id <> new.id;
-  perform public.push_notify(case when n = 0 then 'support-new' else 'support-message' end,
-    jsonb_build_object('conversation_id', new.conversation_id, 'kind', new.kind, 'body', left(coalesce(new.body, new.attachment_name, ''), 120)));
-  return null;
-end;
-$$;
-
 CREATE TABLE IF NOT EXISTS "public"."push_subscriptions" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -104,15 +78,11 @@ CREATE INDEX "push_subscriptions_topics_idx" ON "public"."push_subscriptions" US
 
 CREATE INDEX "push_subscriptions_user_idx" ON "public"."push_subscriptions" USING "btree" ("user_id");
 
-CREATE OR REPLACE TRIGGER "trg_push_booking" AFTER INSERT OR UPDATE OF "status" ON "public"."bookings" FOR EACH ROW EXECUTE FUNCTION "public"."push_on_booking"();
-
 CREATE OR REPLACE TRIGGER "trg_push_profile" AFTER INSERT ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."push_on_profile"();
 
 CREATE OR REPLACE TRIGGER "trg_push_purchase" AFTER INSERT ON "public"."purchases" FOR EACH ROW EXECUTE FUNCTION "public"."push_on_purchase"();
 
 CREATE OR REPLACE TRIGGER "trg_push_subscription" AFTER INSERT ON "public"."subscriptions" FOR EACH ROW EXECUTE FUNCTION "public"."push_on_subscription"();
-
-CREATE OR REPLACE TRIGGER "trg_push_support_message" AFTER INSERT ON "public"."support_messages" FOR EACH ROW EXECUTE FUNCTION "public"."push_on_support_message"();
 
 ALTER TABLE ONLY "public"."push_subscriptions"
     ADD CONSTRAINT "push_subscriptions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
@@ -132,10 +102,6 @@ REVOKE ALL ON FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") FR
 REVOKE ALL ON FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."push_notify"("topic" "text", "data" "jsonb") TO "service_role";
 
-GRANT ALL ON FUNCTION "public"."push_on_booking"() TO "anon";
-GRANT ALL ON FUNCTION "public"."push_on_booking"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."push_on_booking"() TO "service_role";
-
 GRANT ALL ON FUNCTION "public"."push_on_profile"() TO "anon";
 GRANT ALL ON FUNCTION "public"."push_on_profile"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."push_on_profile"() TO "service_role";
@@ -147,10 +113,6 @@ GRANT ALL ON FUNCTION "public"."push_on_purchase"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."push_on_subscription"() TO "anon";
 GRANT ALL ON FUNCTION "public"."push_on_subscription"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."push_on_subscription"() TO "service_role";
-
-GRANT ALL ON FUNCTION "public"."push_on_support_message"() TO "anon";
-GRANT ALL ON FUNCTION "public"."push_on_support_message"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."push_on_support_message"() TO "service_role";
 
 GRANT ALL ON TABLE "public"."push_subscriptions" TO "anon";
 GRANT ALL ON TABLE "public"."push_subscriptions" TO "authenticated";

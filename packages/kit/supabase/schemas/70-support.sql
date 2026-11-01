@@ -545,3 +545,30 @@ $$;
 CREATE OR REPLACE TRIGGER "trg_support_messages_api" AFTER INSERT ON "public"."support_messages" FOR EACH ROW EXECUTE FUNCTION "public"."support_api_on_message"();
 CREATE OR REPLACE TRIGGER "trg_support_conversations_api" AFTER INSERT OR UPDATE ON "public"."support_conversations" FOR EACH ROW EXECUTE FUNCTION "public"."support_api_on_conversation"();
 CREATE OR REPLACE TRIGGER "trg_support_contacts_api" AFTER INSERT ON "public"."support_contacts" FOR EACH ROW EXECUTE FUNCTION "public"."support_api_on_contact"();
+
+-- A PERSON MAY ASK FOR A HUMAN, whichever way a bot is offered on the desk. That is an ACT — they said they want
+-- somebody — so it is a row, it is theirs, and nothing undoes it but a human picking the thread up.
+CREATE OR REPLACE FUNCTION "public"."support_want_human"("p_conversation" "uuid") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+begin
+  update public.support_conversations
+     set bot_off_at = coalesce(bot_off_at, now()),
+         status = case when status = 'resolved' then 'open' else status end
+   where id = p_conversation;
+  if not found then return jsonb_build_object('error', 'gone'); end if;
+  -- a bot already thinking is called off: the answer it was writing is not wanted
+  perform public.support_call_off_bot(p_conversation);
+  return jsonb_build_object('ok', true);
+end;
+$$;
+REVOKE ALL ON FUNCTION "public"."support_want_human"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."support_want_human"("uuid") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."support_want_human"("uuid") TO "service_role";
+
+-- a bot already answering the thread, called off: nothing here, where there are no bots (glue/bots+support.sql)
+CREATE OR REPLACE FUNCTION "public"."support_call_off_bot"("p_conversation" "uuid") RETURNS "void"
+    LANGUAGE "sql" VOLATILE
+    AS $$ select $$;
+REVOKE ALL ON FUNCTION "public"."support_call_off_bot"("uuid") FROM PUBLIC, "anon", "authenticated";

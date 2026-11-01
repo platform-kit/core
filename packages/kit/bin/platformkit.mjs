@@ -19,6 +19,8 @@
  *               the developer's own account back — DEV_ACCOUNT in .env — which the reset emptied)
  *   functions   assemble supabase/ and serve the functions locally (`functions deploy` deploys them)
  *   assemble    supabase/ from the kit's data layer and the site's own (`--check`)
+ *   module drop <key>  remove the tables of a module that is off, after showing them and their rows (`--linked`
+ *               for production, `--plan` to only show; a table with rows needs PLATFORMKIT_ALLOW_DESTRUCTIVE)
  *   print       the printed editions (build/print.mjs)
  *   tts         the spoken books (build/tts.mjs)
  *   tts-setup   prepare the spoken-book engine and browser weights (build/tts/setup.mjs)
@@ -238,6 +240,7 @@ switch (cmd) {
   /* the same by hand, for an account lost to a reset run some other way */
   case 'dev-account': node('dev-account.mjs'); break
   case 'functions': node('assemble.mjs'); npx(rest[0] === 'deploy' ? ['supabase', 'functions', 'deploy', ...rest.slice(1)] : ['supabase', 'functions', 'serve', '--env-file', '.env', ...rest]); break
+  case 'module': if (rest[0] !== 'drop') { console.error('✖ platformkit module drop <key> — the one thing module does'); process.exit(2) } node('assemble.mjs'); node('module-drop.mjs', rest.slice(1)); break
   case 'print': node('print.mjs', rest); break
   case 'tts': node('tts.mjs', rest); break
   case 'tts-setup': node('tts/setup.mjs', rest); break

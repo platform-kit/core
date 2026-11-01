@@ -53,7 +53,7 @@ fs.mkdirSync(path.join(SCR, 'supabase', 'migrations'), { recursive: true })
 fs.cpSync(path.join(KIT, 'schemas'), path.join(SCR, 'supabase', 'schemas'), { recursive: true })
 fs.copyFileSync(path.join(KIT, 'data.sql'), path.join(SCR, 'supabase', 'data.sql'))
 const major = (/major_version\s*=\s*(\d+)/.exec(fs.existsSync(path.join(ROOT, 'supabase', 'config.toml')) ? fs.readFileSync(path.join(ROOT, 'supabase', 'config.toml'), 'utf8') : '') || [])[1] || '17'
-fs.writeFileSync(path.join(SCR, 'supabase', 'config.toml'), `project_id = "${PROJECT}"\n[db]\nport = ${PORT}\nshadow_port = ${SHADOW}\nmajor_version = ${major}\n[db.seed]\nenabled = true\nsql_paths = ["./schemas/*.sql", "./schemas/site/*.sql", "./data.sql"]\n`)
+fs.writeFileSync(path.join(SCR, 'supabase', 'config.toml'), `project_id = "${PROJECT}"\n[db]\nport = ${PORT}\nshadow_port = ${SHADOW}\nmajor_version = ${major}\n[db.seed]\nenabled = true\nsql_paths = ["./schemas/*.sql", "./schemas/glue/*.sql", "./schemas/site/*.sql", "./data.sql"]\n`)
 sb(['stop', '--no-backup'], { stdio: 'ignore' })
 const started = sb(['db', 'start'])
 if (started.status !== 0) { console.log(started.stdout, started.stderr); console.log('schema: the scratch database did not start'); process.exit(1) }

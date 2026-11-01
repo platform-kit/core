@@ -19,7 +19,7 @@ sources:
     packages/kit/theme/src/comments-embed.js,
     packages/kit/theme/src/pages/CommentsEmbedPage.vue,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-10-31
 ---
 
 People want to say something under an article, a wiki page, a book, a product and an event. That is
@@ -180,7 +180,9 @@ answers for every kind:
 Where a subject names a forum **channel**, its comments _are_ a post in that channel. The first
 comment opens the post — so the board is not full of empty posts for every book in the library —
 and after that the page and the board are two views of one thread. Say something on the book's page
-and it is in `#the-books`; say it in `#the-books` and it is on the book's page.
+and it is in `#the-books`; say it in `#the-books` and it is on the book's page. Rooms are the spaces module's:
+everything a comment asks of one (`comment_room_say`, `comment_room_lines` and the rest) is declared again in the glue
+spaces shares with every site, and where spaces are off a subject naming a channel keeps its comments as comments.
 
 The moderation comes free with it. A comment is a space message, so reports, removals and the
 moderation queue already cover it, and the desk needs no second set of tools for a second kind of

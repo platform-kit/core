@@ -383,6 +383,27 @@ CREATE OR REPLACE FUNCTION "public"."channel_of"("ref" "text", "utm" "jsonb") RE
   from h
 $$;
 
+-- WHAT THE INSTRUMENT'S READINGS ADD TO THE FIGURES — rounds, answers and readers in a window, the tests, the types, a
+-- series a day. The readings are the instrument module's, which may be off, so each is declared here answering
+-- nothing and again, reading its tables, in the glue the instrument shares with every site (glue/core+instrument.sql)
+-- (openspec: module-switch-removes-backend).
+CREATE OR REPLACE FUNCTION "public"."admin_readings"("p_from" timestamp with time zone, "p_to" timestamp with time zone, "p_aud" "text") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select jsonb_build_object('rounds', 0, 'answers', 0, 'readers', 0) $$;
+CREATE OR REPLACE FUNCTION "public"."admin_reading_tests"("p_since" timestamp with time zone) RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
+CREATE OR REPLACE FUNCTION "public"."admin_reading_types"() RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
+CREATE OR REPLACE FUNCTION "public"."admin_readings_daily"("p_since" "date") RETURNS TABLE("dd" "date", "rounds" bigint, "answers" bigint)
+    LANGUAGE "sql" STABLE
+    AS $$ select null::date, 0::bigint, 0::bigint where false $$;
+REVOKE ALL ON FUNCTION "public"."admin_readings"(timestamp with time zone, timestamp with time zone, "text") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."admin_reading_tests"(timestamp with time zone) FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."admin_reading_types"() FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."admin_readings_daily"("date") FROM PUBLIC, "anon", "authenticated";
+
 CREATE OR REPLACE FUNCTION "public"."admin_kpis"("days" integer DEFAULT 30, "audience" "text" DEFAULT 'all'::"text", "tz" "text" DEFAULT 'UTC'::"text", "filters" "jsonb" DEFAULT '{}'::"jsonb", "goals" "jsonb" DEFAULT '[]'::"jsonb") RETURNS "jsonb"
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -477,8 +498,8 @@ begin
         'purchases',     (select count(*) from goal where what = 'purchase' and not now_),
         'revenue',       (select coalesce(sum(amount), 0) from goal where what = 'purchase' and not now_),
         'subscriptions', (select count(*) from goal where what = 'subscription' and not now_),
-        'rounds',        (select count(*) from public.results where computed_at >= before and computed_at < since),
-        'answers',       (select count(*) from public.answers where answered_at >= before and answered_at < since))),
+        'rounds',        coalesce((public.admin_readings(before, since, null) ->> 'rounds')::int, 0),
+        'answers',       coalesce((public.admin_readings(before, since, null) ->> 'answers')::int, 0))),
 
     -- the goals: a count, the window before, and the rate per hundred visitors
     'goals', (
@@ -594,22 +615,9 @@ begin
         'ending',  (select count(*) from public.subscriptions where cancel_at_period_end and status in ('active', 'trialing')))),
 
     -- ------------------------------------------------------------- diagnostic
-    'diagnostic', jsonb_build_object(
-      'rounds',  (select count(*) from public.results where computed_at >= since and public.audience_ok(user_id, aud)),
-      'answers', (select count(*) from public.answers where answered_at >= since and public.audience_ok(user_id, aud)),
-      'readers', (select count(distinct user_id) from public.answers where answered_at >= since and public.audience_ok(user_id, aud))),
-    'tests', (
-      select coalesce(jsonb_agg(jsonb_build_object('test', k.t, 'answers', k.a, 'rounds', k.r, 'readers', k.u) order by k.o), '[]'::jsonb)
-      from (select u.t, u.o,
-                   (select count(*) from public.answers a where a.test = u.t and a.answered_at >= since) as a,
-                   (select count(*) from public.results r where r.test = u.t and r.computed_at >= since) as r,
-                   (select count(distinct a.user_id) from public.answers a where a.test = u.t and a.answered_at >= since) as u
-            from unnest(array['personality', 'diagnostics', 'blockages']) with ordinality as u(t, o)) k),
-    'types', (
-      select coalesce(jsonb_agg(jsonb_build_object('type', ty, 'readers', n) order by n desc, ty), '[]'::jsonb)
-      from (select (latest.payload ->> 'type')::int as ty, count(*) as n
-            from (select distinct on (user_id) user_id, payload from public.results where test = 'personality' and payload ? 'type' order by user_id, computed_at desc) latest
-            group by 1) x),
+    'diagnostic', public.admin_readings(since, now(), aud),
+    'tests', public.admin_reading_tests(since),
+    'types', public.admin_reading_types(),
 
     -- ------------------------------------------------------------ experiments
     'experiments', public.experiment_results()
@@ -878,8 +886,8 @@ begin
   left join (select created_at::date as dd, count(*) as n from public.profiles where created_at >= since and public.audience_ok(id, aud) group by 1) pf on pf.dd = g.dd
   left join (select created_at::date as dd, count(*) as n, coalesce(sum(amount_total), 0) as rev
              from public.purchases where status = 'paid' and created_at >= since and public.audience_ok(user_id, aud) group by 1) pu on pu.dd = g.dd
-  left join (select computed_at::date as dd, count(*) as n from public.results where computed_at >= since group by 1) rs on rs.dd = g.dd
-  left join (select answered_at::date as dd, count(*) as n from public.answers where answered_at >= since group by 1) an on an.dd = g.dd
+  left join (select r.dd, r.rounds as n from public.admin_readings_daily(since) r) rs on rs.dd = g.dd
+  left join (select r.dd, r.answers as n from public.admin_readings_daily(since) r) an on an.dd = g.dd
   left join (select created_at::date as dd, count(*) as n from public.subscriptions where created_at >= since group by 1) sb on sb.dd = g.dd
   into result;
 

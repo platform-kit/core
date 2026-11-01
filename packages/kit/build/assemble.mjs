@@ -21,7 +21,16 @@
  * A site that declares no backend (deployment.backend: false) has no data layer: the assembler does
  * nothing for it, and neither does the deploy, so no supabase/ tree is ever written or checked.
  *
- * Run: node packages/kit/build/assemble.mjs [--check]
+ * A MODULE SWITCHED OFF IS NOT IN THE TREE. Of the kit's own data layer only what is the site's is copied: core, the
+ * modules that are on, and the glue between modules that are all on — schema files, rows, seed and functions, each
+ * owned as build/modules/backend.mjs says (openspec: module-switch-removes-backend). The glue loads after every
+ * module's file, from schemas/glue/.
+ *
+ * Run: node packages/kit/build/assemble.mjs [--check] [--off <key>,<key>] [--out <dir>]
+ *
+ * `--off` assembles as though those modules were switched off, and `--out` writes the tree somewhere other than the
+ * site's supabase/ — together, a look at what a site would serve without a module, its own tree left alone (the
+ * modules-off check assembles every module off in turn this way).
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -29,6 +38,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createHash } from 'node:crypto'
 import { loadSite, deploymentShape, pipeSiteConfigSource } from './site.mjs'
 import { moduleSet } from './steps.mjs'
+import { backendFor } from './modules/backend.mjs'
 import { assertNoManualCron, cronSql } from './cron.mjs'
 import { accessOf, accessSql, communityAccessOf } from './network-access.mjs'
 import { closure, PIPE_ROOTS, PIPE_SKIP } from './pipe-closure.mjs'
@@ -44,7 +54,10 @@ import {
 process.on('uncaughtException', (e) => { console.error('✖ ' + (e.message || e)); process.exit(1) })
 const KIT = fileURLToPath(new URL('../supabase/', import.meta.url))
 const ROOT = process.cwd()
-const c = await loadSite(ROOT)
+const arg = (name) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null }
+const site = await loadSite(ROOT)
+/* --off: the same site, with those modules switched off */
+const c = arg('--off') ? { ...site, modules: { ...(site.modules || {}), ...Object.fromEntries(arg('--off').split(',').filter(Boolean).map((k) => [k, false])) } } : site
 /*
  * A SITE THAT HAS SAID IT HAS NO BACKEND HAS NO DATA LAYER TO ASSEMBLE.
  *
@@ -61,7 +74,7 @@ if (deploymentShape(c).backend === false) {
 }
 const D = { schemas: 'db/schemas', rows: 'db/data.sql', functions: 'db/functions', seed: 'db/seed.sql', ...(c.data || {}) }
 if (D.migrations) throw new Error('assemble: data.migrations is gone — a site declares its schema in db/schemas/*.sql (data.schemas) and its rows in db/data.sql (data.rows); a database is brought to the declaration by `platformkit migrate --plan`, never by a migration')
-const OUT = path.join(ROOT, 'supabase')
+const OUT = arg('--out') ? path.resolve(arg('--out')) : path.join(ROOT, 'supabase')
 const MANIFEST = path.join(OUT, '.assembled.json')
 /* the build's own files in the functions tree, never assembled and never removed — and never
    committed either: build/functions-data.mjs makes every one of them, and steps.test.mjs holds
@@ -76,7 +89,7 @@ export const BUILT_PATHS = [
 ]
 export const BUILT = /^functions\/(_shared\/catalog\.json|_shared\/content\/index\.json|_shared\/analytics\.json|_shared\/cloud\.json|_shared\/webhooks\.json|_shared\/(bots|commands)\.json|_shared\/(spaces|teams)\.json|_shared\/forms\.json|_shared\/emails\/(compiled|funnels|strings)\.json|cal-webhook\/strings\.json)$/
 /* what db reset applies, in order: the declaration (the kit's files, then the site's), the rows, the seed */
-export const SEED_PATHS = ['./schemas/*.sql', './schemas/site/*.sql', './data.sql', './seed.sql']
+export const SEED_PATHS = ['./schemas/*.sql', './schemas/glue/*.sql', './schemas/site/*.sql', './data.sql', './seed.sql']
 
 const walk = (d) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]) : []
 const sha = (buf) => createHash('sha1').update(buf).digest('hex').slice(0, 12)
@@ -85,10 +98,15 @@ const rel = (base, f) => path.relative(base, f).split(path.sep).join('/')
 /* what the tree should hold: published path → { from, content } */
 const plan = new Map()
 const put = (to, from) => { if (plan.has(to)) throw new Error(`assemble: ${to} comes from both ${plan.get(to).from} and ${from}`); plan.set(to, { from, content: fs.readFileSync(from) }) }
-/* the declaration: the kit's schema files by name, the site's under site/ */
-const kitSchemas = walk(path.join(KIT, 'schemas')).filter((f) => f.endsWith('.sql')).sort()
+/* what of the kit's data layer is this site's: core, the modules it has on, the glue between them */
+const modules = await moduleSet(c)
+const backend = backendFor(modules, c.modules || {}, KIT)
+/* the declaration: the kit's schema files by name, the glue under glue/, the site's under site/ */
+const kitSchemas = backend.schema.map((f) => path.join(KIT, 'schemas', f))
+const kitGlue = backend.glue.map((f) => path.join(KIT, 'schemas', 'glue', f))
 const siteSchemas = walk(path.resolve(ROOT, D.schemas)).filter((f) => f.endsWith('.sql')).sort()
 for (const f of kitSchemas) put('schemas/' + path.basename(f), f)
+for (const f of kitGlue) put('schemas/glue/' + path.basename(f), f)
 for (const f of siteSchemas) put('schemas/site/' + path.basename(f), f)
 /*
  * A SITE'S SCHEMA REDEFINES NO KIT FUNCTION. The site's files load after the kit's, so a function of the same name in
@@ -99,20 +117,21 @@ for (const f of siteSchemas) put('schemas/site/' + path.basename(f), f)
 {
   const FN = /create\s+(?:or\s+replace\s+)?function\s+(?:"?public"?\.)?"?([a-z_][a-z0-9_]*)"?\s*\(/gi
   const namesIn = (files) => { const m = new Map(); for (const f of files) for (const x of fs.readFileSync(f, 'utf8').matchAll(FN)) m.set(x[1].toLowerCase(), f); return m }
-  const kitFns = namesIn(kitSchemas)
+  /* every function the kit declares, a module's that is off among them: switched on, it would be replaced */
+  const kitFns = namesIn(walk(path.join(KIT, 'schemas')).filter((f) => f.endsWith('.sql')))
   const clash = [...namesIn(siteSchemas)].filter(([n]) => kitFns.has(n))
   if (clash.length) {
     console.error('✖ the site\'s schema redefines functions the kit already has — the site\'s file would replace the kit\'s without a word:\n  ' + clash.map(([n, f]) => `public.${n} in ${rel(ROOT, f)} (the kit's is in ${path.basename(kitFns.get(n))})`).join('\n  ') + '\n  Remove the site\'s copy, or give the site\'s function a name of its own.')
     process.exit(1)
   }
 }
-/* the rows: the kit's data script, the site's after it */
-const kitRows = fs.readFileSync(path.join(KIT, 'data.sql'), 'utf8')
+/* the rows: the kit's data script and the rows of each module that is on, then the site's */
+const kitRows = [fs.readFileSync(path.join(KIT, 'data.sql'), 'utf8').trimEnd(),
+  ...backend.rows.map((f) => `-- the ${f.replace(/\.sql$/, '')} rows (packages/kit/supabase/data/${f})\n` + fs.readFileSync(path.join(KIT, 'data', f), 'utf8').trimEnd())].join('\n\n') + '\n'
 const siteRowsFile = path.resolve(ROOT, D.rows)
 const siteRows = fs.existsSync(siteRowsFile) ? fs.readFileSync(siteRowsFile, 'utf8') : ''
 assertNoManualCron(kitRows, 'packages/kit/supabase/data.sql')
 assertNoManualCron(siteRows, D.rows)
-const modules = await moduleSet(c)
 const rows = kitRows.trimEnd() + (siteRows.trim() ? '\n\n-- the site\'s rows (' + D.rows + ')\n' + siteRows.trimEnd() : '')
 /* who takes part in the network, from the config (network.access): a fault refuses the assembly */
 const access = accessOf(c, ROOT)
@@ -125,8 +144,10 @@ plan.set('data.sql', {
   from: 'the kit\'s data.sql + ' + D.rows + ' + network.access + community.access + enabled module cron declarations',
   content: Buffer.from(rows + accessSql(c.modules && c.modules.network === false ? null : access.rules, places.rules) + cronSql(modules, c.modules || {}) + '\n'),
 })
-/* functions: the kit's whole tree, then the site's (a site function of the kit's name is refused) */
-for (const f of walk(path.join(KIT, 'functions'))) put('functions/' + rel(path.join(KIT, 'functions'), f), f)
+/* functions: the kit's shared tree and the functions that are this site's, then the site's own (a site function of the
+   kit's name is refused) */
+const kitFunctions = new Set(['_shared', ...backend.functions])
+for (const f of walk(path.join(KIT, 'functions'))) { const r = rel(path.join(KIT, 'functions'), f); if (kitFunctions.has(r.split('/')[0])) put('functions/' + r, f) }
 const siteFn = path.resolve(ROOT, D.functions)
 for (const f of walk(siteFn)) { const r = rel(siteFn, f); if (path.basename(r) === '.gitkeep') continue; put('functions/' + r, f) }
 plan.set('functions/_shared/payment-provider.d.ts', {
@@ -164,7 +185,10 @@ plan.set('functions/_shared/payment-provider.d.ts', {
    walk. It was two for a while: this file kept its own copy, and a module added to the skip list
    there went on being copied into the function from here. Never re-declare either list. */
 const KIT_PKG = path.resolve(KIT, '..')
-const pipeImportMaps = [...plan]
+/* every function's map, a module's that is off among them: the shared tree is the same whichever functions are served */
+const pipeImportMaps = [...plan, ...walk(path.join(KIT, 'functions')).filter((f) => path.basename(f) === 'deno.json')
+    .map((f) => ['functions/' + rel(path.join(KIT, 'functions'), f), { content: fs.readFileSync(f) }])
+    .filter(([name]) => !plan.has(name))]
   .filter(([name]) => /^functions\/[^/]+\/deno\.json$/.test(name))
   .flatMap(([file, { content }]) => {
     const imports = JSON.parse(content.toString()).imports || {}
@@ -364,7 +388,8 @@ for (const [target, entry] of plan) {
 }
 
 /* the seed: the kit's shape, the site's rows */
-const kitSeed = fs.readFileSync(path.join(KIT, 'seed.sql'), 'utf8')
+const kitSeed = [fs.readFileSync(path.join(KIT, 'seed.sql'), 'utf8').trimEnd(),
+  ...backend.seed.map((f) => `-- the ${f.replace(/\.sql$/, '')} seed (packages/kit/supabase/seed/${f})\n` + fs.readFileSync(path.join(KIT, 'seed', f), 'utf8').trimEnd())].join('\n\n')
 const siteSeedFile = path.resolve(ROOT, D.seed)
 const siteSeed = fs.existsSync(siteSeedFile) ? fs.readFileSync(siteSeedFile, 'utf8') : ''
 plan.set('seed.sql', { from: 'the kit\'s seed.sql + ' + D.seed, content: Buffer.from(kitSeed.trimEnd() + '\n\n' + siteSeed.trimEnd() + '\n') })
@@ -448,7 +473,7 @@ if (check) {
   if (fs.existsSync(cfg)) for (const fn of withPublicFunctions(fs.readFileSync(cfg, 'utf8')).missing) bad.push(`config.toml: [functions.${fn}] verify_jwt = false is missing — the gateway refuses its callers before it runs`)
   for (const d of fs.existsSync(path.join(OUT, 'functions')) ? fs.readdirSync(path.join(OUT, 'functions')) : []) { const dir = path.join(OUT, 'functions', d); if (fs.statSync(dir).isDirectory() && !walk(dir).length) bad.push(`stray functions/${d}/ — an empty directory a removed function left`) }
   if (bad.length) { console.error('✖ supabase/ is not what its sources assemble to — run node packages/kit/build/assemble.mjs; the tree is generated, never edited or committed:\n  ' + bad.join('\n  ')); process.exit(1) }
-  console.log(`✔ supabase/ assembled: ${kitSchemas.length} kit + ${siteSchemas.length} site schema file(s), the rows, ${new Set([...plan.keys()].filter((k) => k.startsWith('functions/')).map((k) => k.split('/')[1])).size} function dir(s), the seed`)
+  console.log(`✔ supabase/ assembled: ${kitSchemas.length} kit + ${kitGlue.length} glue + ${siteSchemas.length} site schema file(s)${backend.off.length ? ` (off: ${backend.off.join(', ')})` : ''}, the rows, ${new Set([...plan.keys()].filter((k) => k.startsWith('functions/')).map((k) => k.split('/')[1])).size} function dir(s), the seed`)
   process.exit(0)
 }
 {

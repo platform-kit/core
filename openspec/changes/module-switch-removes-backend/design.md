@@ -34,3 +34,11 @@ A module that is off is left out of the assembled declaration entirely. On a liv
 ## Verification
 
 `modules-off-db.test.mjs`, in the end-to-end run: for each module, assemble a site with that module off (and everything it is required by), apply the declaration to a fresh database, serve the functions, and check that every served function boots and none of the module's is served.
+
+## As built
+
+- Glue lives in `supabase/schemas/glue/` and is assembled under `schemas/glue/`, which every reader of the declaration (the seed paths, `readDeclaration`) loads after the kit's numbered files and before the site's. A glue file's name is its owners; `core` may be one of them.
+- A reference inside a function body was the larger part of the work: 45 functions across 15 modules named another module's tables, found by checking every body against a database with that module off (plpgsql_check for PL/pgSQL, re-creation with `check_function_bodies` for SQL — a SQL function's whole body is parsed on its first call, so `space_fill_matches` failed every call where sessions were off). Each became a hook: the asking module declares a function answering nothing (no enrolments, no bookings, no push), and the glue declares it again reading the other module's table. One body per piece of SQL; no `to_regclass` guards.
+- The audience grammar (`space_fill_*`, `audience_for_me`, `community_admitted`) moved to core (`14-audience.sql`): spaces, events, bots, copilot, teams and the network all ask it. A bot's audience is now `audience_for_me`; it had been asking the events' predicate, which also applied the Events place's entry rule.
+- `payouts-sweep` moved from the store's cron to the sessions', whose ledger it sweeps. `storefront-api` is a glue function, served only with both `api` and `store` on.
+- Kept tables keep rows, keys, indexes, owned sequences and column types; their rules and triggers go with the module's functions, so with RLS on nothing but the service role reads them while the module is off.

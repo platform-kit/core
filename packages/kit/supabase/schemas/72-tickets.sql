@@ -199,8 +199,7 @@ CREATE OR REPLACE FUNCTION "public"."support_tickets_list"("p_status" "text" DEF
         /* WHAT IT WAS RAISED WITH, on every row — so the desk can filter by a field it has never
            heard of without opening each ticket to find out. A long answer is left out: a paragraph
            is not a thing anybody filters by, and it would make the list heavy for nothing. */
-        'answers', coalesce((select jsonb_object_agg(fa.field, fa.value)
-            from public.form_answers fa where fa.response_id = t.response_id and length(fa.value #>> '{}') <= 60), '{}'::jsonb),
+        'answers', public.ticket_raised_with(t.response_id, true),
         'replies', (select count(*) from public.support_ticket_events e where e.ticket_id = t.id and e.kind in ('reply', 'file')),
         'chats', (select count(*) from public.support_ticket_links l where l.ticket_id = t.id)
       ) as x
@@ -233,8 +232,7 @@ CREATE OR REPLACE FUNCTION "public"."support_ticket"("p_ticket" "uuid") RETURNS 
          where c.id = t.contact_id) end),
     /* what it was raised with, where a form raised it: the answers, in the order they were asked.
        The desk shows them at the head of the ticket so nobody has to ask for them again. */
-    'answers', coalesce((select jsonb_agg(jsonb_build_object('field', fa.field, 'value', fa.value) order by fa.slide, fa.field)
-        from public.form_answers fa where fa.response_id = t.response_id), '[]'::jsonb),
+    'answers', public.ticket_raised_with(t.response_id, false),
     'assignees', coalesce((select jsonb_agg(jsonb_build_object('id', a.user_id,
           'name', coalesce(nullif(p2.display_name, ''), split_part(coalesce(p2.email, ''), '@', 1))))
         from public.support_ticket_assignees a join public.profiles p2 on p2.id = a.user_id
@@ -526,19 +524,22 @@ REVOKE ALL ON FUNCTION "public"."support_ticket_from_form"("text", "uuid", "uuid
 REVOKE ALL ON FUNCTION "public"."support_ticket_from_form"("text", "uuid", "uuid", "text", "text", "text") FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."support_ticket_from_form"("text", "uuid", "uuid", "text", "text", "text") TO "service_role";
 
--- WHAT A TICKET WAS RAISED WITH, for the desk: the answers of the form that raised it, each with
+-- WHAT A TICKET WAS RAISED WITH. A ticket raised by a form carries the form's answers, and the forms are a module of
+-- their own that may be off: these four readings answer nothing here, and are declared again reading the answers in
+-- the glue the two modules share (glue/forms+support.sql), there only while both are on
+-- (openspec: module-switch-removes-backend). ticket_raised_with is a ticket's answers in its own lists — the short ones
+-- as a { field: value } for filtering, or all of them in the order asked.
+CREATE OR REPLACE FUNCTION "public"."ticket_raised_with"("p_response" "uuid", "p_short" boolean) RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select case when p_short then '{}'::jsonb else '[]'::jsonb end $$;
+REVOKE ALL ON FUNCTION "public"."ticket_raised_with"("uuid", boolean) FROM PUBLIC, "anon", "authenticated";
+
+-- the desk's own reading of what a ticket was raised with: the answers of the form that raised it, each with
 -- the field it answered, so the desk can show them and filter by any of them without knowing in
 -- advance what a site asks. The staff only; a ticket with no form answers nothing.
 CREATE OR REPLACE FUNCTION "public"."ticket_answers"("p_ticket" "uuid") RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select case when not public.is_support() then '[]'::jsonb else coalesce((
-    select jsonb_agg(jsonb_build_object('field', a.field, 'value', a.value, 'slide', a.slide) order by a.slide, a.field)
-      from public.support_tickets t
-      join public.form_answers a on a.response_id = t.response_id
-     where t.id = p_ticket), '[]'::jsonb) end;
-$$;
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
 REVOKE ALL ON FUNCTION "public"."ticket_answers"("uuid") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."ticket_answers"("uuid") FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."ticket_answers"("uuid") TO "authenticated", "service_role";
@@ -547,19 +548,8 @@ GRANT EXECUTE ON FUNCTION "public"."ticket_answers"("uuid") TO "authenticated", 
 -- tickets carry it. This is what makes "show me the urgent ones" or "show me the billing ones"
 -- work for a question the kit has never heard of — the desk offers whatever the site asked.
 CREATE OR REPLACE FUNCTION "public"."ticket_answer_values"("p_open" boolean DEFAULT true) RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select case when not public.is_support() then '[]'::jsonb else coalesce((
-    select jsonb_agg(jsonb_build_object('field', f, 'value', v, 'tickets', n) order by f, n desc, v)
-      from (select a.field as f, a.value #>> '{}' as v, count(distinct t.id)::int as n
-              from public.support_tickets t
-              join public.form_answers a on a.response_id = t.response_id
-             where t.response_id is not null
-               and (not p_open or t.status not in ('resolved', 'closed'))
-               and length(a.value #>> '{}') <= 60   -- a paragraph is not something anybody filters by
-             group by 1, 2) x), '[]'::jsonb) end;
-$$;
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
 REVOKE ALL ON FUNCTION "public"."ticket_answer_values"(boolean) FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."ticket_answer_values"(boolean) FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."ticket_answer_values"(boolean) TO "authenticated", "service_role";

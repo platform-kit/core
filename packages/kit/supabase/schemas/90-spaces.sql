@@ -687,156 +687,11 @@ ALTER TABLE ONLY "public"."desk_done" ADD CONSTRAINT "desk_done_user_fkey" FOREI
 -- who may see what: membership, and nothing else
 -- ---------------------------------------------------------------------------------------------
 
--- what fills a space's membership. {} is invitation only and matches nobody.
--- WHAT ONE KEY ADMITS. A key may be given one value or several, and several means ANY OF THEM —
--- `tier: inner` is that tier, `tier: [inner, outer]` is either. It reads a scalar and a list the
--- same way, so the grammar is one rule rather than a rule per key. (`role` has always worked this
--- way; `tier`, `entitlement` and `product` compared a scalar, so a list written there silently
--- matched nobody — which is worse than refusing it.)
---
--- Tiers are NOT a ladder here. A fill says which tiers it admits and nothing is implied: a rule
--- that means all three says all three. What ranks mean — an upgrade, the price you pay, what a
--- session includes — is the pricing model's business and is decided where that lives.
-CREATE OR REPLACE FUNCTION "public"."space_fill_values"("p_set" "jsonb", "p_key" "text") RETURNS "text"[]
-    LANGUAGE "sql" IMMUTABLE
-    AS $$
-  select case jsonb_typeof(p_set -> p_key)
-    when 'array' then (select coalesce(array_agg(v), '{}') from jsonb_array_elements_text(p_set -> p_key) v)
-    when 'string' then array[p_set ->> p_key]
-    else '{}'::text[] end;
-$$;
-
--- A COURSE'S PEOPLE, for a space's rule: enrolled in one of the courses named, and in one of the cohorts where any are.
--- plpgsql, so the query naming the enrolments is only planned where it runs: a site with the courses module off has no
--- such table, and the rule then matches nobody rather than failing every sweep.
-CREATE OR REPLACE FUNCTION "public"."space_fill_course"("p_user" "uuid", "p_set" "jsonb") RETURNS boolean
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $f$
-begin
-  if p_user is null or to_regclass('public.enrollments') is null then return false; end if;
-  return exists (select 1 from public.enrollments e
-                  where e.user_id = p_user and e.course = any(public.space_fill_values(p_set, 'course'))
-                    and (not (p_set ? 'cohort') or e.cohort = any(public.space_fill_values(p_set, 'cohort'))));
-end;
-$f$;
-REVOKE ALL ON FUNCTION "public"."space_fill_course"("uuid", "jsonb") FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."space_fill_course"("uuid", "jsonb") FROM "anon", "authenticated";
-GRANT ALL ON FUNCTION "public"."space_fill_course"("uuid", "jsonb") TO "service_role";
-
--- A WINDOW ON A CONDITION. `within_last` and `within_next` are whole minutes, written by the compile
--- from the file's own `withinLast: 7d` / `withinNext: 7d`. They are QUALIFIERS: a set carrying one
--- and nothing to hang it on is refused at the compile, so by the time a rule is here the window
--- always has a purchase or a booking under it.
---
--- Two of them rather than one because a span against a future event and a span against a past one
--- are different questions: a session a week from now and a session a week ago are both "within 7
--- days" and they are opposite rules. Written together on two alternatives they compose into one
--- continuous window round a call — in a week before, out a week after — and nobody presses anything.
---
--- A window is only ever as sharp as the sweep that asks this, which runs on a schedule. That is
--- right for access to a room and would be wrong for a licence; nothing here promises finer.
-CREATE OR REPLACE FUNCTION "public"."space_fill_set_matches"("p_user" "uuid", "p_set" "jsonb") RETURNS boolean
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select case when coalesce("p_set", '{}'::jsonb) = '{}'::jsonb then false else (
-      -- SIGNED IN, AND NOTHING MORE. `for: authenticated` used to compile to an 'account'
-      -- entitlement, which nothing has ever granted — so the one switch a site would reach for to
-      -- keep anonymous visitors away from a paid model matched NOBODY. Having an id is the whole
-      -- of the test.
-      (not (p_set ? 'signed_in') or p_user is not null)
-    and
-      -- HAS EVER PAID. The ledger grants class/paid on every paid purchase and to a guest's account
-      -- when it is claimed, so this needs no new data — only a name. Distinct from `product`,
-      -- which asks for one particular thing.
-      (not (p_set ? 'paid') or exists (
-        select 1 from public.entitlements e
-        where e.user_id = p_user and e.kind = 'class' and e.key = 'paid' and e.active
-          and (e.expires_at is null or e.expires_at > now())))
-    and
-      (not (p_set ? 'role') or exists (
-        select 1 from public.profiles p
-        where p.id = p_user and p.roles && public.space_fill_values(p_set, 'role')))
-    -- ENROLLED IN A COURSE (the courses module), and in one of its cohorts where the rule names any: asked through a
-    -- function of its own, which answers false where the courses module is off and there are no enrolments to ask
-    and (not (p_set ? 'course') or public.space_fill_course(p_user, p_set))
-    and (not (p_set ? 'tier') or exists (
-        select 1 from public.entitlements e
-        where e.user_id = p_user and e.kind = 'class' and e.key = 'subscribed' and e.active
-          and (e.expires_at is null or e.expires_at > now())
-          and e.tier = any(public.space_fill_values(p_set, 'tier'))))
-    and (not (p_set ? 'entitlement') or exists (
-        select 1 from public.entitlements e
-        where e.user_id = p_user and e.key = any(public.space_fill_values(p_set, 'entitlement')) and e.active
-          and (e.expires_at is null or e.expires_at > now())))
-    -- bought once and in for good, unless the set puts a window on it: the paid server, where the
-    -- way in is a purchase rather than a subscription. The key is the offer's, which is what every
-    -- purchase is attributed by. A purchase has no future, so only `within_last` applies and the
-    -- compile refuses the other.
-    and (not (p_set ? 'product') or exists (
-        select 1 from public.purchases pu
-        where pu.user_id = p_user and pu.status = 'paid' and pu.key = any(public.space_fill_values(p_set, 'product'))
-          and (not (p_set ? 'within_last')
-               or pu.created_at > now() - make_interval(mins => (p_set ->> 'within_last')::int))))
-    -- A BOOKING, WHICH IS THE ONE CONDITION THAT LOOKS FORWARD. A booking of that type belonging to
-    -- this person that was neither cancelled nor refused: `within_last` matches one that has ENDED
-    -- inside the span, `within_next` one that STARTS inside it. With neither, any such booking ever.
-    -- A cancelled booking is not a booking, which is why `refused` and the status are both asked.
-    and (not (p_set ? 'booking') or exists (
-        select 1 from public.bookings b
-        where b.user_id = p_user
-          and coalesce(b.type, b.event) = any(public.space_fill_values(p_set, 'booking'))
-          and b.status = 'accepted' and b.refused is null
-          and (not (p_set ? 'within_last')
-               or (b.end_at is not null and b.end_at <= now()
-                   and b.end_at > now() - make_interval(mins => (p_set ->> 'within_last')::int)))
-          and (not (p_set ? 'within_next')
-               or (b.start_at is not null and b.start_at >= now()
-                   and b.start_at < now() + make_interval(mins => (p_set ->> 'within_next')::int)))))
-  ) end;
-$$;
-
--- A FILL MAY OFFER ALTERNATIVES, and any one of them is enough: a list of sets, true when any set
--- is. A mapping is one set and means exactly what it always meant, so nothing already written
--- changes — and an empty list, like an empty mapping, fills nobody.
---
--- It is decided here rather than at the compile because the compile writes a rule once and walks
--- away, while the sweep asks this every hour, for ever, as people's standing changes.
-CREATE OR REPLACE FUNCTION "public"."space_fill_matches"("p_user" "uuid", "p_fill" "jsonb") RETURNS boolean
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select case
-    when p_fill is null then false
-    when jsonb_typeof(p_fill) = 'array' then exists (
-      select 1 from jsonb_array_elements(p_fill) s where public.space_fill_set_matches(p_user, s))
-    else public.space_fill_set_matches(p_user, p_fill)
-  end;
-$$;
-
--- WHO ENTERS EACH PLACE OF THE COMMUNITY (community.access and a registered place's access, projected
--- by the data script into app_settings as 'community_access': { place: [fill rule…] }). A place with
--- no rule is open to anyone signed in, as before; the staff always enter; anybody else enters when one
--- of the place's rules holds for them (space_fill_matches, the grammar a space is filled by). The
--- reads and writes of events, direct messages and notifications ask it, and a site's own place may.
--- (Here, beside the fill it asks, so every later file — the spaces' own reads below, the network,
--- the events — finds it defined.)
-CREATE OR REPLACE FUNCTION "public"."community_admitted"("p_place" "text") RETURNS boolean
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare rules jsonb;
-begin
-  select s.value::jsonb -> p_place into rules from public.app_settings s where s.key = 'community_access';
-  if rules is null or jsonb_typeof(rules) <> 'array' then return true; end if;
-  if auth.uid() is null then return false; end if;
-  if public.is_staff() then return true; end if;
-  return exists (select 1 from jsonb_array_elements(rules) one where public.space_fill_matches(auth.uid(), one));
-end;
-$$;
-REVOKE ALL ON FUNCTION "public"."community_admitted"("text") FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION "public"."community_admitted"("text") TO "authenticated", "anon", "service_role";
+-- THE EVENTS IN THE COMMUNITY'S NOTIFICATIONS (98-community.sql): none, until the events module declares them
+-- (95-events.sql, which loads after this file and is there only while events are on)
+CREATE OR REPLACE FUNCTION "public"."events_soon_for_me"() RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
 
 -- a member of the channel: joined it, whatever its visibility
 CREATE OR REPLACE FUNCTION "public"."in_channel"("p_channel" "uuid") RETURNS boolean
@@ -1525,15 +1380,10 @@ $$;
 
 -- Where they are working: what the instrument's sheet placed them at, as their own browser wrote it to signals — the
 -- level, what is secure, the areas taken. A reading of their own result, never a second scoring of it.
+-- answers null::jsonb here; glue/instrument+spaces.sql declares it again, there while both modules are on
 CREATE OR REPLACE FUNCTION "public"."member_working"("p_user" "uuid") RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select case when not public.may_see_member(p_user) then null else (
-    select jsonb_build_object('working', s.working, 'secured', s.secured, 'areas', to_jsonb(s.areas), 'at', s.updated_at)
-      from public.signals s where s.user_id = p_user
-  ) end
-$$;
+    LANGUAGE "sql" STABLE
+    AS $$ select null::jsonb $$;
 
 -- What they have bought: their paid purchases, newest first, from the one source the admin reads too.
 CREATE OR REPLACE FUNCTION "public"."member_bought"("p_user" "uuid", "p_lim" integer DEFAULT 8) RETURNS "jsonb"
@@ -1966,30 +1816,22 @@ $$;
 
 -- what the site already knows, written where the staff asked for it: no webhook, no third party,
 -- nothing to configure but the channel.
+-- the bots that hear an event a room is told of: the bots module's, none where it is off (glue/bots+spaces.sql)
+CREATE OR REPLACE FUNCTION "public"."space_hook_bots"("p_channel" "uuid", "p_event" "text", "p_meta" "jsonb") RETURNS "void"
+    LANGUAGE "sql" VOLATILE
+    AS $$ select $$;
+REVOKE ALL ON FUNCTION "public"."space_hook_bots"("uuid", "text", "jsonb") FROM PUBLIC, "anon", "authenticated";
+
 CREATE OR REPLACE FUNCTION "public"."space_hook_post"("p_event" "text", "p_body" "text", "p_meta" "jsonb" DEFAULT '{}'::"jsonb") RETURNS integer
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-declare h record; b record; n integer := 0;
+declare h record; n integer := 0;
 begin
   for h in select channel_id from public.space_hooks where event = p_event loop
     perform public.space_post(h.channel_id, p_body, coalesce(p_meta, '{}'::jsonb));
-    -- AND A BOT THAT LISTENS FOR IT. A bot may say `hears: [{ event: purchase.paid, … }]`, and
-    -- this is where that becomes true: the same event that writes the line queues the run, in the
-    -- room the line went to, with the facts on it. It is a run like any other from there on — the
-    -- loop, the budget, the Stop button — and a bot nobody declared for this event costs nothing.
-    for b in select slug, hears from public.bots where published loop
-      if b.hears @> jsonb_build_array(jsonb_build_object('kind', 'event', 'event', p_event)) then
-        insert into public.agent_runs (bot, surface, channel_id, root_id, status, state)
-             values (b.slug, 'spaces', h.channel_id, h.channel_id, 'queued',
-                     jsonb_build_object(
-                       'messages', jsonb_build_array(jsonb_build_object('role', 'user', 'content',
-                         (select coalesce(x->>'ask', 'Something happened: ' || p_event)
-                            from jsonb_array_elements(b.hears) x
-                           where x->>'kind' = 'event' and x->>'event' = p_event limit 1))),
-                       'context', 'The facts: ' || coalesce(p_meta::text, '{}')));
-      end if;
-    end loop;
+    -- and a bot that listens for it, where there are bots (glue/bots+spaces.sql)
+    perform public.space_hook_bots(h.channel_id, p_event, p_meta);
     n := n + 1;
   end loop;
   return n;
@@ -2027,19 +1869,6 @@ begin
 end;
 $$;
 
-CREATE OR REPLACE FUNCTION "public"."space_on_print_order"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-begin
-  if new.status is distinct from 'failed' or (tg_op = 'UPDATE' and old.status = 'failed') then return null; end if;
-  perform public.space_hook_post('print.failed', null, jsonb_build_object(
-    'event', 'print-failed', 'book', new.chosen ->> 'book', 'format', new.chosen ->> 'format', 'printer', new.supplier,
-    'reason', left(coalesce(new.error, ''), 200), 'order', new.id));
-  return null;
-end;
-$$;
-
 CREATE OR REPLACE FUNCTION "public"."space_on_account"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -2047,18 +1876,6 @@ CREATE OR REPLACE FUNCTION "public"."space_on_account"() RETURNS "trigger"
 begin
   perform public.space_hook_post('account.new', null, jsonb_build_object(
     'event', 'account-new', 'name', coalesce(nullif(new.display_name, ''), split_part(coalesce(new.email, ''), '@', 1))));
-  return null;
-end;
-$$;
-
-CREATE OR REPLACE FUNCTION "public"."space_on_escalation"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-begin
-  if new.escalated_at is null or old.escalated_at is not null then return null; end if;
-  perform public.space_hook_post('support.escalated', null, jsonb_build_object(
-    'event', 'support-escalated', 'conversation', new.id));
   return null;
 end;
 $$;
@@ -2170,7 +1987,6 @@ $$;
 REVOKE ALL ON FUNCTION "public"."space_mail"("uuid", "uuid", "uuid") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."space_mail"("uuid", "uuid", "uuid") FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."space_mail"("uuid", "uuid", "uuid") TO "service_role";
-
 
 -- ---------------------------------------------------------------------------------------------
 -- a community: the mute, the acts, and the way in
@@ -2755,9 +2571,7 @@ CREATE OR REPLACE TRIGGER "trg_space_purchase" AFTER INSERT OR UPDATE OF "status
 CREATE OR REPLACE TRIGGER "trg_space_standing_entitlement" AFTER INSERT OR UPDATE OF "active", "expires_at", "tier" ON "public"."entitlements" FOR EACH ROW EXECUTE FUNCTION "public"."space_on_standing"();
 CREATE OR REPLACE TRIGGER "trg_space_standing_purchase" AFTER INSERT OR UPDATE OF "status" ON "public"."purchases" FOR EACH ROW EXECUTE FUNCTION "public"."space_on_standing"();
 CREATE OR REPLACE TRIGGER "trg_space_subscription" AFTER INSERT ON "public"."subscriptions" FOR EACH ROW EXECUTE FUNCTION "public"."space_on_subscription"();
-CREATE OR REPLACE TRIGGER "trg_space_print_order" AFTER INSERT OR UPDATE OF "status" ON "public"."fulfilments" FOR EACH ROW EXECUTE FUNCTION "public"."space_on_print_order"();
 CREATE OR REPLACE TRIGGER "trg_space_account" AFTER INSERT ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."space_on_account"();
-CREATE OR REPLACE TRIGGER "trg_space_escalation" AFTER UPDATE OF "escalated_at" ON "public"."support_conversations" FOR EACH ROW EXECUTE FUNCTION "public"."space_on_escalation"();
 
 -- ---------------------------------------------------------------------------------------------
 -- who may read what. Every policy is membership and nothing else: never a role at the site's level,
@@ -3185,9 +2999,6 @@ GRANT ALL ON TABLE "public"."space_moderation" TO "service_role";
 GRANT ALL ON TABLE "public"."desk_done" TO "service_role";
 GRANT ALL ON TABLE "public"."space_grants" TO "service_role";
 
-REVOKE ALL ON FUNCTION "public"."space_fill_matches"("uuid", "jsonb") FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."space_fill_matches"("uuid", "jsonb") FROM "anon", "authenticated";
-GRANT ALL ON FUNCTION "public"."space_fill_matches"("uuid", "jsonb") TO "service_role";
 GRANT ALL ON FUNCTION "public"."my_space_ids"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."my_space_ids"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."my_channel_ids"() TO "authenticated";
@@ -3330,11 +3141,7 @@ GRANT ALL ON FUNCTION "public"."space_threads"(integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."space_activity"(integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."space_unseen"(integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."space_later"(integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."space_fill_values"("jsonb", "text") TO "authenticated", "anon", "service_role";
 -- about any account by id (whether it has paid, which tiers it holds): space_fill_matches asks it, as the owner
-REVOKE ALL ON FUNCTION "public"."space_fill_set_matches"("uuid", "jsonb") FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."space_fill_set_matches"("uuid", "jsonb") FROM "anon", "authenticated";
-GRANT ALL ON FUNCTION "public"."space_fill_set_matches"("uuid", "jsonb") TO "service_role";
 GRANT ALL ON FUNCTION "public"."may_see_member"("uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."may_see_member"("uuid") TO "service_role";
 GRANT ALL ON FUNCTION "public"."space_member_card"("uuid", "uuid") TO "authenticated";
@@ -3508,15 +3315,9 @@ GRANT ALL ON FUNCTION "public"."space_on_purchase"() TO "service_role";
 REVOKE ALL ON FUNCTION "public"."space_on_subscription"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."space_on_subscription"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."space_on_subscription"() TO "service_role";
-REVOKE ALL ON FUNCTION "public"."space_on_print_order"() FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."space_on_print_order"() FROM "anon", "authenticated";
-GRANT ALL ON FUNCTION "public"."space_on_print_order"() TO "service_role";
 REVOKE ALL ON FUNCTION "public"."space_on_account"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."space_on_account"() FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."space_on_account"() TO "service_role";
-REVOKE ALL ON FUNCTION "public"."space_on_escalation"() FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."space_on_escalation"() FROM "anon", "authenticated";
-GRANT ALL ON FUNCTION "public"."space_on_escalation"() TO "service_role";
 REVOKE ALL ON FUNCTION "public"."space_hook_post"("text", "text", "jsonb") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."space_hook_post"("text", "text", "jsonb") FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."space_hook_post"("text", "text", "jsonb") TO "service_role";
@@ -3745,3 +3546,26 @@ GRANT EXECUTE ON FUNCTION "public"."space_answer"("uuid", boolean) TO "authentic
 REVOKE ALL ON FUNCTION "public"."space_asks"("uuid") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."space_asks"("uuid") FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."space_asks"("uuid") TO "authenticated", "service_role";
+
+-- ---------------------------------------------------------------------------------------------
+-- a channel read as a feed: each post whole, with its first answers under it
+-- ---------------------------------------------------------------------------------------------
+
+-- THE FIRST ANSWERS of each post a feed shows, oldest first, a few each — the same answers the
+-- thread itself would show, under the same guards (can_read_channel, a shadow-banned line seen by
+-- its author alone, the plan's horizon), so the feed never shows an answer the thread would not.
+CREATE OR REPLACE FUNCTION "public"."space_first_replies"("p_roots" "uuid"[], "p_n" integer DEFAULT 2) RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  select coalesce(jsonb_object_agg(r.id, coalesce((
+      select jsonb_agg(to_jsonb(x) - 'fts' order by x.seq)
+      from (select * from public.space_messages sm
+             where sm.thread_root_id = r.id and sm.deleted_at is null
+               and public.space_sees(sm.shadowed, sm.author_id, sm.channel_id)
+             order by sm.seq
+             limit least(greatest(coalesce(p_n, 2), 1), 10)) x), '[]'::jsonb)), '{}'::jsonb)
+  from public.space_messages r
+  where r.id = any(p_roots) and r.thread_root_id is null and public.can_read_channel(r.channel_id);
+$$;
+GRANT ALL ON FUNCTION "public"."space_first_replies"("uuid"[], integer) TO "authenticated", "service_role";

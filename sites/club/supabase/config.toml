@@ -66,7 +66,7 @@ schema_paths = []
 # The database is a declaration, never a history: a reset applies the declared schema (the kit's files, then the
 # site's), the rows script, then the seed. The assembler (platformkit assemble) owns this line.
 enabled = true
-sql_paths = ["./schemas/*.sql", "./schemas/site/*.sql", "./data.sql", "./seed.sql"]
+sql_paths = ["./schemas/*.sql", "./schemas/glue/*.sql", "./schemas/site/*.sql", "./data.sql", "./seed.sql"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.

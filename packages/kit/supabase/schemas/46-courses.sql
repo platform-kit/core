@@ -371,15 +371,15 @@ begin
   if f.key is null then return jsonb_build_object('error', 'no-lesson'); end if;
   if not f.open then return jsonb_build_object('error', coalesce(f.why, 'closed')); end if;
   how_ := case f.kind when 'chapter' then 'read' when 'article' then 'read' when 'form' then 'form' when 'session' then 'booked' else 'marked' end;
-  if f.kind = 'form' and not exists (select 1 from public.form_responses r where r.user_id = me and r.form = f.ref and r.completed_at is not null and coalesce(r.passed, true)) then
+  if f.kind = 'form' and not public.course_form_done(me, f.ref, false) then
     return jsonb_build_object('error', 'form-not-finished');
   end if;
-  if f.kind = 'session' and not exists (select 1 from public.bookings b where b.user_id = me and b.type = f.ref and b.status in ('accepted', 'ended')) then
+  if f.kind = 'session' and not public.course_session_booked(me, f.ref) then
     return jsonb_build_object('error', 'not-booked');
   end if;
   insert into public.lesson_progress (enrollment, lesson, how) values (e.id, p_lesson, how_) on conflict do nothing;
   -- a quiz passed before its lesson opened, recorded now: its first pass, as the trigger records one
-  if found and f.kind = 'form' and exists (select 1 from public.form_responses r where r.user_id = me and r.form = f.ref and r.completed_at is not null and r.passed is true) then
+  if found and f.kind = 'form' and public.course_form_done(me, f.ref, true) then
     insert into public.events (session_id, user_id, anon_id, type, props, occurred_at, source)
       values (gen_random_uuid(), me, me, 'quiz_passed', jsonb_build_object('course', p_course, 'lesson', p_lesson), now(), 'server');
   end if;
@@ -388,44 +388,23 @@ begin
 end;
 $$;
 
--- A FORM FINISHED FINISHES ITS LESSON. When somebody's response completes, and is passed where the form is scored,
--- every open form lesson pointing at that form is recorded done for them, then the course is checked for completion.
--- Nobody marks a quiz lesson by hand; a response that fails changes nothing, and a later pass still counts.
-CREATE OR REPLACE FUNCTION "public"."course_form_finished"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare e public.enrollments; f record;
-begin
-  if new.user_id is null or new.completed_at is null or new.passed is false then return new; end if;
-  if tg_op = 'UPDATE' and old.completed_at is not null and old.passed is not distinct from new.passed then return new; end if;
-  for e in select en.* from public.enrollments en where en.user_id = new.user_id
-             and exists (select 1 from public.course_lessons l where l.course = en.course and l.kind = 'form' and l.ref = new.form) loop
-    for f in select x.key from public.course_lessons_for(e.course, new.user_id) x where x.kind = 'form' and x.ref = new.form and x.open and not x.done loop
-      insert into public.lesson_progress (enrollment, lesson, how) values (e.id, f.key, 'form') on conflict do nothing;
-      -- a quiz passed, the first time: an event like any other, from which the achievements module awards that quiz's achievement
-      if found and new.passed is true then
-        insert into public.events (session_id, user_id, anon_id, type, props, occurred_at, source)
-          values (gen_random_uuid(), new.user_id, new.user_id, 'quiz_passed', jsonb_build_object('course', e.course, 'lesson', f.key, 'score', new.score, 'total', new.total), now(), 'server');
-      end if;
-    end loop;
-    perform public.course_check_complete(e.id);
-  end loop;
-  return new;
-end;
-$$;
-
-CREATE OR REPLACE TRIGGER "trg_form_responses_course" AFTER INSERT OR UPDATE OF "completed_at", "passed" ON "public"."form_responses" FOR EACH ROW EXECUTE FUNCTION "public"."course_form_finished"();
-
--- A QUIZ'S RESULT for one person: their best score on a scored form, whether any attempt passed, and how many they
--- made. Every attempt is a form response of its own, so this reads them; nothing is copied. Null where none is scored.
+-- WHAT A LESSON ASKS OF ANOTHER MODULE. A form lesson is finished by a form answered, a session lesson by a session
+-- booked, and the forms and the sessions are modules of their own that may be off. So each question is a function
+-- declared here answering no — a lesson nobody can finish where there is nothing to finish it with — and declared again
+-- in the glue the two modules share (glue/courses+forms.sql, glue/courses+sessions.sql), which loads after every
+-- module's file and is there only while both are on (openspec: module-switch-removes-backend).
+CREATE OR REPLACE FUNCTION "public"."course_form_done"("p_user" "uuid", "p_form" "text", "p_passed" boolean) RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$ select false $$;
+CREATE OR REPLACE FUNCTION "public"."course_session_booked"("p_user" "uuid", "p_type" "text") RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$ select false $$;
+-- a quiz's result for one person: none, where there are no forms to have answered
 CREATE OR REPLACE FUNCTION "public"."course_quiz_result"("p_user" "uuid", "p_form" "text") RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select case when count(*) = 0 then null else jsonb_build_object('score', max(r.score), 'total', max(r.total), 'passed', bool_or(coalesce(r.passed, false)), 'attempts', count(*)) end
-  from public.form_responses r where r.user_id = p_user and r.form = p_form and r.completed_at is not null and r.total is not null;
-$$;
+    LANGUAGE "sql" STABLE
+    AS $$ select null::jsonb $$;
+REVOKE ALL ON FUNCTION "public"."course_form_done"("uuid", "text", boolean) FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."course_session_booked"("uuid", "text") FROM PUBLIC, "anon", "authenticated";
 
 -- a certificate, for anyone holding its address
 CREATE OR REPLACE FUNCTION "public"."certificate_public"("p_id" "text") RETURNS "jsonb"
@@ -445,18 +424,10 @@ CREATE OR REPLACE FUNCTION "public"."my_courses"() RETURNS "jsonb"
 $$;
 
 -- what somebody is enrolled in, for their card's private half: that person or staff, and nothing for anybody else
+-- answers '[]'::jsonb here; glue/courses+spaces.sql declares it again, there while both modules are on
 CREATE OR REPLACE FUNCTION "public"."member_courses"("p_user" "uuid") RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select case when not public.may_see_member(p_user) then '[]'::jsonb else coalesce((
-    select jsonb_agg(jsonb_build_object('slug', c.slug, 'title', c.title, 'image', c.image, 'started_at', e.started_at, 'completed_at', e.completed_at,
-        'done', (select count(*) from public.lesson_progress p join public.course_lessons l on l.course = c.slug and l.key = p.lesson and l.required where p.enrollment = e.id),
-        'total', (select count(*) from public.course_lessons l where l.course = c.slug and l.required),
-        'certificate_id', (select x.id from public.certificates x where x.enrollment = e.id))
-      order by e.completed_at nulls first, e.started_at desc)
-    from public.enrollments e join public.courses c on c.slug = e.course where e.user_id = p_user), '[]'::jsonb) end;
-$$;
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
 
 -- ADMINISTRATORS: who is where in a course (names and addresses, so an administrator's, as orders are), how many finish, and the lesson where most of those who have not are stuck
 CREATE OR REPLACE FUNCTION "public"."admin_course_enrollments"("p_course" "text") RETURNS "jsonb"
@@ -554,8 +525,6 @@ REVOKE ALL ON FUNCTION "public"."course_enroll_for"("uuid") FROM "anon", "authen
 GRANT ALL ON FUNCTION "public"."course_enroll_for"("uuid") TO "service_role";
 REVOKE ALL ON FUNCTION "public"."course_enroll_on_access"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."course_enroll_on_access"() FROM "anon", "authenticated";
-REVOKE ALL ON FUNCTION "public"."course_form_finished"() FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."course_form_finished"() FROM "anon", "authenticated";
 REVOKE ALL ON FUNCTION "public"."course_quiz_result"("uuid", "text") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."course_quiz_result"("uuid", "text") FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."course_quiz_result"("uuid", "text") TO "service_role";
@@ -583,3 +552,15 @@ REVOKE ALL ON FUNCTION "public"."my_courses"() FROM PUBLIC, "anon";
 GRANT ALL ON FUNCTION "public"."my_courses"() TO "authenticated", "service_role";
 REVOKE ALL ON FUNCTION "public"."admin_course_enrollments"("text") FROM PUBLIC, "anon";
 GRANT ALL ON FUNCTION "public"."admin_course_enrollments"("text") TO "authenticated", "service_role";
+
+-- A COURSE'S PEOPLE, for an audience rule naming a course (14-audience.sql declares it answering false, for a site
+-- without courses): enrolled in one of the courses named, and in one of the cohorts where any are.
+CREATE OR REPLACE FUNCTION "public"."space_fill_course"("p_user" "uuid", "p_set" "jsonb") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  select p_user is not null and exists (
+    select 1 from public.enrollments e
+     where e.user_id = p_user and e.course = any(public.space_fill_values(p_set, 'course'))
+       and (not (p_set ? 'cohort') or e.cohort = any(public.space_fill_values(p_set, 'cohort'))));
+$$;

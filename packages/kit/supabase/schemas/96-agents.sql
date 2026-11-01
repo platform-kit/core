@@ -233,6 +233,29 @@ begin
 end;
 $$;
 
+-- WHERE A BOT IS BEING ASKED, and whether the asker is there: a room they can read, a conversation they are in. Each is
+-- the surface module's own question, asked in the glue it shares with the bots (glue/bots+spaces.sql,
+-- glue/bots+coaching.sql); nowhere, where that surface is off. And of a desk's thread, whether its person asked for a
+-- human and whether they chose the bot (glue/bots+support.sql).
+CREATE OR REPLACE FUNCTION "public"."agent_where_spaces"("p_channel" "uuid") RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$ select false $$;
+CREATE OR REPLACE FUNCTION "public"."agent_where_coaching"("p_conversation" "uuid") RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$ select false $$;
+CREATE OR REPLACE FUNCTION "public"."agent_support_state"("p_conversation" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select '{}'::jsonb $$;
+REVOKE ALL ON FUNCTION "public"."agent_where_spaces"("uuid") FROM PUBLIC, "anon";
+REVOKE ALL ON FUNCTION "public"."agent_where_coaching"("uuid") FROM PUBLIC, "anon";
+REVOKE ALL ON FUNCTION "public"."agent_support_state"("uuid") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."agent_where_spaces"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."agent_where_spaces"("uuid") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."agent_where_spaces"("uuid") TO "authenticated", "service_role";
+REVOKE ALL ON FUNCTION "public"."agent_where_coaching"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."agent_where_coaching"("uuid") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."agent_where_coaching"("uuid") TO "authenticated", "service_role";
+
 -- what is running here, for the surface that is waiting on it
 CREATE OR REPLACE FUNCTION "public"."agent_runs_here"("p_root" "uuid") RETURNS "jsonb"
     LANGUAGE "sql" STABLE SECURITY DEFINER
@@ -244,7 +267,7 @@ CREATE OR REPLACE FUNCTION "public"."agent_runs_here"("p_root" "uuid") RETURNS "
     from public.agent_runs r
    where r.root_id = p_root
      and (r.asked_by = auth.uid() or public.is_staff()
-          or (r.channel_id is not null and public.can_read_channel(r.channel_id)));
+          or (r.channel_id is not null and public.agent_where_spaces(r.channel_id)));
 $$;
 
 -- ---------------------------------------------------------------------------------------------
@@ -257,7 +280,7 @@ ALTER TABLE "public"."agent_runs" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."agent_steps" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "bots_select" ON "public"."bots" FOR SELECT TO "authenticated", "anon"
-  USING (("published" = true) AND "public"."event_for_me"("audience"));
+  USING (("published" = true) AND "public"."audience_for_me"("audience"));
 CREATE POLICY "agent_runs_select" ON "public"."agent_runs" FOR SELECT TO "authenticated"
   USING (("asked_by" = ( SELECT "auth"."uid"())) OR "public"."is_staff"());
 -- what the tools answered — orders, tickets, transcripts — is the desk's, not every role's
@@ -398,14 +421,14 @@ begin
   if not found then return jsonb_build_object('error', 'no-bot'); end if;
   -- nothing to think with: a bot that cannot run is not refused politely, it is not there
   if not public.agents_live() then return jsonb_build_object('error', 'no-provider'); end if;
-  if not public.event_for_me(b.audience) then return jsonb_build_object('error', 'not-for-you'); end if;
+  if not public.audience_for_me(b.audience) then return jsonb_build_object('error', 'not-for-you'); end if;
   if not (p_surface = any(b.surfaces)) then return jsonb_build_object('error', 'not-here'); end if;
   -- where it is being summoned must be somewhere the asker is
-  if p_surface = 'spaces' and (p_channel is null or not public.can_read_channel(p_channel)) then
+  if p_surface = 'spaces' and (p_channel is null or not public.agent_where_spaces(p_channel)) then
     return jsonb_build_object('error', 'not-yours');
   end if;
   if p_surface = 'support' and not public.is_staff() then return jsonb_build_object('error', 'not-yours'); end if;
-  if p_surface = 'coaching' and (p_conversation is null or not public.in_conversation(p_conversation)) then
+  if p_surface = 'coaching' and (p_conversation is null or not public.agent_where_coaching(p_conversation)) then
     return jsonb_build_object('error', 'not-yours');
   end if;
 
@@ -537,8 +560,6 @@ REVOKE ALL ON FUNCTION "public"."agent_job"("text", "text", "jsonb", numeric) FR
 REVOKE ALL ON FUNCTION "public"."agent_job"("text", "text", "jsonb", numeric) FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."agent_job"("text", "text", "jsonb", numeric) TO "authenticated", "service_role";
 
-
-
 -- THE ROW WAKES THE WORKER. Nothing in a browser pokes it — a browser holds no key that the worker
 -- would accept, and a surface that had to wait for a model would be a surface that stalls. The
 -- insert is the signal, pg_net carries it, and pg_cron is the backstop for anything it misses.
@@ -588,23 +609,25 @@ CREATE OR REPLACE TRIGGER "trg_agent_wake" AFTER INSERT ON "public"."agent_runs"
 
 -- The same resolution, from the parts rather than from a row, so a summon can ask "who would this
 -- be for?" before it has decided whether to create anything.
+-- who a desk's thread or a coaching conversation is about: read in the glue each shares with the bots
+-- (glue/bots+support.sql, glue/bots+coaching.sql); nobody, where that surface is off
+CREATE OR REPLACE FUNCTION "public"."agent_subject_support"("p_conversation" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select jsonb_build_object('user_id', null, 'contact_id', null) $$;
+CREATE OR REPLACE FUNCTION "public"."agent_subject_coaching"("p_conversation" "uuid", "p_asked_by" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select jsonb_build_object('user_id', null, 'contact_id', null) $$;
+REVOKE ALL ON FUNCTION "public"."agent_subject_support"("uuid") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."agent_subject_coaching"("uuid", "uuid") FROM PUBLIC, "anon", "authenticated";
+
 CREATE OR REPLACE FUNCTION "public"."agent_subject_of"(
       "p_surface" "text", "p_conversation" "uuid", "p_asked_by" "uuid") RETURNS "jsonb"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
   select case
-    when p_surface = 'support' then (
-      select jsonb_build_object('user_id', k.user_id, 'contact_id', c.contact_id)
-        from public.support_conversations c
-        left join public.support_contacts k on k.id = c.contact_id
-       where c.id = p_conversation)
-    when p_surface = 'coaching' then jsonb_build_object(
-      'user_id', (select (array_agg(m.user_id))[1] from public.conversation_members m
-                   where m.conversation_id = p_conversation
-                     and m.user_id is distinct from p_asked_by
-                  having count(*) = 1),
-      'contact_id', null)
+    when p_surface = 'support' then public.agent_subject_support(p_conversation)
+    when p_surface = 'coaching' then public.agent_subject_coaching(p_conversation, p_asked_by)
     when p_surface = 'social' then jsonb_build_object('user_id', null, 'contact_id', null)
     else jsonb_build_object('user_id', p_asked_by, 'contact_id', null)
   end;
@@ -641,84 +664,6 @@ GRANT EXECUTE ON FUNCTION "public"."agent_subject"("uuid") TO "service_role";
 -- An empty result means "this person has none". The two are different answers and the difference
 -- matters: one is "I cannot see that", the other is "you have not bought anything".
 
-CREATE OR REPLACE FUNCTION "public"."agent_orders"("p_run" "uuid") RETURNS "jsonb"
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare u uuid;
-begin
-  select (public.agent_subject(p_run)->>'user_id')::uuid into u;
-  if u is null then return null; end if;
-  return jsonb_build_object(
-    'purchases', coalesce((
-      select jsonb_agg(jsonb_build_object('sku', p.sku, 'amount_total', p.amount_total,
-               'currency', p.currency, 'status', p.status, 'created_at', p.created_at,
-               'variant', p.variant) order by p.created_at desc)
-        from (select * from public.purchases where user_id = u order by created_at desc limit 20) p
-    ), '[]'::jsonb),
-    'parcels', coalesce((
-      select jsonb_agg(jsonb_build_object('book', o.chosen ->> 'book', 'format', o.chosen ->> 'format', 'contents', o.chosen ->> 'contents',
-               'status', o.status, 'supplier_status', o.supplier_status, 'tracking', o.tracking,
-               'created_at', o.created_at) order by o.created_at desc)
-        from (select * from public.fulfilments where user_id = u order by created_at desc limit 20) o
-    ), '[]'::jsonb));
-end;
-$$;
-
-CREATE OR REPLACE FUNCTION "public"."agent_membership"("p_run" "uuid") RETURNS "jsonb"
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare u uuid;
-begin
-  select (public.agent_subject(p_run)->>'user_id')::uuid into u;
-  if u is null then return null; end if;
-  return (
-    select jsonb_build_object(
-      'tiers', coalesce(jsonb_agg(distinct e.tier) filter (where e.tier is not null), '[]'::jsonb),
-      'entitlements', coalesce(jsonb_agg(jsonb_build_object('kind', e.kind, 'key', e.key,
-        'tier', e.tier, 'expires_at', e.expires_at, 'created_at', e.created_at)), '[]'::jsonb))
-      from public.entitlements e
-     where e.user_id = u and e.active
-       and (e.expires_at is null or e.expires_at > now()));
-end;
-$$;
-
--- A ticket belongs to a CONTACT, and one person may have several (a guest who later signed up, the
--- same address written in twice). So this takes the subject's own contact and every contact their
--- account holds — never a contact belonging to anybody else.
-CREATE OR REPLACE FUNCTION "public"."agent_tickets"("p_run" "uuid") RETURNS "jsonb"
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare s jsonb; u uuid; k uuid;
-begin
-  s := public.agent_subject(p_run);
-  u := (s->>'user_id')::uuid;
-  k := (s->>'contact_id')::uuid;
-  if u is null and k is null then return null; end if;
-  return coalesce((
-    select jsonb_agg(jsonb_build_object('ref', t.ref, 'title', t.title, 'status', t.status,
-             'created_at', t.created_at, 'last_at', t.last_at) order by t.last_at desc)
-      from (select * from public.support_tickets
-             where contact_id in (
-               select c.id from public.support_contacts c
-                where (k is not null and c.id = k)
-                   or (u is not null and c.user_id = u))
-             order by last_at desc limit 20) t
-  ), '[]'::jsonb);
-end;
-$$;
-
-REVOKE ALL ON FUNCTION "public"."agent_orders"("uuid") FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."agent_orders"("uuid") FROM "anon", "authenticated";
-GRANT EXECUTE ON FUNCTION "public"."agent_orders"("uuid") TO "service_role";
-REVOKE ALL ON FUNCTION "public"."agent_membership"("uuid") FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."agent_membership"("uuid") FROM "anon", "authenticated";
-GRANT EXECUTE ON FUNCTION "public"."agent_membership"("uuid") TO "service_role";
-REVOKE ALL ON FUNCTION "public"."agent_tickets"("uuid") FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."agent_tickets"("uuid") FROM "anon", "authenticated";
-GRANT EXECUTE ON FUNCTION "public"."agent_tickets"("uuid") TO "service_role";
 
 -- A ticket a bot raises belongs to the run's SUBJECT, and the run says who that is.
 --
@@ -726,30 +671,12 @@ GRANT EXECUTE ON FUNCTION "public"."agent_tickets"("uuid") TO "service_role";
 -- ever set — so every ticket a bot raised was attached to no contact, and agent_tickets, which finds
 -- tickets BY contact, could never find one. Here the contact is resolved rather than passed, which
 -- is the same reason the facts above take a run: there is no wrong contact available to send.
+-- a ticket raised by a bot, where there is a desk to raise it on (glue/bots+support.sql)
 CREATE OR REPLACE FUNCTION "public"."agent_raise_ticket"(
       "p_run" "uuid", "p_title" "text", "p_body" "text" DEFAULT NULL::"text",
       "p_priority" "text" DEFAULT 'normal'::"text") RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare s jsonb; r public.agent_runs;
-begin
-  select * into r from public.agent_runs where id = p_run;
-  if not found then return jsonb_build_object('error', 'no such run'); end if;
-  s := public.agent_subject(p_run);
-  -- this run, this transaction, and nothing else: the opener admits it by name
-  perform set_config('app.bot_ticket', '1', true);
-  return public.support_ticket_open(
-    p_title => p_title,
-    p_body => p_body,
-    p_contact => (s->>'contact_id')::uuid,
-    p_priority => p_priority,
-    p_category => null,
-    -- the thread it came out of, so the desk can see where it started
-    p_conversation => case when r.surface = 'support' then r.conversation_id else null end,
-    p_assign => null);
-end;
-$$;
+    LANGUAGE "sql" VOLATILE
+    AS $$ select jsonb_build_object('error', 'no-desk') $$;
 
 REVOKE ALL ON FUNCTION "public"."agent_raise_ticket"("uuid", "text", "text", "text") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."agent_raise_ticket"("uuid", "text", "text", "text") FROM "anon", "authenticated";
@@ -795,7 +722,6 @@ REVOKE ALL ON FUNCTION "public"."agent_recall"("uuid", integer) FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."agent_recall"("uuid", integer) FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."agent_recall"("uuid", integer) TO "service_role";
 
-
 -- ---------------------------------------------------------------------------------------------
 -- A BOT SEES ONLY WHAT THAT PERSON'S OWN SCREEN COULD SHOW THEM.
 --
@@ -840,6 +766,12 @@ $$;
 -- What somebody has bought, for themselves. The reader's own question, which had no function of its
 -- own because a client reads these tables directly under RLS; a bot cannot, so here it is, written
 -- once for both. No argument: it is always and only about whoever is asking.
+-- what has been sent, where there is a store to have sent it (glue/bots+store.sql); nothing otherwise
+CREATE OR REPLACE FUNCTION "public"."my_parcels"() RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
+REVOKE ALL ON FUNCTION "public"."my_parcels"() FROM PUBLIC, "anon", "authenticated";
+
 CREATE OR REPLACE FUNCTION "public"."my_orders"() RETURNS "jsonb"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -851,12 +783,7 @@ CREATE OR REPLACE FUNCTION "public"."my_orders"() RETURNS "jsonb"
                'variant', p.variant) order by p.created_at desc)
         from (select * from public.purchases where user_id = auth.uid()
                order by created_at desc limit 20) p), '[]'::jsonb),
-    'parcels', coalesce((
-      select jsonb_agg(jsonb_build_object('book', o.chosen ->> 'book', 'format', o.chosen ->> 'format', 'contents', o.chosen ->> 'contents',
-               'status', o.status, 'supplier_status', o.supplier_status, 'tracking', o.tracking,
-               'created_at', o.created_at) order by o.created_at desc)
-        from (select * from public.fulfilments where user_id = auth.uid()
-               order by created_at desc limit 20) o), '[]'::jsonb)) end;
+    'parcels', public.my_parcels()) end;
 $$;
 REVOKE ALL ON FUNCTION "public"."my_orders"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."my_orders"() FROM "anon", "authenticated";
@@ -884,26 +811,20 @@ $$;
 
 -- A guest has no account to become, and their tickets hang off a contact rather than a user, so
 -- that one case is answered here — filtered to the single contact the run is about and nothing else.
+-- a subject's tickets, where there is a desk (glue/bots+support.sql); none otherwise
 CREATE OR REPLACE FUNCTION "public"."agent_tickets"("p_run" "uuid") RETURNS "jsonb"
-    LANGUAGE "plpgsql" VOLATILE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare s jsonb; k uuid;
-begin
-  s := public.agent_subject(p_run);
-  k := (s->>'contact_id')::uuid;
-  if (s->>'user_id') is null then
-    if k is null then return null; end if;
-    return coalesce((
-      select jsonb_agg(jsonb_build_object('ref', t.ref, 'title', t.title, 'status', t.status,
-               'created_at', t.created_at, 'last_at', t.last_at) order by t.last_at desc)
-        from (select * from public.support_tickets where contact_id = k
-               order by last_at desc limit 20) t), '[]'::jsonb);
-  end if;
-  perform public.agent_become(p_run);
-  return coalesce(public.support_tickets_mine(), '[]'::jsonb);
-end;
-$$;
+    LANGUAGE "sql" VOLATILE
+    AS $$ select '[]'::jsonb $$;
+REVOKE ALL ON FUNCTION "public"."agent_orders"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."agent_orders"("uuid") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."agent_orders"("uuid") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."agent_membership"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."agent_membership"("uuid") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."agent_membership"("uuid") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."agent_tickets"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."agent_tickets"("uuid") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."agent_tickets"("uuid") TO "service_role";
+
 
 REVOKE ALL ON FUNCTION "public"."agent_become"("uuid") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."agent_become"("uuid") FROM "anon", "authenticated";
@@ -925,55 +846,34 @@ GRANT EXECUTE ON FUNCTION "public"."agent_become"("uuid") TO "service_role";
 --
 -- Which lines, by the same rule the surface draws: in a thread the thread (root_id differs from the
 -- channel), otherwise the channel. Newest last, capped.
+-- the surface's own lines: each surface's transcript is read in the glue it shares with the bots
+-- (glue/bots+spaces.sql, glue/bots+support.sql, glue/bots+coaching.sql), and answers nothing where it is off
+CREATE OR REPLACE FUNCTION "public"."agent_transcript_spaces"("p_run" "uuid", "p_limit" integer) RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
+CREATE OR REPLACE FUNCTION "public"."agent_transcript_support"("p_run" "uuid", "p_limit" integer) RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
+CREATE OR REPLACE FUNCTION "public"."agent_transcript_coaching"("p_run" "uuid", "p_limit" integer) RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
+REVOKE ALL ON FUNCTION "public"."agent_transcript_spaces"("uuid", integer) FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."agent_transcript_support"("uuid", integer) FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."agent_transcript_coaching"("uuid", integer) FROM PUBLIC, "anon", "authenticated";
+
 CREATE OR REPLACE FUNCTION "public"."agent_transcript"("p_run" "uuid", "p_limit" integer DEFAULT 60) RETURNS "jsonb"
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-declare r public.agent_runs; n int := greatest(1, least(coalesce(p_limit, 60), 200)); inthread boolean;
+declare r public.agent_runs; n int := greatest(1, least(coalesce(p_limit, 60), 200));
 begin
   select * into r from public.agent_runs where id = p_run;
   if not found then return '[]'::jsonb; end if;
-
-  if r.surface = 'spaces' and r.channel_id is not null then
-    inthread := r.root_id is not null and r.root_id is distinct from r.channel_id;
-    return coalesce((
-      select jsonb_agg(jsonb_build_object(
-               'kind', m.kind, 'body', m.body, 'title', m.title, 'meta', m.meta,
-               'attachment_name', m.attachment_name,
-               'deleted_at', m.deleted_at, 'author_id', m.author_id,
-               'name', coalesce(nullif(p.display_name, ''), split_part(coalesce(p.email, ''), '@', 1)))
-             order by m.created_at)
-        from (select * from public.space_messages x
-               where x.channel_id = r.channel_id
-                 and (case when inthread
-                           then x.id = r.root_id or x.thread_root_id = r.root_id
-                           else x.thread_root_id is null end)
-               order by x.created_at desc limit n) m
-        left join public.profiles p on p.id = m.author_id), '[]'::jsonb);
-  end if;
-
-  if r.surface = 'support' and r.conversation_id is not null then
-    return coalesce((
-      select jsonb_agg(jsonb_build_object(
-               'kind', m.kind, 'body', m.body, 'meta', jsonb_build_object(),
-               'attachment_name', m.attachment_name, 'deleted_at', m.deleted_at,
-               'mine', m.author = 'agent') order by m.created_at)
-        from (select * from public.support_messages x
-               where x.conversation_id = r.conversation_id
-               order by x.created_at desc limit n) m), '[]'::jsonb);
-  end if;
-
-  if r.surface = 'coaching' and r.conversation_id is not null then
-    return coalesce((
-      select jsonb_agg(jsonb_build_object(
-               'kind', m.kind, 'body', m.body, 'meta', jsonb_build_object(),
-               'deleted_at', m.deleted_at, 'mine', m.sender_id = r.asked_by) order by m.created_at)
-        from (select * from public.messages x
-               where x.conversation_id = r.conversation_id
-               order by x.created_at desc limit n) m), '[]'::jsonb);
-  end if;
-
-  return '[]'::jsonb;
+  return case r.surface
+    when 'spaces' then public.agent_transcript_spaces(p_run, n)
+    when 'support' then public.agent_transcript_support(p_run, n)
+    when 'coaching' then public.agent_transcript_coaching(p_run, n)
+    else '[]'::jsonb end;
 end;
 $$;
 
@@ -1012,8 +912,7 @@ begin
   if not public.agents_live() then return 0; end if;
 
   -- somebody who asked for a person gets a person
-  if exists (select 1 from public.support_conversations c
-              where c.id = p_conversation and c.bot_off_at is not null) then return 0; end if;
+  if p_surface = 'support' and public.agent_support_state(p_conversation) ->> 'human' = 'true' then return 0; end if;
 
   subj := public.agent_subject_of(p_surface, p_conversation, null);
   su := (subj->>'user_id')::uuid;
@@ -1029,8 +928,7 @@ begin
     -- wherever it is offered; it hears ordinary messages (support-message) only once somebody has
     -- chosen it, which is what makes the choice stick instead of asking them to press every time.
     if p_event = 'support-message' and b.offer = 'ask'
-       and not exists (select 1 from public.support_conversations c
-                        where c.id = p_conversation and c.bot_at is not null) then
+       and coalesce(public.agent_support_state(p_conversation) ->> 'chosen', 'false') <> 'true' then
       continue;
     end if;
 
@@ -1069,67 +967,6 @@ $$;
 REVOKE ALL ON FUNCTION "public"."agent_hear"("text", "text", "uuid", "uuid", "text") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."agent_hear"("text", "text", "uuid", "uuid", "text") FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."agent_hear"("text", "text", "uuid", "uuid", "text") TO "service_role";
-
--- A contact writing in is the event. Never an agent's own line, and never a system line, or a bot
--- would answer itself.
-CREATE OR REPLACE FUNCTION "public"."agent_hear_support"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-begin
-  if new.author <> 'contact' then return null; end if;
-  perform public.agent_hear('support-message', 'support', new.conversation_id, null, null);
-  return null;
-end;
-$$;
-
-DROP TRIGGER IF EXISTS "trg_agent_hear_support" ON "public"."support_messages";
-CREATE TRIGGER "trg_agent_hear_support" AFTER INSERT ON "public"."support_messages"
-  FOR EACH ROW EXECUTE FUNCTION "public"."agent_hear_support"();
-
--- ---------------------------------------------------------------------------------------------
--- A BOT NAMED IN A ROOM IS BEING ASKED SOMETHING — and it is the MESSAGE that asks, not the client
--- that wrote it.
---
--- This used to be the browser's job: SpacesPage saw a mention in what it had just sent and called
--- agent_summon. That works for exactly one client. A line written by anything else — the Matrix
--- surface, a bridge, a script holding a key, a second client of the site's own — landed as a
--- perfectly good row that no bot ever heard, and nothing anywhere said so. The desk never had the
--- problem because the desk has always had a trigger.
---
--- So the summon happens where the row happens. Nothing about WHO may is changed: agent_summon
--- makes every one of its own refusals — the bot must be published, live, offered on this surface,
--- its audience must admit this person, and they must be able to read the room — and this only
--- decides WHERE the asking is noticed. The browser stops asking in the same change: two paths
--- that both summon would summon twice, which is worse than not answering.
---
--- Only a mention in a PERSON'S line. A bot's own answer is a system line, and a bot that heard
--- itself would talk to itself for as long as its budget lasted.
--- ---------------------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION "public"."agent_hear_mention"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare slug text;
-begin
-  if new.author_id is null or new.kind = 'system' or new.deleted_at is not null then return null; end if;
-  -- the first bot named, and only the first: naming three bots is not asking three
-  slug := substring(coalesce(new.body, '') from '<@bot:([a-z0-9-]{1,60})>');
-  if slug is null then return null; end if;
-  -- summoned AS THE AUTHOR, so every refusal agent_summon makes is made about them and not about
-  -- whatever wrote the row. The result is discarded on purpose: a bot that may not be summoned
-  -- here is not an error in somebody's message.
-  perform public.agent_summon(
-    slug, 'spaces', new.channel_id, null,
-    coalesce(new.thread_root_id, new.id),
-    public.space_plain_body(coalesce(new.body, '')), null, null, null);
-  return null;
-end;
-$$;
-
-DROP TRIGGER IF EXISTS "trg_agent_hear_mention" ON "public"."space_messages";
-CREATE TRIGGER "trg_agent_hear_mention" AFTER INSERT ON "public"."space_messages"
-  FOR EACH ROW EXECUTE FUNCTION "public"."agent_hear_mention"();
 
 -- the words a bot is asked, with the mention tokens taken out: it is being asked a question, not
 -- handed the room's markup. The same rule the browser applied before this moved.
@@ -1183,26 +1020,8 @@ GRANT EXECUTE ON FUNCTION "public"."agent_permits"("uuid", "jsonb") TO "service_
 -- you cannot get away from is a bad bot, and every one of these has an escape by construction
 -- rather than by a prompt asking it nicely to hand over.
 
-CREATE OR REPLACE FUNCTION "public"."support_want_human"("p_conversation" "uuid") RETURNS "jsonb"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-begin
-  update public.support_conversations
-     set bot_off_at = coalesce(bot_off_at, now()),
-         status = case when status = 'resolved' then 'open' else status end
-   where id = p_conversation;
-  if not found then return jsonb_build_object('error', 'gone'); end if;
-  -- a bot already thinking is called off: the answer it was writing is not wanted
-  update public.agent_runs set cancel_at = now()
-   where conversation_id = p_conversation and status in ('queued', 'running') and cancel_at is null;
-  return jsonb_build_object('ok', true);
-end;
-$$;
 
-REVOKE ALL ON FUNCTION "public"."support_want_human"("uuid") FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."support_want_human"("uuid") FROM "anon", "authenticated";
-GRANT EXECUTE ON FUNCTION "public"."support_want_human"("uuid") TO "service_role";
+
 
 -- ---------------------------------------------------------------------------------------------
 -- IS THERE ANYWHERE TO BUY A THOUGHT?
@@ -1230,7 +1049,7 @@ GRANT EXECUTE ON FUNCTION "public"."agents_live"() TO "anon", "authenticated", "
 
 DROP POLICY IF EXISTS "bots_select" ON "public"."bots";
 CREATE POLICY "bots_select" ON "public"."bots" FOR SELECT TO "authenticated", "anon"
-  USING (("published" = true) AND "public"."agents_live"() AND "public"."event_for_me"("audience"));
+  USING (("published" = true) AND "public"."agents_live"() AND "public"."audience_for_me"("audience"));
 
 -- WHICH RUNG THE PERSON A RUN IS FOR STANDS ON — the same ladder _shared/access.js defines, read
 -- from the subject's entitlements. A run with nobody behind it is a guest, which is the safe end.

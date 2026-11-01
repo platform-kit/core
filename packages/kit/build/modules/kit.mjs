@@ -9,6 +9,11 @@
  *
  * `owns.env` is filled as deploy-checks' per-module needs move here (task 2.2). An empty list
  * means "not moved yet", never "asks for nothing".
+ *
+ * `owns.schema` and `owns.functions` are the whole of a module's backend, and switching it off leaves none of it
+ * in the site's assembled supabase/ tree (openspec: module-switch-removes-backend). What every site has is `core`,
+ * and what joins two modules is glue owned by both — both in build/modules/backend.mjs, which the manifests check
+ * holds the tree to: a schema file or a function nobody owns is refused by name.
  */
 export const MODULES = [
   {
@@ -49,10 +54,10 @@ export const MODULES = [
     static: false, git: true, cloud: true,
     owns: {
       steps: ['sales'],
+      schema: ['41-inventory.sql', '42-promotions.sql', '43-orders.sql'],
       functions: ['usage-meter-report', 'usage-topup'],
       cron: [
         { name: 'stock-holds', schedule: '*/20 * * * *', command: 'select public.inventory_sweep()' },
-        { name: 'payouts-sweep', schedule: '15 * * * *', command: 'select public.payouts_sweep()' },
         { name: 'usage-meter-reports', schedule: '*/5 * * * *', command: 'select public.run_usage_meter_reports()' },
       ],
       env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PUBLISHABLE_KEY'],
@@ -62,7 +67,7 @@ export const MODULES = [
     key: 'memberships', what: 'tiers, the billing portal', needs: 'there is nowhere to keep a membership',
     static: false, git: true, cloud: true,
     owns: {
-      functions: ['hyperswitch-subscription-renewal'],
+      functions: ['hyperswitch-subscription-renewal', 'create-portal-session'],
       cron: [
         { name: 'hyperswitch-subscription-renewal', schedule: '*/15 * * * *', command: 'select public.run_hyperswitch_subscription_renewal()' },
       ],
@@ -74,7 +79,12 @@ export const MODULES = [
     static: false, git: true, cloud: true,
     owns: {
       steps: ['teams', 'teams-push'],
+      schema: ['55-sessions.sql', '56-teams.sql', '57-providers.sql'],
+      functions: ['book-session', 'cal-webhook', 'cancel-session', 'coach-hours', 'livekit-webhook', 'payouts', 'providers',
+        'scheduling-api', 'session-files', 'session-recordings', 'session-reminders', 'session-room', 'session-slots'],
       cron: [
+        /* the providers' ledger (57-providers.sql) paid out, hourly */
+        { name: 'payouts-sweep', schedule: '15 * * * *', command: 'select public.payouts_sweep()' },
         { name: 'session-recordings', schedule: '*/10 * * * *', command: 'select public.run_session_recordings()' },
         { name: 'session-recordings-retain', schedule: '40 4 * * *', command: 'select public.run_session_recordings_retain()' },
         { name: 'session-reminders', schedule: '*/5 * * * *', command: 'select public.run_session_reminders()' },
@@ -86,6 +96,7 @@ export const MODULES = [
     key: 'coaching', what: 'the members\' chat with the coaches', needs: 'there is nowhere to keep a message',
     static: false, git: true, cloud: true,
     owns: {
+      schema: ['50-chat.sql'], functions: ['chat-notify'],
       cron: [{ name: 'chat-followups', schedule: '* * * * *', command: 'select public.send_booking_followups()' }],
       env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'],
     },
@@ -95,6 +106,7 @@ export const MODULES = [
     static: false, git: true, cloud: true,
     owns: {
       steps: ['support-sdk'],
+      schema: ['70-support.sql', '72-tickets.sql'], functions: ['support', 'support-api'],
       cron: [
         { name: 'support-escalate', schedule: '*/5 * * * *', command: 'select public.run_support_escalation()' },
         { name: 'support-retain', schedule: '20 4 * * *', command: 'select public.run_support_retention()' },
@@ -123,7 +135,7 @@ export const MODULES = [
        answers for the three shapes with it. It needs a backend for the same reason spaces does,
        and additionally the api module, which gates every other door the same way. */
     owns: {
-      steps: ['spaces', 'spaces-push'], functions: ['matrix-api'], schema: ['91-matrix.sql'],
+      steps: ['spaces', 'spaces-push'], functions: ['spaces', 'matrix-api'], schema: ['90-spaces.sql', '91-matrix.sql', '98-community.sql'],
       cron: [
         { name: 'spaces-later', schedule: '* * * * *', command: 'select public.run_space_scheduled();' },
         { name: 'spaces-sweep', schedule: '23 * * * *', command: 'select public.run_spaces_sweep();' },
@@ -172,9 +184,12 @@ export const MODULES = [
   },
   {
     key: 'events', what: 'what is on, and who says they are coming', needs: 'there is nowhere to keep who is coming',
+    /* an event's audience and its place's entry rule are the community's, and an event happens in a space or beside one */
+    requires: [{ module: 'spaces', why: 'an event is the community\u2019s: its place, its rooms and its audience are the spaces\u2019' }],
     static: false, git: true, cloud: true,
     owns: {
       steps: ['events', 'events-push'],
+      schema: ['95-events.sql'], functions: ['event-reminders'],
       cron: [{ name: 'event-reminders', schedule: '*/5 * * * *', command: 'select public.run_event_reminders()' }],
     },
   },
@@ -198,13 +213,14 @@ export const MODULES = [
   {
     key: 'forms', what: 'the builder, /form/<slug>, the responses', needs: 'there is nowhere to keep a response',
     static: false, git: true, cloud: true,
-    owns: { steps: ['form-embed', 'forms'] },
+    owns: { steps: ['form-embed', 'forms'], schema: ['25-forms.sql'], functions: ['form', 'forms-api'] },
   },
   {
     key: 'funnels', what: 'funnels, blasts, audiences, the runner', needs: 'there is nobody to send to and nowhere to record it',
     static: false, git: true, cloud: true,
     owns: {
       steps: ['funnels-run', 'funnels'],
+      schema: ['60-emails.sql'], functions: ['email-blast', 'email-track', 'email-unsubscribe', 'funnels-run'],
       cron: [{ name: 'email-funnels', schedule: '7 * * * *', command: 'select public.run_email_funnels()' }],
       env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'],
     },
@@ -212,12 +228,12 @@ export const MODULES = [
   {
     key: 'emails', what: 'the designs and the send function', needs: 'there is nothing to send with',
     static: false, git: true, cloud: true,
-    owns: { steps: ['emails'], env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'], },
+    owns: { steps: ['emails'], functions: ['send-email'], env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'], },
   },
   {
     key: 'push', what: 'web push to the staff', needs: 'there is nothing to send a notification from',
     static: false, git: true, cloud: true,
-    owns: { env: ['VAPID_PRIVATE_KEY', 'VAPID_SUBJECT', 'VITE_VAPID_PUBLIC_KEY'], },
+    owns: { schema: ['80-push.sql'], functions: ['push'], env: ['VAPID_PRIVATE_KEY', 'VAPID_SUBJECT', 'VITE_VAPID_PUBLIC_KEY'], },
   },
   {
     key: 'models', what: 'content models and their entries', needs: 'an entry is edited through the admin, which needs a backend',
@@ -228,6 +244,7 @@ export const MODULES = [
     key: 'api', what: 'the content API', needs: 'the API is Edge Functions',
     static: false, git: true, cloud: true,
     owns: {
+      schema: ['85-api.sql'],
       cron: [
         { name: 'content-push', schedule: '* * * * *', command: 'select public.run_content_push()' },
         { name: 'sweep-uploads', schedule: '50 4 * * *', command: 'select public.sweep_uploads()' },
@@ -239,6 +256,7 @@ export const MODULES = [
     static: false, git: true, cloud: true,
     owns: {
       steps: ['bots', 'bots-push'],
+      schema: ['96-agents.sql'], functions: ['agent-run'],
       cron: [
         { name: 'agents-sweep', schedule: '* * * * *', command: 'select public.run_agents();' },
         { name: 'agents-schedule', schedule: '*/5 * * * *', command: 'select public.run_agent_schedules();' },
@@ -269,7 +287,7 @@ export const MODULES = [
        DEPENDENT declares it, so forms need not know who uses it. */
     requires: [{ module: 'forms', why: 'the instrument runs on the forms module\u2019s runner \u2014 one without the other cannot serve' }],
     static: false, git: true, cloud: true,
-    owns: {},
+    owns: { schema: ['20-instrument.sql'] },
   },
   {
     key: 'recommendations', what: 'Recommended For You, and the recommendations tab', needs: 'it is derived from what an account has read and bought',
@@ -299,7 +317,7 @@ export const MODULES = [
     static: false, git: true, cloud: true,
     owns: { steps: ['lulu-webhook', 'print-type', 'print'], env: ['LULU_CLIENT_KEY', 'LULU_CLIENT_SECRET', 'MIXAM_USER', 'MIXAM_PASS', 'BOOKVAULT_API_KEY', 'PRINT_MOCK'],
       /* a set is a job that outlives its request: the rows, their lease, and the sweep that picks up a lapsed one */
-      schema: ['44-print-jobs.sql'],
+      schema: ['44-print-jobs.sql'], functions: ['book-files', 'lulu-webhook', 'print-order', 'print-render', 'print-webhook'],
       cron: [{ name: 'print-jobs', schedule: '* * * * *', command: 'select public.run_print_jobs();' }], },
   },
   /*

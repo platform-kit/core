@@ -2,8 +2,13 @@
 title: Votes and reactions
 description: Two ways of answering something without writing a reply — an emoji and a judgement — for a comment and for a message in a room, from one pair of tables and one rule.
 order: 56.6
-sources: [packages/kit/supabase/schemas/99-reactions.sql, packages/kit/src/lib/comments/model.js, packages/kit/build/reactions.test.mjs]
-reviewed: 2026-09-26
+sources:
+  [
+    packages/kit/supabase/schemas/99-reactions.sql,
+    packages/kit/src/lib/comments/model.js,
+    packages/kit/build/reactions.test.mjs,
+  ]
+reviewed: 2026-10-31
 ---
 
 A **reaction** is expressive: an emoji, several per person, saying how something landed. A **vote**
@@ -38,7 +43,9 @@ from the site's comment policy.
 `signal_takes(surface, target, what)` is that question, and `signal_may(surface, target, what)` is
 whether this person may — which is the same standing as saying something there. Somebody who may not
 comment may not vote; somebody who cannot read a channel cannot react in it; nobody with no account
-can do either, because a vote from nobody is not a signal.
+can do either, because a vote from nobody is not a signal. A message is a space's, so what a message allows is
+asked of `signal_message`, which answers no where the spaces module is off and is declared again in the glue spaces
+shares with every site (`glue/core+spaces.sql`).
 
 ## Changing your mind is the same row
 
@@ -52,15 +59,15 @@ write comes back.
 **Oldest first stays the default**, so turning voting on changes nothing about how a page reads
 until somebody asks it to. Where a surface takes votes, somebody may choose:
 
-| order | what it does |
-| --- | --- |
-| **oldest** | as written — a conversation read in the order it happened |
-| **newest** | most recent first |
-| **top** | the highest score: ups less downs |
-| **best** | the most confidently liked |
-| **controversial** | the most argued over: many votes, close to even |
+| order             | what it does                                              |
+| ----------------- | --------------------------------------------------------- |
+| **oldest**        | as written — a conversation read in the order it happened |
+| **newest**        | most recent first                                         |
+| **top**           | the highest score: ups less downs                         |
+| **best**          | the most confidently liked                                |
+| **controversial** | the most argued over: many votes, close to even           |
 
-Where a surface takes no votes only *oldest* and *newest* are offered: an order nothing can compute
+Where a surface takes no votes only _oldest_ and _newest_ are offered: an order nothing can compute
 is not a choice. The person's own order is theirs, is remembered, and never changes what anybody
 else sees.
 

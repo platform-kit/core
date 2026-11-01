@@ -131,51 +131,29 @@ REVOKE ALL ON FUNCTION "public"."cover_choices"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."cover_choices"() FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."cover_choices"() TO "authenticated", "service_role";
 
+-- WHAT A HOST SAYS TO THE PERSON THEY BOOKED WITH is said in the members' chat — the coaching module's, which may be
+-- off. Declared here saying nothing (a refusal then carries its reason on the booking alone), and again, writing the
+-- line into their conversation, in the glue the two modules share (glue/coaching+sessions.sql)
+-- (openspec: module-switch-removes-backend).
+CREATE OR REPLACE FUNCTION "public"."booking_tell"("p_to" "uuid", "p_from" "uuid", "p_body" "text") RETURNS boolean
+    LANGUAGE "sql" VOLATILE
+    AS $$ select false $$;
+REVOKE ALL ON FUNCTION "public"."booking_tell"("uuid", "uuid", "text") FROM PUBLIC, "anon", "authenticated";
+
 CREATE OR REPLACE FUNCTION "public"."refuse_booking"("p_uid" "text", "p_reason" "text", "p_body" "text") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
 declare
-  b record; cid uuid;
+  b record;
 begin
   select uid, provider_id, user_id into b from public.bookings where uid = p_uid;
   if b.uid is null then return false; end if;
   update public.bookings set status = 'cancelled', refused = p_reason, updated_at = now() where uid = p_uid;
   if b.provider_id is not null and b.user_id is not null and p_body is not null and p_body <> '' then
-    cid := public.conversation_between(b.user_id, b.provider_id);
-    insert into public.messages (conversation_id, sender_id, kind, body) values (cid, b.provider_id, 'text', p_body);
-    return true;
+    return public.booking_tell(b.user_id, b.provider_id, p_body);
   end if;
   return false;
-end;
-$$;
-
-CREATE OR REPLACE FUNCTION "public"."send_booking_followups"() RETURNS integer
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-declare
-  b record; who record; cid uuid; sent integer := 0;
-begin
-  for b in
-    select uid, provider_id, user_id, attendee_emails, followup_body
-    from public.bookings
-    where followup_sent_at is null and followup_at is not null and followup_at <= now()
-      and provider_id is not null and followup_body is not null
-    for update skip locked
-  loop
-    for who in
-      select distinct p.id from public.profiles p
-      where p.id <> b.provider_id
-        and (p.id = b.user_id or lower(coalesce(p.email, '')) = any (b.attendee_emails))
-    loop
-      cid := public.conversation_between(who.id, b.provider_id);
-      insert into public.messages (conversation_id, sender_id, kind, body) values (cid, b.provider_id, 'text', b.followup_body);
-      sent := sent + 1;
-    end loop;
-    update public.bookings set followup_sent_at = now() where uid = b.uid;
-  end loop;
-  return sent;
 end;
 $$;
 
@@ -277,7 +255,6 @@ begin
 end;
 $$;
 
-
 -- a call's recording (session-recordings): every ten minutes the pending pulls, nightly the keep — both posted to the
 -- function with the service key, like the support desk's clocks
 CREATE OR REPLACE FUNCTION "public"."run_session_recordings"() RETURNS "void"
@@ -355,10 +332,6 @@ CREATE INDEX "bookings_user_idx" ON "public"."bookings" USING "btree" ("user_id"
 
 ALTER TABLE ONLY "public"."bookings"
     ADD CONSTRAINT "bookings_provider_id_fkey" FOREIGN KEY ("provider_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
--- the response is the booking's, and goes with it; a response deleted on its own simply leaves the
--- booking with nothing to show, which is better than refusing to delete either
-ALTER TABLE ONLY "public"."bookings"
-    ADD CONSTRAINT "bookings_response_fkey" FOREIGN KEY ("response_id") REFERENCES "public"."form_responses"("id") ON DELETE SET NULL;
 
 ALTER TABLE ONLY "public"."bookings"
     ADD CONSTRAINT "bookings_credit_id_fkey" FOREIGN KEY ("credit_id") REFERENCES "public"."entitlements"("id") ON DELETE SET NULL;
@@ -407,10 +380,6 @@ REVOKE ALL ON FUNCTION "public"."refuse_booking"("p_uid" "text", "p_reason" "tex
 REVOKE ALL ON FUNCTION "public"."refuse_booking"("p_uid" "text", "p_reason" "text", "p_body" "text") FROM "anon", "authenticated";
 GRANT ALL ON FUNCTION "public"."refuse_booking"("p_uid" "text", "p_reason" "text", "p_body" "text") TO "service_role";
 
-REVOKE ALL ON FUNCTION "public"."send_booking_followups"() FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."send_booking_followups"() FROM "anon", "authenticated";
-GRANT ALL ON FUNCTION "public"."send_booking_followups"() TO "service_role";
-
 -- the schedule's (pg_cron, as the owner): it posts to a function with the service secret, so a visitor calling it would run the job
 REVOKE ALL ON FUNCTION "public"."run_session_recordings"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."run_session_recordings"() FROM "anon", "authenticated";
@@ -448,7 +417,6 @@ GRANT ALL ON TABLE "public"."bookings" TO "service_role";
 GRANT ALL ON TABLE "public"."sessions" TO "service_role";
 
 REVOKE ALL ON FUNCTION "public"."refuse_booking"("text", "text", "text") FROM PUBLIC, "anon", "authenticated";
-REVOKE ALL ON FUNCTION "public"."send_booking_followups"() FROM PUBLIC, "anon", "authenticated";
 REVOKE ALL ON TABLE "public"."sessions" FROM "anon", "authenticated";
 
 ALTER PUBLICATION "supabase_realtime" ADD TABLE "public"."bookings";
@@ -655,3 +623,24 @@ GRANT EXECUTE ON FUNCTION "public"."booking_release"("text") TO "service_role";
 REVOKE ALL ON FUNCTION "public"."booking_hold_move"("text", timestamp with time zone, timestamp with time zone) FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."booking_hold_move"("text", timestamp with time zone, timestamp with time zone) FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."booking_hold_move"("text", timestamp with time zone, timestamp with time zone) TO "service_role";
+
+-- BOOKED A SESSION, for an audience rule naming a booking type (14-audience.sql declares it answering false, for a
+-- site without sessions). A booking of that type belonging to this person that was neither cancelled nor refused:
+-- `within_last` matches one that has ENDED inside the span, `within_next` one that STARTS inside it. With neither,
+-- any such booking ever. A cancelled booking is not a booking, which is why `refused` and the status are both asked.
+CREATE OR REPLACE FUNCTION "public"."space_fill_booking"("p_user" "uuid", "p_set" "jsonb") RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  select exists (
+    select 1 from public.bookings b
+     where b.user_id = p_user
+       and coalesce(b.type, b.event) = any(public.space_fill_values(p_set, 'booking'))
+       and b.status = 'accepted' and b.refused is null
+       and (not (p_set ? 'within_last')
+            or (b.end_at is not null and b.end_at <= now()
+                and b.end_at > now() - make_interval(mins => (p_set ->> 'within_last')::int)))
+       and (not (p_set ? 'within_next')
+            or (b.start_at is not null and b.start_at >= now()
+                and b.start_at < now() + make_interval(mins => (p_set ->> 'within_next')::int))));
+$$;

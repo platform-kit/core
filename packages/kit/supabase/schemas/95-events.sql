@@ -106,10 +106,6 @@ ALTER TABLE ONLY "public"."calendar_occurrences" ADD CONSTRAINT "calendar_occurr
 ALTER TABLE ONLY "public"."calendar_occurrences" ADD CONSTRAINT "calendar_occurrences_once" UNIQUE ("event_id", "starts_at");
 ALTER TABLE ONLY "public"."calendar_rsvps" ADD CONSTRAINT "calendar_rsvps_pkey" PRIMARY KEY ("occurrence_id", "user_id");
 
-ALTER TABLE ONLY "public"."calendar_events"
-    ADD CONSTRAINT "calendar_events_space_id_fkey" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE CASCADE;
-ALTER TABLE ONLY "public"."calendar_events"
-    ADD CONSTRAINT "calendar_events_channel_id_fkey" FOREIGN KEY ("channel_id") REFERENCES "public"."channels"("id") ON DELETE SET NULL;
 ALTER TABLE ONLY "public"."calendar_occurrences"
     ADD CONSTRAINT "calendar_occurrences_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "public"."calendar_events"("id") ON DELETE CASCADE;
 ALTER TABLE ONLY "public"."calendar_rsvps"
@@ -125,27 +121,15 @@ ALTER TABLE ONLY "public"."calendar_occurrences" REPLICA IDENTITY FULL;
 ALTER TABLE ONLY "public"."calendar_rsvps" REPLICA IDENTITY FULL;
 
 -- ---------------------------------------------------------------------------------------------
--- WHO IT IS FOR. The same predicate a space's membership is filled by, asked of one audience:
--- a list of ways in, any one of which is enough. An empty audience is everybody.
+-- WHO IT IS FOR. The audience grammar every module shares (audience_for_me, 14-audience.sql): a list of ways
+-- in, any one of which is enough, an empty audience everybody, the staff always in. And before any audience, the
+-- Events place may carry an entry rule of its own (community.access.events).
 
 CREATE OR REPLACE FUNCTION "public"."event_for_me"("p_audience" "jsonb") RETURNS boolean
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-  select case
-    -- the Events place may carry an entry rule of its own (community.access.events), before any audience
-    when not public.community_admitted('events') then false
-    when coalesce(jsonb_array_length(coalesce(p_audience, '[]'::jsonb)), 0) = 0 then true
-    when auth.uid() is null then false
-    -- WHOEVER RUNS THE PLACE SEES WHAT IS ON IN IT. An audience says who an event is FOR; it was
-    -- never meant to hide the calendar from the people arranging it, and a community home that is
-    -- empty for its own staff is a community home nobody on the staff ever opens. The same escape
-    -- the capabilities have (space_may), for the same reason.
-    when public.is_staff() then true
-    else exists (
-      select 1 from jsonb_array_elements(p_audience) one
-       where public.space_fill_matches(auth.uid(), one))
-  end;
+  select public.community_admitted('events') and public.audience_for_me(p_audience);
 $$;
 
 -- ---------------------------------------------------------------------------------------------
@@ -485,3 +469,26 @@ $$;
 REVOKE ALL ON FUNCTION "public"."event_reminders_due"(integer[], integer) FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."event_reminders_due"(integer[], integer) FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."event_reminders_due"(integer[], integer) TO "service_role";
+
+-- the events somebody said they are going to, from a day before each starts until it has been on an
+-- hour: the reminder, kept in the list. Its moment is when it came near (or when they said yes, if
+-- that was later), so it lands in the list as new once and stays where it fell.
+CREATE OR REPLACE FUNCTION "public"."events_soon_for_me"() RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  select coalesce(jsonb_agg(x order by x.at desc), '[]'::jsonb) from (
+    select o.id, e.slug, e.title, e.space_id, sp.name as space, sp.slug as space_slug, o.starts_at, e.place,
+           greatest(o.starts_at - interval '24 hours', r.created_at) as at
+    from public.calendar_rsvps r
+    join public.calendar_occurrences o on o.id = r.occurrence_id
+    join public.calendar_events e on e.id = o.event_id
+    left join public.spaces sp on sp.id = e.space_id
+    where r.user_id = auth.uid() and r.state = 'going'
+      and e.published and o.cancelled_at is null
+      and o.starts_at > now() - interval '1 hour'
+      and o.starts_at <= now() + interval '24 hours'
+      and (e.space_id is null or public.in_space(e.space_id))) x;
+$$;
+GRANT ALL ON FUNCTION "public"."events_soon_for_me"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."events_soon_for_me"() TO "service_role";

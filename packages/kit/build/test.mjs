@@ -264,6 +264,7 @@ const KIT_TESTS = [
   ['store-separation.test.mjs'],   /* and the store names no kind of thing — both ways, so deleting print's vocabulary fails too */
   ['destructive.test.mjs'],
   ['schema.test.mjs'],   /* the declaration's loop on a database of its own; skipped when Docker is down or SCHEMA_TEST=0 */
+  ['modules-off-db.test.mjs'],   /* every module off in turn, assembled and applied to a database of its own; the data kept, then dropped */
   ['policies.test.mjs'],   /* who may read what, on the local stack's seed: an administrator every order and booking, a reader their own; skipped when the stack is down or POLICY_TEST=0 */
   fs.existsSync(path.join(WORKSPACE_ROOT, 'sites', 'docs', 'content', 'docs')) && ['docs-check.mjs'],   /* the docs agree with the code (the reference pages exactly; every page's sources exist) */
 ].filter(Boolean)
@@ -281,7 +282,7 @@ const STACK_SOURCE = /from '\.\/test-stack\.mjs'|supabaseUrl\(\)|localStack\(\)/
 const needsStack = (file) => { try { return STACK_SOURCE.test(fs.readFileSync(file, 'utf8')) } catch { return false } }
 const E2E = process.argv.includes('--e2e')
 /* the checks that make databases of their own, which only the end-to-end run's Docker should be asked for */
-const E2E_ALSO = ['schema.test.mjs', 'cloud-lane.test.mjs', 'stripe-testmode.integration.mjs', 'stripe-usage-recovery.integration.mjs']
+const E2E_ALSO = ['schema.test.mjs', 'modules-off-db.test.mjs', 'cloud-lane.test.mjs', 'stripe-testmode.integration.mjs', 'stripe-usage-recovery.integration.mjs']
 
 if (E2E) {
   /* every stack check this site's modules switch on, the site's own among them; each runs whatever came before */
@@ -333,7 +334,7 @@ const run = (label, cmd, args) => {
 }
 console.log('\n══ lane: git — a checkout with a backend ══')
 /* the schema check makes and breaks a database of its own in Docker: the end-to-end run's, not this one's */
-for (const [f, ...args] of KIT_TESTS.filter(([f]) => f !== 'schema.test.mjs')) run(`kit: ${f}${args.length ? ' ' + args.join(' ') : ''}`, process.execPath, [KIT(f), ...args])
+for (const [f, ...args] of KIT_TESTS.filter(([f]) => f !== 'schema.test.mjs' && f !== 'modules-off-db.test.mjs')) run(`kit: ${f}${args.length ? ' ' + args.join(' ') : ''}`, process.execPath, [KIT(f), ...args])
 for (const t of (c.build && c.build.tests) || []) run(`site: ${t}`, process.execPath, [path.resolve(ROOT, t)])
 /* the adapters' Deno tests, run as Deno runs them (the functions are Deno's); test-coverage holds that every one is listed here */
 export const DENO_TESTS = ['stripe-payment-provider.test.ts', 'hyperswitch-payment-provider-adapter.test.ts']

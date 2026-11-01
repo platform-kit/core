@@ -20,30 +20,19 @@ $$;
 -- a paid session (a credit was spent on it) that is not cancelled opens the chat between its booker and
 -- its coach from the booking until a week after the session ends. A move re-dates it and a cancel ends
 -- it, because both change the booking. It is not a membership: nothing else asks it.
+-- answers false here; glue/coaching+sessions.sql declares it again, there while both modules are on
 CREATE OR REPLACE FUNCTION "public"."chat_session_with"("p_member" "uuid", "p_coach" "uuid") RETURNS boolean
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select p_member is not null and p_coach is not null and exists (
-    select 1 from public.bookings b
-     where b.user_id = p_member and b.provider_id = p_coach
-       and b.credit_id is not null and b.status = 'accepted'
-       and now() < coalesce(b.end_at, b.start_at) + interval '7 days');
-$$;
+    LANGUAGE "sql" STABLE
+    AS $$ select false $$;
 REVOKE ALL ON FUNCTION "public"."chat_session_with"("uuid", "uuid") FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."chat_session_with"("uuid", "uuid") FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."chat_session_with"("uuid", "uuid") TO "authenticated", "service_role";
 
 -- the coaches the caller has such a week with: what the client asks to know whether the chat is theirs
+-- answers '{}'::uuid[] here; glue/coaching+sessions.sql declares it again, there while both modules are on
 CREATE OR REPLACE FUNCTION "public"."chat_session_coaches"() RETURNS "uuid"[]
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select coalesce(array_agg(distinct b.provider_id), '{}'::uuid[]) from public.bookings b
-   where b.user_id = auth.uid() and b.provider_id is not null
-     and b.credit_id is not null and b.status = 'accepted'
-     and now() < coalesce(b.end_at, b.start_at) + interval '7 days';
-$$;
+    LANGUAGE "sql" STABLE
+    AS $$ select '{}'::uuid[] $$;
 REVOKE ALL ON FUNCTION "public"."chat_session_coaches"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."chat_session_coaches"() FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."chat_session_coaches"() TO "authenticated", "service_role";
@@ -502,3 +491,14 @@ CREATE POLICY "chat parties hear voice notes" ON "storage"."objects" FOR SELECT 
   and name ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}\.(mp3|png|jpg|jpeg|gif|webp|pdf|txt)$'
   and public.in_conversation(((storage.foldername(name))[1])::uuid)
 );
+
+-- answers 0 here; glue/coaching+sessions.sql declares it again, there while both modules are on
+CREATE OR REPLACE FUNCTION "public"."send_booking_followups"() RETURNS integer
+    LANGUAGE "sql" VOLATILE
+    AS $$ select 0 $$;
+
+REVOKE ALL ON FUNCTION "public"."send_booking_followups"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."send_booking_followups"() FROM "anon", "authenticated";
+GRANT ALL ON FUNCTION "public"."send_booking_followups"() TO "service_role";
+REVOKE ALL ON FUNCTION "public"."send_booking_followups"() FROM PUBLIC, "anon", "authenticated";
+

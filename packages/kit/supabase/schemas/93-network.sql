@@ -530,29 +530,6 @@ $$;
 DROP TRIGGER IF EXISTS "network_blocks_after" ON "public"."network_blocks";
 CREATE TRIGGER "network_blocks_after" AFTER INSERT ON "public"."network_blocks" FOR EACH ROW EXECUTE FUNCTION "public"."network_blocks_after"();
 
--- ---------------------------------------------------------------------------------------------
--- a space's feed, pinned to somebody's timeline
--- ---------------------------------------------------------------------------------------------
-
--- A member may pin a space they belong to; its feed channels then run through their timeline. The
--- pin is theirs; what they read through it is still the space's to decide (can_read_channel).
-CREATE TABLE IF NOT EXISTS "public"."network_pins" (
-    "user_id" "uuid" NOT NULL,
-    "space_id" "uuid" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-ALTER TABLE ONLY "public"."network_pins" ADD CONSTRAINT "network_pins_pkey" PRIMARY KEY ("user_id", "space_id");
-ALTER TABLE ONLY "public"."network_pins" ADD CONSTRAINT "network_pins_user_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-ALTER TABLE ONLY "public"."network_pins" ADD CONSTRAINT "network_pins_space_fkey" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE CASCADE;
-ALTER TABLE "public"."network_pins" ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "network_pins_own" ON "public"."network_pins";
-CREATE POLICY "network_pins_own" ON "public"."network_pins" FOR SELECT TO "authenticated" USING (("user_id" = "auth"."uid"()));
-DROP POLICY IF EXISTS "network_pins_write" ON "public"."network_pins";
-CREATE POLICY "network_pins_write" ON "public"."network_pins" FOR INSERT TO "authenticated" WITH CHECK ((("user_id" = "auth"."uid"()) AND "public"."in_space"("space_id") AND "public"."network_admitted"("auth"."uid"(), 'write')));
-DROP POLICY IF EXISTS "network_pins_delete" ON "public"."network_pins";
-CREATE POLICY "network_pins_delete" ON "public"."network_pins" FOR DELETE TO "authenticated" USING (("user_id" = "auth"."uid"()));
-GRANT SELECT, INSERT, DELETE ON TABLE "public"."network_pins" TO "authenticated";
-GRANT ALL ON TABLE "public"."network_pins" TO "service_role";
 
 -- ---------------------------------------------------------------------------------------------
 -- the reads
@@ -565,6 +542,16 @@ GRANT ALL ON TABLE "public"."network_pins" TO "service_role";
 -- filtering, so this adds no rule of its own). A reply shows only where the person it answers is
 -- also followed, or is the reader — a stranger's half of a conversation is noise. Muted people are
 -- left out. `p_before` pages backwards.
+-- THE SPACES IN THE TIMELINE are the spaces module's, which may be off: their feed posts — every space one is in, or
+-- the ones pinned — are read in the glue the network shares with the spaces (glue/network+spaces.sql), with the pins
+-- themselves and the spaces one may post to; nothing here (openspec: module-switch-removes-backend).
+CREATE OR REPLACE FUNCTION "public"."network_timeline_spaced"("p_before" timestamp with time zone, "p_limit" integer, "p_all_spaces" boolean) RETURNS TABLE("kind" "text", "post_id" "uuid", "message_id" "uuid", "reposted_by" "uuid", "at" timestamp with time zone)
+    LANGUAGE "sql" STABLE
+    AS $$ select null::text, null::uuid, null::uuid, null::uuid, null::timestamptz where false $$;
+REVOKE ALL ON FUNCTION "public"."network_timeline_spaced"(timestamp with time zone, integer, boolean) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."network_timeline_spaced"(timestamp with time zone, integer, boolean) FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."network_timeline_spaced"(timestamp with time zone, integer, boolean) TO "authenticated", "service_role";
+
 CREATE OR REPLACE FUNCTION "public"."network_timeline"("p_before" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_limit" integer DEFAULT 30, "p_all_spaces" boolean DEFAULT true)
     RETURNS TABLE("kind" "text", "post_id" "uuid", "message_id" "uuid", "reposted_by" "uuid", "at" timestamp with time zone)
     LANGUAGE "sql" STABLE SECURITY INVOKER
@@ -596,21 +583,7 @@ CREATE OR REPLACE FUNCTION "public"."network_timeline"("p_before" timestamp with
       and (p_before is null or r.created_at < p_before)
     order by r.created_at desc limit p_limit
   ),
-  spaced as (
-    select 'space'::text, null::uuid, m.id, null::uuid, m.created_at
-    from (
-      select sm.space_id from public.space_members sm, me where p_all_spaces and sm.user_id = me.id
-      union
-      select pin.space_id from public.network_pins pin, me where not p_all_spaces and pin.user_id = me.id
-    ) pin
-    join public.channels c on c.space_id = pin.space_id and c.mode = 'feed' and c.archived_at is null
-    join public.space_messages m on m.channel_id = c.id
-    where m.thread_root_id is null and m.deleted_at is null and m.kind <> 'system'
-      and public.can_read_channel(c.id)
-      and (m.author_id is null or m.author_id not in (select id from muted))
-      and (p_before is null or m.created_at < p_before)
-    order by m.created_at desc limit p_limit
-  )
+  spaced as (select * from public.network_timeline_spaced(p_before, p_limit, p_all_spaces))
   select * from (select * from posts union all select * from reposts union all select * from spaced) t
   order by t.at desc limit p_limit;
 $$;
@@ -965,22 +938,10 @@ $$;
 
 -- THE SPACES the caller may post to and pin: every space they are in that has a feed channel, with
 -- its first feed channel (where a post to the space's members lands) and whether it is pinned.
+-- answers '[]'::jsonb here; glue/network+spaces.sql declares it again, there while both modules are on
 CREATE OR REPLACE FUNCTION "public"."network_spaces"() RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select coalesce(jsonb_agg(jsonb_build_object(
-      'space_id', s.id, 'slug', s.slug, 'name', s.name,
-      'channel_id', (select c.id from public.channels c
-                     where c.space_id = s.id and c.mode = 'feed' and c.archived_at is null and public.can_read_channel(c.id)
-                     order by c.position, c.name limit 1),
-      'pinned', exists (select 1 from public.network_pins pin where pin.user_id = auth.uid() and pin.space_id = s.id)
-    ) order by s.position, s.name), '[]'::jsonb)
-  from public.spaces s
-  join public.space_members sm on sm.space_id = s.id and sm.user_id = auth.uid()
-  where s.archived_at is null
-    and exists (select 1 from public.channels c where c.space_id = s.id and c.mode = 'feed' and c.archived_at is null and public.can_read_channel(c.id));
-$$;
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
 
 GRANT ALL ON FUNCTION "public"."network_can_see"("uuid") TO "authenticated", "anon", "service_role";
 GRANT ALL ON FUNCTION "public"."network_people"("uuid"[]) TO "authenticated", "anon", "service_role";
@@ -1015,28 +976,6 @@ DROP POLICY IF EXISTS "network pictures are taken back by their author" ON "stor
 CREATE POLICY "network pictures are taken back by their author" ON "storage"."objects" FOR DELETE TO "authenticated" USING (
   bucket_id = 'network' and split_part(name, '/', 1) = auth.uid()::text);
 
--- ---------------------------------------------------------------------------------------------
--- a channel read as a feed: each post whole, with its first answers under it
--- ---------------------------------------------------------------------------------------------
-
--- THE FIRST ANSWERS of each post a feed shows, oldest first, a few each — the same answers the
--- thread itself would show, under the same guards (can_read_channel, a shadow-banned line seen by
--- its author alone, the plan's horizon), so the feed never shows an answer the thread would not.
-CREATE OR REPLACE FUNCTION "public"."space_first_replies"("p_roots" "uuid"[], "p_n" integer DEFAULT 2) RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select coalesce(jsonb_object_agg(r.id, coalesce((
-      select jsonb_agg(to_jsonb(x) - 'fts' order by x.seq)
-      from (select * from public.space_messages sm
-             where sm.thread_root_id = r.id and sm.deleted_at is null
-               and public.space_sees(sm.shadowed, sm.author_id, sm.channel_id)
-             order by sm.seq
-             limit least(greatest(coalesce(p_n, 2), 1), 10)) x), '[]'::jsonb)), '{}'::jsonb)
-  from public.space_messages r
-  where r.id = any(p_roots) and r.thread_root_id is null and public.can_read_channel(r.channel_id);
-$$;
-GRANT ALL ON FUNCTION "public"."space_first_replies"("uuid"[], integer) TO "authenticated", "service_role";
 
 -- ---------------------------------------------------------------------------------------------
 -- the protocol's identities: whose handle is whose
@@ -1332,3 +1271,48 @@ $$;
 REVOKE ALL ON FUNCTION "public"."run_network_crawl"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."run_network_crawl"() FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."run_network_crawl"() TO "service_role";
+
+-- A FEED ROOM'S POSTS IN FOR YOU, beside the network's own: the spaces module's, which may be off, so none here and the
+-- room's read in the glue the network shares with the spaces (glue/network+spaces.sql)
+CREATE OR REPLACE FUNCTION "public"."network_spaced_posts"() RETURNS TABLE("kind" "text", "id" "uuid", "author_id" "uuid", "at" timestamp with time zone, "heat" double precision, "near" numeric)
+    LANGUAGE "sql" STABLE
+    AS $$ select null::text, null::uuid, null::uuid, null::timestamptz, null::float8, null::numeric where false $$;
+REVOKE ALL ON FUNCTION "public"."network_spaced_posts"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."network_spaced_posts"() FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."network_spaced_posts"() TO "authenticated", "service_role";
+
+-- ---------------------------------------------------------------------------------------------
+-- FOR YOU (community.forYou): the posts with pictures or video the reader may read, from the last
+-- thirty days, ranked by what people did with them over time — (likes + 2·replies + 3·reposts + 1)
+-- over (hours + 2)^1.5 — and weighted toward who they are close to: 1.5 for someone they follow, 1.3
+-- for someone they answered in the last thirty days, 1.2 for a post in a space they are in. Read as
+-- the person, so the read rules of both modules decide what is in it; the "two in six" spread is the
+-- browser's (spread in network/model.js), so a page is ranked here and arranged there.
+CREATE OR REPLACE FUNCTION "public"."network_for_you"("p_offset" integer DEFAULT 0, "p_limit" integer DEFAULT 30)
+    RETURNS TABLE("kind" "text", "id" "uuid", "author_id" "uuid", "score" double precision, "at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY INVOKER
+    SET "search_path" TO 'public'
+    AS $$
+  with me as (select auth.uid() as id),
+  follows as (select f.subject_id as id from public.network_follows f, me where f.follower_id = me.id),
+  answered as (
+    select distinct parent.author_id as id
+      from public.network_posts p join public.network_posts parent on parent.id = p.reply_parent_id, me
+     where p.author_id = me.id and p.created_at > now() - interval '30 days'),
+  posts as (
+    select 'post'::text as kind, p.id, p.author_id, p.created_at as at,
+           (p.like_count + 2 * p.reply_count + 3 * p.repost_count + 1)::double precision as heat,
+           case when p.author_id in (select id from follows) then 1.5
+                when p.author_id in (select id from answered) then 1.3 else 1.0 end as near
+      from public.network_posts p
+     where jsonb_array_length(p.media) > 0 and p.removed_at is null and p.reply_parent_id is null
+       and p.created_at > now() - interval '30 days'
+       and public.network_admitted(auth.uid(), 'read')),
+  spaced as (select * from public.network_spaced_posts())
+  select t.kind, t.id, t.author_id, t.heat / power(extract(epoch from (now() - t.at)) / 3600 + 2, 1.5) * t.near as score, t.at
+    from (select * from posts union all select * from spaced) t
+   order by score desc, t.id
+   offset greatest(coalesce(p_offset, 0), 0) limit least(greatest(coalesce(p_limit, 30), 1), 60);
+$$;
+GRANT ALL ON FUNCTION "public"."network_for_you"(integer, integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."network_for_you"(integer, integer) TO "service_role";

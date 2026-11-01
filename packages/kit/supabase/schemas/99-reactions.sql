@@ -39,7 +39,6 @@ CREATE TABLE IF NOT EXISTS "public"."reactions" (    -- renamed from: space_reac
     CONSTRAINT "reactions_emoji_check" CHECK ((("char_length"("emoji") >= 1) AND ("char_length"("emoji") <= 16)))
 );
 ALTER TABLE ONLY "public"."reactions" ADD CONSTRAINT "reactions_pkey" PRIMARY KEY ("surface", "target_id", "user_id", "emoji");
-ALTER TABLE ONLY "public"."reactions" ADD CONSTRAINT "reactions_channel_fkey" FOREIGN KEY ("channel_id") REFERENCES "public"."channels"("id") ON DELETE CASCADE;
 ALTER TABLE ONLY "public"."reactions" ADD CONSTRAINT "reactions_user_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
 -- the tallies, read for a whole thread at once
 CREATE INDEX IF NOT EXISTS "reactions_target_idx" ON "public"."reactions" USING "btree" ("surface", "target_id");
@@ -57,12 +56,21 @@ CREATE TABLE IF NOT EXISTS "public"."votes" (
     CONSTRAINT "votes_vote_check" CHECK (("vote" = ANY (ARRAY[(-1)::smallint, 1::smallint])))
 );
 ALTER TABLE ONLY "public"."votes" ADD CONSTRAINT "votes_pkey" PRIMARY KEY ("surface", "target_id", "user_id");
-ALTER TABLE ONLY "public"."votes" ADD CONSTRAINT "votes_channel_fkey" FOREIGN KEY ("channel_id") REFERENCES "public"."channels"("id") ON DELETE CASCADE;
 ALTER TABLE ONLY "public"."votes" ADD CONSTRAINT "votes_user_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
 CREATE INDEX IF NOT EXISTS "votes_target_idx" ON "public"."votes" USING "btree" ("surface", "target_id");
 
 ALTER TABLE "public"."reactions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."votes" ENABLE ROW LEVEL SECURITY;
+
+-- A MESSAGE IS A SPACE'S. Votes and reactions are every site's, on comments; on a message in a room they are the
+-- spaces module's too, and that module may be off. So what a message allows is one question declared here answering
+-- no, and again, reading the room, in the glue spaces shares with every site (glue/core+spaces.sql), along with the
+-- trigger that wakes the room when a reaction lands (openspec: module-switch-removes-backend). p_what is 'votes' or
+-- 'reactions' (does the room take them), 'may' (may this person cast one) or 'visible' (may they see them).
+CREATE OR REPLACE FUNCTION "public"."signal_message"("p_target" "uuid", "p_what" "text") RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$ select false $$;
+GRANT EXECUTE ON FUNCTION "public"."signal_message"("uuid", "text") TO "authenticated", "anon", "service_role";
 
 -- DOES THIS SURFACE TAKE THEM? The channel says so for a message, the comment subject for a
 -- comment, and neither reaches the other. `p_what` is 'votes' or 'reactions': one question asked
@@ -72,10 +80,7 @@ CREATE OR REPLACE FUNCTION "public"."signal_takes"("p_surface" "text", "p_target
     SET "search_path" TO 'public'
     AS $$
   select case p_surface
-    when 'message' then coalesce((
-      select case when p_what = 'votes' then c.votes else c.reactions end
-        from public.space_messages m join public.channels c on c.id = m.channel_id
-       where m.id = p_target), false)
+    when 'message' then public.signal_message(p_target, p_what)
     when 'comment' then coalesce((
       select case when p_what = 'votes' then s.votes else s.reactions end
         from public.comments k
@@ -97,10 +102,7 @@ CREATE OR REPLACE FUNCTION "public"."signal_may"("p_surface" "text", "p_target" 
      and case p_surface
        -- speaking in a room is membership, and it is muting that takes it away; the same two
        -- questions the insert policy on a message asks, asked here rather than copied
-       when 'message' then coalesce((
-         select m.channel_id in (select public.my_channel_ids())
-            and not public.space_muted_in(m.channel_id)
-           from public.space_messages m where m.id = p_target), false)
+       when 'message' then public.signal_message(p_target, 'may')
        when 'comment' then coalesce((
          select public.comment_may_write(k.kind, k.subject) from public.comments k where k.id = p_target), false)
        else false end;
@@ -113,8 +115,7 @@ CREATE OR REPLACE FUNCTION "public"."signal_visible"("p_surface" "text", "p_targ
     SET "search_path" TO 'public'
     AS $$
   select case p_surface
-    when 'message' then coalesce((
-      select public.can_read_channel(m.channel_id) from public.space_messages m where m.id = p_target), false)
+    when 'message' then public.signal_message(p_target, 'visible')
     when 'comment' then coalesce((
       select public.comment_may_read(k.kind, k.subject) from public.comments k where k.id = p_target), false)
     else false end;
@@ -148,9 +149,6 @@ GRANT EXECUTE ON FUNCTION "public"."signal_takes"("text", "uuid", "text") TO "au
 GRANT EXECUTE ON FUNCTION "public"."signal_may"("text", "uuid", "text") TO "authenticated", "anon", "service_role";
 GRANT EXECUTE ON FUNCTION "public"."signal_visible"("text", "uuid") TO "authenticated", "anon", "service_role";
 
--- the room hears a reaction land, exactly as it did when the table was its own
-CREATE OR REPLACE TRIGGER "trg_reactions_on" AFTER INSERT ON "public"."reactions" FOR EACH ROW EXECUTE FUNCTION "public"."space_reaction_changed"();
-CREATE OR REPLACE TRIGGER "trg_reactions_off" AFTER DELETE ON "public"."reactions" FOR EACH ROW EXECUTE FUNCTION "public"."space_reaction_changed"();
 
 -- NOTHING POINTS AT THE TARGET, because it may be either of two tables and a key cannot say "one of
 -- these". So what a key would have done is done here: when a line is really gone — not withdrawn,
@@ -167,4 +165,3 @@ begin
 end;
 $$;
 CREATE OR REPLACE TRIGGER "trg_comments_signals_gone" AFTER DELETE ON "public"."comments" FOR EACH ROW EXECUTE FUNCTION "public"."signals_gone"();
-CREATE OR REPLACE TRIGGER "trg_messages_signals_gone" AFTER DELETE ON "public"."space_messages" FOR EACH ROW EXECUTE FUNCTION "public"."signals_gone"();

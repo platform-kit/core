@@ -46,10 +46,6 @@ update public.purchases
    set checkout_identity = stripe_checkout_session_id
  where checkout_identity is null and nullif(btrim(stripe_checkout_session_id), '') is not null;
 
-update public.bookings
-   set checkout_identity = stripe_checkout_session_id
- where checkout_identity is null and nullif(btrim(stripe_checkout_session_id), '') is not null;
-
 update public.usage_meter_reports r
    set user_id = p.id
   from public.profiles p
@@ -101,28 +97,6 @@ union all
 select 'stripe', 'meter', s.usage_meter, 'subscriptions', s.id
   from public.subscriptions s
  where position(':' in s.id) = 0 and nullif(btrim(s.usage_meter), '') is not null
-union all
-select 'stripe', 'checkout', o.checkout_session, 'orders', o.id::text
-  from public.orders o
- where position(':' in o.checkout_session) = 0 and nullif(btrim(o.checkout_session), '') is not null
-union all
-select 'stripe',
-       case t.reason when 'refund' then 'refund' when 'chargeback' then 'chargeback' else 'payment' end,
-       t.reference, 'order_transactions', t.id::text
-  from public.order_transactions t
- where t.reason <> 'credit' and position(':' in t.reference) = 0 and nullif(btrim(t.reference), '') is not null
-union all
-select 'stripe', 'checkout', b.stripe_checkout_session_id, 'bookings', b.uid
-  from public.bookings b
- where nullif(btrim(b.stripe_checkout_session_id), '') is not null
-union all
-select 'stripe', 'checkout', f.checkout_session_id, 'booking_checkout_fulfilments', f.checkout_session_id
-  from public.booking_checkout_fulfilments f
- where position(':' in f.checkout_session_id) = 0 and nullif(btrim(f.checkout_session_id), '') is not null
-union all
-select a.provider, 'payout_account', a.account_id, 'payout_accounts', a.user_id::text
-  from public.payout_accounts a
- where nullif(btrim(a.account_id), '') is not null
 union all
 select 'stripe', 'customer', r.stripe_customer_id, 'usage_meter_reports', r.usage_event_id::text
   from public.usage_meter_reports r
@@ -203,71 +177,6 @@ update public.profiles
 update public.profiles
    set role = 'provider'
  where role = 'coach';
-
--- EVERY BOOKING THAT ALREADY HOLDS A TIME gets the row that now says so. Idempotent: a hold the
--- booking already has is left alone, and a group's hold is written once, on its first seat.
-insert into public.booking_holds (booking_uid, user_id, start_at, end_at)
-select coalesce(b.seat_of, b.uid), b.host_id, b.start_at, b.end_at
-  from public.bookings b
- where b.provider = 'native' and b.status in ('accepted', 'pending')
-   and b.host_id is not null and b.start_at is not null and b.end_at is not null
-   and (b.seat_of is null or b.seat_of = b.uid)
-   /* a host whose account has gone holds nothing — the booking keeps their id for the record, but
-      there is no longer a person whose time could be taken twice */
-   and exists (select 1 from public.profiles p where p.id = b.host_id)
-   and not exists (select 1 from public.booking_holds h
-                    where h.booking_uid = coalesce(b.seat_of, b.uid) and h.user_id = b.host_id)
-on conflict do nothing;
-
--- ONE BUFFER BECAME TWO, and the old one meant both sides: `openStarts` widened a busy interval by
--- it before AND after, so copying it into `buffer_before` alone would quietly halve everybody's
--- breathing room. It is copied across once — guarded by a marker rather than by "where it is still
--- zero", because somebody who deliberately wants nothing after a call must be able to say so.
-do $$
-begin
-  if not exists (select 1 from public.app_settings where key = 'buffers_split') then
-    update public.provider_schedules set buffer_after = buffer_before where buffer_before > 0;
-    insert into public.app_settings (key, value) values ('buffers_split', '1')
-    on conflict (key) do nothing;
-  end if;
-end $$;
-
--- every set of hours has a name and one of them is the default; a person who kept hours before there
--- was more than one set keeps them as their default, called what cal.com calls it
-update public.provider_schedules set name = 'Working hours' where coalesce(btrim(name), '') = '';
-update public.provider_schedules s set is_default = true
- where not exists (select 1 from public.provider_schedules d where d.user_id = s.user_id and d.is_default);
-
--- an override written before there was more than one set of hours belongs to the default one
-update public.provider_overrides o set schedule_id = s.id
-  from public.provider_schedules s
- where o.schedule_id is null and s.user_id = o.user_id and s.is_default;
-
--- WHAT A BOOK'S KIND DERIVED, OFF PRINT'S OWN COLUMNS AND ONTO THE GENERIC SLOT.
--- fulfilments carried book, edition, format, contents, cloth and foil beside `chosen`, which is
--- the slot every other kind writes; that is what made the table a print_orders with a wider name.
--- Nothing reads them now. They cannot be dropped in the same deploy as this backfill — the plan is
--- renames, then the diff, then this script, so a drop would run BEFORE the rows were carried over
--- — so they are dropped in the deploy after the one that runs this.
--- A row whose variant was never written (every row made before the store sold anything but books)
--- is the reason this exists rather than deriving from the variant at read time.
-do $$
-begin
-  if exists (select 1 from information_schema.columns
-              where table_schema = 'public' and table_name = 'fulfilments' and column_name = 'book') then
-    execute $q$
-      update public.fulfilments f set chosen = jsonb_strip_nulls(jsonb_build_object(
-               'book', f.book, 'edition', f.edition, 'format', f.format,
-               'contents', f.contents, 'cloth', f.cloth, 'foil', f.foil))
-       where f.chosen is null and f.book is not null
-    $q$;
-    execute $q$
-      update public.fulfilments f
-         set variant = concat_ws('.', nullif(f.contents, ''), nullif(f.cloth, ''), nullif(f.foil, ''))
-       where coalesce(f.variant, '') = '' and nullif(f.contents, '') is not null
-    $q$;
-  end if;
-end $$;
 
 -- A PAID SESSION'S WEEK OF CHAT IS READ FROM THE BOOKING (chat_session_with, 50-chat.sql), and is no
 -- longer a `subscribed` grant: the grants it once wrote, keyed `session:<uid>`, are closed — they made

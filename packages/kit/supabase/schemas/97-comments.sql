@@ -172,6 +172,41 @@ CREATE OR REPLACE FUNCTION "public"."comment_may_write"("p_kind" "text", "p_subj
   end;
 $$;
 
+-- A CONVERSATION KEPT IN A ROOM. A subject may name a forum channel, and then its comments are a post there — one
+-- thread, reached from the page and from the board. Rooms are the spaces module's, which may be off, so everything a
+-- comment asks of a room is a function declared here answering as though there were none — the subject's comments are
+-- kept as comments — and declared again, reading and writing the room, in the glue spaces shares with every site
+-- (glue/core+spaces.sql) (openspec: module-switch-removes-backend). And the moderation record, which is the spaces'
+-- table, is written only where there is one.
+CREATE OR REPLACE FUNCTION "public"."comment_room_moderates"("p_channel" "uuid") RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$ select false $$;
+CREATE OR REPLACE FUNCTION "public"."comment_room_lines"("p_post" "uuid", "p_limit" integer) RETURNS TABLE("id" "uuid", "body" "text", "created_at" timestamp with time zone, "parent" "uuid", "author_id" "uuid", "deleted_at" timestamp with time zone, "state" "text", "flagged" "text", "ord" numeric, "surface" "text")
+    LANGUAGE "sql" STABLE
+    AS $$ select null::uuid, null::text, null::timestamptz, null::uuid, null::uuid, null::timestamptz, null::text, null::text, null::numeric, null::text where false $$;
+CREATE OR REPLACE FUNCTION "public"."comment_room_count"("p_post" "uuid") RETURNS bigint
+    LANGUAGE "sql" STABLE
+    AS $$ select 0::bigint $$;
+CREATE OR REPLACE FUNCTION "public"."comment_room_say"("p_kind" "text", "p_subject" "text", "p_body" "text", "p_parent" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" VOLATILE
+    AS $$ select null::jsonb $$;
+CREATE OR REPLACE FUNCTION "public"."comment_room_unsay"("p_comment" "uuid") RETURNS boolean
+    LANGUAGE "sql" VOLATILE
+    AS $$ select false $$;
+CREATE OR REPLACE FUNCTION "public"."comment_room_record"("p_comment" "uuid", "p_kind" "text", "p_reason" "text") RETURNS "void"
+    LANGUAGE "sql" VOLATILE
+    AS $$ select $$;
+CREATE OR REPLACE FUNCTION "public"."comment_room_thread"("p_channel" "uuid") RETURNS "text"
+    LANGUAGE "sql" STABLE
+    AS $$ select null::text $$;
+REVOKE ALL ON FUNCTION "public"."comment_room_moderates"("uuid") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."comment_room_lines"("uuid", integer) FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."comment_room_count"("uuid") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."comment_room_say"("text", "text", "text", "uuid") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."comment_room_unsay"("uuid") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."comment_room_record"("uuid", "text", "text") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."comment_room_thread"("uuid") FROM PUBLIC, "anon", "authenticated";
+
 -- MAY I MODERATE IT? Staff always; and where the subject's conversation lives in a forum room, whoever
 -- moderates that room, because a comment there IS a post there and a second set of moderators for the
 -- same words would be two answers to one question. A subject attached to no room has no room's
@@ -183,7 +218,7 @@ CREATE OR REPLACE FUNCTION "public"."comment_may_moderate"("p_kind" "text", "p_s
   select public.is_staff() or exists (
     select 1 from public.comment_subjects s
      where s.kind = p_kind and s.subject = p_subject
-       and s.channel_id is not null and public.space_may(s.channel_id, 'moderate'));
+       and s.channel_id is not null and public.comment_room_moderates(s.channel_id));
 $$;
 
 -- IS THIS PERSON SOMEBODY THE SITE ALREADY TRUSTS — asked of standings that were true before they
@@ -318,13 +353,8 @@ CREATE OR REPLACE FUNCTION "public"."comments_on"("p_kind" "text", "p_subject" "
   lim as (select greatest(1, least(coalesce(p_limit, 200), 500)) as n),
   -- the lines themselves, from whichever of the two places this subject keeps them
   lines as (
-    (select m.id, m.body, m.created_at, nullif(m.meta->>'parent', '')::uuid as parent, m.author_id,
-           m.deleted_at, case when m.deleted_at is not null then 'removed' else 'live' end as state,
-           null::text as flagged, m.seq::numeric as ord, 'message'::text as surface
-      from public.space_messages m
-     where (select read from may) and (select post_id from s) is not null
-       and m.thread_root_id = (select post_id from s)
-     order by m.seq limit (select n from lim))
+    (select * from public.comment_room_lines((select post_id from s), (select n from lim))
+      where (select read from may) and (select post_id from s) is not null)
     union all
     (select k.id, k.body, k.created_at, k.parent_id, k.author_id,
            k.deleted_at, case when k.deleted_at is not null then 'removed' else k.state end,
@@ -381,8 +411,7 @@ CREATE OR REPLACE FUNCTION "public"."comment_counts"("p_kind" "text", "p_subject
   select coalesce(jsonb_object_agg(x.subject, x.n), '{}'::jsonb) from (
     select s.subject,
       case when s.post_id is not null
-        then (select count(*) from public.space_messages m
-               where m.thread_root_id = s.post_id and m.deleted_at is null)
+        then public.comment_room_count(s.post_id)
         else (select count(*) from public.comments c
                where c.kind = s.kind and c.subject = s.subject
                  and c.deleted_at is null and c.state = 'live') end as n
@@ -407,7 +436,7 @@ CREATE OR REPLACE FUNCTION "public"."comment_say"("p_kind" "text", "p_subject" "
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-declare k public.comments; s public.comment_subjects; root uuid; m public.space_messages;
+declare k public.comments; s public.comment_subjects; said jsonb;
         held text; parent uuid;
 begin
   if auth.uid() is null then return jsonb_build_object('error', 'sign-in'); end if;
@@ -438,28 +467,10 @@ begin
     returning * into s;
   end if;
 
+  -- a subject kept as a post in a room is said there, while there are rooms; otherwise it is a comment like any other
   if s.channel_id is not null then
-    root := s.post_id;
-    -- the first comment opens the post. Its title is the thing's own, so the board reads as a list
-    -- of what is being talked about rather than a list of first sentences, and its body is the
-    -- address of the page the conversation is on — a way back for whoever answers from the board.
-    if root is null then
-      insert into public.space_messages (channel_id, author_id, title, body, kind)
-           values (s.channel_id, auth.uid(), coalesce(s.title, p_subject),
-                   coalesce(s.href, ''), 'text')
-        returning * into m;
-      root := m.id;
-      update public.comment_subjects set post_id = root where kind = p_kind and subject = p_subject;
-    end if;
-    -- a room is flat, so who a reply answers rides on the message's own meta, which the edit guard
-    -- holds immutable. The room ignores it; a comment thread drawn from these lines does not.
-    insert into public.space_messages (channel_id, author_id, body, kind, thread_root_id, meta)
-         values (s.channel_id, auth.uid(), left(btrim(p_body), 4000), 'text', root,
-                 case when p_parent is null then '{}'::jsonb
-                      else jsonb_build_object('parent', p_parent::text) end)
-      returning * into m;
-    return jsonb_build_object('id', m.id, 'body', m.body, 'created_at', m.created_at,
-      'author_id', m.author_id, 'mine', true, 'in_channel', true, 'state', 'live');
+    said := public.comment_room_say(p_kind, p_subject, p_body, p_parent);
+    if said is not null then return said; end if;
   end if;
 
   -- DOES IT WAIT? On who wrote it, against this surface's setting; and on the site's flagged words,
@@ -490,10 +501,7 @@ begin
    where id = p_comment and deleted_at is null
      and (author_id = auth.uid() or public.is_staff());
   if found then return jsonb_build_object('ok', true); end if;
-  update public.space_messages set deleted_at = now()
-   where id = p_comment and deleted_at is null
-     and (author_id = auth.uid() or public.is_staff());
-  if found then return jsonb_build_object('ok', true); end if;
+  if public.comment_room_unsay(p_comment) then return jsonb_build_object('ok', true); end if;
   return jsonb_build_object('error', 'not-yours');
 end;
 $$;
@@ -515,11 +523,7 @@ begin
   update public.comments
      set state = 'live', approved_at = now(), approved_by = auth.uid()
    where id = p_comment returning * into k;
-  select c.space_id into sp from public.comment_subjects s
-    join public.channels c on c.id = s.channel_id
-   where s.kind = k.kind and s.subject = k.subject;
-  insert into public.space_moderation (space_id, comment_id, kind, actor_id, subject_id, reason)
-       values (sp, k.id, 'approve', auth.uid(), k.author_id, p_reason);
+  perform public.comment_room_record(k.id, 'approve', p_reason);
   return jsonb_build_object('ok', true, 'state', 'live');
 end;
 $$;
@@ -537,11 +541,7 @@ begin
   if not public.comment_may_moderate(k.kind, k.subject) then return jsonb_build_object('error', 'not-yours'); end if;
   update public.comments set deleted_at = coalesce(deleted_at, now())
    where id = p_comment returning * into k;
-  select c.space_id into sp from public.comment_subjects s
-    join public.channels c on c.id = s.channel_id
-   where s.kind = k.kind and s.subject = k.subject;
-  insert into public.space_moderation (space_id, comment_id, kind, actor_id, subject_id, reason)
-       values (sp, k.id, 'refuse', auth.uid(), k.author_id, p_reason);
+  perform public.comment_room_record(k.id, 'refuse', p_reason);
   return jsonb_build_object('ok', true, 'state', 'removed');
 end;
 $$;
@@ -605,20 +605,10 @@ CREATE OR REPLACE FUNCTION "public"."comment_subject"("p_kind" "text", "p_subjec
       'votes', s.votes, 'reactions', s.reactions,
       -- the same conversation, read in the community. Null until somebody has said something,
       -- because a link to a thread that does not exist yet is a link to nothing.
-      'thread', case when s.post_id is null then null else (
-        select '/spaces/' || sp.slug || '/' || c.slug
-          from public.channels c join public.spaces sp on sp.id = c.space_id
-         where c.id = s.channel_id) end)
+      'thread', case when s.post_id is null then null else public.comment_room_thread(s.channel_id) end)
       from public.comment_subjects s
      where s.kind = p_kind and s.subject = p_subject) end;
 $$;
-
--- the act's record points at the comment it was about; the comments table is declared here, so the
--- key is too rather than in the spaces file that declares the record
-DO $$ BEGIN
-  ALTER TABLE ONLY "public"."space_moderation"
-    ADD CONSTRAINT "space_moderation_comment_fkey" FOREIGN KEY ("comment_id") REFERENCES "public"."comments"("id") ON DELETE SET NULL;
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 GRANT EXECUTE ON FUNCTION "public"."comment_subject"("text", "text") TO "authenticated", "anon", "service_role";
 GRANT EXECUTE ON FUNCTION "public"."comment_open_kind"("text") TO "authenticated", "anon", "service_role";

@@ -40,26 +40,24 @@ CREATE OR REPLACE FUNCTION "public"."space_replies_to_me"("p_lim" integer DEFAUL
     limit least(greatest(coalesce(p_lim, 50), 1), 200)) x;
 $$;
 
--- the events somebody said they are going to, from a day before each starts until it has been on an
--- hour: the reminder, kept in the list. Its moment is when it came near (or when they said yes, if
--- that was later), so it lands in the list as new once and stays where it fell.
-CREATE OR REPLACE FUNCTION "public"."events_soon_for_me"() RETURNS "jsonb"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-  select coalesce(jsonb_agg(x order by x.at desc), '[]'::jsonb) from (
-    select o.id, e.slug, e.title, e.space_id, sp.name as space, sp.slug as space_slug, o.starts_at, e.place,
-           greatest(o.starts_at - interval '24 hours', r.created_at) as at
-    from public.calendar_rsvps r
-    join public.calendar_occurrences o on o.id = r.occurrence_id
-    join public.calendar_events e on e.id = o.event_id
-    left join public.spaces sp on sp.id = e.space_id
-    where r.user_id = auth.uid() and r.state = 'going'
-      and e.published and o.cancelled_at is null
-      and o.starts_at > now() - interval '1 hour'
-      and o.starts_at <= now() + interval '24 hours'
-      and (e.space_id is null or public.in_space(e.space_id))) x;
-$$;
+
+-- THE NETWORK'S PART, AND THE ONE "SEEN" MARKER, are the network module's, which may be off: its notifications and
+-- the moment the person last looked are functions declared here answering nothing, and again, reading the network,
+-- in the glue it shares with the spaces (glue/network+spaces.sql). The events' part is the events module's own
+-- (events_soon_for_me, 95-events.sql; nothing, declared in 90-spaces.sql, where there are no events)
+-- (openspec: module-switch-removes-backend).
+CREATE OR REPLACE FUNCTION "public"."community_network_items"("p_before" timestamp with time zone, "p_limit" integer) RETURNS TABLE("reason" "text", "actor_id" "uuid", "post_id" "uuid", "subject_post_id" "uuid", "at" timestamp with time zone)
+    LANGUAGE "sql" STABLE
+    AS $$ select null::text, null::uuid, null::uuid, null::uuid, null::timestamptz where false $$;
+CREATE OR REPLACE FUNCTION "public"."community_seen_at"() RETURNS timestamp with time zone
+    LANGUAGE "sql" STABLE
+    AS $$ select null::timestamptz $$;
+REVOKE ALL ON FUNCTION "public"."community_network_items"(timestamp with time zone, integer) FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."community_network_items"(timestamp with time zone, integer) FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."community_network_items"(timestamp with time zone, integer) TO "authenticated", "service_role";
+REVOKE ALL ON FUNCTION "public"."community_seen_at"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."community_seen_at"() FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."community_seen_at"() TO "authenticated", "service_role";
 
 CREATE OR REPLACE FUNCTION "public"."community_notifications"("p_before" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_limit" integer DEFAULT 50)
     RETURNS TABLE("source" "text", "reason" "text", "actor_id" "uuid", "post_id" "uuid", "subject_post_id" "uuid", "item" "jsonb", "at" timestamp with time zone)
@@ -68,7 +66,7 @@ CREATE OR REPLACE FUNCTION "public"."community_notifications"("p_before" timesta
     AS $$
   with t as (
     select 'network'::text as source, n.reason, n.actor_id, n.post_id, n.subject_post_id, null::jsonb as item, n.at
-      from public.network_notifications(p_before, p_limit) n
+      from public.community_network_items(p_before, p_limit) n
     union all
     select 'mention', 'mention-' || (j->>'mention'), (j->>'author_id')::uuid, null, null, j, (j->>'created_at')::timestamptz
       from jsonb_array_elements(public.space_activity(200)) j
@@ -90,57 +88,13 @@ CREATE OR REPLACE FUNCTION "public"."community_unread"() RETURNS integer
     SET "search_path" TO 'public'
     AS $$
   select count(*)::int from public.community_notifications(null, 200) n
-  where n.at > coalesce((select s.seen_at from public.network_seen s where s.user_id = auth.uid()), '-infinity'::timestamptz);
+  where n.at > coalesce(public.community_seen_at(), '-infinity'::timestamptz);
 $$;
 
 GRANT ALL ON FUNCTION "public"."space_replies_to_me"(integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."events_soon_for_me"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."community_notifications"(timestamp with time zone, integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."community_unread"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."space_replies_to_me"(integer) TO "service_role";
-GRANT ALL ON FUNCTION "public"."events_soon_for_me"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."community_notifications"(timestamp with time zone, integer) TO "service_role";
 GRANT ALL ON FUNCTION "public"."community_unread"() TO "service_role";
 
--- ---------------------------------------------------------------------------------------------
--- FOR YOU (community.forYou): the posts with pictures or video the reader may read, from the last
--- thirty days, ranked by what people did with them over time — (likes + 2·replies + 3·reposts + 1)
--- over (hours + 2)^1.5 — and weighted toward who they are close to: 1.5 for someone they follow, 1.3
--- for someone they answered in the last thirty days, 1.2 for a post in a space they are in. Read as
--- the person, so the read rules of both modules decide what is in it; the "two in six" spread is the
--- browser's (spread in network/model.js), so a page is ranked here and arranged there.
-CREATE OR REPLACE FUNCTION "public"."network_for_you"("p_offset" integer DEFAULT 0, "p_limit" integer DEFAULT 30)
-    RETURNS TABLE("kind" "text", "id" "uuid", "author_id" "uuid", "score" double precision, "at" timestamp with time zone)
-    LANGUAGE "sql" STABLE SECURITY INVOKER
-    SET "search_path" TO 'public'
-    AS $$
-  with me as (select auth.uid() as id),
-  follows as (select f.subject_id as id from public.network_follows f, me where f.follower_id = me.id),
-  answered as (
-    select distinct parent.author_id as id
-      from public.network_posts p join public.network_posts parent on parent.id = p.reply_parent_id, me
-     where p.author_id = me.id and p.created_at > now() - interval '30 days'),
-  posts as (
-    select 'post'::text as kind, p.id, p.author_id, p.created_at as at,
-           (p.like_count + 2 * p.reply_count + 3 * p.repost_count + 1)::double precision as heat,
-           case when p.author_id in (select id from follows) then 1.5
-                when p.author_id in (select id from answered) then 1.3 else 1.0 end as near
-      from public.network_posts p
-     where jsonb_array_length(p.media) > 0 and p.removed_at is null and p.reply_parent_id is null
-       and p.created_at > now() - interval '30 days'
-       and public.network_admitted(auth.uid(), 'read')),
-  spaced as (
-    select 'space'::text, m.id, m.author_id, m.created_at,
-           ((select count(*) from public.reactions r where r.surface = 'message' and r.target_id = m.id and r.emoji = '❤️') + 2 * m.reply_count + 1)::double precision,
-           1.2
-      from public.space_messages m join public.channels c on c.id = m.channel_id
-     where c.mode = 'feed' and jsonb_array_length(m.media) > 0 and m.deleted_at is null and m.thread_root_id is null
-       and m.created_at > now() - interval '30 days'
-       and public.can_read_channel(c.id))
-  select t.kind, t.id, t.author_id, t.heat / power(extract(epoch from (now() - t.at)) / 3600 + 2, 1.5) * t.near as score, t.at
-    from (select * from posts union all select * from spaced) t
-   order by score desc, t.id
-   offset greatest(coalesce(p_offset, 0), 0) limit least(greatest(coalesce(p_limit, 30), 1), 60);
-$$;
-GRANT ALL ON FUNCTION "public"."network_for_you"(integer, integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."network_for_you"(integer, integer) TO "service_role";

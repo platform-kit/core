@@ -27,6 +27,12 @@
  *      did not make, so it can never be pointed at production by mistake. Same engine, same schemas, same output either way.
  *   3. the data script (supabase/data.sql), verbatim — every statement idempotent.
  *
+ * A MODULE SWITCHED OFF KEEPS ITS DATA (openspec: module-switch-removes-backend). Its tables are not in the
+ * declaration, so the diff would drop them; a table the kit declares for a module that is off is kept instead, rows,
+ * keys, indexes and all — only what the module DID goes: its triggers, its rules on the table, its functions. With
+ * row level security on and no rule left, nobody but the service role reads it until the module is back.
+ * `platformkit module drop <key>` is the one way to remove the tables themselves.
+ *
  * Then the guard (destructive.mjs) over all three: a plan with a destructive statement is refused whole unless
  * PLATFORMKIT_ALLOW_DESTRUCTIVE=1 is set for this run, and the run then says so and lists what it allowed.
  * `--plan` prints the plan and the verdict and applies nothing (exit 1 when refused); without it the plan is
@@ -42,6 +48,7 @@ import pg from 'pg'
 import { statements, guard, describe as describeHits, destructive as destructiveIn, digestOf } from './destructive.mjs'
 import { VERBOSE, some } from './verbose.mjs'
 import { platformkitRuntimePath } from './runtime-paths.mjs'
+import { kitDeclaredTables, tablesIn } from './modules/backend.mjs'
 
 const SCHEMAS = 'public,storage,auth'
 /* a statement's target: its kind and the schema of the object it makes, changes or drops — a policy's or a
@@ -75,7 +82,7 @@ const connect = async (url) => {
   try { await c.connect() } catch (e) { if (tls && /SSL|TLS/i.test(e.message)) { c = sql(url, false); await c.connect() } else throw e }
   return c
 }
-const withDb = async (url, fn) => { const c = await connect(url); try { return await fn(c) } finally { await c.end() } }
+export const withDb = async (url, fn) => { const c = await connect(url); try { return await fn(c) } finally { await c.end() } }
 
 /* every column the database computes for itself (GENERATED ALWAYS AS … STORED), as
    `schema.table.column`. The guard is told these so that changing one — which postgres can only do
@@ -102,7 +109,7 @@ const generatedIn = async (db) => new Set((await db.query(`
  * timeout: `unknown`, which refuses. Reading an error as "nothing to lose" would turn this from a
  * net into a trap, and it is the one way this function must not fail.
  */
-async function costsIn(db, hits) {
+export async function costsIn(db, hits) {
   const out = {}
   for (const h of hits) {
     const key = h.object.toLowerCase()
@@ -133,7 +140,7 @@ async function costsIn(db, hits) {
 }
 
 /* the commit this plan is of, for an allowance that names one: git, else whatever the host says */
-function commitOf(root, env = process.env) {
+export function commitOf(root, env = process.env) {
   for (const k of ['PLATFORMKIT_COMMIT', 'RENDER_GIT_COMMIT', 'GITHUB_SHA', 'VERCEL_GIT_COMMIT_SHA', 'SOURCE_COMMIT', 'CF_PAGES_COMMIT_SHA']) {
     if (env[k] && /^[0-9a-f]{7,40}$/i.test(String(env[k]).trim())) return String(env[k]).trim().toLowerCase()
   }
@@ -149,7 +156,8 @@ const bare = (url) => { try { const u = new URL(url); return (u.username ? u.use
 /* ---- the declaration as one text, in reset order: the kit's files, the site's, and its data script ---- */
 export function readDeclaration(root) {
   const dir = path.join(root, 'supabase', 'schemas')
-  const files = [...list(dir), ...list(path.join(dir, 'site'))]
+  /* the kit's files, the glue between the modules that are on (it loads after every module's), the site's */
+  const files = [...list(dir), ...list(path.join(dir, 'glue')), ...list(path.join(dir, 'site'))]
   if (!files.length) throw new Error('plan: supabase/schemas/ is empty — run platformkit assemble first')
   const data = path.join(root, 'supabase', 'data.sql')
   return { files, schema: files.map((f) => `-- ${path.relative(root, f)}\n` + fs.readFileSync(f, 'utf8')).join('\n\n'), data: fs.existsSync(data) ? fs.readFileSync(data, 'utf8') : '' }
@@ -373,6 +381,41 @@ export async function ensureExtensions(db, data) {
   for (const m of String(data || '').matchAll(/^\s*create extension if not exists [^;]+;/gim)) { try { await db.query(m[0]) } catch (e) { /* a plain Postgres without the extension: the diff will say */ } }
 }
 
+/*
+ * ---- a module that is off keeps its tables ----
+ *
+ * Of what the diff would do to a table the kit declares and this site's declaration does not (a module of its that is
+ * off), only a dropped rule and a dropped trigger stand: the table, its keys and indexes, the sequences it owns, the
+ * types its columns use, its grants and comments are left as they are, so switching the module back on finds every
+ * row and the plan then has nothing to change in them.
+ */
+export async function keepOffTables(db, sql, schema) {
+  if (!sql || !sql.trim()) return { sql, kept: [] }
+  const declared = new Set(tablesIn(schema))
+  const kit = kitDeclaredTables()
+  const present = (await db.query("select tablename from pg_tables where schemaname = 'public'")).rows.map((r) => r.tablename)
+  const kept = present.filter((t) => kit.has(t) && !declared.has(t)).sort()
+  if (!kept.length) return { sql, kept }
+  const names = new Set(kept)
+  const more = await db.query(`
+    select indexname as n from pg_indexes where schemaname = 'public' and tablename = any($1)
+    union select s.relname from pg_class s join pg_depend d on d.objid = s.oid join pg_class t on t.oid = d.refobjid
+     where s.relkind = 'S' and d.deptype in ('a', 'i') and t.relnamespace = 'public'::regnamespace and t.relname = any($1)
+    union select distinct b.typname from pg_attribute a join pg_class t on t.oid = a.attrelid join pg_type ty on ty.oid = a.atttypid
+      join pg_type b on b.oid = case when ty.typelem <> 0 then ty.typelem else ty.oid end
+     where t.relnamespace = 'public'::regnamespace and t.relname = any($1) and b.typnamespace = 'public'::regnamespace`, [kept])
+  for (const r of more.rows) names.add(r.n)
+  const out = []
+  for (const st of statements(sql)) {
+    if (/^drop\s+(policy|trigger)\b/i.test(st.text) || /^set\s/i.test(st.text)) { out.push(st.raw); continue }
+    const refs = [...st.text.matchAll(/"?public"?\s*\.\s*"?([a-z_][a-z0-9_]*)"?/gi)].map((m) => m[1])
+    if (refs.some((r) => names.has(r)) && /^(drop\s+(table|index|sequence|type)|alter\s+(table|sequence|type|index|publication)|grant|revoke|comment\s+on)\b/i.test(st.text)) continue
+    out.push(st.raw)
+  }
+  const body = out.filter((x) => !/^set\s/i.test(x))
+  return { sql: body.length ? out.join('\n\n') + '\n' : '', kept }
+}
+
 /* ---- the whole plan for a target ---- */
 export async function computePlan({ root = process.cwd(), target, shadowUrl = process.env.PLATFORMKIT_SHADOW_DB_URL, local, env = process.env } = {}) {
   if (shadowUrl && bare(shadowUrl) === bare(target)) throw new Error('plan: PLATFORMKIT_SHADOW_DB_URL is the target itself — the shadow is reset to the declaration, and that would empty the database the plan is for')
@@ -389,6 +432,9 @@ export async function computePlan({ root = process.cwd(), target, shadowUrl = pr
   /* an event trigger lives in no schema, so the diff never sees it; one that depends on a function the diff drops
      would stop the drop — it is dropped first, and named in the plan */
   diff.sql = await withDb(target, (db) => withEventTriggers(db, diff.sql))
+  /* a module that is off keeps its tables: the diff's drops of them, and of what is theirs, are taken out */
+  const off = await withDb(target, (db) => keepOffTables(db, diff.sql, d.schema))
+  diff.sql = off.sql
   /* a diff reads committed state: with renames pending, what it says of the renamed objects is a drop and a create,
      so those statements are set aside here and the apply computes the diff again once the renames are in */
   let setAside = []
@@ -415,7 +461,7 @@ export async function computePlan({ root = process.cwd(), target, shadowUrl = pr
     return { generated, costs }
   })
   const verdict = guard(sql, env, { generated, costs, commit })
-  return { parts, notes: renames.notes, setAside, left: diff.left, verdict, empty: !parts.renames && !parts.diff, files: d.files.map((f) => path.relative(root, f)), _: { root, shadowUrl, schema: d.schema, env } }
+  return { parts, notes: renames.notes, setAside, left: diff.left, kept: off.kept, verdict, empty: !parts.renames && !parts.diff, files: d.files.map((f) => path.relative(root, f)), _: { root, shadowUrl, schema: d.schema, env } }
 }
 
 /* apply: each part in its own transaction, in order */
@@ -433,6 +479,7 @@ export async function applyPlan(plan, target, log = console.log) {
       await part(db, 'renames', plan.parts.renames)
       /* the diff again, over the renamed objects, and the guard again over what it now says */
       const again = await diffAgainst(plan._.root, target, plan._.schema, plan._.shadowUrl)
+      again.sql = (await keepOffTables(db, again.sql, plan._.schema)).sql
       const v = guard(again.sql, plan._.env)
       if (!v.ok) throw new Error('plan: the diff over the renamed objects holds a destructive statement — refused; the renames stand (they lose nothing and are the declaration\'s), nothing else applied:\n' + describeHits(v.hits))
       if (v.hits.length) log('  ! allowed by PLATFORMKIT_ALLOW_DESTRUCTIVE=1 after the renames:\n' + describeHits(v.hits))
@@ -445,6 +492,7 @@ export async function applyPlan(plan, target, log = console.log) {
        applied — grants alone, never a structural statement (one would mean the shadow and the target disagree) */
     if (diff && diff.trim()) {
       const settle = await diffAgainst(plan._.root, target, plan._.schema, plan._.shadowUrl)
+      settle.sql = (await keepOffTables(db, settle.sql, plan._.schema)).sql
       const rest = statements(settle.sql || '').map((x) => x.raw).filter((x) => x.trim())
       if (rest.length) {
         if (rest.some((x) => !/^\s*(GRANT|REVOKE)\b/i.test(x))) log('  ! the diff after applying still holds statements that are not grants — left for the next plan:\n' + rest.filter((x) => !/^\s*(GRANT|REVOKE)\b/i.test(x)).map((x) => '    ' + x.split('\n')[0]).join('\n'))
@@ -483,6 +531,7 @@ export function printPlan(plan, target, log = console.log, { verbose = VERBOSE }
     for (const line of sum.lines) log('--   ' + line)
     log('--   (PLATFORMKIT_VERBOSE=1 prints it whole; so does platformkit migrate --plan)')
   }
+  if (plan.kept && plan.kept.length) log(`\n-- kept: ${plan.kept.length} table(s) of a module that is off, rows and all (${some(plan.kept, 8, verbose).join(', ')}) — switching it back on finds them; \`platformkit module drop <key>\` removes them`)
   if (plan.setAside.length) log(`\n-- set aside until the renames are in (${plan.setAside.length} statement(s) on the renamed objects; the apply computes the diff again over them):\n` + some(plan.setAside.map((x) => '--   ' + x.split('\n')[0]), 8, verbose).join('\n'))
   if (plan.left.length) log(`\n-- left to the platform (${plan.left.length} statement(s) on a schema itself, or in auth/storage but not a policy or trigger):\n` + some(plan.left.map((s) => '--   ' + s.split('\n')[0]), 8, verbose).join('\n'))
   log(`\n-- 3. the data script: ${statements(plan.parts.data).length} statement(s), idempotent`)

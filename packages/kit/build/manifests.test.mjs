@@ -433,5 +433,51 @@ if (CRON_SITE.deployment.backend) {
   })
 }
 
+/* ---- THE BACKEND IS OWNED, ALL OF IT (openspec: module-switch-removes-backend) ------------- */
+/*
+ * Switching a module off leaves out of the site's supabase/ tree everything that module owns. Something nobody owns
+ * would be served whatever the switches say — which is how 45 of 58 functions came to be served to every site,
+ * print-render to a site that sells no books. So nothing may be unowned, nothing owned twice, and a glue file or a
+ * file of rows must name modules that exist. And it is shown to fail: a function and a schema file nobody claims,
+ * added to a copy of the tree, are refused by name.
+ */
+{
+  const { ownership, CORE, KIT_SUPABASE } = await import('./modules/backend.mjs')
+  const MODS = await moduleSet(await loadSite())
+  const TMP = (await import('node:os')).tmpdir()
+  t('every schema file, glue, rows file and function is owned', () => {
+    const { faults } = ownership(MODS)
+    assert.deepEqual(faults, [])
+  })
+  t('something nobody owns is refused, by name', () => {
+    const tmp = nodeFs.mkdtempSync(nodePath.join(TMP, 'pk-own-'))
+    try {
+      nodeFs.cpSync(nodePath.join(KIT_SUPABASE, 'schemas'), nodePath.join(tmp, 'schemas'), { recursive: true })
+      for (const f of nodeFs.readdirSync(nodePath.join(KIT_SUPABASE, 'functions'))) nodeFs.mkdirSync(nodePath.join(tmp, 'functions', f), { recursive: true })
+      nodeFs.mkdirSync(nodePath.join(tmp, 'functions', 'nobodys-function'))
+      nodeFs.writeFileSync(nodePath.join(tmp, 'schemas', '61-nobodys.sql'), '')
+      nodeFs.mkdirSync(nodePath.join(tmp, 'data'))
+      nodeFs.writeFileSync(nodePath.join(tmp, 'data', 'nosuchmodule.sql'), '')
+      const { faults } = ownership(MODS, tmp)
+      assert.ok(faults.some((f) => f.includes('nobodys-function')), 'an unowned function passed')
+      assert.ok(faults.some((f) => f.includes('61-nobodys.sql')), 'an unowned schema file passed')
+      assert.ok(faults.some((f) => f.includes('nosuchmodule')), 'rows for a module nobody declares passed')
+    } finally { nodeFs.rmSync(tmp, { recursive: true, force: true }) }
+  })
+  /* a job runs while its module is on, so the function it calls must be declared by that module or by core —
+     never only by a module that may be off (payouts-sweep was the store's and called the sessions' function) */
+  t('every cron job calls a function its own module or core declares', () => {
+    const fileText = (f) => nodeFs.readFileSync(nodePath.join(KIT_SUPABASE, 'schemas', f), 'utf8')
+    const coreText = CORE.schema.map(fileText).join('\n')
+    const wrong = []
+    for (const m of MODS.values()) for (const j of m.owns.cron) {
+      const fn = /public\.([a-z_][a-z0-9_]*)\s*\(/i.exec(j.command)?.[1]
+      const text = coreText + (m.owns.schema || []).map(fileText).join('\n')
+      if (fn && !new RegExp(`FUNCTION "?public"?\\."?${fn}"?\\(`).test(text)) wrong.push(`${m.key}: ${j.name} → ${fn}`)
+    }
+    assert.deepEqual(wrong, [])
+  })
+}
+
 console.log(bad ? `\nmanifests: ${n - bad} passed, ${bad} failed\n` : `\nmanifests: ${n} passed, 0 failed\n`)
 process.exit(bad ? 1 : 0)

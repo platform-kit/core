@@ -31,41 +31,24 @@ begin
     from public.purchases p where p.user_id = uid and p.status = 'paid'
       and p.kind is distinct from 'session' and coalesce(p.checkout_identity, p.stripe_checkout_session_id) is not null
     on conflict (user_id, kind, key, source_id) do nothing;
-    update public.orders o set user_id = uid
-      where o.user_id is null and o.checkout_session in (
-        select coalesce(p.checkout_identity, p.stripe_checkout_session_id) from public.purchases p where p.user_id = uid
-      );
+    perform public.claim_guest_orders(uid);
   end if;
-  if verified then
-    update public.bookings b set user_id = uid
-      where b.user_id is null and b.made_by is null and lower(btrim(b.email)) = lower(btrim(addr));
-    insert into public.entitlements (user_id, kind, key, source, source_id, active)
-    select uid, 'product',
-      case when p.sku like 'offering:%' then 'session:' || p.sku else 'session:' || p.key end,
-      'purchase', coalesce(p.checkout_identity, p.stripe_checkout_session_id) || ':' || units.i::text,
-      not exists (
-        select 1 from public.bookings b
-        where coalesce(b.checkout_identity, b.stripe_checkout_session_id) = coalesce(p.checkout_identity, p.stripe_checkout_session_id)
-          and b.status in ('pending', 'accepted', 'ended')
-      )
-    from public.purchases p
-    cross join lateral generate_series(0, greatest(coalesce(p.quantity, 1), 1) - 1) as units(i)
-    where p.user_id = uid and p.kind = 'session' and p.status = 'paid'
-      and coalesce(p.checkout_identity, p.stripe_checkout_session_id) is not null and (p.key is not null or p.sku like 'offering:%')
-    on conflict (user_id, kind, key, source_id) do nothing;
-    update public.bookings b set credit_id = e.id
-      from public.purchases p
-      join public.entitlements e on e.user_id = uid
-        and e.kind = 'product'
-        and e.source_id = coalesce(p.checkout_identity, p.stripe_checkout_session_id) || ':0'
-      where p.user_id = uid and p.kind = 'session'
-        and coalesce(p.checkout_identity, p.stripe_checkout_session_id) = coalesce(b.checkout_identity, b.stripe_checkout_session_id)
-        and b.credit_id is null
-        and b.status in ('pending', 'accepted', 'ended');
-  end if;
+  perform public.claim_guest_bookings(uid, addr);
   return n;
 end;
 $$;
+
+-- WHAT ELSE A GUEST LEFT UNDER THE ADDRESS: the store's orders, the sessions' bookings and the credits a session bought.
+-- Both are other modules', which may be off, so each is declared here doing nothing and again, claiming, in the glue
+-- the module shares with every site (glue/core+store.sql, glue/core+sessions.sql) (openspec: module-switch-removes-backend).
+CREATE OR REPLACE FUNCTION "public"."claim_guest_orders"("p_user" "uuid") RETURNS "void"
+    LANGUAGE "sql"
+    AS $$ select $$;
+CREATE OR REPLACE FUNCTION "public"."claim_guest_bookings"("p_user" "uuid", "p_addr" "text") RETURNS "void"
+    LANGUAGE "sql"
+    AS $$ select $$;
+REVOKE ALL ON FUNCTION "public"."claim_guest_orders"("uuid") FROM PUBLIC, "anon", "authenticated";
+REVOKE ALL ON FUNCTION "public"."claim_guest_bookings"("uuid", "text") FROM PUBLIC, "anon", "authenticated";
 
 CREATE OR REPLACE FUNCTION "public"."get_my_entitlements"() RETURNS "jsonb"
     LANGUAGE "sql" STABLE SECURITY DEFINER

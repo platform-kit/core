@@ -348,8 +348,7 @@ begin
          released_at = case when p_live then now() else null end,
          released_by = case when p_live then auth.uid() else null end
    where id = p_offering;
-  insert into public.space_moderation (offering_id, kind, actor_id, subject_id, note)
-       values (o.id, case when p_live then 'approve' else 'refuse' end, auth.uid(), o.provider_id, o.title);
+  perform public.provider_release_recorded(o.id, case when p_live then 'approve' else 'refuse' end, o.provider_id, o.title);
   perform set_config('app.releasing', '', true);
   return jsonb_build_object('ok', true, 'state', case when p_live then 'live' else 'draft' end);
 end;
@@ -678,3 +677,11 @@ $$;
 REVOKE ALL ON FUNCTION "public"."provider_standing"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."provider_standing"() FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."provider_standing"() TO "authenticated", "service_role";
+
+-- AN OFFERING RELEASED OR TAKEN BACK goes into the moderation record beside every other act — the spaces module's
+-- table, which may be off. Nothing is recorded here, and the record is written in the glue the two modules share
+-- (glue/sessions+spaces.sql) (openspec: module-switch-removes-backend).
+CREATE OR REPLACE FUNCTION "public"."provider_release_recorded"("p_offering" "uuid", "p_kind" "text", "p_provider" "uuid", "p_note" "text") RETURNS "void"
+    LANGUAGE "sql" VOLATILE
+    AS $$ select $$;
+REVOKE ALL ON FUNCTION "public"."provider_release_recorded"("uuid", "text", "uuid", "text") FROM PUBLIC, "anon", "authenticated";
