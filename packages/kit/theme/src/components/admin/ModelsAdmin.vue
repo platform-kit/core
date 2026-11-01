@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* The content models: the collections' grid (AG Grid, the shared theme) — a row each with its name, its key,
    its fields, its entries, how it is delivered, whether it is on, what is wrong with it — opening into the
    builder (ModelBuilder.vue); New model opens the builder on a blank one. Everything goes through
@@ -21,29 +21,29 @@ import AdminHead from './AdminHead.vue'
 /* the page's own name and its one line, from the admin's words — the same two the shell reads
    when it draws a head, so a page is never named twice in two files */
 const PAGE = { title: (ug('admin', 'rail').views || {})['models'] || '', lead: (ug('admin', 'leads').main || {})['models'] || '' }
-const models = ref([]), loading = ref(true), msg = ref('')
+const models = ref<any>([]), loading = ref(true), msg = ref('')
 /* the custom models from their records, and the core models of the registry — the kit's and the site's — read-only beside them */
 async function load() {
   loading.value = true
   try {
     const [custom, cols] = await Promise.all([pipe.items('models'), pipe.collections()])
-    const core = Object.values(cols).filter((c) => c.core && !c.custom && c.fields.length).map((c) => ({ key: c.key, name: c.label, published: true, fields: c.fields.length, entries: c.count, deliver: [], errors: [], core: true, dir: c.dir, describe: c }))
-    models.value = [...custom.map((m) => ({ ...m, core: false })), ...core]
-  } catch (e) { msg.value = e.message } finally { loading.value = false }
+    const core = Object.values(cols).filter((c) => (c as any).core && !(c as any).custom && (c as any).fields.length).map((c) => ({ key: (c as any).key, name: (c as any).label, published: true, fields: (c as any).fields.length, entries: (c as any).count, deliver: [], errors: [], core: true, dir: (c as any).dir, describe: c }))
+    models.value = [...custom.map((m: any) => ({ ...m, core: false })), ...core]
+  } catch (e) { msg.value = (e as any).message } finally { loading.value = false }
 }
-const coreOf = (key) => models.value.find((m) => m.core && m.key === key) || null
-const kindOf = (f) => (f.kind ? ((us('models').kinds || {})[f.kind] || {}).name || f.kind : f.widget || f.type)
+const coreOf = (key: any) => models.value.find((m: any) => m.core && m.key === key) || null
+const kindOf = (f: any) => (f.kind ? ((us('models').kinds || {})[f.kind] || {}).name || f.kind : f.widget || f.type)
 onMounted(load)
 watch(() => props.name, (n) => { if (!n) load() })
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
-const getRowId = (q) => q.data.key
+const getRowId = (q: any) => q.data.key
 const columnDefs = computed(() => [
-  { headerName: G['col-name'], field: 'name', pinned: 'left', flex: 1.4, minWidth: 200, cellRenderer: (q) => `<span class="ma-gtitle">${q.value}</span><span class="ma-gaddr">${q.data.core ? q.data.dir : 'content/models/' + q.data.key}</span>` },
-  { headerName: G['col-kind'], width: 110, valueGetter: (q) => (q.data.core ? G.core : G.custom), cellRenderer: (q) => `<span class="ui-pill ${q.data.core ? 'ui-off' : 'ui-ok'}">${q.value}</span>` },
-  { headerName: G['col-on'], width: 110, valueGetter: (q) => (q.data.errors && q.data.errors.length ? '!' : q.data.published ? '✓' : '—'), cellRenderer: (q) => (q.data.errors && q.data.errors.length ? `<span class="ui-pill ui-warn" title="${q.data.errors.join('\n').replace(/"/g, '&quot;')}">!</span>` : `<span class="ui-pill ${q.data.published ? 'ui-ok' : 'ui-off'}">${q.value}</span>`) },
+  { headerName: G['col-name'], field: 'name', pinned: 'left', flex: 1.4, minWidth: 200, cellRenderer: (q: any) => `<span class="ma-gtitle">${q.value}</span><span class="ma-gaddr">${q.data.core ? q.data.dir : 'content/models/' + q.data.key}</span>` },
+  { headerName: G['col-kind'], width: 110, valueGetter: (q: any) => (q.data.core ? G.core : G.custom), cellRenderer: (q: any) => `<span class="ui-pill ${q.data.core ? 'ui-off' : 'ui-ok'}">${q.value}</span>` },
+  { headerName: G['col-on'], width: 110, valueGetter: (q: any) => (q.data.errors && q.data.errors.length ? '!' : q.data.published ? '✓' : '—'), cellRenderer: (q: any) => (q.data.errors && q.data.errors.length ? `<span class="ui-pill ui-warn" title="${q.data.errors.join('\n').replace(/"/g, '&quot;')}">!</span>` : `<span class="ui-pill ${q.data.published ? 'ui-ok' : 'ui-off'}">${q.value}</span>`) },
   { headerName: G['col-fields'], field: 'fields', width: 100, type: 'numericColumn' },
   { headerName: G['col-entries'], field: 'entries', width: 100, type: 'numericColumn' },
-  { headerName: G['col-deliver'], flex: 1, minWidth: 180, valueGetter: (q) => (q.data.deliver || []).map((k) => D[k] || k).join(' · ') },
+  { headerName: G['col-deliver'], flex: 1, minWidth: 180, valueGetter: (q: any) => (q.data.deliver || []).map((k: any) => D[k] || k).join(' · ') },
 ])
 </script>
 
@@ -72,7 +72,7 @@ const columnDefs = computed(() => [
       <p v-if="loading" class="ui-muted">…</p>
       <div v-else-if="!models.length" class="ui-empty"><p>{{ W.empty }}</p><button type="button" class="ui-btn ui-primary" @click="emit('open', '__new')">{{ W.new }}</button></div>
       <div v-else class="ma-grid">
-        <AgGridVue class="ma-aggrid" :theme="theme" :row-data="models" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
+        <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: any; field: string; pinned: string; flex: number; minWidth: number; cellRenderer: (q: any) => string; width?: undefined --><AgGridVue class="ma-aggrid" :theme="theme" :row-data="models" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
                    :row-height="54" :suppress-cell-focus="true" @row-clicked="emit('open', $event.data.key)" />
       </div>
     </template>

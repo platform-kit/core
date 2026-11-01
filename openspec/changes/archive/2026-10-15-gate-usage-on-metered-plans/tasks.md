@@ -8,5 +8,5 @@
 
 ## 2. Documentation and verification
 
-- [x] 2.1 Update the Usage billing guide and account guide to explain the metered-plan gate and call the destination Billing; verify with `node packages/kit/build/docs-check.mjs`.
+- [x] 2.1 Update the Usage billing guide and account guide to explain the metered-plan gate and call the destination Billing; verify with `node packages/kit/build/docs-check.mts`.
 - [x] 2.2 Verify every scenario in `specs/account-billing-usage/spec.md`, including signed-out behavior, the concise Billing heading, no eyebrow/intro, and desktop/390px views; run the focused eligibility test and demo build, and report each scenario as passed, failed, or not verified.

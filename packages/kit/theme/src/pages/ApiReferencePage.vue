@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* The API reference at /api: Scalar's reference (MIT) over the OpenAPI document the content function generates from the
    index — every route of the content API and the analytics door, one schema per content type — so the page always
    says what this site serves. Full-bleed under the header, in the site's light or dark as the root's data-theme says
@@ -13,19 +13,20 @@ import SiteMark from '../components/SiteMark.vue'
 
 const W = (us('api').reference || {}).head || {}
 const S = Array.isArray(SITE) ? SITE[0] : SITE
+// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: W.title, description: W.description, path: ROUTES.api, noindex: true })
-const Scalar = shallowRef(null), failed = ref('')
+const Scalar = shallowRef<any>(null), failed = ref('')
 const fns = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '')
 const url = fns + '/functions/v1/content/openapi.json'
 const dark = ref(document.documentElement.dataset.theme === 'dark')
-let mo = null
+let mo: any = null
 onMounted(async () => {
   mo = new MutationObserver(() => { dark.value = document.documentElement.dataset.theme === 'dark' })
   mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
   try {
     const [mod] = await Promise.all([import('@scalar/api-reference'), import('@scalar/api-reference/style.css')])
     Scalar.value = mod.ApiReference
-  } catch (e) { failed.value = e && e.message ? e.message : String(e) }
+  } catch (e) { failed.value = e && (e as any).message ? (e as any).message : String(e) }
 })
 onBeforeUnmount(() => { if (mo) mo.disconnect() })
 </script>

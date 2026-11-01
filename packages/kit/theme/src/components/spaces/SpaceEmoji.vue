@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * THE EMOJI PICKER, one of them, used wherever an emoji is chosen: the composer inserts from it and
  * a message reacts with it. Two pickers would be two sets, two searches and two ideas about what
@@ -15,18 +16,18 @@ import { GROUPS, search, remember } from 'platformkit/lib/spaces/emoji.js'
 const props = defineProps({
   /* drawn away from its button (teleported out of a scroller that would clip it), in which case it
      places itself and carries its own floating rather than relying on a rule reaching it there */
-  at: { type: Object, default: null },
+  at: { type: Object as PropType<any>, default: null },
 })
 const emit = defineEmits(['pick', 'close'])
 const W = computed(() => us('spaces').emoji.main)
 const KEY = 'dl.spaces.emoji'
 
 const q = ref('')
-const box = ref(null)
-const root = ref(null)
-const recent = ref([])
+const box = ref<any>(null)
+const root = ref<any>(null)
+const recent = ref<any>([])
 /* clicking away closes it — the thing every popup owes, said once here rather than by each host */
-const away = (e) => { if (root.value && !root.value.contains(e.target)) emit('close') }
+const away = (e: any) => { if (root.value && !root.value.contains(e.target)) emit('close') }
 onMounted(async () => {
   try { recent.value = JSON.parse(localStorage.getItem(KEY) || '[]') } catch { recent.value = [] }
   await nextTick()
@@ -39,11 +40,11 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', away, true))
 const found = computed(() => (q.value.trim() ? search(q.value) : null))
 const sections = computed(() => {
   if (found.value) return [[W.value.results, found.value.map((e) => e.emoji)]]
-  const out = GROUPS.map(([g, list]) => [W.value['group-' + g] || g, list.map(([e]) => e)])
+  const out = GROUPS.map(([g, list]) => [W.value['group-' + g] || g, (list as any).map(([e]: any) => e)])
   return recent.value.length ? [[W.value.recent, recent.value], ...out] : out
 })
 
-function choose(e) {
+function choose(e: any) {
   recent.value = remember(recent.value, e)
   try { localStorage.setItem(KEY, JSON.stringify(recent.value)) } catch { /* a private window */ }
   emit('pick', e)

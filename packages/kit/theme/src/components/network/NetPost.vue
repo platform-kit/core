@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import site from '#site'
 /*
  * ONE POST, wherever it is drawn — the timeline, somebody's page, a thread, a notification. A post
@@ -24,7 +25,7 @@ import NetMedia from './NetMedia.vue'
 import { mediaUrls } from 'platformkit/lib/spaces/api.js'
 
 const props = defineProps({
-  post: { type: Object, required: true },
+  post: { type: Object as PropType<any>, required: true },
   /* who reposted it, where this is a repost in the timeline */
   repostedBy: { type: String, default: '' },
   /* in a thread: how far in, and whether this is the post the thread was opened on */
@@ -38,12 +39,12 @@ const emit = defineEmits(['reply', 'report', 'removed'])
 const P = computed(() => us('network').post.main)
 const S = computed(() => us('network').shell.main)
 const T = computed(() => us('network').timeline.main)
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const live = computed(() => (props.post.kind === 'space' ? net.messages[props.post.id] || props.post : net.posts[props.post.id] || props.post))
 const author = computed(() => net.people[live.value.author_id] || null)
-const nameOf = (p) => (p && (p.name || p.username)) || P.value.someone
-const pageOf = (p) => (p && p.page && p.username ? ROUTES.people + '/' + p.username : '')
+const nameOf = (p: any) => (p && (p.name || p.username)) || P.value.someone
+const pageOf = (p: any) => (p && p.page && p.username ? ROUTES.people + '/' + p.username : '')
 const reposter = computed(() => (props.repostedBy ? net.people[props.repostedBy] : null))
 const parent = computed(() => (live.value.reply_parent_id ? net.posts[live.value.reply_parent_id] : null))
 const quote = computed(() => (!props.quoted && live.value.quote_id ? net.posts[live.value.quote_id] : null))
@@ -56,9 +57,9 @@ const narrower = computed(() => (FEDERATES ? live.value.audience !== 'everyone' 
    accent, and every other run of words with its links */
 const segs = computed(() => {
   if (live.value.kind !== 'space') return segmentsOf(live.value.text)
-  const names = Object.fromEntries(Object.entries(net.people).map(([k, v]) => [k, v.name || v.username]))
+  const names = Object.fromEntries(Object.entries(net.people).map(([k, v]) => [k, (v as any).name || (v as any).username]))
   const words = { someone: P.value.someone, channel: us('spaces').page.main['channel-word'] }
-  return mentionParts(live.value.text, names, words).flatMap((m) => (m.kind === 'mention' ? [{ kind: 'mention', text: '@' + m.name }] : segmentsOf(m.text)))
+  return mentionParts(live.value.text, names, words).flatMap((m) => (m.kind === 'mention' ? [{ kind: 'mention', text: '@' + m.name }] : segmentsOf((m as any).text)))
 })
 watch(() => live.value.kind === 'space' && live.value.text, (t) => {
   if (!t) return
@@ -70,13 +71,14 @@ const media = computed(() => live.value.media || [])
 const threadHref = computed(() => (live.value.kind === 'space'
   ? ROUTES.spaces + '/' + (live.value.space ? live.value.space.slug + '/' + (live.value.space.channel || '') : '')
   : ROUTES.feed + '/post/' + live.value.id))
+// @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 1.
 const when = computed(() => agoOf(live.value.created_at))
 const whenFull = computed(() => { try { return new Date(live.value.created_at).toLocaleString() } catch { return '' } })
 
 const busy = ref(false)
 const err = ref('')
-const needSignIn = () => { if (window.DLauth) window.DLauth.open() }
-async function toggle(which) {
+const needSignIn = () => { if ((window as any).DLauth) (window as any).DLauth.open() }
+async function toggle(which: any) {
   if (!isSignedIn.value) return needSignIn()
   if (busy.value) return
   if (live.value.kind === 'space' && which !== 'like') return
@@ -85,18 +87,18 @@ async function toggle(which) {
     if (live.value.kind === 'space') await likeMessage(live.value, !live.value.liked)
     else if (which === 'like') await like(live.value.id, !live.value.liked)
     else await repost(live.value.id, !live.value.reposted)
-  } catch (e) { err.value = e.message || String(e) } finally { busy.value = false }
+  } catch (e) { err.value = (e as any).message || String(e) } finally { busy.value = false }
 }
 
 /* the reader's own post may be deleted; anybody else's may be reported. The menu sits in the
    actions row, beside the actions, and closes on any press outside it. */
 const menu = ref(false)
-function closeMenu(e) { if (!e.target.closest || !e.target.closest('.np-menu')) { menu.value = false; document.removeEventListener('click', closeMenu, true) } }
+function closeMenu(e: any) { if (!e.target.closest || !e.target.closest('.np-menu')) { menu.value = false; document.removeEventListener('click', closeMenu, true) } }
 function openMenu() { menu.value = !menu.value; if (menu.value) setTimeout(() => document.addEventListener('click', closeMenu, true)) }
 async function drop() {
   menu.value = false
   if (!window.confirm(P.value['delete-confirm'])) return
-  try { await remove(live.value.id); emit('removed', live.value.id) } catch (e) { err.value = e.message || String(e) }
+  try { await remove(live.value.id); emit('removed', live.value.id) } catch (e) { err.value = (e as any).message || String(e) }
 }
 /* SHARE: the post's address, copied — said on the button for a moment */
 const copied = ref(false)
@@ -105,7 +107,7 @@ async function share() {
   try { await navigator.clipboard.writeText(url); copied.value = true; setTimeout(() => { copied.value = false }, 1600) } catch { window.prompt(S.value.share, url) }
 }
 function reportIt() { menu.value = false; if (!isSignedIn.value) return needSignIn(); emit('report', live.value) }
-function open(e) {
+function open(e: any) {
   /* a press on the card opens the thread — but not one on a link, a button or a picture */
   if (props.quoted || props.focus) return
   if (e.target.closest('a, button, img, input, textarea')) return

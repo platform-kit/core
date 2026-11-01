@@ -5,9 +5,9 @@ order: 31
 sources:
   [
     packages/kit/supabase/schemas/98-achievements.sql,
-    packages/kit/build/achievements-push.mjs,
-    packages/kit/build/steps/achievements.mjs,
-    packages/kit/src/lib/awards.js,
+    packages/kit/build/achievements-push.mts,
+    packages/kit/build/steps/achievements.mts,
+    packages/kit/src/lib/awards.ts,
     packages/kit/theme/src/pages/AwardPage.vue,
     packages/kit/theme/src/components/AwardBadge.vue,
     packages/kit/theme/src/content/ui/awards.md,

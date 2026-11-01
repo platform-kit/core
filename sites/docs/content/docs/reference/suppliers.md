@@ -2,7 +2,15 @@
 title: Suppliers
 description: The one interface anything that makes or sends a thing wears, and how a site adds its own.
 order: 86
-sources: [packages/kit/supabase/functions/_shared/suppliers, packages/kit/build/suppliers.mjs, packages/kit/build/kinds, packages/kit/build/suppliers.test.mjs, packages/kit/build/store-kinds.test.mjs, sites/demo/build/suppliers.mjs]
+sources:
+  [
+    packages/kit/supabase/functions/_shared/suppliers,
+    packages/kit/build/suppliers.mts,
+    packages/kit/build/kinds,
+    packages/kit/build/suppliers.test.mjs,
+    packages/kit/build/store-kinds.test.mjs,
+    sites/demo/build/suppliers.mjs,
+  ]
 reviewed: 2026-10-01
 ---
 
@@ -16,7 +24,7 @@ That is the whole vocabulary, and it is deliberately empty of any word belonging
 thing:
 
 - **`chosen`** — the variant's own option values: what the buyer picked.
-- **`artefacts`** — whatever the *kind* derived for that variant: a book's page count and its
+- **`artefacts`** — whatever the _kind_ derived for that variant: a book's page count and its
   print files, a garment's artwork and its placements. The supplier understands them and nothing
   between the two needs to.
 
@@ -25,34 +33,34 @@ but a book could not implement it — "plug-in" was true only of printers.
 
 ## The interface
 
-| Field | What it is |
-| --- | --- |
-| `id` | a slug naming this supplier; the only place it is ever written |
-| `name` | what a person calls it |
-| `makes` | the formats it can **make**; `[]` for one that only sends |
-| `sends` | whether anything physically travels |
-| `stateful` | whether it keeps a title of its own, made once and replaced free after |
-| `keys` | the **environment** keys it cannot work without, by name |
-| `needs` | the **artefacts** it needs a kind to have produced |
-| `levels` | our three shipping words (`standard`, `priority`, `express`) in its own |
+| Field      | What it is                                                              |
+| ---------- | ----------------------------------------------------------------------- |
+| `id`       | a slug naming this supplier; the only place it is ever written          |
+| `name`     | what a person calls it                                                  |
+| `makes`    | the formats it can **make**; `[]` for one that only sends               |
+| `sends`    | whether anything physically travels                                     |
+| `stateful` | whether it keeps a title of its own, made once and replaced free after  |
+| `keys`     | the **environment** keys it cannot work without, by name                |
+| `needs`    | the **artefacts** it needs a kind to have produced                      |
+| `levels`   | our three shipping words (`standard`, `priority`, `express`) in its own |
 
 `keys` and `needs` answer two different questions and a supplier that confused them would
 report `LULU_CLIENT_KEY` as a missing artefact. `keys` is how a deploy refuses before it
 starts; `needs` is matched against a kind's `produces` when the shop is configured.
 
-| Method | What it answers |
-| --- | --- |
-| `configured()` / `mock()` | keys present; every call answered locally |
-| `options(format)` | the **shop's** choices about how a thing is made — the admin's tab |
-| `catalogue(chosen)` | the **buyer's** axes, where the supplier publishes them. Optional |
-| `product({ chosen, options })` | its own descriptor for that variant. Pure |
-| `measure({ product, artefacts })` | a shape, where it has one |
-| `quote({ product, artefacts, quantity, country, level })` | `{ print, shipping, currency, days }` |
-| `validate({ product, artefacts })` | `{ ok, errors }` |
-| `register({ product, artefacts, title, sku, existing })` | stateful suppliers only |
-| `order({ product, artefacts, ref, title, quantity, address, email, level, externalId, callbackUrl })` | `{ id, status, cost }` |
-| `status(id)` / `statusOf(word)` | its words onto ours: submitted · in_production · shipped · rejected · canceled · failed |
-| `webhook(body)` / `ensureWebhook(url)` | the job id a callback names; registering the callback |
+| Method                                                                                                | What it answers                                                                         |
+| ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `configured()` / `mock()`                                                                             | keys present; every call answered locally                                               |
+| `options(format)`                                                                                     | the **shop's** choices about how a thing is made — the admin's tab                      |
+| `catalogue(chosen)`                                                                                   | the **buyer's** axes, where the supplier publishes them. Optional                       |
+| `product({ chosen, options })`                                                                        | its own descriptor for that variant. Pure                                               |
+| `measure({ product, artefacts })`                                                                     | a shape, where it has one                                                               |
+| `quote({ product, artefacts, quantity, country, level })`                                             | `{ print, shipping, currency, days }`                                                   |
+| `validate({ product, artefacts })`                                                                    | `{ ok, errors }`                                                                        |
+| `register({ product, artefacts, title, sku, existing })`                                              | stateful suppliers only                                                                 |
+| `order({ product, artefacts, ref, title, quantity, address, email, level, externalId, callbackUrl })` | `{ id, status, cost }`                                                                  |
+| `status(id)` / `statusOf(word)`                                                                       | its words onto ours: submitted · in_production · shipped · rejected · canceled · failed |
+| `webhook(body)` / `ensureWebhook(url)`                                                                | the job id a callback names; registering the callback                                   |
 
 A supplier that sends nothing — a download — answers `order` by saying it is already done. One
 that is a shelf in a back room says so too, and waits for somebody to mark it sent.
@@ -65,14 +73,14 @@ the last two is how a shop ends up offering free shipping it cannot do.
 
 ## The ones the kit ships
 
-| Id | Makes | Keys |
-| --- | --- | --- |
-| `lulu` | softcover · hardcover | `LULU_CLIENT_KEY`, `LULU_CLIENT_SECRET` (+ `LULU_SANDBOX`) |
-| `mixam` | softcover · hardcover | `MIXAM_USER`, `MIXAM_PASS` (+ `MIXAM_UK`) |
-| `bookvault` | softcover · hardcover · premium | `BOOKVAULT_API_KEY` |
-| `post-room` | — (it only sends) | none |
-| `printify` | shirt · hoodie | `PRINTIFY_API_KEY`, `PRINTIFY_SHOP_ID` |
-| `download` | pdf · epub | none |
+| Id          | Makes                           | Keys                                                       |
+| ----------- | ------------------------------- | ---------------------------------------------------------- |
+| `lulu`      | softcover · hardcover           | `LULU_CLIENT_KEY`, `LULU_CLIENT_SECRET` (+ `LULU_SANDBOX`) |
+| `mixam`     | softcover · hardcover           | `MIXAM_USER`, `MIXAM_PASS` (+ `MIXAM_UK`)                  |
+| `bookvault` | softcover · hardcover · premium | `BOOKVAULT_API_KEY`                                        |
+| `post-room` | — (it only sends)               | none                                                       |
+| `printify`  | shirt · hoodie                  | `PRINTIFY_API_KEY`, `PRINTIFY_SHOP_ID`                     |
+| `download`  | pdf · epub                      | none                                                       |
 
 Every one is mocked by `PRINT_MOCK=1`, by its own `<ID>_MOCK`, and by having no keys — which
 is what lets the whole chain run on a fresh clone with no account.
@@ -128,7 +136,7 @@ a garment printer that publishes a catalogue.
 
 ## Asking for them
 
-`packages/kit/build/suppliers.mjs` is the one build-side door — `suppliersFor(ctx)` and
+`packages/kit/build/suppliers.mts` is the one build-side door — `suppliersFor(ctx)` and
 `kindsFor(ctx)`, both bound to the process's environment and cached per site root. Everything
 that needs a supplier asks there. Reaching past it to `_shared/suppliers/index.js` gets the
 kit's five and silently loses the site's, which is the shape a plug-in seam rots into: true of

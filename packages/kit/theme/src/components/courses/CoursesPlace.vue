@@ -8,7 +8,7 @@
   <CoursesView :base="COURSES_PLACE_BASE" :path="rest" place />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { COURSES_PLACE_BASE } from 'platformkit/lib/router.js'
 import CoursesView from './CoursesView.vue'
 

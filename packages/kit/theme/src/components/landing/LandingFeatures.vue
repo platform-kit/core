@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 import { glyph } from './icons.js'
 import SectionHead from './SectionHead.vue'
@@ -23,7 +24,7 @@ defineProps({
   alt: { type: String, default: '' },
   side: { type: String, default: 'right' },       /* the picture's side, for the list: left | right */
   cta: { type: String, default: '' }, href: { type: String, default: '' },
-  items: { type: Array, default: () => [] },      /* [{ icon, title, body, href?, link?, image?, highlight? }] */
+  items: { type: Array as PropType<any[]>, default: () => [] },      /* [{ icon, title, body, href?, link?, image?, highlight? }] */
 })
 </script>
 

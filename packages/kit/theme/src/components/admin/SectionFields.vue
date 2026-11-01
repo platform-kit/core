@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A section's fields, drawn from its zod schema (components/landing/schemas.js): one control per
  * field by its type — a line, a paragraph, a number, a switch, a choice (segmented when few, a select
@@ -14,34 +15,35 @@ import pipe from '../../lib/admin/api.js'
 import MarkdownEditor from './MarkdownEditor.vue'
 import GlyphPicker from './GlyphPicker.vue'
 import { forms as FORMS } from '#content'
-const FORM_SLUGS = (FORMS || []).map((f) => ({ slug: f.slug, title: (f.model && f.model.title) || f.slug }))
+const FORM_SLUGS = (FORMS || []).map((f: any) => ({ slug: f.slug, title: (f.model && f.model.title) || f.slug }))
 import { GripVerticalIcon, ChevronDownIcon, CopyIcon, TrashIcon, PlusIcon, UploadIcon, FolderOpenIcon, XIcon } from 'lucide-vue-next'
 import { us } from 'platformkit/lib/strings.js'
 import { useMediaPick } from '../../lib/admin/media-pick.js'
 
 const props = defineProps({
   shape: { type: null, required: true },        /* a zod object schema */
-  config: { type: Object, default: () => ({}) },
-  modelValue: { type: Object, default: () => ({}) },
-  errors: { type: Object, default: () => ({}) }, /* dotted path → message */
+  config: { type: Object as PropType<any>, default: () => ({}) },
+  modelValue: { type: Object as PropType<any>, default: () => ({}) },
+  errors: { type: Object as PropType<any>, default: () => ({}) }, /* dotted path → message */
   base: { type: String, default: '' },           /* this record's path, for the errors */
 })
 const emit = defineEmits(['update:modelValue'])
 
-const unwrap = (z) => { while (z && z._def && 'innerType' in z._def) z = z._def.innerType; return z }
-const beautify = (k) => String(k).replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())
+const unwrap = (z: any) => { while (z && z._def && 'innerType' in z._def) z = z._def.innerType; return z }
+const beautify = (k: any) => String(k).replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())
 /* a field shown only while another says so: `when: (values) => boolean` in its config */
-const shown = (f) => !f.cfg.when || f.cfg.when(props.modelValue || {})
+const shown = (f: any) => !f.cfg.when || f.cfg.when(props.modelValue || {})
 /* the section's look — tone, glow, ground, spacing, width, reveal, anchor — folded away at the foot */
 const lookOpen = ref(false)
 const main = computed(() => fields.value.filter((f) => f.cfg.group !== 'look'))
 const look = computed(() => fields.value.filter((f) => f.cfg.group === 'look'))
 const fields = computed(() => {
   const s = unwrap(props.shape)
-  const shape = (s && s.shape) || {}
+  const shape: any = (s && s.shape) || {}
   return Object.keys(shape).map((key) => {
     const z = shape[key], b = unwrap(z), cfg = (props.config || {})[key] || {}
     const t = b._def.typeName
+    // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ ZodString: string; ZodNumber: string; Z
     let kind = cfg.component || ({ ZodString: 'text', ZodNumber: 'number', ZodBoolean: 'boolean', ZodEnum: 'enum', ZodArray: 'list', ZodObject: 'group' })[t] || 'text'
     let of = null, values = null
     if (t === 'ZodEnum') values = b._def.values
@@ -52,53 +54,53 @@ const fields = computed(() => {
     return { key, kind, of, values, wide, fallback, required: !['ZodOptional', 'ZodDefault', 'ZodNullable'].includes(z._def.typeName), label: cfg.label || z.description || b.description || beautify(key), cfg, schema: b, min: b._def.minValue, max: b._def.maxValue }
   })
 })
-const val = (key) => (props.modelValue || {})[key]
-const cur = (f) => { const v = val(f.key); return v === undefined || v === null || v === '' ? f.fallback : v }
+const val = (key: any) => (props.modelValue || {})[key]
+const cur = (f: any) => { const v = val(f.key); return v === undefined || v === null || v === '' ? f.fallback : v }
 /* the look's own shape and config, cut from the section's for the nested renderer */
-const lookShape = computed(() => { const s = unwrap(props.shape); const shape = {}; for (const f of look.value) shape[f.key] = s.shape[f.key]; return { _def: { typeName: 'ZodObject' }, shape } })
+const lookShape = computed(() => { const s = unwrap(props.shape); const shape = {}; for (const f of look.value) (shape as any)[f.key] = s.shape[f.key]; return { _def: { typeName: 'ZodObject' }, shape } })
 const lookCfg = computed(() => Object.fromEntries(look.value.map((f) => [f.key, { ...f.cfg, group: undefined }])))
-function set(key, v) { emit('update:modelValue', { ...(props.modelValue || {}), [key]: v }) }
-const at = (key) => (props.base ? props.base + '.' + key : key)
-const err = (key) => props.errors[at(key)] || ''
-const clone = (v) => JSON.parse(JSON.stringify(v == null ? null : v))
+function set(key: any, v: any) { emit('update:modelValue', { ...(props.modelValue || {}), [key]: v }) }
+const at = (key: any) => (props.base ? props.base + '.' + key : key)
+const err = (key: any) => props.errors[at(key)] || ''
+const clone = (v: any) => JSON.parse(JSON.stringify(v == null ? null : v))
 
 /* a record's blank, from its shape */
-function blank(z) {
+function blank(z: any) {
   const s = unwrap(z); if (!s || !s.shape) return {}
-  const o = {}
+  const o: any = {}
   for (const k of Object.keys(s.shape)) { const b = unwrap(s.shape[k]), t = b._def.typeName; o[k] = t === 'ZodNumber' ? 0 : t === 'ZodBoolean' ? false : t === 'ZodArray' ? [] : t === 'ZodObject' ? blank(b) : t === 'ZodEnum' ? b._def.values[0] : '' }
   return o
 }
 /* lists: lines and rows */
-const listOf = (key) => (Array.isArray(val(key)) ? val(key) : [])
-function addLine(key) { set(key, listOf(key).concat('')) }
-function setLine(key, i, v) { const a = listOf(key).slice(); a[i] = v; set(key, a) }
-function removeAt(key, i) { const a = listOf(key).slice(); a.splice(i, 1); set(key, a) }
-function move(key, e) { if (e.oldIndex === e.newIndex) return; const a = listOf(key).slice(); const [m] = a.splice(e.oldIndex, 1); a.splice(e.newIndex, 0, m); set(key, a) }
-const open = ref({})   /* which rows are open, by "key.i" */
-function addRow(f) { const a = listOf(f.key); set(f.key, a.concat([blank(f.of)])); open.value[f.key + '.' + a.length] = true }
-function dupRow(f, i) { const a = listOf(f.key).slice(); a.splice(i + 1, 0, clone(a[i])); set(f.key, a) }
-function setRow(key, i, v) { const a = listOf(key).slice(); a[i] = v; set(key, a) }
-function rowTitle(f, row, i) {
+const listOf = (key: any) => (Array.isArray(val(key)) ? val(key) : [])
+function addLine(key: any) { set(key, listOf(key).concat('')) }
+function setLine(key: any, i: any, v: any) { const a = listOf(key).slice(); a[i] = v; set(key, a) }
+function removeAt(key: any, i: any) { const a = listOf(key).slice(); a.splice(i, 1); set(key, a) }
+function move(key: any, e: any) { if (e.oldIndex === e.newIndex) return; const a = listOf(key).slice(); const [m] = a.splice(e.oldIndex, 1); a.splice(e.newIndex, 0, m); set(key, a) }
+const open = ref<any>({})   /* which rows are open, by "key.i" */
+function addRow(f: any) { const a = listOf(f.key); set(f.key, a.concat([blank(f.of)])); open.value[f.key + '.' + a.length] = true }
+function dupRow(f: any, i: any) { const a = listOf(f.key).slice(); a.splice(i + 1, 0, clone(a[i])); set(f.key, a) }
+function setRow(key: any, i: any, v: any) { const a = listOf(key).slice(); a[i] = v; set(key, a) }
+function rowTitle(f: any, row: any, i: any) {
   if (f.cfg.summary) { try { const s = f.cfg.summary(row); if (s) return String(s) } catch (e) { /* the row is half-made */ } }
   const shape = (unwrap(f.of) || {}).shape || {}
-  const isText = (k) => shape[k] && unwrap(shape[k])._def.typeName === 'ZodString' && typeof row[k] === 'string' && row[k].trim()
+  const isText = (k: any) => shape[k] && unwrap(shape[k])._def.typeName === 'ZodString' && typeof row[k] === 'string' && row[k].trim()
   const first = ['title', 'name', 'label', 'question', 'heading', 'quote', 'value', 'date', 'text', 'caption'].find(isText) || Object.keys(shape).find(isText)
   return first ? row[first] : (f.cfg.item || 'Item') + ' ' + (i + 1)
 }
-const rowsWithErr = (f, i) => Object.keys(props.errors).some((p) => p.startsWith(at(f.key) + '.' + i + '.'))
+const rowsWithErr = (f: any, i: any) => Object.keys(props.errors).some((p) => p.startsWith(at(f.key) + '.' + i + '.'))
 /* pictures: an address written, a file uploaded into content/uploads, or one chosen from the library */
 const MF = us('media').page.field
 const { choose } = useMediaPick()
-async function fromLibrary(key) { const url = await choose('image'); if (url) set(key, url) }
-const uploading = ref({})
-async function upload(key, e) {
+async function fromLibrary(key: any) { const url = await choose('image'); if (url) set(key, url) }
+const uploading = ref<any>({})
+async function upload(key: any, e: any) {
   const file = e.target.files && e.target.files[0]; e.target.value = ''
   if (!file) return
   uploading.value[key] = true
-  try { const j = await pipe.uploadImage(file); set(key, j.path) } catch (x) { alert(x.message) } finally { uploading.value[key] = false }
+  try { const j = await pipe.uploadImage(file); set(key, j.path) } catch (x) { alert((x as any).message) } finally { uploading.value[key] = false }
 }
-const fit = (el) => { el.style.height = 'auto'; el.style.height = Math.max(el.scrollHeight, 40) + 'px' }
+const fit = (el: any) => { el.style.height = 'auto'; el.style.height = Math.max(el.scrollHeight, 40) + 'px' }
 const vAutosize = { mounted: fit, updated: fit }
 </script>
 
@@ -108,7 +110,7 @@ const vAutosize = { mounted: fit, updated: fit }
     <div class="sfd-f" :class="{ wide: f.wide, bad: !!err(f.key), ['k-' + f.kind]: true }">
       <!-- a switch carries its own label, on the same line -->
       <label v-if="f.kind === 'boolean'" class="sfd-switch">
-        <input type="checkbox" :checked="!!cur(f)" @change="set(f.key, $event.target.checked)" /><i></i>
+        <input type="checkbox" :checked="!!cur(f)" @change="set(f.key, ($event.target as any).checked)" /><i></i>
         <span class="sfd-lab">{{ f.label }}</span>
         <small v-if="f.cfg.description" class="sfd-desc">{{ f.cfg.description }}</small>
       </label>
@@ -118,14 +120,14 @@ const vAutosize = { mounted: fit, updated: fit }
           <span v-if="f.kind === 'lines' || f.kind === 'rows'" class="sfd-n">{{ listOf(f.key).length || '' }}</span>
         </div>
 
-        <input v-if="f.kind === 'text'" type="text" class="sfd-in" :value="val(f.key) ?? ''" :placeholder="f.cfg.placeholder || ''" @input="set(f.key, $event.target.value)" />
-        <textarea v-else-if="f.kind === 'textarea'" v-autosize class="sfd-in sfd-ta" :value="val(f.key) ?? ''" rows="2" :placeholder="f.cfg.placeholder || ''" @input="fit($event.target); set(f.key, $event.target.value)" />
+        <input v-if="f.kind === 'text'" type="text" class="sfd-in" :value="val(f.key) ?? ''" :placeholder="f.cfg.placeholder || ''" @input="set(f.key, ($event.target as any).value)" />
+        <textarea v-else-if="f.kind === 'textarea'" v-autosize class="sfd-in sfd-ta" :value="val(f.key) ?? ''" rows="2" :placeholder="f.cfg.placeholder || ''" @input="fit($event.target); set(f.key, ($event.target as any).value)" />
         <MarkdownEditor v-else-if="f.kind === 'markdown'" :model-value="val(f.key) ?? ''" prose class="sfd-md" @update:model-value="set(f.key, $event)" />
         <div v-else-if="f.kind === 'number'" class="sfd-num">
-          <input type="number" class="sfd-in" :value="cur(f) ?? ''" :min="f.min" :max="f.max" step="1" @input="set(f.key, $event.target.value === '' ? undefined : Number($event.target.value))" />
+          <input type="number" class="sfd-in" :value="cur(f) ?? ''" :min="f.min" :max="f.max" step="1" @input="set(f.key, ($event.target as any).value === '' ? undefined : Number(($event.target as any).value))" />
         </div>
         <div v-else-if="f.kind === 'form'" class="sfd-sel">
-          <select class="sfd-in" :value="cur(f) ?? ''" @change="set(f.key, $event.target.value)">
+          <select class="sfd-in" :value="cur(f) ?? ''" @change="set(f.key, ($event.target as any).value)">
             <option value="">—</option>
             <option v-for="o in FORM_SLUGS" :key="o.slug" :value="o.slug">{{ o.title }}</option>
           </select><ChevronDownIcon :size="14" class="sfd-selchev" />
@@ -135,24 +137,24 @@ const vAutosize = { mounted: fit, updated: fit }
           <button v-for="v in f.values" :key="v" type="button" :class="{ on: cur(f) === v }" :aria-pressed="cur(f) === v" @click="set(f.key, v)">{{ (f.cfg.labels && f.cfg.labels[v]) || beautify(v) }}</button>
         </div>
         <div v-else-if="f.kind === 'enum'" class="sfd-sel">
-          <select class="sfd-in" :value="cur(f) ?? ''" @change="set(f.key, $event.target.value)">
+          <select class="sfd-in" :value="cur(f) ?? ''" @change="set(f.key, ($event.target as any).value)">
             <option v-for="v in f.values" :key="v" :value="v">{{ (f.cfg.labels && f.cfg.labels[v]) || beautify(v) }}</option>
           </select><ChevronDownIcon :size="14" class="sfd-selchev" />
         </div>
         <div v-else-if="f.kind === 'image'" class="sfd-img" :class="{ has: !!val(f.key) }">
           <span class="sfd-thumb"><img v-if="val(f.key)" :src="val(f.key)" alt="" /><UploadIcon v-else :size="16" /></span>
-          <input type="text" class="sfd-in" :value="val(f.key) ?? ''" :placeholder="f.cfg.placeholder || MF.paste" @input="set(f.key, $event.target.value)" />
+          <input type="text" class="sfd-in" :value="val(f.key) ?? ''" :placeholder="f.cfg.placeholder || MF.paste" @input="set(f.key, ($event.target as any).value)" />
           <label class="sfd-up" :class="{ busy: uploading[f.key] }" :title="MF['upload-image']"><input type="file" accept="image/*" hidden @change="upload(f.key, $event)" /><UploadIcon :size="14" /><span>{{ uploading[f.key] ? MF.uploading : MF.upload }}</span></label>
           <button type="button" class="sfd-up" :title="MF.choose" @click="fromLibrary(f.key)"><FolderOpenIcon :size="14" /></button>
           <button v-if="val(f.key)" type="button" class="sfd-x" title="Clear" @click="set(f.key, '')"><XIcon :size="13" /></button>
         </div>
 
         <div v-else-if="f.kind === 'lines'" class="sfd-lines">
-          <draggable :model-value="listOf(f.key).map((text, i) => ({ text, i }))" item-key="i" handle=".sfd-grip" class="sfd-list" ghost-class="sfd-ghost" :animation="150" :force-fallback="true" :fallback-tolerance="4" @end="move(f.key, $event)">
+          <draggable :model-value="listOf(f.key).map((text: any, i: any) => ({ text, i }))" item-key="i" handle=".sfd-grip" class="sfd-list" ghost-class="sfd-ghost" :animation="150" :force-fallback="true" :fallback-tolerance="4" @end="move(f.key, $event)">
             <template #item="{ element, index }">
               <div class="sfd-line" :class="{ bad: !!errors[at(f.key) + '.' + index] }">
                 <button type="button" class="sfd-grip" tabindex="-1" aria-label="Drag to reorder"><GripVerticalIcon :size="13" /></button>
-                <input type="text" class="sfd-in" :value="element.text" :placeholder="f.cfg.placeholder || ''" @input="setLine(f.key, index, $event.target.value)" />
+                <input type="text" class="sfd-in" :value="element.text" :placeholder="f.cfg.placeholder || ''" @input="setLine(f.key, index, ($event.target as any).value)" />
                 <button type="button" class="sfd-rm" title="Remove" @click="removeAt(f.key, index)"><XIcon :size="13" /></button>
               </div>
             </template>
@@ -161,7 +163,7 @@ const vAutosize = { mounted: fit, updated: fit }
         </div>
 
         <div v-else-if="f.kind === 'rows'" class="sfd-rows">
-          <draggable :model-value="listOf(f.key).map((row, i) => ({ row, i }))" item-key="i" handle=".sfd-grip" class="sfd-list" ghost-class="sfd-ghost" :animation="150" :force-fallback="true" :fallback-tolerance="4" @end="move(f.key, $event)">
+          <draggable :model-value="listOf(f.key).map((row: any, i: any) => ({ row, i }))" item-key="i" handle=".sfd-grip" class="sfd-list" ghost-class="sfd-ghost" :animation="150" :force-fallback="true" :fallback-tolerance="4" @end="move(f.key, $event)">
             <template #item="{ element, index }">
               <div class="sfd-row" :class="{ open: open[f.key + '.' + index], bad: rowsWithErr(f, index) }">
                 <div class="sfd-rowhead">

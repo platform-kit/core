@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * THE TICKETS SIDE OF THE WIDGET.
  *
@@ -20,7 +20,7 @@ import { whenOf } from 'platformkit/lib/chat/model.js'
 import SupportMark from './SupportMark.vue'
 
 const T = us('support').widget.tickets
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 /* list | one | new */
 const view = ref('list')
@@ -30,12 +30,12 @@ const said = ref('')
 const title = ref('')
 const body = ref('')
 
-const statusWord = (s) => T[`status-${s}`] || s
-const at = (iso) => whenOf(iso)
+const statusWord = (s: any) => T[`status-${s}`] || s
+const at = (iso: any) => whenOf(iso)
 
 onMounted(() => loadTickets())
 
-async function show(id) { view.value = 'one'; said.value = ''; await openTicket(id) }
+async function show(id: any) { view.value = 'one'; said.value = ''; await openTicket(id) }
 function back() { view.value = 'list'; closeTicket(); failed.value = '' }
 function goNew() { view.value = 'new'; title.value = ''; body.value = ''; failed.value = '' }
 
@@ -61,8 +61,8 @@ async function report() {
 }
 
 /* what a timeline entry says. A state change is a sentence, not a row of fields. */
-const lineOf = (e) => (e.kind === 'status' ? fill(T.changed, { what: statusWord((e.data || {}).to) }) : e.body || '')
-const shown = computed(() => (ticket.timeline || []).filter((e) => lineOf(e)))
+const lineOf = (e: any) => (e.kind === 'status' ? fill(T.changed, { what: statusWord((e.data || {}).to) }) : e.body || '')
+const shown = computed<any>(() => (ticket.timeline || []).filter((e: any) => lineOf(e)))
 </script>
 
 <template>
@@ -88,7 +88,7 @@ const shown = computed(() => (ticket.timeline || []).filter((e) => lineOf(e)))
       <p v-if="ticket.loading && !ticket.row" class="st-none">{{ T.loading }}</p>
       <template v-if="ticket.row">
         <h3 class="st-title">{{ ticket.row.title }}</h3>
-        <p class="st-meta"><i class="st-pill" :class="ticket.row.status">{{ statusWord(ticket.row.status) }}</i>{{ fill(T.ref, { n: ticket.row.ref }) }} · {{ fill(T.opened, { when: at(ticket.row.created_at) }) }}</p>
+        <p class="st-meta"><!-- @vue-expect-error TS2339, from the conversion: Property 'status' does not exist on type 'never'. --><i class="st-pill" :class="ticket.row.status"><!-- @vue-expect-error TS2339, from the conversion: Property 'status' does not exist on type 'never'. -->{{ statusWord(ticket.row.status) }}</i>{{ fill(T.ref, { n: ticket.row.ref }) }} · {{ fill(T.opened, { when: at(ticket.row.created_at) }) }}</p>
         <div class="st-line" v-for="e in shown" :key="e.id" :class="{ own: e.by_contact, note: e.kind === 'status' }">
           <SupportMark v-if="!e.by_contact && e.kind !== 'status'" :name="e.agent_name || ''" :size="26" />
           <div class="st-said">

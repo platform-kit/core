@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* When you are away — the stretches of days nobody can book, on the Coaching tab beside Your hours:
    a from and a to, what it is (only they see it), and who takes it instead. A day off on its own is
    an exception on a set of hours; this is for the stretch, and it comes back by itself.
@@ -7,17 +7,18 @@ import { ref, onMounted } from 'vue'
 import { us } from '../strings.js'
 import { getAway, addAway, removeAway, coverChoices } from 'platformkit/lib/hours.js'
 const A = us('library').coaching.away || {}
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const open = ref(false), loading = ref(true), saving = ref(false), error = ref('')
-const rows = ref([]), covers = ref([])
+const rows = ref<any>([]), covers = ref<any>([])
 const draft = ref({ from: '', to: '', reason: '', cover: '' })
 const today = new Date().toISOString().slice(0, 10)
-const nameOf = (id) => (covers.value.find((c) => c.id === id) || {}).name || ''
-const dayLabel = (d) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d + 'T12:00:00')) } catch (e) { return d } }
+// @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
+const nameOf = (id: any) => (covers.value.find((c) => (c as any).id === id) || {}).name || ''
+const dayLabel = (d: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d + 'T12:00:00')) } catch (e) { return d } }
 async function load() {
   loading.value = true
   try { rows.value = await getAway(); covers.value = await coverChoices() }
-  catch (e) { error.value = e.message } finally { loading.value = false }
+  catch (e) { error.value = (e as any).message } finally { loading.value = false }
 }
 onMounted(load)
 async function add() {
@@ -26,10 +27,10 @@ async function add() {
   try {
     rows.value = await addAway({ ...draft.value, to: draft.value.to || draft.value.from })
     draft.value = { from: '', to: '', reason: '', cover: '' }
-  } catch (e) { error.value = A.error || e.message } finally { saving.value = false }
+  } catch (e) { error.value = A.error || (e as any).message } finally { saving.value = false }
 }
-async function drop(id) { try { rows.value = await removeAway(id) } catch (e) { error.value = e.message } }
-const summary = () => (rows.value.length ? rows.value.map((r) => fill(A.one, { from: dayLabel(r.from), to: dayLabel(r.to) })).join(' · ') : A['none-yet'])
+async function drop(id: any) { try { rows.value = await removeAway(id) } catch (e) { error.value = (e as any).message } }
+const summary = () => (rows.value.length ? rows.value.map((r: any) => fill(A.one, { from: dayLabel((r as any).from), to: dayLabel((r as any).to) })).join(' · ') : A['none-yet'])
 </script>
 
 <template>

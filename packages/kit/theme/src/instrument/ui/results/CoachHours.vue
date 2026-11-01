@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* Your hours — a host's own availability, on the Coaching tab: the time zone, the week as seven rows
    (a switch per day, its ranges as from · to pickers, add and remove), the breathing room, the notice,
    the cap, and the exceptions (a date, off all day or its own ranges). Every value a control; saved
@@ -7,34 +7,35 @@ import { ref, computed, onMounted } from 'vue'
 import { us } from '../strings.js'
 import { getHours, setHours, setOverride, removeOverride, makeDefault, forgetHours, zones, WEEKDAYS, emptyHours } from 'platformkit/lib/hours.js'
 const H = us('library').coaching.hours || {}
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-const DAYS = { 1: H.mon, 2: H.tue, 3: H.wed, 4: H.thu, 5: H.fri, 6: H.sat, 7: H.sun }
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const DAYS: any = { 1: H.mon, 2: H.tue, 3: H.wed, 4: H.thu, 5: H.fri, 6: H.sat, 7: H.sun }
 const open = ref(false), loading = ref(true), saving = ref(false), saved = ref(false), error = ref('')
-const hours = ref(emptyHours()), overrides = ref([]), had = ref(false)
+const hours = ref<any>(emptyHours()), overrides = ref<any>([]), had = ref(false)
 /* A HOST KEEPS ANY NUMBER OF NAMED SETS — "mornings for discovery calls, evenings for clients" —
    one of them theirs by default. The panel edits ONE at a time, picked here; a booking type asks
    for a set by name and anything that asks for none uses the default. */
-const sets = ref([]), picked = ref(null)
-const current = computed(() => sets.value.find((s) => s.id === picked.value) || null)
-const isDefault = computed(() => !!(current.value && current.value.is_default))
+const sets = ref<any>([]), picked = ref<any>(null)
+const current = computed(() => sets.value.find((s: any) => (s as any).id === picked.value) || null)
+const isDefault = computed(() => !!(current.value && (current.value as any).is_default))
 const { list: ZONES } = zones()
-const on = (d) => Array.isArray(hours.value.weekly[d]) && hours.value.weekly[d].length > 0
-function toggle(d) { if (on(d)) delete hours.value.weekly[d]; else hours.value.weekly[d] = [['09:00', '17:00']]; hours.value.weekly = { ...hours.value.weekly } }
-function add(d) { hours.value.weekly[d] = [...(hours.value.weekly[d] || []), ['13:00', '17:00']]; hours.value.weekly = { ...hours.value.weekly } }
-function drop(d, i) { const r = (hours.value.weekly[d] || []).filter((_, j) => j !== i); if (r.length) hours.value.weekly[d] = r; else delete hours.value.weekly[d]; hours.value.weekly = { ...hours.value.weekly } }
+const on = (d: any) => Array.isArray(hours.value.weekly[d]) && hours.value.weekly[d].length > 0
+function toggle(d: any) { if (on(d)) delete hours.value.weekly[d]; else hours.value.weekly[d] = [['09:00', '17:00']]; hours.value.weekly = { ...hours.value.weekly } }
+function add(d: any) { hours.value.weekly[d] = [...(hours.value.weekly[d] || []), ['13:00', '17:00']]; hours.value.weekly = { ...hours.value.weekly } }
+function drop(d: any, i: any) { const r = (hours.value.weekly[d] || []).filter((_: any, j: any) => j !== i); if (r.length) hours.value.weekly[d] = r; else delete hours.value.weekly[d]; hours.value.weekly = { ...hours.value.weekly } }
 async function load() {
   loading.value = true
   try {
     const r = await getHours()
     sets.value = r.schedules || (r.hours ? [r.hours] : [])
-    if (!picked.value || !sets.value.some((s) => s.id === picked.value)) picked.value = (sets.value.find((s) => s.is_default) || sets.value[0] || {}).id ?? null
-    const mine = sets.value.find((s) => s.id === picked.value) || r.hours
+    // @ts-expect-error TS2339, from the conversion: Property 'id' does not exist on type 'never'.
+    if (!picked.value || !sets.value.some((s) => (s as any).id === picked.value)) picked.value = (sets.value.find((s) => (s as any).is_default) || sets.value[0] || {}).id ?? null
+    const mine = sets.value.find((s: any) => (s as any).id === picked.value) || r.hours
     if (mine) { hours.value = { ...emptyHours(), ...mine }; had.value = true }
     /* an exception belongs to the set it was written on; one written before there were several has
        no set and belongs to the default */
-    overrides.value = (r.overrides || []).filter((o) => o.schedule_id === picked.value || (!o.schedule_id && (current.value ? current.value.is_default : true)))
+    overrides.value = (r.overrides || []).filter((o: any) => o.schedule_id === picked.value || (!o.schedule_id && (current.value ? (current.value as any).is_default : true)))
   }
-  catch (e) { error.value = e.message } finally { loading.value = false }
+  catch (e) { error.value = (e as any).message } finally { loading.value = false }
 }
 onMounted(load)
 async function save() {
@@ -42,28 +43,28 @@ async function save() {
   try {
     const r = await setHours(hours.value, picked.value || undefined)
     sets.value = r.schedules || []
-    const mine = sets.value.find((s) => s.name === hours.value.name) || sets.value.find((s) => s.id === picked.value) || r.hours
+    const mine = sets.value.find((s: any) => (s as any).name === hours.value.name) || sets.value.find((s: any) => (s as any).id === picked.value) || r.hours
     if (mine) { picked.value = mine.id; hours.value = { ...emptyHours(), ...mine } }
     had.value = true; saved.value = true; setTimeout(() => { saved.value = false }, 1800)
   }
-  catch (e) { error.value = H.error || e.message } finally { saving.value = false }
+  catch (e) { error.value = H.error || (e as any).message } finally { saving.value = false }
 }
 /* the exceptions: a day picked, off by default; its own ranges when the switch says so */
 const newDay = ref('')
 /* picking another set re-reads, because its exceptions are its own */
-async function pick(id) { picked.value = id; await load() }
+async function pick(id: any) { picked.value = id; await load() }
 async function addSet() { picked.value = null; hours.value = { ...emptyHours(), name: '', timezone: (usual.value || hours.value).timezone || emptyHours().timezone }; overrides.value = [] }
-async function beDefault() { if (!picked.value) return; try { const r = await makeDefault(picked.value); sets.value = r.schedules || [] } catch (e) { error.value = e.message } }
-async function forget() { if (!picked.value || !window.confirm(H['forget-ask'])) return; try { const r = await forgetHours(picked.value); sets.value = r.schedules || []; picked.value = null; await load() } catch (e) { error.value = e.code === 'last' ? H['forget-last'] : e.message } }
+async function beDefault() { if (!picked.value) return; try { const r = await makeDefault(picked.value); sets.value = r.schedules || [] } catch (e) { error.value = (e as any).message } }
+async function forget() { if (!picked.value || !window.confirm(H['forget-ask'])) return; try { const r = await forgetHours(picked.value); sets.value = r.schedules || []; picked.value = null; await load() } catch (e) { error.value = (e as any).code === 'last' ? H['forget-last'] : (e as any).message } }
 const today = new Date().toISOString().slice(0, 10)
-async function addOverride() { if (!newDay.value) return; try { const r = await setOverride(newDay.value, null, '', picked.value || undefined); overrides.value = r.overrides || []; newDay.value = '' } catch (e) { error.value = e.message } }
-async function setKind(o, own) { try { const r = await setOverride(o.day, own ? [['09:00', '12:00']] : null, o.note, picked.value || undefined); overrides.value = r.overrides || [] } catch (e) { error.value = e.message } }
-async function saveRanges(o) { try { const r = await setOverride(o.day, o.ranges, o.note, picked.value || undefined); overrides.value = r.overrides || [] } catch (e) { error.value = e.message } }
-function addRange(o) { o.ranges = [...(o.ranges || []), ['13:00', '17:00']]; saveRanges(o) }
-function dropRange(o, i) { o.ranges = (o.ranges || []).filter((_, j) => j !== i); if (!o.ranges.length) o.ranges = null; saveRanges(o) }
-async function removeDay(o) { try { const r = await removeOverride(o.day, picked.value || undefined); overrides.value = r.overrides || [] } catch (e) { error.value = e.message } }
-const dayLabel = (d) => { try { return new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(d + 'T12:00:00')) } catch (e) { return d } }
-const usual = computed(() => sets.value.find((s) => s.is_default) || sets.value[0] || null)
+async function addOverride() { if (!newDay.value) return; try { const r = await setOverride(newDay.value, null, '', picked.value || undefined); overrides.value = r.overrides || []; newDay.value = '' } catch (e) { error.value = (e as any).message } }
+async function setKind(o: any, own: any) { try { const r = await setOverride(o.day, own ? [['09:00', '12:00']] : null, o.note, picked.value || undefined); overrides.value = r.overrides || [] } catch (e) { error.value = (e as any).message } }
+async function saveRanges(o: any) { try { const r = await setOverride(o.day, o.ranges, o.note, picked.value || undefined); overrides.value = r.overrides || [] } catch (e) { error.value = (e as any).message } }
+function addRange(o: any) { o.ranges = [...(o.ranges || []), ['13:00', '17:00']]; saveRanges(o) }
+function dropRange(o: any, i: any) { o.ranges = (o.ranges || []).filter((_: any, j: any) => j !== i); if (!o.ranges.length) o.ranges = null; saveRanges(o) }
+async function removeDay(o: any) { try { const r = await removeOverride(o.day, picked.value || undefined); overrides.value = r.overrides || [] } catch (e) { error.value = (e as any).message } }
+const dayLabel = (d: any) => { try { return new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(d + 'T12:00:00')) } catch (e) { return d } }
+const usual = computed(() => sets.value.find((s: any) => (s as any).is_default) || sets.value[0] || null)
 const summary = computed(() => { const w = (usual.value || hours.value).weekly || {}; return WEEKDAYS.filter((d) => Array.isArray(w[d]) && w[d].length).map((d) => DAYS[d].slice(0, 3)).join(' · ') })
 </script>
 

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * WHAT YOU HAVE EARNED — a provider's own ledger, on the Coaching tab beside their hours and what
  * they offer. Four numbers and the lines that made them:
@@ -20,21 +20,21 @@ import { user } from 'platformkit/lib/auth.js'
 import { balanceOf } from 'platformkit/lib/payouts.js'
 
 const E = us('library').coaching.earnings || {}
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const open = ref(false), loading = ref(true), error = ref(''), busy = ref('')
-const state = ref(null)
+const state = ref<any>(null)
 
 const lines = computed(() => (state.value && state.value.lines) || [])
 const bal = computed(() => (state.value && state.value.balance) || balanceOf(lines.value))
 const account = computed(() => (state.value && state.value.account) || null)
-const currency = computed(() => (bal.value && bal.value.currency) || 'usd')
-const money = (c) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: String(currency.value).toUpperCase() }).format((Number(c) || 0) / 100) } catch (e) { return String(c) } }
+const currency = computed(() => (bal.value && (bal.value as any).currency) || 'usd')
+const money = (c: any) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: String(currency.value).toUpperCase() }).format((Number(c) || 0) / 100) } catch (e) { return String(c) } }
 const days = computed(() => Math.round(((state.value && state.value.delay) || 0) / 1440))
-const when = (d) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(d)) } catch (e) { return '' } }
+const when = (d: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(d)) } catch (e) { return '' } }
 /* INFINITY is what a refund inside the window leaves behind: the line never becomes payable. It is
    not a date and must never be drawn as one. */
-const forever = (d) => !d || new Date(d).getTime() > Date.now() + 100 * 365 * 864e5
+const forever = (d: any) => !d || new Date(d).getTime() > Date.now() + 100 * 365 * 864e5
 
 const summary = computed(() => {
   if (loading.value) return ''
@@ -42,8 +42,8 @@ const summary = computed(() => {
   return [money(bal.value.payable) + ' ' + String(E.payable || '').toLowerCase(), bal.value.waiting ? money(bal.value.waiting) + ' ' + String(E.waiting || '').toLowerCase() : ''].filter(Boolean).join(' · ')
 })
 
-async function call(action, body) {
-  const { data, error: e } = await supabase.functions.invoke('payouts', { body: { action, ...(body || {}) } })
+async function call(action: any, body: any) {
+  const { data, error: e } = await (supabase as any).functions.invoke('payouts', { body: { action, ...(body || {}) } })
   if (e) throw e
   if (data && data.error) throw new Error(data.error)
   return data
@@ -51,7 +51,8 @@ async function call(action, body) {
 async function load() {
   if (!configured || !user.value) { loading.value = false; return }
   loading.value = true; error.value = ''
-  try { state.value = await call('status') } catch (e) { error.value = e.message || E.error } finally { loading.value = false }
+  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
+  try { state.value = await call('status') } catch (e) { error.value = (e as any).message || E.error } finally { loading.value = false }
 }
 onMounted(load)
 defineExpose({ reload: load })
@@ -59,14 +60,16 @@ defineExpose({ reload: load })
 async function connect() {
   busy.value = 'connect'; error.value = ''
   try {
+    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     const r = await call('connect')
     if (r && r.url) { window.location.href = r.url; return }
     await load()
-  } catch (e) { error.value = e.message || E.error } finally { busy.value = '' }
+  } catch (e) { error.value = (e as any).message || E.error } finally { busy.value = '' }
 }
 async function refresh() {
   busy.value = 'refresh'; error.value = ''
-  try { await call('refresh'); await load() } catch (e) { error.value = e.message || E.error } finally { busy.value = '' }
+  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
+  try { await call('refresh'); await load() } catch (e) { error.value = (e as any).message || E.error } finally { busy.value = '' }
 }
 </script>
 

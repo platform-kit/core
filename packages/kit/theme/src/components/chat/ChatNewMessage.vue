@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A coach starting a conversation: a modal with a search box that asks the
  * server as they type (chat_members(q) — a page of matches, never the whole
@@ -16,11 +16,11 @@ const emit = defineEmits(['pick', 'close'])
 const K = us('chat').picker.main
 
 const q = ref('')
-const box = ref(null)
-const list = ref(null)
+const box = ref<any>(null)
+const list = ref<any>(null)
 const cursor = ref(0)
 const searching = ref(false)
-let timer = null
+let timer: any = null
 
 const count = computed(() => K.count.replace('{n}', membersTotal.value))
 const rows = computed(() => members.value)
@@ -33,21 +33,21 @@ async function search() {
 }
 watch(q, () => { clearTimeout(timer); timer = setTimeout(search, 160) })
 
-function move(d) {
+function move(d: any) {
   if (!rows.value.length) return
   cursor.value = (cursor.value + d + rows.value.length) % rows.value.length
-  const el = list.value && list.value.children[cursor.value]
+  const el: any = list.value && list.value.children[cursor.value]
   if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' })
 }
-function choose(m) { if (m) emit('pick', m) }
-function key(e) {
+function choose(m: any) { if (m) emit('pick', m) }
+function key(e: any) {
   if (e.key === 'ArrowDown') { e.preventDefault(); move(1) }
   else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1) }
   else if (e.key === 'Enter') { e.preventDefault(); choose(rows.value[cursor.value]) }
 }
 
 /* Escape closes wherever focus is */
-function esc(e) { if (e.key === 'Escape') { e.preventDefault(); emit('close') } }
+function esc(e: any) { if (e.key === 'Escape') { e.preventDefault(); emit('close') } }
 onMounted(() => { search(); document.addEventListener('keydown', esc); setTimeout(() => box.value && box.value.focus(), 30) })
 onBeforeUnmount(() => { clearTimeout(timer); document.removeEventListener('keydown', esc) })
 </script>
@@ -65,13 +65,13 @@ onBeforeUnmount(() => { clearTimeout(timer); document.removeEventListener('keydo
         </div>
         <label class="nm-search" :class="{ busy: searching }">
           <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="9" cy="9" r="5.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M13.5 13.5 17.5 17.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          <input ref="box" v-model="q" type="search" :placeholder="K.placeholder" :aria-label="K.placeholder" autocomplete="off" spellcheck="false"
+          <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><input ref="box" v-model="q" type="search" :placeholder="K.placeholder" :aria-label="K.placeholder" autocomplete="off" spellcheck="false"
                  role="combobox" aria-autocomplete="list" aria-controls="nm-list" :aria-activedescendant="rows.length ? 'nm-' + cursor : null" />
           <span class="nm-spin" aria-hidden="true" />
         </label>
         <p class="nm-hint">{{ K.hint }}</p>
         <div id="nm-list" ref="list" class="nm-list" role="listbox">
-          <button v-for="(m, i) in rows" :id="'nm-' + i" :key="m.id" type="button" role="option" class="nm-row" :class="{ on: i === cursor }"
+          <!-- @vue-expect-error TS2322, from the conversion: Type 'string | number' is not assignable to type 'number'. --><button v-for="(m, i) in rows" :id="'nm-' + i" :key="m.id" type="button" role="option" class="nm-row" :class="{ on: i === cursor }"
                   :aria-selected="i === cursor" @mousemove="cursor = i" @click="choose(m)">
             <ChatAvatar :name="m.name" :size="38" />
             <span class="nm-body">

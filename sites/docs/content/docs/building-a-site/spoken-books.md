@@ -4,9 +4,9 @@ description: The text-to-speech pipeline — made locally, named by the text, st
 order: 58
 sources:
   [
-    packages/kit/build/tts.mjs,
+    packages/kit/build/tts.mts,
     packages/kit/build/tts,
-    packages/kit/src/lib/speech.js,
+    packages/kit/src/lib/speech.ts,
     packages/kit/src/lib/speech/,
     packages/kit/src/lib/tts,
     packages/kit/theme/src/components/content/BookAudio.vue,
@@ -17,7 +17,7 @@ reviewed: 2026-10-27
 
 ## The step
 
-The deploy's side of it is a build step, `packages/kit/build/steps/tts.mjs`: phase `after`, module `tts`, `when` `TTS=1`, needing the service key and `SUPABASE_URL`, `git-lfs` on the path and the packages `onnxruntime-node` and `ffmpeg-static` — optional peers of the kit that a site with the module on names in its own `package.json`. `platformkit steps` shows it, `platformkit run tts` runs it alone, and the deploy checks ask for its needs only while `TTS=1`. See [the build steps](/content/docs/building-a-site/dev-build-and-deploy#the-build-steps).
+The deploy's side of it is a build step, `packages/kit/build/steps/tts.mts`: phase `after`, module `tts`, `when` `TTS=1`, needing the service key and `SUPABASE_URL`, `git-lfs` on the path and the packages `onnxruntime-node` and `ffmpeg-static` — optional peers of the kit that a site with the module on names in its own `package.json`. `platformkit steps` shows it, `platformkit run tts` runs it alone, and the deploy checks ask for its needs only while `TTS=1`. See [the build steps](/content/docs/building-a-site/dev-build-and-deploy#the-build-steps).
 
 ## The script
 

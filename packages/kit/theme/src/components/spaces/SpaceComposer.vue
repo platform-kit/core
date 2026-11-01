@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The box a message is written in: a bordered card with the words in it and a row of actions beneath,
  * the send button lighting up only when there is something to send — the shape a workspace chat has,
@@ -29,7 +30,7 @@ import VoiceRecorder from '../chat/VoiceRecorder.vue'
 const props = defineProps({
   /* a feed's box takes pictures and videos, up to ten, as a post */
   mayMedia: { type: Boolean, default: false },
-  people: { type: Array, default: () => [] },
+  people: { type: Array as PropType<any[]>, default: () => [] },
   placeholder: { type: String, default: '' },
   mayMentionChannel: { type: Boolean, default: false },
   thread: { type: Boolean, default: false },
@@ -39,11 +40,11 @@ const props = defineProps({
   disabled: { type: Boolean, default: false },
   draft: { type: String, default: '' },
   /* the commands this person may run in this room — compiled records, already gated */
-  commands: { type: Array, default: () => [] },
+  commands: { type: Array as PropType<any[]>, default: () => [] },
   /* the bots that can be summoned here by name: { slug, name } — mentioned like anybody else */
-  bots: { type: Array, default: () => [] },
+  bots: { type: Array as PropType<any[]>, default: () => [] },
   /* the groups this room has: a space's roles, { slug, name } — named the same way */
-  groups: { type: Array, default: () => [] },
+  groups: { type: Array as PropType<any[]>, default: () => [] },
   /* whether this room takes a message written now and sent later — not a thread, not a post */
   mayLater: { type: Boolean, default: false },
   /* whether this room takes a voice from this person — the database's answer, passed down; the
@@ -58,7 +59,7 @@ const props = defineProps({
 const emit = defineEmits(['send', 'typing', 'draft', 'voice', 'poll', 'file', 'command', 'later', 'media'])
 /* PICTURES AND VIDEOS, in a feed: up to ten at once, refused by name before anything is sent */
 const MEDIA_ACCEPT = [...MEDIA.imageTypes, ...MEDIA.videoTypes].join(',')
-async function pickedMedia(e) {
+async function pickedMedia(e: any) {
   const files = [...(e.target.files || [])]
   e.target.value = ''
   if (!files.length) return
@@ -73,15 +74,15 @@ async function pickedMedia(e) {
    same preview to hear back before it goes */
 const recording = ref(false)
 const micOn = computed(() => props.mayVoice && !props.disabled && micUsable())
-function sendVoice(take) { recording.value = false; if (take) emit('voice', take) }
+function sendVoice(take: any) { recording.value = false; if (take) emit('voice', take) }
 /* WHAT MAY BE ATTACHED is the bucket's own list, said here so a file is refused by name in front
    of the person who chose it rather than as a failure after it has been sent. The words a person
    has already typed go with it as its caption, so an attachment is never a line on its own. */
-function attached(e) {
+function attached(e: any) {
   const file = e.target.files && e.target.files[0]
   e.target.value = ''
   if (!file) return
-  if (!FILE_TYPES[String(file.type || '').toLowerCase()]) { refused.value = W.value['file-kind']; return }
+  if (!(FILE_TYPES as any)[String(file.type || '').toLowerCase()]) { refused.value = W.value['file-kind']; return }
   if (file.size > FILE_MAX) { refused.value = (W.value['file-big'] || '').replace('{n}', Math.round(FILE_MAX / 1048576)); return }
   refused.value = ''
   emit('file', { file, said: toTokens(body.value.trim(), picked.value) })
@@ -97,10 +98,10 @@ function attached(e) {
  */
 const slashing = ref(false)
 const slashQ = ref('')
-const running = ref(null)
+const running = ref<any>(null)
 const commands = computed(() => {
   const q = slashQ.value.toLowerCase()
-  return (props.commands || []).filter((c) => !q || c.name.startsWith(q))
+  return (props.commands || []).filter((c) => !q || (c as any).name.startsWith(q))
 })
 const refused = ref('')
 const W = computed(() => us('spaces').composer.main)
@@ -110,41 +111,43 @@ const P = computed(() => us('spaces').poll.main)
 const L = computed(() => us('spaces').later.main)
 /* what the writer sees is the name; picked is what each name stood for, and the token is made
    from the two on the way out */
-const picked = ref({})
-const first = fromTokens(props.draft || '', Object.fromEntries(props.people.map((p) => [p.id, p.name])), { channel: W.value['mention-channel'] })
+const picked = ref<any>({})
+const first = fromTokens(props.draft || '', Object.fromEntries(props.people.map((p) => [(p as any).id, (p as any).name])), { channel: W.value['mention-channel'] })
 const body = ref(first.text)
 Object.assign(picked.value, first.picked)
 const spans = computed(() => mentionSpans(body.value, picked.value))
 const echo = ref(false)
-const box = ref(null)
+const box = ref<any>(null)
 const picking = ref(false)
 const query = ref('')
 const at = ref(-1)
 const cursor = ref(0)
 
-const matches = computed(() => {
+const matches = computed<any>(() => {
   const q = query.value.toLowerCase()
-  const list = props.people.filter((p) => !q || String(p.name || '').toLowerCase().includes(q))
+  const list = props.people.filter((p) => !q || String((p as any).name || '').toLowerCase().includes(q))
   /* the bots first and marked: naming one is asking it to do something, which is a different act
      from naming a person, and the list should not make the two look alike */
   const bots = props.bots
-    .filter((b) => !q || String(b.name || '').toLowerCase().includes(q))
-    .map((b) => ({ id: BOT_PICK(b.slug), name: b.name, bot: true }))
+    .filter((b) => !q || String((b as any).name || '').toLowerCase().includes(q))
+    .map((b) => ({ id: BOT_PICK((b as any).slug), name: (b as any).name, bot: true }))
   /* the groups after the bots and before the people: naming a group is naming several people,
      which sits between asking a bot to do something and speaking to one person */
   const groups = props.groups
-    .filter((g) => !q || String(g.name || '').toLowerCase().includes(q))
-    .map((g) => ({ id: ROLE_PICK(g.slug), name: g.name, group: true }))
+    .filter((g) => !q || String((g as any).name || '').toLowerCase().includes(q))
+    .map((g) => ({ id: ROLE_PICK((g as any).slug), name: (g as any).name, group: true }))
+  // @ts-expect-error TS2769, from the conversion: No overload matches this call.
   const all = bots.concat(groups, list)
+  // @ts-expect-error TS2769, from the conversion: No overload matches this call.
   return props.mayMentionChannel ? [{ id: null, name: W.value['mention-channel'] }].concat(all) : all
 })
 const warns = computed(() => !props.mayMentionChannel && mentionsChannel(toTokens(body.value, picked.value)))
 const ready = computed(() => !!body.value.trim() && !props.disabled)
 
-function typed(e) {
+function typed(e: any) {
   emit('typing')
   emit('draft', body.value)
-  const el = e.target
+  const el: any = e.target
   cursor.value = el.selectionStart
   const upto = body.value.slice(0, cursor.value)
   const m = upto.match(/(^|\s)@([^\s@]*)$/)
@@ -156,7 +159,7 @@ function typed(e) {
   slashQ.value = s ? s[1].toLowerCase() : ''
 }
 
-function choose(p) {
+function choose(p: any) {
   const name = String(p.name || '')
   picked.value = { ...picked.value, [name]: p.id || CHANNEL_PICK }
   const put = '@' + name + ' '
@@ -167,9 +170,9 @@ function choose(p) {
 }
 
 /* the chosen command opens its form; running it clears the line, because the command IS the message */
-function openCommand(c) { running.value = c; slashing.value = false }
-function ranCommand(args) {
-  const c = running.value
+function openCommand(c: any) { running.value = c; slashing.value = false }
+function ranCommand(args: any) {
+  const c: any = running.value
   running.value = null
   body.value = ''
   emit('draft', '')
@@ -177,7 +180,7 @@ function ranCommand(args) {
 }
 
 const picks = ref(false)
-function put(e) {
+function put(e: any) {
   const el = box.value
   const at = el ? el.selectionStart : body.value.length
   body.value = body.value.slice(0, at) + e + body.value.slice(at)
@@ -185,7 +188,7 @@ function put(e) {
   nextTick(() => el && el.focus())
 }
 /* a mark at the head of the line, for a list or a quotation */
-function lead(mark) {
+function lead(mark: any) {
   const el = box.value
   if (!el) return
   const at = body.value.lastIndexOf('\n', Math.max(0, el.selectionStart - 1)) + 1
@@ -194,16 +197,16 @@ function lead(mark) {
 }
 
 /* wrap what is selected, or open the marks where the cursor is */
-function wrap(mark) {
+function wrap(mark: any) {
   const el = box.value
   if (!el) return
-  const a = el.selectionStart, b = el.selectionEnd
+  const a = el.selectionStart, b: any = el.selectionEnd
   const chosen = body.value.slice(a, b)
   body.value = body.value.slice(0, a) + mark + chosen + mark + body.value.slice(b)
   nextTick(() => { el.focus(); el.setSelectionRange(a + mark.length, a + mark.length + chosen.length) })
 }
 
-function keys(e) {
+function keys(e: any) {
   if (picking.value && e.key === 'Escape') { picking.value = false; e.preventDefault(); return }
   if (picking.value && e.key === 'Enter' && matches.value.length) { choose(matches.value[0]); e.preventDefault(); return }
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go() }
@@ -231,13 +234,13 @@ function clear() {
 const timing = ref(false)
 const exact = ref('')
 const whens = computed(() => offers(Date.now()))
-const sayWhen = (when) => {
+const sayWhen = (when: any) => {
   const d = when instanceof Date ? when : new Date(when)
   const today = new Date().toDateString() === d.toDateString()
   const at = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
   return today ? at : d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + at
 }
-function later(when) {
+function later(when: any) {
   if (!ready.value || !usable(when)) return
   emit('later', { body: toTokens(body.value.trim(), picked.value), when })
   timing.value = false
@@ -247,7 +250,7 @@ function later(when) {
 /* placed from the button's own rectangle and drawn fixed: the composer sits in a box that scrolls,
    and anything positioned inside it is cut off by it — the same reason the emoji picker is. */
 const whenAt = ref({ top: 0, left: 0 })
-function openTiming(e) {
+function openTiming(e: any) {
   timing.value = !timing.value
   if (!timing.value) return
   if (!exact.value) exact.value = fieldValue(whens.value[0].when)

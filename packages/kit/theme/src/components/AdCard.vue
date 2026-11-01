@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The quiet corner card an ad takes on most pages. Presentational: the host
  * (CtaHost.vue) decides when it appears and what happens on a click; the admin
@@ -9,7 +10,7 @@ import { us } from 'platformkit/lib/content.js'
 import MediaBlock from './content/MediaBlock.vue'
 
 defineProps({
-  ad: { type: Object, required: true },
+  ad: { type: Object as PropType<any>, required: true },
   inline: { type: Boolean, default: false },
 })
 const emit = defineEmits(['go', 'dismiss'])

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * THE JOIN CARD — where a site sells its network (network.access) and this reader is outside a grant.
  * Whole, in place of the timeline, for somebody who may not read; compact, in place of the composer
@@ -24,8 +24,8 @@ const props = defineProps({ compact: { type: Boolean, default: false } })
 const W = computed(() => us('network').access.main)
 const sku = (site.network && site.network.access && site.network.access.join) || ''
 const plans = (site.network && site.network.access && site.network.access.plans) || ''
-function toPlans(e) { e.preventDefault(); navigate(plans) }
-const offer = computed(() => (sku ? products.value.find((p) => p.sku === sku) || null : null))
+function toPlans(e: any) { e.preventDefault(); navigate(plans) }
+const offer = computed(() => (sku ? products.value.find((p: any) => p.sku === sku) || null : null))
 const price = computed(() => {
   const o = offer.value
   if (!o || o.unit_amount == null) return ''
@@ -37,7 +37,7 @@ const price = computed(() => {
 const busy = ref(false)
 const err = ref('')
 async function join() {
-  if (!isSignedIn.value) { if (window.DLauth) window.DLauth.open({ intent: 'buy' }); return }
+  if (!isSignedIn.value) { if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'buy' }); return }
   if (!offer.value) return
   busy.value = true; err.value = ''
   try { if (offer.value.recurring) await subscribe(offer.value.sku); else await checkout([{ sku: offer.value.sku, quantity: 1 }]) }

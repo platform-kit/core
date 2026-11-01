@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md, mdBlock } from './md.js'
 import { glyph } from './icons.js'
 /*
@@ -15,7 +16,7 @@ defineProps({
   image: { type: String, default: '' },
   alt: { type: String, default: '' },
   side: { type: String, default: 'left' },      /* the picture's side: left | right */
-  points: { type: Array, default: () => [] },   /* [{ icon?, text }] */
+  points: { type: Array as PropType<any[]>, default: () => [] },   /* [{ icon?, text }] */
   cta: { type: String, default: '' },
   href: { type: String, default: '' },
 })

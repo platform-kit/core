@@ -47,5 +47,5 @@ The maintained reference documentation is in the documentation site. The OpenSpe
 
 ---
 
-**Sources:** `package.json`, `packages/kit/package.json`, `packages/kit/bin/platformkit.mjs`, `packages/kit/build/sites.mjs`, `packages/kit/build/dev-workspace.mjs`, `packages/kit/build/e2e-container.mjs`, `.github/workflows/kit.yml`, `.github/workflows/publish.yml`
+**Sources:** `package.json`, `packages/kit/package.json`, `packages/kit/bin/platformkit.mjs`, `packages/kit/build/sites.mts`, `packages/kit/build/dev-workspace.mts`, `packages/kit/build/e2e-container.mts`, `.github/workflows/kit.yml`, `.github/workflows/publish.yml`
 **Reviewed:** `2026-11-01`

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { checkout } from 'platformkit/lib/commerce.js'
 import { supabase } from 'platformkit/lib/supabase.js'
@@ -23,14 +23,14 @@ const topupNotice = ref('')
 const paymentMethodFault = ref('')
 const paymentMethodNotice = ref('')
 const busy = ref(false)
-const balances = ref([])
-const history = ref([])
+const balances = ref<any>([])
+const history = ref<any>([])
 const hasUsageSettings = ref(false)
 const topupConfig = ref({ enabled: false, currency: null, packs: [] })
 const hasPaymentMethod = ref(false)
-const incrementalAttention = ref([])
-const activeIncremental = ref(null)
-const activePaymentMethod = ref(null)
+const incrementalAttention = ref<any>([])
+const activeIncremental = ref<any>(null)
+const activePaymentMethod = ref<any>(null)
 const incrementalFault = ref('')
 const incrementalNotice = ref('')
 const canManagePaymentMethod = ref(false)
@@ -39,34 +39,34 @@ const selectedPack = ref('')
 const threshold = ref('1')
 const monthlyCap = ref('20')
 const consent = ref(false)
-let authListener
-let stripeScriptPromise
+let authListener: any
+let stripeScriptPromise: any
 
-function hyperswitchV2UnavailableMessage(error) {
+function hyperswitchV2UnavailableMessage(error: any) {
   return error?.code === HYPERSWITCH_V2_BROWSER_UNAVAILABLE_CODE
     ? W.value['hyperswitch-v2-browser-unavailable'] ||
       'The secure V2 payment form could not be loaded. No card details were submitted.'
     : ''
 }
 
-const usageOffers = computed(() => (products || []).filter((offer) => offer.published !== false && offer.usage))
-const usagePacks = computed(() => usageOffers.value.filter((offer) =>
+const usageOffers = computed(() => (products || []).filter((offer: any) => offer.published !== false && offer.usage))
+const usagePacks = computed(() => usageOffers.value.filter((offer: any) =>
   offer.billing === 'once' && Number(offer.usage?.grant) > 0,
 ))
-const eligiblePacks = computed(() => topupConfig.value.packs || [])
-const selectedTopupPack = computed(() =>
-  eligiblePacks.value.find((pack) => pack.key === selectedPack.value) || eligiblePacks.value[0] || null,
+const eligiblePacks = computed<any>(() => topupConfig.value.packs || [])
+const selectedTopupPack = computed<any>(() =>
+  eligiblePacks.value.find((pack: any) => (pack as any).key === selectedPack.value) || eligiblePacks.value[0] || null,
 )
-const titleOf = (key) => usageOffers.value.find((offer) => offer.key === key)?.title || W.value.archived
-const unitOf = (key, value) => resolveUsageUnit(
-  usageOffers.value.find((offer) => offer.key === key)?.usage?.unit,
+const titleOf = (key: any) => usageOffers.value.find((offer: any) => offer.key === key)?.title || W.value.archived
+const unitOf = (key: any, value: any) => resolveUsageUnit(
+  usageOffers.value.find((offer: any) => offer.key === key)?.usage?.unit,
   value,
 )
-const numberOf = (micros) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(Number(micros || 0) / 1_000_000)
-const moneyOf = (amount, currency = 'usd') => new Intl.NumberFormat(undefined, {
+const numberOf = (micros: any) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(Number(micros || 0) / 1_000_000)
+const moneyOf = (amount: any, currency = 'usd') => new Intl.NumberFormat(undefined, {
   style: 'currency', currency: String(currency || 'usd').toUpperCase(), maximumFractionDigits: 2,
 }).format(Number(amount || 0))
-const moneyMinorOf = (amountMinor, currency = 'usd') => {
+const moneyMinorOf = (amountMinor: any, currency = 'usd') => {
   const code = String(currency || 'usd').toUpperCase()
   const fractionDigits = new Intl.NumberFormat(undefined, { style: 'currency', currency: code })
     .resolvedOptions().maximumFractionDigits
@@ -75,17 +75,18 @@ const moneyMinorOf = (amountMinor, currency = 'usd') => {
     currency: code,
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
+  // @ts-expect-error TS18048, from the conversion: 'fractionDigits' is possibly 'undefined'.
   }).format(Number(amountMinor || 0) / (10 ** fractionDigits))
 }
-const timeOf = (value) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
-const kindOf = (kind) => W.value[`kind-${kind}`] || W.value['kind-other']
+const timeOf = (value: any) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+const kindOf = (kind: any) => W.value[`kind-${kind}`] || W.value['kind-other']
 const topupAvailable = computed(() => topupConfig.value.enabled && eligiblePacks.value.length > 0)
-const incrementalKey = (settlement) =>
+const incrementalKey = (settlement: any) =>
   `${settlement.subscription_id}:${settlement.period_start}:${settlement.settlement_key}`
 let loadGeneration = 0
 
-async function topupRequest(body) {
-  const { data, error } = await supabase.functions.invoke('usage-topup', { body })
+async function topupRequest(body: any) {
+  const { data, error } = await (supabase as any).functions.invoke('usage-topup', { body })
   if (error) {
     let detail = error.message || ''
     let code = ''
@@ -94,20 +95,20 @@ async function topupRequest(body) {
       detail = payload?.error || detail
       code = payload?.code || ''
     } catch {}
-    const failure = new Error(detail || W.value['request-error'])
+    const failure: any = new Error(detail || W.value['request-error'])
     failure.code = code
     throw failure
   }
   if (data?.error) {
     const failure = new Error(data.error)
-    failure.code = data.code || ''
+    ;(failure as any).code = data.code || ''
     throw failure
   }
   return data
 }
 
-async function payoutRequest(body) {
-  const { data, error } = await supabase.functions.invoke('payouts', { body })
+async function payoutRequest(body: any) {
+  const { data, error } = await (supabase as any).functions.invoke('payouts', { body })
   if (error) {
     let detail = error.message || ''
     try {
@@ -123,7 +124,7 @@ async function payoutRequest(body) {
 const payoutSetupMode = () =>
   new URLSearchParams(window.location.search).get('payout_setup') === '1'
 
-function payoutReturnTarget(name) {
+function payoutReturnTarget(name: any) {
   const value = new URLSearchParams(window.location.search).get(name) || ''
   if (!value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return null
   const target = new URL(value, window.location.origin)
@@ -177,7 +178,7 @@ async function load(retryOnce = true) {
   state.value = 'loading'
   fault.value = ''
   try {
-    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    const { data: { session }, error: authError } = await (supabase as any).auth.getSession()
     if (authError) throw authError
     if (generation !== loadGeneration) return false
     const user = session?.user
@@ -188,10 +189,10 @@ async function load(retryOnce = true) {
       return false
     }
     const [balanceResult, historyResult] = await Promise.all([
-      supabase.from('usage_balances')
+      (supabase as any).from('usage_balances')
         .select('offer_key, period_start, granted_micros, used_micros, reserved_micros, remaining_micros')
         .eq('user_id', user.id),
-      supabase.from('usage_events')
+      (supabase as any).from('usage_events')
         .select('id, offer_key, kind, units_micros, usage_unit, seconds_micros, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -244,9 +245,9 @@ async function loadTopup() {
     incrementalAttention.value = Array.isArray(result.incremental_attention) ? result.incremental_attention : []
     /* the site-wide banner (UsagePaymentAlert.vue) follows what this view now knows, so a payment settled
        here takes the banner away without asking the server again */
-    try { window.dispatchEvent(new CustomEvent('pk:usage-attention', { detail: incrementalAttention.value.map((settlement) => settlement.status) })) } catch (e) { /* no window */ }
+    try { window.dispatchEvent(new CustomEvent('pk:usage-attention', { detail: incrementalAttention.value.map((settlement: any) => settlement.status) })) } catch (e) { /* no window */ }
     topupEnabled.value = result.preferences?.enabled === true
-    selectedPack.value = result.preferences?.offer_key || eligiblePacks.value[0]?.key || ''
+    selectedPack.value = result.preferences?.offer_key || (eligiblePacks.value[0] as any)?.key || ''
     if (result.preferences?.threshold_micros != null) {
       threshold.value = numberOf(result.preferences.threshold_micros)
     }
@@ -260,9 +261,9 @@ async function loadTopup() {
   }
 }
 
-async function loadPaymentSdk(provider, publishableKey, apiBaseUrl, profileId, clientUrl) {
+async function loadPaymentSdk(provider: any, publishableKey: any, apiBaseUrl: any, profileId: any, clientUrl: any) {
   if (provider === 'stripe') {
-    if (!stripeScriptPromise && !window.Stripe) {
+    if (!stripeScriptPromise && !(window as any).Stripe) {
       stripeScriptPromise = new Promise((resolve, reject) => {
         const script = document.createElement('script')
         script.src = 'https://js.stripe.com/v3/'
@@ -273,8 +274,8 @@ async function loadPaymentSdk(provider, publishableKey, apiBaseUrl, profileId, c
       })
     }
     await stripeScriptPromise
-    if (typeof window.Stripe !== 'function') throw new Error('Stripe.js did not initialize')
-    return { stripe: window.Stripe(publishableKey) }
+    if (typeof (window as any).Stripe !== 'function') throw new Error('Stripe.js did not initialize')
+    return { stripe: (window as any).Stripe(publishableKey) }
   }
   if (provider === 'hyperswitch') {
     const Hyper = await loadHyperswitchSdk(clientUrl)
@@ -283,7 +284,7 @@ async function loadPaymentSdk(provider, publishableKey, apiBaseUrl, profileId, c
   throw new Error(`Unsupported payment authentication provider: ${provider}`)
 }
 
-async function beginIncrementalPayment(settlement) {
+async function beginIncrementalPayment(settlement: any) {
   if (busy.value) return
   busy.value = true
   incrementalFault.value = ''
@@ -333,6 +334,7 @@ async function beginIncrementalPayment(settlement) {
       await nextTick()
       widget.mount('#usage-incremental-payment')
     } else {
+      // @ts-expect-error TS2554, from the conversion: Expected 5 arguments, but got 2.
       const { stripe } = await loadPaymentSdk(action.provider, action.publishable_key)
       activeIncremental.value = { ...activeIncremental.value, stripe }
     }
@@ -344,7 +346,7 @@ async function beginIncrementalPayment(settlement) {
   }
 }
 
-async function completeIncrementalPayment(active) {
+async function completeIncrementalPayment(active: any) {
   const settlement = active.settlement
   const result = await topupRequest({
     action: 'complete_incremental',
@@ -404,7 +406,7 @@ async function confirmIncrementalPayment() {
   }
 }
 
-async function retryIncrementalPayment(settlement, action = 'retry_incremental') {
+async function retryIncrementalPayment(settlement: any, action = 'retry_incremental') {
   if (busy.value) return
   busy.value = true
   incrementalFault.value = ''
@@ -428,7 +430,7 @@ async function retryIncrementalPayment(settlement, action = 'retry_incremental')
   }
 }
 
-async function checkIncrementalPayment(settlement) {
+async function checkIncrementalPayment(settlement: any) {
   try {
     const result = await topupRequest({
       action: 'check_incremental',
@@ -447,7 +449,7 @@ async function checkIncrementalPayment(settlement) {
   }
 }
 
-async function buyPack(offer) {
+async function buyPack(offer: any) {
   if (busy.value) return
   busy.value = true
   fault.value = ''
@@ -485,9 +487,9 @@ async function saveTopup() {
     topupNotice.value = W.value['settings-saved']
   } catch (error) {
     console.error('Unable to save automatic top-up settings', error)
-    topupFault.value = error.code === 'payment_method_required'
+    topupFault.value = (error as any).code === 'payment_method_required'
       ? W.value['payment-method-required']
-      : error.code === 'topup_site_disabled'
+      : (error as any).code === 'topup_site_disabled'
         ? W.value['topup-site-disabled']
         : W.value['settings-error']
   } finally {
@@ -570,7 +572,7 @@ async function confirmPaymentMethodManagement() {
   }
 }
 
-function onAuthChange(event, session) {
+function onAuthChange(event: any, session: any) {
   if (event === 'INITIAL_SESSION') return
   if (session?.user) {
     queueMicrotask(() => void load())
@@ -598,7 +600,7 @@ onMounted(() => {
       paymentMethodNotice.value = W.value['payment-method-saved']
     }
   })
-  const result = supabase.auth.onAuthStateChange(onAuthChange)
+  const result = (supabase as any).auth.onAuthStateChange(onAuthChange)
   authListener = result.data.subscription
 })
 
@@ -615,7 +617,7 @@ onBeforeUnmount(() => {
       <section v-if="state === 'loading'" class="usage-card" role="status">{{ W.loading }}</section>
       <section v-else-if="state === 'error'" class="usage-card usage-error" role="alert">
         <p>{{ fault }}</p>
-        <button type="button" class="usage-button" @click="load">{{ W.retry }}</button>
+        <!-- @vue-expect-error TS2345, from the conversion: Argument of type '{ class: string; type: "button"; onClick: (retryOnce?: boolean) => Promise<boolean>; }' is not assignable to parameter of  --><button type="button" class="usage-button" @click="load">{{ W.retry }}</button>
       </section>
       <template v-else-if="state === 'ready'">
         <p v-if="fault" class="usage-alert" role="alert">{{ fault }}</p>
@@ -634,11 +636,11 @@ onBeforeUnmount(() => {
                 <span v-if="balance.period_start" class="usage-period">{{ timeOf(balance.period_start) }}</span>
               </div>
               <p class="usage-remaining">
-                {{ W.remaining.replace('{amount}', numberOf(balance.remaining_micros)).replace('{unit}', unitOf(balance.offer_key)) }}
+                <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ W.remaining.replace('{amount}', numberOf(balance.remaining_micros)).replace('{unit}', unitOf(balance.offer_key)) }}
               </p>
               <div class="usage-totals">
-                <span>{{ W.used.replace('{amount}', numberOf(balance.used_micros)).replace('{unit}', unitOf(balance.offer_key)) }}</span>
-                <span>{{ W.reserved.replace('{amount}', numberOf(balance.reserved_micros)).replace('{unit}', unitOf(balance.offer_key)) }}</span>
+                <span><!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ W.used.replace('{amount}', numberOf(balance.used_micros)).replace('{unit}', unitOf(balance.offer_key)) }}</span>
+                <span><!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ W.reserved.replace('{amount}', numberOf(balance.reserved_micros)).replace('{unit}', unitOf(balance.offer_key)) }}</span>
               </div>
             </article>
           </div>
@@ -701,7 +703,7 @@ onBeforeUnmount(() => {
             >
               {{ busy ? W['incremental-working'] : W['incremental-retry'] }}
             </button>
-            <button
+            <!-- @vue-expect-error TS2345, from the conversion: Argument of type '{ disabled: boolean; class: string; type: "button"; onClick: (forPayout?: boolean) => Promise<void>; }' is not assignable  --><button
               v-if="settlement.status === 'failed' && canManagePaymentMethod"
               type="button"
               class="usage-button"
@@ -762,7 +764,7 @@ onBeforeUnmount(() => {
             <article v-for="offer in usagePacks" :key="offer.key" class="usage-card">
               <div>
                 <h3>{{ offer.title }}</h3>
-                <p>{{ W.pack-size.replace('{amount}', numberOf(Number(offer.usage.grant) * 1_000_000)).replace('{unit}', unitOf(offer.key)) }}</p>
+                <p><!-- @vue-expect-error TS2339, from the conversion: Property 'size' does not exist on type '{ active: boolean; $props: { readonly active: boolean; }; $: ComponentInternalInstance; $data: {}; $ -->{{ W.pack-size.replace('{amount}', numberOf(Number(offer.usage.grant) * 1_000_000)).replace('{unit}', unitOf(offer.key)) }}</p>
               </div>
               <div class="usage-pack-buy">
                 <strong>{{ moneyOf(offer.price, offer.currency) }}</strong>
@@ -779,7 +781,7 @@ onBeforeUnmount(() => {
           <p class="usage-help">{{ W['topup-explanation'] }}</p>
           <p class="usage-help">{{ W['topup-failure-note'] }}</p>
           <p class="usage-payment">{{ hasPaymentMethod ? W['payment-ready'] : W['payment-missing'] }}</p>
-          <button type="button" class="usage-button" :disabled="busy" @click="managePayment">{{ W['manage-payment'] }}</button>
+          <!-- @vue-expect-error TS2345, from the conversion: Argument of type '{ disabled: boolean; class: string; type: "button"; onClick: (forPayout?: boolean) => Promise<void>; }' is not assignable  --><button type="button" class="usage-button" :disabled="busy" @click="managePayment">{{ W['manage-payment'] }}</button>
 
           <form class="usage-settings" @submit.prevent="saveTopup">
             <label class="usage-check">
@@ -795,7 +797,7 @@ onBeforeUnmount(() => {
               </select>
             </label>
             <label>
-              <span>{{ W.threshold.replace('{unit}', resolveUsageUnit(selectedTopupPack?.unit)) }}</span>
+              <span><!-- @vue-expect-error TS2554, from the conversion: Expected 2-3 arguments, but got 1. -->{{ W.threshold.replace('{unit}', resolveUsageUnit(selectedTopupPack?.unit)) }}</span>
               <input v-model="threshold" type="number" min="0" step="0.01" :disabled="busy" />
             </label>
             <label>

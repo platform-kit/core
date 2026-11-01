@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * What a chat prompt shows above the launcher before the panel opens. Two shapes, by what the
  * prompt carries:
@@ -14,7 +15,7 @@ import { us } from 'platformkit/lib/content.js'
 import { siteUrl } from 'platformkit/lib/support/api.js'
 import SupportMark from './SupportMark.vue'
 
-defineProps({ prompt: { type: Object, required: true } })
+defineProps({ prompt: { type: Object as PropType<any>, required: true } })
 /* reply carries the choice picked, if the prompt offered any; open is the teaser's button */
 const emit = defineEmits(['reply', 'open', 'dismiss'])
 const T = us('support').teaser.main

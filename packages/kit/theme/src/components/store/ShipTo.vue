@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Where it ships: the country a buyer chooses before checkout, and what shipping costs
  * there — the store's rules (src/lib/shipping.js) from the storefront's settings. The
@@ -12,7 +12,7 @@ import { shipTo, rules, rates } from 'platformkit/lib/shipto.js'
 
 const W = us('store').cart.ship
 const names = (() => { try { return new Intl.DisplayNames([navigator.language || 'en'], { type: 'region' }) } catch (e) { return null } })()
-const name = (c) => { try { return (names && names.of(c)) || c } catch (e) { return c } }
+const name = (c: any) => { try { return (names && names.of(c)) || c } catch (e) { return c } }
 const options = computed(() => rules.countries.map((c) => ({ code: c, name: name(c) })).sort((a, b) => a.name.localeCompare(b.name)))
 const country = computed({ get: () => shipTo.value, set: (v) => { shipTo.value = v } })
 const standard = computed(() => (rates.value[0] ? money(rates.value[0].amount, 'usd') : ''))

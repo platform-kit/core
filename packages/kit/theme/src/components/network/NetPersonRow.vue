@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * ONE PERSON IN A LIST — Who to follow, a search's answers: their face, name and handle (each a way
  * to their page when it is open), a line about them where there is room, and Follow beside them.
@@ -12,6 +12,7 @@ import { isSignedIn } from 'platformkit/lib/auth.js'
 import { net, follow } from 'platformkit/lib/network/api.js'
 import site from '#site'
 import { showsFollowing } from 'platformkit/lib/community/places.js'
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const FOLLOWING = showsFollowing((site.community || {}).hide)
 import SpaceAvatar from '../spaces/SpaceAvatar.vue'
 
@@ -27,7 +28,7 @@ const href = computed(() => (person.value && person.value.page && person.value.u
 const on = ref(false)
 const busy = ref(false)
 async function toggle() {
-  if (!isSignedIn.value) { if (window.DLauth) window.DLauth.open(); return }
+  if (!isSignedIn.value) { if ((window as any).DLauth) (window as any).DLauth.open(); return }
   busy.value = true
   try { await follow(props.id, !on.value); on.value = !on.value; emit('followed', on.value) } catch { /* the database said no */ } finally { busy.value = false }
 }

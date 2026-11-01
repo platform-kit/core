@@ -59,7 +59,7 @@ if (SITE.deployment.backend) {
 
 /* ---- 2. a published artefact is wired end to end ---- */
 {
-  const models = readFileSync(join(KIT, 'build', 'models', 'index.mjs'), 'utf8')
+  const models = readFileSync(join(KIT, 'build', 'models', 'index.mts'), 'utf8')
   const overlay = readFileSync(join(KIT, 'supabase', 'functions', '_shared', 'compiled.ts'), 'utf8')
   for (const key of Object.keys(PUBLISHED)) {
     ok(key + ' is compiled by a publish', new RegExp('^\\s*' + key + ':\\s*async', 'm').test(models),
@@ -98,7 +98,7 @@ if (SITE.deployment.backend) {
   }
   await both('catalog', async (store, theme) => (await import('./catalog.mjs')).compileCatalog({ store, theme, root: ROOT }))
   await both('forms', async (store) => (await (await import('./forms.mjs')).compileForms(store)).forms)
-  await both('funnels', async (store) => (await import('./funnels.mjs')).compileFunnels({ store, write: false, offers: (() => { try { return JSON.parse(readFileSync(join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8')).offers } catch { return null } })() }))
+  await both('funnels', async (store) => (await import('./funnels.mts')).compileFunnels({ store, write: false, offers: (() => { try { return JSON.parse(readFileSync(join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8')).offers } catch { return null } })() }))
 }
 
 console.log('\nartefacts: ' + pass + ' passed' + (fail ? ', ' + fail + ' FAILED' : '') + '\n')

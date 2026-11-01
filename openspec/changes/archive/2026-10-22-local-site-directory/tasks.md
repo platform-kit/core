@@ -16,6 +16,6 @@
 
 ## 3. Document and verify the change
 
-- [x] 3.1 Update the multiple-sites, dev-build, and CLI reference docs to explain the development-only root directory, unchanged site subdomains, fixed public port and explicit auto options, stable configurable Supabase project IDs, and the safe stop command; verify with `node packages/kit/build/docs-check.mjs`.
-- [x] 3.2 Run the changed scenarios, cross-cutting `design-rules`, `admin-editing`, and `deploy` checks, the site-owned tests, production build, docs check, and strict OpenSpec validation; verify from the site repository root and with `node packages/kit/build/docs-check.mjs` and `openspec validate --all --strict`.
-- [x] 3.3 Update the multiple-sites guide and config-key reference for `dev.projectName` and the card behavior; verify source freshness and coverage with `node packages/kit/build/docs-check.mjs`.
+- [x] 3.1 Update the multiple-sites, dev-build, and CLI reference docs to explain the development-only root directory, unchanged site subdomains, fixed public port and explicit auto options, stable configurable Supabase project IDs, and the safe stop command; verify with `node packages/kit/build/docs-check.mts`.
+- [x] 3.2 Run the changed scenarios, cross-cutting `design-rules`, `admin-editing`, and `deploy` checks, the site-owned tests, production build, docs check, and strict OpenSpec validation; verify from the site repository root and with `node packages/kit/build/docs-check.mts` and `openspec validate --all --strict`.
+- [x] 3.3 Update the multiple-sites guide and config-key reference for `dev.projectName` and the card behavior; verify source freshness and coverage with `node packages/kit/build/docs-check.mts`.

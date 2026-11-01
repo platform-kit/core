@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * Booking a session in the app, in two questions: WHAT (a splash of the ways to
  * book, when there is more than one — the call, what it includes or costs, a
@@ -24,17 +25,17 @@ import { payAndBook, money } from 'platformkit/lib/commerce.js'
 import { refreshEntitlements, isSignedIn } from 'platformkit/lib/auth.js'
 
 /* host: a host booking for people — every option offered, the invitees named, no judge and nothing paid */
-const props = defineProps({ options: { type: Array, default: () => [] }, moving: { type: Object, default: null }, host: { type: Boolean, default: false }, requireAuthToBook: { type: Boolean, default: true } })
+const props = defineProps({ options: { type: Array as PropType<any[]>, default: () => [] }, moving: { type: Object as PropType<any>, default: null }, host: { type: Boolean, default: false }, requireAuthToBook: { type: Boolean, default: true } })
 const emit = defineEmits(['booked', 'moved', 'back'])
 const B = us('library').coaching.booker || {}
 const C = us('library').coaching.page || {}
 const HW = us('library').coaching.host || {}
 /* the invitees, a host's rows of addresses */
 const invitees = ref([''])
-const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '').trim())
+const emailOk = (e: any) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '').trim())
 const cleanInvitees = computed(() => invitees.value.map((e) => String(e || '').trim().toLowerCase()).filter(Boolean))
 function addInvitee() { invitees.value = [...invitees.value, ''] }
-function dropInvitee(i) { invitees.value = invitees.value.filter((_, j) => j !== i); if (!invitees.value.length) invitees.value = [''] }
+function dropInvitee(i: any) { invitees.value = invitees.value.filter((_, j) => j !== i); if (!invitees.value.length) invitees.value = [''] }
 
 /* what: the chosen option; a single option, or a move, skips the splash */
 const picked = ref(props.moving ? (props.options.find((o) => o.event === props.moving.event) || null) : props.options.length === 1 ? props.options[0] : null)
@@ -49,7 +50,7 @@ const zone = ref((() => { try { return Intl.DateTimeFormat().resolvedOptions().t
 /* when: the month in view and what is open in it */
 const first = new Date(); first.setDate(1); first.setHours(0, 0, 0, 0)
 const month = ref(new Date(first))
-const open = ref({})
+const open = ref<any>({})
 const minutes = ref(0)
 const loading = ref(false)
 const day = ref('')
@@ -59,13 +60,13 @@ const notes = ref('')
 const guestEmail = ref('')
 const phone = ref('')   /* a session by phone with no number of its own asks the reader's */
 const error = ref('')
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 /* where the session happens, from the type — a video call, a link, a place, a phone, or nothing said */
 const whereFact = computed(() => (option.value ? placeOf(option.value, B) : ''))
 const asksPhone = computed(() => !!option.value && option.value.where === 'phone' && !option.value.phone && !props.moving)
-const done = ref(null)
+const done = ref<any>(null)
 
-const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const ymd = (d: any) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const monthName = computed(() => new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(month.value))
 const weekdays = computed(() => { const base = new Date(2024, 0, 7); return [...Array(7)].map((_, i) => new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(new Date(base.getTime() + i * 864e5))) })
 const cells = computed(() => {
@@ -111,14 +112,14 @@ const runCount = ref(0)
 watch(option, (o) => { runCount.value = (o && o.repeat) ? o.repeat.count : 0 }, { immediate: true })
 watch(runCount, () => { if (step.value !== 'what') { day.value = ''; slot.value = ''; load() } })
 const runEvery = computed(() => { const e = (option.value && option.value.repeat && option.value.repeat.every) || 'week'; return B['run-every-' + e] || '' })
-const seatsLeft = ref({})
-const leftAt = (iso) => seatsLeft.value[iso]
-const anyOpen = computed(() => Object.values(open.value).some((l) => l.length))
+const seatsLeft = ref<any>({})
+const leftAt = (iso: any) => seatsLeft.value[iso]
+const anyOpen = computed(() => Object.values(open.value).some((l) => (l as any).length))
 /* WHY A MONTH IS EMPTY. An empty calendar with no word looks broken, and the reader's next move
    depends entirely on which of these it is: turn the page, come back later, or write and ask. The
    scheduler says which; this says it in the site's own words, and falls back to the plain line for
    anything it has no word for. */
-const why = ref(null)
+const why = ref<any>(null)
 const whyNone = computed(() => {
   const w = why.value
   if (!w) return B['none-month']
@@ -127,11 +128,11 @@ const whyNone = computed(() => {
   const when = w.from || w.to
   return when ? said.replace('{date}', dayOf(when)) : said
 })
-const at = (iso, opts) => { try { return new Intl.DateTimeFormat(undefined, { timeZone: zone.value, ...opts }).format(new Date(iso)) } catch (e) { return iso } }
-const timeOf = (iso) => at(iso, { hour: 'numeric', minute: '2-digit' })
-const whenOf = (iso) => at(iso, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })
-const dayOf = (k) => at(k + 'T12:00:00', { weekday: 'long', day: 'numeric', month: 'long' })
-const soon = (iso) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(iso)) } catch (e) { return '' } }
+const at = (iso: any, opts: any) => { try { return new Intl.DateTimeFormat(undefined, { timeZone: zone.value, ...opts }).format(new Date(iso)) } catch (e) { return iso } }
+const timeOf = (iso: any) => at(iso, { hour: 'numeric', minute: '2-digit' })
+const whenOf = (iso: any) => at(iso, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+const dayOf = (k: any) => at(k + 'T12:00:00', { weekday: 'long', day: 'numeric', month: 'long' })
+const soon = (iso: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(iso)) } catch (e) { return '' } }
 
 async function load() {
   if (!option.value) return
@@ -156,9 +157,9 @@ onMounted(async () => {
 watch(isSignedIn, (signed) => { if (signed) resumeAfterAuth() })
 watch([month, zone], () => { if (step.value !== 'what') load() })
 
-function choose(o) { if (o.blocked) return; picked.value = o; day.value = ''; slot.value = ''; month.value = new Date(first); step.value = 'when'; load() }
+function choose(o: any) { if (o.blocked) return; picked.value = o; day.value = ''; slot.value = ''; month.value = new Date(first); step.value = 'when'; load() }
 function change() { step.value = 'what'; picked.value = null; open.value = {}; day.value = ''; slot.value = ''; error.value = '' }
-function shift(n) { const m = new Date(month.value); m.setMonth(m.getMonth() + n); month.value = m }
+function shift(n: any) { const m = new Date(month.value); m.setMonth(m.getMonth() + n); month.value = m }
 /*
  * QUESTIONS ON THE WAY IN. A type may ask a form's questions between choosing a time and confirming
  * — and they are asked AFTER the time rather than before, because somebody who cannot find an hour
@@ -172,11 +173,11 @@ function shift(n) { const m = new Date(month.value); m.setMonth(m.getMonth() + n
 const asked = computed(() => {
   const slug = option.value && option.value.form
   if (!slug) return null
-  return (FORMS || []).find((x) => x.slug === slug && x.published !== false) || null
+  return (FORMS || []).find((x: any) => x.slug === slug && x.published !== false) || null
 })
-const response = ref(null)
-function answered(e) { response.value = (e && e.response) || null; step.value = 'confirm'; error.value = '' }
-function pick(iso) { slot.value = iso; response.value = null; step.value = asked.value ? 'questions' : 'confirm'; error.value = '' }
+const response = ref<any>(null)
+function answered(e: any) { response.value = (e && e.response) || null; step.value = 'confirm'; error.value = '' }
+function pick(iso: any) { slot.value = iso; response.value = null; step.value = asked.value ? 'questions' : 'confirm'; error.value = '' }
 
 const price = computed(() => option.value && option.value.paid ? money(option.value.unit_amount || 0, 'usd') : '')
 const paying = computed(() => !props.host && !!option.value && option.value.paid && !(option.value.credits > 0) && !props.moving)
@@ -199,7 +200,7 @@ async function restorePending() {
   if (!selected || typeof saved?.start !== 'string' || !Number.isFinite(Date.parse(saved.start))) { clearPending(); return }
   picked.value = selected
   await nextTick()
-  const availableLengths = lengthsOf(selected).map((l) => l.minutes)
+  const availableLengths = lengthsOf(selected).map((l: any) => l.minutes)
   if (availableLengths.includes(saved.minutes)) chosen.value = saved.minutes
   if (runs.value.includes(saved.count)) runCount.value = saved.count
   if (typeof saved.zone === 'string') {
@@ -213,11 +214,11 @@ async function restorePending() {
 /* WHAT IT COSTS, and the three different kinds of nothing are not the same sentence: one of the
    site's own types costs nothing because a membership covers it, a provider's own may simply be
    free, and a paid one already bought is waiting to be used. */
-const costOf = (o) => (o.paid ? (o.credits > 0 ? B['credit-line'] : money(o.unit_amount || 0, o.currency || 'usd')) : o.offering ? B.free : B.included)
+const costOf = (o: any) => (o.paid ? (o.credits > 0 ? B['credit-line'] : money(o.unit_amount || 0, o.currency || 'usd')) : o.offering ? B.free : B.included)
 /* WHOSE AN OPTION IS, in words — nothing at all for one of the site's own types, which are the
    business's and belong to nobody in particular */
-const fillWords = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-const byOf = (o) => {
+const fillWords = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const byOf = (o: any) => {
   const by = o && o.by
   if (!by || !by.name) return ''
   return fillWords(by.title ? B['by-titled'] : B.by, { name: by.name, title: by.title })
@@ -226,12 +227,12 @@ const byOf = (o) => {
 async function confirm(afterAuth = false) {
   if (!slot.value || !option.value) return
   if (!isSignedIn.value && !guestBooking.value) {
-    if (!window.DLauth) { error.value = B['cal-error']; return }
+    if (!(window as any).DLauth) { error.value = B['cal-error']; return }
     try {
       window.sessionStorage.setItem(pendingKey, JSON.stringify({ event: option.value.event, start: slot.value, zone: zone.value, minutes: chosen.value, count: runCount.value }))
-    } catch (e) { error.value = e.message || B['cal-error']; return }
+    } catch (e) { error.value = (e as any).message || B['cal-error']; return }
     pendingAuth.value = true
-    window.DLauth.open({ intent: 'booking', returnTo: window.location.href, onAuthenticated: resumeAfterAuth })
+    ;(window as any).DLauth.open({ intent: 'booking', returnTo: window.location.href, onAuthenticated: resumeAfterAuth })
     return
   }
   if (askGuestEmail.value && !emailOk(guestEmail.value)) { error.value = B['email-invalid']; return }
@@ -268,6 +269,7 @@ async function confirm(afterAuth = false) {
       if (!list.length) { step.value = 'confirm'; error.value = HW['need-invitee']; return }
       if (list.some((e) => !emailOk(e))) { step.value = 'confirm'; error.value = HW['bad-email']; return }
       if (option.value.seats > 0 && list.length > option.value.seats) { step.value = 'confirm'; error.value = fill(HW['seats-full'], { n: option.value.seats }); return }
+      // @ts-expect-error TS2554, from the conversion: Expected 6 arguments, but got 5.
       const r = await bookForOthers(option.value.event, slot.value, zone.value, notes.value, list)
       done.value = r.booking; step.value = 'done'; emit('booked', r.booking); sendOn(); return
     }
@@ -277,9 +279,9 @@ async function confirm(afterAuth = false) {
     emit(props.moving ? 'moved' : 'booked', r.booking)
   } catch (e) {
     step.value = 'confirm'
-    error.value = e.code === 'taken' ? B.taken : e.code === 'too-soon' ? fill(B['too-soon'], { n: e.hours }) : e.code === 'no-host' ? B['no-host'] : e.code === 'phone' ? B['phone-need'] : e.code === 'unpaid' ? B.unpaid : e.code === 'over' ? (C['booked-' + (e.allowance && /month/.test(e.allowance) ? 'month' : 'week')] || e.message) : e.message || B['cal-error']
+    error.value = (e as any).code === 'taken' ? B.taken : (e as any).code === 'too-soon' ? fill(B['too-soon'], { n: (e as any).hours }) : (e as any).code === 'no-host' ? B['no-host'] : (e as any).code === 'phone' ? B['phone-need'] : (e as any).code === 'unpaid' ? B.unpaid : (e as any).code === 'over' ? (C['booked-' + ((e as any).allowance && /month/.test((e as any).allowance) ? 'month' : 'week')] || (e as any).message) : (e as any).message || B['cal-error']
     /* the time went: back to the times, refreshed, the line kept over the refresh (load clears it first) */
-    if (e.code === 'taken') { const line = error.value; slot.value = ''; step.value = 'when'; load().then(() => { error.value = line }) }
+    if ((e as any).code === 'taken') { const line = error.value; slot.value = ''; step.value = 'when'; load().then(() => { error.value = line }) }
   }
 }
 </script>
@@ -322,7 +324,7 @@ async function confirm(afterAuth = false) {
             <div v-if="lengths.length > 1" class="bk-lengths">
               <span class="bk-lengths-label">{{ B['how-long'] }}</span>
               <span class="bk-lengths-row">
-                <button v-for="l in lengths" :key="l.minutes" type="button" class="bk-length" :class="{ on: chosen === l.minutes }" :disabled="step === 'busy'" @click="chosen = l.minutes">{{ l.minutes }} {{ B.minutes }}<i v-if="l.price && lengths.some((x) => x.price !== lengths[0].price)">{{ l.price }}</i></button>
+                <button v-for="l in lengths" :key="l.minutes" type="button" class="bk-length" :class="{ on: chosen === l.minutes }" :disabled="step === 'busy'" @click="chosen = l.minutes">{{ l.minutes }} {{ B.minutes }}<i v-if="l.price && lengths.some((x: any) => x.price !== lengths[0].price)">{{ l.price }}</i></button>
               </span>
             </div>
             <!-- HOW MANY, where the type offers a run -->
@@ -390,7 +392,7 @@ async function confirm(afterAuth = false) {
             <p v-if="error" class="bk-err">{{ error }}</p>
             <div class="bk-acts">
               <button type="button" class="bk-btn ghost" :disabled="step === 'busy'" @click="step = 'when'; slot = ''">{{ B.back }}</button>
-              <button type="button" class="bk-btn" :class="{ busy: step === 'busy' }" :disabled="step === 'busy'" @click="confirm">{{ step === 'busy' ? (moving ? B.moving : B.booking) : host ? HW.confirm : paying ? B['pay-confirm'] + ' · ' + price : B.confirm }}</button>
+              <!-- @vue-expect-error TS2345, from the conversion: Argument of type '{ disabled: boolean; class: { busy: boolean; }; type: "button"; onClick: (afterAuth?: boolean) => Promise<void>; }' is not --><button type="button" class="bk-btn" :class="{ busy: step === 'busy' }" :disabled="step === 'busy'" @click="confirm">{{ step === 'busy' ? (moving ? B.moving : B.booking) : host ? HW.confirm : paying ? B['pay-confirm'] + ' · ' + price : B.confirm }}</button>
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* toolbar-items: labelled buttons on VueFinder's own actions — New folder, Upload, and on a selection its count, Rename
    (one), Move to…, Copy to… (VueFinder's clipboard: copy, then paste into the folder chosen in its modal), Download
    (one file, by its served address), Delete, Clear */
@@ -10,10 +10,10 @@ const A = W.actions, F = W.file
 /* a file in use — any record names it — is neither renamed, moved nor deleted from here */
 const inUse = computed(() => selection.value.some((i) => usedBy(i).length))
 const n = computed(() => selection.value.length)
-const one = computed(() => (n.value === 1 ? selection.value[0] : null))
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const one = computed<any>(() => (n.value === 1 ? selection.value[0] : null))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 function copyTo() { menuAction('copy'); menuAction('paste') }
-function download() { const f = one.value; if (!f || f.type === 'dir' || !f.url) return; const a = document.createElement('a'); a.href = f.url; a.download = f.basename || ''; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove() }
+function download() { const f: any = one.value; if (!f || f.type === 'dir' || !f.url) return; const a = document.createElement('a'); a.href = f.url; a.download = f.basename || ''; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove() }
 </script>
 
 <template>

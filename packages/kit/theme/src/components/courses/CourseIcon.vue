@@ -1,10 +1,10 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The course screens' own marks, one stroke weight throughout: what a lesson is (video, audio, reading, a chapter, an
  * article, a form, a session), what state it is in (done, open, closed), and the few controls the player needs.
  */
 const props = defineProps({ name: { type: String, required: true }, size: { type: Number, default: 18 } })
-const P = {
+const P: any = {
   video: ['M4 6.5h9a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 14V8A1.5 1.5 0 0 1 4 6.5Z', 'm14.5 9.5 3-2v7l-3-2'],
   audio: ['M3.5 12v-1a6.5 6.5 0 0 1 13 0v1', 'M3.5 12h2v4h-1a1 1 0 0 1-1-1v-3Zm13 0h-2v4h1a1 1 0 0 0 1-1v-3Z'],
   text: ['M5 3.5h7l3 3v10H5z', 'M12 3.5v3h3', 'M7.5 10h5M7.5 13h5'],

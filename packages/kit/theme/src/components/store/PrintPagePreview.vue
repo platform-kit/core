@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue'
 import bitterRegular from '../../assets/print-fonts/Bitter-400-normal.ttf?url'
 import bitterItalic from '../../assets/print-fonts/Bitter-400-italic.ttf?url'
@@ -16,7 +16,7 @@ defineProps({
   zoom: { type: Boolean, default: false },
 })
 
-let printFontsPromise
+let printFontsPromise: any
 onMounted(() => {
   if (!printFontsPromise) {
     printFontsPromise = Promise.all([

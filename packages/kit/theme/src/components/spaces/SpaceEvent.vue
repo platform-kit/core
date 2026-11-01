@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * ONE EVENT, ON ITS OWN PAGE — what it is, when it next runs, where, who is running it, who is
  * coming, and what people have said about it.
@@ -22,12 +23,12 @@ import MediaBlock from '../content/MediaBlock.vue'
 import CommentThread from '../content/CommentThread.vue'
 import { checkout } from 'platformkit/lib/commerce.js'
 
-const props = defineProps({ slug: { type: String, required: true }, names: { type: Object, default: () => ({}) } })
+const props = defineProps({ slug: { type: String, required: true }, names: { type: Object as PropType<any>, default: () => ({}) } })
 const emit = defineEmits(['back', 'join'])
 
 const W = computed(() => us('spaces').calendar.page)
 const C = computed(() => us('spaces').calendar.main)
-const row = ref(null)
+const row = ref<any>(null)
 const now = Date.now()
 /* the card's own words for a day, so a date reads the same wherever it is shown */
 const dayWords = computed(() => ({ today: C.value.today, tomorrow: C.value.tomorrow }))
@@ -40,10 +41,10 @@ onMounted(load)
 watch(() => props.slug, load)
 
 /* the next one that has not happened, which is what a page is about */
-const next = computed(() => (row.value?.occurrences || []).find((o) => new Date(o.starts_at) > new Date()) || null)
+const next = computed(() => (row.value?.occurrences || []).find((o: any) => new Date(o.starts_at) > new Date()) || null)
 const past = computed(() => !!row.value && !next.value)
 const place = computed(() => row.value?.place || {})
-const comments = computed(() => (row.value?.comments || []).filter((c) => !c.deleted_at))
+const comments = computed(() => (row.value?.comments || []).filter((c: any) => !c.deleted_at))
 const left = computed(() => {
   const cap = row.value?.capacity
   return cap && next.value ? Math.max(0, cap - (next.value.going || 0)) : null
@@ -51,10 +52,10 @@ const left = computed(() => {
 
 /* ONLY THE ANSWERS THE FILE ALLOWS. A file naming none allows all three; one that names yes and no
    offers two buttons rather than three with one that does nothing. */
-const may = (k) => { const a = row.value?.rsvp_answers || []; return !a.length || a.includes(k) }
+const may = (k: any) => { const a = row.value?.rsvp_answers || []; return !a.length || a.includes(k) }
 
 /* WHAT IT COSTS, said in the reader's own money. The price is the file's; the currency is too. */
-const money = (c) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (c.currency || 'usd').toUpperCase() }).format(c.price) } catch (e) { return String(c.price) } }
+const money = (c: any) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (c.currency || 'usd').toUpperCase() }).format(c.price) } catch (e) { return String(c.price) } }
 /* buying one is buying anything else: the sku the file names, or the event's own */
 async function buy() {
   if (!row.value?.cost || busy.value) return
@@ -70,11 +71,12 @@ watch(next, (o) => { why.value = (o && o.reason) || '' })
 async function sayWhy() {
   if (!next.value || !next.value.mine || busy.value) return
   busy.value = true
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'null | undefined'.
   await rsvp(next.value.id, next.value.mine, why.value.trim() || null)
   busy.value = false
 }
 
-async function going(state) {
+async function going(state: any) {
   if (!next.value || busy.value) return
   busy.value = true
   await rsvp(next.value.id, next.value.mine === state ? 'out' : state)
@@ -90,7 +92,7 @@ async function say() {
   await load()
   busy.value = false
 }
-async function remove(id) { busy.value = true; await unsay(id); await load(); busy.value = false }
+async function remove(id: any) { busy.value = true; await unsay(id); await load(); busy.value = false }
 </script>
 
 <template>
@@ -117,7 +119,7 @@ async function remove(id) { busy.value = true; await unsay(id); await load(); bu
       <dl class="se-facts">
         <div v-if="next">
           <dt>{{ W.when }}</dt>
-          <dd>{{ whenWord(next.starts_at, now, dayWords) }} · {{ clockOf(next.starts_at) }}</dd>
+          <dd><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(next.starts_at, now, dayWords) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clockOf(next.starts_at) }}</dd>
         </div>
         <div v-if="place.kind">
           <dt>{{ W.where }}</dt>

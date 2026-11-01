@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A number that rolls into place as it enters view: the value as written ("12,000+", "4.9", "$1M+",
  * "98.29%") is kept exactly — the digits inside it count up from zero over a second, the rest stands
@@ -8,16 +8,17 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { md } from './md.js'
 const props = defineProps({ value: { type: [String, Number], default: '' }, on: { type: Boolean, default: true }, duration: { type: Number, default: 1100 } })
-const el = ref(null), shown = ref('')
+const el = ref<any>(null), shown = ref('')
 const text = computed(() => String(props.value ?? ''))
 const m = computed(() => text.value.match(/^(.*?)(\d[\d,.]*)(.*)$/))
 const rm = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-let io = null, raf = 0
+let io: any = null, raf = 0
 function run() {
+  // @ts-expect-error TS2488, from the conversion: Type 'RegExpMatchArray | null' must have a '[Symbol.iterator]()' method that returns an iterator.
   const [, pre, num, post] = m.value
   const decimals = (num.split('.')[1] || '').length, target = Number(num.replace(/,/g, '')), grouped = num.includes(',')
   const t0 = performance.now()
-  const step = (t) => {
+  const step = (t: any) => {
     const k = Math.min(1, (t - t0) / props.duration), e = 1 - Math.pow(1 - k, 3)
     let v = (target * e).toFixed(decimals); if (grouped) v = Number(v).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
     shown.value = pre + v + post

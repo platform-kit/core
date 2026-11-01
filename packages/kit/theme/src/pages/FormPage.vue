@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* A form on its own page: /form/<slug> (and /to/<slug>, Typeform's address shape, where its embed looks), no site
    chrome — the form fills the window in the site's design. The head is the form's title. A slug no published form
    has lands on a quiet "no such form". Under Typeform's embed (?typeform-embed=…) the runner speaks its messages. */
@@ -10,8 +10,9 @@ import { us } from 'platformkit/lib/strings.js'
 import FormRun from '../components/forms/FormRun.vue'
 const props = defineProps({ path: { type: String, required: true } })
 const slug = computed(() => props.path.slice((props.path.startsWith(ROUTES.to + '/') ? ROUTES.to : ROUTES.form).length + 1).split('/')[0])
-const form = computed(() => (FORMS || []).find((f) => f.slug === slug.value && f.published !== false) || null)
+const form = computed(() => (FORMS || []).find((f: any) => f.slug === slug.value && f.published !== false) || null)
 const W = (us('forms').end || {}).state || {}
+// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: form.value ? form.value.title : (W.off || ''), description: form.value ? (form.value.model.settings['meta-description'] || '') : '', path: props.path, noindex: !form.value })
 </script>
 

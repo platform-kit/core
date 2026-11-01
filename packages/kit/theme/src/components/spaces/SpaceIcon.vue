@@ -1,8 +1,8 @@
-<script setup>
+<script setup lang="ts">
 /* The glyphs the workspace chrome is drawn with, as line art rather than emoji, so the rail and the
    toolbars read as one set. Each is 20 units square and inherits the colour around it. */
 const props = defineProps({ name: { type: String, required: true }, size: { type: Number, default: 18 } })
-const P = {
+const P: any = {
   home: 'M3 9.5 10 3l7 6.5V17a1 1 0 0 1-1 1h-4v-5H8v5H4a1 1 0 0 1-1-1z',
   dm: 'M4 4h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H8l-4 3v-3H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z',
   /* threads: a line said, and a second one answering it under the first */
@@ -68,7 +68,9 @@ const P = {
      the button asked for a glyph this set did not have and an unknown name draws empty */
   'mic-off': 'M10 3.2a2.2 2.2 0 0 1 2.2 2.2v4.2a2.2 2.2 0 0 1-.3 1.1M7.8 8.2V5.4M5.8 9.6a4.2 4.2 0 0 0 6.5 3.5M10 13.8v3M7.6 16.8h4.8M3.6 3.6l12.8 12.8',
   /* a month, for the calendar the rail opens */
+  // @ts-expect-error TS1117, from the conversion: An object literal cannot have multiple properties with the same name.
   calendar: 'M4 5.5h12a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zM3 9h14M7 3.5v3M13 3.5v3',
+  // @ts-expect-error TS1117, from the conversion: An object literal cannot have multiple properties with the same name.
   'mic-off': 'M12.2 5.4a2.2 2.2 0 0 0-4.4 0v3.2M7.8 11.2a2.2 2.2 0 0 0 3.9 1.2M5.8 9.6a4.2 4.2 0 0 0 6.3 3.6M10 13.8v3M7.6 16.8h4.8M3.5 3.5l13 13',
   cam: 'M3.5 6.2h8.2v7.6H3.5zM11.7 9.4 16.5 7v6l-4.8-2.4z',
   'cam-off': 'M8.6 6.2h3.1v5M11.7 9.4 16.5 7v6l-2.6-1.3M3.5 7.6v6.2h7.3M3.5 3.5l13 13',
@@ -78,9 +80,9 @@ const P = {
 }
 /* A GLYPH TAKEN FROM LUCIDE keeps Lucide's drawing and its 24-unit grid ({ grid, d }); the line is
    thickened in proportion, so it reads at the same weight as the 20-unit glyphs beside it */
-const entry = (n) => P[n] || ''
-const GRID = (n) => (typeof entry(n) === 'object' ? entry(n).grid : 20)
-const D = (n) => (typeof entry(n) === 'object' ? entry(n).d : entry(n))
+const entry = (n: any) => P[n] || ''
+const GRID = (n: any) => (typeof entry(n) === 'object' ? entry(n).grid : 20)
+const D = (n: any) => (typeof entry(n) === 'object' ? entry(n).d : entry(n))
 </script>
 
 <template>

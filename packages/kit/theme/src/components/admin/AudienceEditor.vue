@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * Who an email goes to, as a list of rules: only the rules the audience has are on the page,
  * each with its own control and nothing else; "Add a rule" offers the rest. Kept in the
@@ -16,10 +17,10 @@ import { normalizeRules, describeRules } from 'platformkit/supabase/functions/_s
 import { supabase, configured as supabaseOn } from 'platformkit/lib/supabase.js'
 import { isSignedIn } from 'platformkit/lib/auth.js'
 
-const props = defineProps({ modelValue: { type: Object, default: () => ({}) } })
+const props = defineProps({ modelValue: { type: Object as PropType<any>, default: () => ({}) } })
 const emit = defineEmits(['update:modelValue'])
 const a = computed(() => props.modelValue || {})
-const set = (k, v) => { const next = { ...a.value }; if (v == null || v === '' || (Array.isArray(v) && !v.length)) delete next[k]; else next[k] = v; emit('update:modelValue', next) }
+const set = (k: any, v: any) => { const next = { ...a.value }; if (v == null || v === '' || (Array.isArray(v) && !v.length)) delete next[k]; else next[k] = v; emit('update:modelValue', next) }
 
 /* the rules there are, each with the control it takes */
 const RULES = [
@@ -46,24 +47,25 @@ const ROLES = ['admin', 'provider', 'editor', 'support', 'analyst']
 const GRANTS = ['voice', 'file', 'mention-channel', 'moderate', 'invite']
 const byKey = Object.fromEntries(RULES.map((r) => [r.key, r]))
 /* a rule is on the page while the audience carries it — or while it was just added and is still blank */
-const added = ref([])
+const added = ref<any>([])
 const active = computed(() => RULES.filter((r) => a.value[r.key] != null || added.value.includes(r.key)))
 const available = computed(() => RULES.filter((r) => !active.value.includes(r)))
-function add(key) { if (!key) return; if (!added.value.includes(key)) added.value.push(key); if (key === 'answered' && !a.value.answered) set('answered', [{ item: '' }]) }
-function drop(key) { added.value = added.value.filter((k) => k !== key); set(key, null) }
+function add(key: any) { if (!key) return; if (!added.value.includes(key)) added.value.push(key); if (key === 'answered' && !a.value.answered) set('answered', [{ item: '' }]) }
+function drop(key: any) { added.value = added.value.filter((k: any) => k !== key); set(key, null) }
 
 /* the choices */
-const TIERS = [...new Map(PRODUCTS.filter((p) => p.kind === 'membership' && p.tier).map((p) => [p.tier, p.title])).entries()]
+const TIERS = [...new Map(PRODUCTS.filter((p: any) => p.kind === 'membership' && p.tier).map((p: any) => [p.tier, p.title])).entries()]
+// @ts-expect-error TS2488, from the conversion: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
 const AREAS = DOMAINS.map(([k, name]) => [k, name])
-const LVLS = Object.entries(LEVELS).map(([k, l]) => [k, l.name])
-const BOOKLIST = BOOKS.map((b) => [b.slug, b.title])
-const CHARGES = [['clear', 'nothing stirred'], ...CHS.map((c) => [c.k, c.label])]
-const bookName = (slug) => { const b = BOOKLIST.find(([s]) => s === slug); return b ? b[1] : slug }
-const statementText = (id) => { const s = STATEMENTS.find((x) => x.id === id); return s ? s.text : '' }
+const LVLS = Object.entries(LEVELS).map(([k, l]) => [k, (l as any).name])
+const BOOKLIST = BOOKS.map((b: any) => [b.slug, b.title])
+const CHARGES = [['clear', 'nothing stirred'], ...CHS.map((c: any) => [(c as any).k, (c as any).label])]
+const bookName = (slug: any) => { const b = BOOKLIST.find(([s]: any) => s === slug); return b ? b[1] : slug }
+const statementText = (id: any) => { const s = STATEMENTS.find((x: any) => (x as any).id === id); return s ? (s as any).text : '' }
 
 /* a span rule as three controls: the mode, the number, the unit */
 const UNITS = [['d', 'days'], ['w', 'weeks'], ['h', 'hours']]
-function spanParts(v) {
+function spanParts(v: any) {
   const t = String(v || '').trim()
   if (!t) return { mode: 'atleast', n: 7, u: 'd' }
   if (/^(none|never)$/i.test(t)) return { mode: 'none', n: 7, u: 'd' }
@@ -71,28 +73,29 @@ function spanParts(v) {
   if (m) return { mode: m[3] === '-' ? 'within' : 'atleast', n: Number(m[1]), u: (m[2] || 'd').toLowerCase() }
   return { mode: 'atleast', n: 7, u: 'd' }
 }
-const spanOf = (p) => (p.mode === 'none' ? 'none' : p.mode === 'within' ? `${p.n}${p.u}-` : `${p.n}${p.u}+`)
-const setSpan = (k, patch) => set(k, spanOf({ ...spanParts(a.value[k]), ...patch }))
+const spanOf = (p: any) => (p.mode === 'none' ? 'none' : p.mode === 'within' ? `${p.n}${p.u}-` : `${p.n}${p.u}+`)
+const setSpan = (k: any, patch: any) => set(k, spanOf({ ...spanParts(a.value[k]), ...patch }))
 
-const listOf = (k) => (Array.isArray(a.value[k]) ? a.value[k] : a.value[k] ? String(a.value[k]).split(/[,\s]+/) : []).filter(Boolean)
-const toggle = (k, v) => { const l = listOf(k); set(k, l.includes(v) ? l.filter((x) => x !== v) : [...l, v]) }
-const toggleTier = (v) => { let l = listOf('subscription'); if (l.includes(v)) l = l.filter((x) => x !== v); else if (v === 'none' || v === 'any') l = [v]; else l = [...l.filter((x) => x !== 'none' && x !== 'any'), v]; set('subscription', l) }
+const listOf = (k: any) => (Array.isArray(a.value[k]) ? a.value[k] : a.value[k] ? String(a.value[k]).split(/[,\s]+/) : []).filter(Boolean)
+const toggle = (k: any, v: any) => { const l = listOf(k); set(k, l.includes(v) ? l.filter((x) => x !== v) : [...l, v]) }
+const toggleTier = (v: any) => { let l = listOf('subscription'); if (l.includes(v)) l = l.filter((x) => x !== v); else if (v === 'none' || v === 'any') l = [v]; else l = [...l.filter((x) => x !== 'none' && x !== 'any'), v]; set('subscription', l) }
 
 /* the specific answers: rows of item · truth · charge */
-const answered = computed(() => (Array.isArray(a.value.answered) ? a.value.answered : []).map((r) => (typeof r === 'string' ? parseRow(r) : { item: r.item || '', truth: r.truth || '', charge: r.charge || '' })))
-const parseRow = (s) => { const m = /^\s*([\w-]+\.[\w-]+)\s*(?:=\s*(\w+))?\s*,?\s*(\w+)?\s*$/.exec(s) || []; return { item: m[1] || '', truth: m[2] || '', charge: m[3] || '' } }
-const writeAnswered = (rows) => set('answered', rows.map((r) => ({ item: r.item, ...(r.truth ? { truth: r.truth } : {}), ...(r.charge ? { charge: r.charge } : {}) })))
-const patchAnswered = (i, patch) => writeAnswered(answered.value.map((r, j) => (j === i ? { ...r, ...patch } : r)))
-const dropAnswered = (i) => { const rows = answered.value.filter((_, j) => j !== i); if (rows.length) writeAnswered(rows); else drop('answered') }
+const answered = computed(() => (Array.isArray(a.value.answered) ? a.value.answered : []).map((r: any) => (typeof r === 'string' ? parseRow(r) : { item: r.item || '', truth: r.truth || '', charge: r.charge || '' })))
+const parseRow = (s: any) => { const m = /^\s*([\w-]+\.[\w-]+)\s*(?:=\s*(\w+))?\s*,?\s*(\w+)?\s*$/.exec(s) || []; return { item: m[1] || '', truth: m[2] || '', charge: m[3] || '' } }
+const writeAnswered = (rows: any) => set('answered', rows.map((r: any) => ({ item: r.item, ...(r.truth ? { truth: r.truth } : {}), ...(r.charge ? { charge: r.charge } : {}) })))
+const patchAnswered = (i: any, patch: any) => writeAnswered(answered.value.map((r: any, j: any) => (j === i ? { ...r, ...patch } : r)))
+const dropAnswered = (i: any) => { const rows = answered.value.filter((_: any, j: any) => j !== i); if (rows.length) writeAnswered(rows); else drop('answered') }
 
 /* the rules read back, and the count */
-const rules = computed(() => normalizeRules(a.value, { skusOf: (slug) => PRODUCTS.filter((p) => p.book === slug).map((p) => p.sku) }))
+// @ts-expect-error TS2322, from the conversion: Type '(slug: any) => any' is not assignable to type 'null | undefined'.
+const rules = computed(() => normalizeRules(a.value, { skusOf: (slug: any) => PRODUCTS.filter((p: any) => p.book === slug).map((p: any) => p.sku) }))
 const words = computed(() => describeRules(rules.value))
-const count = ref(null), counting = ref(false), countErr = ref('')
+const count = ref<any>(null), counting = ref(false), countErr = ref('')
 async function countNow() {
   if (!supabaseOn || !isSignedIn.value) { countErr.value = 'Sign in as an admin to count'; return }
   counting.value = true; countErr.value = ''
-  try { const { data, error } = await supabase.rpc('email_audience_count', { rules: rules.value }); if (error) throw error; count.value = data } catch (e) { countErr.value = e.message || 'Could not count' }
+  try { const { data, error } = await (supabase as any).rpc('email_audience_count', { rules: rules.value }); if (error) throw error; count.value = data } catch (e) { countErr.value = (e as any).message || 'Could not count' }
   finally { counting.value = false }
 }
 watch(rules, () => { count.value = null })
@@ -110,12 +113,12 @@ watch(rules, () => { count.value = null })
       </div>
 
       <div v-if="r.kind === 'span'" class="ae-span">
-        <select class="ui-select" :value="spanParts(a[r.key]).mode" @change="setSpan(r.key, { mode: $event.target.value })">
+        <select class="ui-select" :value="spanParts(a[r.key]).mode" @change="setSpan(r.key, { mode: ($event.target as any).value })">
           <option value="atleast">at least</option><option value="within">within</option><option v-if="r.none" value="none">never</option>
         </select>
         <template v-if="spanParts(a[r.key]).mode !== 'none'">
-          <input class="ui-input ae-n" type="number" min="0" step="1" :value="spanParts(a[r.key]).n" @input="setSpan(r.key, { n: Number($event.target.value) })" />
-          <select class="ui-select ae-u" :value="spanParts(a[r.key]).u" @change="setSpan(r.key, { u: $event.target.value })"><option v-for="[u, name] in UNITS" :key="u" :value="u">{{ name }}</option></select>
+          <input class="ui-input ae-n" type="number" min="0" step="1" :value="spanParts(a[r.key]).n" @input="setSpan(r.key, { n: Number(($event.target as any).value) })" />
+          <select class="ui-select ae-u" :value="spanParts(a[r.key]).u" @change="setSpan(r.key, { u: ($event.target as any).value })"><option v-for="[u, name] in UNITS" :key="u" :value="u">{{ name }}</option></select>
           <span class="ui-hint">ago</span>
         </template>
       </div>
@@ -123,7 +126,7 @@ watch(rules, () => { count.value = null })
       <div v-else-if="r.kind === 'tiers'" class="ui-chips">
         <button type="button" class="ui-chip" :class="{ 'ui-on': listOf('subscription').includes('none') }" @click="toggleTier('none')">None</button>
         <button type="button" class="ui-chip" :class="{ 'ui-on': listOf('subscription').includes('any') }" @click="toggleTier('any')">Any</button>
-        <button v-for="[t, name] in TIERS" :key="t" type="button" class="ui-chip" :class="{ 'ui-on': listOf('subscription').includes(t) }" @click="toggleTier(t)">{{ name }}</button>
+        <!-- @vue-expect-error TS2322, from the conversion: Type 'unknown' is not assignable to type 'PropertyKey | undefined'. --><button v-for="[t, name] in TIERS" :key="t" type="button" class="ui-chip" :class="{ 'ui-on': listOf('subscription').includes(t) }" @click="toggleTier(t)">{{ name }}</button>
       </div>
       <div v-else-if="r.kind === 'roles'" class="ui-chips"><button v-for="k in ROLES" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('role').includes(k) }" @click="toggle('role', k)">{{ k }}</button></div>
       <div v-else-if="r.kind === 'grants'" class="ui-chips"><button v-for="k in GRANTS" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('grant').includes(k) }" @click="toggle('grant', k)">{{ k }}</button></div>
@@ -132,22 +135,22 @@ watch(rules, () => { count.value = null })
 
       <div v-else-if="r.kind === 'books'" class="ui-chips">
         <button v-for="slug in listOf(r.key)" :key="slug" type="button" class="ui-chip ui-on" title="Remove" @click="toggle(r.key, slug)">{{ bookName(slug) }} <span class="ae-x">×</span></button>
-        <select class="ui-select ae-add" value="" @change="$event.target.value && toggle(r.key, $event.target.value); $event.target.value = ''">
-          <option value="">+ Add a book</option><option v-for="[slug, name] in BOOKLIST.filter(([s]) => !listOf(r.key).includes(s))" :key="slug" :value="slug">{{ name }}</option>
+        <select class="ui-select ae-add" value="" @change="($event.target as any).value && toggle(r.key, ($event.target as any).value); ($event.target as any).value = ''">
+          <option value="">+ Add a book</option><!-- @vue-expect-error TS7031, from the conversion: Binding element 's' implicitly has an 'any' type. --><option v-for="[slug, name] in BOOKLIST.filter(([s]) => !listOf(r.key).includes(s))" :key="slug" :value="slug">{{ name }}</option>
         </select>
       </div>
 
       <div v-else-if="r.kind === 'verified'">
-        <select class="ui-select ae-one" :value="a.verified === true || a.verified === 'true' ? 'yes' : 'no'" @change="set('verified', $event.target.value === 'yes')">
+        <select class="ui-select ae-one" :value="a.verified === true || a.verified === 'true' ? 'yes' : 'no'" @change="set('verified', ($event.target as any).value === 'yes')">
           <option value="yes">confirmed</option><option value="no">not confirmed</option>
         </select>
       </div>
 
       <div v-else-if="r.kind === 'answered'" class="ae-answers">
         <div v-for="(row, i) in answered" :key="i" class="ae-row">
-          <input class="ui-input ui-mono" list="ae-statements" :value="row.item" placeholder="start typing a statement" @change="patchAnswered(i, { item: $event.target.value.trim() })" />
-          <select class="ui-select" :value="row.truth" @change="patchAnswered(i, { truth: $event.target.value })"><option value="">true — any</option><option value="yes">true — yes</option><option value="no">true — no</option><option value="partly">true — partly</option></select>
-          <select class="ui-select" :value="row.charge" @change="patchAnswered(i, { charge: $event.target.value })"><option value="">stirred — any</option><option v-for="[k, name] in CHARGES" :key="k" :value="k">{{ name }}</option></select>
+          <input class="ui-input ui-mono" list="ae-statements" :value="row.item" placeholder="start typing a statement" @change="patchAnswered(i, { item: ($event.target as any).value.trim() })" />
+          <select class="ui-select" :value="row.truth" @change="patchAnswered(i, { truth: ($event.target as any).value })"><option value="">true — any</option><option value="yes">true — yes</option><option value="no">true — no</option><option value="partly">true — partly</option></select>
+          <select class="ui-select" :value="row.charge" @change="patchAnswered(i, { charge: ($event.target as any).value })"><option value="">stirred — any</option><option v-for="[k, name] in CHARGES" :key="k" :value="k">{{ name }}</option></select>
           <button type="button" class="ui-btn ui-ghost ui-sm" title="Remove" @click="dropAnswered(i)">×</button>
           <small v-if="statementText(row.item)" class="ae-stmt">{{ statementText(row.item) }}</small>
         </div>
@@ -157,7 +160,7 @@ watch(rules, () => { count.value = null })
     </div>
 
     <div class="ae-add-row">
-      <select v-if="available.length" class="ui-select ae-addrule" value="" @change="add($event.target.value); $event.target.value = ''">
+      <select v-if="available.length" class="ui-select ae-addrule" value="" @change="add(($event.target as any).value); ($event.target as any).value = ''">
         <option value="">+ Add a rule</option>
         <option v-for="r in available" :key="r.key" :value="r.key">{{ r.label }} — {{ r.hint }}</option>
       </select>

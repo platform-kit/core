@@ -20,5 +20,5 @@
 
 ## 4. Docs and verification
 
-- [x] 4.1 Update the docs site's pages for the extension model and the community's member card, naming the new sources. Verified by `node packages/kit/build/docs-check.mjs`.
+- [x] 4.1 Update the docs site's pages for the extension model and the community's member card, naming the new sources. Verified by `node packages/kit/build/docs-check.mts`.
 - [x] 4.2 Run the change's tests on a fresh stack (`member-panels-db`, `function-bodies`, `people-db`) and report each scenario in the spec as passed, failed or not verified, with why. Verified by `verify.md`.

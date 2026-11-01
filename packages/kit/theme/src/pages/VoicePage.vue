@@ -19,7 +19,7 @@
   The ground is the site's own (`lpbg`/`lpblobs`/`lpgrain`), so a spoken conversation looks like it
   belongs to the site rather than to a demo. Every colour is a look token; there is not one literal.
 -->
-<script setup>
+<script setup lang="ts">
 import { ref, shallowRef, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { Room, RoomEvent } from 'livekit-client'
 import { supabase, functionsBase } from 'platformkit/lib/supabase.js'
@@ -55,8 +55,8 @@ const DEMO = [
   ['me', 'And after that?'],
 ]
 
-const chat = shallowRef(null)
-const bot = ref(null), fault = ref(''), mine = ref(0), theirs = ref(0)
+const chat = shallowRef<any>(null)
+const bot = ref<any>(null), fault = ref(''), mine = ref(0), theirs = ref(0)
 const muted = ref(false), showLog = ref(true), ended = ref(false), held = ref(false)
 /*
  * TYPING IS NOT A FALLBACK, it is the other way in. Somebody mutes the microphone because they
@@ -69,18 +69,18 @@ const deaf = ref(false)              /* this browser cannot listen, whatever the
 const canType = computed(() => muted.value || deaf.value)
 
 /* the conversations they have had with THIS assistant, and which one they are in */
-const sessions = ref([])
-const threadId = ref(null)
+const sessions = ref<any>([])
+const threadId = ref<any>(null)
 const showSessions = ref(false)
-const asking = ref(null)             /* the one whose Delete is waiting to be confirmed */
+const asking = ref<any>(null)             /* the one whose Delete is waiting to be confirmed */
 const pastView = ref('sessions')
-const memories = ref([])
+const memories = ref<any>([])
 const memoryLoading = ref(false)
 const memoryFault = ref('')
-const askingMemory = ref(null)
-const memoryDeleting = ref(null)
+const askingMemory = ref<any>(null)
+const memoryDeleting = ref<any>(null)
 const usageFault = ref('')
-let store = null
+let store: any = null
 /* what the recogniser has heard so far in this breath, before it has committed to it */
 const heard = ref('')
 /*
@@ -147,7 +147,7 @@ const speaking = ref('browser')   /* which provider ended up speaking; a compute
  * broken. It is not the conversation; it is the reason there is not one yet, so it goes where the
  * state goes.
  */
-const fetching = ref(null)
+const fetching = ref<any>(null)
 const canPick = computed(() => voicesFor(speaking.value, bot.value?.voice || {}))
 /* the voice that would be used if the reader chose nothing: the endpoint's named one, or the
    engine's own. The control shows this rather than a phrase about where it came from. */
@@ -157,7 +157,7 @@ const langNow = computed(() => (document.documentElement.lang || 'en').slice(0, 
 const visualNow = computed(() => bot.value?.voice?.visual || 'aura')
 const visual = computed(() => prefs.value.visual || visualNow.value)
 
-function setPrefs(next) {
+function setPrefs(next: any) {
   const was = prefs.value
   prefs.value = writePrefs(box, next)
   /* silenced mid-sentence means mid-sentence: what is already playing stops */
@@ -169,7 +169,7 @@ function setPrefs(next) {
   if (next.lang !== was.lang && recog) { try { recog.lang = next.lang || document.documentElement.lang || 'en-GB' } catch { /* going */ } }
 }
 const flipAloud = () => setPrefs({ ...prefs.value, aloud: !prefs.value.aloud })
-const said_when = (at) => whenOf(at, WHEN.value)
+const said_when = (at: any) => whenOf(at, WHEN.value)
 
 /*
  * EVERY LINE IS KEPT AS IT IS SAID, not at the end: a conversation has no end — the tab is
@@ -177,7 +177,7 @@ const said_when = (at) => whenOf(at, WHEN.value)
  * usually not written. The thread itself is made by the first thing said rather than on arrival,
  * so opening the page and walking away leaves nothing in the list.
  */
-async function keep(line) {
+async function keep(line: any) {
   if (!store) return
   try {
     const first = !threadId.value
@@ -187,7 +187,7 @@ async function keep(line) {
   } catch { /* the conversation is the point; a transcript that will not save never stops it */ }
 }
 
-async function openSession(id) {
+async function openSession(id: any) {
   if (!store || id === threadId.value) return
   showSessions.value = false
   const lines = await store.lines(id).catch(() => [])
@@ -201,7 +201,7 @@ function freshSession() {
   chat.value && chat.value.load([])
 }
 
-async function dropSession(id) {
+async function dropSession(id: any) {
   if (!store) return
   asking.value = null
   await store.remove(id).catch(() => {})
@@ -214,7 +214,7 @@ async function showMemories() {
   memoryLoading.value = true
   memoryFault.value = ''
   try {
-    const { data, error } = await supabase.from('copilot_memory')
+    const { data, error } = await (supabase as any).from('copilot_memory')
       .select('id, said, created_at')
       .eq('bot', slug.value)
       .order('created_at', { ascending: false })
@@ -228,14 +228,14 @@ async function showMemories() {
   }
 }
 
-async function dropMemory(id) {
+async function dropMemory(id: any) {
   memoryDeleting.value = id
   memoryFault.value = ''
   try {
-    const { error } = await supabase.from('copilot_memory')
+    const { error } = await (supabase as any).from('copilot_memory')
       .delete().eq('id', id).eq('bot', slug.value)
     if (error) throw error
-    memories.value = memories.value.filter((item) => item.id !== id)
+    memories.value = memories.value.filter((item: any) => (item as any).id !== id)
     askingMemory.value = null
   } catch (error) {
     console.error('Unable to delete assistant memory', error)
@@ -253,8 +253,8 @@ function sendTyped() {
   chat.value.say(t)
 }
 
-let grant = '', mic = null, ctx = null, raf = 0, recog = null, out = null, sttStartedAt = 0
-let voiceRoom = null
+let grant = '', mic: any = null, ctx: any = null, raf = 0, recog: any = null, out: any = null, sttStartedAt = 0
+let voiceRoom: any = null
 const roomAnswers = new Map()
 const ROOM_INPUT = 'copilot.input'
 const ROOM_OUTPUT = 'copilot.output'
@@ -265,7 +265,7 @@ let settle = 0            /* the timer that decides the sentence has ended */
 
 const phase = computed(() => forced || (ended.value ? 'connecting' : (chat.value?.state.phase || 'connecting')))
 const label = computed(() => {
-  const f = fetching.value
+  const f: any = fetching.value
   if (f) return (W.value[f.pct >= 100 ? 'starting' : 'fetching'] || '').replace('{n}', String(f.pct))
   if (phase.value === 'thinking') return W.value.holding || ''
   return W.value[phase.value] || ''
@@ -296,22 +296,22 @@ const log = computed(() => (pending.value ? said.value.slice(0, -1) : said.value
  * nobody reads, and on a surface where the answer is spoken the written copy is the only one that
  * stays. Smooth, except for the reader who asked for no motion.
  */
-const logEl = ref(null)
+const logEl = ref<any>(null)
 /* the top of the log fades out ONLY once there is something above it to fade; a soft edge on a
    first line that is fully in view is a gradient over nothing */
 const clipped = ref(false)
 watch(() => [log.value.length, showLog.value], async () => {
   await nextTick()
-  const el = logEl.value
+  const el: any = logEl.value
   if (!el) return
   const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   el.scrollTo({ top: el.scrollHeight, behavior: still ? 'auto' : 'smooth' })
   clipped.value = el.scrollHeight > el.clientHeight + 1
 })
 const needsSignIn = computed(() => fault.value === (W.value['sign-in'] || ''))
-const openAuth = () => { if (window.DLauth) window.DLauth.open({ intent: 'buy' }) }
+const openAuth = () => { if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'buy' }) }
 
-async function reportStt(elapsedMs) {
+async function reportStt(elapsedMs: any) {
   if (!grant || !bot.value?.usage?.offer_key || elapsedMs <= 0) return
   const secondsMicros = Math.min(Math.round(elapsedMs * 1000), Number(bot.value.minutes || 0) * 60_000_000)
   if (!secondsMicros) return
@@ -336,7 +336,7 @@ async function reportStt(elapsedMs) {
 }
 
 async function begin() {
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { session } } = await (supabase as any).auth.getSession()
   if (!session) { fault.value = W.value['sign-in'] || ''; return }
   const r = await fetch(`${functionsBase()}/copilot-llm/start`, {
     method: 'POST',
@@ -344,7 +344,7 @@ async function begin() {
     body: JSON.stringify({ bot: slug.value }),
   }).catch(() => null)
   if (!r || !r.ok) { fault.value = W.value['no-bot'] || ''; return }
-  const got = await r.json()
+  const got: any = await r.json()
   grant = got.grant; bot.value = got
 
   if (got.transport) {
@@ -357,7 +357,7 @@ async function begin() {
     }
   }
 
-  ctx = new (window.AudioContext || window.webkitAudioContext)()
+  ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
   out = player(ctx)
 
   const probe = await fetch(`${functionsBase()}/copilot-speak`, {
@@ -381,15 +381,16 @@ async function begin() {
    * later fails, the failover builds it then.
    */
   if (sp.id === 'browser') warmEngine()
-  chat.value = conversation({ speaker: voiced, ask, onSaid: (line) => {
+  chat.value = conversation({ speaker: voiced, ask, onSaid: (line: any) => {
     if (line.who === 'them') {
       ear.speaking(line.text)
+      // @ts-expect-error TS2304, from the conversion: Cannot find name 'refreshUsage'.
       if (bot.value?.usage) setTimeout(() => { void refreshUsage() }, 1_000)
     }
     keep(line)
   } })
   store = threadStore(supabase, slug.value)
-  store.list().then((l) => { sessions.value = l }).catch(() => { store = null })
+  store.list().then((l: any) => { sessions.value = l }).catch(() => { store = null })
   /*
    * NO MICROPHONE IS NOT NO SURFACE. A refused permission used to replace the whole page with a
    * sentence; it now says so once and leaves the conversation standing, because there is a box
@@ -405,9 +406,9 @@ async function begin() {
   await openMic().catch(() => { deaf.value = true })
 }
 
-let sp = null
-let voiced = null
-let engineWorker = null
+let sp: any = null
+let voiced: any = null
+let engineWorker: any = null
 /* one worker for the page, so the pre-build and the speaking are the same engine */
 function theWorker() {
   if (!engineWorker) engineWorker = voiceWorker()
@@ -425,7 +426,8 @@ function buildSpeaker() {
      other preference in this project keeps */
   sp = speaker({
     id, voice: { ...(got.voice || {}), ...voiceSettings(prefs.value, got.voice || {}) },
-    onState: (st) => {
+    // @ts-expect-error TS2322, from the conversion: Type '(st: any) => void' is not assignable to type '() => void'.
+    onState: (st: any) => {
       /* the endpoint may have failed and handed over, so the provider in force can change */
       if (st.at === 'ready') { fetching.value = null; speaking.value = 'browser' }
       else if (st.at === 'starting') fetching.value = { pct: 100 }
@@ -434,8 +436,10 @@ function buildSpeaker() {
     /* a FACTORY, not a worker: the endpoint may fail at any point and fall back to this, so
        the kit's own voice has to be reachable — but a deployment whose endpoint works should
        never build one, and a worker holds about a gigabyte once it has */
+    // @ts-expect-error TS2322, from the conversion: Type '() => any' is not assignable to type 'null | undefined'.
     worker: theWorker,
-    post: async ({ text, voice, format }) => {
+    // @ts-expect-error TS2322, from the conversion: Type '({ text, voice, format }: any) => Promise<ReadableStream<any> | null>' is not assignable to type 'null | undefined'.
+    post: async ({ text, voice, format }: any) => {
       const res = await fetch(`${functionsBase()}/copilot-speak`, {
         method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${grant}` },
         body: JSON.stringify({ text, voice, format: format || 'pcm' }),
@@ -447,6 +451,7 @@ function buildSpeaker() {
           try {
             const { done, value } = await reader.read()
             if (done) {
+              // @ts-expect-error TS2304, from the conversion: Cannot find name 'refreshUsage'.
               await refreshUsage()
               controller.close()
             } else controller.enqueue(value)
@@ -455,6 +460,7 @@ function buildSpeaker() {
           }
         },
         async cancel(reason) {
+          // @ts-expect-error TS2304, from the conversion: Cannot find name 'refreshUsage'.
           try { await reader.cancel(reason) } finally { void refreshUsage() }
         },
       })
@@ -464,7 +470,7 @@ function buildSpeaker() {
      engine's finished mp3 decoded once. Either way the assistant is audible AND measurable. */
   voiced = {
     get id() { return sp.id },
-    cancel: (u) => { sp.cancel(u); out && out.stop() },
+    cancel: (u: any) => { sp.cancel(u); out && out.stop() },
     /* READING ALOUD IS OFF: nothing is synthesised and nothing is fetched. The turn still ends —
        the machine is waiting on this promise to give the turn back — it simply ends at once. */
     /*
@@ -479,13 +485,13 @@ function buildSpeaker() {
      *
      * The page is not supposed to know which provider is speaking. So it does not ask.
      */
-    say: (text) => (!aloud.value
+    say: (text: any) => (!aloud.value
       ? Object.assign(Promise.resolve(null), { utterance: null })
-      : sp.say(text, (c) => { if (c && c.pcm) out.frames(c.pcm, c.rate); else out.write(c) })),
+      : sp.say(text, (c: any) => { if (c && c.pcm) out.frames(c.pcm, c.rate); else out.write(c) })),
   }
 }
 
-async function ask(text) {
+async function ask(text: any) {
   if (voiceRoom) return askInRoom(text)
   const r = await fetch(`${functionsBase()}/copilot-llm`, {
     method: 'POST',
@@ -496,7 +502,7 @@ async function ask(text) {
   return (await r.json()).choices?.[0]?.message?.content || ''
 }
 
-async function connectVoiceRoom(transport) {
+async function connectVoiceRoom(transport: any) {
   const room = new Room()
   room.on(RoomEvent.DataReceived, (payload, participant, _kind, topic) => {
     if (topic !== ROOM_OUTPUT || participant?.identity === room.localParticipant.identity) return
@@ -526,7 +532,7 @@ async function connectVoiceRoom(transport) {
   }
 }
 
-function askInRoom(text) {
+function askInRoom(text: any) {
   const id = crypto.randomUUID()
   return new Promise((resolve, reject) => {
     const pending = {
@@ -541,7 +547,7 @@ function askInRoom(text) {
     voiceRoom.localParticipant.publishData(
       new TextEncoder().encode(JSON.stringify({ id, text })),
       { reliable: true, topic: ROOM_INPUT },
-    ).catch((error) => {
+    ).catch((error: any) => {
       clearTimeout(pending.timer)
       roomAnswers.delete(id)
       reject(error)
@@ -556,7 +562,7 @@ async function openMic() {
    * — which reads as a broken agent and is a broken audio graph. Echo cancellation is the first
    * line and it is not on by default everywhere.
    */
-  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)()
+  if (!ctx) ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
   if (ctx.state === 'suspended') await ctx.resume().catch(() => {})
   /*
    * THE LEVEL LOOP IS NOT THE MICROPHONE'S. It also carries what the ASSISTANT is saying, which
@@ -564,7 +570,7 @@ async function openMic() {
    * permission is asked and survives a refusal. Starting it inside the success path left a
    * person with no microphone watching a dead shape while the answer played.
    */
-  const tick = () => {
+  const tick: any = () => {
     mine.value = muted.value || !mic ? 0 : mic.read()
     theirs.value = out ? out.level() : 0
     const t = performance.now()
@@ -603,7 +609,7 @@ async function openMic() {
 }
 
 /* the microphone, as the reader asked to be heard */
-function listenAs(hold) {
+function listenAs(hold: any) {
   if (!recog) return
   if (hold) { try { recog.stop() } catch { /* not started */ } return }
   try { recog.start() } catch { /* already going */ }
@@ -623,7 +629,7 @@ function holdOff() {
 }
 
 function listen() {
-  const Engine = window.SpeechRecognition || window.webkitSpeechRecognition
+  const Engine = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
   /* Firefox has no recogniser. That is a reason to type, not a reason to show a wall. */
   if (!Engine) { deaf.value = true; return }
   recog = new Engine()
@@ -640,7 +646,7 @@ function listen() {
   }
   const forget = () => { clearTimeout(settle); settle = 0; breath = ''; heard.value = '' }
 
-  recog.onresult = (e) => {
+  recog.onresult = (e: any) => {
     /* muted mid-sentence: whatever is on the big line was heard before the microphone was shut
        and leaving it there says the surface is still listening, which it is not */
     if (muted.value) { forget(); return }
@@ -669,6 +675,7 @@ function listen() {
     heard.value = (breath + ' ' + saying).replace(/\s+/g, ' ').trim()
     /* the words are still coming, so the sentence is not over yet */
     clearTimeout(settle)
+    // @ts-expect-error TS2322, from the conversion: Type '0 | Timeout' is not assignable to type 'number'.
     settle = breath.trim() ? setTimeout(finish, BREATH_MS) : 0
   }
   /* the recogniser noticed the silence before the timer did */
@@ -700,6 +707,7 @@ function listen() {
  */
 function leaving() {
   out && out.stop()
+  // @ts-expect-error TS2304, from the conversion: Cannot find name 'usageTimer'.
   clearInterval(usageTimer); usageTimer = 0
   clearTimeout(settle); settle = 0; breath = ''
   heard.value = ''
@@ -715,7 +723,7 @@ function leaving() {
  * pushed through the real player and the real numbers read out. Inert in a build.
  */
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  window.__voice = {
+  ;(window as any).__voice = {
     get theirs() { return theirs.value },
     get mine() { return mine.value },
     get phase() { return phase.value },
@@ -889,7 +897,7 @@ onBeforeUnmount(() => {
       <p class="vp-status" aria-hidden="true"><span class="vp-dot"></span>{{ label }}</p>
 
       <!-- THE LIVE LINE: being spoken, or spoken and still waiting. Never what has been answered. -->
-      <p class="vp-line" :class="{ 'is-held': !!latest }" :data-who="latest?.who || ''"
+      <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><p class="vp-line" :class="{ 'is-held': !!latest }" :data-who="latest?.who || ''"
          :role="said.length ? null : 'status'" :aria-live="said.length ? 'off' : 'polite'"
          :aria-hidden="said.length > 0">{{ latest?.text || '' }}</p>
 

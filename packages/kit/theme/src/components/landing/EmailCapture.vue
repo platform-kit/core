@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * One field and one button: an address, captured into one of the site's forms (lib/capture.js).
  * The words are the page's (the button, the placeholder) with the section strings' behind them;
@@ -24,7 +24,7 @@ async function go() {
   if (state.value === 'sending' || state.value === 'done') return
   if (!isEmail(email.value)) { error.value = W.invalid || ''; return }
   error.value = ''; state.value = 'sending'
-  try { await capture(props.form, email.value, props.name ? { name: first.value } : {}); state.value = 'done' } catch (e) { state.value = 'idle'; error.value = W.error || String(e.message || e) }
+  try { await capture(props.form, email.value, props.name ? { name: first.value } : {}); state.value = 'done' } catch (e) { state.value = 'idle'; error.value = W.error || String((e as any).message || e) }
 }
 </script>
 

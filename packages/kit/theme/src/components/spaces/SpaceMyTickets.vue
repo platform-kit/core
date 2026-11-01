@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A PERSON'S OWN TICKETS. What they have asked the business to sort out, and where each one has
  * got to — no queue, no priorities, no assignees, none of the desk's own apparatus. The one
@@ -26,11 +26,11 @@ onMounted(loadMyTickets)
 const open = computed(() => mine.open && mine.open.ticket)
 const timeline = computed(() => (mine.open && mine.open.timeline) || [])
 /* the states as the person who raised it reads them, not as the desk files them */
-const stateWord = (s) => W.value['mine-' + s] || W.value['state-' + s] || s
-const replies = (t) => (Number(t.replies) === 1 ? W.value['replies-one'] : (W.value['replies-many'] || '').replace('{n}', t.replies))
+const stateWord = (s: any) => W.value['mine-' + s] || W.value['state-' + s] || s
+const replies = (t: any) => (Number(t.replies) === 1 ? W.value['replies-one'] : (W.value['replies-many'] || '').replace('{n}', t.replies))
 /* where it got to, rather than the desk's own book-keeping: "now Waiting on you" says the thing
    they want to know, and a from-and-to says the thing we want to know */
-const said = (e) => {
+const said = (e: any) => {
   const to = e.kind === 'status' && e.data && e.data.to
   return to ? (W.value['said-now'] || '').replace('{to}', stateWord(to)) : ''
 }
@@ -80,12 +80,12 @@ const said = (e) => {
               <div class="mt-bubble">
                 <header>
                   <b>{{ e.by_contact ? W.you : (e.agent_name || W.someone) }}</b>
-                  <time :datetime="e.created_at">{{ stampOf(e.created_at, now) }}</time>
+                  <time :datetime="e.created_at"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ stampOf(e.created_at, now) }}</time>
                 </header>
                 <p><MessageText :blocks="messageBlocks(e.body)" /></p>
               </div>
             </template>
-            <p v-else-if="said(e)" class="mt-happened">{{ said(e) }}<time :datetime="e.created_at">{{ stampOf(e.created_at, now) }}</time></p>
+            <p v-else-if="said(e)" class="mt-happened">{{ said(e) }}<time :datetime="e.created_at"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ stampOf(e.created_at, now) }}</time></p>
           </article>
         </div>
       </template>

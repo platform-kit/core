@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* The one thing to do. The only filled block on a page, because it is the only
    thing on it that asks for anything. */
 defineProps({

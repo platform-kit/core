@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The space's column: the one space being read, and nothing else. Its name at the head with what
  * kind of place it is, then where to go in it that is not a room (its home, its people, its queue,
@@ -21,14 +22,14 @@ import SpaceAvatar from './SpaceAvatar.vue'
 
 const props = defineProps({
   events: { type: Boolean, default: false },   /* this space has something on */
-  space: { type: Object, default: null },
-  channels: { type: Array, default: () => [] },
-  unread: { type: Array, default: () => [] },
-  members: { type: Object, default: () => ({}) },   /* channel id → [user id] */
-  names: { type: Object, default: () => ({}) },
-  here: { type: Object, default: () => ({}) },
+  space: { type: Object as PropType<any>, default: null },
+  channels: { type: Array as PropType<any[]>, default: () => [] },
+  unread: { type: Array as PropType<any[]>, default: () => [] },
+  members: { type: Object as PropType<any>, default: () => ({}) },   /* channel id → [user id] */
+  names: { type: Object as PropType<any>, default: () => ({}) },
+  here: { type: Object as PropType<any>, default: () => ({}) },
   me: { type: String, default: '' },
-  drafts: { type: Object, default: () => ({}) },
+  drafts: { type: Object as PropType<any>, default: () => ({}) },
   activeId: { type: String, default: null },
   view: { type: String, default: 'channel' },
   moderating: { type: Boolean, default: false },  /* the space granted them keeping it; a staff room grants nobody */
@@ -40,24 +41,26 @@ const C = computed(() => us('spaces').chrome.main)
 /* the words a sealed room is marked with, from the `## encryption` group like every other */
 const EN = computed(() => us('spaces').encryption)
 const filter = ref('')
-const shut = ref({})
+const shut = ref<any>({})
 
-const rowOf = (id) => props.unread.find((r) => r.channel === id) || null
-const joined = (id) => !!rowOf(id)
-const titleOf = (c) => (c.kind === 'dm' ? dmTitle(props.members[c.id] || [], props.names, props.me, { self: W.value.self, more: W.value.more, someone: W.value.someone }) : c.name)
+const rowOf = (id: any) => props.unread.find((r) => (r as any).channel === id) || null
+const joined = (id: any) => !!rowOf(id)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
+const titleOf = (c: any) => (c.kind === 'dm' ? dmTitle(props.members[c.id] || [], props.names, props.me, { self: W.value.self, more: W.value.more, someone: W.value.someone }) : c.name)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const sections = computed(() => railSections(props.channels, props.unread, props.space ? props.space.id : null, (props.space && props.space.groups) || []))
 /* The rail's runs, in the order they are drawn: the headings the space's own file declares (each
    with the rooms that name it), then what this person starred, then whatever sits under no heading,
    then the direct messages. A space that declares no heading has exactly the rail it always had. */
 const runs = computed(() => [
-  ...sections.value.groups.map((g) => ({ key: 'group:' + g.name, label: g.name, list: g.channels })),
+  ...sections.value.groups.map((g: any) => ({ key: 'group:' + g.name, label: g.name, list: g.channels })),
   { key: 'starred', label: W.value['section-starred'], list: sections.value.starred },
   { key: 'channels', label: W.value['section-channels'], list: sections.value.channels },
   { key: 'dms', label: W.value['section-direct'], list: sections.value.dms },
 ])
-const shown = (list) => {
+const shown = (list: any) => {
   const q = filter.value.trim().toLowerCase()
-  return q ? list.filter((c) => titleOf(c).toLowerCase().includes(q)) : list
+  return q ? list.filter((c: any) => titleOf(c).toLowerCase().includes(q)) : list
 }
 const nothing = computed(() => filter.value.trim() && runs.value.every((r) => !shown(r.list).length))
 const drafting = computed(() => draftCount(props.drafts))
@@ -73,17 +76,17 @@ const PLACES = computed(() => [
   ...(props.moderating ? [{ key: 'keeping', icon: 'shield', word: W.value.keeping, count: props.reports }] : []),
   ...(drafting.value ? [{ key: 'drafts', icon: 'pencil', word: W.value.drafts, quiet: drafting.value }] : []),
 ])
-function badge(id) {
+function badge(id: any) {
   const row = rowOf(id)
   if (!row) return null
   const m = mentionsOf(row), u = unreadOf(row)
   if (m) return { text: String(m), mention: true }
-  if (!u || row.notify === 'none' || mutedNow(row)) return null
+  if (!u || (row as any).notify === 'none' || mutedNow(row)) return null
   return { text: '', mention: false }
 }
 /* a direct message with one other person shows whether they are here */
-const soloPeer = (c) => {
-  const ids = (props.members[c.id] || []).filter((id) => id !== props.me)
+const soloPeer = (c: any) => {
+  const ids = (props.members[c.id] || []).filter((id: any) => id !== props.me)
   return ids.length === 1 ? ids[0] : null
 }
 </script>
@@ -153,7 +156,7 @@ const soloPeer = (c) => {
                 <span v-if="c.encrypted" class="sr-sealed" role="img" :title="EN.room.sealed" :aria-label="EN.room.sealed">
                   <SpaceIcon name="shield" :size="12" />
                 </span>
-                <em v-if="badge(c.id) && badge(c.id).mention" class="sr-badge">{{ badge(c.id).text }}</em>
+                <!-- @vue-expect-error TS2531, from the conversion: Object is possibly 'null'. --><em v-if="badge(c.id) && badge(c.id).mention" class="sr-badge"><!-- @vue-expect-error TS2531, from the conversion: Object is possibly 'null'. -->{{ badge(c.id).text }}</em>
               </button>
             </li>
           </ul>

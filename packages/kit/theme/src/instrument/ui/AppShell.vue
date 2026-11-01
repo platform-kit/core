@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* The /app page when the site registers no instrument of its own (platformkit.config.js
    instrumentComponent): the results sheet alone — the kit's tabs (accomplishments, coaching, chat)
    and any the site adds — with nothing to start. A site with rounds to run wraps the sheet in its

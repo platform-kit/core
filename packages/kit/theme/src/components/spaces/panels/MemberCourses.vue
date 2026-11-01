@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The courses somebody is taking, with how far they are: member_courses, which asks may_see_member first, so anybody
  * else is answered as somebody with nothing to show. Words from the theme's content/ui/courses.md (## member-panel).
@@ -9,18 +9,18 @@ import { us } from 'platformkit/lib/content.js'
 
 const props = defineProps({ user: { type: String, default: '' }, mine: { type: Boolean, default: false } })
 const W = computed(() => us('courses')['member-panel'].main)
-const rows = ref([])
+const rows = ref<any>([])
 const done = ref(false)
 
 watch(() => props.user, async (id) => {
   done.value = false
   rows.value = []
   if (!id) return
-  const { data } = await supabase.rpc('member_courses', { p_user: id })
+  const { data } = await (supabase as any).rpc('member_courses', { p_user: id })
   rows.value = data || []
   done.value = true
 }, { immediate: true })
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : String(m[k])))
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : String(m[k])))
 </script>
 
 <template>

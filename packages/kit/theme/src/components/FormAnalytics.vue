@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Form analytics — one form at a time, as Typeform reports one. The index is every form with its numbers in the
  * window (started, finished, completion, the last response); a form opens to its own results: the numbers with
@@ -24,15 +24,15 @@ const T = us('analytics')
 const H = T.page.head
 const FM = T.forms ? T.forms.ui : {}
 /* a word with a number in it — never a throw on a word a stale build lacks */
-const wn = (key, n) => String(FM[key] || '').replace('{n}', n)
+const wn = (key: any, n: any) => String(FM[key] || '').replace('{n}', n)
 const days = ref(30)
 const state = ref('idle')      /* idle | loading | ok | denied | error */
-const stats = ref(null)
+const stats = ref<any>(null)
 
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; stats.value = null; return }
   state.value = 'loading'
-  const { data, error } = await supabase.rpc('admin_forms', { days: days.value })
+  const { data, error } = await (supabase as any).rpc('admin_forms', { days: days.value })
   if (error) { state.value = (error.code === '42501' || /admin only|permission/i.test(error.message || '')) ? 'denied' : 'error'; return }
   stats.value = data || []
   state.value = 'ok'
@@ -43,34 +43,36 @@ const chartKey = ref(0)
 onMounted(() => { const mo = new MutationObserver(() => chartKey.value++); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }) })
 
 /* ---- helpers ---- */
-const num = (n) => new Intl.NumberFormat().format(Math.round(n || 0))
-const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0)
-const secs = (s) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
-const dayKey = (d) => String(d || '').slice(0, 10)
-const day = (d) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
-const when = (d) => { if (!d) return FM['last-none']; const t = new Date(d); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' + t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) }
+const num = (n: any) => new Intl.NumberFormat().format(Math.round(n || 0))
+const pct = (a: any, b: any) => (b ? Math.round((a / b) * 100) : 0)
+const secs = (s: any) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
+const dayKey = (d: any) => String(d || '').slice(0, 10)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const when = (d: any) => { if (!d) return FM['last-none']; const t = new Date(d); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' + t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) }
 const rangeLabel = computed(() => H.range.replace('{days}', days.value))
-function openAuth() { if (window.DLauth) window.DLauth.open() }
-const formOf = (slug) => (FORMS || []).find((x) => x.slug === slug)
-const formTitle = (slug) => { const f = formOf(slug); return f ? f.title : slug }
-const kindWord = (k) => FM['kind-' + ({ text: 'text', url: 'text', tel: 'text', password: 'text', email: 'email', number: 'number', select: 'choice', choice: 'choice', picture: 'choice', rating: 'scale', scale: 'scale', datetime: 'date', date: 'date', time: 'date', file: 'file' }[k] || 'text')] || k
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
+const formOf = (slug: any) => (FORMS || []).find((x: any) => x.slug === slug)
+const formTitle = (slug: any) => { const f = formOf(slug); return f ? f.title : slug }
+const kindWord = (k: any) => FM['kind-' + (({ text: 'text', url: 'text', tel: 'text', password: 'text', email: 'email', number: 'number', select: 'choice', choice: 'choice', picture: 'choice', rating: 'scale', scale: 'scale', datetime: 'date', date: 'date', time: 'date', file: 'file' } as any)[k] || 'text')] || k
 /* a question as asked, a template's variable ({$ name $}) shown as an ellipsis */
-const plainQ = (q) => (q.question && q.question !== '...' ? q.question : q.name).replace(/\{\$[^}]*\$\}/g, '…')
-const isChoice = (k) => ['select', 'choice', 'picture'].includes(k)
-const isScale = (k) => ['rating', 'scale', 'number'].includes(k)
+const plainQ = (q: any) => (q.question && q.question !== '...' ? q.question : q.name).replace(/\{\$[^}]*\$\}/g, '…')
+const isChoice = (k: any) => ['select', 'choice', 'picture'].includes(k)
+const isScale = (k: any) => ['rating', 'scale', 'number'].includes(k)
 
 /* ---- the index: every form the window saw, and every published form that saw nothing ---- */
 const index = computed(() => {
   const seen = stats.value || []
-  const rows = seen.map((s) => ({ ...s, title: formTitle(s.form) }))
-  for (const f of FORMS || []) if (!seen.some((s) => s.form === f.slug)) rows.push({ form: f.slug, title: f.title, started: 0, finished: 0, completion: 0, last_at: null, series: [] })
+  // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
+  const rows = seen.map((s) => ({ ...s, title: formTitle((s as any).form) }))
+  for (const f of FORMS || []) if (!seen.some((s: any) => (s as any).form === f.slug)) rows.push({ form: f.slug, title: f.title, started: 0, finished: 0, completion: 0, last_at: null, series: [] })
   return rows
 })
 
 /* ---- one form ---- */
-const cur = computed(() => (props.name ? (stats.value || []).find((s) => s.form === props.name) || null : null))
+const cur = computed<any>(() => (props.name ? (stats.value || []).find((s: any) => (s as any).form === props.name) || null : null))
 const curForm = computed(() => (props.name ? formOf(props.name) : null))
-const tiles = computed(() => { const c = cur.value; if (!c) return []; return [
+const tiles = computed(() => { const c: any = cur.value; if (!c) return []; return [
   { label: FM.started, value: num(c.started), spark: 'started' },
   { label: FM.finished, value: num(c.finished), spark: 'finished' },
   { label: FM.completion, value: c.completion + '%' },
@@ -80,16 +82,17 @@ const tiles = computed(() => { const c = cur.value; if (!c) return []; return [
 /* the series over every day of the window, the days with nothing filled in */
 const series = computed(() => {
   const c = cur.value; if (!c) return []
-  const by = Object.fromEntries((c.series || []).map((r) => [dayKey(r.day), r]))
+  const by = Object.fromEntries(((c as any).series || []).map((r: any) => [dayKey(r.day), r]))
   const out = []; const t = new Date(); t.setHours(0, 0, 0, 0)
   for (let i = days.value - 1; i >= 0; i--) { const d = new Date(t); d.setDate(d.getDate() - i); const k = d.toISOString().slice(0, 10); out.push({ day: k, started: (by[k] || {}).started || 0, finished: (by[k] || {}).finished || 0 }) }
   return out
 })
-const sparkPath = (key) => { const rows = series.value; if (rows.length < 2) return ''; const max = Math.max(1, ...rows.map((r) => r[key] || 0)); return rows.map((r, i) => `${(i / (rows.length - 1)) * 100},${30 - ((r[key] || 0) / max) * 26 - 2}`).join(' ') }
+const sparkPath = (key: any) => { const rows = series.value; if (rows.length < 2) return ''; const max = Math.max(1, ...rows.map((r) => (r as any)[key] || 0)); return rows.map((r, i) => `${(i / (rows.length - 1)) * 100},${30 - (((r as any)[key] || 0) / max) * 26 - 2}`).join(' ') }
 const overTimeOption = computed(() => {
   void chartKey.value; void chartKind.value
   const b = base(), t = tokens()
-  const line = (name, key, color, area) => timeSeries({ name, color, area, data: series.value.map((r) => r[key]) })
+  const line = (name: any, key: any, color: any, area: any) => timeSeries({ name, color, area, data: series.value.map((r) => (r as any)[key]) })
+  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   return { ...b, xAxis: timeAxis({ ...b.xAxis, data: series.value.map((r) => day(r.day)) }), yAxis: { ...b.yAxis, minInterval: 1 }, series: [line(FM.started, 'started', t.accent, true), line(FM.finished, 'finished', PALETTE[1])] }
 })
 /* the steps: each body slide by its number, named by its questions; reached from the answers' slides, the first step
@@ -97,32 +100,32 @@ const overTimeOption = computed(() => {
 const steps = computed(() => {
   const c = cur.value, f = curForm.value; if (!c) return []
   const fields = f ? f.model.fields : []
-  const reached = Object.fromEntries((c.slides || []).map((s) => [Number(s.slide), Number(s.reached)]))
-  const nums = [...new Set([...fields.map((x) => x.slide), ...Object.keys(reached).map(Number)])].filter((n) => n > 0).sort((a, b) => a - b)
-  let prev = c.started
+  const reached = Object.fromEntries(((c as any).slides || []).map((s: any) => [Number(s.slide), Number(s.reached)]))
+  const nums = [...new Set([...fields.map((x: any) => x.slide), ...Object.keys(reached).map(Number)])].filter((n) => n > 0).sort((a, b) => a - b)
+  let prev = (c as any).started
   return nums.map((n) => {
-    const qs = fields.filter((x) => x.slide === n).map((x) => plainQ(x))
-    const r = n === nums[0] ? Math.max(reached[n] || 0, c.started) : reached[n] || 0
-    const row = { n, label: qs[0] || wn('slide', n), more: qs.length > 1 ? qs.length - 1 : 0, reached: r, share: pct(r, c.started), left: Math.max(0, prev - r), leftShare: pct(Math.max(0, prev - r), prev) }
+    const qs = fields.filter((x: any) => x.slide === n).map((x: any) => plainQ(x))
+    const r: any = n === nums[0] ? Math.max(reached[n] || 0, (c as any).started) : reached[n] || 0
+    const row = { n, label: qs[0] || wn('slide', n), more: qs.length > 1 ? qs.length - 1 : 0, reached: r, share: pct(r, (c as any).started), left: Math.max(0, prev - r), leftShare: pct(Math.max(0, prev - r), prev) }
     prev = r; return row
   })
 })
 /* the questions, in the form's order: what the compiled form says each is, joined to what was answered */
 const questions = computed(() => {
   const c = cur.value, f = curForm.value; if (!c) return []
-  const by = Object.fromEntries((c.fields || []).map((x) => [x.field, x]))
-  const reachedOf = (n) => { const s = steps.value.find((x) => x.n === n); return s ? s.reached : c.started }
-  const fields = f ? f.model.fields : (c.fields || []).map((x) => ({ name: x.field, kind: 'text', question: x.field, slide: null }))
-  return fields.map((q) => {
+  const by = Object.fromEntries(((c as any).fields || []).map((x: any) => [x.field, x]))
+  const reachedOf = (n: any) => { const s = steps.value.find((x) => x.n === n); return s ? s.reached : (c as any).started }
+  const fields = f ? f.model.fields : ((c as any).fields || []).map((x: any) => ({ name: x.field, kind: 'text', question: x.field, slide: null }))
+  return fields.map((q: any) => {
     const a = by[q.name] || { answered: 0, values: [] }
-    const vals = (a.values || []).filter((v) => v.value !== null && v.value !== '')
-    const scale = isScale(q.kind) && vals.length && vals.every((v) => !isNaN(Number(v.value)))
+    const vals = (a.values || []).filter((v: any) => v.value !== null && v.value !== '')
+    const scale = isScale(q.kind) && vals.length && vals.every((v: any) => !isNaN(Number(v.value)))
     let rows = [], avg = null
     if (isChoice(q.kind) || scale) {
-      rows = scale ? vals.slice().sort((x, y) => Number(x.value) - Number(y.value)) : vals
-      const max = Math.max(1, ...rows.map((v) => v.n))
-      rows = rows.map((v) => ({ ...v, w: (v.n / max) * 100, share: pct(v.n, a.answered) }))
-      if (scale) { const tot = vals.reduce((s, v) => s + v.n, 0); avg = tot ? Math.round((vals.reduce((s, v) => s + Number(v.value) * v.n, 0) / tot) * 10) / 10 : null }
+      rows = scale ? vals.slice().sort((x: any, y: any) => Number(x.value) - Number(y.value)) : vals
+      const max = Math.max(1, ...rows.map((v: any) => v.n))
+      rows = rows.map((v: any) => ({ ...v, w: (v.n / max) * 100, share: pct(v.n, a.answered) }))
+      if (scale) { const tot = vals.reduce((s: any, v: any) => s + v.n, 0); avg = tot ? Math.round((vals.reduce((s: any, v: any) => s + Number(v.value) * v.n, 0) / tot) * 10) / 10 : null }
     }
     return { name: q.name, question: plainQ(q), kind: q.kind, kindWord: kindWord(q.kind), answered: a.answered, reached: reachedOf(q.slide), rows, avg, free: !(isChoice(q.kind) || scale) }
   })

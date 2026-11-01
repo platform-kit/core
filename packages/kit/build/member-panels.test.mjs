@@ -35,7 +35,7 @@ for (const k of ['working', 'read', 'bought']) for (const s of ['-title', '-titl
 const panelsDir = path.join(HERE, '..', 'theme', 'src', 'components', 'spaces', 'panels')
 const src = fs.readdirSync(panelsDir).map((f) => fs.readFileSync(path.join(panelsDir, f), 'utf8')).join('\n')
 ok('no site is named in the kit\'s panels', !/dharma/i.test(src))
-ok('Working names levels from the site\'s instrument, never by a key of its own', /from '#site\/instrument'/.test(src) && /LEVELS\[lv\]\.name/.test(src))
+ok('Working names levels from the site\'s instrument, never by a key of its own', /from '#site\/instrument'/.test(src) && /(?:LEVELS|\(LEVELS as any\))\[lv\]\.name/.test(src))
 
 console.log(fail ? `member-panels: ${fail} failed, ${pass} passed` : `member-panels: all ${pass} checks passed`)
 process.exit(fail ? 1 : 0)

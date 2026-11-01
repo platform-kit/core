@@ -2,12 +2,17 @@
 title: Selling garments
 description: Upload a design, pick a product type from the supplier's catalogue, and what the buyer sees.
 order: 24
-sources: [packages/kit/build/kinds/apparel.js, packages/kit/supabase/functions/_shared/suppliers/printify.js, packages/kit/build/store-kinds.test.mjs]
-reviewed: 2026-10-01
+sources:
+  [
+    packages/kit/build/kinds/apparel.js,
+    packages/kit/supabase/functions/_shared/suppliers/printify.js,
+    packages/kit/build/store-kinds.test.mjs,
+  ]
+reviewed: 2026-11-01
 ---
 
 A shirt is not a book and not an ordinary product. What is true only of it — the **product type**,
-the **design**, where that design sits on the garment, and a **picture per colour** — is a *kind*,
+the **design**, where that design sits on the garment, and a **picture per colour** — is a _kind_,
 and the store never opens it. Module: `store`; supplier: `printify`.
 
 ## Three steps
@@ -22,7 +27,7 @@ Then price it and publish it like anything else.
 
 ## Why you cannot type a product type
 
-A product type is the *supplier's* fact. If you could type one, a typo could become an order —
+A product type is the _supplier's_ fact. If you could type one, a typo could become an order —
 and you would find out when a customer's shirt did not arrive.
 
 So the control offers a list and the file keeps an id, and a file naming a type the supplier does
@@ -39,8 +44,8 @@ photographed per colour and not per size, so the same picture serves every size 
 
 ## Where the fetching happens
 
-Nowhere a buyer waits. Asking the supplier is something the **admin** does, when you press *Read
-the catalogue again* — so:
+Nowhere a buyer waits. Asking the supplier is something the **admin** does, when you press _Read
+the catalogue again_ — so:
 
 - in [cloud mode](/content/docs/running-a-site/settings/cloud-mode), where nothing ever builds,
   adding a colour gets you its mockup without a deploy;

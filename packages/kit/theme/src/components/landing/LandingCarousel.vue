@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { md } from './md.js'
 import { us } from 'platformkit/lib/strings.js'
@@ -17,23 +18,23 @@ const props = defineProps({
   layout: { type: String, default: 'cards' },   /* cards | arc | coverflow | strip */
   across: { type: Number, default: 3 },
   autoplay: { type: Number, default: 0 },       /* seconds; 0 off */
-  items: { type: Array, default: () => [] },    /* [{ image, title?, body?, href? }] */
+  items: { type: Array as PropType<any[]>, default: () => [] },    /* [{ image, title?, body?, href? }] */
 })
 const W = (us('sections').carousel || {}).nav || {}
 const at = ref(0)
 const n = computed(() => props.items.length)
-const go = (d) => { at.value = (at.value + d + n.value) % n.value; scrollTo() }
-const track = ref(null)
-function scrollTo() { const el = track.value && track.value.children[at.value]; if (el && props.layout === 'cards') el.scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'smooth' }) }
+const go = (d: any) => { at.value = (at.value + d + n.value) % n.value; scrollTo() }
+const track = ref<any>(null)
+function scrollTo() { const el: any = track.value && track.value.children[at.value]; if (el && props.layout === 'cards') el.scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'smooth' }) }
 function onScroll() { if (props.layout !== 'cards' || !track.value) return; const k = [...track.value.children]; const x = track.value.scrollLeft; let best = 0, d = 1e9; k.forEach((c, i) => { const dd = Math.abs(c.offsetLeft - x); if (dd < d) { d = dd; best = i } }); at.value = best }
-let timer = null, hover = false
+let timer: any = null, hover = false
 const rm = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 onMounted(() => { if (props.autoplay > 0 && !rm) timer = setInterval(() => { if (!hover) go(1) }, props.autoplay * 1000) })
 onBeforeUnmount(() => clearInterval(timer))
-const off = (i) => { let d = i - at.value; if (d > n.value / 2) d -= n.value; if (d < -n.value / 2) d += n.value; return d }
+const off = (i: any) => { let d = i - at.value; if (d > n.value / 2) d -= n.value; if (d < -n.value / 2) d += n.value; return d }
 </script>
 <template>
-  <section class="lpsec lpcarousel" :class="'lpcr-' + layout" @mouseenter="hover = true" @mouseleave="hover = false">
+  <!-- @vue-expect-error TS2322, from the conversion: Type 'true' is not assignable to type 'false'. --><section class="lpsec lpcarousel" :class="'lpcr-' + layout" @mouseenter="hover = true" @mouseleave="hover = false">
     <div class="lpwrap">
       <div class="lpcr-top">
         <slot name="head" :heading="heading" :lead="lead"><SectionHead class="lpcr-head" :badge="badge" :eyebrow="eyebrow" :heading="heading" :lead="lead" :center="layout !== 'cards'" /></slot>

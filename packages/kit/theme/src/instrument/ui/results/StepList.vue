@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* A definition list against rules: the label on the left, what it means on the
    right. Each row is written by the page that uses it. */
 defineProps({ heading: { type: String, default: '' } })

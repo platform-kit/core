@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { headForKey } from 'platformkit/lib/seo.js'
 headForKey('app', '/app')
 import SiteLayout from '../layouts/SiteLayout.vue'

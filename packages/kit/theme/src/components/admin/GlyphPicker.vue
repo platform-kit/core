@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A glyph chosen by name: the theme's own few first, then all of Lucide's, searched by name — the
  * chosen one drawn large beside the search, the matches as a grid of buttons. Every name the site
@@ -14,21 +14,22 @@ const emit = defineEmits(['update:modelValue'])
 const q = ref(''), open = ref(false)
 /* the palette floats over the page (fixed, placed from the button), so a row that clips its overflow cannot cut it off;
    it closes on Escape, on a click elsewhere, and when the page scrolls away */
-const btn = ref(null), field = ref(null), pos = ref({ top: 0, left: 0 })
+const btn = ref<any>(null), field = ref<any>(null), pos = ref({ top: 0, left: 0 })
 function place() { if (!btn.value) return; const r = btn.value.getBoundingClientRect(); const w = Math.min(420, window.innerWidth * 0.9); pos.value = { top: r.bottom + 6, left: Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) } }
 function toggle() { open.value = !open.value; if (open.value) { place(); nextTick(() => field.value && field.value.focus()) } }
-function onKey(e) { if (e.key === 'Escape' && open.value) { open.value = false; e.stopPropagation() } }
-function onDoc(e) { if (open.value && btn.value && !btn.value.parentElement.contains(e.target)) open.value = false }
+function onKey(e: any) { if (e.key === 'Escape' && open.value) { open.value = false; e.stopPropagation() } }
+function onDoc(e: any) { if (open.value && btn.value && !btn.value.parentElement.contains(e.target)) open.value = false }
 function onScroll() { if (open.value) place() }
 document.addEventListener('keydown', onKey, true); document.addEventListener('mousedown', onDoc, true); window.addEventListener('scroll', onScroll, true)
 onBeforeUnmount(() => { document.removeEventListener('keydown', onKey, true); document.removeEventListener('mousedown', onDoc, true); window.removeEventListener('scroll', onScroll, true) })
 const matches = computed(() => {
   const s = q.value.trim().toLowerCase()
   const own = GLYPH_NAMES.filter((n) => !s || n.includes(s))
-  const luc = (NAMES || []).filter((n) => !s || n.includes(s)).filter((n) => !own.includes(n))
-  return own.map((n) => ({ n, own: true })).concat(luc.slice(0, 96).map((n) => ({ n, own: false })))
+  // @ts-expect-error TS2339, from the conversion: Property 'filter' does not exist on type '{}'.
+  const luc = (NAMES || []).filter((n: any) => !s || n.includes(s)).filter((n: any) => !own.includes(n))
+  return own.map((n) => ({ n, own: true })).concat(luc.slice(0, 96).map((n: any) => ({ n, own: false })))
 })
-function pick(n) { emit('update:modelValue', n); open.value = false }
+function pick(n: any) { emit('update:modelValue', n); open.value = false }
 </script>
 
 <template>
@@ -43,7 +44,7 @@ function pick(n) { emit('update:modelValue', n); open.value = false }
       <div class="gp-grid">
         <button v-for="m in matches" :key="m.n" type="button" class="gp-b" :class="{ on: m.n === modelValue, own: m.own }" :title="m.n" @click="pick(m.n)" v-html="glyph(m.n)"></button>
       </div>
-      <p class="gp-foot">{{ matches.length }} shown · {{ (NAMES || []).length + GLYPH_NAMES.length }} in all</p>
+      <p class="gp-foot">{{ matches.length }} shown · <!-- @vue-expect-error TS2339, from the conversion: Property 'length' does not exist on type '{}'. -->{{ (NAMES || []).length + GLYPH_NAMES.length }} in all</p>
     </div>
   </div>
 </template>

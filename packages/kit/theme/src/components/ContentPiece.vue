@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * One piece's page — as Parse.ly's post details and Ghost's post analytics read one: views, visitors, engaged minutes,
  * time, read to the end and recirculation against the window before; views a day since it was published; where the
@@ -34,16 +34,16 @@ const { forRead: filtersForRead } = useFilters(T.page.filters || {})
 const days = ref(30)
 const audience = ref('all')
 const state = ref('idle')
-const data = ref(null)
-const COLL = { article: ARTICLES || [], book: BOOKS || [], wiki: WIKI || [], docs: DOCS || [] }
-const record = computed(() => (COLL[props.kind] || []).find((x) => x.slug === props.id || (x.path || '').split('/').pop() === props.id) || null)
+const data = ref<any>(null)
+const COLL: any = { article: ARTICLES || [], book: BOOKS || [], wiki: WIKI || [], docs: DOCS || [] }
+const record = computed(() => (COLL[props.kind] || []).find((x: any) => x.slug === props.id || (x.path || '').split('/').pop() === props.id) || null)
 const title = computed(() => (record.value && record.value.title) || props.id)
 const tzHere = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } catch (e) { return 'UTC' } })()
 
 async function load() {
   if (!configured || !isSignedIn.value || !props.id) { state.value = 'idle'; data.value = null; return }
   state.value = 'loading'
-  const { data: d, error } = await supabase.rpc('admin_piece', { kind: props.kind, id: props.id, days: days.value, audience: audience.value, tz: tzHere, filters: filtersForRead.value })
+  const { data: d, error } = await (supabase as any).rpc('admin_piece', { kind: props.kind, id: props.id, days: days.value, audience: audience.value, tz: tzHere, filters: filtersForRead.value })
   if (error) { state.value = (error.code === '42501' || /admin only|permission/i.test(error.message || '')) ? 'denied' : 'error'; return }
   data.value = d || null
   state.value = 'ok'
@@ -54,52 +54,54 @@ const chartKey = ref(0)
 onMounted(() => { const mo = new MutationObserver(() => chartKey.value++); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }) })
 
 /* ---- helpers ---- */
-const num = (n) => new Intl.NumberFormat().format(Math.round(n || 0))
-const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0)
-const money = (n, c) => new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase(), maximumFractionDigits: 0 }).format((n || 0) / 100)
-const secs = (s) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
-const delta = (now, before) => { if (!before) return null; const d = Math.round(((now - before) / before) * 100); return { dir: d > 0 ? 'up' : d < 0 ? 'down' : 'flat', text: (d > 0 ? '+' : '') + d + '%' } }
-const dayKey = (d) => String(d || '').slice(0, 10)
-const day = (d) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
-const dateOnly = (d) => { if (!d) return ''; const t = new Date(d); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) }
+const num = (n: any) => new Intl.NumberFormat().format(Math.round(n || 0))
+const pct = (a: any, b: any) => (b ? Math.round((a / b) * 100) : 0)
+const money = (n: any, c: any) => new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase(), maximumFractionDigits: 0 }).format((n || 0) / 100)
+const secs = (s: any) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
+const delta = (now: any, before: any) => { if (!before) return null; const d = Math.round(((now - before) / before) * 100); return { dir: d > 0 ? 'up' : d < 0 ? 'down' : 'flat', text: (d > 0 ? '+' : '') + d + '%' } }
+const dayKey = (d: any) => String(d || '').slice(0, 10)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const dateOnly = (d: any) => { if (!d) return ''; const t = new Date(d); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) }
 const rangeLabel = computed(() => H.range.replace('{days}', days.value))
 const audienceLine = computed(() => (audience.value === 'all' ? '' : String(H['audience-line'] || '').replace('{audience}', H['audience-' + audience.value] || audience.value)))
-const kindName = (k) => KN[k] || k
-const channelName = (c) => AQ['channel-' + c] || c
-const bars = (list, key) => { const rows = list || []; const max = Math.max(1, ...rows.map((x) => x[key] || 0)); return rows.map((x) => ({ ...x, w: ((x[key] || 0) / max) * 100 })) }
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+const kindName = (k: any) => KN[k] || k
+const channelName = (c: any) => AQ['channel-' + c] || c
+const bars = (list: any, key: any) => { const rows = list || []; const max = Math.max(1, ...rows.map((x: any) => x[key] || 0)); return rows.map((x: any) => ({ ...x, w: ((x[key] || 0) / max) * 100 })) }
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 
 const now = computed(() => (data.value && data.value.now) || {})
 const prev = computed(() => (data.value && data.value.prev) || {})
-const hasReads = computed(() => (now.value.views || 0) > 0 || (prev.value.views || 0) > 0)
+const hasReads = computed(() => ((now.value as any).views || 0) > 0 || ((prev.value as any).views || 0) > 0)
 const tiles = computed(() => [
-  { label: KP.views, value: num(now.value.views), d: delta(now.value.views, prev.value.views) },
-  { label: PW.visitors, value: num(now.value.visitors), d: delta(now.value.visitors, prev.value.visitors) },
-  { label: KP.engaged, value: num(now.value.minutes), d: delta(now.value.minutes, prev.value.minutes) },
-  { label: KP.time, value: secs(now.value.avg_seconds), d: delta(now.value.avg_seconds, prev.value.avg_seconds) },
-  { label: KP.finish, value: (now.value.finished || 0) + '%', d: delta(now.value.finished, prev.value.finished) },
-  { label: KP.recirculation, value: (now.value.recirculation || 0) + '%', d: delta(now.value.recirculation, prev.value.recirculation), help: KP['recirculation-help'] },
+  { label: KP.views, value: num((now.value as any).views), d: delta((now.value as any).views, (prev.value as any).views) },
+  { label: PW.visitors, value: num((now.value as any).visitors), d: delta((now.value as any).visitors, (prev.value as any).visitors) },
+  { label: KP.engaged, value: num((now.value as any).minutes), d: delta((now.value as any).minutes, (prev.value as any).minutes) },
+  { label: KP.time, value: secs((now.value as any).avg_seconds), d: delta((now.value as any).avg_seconds, (prev.value as any).avg_seconds) },
+  { label: KP.finish, value: ((now.value as any).finished || 0) + '%', d: delta((now.value as any).finished, (prev.value as any).finished) },
+  { label: KP.recirculation, value: ((now.value as any).recirculation || 0) + '%', d: delta((now.value as any).recirculation, (prev.value as any).recirculation), help: KP['recirculation-help'] },
 ])
 /* the series: every day of both windows, from the publish date (or the first view on record) on */
 const series = computed(() => {
   const rows = (data.value && data.value.series) || []
   const from = dayKey((record.value && record.value.date) || (data.value && data.value.first_seen) || '')
-  return from ? rows.filter((r) => dayKey(r.day) >= from) : rows
+  return from ? rows.filter((r: any) => dayKey((r as any).day) >= from) : rows
 })
 const seriesOption = computed(() => {
   void chartKey.value; void chartKind.value
   const b = base(), t = tokens(), rows = series.value
-  return { ...b, xAxis: timeAxis({ ...b.xAxis, data: rows.map((r) => day(r.day)) }), yAxis: { ...b.yAxis, minInterval: 1 }, series: [
-    timeSeries({ name: KP.views, color: t.accent, area: true, data: rows.map((r) => r.views) }),
-    timeSeries({ name: KP.readers, color: PALETTE[1], data: rows.map((r) => r.readers) }),
+  return { ...b, xAxis: timeAxis({ ...b.xAxis, data: rows.map((r: any) => day((r as any).day)) }), yAxis: { ...b.yAxis, minInterval: 1 }, series: [
+    timeSeries({ name: KP.views, color: t.accent, area: true, data: rows.map((r: any) => (r as any).views) }),
+    timeSeries({ name: KP.readers, color: PALETTE[1], data: rows.map((r: any) => (r as any).readers) }),
   ] }
 })
 const newShare = computed(() => pct(data.value && data.value.new, ((data.value && data.value.new) || 0) + ((data.value && data.value.returning) || 0)))
 /* where reads ended: ten bands, 0–9% to 90–100% */
-const depth = computed(() => { const by = {}; for (const b of (data.value && data.value.depth) || []) by[b.band] = b.n; const rows = Array.from({ length: 10 }, (_, i) => ({ band: i, n: by[i] || 0 })); const max = Math.max(1, ...rows.map((r) => r.n)); const total = rows.reduce((s, r) => s + r.n, 0); return rows.map((r) => ({ ...r, w: (r.n / max) * 100, p: pct(r.n, total), label: i10(r.band) })) })
-const i10 = (b) => (b === 9 ? '90–100%' : b * 10 + '–' + (b * 10 + 9) + '%')
+const depth = computed(() => { const by: any = {}; for (const b of (data.value && data.value.depth) || []) by[(b as any).band] = (b as any).n; const rows = Array.from({ length: 10 }, (_, i) => ({ band: i, n: by[i] || 0 })); const max = Math.max(1, ...rows.map((r) => r.n)); const total = rows.reduce((s, r) => s + r.n, 0); return rows.map((r) => ({ ...r, w: (r.n / max) * 100, p: pct(r.n, total), label: i10(r.band) })) })
+const i10 = (b: any) => (b === 9 ? '90–100%' : b * 10 + '–' + (b * 10 + 9) + '%')
 const led = computed(() => (data.value && data.value.conversions) || {})
-const ledTotal = computed(() => (led.value.signups || 0) + (led.value.subscriptions || 0) + (led.value.purchases || 0))
+const ledTotal = computed(() => ((led.value as any).signups || 0) + ((led.value as any).subscriptions || 0) + ((led.value as any).purchases || 0))
 </script>
 
 <template>

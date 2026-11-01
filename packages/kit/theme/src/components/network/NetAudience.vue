@@ -1,13 +1,14 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* WHO CAN SEE A POST, said on the post: a glyph and the audience's own word, with the longer note
    on hover. A reader should never have to guess whether what they are about to answer was said to
    the world or to the people here. Words from network.md (audience). */
 import { computed } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 
-const props = defineProps({ post: { type: Object, required: true } })
+const props = defineProps({ post: { type: Object as PropType<any>, required: true } })
 const A = computed(() => us('network').audience.main)
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const kind = computed(() => (props.post.kind === 'space' ? 'space' : props.post.audience))
 const word = computed(() => (kind.value === 'space' ? fill(A.value.space, { space: (props.post.space && props.post.space.name) || '' }) : A.value[kind.value]))
 const note = computed(() => A.value[kind.value + '-note'])

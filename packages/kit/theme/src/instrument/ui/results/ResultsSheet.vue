@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, inject, unref } from 'vue'
 import { route, navigate, replace, appPath, appPageOf, ROUTES, APP_BASE } from '../../../router.js'
 import { resolveTabs } from './tabs.js'   /* the shell's tabs: the kit's modules' and the site's, less the modules off */
@@ -12,17 +12,18 @@ const emit = defineEmits(['start'])
 /* a host that gives some of these pages homes of their own (a community place: Accomplishments, Coaching)
    leaves them out by key */
 const leaveOut = unref(inject('pk.sheet.hide', [])) || []
+// @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
 const tabs = resolveTabs().filter((t) => !leaveOut.includes(t.key))
 const pages = tabs
 const ctx = {}
 const current = computed(() => tabs.find((t) => t.key === tab.value) || tabs[0])
 const pageProps = computed(() => (current.value && current.value.props ? current.value.props(ctx) : {}))
-function onStart(k) { const t = current.value; if (t && t.start) emit('start', t.start(k)) }
+function onStart(k: any) { const t = current.value; if (t && t.start) emit('start', t.start(k)) }
 /* Each page has its own address, /app/<slug> (APP_PAGES in router.js). The sheet
    opens on the page the address names when that page is on, else on the first
    page that is on, and makes the address say so. Choosing a tab is a navigation,
    so the back button returns to the previous page. */
-const has = (k) => pages.some((p) => p.key === k)
+const has = (k: any) => pages.some((p) => p.key === k)
 const wanted = appPageOf(route.value)
 const tab = ref(wanted && has(wanted) ? wanted : pages[0].key)
 /* an address that already names the page keeps what follows it (a conversation id) */
@@ -46,7 +47,7 @@ const need = computed(() => (isSignedIn.value ? 'verified' : 'authenticated'))
 /* on a phone the tabs wrap; a dropdown reads better there */
 const tabMenu = ref(false)
 const tabLabel = () => (pages.find((p) => p.key === tab.value) || pages[0]).label
-function pickTab(k) { tab.value = k; tabMenu.value = false }
+function pickTab(k: any) { tab.value = k; tabMenu.value = false }
 
 </script>
 
@@ -83,7 +84,7 @@ function pickTab(k) { tab.value = k; tabMenu.value = false }
 
     <div class="tab-panel">
       <!-- the page the tab names, from the registry, with the props its tab builds; a start goes through its tab's start() -->
-      <component :is="current.component" :key="current.key" v-bind="pageProps" @go="(k) => (tab = k)" @start="onStart" />
+      <component :is="current.component" :key="current.key" v-bind="pageProps" @go="(k: any) => (tab = k)" @start="onStart" />
     </div>
 
   </div>

@@ -72,7 +72,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, h, ref, watch } from 'vue'
 import { user, isStaff } from 'platformkit/lib/auth.js'
 import { ROUTES } from 'platformkit/lib/router.js'
@@ -83,30 +83,31 @@ import CourseIcon from './CourseIcon.vue'
 
 const props = defineProps({ base: { type: String, default: '/courses' } })
 const { L } = words()
-const list = ref([]), loading = ref(true)
+const list = ref<any>([]), loading = ref(true)
 
 watch(() => (user.value ? user.value.id : null), async () => {
   loading.value = true
-  try { list.value = (await rpc('courses_list')) || [] } catch (e) { console.warn('courses:', e.message || e) }
+  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
+  try { list.value = (await rpc('courses_list')) || [] } catch (e) { console.warn('courses:', (e as any).message || e) }
   loading.value = false
 }, { immediate: true })
 setHead({ title: L.value.title })
 
-const hrefOf = (c) => props.base + '/' + c.slug
-const lessonsWord = (n) => (n === 1 ? L.value.lesson : fill(L.value.lessons, { n }))
-const modulesWord = (n) => (n === 1 ? L.value.module : fill(L.value.modules, { n }))
-const metaOf = (c) => (c.sections > 1 ? `${lessonsWord(c.lessons)} · ${modulesWord(c.sections)}` : lessonsWord(c.lessons))
+const hrefOf = (c: any) => props.base + '/' + c.slug
+const lessonsWord = (n: any) => (n === 1 ? L.value.lesson : fill(L.value.lessons, { n }))
+const modulesWord = (n: any) => (n === 1 ? L.value.module : fill(L.value.modules, { n }))
+const metaOf = (c: any) => (c.sections > 1 ? `${lessonsWord(c.lessons)} · ${modulesWord(c.sections)}` : lessonsWord(c.lessons))
 
 /* what they are taking, the last one they were in first; what they finished; and everything else */
-const mine = computed(() => list.value.filter((c) => c.enrolled))
-const taking = computed(() => mine.value.filter((c) => !c.completed_at).sort((a, b) => String(b.last_at || '').localeCompare(String(a.last_at || ''))))
-const current = computed(() => taking.value[0] || null)
+const mine = computed(() => list.value.filter((c: any) => (c as any).enrolled))
+const taking = computed(() => mine.value.filter((c: any) => !(c as any).completed_at).sort((a: any, b: any) => String((b as any).last_at || '').localeCompare(String((a as any).last_at || ''))))
+const current = computed<any>(() => taking.value[0] || null)
 const others = computed(() => taking.value.slice(1))
-const finished = computed(() => mine.value.filter((c) => c.completed_at))
-const catalogue = computed(() => list.value.filter((c) => !c.enrolled))
+const finished = computed(() => mine.value.filter((c: any) => (c as any).completed_at))
+const catalogue = computed(() => list.value.filter((c: any) => !(c as any).enrolled))
 
 /* what getting into a course takes, said from where this reader stands */
-const accessOf = (c) => {
+const accessOf = (c: any) => {
   if (c.access) return c.free ? L.value['access-free'] : L.value['access-yours']
   if (c.free) return L.value['access-free-sign-in']
   if (c.skus && c.skus.length) return L.value['access-buy']
@@ -114,8 +115,8 @@ const accessOf = (c) => {
 }
 
 /* one course on a shelf: the cover and the title are the way in; the certificate is a way of its own */
-const CourseCard = (p) => {
-  const c = p.c
+const CourseCard = (p: any) => {
+  const c: any = p.c
   const foot = c.completed_at
     ? [h('span', { class: 'crs-card-state is-done' }, [h(CourseIcon, { name: 'done', size: 16 }), L.value.finished]),
        c.certificate_id ? h('a', { class: 'crs-card-cert', href: ROUTES.certificates + '/' + c.certificate_id }, [h(CourseIcon, { name: 'award', size: 15 }), L.value.certificate]) : null]

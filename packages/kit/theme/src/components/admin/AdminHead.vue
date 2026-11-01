@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * THE HEAD OF AN ADMIN PAGE — one of them, for every page.
  *
@@ -48,10 +48,10 @@ defineProps({
 
 /* { tabs, on, label, count, pick, title } while this view is part of a set, else null */
 const set = inject('adminTabs', null)
-const tabs = computed(() => (set && set.value) || null)
+const tabs = computed<any>(() => (set && (set as any).value) || null)
 /* a page in a set is named for the SET, not for the tab that happens to be open: the title says
    Comments whichever of its two tabs you are on */
-const setTitle = computed(() => (tabs.value && tabs.value.title) || '')
+const setTitle = computed(() => (tabs.value && (tabs.value as any).title) || '')
 </script>
 
 <template>

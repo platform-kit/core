@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* The only v-html on the sheet.
    Charts and score bars come out of charts.js as SVG and markup; re-expressing
    them as component trees would buy nothing and lose the drawing code. Every

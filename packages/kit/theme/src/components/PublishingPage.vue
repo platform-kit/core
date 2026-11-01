@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Content → Publishing, for cloud mode alone (the rail has no such row in git mode): what waits, and where a publish goes. The drafts — every record saved
  * and not yet published (a removal marked, a new record marked), who and when — with a line for the commit's
@@ -18,11 +18,11 @@ import { github, drafts as readDrafts, publish, keep } from '../lib/admin/api.js
 const emit = defineEmits(['published'])
 const W = us('publishing').page
 const H = W.head, D = W.drafts, F = W.form, S = W.status, R = W.rebuild, C = W.copy
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const state = ref('idle')          /* idle | denied | loading | ok */
-const st = ref(null)               /* the pushes: repo, branch, token (set or not), connected, last_push, error, pending */
-const list = ref([])               /* the drafts */
+const st = ref<any>(null)               /* the pushes: repo, branch, token (set or not), connected, last_push, error, pending */
+const list = ref<any>([])               /* the drafts */
 const repo = ref(''), branch = ref(''), token = ref(''), hook = ref('')
 const message = ref('')
 const busy = ref(false), said = ref(''), pushing = ref(false), pushed = ref(''), publishing = ref(false), published = ref('')
@@ -45,7 +45,7 @@ async function load() {
     const [g, d] = await Promise.all([github('get'), readDrafts()])
     st.value = g; repo.value = g.repo; branch.value = g.branch; list.value = d.drafts || []
     state.value = 'ok'
-  } catch (e) { state.value = e.status === 403 ? 'denied' : 'ok' }
+  } catch (e) { state.value = (e as any).status === 403 ? 'denied' : 'ok' }
 }
 onMounted(load)
 watch([isSignedIn, roleKnown, mayEditContent], load)
@@ -63,26 +63,26 @@ async function publishAll() {
     emit('published')
     await load()
   } catch (e) {
-    published.value = e.issues && e.issues.length ? fill(D.checks, { name: e.name || '', issue: e.issues.map((i) => (i.path ? i.path + ': ' : '') + i.message).join('; ') }) : (D.failed + (e.message ? ' ' + e.message : ''))
+    published.value = (e as any).issues && (e as any).issues.length ? fill(D.checks, { name: (e as any).name || '', issue: (e as any).issues.map((i: any) => (i.path ? i.path + ': ' : '') + i.message).join('; ') }) : (D.failed + ((e as any).message ? ' ' + (e as any).message : ''))
   } finally { publishing.value = false }
 }
-async function keepOne(d) { try { await keep(d.path); await load() } catch (e) { published.value = e.message } }
+async function keepOne(d: any) { try { await keep(d.path); await load() } catch (e) { published.value = (e as any).message } }
 async function save() {
   busy.value = true; said.value = ''
   try { const g = await github('put', { repo: repo.value, branch: branch.value, token: token.value || undefined }); st.value = { ...st.value, ...g }; token.value = ''; said.value = F.saved }
-  catch (e) { said.value = F.failed + (e.message ? ' ' + e.message : '') }
+  catch (e) { said.value = F.failed + ((e as any).message ? ' ' + (e as any).message : '') }
   finally { busy.value = false; setTimeout(() => { said.value = '' }, 2500) }
 }
 async function saveHook() {
   hookBusy.value = true; hookSaid.value = ''
   try { const g = await github('hook', { url: hook.value }); st.value = { ...st.value, ...g }; hook.value = ''; hookSaid.value = F.saved }
-  catch (e) { hookSaid.value = F.failed + (e.message ? ' ' + e.message : '') }
+  catch (e) { hookSaid.value = F.failed + ((e as any).message ? ' ' + (e as any).message : '') }
   finally { hookBusy.value = false; setTimeout(() => { hookSaid.value = '' }, 2500) }
 }
 async function rebuild() {
   rebuilding.value = true; rebuilt.value = ''
   try { const r = await github('rebuild'); st.value = { ...st.value, ...r }; rebuilt.value = r.error ? fill(R.failed, { error: r.error }) : R.asked }
-  catch (e) { rebuilt.value = e.message }
+  catch (e) { rebuilt.value = (e as any).message }
   finally { rebuilding.value = false }
 }
 /* the copy: the function answers a zip, so it is fetched and handed to the browser as a download */
@@ -95,18 +95,18 @@ async function takeCopy() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a'); a.href = url; a.download = 'content.zip'; a.click()
     setTimeout(() => URL.revokeObjectURL(url), 4000)
-  } catch (e) { took.value = fill(C.failed, { error: (e && e.message) || e }) }
+  } catch (e) { took.value = fill(C.failed, { error: (e && (e as any).message) || e }) }
   finally { taking.value = false }
 }
 async function push() {
   pushing.value = true; pushed.value = ''
   try { const r = await github('retry'); st.value = { ...st.value, ...r }; pushed.value = fill(S.retried, { n: r.pushed || 0 }) }
-  catch (e) { pushed.value = e.message }
+  catch (e) { pushed.value = (e as any).message }
   finally { pushing.value = false }
 }
-const when = (iso) => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+const when = (iso: any) => { const d: any = new Date(iso); return isNaN(d) ? '' : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
 const connected = computed(() => st.value && st.value.connected)
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 
 <template>

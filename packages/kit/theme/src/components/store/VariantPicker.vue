@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * THE SHAPES A THING IS SOLD IN, as a row of chips per option.
  *
@@ -27,13 +28,13 @@ import { buyable } from 'platformkit/lib/stock.js'
 
 const props = defineProps({
   /* the offer, for its sku and key — the matrix hangs off them */
-  offer: { type: Object, required: true },
+  offer: { type: Object as PropType<any>, required: true },
   /* what is chosen: an option name → a value slug */
-  modelValue: { type: Object, default: () => ({}) },
+  modelValue: { type: Object as PropType<any>, default: () => ({}) },
   /* true once somebody has tried to buy without choosing, so the gap is pointed at */
   warn: { type: Boolean, default: false },
   /* what the shop has, keyed as _shared/stock.js keys it; null is "unknown", which sells */
-  stock: { type: Object, default: null },
+  stock: { type: Object as PropType<any>, default: null },
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -52,20 +53,20 @@ const matrix = computed(() => variantsOf(props.offer, options.value, { sold: { n
  * ever; one that has run out says so and may come back. One boolean would make the page say
  * "no longer made" about a jumper on a lorry.
  */
-const holds = (v, optName, value) => v.chosen.every((c) => (c.option === optName ? c.value === value : (!props.modelValue[c.option] || props.modelValue[c.option] === c.value)))
-function made(optName, value) { return matrix.value.some((v) => v.sold && holds(v, optName, value)) }
-function had(optName, value) { return matrix.value.some((v) => v.sold && holds(v, optName, value) && buyable(props.offer, v.variant, props.stock)) }
+const holds = (v: any, optName: any, value: any) => v.chosen.every((c: any) => (c.option === optName ? c.value === value : (!props.modelValue[c.option] || props.modelValue[c.option] === c.value)))
+function made(optName: any, value: any) { return matrix.value.some((v) => v.sold && holds(v, optName, value)) }
+function had(optName: any, value: any) { return matrix.value.some((v) => v.sold && holds(v, optName, value) && buyable(props.offer, v.variant, props.stock)) }
 /* pressable: it is made AND there is one. The two are separate only in what is SAID. */
-function reachable(optName, value) { return made(optName, value) && had(optName, value) }
+function reachable(optName: any, value: any) { return made(optName, value) && had(optName, value) }
 
-function pick(optName, value) {
-  const next = { ...props.modelValue, [optName]: value }
+function pick(optName: any, value: any) {
+  const next: any = { ...props.modelValue, [optName]: value }
   /* a choice may strand a later one — picking small where white is only large. Rather than
      leaving a dead selection, the stranded ones are dropped and the buyer re-picks, which is
      honest; silently changing their colour would not be. */
   for (const o of options.value) {
     if (o.name === optName) continue
-    if (next[o.name] && !matrix.value.some((v) => v.sold && v.chosen.every((c) => !next[c.option] || next[c.option] === c.value))) delete next[o.name]
+    if (next[o.name] && !matrix.value.some((v) => v.sold && v.chosen.every((c) => !next[(c as any).option] || next[(c as any).option] === (c as any).value))) delete next[o.name]
   }
   emit('update:modelValue', next)
 }

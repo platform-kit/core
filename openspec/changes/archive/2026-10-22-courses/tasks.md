@@ -20,5 +20,5 @@
 
 ## 4. Docs and verification
 
-- [ ] 4.1 A "Courses" docs page, FEATURES.md, and the Kajabi comparison row. Verified by `node packages/kit/build/docs-check.mjs`.
+- [ ] 4.1 A "Courses" docs page, FEATURES.md, and the Kajabi comparison row. Verified by `node packages/kit/build/docs-check.mts`.
 - [ ] 4.2 Report each scenario as passed, failed or not verified, with why. Verified by `verify.md`.

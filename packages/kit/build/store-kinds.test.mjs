@@ -125,8 +125,8 @@ const framed = {
 
   /* ── the three places, each asking the same function ── */
   const files = (rel) => fs.readFileSync(path.join(KIT, rel), 'utf8')
-  ok('AT THE BUILD: the catalog asks it', /checkBlueprint/.test(files('build/catalog.mjs')))
-  ok('AT THE SAVE: the products model asks it', /checkBlueprint/.test(files('build/models/core/collections.mjs')))
+  ok('AT THE BUILD: the catalog asks it', /checkBlueprint/.test(files('build/catalog.mts')))
+  ok('AT THE SAVE: the products model asks it', /checkBlueprint/.test(files('build/models/core/collections.mts')))
   ok('AT THE TILL: the checkout refuses a type that is not the supplier\u2019s',
     /no product type|not taken from the supplier/.test(files('supabase/functions/create-checkout-session/index.ts')))
   /* and the till does it without asking anybody, which is the rule a product page lives by */
@@ -163,18 +163,18 @@ const framed = {
     'supabase/functions/_shared/ledger.ts',
     'supabase/functions/_shared/ledger-rules.js',
     'supabase/functions/_shared/variants.js',
-    'src/lib/storefront.js',
-    'src/lib/commerce.js',
-    'src/lib/cart.js',
+    'src/lib/storefront.ts',
+    'src/lib/commerce.ts',
+    'src/lib/cart.ts',
   ]
   const asking = RUNTIME.filter((rel) => /\.catalogue\(|\.mockups\(|\.types\(/.test(reads(rel)))
   ok('nothing on the request path asks a supplier anything', asking.length === 0, asking.join(', '))
 
   /* and the things that DO ask are the admin's, which is a function in cloud and a dev server in
      git — the same place in both, which is why neither needs a build */
-  ok('the refresh is where the asking happens', /x\.catalogue\(/.test(reads('build/models/core/collections.mjs')))
-  ok('and the mockups come with it, not from a build step', /x\.mockups\(/.test(reads('build/models/core/collections.mjs')))
-  ok('the build itself asks nobody', !/\.catalogue\(|\.mockups\(/.test(reads('build/catalog.mjs')))
+  ok('the refresh is where the asking happens', /x\.catalogue\(/.test(reads('build/models/core/collections.mts')))
+  ok('and the mockups come with it, not from a build step', /x\.mockups\(/.test(reads('build/models/core/collections.mts')))
+  ok('the build itself asks nobody', !/\.catalogue\(|\.mockups\(/.test(reads('build/catalog.mts')))
 }
 
 console.log(fail ? `${fail} failed, ${pass} passed` : `all ${pass} checks passed`)

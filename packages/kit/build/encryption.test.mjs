@@ -211,7 +211,7 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
 
 /*
  * The guarantee an encrypted room makes is only as good as the number of places that could break
- * it, so there is exactly one: `src/lib/spaces/crypto.js`. Everything else — the surface, the
+ * it, so there is exactly one: `src/lib/spaces/crypto.ts`. Everything else — the surface, the
  * state, the search, the admin — asks it. This check reads the files rather than trusting the
  * reading of them, because a second place that learned to seal would not fail any other test:
  * it would work, and it would be wrong in a way nobody could see from the outside.
@@ -236,7 +236,7 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
     ...walk(join(ROOT, 'packages/kit/src')),
     ...walk(join(ROOT, 'packages/kit/theme/src')),
   ]
-  const THE_ONE = join(ROOT, 'packages/kit/src/lib/spaces/crypto.js')
+  const THE_ONE = join(ROOT, 'packages/kit/src/lib/spaces/crypto.ts')
   ok('there is a module whose job this is', files.includes(THE_ONE))
 
   /* the library itself */
@@ -253,7 +253,7 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
     tableIn.map((f) => relative(ROOT, f)).join(', '))
 
   /* api.js is the one caller, and it holds a cipher without ever making one */
-  const API = rf(join(ROOT, 'packages/kit/src/lib/spaces/api.js'), 'utf8')
+  const API = rf(join(ROOT, 'packages/kit/src/lib/spaces/api.ts'), 'utf8')
   ok('api.js reaches the sealing through that module and no other way', /import\('\.\/crypto\.js'\)/.test(API))
   ok('…and it is imported on demand, so an open room is what loads the wasm', !/^import .* from '\.\/crypto\.js'/m.test(API))
   ok('…and api.js both seals and opens through it', /m\.seal\(/.test(API) && /m\.open\(/.test(API))

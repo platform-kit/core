@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { VOICE, MIC, micArm, micListen } from 'platformkit/instrument/engine/voice.js'
 
@@ -9,16 +10,16 @@ import { VOICE, MIC, micArm, micListen } from 'platformkit/instrument/engine/voi
  *
  * Nothing is recorded. The level drives the ring and is discarded frame by frame.
  */
-const props = defineProps({ screen: { type: Object, required: true } })
+const props = defineProps({ screen: { type: Object as PropType<any>, required: true } })
 const emit = defineEmits(['answer'])
 
 const state = ref('Listening.')
 const partial = ref('')
 const dot = ref('')            /* '' | 'live' | 'done' */
 const scale = ref(1)
-let t0 = 0, spoke = false, take = null, gone = false
+let t0 = 0, spoke = false, take: any = null, gone = false
 
-function settle(r) {
+function settle(r: any) {
   if (gone) return
   if (r.why === 'nomic') { VOICE.mode = 'off'; emit('answer', 'nomic', r); return }
   if (r.onset === null) {
@@ -35,12 +36,12 @@ function settle(r) {
 function begin() {
   take = micListen({
     t0, target: props.screen.meta.item.t,
-    onLevel(v) {
+    onLevel(v: any) {
       scale.value = 1 + v * 0.9
       if (!spoke && v > 0.25) { spoke = true; dot.value = 'live'
         state.value = 'Take your time. It stops when you do.' }
     },
-    onPartial(t) { partial.value = t },
+    onPartial(t: any) { partial.value = t },
     onDone: settle,
   })
 }
@@ -49,7 +50,7 @@ onMounted(() => {
   t0 = performance.now()
   if (MIC.stream) return begin()
   state.value = 'Turning the microphone on…'
-  micArm().then((ok) => {
+  micArm().then((ok: any) => {
     if (gone) return
     if (!ok) return settle({ onset: null, dur: null, breaks: 0, text: '', why: 'nomic' })
     /* the clock restarts here: we can only time from the moment we could hear */

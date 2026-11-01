@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * THE ASK: new terms to agree to before anything new goes on sale.
  *
@@ -21,10 +22,10 @@ import { supabase } from 'platformkit/lib/supabase.js'
 import { user } from 'platformkit/lib/auth.js'
 import { marked } from 'marked'
 
-const props = defineProps({ standing: { type: Object, default: null }, open: { type: Boolean, default: false } })
+const props = defineProps({ standing: { type: Object as PropType<any>, default: null }, open: { type: Boolean, default: false } })
 const emit = defineEmits(['close', 'signed'])
 const T = us('library').coaching.terms || {}
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const saving = ref(false), error = ref('')
 const terms = computed(() => (props.standing && props.standing.terms) || null)
@@ -39,11 +40,11 @@ async function agree() {
   if (!terms.value || !user.value) return
   saving.value = true; error.value = ''
   try {
-    const { error: e } = await supabase.from('provider_terms_signed').insert({ user_id: user.value.id, version: terms.value.version })
+    const { error: e } = await (supabase as any).from('provider_terms_signed').insert({ user_id: user.value.id, version: terms.value.version })
     if (e && !/duplicate|unique/i.test(e.message)) throw e
     emit('signed')
     emit('close')
-  } catch (e) { error.value = e.message || T.error } finally { saving.value = false }
+  } catch (e) { error.value = (e as any).message || T.error } finally { saving.value = false }
 }
 watch(() => props.open, (v) => { if (v) error.value = '' })
 </script>

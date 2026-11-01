@@ -23,6 +23,7 @@ import { isOn, type Switches } from './modules/manifest.mjs'
 import { kitTables, tablesIn } from './modules/backend.mjs'
 import { readDeclaration, localUrl, withDb, costsIn, commitOf } from './plan.mjs'
 import { guard, destructive, describe } from './destructive.mjs'
+import { isMain } from './is-main.mjs'
 
 /* the drop for a module: what it would remove, and the verdict on it. `target` is a database url; `site` the site's
    config, read from `root` unless given */
@@ -67,10 +68,7 @@ export async function applyDrop(drop: Drop, target: string): Promise<void> {
   })
 }
 
-/* run as itself: by its .mjs name, which in the workspace resolves to this .mts */
-const bare = (p: string) => p.replace(/\.m?[jt]s$/, '')
-const isMain = process.argv[1] && bare(path.resolve(process.argv[1])) === bare(new URL(import.meta.url).pathname)
-if (isMain) {
+if (isMain(import.meta.url)) {
   process.on('uncaughtException', (e) => { console.error('✖ ' + (e.message || e)); process.exit(1) })
   process.on('unhandledRejection', (e: any) => { console.error('✖ ' + (e.message || e)); process.exit(1) })
   const args = process.argv.slice(2)

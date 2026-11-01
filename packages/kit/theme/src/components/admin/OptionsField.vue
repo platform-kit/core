@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * THE SHAPES A THING IS SOLD IN, EDITED AS WHAT THEY ARE.
  *
@@ -35,9 +36,9 @@ import { us } from 'platformkit/lib/content.js'
 import { normaliseOptions, variantsOf, slug, remapKeys } from 'platformkit/lib/variants.js'
 
 const props = defineProps({
-  modelValue: { type: Array, default: () => [] },
+  modelValue: { type: Array as PropType<any[]>, default: () => [] },
   /* the whole record, for the offer's sku and key and for the variants map the table edits */
-  form: { type: Object, default: () => ({}) },
+  form: { type: Object as PropType<any>, default: () => ({}) },
   /* the record's file name, which the catalogue refresh reads and writes by */
   name: { type: String, default: '' },
 })
@@ -51,7 +52,7 @@ const opts = computed({ get: () => props.modelValue || [], set: (v) => emit('upd
 /* the sizes field is one Size option; shown here so the two are never edited in two places */
 const effective = computed(() => normaliseOptions([
   ...(props.modelValue || []),
-  ...((props.form.sizes || []).length && !(props.modelValue || []).some((o) => slug(o.name) === 'size') ? [{ name: 'Size', values: props.form.sizes }] : []),
+  ...((props.form.sizes || []).length && !(props.modelValue || []).some((o) => slug((o as any).name) === 'size') ? [{ name: 'Size', values: props.form.sizes }] : []),
 ]))
 const rows = computed(() => variantsOf(
   { sku: props.form.sku || 'sku', key: props.form.key || '00000000' },
@@ -61,7 +62,7 @@ const rows = computed(() => variantsOf(
 
 const variants = computed(() => props.form.variants || {})
 const unsold = computed(() => props.form.unsold || [])
-const setVariant = (key, field, raw) => {
+const setVariant = (key: any, field: any, raw: any) => {
   const next = { ...variants.value }
   const v = { ...(next[key] || {}) }
   const value = field === 'price' || field === 'weight' ? (raw === '' ? undefined : Number(raw)) : (raw || undefined)
@@ -70,17 +71,17 @@ const setVariant = (key, field, raw) => {
   if (Object.keys(v).length) next[key] = v; else delete next[key]
   emit('patch', { variants: next })
 }
-const setSold = (key, on) => {
-  const next = on ? unsold.value.filter((k) => k !== key) : [...new Set([...unsold.value, key])]
+const setSold = (key: any, on: any) => {
+  const next = on ? unsold.value.filter((k: any) => k !== key) : [...new Set([...unsold.value, key])]
   emit('patch', { unsold: next })
 }
 
 /* ---- the options themselves ---- */
 const addOption = () => { opts.value = [...opts.value, { name: '', values: [] }] }
-const dropOption = (i) => {
-  const o = opts.value[i]
-  const hurt = rows.value.filter((r) => (variants.value[r.variant] || unsold.value.includes(r.variant)) && r.chosen.some((c) => c.option === o.name))
-  if (hurt.length && !confirm(fill(W['drop-option'], { name: o.name || '?', n: hurt.length }))) return
+const dropOption = (i: any) => {
+  const o: any = opts.value[i]
+  const hurt = rows.value.filter((r) => (variants.value[r.variant] || unsold.value.includes(r.variant)) && r.chosen.some((c) => (c as any).option === o.name))
+  if (hurt.length && !confirm(fill((W as any)['drop-option'], { name: o.name || '?', n: hurt.length }))) return
   opts.value = opts.value.filter((_, j) => j !== i)
 }
 /*
@@ -94,45 +95,45 @@ const dropOption = (i) => {
  * The confirmation stays, because anything in somebody’s basket under the old key stops being
  * recognised, and that is worth asking about. What it must not do is damage the file as well.
  */
-const moveOption = (i, by) => {
+const moveOption = (i: any, by: any) => {
   const j = i + by
   if (j < 0 || j >= opts.value.length) return
   const placed = rows.value.filter((r) => variants.value[r.variant] || unsold.value.includes(r.variant)).length
-  if (placed && !confirm(fill(W['move-option'], { n: placed }))) return
+  if (placed && !confirm(fill((W as any)['move-option'], { n: placed }))) return
   const before = effective.value
   const next = [...opts.value]; const [x] = next.splice(i, 1); next.splice(j, 0, x)
   opts.value = next
   /* and carry the settings across, by name rather than by position */
-  const after = normaliseOptions([...next, ...((props.form.sizes || []).length && !next.some((o) => slug(o.name) === 'size') ? [{ name: 'Size', values: props.form.sizes }] : [])])
+  const after = normaliseOptions([...next, ...((props.form.sizes || []).length && !next.some((o) => slug((o as any).name) === 'size') ? [{ name: 'Size', values: props.form.sizes }] : [])])
   const moved = remapKeys([...Object.keys(variants.value), ...unsold.value], before, after)
-  const vs = {}
+  const vs: any = {}
   for (const [was, now] of Object.entries(moved)) if (now && variants.value[was]) vs[now] = variants.value[was]
-  const un = [...new Set(unsold.value.map((k) => moved[k]).filter(Boolean))]
+  const un = [...new Set(unsold.value.map((k: any) => (moved as any)[k]).filter(Boolean))]
   emit('patch', { variants: vs, unsold: un })
 }
-const valuesOf = (o) => (o.values || []).map((v) => (v && typeof v === 'object' ? String(v.label ?? v.value) : String(v)))
-const setValues = (i, list) => {
+const valuesOf = (o: any) => (o.values || []).map((v: any) => (v && typeof v === 'object' ? String(v.label ?? v.value) : String(v)))
+const setValues = (i: any, list: any) => {
   const next = [...opts.value]
-  next[i] = { ...next[i], values: list.map((label) => ({ value: slug(label), label: String(label) })) }
+  next[i] = { ...next[i], values: list.map((label: any) => ({ value: slug(label), label: String(label) })) }
   opts.value = next
 }
-const typed = ref({})
-const addValue = (i) => {
+const typed = ref<any>({})
+const addValue = (i: any) => {
   const label = String(typed.value[i] || '').trim()
   if (!label) return
   const list = valuesOf(opts.value[i])
   /* the slug is the identity, so the same value twice is the same value */
-  if (!list.some((x) => slug(x) === slug(label))) setValues(i, [...list, label])
+  if (!list.some((x: any) => slug(x) === slug(label))) setValues(i, [...list, label])
   typed.value = { ...typed.value, [i]: '' }
 }
-const dropValue = (i, j) => {
+const dropValue = (i: any, j: any) => {
   const list = valuesOf(opts.value[i])
   const gone = slug(list[j])
-  const hurt = rows.value.filter((r) => (variants.value[r.variant] || unsold.value.includes(r.variant)) && r.chosen.some((c) => c.value === gone)).length
-  if (hurt && !confirm(fill(W['drop-value'], { name: list[j], n: hurt }))) return
-  setValues(i, list.filter((_, k) => k !== j))
+  const hurt = rows.value.filter((r) => (variants.value[r.variant] || unsold.value.includes(r.variant)) && r.chosen.some((c) => (c as any).value === gone)).length
+  if (hurt && !confirm(fill((W as any)['drop-value'], { name: list[j], n: hurt }))) return
+  setValues(i, list.filter((_: any, k: any) => k !== j))
 }
-const setName = (i, name) => { const next = [...opts.value]; next[i] = { ...next[i], name }; opts.value = next }
+const setName = (i: any, name: any) => { const next = [...opts.value]; next[i] = { ...next[i], name }; opts.value = next }
 
 /*
  * ---- THE SUPPLIER'S CATALOGUE ----
@@ -142,10 +143,10 @@ const setName = (i, name) => { const next = [...opts.value]; next[i] = { ...next
  * for them again, and be told what changed — because a dropped colour is a thing that has to be
  * SAID, not noticed.
  */
-const supplied = (o) => !!(o && o.from)
-const goneOf = (o) => new Set((o.values || []).filter((v) => v && typeof v === 'object' && v.gone).map((v) => String(v.label ?? v.value)))
+const supplied = (o: any) => !!(o && o.from)
+const goneOf = (o: any) => new Set((o.values || []).filter((v: any) => v && typeof v === 'object' && v.gone).map((v: any) => String(v.label ?? v.value)))
 const busy = ref(false)
-const said = ref(null)
+const said = ref<any>(null)
 const refresh = async () => {
   if (busy.value || !name.value) return
   busy.value = true
@@ -155,15 +156,15 @@ const refresh = async () => {
     /* the file has been rewritten, so the form takes the rows as they now are */
     emit('update:modelValue', r.options || [])
     said.value = r.changed
-      ? { ok: true, text: [r.added.length ? fill(W.value['added'], { n: r.added.length }) : '', r.gone.length ? fill(W.value['dropped'], { n: r.gone.length, names: r.gone.map((g) => g.label).join(', ') }) : ''].filter(Boolean).join(' ') }
+      ? { ok: true, text: [r.added.length ? fill(W.value['added'], { n: r.added.length }) : '', r.gone.length ? fill(W.value['dropped'], { n: r.gone.length, names: r.gone.map((g: any) => g.label).join(', ') }) : ''].filter(Boolean).join(' ') }
       : { ok: true, text: W.value['no-change'] }
   } catch (e) {
-    said.value = { ok: false, text: String((e && e.message) || e) }
+    said.value = { ok: false, text: String((e && (e as any).message) || e) }
   } finally { busy.value = false }
 }
 
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-const money = (n) => (n == null ? '' : String(n))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const money = (n: any) => (n == null ? '' : String(n))
 </script>
 
 <template>
@@ -179,7 +180,7 @@ const money = (n) => (n == null ? '' : String(n))
             <span class="ui-optlabel">{{ W.name }}</span>
             <!-- a supplied axis is the catalogue's: its name is read, not typed -->
             <p v-if="supplied(o)" class="ui-optname">{{ o.name }}</p>
-            <input v-else :value="o.name" type="text" class="ui-input" @input="setName(i, $event.target.value)" />
+            <input v-else :value="o.name" type="text" class="ui-input" @input="setName(i, ($event.target as any).value)" />
           </div>
           <div class="ui-optcell ui-optwide">
             <span class="ui-optlabel">{{ W.values }}</span>
@@ -188,14 +189,14 @@ const money = (n) => (n == null ? '' : String(n))
               <span v-for="v in valuesOf(o)" :key="v" class="ui-val ui-valsup" :class="{ gone: goneOf(o).has(v) }" :title="goneOf(o).has(v) ? W['value-gone'] : ''">{{ v }}</span>
             </div>
             <div v-else class="ui-vals">
-              <draggable :model-value="valuesOf(o)" :item-key="(v) => v" class="ui-valrow" :animation="150" @update:model-value="setValues(i, $event)">
+              <draggable :model-value="valuesOf(o)" :item-key="(v: any) => v" class="ui-valrow" :animation="150" @update:model-value="setValues(i, $event)">
                 <template #item="{ element: v, index: j }">
                   <span class="ui-val">{{ v }}<button type="button" :aria-label="W['remove-value']" @click="dropValue(i, j)">×</button></span>
                 </template>
               </draggable>
               <input
                 :value="typed[i] || ''" type="text" class="ui-input ui-valadd" :placeholder="W['add-value']"
-                @input="typed = { ...typed, [i]: $event.target.value }"
+                @input="typed = { ...typed, [i]: ($event.target as any).value }"
                 @keydown.enter.prevent="addValue(i)" @blur="addValue(i)"
               />
             </div>
@@ -222,13 +223,13 @@ const money = (n) => (n == null ? '' : String(n))
         </div>
         <div v-for="r in rows" :key="r.variant" class="ui-varitem">
           <span class="ui-varshape" :class="{ off: !r.sold, gone: r.gone }" :title="r.gone ? W['variant-gone'] : ''">{{ r.label }}</span>
-          <input type="number" step="0.01" min="0" class="ui-input ui-varin" :aria-label="W['v-price']" :placeholder="money(form.price)" :value="money((variants[r.variant] || {}).price)" @change="setVariant(r.variant, 'price', $event.target.value)" />
-          <input type="text" class="ui-input ui-varin" :aria-label="W['v-sku']" :placeholder="r.sku" :value="(variants[r.variant] || {}).sku || ''" @change="setVariant(r.variant, 'sku', $event.target.value)" />
+          <input type="number" step="0.01" min="0" class="ui-input ui-varin" :aria-label="W['v-price']" :placeholder="money(form.price)" :value="money((variants[r.variant] || {}).price)" @change="setVariant(r.variant, 'price', ($event.target as any).value)" />
+          <input type="text" class="ui-input ui-varin" :aria-label="W['v-sku']" :placeholder="r.sku" :value="(variants[r.variant] || {}).sku || ''" @change="setVariant(r.variant, 'sku', ($event.target as any).value)" />
           <label class="ui-varmid ui-varsold">
             <!-- a variant the CATALOGUE dropped is not the shop's to put back on sale, so the
                  switch is disabled rather than appearing to work and being overruled by the next
                  refresh. The two facts stay distinct: `unsold` is a decision, `gone` is news. -->
-            <input type="checkbox" :checked="r.sold" :disabled="r.gone" @change="setSold(r.variant, $event.target.checked)" />
+            <input type="checkbox" :checked="r.sold" :disabled="r.gone" @change="setSold(r.variant, ($event.target as any).checked)" />
             <span>{{ W['v-sold'] }}</span>
           </label>
         </div>

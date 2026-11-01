@@ -14,7 +14,7 @@ sources:
     packages/kit/supabase/functions/_shared/social,
     packages/kit/supabase/schemas/99-social.sql,
     packages/kit/build/modules/kit.mts,
-    packages/kit/build/test.mjs,
+    packages/kit/build/test.mts,
     packages/kit/build/social-automation.test.mjs,
     packages/kit/build/social-automation-db.test.mjs,
     packages/kit/build/social-automation-admin.test.mjs,

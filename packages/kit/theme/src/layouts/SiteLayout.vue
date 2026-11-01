@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { moduleOn } from 'platformkit/lib/modules.js'
 import { ROUTES, STORE_ON, DOCS_ONLY, ACCOUNTS_ON, isPageRoute, appPath, QUIZ_PATH, APP_BASE } from '../router.js'
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
@@ -6,6 +6,7 @@ import { t, us } from 'platformkit/lib/content.js'
 import { set as store } from 'platformkit/lib/store.js'
 import CommandK from '../components/content/CommandK.vue'
 import SiteMark from '../components/SiteMark.vue'
+// @ts-expect-error TS2305, from the conversion: Module '"#content"' has no exported member 'spaces'.
 import { site as SITE_RAW, spaces as SPACES_RAW } from '#content'
 /* the site's name, from content/site.md */
 const SITE_NAME = ((Array.isArray(SITE_RAW) ? SITE_RAW[0] : SITE_RAW) || {}).name || 'Site'
@@ -38,7 +39,7 @@ import LandingFooter from '../components/landing/LandingFooter.vue'
 const THEME_LINKS = themeNav({ docsOnly: DOCS_ONLY, storeOn: STORE_ON, hasPricing: isPageRoute('/pricing'), routes: ROUTES })
 /* an item pointing at a route no module answers is dropped here, once, for all three layers — so no
    layer can leave a dead link and no template has to remember to ask */
-const answers = (href) => {
+const answers = (href: any) => {
   const at = String(href || '').split(/[?#]/)[0]
   if (at === ROUTES.store || at.startsWith(ROUTES.store + '/')) return STORE_ON
   if (at === ROUTES.spaces || at.startsWith(ROUTES.spaces + '/')) return moduleOn('spaces')
@@ -50,11 +51,12 @@ const ALL_LINKS = navLinks({ content: SITE_NAV, config: SITE_LINKS, theme: THEME
 /* who sees each one: declared on the item, read through the class ladder the rest of the platform
    already uses — never a rule invented in this template, which is how the community link came to be
    hidden from everybody who had not already joined it */
-const LINKS = computed(() => ALL_LINKS.filter((l) => !l.cta && seen(l, {
+const LINKS = computed(() => ALL_LINKS.filter((l: any) => !l.cta && seen(l, {
+  // @ts-expect-error TS2322, from the conversion: Type '(slug: any) => any' is not assignable to type '() => number'.
   cls: userClass.value, tiers: memberTiers.value, rank: tierRank, staff: isStaff.value,
 })))
-const linkOn = (l) => l.prefix ? props.current.startsWith(l.href) : props.current === l.href
-const linkWord = (l) => l.label || t('nav.' + l.key)
+const linkOn = (l: any) => l.prefix ? props.current.startsWith(l.href) : props.current === l.href
+const linkWord = (l: any) => l.label || t('nav.' + l.key)
 /* across the top, and behind the menu: every link is in exactly one of them, and the menu holds
    the overflow in written order even when the burger is not otherwise needed */
 const headLinks = computed(() => LINKS.value.slice(0, shown.value))
@@ -65,7 +67,7 @@ const menuNeeded = computed(() => fit.value === 'menu' || LINKS.value.length > s
 const narrow = ref(false)
 /* the call to action: where it goes signed out and in, and its two labels' keys; the theme's default is the instrument
    where there is one, and none on a site with nothing that needs an account (a docs site has no "start here") */
-const NAV_CTA = ALL_LINKS.find((l) => l.cta) || null
+const NAV_CTA = ALL_LINKS.find((l: any) => l.cta) || null
 const CTA = NAV_CTA || SITE_CTA || (moduleOn('instrument') ? { href: QUIZ_PATH, hrefIn: APP_BASE, key: 'cta', keyIn: 'cta-in', prefix: ROUTES.diagnostics } : null)
 const ctaHref = computed(() => CTA && ((isSignedIn.value && CTA.hrefIn) || CTA.href))
 /* a site's own item says its label; one of the theme's names a string key */
@@ -100,13 +102,13 @@ const chatOn = computed(() => moduleOn('coaching') && (site.coaching || {}).wher
    rest. A site whose only rooms are private falls back to the old rule on its own, because there
    is genuinely nothing there for a visitor to walk into; and a site that would rather keep the
    link to members says so, once: platformkit.config.js `spaces.link: 'members'`. */
-const OPEN_ROOM = (SPACES_RAW || []).some((s) => s && s.discoverable !== false)
+const OPEN_ROOM = (SPACES_RAW || []).some((s: any) => s && s.discoverable !== false)
 const SPACE_LINK = ((site.spaces || {}).link || 'always')
 /* ONE ANSWER TO "IS THE COMMUNITY IN THE HEADER". A site that names the community in its own nav
    has said where it goes and what it is called, so the theme's own affordance stands down rather
    than drawing it a second time — which is what happened the moment the demo declared a nav: the
    word in the links and the icon among the icons, both pointing at the same room. */
-const NAV_HAS_SPACES = ALL_LINKS.some((l) => {
+const NAV_HAS_SPACES = ALL_LINKS.some((l: any) => {
   const at = String(l.href || '').split(/[?#]/)[0]
   return at === ROUTES.spaces || at.startsWith(ROUTES.spaces + '/')
 })
@@ -136,7 +138,7 @@ const spacesOn = computed(() => moduleOn('spaces') && !NAV_HAS_SPACES
  * The media queries in atlas.css stay as the floor: a prerendered page is read before this runs,
  * and a phone must be right in that first frame.
  */
-const headEl = ref(null)
+const headEl = ref<any>(null)
 const fit = ref('full')
 /* how many of the links are drawn across the top; the rest are in the menu, in the order written.
    Starts at every one of them, which is also what a prerendered page shows before any of this runs. */
@@ -144,7 +146,7 @@ const shown = ref(Infinity)
 let fitting = false
 /* what the row NEEDS: its flex children at their natural width (scrollWidth, so a group that clips
    still reports what it wanted) plus the gaps, against the room inside its padding */
-function overflows(row) {
+function overflows(row: any) {
   const kids = [...row.children].filter((e) => e.offsetParent !== null)
   const cs = getComputedStyle(row)
   const gap = parseFloat(cs.columnGap) || 0
@@ -184,7 +186,7 @@ async function fitHead() {
 /* is the stylesheet's own floor in force? Asked of the browser rather than repeated as 900 in a
    second place — the one number stays in atlas.css and this follows it. */
 const seeNarrow = () => { narrow.value = typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches }
-let ro = null
+let ro: any = null
 onMounted(() => {
   seeNarrow()
   fitHead()
@@ -216,17 +218,17 @@ const FOOTER = computed(() => {
 startUnreadWatch()
 startSpacesWatch()
 if (moduleOn('network')) startNetworkWatch()
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 async function doSignOut() { acctOpen.value = false; await signOut() }
-function closeAcct(e) { if (acctOpen.value && !(e.target.closest && e.target.closest('.siteacct'))) acctOpen.value = false }
+function closeAcct(e: any) { if (acctOpen.value && !(e.target.closest && e.target.closest('.siteacct'))) acctOpen.value = false }
 onMounted(() => document.addEventListener('click', closeAcct))
 onUnmounted(() => document.removeEventListener('click', closeAcct))
 
-const palette = ref(null)
+const palette = ref<any>(null)
 
 /* the mobile nav menu: the links collapse behind a hamburger below 700px */
 const menuOpen = ref(false)
-function onKey(e) { if (e.key === 'Escape') menuOpen.value = false }
+function onKey(e: any) { if (e.key === 'Escape') menuOpen.value = false }
 onMounted(() => window.addEventListener('keydown', onKey))
 onUnmounted(() => window.removeEventListener('keydown', onKey))
 

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { VOICE, MIC, micArm, micListen } from 'platformkit/instrument/engine/voice.js'
 import { ug } from '../strings.js'
@@ -19,17 +20,17 @@ const LP = ug('quiz', 'latency').prompt || {}
  * lands in the same input and the same two numbers come out of it — nothing to
  * press there either.
  */
-const props = defineProps({ screen: { type: Object, required: true } })
+const props = defineProps({ screen: { type: Object as PropType<any>, required: true } })
 const emit = defineEmits(['answer'])
 
 const typed = ref('')
-const input = ref(null)
+const input = ref<any>(null)
 const heard = ref(false)
 
 let t0 = 0
-let first = null      /* ms to the first character */
-let last = null       /* ms to the most recent one */
-let take = null
+let first: any = null      /* ms to the first character */
+let last: any = null       /* ms to the most recent one */
+let take: any = null
 let sent = false
 let source = 'typed'
 
@@ -52,7 +53,7 @@ function submit() {
 function listen() {
   take = micListen({
     t0,
-    onPartial(text) {
+    onPartial(text: any) {
       /* straight into the same input, so the two routes are one measurement */
       if (!text) return
       heard.value = true
@@ -60,7 +61,7 @@ function listen() {
       typed.value = text
       onInput()
     },
-    onDone(r) {
+    onDone(r: any) {
       if (sent) return
       if (r.onset === null) { take = null; return }   /* nothing said — carry on typing */
       source = 'spoken'
@@ -87,7 +88,7 @@ onMounted(() => {
   setTimeout(focus, 30)          /* some browsers hand focus back a tick late */
   if (VOICE.mode === 'off') return
   if (MIC.stream) return listen()
-  micArm().then((ok) => { if (ok && !sent) { t0 = performance.now(); listen() } })
+  micArm().then((ok: any) => { if (ok && !sent) { t0 = performance.now(); listen() } })
 })
 
 onBeforeUnmount(() => {

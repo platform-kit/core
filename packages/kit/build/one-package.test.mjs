@@ -38,7 +38,7 @@ ok('npm packs it', pack.status === 0 && !!packed, (pack.stderr || '').slice(-600
 if (packed) {
   const files = new Set(packed.files.map((f) => f.path))
   ok('…with the command', files.has('bin/platformkit.mjs'))
-  ok('…the theme', files.has('theme/src/main.js') && files.has('theme/src/theme.js'))
+  ok('…the theme', files.has('theme/src/main.ts') && files.has('theme/src/theme.ts'))
   /* Node never strips types inside node_modules, so every TypeScript source arrives with the JavaScript compiled from it */
   const uncompiled = [...files].filter((f) => /\.m?ts$/.test(f) && !/\.d\.m?ts$/.test(f) && /^(bin|build|src|vite)\//.test(f) && !/\.test\.ts$|hyperswitch-browser\.steps\.ts$/.test(f) && !files.has(f.replace(/\.(m?)ts$/, '.$1js')))
   ok('…every TypeScript source with its compiled JavaScript', uncompiled.length === 0, uncompiled.join(', '))

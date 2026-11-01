@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { computed } from 'vue'
 import { md } from './md.js'
 import { glyph } from './icons.js'
@@ -16,14 +17,14 @@ import SectionHead from './SectionHead.vue'
 const props = defineProps({
   badge: { type: String, default: '' }, eyebrow: { type: String, default: '' }, heading: { type: String, default: '' }, lead: { type: String, default: '' },
   layout: { type: String, default: 'tiles' },   /* tiles | icons | banners | circles */
-  ids: { type: Array, default: () => [] },      /* a picked list; blank = every collection */
-  icons: { type: Object, default: () => ({}) }, /* id → glyph (the icons layout) */
+  ids: { type: Array as PropType<any[]>, default: () => [] },      /* a picked list; blank = every collection */
+  icons: { type: Object as PropType<any>, default: () => ({}) }, /* id → glyph (the icons layout) */
   limit: { type: Number, default: 0 },
   cta: { type: String, default: '' }, href: { type: String, default: '' },
 })
 const W = (us('sections').collections || {}).tile || {}
-const items = computed(() => { let list = props.ids.length ? props.ids.map((id) => COLLECTIONS.value.find((c) => c.id === id)).filter(Boolean) : COLLECTIONS.value; return props.limit > 0 ? list.slice(0, props.limit) : list })
-const count = (c) => (W.count || '{n} items').replace('{n}', c.items.length)
+const items = computed(() => { let list = props.ids.length ? props.ids.map((id) => COLLECTIONS.value.find((c: any) => c.id === id)).filter(Boolean) : COLLECTIONS.value; return props.limit > 0 ? list.slice(0, props.limit) : list })
+const count = (c: any) => (W.count || '{n} items').replace('{n}', c.items.length)
 </script>
 <template>
   <section class="lpsec lpcollections" :class="'lpcl-' + layout">
@@ -34,7 +35,7 @@ const count = (c) => (W.count || '{n} items').replace('{n}', c.items.length)
       </div>
       <slot name="tiles" :items="items" :md="md">
         <div v-if="items.length" class="lpcl-grid lprv lpd1" :class="'lpcl-n' + Math.min(6, items.length)">
-          <a v-for="(c, i) in items" :key="c.id" :href="c.href" class="lpcl lpk" :style="{ '--k': (0.05 + i * 0.06) + 's' }">
+          <!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. --><a v-for="(c, i) in items" :key="c.id" :href="c.href" class="lpcl lpk" :style="{ '--k': (0.05 + i * 0.06) + 's' }">
             <template v-if="layout === 'icons'"><span class="lpcl-ico" v-html="glyph(icons[c.id] || 'layers')"></span><b>{{ c.title }}</b><span class="lpcl-count">{{ count(c) }}</span></template>
             <template v-else-if="layout === 'circles'"><span class="lpcl-circ"><img v-if="c.image || c.covers[0]" :src="c.image || c.covers[0]" :alt="c.title" loading="lazy" /></span><b>{{ c.title }}</b><span class="lpcl-count">{{ count(c) }}</span></template>
             <template v-else>

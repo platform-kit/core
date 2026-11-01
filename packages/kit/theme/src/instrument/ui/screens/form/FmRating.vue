@@ -1,16 +1,17 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* a rating: `outof` stars (or hearts), the chosen one and every one before it lit */
 import { computed, ref } from 'vue'
 import FmLabel from './FmLabel.vue'
-const props = defineProps({ field: { type: Object, required: true }, modelValue: { default: null }, ctx: { type: Object, default: () => ({}) }, words: { type: Object, default: () => ({}) }, error: { type: String, default: '' } })
+const props = defineProps({ field: { type: Object as PropType<any>, required: true }, modelValue: { default: null }, ctx: { type: Object as PropType<any>, default: () => ({}) }, words: { type: Object as PropType<any>, default: () => ({}) }, error: { type: String, default: '' } })
 const emit = defineEmits(['update:modelValue', 'enter'])
 const p = computed(() => props.field.params || {})
 const n = computed(() => Number(p.value.outof) || 5)
 const hover = ref(0)
 const value = computed(() => Number(props.modelValue) || 0)
-const lit = (i) => i <= (hover.value || value.value)
+const lit = (i: any) => i <= (hover.value || value.value)
 const heart = computed(() => p.value.icon === 'heart' || p.value.icon === 'hearts')
-function pick(i) { if (p.value.disabled !== undefined) return; emit('update:modelValue', i); emit('enter', 'pick') }
+function pick(i: any) { if (p.value.disabled !== undefined) return; emit('update:modelValue', i); emit('enter', 'pick') }
 </script>
 
 <template>

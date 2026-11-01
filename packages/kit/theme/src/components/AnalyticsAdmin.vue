@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The Analytics & KPI dashboard — the one admin surface that ships to
  * production (a lazy chunk; echarts loads only here). Two views over the same
@@ -40,8 +40,8 @@ const EX = T.experiments.ui
 const XP = T.explore.ui
 const TN = T.tests.names
 /* metric ids carry underscores; the strings file keys them with hyphens */
-const MN = new Proxy(T.metrics.names, { get: (o, k) => { const key = String(k); const reg = (SITE_EVENTS || []).find((e) => e.key === key); return reg ? reg.label : o[key.replace(/_/g, '-')] } })
-const METRICS = [...(SITE_EVENTS || []).map((e) => e.key), 'visitors', 'pageviews', 'sessions', 'users', 'content_views', 'cta_impressions', 'cta_clicks', 'add_to_cart', 'checkouts', 'exposures', 'signups', 'purchases', 'revenue', 'rounds', 'answers', 'new_members']
+const MN = new Proxy(T.metrics.names, { get: (o, k) => { const key = String(k); const reg = (SITE_EVENTS || []).find((e: any) => (e as any).key === key); return reg ? (reg as any).label : o[key.replace(/_/g, '-')] } })
+const METRICS = [...(SITE_EVENTS || []).map((e: any) => (e as any).key), 'visitors', 'pageviews', 'sessions', 'users', 'content_views', 'cta_impressions', 'cta_clicks', 'add_to_cart', 'checkouts', 'exposures', 'signups', 'purchases', 'revenue', 'rounds', 'answers', 'new_members']
 
 /* ---- state ---- */
 const days = ref(30)
@@ -51,13 +51,13 @@ const audience = ref('all')
 /* the chips and the source (analytics-filters.js — in the address, shared by the three pages); the site's own events */
 const FW = T.page.filters || {}
 const { filters, toggle: toggleFilter, set: setFilter, has, forRead } = useFilters(FW)
-const GOALS = (SITE_EVENTS || []).filter((e) => e.goal)
-const EVENT_LABEL = Object.fromEntries((SITE_EVENTS || []).map((e) => [e.key, e.label]))
-const eventLabel = (k) => EVENT_LABEL[k] || k
+const GOALS = (SITE_EVENTS || []).filter((e: any) => (e as any).goal)
+const EVENT_LABEL = Object.fromEntries((SITE_EVENTS || []).map((e: any) => [(e as any).key, (e as any).label]))
+const eventLabel = (k: any) => EVENT_LABEL[k] || k
 const EV = T.events ? T.events.ui : {}
-const events = ref(null)
+const events = ref<any>(null)
 const openEvent = ref('')
-const retention = ref(null)
+const retention = ref<any>(null)
 /* the tabs: overview · acquisition · audience · content · commerce · experiments · explore, one at a time, remembered per browser */
 const TB = T.page.tabs || {}
 const AQ = T.acquisition ? T.acquisition.ui : {}
@@ -71,23 +71,23 @@ const tabs = computed(() => [
 ])
 watch(tabs, (list) => { if (!list.some((t) => t.key === tab.value)) tab.value = 'overview' })
 const state = ref('idle')      /* idle | loading | ok | denied | error */
-const data = ref(null)
-const members = ref(null)
-const now = ref(null)
-const series = ref([])         /* the window, one row per day */
-const seriesPrev = ref([])     /* the window before it, same length */
+const data = ref<any>(null)
+const members = ref<any>(null)
+const now = ref<any>(null)
+const series = ref<any>([])         /* the window, one row per day */
+const seriesPrev = ref<any>([])     /* the window before it, same length */
 const tzHere = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } catch (e) { return 'UTC' } })()
 
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; data.value = null; return }
   state.value = 'loading'
-  const goals = GOALS.map((g) => ({ key: g.key, label: g.label, value: g.value || null }))
+  const goals = GOALS.map((g: any) => ({ key: (g as any).key, label: (g as any).label, value: (g as any).value || null }))
   const [k, s, m, r, e] = await Promise.all([
-    supabase.rpc('admin_kpis', { days: days.value, audience: audience.value, tz: tzHere, filters: forRead.value, goals }),
-    supabase.rpc('admin_series', { days: days.value * 2, audience: audience.value, filters: forRead.value, goals: (SITE_EVENTS || []).map((g) => ({ key: g.key })) }),
-    MEMBERS_ON ? supabase.rpc('admin_members', { days: days.value }) : Promise.resolve({ data: null, error: null }),
-    supabase.rpc('admin_retention', { weeks: 8, audience: audience.value, filters: forRead.value }),
-    supabase.rpc('admin_events', { days: days.value, audience: audience.value, filters: forRead.value, event: openEvent.value || null }),
+    (supabase as any).rpc('admin_kpis', { days: days.value, audience: audience.value, tz: tzHere, filters: forRead.value, goals }),
+    (supabase as any).rpc('admin_series', { days: days.value * 2, audience: audience.value, filters: forRead.value, goals: (SITE_EVENTS || []).map((g: any) => ({ key: (g as any).key })) }),
+    MEMBERS_ON ? (supabase as any).rpc('admin_members', { days: days.value }) : Promise.resolve({ data: null, error: null }),
+    (supabase as any).rpc('admin_retention', { weeks: 8, audience: audience.value, filters: forRead.value }),
+    (supabase as any).rpc('admin_events', { days: days.value, audience: audience.value, filters: forRead.value, event: openEvent.value || null }),
   ])
   const err = k.error || s.error || m.error || r.error || e.error
   if (err) { state.value = (err.code === '42501' || /admin only|permission/i.test(err.message || '')) ? 'denied' : 'error'; return }
@@ -102,27 +102,28 @@ async function load() {
   loadNow()
 }
 /* right now: asked on load and every minute while the tab is visible */
-async function loadNow() { if (!configured || !isSignedIn.value) return; const { data: n } = await supabase.rpc('admin_now'); if (n) now.value = n }
-let nowTimer = null
+async function loadNow() { if (!configured || !isSignedIn.value) return; const { data: n } = await (supabase as any).rpc('admin_now'); if (n) now.value = n }
+let nowTimer: any = null
 onMounted(() => { nowTimer = setInterval(() => { if (document.visibilityState !== 'hidden' && state.value === 'ok') loadNow() }, 60000) })
 onBeforeUnmount(() => clearInterval(nowTimer))
 onMounted(load)
 watch([isSignedIn, days, audience, () => JSON.stringify(forRead.value)], load)
 /* one event opened on the Events tab: its series, channels and values */
-async function openTheEvent(type) { openEvent.value = openEvent.value === type ? '' : type; if (!openEvent.value) return; const { data: e } = await supabase.rpc('admin_events', { days: days.value, audience: audience.value, filters: forRead.value, event: openEvent.value }); if (e) events.value = e }
+async function openTheEvent(type: any) { openEvent.value = openEvent.value === type ? '' : type; if (!openEvent.value) return; const { data: e } = await (supabase as any).rpc('admin_events', { days: days.value, audience: audience.value, filters: forRead.value, event: openEvent.value }); if (e) events.value = e }
 
 /* ---- helpers ---- */
-const num = (n) => new Intl.NumberFormat().format(Math.round(n || 0))
-const money = (n, cur) => new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase(), maximumFractionDigits: 0 }).format((n || 0) / 100)
-const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0)
-const pct1 = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : 0)
-const per100 = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : 0)
-const secs = (s) => (s >= 60 ? Math.floor(s / 60) + 'm ' + Math.round(s % 60) + 's' : Math.round(s || 0) + 's')
+const num = (n: any) => new Intl.NumberFormat().format(Math.round(n || 0))
+const money = (n: any, cur: any) => new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase(), maximumFractionDigits: 0 }).format((n || 0) / 100)
+const pct = (a: any, b: any) => (b ? Math.round((a / b) * 100) : 0)
+const pct1 = (a: any, b: any) => (b ? Math.round((a / b) * 1000) / 10 : 0)
+const per100 = (a: any, b: any) => (b ? Math.round((a / b) * 1000) / 10 : 0)
+const secs = (s: any) => (s >= 60 ? Math.floor(s / 60) + 'm ' + Math.round(s % 60) + 's' : Math.round(s || 0) + 's')
 /* a top product arrives as its sku — the offer's own slug; the product file names it */
-const offerName = (sku) => { const o = PRODUCTS.find((x) => x.sku === sku); return o ? o.title : sku }
+const offerName = (sku: any) => { const o = PRODUCTS.find((x: any) => x.sku === sku); return o ? o.title : sku }
 /* a day arrives as a date, or a timestamp at midnight: the first ten characters are the date either way */
-const dayKey = (d) => String(d || '').slice(0, 10)
-const day = (d) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const dayKey = (d: any) => String(d || '').slice(0, 10)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
 const rangeLabel = computed(() => H.range.replace('{days}', days.value))
 const audienceLine = computed(() => (audience.value === 'all' ? '' : String(H['audience-line'] || '').replace('{audience}', H['audience-' + audience.value] || audience.value)))
 const totals = computed(() => (data.value && data.value.totals) || {})
@@ -133,93 +134,94 @@ const mem = computed(() => (data.value && data.value.membership) || { active: 0,
 const diag = computed(() => (data.value && data.value.diagnostic) || { rounds: 0, answers: 0, readers: 0 })
 const aud = computed(() => (data.value && data.value.audience) || {})
 const cur = computed(() => rev.value.currency)
-const delta = (now, before) => {
+const delta: any = (now: any, before: any) => {
   if (!before) return null   /* nothing to compare with yet */
   const d = Math.round(((now - before) / before) * 100)
   return { dir: d > 0 ? 'up' : d < 0 ? 'down' : 'flat', text: (d > 0 ? '+' : '') + d + '%' }
 }
 /* a delta where lower is better (bounce): the colour follows the meaning */
-const deltaDown = (now, before) => { const d = delta(now, before); return d ? { ...d, dir: d.dir === 'up' ? 'down' : d.dir === 'down' ? 'up' : 'flat' } : null }
-const hasAny = computed(() => (totals.value.pageviews || 0) + (totals.value.content_views || 0) + (diag.value.answers || 0) + (rev.value.purchases || 0) > 0)
-const channelName = (c) => AQ['channel-' + c] || c
-const wordOf = (prefix, k) => AU[prefix + '-' + k] || k
+const deltaDown = (now: any, before: any) => { const d = delta(now, before); return d ? { ...d, dir: d.dir === 'up' ? 'down' : d.dir === 'down' ? 'up' : 'flat' } : null }
+const hasAny = computed(() => ((totals.value as any).pageviews || 0) + ((totals.value as any).content_views || 0) + (diag.value.answers || 0) + (rev.value.purchases || 0) > 0)
+const channelName = (c: any) => AQ['channel-' + c] || c
+const wordOf = (prefix: any, k: any) => AU[prefix + '-' + k] || k
 
 /* the headline: visitors, views, sessions, views per visit, bounce, session length — each against the window before */
-const bounceNow = computed(() => pct(totals.value.bounce_sessions, totals.value.sessions))
-const bouncePrev = computed(() => pct(prev.value.bounce_sessions, prev.value.sessions))
+const bounceNow = computed(() => pct((totals.value as any).bounce_sessions, (totals.value as any).sessions))
+const bouncePrev = computed(() => pct((prev.value as any).bounce_sessions, (prev.value as any).sessions))
 const tiles = computed(() => [
-  { label: K.visitors, value: num(totals.value.visitors), d: delta(totals.value.visitors, prev.value.visitors), spark: 'visitors' },
-  { label: K.pageviews, value: num(totals.value.pageviews), d: delta(totals.value.pageviews, prev.value.pageviews), spark: 'pageviews' },
-  { label: K.sessions, value: num(totals.value.sessions), d: delta(totals.value.sessions, prev.value.sessions), spark: 'sessions' },
-  { label: K['views-per-visit'], value: String(totals.value.views_per_visit || 0), d: delta(totals.value.views_per_visit, prev.value.views_per_visit) },
+  { label: K.visitors, value: num((totals.value as any).visitors), d: delta((totals.value as any).visitors, (prev.value as any).visitors), spark: 'visitors' },
+  { label: K.pageviews, value: num((totals.value as any).pageviews), d: delta((totals.value as any).pageviews, (prev.value as any).pageviews), spark: 'pageviews' },
+  { label: K.sessions, value: num((totals.value as any).sessions), d: delta((totals.value as any).sessions, (prev.value as any).sessions), spark: 'sessions' },
+  { label: K['views-per-visit'], value: String((totals.value as any).views_per_visit || 0), d: delta((totals.value as any).views_per_visit, (prev.value as any).views_per_visit) },
   { label: K.bounce, value: bounceNow.value + '%', d: deltaDown(bounceNow.value, bouncePrev.value) },
-  { label: K['session-length'], value: secs(totals.value.avg_session_seconds), d: delta(totals.value.avg_session_seconds, prev.value.avg_session_seconds) },
+  { label: K['session-length'], value: secs((totals.value as any).avg_session_seconds), d: delta((totals.value as any).avg_session_seconds, (prev.value as any).avg_session_seconds) },
 ])
 /* the goals: a count, its rate per hundred visitors, against the window before; only the goals the site can have */
 const goalRows = computed(() => {
-  const g = goals.value, v = totals.value.visitors || 0, pv = prev.value.visitors || 0
-  const row = (key, label, spark) => { const x = g[key] || { n: 0, prev: 0, credited: 0 }; return { key, label, n: x.n, prev: x.prev, credited: x.credited, rate: per100(x.n, v), prevRate: per100(x.prev, pv), d: delta(x.n, x.prev), spark } }
-  const custom = (g.custom || []).map((c) => { const reg = GOALS.find((x) => x.key === c.key); return { key: c.key, label: reg ? reg.label : c.key, n: c.n, prev: c.prev, credited: c.n, rate: per100(c.n, v), prevRate: per100(c.prev, pv), d: delta(c.n, c.prev), spark: c.key, value: reg && reg.value ? c.value : null } })
+  const g: any = goals.value, v = (totals.value as any).visitors || 0, pv = (prev.value as any).visitors || 0
+  const row = (key: any, label: any, spark: any) => { const x: any = g[key] || { n: 0, prev: 0, credited: 0 }; return { key, label, n: x.n, prev: x.prev, credited: x.credited, rate: per100(x.n, v), prevRate: per100(x.prev, pv), d: delta(x.n, x.prev), spark } }
+  const custom = (g.custom || []).map((c: any) => { const reg = GOALS.find((x: any) => (x as any).key === c.key); return { key: c.key, label: reg ? (reg as any).label : c.key, n: c.n, prev: c.prev, credited: c.n, rate: per100(c.n, v), prevRate: per100(c.prev, pv), d: delta(c.n, c.prev), spark: c.key, value: reg && (reg as any).value ? c.value : null } })
   return [row('signups', K['goal-signups'], 'signups'), ...(STORE_ON ? [row('purchases', K['goal-purchases'], 'purchases')] : []), ...(MEMBERS_ON ? [row('subscriptions', K['goal-subscriptions'], 'new_members')] : []), ...custom]
 })
 /* a spark only when the days have a shape; a flat line at zero says nothing */
-const sparkOn = (key) => series.value.some((r) => (r[key] || 0) > 0)
-const sparkPath = (key) => {
+const sparkOn = (key: any) => series.value.some((r: any) => (r[key] || 0) > 0)
+const sparkPath = (key: any) => {
   const rows = series.value
   if (rows.length < 2) return ''
-  const max = Math.max(1, ...rows.map((r) => r[key] || 0))
-  return rows.map((r, i) => `${(i / (rows.length - 1)) * 100},${30 - ((r[key] || 0) / max) * 26 - 2}`).join(' ')
+  const max = Math.max(1, ...rows.map((r: any) => r[key] || 0))
+  return rows.map((r: any, i: any) => `${(i / (rows.length - 1)) * 100},${30 - ((r[key] || 0) / max) * 26 - 2}`).join(' ')
 }
 
 /* bars for the lists */
-const bars = (list, key) => {
+const bars = (list: any, key: any) => {
   const rows = list || []
-  const max = Math.max(1, ...rows.map((x) => x[key] || 0))
-  return rows.map((x) => ({ ...x, w: ((x[key] || 0) / max) * 100 }))
+  const max = Math.max(1, ...rows.map((x: any) => x[key] || 0))
+  return rows.map((x: any) => ({ ...x, w: ((x[key] || 0) / max) * 100 }))
 }
-const typeName = (n) => TYPEN[n] || String(n)
-const sum = (rows, k) => rows.reduce((n, r) => n + (r[k] || 0), 0)
+const typeName = (n: any) => (TYPEN as any)[n] || String(n)
+const sum = (rows: any, k: any) => rows.reduce((n: any, r: any) => n + (r[k] || 0), 0)
 
 /* ---- acquisition ---- */
-const channels = computed(() => bars((data.value && data.value.channels) || [], 'visitors').map((c) => ({ ...c, bounce: pct(c.bounces, c.sessions), rate: per100(c.signups, c.visitors), d: delta(c.visitors, c.prev_visitors) })))
+const channels = computed(() => bars((data.value && data.value.channels) || [], 'visitors').map((c: any) => ({ ...c, bounce: pct(c.bounces, c.sessions), rate: per100(c.signups, c.visitors), d: delta(c.visitors, c.prev_visitors) })))
 const openChannel = ref('')
-const refsOf = (channel) => bars(((data.value && data.value.referrers) || []).filter((r) => r.channel === channel), 'sessions')
+const refsOf = (channel: any) => bars(((data.value && data.value.referrers) || []).filter((r: any) => (r as any).channel === channel), 'sessions')
 const campaigns = computed(() => bars((data.value && data.value.campaigns) || [], 'visitors'))
-const entryRows = computed(() => bars(pub(data.value && data.value.entry_pages), 'sessions').map((r) => ({ ...r, bounce: pct(r.bounces, r.sessions) })))
+const entryRows = computed(() => bars(pub(data.value && data.value.entry_pages), 'sessions').map((r: any) => ({ ...r, bounce: pct(r.bounces, r.sessions) })))
 const exitRows = computed(() => bars(pub(data.value && data.value.exit_pages), 'sessions'))
 
 /* ---- audience ---- */
-const facet = (key, prefix) => bars(((aud.value[key]) || []).map((r) => ({ ...r, label: prefix ? wordOf(prefix, r.key) : r.key })), 'n')
-const who = computed(() => { const w = aud.value.who || {}; return bars([{ key: 'guest', label: AU['who-guest'], n: w.guest || 0 }, { key: 'user', label: AU['who-user'], n: w.user || 0 }, { key: 'member', label: AU['who-member'], n: w.member || 0 }], 'n') })
-const newShare = computed(() => pct(aud.value.new, (aud.value.new || 0) + (aud.value.returning || 0)))
-const countryName = (() => { try { const dn = new Intl.DisplayNames(undefined, { type: 'region' }); return (c) => (c === 'unknown' ? AU['os-unknown'] || 'Unknown' : (() => { try { return dn.of(c) } catch (e) { return c } })()) } catch (e) { return (c) => c } })()
-const countries = computed(() => bars(((aud.value.countries) || []).map((r) => ({ ...r, label: countryName(r.key) })), 'n'))
+const facet = (key: any, prefix: any) => bars((((aud as any).value[key]) || []).map((r: any) => ({ ...r, label: prefix ? wordOf(prefix, r.key) : r.key })), 'n')
+const who = computed(() => { const w = (aud.value as any).who || {}; return bars([{ key: 'guest', label: AU['who-guest'], n: w.guest || 0 }, { key: 'user', label: AU['who-user'], n: w.user || 0 }, { key: 'member', label: AU['who-member'], n: w.member || 0 }], 'n') })
+const newShare = computed(() => pct((aud.value as any).new, ((aud.value as any).new || 0) + ((aud.value as any).returning || 0)))
+const countryName = (() => { try { const dn = new Intl.DisplayNames(undefined, { type: 'region' }); return (c: any) => (c === 'unknown' ? AU['os-unknown'] || 'Unknown' : (() => { try { return dn.of(c) } catch (e) { return c } })()) } catch (e) { return (c: any) => c } })()
+const countries = computed(() => bars((((aud.value as any).countries) || []).map((r: any) => ({ ...r, label: countryName(r.key) })), 'n'))
 /* the retention grid: a row per week, the cohort's size, then the share back in each later week */
-const cohorts = computed(() => (retention.value || []).map((r) => ({ ...r, label: new Date(r.week + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) })))
-const cohortWeeks = computed(() => Math.max(0, ...cohorts.value.map((r) => (r.back || []).length)))
+// @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
+const cohorts = computed(() => (retention.value || []).map((r) => ({ ...r, label: new Date((r as any).week + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) })))
+const cohortWeeks = computed(() => Math.max(0, ...cohorts.value.map((r: any) => (r.back || []).length)))
 /* the events tab: every name sent, the registered ones by their label and first */
-const eventRows = computed(() => { const list = ((events.value && events.value.events) || []).map((e) => ({ ...e, label: eventLabel(e.type), registered: !!EVENT_LABEL[e.type], goal: GOALS.some((g) => g.key === e.type), perSession: events.value.sessions ? Math.round((e.n / events.value.sessions) * 100) / 100 : 0, d: delta(e.n, e.prev) })); const max = Math.max(1, ...list.map((e) => e.n)); return list.sort((a, b) => (b.registered - a.registered) || (b.n - a.n)).map((e) => ({ ...e, w: (e.n / max) * 100 })) })
+const eventRows = computed(() => { const list = ((events.value && events.value.events) || []).map((e: any) => ({ ...e, label: eventLabel((e as any).type), registered: !!EVENT_LABEL[(e as any).type], goal: GOALS.some((g: any) => (g as any).key === (e as any).type), perSession: events.value.sessions ? Math.round(((e as any).n / events.value.sessions) * 100) / 100 : 0, d: delta((e as any).n, (e as any).prev) })); const max = Math.max(1, ...list.map((e: any) => e.n)); return list.sort((a: any, b: any) => (b.registered - a.registered) || (b.n - a.n)).map((e: any) => ({ ...e, w: (e.n / max) * 100 })) })
 const one = computed(() => (events.value && events.value.one) || null)
-const oneOption = computed(() => { void chartKey.value; void chartKind.value; const b = base(), t = tokens(), rows = (one.value && one.value.series) || []; return { ...b, xAxis: timeAxis({ ...b.xAxis, data: rows.map((r) => day(r.day)) }), yAxis: { ...b.yAxis, minInterval: 1 }, series: [timeSeries({ name: EV.count, color: t.accent, area: true, data: rows.map((r) => r.n) }), timeSeries({ name: EV.people, color: PALETTE[1], data: rows.map((r) => r.people) })] } })
+const oneOption = computed(() => { void chartKey.value; void chartKind.value; const b = base(), t = tokens(), rows = (one.value && (one.value as any).series) || []; return { ...b, xAxis: timeAxis({ ...b.xAxis, data: rows.map((r: any) => day((r as any).day)) }), yAxis: { ...b.yAxis, minInterval: 1 }, series: [timeSeries({ name: EV.count, color: t.accent, area: true, data: rows.map((r: any) => (r as any).n) }), timeSeries({ name: EV.people, color: PALETTE[1], data: rows.map((r: any) => (r as any).people) })] } })
 /* the hours: a 7 × 24 grid, the rows the days of the week from Monday, each cell its share of the busiest hour */
 const DOW = (() => { const b = new Date(2024, 0, 1); return [1, 2, 3, 4, 5, 6, 0].map((d) => { const t = new Date(b); t.setDate(b.getDate() + ((d - 1 + 7) % 7)); return { d, label: t.toLocaleDateString(undefined, { weekday: 'short' }) } }) })()
 const hours = computed(() => {
-  const cells = {}; let max = 0
-  for (const [dow, hr, n] of aud.value.hours || []) { cells[dow + ':' + hr] = n; max = Math.max(max, n) }
+  const cells: any = {}; let max = 0
+  for (const [dow, hr, n] of (aud.value as any).hours || []) { cells[dow + ':' + hr] = n; max = Math.max(max, n) }
   return { max, rows: DOW.map((w) => ({ ...w, cells: Array.from({ length: 24 }, (_, h) => ({ h, n: cells[w.d + ':' + h] || 0, a: max ? (cells[w.d + ':' + h] || 0) / max : 0 })) })) }
 })
-const hourLabel = (h) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
+const hourLabel = (h: any) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
 
 /* ---- the membership as a business ---- */
-const mm = computed(() => members.value || null)
-const membersSeries = computed(() => { const rows = (mm.value && mm.value.series) || []; let acc = (mm.value && mm.value.members) || 0; const back = rows.slice().reverse().map((r) => { const at = acc; acc -= (r.joined || 0) - (r.lapsed || 0); return { day: r.day, members: at, joined: r.joined, lapsed: r.lapsed } }); return back.reverse() })
+const mm = computed<any>(() => members.value || null)
+const membersSeries = computed(() => { const rows = (mm.value && (mm.value as any).series) || []; let acc = (mm.value && (mm.value as any).members) || 0; const back = rows.slice().reverse().map((r: any) => { const at = acc; acc -= ((r as any).joined || 0) - ((r as any).lapsed || 0); return { day: (r as any).day, members: at, joined: (r as any).joined, lapsed: (r as any).lapsed } }); return back.reverse() })
 const membersOption = computed(() => {
   void chartKey.value; void chartKind.value
   const b = base(), t = tokens(), rows = membersSeries.value
-  return { ...b, xAxis: timeAxis({ ...b.xAxis, data: rows.map((r) => day(r.day)) }), yAxis: { ...b.yAxis, minInterval: 1 }, series: [
-    timeSeries({ name: K.members, color: t.accent, area: true, data: rows.map((r) => r.members) }),
-    timeSeries({ name: K.joined, color: PALETTE[3], data: rows.map((r) => r.joined) }),
-    timeSeries({ name: K.lapsed, color: PALETTE[4], data: rows.map((r) => r.lapsed) }),
+  return { ...b, xAxis: timeAxis({ ...b.xAxis, data: rows.map((r: any) => day(r.day)) }), yAxis: { ...b.yAxis, minInterval: 1 }, series: [
+    timeSeries({ name: K.members, color: t.accent, area: true, data: rows.map((r: any) => r.members) }),
+    timeSeries({ name: K.joined, color: PALETTE[3], data: rows.map((r: any) => r.joined) }),
+    timeSeries({ name: K.lapsed, color: PALETTE[4], data: rows.map((r: any) => r.lapsed) }),
   ] }
 })
 
@@ -229,8 +231,9 @@ onMounted(() => { const mo = new MutationObserver(() => chartKey.value++); mo.ob
 const trafficOption = computed(() => {
   void chartKey.value; void chartKind.value   /* re-read the theme's tokens when it flips, redraw when the kind does */
   const b = base(), t = tokens()
-  const x = series.value.map((r) => day(r.day))
-  const line = (name, key, color, area) => timeSeries({ name, color, area, data: series.value.map((r) => r[key] || 0) })
+  const x = series.value.map((r: any) => day((r as any).day))
+  const line = (name: any, key: any, color: any, area: any) => timeSeries({ name, color, area, data: series.value.map((r: any) => r[key] || 0) })
+  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   return { ...b, xAxis: timeAxis({ ...b.xAxis, data: x }), series: [line(MN.visitors, 'visitors', t.accent, true), line(MN.pageviews, 'pageviews', PALETTE[1]), line(MN.sessions, 'sessions', PALETTE[2])] }
 })
 const typesOption = computed(() => {
@@ -238,28 +241,28 @@ const typesOption = computed(() => {
   const b = base(), t = tokens()
   const rows = ((data.value && data.value.types) || []).slice().reverse()
   return { ...b, grid: { left: 8, right: 30, top: 8, bottom: 8, containLabel: true }, tooltip: { ...b.tooltip, trigger: 'item' }, legend: { show: false },
-    xAxis: { ...b.yAxis, type: 'value', minInterval: 1 }, yAxis: { ...b.xAxis, type: 'category', data: rows.map((r) => typeName(r.type)), boundaryGap: true },
-    series: [{ type: 'bar', data: rows.map((r) => r.readers), barMaxWidth: 16, itemStyle: { color: t.accent, borderRadius: [0, 6, 6, 0] }, label: { show: true, position: 'right', color: t.ink2, fontFamily: t.mono, fontSize: 11 } }] }
+    xAxis: { ...b.yAxis, type: 'value', minInterval: 1 }, yAxis: { ...b.xAxis, type: 'category', data: rows.map((r: any) => typeName((r as any).type)), boundaryGap: true },
+    series: [{ type: 'bar', data: rows.map((r: any) => (r as any).readers), barMaxWidth: 16, itemStyle: { color: t.accent, borderRadius: [0, 6, 6, 0] }, label: { show: true, position: 'right', color: t.ink2, fontFamily: t.mono, fontSize: 11 } }] }
 })
 
 /* experiments: rate, leader, lift — and status, dates and the declared winner
    from the experiment's own record (content/experiments) when it still exists */
-const experiments = computed(() => ((data.value && data.value.experiments) || []).map((e) => {
-  const rec = (EXPERIMENTS || []).find((x) => x.id === e.experiment) || null
-  const vs = (e.variants || []).map((v) => ({ ...v, rate: v.exposures ? v.conversions / v.exposures : 0 }))
-  const leader = vs.slice().sort((a, b) => b.rate - a.rate)[0] || null
-  const others = vs.filter((v) => v !== leader)
-  const baseRate = others.length ? Math.max(...others.map((v) => v.rate)) : 0
+const experiments = computed(() => ((data.value && data.value.experiments) || []).map((e: any) => {
+  const rec = (EXPERIMENTS || []).find((x: any) => x.id === (e as any).experiment) || null
+  const vs = ((e as any).variants || []).map((v: any) => ({ ...v, rate: v.exposures ? v.conversions / v.exposures : 0 }))
+  const leader = vs.slice().sort((a: any, b: any) => b.rate - a.rate)[0] || null
+  const others = vs.filter((v: any) => v !== leader)
+  const baseRate = others.length ? Math.max(...others.map((v: any) => v.rate)) : 0
   const lift = leader && baseRate ? Math.round(((leader.rate - baseRate) / baseRate) * 100) : null
-  const started = e.started_at ? new Date(e.started_at) : null
+  const started = (e as any).started_at ? new Date((e as any).started_at) : null
   const endsMs = rec ? endsAt(rec, e) : (started ? started.getTime() + 14 * 86400000 : null)
   const ends = endsMs ? new Date(endsMs) : null
   const status = rec ? statusOf(rec, e) : (ends && Date.now() > ends.getTime() ? 'ended' : 'running')
   const winner = rec && rec.winner ? rec.winner : (status === 'ended' && leader ? leader.variant : '')
-  return { ...e, title: rec ? rec.title : e.experiment, kind: rec ? rec.kind : 'page', variants: vs, leader, lift, started, ends,
-    status, ended: status === 'ended', winner, maxRate: Math.max(0.0001, ...vs.map((v) => v.rate)) }
+  return { ...e, title: rec ? rec.title : (e as any).experiment, kind: rec ? rec.kind : 'page', variants: vs, leader, lift, started, ends,
+    status, ended: status === 'ended', winner, maxRate: Math.max(0.0001, ...vs.map((v: any) => v.rate)) }
 }))
-const fmtDate = (d) => (d ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—')
+const fmtDate = (d: any) => (d ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—')
 
 /* ---- explore ---- */
 const picked = ref(['pageviews', 'sessions'])
@@ -267,12 +270,13 @@ const gran = ref('day')
 const smooth = ref(true)
 const cumulative = ref(false)
 const compare = ref(false)
-function toggleMetric(k) { picked.value = picked.value.includes(k) ? picked.value.filter((x) => x !== k) : picked.value.concat(k) }
+function toggleMetric(k: any) { picked.value = picked.value.includes(k) ? picked.value.filter((x) => x !== k) : picked.value.concat(k) }
 /* by week: sum each metric over Monday-to-Sunday buckets */
-function bucket(rows) {
+function bucket(rows: any) {
   if (gran.value === 'day') return rows
-  const out = [], byKey = {}
+  const out = [], byKey: any = {}
   for (const r of rows) {
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
     const d = new Date(dayKey(r.day) + 'T00:00:00'); if (isNaN(d)) continue
     const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7))
     const k = mon.toISOString().slice(0, 10)
@@ -283,16 +287,16 @@ function bucket(rows) {
 }
 const shaped = computed(() => bucket(series.value))
 const shapedPrev = computed(() => bucket(seriesPrev.value))
-const values = (rows, k) => {
+const values = (rows: any, k: any) => {
   let acc = 0
-  return rows.map((r) => { const v = k === 'revenue' ? (r[k] || 0) / 100 : (r[k] || 0); acc += v; return cumulative.value ? acc : v })
+  return rows.map((r: any) => { const v = k === 'revenue' ? (r[k] || 0) / 100 : (r[k] || 0); acc += v; return cumulative.value ? acc : v })
 }
-const exploreOption = computed(() => {
+const exploreOption: any = computed(() => {
   void chartKey.value; void chartKind.value
   const b = base(), t = tokens()
   const rows = shaped.value
-  const x = rows.map((r) => day(r.day))
-  const out = []
+  const x = rows.map((r: any) => day(r.day))
+  const out: any = []
   picked.value.forEach((k, i) => {
     const color = PALETTE[i % PALETTE.length]
     out.push(timeSeries({ name: MN[k], color, smooth: smooth.value, symbol: rows.length > 60 ? 'none' : 'circle', area: picked.value.length === 1, data: values(rows, k) }))
@@ -306,17 +310,17 @@ const exploreOption = computed(() => {
 function exportCsv() {
   const rows = shaped.value
   const cols = ['day'].concat(picked.value)
-  const csv = [cols.join(',')].concat(rows.map((r) => cols.map((c) => (c === 'day' ? dayKey(r.day) : c === 'revenue' ? (r[c] || 0) / 100 : r[c] || 0)).join(','))).join('\n')
+  const csv = [cols.join(',')].concat(rows.map((r: any) => cols.map((c) => (c === 'day' ? dayKey(r.day) : c === 'revenue' ? (r[c] || 0) / 100 : r[c] || 0)).join(','))).join('\n')
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `the site-${days.value}d.csv`; a.click()
 }
 /* lists: the admin's own routes are never audience; long lists show eight rows
    and open on request */
-const open = reactive({})
+const open = reactive<any>({})
 const PRIVATE = /^\/(admin|__preview)(\/|$)/
-const pub = (rows, key = 'path') => (rows || []).filter((r) => !PRIVATE.test(r[key] || ''))
-function L(name, arr, key, cap = 8) { const all = bars(arr || [], key); return { rows: open[name] ? all : all.slice(0, cap), more: all.length > cap, open: !!open[name], total: all.length } }
-const toggle = (name) => { open[name] = !open[name] }
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+const pub = (rows: any, key = 'path') => (rows || []).filter((r: any) => !PRIVATE.test(r[key] || ''))
+function L(name: any, arr: any, key: any, cap = 8) { const all = bars(arr || [], key); return { rows: open[name] ? all : all.slice(0, cap), more: all.length > cap, open: !!open[name], total: all.length } }
+const toggle = (name: any) => { open[name] = !open[name] }
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 
 <template>
@@ -328,7 +332,7 @@ function openAuth() { if (window.DLauth) window.DLauth.open() }
           <div class="an-seg an-audience" role="group">
             <button v-for="a in AUD" :key="a" type="button" :class="{ on: audience === a }" @click="audience = a">{{ H['audience-' + a] }}</button>
           </div>
-          <label v-if="SITE_SOURCES.length" class="an-source"><span>{{ FW.source }}</span><select :value="filters.source || ''" @change="setFilter('source', $event.target.value || null)"><option value="">{{ FW['this-site'] }}</option><option v-for="src in SITE_SOURCES" :key="src.name" :value="src.name">{{ src.name }}</option></select></label>
+          <label v-if="SITE_SOURCES.length" class="an-source"><span>{{ FW.source }}</span><select :value="filters.source || ''" @change="setFilter('source', ($event.target as any).value || null)"><option value="">{{ FW['this-site'] }}</option><option v-for="src in SITE_SOURCES" :key="src.name" :value="src.name">{{ src.name }}</option></select></label>
           <ChartKind />
           <div class="an-seg">
             <button v-for="d in [7, 30, 90, 365]" :key="d" type="button" :class="{ on: days === d }" @click="days = d">{{ d }}d</button>
@@ -475,12 +479,12 @@ function openAuth() { if (window.DLauth) window.DLauth.open() }
           <section class="an-card">
             <div class="an-ch"><h2>{{ AU.zones }}</h2><p>{{ AU['zones-note'] }}</p></div>
             <ol class="an-list"><li v-for="r in facet('zones')" :key="r.key"><div class="an-rowtxt"><code>{{ r.key }}</code><b>{{ num(r.n) }}</b></div><span class="an-track"><span class="an-fill" :style="{ width: r.w + '%' }" /></span></li></ol>
-            <p v-if="!facet('zones').length" class="an-none">{{ AU['no-rows'] }}</p>
+            <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. --><p v-if="!facet('zones').length" class="an-none">{{ AU['no-rows'] }}</p>
           </section>
           <section class="an-card">
             <div class="an-ch"><h2>{{ AU.languages }}</h2></div>
             <ol class="an-list"><li v-for="r in facet('langs')" :key="r.key" :class="{ on: has('lang', r.key) }"><div class="an-rowtxt"><button type="button" class="an-rowbtn" :aria-pressed="has('lang', r.key)" @click="toggleFilter('lang', r.key)"><code>{{ r.key }}</code></button><b>{{ num(r.n) }}</b></div><span class="an-track"><span class="an-fill" :style="{ width: r.w + '%' }" /></span></li></ol>
-            <p v-if="!facet('langs').length" class="an-none">{{ AU['no-rows'] }}</p>
+            <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. --><p v-if="!facet('langs').length" class="an-none">{{ AU['no-rows'] }}</p>
           </section>
           <section class="an-card">
             <div class="an-ch"><h2>{{ AU.who }}</h2></div>
@@ -722,9 +726,9 @@ function openAuth() { if (window.DLauth) window.DLauth.open() }
             </button>
           </div>
           <h3 class="an-sub">{{ XP.channel }}</h3>
-          <select class="an-select" :value="filters.channel || ''" @change="setFilter('channel', $event.target.value || null)"><option value="">{{ XP['any-channel'] }}</option><option v-for="c in ['direct', 'search', 'social', 'email', 'ai', 'referral', 'paid']" :key="c" :value="c">{{ channelName(c) }}</option></select>
+          <select class="an-select" :value="filters.channel || ''" @change="setFilter('channel', ($event.target as any).value || null)"><option value="">{{ XP['any-channel'] }}</option><option v-for="c in ['direct', 'search', 'social', 'email', 'ai', 'referral', 'paid']" :key="c" :value="c">{{ channelName(c) }}</option></select>
           <template v-if="SITE_SOURCES.length"><h3 class="an-sub">{{ XP.source }}</h3>
-          <select class="an-select" :value="filters.source || ''" @change="setFilter('source', $event.target.value || null)"><option value="">{{ FW['this-site'] }}</option><option v-for="src in SITE_SOURCES" :key="src.name" :value="src.name">{{ src.name }}</option></select></template>
+          <select class="an-select" :value="filters.source || ''" @change="setFilter('source', ($event.target as any).value || null)"><option value="">{{ FW['this-site'] }}</option><option v-for="src in SITE_SOURCES" :key="src.name" :value="src.name">{{ src.name }}</option></select></template>
           <h3 class="an-sub">{{ XP.granularity }}</h3>
           <div class="an-seg">
             <button type="button" :class="{ on: gran === 'day' }" @click="gran = 'day'">{{ XP.day }}</button>

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, shallowRef, computed, watch, onMounted, onBeforeUnmount, nextTick, defineAsyncComponent } from 'vue'
 import CommentThread from './CommentThread.vue'
 import { commentSubject } from 'platformkit/lib/comments.js'
@@ -33,8 +33,8 @@ marked.use(sysmark)
 
 /* The same five colours as hex, so the element can be signalled outside the
    reader body (the cover-page teaser colours its quotation mark from these). */
-const SUG_HEX = { sun: 'E1A200', leaf: '4CA646', sky: 'EFAE7A', ocean: '1785A0', ember: 'DD802F' }
-function sugColor(color) { return '#' + (SUG_HEX[color] || SUG_HEX.sun) }
+const SUG_HEX: any = { sun: 'E1A200', leaf: '4CA646', sky: 'EFAE7A', ocean: '1785A0', ember: 'DD802F' }
+function sugColor(color: any) { return '#' + (SUG_HEX[color] || SUG_HEX.sun) }
 
 /*
  * The e-book reader. One markdown file is one book; its `# ` headings are the
@@ -46,8 +46,8 @@ function sugColor(color) { return '#' + (SUG_HEX[color] || SUG_HEX.sun) }
  */
 const props = defineProps({ slug: { type: String, required: true } })
 /* a buyer's files, asked for once signed in */
-const files = ref(null)
-onIdentity(async (id) => { files.value = null; if (id) { try { files.value = await filesFor(props.slug) } catch (e) { files.value = [] } } })
+const files = ref<any>(null)
+onIdentity(async (id: any) => { files.value = null; if (id) { try { files.value = await filesFor(props.slug) } catch (e) { files.value = [] } } })
 import { userClass, hasProduct, CLASSES, isSignedIn, onIdentity, can, entrySubject } from 'platformkit/lib/auth.js'
 import { filesFor } from 'platformkit/lib/downloads.js'
 import { chapterAllowance, requiredForChapter, allowedBy, requiredBy } from 'platformkit/lib/access.js'
@@ -55,10 +55,10 @@ import Gate from '../Gate.vue'
 import { contentView } from 'platformkit/lib/analytics.js'
 
 const meta = computed(() => (preview
-  ? (preview.value ? bookCard(preview.value) : { title: '', author: '', cover: null })
-  : bookShelf().find((b) => b.slug === props.slug) || { title: props.slug, author: '', cover: null }))
-const fm = ref({})            /* the book's own frontmatter */
-const chapters = ref([])
+  ? ((preview as any).value ? bookCard((preview as any).value) : { title: '', author: '', cover: null })
+  : bookShelf().find((b: any) => b.slug === props.slug) || { title: props.slug, author: '', cover: null }))
+const fm = ref<any>({})            /* the book's own frontmatter */
+const chapters = ref<any>([])
 const view = ref('cover')     /* every book opens on its title page */
 const modal = ref('')         /* '', 'contents', 'search', 'saved', 'type' */
 const missing = ref(false)
@@ -90,16 +90,16 @@ async function askCanSay() {
 const saying = ref(false)
 /* the chapter the comments are about, named once so the button and the panel cannot disagree */
 const chapterSubject = computed(() => props.slug + '/chapters/' + (ch.value + 1))
-const body = ref(null)
-const suggestions = ref([])   /* every baked-in editorial mark: { text, color } */
-const teaser = ref([])        /* a randomised handful, one per colour, for the cover */
+const body = ref<any>(null)
+const suggestions = ref<any>([])   /* every baked-in editorial mark: { text, color } */
+const teaser = ref<any>([])        /* a randomised handful, one per colour, for the cover */
 
 /* ---- reader preferences + kept things, per book ---- */
 /* the admin's live preview provides a draft entry in place of the compiled one;
    its reading state is kept apart from the real book's */
 const preview = inject('dl-preview', null)
 const KEY = 'dl.book.' + (preview ? '__preview__' : props.slug)
-const state = ref({ ch: 0, size: 1, scheme: 'paper', bookmarks: [], highlights: [], mode: 'full' })   /* mode: full | summary */
+const state = ref<any>({ ch: 0, size: 1, scheme: 'paper', bookmarks: [], highlights: [], mode: 'full' })   /* mode: full | summary */
 function saveState() { store(KEY, JSON.stringify(state.value)) }
 try { Object.assign(state.value, JSON.parse(stored(KEY) || '{}')) } catch (e) { /* fresh */ }
 
@@ -117,13 +117,13 @@ const FONTS = [
 ]
 const fontStack = computed(() =>
   (FONTS.find((f) => f.k === state.value.font) || FONTS[0]).stack)
-function setFont(k) { state.value.font = k; saveState() }
+function setFont(k: any) { state.value.font = k; saveState() }
 
 /* ---- the book ---- */
 async function load() {
   gatedState.value = ''
   const d = preview
-    ? (preview.value ? { data: preview.value, body: preview.value.raw || '' } : null)
+    ? ((preview as any).value ? { data: (preview as any).value, body: (preview as any).value.raw || '' } : null)
     : await loadDoc('books', props.slug)
   if (!d) { missing.value = true; return }
   missing.value = false
@@ -136,7 +136,7 @@ async function load() {
   ch.value = Math.min(state.value.ch || 0, chapters.value.length - 1)
   /* ?chapter=N opens the Nth chapter (counted from 1, the introduction not counted): where a course lesson sends somebody */
   const asked = Number(new URLSearchParams(location.search).get('chapter'))
-  if (Number.isInteger(asked) && asked >= 1) ch.value = Math.min(asked - 1 + (chapters.value[0] && chapters.value[0].intro ? 1 : 0), chapters.value.length - 1)
+  if (Number.isInteger(asked) && asked >= 1) ch.value = Math.min(asked - 1 + (chapters.value[0] && (chapters.value[0] as any).intro ? 1 : 0), chapters.value.length - 1)
   fetchGated()
   prepareSpeech().catch(() => {})
 
@@ -162,19 +162,19 @@ if (preview) watch(preview, load)
    so the passages on offer change on every visit. Shown spirit-to-earth. */
 const TEASER_ORDER = ['sun', 'ember', 'sky', 'ocean', 'leaf']
 function rollTeaser() {
-  const byColor = {}
-  for (const s of suggestions.value) (byColor[s.color] || (byColor[s.color] = [])).push(s)
+  const byColor: any = {}
+  for (const s of suggestions.value) (byColor[(s as any).color] || (byColor[(s as any).color] = [])).push(s)
   teaser.value = TEASER_ORDER
     .filter((c) => byColor[c])
     .map((c) => { const a = byColor[c]; return a[Math.floor(Math.random() * a.length)] })
 }
-function teaserText(t) {
+function teaserText(t: any) {
   return t.length > 150 ? t.slice(0, 150).replace(/\s+\S*$/, '') + '…' : t
 }
 watch(view, (v) => { if (v === 'cover') rollTeaser() })
 
 /* about 200 words a minute, and honest rounding */
-const words = computed(() => chapters.value.reduce((n, c) => n + c.md.split(/\s+/).length, 0))
+const words = computed(() => chapters.value.reduce((n: any, c: any) => n + (c as any).md.split(/\s+/).length, 0))
 const readTime = computed(() => {
   const mins = Math.max(1, Math.round(words.value / 200))
   return mins < 60 ? R.time.about + ' ' + mins + ' ' + (mins === 1 ? R.time.minute : R.time.minutes)
@@ -184,26 +184,26 @@ const started = computed(() => state.value.ch > 0 || state.value.bookmarks.lengt
 /* ---- the companion: summaries, the insight, the quizzes and the trophy ---- */
 const essOpen = ref(false)   /* the bottom line, opened past its first three lines */
 const comp = computed(() => (preview ? null : companionFor(props.slug)))
-const hasSummary = (i) => !!(comp.value && chapters.value[i] && (chapterCompanion(props.slug, chapters.value[i].title) || {}).summaryMd)
-const chapterQuiz = (i) => (comp.value && chapters.value[i] ? (chapterCompanion(props.slug, chapters.value[i].title) || {}).quiz || [] : [])
+const hasSummary = (i: any) => !!(comp.value && chapters.value[i] && (chapterCompanion(props.slug, (chapters.value[i] as any).title) || {}).summaryMd)
+const chapterQuiz = (i: any) => (comp.value && chapters.value[i] ? (chapterCompanion(props.slug, (chapters.value[i] as any).title) || {}).quiz || [] : [])
 const insight = computed(() => (preview ? '' : insightFor(props.slug)))
 /* one page ahead of the chapters when the book has an introduction */
-const introOffset = computed(() => (chapters.value[0] && chapters.value[0].intro ? 1 : 0))
+const introOffset = computed(() => (chapters.value[0] && (chapters.value[0] as any).intro ? 1 : 0))
 /* the chapters proper, for the cover's count */
 const chapterCount = computed(() => chapters.value.length - introOffset.value)
 const summaryTimeLabel = computed(() => { const m = summaryTime(props.slug); return m ? R.time.about + ' ' + m + ' ' + (m === 1 ? R.time.minute : R.time.minutes) : '' })
 const mastery = computed(() => { void masteryRev.value; return preview ? { done: 0, total: 0, tier: null } : masteryOf(props.slug) })
-const quizResult = computed(() => { void masteryRev.value; return chapters.value[ch.value] ? chapterResult(props.slug, chapters.value[ch.value].title) : null })
+const quizResult = computed(() => { void masteryRev.value; return chapters.value[ch.value] ? chapterResult(props.slug, (chapters.value[ch.value] as any).title) : null })
 /* a book whose text is withheld (fullText: false) is read in its summaries alone: there is no full text to switch to */
 const textless = computed(() => !!fm.value && fm.value.fullText === false)
-function setMode(m) { if (textless.value) return; if (state.value.mode !== m) { state.value.mode = m; essOpen.value = false; saveState(); if (view.value === 'read') repaint() } }
+function setMode(m: any) { if (textless.value) return; if (state.value.mode !== m) { state.value.mode = m; essOpen.value = false; saveState(); if (view.value === 'read') repaint() } }
 const inSummary = computed(() => (state.value.mode === 'summary' || textless.value) && !!comp.value)
 /* The spoken chapter, if build/tts.mjs made one: the book's `audio` maps a
    chapter title to the file for its text and the file for its summary. The
    player follows the mode — the summary's recording in summary mode, the text's
    otherwise — and a chapter with no file for its mode has no player at all. */
 const audio = computed(() => {
-  const a = fm.value && fm.value.audio, c = chapters.value[ch.value]
+  const a = fm.value && fm.value.audio, c: any = chapters.value[ch.value]
   const key = c && (c.key || c.title)
   if (!a || !c || !a[key]) return null
   /* the introduction reads the same in both modes, so it has one recording */
@@ -219,22 +219,22 @@ const audio = computed(() => {
    to the name the build script would give the recording, made in a worker, kept
    in the browser under that name, and played through the ordinary player. */
 const canSpeak = ttsSupported()
-const speech = shallowRef(null)   /* the lazily loaded module: src/lib/tts/audiobook.js (its own state is reactive) */
-const speechHash = ref({})        /* "<key>|<kind>" → hash, for every page in both modes */
+const speech = shallowRef<any>(null)   /* the lazily loaded module: src/lib/tts/audiobook.js (its own state is reactive) */
+const speechHash = ref<any>({})        /* "<key>|<kind>" → hash, for every page in both modes */
 /* what one page is read with, in one mode: mirrors render() */
-function jobFor(i, summary) {
+function jobFor(i: any, summary: any) {
   const c = chapters.value[i]
   if (!c) return null
-  if (!summary && textless.value && !c.intro) return null   /* no text to read aloud: the summary is the page */
-  const cc = summary && !c.intro ? chapterCompanion(props.slug, c.title) : null
+  if (!summary && textless.value && !(c as any).intro) return null   /* no text to read aloud: the summary is the page */
+  const cc = summary && !(c as any).intro ? chapterCompanion(props.slug, (c as any).title) : null
   const kind = cc && cc.summaryMd ? 'summary' : 'full'
-  return { index: i, key: c.key || c.title, kind, title: c.title, text: chapterSpeech(c, kind === 'summary' ? cc.summaryMd : undefined) }
+  return { index: i, key: (c as any).key || (c as any).title, kind, title: (c as any).title, text: chapterSpeech(c, kind === 'summary' ? cc.summaryMd : undefined) }
 }
-const hashKey = (j) => j.key + '|' + j.kind
+const hashKey = (j: any) => j.key + '|' + j.kind
 async function prepareSpeech() {
   if (!canSpeak || preview) return
   const m = speech.value || (speech.value = await import('platformkit/lib/tts/audiobook.js'))
-  const map = {}, all = []
+  const map: any = {}, all = []
   for (let i = 0; i < chapters.value.length; i++) for (const summary of [false, true]) {
     const j = jobFor(i, summary)
     if (!j || !j.text || map[hashKey(j)]) continue
@@ -247,7 +247,7 @@ async function prepareSpeech() {
   for (const [k, h] of Object.entries(map)) if (!recorded(k)) m.probe(props.slug, h).catch(() => {})
 }
 /* whether the store's manifest has a recording for "<key>|<kind>" */
-function recorded(k) {
+function recorded(k: any) {
   const a = fm.value && fm.value.audio, [key, kind] = k.split('|')
   const e = a && a[key] && a[key][kind]
   return !!(e && e.src)
@@ -257,9 +257,9 @@ const currentHash = computed(() => (currentJob.value ? speechHash.value[hashKey(
 const localTrack = computed(() => (speech.value && currentHash.value ? speech.value.tracks[currentHash.value] : null))
 /* a recording made here plays exactly as one from the store */
 const localAudio = computed(() => {
-  const t = localTrack.value, c = chapters.value[ch.value]
+  const t: any = localTrack.value, c = chapters.value[ch.value]
   if (!t || t.status !== 'done' || !c) return null
-  return { src: t.url, seconds: t.seconds || 0, kind: c.intro ? 'intro' : currentJob.value.kind, title: c.title, local: true }
+  return { src: t.url, seconds: t.seconds || 0, kind: (c as any).intro ? 'intro' : (currentJob as any).value.kind, title: (c as any).title, local: true }
 })
 const playable = computed(() => audio.value || localAudio.value)
 const canGenerate = computed(() => canSpeak && !!speech.value && !playable.value && !gate.value && view.value === 'read' && !!currentHash.value)
@@ -284,7 +284,7 @@ onBeforeUnmount(() => { if (speech.value) speech.value.stop() })
 const quizOpen = ref(false)
 /* the bottom line: the chapter's key insights, shown under the text in both
    modes — three by default, the rest on request */
-const essence = computed(() => (chapters.value[ch.value] && comp.value ? (chapterCompanion(props.slug, chapters.value[ch.value].title) || {}).essence || [] : []))
+const essence = computed(() => (chapters.value[ch.value] && comp.value ? (chapterCompanion(props.slug, (chapters.value[ch.value] as any).title) || {}).essence || [] : []))
 const essShown = computed(() => (essOpen.value ? essence.value : essence.value.slice(0, 3)))
 function openQuiz() { quizOpen.value = true; window.scrollTo({ top: 0, behavior: 'smooth' }) }
 function quizNext() { quizOpen.value = false; if (ch.value < chapters.value.length - 1) ch.value++ }
@@ -292,17 +292,17 @@ function finishReading() { view.value = 'cover'; window.scrollTo(0, 0) }
 
 /* how far through the book, by chapter — drives the bar under the sticky header */
 const progress = computed(() => chapters.value.length ? Math.round(((ch.value + 1) / chapters.value.length) * 100) : 0)
-function begin(atCh, mode) {
+function begin(atCh: any, mode: any) {
   if (mode) setMode(mode)
   if (typeof atCh === 'number') ch.value = atCh
   view.value = 'read'
   quizOpen.value = false
   render()
 }
-function openModal(name) { modal.value = modal.value === name ? '' : name }
+function openModal(name: any) { modal.value = modal.value === name ? '' : name }
 /* the phone's tools menu */
 const toolsOpen = ref(false)
-function onEsc(e) {
+function onEsc(e: any) {
   if (e.key === 'Escape') { if (modal.value) modal.value = ''; return }
   /* left / right turn the page while reading — but not while a modal is open or
      the reader is typing in the search box or a note */
@@ -315,7 +315,7 @@ function onEsc(e) {
 
 /* ---- access: the rung this reader stands on for THIS book (a bought book reads
    as paid), how many chapters that unlocks, and the gate shown past them ---- */
-const rank = (c) => CLASSES.indexOf(c)
+const rank = (c: any) => CLASSES.indexOf(c)
 const effClass = computed(() => (hasProduct(props.slug) && rank(userClass.value) < rank('paid') ? 'paid' : userClass.value))
 /* THE BAR IS THE ABILITY'S, and it already knows that a book bought outright lifts its buyer to
    paid for that book — the same lift effClass makes below for the chapter allowance, which is a
@@ -323,8 +323,8 @@ const effClass = computed(() => (hasProduct(props.slug) && rank(userClass.value)
 const bookAllowed = computed(() => can('read', entrySubject({ kind: 'books', slug: props.slug, canAccess: fm.value.canAccess })))
 /* the allowance counts chapters; the introduction page in front of them is free with the first */
 const firstLocked = computed(() => { if (!bookAllowed.value) return 0; const n = chapterAllowance(fm.value, effClass.value); return n > 0 ? n + introOffset.value : 0 })
-const isLocked = (i) => i >= firstLocked.value
-const gate = ref(null)   /* null, or { required, teaser } while the current chapter is locked */
+const isLocked = (i: any) => i >= firstLocked.value
+const gate = ref<any>(null)   /* null, or { required, teaser } while the current chapter is locked */
 
 /* ---- the chapters the bundle could not carry. The published book is the one a guest may read
    (_shared/gate.js): from gatedFrom on, a chapter is its title and teaser. A reader allowed further is
@@ -332,7 +332,7 @@ const gate = ref(null)   /* null, or { required, teaser } while the current chap
    and if it cannot be fetched it says so with a retry — never the paywall, which would tell somebody who
    has paid that they have not. ---- */
 const gatedState = ref('')   /* '' | 'loading' | 'error' | 'done' */
-const waitingFor = (i) => typeof fm.value.gatedFrom === 'number' && !isLocked(i) && !(chapters.value[i] && chapters.value[i].intro)
+const waitingFor = (i: any) => typeof fm.value.gatedFrom === 'number' && !isLocked(i) && !(chapters.value[i] && (chapters.value[i] as any).intro)
   && i - introOffset.value >= fm.value.gatedFrom && gatedState.value !== 'done'
 async function fetchGated() {
   if (preview || typeof fm.value.gatedFrom !== 'number') return
@@ -341,7 +341,7 @@ async function fetchGated() {
   gatedState.value = 'loading'
   try {
     const r = await readerBook(props.slug)
-    const intro = chapters.value[0] && chapters.value[0].intro ? chapters.value[0] : null
+    const intro = chapters.value[0] && (chapters.value[0] as any).intro ? chapters.value[0] : null
     const next = bookChapters(r.raw)
     if (intro) next.unshift(intro)
     chapters.value = next
@@ -373,7 +373,7 @@ async function render() {
   if (isLocked(ch.value)) {
     gate.value = {
       required: bookAllowed.value ? requiredForChapter(fm.value, ch.value - introOffset.value) : requiredBy(fm.value.canAccess),
-      teaser: c.md.replace(/[#*_=`{}]/g, '').replace(/\s+/g, ' ').trim().slice(0, 260),
+      teaser: (c as any).md.replace(/[#*_=`{}]/g, '').replace(/\s+/g, ' ').trim().slice(0, 260),
     }
     html.value = ''
     state.value.ch = ch.value
@@ -383,9 +383,10 @@ async function render() {
   }
   gate.value = null
   if (waitingFor(ch.value)) { html.value = ''; return }
-  const cc = inSummary.value && !c.intro ? chapterCompanion(props.slug, c.title) : null
-  if (c.intro) {
-    html.value = marked.parse(c.md)   /* the introduction: the same page whichever way the book is read */
+  const cc = inSummary.value && !(c as any).intro ? chapterCompanion(props.slug, (c as any).title) : null
+  if ((c as any).intro) {
+    // @ts-expect-error TS2322, from the conversion: Type 'string | Promise<string>' is not assignable to type 'string'.
+    html.value = marked.parse((c as any).md)   /* the introduction: the same page whichever way the book is read */
   } else if (cc && cc.summaryMd) {
     /* the summary; the reader's own highlights anchor to the full text, so they
        are not painted here. The bottom line follows the text in both modes. */
@@ -393,7 +394,7 @@ async function render() {
   } else {
     /* a book whose text is withheld has only its summaries: a chapter without one says so, and nothing else */
     html.value = textless.value ? '<p class="rd-nosum">' + escapeHtml(R.mode['no-summary']) + '</p>'
-      : (inSummary.value ? '<p class="rd-nosum">' + escapeHtml(R.mode['no-summary']) + '</p>' : '') + marked.parse(c.md)
+      : (inSummary.value ? '<p class="rd-nosum">' + escapeHtml(R.mode['no-summary']) + '</p>' : '') + marked.parse((c as any).md)
   }
   state.value.ch = ch.value
   saveState()
@@ -401,7 +402,8 @@ async function render() {
   if (!cc) paintHighlights()
   toolbar.value.open = false
 }
-const escapeHtml = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+// @ts-expect-error TS2769, from the conversion: No overload matches this call.
+const escapeHtml = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 watch(ch, () => { quizOpen.value = false; essOpen.value = false; render(); askCanSay() })
 watch(chapterSubject, askCanSay, { immediate: true })
 /* between one chapter fading out and the next fading in, the window is at the top */
@@ -410,7 +412,7 @@ function toTop() { window.scrollTo({ top: 0, left: 0, behavior: "instant" }) }
 watch(effClass, render)
 
 /* ---- highlights: anchor by quote + context, paint by walking text nodes ---- */
-function textNodesUnder(el) {
+function textNodesUnder(el: any) {
   const out = [], w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
   let n; while ((n = w.nextNode())) out.push(n)
   return out
@@ -418,26 +420,26 @@ function textNodesUnder(el) {
 function paintHighlights() {
   const el = body.value
   if (!el) return
-  for (const h of state.value.highlights.filter((x) => x.ch === ch.value)) {
+  for (const h of state.value.highlights.filter((x: any) => (x as any).ch === ch.value)) {
     const nodes = textNodesUnder(el)
     const full = nodes.map((n) => n.textContent).join('')
     let at = -1
-    for (let i = full.indexOf(h.quote); i >= 0; i = full.indexOf(h.quote, i + 1)) {
+    for (let i = full.indexOf((h as any).quote); i >= 0; i = full.indexOf((h as any).quote, i + 1)) {
       const pre = full.slice(Math.max(0, i - 16), i)
-      if (!h.prefix || pre.endsWith(h.prefix.slice(-Math.min(16, h.prefix.length)))) { at = i; break }
+      if (!(h as any).prefix || pre.endsWith((h as any).prefix.slice(-Math.min(16, (h as any).prefix.length)))) { at = i; break }
     }
     if (at < 0) continue
     let pos = 0
     for (const node of nodes) {
-      const start = pos, end = pos + node.textContent.length
+      const start = pos, end = pos + (node as any).textContent.length
       pos = end
-      const s = Math.max(at, start), e = Math.min(at + h.quote.length, end)
+      const s = Math.max(at, start), e = Math.min(at + (h as any).quote.length, end)
       if (s >= e) continue
       const range = document.createRange()
       range.setStart(node, s - start); range.setEnd(node, e - start)
       const mark = document.createElement('mark')
-      mark.className = 'bk-hl hl-' + (h.color || 'sun')
-      mark.dataset.id = h.id
+      mark.className = 'bk-hl hl-' + ((h as any).color || 'sun')
+      mark.dataset.id = (h as any).id
       try { range.surroundContents(mark) } catch (err) { /* crosses elements; the node-by-node pass covers it */ }
     }
   }
@@ -450,8 +452,8 @@ function paintHighlights() {
    prevent pointerdown so the selection survives the tap. */
 const COLORS = ['sun', 'leaf', 'sky', 'ocean', 'ember']
 const toolbar = ref({ open: false, x: 0, y: 0 })
-let pending = null
-let selTimer = null
+let pending: any = null
+let selTimer: any = null
 function onSelChange() {
   clearTimeout(selTimer)
   selTimer = setTimeout(() => {
@@ -469,21 +471,21 @@ function onSelChange() {
     toolbar.value = { open: true, x, y: r.bottom - host.top + 10 }
   }, 200)
 }
-function prefixFor(sel) {
+function prefixFor(sel: any) {
   try {
     const r = sel.getRangeAt(0).cloneRange()
     r.setStart(body.value, 0)
     return r.toString().slice(0, -sel.toString().length).slice(-16)
   } catch (e) { return '' }
 }
-async function addHighlight(color, withNote) {
+async function addHighlight(color: any, withNote: any) {
   if (!pending) return
   const h = { id: 'h' + Date.now(), ch: ch.value, quote: pending.quote,
     prefix: pending.prefix, note: '', color: color || state.value.lastColor || 'sun' }
   state.value.lastColor = h.color
   state.value.highlights.push(h)
   saveState()
-  window.getSelection().removeAllRanges()
+  ;(window as any).getSelection().removeAllRanges()
   toolbar.value.open = false
   await repaint()
   if (withNote) { modal.value = 'saved'; editing.value = h.id }
@@ -492,7 +494,7 @@ async function addHighlight(color, withNote) {
 /* tapping a painted highlight opens its own little menu: recolor, note, delete */
 const markMenu = ref({ open: false, x: 0, y: 0, id: '' })
 const editing = ref('')
-function onBodyClick(e) {
+function onBodyClick(e: any) {
   const m = e.target.closest && e.target.closest('mark.bk-hl')
   if (!m) { markMenu.value.open = false; return }
   const host = body.value.getBoundingClientRect()
@@ -500,71 +502,71 @@ function onBodyClick(e) {
   const mx = Math.max(140, Math.min(host.width - 140, r.left - host.left + r.width / 2))
   markMenu.value = { open: true, x: mx, y: r.bottom - host.top + 8, id: m.dataset.id }
 }
-async function recolor(color) {
-  const h = state.value.highlights.find((x) => x.id === markMenu.value.id)
-  if (h) { h.color = color; state.value.lastColor = color; saveState(); await repaint() }
+async function recolor(color: any) {
+  const h = state.value.highlights.find((x: any) => (x as any).id === markMenu.value.id)
+  if (h) { (h as any).color = color; state.value.lastColor = color; saveState(); await repaint() }
   markMenu.value.open = false
 }
 function noteFromMenu() {
   modal.value = 'saved'; editing.value = markMenu.value.id; markMenu.value.open = false
 }
-async function removeHighlight(id) {
-  state.value.highlights = state.value.highlights.filter((h) => h.id !== id)
+async function removeHighlight(id: any) {
+  state.value.highlights = state.value.highlights.filter((h: any) => (h as any).id !== id)
   editing.value = ''
   markMenu.value.open = false
   saveState(); await repaint()
 }
-const doomHighlight = (id) => confirmThen(id, () => removeHighlight(id))
-const doomBookmark = (id) => confirmThen(id, () => removeBookmark(id))
+const doomHighlight = (id: any) => confirmThen(id, () => removeHighlight(id))
+const doomBookmark = (id: any) => confirmThen(id, () => removeBookmark(id))
 
 /* ---- bookmarks: one per chapter, toggled ---- */
-const hasBookmark = computed(() => state.value.bookmarks.some((b) => b.ch === ch.value))
+const hasBookmark = computed(() => state.value.bookmarks.some((b: any) => (b as any).ch === ch.value))
 function toggleBookmark() {
   if (hasBookmark.value) {
-    state.value.bookmarks = state.value.bookmarks.filter((b) => b.ch !== ch.value)
+    state.value.bookmarks = state.value.bookmarks.filter((b: any) => (b as any).ch !== ch.value)
   } else {
     const frac = body.value ? Math.min(1, window.scrollY / Math.max(1, document.body.scrollHeight - innerHeight)) : 0
     state.value.bookmarks.push({ id: 'b' + Date.now(), ch: ch.value, frac,
-      label: chapters.value[ch.value].title })
+      label: (chapters.value[ch.value] as any).title })
   }
   saveState()
 }
-function gotoBookmark(b) {
+function gotoBookmark(b: any) {
   ch.value = b.ch
   nextTick().then(() => window.scrollTo(0, b.frac * (document.body.scrollHeight - innerHeight)))
 }
-function removeBookmark(id) {
-  state.value.bookmarks = state.value.bookmarks.filter((b) => b.id !== id); saveState()
+function removeBookmark(id: any) {
+  state.value.bookmarks = state.value.bookmarks.filter((b: any) => (b as any).id !== id); saveState()
 }
 
 /* ---- in-book search ---- */
 const q = ref('')
-const found = computed(() => {
+const found: any = computed(() => {
   const needle = q.value.trim().toLowerCase()
   if (needle.length < 2) return []
-  const out = []
-  chapters.value.forEach((c, i) => {
-    const t = c.md.toLowerCase()
+  const out: any = []
+  chapters.value.forEach((c: any, i: any) => {
+    const t = (c as any).md.toLowerCase()
     let at = t.indexOf(needle)
     while (at >= 0 && out.length < 30) {
-      out.push({ ch: i, chTitle: c.title,
-        excerpt: '…' + c.md.slice(Math.max(0, at - 34), at + needle.length + 60).replace(/\s+/g, ' ') + '…' })
+      out.push({ ch: i, chTitle: (c as any).title,
+        excerpt: '…' + (c as any).md.slice(Math.max(0, at - 34), at + needle.length + 60).replace(/\s+/g, ' ') + '…' })
       at = t.indexOf(needle, at + needle.length)
     }
   })
   return out
 })
-function gotoHit(hit) { ch.value = hit.ch; modal.value = ''; q.value = ''; view.value = 'read' }
+function gotoHit(hit: any) { ch.value = hit.ch; modal.value = ''; q.value = ''; view.value = 'read' }
 
 /* ---- the saved modal's tabs, and deletes that ask twice ----
    Nothing kept is destroyed on one tap: the first tap arms the button and it
    asks plainly; a second tap within a few seconds does it. */
 const savedTab = ref('bookmarks')
-const noted = computed(() => state.value.highlights.filter((h) => h.note && h.note.trim()))
+const noted = computed(() => state.value.highlights.filter((h: any) => (h as any).note && (h as any).note.trim()))
 const confirmId = ref('')
-let confirmTimer = null
-function armed(id) { return confirmId.value === id }
-function confirmThen(id, fn) {
+let confirmTimer: any = null
+function armed(id: any) { return confirmId.value === id }
+function confirmThen(id: any, fn: any) {
   if (confirmId.value === id) { confirmId.value = ''; clearTimeout(confirmTimer); fn(); return }
   confirmId.value = id
   clearTimeout(confirmTimer)
@@ -577,7 +579,7 @@ function readGlobalDark() {
   const t = document.documentElement.dataset.theme
   globalDark.value = t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)
 }
-let themeObserver = null
+let themeObserver: any = null
 onMounted(() => {
   readGlobalDark()
   themeObserver = new MutationObserver(readGlobalDark)
@@ -592,7 +594,7 @@ onBeforeUnmount(() => {
 /* ---- prefs ---- */
 /* the site's theme is the page: light reads on paper, dark reads at night */
 const scheme = computed(() => (globalDark.value ? 'night' : 'paper'))
-function setSize(i) { state.value.size = i; saveState() }
+function setSize(i: any) { state.value.size = i; saveState() }
 
 onMounted(() => {
   document.addEventListener('selectionchange', onSelChange)
@@ -698,7 +700,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="rd-covactions">
-          <button type="button" class="rd-begin" @click="begin(started ? undefined : 0)">
+          <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. --><button type="button" class="rd-begin" @click="begin(started ? undefined : 0)">
             {{ started ? R.cover.continue : R.cover.begin }}
             <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 8h11m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -821,9 +823,9 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-if="modal === 'contents'" class="rd-mbody">
-          <button v-for="(c, i) in chapters" :key="i" type="button" class="rd-row"
+          <!-- @vue-expect-error TS2322, from the conversion: Type 'string | number' is not assignable to type 'number'. --><button v-for="(c, i) in chapters" :key="i" type="button" class="rd-row"
                   :class="{ on: i === ch }" @click="ch = i; modal = ''; view = 'read'">
-            <span class="rd-n">{{ i + 1 }}</span>{{ c.title }}
+            <span class="rd-n"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ i + 1 }}</span>{{ c.title }}
           </button>
         </div>
 
@@ -867,7 +869,7 @@ onBeforeUnmount(() => {
           </template>
 
           <template v-else>
-            <div v-for="h in (editing && !noted.find((x) => x.id === editing) ? state.highlights.filter((x) => x.id === editing).concat(noted) : noted)"
+            <div v-for="h in (editing && !noted.find((x: any) => x.id === editing) ? state.highlights.filter((x: any) => x.id === editing).concat(noted) : noted)"
                  :key="h.id" class="rd-hl-row">
               <span class="rd-quote" :class="'q-' + (h.color || 'sun')">&ldquo;{{ h.quote.slice(0, 70) }}{{ h.quote.length > 70 ? '\u2026' : '' }}&rdquo;</span>
               <textarea v-if="editing === h.id" v-model="h.note" rows="3"

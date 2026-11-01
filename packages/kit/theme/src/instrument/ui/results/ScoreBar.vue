@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* One labelled bar. Was built as an HTML string by bar() in results.js. */
 defineProps({
   label: { type: String, required: true },

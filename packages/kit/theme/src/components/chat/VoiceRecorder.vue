@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Recording a voice note, in the composer's place: a red dot, the running
  * time, the live bars; stop, and it becomes a preview to hear back, with
@@ -30,7 +30,7 @@ const S = rec.state
 const ear = createListener()
 const E = ear.state
 const heard = ref('')        /* what was written down, once stopped */
-const take = ref(null)       /* { blob, seconds, transcript } once stopped */
+const take = ref<any>(null)       /* { blob, seconds, transcript } once stopped */
 const denied = ref(false)
 
 onMounted(async () => {

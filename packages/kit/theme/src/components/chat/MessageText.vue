@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A message's words, drawn from the parts the parser cut (lib/chat/markup.js): bold, italic,
  * struck, code, bullets, a quotation, a link, and — where the surface passes them — the people the
@@ -10,7 +11,7 @@
  */
 import MessagePart from './MessagePart.vue'
 defineProps({
-  blocks: { type: Array, default: () => [] },   /* what messageBlocks() / lineBlocks() returned */
+  blocks: { type: Array as PropType<any[]>, default: () => [] },   /* what messageBlocks() / lineBlocks() returned */
   me: { type: String, default: '' },            /* so a mention of the reader can be marked */
 })
 </script>

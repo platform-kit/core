@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* A person as their initials in a circle — there are no profile pictures. */
 import { computed } from 'vue'
 import { initials } from 'platformkit/lib/chat/model.js'

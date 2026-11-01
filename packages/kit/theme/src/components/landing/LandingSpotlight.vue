@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref, computed } from 'vue'
 import { md, mdBlock } from './md.js'
 import { us } from 'platformkit/lib/strings.js'
@@ -24,17 +25,17 @@ const props = defineProps({
   sku: { type: String, default: '' },
   side: { type: String, default: 'left' },
   body: { type: String, default: '' },           /* markdown; blank = the product's own opening */
-  points: { type: Array, default: () => [] },    /* [{ icon?, text }] under the passage */
-  trust: { type: Array, default: () => [] },     /* [{ icon?, text }] the small line under the button */
+  points: { type: Array as PropType<any[]>, default: () => [] },    /* [{ icon?, text }] under the passage */
+  trust: { type: Array as PropType<any[]>, default: () => [] },     /* [{ icon?, text }] the small line under the button */
   compare: { type: String, default: '' },        /* the old price, as written */
   until: { type: String, default: '' },          /* a drop: the moment it ends */
-  stock: { type: Object, default: () => ({}) },  /* { left, total } — as written */
+  stock: { type: Object as PropType<any>, default: () => ({}) },  /* { left, total } — as written */
   cta: { type: String, default: '' },
 })
 const W = (us('sections').products || {}).card || {}
 const SW = (us('sections').spotlight || {}).drop || {}
 const P = us('store').product.ui
-const p = computed(() => PRODUCTS.value.find((x) => x.sku === props.sku) || null)
+const p = computed(() => PRODUCTS.value.find((x: any) => x.sku === props.sku) || null)
 const at = ref(0), size = ref(''), qty = ref(1), needSize = ref(false), added = ref(false)
 const text = computed(() => props.body || (p.value && p.value.excerpt) || '')
 function add() {
@@ -56,7 +57,7 @@ const pct = computed(() => { const l = Number(props.stock.left), t = Number(prop
             <span class="lphalo"></span>
             <figure class="lpcard lpsl-main" :key="at"><img v-if="p.images[at]" :src="p.images[at].src" :alt="p.title" decoding="async" /><span v-if="p.badge" class="lpsl-badge">{{ p.badge }}</span></figure>
             <div v-if="p.images.length > 1" class="lpsl-thumbs" role="tablist">
-              <button v-for="(im, i) in p.images" :key="i" type="button" role="tab" :aria-selected="at === i" class="lpsl-thumb" :class="{ on: at === i }" @click="at = i"><img :src="im.src" :alt="p.title" loading="lazy" /></button>
+              <!-- @vue-expect-error TS2322, from the conversion: Type 'string | number' is not assignable to type 'number'. --><button v-for="(im, i) in p.images" :key="i" type="button" role="tab" :aria-selected="at === i" class="lpsl-thumb" :class="{ on: at === i }" @click="at = i"><img :src="im.src" :alt="p.title" loading="lazy" /></button>
             </div>
           </div>
         </slot>

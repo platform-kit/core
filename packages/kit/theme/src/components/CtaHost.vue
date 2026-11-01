@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The global CTA host — mounted once in App.vue. On every route it waits ten
  * seconds, then asks the targeting engine for the best ad. If a full modal
@@ -21,16 +21,17 @@ import AdModal from './AdModal.vue'
 const U = us('cta').card.ui
 const DELAY_MS = 10000
 
-const ad = ref(null)
+const ad = ref<any>(null)
 const mode = ref('card')       /* 'modal' | 'card' */
-let timer = null
+let timer: any = null
 
 function clear() { if (timer) { clearTimeout(timer); timer = null } }
-function evaluate(path) {
+function evaluate(path: any) {
   clear(); ad.value = null
   newPageView(path)
   /* where nothing may appear is one rule, asked by the ad and by the chat alike (lib/interrupt.js):
      a place of work is not a place to be sold to */
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'.
   if (!mayInterrupt(path, INTERRUPT_ROUTES)) return
   if (/^\/content\/articles\/./.test(path)) return
   /* inside a book the reader is mid-sentence, and on a landing page they are
@@ -38,7 +39,8 @@ function evaluate(path) {
      full modal */
   const reading = /^\/content\/books\/./.test(path) || isPageRoute(path)
   timer = setTimeout(async () => {
-    const b = await pickAd({ placement: 'modal' })
+    const b: any = await pickAd({ placement: 'modal' })
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'.
     if (!b || route.value !== path || !mayInterrupt(route.value, INTERRUPT_ROUTES)) return
     /* the corner belongs to whoever takes it first in a page view: if the chat is already saying
        something there, the ad waits for another page rather than stacking on it */
@@ -55,19 +57,19 @@ onBeforeUnmount(clear)
 
 function dismiss() {
   const b = ad.value
-  if (b) { markDismissed(b.id); capture('click', { kind: 'cta_dismiss', ad_id: b.id, mode: mode.value }) }
+  if (b) { markDismissed((b as any).id); capture('click', { kind: 'cta_dismiss', ad_id: (b as any).id, mode: mode.value }) }
   ad.value = null
   releaseCorner('ad')   /* put away: the chat may have the corner for the rest of the page */
 }
 function go() {
   const b = ad.value
   if (!b) return
-  capture('cta_click', { ad_id: b.id, mode: mode.value })
-  markDismissed(b.id)
+  capture('cta_click', { ad_id: (b as any).id, mode: mode.value })
+  markDismissed((b as any).id)
   ad.value = null
-  if (!b.href) return
-  if (b.href.startsWith('/')) navigate(b.href)
-  else window.open(b.href, '_blank', 'noopener')
+  if (!(b as any).href) return
+  if ((b as any).href.startsWith('/')) navigate((b as any).href)
+  else window.open((b as any).href, '_blank', 'noopener')
 }
 </script>
 

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { supabase } from 'platformkit/lib/supabase.js'
 import { isSignedIn, user } from 'platformkit/lib/auth.js'
@@ -19,18 +19,18 @@ import LandingAnnouncement from './landing/LandingAnnouncement.vue'
  */
 const W = computed(() => ((us('usage').page || {}).alert || {}))
 const relevant = hasPublishedMeteredUsagePlan(products)
-const attention = ref(null)
+const attention = ref<any>(null)
 
 async function ask() {
   if (!relevant || !isSignedIn.value) { attention.value = null; return }
   try {
-    const { data, error } = await supabase.functions.invoke('usage-topup', { body: { action: 'attention' } })
+    const { data, error } = await (supabase as any).functions.invoke('usage-topup', { body: { action: 'attention' } })
     attention.value = error ? null : alertFor(data?.attention)
   } catch (e) {
     attention.value = null   /* the banner is a convenience: a failed question shows nothing */
   }
 }
-const follow = (event) => { attention.value = alertFor(event.detail) }
+const follow = (event: any) => { attention.value = alertFor(event.detail) }
 
 onMounted(() => { void ask(); window.addEventListener('pk:usage-attention', follow) })
 onBeforeUnmount(() => window.removeEventListener('pk:usage-attention', follow))

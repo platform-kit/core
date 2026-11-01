@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* menubar-end: Search (VueFinder's search modal, with its field and Include subfolders), Folders (the tree), grid · list */
 import { SearchIcon, LayoutGridIcon, ListIcon, FolderTreeIcon } from 'lucide-vue-next'
 import { useMedia } from './use-media.js'

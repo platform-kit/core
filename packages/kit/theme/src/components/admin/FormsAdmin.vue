@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* The forms: the collections' grid (AG Grid, the shared theme) — a row each with its title, its address,
    whether it is on, its slides and fields, a quiz, one answer per person, what is wrong with it — opening
    into the builder (FormBuilder.vue); New form writes a starter document and opens it. Everything goes
@@ -20,28 +20,28 @@ import AdminHead from './AdminHead.vue'
 /* the page's own name and its one line, from the admin's words — the same two the shell reads
    when it draws a head, so a page is never named twice in two files */
 const PAGE = { title: (ug('admin', 'rail').views || {})['forms'] || '', lead: (ug('admin', 'leads').main || {})['forms'] || '' }
-const forms = ref([]), loading = ref(true), msg = ref('')
-async function load() { loading.value = true; try { forms.value = await pipe.items('forms') } catch (e) { msg.value = e.message } finally { loading.value = false } }
+const forms = ref<any>([]), loading = ref(true), msg = ref('')
+async function load() { loading.value = true; try { forms.value = await pipe.items('forms') } catch (e) { msg.value = (e as any).message } finally { loading.value = false } }
 onMounted(load)
 watch(() => props.name, (n) => { if (!n) load() })
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
-const getRowId = (q) => q.data.name
-const yes = (v) => (v ? '✓' : '—')
+const getRowId = (q: any) => q.data.name
+const yes = (v: any) => (v ? '✓' : '—')
 const columnDefs = computed(() => [
-  { headerName: W['col-title'], field: 'title', pinned: 'left', flex: 1.6, minWidth: 220, cellRenderer: (q) => `<span class="fa-gtitle">${q.value}</span><span class="fa-gaddr">/form/${q.data.name}</span>` },
-  { headerName: W['col-on'], width: 100, valueGetter: (q) => (q.data.published ? W.on : W.off), cellRenderer: (q) => `<span class="ui-pill ${q.data.published ? 'ui-ok' : 'ui-off'}">${q.value}</span>` },
+  { headerName: W['col-title'], field: 'title', pinned: 'left', flex: 1.6, minWidth: 220, cellRenderer: (q: any) => `<span class="fa-gtitle">${q.value}</span><span class="fa-gaddr">/form/${q.data.name}</span>` },
+  { headerName: W['col-on'], width: 100, valueGetter: (q: any) => (q.data.published ? W.on : W.off), cellRenderer: (q: any) => `<span class="ui-pill ${q.data.published ? 'ui-ok' : 'ui-off'}">${q.value}</span>` },
   { headerName: W['col-slides'], field: 'slides', width: 100, type: 'numericColumn' },
   { headerName: W['col-fields'], field: 'fields', width: 100, type: 'numericColumn' },
-  { headerName: W.quiz, width: 90, valueGetter: (q) => yes(q.data.quiz), cellClass: 'fa-gc' },
-  { headerName: W.once, width: 90, valueGetter: (q) => yes(q.data.once), cellClass: 'fa-gc' },
-  { headerName: W['col-state'], flex: 1, minWidth: 160, valueGetter: (q) => (q.data.errors && q.data.errors.length ? W.errors : q.data.warnings && q.data.warnings.length ? W.warnings.replace('{n}', q.data.warnings.length) : ''), cellRenderer: (q) => (q.data.errors && q.data.errors.length ? `<span class="ui-err">${q.value}</span>` : q.value) },
+  { headerName: W.quiz, width: 90, valueGetter: (q: any) => yes(q.data.quiz), cellClass: 'fa-gc' },
+  { headerName: W.once, width: 90, valueGetter: (q: any) => yes(q.data.once), cellClass: 'fa-gc' },
+  { headerName: W['col-state'], flex: 1, minWidth: 160, valueGetter: (q: any) => (q.data.errors && q.data.errors.length ? W.errors : q.data.warnings && q.data.warnings.length ? W.warnings.replace('{n}', q.data.warnings.length) : ''), cellRenderer: (q: any) => (q.data.errors && q.data.errors.length ? `<span class="ui-err">${q.value}</span>` : q.value) },
 ])
-const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+const slug = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 async function startNew() {
   const title = prompt(W.new + ' — ' + (us('forms').admin.settings || {}).title)
   if (!title) return
   const name = slug(title)
-  try { await pipe.action('forms', 'create', { name, title }); try { sessionStorage.setItem('dl.admin.saved', 'forms') } catch (e) { /* private */ } emit('open', name) } catch (e) { msg.value = e.message }
+  try { await pipe.action('forms', 'create', { name, title }); try { sessionStorage.setItem('dl.admin.saved', 'forms') } catch (e) { /* private */ } emit('open', name) } catch (e) { msg.value = (e as any).message }
 }
 </script>
 
@@ -57,7 +57,7 @@ async function startNew() {
       <p v-if="loading" class="ui-muted">…</p>
       <div v-else-if="!forms.length" class="ui-empty"><h3>{{ W['empty-title'] }}</h3><p>{{ W['empty-body'] }}</p><button type="button" class="ui-btn ui-primary" @click="startNew">{{ W['empty-cta'] }}</button></div>
       <div v-else class="fa-grid">
-        <AgGridVue class="fa-aggrid" :theme="theme" :row-data="forms" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
+        <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: any; field: string; pinned: string; flex: number; minWidth: number; cellRenderer: (q: any) => string; width?: undefined --><AgGridVue class="fa-aggrid" :theme="theme" :row-data="forms" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
                    :row-height="54" :suppress-cell-focus="true" @row-clicked="emit('open', $event.data.name)" />
       </div>
     </template>

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * EVERYBODY WITH AN ACCOUNT HERE, and what the site already knows about each of them.
  *
@@ -33,9 +33,9 @@ const R = computed(() => us('people').roles.main)
 const ROLES = ['admin', 'provider', 'editor', 'support', 'analyst']
 const NARROWS = ['all', 'staff', 'provider', 'member', 'paid', 'unconfirmed']
 const PAGE = 50
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
-const rows = ref([])
+const rows = ref<any>([])
 const total = ref(0)
 const q = ref('')
 const narrow = ref('all')
@@ -46,7 +46,7 @@ const loading = ref(true)
 async function load(more = false) {
   loading.value = true
   try {
-    const { data } = await supabase.rpc('admin_everybody', {
+    const { data } = await (supabase as any).rpc('admin_everybody', {
       p_q: q.value.trim() || null, p_narrow: narrow.value,
       p_limit: PAGE, p_offset: more ? rows.value.length : 0,
     })
@@ -56,20 +56,20 @@ async function load(more = false) {
   } finally { loading.value = false }
 }
 onMounted(load)
-let timer = null
+let timer: any = null
 watch(q, () => { clearTimeout(timer); timer = setTimeout(() => load(), 250) })
 watch(narrow, () => load())
 
 /* ------------------------------------------------------------------ one person */
 
 const openId = ref('')
-const person = ref(null)
-const traits = ref([])
-async function open(row) {
+const person = ref<any>(null)
+const traits = ref<any>([])
+async function open(row: any) {
   openId.value = row.id
   person.value = null
   traits.value = []
-  const { data } = await supabase.rpc('admin_person', { p_user: row.id })
+  const { data } = await (supabase as any).rpc('admin_person', { p_user: row.id })
   person.value = data || null
   /* WHAT THE SITE HAS COME TO BELIEVE about them: a note for whoever is about to talk to them. The
      read refuses anybody the declaration (content/traits.md) does not name, so this only asks. */
@@ -77,17 +77,17 @@ async function open(row) {
 }
 function back() { openId.value = ''; person.value = null; traits.value = [] }
 
-const holds = (role) => !!person.value && (person.value.roles || []).includes(role)
-const mine = (id) => !!user.value && id === user.value.id
+const holds = (role: any) => !!person.value && (person.value.roles || []).includes(role)
+const mine = (id: any) => !!user.value && id === user.value.id
 
-async function toggle(role) {
+async function toggle(role: any) {
   if (busy.value || !person.value) return
   busy.value = role
   said.value = ''
   const had = person.value.roles || []
-  const want = had.includes(role) ? had.filter((r) => r !== role) : [...had, role]
+  const want = had.includes(role) ? had.filter((r: any) => r !== role) : [...had, role]
   try {
-    const { data, error } = await supabase.rpc('set_roles', { p_user: person.value.id, p_roles: want })
+    const { data, error } = await (supabase as any).rpc('set_roles', { p_user: person.value.id, p_roles: want })
     if (error) { said.value = error.message; return }
     if (!data || !data.ok) {
       /* the database's own refusals, said in the site's words */
@@ -95,21 +95,22 @@ async function toggle(role) {
       return
     }
     person.value = { ...person.value, roles: want }
-    const inList = rows.value.find((r) => r.id === person.value.id)
-    if (inList) inList.roles = want
+    const inList = rows.value.find((r: any) => (r as any).id === person.value.id)
+    if (inList) (inList as any).roles = want
   } finally { busy.value = '' }
 }
 
 /* what somebody IS, in the words the list uses — read off what the site already knows and never
    off anything they typed about themselves */
-const marks = (row) => [
+const marks = (row: any) => [
   ...((row.roles || []).length ? [{ k: 'staff', w: W.value['is-staff'] }] : []),
   ...(row.member ? [{ k: 'member', w: W.value['is-member'] }] : []),
   ...(row.customer ? [{ k: 'customer', w: W.value['is-customer'] }] : []),
   ...(row.verified === false ? [{ k: 'unconfirmed', w: W.value['is-unconfirmed'] }] : []),
 ]
-const when = (v) => { const d = new Date(v); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
-const money = (a, c) => (a == null ? '' : new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase() }).format(Number(a) / 100))
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const when = (v: any) => { const d = new Date(v); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
+const money = (a: any, c: any) => (a == null ? '' : new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase() }).format(Number(a) / 100))
 /* the processor's own page for this customer — the site keeps the id and nothing else */
 const invoicesAt = computed(() => (person.value && person.value.billing_id
   ? 'https://dashboard.stripe.com/customers/' + person.value.billing_id : ''))

@@ -81,39 +81,40 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { computed, ref, nextTick, watch } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import { DEFAULTS, familyOf, searchFamilies } from 'platformkit/build/typefaces.mjs'
 
 const SPEC = { heading: '--fd', body: '--f', mono: '--m' }
-const props = defineProps({ modelValue: { type: Object, default: () => ({}) } })
+const props = defineProps({ modelValue: { type: Object as PropType<any>, default: () => ({}) } })
 const emit = defineEmits(['update:modelValue'])
 
 const W = computed(() => us('pages').fonts || { slot: {}, field: {} })
 const value = computed(() => props.modelValue || {})
 const open = ref('')
 const query = ref('')
-const searchBox = ref(null)
+const searchBox = ref<any>(null)
 
 const SLOTS = Object.keys(SPEC).map((slot) => ({ slot, what: (us('pages').fonts?.what || {})[slot] || '' }))
 
-const defaultName = (slot) => DEFAULTS[slot]
-const defaultStack = (slot) => familyOf(DEFAULTS[slot]).stack
-const chosen = (slot) => value.value[slot] || DEFAULTS[slot]
-const stackOf = (slot) => (familyOf(chosen(slot)) || familyOf(DEFAULTS[slot])).stack
+const defaultName = (slot: any) => DEFAULTS[slot]
+const defaultStack = (slot: any) => familyOf(DEFAULTS[slot]).stack
+const chosen = (slot: any) => value.value[slot] || DEFAULTS[slot]
+const stackOf = (slot: any) => (familyOf(chosen(slot)) || familyOf(DEFAULTS[slot])).stack
 
-const found = (slot) => searchFamilies(slot, query.value)
+const found = (slot: any) => searchFamilies(slot, query.value)
 
-const toggle = (slot) => {
+const toggle = (slot: any) => {
   open.value = open.value === slot ? '' : slot
   query.value = ''
-  if (open.value) nextTick(() => { const b = [].concat(searchBox.value)[0]; if (b) b.focus() })
+  if (open.value) nextTick(() => { const b: any = [].concat(searchBox.value)[0]; if (b) b.focus() })
 }
 
 /* an empty choice is the theme's, and is written as ABSENT rather than as a name — so a site that
    never chose keeps following the theme when the theme's own default changes */
-const choose = (slot, name) => {
+const choose = (slot: any, name: any) => {
   const next = { ...value.value }
   if (name) next[slot] = name
   else delete next[slot]
@@ -133,13 +134,13 @@ const choose = (slot, name) => {
  * whole family is what the chooser is judging, so the regular weight of each is the honest ask.
  */
 const asked = new Set()
-const load = (names) => {
-  const want = names.filter((n) => n && !asked.has(n))
+const load = (names: any) => {
+  const want = names.filter((n: any) => n && !asked.has(n))
   if (!want.length) return
   for (const n of want) asked.add(n)
   const link = document.createElement('link')
   link.rel = 'stylesheet'
-  link.href = 'https://fonts.googleapis.com/css2?' + want.map((n) => 'family=' + n.replace(/ /g, '+')).join('&') + '&display=swap'
+  link.href = 'https://fonts.googleapis.com/css2?' + want.map((n: any) => 'family=' + n.replace(/ /g, '+')).join('&') + '&display=swap'
   document.head.appendChild(link)
 }
 

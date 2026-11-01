@@ -6,23 +6,23 @@ reviewed: 2026-10-10
 sources:
   [
     packages/kit/theme/src/components/landing/LandingAnnouncement.vue,
-    packages/kit/build/typefaces.mjs,
-    packages/kit/build/google-fonts.mjs,
-    packages/kit/build/google-font.mjs,
-    packages/kit/build/site-fonts.mjs,
-    packages/kit/build/fonts.mjs,
-    packages/kit/src/lib/share-card.js,
-    packages/kit/src/lib/seo.js,
-    packages/kit/src/lib/seo-head.js,
+    packages/kit/build/typefaces.mts,
+    packages/kit/build/google-fonts.mts,
+    packages/kit/build/google-font.mts,
+    packages/kit/build/site-fonts.mts,
+    packages/kit/build/fonts.mts,
+    packages/kit/src/lib/share-card.ts,
+    packages/kit/src/lib/seo.ts,
+    packages/kit/src/lib/seo-head.ts,
     packages/kit/theme/src/pages/SharePage.vue,
     packages/kit/theme/src/looks,
-    packages/kit/build/tokens.mjs,
+    packages/kit/build/tokens.mts,
     packages/kit/theme/src/components/admin/TokensField.vue,
     packages/kit/theme/src/tokens.css,
-    packages/kit/src/lib/look.js,
+    packages/kit/src/lib/look.ts,
     packages/kit/theme/src/components/landing,
     packages/kit/theme/src/pages/SharePage.vue,
-    packages/kit/build/share-images.mjs,
+    packages/kit/build/share-images.mts,
     packages/kit/build/theme-look.test.mjs,
     packages/kit/supabase/functions/share-image,
     packages/kit/supabase/functions/_shared/ttf-metrics.ts,
@@ -61,7 +61,7 @@ axis string, the fallback stack, which slots a family may fill — because the p
 browser and the build reads it under Node.
 
 Naming a family that is not in the catalogue stops the build and says which one you probably meant.
-Refresh the catalogue with `node packages/kit/build/google-fonts.mjs`; `--check` says whether it
+Refresh the catalogue with `node packages/kit/build/google-fonts.mts`; `--check` says whether it
 has gone stale without changing anything.
 
 A look should not set these three. It can carry more than colours in general — a palette is the

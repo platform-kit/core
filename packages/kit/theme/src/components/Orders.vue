@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Orders — EVERY sale, and what has happened to it since: what was on it, what has been paid,
  * what has gone out and what has come back. One read (`admin_orders`), because four would be
@@ -30,21 +30,21 @@ import AdminHead from './admin/AdminHead.vue'
 const T = us('orders')
 const H = T.orders.head, ST = T.orders.status, R = T.orders.row
 const PW = (us('store').product || {}).print || {}
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 /* every sku the site sells → its title and kind: the products, then each book's formats */
 const OFFERS = (() => {
-  const m = new Map()
+  const m: any = new Map()
   for (const p of PRODUCTS || []) m.set(p.sku, { title: p.title, kind: p.kind, book: p.book || '' })
   for (const b of BOOKS || []) for (const f of formatOffers(b)) m.set(f.sku, { title: b.title, kind: f.kind, format: f.format, book: b.slug })
   return m
 })()
-const offerOf = (r) => OFFERS.get(r.sku) || { title: r.sku || r.key || '—', kind: 'good' }
-const kindOf = (r) => offerOf(r).kind
-const kindWord = (r) => R['kind-' + kindOf(r)] || kindOf(r)
-const titleOf = (r) => { const o = offerOf(r); return o.format ? `${o.title} · ${PW['format-' + o.format] || o.format}` : o.title }
+const offerOf = (r: any) => OFFERS.get(r.sku) || { title: r.sku || r.key || '—', kind: 'good' }
+const kindOf = (r: any) => offerOf(r).kind
+const kindWord = (r: any) => R['kind-' + kindOf(r)] || kindOf(r)
+const titleOf = (r: any) => { const o = offerOf(r); return o.format ? `${o.title} · ${PW['format-' + o.format] || o.format}` : o.title }
 /* the variant: a printed book's contents · cloth · foil in the store's words; anything else (a size) as written */
-const variantOf = (r) => {
+const variantOf = (r: any) => {
   if (!r.variant) return ''
   const o = offerOf(r)
   if (o.format) { const v = parseVariant(r.variant); return [v.contents && (PW['contents-' + v.contents] || v.contents), v.cloth && (PW['cloth-' + v.cloth] || v.cloth), v.foil && (PW['foil-' + v.foil] || v.foil)].filter(Boolean).join(' · ') }
@@ -52,23 +52,23 @@ const variantOf = (r) => {
 }
 
 const state = ref('idle')      /* idle | loading | ok | denied | error */
-const rows = ref([])
-const people = ref({})         /* user id → { name, email } */
-const prints = ref({})         /* purchase id → print order id */
+const rows = ref<any>([])
+const people = ref<any>({})         /* user id → { name, email } */
+const prints = ref<any>({})         /* purchase id → print order id */
 const filter = ref('all')
-let channel = null
+let channel: any = null
 
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; rows.value = []; return }
   state.value = 'loading'
-  const { data, error } = await supabase.rpc('admin_orders', { p_limit: 200 })
+  const { data, error } = await (supabase as any).rpc('admin_orders', { p_limit: 200 })
   if (error) { state.value = (error.code === '42501' || /permission/i.test(error.message || '')) ? 'denied' : 'error'; return }
   if (!data) { state.value = 'denied'; return }
   /* an order and a loose purchase are drawn the same way, so they are made the same shape here
      rather than branched on in the template */
   rows.value = [
-    ...(data.orders || []).map((o) => ({ ...o, kind: 'order' })),
-    ...(data.loose || []).map((r) => ({
+    ...(data.orders || []).map((o: any) => ({ ...o, kind: 'order' })),
+    ...(data.loose || []).map((r: any) => ({
       kind: 'loose', id: r.id, created_at: r.created_at, email: r.email, user_id: r.user_id,
       currency: r.currency, total: r.amount_total, payment: r.status === 'refunded' ? 'refunded' : 'paid',
       fulfilment: null, checkout_session: r.session,
@@ -80,15 +80,15 @@ async function load() {
   state.value = 'ok'
   listen()
 }
-async function names(list) {
-  const ids = [...new Set(list.map((r) => r.user_id).filter((id) => id && !people.value[id]))]
+async function names(list: any) {
+  const ids = [...new Set(list.map((r: any) => r.user_id).filter((id: any) => id && !people.value[id]))]
   if (!ids.length) return
-  const { data } = await supabase.rpc('admin_people', { ids })
+  const { data } = await (supabase as any).rpc('admin_people', { ids })
   for (const p of data || []) people.value[p.id] = p
 }
 async function printLinks() {
-  const { data } = await supabase.from('fulfilments').select('id, purchase_id').not('purchase_id', 'is', null).limit(500)
-  const m = {}; for (const o of data || []) m[o.purchase_id] = o.id; prints.value = m
+  const { data } = await (supabase as any).from('fulfilments').select('id, purchase_id').not('purchase_id', 'is', null).limit(500)
+  const m = {}; for (const o of data || []) (m as any)[o.purchase_id] = o.id; prints.value = m
 }
 function listen() {
   if (channel || !supabase) return
@@ -102,35 +102,36 @@ function listen() {
 }
 onMounted(load)
 onIdentity(load)
-onBeforeUnmount(() => { if (channel) supabase.removeChannel(channel); channel = null })
+onBeforeUnmount(() => { if (channel) (supabase as any).removeChannel(channel); channel = null })
 
 /* the kinds a line can be, and the three questions somebody comes to this page with: what still
    has to go out, what has come back, and what is at a printer — the last being the page that
    used to be its own */
 const KINDS = ['book', 'download', 'good', 'membership', 'session', 'print']
-const kindsIn = (r) => (r.lines || []).map((l) => kindOf(l))
-const MATCH = {
+const kindsIn = (r: any) => (r.lines || []).map((l: any) => kindOf(l))
+const MATCH: any = {
   all: () => true,
-  unfulfilled: (r) => r.fulfilment === 'unfulfilled' || r.fulfilment === 'part_fulfilled',
-  returns: (r) => (r.returns || []).length > 0,
-  refunded: (r) => r.payment === 'refunded' || r.payment === 'part_refunded',
+  unfulfilled: (r: any) => r.fulfilment === 'unfulfilled' || r.fulfilment === 'part_fulfilled',
+  returns: (r: any) => (r.returns || []).length > 0,
+  refunded: (r: any) => r.payment === 'refunded' || r.payment === 'part_refunded',
   /* `f.book` was one of print's own columns on the fulfilment; they are empty now and the facts
      live in `chosen`, so reading it meant this half of the test had quietly stopped working */
-  print: (r) => (r.fulfilments || []).some((f) => f.chosen && f.chosen.book) || kindsIn(r).includes('print'),
+  print: (r: any) => (r.fulfilments || []).some((f: any) => f.chosen && f.chosen.book) || kindsIn(r).includes('print'),
 }
-const matches = (r, f) => (MATCH[f] ? MATCH[f](r) : kindsIn(r).includes(f))
-const shown = computed(() => rows.value.filter((r) => matches(r, filter.value)))
+const matches = (r: any, f: any) => (MATCH[f] ? MATCH[f](r) : kindsIn(r).includes(f))
+const shown = computed(() => rows.value.filter((r: any) => matches(r, filter.value)))
 const FILTERS = ['all', 'unfulfilled', 'print', 'returns', ...KINDS.filter((k) => k !== 'print'), 'refunded']
-const counts = computed(() => Object.fromEntries(FILTERS.map((f) => [f, rows.value.filter((r) => matches(r, f)).length])))
+const counts = computed(() => Object.fromEntries(FILTERS.map((f) => [f, rows.value.filter((r: any) => matches(r, f)).length])))
 const filters = computed(() => FILTERS.filter((f) => f === 'all' || counts.value[f]))
 
-const who = (r) => (r.user_id && people.value[r.user_id]) || null
-const when = (d) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
-const cash = (n, cur) => (typeof n === 'number' ? new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format(n / 100) : '')
-const money = (r) => cash(r.total, r.currency)
+const who = (r: any) => (r.user_id && people.value[r.user_id]) || null
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const when = (d: any) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+const cash = (n: any, cur: any) => (typeof n === 'number' ? new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format(n / 100) : '')
+const money = (r: any) => cash(r.total, r.currency)
 /* what has actually been taken: the transactions, which is the same sum the database derives
    its payment state from — shown beside the total so a part-paid order says how far short it is */
-const taken = (r) => (r.transactions || []).reduce((n, t) => n + (t.amount || 0), 0)
+const taken = (r: any) => (r.transactions || []).reduce((n: any, t: any) => n + (t.amount || 0), 0)
 /*
  * SEND IT AGAIN, AND ASK THE PRINTER WHERE IT IS.
  *
@@ -140,25 +141,25 @@ const taken = (r) => (r.transactions || []).reduce((n, t) => n + (t.amount || 0)
  * and offered nothing to do about it. `print-order` is admins-only and does the deciding; this
  * only asks.
  */
-const busy = reactive({}), said = reactive({})
-const canSend = (f) => f.status === 'new' || f.status === 'failed'
-const act = async (f, action) => {
+const busy = reactive<any>({}), said = reactive<any>({})
+const canSend = (f: any) => f.status === 'new' || f.status === 'failed'
+const act = async (f: any, action: any) => {
   busy[f.id] = action; said[f.id] = ''
   try {
-    const { data, error } = await supabase.functions.invoke('print-order', { body: { id: f.id, action } })
+    const { data, error } = await (supabase as any).functions.invoke('print-order', { body: { id: f.id, action } })
     if (error) throw error
     said[f.id] = action === 'submit' && data && data.ok ? R.went : ''
     await load()
-  } catch (e) { said[f.id] = String((e && e.message) || e).slice(0, 120) }
+  } catch (e) { said[f.id] = String((e && (e as any).message) || e).slice(0, 120) }
   finally { busy[f.id] = '' }
 }
 
-const sentOf = (r) => (r.fulfilments || []).filter((f) => !['rejected', 'canceled', 'failed'].includes(f.status)).reduce((n, f) => n + (f.quantity || 0), 0)
-const wantOf = (r) => (r.lines || []).filter((l) => !l.removed).reduce((n, l) => n + (l.quantity || 0), 0)
-const lineTitle = (l) => (OFFERS.get(l.sku) || {}).title || l.title || l.sku || '—'
-const lineShape = (l) => l.variant_title || variantOf(l)
-const stripeUrl = (r) => (/^cs_(live|test)_/.test(r.checkout_session || '') ? 'https://dashboard.stripe.com/checkout/sessions/' + r.checkout_session : '')
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+const sentOf = (r: any) => (r.fulfilments || []).filter((f: any) => !['rejected', 'canceled', 'failed'].includes(f.status)).reduce((n: any, f: any) => n + (f.quantity || 0), 0)
+const wantOf = (r: any) => (r.lines || []).filter((l: any) => !l.removed).reduce((n: any, l: any) => n + (l.quantity || 0), 0)
+const lineTitle = (l: any) => (OFFERS.get(l.sku) || {}).title || l.title || l.sku || '—'
+const lineShape = (l: any) => l.variant_title || variantOf(l)
+const stripeUrl = (r: any) => (/^cs_(live|test)_/.test(r.checkout_session || '') ? 'https://dashboard.stripe.com/checkout/sessions/' + r.checkout_session : '')
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 
 <template>

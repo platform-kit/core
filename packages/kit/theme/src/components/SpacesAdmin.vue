@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Spaces, from the admin. Four views over one space at a time, and they are two different KINDS of
  * thing, which is the whole shape of this screen:
@@ -36,7 +36,7 @@ import AdminHead from './admin/AdminHead.vue'
 
 const W = computed(() => us('spaces').admin.main)
 const NW = computed(() => us('spaces').notify.main)
-const me = computed(() => (session.value && session.value.user && session.value.user.id) || '')
+const me = computed(() => (session.value && (session.value as any).user && (session.value as any).user.id) || '')
 
 const VIEWS = ['rooms', 'members', 'moderation', 'voice']
 const view = ref('rooms')
@@ -48,18 +48,18 @@ const CAPABILITIES = ['voice', 'file', 'mention-channel', 'moderate', 'invite', 
 const EVENTS = ['purchase.paid', 'subscription.started', 'print.failed', 'account.new', 'support.escalated']
 
 /* the declaration, through the pipe */
-const files = ref([])          /* every record of the spaces model: a space, or <space>/<channel> */
-const doc = ref(null)          /* the open space's own file, as the editor holds it */
-const rooms = ref([])          /* its channels, each { name, data, content } */
+const files = ref<any>([])          /* every record of the spaces model: a space, or <space>/<channel> */
+const doc = ref<any>(null)          /* the open space's own file, as the editor holds it */
+const rooms = ref<any>([])          /* its channels, each { name, data, content } */
 /* the state, from the database */
-const rows = ref([])           /* public.spaces, so the acts have an id to hang off */
-const dbChannels = ref([])
-const members = ref([])
-const held = ref({})           /* user id → the role ids they hold here */
-const dbRoles = ref([])        /* the projected roles, for their ids */
-const people = ref({})
-const said = ref([])
-const grants = ref([])
+const rows = ref<any>([])           /* public.spaces, so the acts have an id to hang off */
+const dbChannels = ref<any>([])
+const members = ref<any>([])
+const held = ref<any>({})           /* user id → the role ids they hold here */
+const dbRoles = ref<any>([])        /* the projected roles, for their ids */
+const people = ref<any>({})
+const said = ref<any>([])
+const grants = ref<any>([])
 
 const slug = ref('')
 const busy = ref(false)
@@ -67,43 +67,44 @@ const err = ref('')
 const note = ref('')
 const dirty = ref(false)
 
-const spaces = computed(() => files.value.filter((f) => f.kind === 'space'))
+const spaces = computed(() => files.value.filter((f: any) => (f as any).kind === 'space'))
 const space = computed(() => (doc.value ? doc.value.data : null))
 /* the words a sealed room is marked with, and the ONE reading of whether a room is one: the
    channel's own answer where it gives one, the space's otherwise — the same `encryptedOf` the
    build and the Matrix surface ask, so the admin cannot show a different answer from the room */
 const EN = computed(() => us('spaces').encryption)
-const sealed = (c) => encryptedOf((c && c.data) || {}, space.value || {})
-const row = computed(() => rows.value.find((r) => r.slug === slug.value) || null)
-const tiers = computed(() => [...new Set(products.filter((p) => p.kind === 'membership' && p.tier).map((p) => p.tier))])
-const offers = computed(() => products.filter((p) => p.sku).map((p) => ({ sku: p.sku, key: p.key, title: p.title || p.sku })))
+const sealed = (c: any) => encryptedOf((c && c.data) || {}, space.value || {})
+const row = computed(() => rows.value.find((r: any) => (r as any).slug === slug.value) || null)
+const tiers = computed(() => [...new Set(products.filter((p: any) => p.kind === 'membership' && p.tier).map((p: any) => p.tier))])
+const offers = computed(() => products.filter((p: any) => p.sku).map((p: any) => ({ sku: p.sku, key: p.key, title: p.title || p.sku })))
 /* the booking types a room's rule may hang a window on — the only way in that looks FORWARD */
-const bookables = computed(() => (sessions || []).filter((s) => s.published !== false).map((s) => ({ slug: s.slug, title: s.title || s.slug })))
+const bookables = computed(() => (sessions || []).filter((s: any) => s.published !== false).map((s: any) => ({ slug: s.slug, title: s.title || s.slug })))
 
-const say = (m) => { note.value = m; setTimeout(() => { if (note.value === m) note.value = '' }, 2600) }
-async function run(fn, done) {
+const say = (m: any) => { note.value = m; setTimeout(() => { if (note.value === m) note.value = '' }, 2600) }
+async function run(fn: any, done: any) {
   busy.value = true; err.value = ''
-  try { await fn(); if (done) say(done) } catch (e) { err.value = e.message || String(e) } finally { busy.value = false }
+  try { await fn(); if (done) say(done) } catch (e) { err.value = (e as any).message || String(e) } finally { busy.value = false }
 }
 
 /* ------------------------------------------------------------------ reading */
 
 async function loadFiles() {
   files.value = await pipe.items('spaces')
-  if (!slug.value && spaces.value.length) slug.value = spaces.value[0].name
+  if (!slug.value && spaces.value.length) slug.value = (spaces.value[0] as any).name
 }
-async function openSpace(name) {
+async function openSpace(name: any) {
   if (!name) { doc.value = null; rooms.value = []; return }
   doc.value = await pipe.read('spaces', name)
-  const mine = files.value.filter((f) => f.kind === 'channel' && f.space === name)
-  rooms.value = await Promise.all(mine.map((f) => pipe.read('spaces', f.name)))
-  rooms.value.sort((a, b) => ((a.data.order ?? 99) - (b.data.order ?? 99)) || a.name.localeCompare(b.name))
+  const mine = files.value.filter((f: any) => (f as any).kind === 'channel' && (f as any).space === name)
+  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'.
+  rooms.value = await Promise.all(mine.map((f) => pipe.read('spaces', (f as any).name)))
+  rooms.value.sort((a: any, b: any) => (((a as any).data.order ?? 99) - ((b as any).data.order ?? 99)) || (a as any).name.localeCompare((b as any).name))
   dirty.value = false
 }
 async function loadRows() {
   const [s, c] = await Promise.all([
-    supabase.from('spaces').select('*').order('name'),
-    supabase.from('channels').select('*').order('name'),
+    (supabase as any).from('spaces').select('*').order('name'),
+    (supabase as any).from('channels').select('*').order('name'),
   ])
   rows.value = s.data || []
   dbChannels.value = c.data || []
@@ -111,52 +112,56 @@ async function loadRows() {
 async function loadMembers() {
   if (!row.value) { members.value = []; dbRoles.value = []; held.value = {}; return }
   const [m, r, h] = await Promise.all([
-    supabase.from('space_members').select('*').eq('space_id', row.value.id),
-    supabase.from('space_roles').select('*').eq('space_id', row.value.id).order('rank', { ascending: false }),
-    supabase.from('space_member_roles').select('user_id, role_id').eq('space_id', row.value.id),
+    (supabase as any).from('space_members').select('*').eq('space_id', (row.value as any).id),
+    (supabase as any).from('space_roles').select('*').eq('space_id', (row.value as any).id).order('rank', { ascending: false }),
+    (supabase as any).from('space_member_roles').select('user_id, role_id').eq('space_id', (row.value as any).id),
   ])
   members.value = m.data || []
   dbRoles.value = r.data || []
-  const by = {}
+  const by: any = {}
   for (const x of h.data || []) (by[x.user_id] = by[x.user_id] || []).push(x.role_id)
   held.value = by
-  await namesFor(members.value.map((m2) => m2.user_id))
+  await namesFor(members.value.map((m2: any) => (m2 as any).user_id))
 }
 async function loadSaid() {
-  const ids = dbChannels.value.filter((c) => c.kind !== 'dm' && (!row.value || c.space_id === row.value.id)).map((c) => c.id)
+  const ids = dbChannels.value.filter((c: any) => (c as any).kind !== 'dm' && (!row.value || (c as any).space_id === (row.value as any).id)).map((c: any) => (c as any).id)
   if (!ids.length) { said.value = []; return }
-  const { data } = await supabase.from('space_messages').select('id, channel_id, author_id, kind, body, title, created_at, deleted_at')
+  const { data } = await (supabase as any).from('space_messages').select('id, channel_id, author_id, kind, body, title, created_at, deleted_at')
     .in('channel_id', ids).order('created_at', { ascending: false }).limit(60)
   said.value = data || []
-  await namesFor(said.value.map((m) => m.author_id))
+  await namesFor(said.value.map((m: any) => (m as any).author_id))
 }
 async function loadGrants() {
-  const { data } = await supabase.from('space_grants').select('*').order('created_at', { ascending: false })
+  const { data } = await (supabase as any).from('space_grants').select('*').order('created_at', { ascending: false })
   grants.value = data || []
-  await namesFor(grants.value.map((g) => g.user_id))
+  await namesFor(grants.value.map((g: any) => (g as any).user_id))
 }
 /* a name for every id on screen, asked once each — profiles are self-select, so this is the door */
-async function namesFor(ids) {
-  const want = [...new Set(ids.filter((i) => i && !people.value[i]))]
+async function namesFor(ids: any) {
+  const want = [...new Set(ids.filter((i: any) => i && !people.value[i]))]
   if (!want.length) return
+  // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
   for (const id of want) people.value[id] = { name: '…', email: '' }
-  const { data } = await supabase.rpc('space_people_named', { p_ids: want })
+  const { data } = await (supabase as any).rpc('space_people_named', { p_ids: want })
   for (const r of data || []) people.value[r.id] = { name: r.name, email: r.email }
+  // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
   for (const id of want) if (people.value[id].name === '…') people.value[id] = { name: W.value.someone, email: '' }
 }
-const nameOf = (id) => (people.value[id] || {}).name || W.value.someone
+const nameOf = (id: any) => (people.value[id] || {}).name || W.value.someone
 
 async function loadAll() {
   await Promise.all([loadFiles(), loadRows(), loadGrants()])
   await openSpace(slug.value)
   await Promise.all([loadMembers(), loadSaid()])
 }
+// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 onMounted(() => run(loadAll))
+// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 watch(slug, async (s) => { await run(async () => { await openSpace(s); await Promise.all([loadMembers(), loadSaid()]) }) })
 
 /* ------------------------------------------------------------------ the declaration */
 
-const slugged = (v) => String(v || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const slugged = (v: any) => String(v || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 const touch = () => { dirty.value = true }
 
 /* the ways a space fills itself, said in words rather than as the rule's own shape */
@@ -168,25 +173,25 @@ const FILLS = computed(() => [
      word of its own, so a space using it read as 'a rule of its own' */
   { key: 'entitlement:subscribed', word: W.value['fill-subscribed'], rule: { entitlement: 'subscribed' } },
   ...tiers.value.map((t) => ({ key: 'tier:' + t, word: (W.value['fill-tier'] || '').replace('{tier}', t), rule: { tier: t } })),
-  ...offers.value.map((o) => ({ key: 'bought:' + o.sku, word: (W.value['fill-bought'] || '').replace('{name}', o.title), rule: { bought: o.sku } })),
+  ...offers.value.map((o: any) => ({ key: 'bought:' + o.sku, word: (W.value['fill-bought'] || '').replace('{name}', o.title), rule: { bought: o.sku } })),
   { key: 'none', word: W.value['fill-invite'], rule: {} },
 ])
-const sameRule = (a, b) => JSON.stringify(a || {}) === JSON.stringify(b || {})
+const sameRule = (a: any, b: any) => JSON.stringify(a || {}) === JSON.stringify(b || {})
 /* ALTERNATIVES, AS ROWS. A space may be filled more than one way — a live membership, OR anyone on
    staff — so this is a list of the same worded rules it always offered, and any one of them is
    enough. One row writes a mapping, exactly what every space had before this existed. */
 const fillRows = computed(() => {
-  const f = space.value && space.value.fill
+  const f: any = space.value && space.value.fill
   const sets = Array.isArray(f) ? f : f && Object.keys(f).length ? [f] : []
   return sets.length ? sets : [{}]
 })
-const keyOfRule = (rule) => (FILLS.value.find((f) => sameRule(f.rule, rule)) || { key: 'custom' }).key
-function writeFill(sets) {
-  const kept = sets.filter((s) => s && Object.keys(s).length)
+const keyOfRule = (rule: any) => (FILLS.value.find((f) => sameRule(f.rule, rule)) || { key: 'custom' }).key
+function writeFill(sets: any) {
+  const kept = sets.filter((s: any) => s && Object.keys(s).length)
   space.value.fill = kept.length > 1 ? kept : kept[0] || {}
   touch()
 }
-function setFillAt(i, key) {
+function setFillAt(i: any, key: any) {
   const f = FILLS.value.find((x) => x.key === key)
   if (!f || !space.value) return
   const sets = fillRows.value.map((s) => ({ ...s }))
@@ -201,7 +206,7 @@ function addFill() {
   const next = FILLS.value.find((f) => f.key !== 'none' && Object.keys(f.rule).length && !had.includes(f.key))
   writeFill([...fillRows.value.map((s) => ({ ...s })), { ...(next ? next.rule : {}) }])
 }
-const dropFill = (i) => writeFill(fillRows.value.filter((_, j) => j !== i).map((s) => ({ ...s })))
+const dropFill = (i: any) => writeFill(fillRows.value.filter((_, j) => j !== i).map((s) => ({ ...s })))
 
 /* ------------------------------------------------------------------ a room's own rule */
 
@@ -211,36 +216,36 @@ const dropFill = (i) => writeFill(fillRows.value.filter((_, j) => j !== i).map((
 const ROOM_FILLS = computed(() => [
   { key: 'none', word: W.value['room-fill-none'], rule: {} },
   ...FILLS.value.filter((f) => f.key !== 'none'),
-  ...bookables.value.map((b) => ({ key: 'booking:' + b.slug, word: (W.value['fill-booking'] || '').replace('{name}', b.title || b.slug), rule: { booking: b.slug } })),
+  ...bookables.value.map((b: any) => ({ key: 'booking:' + b.slug, word: (W.value['fill-booking'] || '').replace('{name}', b.title || b.slug), rule: { booking: b.slug } })),
 ])
 /* WHICH WAYS IN CAN CARRY A WINDOW, and which way it may face. A tier, a role and an entitlement
    expire by themselves, so a window on one would be a second clock disagreeing with the first; and
    a purchase has no future, so only a booking may look forward. */
-const canWindow = (rule) => !!(rule && (rule.bought || rule.booking))
-const canLookForward = (rule) => !!(rule && rule.booking)
+const canWindow = (rule: any) => !!(rule && (rule.bought || rule.booking))
+const canLookForward = (rule: any) => !!(rule && rule.booking)
 
 /* a span as the file writes it (`7d`) ↔ the two controls a person is given */
 const UNITS = ['m', 'h', 'd', 'w']
-const spanParts = (v) => { const m = /^(\d+)\s*([mhdw])$/.exec(String(v || '')); return m ? { n: Number(m[1]), unit: m[2] } : { n: 7, unit: 'd' } }
-const spanOf = (n, unit) => Math.max(1, Math.round(Number(n) || 1)) + (UNITS.includes(unit) ? unit : 'd')
+const spanParts = (v: any) => { const m = /^(\d+)\s*([mhdw])$/.exec(String(v || '')); return m ? { n: Number(m[1]), unit: m[2] } : { n: 7, unit: 'd' } }
+const spanOf = (n: any, unit: any) => Math.max(1, Math.round(Number(n) || 1)) + (UNITS.includes(unit) ? unit : 'd')
 
-const keyOfRoomRule = (rule) => {
+const keyOfRoomRule = (rule: any) => {
   /* a window is a qualifier and not a way in, so it is not part of what the select is showing */
   const bare = { ...(rule || {}) }
   delete bare.withinLast; delete bare.withinNext
   return (ROOM_FILLS.value.find((f) => sameRule(f.rule, bare)) || { key: 'custom' }).key
 }
-const roomRows = (c) => {
+const roomRows = (c: any) => {
   const f = c.data && c.data.fill
   const sets = Array.isArray(f) ? f : f && Object.keys(f).length ? [f] : []
   return sets.length ? sets : [{}]
 }
-function writeRoomFill(c, sets) {
-  const kept = sets.filter((s) => s && Object.keys(s).length)
+function writeRoomFill(c: any, sets: any) {
+  const kept = sets.filter((s: any) => s && Object.keys(s).length)
   c.data.fill = kept.length > 1 ? kept : kept[0] || {}
   touch()
 }
-function setRoomFillAt(c, i, key) {
+function setRoomFillAt(c: any, i: any, key: any) {
   const f = ROOM_FILLS.value.find((x) => x.key === key)
   if (!f) return
   const sets = roomRows(c).map((s) => ({ ...s }))
@@ -249,7 +254,7 @@ function setRoomFillAt(c, i, key) {
 }
 /* the window, as three controls: whether there is one, which way it faces, and how long. Turning it
    on picks the direction the way in can actually face — forward for a booking, back for a purchase. */
-function setRoomWindow(c, i, { on, dir, n, unit }) {
+function setRoomWindow(c: any, i: any, { on, dir, n, unit }: any) {
   const sets = roomRows(c).map((s) => ({ ...s }))
   const set = sets[i] || {}
   const had = set.withinLast || set.withinNext
@@ -262,39 +267,39 @@ function setRoomWindow(c, i, { on, dir, n, unit }) {
   sets[i] = set
   writeRoomFill(c, sets)
 }
-const roomWindow = (set) => {
+const roomWindow = (set: any) => {
   const dir = set.withinNext ? 'withinNext' : set.withinLast ? 'withinLast' : ''
   return dir ? { dir, ...spanParts(set[dir]) } : null
 }
-function addRoomFill(c) { writeRoomFill(c, [...roomRows(c).map((s) => ({ ...s })), { ...((ROOM_FILLS.value[1] || {}).rule || {}) }]) }
-const dropRoomFill = (c, i) => writeRoomFill(c, roomRows(c).filter((_, j) => j !== i).map((s) => ({ ...s })))
+function addRoomFill(c: any) { writeRoomFill(c, [...roomRows(c).map((s) => ({ ...s })), { ...((ROOM_FILLS.value[1] || {}).rule || {}) }]) }
+const dropRoomFill = (c: any, i: any) => writeRoomFill(c, roomRows(c).filter((_, j) => j !== i).map((s) => ({ ...s })))
 
 /* a role is a row with a colour, a rank and what holding it lets somebody do */
 function addRole() {
   space.value.roles = [...(space.value.roles || []), { slug: '', name: '', colour: '', rank: 0, can: [] }]
   touch()
 }
-function dropRole(i) { space.value.roles = space.value.roles.filter((_, j) => j !== i); touch() }
-function roleCan(r, cap, on) { r.can = on ? [...new Set([...(r.can || []), cap])] : (r.can || []).filter((c) => c !== cap); touch() }
+function dropRole(i: any) { space.value.roles = space.value.roles.filter((_: any, j: any) => j !== i); touch() }
+function roleCan(r: any, cap: any, on: any) { r.can = on ? [...new Set([...(r.can || []), cap])] : (r.can || []).filter((c: any) => c !== cap); touch() }
 
 /* a grant is a capability and a target, on the space or on one room */
 const TARGETS = computed(() => [
   { value: 'everyone', label: W.value['to-everyone'] },
-  ...(space.value ? (space.value.roles || []).filter((r) => r.slug).map((r) => ({ value: 'role:' + r.slug, label: (W.value['to-role'] || '').replace('{name}', r.name || r.slug) })) : []),
+  ...(space.value ? (space.value.roles || []).filter((r: any) => r.slug).map((r: any) => ({ value: 'role:' + r.slug, label: (W.value['to-role'] || '').replace('{name}', r.name || r.slug) })) : []),
   ...tiers.value.map((t) => ({ value: 'tier:' + t, label: (W.value['to-tier'] || '').replace('{tier}', t) })),
-  ...offers.value.map((o) => ({ value: 'bought:' + o.sku, label: (W.value['to-bought'] || '').replace('{name}', o.title) })),
+  ...offers.value.map((o: any) => ({ value: 'bought:' + o.sku, label: (W.value['to-bought'] || '').replace('{name}', o.title) })),
 ])
-function addGrantTo(holder) { holder.grants = [...(holder.grants || []), { capability: 'voice', to: 'everyone' }]; touch() }
-function dropGrantFrom(holder, i) { holder.grants = holder.grants.filter((_, j) => j !== i); touch() }
-const isBought = (g) => /^bought:/.test(String(g.to || ''))
+function addGrantTo(holder: any) { holder.grants = [...(holder.grants || []), { capability: 'voice', to: 'everyone' }]; touch() }
+function dropGrantFrom(holder: any, i: any) { holder.grants = holder.grants.filter((_: any, j: any) => j !== i); touch() }
+const isBought = (g: any) => /^bought:/.test(String(g.to || ''))
 
 /* a room hears what its own file says it hears */
-function hears(c, e, on) { c.data.hears = on ? [...new Set([...(c.data.hears || []), e])] : (c.data.hears || []).filter((x) => x !== e); touch() }
+function hears(c: any, e: any, on: any) { c.data.hears = on ? [...new Set([...(c.data.hears || []), e])] : (c.data.hears || []).filter((x: any) => x !== e); touch() }
 
 async function saveAll() {
   await run(async () => {
     await pipe.save('spaces', doc.value.name, { data: space.value, content: doc.value.content })
-    for (const c of rooms.value) await pipe.save('spaces', c.name, { data: c.data, content: c.content })
+    for (const c of rooms.value) await pipe.save('spaces', (c as any).name, { data: (c as any).data, content: (c as any).content })
     await loadAll()
   }, W.value.saved)
 }
@@ -329,7 +334,7 @@ async function makeSpace() {
 async function dropSpace() {
   if (!window.confirm((W.value['space-drop-sure'] || '').replace('{name}', space.value.name))) return
   await run(async () => {
-    for (const c of rooms.value) await pipe.remove('spaces', c.name)
+    for (const c of rooms.value) await pipe.remove('spaces', (c as any).name)
     await pipe.remove('spaces', doc.value.name)
     slug.value = ''
     await loadAll()
@@ -353,7 +358,7 @@ async function makeRoom() {
     await openSpace(slug.value)
   }, W.value['room-made'])
 }
-async function dropRoom(c) {
+async function dropRoom(c: any) {
   if (!window.confirm((W.value['room-drop-sure'] || '').replace('{name}', c.data.name))) return
   await run(async () => { await pipe.remove('spaces', c.name); await loadFiles(); await openSpace(slug.value) }, W.value['room-dropped'])
 }
@@ -361,24 +366,24 @@ async function dropRoom(c) {
 /* ------------------------------------------------------------------ the members */
 
 const finding = ref('')
-const found = ref([])
-let findTimer = null
+const found = ref<any>([])
+let findTimer: any = null
 watch(finding, (q) => {
   clearTimeout(findTimer)
   if (q.trim().length < 2) { found.value = []; return }
   findTimer = setTimeout(async () => {
-    const { data } = await supabase.rpc('space_find_people', { q: q.trim(), lim: 12 })
-    const have = new Set(members.value.map((m) => m.user_id))
-    found.value = (data || []).filter((p) => !have.has(p.id))
+    const { data } = await (supabase as any).rpc('space_find_people', { q: q.trim(), lim: 12 })
+    const have = new Set(members.value.map((m: any) => (m as any).user_id))
+    found.value = (data || []).filter((p: any) => !have.has(p.id))
   }, 250)
 })
-async function addMember(p) {
+async function addMember(p: any) {
   await run(async () => {
-    const { error } = await supabase.from('space_members').insert({ space_id: row.value.id, user_id: p.id, source: 'invite' })
+    const { error } = await (supabase as any).from('space_members').insert({ space_id: (row as any).value.id, user_id: p.id, source: 'invite' })
     if (error) throw error
     /* an open channel of the space is theirs to be in from the start */
-    const open = dbChannels.value.filter((c) => c.space_id === row.value.id && c.kind !== 'dm' && c.visibility === 'open')
-    if (open.length) await supabase.from('channel_members').insert(open.map((c) => ({ channel_id: c.id, user_id: p.id })))
+    const open = dbChannels.value.filter((c: any) => (c as any).space_id === (row as any).value.id && (c as any).kind !== 'dm' && (c as any).visibility === 'open')
+    if (open.length) await (supabase as any).from('channel_members').insert(open.map((c: any) => ({ channel_id: (c as any).id, user_id: p.id })))
     finding.value = ''
     found.value = []
     await loadMembers()
@@ -387,24 +392,25 @@ async function addMember(p) {
 /* A role is given or taken away one at a time, because a person holds several. The names are the
    space's own — there is no list of them in this file — and 'member' is what being in the space
    means, so it is given with the membership and never taken off. */
-const givable = computed(() => dbRoles.value.filter((r) => r.slug !== 'member'))
-const holds = (m, role) => (held.value[m.user_id] || []).includes(role.id)
-async function toggleRole(m, role) {
+const givable = computed(() => dbRoles.value.filter((r: any) => (r as any).slug !== 'member'))
+const holds = (m: any, role: any) => (held.value[m.user_id] || []).includes(role.id)
+async function toggleRole(m: any, role: any) {
   if (role.slug === 'member') return
+  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   await run(async () => {
     const q = holds(m, role)
-      ? supabase.from('space_member_roles').delete().eq('space_id', m.space_id).eq('user_id', m.user_id).eq('role_id', role.id)
-      : supabase.from('space_member_roles').insert({ space_id: m.space_id, user_id: m.user_id, role_id: role.id, given_by: me.value })
+      ? (supabase as any).from('space_member_roles').delete().eq('space_id', m.space_id).eq('user_id', m.user_id).eq('role_id', role.id)
+      : (supabase as any).from('space_member_roles').insert({ space_id: m.space_id, user_id: m.user_id, role_id: role.id, given_by: me.value })
     const { error } = await q
     if (error) throw error
     await loadMembers()
   })
 }
-async function removeMember(m) {
+async function removeMember(m: any) {
   await run(async () => {
-    const ids = dbChannels.value.filter((c) => c.space_id === m.space_id).map((c) => c.id)
-    if (ids.length) await supabase.from('channel_members').delete().eq('user_id', m.user_id).in('channel_id', ids)
-    const { error } = await supabase.from('space_members').delete().eq('space_id', m.space_id).eq('user_id', m.user_id)
+    const ids = dbChannels.value.filter((c: any) => (c as any).space_id === m.space_id).map((c: any) => (c as any).id)
+    if (ids.length) await (supabase as any).from('channel_members').delete().eq('user_id', m.user_id).in('channel_id', ids)
+    const { error } = await (supabase as any).from('space_members').delete().eq('space_id', m.space_id).eq('user_id', m.user_id)
     if (error) throw error
     await loadMembers()
   }, W.value['member-removed'])
@@ -412,15 +418,16 @@ async function removeMember(m) {
 
 /* ------------------------------------------------------------------ moderation */
 
-async function withdraw(m) {
+async function withdraw(m: any) {
   if (!window.confirm(W.value['withdraw-sure'])) return
   await run(async () => {
-    const { error } = await supabase.from('space_messages').update({ deleted_at: new Date().toISOString() }).eq('id', m.id)
+    const { error } = await (supabase as any).from('space_messages').update({ deleted_at: new Date().toISOString() }).eq('id', m.id)
     if (error) throw error
     await loadSaid()
   }, W.value.withdrawn)
 }
-const roomName = (id) => (dbChannels.value.find((c) => c.id === id) || {}).name || ''
+// @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
+const roomName = (id: any) => (dbChannels.value.find((c) => (c as any).id === id) || {}).name || ''
 
 /* ------------------------------------------------------------------ voice */
 
@@ -428,24 +435,24 @@ const roomName = (id) => (dbChannels.value.find((c) => c.id === id) || {}).name 
    read-only, with the file that gives it. What is left is the one-off: a capability given to ONE
    PERSON, which names somebody and is therefore an act — written through space_grant_person, which
    marks it 'hand' so the projection never touches it. */
-const declaredGrants = computed(() => grants.value.filter((g) => g.source === 'file'))
-const handGrants = computed(() => grants.value.filter((g) => g.source !== 'file'))
+const declaredGrants = computed(() => grants.value.filter((g: any) => (g as any).source === 'file'))
+const handGrants = computed(() => grants.value.filter((g: any) => (g as any).source !== 'file'))
 const newGrant = ref({ capability: 'voice', user_id: '', space_id: '', channel_id: '', days: '', note: '' })
 const grantFinding = ref('')
-const grantFound = ref([])
-let grantTimer = null
+const grantFound = ref<any>([])
+let grantTimer: any = null
 watch(grantFinding, (q) => {
   clearTimeout(grantTimer)
   if (q.trim().length < 2) { grantFound.value = []; return }
   grantTimer = setTimeout(async () => {
-    const { data } = await supabase.rpc('space_find_people', { q: q.trim(), lim: 12 })
+    const { data } = await (supabase as any).rpc('space_find_people', { q: q.trim(), lim: 12 })
     grantFound.value = data || []
   }, 250)
 })
 async function addGrant() {
-  const g = newGrant.value
+  const g: any = newGrant.value
   await run(async () => {
-    const { error } = await supabase.rpc('space_grant_person', {
+    const { error } = await (supabase as any).rpc('space_grant_person', {
       p_user: g.user_id, p_capability: g.capability,
       p_space: g.space_id || null, p_channel: g.channel_id || null,
       p_days: g.days ? Number(g.days) : null, p_note: g.note.trim() || null,
@@ -457,22 +464,24 @@ async function addGrant() {
     await loadGrants()
   }, W.value['grant-added'])
 }
-async function dropGrant(g) {
-  await run(async () => { const { error } = await supabase.rpc('space_ungrant', { p_id: g.id }); if (error) throw error; await loadGrants() }, W.value['grant-dropped'])
+async function dropGrant(g: any) {
+  await run(async () => { const { error } = await (supabase as any).rpc('space_ungrant', { p_id: g.id }); if (error) throw error; await loadGrants() }, W.value['grant-dropped'])
 }
 /* a grant said back in words, because a row of ids tells nobody anything */
-function grantSays(g) {
+function grantSays(g: any) {
   const w = W.value
   const cap = w['cap-' + g.capability] || g.capability
   const where = g.channel_id ? (w['says-channel'] || '').replace('{name}', roomName(g.channel_id) || '—')
-    : g.space_id ? (w['says-space'] || '').replace('{name}', (rows.value.find((s) => s.id === g.space_id) || {}).name || '—')
+    // @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
+    : g.space_id ? (w['says-space'] || '').replace('{name}', (rows.value.find((s) => (s as any).id === g.space_id) || {}).name || '—')
       : w['says-site']
   const who = g.scope === 'user' ? (w['says-user'] || '').replace('{name}', nameOf(g.user_id))
     : g.scope === 'tier' ? (w['says-tier'] || '').replace('{tier}', g.tier)
-      : g.scope === 'role' ? (w['says-role'] || '').replace('{name}', (dbRoles.value.find((r) => r.id === g.role_id) || {}).name || '—')
+      // @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
+      : g.scope === 'role' ? (w['says-role'] || '').replace('{name}', (dbRoles.value.find((r) => (r as any).id === g.role_id) || {}).name || '—')
         : g.scope === 'product' ? (g.days
-          ? (w['says-product-days'] || '').replace('{name}', (offers.value.find((o) => o.key === g.product_key) || {}).title || g.product_key).replace('{n}', g.days)
-          : (w['says-product'] || '').replace('{name}', (offers.value.find((o) => o.key === g.product_key) || {}).title || g.product_key))
+          ? (w['says-product-days'] || '').replace('{name}', (offers.value.find((o: any) => o.key === g.product_key) || {}).title || g.product_key).replace('{n}', g.days)
+          : (w['says-product'] || '').replace('{name}', (offers.value.find((o: any) => o.key === g.product_key) || {}).title || g.product_key))
           : w['says-anyone']
   return (w['says-line'] || '{cap} · {who} · {where}').replace('{cap}', cap).replace('{who}', who).replace('{where}', where)
 }
@@ -498,7 +507,7 @@ function grantSays(g) {
           <li v-for="s in spaces" :key="s.name">
             <button type="button" :class="{ on: s.name === slug, off: s.data.published === false }" @click="slug = s.name">
               <b>{{ s.data.name || s.name }}</b>
-              <i>{{ files.filter((f) => f.kind === 'channel' && f.space === s.name).length }}</i>
+              <i>{{ files.filter((f: any) => f.kind === 'channel' && f.space === s.name).length }}</i>
             </button>
           </li>
           <li v-if="!spaces.length" class="sa-none">{{ W['no-spaces'] }}</li>
@@ -539,7 +548,7 @@ function grantSays(g) {
               <div class="sa-fill sa-wide">
                 <span class="sa-fill-head">{{ fillRows.length > 1 ? W['space-fill-any'] : W['space-fill'] }}</span>
                 <div v-for="(row, i) in fillRows" :key="i" class="sa-fill-row">
-                  <select :value="keyOfRule(row)" @change="setFillAt(i, $event.target.value)">
+                  <select :value="keyOfRule(row)" @change="setFillAt(i, ($event.target as any).value)">
                     <option v-for="f in FILLS" :key="f.key" :value="f.key">{{ f.word }}</option>
                     <option v-if="keyOfRule(row) === 'custom'" value="custom">{{ W['fill-custom'] }}</option>
                   </select>
@@ -560,7 +569,7 @@ function grantSays(g) {
                    same for everybody in it, staff included. Whether one PERSON wants to be written
                    to is theirs and is set where their own things are, never here. -->
               <label class="sa-switch">
-                <input :checked="space.dms !== false" type="checkbox" @change="space.dms = $event.target.checked; touch()" /><span>{{ W['dms-on'] }}</span>
+                <input :checked="space.dms !== false" type="checkbox" @change="space.dms = ($event.target as any).checked; touch()" /><span>{{ W['dms-on'] }}</span>
               </label>
               <span class="sa-stat">{{ W.slug }}: <code>{{ doc.name }}</code></span>
             </div>
@@ -640,22 +649,22 @@ function grantSays(g) {
               <p class="sa-hint">{{ W['room-fill-hint'] }}</p>
               <ul class="sa-list">
                 <li v-for="(set, i) in roomRows(c)" :key="i" class="sa-fill-row">
-                  <select :value="keyOfRoomRule(set)" @change="setRoomFillAt(c, i, $event.target.value)">
+                  <select :value="keyOfRoomRule(set)" @change="setRoomFillAt(c, i, ($event.target as any).value)">
                     <option v-for="f in ROOM_FILLS" :key="f.key" :value="f.key">{{ f.word }}</option>
                     <option v-if="keyOfRoomRule(set) === 'custom'" value="custom">{{ W['fill-custom'] }}</option>
                   </select>
                   <template v-if="canWindow(set)">
                     <label class="sa-switch sa-inline-field">
-                      <input type="checkbox" :checked="!!roomWindow(set)" @change="setRoomWindow(c, i, { on: $event.target.checked })" />
+                      <input type="checkbox" :checked="!!roomWindow(set)" @change="setRoomWindow(c, i, { on: ($event.target as any).checked })" />
                       <span>{{ W['room-window'] }}</span>
                     </label>
                     <template v-if="roomWindow(set)">
-                      <select :value="roomWindow(set).dir" @change="setRoomWindow(c, i, { dir: $event.target.value })">
+                      <select :value="roomWindow(set).dir" @change="setRoomWindow(c, i, { dir: ($event.target as any).value })">
                         <option value="withinLast">{{ W['window-last'] }}</option>
                         <option v-if="canLookForward(set)" value="withinNext">{{ W['window-next'] }}</option>
                       </select>
-                      <input class="sa-num" type="number" min="1" :value="roomWindow(set).n" @input="setRoomWindow(c, i, { n: $event.target.value })" />
-                      <select :value="roomWindow(set).unit" @change="setRoomWindow(c, i, { unit: $event.target.value })">
+                      <input class="sa-num" type="number" min="1" :value="roomWindow(set).n" @input="setRoomWindow(c, i, { n: ($event.target as any).value })" />
+                      <select :value="roomWindow(set).unit" @change="setRoomWindow(c, i, { unit: ($event.target as any).value })">
                         <option v-for="u in UNITS" :key="u" :value="u">{{ W['unit-' + u] }}</option>
                       </select>
                     </template>
@@ -817,7 +826,7 @@ function grantSays(g) {
               </label>
               <label v-if="newGrant.space_id">{{ W.room }}
                 <select v-model="newGrant.channel_id"><option value="">{{ W['whole-space'] }}</option>
-                  <option v-for="c in dbChannels.filter((x) => x.kind !== 'dm' && x.space_id === newGrant.space_id)" :key="c.id" :value="c.id">{{ c.name }}</option></select>
+                  <option v-for="c in dbChannels.filter((x: any) => x.kind !== 'dm' && x.space_id === newGrant.space_id)" :key="c.id" :value="c.id">{{ c.name }}</option></select>
               </label>
               <label>{{ W['grant-days'] }}<input v-model="newGrant.days" type="number" min="1" :placeholder="W['grant-forever']" /></label>
               <label class="sa-wide">{{ W.person }}

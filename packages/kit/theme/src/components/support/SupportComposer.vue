@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Where a support message is written: a textarea that grows with it (Enter sends, Shift+Enter
  * breaks a line), a clip for a file (a picture shows inline in the thread — a gif moves), the
@@ -23,22 +23,22 @@ const props = defineProps({
 const emit = defineEmits(['send', 'file', 'voice', 'typing'])
 const W = us('support').widget.composer
 const text = ref('')
-const box = ref(null)
-const picker = ref(null)
+const box = ref<any>(null)
+const picker = ref<any>(null)
 const recording = ref(false)
 const mic = ref(false)
 const canSend = computed(() => text.value.trim().length > 0 && !props.busy)
 
 onMounted(async () => { mic.value = await micUsable() })
 
-function grow() { const el = box.value; if (!el) return; el.style.height = 'auto'; el.style.height = Math.min(140, el.scrollHeight) + 'px' }
-function key(e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send() } }
+function grow() { const el: any = box.value; if (!el) return; el.style.height = 'auto'; el.style.height = Math.min(140, el.scrollHeight) + 'px' }
+function key(e: any) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send() } }
 function send() { const t = text.value.trim(); if (!t || props.busy) return; emit('send', t); text.value = ''; nextTick(grow) }
-function picked(e) { const f = e.target.files && e.target.files[0]; if (f) emit('file', f); e.target.value = '' }
-function voice({ blob, seconds, transcript }) { recording.value = false; emit('voice', { blob, seconds, transcript }) }
+function picked(e: any) { const f = e.target.files && e.target.files[0]; if (f) emit('file', f); e.target.value = '' }
+function voice({ blob, seconds, transcript }: any) { recording.value = false; emit('voice', { blob, seconds, transcript }) }
 function focus() { if (box.value) box.value.focus() }
 /* a canned reply, put into the box for the agent to send or change */
-function insert(t) { text.value = (text.value ? text.value.replace(/\s+$/, '') + '\n' : '') + String(t || ''); nextTick(() => { grow(); focus() }) }
+function insert(t: any) { text.value = (text.value ? text.value.replace(/\s+$/, '') + '\n' : '') + String(t || ''); nextTick(() => { grow(); focus() }) }
 defineExpose({ focus, insert })
 </script>
 

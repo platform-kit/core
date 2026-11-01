@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * THE NETWORK'S COLUMN — one component for wherever the network is read: the standalone /feed
  * (FeedPage, between its own navigation and what is beside it) and, on a site whose config says
@@ -42,7 +42,7 @@ const N = computed(() => us('network').notes.main)
 const H = computed(() => us('network').thread.main)
 const P = computed(() => us('network').post.main)
 const S = computed(() => us('network').shell.main)
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const view = computed(() => {
   const p = route.value || ''
@@ -60,17 +60,19 @@ const tl = timeline()
 const ds = discover()
 /* Home has two tabs, remembered for the visit: the people followed, or everything on the site */
 /* a site that hides following has one Home feed: everything the reader may read */
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const FOLLOWING = showsFollowing((site.community || {}).hide)
 /* Explore is the For You grid where the site turned it on */
 const FOR_YOU = !!(site.community || {}).forYou && !!(site.network)
 const tab = ref(!FOLLOWING ? 'discover' : (() => { try { return sessionStorage.getItem('dl.feed.tab') || 'following' } catch { return 'following' } })())
-function setTab(t) { tab.value = t; try { sessionStorage.setItem('dl.feed.tab', t) } catch { /* private window */ } ; if (t === 'discover' && !ds.st.items.length) ds.refresh(); window.scrollTo({ top: 0 }) }
+function setTab(t: any) { tab.value = t; try { sessionStorage.setItem('dl.feed.tab', t) } catch { /* private window */ } ; if (t === 'discover' && !ds.st.items.length) ds.refresh(); window.scrollTo({ top: 0 }) }
 const source = computed(() => (view.value === 'explore' || tab.value === 'discover' ? ds : tl))
-const items = computed(() => source.value.st.items.map((it) => ({ ...it, post: it.post_id ? net.posts[it.post_id] : net.messages[it.message_id] })).filter((it) => it.post))
+// @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
+const items = computed(() => source.value.st.items.map((it) => ({ ...it, post: (it as any).post_id ? net.posts[(it as any).post_id] : net.messages[(it as any).message_id] })).filter((it) => it.post))
 
 /* ---------------------------------------------------------------- explore: people by name */
 const q = ref('')
-const found = ref([])
+const found = ref<any>([])
 const finding = ref(false)
 let findTick = 0
 async function find() {
@@ -80,7 +82,7 @@ async function find() {
   finding.value = true
   try { const ids = await findPeople(s); if (n === findTick) found.value = ids } finally { if (n === findTick) finding.value = false }
 }
-let findTimer = null
+let findTimer: any = null
 watch(q, () => { clearTimeout(findTimer); findTimer = setTimeout(find, 250) })
 
 /* ---------------------------------------------------------------- the notifications */
@@ -90,13 +92,13 @@ const SPACES = moduleOn('spaces')
 const EVENTS = SPACES && moduleOn('events')
 const emit = defineEmits(['open-message', 'open-event'])
 const PAGE = 60
-const notes = ref([])
+const notes = ref<any>([])
 const notesBusy = ref(false)
 const notesErr = ref(false)
 const notesDone = ref(false)
-const seenAt = ref(null)
+const seenAt = ref<any>(null)
 const noteFilter = ref('all')
-const fetchNotes = (before) => (SPACES ? communityNotes(before) : notifications(before).then((r) => r.map((n) => ({ ...n, source: 'network' }))))
+const fetchNotes = (before: any) => (SPACES ? communityNotes(before) : notifications(before).then((r) => r.map((n: any) => ({ ...n, source: 'network' }))))
 async function loadNotes() {
   notesBusy.value = true; notesErr.value = false
   try {
@@ -110,7 +112,7 @@ async function moreNotes() {
   if (notesBusy.value || notesDone.value || !notes.value.length) return
   notesBusy.value = true
   try {
-    const rows = await fetchNotes(notes.value[notes.value.length - 1].at)
+    const rows = await fetchNotes((notes.value[notes.value.length - 1] as any).at)
     notes.value = notes.value.concat(rows); notesDone.value = rows.length < (SPACES ? PAGE : 50)
   } catch { notesErr.value = true } finally { notesBusy.value = false }
 }
@@ -118,15 +120,15 @@ async function moreNotes() {
    only where the reader may read it */
 const noteFilters = computed(() => (!SPACES && !net.access.read ? [] : NOTE_FILTERS.filter((f) => f === 'all' || f === 'replies'
   || (f === 'mentions' && SPACES) || (f === 'events' && EVENTS) || ((f === 'reactions' || f === 'follows') && net.access.read))))
-function setNoteFilter(f) { noteFilter.value = f; window.scrollTo({ top: 0 }) }
+function setNoteFilter(f: any) { noteFilter.value = f; window.scrollTo({ top: 0 }) }
 const grouped = computed(() => groupNotes(notes.value, seenAt.value))
 const shownNotes = computed(() => (noteFilter.value === 'all' ? grouped.value : grouped.value.filter((g) => g.kind === noteFilter.value)))
-const nameOf = (p) => (p && (p.name || p.username)) || P.value.someone
-const nameOfId = (id) => nameOf(net.people[id])
+const nameOf = (p: any) => (p && (p.name || p.username)) || P.value.someone
+const nameOfId = (id: any) => nameOf(net.people[id])
 const names = computed(() => Object.fromEntries(Object.entries(net.people).map(([k, v]) => [k, nameOf(v)])))
 /* a line's words as runs, the names and the room in bold — the words are the file's, whole */
-function runs(tpl, map, bold) {
-  const out = []
+function runs(tpl: any, map: any, bold: any) {
+  const out: any = []
   String(tpl || '').split(/(\{\w+\})/).forEach((bit) => {
     const m = bit.match(/^\{(\w+)\}$/)
     if (m) out.push({ t: map[m[1]] == null ? '' : String(map[m[1]]), b: bold.includes(m[1]) })
@@ -134,13 +136,14 @@ function runs(tpl, map, bold) {
   })
   return out
 }
-function noteRuns(g) {
+function noteRuns(g: any) {
   const W = N.value
   if (g.source === 'event') {
-    const it = g.item || {}
+    const it: any = g.item || {}
     const start = new Date(it.starts_at)
     const now = new Date()
     const key = start <= now ? 'event-on' : start.toDateString() === now.toDateString() ? 'event-today' : 'event-tomorrow'
+    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     return runs(W[key], { title: it.title, time: clockOf(it.starts_at) }, ['title'])
   }
   if (g.source !== 'network') {
@@ -152,13 +155,13 @@ function noteRuns(g) {
   const key = n > 2 ? g.reason + '-many' : n === 2 ? g.reason + '-two' : g.reason
   return runs(W[key] || W[g.reason], { name: nameOfId(g.actors[0]), other: nameOfId(g.actors[1]), n: n - 1 }, ['name', 'other'])
 }
-const noteText = (g) => {
+const noteText = (g: any) => {
   if (g.source === 'network') { const p = net.posts[g.post_id || g.subject_post_id]; return p ? p.text : '' }
   if (g.source === 'event') return ''
   return plainBody((g.item && g.item.body) || '', names.value)
 }
-const noteWhere = (g) => (g.item && g.item.space) || ''
-const noteHref = (g) => {
+const noteWhere = (g: any) => (g.item && g.item.space) || ''
+const noteHref = (g: any) => {
   if (g.source === 'network') {
     if (g.reason === 'follow') { const p = net.people[g.actors[0]] || {}; return g.actors.length === 1 && p.page ? ROUTES.people + '/' + p.username : '' }
     return ROUTES.feed + '/post/' + (g.post_id || g.subject_post_id)
@@ -166,7 +169,7 @@ const noteHref = (g) => {
   if (g.source === 'event') return ROUTES.spaces || ''
   return ROUTES.spaces || ''
 }
-function openNote(g, e) {
+function openNote(g: any, e: any) {
   if (g.source === 'network') return
   e.preventDefault()
   if (g.source === 'event') emit('open-event', (g.item || {}).slug)
@@ -174,10 +177,10 @@ function openNote(g, e) {
 }
 
 /* ---------------------------------------------------------------- a thread */
-const thread = ref(null)
+const thread = ref<any>(null)
 const threadBusy = ref(false)
 const replying = ref(false)
-async function openThread(id) {
+async function openThread(id: any) {
   threadBusy.value = true; thread.value = null
   try { thread.value = await loadThread(id) } finally { threadBusy.value = false }
   replying.value = wantReply.value === id
@@ -185,7 +188,7 @@ async function openThread(id) {
 }
 /* where a press on Reply came from: the thread opens with the box ready under that post */
 const wantReply = ref('')
-const rows = computed(() => (thread.value ? threadOf(thread.value.root, thread.value.replies.map((r) => net.posts[r.id] || r)) : []))
+const rows = computed(() => (thread.value ? threadOf(thread.value.root, thread.value.replies.map((r: any) => net.posts[r.id] || r)) : []))
 const focusPost = computed(() => (thread.value ? net.posts[thread.value.focus] : null))
 
 /* ---------------------------------------------------------------- what drives each view */
@@ -203,18 +206,19 @@ onMounted(show)
 watch([view, threadId, isSignedIn], show)
 
 /* answering from a card: open its thread with the reply box ready */
-function replyTo(post) { wantReply.value = post.id; navigate(ROUTES.feed + '/post/' + post.id) }
+function replyTo(post: any) { wantReply.value = post.id; navigate(ROUTES.feed + '/post/' + post.id) }
 function back() { if (window.history.length > 1) window.history.back(); else navigate(ROUTES.feed) }
-async function posted(out) {
+async function posted(out: any) {
   if (view.value === 'thread') openThread(threadId.value)
   else source.value.refresh()
 }
 /* a report, over whatever view raised it */
-const reporting = ref(null)
-const removed = (id) => { tl.st.items = tl.st.items.filter((it) => it.post_id !== id); if (view.value === 'thread' && id === threadId.value) navigate(ROUTES.feed) }
+const reporting = ref<any>(null)
+const removed = (id: any) => { tl.st.items = tl.st.items.filter((it: any) => (it as any).post_id !== id); if (view.value === 'thread' && id === threadId.value) navigate(ROUTES.feed) }
 
-const signIn = () => { if (window.DLauth) window.DLauth.open() }
+const signIn = () => { if ((window as any).DLauth) (window as any).DLauth.open() }
 /* a post made elsewhere — the post window — lands in whatever this column is showing */
+// @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
 defineExpose({ refresh: () => posted() })
 </script>
 
@@ -314,7 +318,7 @@ defineExpose({ refresh: () => posted() })
             </span>
             <span class="fd-note-line"><template v-for="(r, i) in noteRuns(g)" :key="i"><b v-if="r.b">{{ r.t }}</b><template v-else>{{ r.t }}</template></template></span>
             <span v-if="noteText(g)" class="fd-note-text">{{ noteText(g) }}</span>
-            <span class="fd-note-meta"><time v-if="g.source !== 'event'" :datetime="g.at">{{ agoOf(g.at) }}</time><template v-if="noteWhere(g)">{{ g.source !== 'event' ? ' · ' : '' }}{{ noteWhere(g) }}</template><template v-if="g.source === 'event'">{{ noteWhere(g) ? ' · ' : '' }}<span class="fd-note-go">{{ N['event-open'] }}</span></template></span>
+            <span class="fd-note-meta"><time v-if="g.source !== 'event'" :datetime="g.at"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 1. -->{{ agoOf(g.at) }}</time><template v-if="noteWhere(g)">{{ g.source !== 'event' ? ' · ' : '' }}{{ noteWhere(g) }}</template><template v-if="g.source === 'event'">{{ noteWhere(g) ? ' · ' : '' }}<span class="fd-note-go">{{ N['event-open'] }}</span></template></span>
           </span>
           <i v-if="g.fresh" class="fd-note-dot" :aria-label="N.new"></i>
         </a>

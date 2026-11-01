@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * Who else is here. A member of a space can see who is in it, what each of them is called here (the
  * roles the space invented), whether they are about, and write to any of them — and nothing else.
@@ -21,33 +22,33 @@ import SpaceFlair from './SpaceFlair.vue'
 import SpaceIcon from './SpaceIcon.vue'
 
 const props = defineProps({
-  space: { type: Object, default: null },
-  channels: { type: Array, default: () => [] },
-  here: { type: Object, default: () => ({}) },
+  space: { type: Object as PropType<any>, default: null },
+  channels: { type: Array as PropType<any[]>, default: () => [] },
+  here: { type: Object as PropType<any>, default: () => ({}) },
   me: { type: String, default: '' },
 })
 const emit = defineEmits(['write', 'who'])
 const W = computed(() => us('spaces').directory.main)
 
-const people = ref([])
-const invites = ref([])
+const people = ref<any>([])
+const invites = ref<any>([])
 const mayAsk = ref(false)
 const made = ref('')        /* the one time a token is ever readable */
 const busy = ref(false)
 const err = ref('')
 const filter = ref('')
 
-const aRoom = computed(() => (props.space ? (props.channels.find((c) => c.space_id === props.space.id && c.kind !== 'dm') || null) : null))
+const aRoom = computed(() => (props.space ? (props.channels.find((c) => (c as any).space_id === props.space.id && (c as any).kind !== 'dm') || null) : null))
 const shown = computed(() => {
   const q = filter.value.trim().toLowerCase()
   const list = people.value
-  return q ? list.filter((p) => String(p.name || '').toLowerCase().includes(q)) : list
+  return q ? list.filter((p: any) => String((p as any).name || '').toLowerCase().includes(q)) : list
 })
 
 async function load() {
   if (!props.space) { people.value = []; invites.value = []; return }
   people.value = (await peopleOf(props.space.id)) || []
-  mayAsk.value = aRoom.value ? !!(await mayInvite(aRoom.value.id)) : false
+  mayAsk.value = aRoom.value ? !!(await mayInvite((aRoom.value as any).id)) : false
   invites.value = mayAsk.value ? ((await invitesOf(props.space.id)) || []) : []
 }
 onMounted(load)
@@ -56,12 +57,13 @@ watch(() => props.space && props.space.id, load)
 async function make() {
   busy.value = true; err.value = ''
   try {
+    // @ts-expect-error TS2322, from the conversion: Type 'number' is not assignable to type 'null | undefined'.
     made.value = await makeInvite(props.space.id, { uses: 0, days: 30 })
     invites.value = (await invitesOf(props.space.id)) || []
-  } catch (e) { err.value = e.message || String(e) } finally { busy.value = false }
+  } catch (e) { err.value = (e as any).message || String(e) } finally { busy.value = false }
 }
-async function drop(id) {
-  try { await dropInvite(id); invites.value = (await invitesOf(props.space.id)) || [] } catch (e) { err.value = e.message }
+async function drop(id: any) {
+  try { await dropInvite(id); invites.value = (await invitesOf(props.space.id)) || [] } catch (e) { err.value = (e as any).message }
 }
 const link = computed(() => (made.value ? `${window.location.origin}/spaces/join/${made.value}` : ''))
 const copy = () => { try { navigator.clipboard.writeText(link.value) } catch { /* no clipboard */ } }

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * DESIGNING A FACE.
  *
@@ -32,7 +33,7 @@ const props = defineProps({
   avatar: { type: String, default: '' },
   style: { type: String, default: '' },
   seed: { type: String, default: '' },
-  options: { type: Object, default: () => ({}) },
+  options: { type: Object as PropType<any>, default: () => ({}) },
 })
 const emit = defineEmits(['pick', 'upload', 'clear'])
 const W = computed(() => us('account').avatar.main)
@@ -85,7 +86,7 @@ watch(() => [props.style, props.seed, props.options], () => {
 /* what THIS style offers, by name, straight from its definition */
 const traits = computed(() => traitsOf(style.value))
 /* a colour's option name is the palette's name plus Color, which is DiceBear's convention */
-const colourKey = (name) => name + 'Color'
+const colourKey = (name: any) => name + 'Color'
 
 /*
  * ONE PART AT A TIME, LARGE — and every option in a row only when somebody asks for that.
@@ -101,33 +102,33 @@ const wide = ref(false)
    style definition happens to list its components in (`traitRows` in lib/avatar.js) */
 const rows = computed(() => traitRows(style.value, traits.value))
 /* what a row is choosing among, and the key it writes */
-const rowKey = (r) => (r.kind === 'colour' ? colourKey(r.name) : r.name)
-const rowValues = (r) => (r.kind === 'colour' ? traits.value.colours[r.name] : traits.value.shapes[r.name]) || []
-const rowName = (r) => say(r.kind === 'colour' ? 'colour' : 'part', r.name)
+const rowKey = (r: any) => (r.kind === 'colour' ? colourKey(r.name) : r.name)
+const rowValues = (r: any) => (r.kind === 'colour' ? traits.value.colours[r.name] : traits.value.shapes[r.name]) || []
+const rowName = (r: any) => say(r.kind === 'colour' ? 'colour' : 'part', r.name)
 /* a shape may also be NONE, which is a choice and not the absence of one; a colour may not */
-const rowOptions = (r) => (r.kind === 'shape' ? [OFF, ...rowValues(r)] : rowValues(r))
+const rowOptions = (r: any) => (r.kind === 'shape' ? [OFF, ...rowValues(r)] : rowValues(r))
 const OFF = '\u0000none'
 /* what is showing for this row: what they chose, else None if they chose that, else the seed's own
    — which is where the carousel starts, so stepping is relative to the face they can see */
-const rowAt = (r) => {
+const rowAt = (r: any) => {
   const k = rowKey(r)
   if (r.kind === 'shape' && isOff(parts.value, r.name)) return OFF
   const v = parts.value[k]
   return v === undefined ? null : v
 }
-function step(r, by) {
+function step(r: any, by: any) {
   const opts = rowOptions(r)
   if (!opts.length) return
   const now = rowAt(r)
   const i = now === null ? -1 : opts.indexOf(now)
   /* from "not chosen" a step forward lands on the first option and a step back on the last */
-  const next = opts[((i < 0 ? (by > 0 ? 0 : opts.length - 1) : i + by) + opts.length) % opts.length]
+  const next: any = opts[((i < 0 ? (by > 0 ? 0 : opts.length - 1) : i + by) + opts.length) % opts.length]
   if (next === OFF) pickNone(r.name)
   else if (r.kind === 'shape' && isOff(parts.value, r.name)) { delete parts.value[offKey(r.name)]; pickPart(rowKey(r), next) }
   else pickPart(rowKey(r), next)
 }
 /* back to whatever the seed draws for this part, which is not the same as any option */
-function resetPart(r) {
+function resetPart(r: any) {
   delete parts.value[rowKey(r)]
   delete parts.value[offKey(r.name)]
   parts.value = { ...parts.value }
@@ -135,17 +136,17 @@ function resetPart(r) {
 }
 /* the face this row is showing, at the size somebody can see */
 /* what the colour input opens on: their own colour, else the one the seed drew */
-const colourNow = (r) => {
+const colourNow = (r: any) => {
   const v = parts.value[colourKey(r.name)]
   return typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v : (rowValues(r)[0] || '#000000')
 }
 /* …and whether what they chose is a colour of their own rather than one of the presets */
-const isCustom = (r) => {
+const isCustom = (r: any) => {
   const v = parts.value[colourKey(r.name)]
   return !!v && !rowValues(r).includes(v)
 }
 
-const rowFace = (r) => {
+const rowFace = (r: any) => {
   const now = rowAt(r)
   if (now === OFF) return noneOf(r.name)
   if (now === null) return partFace(rowKey(r), undefined)
@@ -159,11 +160,11 @@ const face = (over = {}) => avatarUrl(seed.value || seeds.value[0], { style: sty
  * the style itself says, in the order it draws its components. Everything BELOW stays, so the part
  * is still shown on a face rather than floating on its own.
  */
-const partFace = (name, v) => avatarUrl(seed.value || seeds.value[0], {
+const partFace = (name: any, v: any) => avatarUrl(seed.value || seeds.value[0], {
   style: style.value, parts: { ...parts.value, [name]: v }, ...isolate(style.value, name),
 })
 
-const say = (group, name) => W.value[group + '-' + name] || name.replace(/([A-Z])/g, ' $1').toLowerCase()
+const say = (group: any, name: any) => W.value[group + '-' + name] || name.replace(/([A-Z])/g, ' $1').toLowerCase()
 
 function settle() {
   const said = { style: style.value, seed: seed.value, options: { ...parts.value } }
@@ -179,16 +180,16 @@ function settle() {
  * see it and pressed back found their work gone, with nothing to undo it. The parts of each style
  * are held here until the page is left, so the toggle is reversible.
  */
-const byStyle = ref({})
-function pickStyle(st) {
+const byStyle = ref<any>({})
+function pickStyle(st: any) {
   if (st === style.value) return
   byStyle.value[style.value] = { ...parts.value }   /* what was built here, to come back to */
   style.value = st
   parts.value = { ...(byStyle.value[st] || {}) }
   settle()
 }
-function pickSeed(sd) { seed.value = sd; settle() }
-function pickPart(key, value) {
+function pickSeed(sd: any) { seed.value = sd; settle() }
+function pickPart(key: any, value: any) {
   if (parts.value[key] === value) delete parts.value[key]   /* pressing it again leaves it to the seed */
   else parts.value[key] = value
   /* a part cannot be both a shape and absent: choosing one clears the other */
@@ -202,21 +203,21 @@ function pickPart(key, value) {
  * the part to the seed and may well draw some. So the row offers it as a choice of its own, and
  * picking it clears whichever shape was chosen.
  */
-function pickNone(name) {
+function pickNone(name: any) {
   if (isOff(parts.value, name)) delete parts.value[offKey(name)]   /* pressing it again gives it back to the seed */
   else { delete parts.value[name]; parts.value[offKey(name)] = 0 }
   parts.value = { ...parts.value }
   settle()
 }
-const noneOf = (name) => avatarUrl(seed.value || seeds.value[0], {
+const noneOf = (name: any) => avatarUrl(seed.value || seeds.value[0], {
   style: style.value, parts: { ...parts.value, [offKey(name)]: 0 }, ...isolate(style.value, name),
 })
 /* SURPRISE ME picks every part, so what it makes can be edited or put back */
 function surprise() {
   const next = {}
   /* a surprise picks parts, never absences: somebody who wanted none can say so */
-  for (const [name, list] of Object.entries(traits.value.shapes)) next[name] = list[Math.floor(Math.random() * list.length)]
-  for (const [name, list] of Object.entries(traits.value.colours)) next[colourKey(name)] = list[Math.floor(Math.random() * list.length)]
+  for (const [name, list] of Object.entries(traits.value.shapes)) (next as any)[name] = (list as any)[Math.floor(Math.random() * (list as any).length)]
+  for (const [name, list] of Object.entries(traits.value.colours)) (next as any)[colourKey(name)] = (list as any)[Math.floor(Math.random() * (list as any).length)]
   parts.value = next
   settle()
 }
@@ -224,8 +225,8 @@ function surprise() {
 function putBack() { parts.value = {}; seed.value = props.seed || seeds.value[0]; settle() }
 const designed = computed(() => Object.keys(parts.value).length > 0)
 
-const file = ref(null)
-function chose(e) {
+const file = ref<any>(null)
+function chose(e: any) {
   const f = e.target.files && e.target.files[0]
   if (f) emit('upload', f)
   e.target.value = ''
@@ -248,7 +249,7 @@ function chose(e) {
                a control zero pixels wide: the designer is folded behind something nobody can see
                or press, and the page reads as though the customisation had been deleted. The
                chevron is drawn whatever the words do, so the fold is always openable. -->
-          <button type="button" class="ap-quiet ap-fold" :aria-expanded="String(designing)"
+          <!-- @vue-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'Booleanish | undefined'. --><button type="button" class="ap-quiet ap-fold" :aria-expanded="String(designing)"
             :aria-label="(designing ? W['design-close'] : W.design) || undefined" @click="designing = !designing">
             <span>{{ designing ? W['design-close'] : W.design }}</span>
             <i class="ap-chev" :class="{ up: designing }" aria-hidden="true"></i>
@@ -300,7 +301,7 @@ function chose(e) {
             <span class="ap-anyface" :style="isCustom(r) ? { background: parts[colourKey(r.name)] } : null"></span>
             <input
               type="color" :value="colourNow(r)" :aria-label="W['custom-colour']"
-              @input="pickPart(colourKey(r.name), $event.target.value)">
+              @input="pickPart(colourKey(r.name), ($event.target as any).value)">
           </label>
           <button
             v-if="rowAt(r) !== null" type="button" class="ap-quiet ap-reset"

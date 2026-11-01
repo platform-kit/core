@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The form builder: a form's document (content/forms/<slug>.md, a forms.md document) edited as what
  * it is — slides as groups down the page, each holding its blocks in order (copy, a field, a div kept
@@ -26,61 +26,64 @@ const W = { ...(A.slides || {}), ...(A.slide || {}) }, WS = A.settings || {}, WH
 import pipe from '../../lib/admin/api.js'
 import { supabase } from 'platformkit/lib/supabase.js'
 
-const model = ref(null), raw = ref(''), saved = ref(''), msg = ref(''), loading = ref(true), saving = ref(false)
+const model = ref<any>(null), raw = ref(''), saved = ref(''), msg = ref(''), loading = ref(true), saving = ref(false)
 const view = ref('build')
-const picked = ref(null)   /* { slide: i, block: j } or { slide: i } */
+const picked = ref<any>(null)   /* { slide: i, block: j } or { slide: i } */
 const snapshot = () => JSON.stringify(model.value)
 const dirty = computed(() => !!model.value && snapshot() !== saved.value)
 async function load() {
   loading.value = true; msg.value = ''
   try { const r = await pipe.read('forms', props.name); model.value = r.parsed; raw.value = r.content; saved.value = snapshot(); picked.value = model.value.slides.length ? { slide: 0 } : null }
-  catch (e) { msg.value = e.message } finally { loading.value = false }
+  catch (e) { msg.value = (e as any).message } finally { loading.value = false }
 }
 onMounted(load)
 watch(() => props.name, load)
 
 /* ---- the slides ---- */
 const slides = computed(() => (model.value ? model.value.slides : []))
-const allFields = computed(() => { const out = []; const walk = (bs) => { for (const b of bs) { if (b.type === 'field') out.push(b); if (b.blocks) walk(b.blocks) } }; for (const s of slides.value) walk(s.blocks); return out })
-const fieldsBefore = (si) => { const out = []; const walk = (bs) => { for (const b of bs) { if (b.type === 'field') out.push(b); if (b.blocks) walk(b.blocks) } }; slides.value.slice(0, si + 1).forEach((s) => walk(s.blocks)); return out }
-const slideLabel = (s, i) => (s.type === 'start' ? W.start : s.type === 'end' ? W.end : W.body.replace('{n}', String(slides.value.slice(0, i + 1).filter((x) => x.type === 'body').length)))
-const summary = (b) => (b.type === 'field' ? (b.params.question === '...' ? b.name : b.params.question) : b.type === 'markdown' ? String(b.md || '').replace(/^#+\s*/gm, '').replace(/[*_`>]/g, '').split('\n').find((l) => l.trim()) || '…' : W.raw)
-const cur = computed(() => { const p = picked.value; if (!p || !model.value) return null; const s = slides.value[p.slide]; if (!s) return null; return p.block == null ? { kind: 'slide', slide: s, i: p.slide } : { kind: 'block', block: s.blocks[p.block], slide: s, i: p.slide, j: p.block } })
-function pick(si, bj) { picked.value = bj == null ? { slide: si } : { slide: si, block: bj } }
-const touchSlide = (s) => { s.headDirty = true; model.value.slidesChanged = true }
-function addSlide(after) {
+const allFields: any = computed(() => { const out: any = []; const walk = (bs: any) => { for (const b of bs) { if (b.type === 'field') out.push(b); if (b.blocks) walk(b.blocks) } }; for (const s of slides.value) walk(s.blocks); return out })
+const fieldsBefore: any = (si: any) => { const out: any = []; const walk = (bs: any) => { for (const b of bs) { if (b.type === 'field') out.push(b); if (b.blocks) walk(b.blocks) } }; slides.value.slice(0, si + 1).forEach((s: any) => walk(s.blocks)); return out }
+const slideLabel = (s: any, i: any) => (s.type === 'start' ? W.start : s.type === 'end' ? W.end : W.body.replace('{n}', String(slides.value.slice(0, i + 1).filter((x: any) => x.type === 'body').length)))
+const summary = (b: any) => (b.type === 'field' ? (b.params.question === '...' ? b.name : b.params.question) : b.type === 'markdown' ? String(b.md || '').replace(/^#+\s*/gm, '').replace(/[*_`>]/g, '').split('\n').find((l) => l.trim()) || '…' : W.raw)
+const cur = computed<any>(() => { const p: any = picked.value; if (!p || !model.value) return null; const s = slides.value[p.slide]; if (!s) return null; return p.block == null ? { kind: 'slide', slide: s, i: p.slide } : { kind: 'block', block: s.blocks[p.block], slide: s, i: p.slide, j: p.block } })
+function pick(si: any, bj: any) { picked.value = bj == null ? { slide: si } : { slide: si, block: bj } }
+const touchSlide = (s: any) => { s.headDirty = true; model.value.slidesChanged = true }
+function addSlide(after: any) {
   const s = { type: 'body', jump: '', progress: '', align: '', post: false, disablePrev: false, button: '', redirect: '', head: [], headDirty: true, blocks: [] }
-  const at = after == null ? slides.value.length - (slides.value.some((x) => x.type === 'end') ? 1 : 0) : after + 1
+  const at = after == null ? slides.value.length - (slides.value.some((x: any) => x.type === 'end') ? 1 : 0) : after + 1
+  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   slides.value.splice(at, 0, s); model.value.slidesChanged = true; pick(at)
 }
-function removeSlide(i) { slides.value.splice(i, 1); model.value.slidesChanged = true; picked.value = slides.value.length ? { slide: Math.max(0, i - 1) } : null }
-function setType(s, t) {
-  const hasEnd = slides.value.some((x) => x !== s && x.type === 'end')
+function removeSlide(i: any) { slides.value.splice(i, 1); model.value.slidesChanged = true; picked.value = slides.value.length ? { slide: Math.max(0, i - 1) } : null }
+function setType(s: any, t: any) {
+  const hasEnd = slides.value.some((x: any) => x !== s && x.type === 'end')
   if (t === 'end' && hasEnd) return
   s.type = t; touchSlide(s)
   /* the document keeps the starts first and the end last */
   const list = slides.value; const i = list.indexOf(s); list.splice(i, 1)
-  if (t === 'start') list.splice(list.filter((x) => x.type === 'start').length, 0, s)
+  if (t === 'start') list.splice(list.filter((x: any) => x.type === 'start').length, 0, s)
   else if (t === 'end') list.push(s)
-  else list.splice(Math.max(list.filter((x) => x.type === 'start').length, Math.min(i, list.length - (list.some((x) => x.type === 'end') ? 1 : 0))), 0, s)
+  else list.splice(Math.max(list.filter((x: any) => x.type === 'start').length, Math.min(i, list.length - (list.some((x: any) => x.type === 'end') ? 1 : 0))), 0, s)
   picked.value = { slide: list.indexOf(s) }
 }
-function addField(si) { const s = slides.value[si]; const b = { type: 'field', name: uniqueName('field'), kind: 'text', required: false, params: { question: '' }, attrs: { deps: [], id: '', classes: [], other: [] }, deps: [], condition: '', dirty: true, autoname: true, line: 0 }; s.blocks.push(b); pick(si, s.blocks.length - 1); model.value.slidesChanged = true }
-function addText(si) { const s = slides.value[si]; s.blocks.push({ type: 'markdown', md: '', raw: null, deps: [], condition: '', dirty: true, line: 0 }); pick(si, s.blocks.length - 1); model.value.slidesChanged = true }
-function uniqueName(base) { let n = base, i = 2; while (allFields.value.some((f) => f.name === n)) n = base + i++; return n }
-function removeBlock(si, bj) { slides.value[si].blocks.splice(bj, 1); pick(si); model.value.slidesChanged = true }
-function moveBlock(si, bj, d) { const bs = slides.value[si].blocks; const k = bj + d; if (k < 0 || k >= bs.length) return; [bs[bj], bs[k]] = [bs[k], bs[bj]]; pick(si, k); model.value.slidesChanged = true }
-function onDrag(si) { model.value.slidesChanged = true; pick(si) }
-function setMd(b, v) { b.md = v; b.raw = null; b.dirty = true }
-const progressOf = (s) => (s.progress ? String(parseFloat(s.progress)) : '')
-const setProgress = (s, v) => { s.progress = v === '' ? '' : String(Math.max(0, Math.min(100, Number(v)))) + '%'; touchSlide(s) }
+function addField(si: any) { const s = slides.value[si]; const b = { type: 'field', name: uniqueName('field'), kind: 'text', required: false, params: { question: '' }, attrs: { deps: [], id: '', classes: [], other: [] }, deps: [], condition: '', dirty: true, autoname: true, line: 0 }; s.blocks.push(b); pick(si, s.blocks.length - 1); model.value.slidesChanged = true }
+function addText(si: any) { const s = slides.value[si]; s.blocks.push({ type: 'markdown', md: '', raw: null, deps: [], condition: '', dirty: true, line: 0 }); pick(si, s.blocks.length - 1); model.value.slidesChanged = true }
+function uniqueName(base: any) { let n = base, i = 2; while (allFields.value.some((f: any) => f.name === n)) n = base + i++; return n }
+// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
+function removeBlock(si: any, bj: any) { slides.value[si].blocks.splice(bj, 1); pick(si); model.value.slidesChanged = true }
+function moveBlock(si: any, bj: any, d: any) { const bs = slides.value[si].blocks; const k = bj + d; if (k < 0 || k >= bs.length) return; [bs[bj], bs[k]] = [bs[k], bs[bj]]; pick(si, k); model.value.slidesChanged = true }
+// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
+function onDrag(si: any) { model.value.slidesChanged = true; pick(si) }
+function setMd(b: any, v: any) { b.md = v; b.raw = null; b.dirty = true }
+const progressOf = (s: any) => (s.progress ? String(parseFloat(s.progress)) : '')
+const setProgress = (s: any, v: any) => { s.progress = v === '' ? '' : String(Math.max(0, Math.min(100, Number(v)))) + '%'; touchSlide(s) }
 
 /* ---- the settings ---- */
 const st = computed(() => (model.value ? model.value.settings : {}))
 const kit = computed(() => (model.value ? model.value.kit : {}))
 const changes = () => (model.value.settingsChanges = model.value.settingsChanges || {})
-const setSetting = (k, v) => { st.value[k] = v; changes()[k] = v === '' || v == null ? null : String(v) }
-const setKit = (k, v) => {
+const setSetting = (k: any, v: any) => { st.value[k] = v; changes()[k] = v === '' || v == null ? null : String(v) }
+const setKit = (k: any, v: any) => {
   kit.value[k] = v
   const c = changes()
   if (k === 'published') c.published = v === false ? 'false' : null
@@ -92,13 +95,13 @@ const setKit = (k, v) => {
   else if (k === 'score') c.score = Object.keys(v).length ? Object.entries(v).map(([f, a]) => `${f}: ${a}`).join(', ') : null
 }
 const origins = computed(() => kit.value.embedOrigins || [])
-function setOrigin(i, v) { const l = origins.value.slice(); l[i] = v; setKit('embedOrigins', l.filter((x) => x !== undefined)) }
+function setOrigin(i: any, v: any) { const l = origins.value.slice(); l[i] = v; setKit('embedOrigins', l.filter((x: any) => x !== undefined)) }
 function addOrigin() { setKit('embedOrigins', [...origins.value, '']) }
-function removeOrigin(i) { const l = origins.value.slice(); l.splice(i, 1); setKit('embedOrigins', l) }
-const scorable = computed(() => allFields.value.filter((f) => ['choice', 'select', 'picture', 'rating', 'scale'].includes(f.kind)))
-const rightOf = (f) => (kit.value.score || {})[f.name] || ''
-function setRight(f, v) { const s = { ...(kit.value.score || {}) }; if (v) s[f.name] = v; else delete s[f.name]; setKit('score', s) }
-const choicesOf = (f) => (f.kind === 'select' ? f.params.options : f.kind === 'choice' || f.kind === 'picture' ? f.params.choices : Array.from({ length: Number(f.params.outof) || (f.kind === 'rating' ? 5 : 10) }, (_, i) => ({ value: String(i + (f.kind === 'scale' ? Number(f.params.startat ?? 0) : 1)), label: String(i + (f.kind === 'scale' ? Number(f.params.startat ?? 0) : 1)) }))) || []
+function removeOrigin(i: any) { const l = origins.value.slice(); l.splice(i, 1); setKit('embedOrigins', l) }
+const scorable = computed(() => allFields.value.filter((f: any) => ['choice', 'select', 'picture', 'rating', 'scale'].includes(f.kind)))
+const rightOf = (f: any) => (kit.value.score || {})[f.name] || ''
+function setRight(f: any, v: any) { const s = { ...(kit.value.score || {}) }; if (v) s[f.name] = v; else delete s[f.name]; setKit('score', s) }
+const choicesOf = (f: any) => (f.kind === 'select' ? f.params.options : f.kind === 'choice' || f.kind === 'picture' ? f.params.choices : Array.from({ length: Number(f.params.outof) || (f.kind === 'rating' ? 5 : 10) }, (_, i) => ({ value: String(i + (f.kind === 'scale' ? Number(f.params.startat ?? 0) : 1)), label: String(i + (f.kind === 'scale' ? Number(f.params.startat ?? 0) : 1)) }))) || []
 
 /* ---- share ---- */
 /* every address is the origin this admin is running on — nothing is written in */
@@ -109,12 +112,12 @@ const snippet = computed(() => `<div data-platformkit-form="${props.name}"></div
 const hereHost = here.replace(/^https?:\/\//, '')
 const tfSnippet = computed(() => `<div data-tf-widget="${props.name}" data-tf-domain="${hereHost}" style="width:100%;height:600px"></div>\n<script src="//embed.typeform.com/next/embed.js"><\/script>`)
 /* the webhook subscriptions the Forms API keeps on this form — read here, written through the API alone */
-const hooks = ref([])
-async function loadHooks() { try { const { data } = await supabase.from('form_webhooks').select('tag, url, enabled, last_at, last_error').eq('form', props.name).order('created_at'); hooks.value = data || [] } catch (e) { hooks.value = [] } }
+const hooks = ref<any>([])
+async function loadHooks() { try { const { data } = await (supabase as any).from('form_webhooks').select('tag, url, enabled, last_at, last_error').eq('form', props.name).order('created_at'); hooks.value = data || [] } catch (e) { hooks.value = [] } }
 onMounted(loadHooks)
-const when = (iso) => { try { return new Date(iso).toLocaleString() } catch (e) { return iso } }
+const when = (iso: any) => { try { return new Date(iso).toLocaleString() } catch (e) { return iso } }
 const copied = ref('')
-async function copy(text, k) { try { await navigator.clipboard.writeText(text); copied.value = k; setTimeout(() => (copied.value = ''), 1500) } catch (e) { /* no clipboard */ } }
+async function copy(text: any, k: any) { try { await navigator.clipboard.writeText(text); copied.value = k; setTimeout(() => (copied.value = ''), 1500) } catch (e) { /* no clipboard */ } }
 
 /* ---- save ---- */
 async function save() {
@@ -127,12 +130,12 @@ async function save() {
     model.value = r.model; raw.value = r.raw; saved.value = snapshot(); msg.value = WSV.saved
     if (!picked.value || !slides.value[picked.value.slide]) picked.value = slides.value.length ? { slide: 0 } : null
     emit('saved')
-  } catch (e) { msg.value = e.message } finally { saving.value = false }
+  } catch (e) { msg.value = (e as any).message } finally { saving.value = false }
 }
 function discard() { load() }
 async function remove() {
   if (!confirm(`${WS.delete}? ${WS['delete-hint']}`)) return
-  try { await pipe.remove('forms', props.name); emit('back') } catch (e) { msg.value = e.message }
+  try { await pipe.remove('forms', props.name); emit('back') } catch (e) { msg.value = (e as any).message }
 }
 </script>
 
@@ -143,9 +146,9 @@ async function remove() {
       <div class="fb-head">
         <h2 class="fb-title">{{ st.title || name }}</h2>
         <span class="ui-grow" />
-        <label class="ui-switch"><input type="checkbox" :checked="kit.published !== false" @change="setKit('published', $event.target.checked)" /><i /><span>{{ WS.published }}</span></label>
+        <label class="ui-switch"><input type="checkbox" :checked="kit.published !== false" @change="setKit('published', ($event.target as any).checked)" /><i /><span>{{ WS.published }}</span></label>
       </div>
-      <p v-if="model.warnings && model.warnings.length" class="ui-hint">{{ model.warnings.map((w) => (w.line ? w.line + ': ' : '') + w.message).join(' · ') }}</p>
+      <p v-if="model.warnings && model.warnings.length" class="ui-hint">{{ model.warnings.map((w: any) => (w.line ? w.line + ': ' : '') + w.message).join(' · ') }}</p>
       <div class="ui-seg" role="tablist">
         <button v-for="k in ['build', 'settings', 'share']" :key="k" type="button" role="tab" :aria-selected="view === k" :class="{ 'ui-on': view === k }" @click="view = k">{{ WV[k] }}</button>
       </div>
@@ -154,9 +157,9 @@ async function remove() {
       <div v-show="view === 'build'" class="fb-build">
         <div class="fb-slides">
           <div v-for="(s, si) in slides" :key="si" class="fb-slide" :class="{ 'fb-on': picked && picked.slide === si && picked.block == null }">
-            <button type="button" class="fb-slidehead" @click="pick(si)">
+            <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. --><button type="button" class="fb-slidehead" @click="pick(si)">
               <b>{{ slideLabel(s, si) }}</b>
-              <small v-if="s.jump">{{ W['shown-when'].replace('{cond}', describe(s.jump, fieldsBefore(si - 1), WC)) }}</small>
+              <small v-if="s.jump"><!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. -->{{ W['shown-when'].replace('{cond}', describe(s.jump, fieldsBefore(si - 1), WC)) }}</small>
               <small v-else-if="s.progress">{{ W['progress-line'].replace('{p}', progressOf(s)) }}</small>
             </button>
             <draggable v-model="s.blocks" item-key="line" handle=".fb-grip" class="fb-blocks" ghost-class="fb-ghost" :animation="150" @end="onDrag(si)">
@@ -176,24 +179,24 @@ async function remove() {
               <button v-if="s.type !== 'end'" type="button" class="ui-btn ui-ghost ui-sm" @click="addSlide(si)">{{ W['add-slide'] }}</button>
             </div>
           </div>
-          <button v-if="!slides.length" type="button" class="ui-btn ui-ghost" @click="addSlide()">{{ W['add-slide'] }}</button>
+          <!-- @vue-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0. --><button v-if="!slides.length" type="button" class="ui-btn ui-ghost" @click="addSlide()">{{ W['add-slide'] }}</button>
         </div>
 
         <div class="fb-inspector ui-card">
           <template v-if="cur && cur.kind === 'slide'">
             <div class="ui-cardhead"><h3>{{ W.heading }}</h3></div>
-            <label class="ui-field"><span>{{ W.type }}</span><select class="ui-select" :value="cur.slide.type" @change="setType(cur.slide, $event.target.value)"><option value="start">{{ W['type-start'] }}</option><option value="body">{{ W['type-body'] }}</option><option value="end">{{ W['type-end'] }}</option></select></label>
-            <label v-if="cur.slide.type === 'start'" class="ui-field"><span>{{ W.button }}</span><input class="ui-input" :value="cur.slide.button" @input="cur.slide.button = $event.target.value; touchSlide(cur.slide)" /></label>
-            <label v-if="cur.slide.type === 'end'" class="ui-field"><span>{{ W.redirect }}</span><input class="ui-input" type="url" :value="cur.slide.redirect" @input="cur.slide.redirect = $event.target.value; touchSlide(cur.slide)" /></label>
+            <label class="ui-field"><span>{{ W.type }}</span><select class="ui-select" :value="cur.slide.type" @change="setType(cur.slide, ($event.target as any).value)"><option value="start">{{ W['type-start'] }}</option><option value="body">{{ W['type-body'] }}</option><option value="end">{{ W['type-end'] }}</option></select></label>
+            <label v-if="cur.slide.type === 'start'" class="ui-field"><span>{{ W.button }}</span><input class="ui-input" :value="cur.slide.button" @input="cur.slide.button = ($event.target as any).value; touchSlide(cur.slide)" /></label>
+            <label v-if="cur.slide.type === 'end'" class="ui-field"><span>{{ W.redirect }}</span><input class="ui-input" type="url" :value="cur.slide.redirect" @input="cur.slide.redirect = ($event.target as any).value; touchSlide(cur.slide)" /></label>
             <template v-if="cur.slide.type === 'body'">
               <ConditionEditor v-if="cur.i > 0" :model-value="cur.slide.jump" :fields="fieldsBefore(cur.i - 1)" :label="W.jump" @update:model-value="(v) => { cur.slide.jump = v; touchSlide(cur.slide) }" />
               <div class="ui-row">
-                <label class="ui-field fb-num"><span>{{ W.progress }} <small>· {{ W['progress-hint'] }}</small></span><input class="ui-input" type="number" min="0" max="100" :value="progressOf(cur.slide)" @input="setProgress(cur.slide, $event.target.value)" /></label>
-                <label class="ui-field"><span>{{ W.align }}</span><select class="ui-select" :value="cur.slide.align" @change="cur.slide.align = $event.target.value; touchSlide(cur.slide)"><option value="">—</option><option value="start">{{ W['align-start'] }}</option><option value="center">{{ W['align-center'] }}</option><option value="end">{{ W['align-end'] }}</option><option value="stretch">{{ W['align-stretch'] }}</option></select></label>
+                <label class="ui-field fb-num"><span>{{ W.progress }} <small>· {{ W['progress-hint'] }}</small></span><input class="ui-input" type="number" min="0" max="100" :value="progressOf(cur.slide)" @input="setProgress(cur.slide, ($event.target as any).value)" /></label>
+                <label class="ui-field"><span>{{ W.align }}</span><select class="ui-select" :value="cur.slide.align" @change="cur.slide.align = ($event.target as any).value; touchSlide(cur.slide)"><option value="">—</option><option value="start">{{ W['align-start'] }}</option><option value="center">{{ W['align-center'] }}</option><option value="end">{{ W['align-end'] }}</option><option value="stretch">{{ W['align-stretch'] }}</option></select></label>
               </div>
               <div class="ui-row ui-wrap">
-                <label class="ui-switch"><input type="checkbox" :checked="cur.slide.disablePrev" @change="cur.slide.disablePrev = $event.target.checked; touchSlide(cur.slide)" /><i /><span>{{ W['disable-prev'] }}</span></label>
-                <label class="ui-switch"><input type="checkbox" :checked="cur.slide.post" @change="cur.slide.post = $event.target.checked; touchSlide(cur.slide)" /><i /><span>{{ W.post }}</span></label>
+                <label class="ui-switch"><input type="checkbox" :checked="cur.slide.disablePrev" @change="cur.slide.disablePrev = ($event.target as any).checked; touchSlide(cur.slide)" /><i /><span>{{ W['disable-prev'] }}</span></label>
+                <label class="ui-switch"><input type="checkbox" :checked="cur.slide.post" @change="cur.slide.post = ($event.target as any).checked; touchSlide(cur.slide)" /><i /><span>{{ W.post }}</span></label>
               </div>
             </template>
             <div class="ui-cardrow fb-acts"><span class="ui-grow" /><button type="button" class="ui-btn ui-ghost ui-danger ui-sm" @click="removeSlide(cur.i)">{{ W.remove }}</button></div>
@@ -205,7 +208,7 @@ async function remove() {
           <template v-else-if="cur && cur.block && cur.block.type === 'markdown'">
             <div class="ui-cardhead"><h3>{{ WT.heading }}</h3><span>{{ WT.hint }}</span></div>
             <MarkdownEditor :key="cur.i + ':' + cur.j" :model-value="cur.block.md" class="fb-md" @update:model-value="(v) => setMd(cur.block, v)" />
-            <label v-if="fieldsBefore(cur.i).length" class="ui-field"><span>{{ WT.bind }}</span><select class="ui-select" value="" @change="(e) => { if (e.target.value) { setMd(cur.block, (cur.block.md || '').replace(/\s+$/, '') + ' {$ ' + e.target.value + ' $}'); e.target.value = '' } }"><option value="">{{ WT['bind-pick'] }}</option><option v-for="f in fieldsBefore(cur.i)" :key="f.name" :value="f.name">{{ f.params.question === '...' || !f.params.question ? f.name : f.params.question }}</option></select></label>
+            <label v-if="fieldsBefore(cur.i).length" class="ui-field"><span>{{ WT.bind }}</span><select class="ui-select" value="" @change="(e: any) => { if (e.target.value) { setMd(cur.block, (cur.block.md || '').replace(/\s+$/, '') + ' {$ ' + (e.target as any).value + ' $}'); (e.target as any).value = '' } }"><option value="">{{ WT['bind-pick'] }}</option><option v-for="f in fieldsBefore(cur.i)" :key="f.name" :value="f.name">{{ f.params.question === '...' || !f.params.question ? f.name : f.params.question }}</option></select></label>
             <ConditionEditor :model-value="cur.block.condition || ''" :fields="fieldsBefore(cur.i)" :label="(A.field || {}).condition" @update:model-value="(v) => { cur.block.condition = v; cur.block.deps = []; cur.block.dirty = true; if (cur.block.raw != null) { cur.block.raw = null } }" />
             <div class="ui-cardrow fb-acts"><button type="button" class="ui-btn ui-ghost ui-sm" @click="moveBlock(cur.i, cur.j, -1)">← {{ (A.field || {})['move-up'] }}</button><button type="button" class="ui-btn ui-ghost ui-sm" @click="moveBlock(cur.i, cur.j, 1)">{{ (A.field || {})['move-down'] }} →</button><span class="ui-grow" /><button type="button" class="ui-btn ui-ghost ui-danger ui-sm" @click="removeBlock(cur.i, cur.j)">{{ (A.field || {}).remove }}</button></div>
           </template>
@@ -221,36 +224,36 @@ async function remove() {
       <!-- ===== settings ===== -->
       <div v-show="view === 'settings'" class="fb-settings">
         <div class="ui-card">
-          <label class="ui-field"><span>{{ WS.title }}</span><input class="ui-input" :value="st.title || ''" @input="setSetting('title', $event.target.value)" /></label>
-          <label class="ui-field"><span>{{ WS['meta-description'] }}</span><input class="ui-input" :value="st['meta-description'] || ''" @input="setSetting('meta-description', $event.target.value)" /></label>
+          <label class="ui-field"><span>{{ WS.title }}</span><input class="ui-input" :value="st.title || ''" @input="setSetting('title', ($event.target as any).value)" /></label>
+          <label class="ui-field"><span>{{ WS['meta-description'] }}</span><input class="ui-input" :value="st['meta-description'] || ''" @input="setSetting('meta-description', ($event.target as any).value)" /></label>
           <code class="ui-key">content/forms/{{ name }}.md</code>
           <div class="ui-row">
-            <label class="ui-field"><span>{{ WS.page }}</span><select class="ui-select" :value="st.page" @change="setSetting('page', $event.target.value)"><option value="form-slides">{{ WS['page-form-slides'] }}</option><option value="slides">{{ WS['page-slides'] }}</option><option value="single">{{ WS['page-single'] }}</option></select></label>
-            <label class="ui-field"><span>{{ WS['page-progress'] }}</span><select class="ui-select" :value="st['page-progress'] || 'show'" @change="setSetting('page-progress', $event.target.value === 'show' ? '' : $event.target.value)"><option value="show">{{ WS['progress-show'] }}</option><option value="hide">{{ WS['progress-hide'] }}</option><option value="decorative">{{ WS['progress-decorative'] }}</option></select></label>
-            <label class="ui-field"><span>{{ WS['slide-controls'] }}</span><select class="ui-select" :value="st['slide-controls'] || 'show'" @change="setSetting('slide-controls', $event.target.value === 'show' ? '' : $event.target.value)"><option value="show">{{ WS['controls-show'] }}</option><option value="hide">{{ WS['controls-hide'] }}</option></select></label>
+            <label class="ui-field"><span>{{ WS.page }}</span><select class="ui-select" :value="st.page" @change="setSetting('page', ($event.target as any).value)"><option value="form-slides">{{ WS['page-form-slides'] }}</option><option value="slides">{{ WS['page-slides'] }}</option><option value="single">{{ WS['page-single'] }}</option></select></label>
+            <label class="ui-field"><span>{{ WS['page-progress'] }}</span><select class="ui-select" :value="st['page-progress'] || 'show'" @change="setSetting('page-progress', ($event.target as any).value === 'show' ? '' : ($event.target as any).value)"><option value="show">{{ WS['progress-show'] }}</option><option value="hide">{{ WS['progress-hide'] }}</option><option value="decorative">{{ WS['progress-decorative'] }}</option></select></label>
+            <label class="ui-field"><span>{{ WS['slide-controls'] }}</span><select class="ui-select" :value="st['slide-controls'] || 'show'" @change="setSetting('slide-controls', ($event.target as any).value === 'show' ? '' : ($event.target as any).value)"><option value="show">{{ WS['controls-show'] }}</option><option value="hide">{{ WS['controls-hide'] }}</option></select></label>
           </div>
           <div class="ui-row">
-            <label class="ui-field"><span>{{ WS['submit-text'] }}</span><input class="ui-input" :value="st['submit-button-text'] || ''" @input="setSetting('submit-button-text', $event.target.value)" /></label>
-            <label class="ui-field"><span>{{ WS.align }}</span><select class="ui-select" :value="st['button-alignment'] || ''" @change="setSetting('button-alignment', $event.target.value)"><option value="">—</option><option value="center">{{ W['align-center'] }}</option><option value="end">{{ W['align-end'] }}</option><option value="stretch">{{ W['align-stretch'] }}</option></select></label>
+            <label class="ui-field"><span>{{ WS['submit-text'] }}</span><input class="ui-input" :value="st['submit-button-text'] || ''" @input="setSetting('submit-button-text', ($event.target as any).value)" /></label>
+            <label class="ui-field"><span>{{ WS.align }}</span><select class="ui-select" :value="st['button-alignment'] || ''" @change="setSetting('button-alignment', ($event.target as any).value)"><option value="">—</option><option value="center">{{ W['align-center'] }}</option><option value="end">{{ W['align-end'] }}</option><option value="stretch">{{ W['align-stretch'] }}</option></select></label>
           </div>
           <div class="ui-row ui-wrap">
-            <label class="ui-switch"><input type="checkbox" :checked="st['restart-button'] === 'show'" @change="setSetting('restart-button', $event.target.checked ? 'show' : '')" /><i /><span>{{ WS.restart }}</span></label>
-            <label class="ui-switch"><input type="checkbox" :checked="st.autofocus === 'all-slides'" @change="setSetting('autofocus', $event.target.checked ? 'all-slides' : '')" /><i /><span>{{ WS.autofocus }}</span></label>
+            <label class="ui-switch"><input type="checkbox" :checked="st['restart-button'] === 'show'" @change="setSetting('restart-button', ($event.target as any).checked ? 'show' : '')" /><i /><span>{{ WS.restart }}</span></label>
+            <label class="ui-switch"><input type="checkbox" :checked="st.autofocus === 'all-slides'" @change="setSetting('autofocus', ($event.target as any).checked ? 'all-slides' : '')" /><i /><span>{{ WS.autofocus }}</span></label>
           </div>
         </div>
         <div class="ui-card">
           <div class="ui-row ui-wrap">
-            <label class="ui-switch"><input type="checkbox" :checked="kit.once" @change="setKit('once', $event.target.checked)" /><i /><span>{{ WS.once }}</span></label>
-            <label class="ui-field"><span>{{ WS.respond }}</span><select class="ui-select" :value="kit.respond" @change="setKit('respond', $event.target.value)"><option value="anyone">{{ WS['respond-anyone'] }}</option><option value="authenticated">{{ WS['respond-authenticated'] }}</option></select></label>
+            <label class="ui-switch"><input type="checkbox" :checked="kit.once" @change="setKit('once', ($event.target as any).checked)" /><i /><span>{{ WS.once }}</span></label>
+            <label class="ui-field"><span>{{ WS.respond }}</span><select class="ui-select" :value="kit.respond" @change="setKit('respond', ($event.target as any).value)"><option value="anyone">{{ WS['respond-anyone'] }}</option><option value="authenticated">{{ WS['respond-authenticated'] }}</option></select></label>
           </div>
-          <label class="ui-field"><span>{{ WS.webhook }}</span><input class="ui-input" type="url" :value="kit.webhook || ''" @input="setKit('webhook', $event.target.value)" /></label>
+          <label class="ui-field"><span>{{ WS.webhook }}</span><input class="ui-input" type="url" :value="kit.webhook || ''" @input="setKit('webhook', ($event.target as any).value)" /></label>
           <div class="ui-field"><span>{{ WS['webhooks-api'] }}</span>
             <p v-if="!hooks.length" class="ui-hint">{{ WS['webhooks-none'] }}</p>
             <ul v-else class="fb-hooks"><li v-for="h in hooks" :key="h.tag"><code class="ui-key">{{ h.tag }}</code><span class="ui-mono fb-hookurl">{{ h.url }}</span><span class="ui-badge" :class="{ 'ui-ok': h.enabled }">{{ h.enabled ? WS['webhooks-on'] : WS['webhooks-off'] }}</span><small v-if="h.last_error" class="ui-err">{{ h.last_error }}</small><small v-else-if="h.last_at">{{ WS['webhooks-last'].replace('{at}', when(h.last_at)) }}</small></li></ul>
           </div>
           <div class="ui-field"><span>{{ WS['embed-origins'] }}</span>
             <div class="fb-origins">
-              <div v-for="(o, i) in origins" :key="i" class="fb-origin"><input class="ui-input ui-mono" type="url" :value="o" :placeholder="WS['embed-origin-placeholder']" @input="setOrigin(i, $event.target.value)" /><button type="button" class="ui-iconbtn" @click="removeOrigin(i)">×</button></div>
+              <div v-for="(o, i) in origins" :key="i" class="fb-origin"><input class="ui-input ui-mono" type="url" :value="o" :placeholder="WS['embed-origin-placeholder']" @input="setOrigin(i, ($event.target as any).value)" /><button type="button" class="ui-iconbtn" @click="removeOrigin(i)">×</button></div>
               <button type="button" class="ui-btn ui-ghost ui-sm" @click="addOrigin">+</button>
             </div>
           </div>
@@ -259,9 +262,9 @@ async function remove() {
           <div class="ui-cardhead"><h3>{{ WS['quiz-heading'] }}</h3><span>{{ WS['quiz-lead'] }}</span></div>
           <div v-for="f in scorable" :key="f.name" class="ui-row fb-right">
             <span class="fb-rightq">{{ f.params.question === '...' ? f.name : f.params.question }}</span>
-            <select class="ui-select" :value="rightOf(f)" @change="setRight(f, $event.target.value)"><option value="">{{ WS['right-none'] }}</option><option v-for="c in choicesOf(f)" :key="c.value" :value="c.value">{{ c.label }}</option></select>
+            <select class="ui-select" :value="rightOf(f)" @change="setRight(f, ($event.target as any).value)"><option value="">{{ WS['right-none'] }}</option><option v-for="c in choicesOf(f)" :key="c.value" :value="c.value">{{ c.label }}</option></select>
           </div>
-          <label v-if="Object.keys(kit.score || {}).length" class="ui-field fb-num"><span>{{ WS.pass }}</span><input class="ui-input" type="number" min="0" :max="Object.keys(kit.score).length" :value="kit.pass ?? ''" @input="setKit('pass', $event.target.value === '' ? null : Number($event.target.value))" /></label>
+          <label v-if="Object.keys(kit.score || {}).length" class="ui-field fb-num"><span>{{ WS.pass }}</span><input class="ui-input" type="number" min="0" :max="Object.keys(kit.score).length" :value="kit.pass ?? ''" @input="setKit('pass', ($event.target as any).value === '' ? null : Number(($event.target as any).value))" /></label>
         </div>
         <div class="ui-cardrow fb-danger"><span class="ui-hint">{{ WS['delete-hint'] }}</span><span class="ui-grow" /><button type="button" class="ui-btn ui-ghost ui-danger ui-sm" @click="remove">{{ WS.delete }}</button></div>
       </div>

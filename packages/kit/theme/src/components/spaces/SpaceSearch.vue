@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * Search: a box for the words, and who, where and when as CONTROLS beside it. There is no query
  * syntax and there is never going to be one — nobody types `from:`, no placeholder teaches a
@@ -11,10 +12,10 @@ import { blankQuery, RANGES, chipsOf, describeQuery, emptyQuery, narrowingCount 
 import { plainBody } from 'platformkit/lib/spaces/model.js'
 
 const props = defineProps({
-  people: { type: Array, default: () => [] },
-  channels: { type: Array, default: () => [] },
-  names: { type: Object, default: () => ({}) },
-  results: { type: Array, default: () => [] },
+  people: { type: Array as PropType<any[]>, default: () => [] },
+  channels: { type: Array as PropType<any[]>, default: () => [] },
+  names: { type: Object as PropType<any>, default: () => ({}) },
+  results: { type: Array as PropType<any[]>, default: () => [] },
   busy: { type: Boolean, default: false },
   /* how many of this person's rooms are sealed, and so could not be looked in */
   sealed: { type: Number, default: 0 },
@@ -39,18 +40,18 @@ const sealedNote = computed(() => {
 const q = ref(blankQuery())
 const more = ref(false)
 const labels = computed(() => {
-  const out = {}
-  for (const p of props.people) out[p.id] = p.name
-  for (const c of props.channels) out[c.id] = '#' + c.name
+  const out: any = {}
+  for (const p of props.people) out[(p as any).id] = (p as any).name
+  for (const c of props.channels) out[(c as any).id] = '#' + (c as any).name
   return out
 })
 const chips = computed(() => chipsOf(q.value, W.value, labels.value))
 const said = computed(() => describeQuery(q.value, W.value, labels.value))
 const n = computed(() => narrowingCount(q.value))
-const channelOf = (id) => (props.channels.find((c) => c.id === id) || {}).name || ''
-const drop = (chip) => { q.value = { ...q.value, ...chip.clear }; go() }
+const channelOf = (id: any) => (props.channels.find((c) => (c as any).id === id) || {}).name || ''
+const drop = (chip: any) => { q.value = { ...q.value, ...chip.clear }; go() }
 const go = () => { if (!emptyQuery(q.value)) emit('search', { ...q.value }) }
-let t = null
+let t: any = null
 watch(q, () => { clearTimeout(t); t = setTimeout(go, 250) }, { deep: true })
 </script>
 

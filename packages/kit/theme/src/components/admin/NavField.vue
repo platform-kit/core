@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * THE HEADER, AS THE ROWS IT ACTUALLY IS.
  *
@@ -28,9 +29,9 @@ import { options } from '../../lib/admin/api.js'
 import GlyphPicker from './GlyphPicker.vue'
 
 const props = defineProps({
-  modelValue: { type: Array, default: null },
+  modelValue: { type: Array as PropType<any[]>, default: null },
   /* what the site would show if it declared nothing — drawn greyed until the editor starts from it */
-  inherited: { type: Array, default: () => [] },
+  inherited: { type: Array as PropType<any[]>, default: () => [] },
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -43,8 +44,8 @@ const rows = computed({
 const declared = computed(() => Array.isArray(props.modelValue) && props.modelValue.length > 0)
 
 /* the two lists the server owns */
-const links = ref([])
-const sees = ref([])
+const links = ref<any>([])
+const sees = ref<any>([])
 onMounted(async () => {
   try { links.value = await options('nav-links') } catch { links.value = [] }
   try { sees.value = await options('nav-see') } catch { sees.value = [] }
@@ -52,32 +53,32 @@ onMounted(async () => {
 /* the groups in the order the server gave them, so "The site" stays above "Your pages" */
 const linkGroups = computed(() => {
   const by = new Map()
-  for (const o of links.value) { const g = o.group || ''; if (!by.has(g)) by.set(g, []); by.get(g).push(o) }
+  for (const o of links.value) { const g = (o as any).group || ''; if (!by.has(g)) by.set(g, []); by.get(g).push(o) }
   return [...by]
 })
-const known = (href) => links.value.some((o) => o.value === href)
+const known = (href: any) => links.value.some((o: any) => (o as any).value === href)
 
 const OWN = '\u0000own'   /* the sentinel for "a path of my own" — never a real value */
-const whereOf = (r) => (r.href && !known(r.href) ? OWN : (r.href || ''))
-function setWhere(r, v) {
+const whereOf = (r: any) => (r.href && !known(r.href) ? OWN : (r.href || ''))
+function setWhere(r: any, v: any) {
   if (v === OWN) { r.href = r.href && !known(r.href) ? r.href : '/'; r.own = true }
   else { r.href = v; delete r.own }
   touch()
 }
-const isOwn = (r) => !!r.own || (!!r.href && !known(r.href))
+const isOwn = (r: any) => !!r.own || (!!r.href && !known(r.href))
 
 /* the word the header itself would show for an inherited item: its own label, else the key
    through the nav strings — never the bare key, which is what the editor must not have to know */
-const word = (l) => l.label || t('nav.' + l.key) || l.key || l.href
+const word = (l: any) => l.label || t('nav.' + l.key) || l.key || l.href
 function touch() { emit('update:modelValue', [...rows.value]) }
 function add() {
-  rows.value = [...rows.value, { label: '', href: links.value.length ? links.value[0].value : '/', prefix: false }]
+  rows.value = [...rows.value, { label: '', href: links.value.length ? (links.value[0] as any).value : '/', prefix: false }]
 }
-function drop(i) { const next = [...rows.value]; next.splice(i, 1); emit('update:modelValue', next) }
+function drop(i: any) { const next = [...rows.value]; next.splice(i, 1); emit('update:modelValue', next) }
 function startFrom() { emit('update:modelValue', (props.inherited || []).map((x) => ({ ...x }))) }
 /* exactly one item may be the call to action: turning one on turns the others off, which is a
    rule the file enforces anyway and is far better met here than refused on save */
-function setCta(r, on) { for (const x of rows.value) if (x !== r) delete x.cta; if (on) r.cta = true; else delete r.cta; touch() }
+function setCta(r: any, on: any) { for (const x of rows.value) if (x !== r) delete (x as any).cta; if (on) r.cta = true; else delete r.cta; touch() }
 </script>
 
 <template>
@@ -106,7 +107,7 @@ function setCta(r, on) { for (const x of rows.value) if (x !== r) delete x.cta; 
 
           <label class="ui-navcell">
             <span class="ui-navlab">{{ W.where }}</span>
-            <select class="ui-input" :value="whereOf(r)" @change="setWhere(r, $event.target.value)">
+            <select class="ui-input" :value="whereOf(r)" @change="setWhere(r, ($event.target as any).value)">
               <optgroup v-for="[g, list] in linkGroups" :key="g" :label="g">
                 <option v-for="o in list" :key="o.value" :value="o.value">{{ o.label }}</option>
               </optgroup>
@@ -128,7 +129,7 @@ function setCta(r, on) { for (const x of rows.value) if (x !== r) delete x.cta; 
           </label>
 
           <label class="ui-navtick" :title="W['cta-help']">
-            <input type="checkbox" :checked="!!r.cta" @change="setCta(r, $event.target.checked)" />
+            <input type="checkbox" :checked="!!r.cta" @change="setCta(r, ($event.target as any).checked)" />
             <span>{{ W.cta }}</span>
           </label>
 

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The page inside the admin's live-preview frame (dev only, at /__preview).
  * It renders a draft entry with the SAME components the site uses — the
@@ -27,7 +27,7 @@ import { applyLook } from 'platformkit/lib/look.js'
 loadStorefront()   /* live prices for a product draft */
 
 const col = ref('')
-const entry = ref(null)
+const entry = ref<any>(null)
 provide('dl-preview', entry)
 
 /* the view remounts when the document changes, not on every keystroke */
@@ -35,8 +35,8 @@ const key = computed(() => col.value + ':' + (entry.value ? (entry.value.id || e
 /* the tree views take the same landing title + subtitle the site gives them */
 const TREE = { wiki: { title: 'Wiki', subtitle: 'The canon, page by page.' }, docs: { title: 'Docs', subtitle: 'How everything works, in order.' } }
 
-const say = (msg) => { if (window.parent !== window) window.parent.postMessage(msg, window.location.origin) }
-function onMessage(e) {
+const say = (msg: any) => { if (window.parent !== window) window.parent.postMessage(msg, window.location.origin) }
+function onMessage(e: any) {
   if (e.origin !== window.location.origin || !e.data) return
   /* the admin's look switch: the frame wears the look it names, unsaved */
   if (e.data.type === 'dl-look') { applyLook(e.data.look); return }
@@ -46,9 +46,9 @@ function onMessage(e) {
   col.value = e.data.col || ''
   entry.value = e.data.entry || null
 }
-function onKey(e) { if (e.key === 'Escape' && !e.defaultPrevented) say({ type: 'dl-preview-close' }) }
+function onKey(e: any) { if (e.key === 'Escape' && !e.defaultPrevented) say({ type: 'dl-preview-close' }) }
 /* a click on a page section opens its block in the builder (a link inside still goes nowhere: the preview is not the site) */
-function onClick(e) { const el = e.target.closest && e.target.closest('[data-section]'); if (!el) return; e.preventDefault(); say({ type: 'dl-preview-pick', index: Number(el.dataset.section) }) }
+function onClick(e: any) { const el = e.target.closest && e.target.closest('[data-section]'); if (!el) return; e.preventDefault(); say({ type: 'dl-preview-pick', index: Number(el.dataset.section) }) }
 onMounted(() => {
   window.addEventListener('message', onMessage)
   document.addEventListener('keydown', onKey)

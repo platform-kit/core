@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* A cart made through the Store API (Shopify's Storefront), followed to its checkoutUrl — /cart/c/<token>: the cart's
    lines are put in the site's bag (the same lines the product pages add: a sku, a variant, a quantity), the shipping
    country set when the cart's buyer said one, and the buyer goes on as any buyer does — straight to Checkout when every
@@ -22,13 +22,14 @@ const W = (us('store').cart || {}).handoff || {}
 const token = props.path.slice((ROUTES.cart + '/c/').length).split('/')[0]
 const state = ref('loading')   /* loading | signin | expired | failed */
 const error = ref('')
+// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: W.title || '', description: '', path: props.path, noindex: true })
 
 async function load() {
   if (!configured || !supabase || !/^[a-f0-9]{36}$/.test(token)) { state.value = 'expired'; return }
   const fns = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '') + '/functions/v1/storefront-api/api/carts/' + token
   let data = null
-  try { const r = await fetch(fns); if (r.status === 404) { state.value = 'expired'; return } if (!r.ok) throw new Error('the cart could not be read'); data = await r.json() } catch (e) { state.value = 'failed'; error.value = e.message; return }
+  try { const r = await fetch(fns); if (r.status === 404) { state.value = 'expired'; return } if (!r.ok) throw new Error('the cart could not be read'); data = await r.json() } catch (e) { state.value = 'failed'; error.value = (e as any).message; return }
   if (!data.lines || !data.lines.length) { state.value = 'expired'; return }
   /* the bag as the product pages fill it */
   cart.clear()
@@ -36,13 +37,14 @@ async function load() {
   const cc = data.buyerIdentity && data.buyerIdentity.countryCode
   if (cc && shipsTo(rules, cc)) shipTo.value = cc
   /* wait for the session to be known before deciding who is buying */
+  // @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
   await new Promise((r) => { const t = setInterval(() => { if (authSettled.value) { clearInterval(t); r() } }, 50); setTimeout(() => { clearInterval(t); r() }, 4000) })
   if (isSignedIn.value || guestCart(cart.items.value)) {
-    try { await checkout(cart.items.value); return } catch (e) { state.value = 'failed'; error.value = e.message; return }
+    try { await checkout(cart.items.value); return } catch (e) { state.value = 'failed'; error.value = (e as any).message; return }
   }
   state.value = 'signin'
   cart.openCart()
-  if (window.DLauth) window.DLauth.open({ intent: 'buy' })
+  if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'buy' })
 }
 onMounted(load)
 function toStore() { navigate(ROUTES.store) }

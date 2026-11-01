@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Words that arrive: the text split into words, each rising in a beat after the last as the block
  * is seen (`words`) — or the whole passage dim until it is scrolled through, each word brightening
@@ -11,11 +11,11 @@ const props = defineProps({ text: { type: String, default: '' }, mode: { type: S
 /* the rendered inline html, its text nodes split into word spans */
 const html = computed(() => {
   const h = md(props.text); let i = 0
-  return h.replace(/>([^<]+)</g, (_, t) => '>' + t.replace(/(\S+)(\s*)/g, (m, w, sp) => `<span class="lprw" style="--w:${i++}">${w}</span>${sp}`) + '<')
-    .replace(/^([^<]+)/, (t) => t.replace(/(\S+)(\s*)/g, (m, w, sp) => `<span class="lprw" style="--w:${i++}">${w}</span>${sp}`))
+  return h.replace(/>([^<]+)</g, (_: any, t: any) => '>' + t.replace(/(\S+)(\s*)/g, (m: any, w: any, sp: any) => `<span class="lprw" style="--w:${i++}">${w}</span>${sp}`) + '<')
+    .replace(/^([^<]+)/, (t: any) => t.replace(/(\S+)(\s*)/g, (m: any, w: any, sp: any) => `<span class="lprw" style="--w:${i++}">${w}</span>${sp}`))
 })
-const el = ref(null)
-let onScroll = null
+const el = ref<any>(null)
+let onScroll: any = null
 onMounted(() => {
   if (props.mode !== 'scroll') return
   const words = [...el.value.querySelectorAll('.lprw')]

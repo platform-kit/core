@@ -38,7 +38,7 @@ Whether the selection of sites is right — every registered site locally, the k
 
 ## Impact
 
-- `packages/kit/build/test.mjs` and a new runner beside it; `packages/kit/bin/platformkit.mjs` (`test --e2e`); the root `package.json`.
+- `packages/kit/build/test.mts` and a new runner beside it; `packages/kit/bin/platformkit.mjs` (`test --e2e`); the root `package.json`.
 - Every stack-backed test under `packages/kit/build/` (how it finds its stack); `schema.test.mjs`.
 - The seed steps of `platformkit migrate reset`, shared rather than copied.
 - `.github/workflows/kit.yml`.

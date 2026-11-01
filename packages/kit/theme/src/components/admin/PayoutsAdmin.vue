@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * PAYOUTS — what the business owes the people it pays, and the rules that decide it.
  *
@@ -26,53 +26,56 @@ import AdminHead from './AdminHead.vue'
 
 const W = computed(() => us('payouts').page.main)
 const P = computed(() => us('payouts').page.person)
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const loading = ref(true), error = ref(''), busy = ref(''), note = ref('')
-const due = ref([]), live = ref(false)
-const openId = ref(''), person = ref(null), editing = ref(false), draft = ref(null)
+const due = ref<any>([]), live = ref(false)
+const openId = ref(''), person = ref<any>(null), editing = ref(false), draft = ref<any>(null)
 
-const money = (c, cur) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: String(cur || 'usd').toUpperCase() }).format((Number(c) || 0) / 100) } catch (e) { return String(c) } }
-const when = (d) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(d)) } catch (e) { return '' } }
-const forever = (d) => !d || new Date(d).getTime() > Date.now() + 100 * 365 * 864e5
-const TYPES = computed(() => (SESSIONS || []).filter((s) => s.published !== false).map((s) => s.slug))
+const money = (c: any, cur: any) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: String(cur || 'usd').toUpperCase() }).format((Number(c) || 0) / 100) } catch (e) { return String(c) } }
+const when = (d: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(d)) } catch (e) { return '' } }
+const forever = (d: any) => !d || new Date(d).getTime() > Date.now() + 100 * 365 * 864e5
+const TYPES = computed(() => (SESSIONS || []).filter((s: any) => s.published !== false).map((s: any) => s.slug))
 
-async function call(action, body) {
-  const { data, error: e } = await supabase.functions.invoke('payouts', { body: { action, ...(body || {}) } })
+async function call(action: any, body: any) {
+  const { data, error: e } = await (supabase as any).functions.invoke('payouts', { body: { action, ...(body || {}) } })
   if (e) throw e
   if (data && data.error) throw new Error(data.error)
   return data
 }
 async function load() {
   loading.value = true; error.value = ''
+  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   try { const r = await call('due'); due.value = r.due || []; live.value = !!r.live }
-  catch (e) { error.value = e.message || W.value.error } finally { loading.value = false }
+  catch (e) { error.value = (e as any).message || W.value.error } finally { loading.value = false }
 }
 onMounted(load)
 
 async function sweep() {
   busy.value = 'sweep'; error.value = ''; note.value = ''
   try {
+    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     const r = await call('sweep')
     note.value = !r.written ? W.value['swept-none'] : r.written === 1 ? W.value['swept-one'] : fill(W.value.swept, { n: r.written })
     await load()
     if (openId.value) await openPerson(openId.value, true)
-  } catch (e) { error.value = e.message || W.value.error } finally { busy.value = '' }
+  } catch (e) { error.value = (e as any).message || W.value.error } finally { busy.value = '' }
 }
 async function sendAll() {
   busy.value = 'send'; error.value = ''; note.value = ''
+  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   try { const r = await call('send'); note.value = r.sent === 1 ? W.value['sent-one'] : fill(W.value.sent, { n: r.sent || 0 }); await load() }
-  catch (e) { error.value = e.message || W.value.error } finally { busy.value = '' }
+  catch (e) { error.value = (e as any).message || W.value.error } finally { busy.value = '' }
 }
-async function sendOne(d) {
+async function sendOne(d: any) {
   busy.value = d.user_id; error.value = ''; note.value = ''
   try { const r = await call('send', { user: d.user_id }); note.value = r.sent ? fill(W.value.sent, { n: 1 }) : (r.reason || ''); await load() }
-  catch (e) { error.value = e.message || W.value.error } finally { busy.value = '' }
+  catch (e) { error.value = (e as any).message || W.value.error } finally { busy.value = '' }
 }
-async function openPerson(id, keep) {
+async function openPerson(id: any, keep: any) {
   if (!keep && openId.value === id) { openId.value = ''; person.value = null; return }
   openId.value = id; person.value = null; editing.value = false
-  try { person.value = await call('status', { user: id }) } catch (e) { error.value = e.message || W.value.error }
+  try { person.value = await call('status', { user: id }) } catch (e) { error.value = (e as any).message || W.value.error }
 }
 
 /* --- the rules --- */
@@ -83,7 +86,7 @@ const blank = () => ({ trigger: 'booking', booking_type: TYPES.value[0] || '', a
 watch(() => draft.value && draft.value.amount_kind, (k, was) => { if (draft.value && k && was && k !== was) draft.value.amount = k === 'share' ? 10 : 50 })
 function addRule() { draft.value = blank(); editing.value = true }
 const asRule = computed(() => {
-  const d = draft.value
+  const d: any = draft.value
   if (!d) return null
   return { ...d, booking_type: d.trigger === 'booking' ? d.booking_type : null, amount: Math.round(Number(d.amount) * 100) }
 })
@@ -99,18 +102,18 @@ async function saveRule() {
   if (!asRule.value || fault.value) return
   busy.value = 'rule'; error.value = ''
   try {
-    const { error: e } = await supabase.from('payout_rules').insert({ user_id: openId.value, ...asRule.value })
+    const { error: e } = await (supabase as any).from('payout_rules').insert({ user_id: openId.value, ...asRule.value })
     if (e) throw e
     editing.value = false; draft.value = null
     await openPerson(openId.value, true)
-  } catch (e) { error.value = e.message || W.value.error } finally { busy.value = '' }
+  } catch (e) { error.value = (e as any).message || W.value.error } finally { busy.value = '' }
 }
-async function removeRule(r) {
+async function removeRule(r: any) {
   if (!window.confirm(P.value['remove-ask'])) return
-  try { await supabase.from('payout_rules').update({ active: false }).eq('id', r.id); await openPerson(openId.value, true) }
-  catch (e) { error.value = e.message || W.value.error }
+  try { await (supabase as any).from('payout_rules').update({ active: false }).eq('id', r.id); await openPerson(openId.value, true) }
+  catch (e) { error.value = (e as any).message || W.value.error }
 }
-const ruleWords = (r) => {
+const ruleWords = (r: any) => {
   const t = r.trigger === 'weekly' ? P.value['trigger-weekly'] : r.trigger === 'monthly' ? P.value['trigger-monthly'] : (r.booking_type || P.value['trigger-booking'])
   const a = r.amount_kind === 'share' ? (r.amount / 100).toFixed(2).replace(/\.00$/, '') + '%' : money(r.amount, r.currency)
   return a + ' · ' + t
@@ -123,7 +126,7 @@ const ruleWords = (r) => {
       <template #actions>
         <div class="pa-acts">
           <button type="button" class="pa-act" :disabled="busy === 'sweep'" @click="sweep">{{ busy === 'sweep' ? W.sweeping : W.sweep }}</button>
-          <button type="button" class="pa-primary" :disabled="busy === 'send' || !due.some((d) => d.sendable)" @click="sendAll">{{ busy === 'send' ? W.sending : W['send-all'] }}</button>
+          <button type="button" class="pa-primary" :disabled="busy === 'send' || !due.some((d: any) => d.sendable)" @click="sendAll">{{ busy === 'send' ? W.sending : W['send-all'] }}</button>
         </div>
       </template>
     </AdminHead>
@@ -142,7 +145,7 @@ const ruleWords = (r) => {
           <!-- what stands in the way, in words -->
           <span v-if="d.why" class="pa-why">{{ d.why }}</span>
           <span class="pa-row-acts">
-            <button type="button" class="pa-act" @click="openPerson(d.user_id)">{{ openId === d.user_id ? W.close : W.open }}</button>
+            <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. --><button type="button" class="pa-act" @click="openPerson(d.user_id)">{{ openId === d.user_id ? W.close : W.open }}</button>
             <button type="button" class="pa-act pa-go" :disabled="!d.sendable || busy === d.user_id" @click="sendOne(d)">{{ W['send-one'] }}</button>
           </span>
         </div>

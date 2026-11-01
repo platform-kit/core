@@ -4,9 +4,9 @@ description: How a site lets providers offer their own services, agree to terms,
 order: 21
 sources:
   [
-    packages/kit/build/providers-io.mjs,
-    packages/kit/build/providers-push.mjs,
-    packages/kit/src/lib/payouts.js,
+    packages/kit/build/providers-io.mts,
+    packages/kit/build/providers-push.mts,
+    packages/kit/src/lib/payouts.ts,
     packages/kit/supabase/functions/providers,
     packages/kit/supabase/functions/payouts,
     packages/kit/supabase/functions/_shared/payouts.ts,

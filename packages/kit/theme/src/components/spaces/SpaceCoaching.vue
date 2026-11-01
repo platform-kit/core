@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A MEMBER'S COACHING, inside the community (openspec: coaching-in-one-place).
  *
@@ -19,7 +20,7 @@ import CoachingPage from '../../instrument/ui/results/CoachingPage.vue'
 
 const props = defineProps({
   /* { chat, sessions } — what this reader's place holds */
-  place: { type: Object, default: () => ({ chat: true, sessions: false }) },
+  place: { type: Object as PropType<any>, default: () => ({ chat: true, sessions: false }) },
 })
 const W = computed(() => us('spaces').coaching.main)
 const KEY = 'pk.coaching.tab'
@@ -31,7 +32,7 @@ const tabs = computed(() => [
 const tab = ref(read())
 /* the remembered tab where it is still offered, else the first: the conversation where there is one */
 watch(tabs, (t) => { if (!t.some((x) => x.key === tab.value)) tab.value = (t[0] || {}).key || '' }, { immediate: true })
-function choose(k) { tab.value = k; try { localStorage.setItem(KEY, k) } catch (e) { /* this browser keeps nothing */ } }
+function choose(k: any) { tab.value = k; try { localStorage.setItem(KEY, k) } catch (e) { /* this browser keeps nothing */ } }
 </script>
 
 <template>

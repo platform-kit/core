@@ -17,7 +17,7 @@
       webhook replay, and meter-event sum/retry assertions in `packages/kit/build/usage.test.mjs`.
 - [x] 1.4 Make deploy checks require the live Stripe credentials and meter configuration only
       when a published offer declares metering. Verify with the targeted deploy-check fixtures
-      and `node packages/kit/build/deploy-checks.mjs --test`.
+      and `node packages/kit/build/deploy-checks.mts --test`.
 - [x] 1.5 Add the site-level automatic-top-up switch and eligible-pack declarations, then
       implement reader-consented off-session pack purchases through Stripe. Grant the pack only
       after confirmed payment, with stable payment idempotency. Verify site-disabled, declined,
@@ -111,7 +111,7 @@
       cross-operation `/app/usage` page, the surface-independent server gate, bot and speech
       consumers, and known boundaries; update offer, site-config, and bot reference pages, name
       their sources, and change page words rather than only review dates. Verify with
-      `node packages/kit/build/docs-check.mjs`.
+      `node packages/kit/build/docs-check.mts`.
 - [x] 6.2 Run the focused usage, catalog, declaration, database, and UI checks named above, validate
       OpenSpec with `npx openspec validate --all --strict`, and report each change scenario as
       passed, failed, or not verified plus applicable `design-rules`, `admin-editing`,

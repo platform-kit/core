@@ -134,7 +134,7 @@ A usage offer with an omitted or blank unit SHALL resolve to “credits” durin
 
 - **WHEN** a site compiles a usage offer with its unit omitted or blank
 - **THEN** the resulting offer uses “credits”, and a metered offer is not rejected solely because its unit was omitted
-- **Verified by:** `cd sites/demo && node --test ../../packages/kit/build/usage.test.mjs` and `cd sites/demo && node ../../packages/kit/build/deploy-checks.mjs --test`
+- **Verified by:** `cd sites/demo && node --test ../../packages/kit/build/usage.test.mjs` and `cd sites/demo && node ../../packages/kit/build/deploy-checks.mts --test`
 
 #### Scenario: A recorded activity unit is used for legacy activity
 

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * THE NETWORK'S MODERATION, for the people responsible for it — the site's administrators, since
  * the network belongs to no space (93-network.sql network_moderator). Two views, one at a time:
@@ -22,50 +22,50 @@ import AdminHead from './admin/AdminHead.vue'
 import NetPost from './network/NetPost.vue'
 
 const W = computed(() => us('network').admin.main)
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const tab = ref('reports')
 const state = ref('idle')   /* idle | loading | ok | denied | error */
-const reports = ref([])
-const suspended = ref([])
+const reports = ref<any>([])
+const suspended = ref<any>([])
 const busy = ref('')
 const SPANS = [['day', 1], ['week', 7], ['month', 30], ['ever', 0]]
 
-const nameOf = (id) => { const p = net.people[id]; return (p && (p.name || p.username)) || us('network').post.main.someone }
+const nameOf = (id: any) => { const p = net.people[id]; return (p && (p.name || p.username)) || us('network').post.main.someone }
 
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; return }
   if (roleKnown.value && !isAdmin.value) { state.value = 'denied'; return }
   if (state.value !== 'ok') state.value = 'loading'
   const [r, s, l] = await Promise.all([
-    supabase.from('network_moderation').select('*').eq('kind', 'report').is('answered_at', null).order('created_at', { ascending: false }).limit(200),
-    supabase.from('network_moderation').select('*').eq('kind', 'suspend').order('created_at', { ascending: false }).limit(200),
-    supabase.from('network_moderation').select('lifts_id').eq('kind', 'lift'),
+    (supabase as any).from('network_moderation').select('*').eq('kind', 'report').is('answered_at', null).order('created_at', { ascending: false }).limit(200),
+    (supabase as any).from('network_moderation').select('*').eq('kind', 'suspend').order('created_at', { ascending: false }).limit(200),
+    (supabase as any).from('network_moderation').select('lifts_id').eq('kind', 'lift'),
   ])
   if (r.error || s.error) { state.value = /permission|denied/i.test((r.error || s.error).message || '') ? 'denied' : 'error'; return }
-  const lifted = new Set((l.data || []).map((x) => x.lifts_id))
+  const lifted = new Set((l.data || []).map((x: any) => x.lifts_id))
   const now = Date.now()
   reports.value = r.data || []
-  suspended.value = (s.data || []).filter((x) => !lifted.has(x.id) && (!x.until || new Date(x.until).getTime() > now))
+  suspended.value = (s.data || []).filter((x: any) => !lifted.has(x.id) && (!x.until || new Date(x.until).getTime() > now))
   await Promise.all([
-    loadPosts(reports.value.map((x) => x.post_id).filter(Boolean)),
-    loadPeople([...reports.value, ...suspended.value].flatMap((x) => [x.actor_id, x.subject_id])),
+    loadPosts(reports.value.map((x: any) => (x as any).post_id).filter(Boolean)),
+    loadPeople([...reports.value, ...suspended.value].flatMap((x) => [(x as any).actor_id, (x as any).subject_id])),
   ])
   state.value = 'ok'
 }
 onMounted(load)
 watch([isSignedIn, roleKnown], load)
 
-async function run(key, fn, args) {
+async function run(key: any, fn: any, args: any) {
   busy.value = key
-  try { const { error } = await supabase.rpc(fn, args); if (error) throw error; await load() }
+  try { const { error } = await (supabase as any).rpc(fn, args); if (error) throw error; await load() }
   catch (e) { state.value = 'error' } finally { busy.value = '' }
 }
-const remove = (r) => run(r.id, 'network_remove_post', { p_post: r.post_id, p_reason: r.reason })
-const suspend = (r, days) => run(r.id, 'network_suspend', { p_person: r.subject_id, p_until: days ? new Date(Date.now() + days * 86400000).toISOString() : null, p_reason: r.reason })
-const dismiss = (r) => run(r.id, 'network_lift', { p_act: r.id, p_reason: null })
-const lift = (s) => run(s.id, 'network_lift', { p_act: s.id, p_reason: null })
-const reasonWord = (k) => W.value['reason-' + k] || k
-const untilWord = (s) => (s.until ? fill(W.value.until, { when: new Date(s.until).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }) : W.value['for-good'])
+const remove = (r: any) => run(r.id, 'network_remove_post', { p_post: r.post_id, p_reason: r.reason })
+const suspend = (r: any, days: any) => run(r.id, 'network_suspend', { p_person: r.subject_id, p_until: days ? new Date(Date.now() + days * 86400000).toISOString() : null, p_reason: r.reason })
+const dismiss = (r: any) => run(r.id, 'network_lift', { p_act: r.id, p_reason: null })
+const lift = (s: any) => run(s.id, 'network_lift', { p_act: s.id, p_reason: null })
+const reasonWord = (k: any) => W.value['reason-' + k] || k
+const untilWord = (s: any) => (s.until ? fill(W.value.until, { when: new Date(s.until).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }) : W.value['for-good'])
 </script>
 
 <template>
@@ -90,7 +90,7 @@ const untilWord = (s) => (s.until ? fill(W.value.until, { when: new Date(s.until
           <li v-for="r in reports" :key="r.id" class="nwa-row">
             <div class="nwa-meta">
               <b>{{ r.post_id ? fill(W['reported-by'], { name: nameOf(r.actor_id) }) : fill(W['reported-person'], { name: nameOf(r.subject_id) }) }}</b>
-              <span>{{ W.reason }}: {{ reasonWord(r.reason) }} · {{ agoOf(r.created_at) }}</span>
+              <span>{{ W.reason }}: {{ reasonWord(r.reason) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 1. -->{{ agoOf(r.created_at) }}</span>
               <q v-if="r.note">{{ r.note }}</q>
             </div>
             <div v-if="r.post_id" class="nwa-post">
@@ -119,7 +119,7 @@ const untilWord = (s) => (s.until ? fill(W.value.until, { when: new Date(s.until
           <li v-for="s in suspended" :key="s.id" class="nwa-row nwa-row-flat">
             <div class="nwa-meta">
               <b>{{ nameOf(s.subject_id) }}</b>
-              <span>{{ untilWord(s) }} · {{ fill(W['suspended-by'], { name: nameOf(s.actor_id) }) }} · {{ agoOf(s.created_at) }}</span>
+              <span>{{ untilWord(s) }} · {{ fill(W['suspended-by'], { name: nameOf(s.actor_id) }) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 1. -->{{ agoOf(s.created_at) }}</span>
               <span v-if="s.reason">{{ W.reason }}: {{ reasonWord(s.reason) }}</span>
             </div>
             <div class="nwa-acts"><button type="button" :disabled="busy === s.id" @click="lift(s)">{{ W.lift }}</button></div>

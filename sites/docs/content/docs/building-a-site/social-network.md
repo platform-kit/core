@@ -7,7 +7,7 @@ sources:
     packages/kit/build/network-media.test.mjs,
     packages/kit/supabase/schemas/98-community.sql,
     packages/kit/build/community-notes-db.test.mjs,
-    packages/kit/build/network-access.mjs,
+    packages/kit/build/network-access.mts,
     packages/kit/supabase/schemas/93-network.sql,
     packages/kit/build/network-db.test.mjs,
     packages/kit/src/lib/network,
@@ -17,11 +17,11 @@ sources:
     packages/kit/theme/src/content/ui/network.md,
     packages/kit/theme/src/pages/PersonPage.vue,
     packages/kit/theme/src/components/NetworkAdmin.vue,
-    packages/kit/src/lib/network/apps.js,
+    packages/kit/src/lib/network/apps.ts,
     packages/kit/supabase/functions/atproto,
     packages/kit/supabase/functions/_shared/atproto,
     packages/kit/build/atproto-interop.test.mjs,
-    packages/kit/build/network-keys.mjs,
+    packages/kit/build/network-keys.mts,
     packages/kit/theme/src/components/network/NetJoin.vue,
   ]
 reviewed: 2026-10-31
@@ -79,7 +79,7 @@ A post written in another app goes to the widest audience its writer has — eve
 
 A site **federates** by saying so in its config — `network: { federate: true }`, with `appview` and `relay` naming the app view it reads the world from and the relay it asks to crawl it (Bluesky's, unless it says otherwise). Off, which is the default, the network is closed: the protocol answers only the site's own people and refuses everything addressed to another server.
 
-On, a member may **join**, from the Join the wider network card on their account page (`NetJoin.vue`; a username first, since it becomes their handle). Joining is their own act and does four things: a portable `did:plc` identity is made for them at the PLC directory, its genesis operation naming their handle, this site as the server holding their posts and a signing key made for them and kept in Vault, all signed by the site's rotation key (`NETWORK_PLC_ROTATION_KEY` — `node ../../packages/kit/build/network-keys.mjs` prints one; never rotate it away); their page becomes public; their public records — their everyone posts, their likes and reposts of public posts, whom they follow, whom of the joined they block, their profile — become a signed repository; and the relay is asked to crawl the site. **Leaving** takes the repository down and tells the network the account is deactivated; the card says that copies other services already made may stay. Joining again is the same identity.
+On, a member may **join**, from the Join the wider network card on their account page (`NetJoin.vue`; a username first, since it becomes their handle). Joining is their own act and does four things: a portable `did:plc` identity is made for them at the PLC directory, its genesis operation naming their handle, this site as the server holding their posts and a signing key made for them and kept in Vault, all signed by the site's rotation key (`NETWORK_PLC_ROTATION_KEY` — `node ../../packages/kit/build/network-keys.mts` prints one; never rotate it away); their page becomes public; their public records — their everyone posts, their likes and reposts of public posts, whom they follow, whom of the joined they block, their profile — become a signed repository; and the relay is asked to crawl the site. **Leaving** takes the repository down and tells the network the account is deactivated; the card says that copies other services already made may stay. Joining again is the same identity.
 
 The repository is **derived**: whenever a joined member's public rows change, a trigger queues them (`network_dirty`) and asks the function over pg_net to make the repository agree — the difference committed and signed with Bluesky's own repository library — and the `network-project` job (every five minutes) catches anything the ask missed. A post to the people here is never in it: a signed repository is one tree that relays copy whole. Every commit, identity change and account change is numbered on `network_seq`, and the sync methods and the event stream (`com.atproto.sync.subscribeRepos`, a WebSocket) serve it, resuming from a relay's cursor; the `network-crawl` job asks the relay to crawl again once a day. A moderator's removal is a deletion on the stream, a suspension a takedown, its lift the account active again.
 

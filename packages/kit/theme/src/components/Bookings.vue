@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Bookings — every session cal.com mirrored into bookings (the webhook's projection: the attendee,
  * the coach, the time, what became of it), upcoming first and then the past, read with the admin's
@@ -20,38 +20,39 @@ import AdminHead from './admin/AdminHead.vue'
 const T = us('orders')
 /* where a native session happens, worded by the booker's lines (the library scope) */
 const BW = (us('library').coaching || {}).booker || {}
-const placeLine = (r) => placeOf(r.where, BW)
+const placeLine = (r: any) => placeOf(r.where, BW)
 /* the other addresses on a booking a host made for several */
-const others = (r) => (r.attendee_emails || []).filter((e) => e && e.toLowerCase() !== String(r.email || '').toLowerCase())
+const others = (r: any) => (r.attendee_emails || []).filter((e: any) => e && e.toLowerCase() !== String(r.email || '').toLowerCase())
 /* a host books for people from the desk too: the booker in its host mode over every published type */
 const booking = ref(false)
-const hostOptions = computed(() => (SESSIONS || []).filter((s) => s.published !== false).sort((a, b) => (a.order || 99) - (b.order || 99)).map((s) => ({ ...s, event: eventOfType(s), scheduler: schedulerOf(s), blocked: false, paid: false, credits: 0 })))
-const fillW = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const hostOptions = computed(() => (SESSIONS || []).filter((s: any) => s.published !== false).sort((a: any, b: any) => (a.order || 99) - (b.order || 99)).map((s: any) => ({ ...s, event: eventOfType(s), scheduler: schedulerOf(s), blocked: false, paid: false, credits: 0 })))
+const fillW = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const H = T.bookings.head, ST = T.bookings.status, RF = T.bookings.refused, R = T.bookings.row
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 /* a call's recording on the desk: watched or downloaded from a signed url (session-files), fetched again when a pull failed */
-const media = ref({}), mediaBusy = ref(''), watching = ref(null)
-async function open(r, what) {
+const media = ref<any>({}), mediaBusy = ref(''), watching = ref<any>(null)
+async function open(r: any, what: any) {
   mediaBusy.value = r.uid
   try {
     const m = media.value[r.uid] || (await recordingFor(r.uid)); media.value = { ...media.value, [r.uid]: m }
     if (what === 'watch') watching.value = watching.value === r.uid ? null : r.uid
     else if (what === 'download' && m.recording) window.open(m.recording, '_blank', 'noopener')
     else if (what === 'transcript' && m.transcript) window.open(m.transcript, '_blank', 'noopener')
-  } catch (e) { media.value = { ...media.value, [r.uid]: { error: e.message } } } finally { mediaBusy.value = '' }
+  } catch (e) { media.value = { ...media.value, [r.uid]: { error: (e as any).message } } } finally { mediaBusy.value = '' }
 }
-async function retry(r) { mediaBusy.value = r.uid; try { const out = await fetchAgain(r.uid); const i = rows.value.findIndex((x) => x.uid === r.uid); if (i >= 0) rows.value[i] = { ...rows.value[i], recording_state: out.state === 'pulled' ? null : out.state, recording_error: out.error || null, recording_path: out.state === 'pulled' ? r.uid + '/recording.mp4' : rows.value[i].recording_path } } catch (e) { /* the row says */ } finally { mediaBusy.value = '' } }
+// @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
+async function retry(r: any) { mediaBusy.value = r.uid; try { const out = await fetchAgain(r.uid); const i = rows.value.findIndex((x) => (x as any).uid === r.uid); if (i >= 0) rows.value[i] = { ...rows.value[i], recording_state: out.state === 'pulled' ? null : out.state, recording_error: out.error || null, recording_path: out.state === 'pulled' ? r.uid + '/recording.mp4' : (rows.value[i] as any).recording_path } } catch (e) { /* the row says */ } finally { mediaBusy.value = '' } }
 const state = ref('idle')      /* idle | loading | ok | denied | error */
-const rows = ref([])
-const people = ref({})
+const rows = ref<any>([])
+const people = ref<any>({})
 const tab = ref('upcoming')
-let channel = null
+let channel: any = null
 
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; rows.value = []; return }
   state.value = 'loading'
-  const { data, error } = await supabase.from('bookings').select('*').order('start_at', { ascending: false }).limit(500)
+  const { data, error } = await (supabase as any).from('bookings').select('*').order('start_at', { ascending: false }).limit(500)
   if (error) { state.value = (error.code === '42501' || /permission/i.test(error.message || '')) ? 'denied' : 'error'; return }
   rows.value = data || []
   loadAnswers(rows.value)
@@ -59,80 +60,83 @@ async function load() {
   state.value = 'ok'
   listen()
 }
-async function names(list) {
-  const ids = [...new Set(list.flatMap((r) => [r.user_id, r.provider_id]).filter((id) => id && !people.value[id]))]
+async function names(list: any) {
+  const ids = [...new Set(list.flatMap((r: any) => [r.user_id, r.provider_id]).filter((id: any) => id && !people.value[id]))]
   if (!ids.length) return
-  const { data } = await supabase.rpc('admin_people', { ids })
+  const { data } = await (supabase as any).rpc('admin_people', { ids })
   for (const p of data || []) people.value[p.id] = p
 }
 function listen() {
   if (channel || !supabase) return
   channel = supabase.channel('bookings').on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, async (p) => {
-    if (p.eventType === 'DELETE') { rows.value = rows.value.filter((r) => r.uid !== p.old.uid); return }
-    const i = rows.value.findIndex((r) => r.uid === p.new.uid)
+    if (p.eventType === 'DELETE') { rows.value = rows.value.filter((r: any) => (r as any).uid !== p.old.uid); return }
+    const i = rows.value.findIndex((r: any) => (r as any).uid === p.new.uid)
     if (i >= 0) rows.value.splice(i, 1, p.new); else rows.value.unshift(p.new)
     await names([p.new])
   }).subscribe()
 }
 onMounted(load)
 onIdentity(load)
-onBeforeUnmount(() => { if (channel) supabase.removeChannel(channel); channel = null })
+onBeforeUnmount(() => { if (channel) (supabase as any).removeChannel(channel); channel = null })
 
 /* what became of it: refused and no-show first (they say more than the status), then the status, an accepted one ahead as upcoming */
 const now = () => Date.now()
-const isUpcoming = (r) => r.status === 'accepted' && r.start_at && new Date(r.start_at).getTime() > now()
-const stateOf = (r) => (r.refused ? 'refused' : r.no_show ? 'no-show' : isUpcoming(r) ? 'upcoming' : r.status === 'accepted' ? 'ended' : r.status)
-const stateWord = (r) => { const k = stateOf(r); const w = ST[k] || k; return k === 'refused' && RF[r.refused] ? `${w} · ${RF[r.refused]}` : w }
+const isUpcoming = (r: any) => r.status === 'accepted' && r.start_at && new Date(r.start_at).getTime() > now()
+const stateOf = (r: any) => (r.refused ? 'refused' : r.no_show ? 'no-show' : isUpcoming(r) ? 'upcoming' : r.status === 'accepted' ? 'ended' : r.status)
+const stateWord = (r: any) => { const k = stateOf(r); const w = ST[k] || k; return k === 'refused' && RF[r.refused] ? `${w} · ${RF[r.refused]}` : w }
 
-const upcoming = computed(() => rows.value.filter(isUpcoming).sort((a, b) => new Date(a.start_at) - new Date(b.start_at)))
-const past = computed(() => rows.value.filter((r) => !isUpcoming(r)))
+// @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+const upcoming = computed(() => rows.value.filter(isUpcoming).sort((a, b) => new Date((a as any).start_at) - new Date((b as any).start_at)))
+const past = computed(() => rows.value.filter((r: any) => !isUpcoming(r)))
 const shown = computed(() => (tab.value === 'upcoming' ? upcoming.value : tab.value === 'past' ? past.value : [...upcoming.value, ...past.value]))
 const counts = computed(() => ({ upcoming: upcoming.value.length, past: past.value.length, all: rows.value.length }))
 
 /* the booking type: the session record whose cal.com link ends in the event slug the webhook recorded */
-const typeOf = (r) => { const s = (SESSIONS || []).find((x) => (r.type && x.slug === r.type) || (x.url && r.event && String(x.url).split('?')[0].replace(/\/+$/, '').endsWith('/' + r.event))); return (s && s.title) || r.title || r.event || '—' }
-const who = (id) => (id && people.value[id]) || null
-const attendee = (r) => { const p = who(r.user_id); return p ? { name: p.name, email: p.email, account: true } : { name: r.name || '', email: r.email || (r.attendee_emails || [])[0] || '', account: false } }
-const coach = (r) => { const p = who(r.provider_id); return p ? p.name + (p.email ? ' · ' + p.email : '') : r.provider_email || '—' }
-const when = (d) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+const typeOf = (r: any) => { const s = (SESSIONS || []).find((x: any) => (r.type && x.slug === r.type) || (x.url && r.event && String(x.url).split('?')[0].replace(/\/+$/, '').endsWith('/' + r.event))); return (s && s.title) || r.title || r.event || '—' }
+const who = (id: any) => (id && people.value[id]) || null
+const attendee = (r: any) => { const p = who(r.user_id); return p ? { name: p.name, email: p.email, account: true } : { name: r.name || '', email: r.email || (r.attendee_emails || [])[0] || '', account: false } }
+const coach = (r: any) => { const p = who(r.provider_id); return p ? p.name + (p.email ? ' · ' + p.email : '') : r.provider_email || '—' }
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const when = (d: any) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
 /*
  * WHAT THEY ANSWERED ON THE WAY IN. A type may ask a form's questions before the booking is made,
  * and the host needs them where they are looking at the booking rather than in the forms section
  * under a name they would have to match up themselves. Fetched for the rows that have one only —
  * most bookings ask nothing, and a join would cost every row for the few that do.
  */
-const answers = ref({})
+const answers = ref<any>({})
 /* THE QUESTION AS IT WAS ASKED. An answer is stored against the field's key, and a key is not a
    question: the form document has the words, so the desk shows those and falls back to the key
    only for a field that has since been renamed away. */
-function labelOf(slug, field) {
-  const doc = (FORMS || []).find((x) => x.slug === slug)
-  const found = ((doc && doc.model && doc.model.fields) || []).find((x) => x.name === field)
+function labelOf(slug: any, field: any) {
+  const doc = (FORMS || []).find((x: any) => x.slug === slug)
+  const found = ((doc && doc.model && doc.model.fields) || []).find((x: any) => x.name === field)
   const q = found && (found.question || (found.params && found.params.question))
   return q && q !== '...' ? q : field
 }
 /* and in the order the form asks them, not the order the rows came back */
-function orderOf(slug) {
-  const doc = (FORMS || []).find((x) => x.slug === slug)
-  return ((doc && doc.model && doc.model.fields) || []).map((x) => x.name)
+function orderOf(slug: any) {
+  const doc = (FORMS || []).find((x: any) => x.slug === slug)
+  return ((doc && doc.model && doc.model.fields) || []).map((x: any) => x.name)
 }
-async function loadAnswers(rows) {
-  const ids = [...new Set((rows || []).map((r) => r.response_id).filter(Boolean))]
+async function loadAnswers(rows: any) {
+  const ids = [...new Set((rows || []).map((r: any) => r.response_id).filter(Boolean))]
   if (!ids.length) { answers.value = {}; return }
-  const { data: resp } = await supabase.from('form_responses').select('id, form').in('id', ids)
-  const formOf = Object.fromEntries((resp || []).map((r) => [r.id, r.form]))
-  const { data } = await supabase.from('form_answers').select('response_id, field, value, file_name').in('response_id', ids)
-  const by = {}
+  const { data: resp } = await (supabase as any).from('form_responses').select('id, form').in('id', ids)
+  const formOf = Object.fromEntries((resp || []).map((r: any) => [r.id, r.form]))
+  const { data } = await (supabase as any).from('form_answers').select('response_id, field, value, file_name').in('response_id', ids)
+  const by: any = {}
   for (const a of data || []) {
     const v = a.file_name ? a.file_name : Array.isArray(a.value) ? a.value.join(', ') : a.value && typeof a.value === 'object' ? JSON.stringify(a.value) : String(a.value ?? '')
     ;(by[a.response_id] ||= []).push({ key: a.field, label: labelOf(formOf[a.response_id], a.field), value: v })
   }
-  for (const [id, list] of Object.entries(by)) { const o = orderOf(formOf[id]); list.sort((x, y) => (o.indexOf(x.key) + 1 || 99) - (o.indexOf(y.key) + 1 || 99)) }
+  for (const [id, list] of Object.entries(by)) { const o = orderOf(formOf[id]); (list as any).sort((x: any, y: any) => (o.indexOf(x.key) + 1 || 99) - (o.indexOf(y.key) + 1 || 99)) }
   answers.value = by
 }
-const answersOf = (r) => (r.response_id && answers.value[r.response_id]) || []
-const minutes = (r) => { const a = new Date(r.start_at), b = new Date(r.end_at); const n = Math.round((b - a) / 60000); return n > 0 ? fill(R.minutes, { n }) : '' }
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+const answersOf = (r: any) => (r.response_id && answers.value[r.response_id]) || []
+// @ts-expect-error TS2363, from the conversion: The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+const minutes = (r: any) => { const a = new Date(r.start_at), b: any = new Date(r.end_at); const n = Math.round((b - a) / 60000); return n > 0 ? fill(R.minutes, { n }) : '' }
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 
 <template>

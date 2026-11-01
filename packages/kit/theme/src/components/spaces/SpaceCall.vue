@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A huddle, in the shape every workspace chat gives one: a small panel docked at the foot of the
  * sidebar, NOT a room that takes the screen. The whole point of a huddle is that you keep working
@@ -24,17 +25,17 @@ import SpaceAvatar from './SpaceAvatar.vue'
 import SpaceIcon from './SpaceIcon.vue'
 
 const props = defineProps({
-  channel: { type: Object, required: true },
+  channel: { type: Object as PropType<any>, required: true },
   me: { type: String, default: '' },
 })
 const emit = defineEmits(['close', 'open'])
 const W = computed(() => us('spaces').call.main)
 /* shallow on purpose: a plain ref would unwrap the refs the call hands back (state, trouble), and
    reading .value on the unwrapped value is an error rather than the ref it looks like */
-const call = shallowRef(null)
-const cred = ref(null)
-const error = ref(null)
-const els = ref({})
+const call = shallowRef<any>(null)
+const cred = ref<any>(null)
+const error = ref<any>(null)
+const els = ref<any>({})
 const big = ref(false)
 
 const list = computed(() => (call.value

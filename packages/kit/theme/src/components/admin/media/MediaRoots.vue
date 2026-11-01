@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* menubar-start: the two roots as the admin's segmented control (VueFinder's storage select is hidden by the skin) */
 import { computed } from 'vue'
 import { useMedia } from './use-media.js'

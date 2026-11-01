@@ -4,7 +4,7 @@ description: Any kind of content the site needs — teachers, events, testimonia
 order: 16
 sources:
   [
-    packages/kit/build/tags.mjs,
+    packages/kit/build/tags.mts,
     packages/kit/theme/src/components/admin/ModelsAdmin.vue,
     packages/kit/theme/src/components/admin/ModelBuilder.vue,
     packages/kit/theme/src/components/admin/ModelField.vue,

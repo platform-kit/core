@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * WRITING A POST — or an answer to one. The words, up to four pictures each with a line describing
  * it, and WHO CAN SEE IT, chosen before anything is sent: Everyone, People here, or the members of
@@ -20,33 +21,33 @@ import { answerAudiences, defaultAudience, MAX_TEXT, MEDIA, refuseMedia, kindOfT
 import SpaceAvatar from '../spaces/SpaceAvatar.vue'
 
 const props = defineProps({
-  replyTo: { type: Object, default: null },
+  replyTo: { type: Object as PropType<any>, default: null },
   autofocus: { type: Boolean, default: false },
 })
 const emit = defineEmits(['posted'])
 
 const C = computed(() => us('network').composer.main)
 const A = computed(() => us('network').audience.main)
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const FEDERATES = !!(site.network && site.network.federate)
 
 const text = ref('')
-const files = ref([])       /* { file, url, alt } */
+const files = ref<any>([])       /* { file, url, alt } */
 const audience = ref(defaultAudience(props.replyTo))
 const busy = ref(false)
 const err = ref('')
-const box = ref(null)
+const box = ref<any>(null)
 /* FOLDED TO ONE LINE until it is wanted: the face and "Write something…". A reply, or a composer
    opened in the post window, starts open. It folds back when it is left with nothing in it. */
 const opened = ref(!!(props.replyTo || props.autofocus))
 async function unfold() { opened.value = true; await nextTick(); box.value && box.value.focus() }
-function maybeFold(e) {
+function maybeFold(e: any) {
   if (props.replyTo || props.autofocus) return
   const next = e.relatedTarget
   if (next && e.currentTarget.contains(next)) return
   if (!text.value.trim() && !files.value.length && !menu.value) opened.value = false
 }
-const picker = ref(null)
+const picker = ref<any>(null)
 
 onMounted(async () => {
   if (!props.replyTo) loadSpaces().catch(() => {})
@@ -58,7 +59,7 @@ onMounted(async () => {
 const choices = computed(() => {
   const net2 = answerAudiences(props.replyTo).map((a) => ({ key: a, label: A.value[a], note: a === 'everyone' && FEDERATES ? A.value['everyone-federated'] : A.value[a + '-note'] }))
   if (props.replyTo) return net2
-  return net2.concat((net.spaces || []).map((s) => ({ key: 'space:' + s.space_id, label: fill(A.value.space, { space: s.name }), note: A.value['space-note'] })))
+  return net2.concat((net.spaces || []).map((s: any) => ({ key: 'space:' + s.space_id, label: fill(A.value.space, { space: s.name }), note: A.value['space-note'] })))
 })
 const chosen = computed(() => choices.value.find((c) => c.key === audience.value) || choices.value[0])
 const narrowed = computed(() => !!props.replyTo && choices.value.length < 2)
@@ -69,18 +70,18 @@ const used = computed(() => Math.min(1, text.value.length / MAX_TEXT))
 const RING = 2 * Math.PI * 9
 /* the audience menu */
 const menu = ref(false)
-function closeMenu(e) { if (!e.target.closest || !e.target.closest('.nc-aud')) { menu.value = false; document.removeEventListener('click', closeMenu, true) } }
+function closeMenu(e: any) { if (!e.target.closest || !e.target.closest('.nc-aud')) { menu.value = false; document.removeEventListener('click', closeMenu, true) } }
 function openMenu() { if (narrowed.value) return; menu.value = !menu.value; if (menu.value) setTimeout(() => document.addEventListener('click', closeMenu, true)) }
-function choose(k) { audience.value = k; menu.value = false }
-const iconOf = (k) => (k === 'everyone' ? 'globe' : k === 'here' ? 'house' : 'space')
+function choose(k: any) { audience.value = k; menu.value = false }
+const iconOf = (k: any) => (k === 'everyone' ? 'globe' : k === 'here' ? 'house' : 'space')
 const canPost = computed(() => !busy.value && left.value >= 0 && (text.value.trim().length > 0 || files.value.length > 0))
 
 /* the box grows with what is written, to a point */
-function grow() { const el = box.value; if (!el) return; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 360) + 'px' }
+function grow() { const el: any = box.value; if (!el) return; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 360) + 'px' }
 
 /* PICTURES AND VIDEOS: up to ten, refused by name before anything is sent (_shared/atproto/media.js) */
 const ACCEPT = [...MEDIA.imageTypes, ...MEDIA.videoTypes].join(',')
-function addPictures(e) {
+function addPictures(e: any) {
   const list = [...(e.target.files || [])]
   e.target.value = ''
   const why = refuseMedia(list.map((f) => ({ type: f.type, size: f.size })), files.value.length)
@@ -88,8 +89,8 @@ function addPictures(e) {
   err.value = ''
   for (const f of list) files.value.push({ file: f, url: URL.createObjectURL(f), alt: '', kind: kindOfType(f.type) })
 }
-function dropPicture(i) { URL.revokeObjectURL(files.value[i].url); files.value.splice(i, 1) }
-function clearPictures() { for (const f of files.value) URL.revokeObjectURL(f.url); files.value = [] }
+function dropPicture(i: any) { URL.revokeObjectURL((files.value[i] as any).url); files.value.splice(i, 1) }
+function clearPictures() { for (const f of files.value) URL.revokeObjectURL((f as any).url); files.value = [] }
 
 async function send() {
   if (!canPost.value) return
@@ -97,14 +98,14 @@ async function send() {
   try {
     const out = await publish({
       text: text.value, audience: chosen.value.key,
-      files: files.value.map((f) => f.file), alts: files.value.map((f) => f.alt),
+      files: files.value.map((f: any) => (f as any).file), alts: files.value.map((f: any) => (f as any).alt),
       replyTo: props.replyTo ? props.replyTo.id : null,
     })
     text.value = ''; clearPictures(); await nextTick(); grow()
     emit('posted', out)
   } catch (e) { err.value = C.value.failed } finally { busy.value = false }
 }
-function onKey(e) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); send() } }
+function onKey(e: any) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); send() } }
 const me = computed(() => (user.value ? net.people[user.value.id] || myFace.value || null : null))
 </script>
 

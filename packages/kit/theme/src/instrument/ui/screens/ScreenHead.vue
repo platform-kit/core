@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* The eyebrow, the sentence and its aside. The headline is the statement itself:
    escaped, then its own small markdown (bold, italic, underline — inline.js);
    the eyebrow and the aside carry markup on purpose. */

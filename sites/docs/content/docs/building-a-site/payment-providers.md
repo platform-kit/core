@@ -6,15 +6,15 @@ sources:
   [
     packages/kit/src/payment-provider.d.ts,
     packages/kit/src/payment-provider.mjs,
-    packages/kit/build/payment-provider-registry.mjs,
+    packages/kit/build/payment-provider-registry.mts,
     packages/kit/build/payment-provider-registry.test.mjs,
     packages/kit/build/site-payment-provider.test.mjs,
     packages/kit/build/modules/manifest.mts,
-    packages/kit/build/assemble.mjs,
-    packages/kit/build/deploy.mjs,
-    packages/kit/build/deploy-checks.mjs,
-    packages/kit/build/steps.mjs,
-    packages/kit/build/steps/push-catalog.mjs,
+    packages/kit/build/assemble.mts,
+    packages/kit/build/deploy.mts,
+    packages/kit/build/deploy-checks.mts,
+    packages/kit/build/steps.mts,
+    packages/kit/build/steps/push-catalog.mts,
     packages/kit/build/fixtures/site-payment-provider,
     packages/kit/supabase/config.toml.template,
     packages/kit/supabase/functions/_shared/payment-provider.mjs,
@@ -23,7 +23,7 @@ sources:
     packages/kit/supabase/functions/_shared/hyperswitch-api.mjs,
     packages/kit/supabase/functions/_shared/hyperswitch-billing.mjs,
     packages/kit/supabase/functions/_shared/hyperswitch-payment-provider.ts,
-    packages/kit/theme/src/lib/hyperswitch-sdk.js,
+    packages/kit/theme/src/lib/hyperswitch-sdk.ts,
     packages/kit/supabase/functions/_shared/stripe-payment-provider.ts,
     packages/kit/supabase/functions/_shared/usage-stripe.mjs,
     packages/kit/supabase/functions/_shared/usage.ts,
@@ -35,8 +35,8 @@ sources:
     packages/kit/supabase/functions/create-portal-session/index.ts,
     packages/kit/supabase/functions/hyperswitch-subscription-renewal,
     packages/kit/supabase/schemas/40-commerce.sql,
-    packages/kit/src/lib/commerce.js,
-    packages/kit/src/lib/router.js,
+    packages/kit/src/lib/commerce.ts,
+    packages/kit/src/lib/router.ts,
     packages/kit/theme/src/App.vue,
     packages/kit/theme/src/pages/BillingPortalPage.vue,
     packages/kit/theme/src/pages/HyperswitchCheckoutPage.vue,
@@ -53,12 +53,12 @@ sources:
     packages/kit/build/hyperswitch-sdk.test.mjs,
     packages/kit/build/hyperswitch-local.integration.mjs,
     packages/kit/build/hyperswitch-local.integration.test.ts,
-    packages/kit/build/hyperswitch-test-stack.mjs,
+    packages/kit/build/hyperswitch-test-stack.mts,
     packages/kit/build/hyperswitch-v2-test.compose.yml,
-    packages/kit/build/hyperswitch-fake-processor.mjs,
+    packages/kit/build/hyperswitch-fake-processor.mts,
     packages/kit/build/hyperswitch-browser.integration.mjs,
     packages/kit/build/hyperswitch-browser.steps.ts,
-    packages/kit/build/test.mjs,
+    packages/kit/build/test.mts,
     package.json,
     packages/kit/build/payment-provider-adapters.test.mjs,
     packages/kit/build/payment-provider-db.test.mjs,
@@ -67,7 +67,7 @@ sources:
     packages/kit/build/stripe-testmode.integration.test.ts,
     packages/kit/build/stripe-usage-recovery.integration.mjs,
     packages/kit/build/stripe-usage-recovery.integration.test.ts,
-    packages/kit/build/stripe-3ds-complete.mjs,
+    packages/kit/build/stripe-3ds-complete.mts,
     packages/kit/build/usage.test.mjs,
     packages/kit/supabase/functions/payment-provider-webhook,
     packages/kit/supabase/functions/push-catalog,
@@ -128,8 +128,8 @@ have to run as its standalone gRPC microservice to be called from the Supabase E
 would be a separate adapter, not a change to this one.
 
 **A local fake processor for end-to-end tests.** The Router's built-in test connectors (fauxpay and
-friends) are not served by a V2 build, so `packages/kit/build/hyperswitch-fake-processor.mjs` is a small
-Stripe-shaped test double: run it (`node packages/kit/build/hyperswitch-fake-processor.mjs 12111`), point
+friends) are not served by a V2 build, so `packages/kit/build/hyperswitch-fake-processor.mts` is a small
+Stripe-shaped test double: run it (`node packages/kit/build/hyperswitch-fake-processor.mts 12111`), point
 the Router's `stripe.base_url` at it, and the whole card path runs without Stripe's raw-card approval.
 It accepts card numbers, declines `4000000000000002`, and supports retrieval and refunds. It proves
 the Router, SDK, Card Vault, adapter, retrieval, one-time card cleanup, and refund paths work together; it

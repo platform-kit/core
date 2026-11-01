@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 /*
  * The library's three ways in, shown: one real chapter of one real book, as
@@ -25,18 +26,18 @@ const props = defineProps({
   lead: { type: String, default: '' },
   book: { type: String, default: '' },        /* slug of the book shown */
   chapter: { type: String, default: '' },     /* title of the chapter shown; the first when empty */
-  formats: { type: Array, default: () => [] },  /* [{ title, body }] — full text, summary, audiobook, in that order */
+  formats: { type: Array as PropType<any[]>, default: () => [] },  /* [{ title, body }] — full text, summary, audiobook, in that order */
   bottomLabel: { type: String, default: '' },  /* the summary card's list label */
   playerLabel: { type: String, default: '' },  /* the player's eyebrow */
-  extras: { type: Array, default: () => [] },   /* [{ title, body, icon }] — what every book carries beyond its text; icon names a glyph: lines, trophy, highlight, note, bookmark, search, type, place, audio */
+  extras: { type: Array as PropType<any[]>, default: () => [] },   /* [{ title, body, icon }] — what every book carries beyond its text; icon names a glyph: lines, trophy, highlight, note, bookmark, search, type, place, audio */
   fine: { type: String, default: '' },
   cta: { type: String, default: '' },
   href: { type: String, default: '/content' },
 })
 /* the chapter's markdown as the reader would show it, marks as wavy underlines */
-const marks = (s) => String(s || '').replace(/==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/g, (_, t, c) => '<mark class="sys-mark sug-' + (c || 'sun') + '">' + t + '</mark>')
-const html = (mdText, paragraphs) => marked.parse(marks(String(mdText || '').split(/\n{2,}/).filter((p) => p.trim()).slice(0, paragraphs).join('\n\n')))
-const book = computed(() => (BOOKS || []).find((b) => b.slug === props.book) || null)
+const marks = (s: any) => String(s || '').replace(/==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/g, (_, t, c) => '<mark class="sys-mark sug-' + (c || 'sun') + '">' + t + '</mark>')
+const html = (mdText: any, paragraphs: any) => marked.parse(marks(String(mdText || '').split(/\n{2,}/).filter((p) => p.trim()).slice(0, paragraphs).join('\n\n')))
+const book = computed(() => (BOOKS || []).find((b: any) => b.slug === props.book) || null)
 const chapter = computed(() => {
   const b = book.value
   if (!b) return null
@@ -45,7 +46,7 @@ const chapter = computed(() => {
 })
 const companion = computed(() => (book.value && chapter.value ? chapterCompanion(book.value.slug, chapter.value.title) : null))
 const text = computed(() => (chapter.value ? html(chapter.value.md, 2) : ''))
-const sentences = (mdText, n) => { const p = String(mdText || '').split(/\n{2,}/).find((x) => x.trim()) || ''; const m = p.match(/[^.!?]+[.!?]+(\s|$)/g); return m ? m.slice(0, n).join('').trim() : p }
+const sentences = (mdText: any, n: any) => { const p = String(mdText || '').split(/\n{2,}/).find((x) => x.trim()) || ''; const m = p.match(/[^.!?]+[.!?]+(\s|$)/g); return m ? m.slice(0, n).join('').trim() : p }
 const summary = computed(() => (companion.value ? html(sentences(companion.value.summaryMd, 2), 1) : ''))
 /* what the voice is reading: the opening, the first sentence lit as the spoken part */
 const spoken = computed(() => {
@@ -65,7 +66,7 @@ const clock = computed(() => {
 /* a still waveform, the same picture for the same chapter */
 const bars = computed(() => {
   const out = [], n = 64
-  let x = (chapter.value ? chapter.value.md.length : 7) % 97 || 7
+  let x: any = (chapter.value ? chapter.value.md.length : 7) % 97 || 7
   for (let i = 0; i < n; i++) { x = (x * 48271) % 2147483647; out.push(6 + (x % 26)) }
   return out
 })

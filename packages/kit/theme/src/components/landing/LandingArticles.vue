@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { md } from './md.js'
 import { articles as ARTICLES } from '#content'
@@ -24,13 +24,13 @@ const props = defineProps({
 })
 const W = (us('sections').articles || {}).card || {}
 const items = computed(() => {
-  const all = (ARTICLES || []).filter((a) => a.published !== false && (!props.tag || (a.tags || []).includes(props.tag)))
-  all.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
+  const all = (ARTICLES || []).filter((a: any) => a.published !== false && (!props.tag || (a.tags || []).includes(props.tag)))
+  all.sort((a: any, b: any) => String(b.date || '').localeCompare(String(a.date || '')))
   return all.slice(0, Math.max(1, props.limit))
 })
-const when = (d) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) } catch (e) { return '' } }
-const link = (a) => `${ROUTES.content}/articles/${a.id}`
-const line = (a) => a.description || ''
+const when = (d: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) } catch (e) { return '' } }
+const link = (a: any) => `${ROUTES.content}/articles/${a.id}`
+const line = (a: any) => a.description || ''
 </script>
 
 <template>
@@ -43,7 +43,7 @@ const line = (a) => a.description || ''
       <slot name="articles" :items="items" :md="md">
         <!-- a list -->
         <div v-if="layout === 'list' && items.length" class="lpar-list lprv lpd1">
-          <a v-for="(a, i) in items" :key="a.id" :href="link(a)" class="lpar-row lpk" :style="{ '--k': (0.1 + i * 0.06) + 's' }">
+          <!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. --><a v-for="(a, i) in items" :key="a.id" :href="link(a)" class="lpar-row lpk" :style="{ '--k': (0.1 + i * 0.06) + 's' }">
             <span class="lpar-date lpnum">{{ when(a.date) }}</span>
             <span class="lpar-roww"><h4>{{ a.title }}</h4><p v-if="line(a)">{{ line(a) }}</p></span>
             <span class="lpar-read">{{ W.read }} →</span>
@@ -51,7 +51,7 @@ const line = (a) => a.description || ''
         </div>
         <!-- cards, the first large when featured -->
         <div v-else-if="items.length" class="lpar-grid" :class="{ 'lpar-feat': layout === 'featured' }">
-          <a v-for="(a, i) in items" :key="a.id" :href="link(a)" class="lpcard lpar lplift lprv" :class="{ 'lpar-big': layout === 'featured' && i === 0, ['lpd' + Math.min(3, i % 4)]: i % 4 }">
+          <!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. --><a v-for="(a, i) in items" :key="a.id" :href="link(a)" class="lpcard lpar lplift lprv" :class="{ 'lpar-big': layout === 'featured' && i === 0, ['lpd' + Math.min(3, i % 4)]: i % 4 }">
             <span class="lpar-cover"><img v-if="a.image" :src="a.image" :alt="a.title" loading="lazy" decoding="async" /></span>
             <span class="lpar-words">
               <span class="lpar-meta"><span v-if="a.date" class="lpnum">{{ when(a.date) }}</span><span v-if="a.tags && a.tags.length" class="lpar-tag">{{ a.tags[0] }}</span></span>

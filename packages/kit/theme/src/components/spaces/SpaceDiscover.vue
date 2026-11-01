@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A way in. The spaces a reader could be in, with what each would take — already theirs, included
  * with something they hold, or something to buy — and, on a link, the invitation somebody sent them.
@@ -32,8 +32,8 @@ const W = computed(() => us('spaces').discover.main)
 /* what kind of place it is, in the words the rail already uses for it */
 const R = computed(() => us('spaces').rail.main)
 
-const rows = ref([])
-const invite = ref(null)
+const rows = ref<any>([])
+const invite = ref<any>(null)
 const busy = ref(false)
 const err = ref('')
 const loading = ref(true)
@@ -42,7 +42,7 @@ onMounted(async () => {
   try {
     if (props.token) invite.value = await lookInvite(props.token)
     rows.value = (await discover()) || []
-  } catch (e) { err.value = e.message || String(e) } finally { loading.value = false }
+  } catch (e) { err.value = (e as any).message || String(e) } finally { loading.value = false }
 })
 
 /* what a space would take, in the site's own words rather than the rule's shape */
@@ -52,24 +52,24 @@ onMounted(async () => {
    whether to join does not want a truth table. So this says the ONE way in that is theirs to take:
    something they could buy before something only the site can give them (nobody can make themselves
    staff), and an invitation only when there is no other way at all. */
-function wayIn(set) {
+function wayIn(set: any) {
   if (set.tier) {
-    const offer = products.find((p) => p.kind === 'membership' && p.tier === set.tier)
+    const offer = products.find((p: any) => p.kind === 'membership' && p.tier === set.tier)
     return { rank: 1, word: (W.value['with-membership'] || '').replace('{name}', offer ? offer.title : set.tier), href: offer ? '/store/products/' + offer.sku : '/pricing' }
   }
   if (set.product) {
-    const offer = products.find((p) => p.key === set.product)
+    const offer = products.find((p: any) => p.key === set.product)
     return { rank: 1, word: (W.value['buy-it'] || '').replace('{name}', offer ? offer.title : ''), href: offer ? '/store/products/' + offer.sku : null }
   }
   if (set.entitlement) return { rank: 0, word: W.value['with-any-membership'], href: '/pricing' }
   /* a role is not something anybody can give themselves, so it is never the way offered */
   return null
 }
-function takes(s) {
+function takes(s: any) {
   if (s.mine) return { word: W.value.yours, href: null }
   const f = s.fill
   const sets = (Array.isArray(f) ? f : f && typeof f === 'object' ? [f] : []).filter((x) => x && Object.keys(x).length)
-  const ways = sets.map(wayIn).filter(Boolean).sort((x, y) => x.rank - y.rank)
+  const ways = sets.map(wayIn).filter(Boolean).sort((x, y) => (x as any).rank - (y as any).rank)
   return ways[0] || { word: W.value['by-invitation'], href: null }
 }
 
@@ -80,29 +80,29 @@ async function accept() {
     const r = await acceptInvite(props.token)
     invite.value = { ...(invite.value || {}), ...r }
     if (r && (r.state === 'joined' || r.state === 'good')) emit('joined', r.space)
-  } catch (e) { err.value = e.message || String(e) } finally { busy.value = false }
+  } catch (e) { err.value = (e as any).message || String(e) } finally { busy.value = false }
 }
-const signIn = () => { try { window.DLauth.open({ intent: 'join' }) } catch { /* no modal */ } }
+const signIn = () => { try { (window as any).DLauth.open({ intent: 'join' }) } catch { /* no modal */ } }
 
 /* ------------------------------------------------------------------------------------------
    THE DOOR. A space may let anybody in, take an ask and open at once, or make them wait — and
    either of the last two may want a form answered and terms agreed. The page draws what the
    space declared; space_ask refuses anything the page got wrong, so a browser cannot walk past
    the terms by not drawing them. */
-const door = ref(null)          /* the space being knocked on */
+const door = ref<any>(null)          /* the space being knocked on */
 const note = ref('')
 const agreed = ref(false)
 /* the terms as blocks: paragraphs and the marks a message may wear */
 const termsBlocks = computed(() => messageBlocks((door.value && door.value.joining && door.value.joining.terms) || ''))
-const answered = ref(null)      /* the form response, once it is done */
+const answered = ref<any>(null)      /* the form response, once it is done */
 const sent = ref('')            /* accepted | waiting, once it has gone */
 
 const doorForm = computed(() => {
   const slug = door.value && door.value.joining && door.value.joining.form
-  return slug ? forms.find((x) => x.slug === slug) || null : null
+  return slug ? forms.find((x: any) => x.slug === slug) || null : null
 })
 /* what the button says, and whether there is anything to say at all */
-function doorOf(sp) {
+function doorOf(sp: any) {
   const j = (sp && sp.joining) || {}
   const how = j.how || 'none'
   if (sp.mine || how === 'none') return null
@@ -117,7 +117,7 @@ function doorOf(sp) {
     straight: how !== 'approve' && !j.form && !j.terms && !j.question,
   }
 }
-function knock(sp) {
+function knock(sp: any) {
   const d = doorOf(sp)
   if (!d) return
   if (d.state === 'signin') return signIn()
@@ -127,17 +127,18 @@ function knock(sp) {
   door.value = sp
 }
 async function ask() {
-  const sp = door.value
+  const sp: any = door.value
   if (!sp || busy.value) return
   busy.value = true; err.value = ''
   try {
+    // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'null | undefined'.
     const r = await askToJoin(sp.id, { note: note.value || null, response: answered.value, agreed: agreed.value })
     if (r && r.error) { err.value = W.value['err-' + r.error] || r.error; return }
     sent.value = (r && r.state) || 'accepted'
     /* the row changes under them either way: they are in, or they are waiting */
     sp.asked = sent.value
     if (sent.value === 'accepted') { sp.mine = true; sp.people = (sp.people || 0) + 1 }
-  } catch (e) { err.value = e.message || String(e) } finally { busy.value = false }
+  } catch (e) { err.value = (e as any).message || String(e) } finally { busy.value = false }
 }
 const shut = () => { door.value = null }
 </script>
@@ -176,11 +177,11 @@ const shut = () => { door.value = null }
         <span class="sv-takes">{{ takes(s).word }}</span>
         <a v-if="s.mine" class="sv-go" :href="ROUTES.spaces + '/' + s.slug">{{ W['go-in'] }}</a>
         <template v-else-if="doorOf(s)">
-          <button v-if="doorOf(s).state === 'open' || doorOf(s).state === 'signin'" type="button" class="sv-go"
-                  :disabled="busy" @click="knock(s)">{{ doorOf(s).word }}</button>
-          <span v-else class="sv-quiet">{{ doorOf(s).word }}</span>
+          <!-- @vue-expect-error TS2531, from the conversion: Object is possibly 'null'. --><button v-if="doorOf(s).state === 'open' || doorOf(s).state === 'signin'" type="button" class="sv-go"
+                  :disabled="busy" @click="knock(s)"><!-- @vue-expect-error TS2531, from the conversion: Object is possibly 'null'. -->{{ doorOf(s).word }}</button>
+          <span v-else class="sv-quiet"><!-- @vue-expect-error TS2531, from the conversion: Object is possibly 'null'. -->{{ doorOf(s).word }}</span>
         </template>
-        <a v-else-if="takes(s).href" class="sv-go" :href="takes(s).href">{{ W.how }}</a>
+        <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><a v-else-if="takes(s).href" class="sv-go" :href="takes(s).href">{{ W.how }}</a>
         <span v-else class="sv-quiet">{{ W['by-invitation'] }}</span>
       </li>
     </ul>

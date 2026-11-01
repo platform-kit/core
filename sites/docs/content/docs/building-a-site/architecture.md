@@ -6,15 +6,15 @@ sources:
   [
     docs/PLATFORMKIT.md,
     packages/kit/package.json,
-    packages/kit/src/lib/store.js,
-    packages/kit/src/lib/store-light.js,
-    packages/kit/src/lib/sync.js,
-    packages/kit/src/lib/supabase.js,
-    packages/kit/src/lib/toast.js,
+    packages/kit/src/lib/store.ts,
+    packages/kit/src/lib/store-light.ts,
+    packages/kit/src/lib/sync.ts,
+    packages/kit/src/lib/supabase.ts,
+    packages/kit/src/lib/toast.ts,
     package.json,
-    packages/kit/build/sites.mjs,
-    packages/kit/build/runtime-paths.mjs,
-    packages/kit/build/hyperswitch-test-stack.mjs,
+    packages/kit/build/sites.mts,
+    packages/kit/build/runtime-paths.mts,
+    packages/kit/build/hyperswitch-test-stack.mts,
     packages/kit/build/hyperswitch-v2-test.compose.yml,
     packages/kit/bin/platformkit.mjs,
     sites/docs/package.json,
@@ -66,7 +66,7 @@ documents its setup and commands, including the Router prefix and Card Vault the
 
 ## Reader state
 
-The browser stores reader state—such as answers, reading positions, and highlights—in a local Loro document (`packages/kit/src/lib/store.js`). After sign-in, the document syncs with the account's cloud copy (`sync.js`); local changes can be queued while offline. The forms embed uses a smaller local-storage implementation (`store-light.js`) so it does not load the full Loro runtime.
+The browser stores reader state—such as answers, reading positions, and highlights—in a local Loro document (`packages/kit/src/lib/store.ts`). After sign-in, the document syncs with the account's cloud copy (`sync.js`); local changes can be queued while offline. The forms embed uses a smaller local-storage implementation (`store-light.js`) so it does not load the full Loro runtime.
 
 The kit's `supabase.js` provides the shared Supabase client, and `toast.js` provides the shared toast interface.
 

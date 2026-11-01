@@ -4,8 +4,8 @@ description: Drip campaigns, one-off sends, the audience rules, the policy, chat
 order: 36
 sources:
   [
-    packages/kit/build/funnels.mjs,
-    packages/kit/build/funnel-io.mjs,
+    packages/kit/build/funnels.mts,
+    packages/kit/build/funnel-io.mts,
     packages/kit/supabase/functions/_shared/emails/rules.js,
     packages/kit/supabase/functions/funnels-run,
     packages/kit/supabase/functions/email-blast,

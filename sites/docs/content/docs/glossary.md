@@ -4,8 +4,8 @@ description: The words these docs use, in one place.
 order: 3
 sources:
   [
-    packages/kit/build/site.mjs,
-    packages/kit/src/lib/router.js,
+    packages/kit/build/site.mts,
+    packages/kit/src/lib/router.ts,
     packages/kit/theme/src/pages/AdminPage.vue,
   ]
 reviewed: 2026-10-31

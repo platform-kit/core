@@ -10,7 +10,7 @@ A site's `supabase/` tree is assembled from the kit and the site's own `db/`, an
 - `platformkit test` assembles a fresh tree and then checks it, instead of checking whatever copy is already on disk. The checks that matter stay: an unresolved import, a stray file under `supabase/`, a leftover `supabase/migrations`, and a `config.toml` whose seed line does not name the declaration.
 - The check's failure message stops telling the reader to commit. Proposed copy:
 
-  > ✖ supabase/ is not what its sources assemble to — run node packages/kit/build/assemble.mjs; the tree is generated, never edited or committed:
+  > ✖ supabase/ is not what its sources assemble to — run node packages/kit/build/assemble.mts; the tree is generated, never edited or committed:
 
 - The database documentation says what a site repository ignores. Proposed copy for the section that explains the assembled tree:
 
@@ -36,7 +36,7 @@ None.
 
 ## Impact
 
-- `packages/kit/build/assemble.mjs`: header and the `--check` failure message.
-- `packages/kit/build/test.mjs`: the assembled-tree step.
+- `packages/kit/build/assemble.mts`: header and the `--check` failure message.
+- `packages/kit/build/test.mts`: the assembled-tree step.
 - Documentation: `building-a-site/the-database.md` and `building-a-site/testing.md`.
 - Surfaces to verify: `platformkit test` on `sites/demo` and a backend-free site, `assemble.mjs --check` on a tree with a stray file and with a `migrations` folder, and the docs check.

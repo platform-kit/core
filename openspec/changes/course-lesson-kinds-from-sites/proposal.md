@@ -26,6 +26,6 @@ A course's lessons can only be the kit's five kinds: text, chapter, article, for
 
 ## Impact
 
-- `packages/kit/build/courses-io.mjs` (the kinds a file may name), the push, `46-courses.sql` (the kind check), `CoursePlayer.vue`, `CourseOverview.vue`, `course-ui.js`, the config reader and the virtual module that hands a site's registrations to the theme.
+- `packages/kit/build/courses-io.mts` (the kinds a file may name), the push, `46-courses.sql` (the kind check), `CoursePlayer.vue`, `CourseOverview.vue`, `course-ui.js`, the config reader and the virtual module that hands a site's registrations to the theme.
 - New code in TypeScript.
 - The courses and extension-model pages of the documentation site; the demo registers a self-rating kind to prove it.

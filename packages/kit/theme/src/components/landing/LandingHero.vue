@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { computed } from 'vue'
 import { md } from './md.js'
 import { embedOf, loopSrc } from '../../lib/embed.js'
@@ -27,23 +28,23 @@ import { us } from 'platformkit/lib/strings.js'
 const props = defineProps({
   layout: { type: String, default: 'split' },   /* split | centered | backdrop */
   eyebrow: { type: String, default: '' },
-  lines: { type: Array, default: () => ['A short line', 'that says what', 'this is for.'] },
+  lines: { type: Array as PropType<any[]>, default: () => ['A short line', 'that says what', 'this is for.'] },
   sub: { type: String, default: '' },
   cta: { type: String, default: 'Get started' },
   href: { type: String, default: '/app' },
   cta2: { type: String, default: '' },
   href2: { type: String, default: '' },
   fine: { type: String, default: '' },
-  visual: { type: Object, default: () => ({ kind: 'none' }) },   /* { kind: none | image | video | frame | <stage>, image, alt, video, poster } */
-  stage: { type: Object, default: () => ({}) },                   /* the chosen stage's own words */
-  avatars: { type: Object, default: () => ({}) },                 /* { items: [{ image, name }], line } */
-  rating: { type: Object, default: () => ({}) },                  /* { stars, line } */
-  stats: { type: Array, default: () => [] },                      /* [{ value, label }] */
-  capture: { type: Object, default: () => ({}) },                 /* { form, button, placeholder, fine } — an email field in place of the buttons */
-  float: { type: Object, default: () => ({}) },                   /* { value, title, line, image } — a card over the visual */
-  floats: { type: Array, default: () => [] },                     /* more cards over the visual: [{ kind: card | chat | stat, at: tl|tr|bl|br, title, line, value, image }] */
-  cards: { type: Array, default: () => [] },                      /* [{ icon?, title, body, image? }] under the hero */
-  badges: { type: Object, default: () => ({}) },                  /* { apple, google } — links to the stores, under the buttons */
+  visual: { type: Object as PropType<any>, default: () => ({ kind: 'none' }) },   /* { kind: none | image | video | frame | <stage>, image, alt, video, poster } */
+  stage: { type: Object as PropType<any>, default: () => ({}) },                   /* the chosen stage's own words */
+  avatars: { type: Object as PropType<any>, default: () => ({}) },                 /* { items: [{ image, name }], line } */
+  rating: { type: Object as PropType<any>, default: () => ({}) },                  /* { stars, line } */
+  stats: { type: Array as PropType<any[]>, default: () => [] },                      /* [{ value, label }] */
+  capture: { type: Object as PropType<any>, default: () => ({}) },                 /* { form, button, placeholder, fine } — an email field in place of the buttons */
+  float: { type: Object as PropType<any>, default: () => ({}) },                   /* { value, title, line, image } — a card over the visual */
+  floats: { type: Array as PropType<any[]>, default: () => [] },                     /* more cards over the visual: [{ kind: card | chat | stat, at: tl|tr|bl|br, title, line, value, image }] */
+  cards: { type: Array as PropType<any[]>, default: () => [] },                      /* [{ icon?, title, body, image? }] under the hero */
+  badges: { type: Object as PropType<any>, default: () => ({}) },                  /* { apple, google } — links to the stores, under the buttons */
   arrive: { type: String, default: 'lines' },                     /* the headline arrives: lines | words | none */
   arrow: { type: Boolean, default: false },                       /* a scroll arrow at the foot */
 })
@@ -58,7 +59,7 @@ const kind = computed(() => {
   if (v.kind === 'video') return embedOf(v.video) ? 'video' : 'none'
   return v.image ? v.kind : 'none'
 })
-const embed = computed(() => (kind.value === 'video' ? embedOf(props.visual.video) : null))
+const embed = computed<any>(() => (kind.value === 'video' ? embedOf(props.visual.video) : null))
 const mode = computed(() => (kind.value === 'none' ? 'solo' : props.layout === 'backdrop' && (kind.value === 'image' || kind.value === 'video') ? 'backdrop' : props.layout === 'centered' ? 'centered' : 'split'))
 const host = (() => { try { return new URL(((Array.isArray(SITE_RAW) ? SITE_RAW[0] : SITE_RAW) || {}).url).host } catch (e) { return '' } })()
 const hasFloat = computed(() => props.float && (props.float.value || props.float.title || props.float.line))

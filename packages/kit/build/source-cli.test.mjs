@@ -29,9 +29,13 @@ try {
   fs.writeFileSync(path.join(source, 'packages', 'kit', 'theme', 'src', 'theme.js'), 'export default { name: "movable-types" }\n')
   for (const file of [
     'packages/kit/bin/platformkit.mjs',
-    'packages/kit/build/source-install.mjs',
-    'packages/kit/build/sites.mjs',
-    'packages/kit/build/verbose.mjs',
+    'packages/kit/build/source-install.mts',
+    'packages/kit/build/sites.mts',
+    'packages/kit/build/verbose.mts',
+    /* and what makes a source checkout's TypeScript run: the compile a source install runs, and what it needs */
+    'packages/kit/build/compile.mjs',
+    'packages/kit/build/is-main.mjs',
+    'packages/kit/build/workspace-ts.mjs',
   ]) {
     const destination = path.join(source, file)
     fs.mkdirSync(path.dirname(destination), { recursive: true })

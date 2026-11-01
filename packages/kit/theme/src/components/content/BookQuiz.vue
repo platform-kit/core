@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A chapter's quiz, run by the same Typeform runner as the diagnostic: an intro
  * screen, one choice screen per question (options shuffled once), and a result
@@ -17,7 +18,7 @@ import { capture } from 'platformkit/lib/analytics.js'
 
 const props = defineProps({
   slug: { type: String, required: true },
-  chapter: { type: Object, required: true },   /* { title, quiz: [{ q, options, answer, why }] } */
+  chapter: { type: Object as PropType<any>, required: true },   /* { title, quiz: [{ q, options, answer, why }] } */
   nextTitle: { type: String, default: '' },
 })
 const emit = defineEmits(['close', 'next'])
@@ -25,28 +26,29 @@ const Q = us('library').reader.quiz
 const T = us('library').trophy.tier
 
 /* the questions, each with its options shuffled once so the answer's position tells nothing */
-const shuffled = (arr) => { const a = arr.map((v, i) => ({ v, i })); for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]] } return a }
-const questions = props.chapter.quiz.map((q, n) => ({ ...q, n, order: shuffled(q.options) }))
-const answers = ref({})   /* n → chosen original index */
-const result = ref(null)
-const runner = ref(null)
+const shuffled = (arr: any) => { const a = arr.map((v: any, i: any) => ({ v, i })); for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]] } return a }
+const questions = props.chapter.quiz.map((q: any, n: any) => ({ ...q, n, order: shuffled(q.options) }))
+const answers = ref<any>({})   /* n → chosen original index */
+const result = ref<any>(null)
+const runner = ref<any>(null)
 const progress = ref(0)
 
 const need = passMark(questions.length)
 const screens = computed(() => {
   const intro = { id: 'intro', kind: 'info', label: props.chapter.title, eyebrow: Q['intro-eyebrow'], headline: props.chapter.title,
+    // @ts-expect-error TS2769, from the conversion: No overload matches this call.
     body: String(Q['intro-body'] || '').replace('{n}', questions.length).replace('{need}', need), options: [{ v: 'go', label: Q['intro-begin'] }] }
-  const qs = questions.map((q) => ({ id: 'q:' + q.n, kind: 'choice', label: props.chapter.title, eyebrow: (q.n + 1) + ' ' + Q.of + ' ' + questions.length,
-    headline: q.q, options: q.order.map((o) => ({ v: o.i, label: o.v })), meta: { n: q.n } }))
+  const qs = questions.map((q: any) => ({ id: 'q:' + q.n, kind: 'choice', label: props.chapter.title, eyebrow: (q.n + 1) + ' ' + Q.of + ' ' + questions.length,
+    headline: q.q, options: q.order.map((o: any) => ({ v: o.i, label: o.v })), meta: { n: q.n } }))
   return [intro, ...qs]
 })
-function onAnswer(screen, value) {
+function onAnswer(screen: any, value: any) {
   if (screen.meta && typeof screen.meta.n === 'number') answers.value[screen.meta.n] = value
 }
 function onComplete() {
-  const correct = questions.filter((q) => answers.value[q.n] === q.answer).length
+  const correct = questions.filter((q: any) => answers.value[q.n] === q.answer).length
   const r = recordAttempt(props.slug, props.chapter.title, correct, questions.length)
-  result.value = { ...r, review: questions.map((q) => ({ q: q.q, right: answers.value[q.n] === q.answer, answer: q.options[q.answer], why: q.why })) }
+  result.value = { ...r, review: questions.map((q: any) => ({ q: q.q, right: answers.value[q.n] === q.answer, answer: q.options[q.answer], why: q.why })) }
   capture('book_quiz', { slug: props.slug, chapter: props.chapter.title, correct, total: questions.length, passed: r.passed, tier: r.tier || null })
 }
 /* a fresh round: new shuffles, the runner sees a new list */
@@ -54,7 +56,7 @@ const round = ref(0)
 function again() { for (const q of questions) q.order = shuffled(q.options); answers.value = {}; result.value = null; round.value++ }
 
 /* the number keys, as the instrument's shell forwards them */
-function onKey(e) {
+function onKey(e: any) {
   if (e.metaKey || e.ctrlKey || e.altKey) return
   const t = e.target
   if (t && t.closest && t.closest('input, textarea, select, [contenteditable]')) return

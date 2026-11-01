@@ -9,5 +9,5 @@
 
 ## 2. Docs and verification
 
-- [x] 2.1 The CLI reference and the getting-started page. Verified by `node packages/kit/build/docs-check.mjs`.
+- [x] 2.1 The CLI reference and the getting-started page. Verified by `node packages/kit/build/docs-check.mts`.
 - [x] 2.2 Report each scenario as passed, failed or not verified, with why. Verified by `verify.md`.

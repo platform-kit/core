@@ -4,12 +4,12 @@ description: Every field of every shared content record, as the files hold them 
 order: 83
 sources:
   [
-    packages/kit/build/velite.mjs,
-    packages/kit/build/funnel-io.mjs,
-    packages/kit/build/quiz-io.mjs,
-    packages/kit/build/models/core/agents.mjs,
-    packages/kit/build/statement-keys.mjs,
-    packages/kit/build/docs-check.mjs,
+    packages/kit/build/velite.mts,
+    packages/kit/build/funnel-io.mts,
+    packages/kit/build/quiz-io.mts,
+    packages/kit/build/models/core/agents.mts,
+    packages/kit/build/statement-keys.mts,
+    packages/kit/build/docs-check.mts,
   ]
 reviewed: 2026-10-21
 ---

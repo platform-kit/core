@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * THE TABS OF A PAGE, which stand where its title would be.
  *
@@ -9,7 +10,7 @@
  */
 defineProps({
   /* the view keys in the set, in order */
-  tabs: { type: Array, required: true },
+  tabs: { type: Array as PropType<any[]>, required: true },
   /* which one is open */
   on: { type: String, default: '' },
   /* how a key is named and counted — the shell's own, so no label is written twice */

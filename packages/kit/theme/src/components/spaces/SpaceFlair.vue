@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A BADGE SOMEBODY WAS GIVEN. "Founding member", "Answered fifty questions", "Read the whole
  * shelf" — what a space invents to say something about a person that a role does not.
@@ -20,13 +21,13 @@ import { computed } from 'vue'
 import SpaceIcon from './SpaceIcon.vue'
 
 const props = defineProps({
-  flair: { type: Array, default: () => [] },
+  flair: { type: Array as PropType<any[]>, default: () => [] },
   /* inline beside a name, full on a card */
   mode: { type: String, default: 'inline' },
   size: { type: Number, default: 13 },
 })
 /* inline shows only what asked to be there; the card shows everything they have */
-const rows = computed(() => (props.flair || []).filter((f) => props.mode !== 'inline' || f.inline !== false))
+const rows = computed(() => (props.flair || []).filter((f) => props.mode !== 'inline' || (f as any).inline !== false))
 </script>
 
 <template>

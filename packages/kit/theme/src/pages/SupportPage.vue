@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* The support panel on a page of its own — /support: what $chatwidget.popoutChatWindow opens in a new tab (support-api),
    and a plain way in for a reader whose page has no room for the widget. The panel as the widget mounts it, on the
    site's ground, no launcher (the page is the panel); the same threads, the same token. Words: support.md `widget.page`. */
@@ -12,7 +12,9 @@ import SupportPanel from '../components/support/SupportPanel.vue'
 import SiteMark from '../components/SiteMark.vue'
 
 const W = (us('support').widget || {}).page || {}
+// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: W.title || '', description: W.lead || '', path: ROUTES.support, noindex: true })
+// @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
 onMounted(async () => { resolveDefault(); await boot(); open() })
 onBeforeUnmount(close)
 </script>

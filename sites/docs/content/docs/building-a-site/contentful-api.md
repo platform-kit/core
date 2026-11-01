@@ -25,16 +25,16 @@ sources:
     packages/kit/supabase/functions/_shared/api/types.js,
     packages/kit/supabase/functions/_shared/content-index.ts,
     packages/kit/supabase/functions/_shared/access.js,
-    packages/kit/build/content-json.mjs,
-    packages/kit/build/steps/content-json.mjs,
+    packages/kit/build/content-json.mts,
+    packages/kit/build/steps/content-json.mts,
     packages/kit/build/content-api.test.mjs,
     packages/kit/supabase/schemas/85-api.sql,
     packages/kit/theme/src/components/ApiAdmin.vue,
     packages/kit/theme/src/pages/ApiReferencePage.vue,
-    packages/kit/theme/src/main.js,
+    packages/kit/theme/src/main.ts,
     packages/kit/supabase/functions/_shared/content-ids.js,
     packages/kit/build/management.test.mjs,
-    packages/kit/build/store/rows.mjs,
+    packages/kit/build/store/rows.mts,
   ]
 reviewed: 2026-10-21
 ---

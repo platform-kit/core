@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A book's companion, edited as what it is rather than as markdown: the book's
  * chapters down the side (the companion may only speak of those — a title is
@@ -24,7 +24,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'chapters'])
 
 /* ---- the book's chapters, by title, in the book's order ---- */
-const bookTitles = ref(null)   /* null until known; [] when the book cannot be read */
+const bookTitles = ref<any>(null)   /* null until known; [] when the book cannot be read */
 watch(() => props.book, async (slug) => {
   bookTitles.value = null
   if (!slug) { bookTitles.value = []; return }
@@ -34,11 +34,11 @@ watch(() => props.book, async (slug) => {
 
 /* ---- the companion's chapters, hydrated from the body and written back as one string ---- */
 let ids = 0
-const chapters = ref([])   /* [{ id, title, summaryMd, essence, quiz }] */
-let lastEmitted = null
-function hydrate(md) {
+const chapters = ref<any>([])   /* [{ id, title, summaryMd, essence, quiz }] */
+let lastEmitted: any = null
+function hydrate(md: any) {
   if (md === lastEmitted) return
-  chapters.value = parseCompanionBody(md).chapters.map((c) => ({ id: ++ids, ...c }))
+  chapters.value = parseCompanionBody(md).chapters.map((c: any) => ({ id: ++ids, ...c }))
   emit('chapters', chapters.value.length)
 }
 watch(() => props.modelValue, hydrate, { immediate: true })
@@ -50,47 +50,47 @@ function emitAll() {
 watch(chapters, emitAll, { deep: true })
 
 /* the rail: every chapter of the book, written or not, then any the book no longer has */
-const byTitle = computed(() => { const m = new Map(); for (const c of chapters.value) m.set(c.title, c); return m })
+const byTitle = computed(() => { const m = new Map(); for (const c of chapters.value) m.set((c as any).title, c); return m })
 const rail = computed(() => {
-  const titles = bookTitles.value || chapters.value.map((c) => c.title)
-  const rows = titles.map((t, i) => ({ n: i + 1, title: t, chapter: byTitle.value.get(t) || null, stray: false }))
-  if (bookTitles.value) for (const c of chapters.value) if (!bookTitles.value.includes(c.title)) rows.push({ n: null, title: c.title, chapter: c, stray: true })
+  const titles = bookTitles.value || chapters.value.map((c: any) => (c as any).title)
+  const rows = titles.map((t: any, i: any) => ({ n: i + 1, title: t, chapter: byTitle.value.get(t) || null, stray: false }))
+  if (bookTitles.value) for (const c of chapters.value) if (!bookTitles.value.includes((c as any).title)) rows.push({ n: null, title: (c as any).title, chapter: c, stray: true })
   return rows
 })
-const written = computed(() => rail.value.filter((r) => r.chapter && !r.stray).length)
+const written = computed(() => rail.value.filter((r: any) => r.chapter && !r.stray).length)
 const total = computed(() => (bookTitles.value || []).length)
 
 /* the open chapter: a title of the book's; opening one not yet written makes it, empty */
 const activeTitle = ref('')
 const active = computed(() => byTitle.value.get(activeTitle.value) || null)
-function open(row) {
+function open(row: any) {
   if (!row.chapter) chapters.value.push({ id: ++ids, title: row.title, summaryMd: '', essence: [], quiz: [] })
   activeTitle.value = row.title
 }
-watch(rail, (rows) => { if (!activeTitle.value || !rows.some((r) => r.title === activeTitle.value)) { const first = rows.find((r) => r.chapter) || rows[0]; if (first) activeTitle.value = first.title } }, { immediate: true })
-function removeChapter(c) {
+watch(rail, (rows) => { if (!activeTitle.value || !rows.some((r: any) => r.title === activeTitle.value)) { const first = rows.find((r: any) => r.chapter) || rows[0]; if (first) activeTitle.value = first.title } }, { immediate: true })
+function removeChapter(c: any) {
   if (!confirm(`Remove the companion's “${c.title}” — its summary, essence and quiz?`)) return
   chapters.value.splice(chapters.value.indexOf(c), 1)
 }
-const activeIndex = computed(() => rail.value.findIndex((r) => r.title === activeTitle.value))
+const activeIndex = computed(() => rail.value.findIndex((r: any) => r.title === activeTitle.value))
 
 /* ---- the three parts ---- */
 const TABS = [['summary', 'Summary'], ['essence', 'Essence'], ['quiz', 'Quiz']]
 const tab = ref('summary')
-const words = (s) => (s || '').trim().split(/\s+/).filter(Boolean).length
-const countOf = (c, k) => !c ? 0 : k === 'summary' ? words(c.summaryMd) : k === 'essence' ? c.essence.length : c.quiz.length
-const unit = { summary: 'w', essence: '', quiz: '' }
+const words = (s: any) => (s || '').trim().split(/\s+/).filter(Boolean).length
+const countOf = (c: any, k: any) => !c ? 0 : k === 'summary' ? words(c.summaryMd) : k === 'essence' ? c.essence.length : c.quiz.length
+const unit: any = { summary: 'w', essence: '', quiz: '' }
 
 /* a question: four options, always, and one of them right */
 const blankQ = () => ({ q: '', options: ['', '', '', ''], answer: 0, why: '' })
 function addQuestion() { active.value.quiz.push(blankQ()) }
-function removeQuestion(i) { const x = active.value.quiz[i]; if (!x.q.trim() && x.options.every((o) => !o.trim()) || confirm('Remove this question?')) active.value.quiz.splice(i, 1) }
-function moveQuestion(i, d) { const q = active.value.quiz; const j = i + d; if (j < 0 || j >= q.length) return; const [m] = q.splice(i, 1); q.splice(j, 0, m) }
+function removeQuestion(i: any) { const x = active.value.quiz[i]; if (!x.q.trim() && x.options.every((o: any) => !o.trim()) || confirm('Remove this question?')) active.value.quiz.splice(i, 1) }
+function moveQuestion(i: any, d: any) { const q = active.value.quiz; const j = i + d; if (j < 0 || j >= q.length) return; const [m] = q.splice(i, 1); q.splice(j, 0, m) }
 /* what is still missing on a question, said beside it rather than refused at save */
 /* a text field that grows with its text: one line until there is more */
-const fit = (el) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }
+const fit = (el: any) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }
 const vAutosize = { mounted: fit, updated: fit }
-const qNote = (x) => { const empty = x.options.filter((o) => !o.trim()).length; return !x.q.trim() ? 'needs a question' : empty ? `${empty} option${empty === 1 ? '' : 's'} empty` : !(x.options[x.answer] || '').trim() ? 'the right answer is empty' : '' }
+const qNote = (x: any) => { const empty = x.options.filter((o: any) => !o.trim()).length; return !x.q.trim() ? 'needs a question' : empty ? `${empty} option${empty === 1 ? '' : 's'} empty` : !(x.options[x.answer] || '').trim() ? 'the right answer is empty' : '' }
 </script>
 
 <template>
@@ -140,7 +140,7 @@ const qNote = (x) => { const empty = x.options.filter((o) => !o.trim()).length; 
           <p class="co-hint">Four options each; choose the right one. A note under the question says why.</p>
           <div v-for="(x, i) in active.quiz" :key="i" class="co-q">
             <div class="co-qhead">
-              <span class="co-qn">{{ i + 1 }}</span>
+              <span class="co-qn"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ i + 1 }}</span>
               <textarea v-model="x.q" v-autosize class="co-qtext" rows="1" placeholder="The question" @input="fit($event.target)" />
               <span class="co-qtools">
                 <button type="button" class="co-qbtn" title="Move up" :disabled="i === 0" @click="moveQuestion(i, -1)">↑</button>
@@ -151,7 +151,7 @@ const qNote = (x) => { const empty = x.options.filter((o) => !o.trim()).length; 
             <div class="co-opts">
               <label v-for="(o, j) in x.options" :key="j" class="co-opt" :class="{ right: x.answer === j }">
                 <input type="radio" :name="'q' + active.id + '-' + i" :checked="x.answer === j" title="The right answer" @change="x.answer = j" />
-                <textarea v-model="x.options[j]" v-autosize rows="1" :placeholder="'Option ' + 'ABCD'[j]" @input="fit($event.target)" />
+                <!-- @vue-expect-error TS7015, from the conversion: Element implicitly has an 'any' type because index expression is not of type 'number'. --><textarea v-model="x.options[j]" v-autosize rows="1" :placeholder="'Option ' + 'ABCD'[j]" @input="fit($event.target)" />
               </label>
             </div>
             <textarea v-model="x.why" v-autosize rows="1" class="co-why" placeholder="Why (optional) — shown after answering" @input="fit($event.target)" />

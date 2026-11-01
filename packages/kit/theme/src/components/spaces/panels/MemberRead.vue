@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * What somebody has read: the books and articles they have opened, most recent first. A panel of
  * the member card's private half — it is drawn only where the database has already said this
@@ -12,20 +12,21 @@ import { us } from 'platformkit/lib/content.js'
 
 const props = defineProps({ user: { type: String, default: '' }, mine: { type: Boolean, default: false } })
 const W = computed(() => us('spaces')['member-panels'].main)
-const rows = ref([])
+const rows = ref<any>([])
 const done = ref(false)
 
 watch(() => props.user, async (id) => {
   done.value = false
   rows.value = []
   if (!id) return
-  const { data } = await supabase.rpc('member_read', { p_user: id })
+  const { data } = await (supabase as any).rpc('member_read', { p_user: id })
   rows.value = data || []
   done.value = true
 }, { immediate: true })
 
-const when = (v) => {
+const when = (v: any) => {
   const d = new Date(v)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }
 </script>

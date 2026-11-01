@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The far column: this PERSON. Their four places across every space they are in, then every space
  * they are in by name, then the way to find another — and at its foot, who they are and what they
@@ -27,9 +28,9 @@ import SpaceAvatar from './SpaceAvatar.vue'
 
 const props = defineProps({
   /* the reader's OWN record, so the chip draws the face they designed and not one made from their name */
-  myPerson: { type: Object, default: null },
-  spaces: { type: Array, default: () => [] },
-  badges: { type: Object, default: () => ({}) },   /* space id → what is owed there */
+  myPerson: { type: Object as PropType<any>, default: null },
+  spaces: { type: Array as PropType<any[]>, default: () => [] },
+  badges: { type: Object as PropType<any>, default: () => ({}) },   /* space id → what is owed there */
   openId: { type: String, default: '' },           /* the space being read, if any */
   view: { type: String, default: 'channel' },
   inSpace: { type: Boolean, default: true },
@@ -37,7 +38,7 @@ const props = defineProps({
   coaching: { type: Boolean, default: false },
   coachingUnread: { type: Number, default: 0 },
   events: { type: Boolean, default: true },
-  work: { type: Array, default: () => [] },
+  work: { type: Array as PropType<any[]>, default: () => [] },
   saved: { type: Number, default: 0 },
   drafts: { type: Number, default: 0 },
   /* a customer's own tickets, where they have any */
@@ -48,7 +49,7 @@ const props = defineProps({
   unreads: { type: Number, default: 0 },
   status: { type: String, default: 'active' },
   me: { type: String, default: '' },
-  names: { type: Object, default: () => ({}) },
+  names: { type: Object as PropType<any>, default: () => ({}) },
   myself: { type: String, default: '' },   /* what this person is called, from their own account */
   /* THE NETWORK, where the site makes it one place with the spaces (in the chat layout, community.layout): its feed and
      what has happened to the reader, under Home, with the count of what is new */
@@ -95,16 +96,16 @@ const MINE = computed(() => [
   ...NAV.value.first,
   ...(props.unreads ? [{ key: 'unreads', icon: 'unread', word: 'unreads', count: props.unreads }] : []),
 ])
-const QUEUE_ICON = { support: 'head', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
-const count = (n) => n > 99 ? '99+' : n || ''
-const wordOf = (m) => {
+const QUEUE_ICON: any = { support: 'head', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
+const count = (n: any) => n > 99 ? '99+' : n || ''
+const wordOf = (m: any) => {
   if (m.key === 'index') return W.value.home
   if (m.key === 'net') return W.value.home
   if (m.place || ['saved', 'drafts', 'my-tickets', 'coaching', 'unreads'].includes(m.key)) return W.value[m.word] || m.word
   return S.value[m.word] || W.value[m.word] || m.word
 }
 const ALWAYS = ['index', 'net', 'net-explore', 'events', 'coaching', 'dms', 'inbox', 'net-notes', 'mentions']
-const earned = (m) => ALWAYS.includes(m.key) || m.place || Number(m.count) > 0 || props.view === m.key
+const earned = (m: any) => ALWAYS.includes(m.key) || m.place || Number(m.count) > 0 || props.view === m.key
 const SHOWN = computed(() => MINE.value.filter(earned))
 const MORE = computed(() => [
   ...MINE.value.filter((m) => !earned(m)),
@@ -116,10 +117,10 @@ const MORE = computed(() => [
 ])
 /* THE INBOX (the queues, then Direct Messages) unfolds by hand, or while one of its rows is open */
 const INBOX = computed(() => NAV.value.first.find((m) => m.group) || null)
-const readSet = (k) => { try { return JSON.parse(localStorage.getItem(k) || '[]') } catch { return [] } }
-const writeSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
+const readSet = (k: any) => { try { return JSON.parse(localStorage.getItem(k) || '[]') } catch { return [] } }
+const writeSet = (k: any, v: any) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
 const inboxPinned = ref(readSet('pk.nav.inbox').length > 0)
-const inboxOpen = computed(() => inboxPinned.value || !!(INBOX.value && INBOX.value.rows.some((r) => r.key === props.view)))
+const inboxOpen = computed(() => inboxPinned.value || !!(INBOX.value && INBOX.value.rows.some((r: any) => r.key === props.view)))
 function toggleInbox() { inboxPinned.value = !inboxOpen.value; writeSet('pk.nav.inbox', inboxPinned.value ? [1] : []) }
 const expanded = ref(false)
 /* a place somebody is actually looking at is never hidden behind More */
@@ -130,19 +131,19 @@ const showMore = computed(() => expanded.value || MORE.value.some((m) => m.key =
    unlike a channel's group this is not a thing a person collapses, it is how the site is laid out.
    A site whose spaces name no group gets one unheaded run, which is what three spaces should be. */
 const runs = computed(() => {
-  const out = []
+  const out: any = []
   for (const sp of props.spaces) {
-    const g = (sp.group || '').trim()
-    let run = out.find((r) => r.key === g)
+    const g = ((sp as any).group || '').trim()
+    let run: any = out.find((r: any) => r.key === g)
     if (!run) { run = { key: g, label: g, list: [] }; out.push(run) }
     run.list.push(sp)
   }
   /* the ungrouped go last whatever order they arrived in: a heading over nothing reads as a mistake,
      and a run with no heading above two that have one reads as a list that lost its first heading */
-  return [...out.filter((r) => r.key), ...out.filter((r) => !r.key)]
+  return [...out.filter((r: any) => r.key), ...out.filter((r: any) => !r.key)]
 })
 const grouped = computed(() => runs.value.some((r) => r.key))
-const here = (s) => props.inSpace && s.id === props.openId
+const here = (s: any) => props.inSpace && s.id === props.openId
 </script>
 
 <template>
@@ -163,7 +164,7 @@ const here = (s) => props.inSpace && s.id === props.openId
               </span>
             </button>
             <div id="sbar-inbox" class="sbar-fold" :class="{ open: inboxOpen }">
-              <ul class="sbar-list sbar-fold-in" :inert="!inboxOpen || null">
+              <!-- @vue-expect-error TS2322, from the conversion: Type 'true | null' is not assignable to type 'Booleanish | undefined'. --><ul class="sbar-list sbar-fold-in" :inert="!inboxOpen || null">
                 <li v-for="row in m.rows" :key="row.key">
                   <button type="button" class="sbar-row sbar-work-item" :class="{ on: view === row.key }" :aria-current="view === row.key ? 'page' : undefined" @click="emit('view', row.key)">
                     <SpaceIcon :name="QUEUE_ICON[row.key] || 'dm'" :size="14" /><span class="sbar-label">{{ row.key === 'dms' ? S.messages : W[row.key] }}</span>

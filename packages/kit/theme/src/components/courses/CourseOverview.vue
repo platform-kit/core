@@ -129,7 +129,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { computed, h, ref, watch } from 'vue'
 import { ROUTES } from 'platformkit/lib/router.js'
 import MarkdownDoc from '../MarkdownDoc.vue'
@@ -139,7 +140,7 @@ import { words, fill, pct, day, shortDay, leadOf, restOf, modulesOf, kindOf, sta
 
 const props = defineProps({
   base: { type: String, required: true },
-  state: { type: Object, default: null },
+  state: { type: Object as PropType<any>, default: null },
   loading: { type: Boolean, default: false },
   busy: { type: Boolean, default: false },
   problem: { type: String, default: '' },
@@ -148,7 +149,7 @@ const emit = defineEmits(['enroll', 'sign-in'])
 const { L, K, S } = words()
 
 /* a ring that fills as the course does */
-const ProgressRing = (p) => {
+const ProgressRing = (p: any) => {
   const r = 26, c = 2 * Math.PI * r
   return h('span', { class: 'crs-ring' }, [
     h('svg', { viewBox: '0 0 64 64', 'aria-hidden': 'true' }, [
@@ -165,34 +166,34 @@ const lessons = computed(() => (props.state && props.state.lessons) || [])
 /* the reader's measures for the sections a site's own kind measures */
 const { measures } = useMeasures(() => props.state)
 const modules = computed(() => modulesOf(lessons.value, measures))
-const next = computed(() => (props.state && props.state.enrollment && !props.state.enrollment.completed_at ? nextOpen(lessons.value) : null))
-const opening = computed(() => nextOpening(lessons.value))
+const next = computed<any>(() => (props.state && props.state.enrollment && !props.state.enrollment.completed_at ? nextOpen(lessons.value) : null))
+const opening = computed<any>(() => nextOpening(lessons.value))
 const first = computed(() => lessons.value[0] || null)
 const lead = computed(() => leadOf(props.state && props.state.about))
 const rest = computed(() => restOf(props.state && props.state.about))
 const cadence = computed(() => cadenceOf(props.state || {}, K.value))
-const cohortStart = computed(() => { const s = props.state || {}; const e = s.enrollment; const c = e && (s.cohorts || []).find((x) => x.key === e.cohort); return c && new Date(c.starts_on) > new Date() ? c.starts_on : null })
+const cohortStart = computed(() => { const s = props.state || {}; const e = s.enrollment; const c = e && (s.cohorts || []).find((x: any) => x.key === e.cohort); return c && new Date(c.starts_on) > new Date() ? c.starts_on : null })
 const metaLine = computed(() => {
   const n = lessons.value.length, m = modules.value.length
   const ls = n === 1 ? L.value.lesson : fill(L.value.lessons, { n })
   return m > 1 ? `${ls} · ${fill(L.value.modules, { n: m })}` : ls
 })
 const accessLine = computed(() => { const s = props.state || {}; return s.free ? K.value.free : s.tiers && s.tiers.length && !(s.skus && s.skus.length) ? K.value.included : K.value.sold })
-const kindWord = (l) => { const own = siteKind(l); if (own) return S.value['tag-' + l.kind] || own.label || ''; const k = kindOf(l); return S.value['tag-' + k] || S.value['kind-' + k] || '' }
+const kindWord = (l: any) => { const own = siteKind(l); if (own) return S.value['tag-' + l.kind] || own.label || ''; const k = kindOf(l); return S.value['tag-' + k] || S.value['kind-' + k] || '' }
 
 /* which modules are unfolded: the one holding the next lesson, or the first; the reader's own choice after that */
-const shut = ref(null)
+const shut = ref<any>(null)
 watch(() => props.state && props.state.slug, () => { shut.value = null })
 const defaultOpen = computed(() => {
-  const at = next.value ? modules.value.find((m) => m.lessons.some((l) => l.key === next.value.key)) : null
+  const at = next.value ? modules.value.find((m: any) => m.lessons.some((l: any) => l.key === (next as any).value.key)) : null
   return new Set([(at || modules.value[0] || {}).n])
 })
-const isOpen = (m) => (shut.value ? !shut.value.has(m.n) : defaultOpen.value.has(m.n))
-function toggle(m) {
-  const s = shut.value ? new Set(shut.value) : new Set(modules.value.filter((x) => !defaultOpen.value.has(x.n)).map((x) => x.n))
+const isOpen = (m: any) => (shut.value ? !shut.value.has(m.n) : defaultOpen.value.has(m.n))
+function toggle(m: any) {
+  const s = shut.value ? new Set(shut.value) : new Set(modules.value.filter((x: any) => !defaultOpen.value.has(x.n)).map((x: any) => x.n))
   if (s.has(m.n)) s.delete(m.n); else s.add(m.n)
   shut.value = s
 }
 const allOpen = computed(() => modules.value.every(isOpen))
-function toggleAll() { shut.value = allOpen.value ? new Set(modules.value.map((m) => m.n)) : new Set() }
+function toggleAll() { shut.value = allOpen.value ? new Set(modules.value.map((m: any) => m.n)) : new Set() }
 </script>

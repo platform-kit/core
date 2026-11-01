@@ -16,15 +16,16 @@
   answer: thirty-one names hand-written in English would be worse for every reader who does not
   read English, which is exactly the person choosing a language.
 -->
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { computed, ref, watch } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import VoiceVisual from './VoiceVisual.vue'
 import { LANGS, SPEEDS, SHAPES } from 'platformkit/lib/copilot/prefs.js'
 
 const props = defineProps({
-  prefs: { type: Object, required: true },
-  voices: { type: Array, default: () => [] },   /* what this provider offers, named by the site */
+  prefs: { type: Object as PropType<any>, required: true },
+  voices: { type: Array as PropType<any[]>, default: () => [] },   /* what this provider offers, named by the site */
   /*
    * THE DEFAULTS, RESOLVED, because a control should show the value that is in force rather than
    * a sentence about where it came from. "As the site set it" tells somebody that a decision was
@@ -38,11 +39,11 @@ const props = defineProps({
 const emit = defineEmits(['change', 'close'])
 
 const S = computed(() => ((us('copilot').page || {}).settings || {}))
-const card = ref(null)
+const card = ref<any>(null)
 
 /* the browser's own name for a language, in the reader's language. A browser too old for it
    falls back to the code, which is still an answer a person can act on. */
-const named = (code) => {
+const named = (code: any) => {
   try { return new Intl.DisplayNames(undefined, { type: 'language' }).of(code) || code } catch { return code }
 }
 const langs = computed(() => LANGS.map((c) => ({ c, name: named(c) })).sort((a, b) => a.name.localeCompare(b.name)))
@@ -53,11 +54,11 @@ const lang = computed(() => props.prefs.lang || props.langNow)
 const list = computed(() => (voice.value && !props.voices.includes(voice.value) ? [voice.value, ...props.voices] : props.voices))
 const visual = computed(() => props.prefs.visual || props.visualNow)
 
-const set = (patch) => emit('change', { ...props.prefs, ...patch })
+const set = (patch: any) => emit('change', { ...props.prefs, ...patch })
 
 /* a dialogue traps the keyboard or it is not one */
-watch(card, (el) => el && el.focus())
-const keys = (e) => { if (e.key === 'Escape') emit('close') }
+watch(card, (el) => el && (el as any).focus())
+const keys = (e: any) => { if (e.key === 'Escape') emit('close') }
 </script>
 
 <template>
@@ -70,14 +71,14 @@ const keys = (e) => { if (e.key === 'Escape') emit('close') }
            that does nothing — which reads as broken and is worse than the absence. -->
       <label v-if="list.length" class="vs-row">
         <span class="vs-label">{{ S.voice }}</span>
-        <select class="vs-in" :value="voice" @change="set({ voice: $event.target.value })">
+        <select class="vs-in" :value="voice" @change="set({ voice: ($event.target as any).value })">
           <option v-for="v in list" :key="v" :value="v">{{ v }}</option>
         </select>
       </label>
 
       <label class="vs-row">
         <span class="vs-label">{{ S.language }}</span>
-        <select class="vs-in" :value="lang" @change="set({ lang: $event.target.value })">
+        <select class="vs-in" :value="lang" @change="set({ lang: ($event.target as any).value })">
           <option v-for="l in langs" :key="l.c" :value="l.c">{{ l.name }}</option>
         </select>
       </label>

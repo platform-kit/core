@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The sign-in modal — mounted once, globally, in App.vue. Any surface opens it
  * with window.DLauth.open() (the same imperative pattern CommandK uses for
@@ -32,8 +32,8 @@ const sent = ref('')           /* '' | 'link' (a magic link went out) | 'confirm
 const mode = ref('signin')     /* 'signin' | 'forgot' | 'new' */
 const newPassword = ref('')
 const resent = ref(false)
-const emailEl = ref(null)
-const onAuthenticated = ref(null)
+const emailEl = ref<any>(null)
+const onAuthenticated = ref<any>(null)
 const returnTo = ref('')
 
 const heading = computed(() => sent.value === 'confirm' ? M.title['heading-confirm'] : sent.value === 'reset' ? M.title['heading-reset-sent'] : sent.value ? M.title['heading-sent'] : mode.value === 'forgot' ? M.title['heading-forgot'] : mode.value === 'new' ? M.title['heading-new-password'] : M.title['heading-signin'])
@@ -46,7 +46,7 @@ const submitLabel = computed(() => busy.value ? M.buttons.working : mode.value =
 /* why we are asking, when a feature (not the header) opened the modal: one line
    under the subtitle, keyed into modal.intent in auth.md */
 const intent = ref('')
-function show(opts) {
+function show(opts: any) {
   intent.value = (opts && opts.intent && M.intent && M.intent[opts.intent]) ? opts.intent : ''
   onAuthenticated.value = typeof opts?.onAuthenticated === 'function' ? opts.onAuthenticated : null
   returnTo.value = opts?.returnTo || ''
@@ -65,7 +65,7 @@ function finishSignIn() {
 
 /* what Supabase's messages mean to a reader; the unconfirmed one also offers the email again */
 const unconfirmed = ref(false)
-const mapErr = (e) => {
+const mapErr = (e: any) => {
   const m = (e && e.message) || ''
   if (/not confirmed/i.test(m)) { unconfirmed.value = true; return M.errors.unconfirmed }
   /* sign-ups switched off in Supabase (Authentication → Sign In / Providers): the sign-in was
@@ -83,7 +83,7 @@ const mapErr = (e) => {
   if (/invalid|credentials|password/i.test(m)) return M.errors.invalid
   return M.errors.generic
 }
-async function run(fn) {
+async function run(fn: any) {
   busy.value = true; error.value = ''; unconfirmed.value = false
   try { await fn() } catch (e) { error.value = mapErr(e) } finally { busy.value = false }
 }
@@ -99,7 +99,7 @@ function submit() {
       return   /* a session arrives; the watcher below closes the modal */
     } catch (e) {
       /* anything but a refused password (not confirmed, a rate limit, offline) is said as itself */
-      if (!/invalid|credentials/i.test((e && e.message) || '')) throw e
+      if (!/invalid|credentials/i.test((e && (e as any).message) || '')) throw e
     }
     /* closed to new accounts while the app is under construction: say so, make nothing */
     if (LOCKDOWN) { hide(); lockdownNotice(); return }
@@ -129,9 +129,9 @@ watch(session, (s) => {
   else if (!sent.value) hide()
 })
 
-function onKey(e) { if (e.key === 'Escape' && open.value) hide() }
-onMounted(() => { if (!inline) window.DLauth = { open: show, close: hide }; document.addEventListener('keydown', onKey) })
-onBeforeUnmount(() => { document.removeEventListener('keydown', onKey); if (!inline && window.DLauth) delete window.DLauth })
+function onKey(e: any) { if (e.key === 'Escape' && open.value) hide() }
+onMounted(() => { if (!inline) (window as any).DLauth = { open: show, close: hide }; document.addEventListener('keydown', onKey) })
+onBeforeUnmount(() => { document.removeEventListener('keydown', onKey); if (!inline && (window as any).DLauth) delete (window as any).DLauth })
 </script>
 
 <template>

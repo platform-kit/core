@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The support panel: what opens over the launcher. One view at a time — the reader's
  * conversations (any number; a new one from the button), the open thread (the team's lines
@@ -31,11 +32,11 @@ import ChatChoices from '../chat/ChatChoices.vue'
 
 const props = defineProps({
   /* a prompt the reader is answering (a teaser's): { id, text, choices } */
-  prompt: { type: Object, default: null },
+  prompt: { type: Object as PropType<any>, default: null },
   /* the choice they picked on the teaser, if any */
-  choice: { type: Object, default: null },
+  choice: { type: Object as PropType<any>, default: null },
   /* the desk's resting prompt, for a fresh start */
-  fallback: { type: Object, default: null },
+  fallback: { type: Object as PropType<any>, default: null },
 })
 const emit = defineEmits(['close', 'answered'])
 const S = us('support').widget
@@ -53,12 +54,12 @@ const P = S.panel, I = S.identity, L = S.launcher, CW = S.composer, T = S.ticket
  * bad bot.
  */
 const askedForHuman = computed(() => !!(thread.conversation && thread.conversation.bot_off_at))
-const aPersonAnswered = computed(() => thread.messages.some((m) => m.author === 'agent' && !m.bot))
+const aPersonAnswered = computed(() => thread.messages.some((m: any) => m.author === 'agent' && !m.bot))
 const botIsInPlay = computed(() => !!bot.value && !askedForHuman.value && !aPersonAnswered.value)
 /* the last thing anybody actually SAID — the acknowledgement and the other system lines are the
    desk talking about the conversation rather than in it, so they do not count as an answer */
 const lastSaid = computed(() => {
-  const said = thread.messages.filter((m) => !m.deleted_at && (m.author === ME || m.author === 'agent'))
+  const said = thread.messages.filter((m: any) => !m.deleted_at && (m.author === ME || m.author === 'agent'))
   return said[said.length - 1] || null
 })
 /*
@@ -72,7 +73,7 @@ const lastSaid = computed(() => {
  * After it answers, what sits under the answer is the resolution check — did that help — which is
  * where the way out lives and where every other desk puts it.
  */
-const botHasSpoken = computed(() => thread.messages.some((m) => m.bot))
+const botHasSpoken = computed(() => thread.messages.some((m: any) => m.bot))
 const mayRoute = computed(() => botIsInPlay.value && bot.value.offer === 'ask' && !botHasSpoken.value
   && !!lastSaid.value && lastSaid.value.author === ME)
 
@@ -87,7 +88,7 @@ const mayRoute = computed(() => botIsInPlay.value && bot.value.offer === 'ask' &
  * It is ephemeral: it belongs to the answer on screen, not to the conversation, so it is a ref and
  * not a row. A new line from either side clears it.
  */
-const checking = ref(null)
+const checking = ref<any>(null)
 const answered = computed(() => botIsInPlay.value && !!lastSaid.value && !!lastSaid.value.bot)
 /* the check belongs to an answer you WATCHED ARRIVE, not to every time the panel is opened. Asking
    "did that help?" again about an answer from last Tuesday is a bot that has lost the thread — so
@@ -121,7 +122,7 @@ async function askForHuman() { try { await wantHuman() } catch (e) { /* the note
    arriving. Outside that gap it is noise — with no bot on offer it describes an assistant the
    reader has never met, and once somebody has replied the reply says it better. */
 const handedOver = computed(() => askedForHuman.value && !!bot.value && !aPersonAnswered.value)
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 /* list | thread | start */
 const view = ref('list')
@@ -131,15 +132,15 @@ const view = ref('list')
 const side = ref('chats')
 /* the prompt the start view rests on, and the choice in hand */
 const active = computed(() => props.prompt || props.fallback || null)
-const picked = ref(null)
+const picked = ref<any>(null)
 /* a choice made on the teaser arrives with the panel: sent as the first line at once */
 watch(() => props.choice, (c) => { if (c) pick(c) })
-let shownFor = null
+let shownFor: any = null
 watch([view, active], ([v, a]) => { if (v !== 'start') { shownFor = null; return } if (a && !props.prompt && shownFor !== a.id) { shownFor = a.id; track.shown(a, 'default') } }, { immediate: true })
 /* the choices offered next: a picked choice's children, until one without any is picked */
-const followups = ref([])
-const promptFor = ref(null)   /* the prompt the follow-ups belong to */
-async function pick(c) {
+const followups = ref<any>([])
+const promptFor = ref<any>(null)   /* the prompt the follow-ups belong to */
+async function pick(c: any) {
   if (busy.value) return
   const a = active.value || promptFor.value
   if (!a) return
@@ -164,23 +165,23 @@ const tick = ref(0)
 const typingNow = computed(() => { void tick.value; return view.value === 'thread' && agentTyping() })
 const ticker = setInterval(() => { tick.value++ }, 1000)
 onBeforeUnmount(() => clearInterval(ticker))
-async function takeBack(id) { await withdraw(id) }
+async function takeBack(id: any) { await withdraw(id) }
 const busy = ref(false), err = ref('')
-const composer = ref(null)
-const scroller = ref(null)
+const composer = ref<any>(null)
+const scroller = ref<any>(null)
 
 /* who the reader is, from the account alone: a guest is anonymous until they sign in; a
    reader's address counts once it has answered the app's confirmation */
 const signedIn = computed(() => !!session.value)
 const verified = computed(() => signedIn.value && (emailVerified.value || !!(contact.value && contact.value.verified)))
 const asName = computed(() => (contact.value && contact.value.name) || (user.value && user.value.email) || '')
-function signIn() { if (window.DLauth) window.DLauth.open({ intent: 'support' }) }
+function signIn() { if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'support' }) }
 const resent = ref(false)
 async function resend() { if (!user.value || resent.value) return; try { await resendConfirmation(user.value.email); resent.value = true } catch (e) { err.value = P.error } }
 
 function goList() { closeThread(); followups.value = []; view.value = 'list'; err.value = '' }
 function goStart() { closeThread(); followups.value = []; view.value = 'start'; err.value = ''; nextTick(() => composer.value && composer.value.focus && composer.value.focus()) }
-async function goThread(id) { followups.value = []; view.value = 'thread'; err.value = ''; await openThread(id); toFoot() }
+async function goThread(id: any) { followups.value = []; view.value = 'thread'; err.value = ''; await openThread(id); toFoot() }
 
 /* where to land on opening: a prompt → start; one thread → in it; else the list */
 onMounted(() => {
@@ -222,10 +223,10 @@ const offer = computed(() => offerOf(thread.messages))
 /* and it is the bot's, so it goes when the bot does: somebody who has asked for a person is
    waiting for one, not being offered another lap of the assistant */
 const liveOffer = computed(() => (offer.value && offer.value.live && botIsInPlay.value && status.value !== 'resolved' ? offer.value.id : null))
-const lines = computed(() => sections.value.flatMap((s) => [{ key: 'day:' + s.key, day: s.label }]
-  .concat(s.messages.map((m) => ({ key: m.id, m })))))
+const lines = computed<any>(() => sections.value.flatMap((s) => [{ key: 'day:' + s.key, day: s.label }]
+  .concat(s.messages.map((m: any) => ({ key: m.id, m })))))
 /* a choice is the reader saying those words: the offer's row says what they are, not the client */
-async function choose(m, c) {
+async function choose(m: any, c: any) {
   if (busy.value) return
   /* the same arrow a prompt's choice may carry: a bot may point at a form or a page */
   if (c.form || c.href) { window.location.assign(c.form ? ROUTES.form + '/' + c.form : c.href); return }
@@ -234,15 +235,15 @@ async function choose(m, c) {
 }
 const status = computed(() => (thread.conversation && thread.conversation.status) || 'open')
 /* the reader has a line in the open thread: only then is who they are worth asking about */
-const written = computed(() => view.value === 'thread' && thread.messages.some((m) => m.author === 'contact'))
+const written = computed(() => view.value === 'thread' && thread.messages.some((m: any) => m.author === 'contact'))
 /* the way in is offered only while there is one: under lockdown a sign-in is refused or undone at once (and
    undoing it drops the guest's token, and with it the thread from their device), so a guest just stays a guest */
 const wayIn = computed(() => written.value && !LOCKDOWN)
 const agentReadAt = computed(() => (thread.conversation && thread.conversation.agent_read_at) || null)
 /* the person on the other side of the open thread: the last agent who wrote, else the house */
-const agentName = computed(() => { for (let i = thread.messages.length - 1; i >= 0; i--) { const m = thread.messages[i]; if (m.author === 'agent' && m.agent_name) return m.agent_name } const c = conversations.value.find((x) => x.id === thread.id); return (c && c.agent_name) || '' })
+const agentName = computed(() => { for (let i = thread.messages.length - 1; i >= 0; i--) { const m = thread.messages[i]; if (m.author === 'agent' && m.agent_name) return m.agent_name } const c = conversations.value.find((x: any) => x.id === thread.id); return (c && c.agent_name) || '' })
 /* the latest exchange stays in view: scrolled now, and again as lines settle and pictures arrive */
-let footTimers = []
+let footTimers: any = []
 function toFoot() {
   for (const t of footTimers) clearTimeout(t); footTimers = []
   const go = () => { const el = scroller.value || (root.value && root.value.querySelector('.sp-body')); if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }) }
@@ -250,19 +251,19 @@ function toFoot() {
   for (const ms of [120, 320, 600]) footTimers.push(setTimeout(go, ms))
 }
 /* a picture landing anywhere in the panel changes a body's height: back to the foot (load does not bubble; capture does) */
-const root = ref(null)
+const root = ref<any>(null)
 onMounted(() => { if (root.value) root.value.addEventListener('load', toFoot, true) })
 watch(view, () => toFoot())
 watch(scroller, (el) => { if (el) toFoot() })
 watch(() => thread.messages.length, () => { toFoot(); if (view.value === 'thread') markRead() })
 
-async function reply(text) {
+async function reply(text: any) {
   err.value = ''; busy.value = true
   try { await send(text); toFoot() } catch (e) { err.value = P.error } finally { busy.value = false }
 }
 
 /* ---- a new conversation ---- */
-async function begin(text) {
+async function begin(text: any) {
   err.value = ''
   const body = String(text || '').trim()
   const a = active.value, c = picked.value
@@ -275,7 +276,7 @@ async function begin(text) {
     if (props.prompt) emit('answered')
     view.value = 'thread'; toFoot()
   } catch (e) {
-    if (e.status === 409 && e.data && e.data.conversation_id) { emit('answered'); await goThread(e.data.conversation_id) }
+    if ((e as any).status === 409 && (e as any).data && (e as any).data.conversation_id) { emit('answered'); await goThread((e as any).data.conversation_id) }
     else err.value = P.error
   } finally { busy.value = false }
 }
@@ -292,30 +293,30 @@ async function ensureThread() {
   view.value = 'thread'
   return !!thread.id
 }
-async function sendFile(file) {
+async function sendFile(file: any) {
   err.value = ''
   if (!file) return
   if (file.size > MAX_FILE) { err.value = CW['too-big']; return }
   if (!ALLOWED.includes(String(file.type || '').toLowerCase())) { err.value = CW['not-allowed']; return }
   busy.value = true
-  try { if (await ensureThread()) { await upload(file, { kind: 'file' }); toFoot() } } catch (e) { err.value = e.status === 413 ? CW['too-big'] : e.status === 415 ? CW['not-allowed'] : CW['upload-failed'] } finally { busy.value = false }
+  try { if (await ensureThread()) { await upload(file, { kind: 'file' }); toFoot() } } catch (e) { err.value = (e as any).status === 413 ? CW['too-big'] : (e as any).status === 415 ? CW['not-allowed'] : CW['upload-failed'] } finally { busy.value = false }
 }
-async function sendVoice({ blob, seconds, transcript }) {
+async function sendVoice({ blob, seconds, transcript }: any) {
   err.value = ''; busy.value = true
   try { if (await ensureThread()) { await upload(new File([blob], 'voice.mp3', { type: 'audio/mpeg' }), { kind: 'voice', seconds, transcript }); toFoot() } } catch (e) { err.value = CW['upload-failed'] } finally { busy.value = false }
 }
 /* drag and drop over the whole panel */
 const dragging = ref(0)
-function dragIn(e) { if ([...(e.dataTransfer && e.dataTransfer.types || [])].includes('Files')) { dragging.value++ } }
+function dragIn(e: any) { if ([...(e.dataTransfer && e.dataTransfer.types || [])].includes('Files')) { dragging.value++ } }
 function dragOut() { dragging.value = Math.max(0, dragging.value - 1) }
-function dropped(e) { dragging.value = 0; const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f && view.value !== 'list') sendFile(f) }
+function dropped(e: any) { dragging.value = 0; const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f && view.value !== 'list') sendFile(f) }
 
 /* anything that grows the thread's foot — a strip, the follow-ups, the dots — keeps the foot in view */
 watch([written, () => followups.value.length, typingNow], () => { if (view.value === 'thread') toFoot() })
 
-const statusWord = (s) => P['status-' + s] || ''
-const preview = (c) => previewOf(c.last, { deleted: P.withdrawn })
-const at = (c) => whenOf(c.last_message_at || c.created_at, Date.now(), { yesterday: P.yesterday })
+const statusWord = (s: any) => P['status-' + s] || ''
+const preview = (c: any) => previewOf(c.last, { deleted: P.withdrawn })
+const at = (c: any) => whenOf(c.last_message_at || c.created_at, Date.now(), { yesterday: P.yesterday })
 </script>
 
 <template>
@@ -367,10 +368,10 @@ const at = (c) => whenOf(c.last_message_at || c.created_at, Date.now(), { yester
       <p v-if="thread.loading && !thread.messages.length" class="sp-note">{{ P.loading }}</p>
       <TransitionGroup name="sp-line" tag="div" class="sp-lines" appear>
         <template v-for="(l, i) in lines" :key="l.key">
-          <div v-if="l.day" class="sp-day" :style="{ '--i': Math.min(i, 12) }"><span>{{ l.day }}</span></div>
-          <a v-else-if="l.m.author === 'system' && l.m.kind === 'file'" class="sp-sysimg" :style="{ '--i': Math.min(i, 12) }" :href="l.m.url" target="_blank" rel="noopener"><img :src="l.m.url" alt="" loading="lazy" /></a>
-          <div v-else-if="l.m.author === 'system'" class="sp-sys" :class="{ 'sp-ack': i > 0 && lines[i - 1].m && lines[i - 1].m.author === 'contact' }" :style="{ '--i': Math.min(i, 12) }"><small v-if="!(i > 0 && lines[i - 1].m && lines[i - 1].m.author === 'contact')">{{ P['prompt-label'] }}</small><p>{{ l.m.body }}</p></div>
-          <div v-else class="sp-linewrap" :class="{ own: l.m.author === 'contact' }" :style="{ '--i': Math.min(i, 12) }">
+          <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'number'. --><div v-if="l.day" class="sp-day" :style="{ '--i': Math.min(i, 12) }"><span>{{ l.day }}</span></div>
+          <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'number'. --><a v-else-if="l.m.author === 'system' && l.m.kind === 'file'" class="sp-sysimg" :style="{ '--i': Math.min(i, 12) }" :href="l.m.url" target="_blank" rel="noopener"><img :src="l.m.url" alt="" loading="lazy" /></a>
+          <!-- @vue-expect-error TS2365, from the conversion: Operator '>' cannot be applied to types 'string | number' and 'number'. --><div v-else-if="l.m.author === 'system'" class="sp-sys" :class="{ 'sp-ack': i > 0 && lines[i - 1].m && lines[i - 1].m.author === 'contact' }" :style="{ '--i': Math.min(i, 12) }"><!-- @vue-expect-error TS2365, from the conversion: Operator '>' cannot be applied to types 'string | number' and 'number'. --><small v-if="!(i > 0 && lines[i - 1].m && lines[i - 1].m.author === 'contact')">{{ P['prompt-label'] }}</small><p>{{ l.m.body }}</p></div>
+          <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'number'. --><div v-else class="sp-linewrap" :class="{ own: l.m.author === 'contact' }" :style="{ '--i': Math.min(i, 12) }">
             <small v-if="l.m.author === 'agent' && l.m.first" class="sp-who">{{ l.m.bot ? A.by : (l.m.agent_name || P.team) }}</small>
             <ChatBubble :message="l.m" :me="ME" :peer-read-at="agentReadAt" :actions="['remove']" @remove="takeBack(l.m.id)" />
             <ChatChoices :choices="l.m.choices || []" :live="l.m.id === liveOffer" :taken="l.m.choice_key || ''" :busy="busy" @choose="(c) => choose(l.m, c)" />
@@ -408,7 +409,7 @@ const at = (c) => whenOf(c.last_message_at || c.created_at, Date.now(), { yester
         </div>
       </Transition>
       <p v-if="status === 'resolved'" class="sp-note sp-resolved">{{ P['resolved-note'] }}</p>
-      <p v-else-if="verified && thread.messages.length && !thread.messages.some((m) => m.author === 'agent')" class="sp-note">{{ P['away-note'] }}</p>
+      <p v-else-if="verified && thread.messages.length && !thread.messages.some((m: any) => m.author === 'agent')" class="sp-note">{{ P['away-note'] }}</p>
       <!-- who they are, from the account alone — the acknowledgement's own box, the last thing in the history, so it
            scrolls with the thread and stays under whatever arrives -->
       <Transition name="sp-rise">
@@ -434,7 +435,7 @@ const at = (c) => whenOf(c.last_message_at || c.created_at, Date.now(), { yester
 
     <p v-if="err" class="sp-err">{{ err }}</p>
     <footer v-if="view !== 'list'" class="sp-foot">
-      <SupportComposer ref="composer" :busy="busy" :placeholder="view === 'thread' && thread.messages.length && thread.messages.every((m) => m.author !== 'agent') && picked ? P['more-placeholder'] : ''" :autofocus="view === 'start'" @send="view === 'start' ? begin($event) : reply($event)" @file="sendFile" @voice="sendVoice" @typing="view === 'thread' && typing()" />
+      <SupportComposer ref="composer" :busy="busy" :placeholder="view === 'thread' && thread.messages.length && thread.messages.every((m: any) => m.author !== 'agent') && picked ? P['more-placeholder'] : ''" :autofocus="view === 'start'" @send="view === 'start' ? begin($event) : reply($event)" @file="sendFile" @voice="sendVoice" @typing="view === 'thread' && typing()" />
     </footer>
   </div>
 </template>

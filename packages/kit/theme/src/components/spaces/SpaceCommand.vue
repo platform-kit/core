@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A COMMAND'S ARGUMENTS, AS FIELDS.
  *
@@ -17,20 +18,20 @@ import { us } from 'platformkit/lib/content.js'
 import SpaceIcon from './SpaceIcon.vue'
 
 const props = defineProps({
-  command: { type: Object, required: true },
-  people: { type: Array, default: () => [] },
+  command: { type: Object as PropType<any>, required: true },
+  people: { type: Array as PropType<any[]>, default: () => [] },
 })
 const emit = defineEmits(['run', 'cancel'])
 const W = computed(() => us('spaces').commands.main)
 
 /* the units a span is offered in, shortest first — the same letters the files use */
 const UNITS = ['m', 'h', 'd', 'w']
-const unitWord = (u) => W.value['unit-' + u] || u
+const unitWord = (u: any) => W.value['unit-' + u] || u
 
 /* every argument starts at its default, taken apart into the controls that will put it back */
-const vals = ref({})
-const nums = ref({})
-const units = ref({})
+const vals = ref<any>({})
+const nums = ref<any>({})
+const units = ref<any>({})
 onMounted(async () => {
   for (const a of props.command.args || []) {
     if (a.kind === 'span') {
@@ -42,18 +43,18 @@ onMounted(async () => {
   }
   await nextTick()
   const el = document.querySelector('.scm input, .scm select')
-  if (el) el.focus()
+  if (el) (el as any).focus()
 })
 
 /* what goes out: a value per argument, built from its controls */
 const args = computed(() => {
-  const out = {}
+  const out: any = {}
   for (const a of props.command.args || []) {
     out[a.name] = a.kind === 'span' ? `${nums.value[a.name] || 1}${units.value[a.name] || 'd'}` : vals.value[a.name]
   }
   return out
 })
-const ready = computed(() => (props.command.args || []).every((a) => !a.required || String(args.value[a.name] ?? '').trim() !== ''))
+const ready = computed(() => (props.command.args || []).every((a: any) => !a.required || String((args as any).value[a.name] ?? '').trim() !== ''))
 const go = () => { if (ready.value) emit('run', args.value) }
 onMounted(() => { if (!(props.command.args || []).length) go() })
 </script>

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { docsCorpus, searchDocs } from 'platformkit/lib/content.js'
 
@@ -6,16 +6,16 @@ const props = defineProps({ collection: { type: String, required: true } })
 const emit = defineEmits(['open'])
 
 const q = ref('')
-const hits = ref([])
+const hits = ref<any>([])
 const openList = ref(false)
-let corpus = null
+let corpus: any = null
 
 async function run() {
   if (!corpus) corpus = await docsCorpus(props.collection)
   hits.value = searchDocs(corpus, q.value)
   openList.value = true
 }
-function pick(id) { openList.value = false; q.value = ''; emit('open', id) }
+function pick(id: any) { openList.value = false; q.value = ''; emit('open', id) }
 </script>
 
 <template>

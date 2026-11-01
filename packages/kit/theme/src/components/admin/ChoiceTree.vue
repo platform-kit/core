@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A prompt's choices as a tree, edited as rows: each a line of words, ↑ ↓ to reorder among its
  * siblings, × to remove it (and what is under it), and "+ Follow-up" to add a choice the reader
@@ -6,20 +7,20 @@
  * writes the tree back into the file's list (joinChoices) — nobody types the indentation.
  */
 const props = defineProps({
-  modelValue: { type: Array, default: () => [] },
+  modelValue: { type: Array as PropType<any[]>, default: () => [] },
   depth: { type: Number, default: 0 },
   max: { type: Number, default: 3 },
 })
 const emit = defineEmits(['update:modelValue'])
-const node = (text) => ({ key: '', text, children: [] })
-const put = (list) => emit('update:modelValue', list)
-const list = () => props.modelValue.map((c) => ({ ...c, children: (c.children || []).slice() }))
-function edit(i, text) { const l = list(); l[i].text = text; put(l) }
+const node = (text: any) => ({ key: '', text, children: [] })
+const put = (list: any) => emit('update:modelValue', list)
+const list = () => props.modelValue.map((c) => ({ ...c, children: ((c as any).children || []).slice() }))
+function edit(i: any, text: any) { const l = list(); l[i].text = text; put(l) }
 function add() { put(list().concat([node('New choice')])) }
-function addUnder(i) { const l = list(); l[i].children = l[i].children.concat([node('New follow-up')]); put(l) }
-function drop(i) { put(list().filter((_, j) => j !== i)) }
-function move(i, d) { const l = list(); const j = i + d; if (j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; put(l) }
-function children(i, kids) { const l = list(); l[i].children = kids; put(l) }
+function addUnder(i: any) { const l = list(); l[i].children = l[i].children.concat([node('New follow-up')]); put(l) }
+function drop(i: any) { put(list().filter((_, j) => j !== i)) }
+function move(i: any, d: any) { const l = list(); const j = i + d; if (j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; put(l) }
+function children(i: any, kids: any) { const l = list(); l[i].children = kids; put(l) }
 </script>
 
 <template>
@@ -27,7 +28,7 @@ function children(i, kids) { const l = list(); l[i].children = kids; put(l) }
     <div v-for="(c, i) in modelValue" :key="i" class="ct-node">
       <div class="ct-row">
         <span v-if="depth > 0" class="ct-elbow" aria-hidden="true" />
-        <input :value="c.text" class="ui-input" :placeholder="depth ? 'A follow-up the reader may pick' : 'A choice the reader may pick'" @input="edit(i, $event.target.value)" />
+        <input :value="c.text" class="ui-input" :placeholder="depth ? 'A follow-up the reader may pick' : 'A choice the reader may pick'" @input="edit(i, ($event.target as any).value)" />
         <button type="button" class="ui-btn ui-ghost ui-sm" :disabled="i === 0" title="Earlier" @click="move(i, -1)">↑</button>
         <button type="button" class="ui-btn ui-ghost ui-sm" :disabled="i >= modelValue.length - 1" title="Later" @click="move(i, 1)">↓</button>
         <button v-if="depth < max - 1" type="button" class="ui-btn ui-ghost ui-sm ct-sub" title="A choice offered after this one" @click="addUnder(i)">+ Follow-up</button>

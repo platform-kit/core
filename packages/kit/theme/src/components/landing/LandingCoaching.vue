@@ -1,11 +1,12 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { md } from './md.js'
 /* a phone or tablet gets a still in each tile instead of the loop: iOS draws its own
    play button over an autoplaying video, which is not the picture. Coarse pointer or a
    narrow window says phone; the stills are named on the call (coachImage / clientImage). */
 const mobile = ref(false)
-let mq = null
+let mq: any = null
 function readMobile() { mobile.value = !!(mq && mq.matches) }
 onMounted(() => { if (typeof matchMedia === 'undefined') return; mq = matchMedia('(pointer: coarse), (max-width: 760px)'); readMobile(); mq.addEventListener('change', readMobile) })
 onBeforeUnmount(() => { if (mq) mq.removeEventListener('change', readMobile) })
@@ -28,7 +29,7 @@ defineProps({
   heading: { type: String, default: '' },
   lead: { type: String, default: '' },
   call: {
-    type: Object,
+    type: Object as PropType<any>,
     /* title: the window's bar; live + elapsed: the chip; coach/client: name and role under each tile; leave: the red button */
     /* coachVideo / clientVideo: a short muted loop for the tile (mp4 or webm, any aspect — it is cropped to the tile);
        coachImage / clientImage: the still a phone shows instead; without either the tile shows the figure */

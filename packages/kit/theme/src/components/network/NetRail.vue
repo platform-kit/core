@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * THE NETWORK'S OWN NAVIGATION — what every social app has down its left side: Home, Explore,
  * Notifications (with the count of what is new), the reader's own profile, the spaces when the site
@@ -31,7 +31,7 @@ const items = computed(() => [
 
 <template>
   <nav class="nr" :aria-label="S.label">
-    <a v-for="it in items" :key="it.key" :href="it.href" class="nr-i" :class="{ on: view === it.key }" :aria-current="view === it.key ? 'page' : null">
+    <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "page" | "time" | Booleanish | "date" | "location" | undefined'. --><a v-for="it in items" :key="it.key" :href="it.href" class="nr-i" :class="{ on: view === it.key }" :aria-current="view === it.key ? 'page' : null">
       <span class="nr-ic" aria-hidden="true">
         <svg v-if="it.key === 'home'" viewBox="0 0 24 24" width="24" height="24" :fill="view === 'home' ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7V20a.5.5 0 0 1-.5.5h-5v-6h-6v6H4a.5.5 0 0 1-.5-.5z" /></svg>
         <svg v-else-if="it.key === 'explore'" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" :stroke-width="view === 'explore' ? 2.6 : 1.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" /></svg>

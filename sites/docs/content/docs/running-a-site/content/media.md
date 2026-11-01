@@ -6,14 +6,14 @@ sources:
   [
     packages/kit/theme/src/components/MediaPage.vue,
     packages/kit/theme/src/components/admin/MediaPicker.vue,
-    packages/kit/theme/src/lib/admin/media-driver.js,
-    packages/kit/theme/src/lib/admin/media-pick.js,
+    packages/kit/theme/src/lib/admin/media-driver.ts,
+    packages/kit/theme/src/lib/admin/media-pick.ts,
     packages/kit/theme/src/content/ui/media.md,
-    packages/kit/build/assets.mjs,
-    packages/kit/build/runtime-paths.mjs,
-    packages/kit/build/migrate-assets.mjs,
+    packages/kit/build/assets.mts,
+    packages/kit/build/runtime-paths.mts,
+    packages/kit/build/migrate-assets.mts,
     packages/kit/theme/src/components/admin/media,
-    packages/kit/build/admin-pipe.mjs,
+    packages/kit/build/admin-pipe.mts,
     packages/kit/build/images,
     packages/kit/theme/src/components/admin/ImageSource.vue,
   ]
@@ -39,7 +39,7 @@ A record's file field — a book's cover or share image, an article's hero, a la
 
 When a web address is not already present in the checkout, the resolver fetches it once and caches it by address under `node_modules/.cache/platformkit/assets/`. It never writes the fetched file beside the record.
 
-A site that still has pictures beside its records (`cover: ./the-kybalion.png`) is moved in one run: `node packages/kit/build/migrate-assets.mjs` (`--dry` to see) puts every such picture under `content/uploads/<collection>/` and rewrites its field to the address, reporting each; a second run moves nothing. Until it is run the build still finds a picture beside its record, and says so as the old way.
+A site that still has pictures beside its records (`cover: ./the-kybalion.png`) is moved in one run: `node packages/kit/build/migrate-assets.mts` (`--dry` to see) puts every such picture under `content/uploads/<collection>/` and rewrites its field to the address, reporting each; a second run moves nothing. Until it is run the build still finds a picture beside its record, and says so as the old way.
 
 ## A file in use is kept
 

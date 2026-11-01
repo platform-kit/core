@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 import { glyph } from './icons.js'
 import SectionHead from './SectionHead.vue'
@@ -18,7 +19,7 @@ defineProps({
   lead: { type: String, default: '' },
   layout: { type: String, default: 'row' },   /* row | cards | beside | serif */
   animate: { type: Boolean, default: false }, /* the numbers count up as they enter view */
-  stats: { type: Array, default: () => [] },  /* [{ value, label, note?, icon?, stars? }] */
+  stats: { type: Array as PropType<any[]>, default: () => [] },  /* [{ value, label, note?, icon?, stars? }] */
   fine: { type: String, default: '' },
 })
 </script>

@@ -12,4 +12,4 @@
 
 ## 3. Documentation
 
-- [x] 3.1 The courses documentation page says how a quiz lesson runs and completes. Verified by `node packages/kit/build/docs-check.mjs`.
+- [x] 3.1 The courses documentation page says how a quiz lesson runs and completes. Verified by `node packages/kit/build/docs-check.mts`.

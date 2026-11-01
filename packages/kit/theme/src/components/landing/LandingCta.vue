@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 import { glyph } from './icons.js'
 import EmailCapture from './EmailCapture.vue'
@@ -23,15 +24,15 @@ defineProps({
   cta: { type: String, default: '' }, href: { type: String, default: '' },
   cta2: { type: String, default: '' }, href2: { type: String, default: '' },
   fine: { type: String, default: '' },
-  capture: { type: Object, default: () => ({}) },   /* { form, button, placeholder, fine } */
-  points: { type: Array, default: () => [] },       /* [{ icon?, text }] */
-  avatars: { type: Object, default: () => ({}) },   /* { items: [{ image, name }], line } */
-  rating: { type: Object, default: () => ({}) },    /* { stars, line } */
-  logos: { type: Array, default: () => [] },        /* [{ name, image }] */
-  badges: { type: Object, default: () => ({}) },    /* { apple, google } — links to the stores */
+  capture: { type: Object as PropType<any>, default: () => ({}) },   /* { form, button, placeholder, fine } */
+  points: { type: Array as PropType<any[]>, default: () => [] },       /* [{ icon?, text }] */
+  avatars: { type: Object as PropType<any>, default: () => ({}) },   /* { items: [{ image, name }], line } */
+  rating: { type: Object as PropType<any>, default: () => ({}) },    /* { stars, line } */
+  logos: { type: Array as PropType<any[]>, default: () => [] },        /* [{ name, image }] */
+  badges: { type: Object as PropType<any>, default: () => ({}) },    /* { apple, google } — links to the stores */
   image: { type: String, default: '' }, alt: { type: String, default: '' },
   frame: { type: Boolean, default: false },         /* the picture inside a browser window */
-  cards: { type: Array, default: () => [] },        /* [{ icon?, title, body, cta, href }] for the cards layout */
+  cards: { type: Array as PropType<any[]>, default: () => [] },        /* [{ icon?, title, body, cta, href }] for the cards layout */
 })
 </script>
 

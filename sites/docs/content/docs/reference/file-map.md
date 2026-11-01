@@ -5,17 +5,17 @@ order: 84
 sources:
   [
     packages/kit/package.json,
-    packages/kit/theme/src/theme.js,
+    packages/kit/theme/src/theme.ts,
     package.json,
     packages/kit/bin/platformkit.mjs,
-    packages/kit/build/sites.mjs,
-    packages/kit/build/runtime-paths.mjs,
-    packages/kit/build/assets.mjs,
-    packages/kit/build/plan.mjs,
-    packages/kit/build/dev-directory.mjs,
-    packages/kit/build/dev-stop.mjs,
-    packages/kit/build/dev-workspace.mjs,
-    packages/kit/build/hyperswitch-test-stack.mjs,
+    packages/kit/build/sites.mts,
+    packages/kit/build/runtime-paths.mts,
+    packages/kit/build/assets.mts,
+    packages/kit/build/plan.mts,
+    packages/kit/build/dev-directory.mts,
+    packages/kit/build/dev-stop.mts,
+    packages/kit/build/dev-workspace.mts,
+    packages/kit/build/hyperswitch-test-stack.mts,
     packages/kit/build/hyperswitch-v2-test.compose.yml,
   ]
 reviewed: 2026-11-01

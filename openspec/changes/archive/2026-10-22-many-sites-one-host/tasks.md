@@ -2,7 +2,7 @@
 
 ## 1. The list of sites, read once
 
-- [x] 1.1 `packages/kit/build/sites.mjs`: `sites(root)` — the root site (named by
+- [x] 1.1 `packages/kit/build/sites.mts`: `sites(root)` — the root site (named by
   `PLATFORMKIT_ROOT_SITE`, absent when unset) and every directory under `sites/` holding a
   `package.json`, each with its name, its directory and its dist path; `PLATFORMKIT_SITES`
   narrows it; a name that is not a legal DNS label is refused by name.
@@ -12,7 +12,7 @@
 
 ## 2. The host generator
 
-- [x] 2.1 `packages/kit/build/hosts.mjs`: the sites and the mode in, the nginx server blocks out —
+- [x] 2.1 `packages/kit/build/hosts.mts`: the sites and the mode in, the nginx server blocks out —
   one generator with two bodies (`proxy` and `files`), the host rule, the apex, the `www`
   redirect and the crawler branch shared between them.
   **Verified by** `build/sites-host.test.mjs`: three sites in both modes, snapshot compared.
@@ -76,7 +76,7 @@
 
 - [x] 6.1 The test refuses a cookie set on a parent domain anywhere in the kit or the theme.
   **Verified by** `build/sites-host.test.mjs`.
-- [x] 6.2 `build/sites-host.test.mjs` wired into `packages/kit/build/test.mjs`.
+- [x] 6.2 `build/sites-host.test.mjs` wired into `packages/kit/build/test.mts`.
   **Verified by** `npm test` running it and failing when it fails.
 
 ## 7. The pages
@@ -88,7 +88,7 @@
   **Verified by** `docs-check.mjs` exactness, which compares the page with the code.
 - [x] 7.3 Update the multiple-sites guide with the one-command workspace startup, automatic
   per-site Supabase and front-door port assignment, the backend-free site behavior, and shutdown
-  cleanup. **Verified by** `node packages/kit/build/docs-check.mjs`.
+  cleanup. **Verified by** `node packages/kit/build/docs-check.mts`.
 
 ## 8. Verify
 

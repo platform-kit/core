@@ -6,9 +6,9 @@ sources:
   [
     packages/kit/src/lib/forms,
     packages/kit/vendor/formsmd,
-    packages/kit/build/forms.mjs,
-    packages/kit/build/form-io.mjs,
-    packages/kit/build/form-embed.mjs,
+    packages/kit/build/forms.mts,
+    packages/kit/build/form-io.mts,
+    packages/kit/build/form-embed.mts,
     packages/kit/build/forms.test.mjs,
     packages/kit/supabase/functions/form,
     packages/kit/supabase/functions/_shared/forms/score.js,
@@ -16,9 +16,9 @@ sources:
     packages/kit/theme/src/instrument/ui/screens/form,
     packages/kit/theme/src/components/forms,
     packages/kit/theme/src/components/landing/LandingForm.vue,
-    packages/kit/theme/src/embed.js,
+    packages/kit/theme/src/embed.ts,
     packages/kit/theme/src/pages/FormPage.vue,
-    packages/kit/build/embed-content.mjs,
+    packages/kit/build/embed-content.mts,
   ]
 reviewed: 2026-10-01
 ---

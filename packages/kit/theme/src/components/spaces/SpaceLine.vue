@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * One message, in the shape a workspace chat draws one: a rounded-square avatar in the gutter, the
  * name in bold with the time beside it, the words at 15px under them, and — in a run from the same
@@ -29,15 +30,15 @@ import VoiceNote from '../chat/VoiceNote.vue'
 import MessageText from '../chat/MessageText.vue'
 
 const props = defineProps({
-  message: { type: Object, required: true },
-  names: { type: Object, default: () => ({}) },
+  message: { type: Object as PropType<any>, required: true },
+  names: { type: Object as PropType<any>, default: () => ({}) },
   /* what each person wears in this space, keyed by id — one map for the room, not a read per line */
-  flair: { type: Object, default: () => ({}) },
+  flair: { type: Object as PropType<any>, default: () => ({}) },
   /* and who each of them is, for the face: the picture, the style and the seed, keyed by id */
-  faces: { type: Object, default: () => ({}) },
+  faces: { type: Object as PropType<any>, default: () => ({}) },
   me: { type: String, default: '' },
   first: { type: Boolean, default: true },
-  reactions: { type: Array, default: () => [] },
+  reactions: { type: Array as PropType<any[]>, default: () => [] },
   /* WHAT THIS ROOM TAKES besides words — its own answer, resolved by the projection from the room's
      file and its space's. Reactions on, votes off: a score changes what people write as well as
      what they read, so a room opts into that. A comment subject is set apart and inherits nothing
@@ -49,11 +50,11 @@ const props = defineProps({
   pinned: { type: Boolean, default: false },
   mentionsMe: { type: Boolean, default: false },
   hideReplies: { type: Boolean, default: false },
-  repliers: { type: Array, default: () => [] },     /* who is in the thread, for the summary row */
+  repliers: { type: Array as PropType<any[]>, default: () => [] },     /* who is in the thread, for the summary row */
   /* a room where reporting means something: a community, never a staff room and never a direct
      message, where the only two people who could read it are the two who are in it */
   reportable: { type: Boolean, default: false },
-  votes: { type: Array, default: () => [] },        /* the votes of every poll on screen */
+  votes: { type: Array as PropType<any[]>, default: () => [] },        /* the votes of every poll on screen */
   mayClose: { type: Boolean, default: false },      /* this reader keeps the room, so may close one */
   /* a room read by side rather than by author (sidedRoom in lib/spaces/model.js): the other
      person's lines at the left, the reader's own at the right, and no name over either */
@@ -87,6 +88,7 @@ const who = computed(() => botName.value || props.names[props.message.author_id]
 const mine = computed(() => props.message.author_id === props.me)
 const when = computed(() => {
   const d = new Date(props.message.created_at)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   return isNaN(d) ? '' : d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 })
 const ago = computed(() => {
@@ -101,35 +103,36 @@ const parts = computed(() => lineBlocks(props.message.body, props.names, { someo
 
 /* The platform's own line carries the facts and never a sentence: the words are markdown like every
    other, and this is where they are said. Money arrives in the smallest unit, as the ledger keeps it. */
-const money = (v, c) => {
+const money = (v: any, c: any) => {
   const n = Number(v)
   if (!isFinite(n)) return ''
   try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase() }).format(n / 100) } catch (e) { return String(n / 100) }
 }
 /* said through the shared function, so what a person reads and what a bot is given cannot drift */
+// @ts-expect-error TS2322, from the conversion: Type '(v: any, c: any) => string' is not assignable to type '(v: any) => string'.
 const systemLine = computed(() => saidIn(props.message, { names: props.names, words: EV.value, money }))
 /* the sound is fetched once the row is on screen, and the player is the one the coaching chat
    uses — a waveform is a waveform, and two of them would be two to keep */
-const heard = ref(null)
+const heard = ref<any>(null)
 watchEffect(() => {
   if (props.message.kind !== 'voice' || props.message.deleted_at) { heard.value = null; return }
   const m = props.message
-  voiceUrl(m).then((u) => { if (u) heard.value = { id: m.id, url: u, seconds: m.seconds } })
+  voiceUrl(m).then((u: any) => { if (u) heard.value = { id: m.id, url: u, seconds: m.seconds } })
 })
 
 /* A FILE IS SHOWN, NOT DESCRIBED: a picture is the message, and anything else is a chip that opens
    it. The bucket is private, so the address is signed (or, for what this browser just sent, the
    bytes it already has). */
-const got = ref(null)
+const got = ref<any>(null)
 watchEffect(() => {
   const m = props.message
   got.value = null
   if (m.kind !== 'file') return
-  fileUrl(m).then((u) => { if (u) got.value = u })
+  fileUrl(m).then((u: any) => { if (u) got.value = u })
 })
 const isPic = computed(() => props.message.kind === 'file' && !!got.value
   && (!props.message.attachment_type || /^image\//.test(props.message.attachment_type)))
-const sizeOf = (n) => (!n ? '' : n < 1024 ? n + ' B' : n < 1048576 ? Math.round(n / 1024) + ' KB' : (n / 1048576).toFixed(1) + ' MB')
+const sizeOf = (n: any) => (!n ? '' : n < 1024 ? n + ' B' : n < 1048576 ? Math.round(n / 1024) + ' KB' : (n / 1048576).toFixed(1) + ' MB')
 
 const replies = computed(() => Number(props.message.reply_count || 0))
 /* The picker is open on this line and no other, and it is drawn on the BODY rather than inside the
@@ -137,7 +140,7 @@ const replies = computed(() => Number(props.message.reply_count || 0))
    it. So its place is worked out from the button's own rectangle when it opens. */
 const picking = ref(false)
 const at = ref({ top: 0, left: 0 })
-function pickHere(e) {
+function pickHere(e: any) {
   if (picking.value) { picking.value = false; return }
   const r = e.currentTarget.getBoundingClientRect()
   const W = 288, H = 320, pad = 12

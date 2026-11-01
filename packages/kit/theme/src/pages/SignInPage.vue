@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { computed, useSlots } from 'vue'
 import AuthModal from '../components/AuthModal.vue'
 import SiteMark from '../components/SiteMark.vue'
@@ -9,9 +10,9 @@ import { site as SITE_RAW } from '#content'
 const props = defineProps({
   pending: { type: Boolean, default: false },
   copy: {
-    type: Object,
+    type: Object as PropType<any>,
     default: null,
-    validator: (value) => value === null || ['eyebrow', 'title', 'description'].every((key) => typeof value[key] === 'string'),
+    validator: (value) => value === null || ['eyebrow', 'title', 'description'].every((key) => typeof (value as any)[key] === 'string'),
   },
 })
 

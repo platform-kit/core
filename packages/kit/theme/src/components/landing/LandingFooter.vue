@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 import { site as SITE_RAW } from '#content'
 import SiteMark from '../SiteMark.vue'
@@ -15,15 +16,15 @@ import EmailCapture from './EmailCapture.vue'
 defineProps({
   layout: { type: String, default: 'columns' },    /* columns | mega | minimal */
   about: { type: String, default: '' },
-  columns: { type: Array, default: () => [] },     /* [{ title, links: [{ label, href }] }] */
-  capture: { type: Object, default: () => ({}) },  /* { heading, form, button, placeholder } */
-  social: { type: Array, default: () => [] },      /* [{ label, href }] — LinkedIn, X, GitHub, Instagram, Mail, YouTube, Facebook draw a glyph */
+  columns: { type: Array as PropType<any[]>, default: () => [] },     /* [{ title, links: [{ label, href }] }] */
+  capture: { type: Object as PropType<any>, default: () => ({}) },  /* { heading, form, button, placeholder } */
+  social: { type: Array as PropType<any[]>, default: () => [] },      /* [{ label, href }] — LinkedIn, X, GitHub, Instagram, Mail, YouTube, Facebook draw a glyph */
   legal: { type: String, default: '' },
-  small: { type: Array, default: () => [] },       /* [{ label, href }] — privacy, terms */
-  call: { type: Object, default: () => ({}) },     /* mega: { heading, cta, href } */
+  small: { type: Array as PropType<any[]>, default: () => [] },       /* [{ label, href }] — privacy, terms */
+  call: { type: Object as PropType<any>, default: () => ({}) },     /* mega: { heading, cta, href } */
 })
 const SITE = (Array.isArray(SITE_RAW) ? SITE_RAW[0] : SITE_RAW) || {}
-const NET = {
+const NET: any = {
   linkedin: '<path d="M4 8h3v9H4zM5.5 3.5a1.7 1.7 0 1 1 0 3.4 1.7 1.7 0 0 1 0-3.4zM9 8h2.8v1.3c.4-.8 1.4-1.5 2.9-1.5 3 0 3.3 2 3.3 4.4V17h-3v-4.2c0-1.1 0-2.3-1.4-2.3s-1.6 1.1-1.6 2.2V17H9z"/>',
   x: '<path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2" fill="none"/>', twitter: '<path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2" fill="none"/>',
   github: '<path d="M10 2a8 8 0 0 0-2.5 15.6c.4 0 .5-.2.5-.4v-1.5c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.3 1.9.9 2.3.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-4a3 3 0 0 1 .8-2.1c-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.6 7.6 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.4 1.1.2 1.9.1 2.1a3 3 0 0 1 .8 2.1c0 3.1-1.8 3.8-3.6 4 .3.3.6.8.6 1.5v2.2c0 .2.1.5.6.4A8 8 0 0 0 10 2z"/>',
@@ -32,7 +33,7 @@ const NET = {
   youtube: '<rect x="2" y="5" width="16" height="10" rx="3"/><path d="M8.5 7.8v4.4l3.8-2.2z" fill="var(--paper)"/>',
   facebook: '<path d="M11.5 17v-6h2l.3-2.5h-2.3V7c0-.7.2-1.2 1.2-1.2H14V3.6c-.2 0-1-.1-1.9-.1-1.9 0-3.2 1.1-3.2 3.2v1.8H6.8V11h2.1v6z"/>',
 }
-const net = (label) => NET[String(label || '').trim().toLowerCase()] || ''
+const net = (label: any) => NET[String(label || '').trim().toLowerCase()] || ''
 </script>
 <template>
   <section class="lpsec lpfooter" :class="'lpfo-' + layout">

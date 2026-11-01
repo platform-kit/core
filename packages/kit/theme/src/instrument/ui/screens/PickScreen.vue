@@ -1,20 +1,21 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* A choice with an "other" — the last option opens a line to write in, the way a
    Typeform "other" does. The number keys pick as on any choice screen; on "other"
    the line takes focus and Enter sends it. The answer is the option's value, with
    the written text alongside for "other". */
 import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import ScreenHead from './ScreenHead.vue'
-const props = defineProps({ screen: { type: Object, required: true } })
+const props = defineProps({ screen: { type: Object as PropType<any>, required: true } })
 const emit = defineEmits(['answer'])
-const other = ref(false), text = ref(''), input = ref(null)
-function pick(o) {
-  if (o.other) { other.value = true; nextTick(() => { const el = Array.isArray(input.value) ? input.value[0] : input.value; el && el.focus() }); return }
+const other = ref(false), text = ref(''), input = ref<any>(null)
+function pick(o: any) {
+  if (o.other) { other.value = true; nextTick(() => { const el: any = Array.isArray(input.value) ? input.value[0] : input.value; el && el.focus() }); return }
   emit('answer', o.v, {})
 }
 function sendOther() { const t = text.value.trim(); if (t) emit('answer', 'other', { text: t }) }
 /* the number keys, as on any choice screen — unless the line is being written in */
-function onKey(e) {
+function onKey(e: any) {
   if (e.metaKey || e.ctrlKey || e.altKey) return
   if (e.target && e.target.closest && e.target.closest('input, textarea, [contenteditable]')) return
   const n = +e.key; const o = (props.screen.options || [])[n - 1]
@@ -30,11 +31,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
     <div class="qopts">
       <template v-for="(o, n) in screen.options || []" :key="o.v">
         <button v-if="!(o.other && other)" type="button" class="qopt" @click="pick(o)">
-          <span class="k">{{ n + 1 }}</span>
+          <span class="k"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ n + 1 }}</span>
           <span class="qoptl">{{ o.label }}</span>
         </button>
         <div v-else class="qpick-other">
-          <span class="k">{{ n + 1 }}</span>
+          <span class="k"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ n + 1 }}</span>
           <input ref="input" v-model="text" class="qwordin qpick-in" autocomplete="off" :placeholder="screen.placeholder" :aria-label="o.label" @keydown.enter.prevent="sendOther" />
           <button type="button" class="qbtn" :disabled="!text.trim()" @click="sendOther">{{ screen.submit }}</button>
         </div>

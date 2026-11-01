@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * /store/collections — every collection, as a tile you can walk into.
  */

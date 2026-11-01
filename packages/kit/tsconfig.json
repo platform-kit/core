@@ -17,7 +17,7 @@
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node", "vite/client"]
   },
   "include": ["bin", "build", "src", "vite"],
   "exclude": ["node_modules", "supabase/functions", "build/fixtures", "theme", "build/**/*.test.ts", "build/hyperswitch-browser.steps.ts", "build/**/*.test.mjs", "build/**/*.integration.mjs"]

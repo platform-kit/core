@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The storefront: a hero, the collections, a featured rail, the shelves, the membership,
  * each collection's shelf, and what the store promises. What it says and shows
@@ -30,15 +30,16 @@ const POSES = [{ x: 0, y: -9 }, { x: 0, y: 0 }, { x: 0, y: 9 }]
 const CU = T.collection.ui
 
 const preview = inject('dl-preview', null)
-const A = computed(() => arrange(preview ? preview.value : null))
+const A = computed(() => arrange(preview ? (preview as any).value : null))
 const hero = computed(() => A.value.hero)
 /* the title, with one *word* in italic: the markdown's asterisks, nothing else */
-const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+// @ts-expect-error TS2769, from the conversion: No overload matches this call.
+const esc = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 const heroTitle = computed(() => esc(hero.value.title).replace(/\*([^*]+)\*/g, '<em>$1</em>'))
 /* the row under the buttons: the price the shelf starts at, what comes with a copy, where it ships */
 const HR = T.home.hero || {}
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-const fromPrice = computed(() => { const ps = products.value.filter((p) => p.kind === 'print' && p.available && p.unit_amount > 0); return ps.length ? money(Math.min(...ps.map((p) => p.unit_amount)), ps[0].currency).replace(/\.00$/, '') : '' })
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fromPrice = computed(() => { const ps = products.value.filter((p: any) => p.kind === 'print' && p.available && p.unit_amount > 0); return ps.length ? money(Math.min(...ps.map((p: any) => p.unit_amount)), ps[0].currency).replace(/\.00$/, '') : '' })
 const heroPoints = computed(() => [fromPrice.value ? fill(HR.from, { price: fromPrice.value }) : '', HR.files, HR.ships].filter(Boolean))
 
 const isMember = computed(() => userClass.value === 'subscribed')
@@ -48,16 +49,17 @@ const checkoutSuccessSubtitle = computed(() => checkoutMode.value === 'payment'
 const busy = ref(false)
 const error = ref('')
 const errorCode = ref('')
-async function run(fn, evt) {
-  if (!isSignedIn.value) { if (window.DLauth) window.DLauth.open(); return }
+async function run(fn: any, evt: any) {
+  if (!isSignedIn.value) { if ((window as any).DLauth) (window as any).DLauth.open(); return }
   busy.value = true; error.value = ''; errorCode.value = ''
   if (evt) capture('click', evt)
-  try { await fn() } catch (e) { error.value = (e && e.message) || HD['error-heading']; errorCode.value = (e && e.code) || '' } finally { busy.value = false }
+  try { await fn() } catch (e) { error.value = (e && (e as any).message) || HD['error-heading']; errorCode.value = (e && (e as any).code) || '' } finally { busy.value = false }
 }
-const join = (m) => run(() => subscribe(m.sku), { kind: 'subscribe', product_id: m.sku })
+const join = (m: any) => run(() => subscribe(m.sku), { kind: 'subscribe', product_id: m.sku })
+// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 const manage = () => run(() => openPortal())
-const perText = (p) => (p.recurring ? ' ' + (S['per-' + (p.interval || 'month')] || '') : '')
-const shelf = (c) => c.items.slice(0, 12)
+const perText = (p: any) => (p.recurring ? ' ' + (S['per-' + (p.interval || 'month')] || '') : '')
+const shelf = (c: any) => c.items.slice(0, 12)
 </script>
 
 <template>
@@ -95,7 +97,7 @@ const shelf = (c) => c.items.slice(0, 12)
         <!-- the books themselves, as they are printed -->
         <div v-else-if="A.heroBooks.length" class="sf-hero-books" :class="'n' + A.heroBooks.length" aria-hidden="true">
           <a v-for="(b, i) in A.heroBooks" :key="b.slug" class="sf-hero-book" :href="bookHref(b.slug)" tabindex="-1">
-            <Book3D :art="b.art" :fallback-art="b.fallbackArt" :dims="b.dims" :binding="b.binding" :trim="b.trim" :pages="b.pages" :cloth="b.binding !== 'softcover' ? (b.cloth || 'black') : ''" :foil="b.binding === 'softcover' ? '' : (b.foil || 'gold')" :foil-layer="b.foilArt || ''" :jacket="b.jacket" :edges="b.edges" :sheets="b.sheets || []" :title="b.title" :author="b.author" mode="still" anchor="floor" :fill="i === 1 ? 0.92 : 0.8" :pose="POSES[i] || POSES[1]" />
+            <!-- @vue-expect-error TS7015, from the conversion: Element implicitly has an 'any' type because index expression is not of type 'number'. --><Book3D :art="b.art" :fallback-art="b.fallbackArt" :dims="b.dims" :binding="b.binding" :trim="b.trim" :pages="b.pages" :cloth="b.binding !== 'softcover' ? (b.cloth || 'black') : ''" :foil="b.binding === 'softcover' ? '' : (b.foil || 'gold')" :foil-layer="b.foilArt || ''" :jacket="b.jacket" :edges="b.edges" :sheets="b.sheets || []" :title="b.title" :author="b.author" mode="still" anchor="floor" :fill="i === 1 ? 0.92 : 0.8" :pose="POSES[i] || POSES[1]" />
           </a>
         </div>
       </div>

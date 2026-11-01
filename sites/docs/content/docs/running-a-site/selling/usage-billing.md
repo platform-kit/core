@@ -4,16 +4,16 @@ description: Sell prepaid usage or bill measured SaaS usage through the same pro
 order: 23
 sources:
   [
-    packages/kit/build/catalog.mjs,
-    packages/kit/src/lib/usage-unit.js,
+    packages/kit/build/catalog.mts,
+    packages/kit/src/lib/usage-unit.ts,
     packages/kit/build/usage.test.mjs,
     packages/kit/build/usage-db.test.mjs,
-    packages/kit/build/site.mjs,
-    packages/kit/build/bots.mjs,
-    packages/kit/build/bots-db.mjs,
-    packages/kit/build/deploy-checks.mjs,
-    packages/kit/build/models/core/collections.mjs,
-    packages/kit/build/velite.mjs,
+    packages/kit/build/site.mts,
+    packages/kit/build/bots.mts,
+    packages/kit/build/bots-db.mts,
+    packages/kit/build/deploy-checks.mts,
+    packages/kit/build/models/core/collections.mts,
+    packages/kit/build/velite.mts,
     packages/kit/supabase/schemas/40-commerce.sql,
     packages/kit/supabase/schemas/95-copilot.sql,
     packages/kit/supabase/schemas/96-agents.sql,
@@ -23,7 +23,7 @@ sources:
     packages/kit/supabase/functions/_shared/usage-incremental.ts,
     packages/kit/supabase/functions/_shared/payment-provider.mjs,
     packages/kit/src/payment-provider.d.ts,
-    packages/kit/build/payment-provider-registry.mjs,
+    packages/kit/build/payment-provider-registry.mts,
     packages/kit/supabase/functions/_shared/inference-meter.mjs,
     packages/kit/supabase/functions/_shared/usage-gate.mjs,
     packages/kit/supabase/functions/_shared/usage.ts,
@@ -45,14 +45,14 @@ sources:
     packages/kit/theme/src/layouts/SiteLayout.vue,
     packages/kit/theme/src/pages/BillingPortalPage.vue,
     packages/kit/theme/src/components/UsagePanel.vue,
-    packages/kit/theme/src/lib/usage-eligibility.js,
-    packages/kit/src/lib/router.js,
+    packages/kit/theme/src/lib/usage-eligibility.ts,
+    packages/kit/src/lib/router.ts,
     packages/kit/theme/src/pages/VoicePage.vue,
     packages/kit/theme/src/components/UsageAdmin.vue,
     packages/kit/theme/src/components/AnalyticsAdmin.vue,
     packages/kit/theme/src/content/ui/usage.md,
     packages/kit/theme/src/components/UsagePaymentAlert.vue,
-    packages/kit/src/lib/usage-alert.js,
+    packages/kit/src/lib/usage-alert.ts,
     packages/kit/build/usage-alert.test.mjs,
     packages/kit/theme/src/content/ui/auth.md,
     packages/kit/theme/src/content/ui/analytics.md,
@@ -203,7 +203,7 @@ PlatformKit's usage records and does not require a Hyperswitch native-meter decl
 charges require a subscription with a saved off-session payment method. Sites with no published
 metered offer do not need meter configuration. The targeted
 checks are `node packages/kit/build/usage.test.mjs`,
-`node packages/kit/build/deploy-checks.mjs --test`, and `node packages/kit/build/assemble.mjs
+`node packages/kit/build/deploy-checks.mts --test`, and `node packages/kit/build/assemble.mts
 --check` from the site directory. The database integration check,
 `node packages/kit/build/usage-db.test.mjs`, needs a local database with the declared schema
 already applied; do not run a database reset merely to test it if that would erase data.

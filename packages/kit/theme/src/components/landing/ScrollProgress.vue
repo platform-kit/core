@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* a thin bar at the top of the page that fills as it is read (the page's `progress` field) */
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 const at = ref(0)

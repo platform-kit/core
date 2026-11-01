@@ -8,6 +8,7 @@
  * tried to break is a hope.
  */
 import { sign, open, grantExpiry, GRANT_MINUTES } from '../supabase/functions/_shared/copilot/grant.js'
+import { stripTypeScriptTypes } from 'node:module'   /* the libraries are TypeScript: a page or an eval is handed their JavaScript */
 import { MEMORIES, memoryOf, recalls } from '../src/lib/agents/loop.js'
 import { speakerIdOf, speaker, engineOf } from '../src/lib/copilot/speak.js'
 import { STATES, isState, frame, loudness } from '../src/lib/copilot/levels.js'
@@ -440,7 +441,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
 
 /* the silent trap, asserted on the source because only pixels and ears catch it otherwise */
 {
-  const src = fs.readFileSync(new URL('../src/lib/copilot/levels.js', import.meta.url), 'utf8')
+  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../src/lib/copilot/levels.ts', import.meta.url), 'utf8'), { mode: 'strip' })
   ok('the assistant\'s audio is connected on to the speakers', /hearAssistant[\s\S]*toSpeakers: true/.test(src))
   ok('and the microphone is NOT, because that is feedback', /hearPerson[\s\S]*toSpeakers: false/.test(src))
 }
@@ -455,7 +456,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
  */
 {
   const fs2 = fs
-  const src = fs2.readFileSync(new URL('../src/lib/copilot/visual.js', import.meta.url), 'utf8')
+  const src = stripTypeScriptTypes(fs2.readFileSync(new URL('../src/lib/copilot/visual.ts', import.meta.url), 'utf8'), { mode: 'strip' })
   ok('the five shapes are named in one place', SHAPES.join(',') === 'aura,wave,radial,grid,bar')
   ok('DIRECTION: the person draws inward, the assistant outward', /const out = them \? 1 : me \? -1 : 0/.test(src))
   ok('WEIGHT: the assistant is filled, the person an outline', /const filled = them/.test(src))
@@ -466,7 +467,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
 
 /* connecting and thinking both have nobody speaking, so without this they are drawn identically */
 {
-  const src = fs.readFileSync(new URL('../src/lib/copilot/visual.js', import.meta.url), 'utf8')
+  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../src/lib/copilot/visual.ts', import.meta.url), 'utf8'), { mode: 'strip' })
   ok('connecting is slower than thinking', /const pace = state === 'connecting' \? 0\.45 : state === 'thinking' \? 1\.6/.test(src))
   ok('and deliberately INCOMPLETE, which is what "not joined up yet" looks like',
     /const whole = state === 'connecting' \? 0\.6 : 1/.test(src))
@@ -476,7 +477,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
 
 /* a state nobody can see is a state that is not being shown */
 {
-  const src = fs.readFileSync(new URL('../src/lib/copilot/visual.js', import.meta.url), 'utf8')
+  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../src/lib/copilot/visual.ts', import.meta.url), 'utf8'), { mode: 'strip' })
   ok('the grid has a visible floor on a dark ground', /Math\.max\(0\.3,/.test(src),
     'the grid vanished into a dark background at 0.08 — right arithmetic, blank pixels')
 }
@@ -712,7 +713,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
  * its file was written — which looks exactly like a working feature until somebody changes it.
  */
 {
-  const src = fs.readFileSync(new URL('./velite.mjs', import.meta.url), 'utf8')
+  const src = fs.readFileSync(new URL('./velite.mts', import.meta.url), 'utf8')
   const block = src.slice(src.indexOf('voice: s.object({'), src.indexOf('extends: s.string()'))
   for (const f of ['say', 'voices', 'greeting', 'wait', 'visual', 'steps', 'opening', 'words', 'gap']) {
     ok(`the compile carries a bot's voice.${f}`, new RegExp('\\b' + f + ':\\s*s\\.').test(block))
@@ -810,7 +811,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
  * run against a deliberately unplugged copy of the same module to show the check bites.
  */
 {
-  const src = fs.readFileSync(new URL('../src/lib/copilot/play.js', import.meta.url), 'utf8')
+  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../src/lib/copilot/play.ts', import.meta.url), 'utf8'), { mode: 'strip' })
     .replace(/export function/g, 'function')
   const unplugged = src.replace('analyser.connect(ctx.destination)', '/* unplugged */')
   ok('the mutation the check is measured against applies', unplugged !== src)

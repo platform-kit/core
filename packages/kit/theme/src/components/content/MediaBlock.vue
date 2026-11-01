@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import 'vidstack/styles/defaults.css'
 import 'vidstack/styles/community-skin/video.css'
@@ -25,13 +25,13 @@ const cur = computed(() => tracks.value[at.value])
 
 const autoplay = ref(true)     /* auto-advance the playlist (reader can switch it off) */
 const autostart = ref(false)   /* whether the mounting track should begin playing itself */
-function selectTrack(i) { autostart.value = true; at.value = i }
+function selectTrack(i: any) { autostart.value = true; at.value = i }
 function onEnded() {
   if (autoplay.value && at.value < tracks.value.length - 1) { autostart.value = true; at.value += 1 }
 }
 
 /* youtube / vimeo → an embeddable player URL, or null for a hosted file */
-function embedUrl(src) {
+function embedUrl(src: any) {
   const yt = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/.exec(src || '')
   if (yt) return 'https://www.youtube.com/embed/' + yt[1]
   const vm = /vimeo\.com\/(?:video\/)?(\d+)/.exec(src || '')

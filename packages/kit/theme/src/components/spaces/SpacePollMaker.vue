@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Asking the room a question. A question, and the answers as ROWS to add, reorder and remove —
  * never a list typed into a box, never a placeholder teaching a separator. The structure this
@@ -14,17 +14,17 @@ const W = computed(() => us('spaces').poll.main)
 const question = ref('')
 const options = ref(['', ''])
 const multi = ref(false)
-const rows = ref(null)
+const rows = ref<any>(null)
 
 const ready = computed(() => !!question.value.trim() && options.value.filter((o) => o.trim()).length >= 2)
 
 async function add() {
   options.value.push('')
   await nextTick()
-  const last = rows.value && rows.value.querySelectorAll('input')
-  if (last && last.length) last[last.length - 1].focus()
+  const last: any = rows.value && rows.value.querySelectorAll('input')
+  if (last && last.length) (last[last.length - 1] as any).focus()
 }
-const drop = (i) => { if (options.value.length > 2) options.value.splice(i, 1); else options.value[i] = '' }
+const drop = (i: any) => { if (options.value.length > 2) options.value.splice(i, 1); else options.value[i] = '' }
 function ask() {
   if (!ready.value) return
   emit('ask', { question: question.value.trim(), options: options.value.map((o) => o.trim()).filter(Boolean), multi: multi.value })

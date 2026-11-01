@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * DIRECT MESSAGES — the place, not a section of one space's rail.
  *
@@ -20,12 +21,12 @@ import SpaceAvatar from './SpaceAvatar.vue'
 import SpaceIcon from './SpaceIcon.vue'
 
 const props = defineProps({
-  rows: { type: Array, default: () => [] },     /* space_dms() */
+  rows: { type: Array as PropType<any[]>, default: () => [] },     /* space_dms() */
   me: { type: String, default: '' },
-  spaces: { type: Array, default: () => [] },   /* to say which community a row is in */
+  spaces: { type: Array as PropType<any[]>, default: () => [] },   /* to say which community a row is in */
   /* a member's coaching conversation, pinned above every other (the social layout keeps it here
      rather than as a place of its own): its unread, or null where there is none to pin */
-  pinned: { type: Object, default: null },        /* { unread, chat, host } — chat false: sessions alone; host: a coach's own sessions */
+  pinned: { type: Object as PropType<any>, default: null },        /* { unread, chat, host } — chat false: sessions alone; host: a coach's own sessions */
 })
 const emit = defineEmits(['open', 'compose', 'pinned'])
 const D = computed(() => us('spaces').dms.main)
@@ -33,18 +34,18 @@ const R = computed(() => us('spaces').rail.main)
 
 const q = ref('')
 /* a direct message has no name of its own: it is who is in it */
-const titleOf = (row) => {
-  const said = (row.people || []).map((p) => p.name).filter(Boolean)
+const titleOf = (row: any) => {
+  const said = (row.people || []).map((p: any) => p.name).filter(Boolean)
   if (!said.length) return R.value.self
   if (said.length <= 3) return said.join(', ')
   return said.slice(0, 2).join(', ') + ' ' + (R.value.more || '+{n}').replace('{n}', said.length - 2)
 }
-const nameOf = (row, id) => (id === props.me ? D.value.you : ((row.people || []).find((p) => p.id === id) || {}).name || R.value.someone)
+const nameOf = (row: any, id: any) => (id === props.me ? D.value.you : ((row.people || []).find((p: any) => p.id === id) || {}).name || R.value.someone)
 /* The last line. Whose it is, is said only where it is not already obvious: between two people the
    name is on the row above, so their own line stands bare and only the reader's own is marked
    "You"; in a conversation between three or more, every line is named. A voice note or a file has
    no words, so it is named instead of quoted. */
-const lineOf = (row) => {
+const lineOf = (row: any) => {
   const l = row.last
   if (!l) return D.value['nothing-said']
   const body = l.kind === 'voice' ? D.value.voice : l.kind === 'file' ? D.value.file : plainBody(l.body, {})
@@ -53,21 +54,22 @@ const lineOf = (row) => {
   if (!mine && !many) return body
   return (D.value.line || '{who}: {what}').replace('{who}', nameOf(row, l.author)).replace('{what}', body)
 }
-const when = (v) => {
+const when = (v: any) => {
   const d = new Date(v)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   if (isNaN(d)) return ''
   const mins = Math.max(1, Math.round((Date.now() - d.getTime()) / 60000))
   if (mins < 60) return mins + 'm'
   const hrs = Math.round(mins / 60)
   return hrs < 24 ? hrs + 'h' : Math.round(hrs / 24) + 'd'
 }
-const spaceName = (row) => row.space_name || ((props.spaces || []).find((s) => s.id === row.space) || {}).name || ''
+const spaceName = (row: any) => row.space_name || ((props.spaces || []).find((s) => (s as any).id === row.space) || {}).name || ''
 const shown = computed(() => {
   const t = q.value.trim().toLowerCase()
   if (!t) return props.rows
   return props.rows.filter((r) => (titleOf(r) + ' ' + lineOf(r)).toLowerCase().includes(t))
 })
-const unread = computed(() => props.rows.filter((r) => r.unread > 0).length)
+const unread = computed(() => props.rows.filter((r) => (r as any).unread > 0).length)
 </script>
 
 <template>

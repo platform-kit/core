@@ -246,7 +246,7 @@ await ok('an empty list of areas never becomes an enum', async () => {
   assert.equal(mk(['abundance']).safeParse({ statementArea: 'abundance' }).success, true)
   assert.equal(mk(['abundance']).safeParse({ statementArea: 'nonsense' }).success, false, 'with areas, the enum still bites')
   /* and the schema that caused it is gone: nothing in the pipeline reads the filesystem for them */
-  const src = (await import('node:fs')).readFileSync(new URL('./enrich/pipeline.mjs', import.meta.url), 'utf8')
+  const src = (await import('node:fs')).readFileSync(new URL('./enrich/pipeline.mts', import.meta.url), 'utf8')
   assert.ok(!/z\.enum\(AREAS\.list\)/.test(src), 'the enum is not built from a directory read')
   assert.ok(/areaKeysFrom\(store\)/.test(src), 'the areas come from the store')
 })

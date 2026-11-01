@@ -36,7 +36,7 @@ console.log('\nONE PERSON, ONE FACE\n')
 
 /* 2 · and the seed resolves the same way wherever it is read */
 {
-  const t = readFileSync(join(KIT, 'src', 'lib', 'avatar.js'), 'utf8')
+  const t = readFileSync(join(KIT, 'src', 'lib', 'avatar.ts'), 'utf8')
   ok('seedOf reads the resolved seed as well as the chosen one', /person\.avatar_seed \|\| person\.seed/.test(t),
     'my_profile calls it `seed`; reading only avatar_seed there falls through to the id and draws a different face')
 }

@@ -8,8 +8,8 @@ sources:
     packages/kit/supabase/functions/_shared/api/shopify,
     packages/kit/theme/src/pages/CartHandoffPage.vue,
     packages/kit/build/storefront-api.test.mjs,
-    packages/kit/src/lib/cart.js,
-    packages/kit/src/lib/shipto.js,
+    packages/kit/src/lib/cart.ts,
+    packages/kit/src/lib/shipto.ts,
   ]
 reviewed: 2026-10-20
 ---

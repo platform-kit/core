@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* A booking type on its own page: /book/<slug>, no site chrome — the booker as the Coaching tab shows it, on the site's
    ground; the site's sign-in where the reader has none (every booking is an account's). Under cal.com's embed
    (?embed=<namespace>…) the page speaks the embed's messages (lib/cal-embed.js), so `Cal("init", { origin })` and
@@ -19,23 +19,24 @@ import SiteMark from '../components/SiteMark.vue'
 
 const props = defineProps({ path: { type: String, required: true } })
 const slug = computed(() => props.path.slice(ROUTES.book.length + 1).split('/')[0])
-const type = computed(() => (SESSIONS || []).find((s) => s.slug === slug.value && s.published !== false) || null)
+const type = computed(() => (SESSIONS || []).find((s: any) => s.slug === slug.value && s.published !== false) || null)
 const W = (us('library').coaching || {})['book-page'] || {}
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: type.value ? fill(W.title, { session: type.value.title }) : (W.none || ''), description: type.value ? (type.value.line || '') : '', path: props.path, noindex: true })
 
 /* the reader's bookings, for the allowance the options count */
-const rows = ref([])
-async function load() { if (!isSignedIn.value || !configured) { rows.value = []; return } const { data } = await supabase.from('bookings').select('uid,event,start_at,status,user_id,made_by').eq('user_id', user.value ? user.value.id : ''); rows.value = data || [] }
+const rows = ref<any>([])
+async function load() { if (!isSignedIn.value || !configured) { rows.value = []; return } const { data } = await (supabase as any).from('bookings').select('uid,event,start_at,status,user_id,made_by').eq('user_id', user.value ? user.value.id : ''); rows.value = data || [] }
 onIdentity(load)
 const options = computed(() => sessionOptions(rows.value).filter((o) => o.slug === slug.value))
 const notMine = computed(() => isSignedIn.value && type.value && !options.value.length)
-function openSignIn() { if (window.DLauth) window.DLauth.open({ intent: 'book' }) }
+function openSignIn() { if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'book' }) }
 
 /* inside cal.com's embed: its messages */
 const ctx = calEmbedContext()
 const cal = calEmbedMessenger(ctx)
-let ro = null
+let ro: any = null
 onMounted(() => {
   if (ctx && ctx.theme && ['light', 'dark'].includes(ctx.theme)) document.documentElement.setAttribute('data-theme', ctx.theme)
   if (!cal) return
@@ -47,8 +48,8 @@ onMounted(() => {
 })
 watch(options, (o) => { if (cal && o.length) setTimeout(() => cal.linkReady(), 0) }, { immediate: true })
 onBeforeUnmount(() => { if (ro) ro.disconnect() })
-function onBooked(b) { if (cal && b) cal.booked({ ...b, eventTypeId: type.value ? eventTypeId(type.value.slug) : null }) }
-function onMoved(b) { if (cal && b) cal.moved({ ...b, eventTypeId: type.value ? eventTypeId(type.value.slug) : null }) }
+function onBooked(b: any) { if (cal && b) cal.booked({ ...b, eventTypeId: type.value ? eventTypeId(type.value.slug) : null }) }
+function onMoved(b: any) { if (cal && b) cal.moved({ ...b, eventTypeId: type.value ? eventTypeId(type.value.slug) : null }) }
 </script>
 
 <template>

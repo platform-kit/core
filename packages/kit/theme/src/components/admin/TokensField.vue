@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * EVERY COLOUR THE LOOK NAMES, and a way back to each one.
  *
@@ -28,26 +29,27 @@ import { us } from 'platformkit/lib/content.js'
 
 const props = defineProps({
   /* { "<token>" | "<scope> <token>": "#hex" | { light, dark } } — what this site changed */
-  modelValue: { type: Object, default: () => ({}) },
+  modelValue: { type: Object as PropType<any>, default: () => ({}) },
   /* the look's own, per token: { token, scope, light, dark, kind } */
-  tokens: { type: Object, default: () => ({}) },
+  tokens: { type: Object as PropType<any>, default: () => ({}) },
 })
 const emit = defineEmits(['update:modelValue'])
 const W = computed(() => us('models').tokens || {})
-const say = (k, fallback) => (W.value.main || {})[k] || fallback
+const say = (k: any, fallback: any) => (W.value.main || {})[k] || fallback
 
 const chosen = computed(() => props.modelValue || {})
-const open = ref({})
+const open = ref<any>({})
 
 /* by where they apply, in the order somebody thinks about them */
 const ORDER = ['site', 'landing', 'qz', 'sp-page', 'reader']
 const groups = computed(() => {
-  const by = {}
+  const by: any = {}
   for (const [key, def] of Object.entries(props.tokens || {})) {
-    const g = def.scope || 'site'
+    const g = (def as any).scope || 'site'
+    // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
     ;(by[g] || (by[g] = [])).push({ key, ...def })
   }
-  for (const list of Object.values(by)) list.sort((a, b) => a.token.localeCompare(b.token))
+  for (const list of Object.values(by)) (list as any).sort((a: any, b: any) => a.token.localeCompare(b.token))
   const names = Object.keys(by).sort((a, b) => {
     const i = ORDER.indexOf(a), j = ORDER.indexOf(b)
     return (i < 0 ? 99 : i) - (j < 0 ? 99 : j) || a.localeCompare(b)
@@ -56,18 +58,18 @@ const groups = computed(() => {
 })
 
 /* what this field shows: what they chose, or the look's own behind it */
-const valueOf = (row, mode) => {
+const valueOf = (row: any, mode: any) => {
   const v = chosen.value[row.key]
   const own = typeof v === 'string' ? (mode === 'light' ? v : '') : (v && v[mode]) || ''
   return own || ''
 }
-const shownOf = (row, mode) => valueOf(row, mode) || row[mode] || ''
-const changed = (row) => !!(valueOf(row, 'light') || valueOf(row, 'dark'))
+const shownOf = (row: any, mode: any) => valueOf(row, mode) || row[mode] || ''
+const changed = (row: any) => !!(valueOf(row, 'light') || valueOf(row, 'dark'))
 
-function set(row, mode, value) {
+function set(row: any, mode: any, value: any) {
   const next = { ...chosen.value }
   const was = next[row.key]
-  const pair = typeof was === 'string' ? { light: was, dark: '' } : { light: (was && was.light) || '', dark: (was && was.dark) || '' }
+  const pair: any = typeof was === 'string' ? { light: was, dark: '' } : { light: (was && was.light) || '', dark: (was && was.dark) || '' }
   pair[mode] = String(value || '').trim()
   if (!pair.light && !pair.dark) delete next[row.key]
   else if (!pair.dark) next[row.key] = pair.light      /* a day-only change is just a colour */
@@ -75,7 +77,7 @@ function set(row, mode, value) {
   emit('update:modelValue', next)
 }
 /* PUT BACK DELETES THE KEY. It does not write the default in, for the reason at the top. */
-function putBack(row) {
+function putBack(row: any) {
   const next = { ...chosen.value }
   delete next[row.key]
   emit('update:modelValue', next)
@@ -99,13 +101,13 @@ const anyChanged = computed(() => Object.keys(chosen.value).length > 0)
             <span class="tf-chip" :style="{ background: shownOf(row, 'light') }"></span>
             <input
               v-if="row.kind === 'colour'" type="color" class="tf-input"
-              :value="shownOf(row, 'light')" @input="set(row, 'light', $event.target.value)" />
+              :value="shownOf(row, 'light')" @input="set(row, 'light', ($event.target as any).value)" />
           </label>
           <div class="tf-txt">
             <b>{{ row.token.replace(/^--/, '') }}</b>
             <input
               class="tf-val" type="text" :value="shownOf(row, 'light')"
-              :placeholder="row.light" @change="set(row, 'light', $event.target.value)" />
+              :placeholder="row.light" @change="set(row, 'light', ($event.target as any).value)" />
           </div>
           <div class="tf-acts">
             <button v-if="row.dark" type="button" class="tf-quiet" @click="open[row.key] = !open[row.key]">
@@ -118,11 +120,11 @@ const anyChanged = computed(() => Object.keys(chosen.value).length > 0)
               <span class="tf-chip" :style="{ background: shownOf(row, 'dark') }"></span>
               <input
                 v-if="row.kind === 'colour'" type="color" class="tf-input"
-                :value="shownOf(row, 'dark')" @input="set(row, 'dark', $event.target.value)" />
+                :value="shownOf(row, 'dark')" @input="set(row, 'dark', ($event.target as any).value)" />
             </label>
             <input
               class="tf-val" type="text" :value="shownOf(row, 'dark')"
-              :placeholder="row.dark" @change="set(row, 'dark', $event.target.value)" />
+              :placeholder="row.dark" @change="set(row, 'dark', ($event.target as any).value)" />
             <span class="tf-nightlbl">{{ say('at-night', 'at night') }}</span>
           </div>
         </div>

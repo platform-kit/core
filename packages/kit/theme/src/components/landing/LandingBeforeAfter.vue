@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { md } from './md.js'
 import SectionHead from './SectionHead.vue'
@@ -15,11 +15,11 @@ defineProps({
   start: { type: Number, default: 50 },
   size: { type: String, default: 'wide' },    /* wide | narrow */
 })
-const at = ref(null), el = ref(null)
+const at = ref<any>(null), el = ref<any>(null)
 let dragging = false
-function set(e) { const r = el.value.getBoundingClientRect(); at.value = Math.min(100, Math.max(0, ((e.clientX - r.left) / r.width) * 100)) }
-function down(e) { dragging = true; set(e); el.value.setPointerCapture(e.pointerId) }
-function move(e) { if (dragging) set(e) }
+function set(e: any) { const r = el.value.getBoundingClientRect(); at.value = Math.min(100, Math.max(0, ((e.clientX - r.left) / r.width) * 100)) }
+function down(e: any) { dragging = true; set(e); el.value.setPointerCapture(e.pointerId) }
+function move(e: any) { if (dragging) set(e) }
 function up() { dragging = false }
 </script>
 <template>
@@ -33,7 +33,7 @@ function up() { dragging = false }
           <span v-if="beforeLabel" class="lpba-lab lpba-lab-l" v-html="md(beforeLabel)"></span>
           <span v-if="afterLabel" class="lpba-lab lpba-lab-r" v-html="md(afterLabel)"></span>
           <span class="lpba-handle" aria-hidden="true"><i><svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l-4 5 4 5M13 5l4 5-4 5" /></svg></i></span>
-          <input type="range" min="0" max="100" :value="at ?? start" class="lpba-range" :aria-label="(beforeLabel || 'before') + ' / ' + (afterLabel || 'after')" @input="at = Number($event.target.value)" />
+          <input type="range" min="0" max="100" :value="at ?? start" class="lpba-range" :aria-label="(beforeLabel || 'before') + ' / ' + (afterLabel || 'after')" @input="at = Number(($event.target as any).value)" />
         </div>
       </slot>
     </div>

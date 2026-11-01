@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * THE SOCIAL LAYOUT'S NAVIGATION (community.layout: social) — two sections, as Circle and Skool keep
  * theirs. The first, with no heading: Home, Explore (where For You is on), Messages, Events,
@@ -24,13 +25,13 @@ const props = defineProps({
   view: { type: String, default: '' },
   network: { type: Boolean, default: false },
   events: { type: Boolean, default: true },
-  spaces: { type: Array, default: () => [] },
-  channels: { type: Array, default: () => [] },
-  unread: { type: Array, default: () => [] },
+  spaces: { type: Array as PropType<any[]>, default: () => [] },
+  channels: { type: Array as PropType<any[]>, default: () => [] },
+  unread: { type: Array as PropType<any[]>, default: () => [] },
   spaceId: { type: String, default: '' },
   channelId: { type: String, default: '' },
   /* the queues this reader answers, and what waits in each — exactly the chat layout's */
-  work: { type: Array, default: () => [] },     /* [{ key, count }] */
+  work: { type: Array as PropType<any[]>, default: () => [] },     /* [{ key, count }] */
   coachingUnread: { type: Number, default: 0 },
   dmUnread: { type: Number, default: 0 },
   mentions: { type: Number, default: 0 },
@@ -44,13 +45,13 @@ const props = defineProps({
   part: { type: String, default: 'full' },
   /* the spaces with something coming up, and the ones this reader keeps: their Events and
      Moderation rows (a space of several rooms carries its places here rather than as tabs) */
-  eventSpaces: { type: Array, default: () => [] },
-  keeps: { type: Array, default: () => [] },
+  eventSpaces: { type: Array as PropType<any[]>, default: () => [] },
+  keeps: { type: Array as PropType<any[]>, default: () => [] },
 })
 const emit = defineEmits(['view', 'space', 'open', 'place', 'drawer'])
 const W = computed(() => us('spaces').rail.main)
 const S = computed(() => us('network').shell.main)
-const count = (n) => (n > 99 ? '99+' : n || '')
+const count = (n: any) => (n > 99 ? '99+' : n || '')
 const C = (site && site.community) || {}
 
 /* THE FIRST SECTION AND WORK, from the one list */
@@ -61,42 +62,45 @@ const places = computed(() => socialPlaces({
   /* what this reader may not enter: kept in the list, marked, opening on the join card */
   locked: isSignedIn.value ? lockedPlaces({ home: !(props.network && net.access.known && !net.access.read), admitted: net.places }) : [],
 }))
-const wordOf = (m) => (m.place ? W.value[m.word] || m.word : m.word === 'saved' || m.word === 'drafts' || m.word === 'my-tickets' || m.word === 'coaching' ? W.value[m.word] : S.value[m.word])
-const QUEUE_ICON = { support: 'head', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
-const isOn = (key) => props.view === key || (key === 'net' && props.view === 'net' && !props.channelId)
+const wordOf = (m: any) => (m.place ? W.value[m.word] || m.word : m.word === 'saved' || m.word === 'drafts' || m.word === 'my-tickets' || m.word === 'coaching' ? W.value[m.word] : S.value[m.word])
+const QUEUE_ICON: any = { support: 'head', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
+const isOn = (key: any) => props.view === key || (key === 'net' && props.view === 'net' && !props.channelId)
 
 /* THE INBOX unfolds by hand, or while one of its rows is open; remembered per browser */
-const readSet = (k) => { try { return JSON.parse(localStorage.getItem(k) || '[]') } catch { return [] } }
-const writeSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
+const readSet = (k: any) => { try { return JSON.parse(localStorage.getItem(k) || '[]') } catch { return [] } }
+const writeSet = (k: any, v: any) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
 const inbox = computed(() => places.value.first.find((m) => m.group) || null)
 const inboxPinned = ref(readSet('pk.nav.inbox').length > 0)
-const inboxOpen = computed(() => inboxPinned.value || !!(inbox.value && inbox.value.rows.some((r) => r.key === props.view)))
+const inboxOpen = computed(() => inboxPinned.value || !!(inbox.value && inbox.value.rows.some((r: any) => r.key === props.view)))
 function toggleInbox() { inboxPinned.value = !inboxOpen.value; writeSet('pk.nav.inbox', inboxPinned.value ? [1] : []) }
 
 /* THE SPACES fold unless the reader is in one or opened it themselves */
 const opened = ref(readSet('pk.nav.open'))
-const isOpen = (id) => spaceOpen(id, props.spaceId, opened.value)
-function toggleSpace(id) {
-  const next = opened.value.includes(id) ? opened.value.filter((x) => x !== id) : [...opened.value, id]
+const isOpen = (id: any) => spaceOpen(id, props.spaceId, opened.value)
+function toggleSpace(id: any) {
+  const next = opened.value.includes(id) ? opened.value.filter((x: any) => x !== id) : [...opened.value, id]
   /* folding the space being read means: not pinned open; it stays unfolded while it is read */
   opened.value = next; writeSet('pk.nav.open', next)
 }
 /* a space's rooms, its feed first; a space of one room has nothing to unfold, and its row opens it
    (the page opens a space on what it holds — places.js frontOf) */
-const roomsOf = (id) => roomsIn(id, props.channels)
-const foldsOf = (id) => foldOf(id, props.channels)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
+const roomsOf = (id: any) => roomsIn(id, props.channels)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
+const foldsOf = (id: any) => foldOf(id, props.channels)
 /* what a space of several rooms unfolds to: its rooms, then Events, People and Moderation */
-const itemsOf = (id) => spaceItems(id, props.channels, { events: props.eventSpaces.includes(id), keeps: props.keeps.includes(id) })
-const PLACE_ICON = { events: 'calendar', people: 'people', keeping: 'shield' }
-const PLACE_WORD = { events: 'events', people: 'directory', keeping: 'keeping' }
-const placeOn = (id, key) => props.spaceId === id && props.view === (key === 'events' ? 'space-events' : key)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
+const itemsOf: any = (id: any) => spaceItems(id, props.channels, { events: props.eventSpaces.includes(id), keeps: props.keeps.includes(id) })
+const PLACE_ICON: any = { events: 'calendar', people: 'people', keeping: 'shield' }
+const PLACE_WORD: any = { events: 'events', people: 'directory', keeping: 'keeping' }
+const placeOn = (id: any, key: any) => props.spaceId === id && props.view === (key === 'events' ? 'space-events' : key)
 /* a space of one room is lit while the reader is in it — never while one of the first section's places,
    the Inbox's rows, the index or Browse is open, though the page still remembers the space last read */
-const spaceOnHere = (id) => props.spaceId === id && !foldsOf(id).length && !['index', 'discover'].includes(props.view)
-  && !places.value.first.some((m) => m.key === props.view) && !(inbox.value && inbox.value.rows.some((r) => r.key === props.view))
-const rowOf = (id) => props.unread.find((r) => r.channel === id) || null
-const unreadIn = (id) => { const r = rowOf(id); return r ? unreadOf(r) : 0 }
-const spaceUnread = (id) => roomsOf(id).reduce((n, c) => n + unreadIn(c.id), 0)
+const spaceOnHere = (id: any) => props.spaceId === id && !foldsOf(id).length && !['index', 'discover'].includes(props.view)
+  && !places.value.first.some((m) => m.key === props.view) && !(inbox.value && inbox.value.rows.some((r: any) => r.key === props.view))
+const rowOf = (id: any) => props.unread.find((r) => (r as any).channel === id) || null
+const unreadIn = (id: any) => { const r = rowOf(id); return r ? unreadOf(r) : 0 }
+const spaceUnread = (id: any) => roomsOf(id).reduce((n, c) => n + unreadIn((c as any).id), 0)
 
 /* THE SPACES SECTION is for somebody with a space, or a space they could join: a reader in none, with
    none open to them (a members' community, seen by somebody who is not one), is not shown a heading and
@@ -126,9 +130,9 @@ watch(() => [props.network, isSignedIn.value], ([on, signed]) => { if (on && sig
               <svg class="sn-chev" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 8 4 4 4-4" /></svg>
             </button>
             <div class="sn-fold" :class="{ open: inboxOpen }">
-              <ul class="sn-list sn-fold-in sn-sub" :inert="!inboxOpen || null">
+              <!-- @vue-expect-error TS2322, from the conversion: Type 'true | null' is not assignable to type 'Booleanish | undefined'. --><ul class="sn-list sn-fold-in sn-sub" :inert="!inboxOpen || null">
                 <li v-for="r in m.rows" :key="r.key">
-                  <button type="button" class="sn-i sn-small" :class="{ on: view === r.key }" :aria-current="view === r.key ? 'page' : null" @click="emit('view', r.key)">
+                  <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "page" | "time" | Booleanish | "date" | "location" | undefined'. --><button type="button" class="sn-i sn-small" :class="{ on: view === r.key }" :aria-current="view === r.key ? 'page' : null" @click="emit('view', r.key)">
                     <span class="sn-ic"><SpaceIcon :name="QUEUE_ICON[r.key] || 'dm'" :size="17" /></span>
                     <span class="sn-w">{{ r.key === 'dms' ? S.messages : W[r.key] }}</span>
                     <em v-if="r.count" class="sn-c">{{ count(r.count) }}</em>
@@ -138,7 +142,7 @@ watch(() => [props.network, isSignedIn.value], ([on, signed]) => { if (on && sig
               </ul>
             </div>
           </template>
-          <button v-else type="button" class="sn-i" :class="{ on: isOn(m.key) }" :aria-current="isOn(m.key) ? 'page' : null" @click="emit('view', m.key)">
+          <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "page" | "time" | Booleanish | "date" | "location" | undefined'. --><button v-else type="button" class="sn-i" :class="{ on: isOn(m.key) }" :aria-current="isOn(m.key) ? 'page' : null" @click="emit('view', m.key)">
             <span class="sn-ic"><SpaceIcon :name="m.icon" :size="20" /></span>
             <span class="sn-w">{{ wordOf(m) }}</span>
             <em v-if="m.count" class="sn-c">{{ count(m.count) }}</em>
@@ -163,8 +167,8 @@ watch(() => [props.network, isSignedIn.value], ([on, signed]) => { if (on && sig
               </button>
             </div>
             <div v-if="foldsOf(sp.id).length" class="sn-fold" :class="{ open: isOpen(sp.id) }">
-              <ul class="sn-rooms sn-fold-in" :inert="!isOpen(sp.id) || null">
-                <li v-for="it in itemsOf(sp.id)" :key="it.key" :class="{ 'sn-place-first': it.kind === 'place' && it.key === itemsOf(sp.id).find((x) => x.kind === 'place').key }">
+              <!-- @vue-expect-error TS2322, from the conversion: Type 'true | null' is not assignable to type 'Booleanish | undefined'. --><ul class="sn-rooms sn-fold-in" :inert="!isOpen(sp.id) || null">
+                <li v-for="it in itemsOf(sp.id)" :key="it.key" :class="{ 'sn-place-first': it.kind === 'place' && it.key === itemsOf(sp.id).find((x: any) => x.kind === 'place').key }">
                   <button v-if="it.kind === 'room'" type="button" class="sn-room" :class="{ on: channelId === it.key && view === 'channel', bold: unreadIn(it.key) > 0 }" @click="emit('open', it.key)">
                     <SpaceIcon :name="it.room.mode === 'feed' ? 'feed' : it.room.visibility === 'private' ? 'lock' : 'hash'" :size="14" />
                     <span>{{ it.room.name }}</span>

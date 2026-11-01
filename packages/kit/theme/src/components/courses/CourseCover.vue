@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A course's cover: its picture where it has one, else one drawn from its title in the colour the kit gives a book
  * with no cover of its own (coverTint), so a catalogue of courses without pictures still reads as a shelf of distinct

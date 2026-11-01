@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * WHO IS IN A TEAM — the rows beside the file, in the team's own drawer.
  *
@@ -25,21 +25,21 @@ const props = defineProps({
   saved: { type: Boolean, default: true },
 })
 const W = computed(() => (us('teams').members || {}).main || {})
-const rows = ref([])
+const rows = ref<any>([])
 /* null while unknown, false where the file exists and the row does not — see teamProjected */
-const projected = ref(null)
+const projected = ref<any>(null)
 const loading = ref(false)
 const err = ref('')
 const asking = ref(false)
 const q = ref('')
-const found = ref([])
+const found = ref<any>([])
 const looking = ref(false)
 const busy = ref('')
 
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-const how = (r) => (r.source === 'fill' ? W.value['by-fill'] : r.source === 'invite' ? W.value['by-invite'] : W.value['by-manual'])
-const when = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch (e) { return '' } }
-const nameOf = (r) => r.name || r.username || ''
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const how = (r: any) => (r.source === 'fill' ? W.value['by-fill'] : r.source === 'invite' ? W.value['by-invite'] : W.value['by-manual'])
+const when = (iso: any) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch (e) { return '' } }
+const nameOf = (r: any) => r.name || r.username || ''
 
 async function load() {
   if (!props.team || !props.saved) { rows.value = []; projected.value = null; return }
@@ -53,7 +53,7 @@ onMounted(load)
 watch(() => [props.team, props.saved], load)
 
 /* the search is the People section's read, a beat after the typing stops */
-let t = null
+let t: any = null
 watch(q, (v) => {
   clearTimeout(t)
   if (!v.trim()) { found.value = []; looking.value = false; return }
@@ -63,17 +63,17 @@ watch(q, (v) => {
   }, 300)
 })
 
-async function add(p) {
+async function add(p: any) {
   busy.value = p.id; err.value = ''
   try { await inviteToTeam(props.team, p.id); q.value = ''; found.value = []; asking.value = false; await load() }
   catch (e) { err.value = W.value.failed } finally { busy.value = '' }
 }
-async function drop(r) {
+async function drop(r: any) {
   busy.value = r.user_id; err.value = ''
   try { await removeFromTeam(props.team, r.user_id); await load() }
   catch (e) { err.value = W.value.failed } finally { busy.value = '' }
 }
-const already = (id) => rows.value.some((r) => r.user_id === id)
+const already = (id: any) => rows.value.some((r: any) => (r as any).user_id === id)
 </script>
 
 <template>

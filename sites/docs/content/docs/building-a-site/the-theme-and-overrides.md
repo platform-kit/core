@@ -4,25 +4,25 @@ description: The theme's manifest, the virtual modules the plugin answers, repla
 order: 47
 sources:
   [
-    packages/kit/src/lib/nav.js,
-    packages/kit/theme/src/theme.js,
-    packages/kit/vite/index.mjs,
+    packages/kit/src/lib/nav.ts,
+    packages/kit/theme/src/theme.ts,
+    packages/kit/vite/index.mts,
     packages/kit/build/site-modules.test.mjs,
-    packages/kit/build/theme.mjs,
-    packages/kit/build/site.mjs,
-    packages/kit/src/lib/router.js,
-    packages/kit/theme/src/instrument/ui/results/tabs.js,
+    packages/kit/build/theme.mts,
+    packages/kit/build/site.mts,
+    packages/kit/src/lib/router.ts,
+    packages/kit/theme/src/instrument/ui/results/tabs.ts,
   ]
 reviewed: 2026-10-31
 ---
 
 ## The manifest
 
-`packages/kit/theme/src/theme.js` names the theme's **entry** (`main.js`), its **design** stylesheet, its **strings** directory, its **section schemas**, its **build steps** (`steps`: modules exporting a step record each, run among the kit's — see [the build steps](/content/docs/building-a-site/dev-build-and-deploy#the-build-steps)), and what the phone probe lets run to the edge (`probe.allow`, and `probe.rails` for a scroller that may leave on the right while keeping its left gutter). The components are every `.vue` under `src`, registered by file name; the kit refuses a theme where two share one. `loadTheme()` in the kit reads the manifest, and a second theme meets the same shape.
+`packages/kit/theme/src/theme.ts` names the theme's **entry** (`main.js`), its **design** stylesheet, its **strings** directory, its **section schemas**, its **build steps** (`steps`: modules exporting a step record each, run among the kit's — see [the build steps](/content/docs/building-a-site/dev-build-and-deploy#the-build-steps)), and what the phone probe lets run to the edge (`probe.allow`, and `probe.rails` for a scroller that may leave on the right while keeping its left gutter). The components are every `.vue` under `src`, registered by file name; the kit refuses a theme where two share one. `loadTheme()` in the kit reads the manifest, and a second theme meets the same shape.
 
 ## The virtual modules
 
-The Vite plugin (`packages/kit/vite/index.mjs`, `platformkit()` in a two-line `vite.config.js`) reads the config and answers a family of import specifiers. Under Node — the build scripts, the tests — each has a fallback in the packages' `imports` maps, so the same code runs both sides. In development, the plugin watches Markdown changes and runs the matching build phases; it reports a failed step and does not continue later refresh phases for that change. It also serves the development-only `GET /__platformkit/site-meta` endpoint used by workspace directory cards, applying the same head resolver as the site.
+The Vite plugin (`packages/kit/vite/index.mts`, `platformkit()` in a two-line `vite.config.js`) reads the config and answers a family of import specifiers. Under Node — the build scripts, the tests — each has a fallback in the packages' `imports` maps, so the same code runs both sides. In development, the plugin watches Markdown changes and runs the matching build phases; it reports a failed step and does not continue later refresh phases for that change. It also serves the development-only `GET /__platformkit/site-meta` endpoint used by workspace directory cards, applying the same head resolver as the site.
 
 | Specifier                       | Exports                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | From                           |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
@@ -48,7 +48,7 @@ Because the scan now reads the site's code, a construct esbuild refuses there (a
 
 The public `#site` config also carries the community, network and coaching settings used by the theme; the assembled function-side config preserves the network access and coaching booking preferences needed by server-side flows. The CMS is compiled into production when the resolved content store is rows; a backend and repository alone do not turn it on when content is file-backed.
 
-The contracts (`INSTRUMENT`, `RECOMMENDATIONS` in `packages/kit/build/site.mjs`) are what let the theme's admin name a reading's areas and levels, or the hub ask for recommendations, on a site that has neither: the demo gets empty lists and nothing breaks.
+The contracts (`INSTRUMENT`, `RECOMMENDATIONS` in `packages/kit/build/site.mts`) are what let the theme's admin name a reading's areas and levels, or the hub ask for recommendations, on a site that has neither: the demo gets empty lists and nothing breaks.
 
 `invites` is the one that decides whether something is _shown_. It answers whether the site can **earn** recommendations for somebody who has none — a diagnostic to take, a survey, anything other than waiting for them to read more. The kit's answer is no, and then Recommended For You is not offered at all until there is something in it: no toggle, no card, no mention of it. A site that says yes gets the view offered while it is still empty, because there the empty view is not empty — it carries the invitation.
 

@@ -49,7 +49,7 @@ const walk = (d, out = []) => {
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {
     const p = path.join(d, e.name)
     if (e.isDirectory()) { if (!/^(node_modules|dist)$/.test(e.name) && !e.name.startsWith('.')) walk(p, out) }
-    else if (/\.(css|vue|js)$/.test(e.name)) out.push(p)
+    else if (/\.(css|vue|js|ts)$/.test(e.name)) out.push(p)
   }
   return out
 }

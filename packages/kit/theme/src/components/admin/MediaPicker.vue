@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The library as a picker: the Media page in a modal (MediaPage `pick`), opened by any file field through
  * lib/admin/media-pick.js and closed with the chosen file or nothing. Mounted once by the admin; the manager's chunk is
@@ -29,7 +29,7 @@ const S = computed(() => us('media').page.sources)
 
 /* asked once: which sources this deployment has keys for. Null until the answer is in, so the
    tab bar is not drawn and then taken away again. */
-const sources = ref(null)
+const sources = ref<any>(null)
 const tab = ref('library')
 
 async function askSources() {
@@ -39,12 +39,12 @@ async function askSources() {
 
 /* a source's own name is a word of the scope, under its key — so a new source needs one line of
    markdown and no change here */
-const nameOf = (key) => S.value[key] || key
-const shown = computed(() => (pickState.value && pickState.value.pictures ? (sources.value || []) : []))
+const nameOf = (key: any) => S.value[key] || key
+const shown = computed(() => (pickState.value && (pickState.value as any).pictures ? (sources.value || []) : []))
 
-function onKey(e) { if (e.key === 'Escape') answerPick(null) }
+function onKey(e: any) { if (e.key === 'Escape') answerPick(null) }
 watch(pickState, (s) => {
-  if (s) { document.addEventListener('keydown', onKey); tab.value = 'library'; if (s.pictures) askSources() }
+  if (s) { document.addEventListener('keydown', onKey); tab.value = 'library'; if ((s as any).pictures) askSources() }
   else document.removeEventListener('keydown', onKey)
 })
 </script>

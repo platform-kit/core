@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * THE NETWORK, ON ITS OWN — /feed and everything under it, laid out the way every social app is:
  * the network's own navigation on the left (NetRail; a bar along the bottom on a phone), its column
@@ -28,13 +28,13 @@ const view = computed(() => {
   if (p === ROUTES.feed + '/explore') return 'explore'
   return 'home'
 })
-const column = ref(null)
+const column = ref<any>(null)
 /* THE POST WINDOW: the left rail's Post button and the phone's floating one open the composer over the page */
 const composing = ref(false)
-const signIn = () => { if (window.DLauth) window.DLauth.open() }
+const signIn = () => { if ((window as any).DLauth) (window as any).DLauth.open() }
 function compose() { if (!isSignedIn.value) return signIn(); composing.value = true }
 function posted() { composing.value = false; if (column.value) column.value.refresh() }
-function onKey(e) { if (e.key === 'Escape') composing.value = false }
+function onKey(e: any) { if (e.key === 'Escape') composing.value = false }
 watch(composing, (on) => { if (on) document.addEventListener('keydown', onKey); else document.removeEventListener('keydown', onKey) })
 </script>
 

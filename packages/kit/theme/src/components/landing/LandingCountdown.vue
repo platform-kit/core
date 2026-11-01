@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { md } from './md.js'
 import { us } from 'platformkit/lib/strings.js'
@@ -21,7 +21,7 @@ const props = defineProps({
 })
 const W = (us('sections').countdown || {}).unit || {}
 const left = ref(0)
-let timer = null
+let timer: any = null
 function target() {
   if (props.until) return new Date(props.until).getTime()
   if (props.fomo > 0) { const k = 'lp.fomo.' + props.fomo; let t = 0; try { t = Number(localStorage.getItem(k)) || 0; if (!t) { t = Date.now() + props.fomo * 3600e3; localStorage.setItem(k, String(t)) } } catch (e) { t = Date.now() + props.fomo * 3600e3 } return t }
@@ -31,7 +31,7 @@ function tick() { const t = target(); left.value = t ? Math.max(0, t - Date.now(
 onMounted(() => { tick(); timer = setInterval(tick, 1000) })
 onBeforeUnmount(() => clearInterval(timer))
 const parts = computed(() => { const s = Math.floor(left.value / 1000); return [{ v: Math.floor(s / 86400), l: W.days }, { v: Math.floor((s % 86400) / 3600), l: W.hours }, { v: Math.floor((s % 3600) / 60), l: W.minutes }, { v: s % 60, l: W.seconds }] })
-const pad = (n) => String(n).padStart(2, '0')
+const pad = (n: any) => String(n).padStart(2, '0')
 const done = computed(() => target() > 0 && left.value <= 0)
 </script>
 <template>

@@ -1,10 +1,11 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { computed, reactive, ref, watch } from 'vue'
 import { supabase } from 'platformkit/lib/supabase.js'
 import { us } from 'platformkit/lib/strings.js'
 
 const props = defineProps({
-  accounts: { type: Array, default: () => [] },
+  accounts: { type: Array as PropType<any[]>, default: () => [] },
 })
 
 const W = us('social').automations?.main || {}
@@ -15,16 +16,16 @@ const actionError = ref('')
 const notice = ref('')
 const pane = ref('rules')
 const accountId = ref('')
-const rules = ref([])
-const events = ref([])
-const responses = ref([])
-const bots = ref([])
-const routes = ref([])
+const rules = ref<any>([])
+const events = ref<any>([])
+const responses = ref<any>([])
+const bots = ref<any>([])
+const routes = ref<any>([])
 const routeUnavailable = ref('')
 const selectedRuleId = ref('')
 const selectedResponseId = ref('')
 const responseText = ref('')
-const form = reactive({
+const form = reactive<any>({
   id: '',
   eventKind: 'comment',
   keyword: '',
@@ -35,36 +36,36 @@ const form = reactive({
 })
 
 const viewableAccounts = computed(() =>
-  props.accounts.filter((account) => account.permissions?.view_results === true),
+  props.accounts.filter((account) => (account as any).permissions?.view_results === true),
 )
 const selectedAccount = computed(
-  () => viewableAccounts.value.find((account) => account.id === accountId.value) || null,
+  () => viewableAccounts.value.find((account) => (account as any).id === accountId.value) || null,
 )
-const canPublish = computed(() => selectedAccount.value?.permissions?.publish_now === true)
-const eventRoutes = computed(() => routes.value.find((route) => route.eventKind === form.eventKind))
-const supportedDestinations = computed(() => eventRoutes.value?.destinations || [])
-const selectedResponse = computed(
-  () => responses.value.find((response) => response.id === selectedResponseId.value) || null,
+const canPublish = computed(() => (selectedAccount.value as any)?.permissions?.publish_now === true)
+const eventRoutes = computed(() => routes.value.find((route: any) => (route as any).eventKind === form.eventKind))
+const supportedDestinations = computed(() => (eventRoutes.value as any)?.destinations || [])
+const selectedResponse = computed<any>(
+  () => responses.value.find((response: any) => (response as any).id === selectedResponseId.value) || null,
 )
-const eventById = computed(() => new Map(events.value.map((event) => [event.id, event])))
-const eventForResponse = computed(() =>
-  selectedResponse.value ? eventById.value.get(selectedResponse.value.event_id) || null : null,
+const eventById = computed(() => new Map(events.value.map((event: any) => [(event as any).id, event])))
+const eventForResponse = computed<any>(() =>
+  selectedResponse.value ? eventById.value.get((selectedResponse.value as any).event_id) || null : null,
 )
-const responseStatus = (response) => {
+const responseStatus = (response: any) => {
   if (response.mode === 'automatic' && response.status === 'draft') return W['queued-status']
   return W[`${response.status}-status`] || response.status
 }
-const destinationLabel = (destination) =>
+const destinationLabel = (destination: any) =>
   destination === 'public_reply' ? W['public-label'] : W['private-label']
-const visibilityText = (destination) =>
+const visibilityText = (destination: any) =>
   destination === 'public_reply' ? W['public-visibility'] : W['private-visibility']
-const eventLabel = (kind) =>
+const eventLabel = (kind: any) =>
   kind === 'comment' ? W['comment-event'] : kind === 'dm' ? W['dm-event'] : ''
-const eventExcerpt = (eventId) => eventById.value.get(eventId)?.body || W['empty-text']
-const dateLabel = (value) => (value ? new Date(value).toLocaleString() : '')
+const eventExcerpt = (eventId: any) => (eventById.value.get(eventId) as any)?.body || W['empty-text']
+const dateLabel = (value: any) => (value ? new Date(value).toLocaleString() : '')
 
-async function call(action, fields = {}) {
-  const { data, error } = await supabase.functions.invoke('social', {
+async function call(action: any, fields = {}) {
+  const { data, error } = await (supabase as any).functions.invoke('social', {
     body: { action, ...fields },
   })
   if (error || data?.error) throw error || new Error(data.error)
@@ -74,23 +75,23 @@ async function call(action, fields = {}) {
 function resetForm() {
   Object.assign(form, {
     id: '',
-    eventKind: routes.value.some((route) => route.eventKind === 'comment') ? 'comment' : 'dm',
+    eventKind: routes.value.some((route: any) => (route as any).eventKind === 'comment') ? 'comment' : 'dm',
     keyword: '',
-    botSlug: bots.value[0]?.slug || '',
+    botSlug: (bots.value[0] as any)?.slug || '',
     destinations: [],
     mode: 'draft',
     enabled: true,
   })
   selectedRuleId.value = ''
   if (form.eventKind === 'comment') {
-    const route = routes.value.find((item) => item.eventKind === 'comment')
-    form.destinations = route?.destinations.includes('public_reply') ? ['public_reply'] : []
-  } else if (routes.value.some((item) => item.eventKind === 'dm')) {
+    const route = routes.value.find((item: any) => (item as any).eventKind === 'comment')
+    form.destinations = (route as any)?.destinations.includes('public_reply') ? ['public_reply'] : []
+  } else if (routes.value.some((item: any) => (item as any).eventKind === 'dm')) {
     form.destinations = ['private_dm']
   }
 }
 
-function editRule(rule) {
+function editRule(rule: any) {
   selectedRuleId.value = rule.id
   Object.assign(form, {
     id: rule.id,
@@ -105,20 +106,20 @@ function editRule(rule) {
   notice.value = ''
 }
 
-function chooseEvent(eventKind) {
+function chooseEvent(eventKind: any) {
   form.eventKind = eventKind
-  const route = routes.value.find((item) => item.eventKind === eventKind)
+  const route = routes.value.find((item: any) => (item as any).eventKind === eventKind)
   form.destinations =
     eventKind === 'dm'
-      ? route?.destinations.includes('private_dm')
+      ? (route as any)?.destinations.includes('private_dm')
         ? ['private_dm']
         : []
-      : route?.destinations.includes('public_reply')
+      : (route as any)?.destinations.includes('public_reply')
         ? ['public_reply']
         : []
 }
 
-async function loadAccount(id) {
+async function loadAccount(id: any) {
   if (!id) return
   loading.value = true
   loadError.value = ''
@@ -131,9 +132,9 @@ async function loadAccount(id) {
     events.value = result.events || []
     responses.value = result.responses || []
     bots.value = result.bots || []
-    if (!rules.value.some((rule) => rule.id === selectedRuleId.value)) resetForm()
-    if (!responses.value.some((response) => response.id === selectedResponseId.value))
-      selectedResponseId.value = responses.value[0]?.id || ''
+    if (!rules.value.some((rule: any) => (rule as any).id === selectedRuleId.value)) resetForm()
+    if (!responses.value.some((response: any) => (response as any).id === selectedResponseId.value))
+      selectedResponseId.value = (responses.value[0] as any)?.id || ''
     try {
       const options = await call('automation_options', { accountId: id })
       routes.value = options.routes || []
@@ -142,7 +143,7 @@ async function loadAccount(id) {
       routes.value = []
       routeUnavailable.value = W['options-failed']
     }
-    if (!rules.value.some((rule) => rule.id === selectedRuleId.value)) resetForm()
+    if (!rules.value.some((rule: any) => (rule as any).id === selectedRuleId.value)) resetForm()
   } catch {
     loadError.value = W['load-failed']
     rules.value = []
@@ -180,14 +181,14 @@ async function saveRule() {
   }
 }
 
-async function reviewResponse(decision) {
+async function reviewResponse(decision: any) {
   if (!selectedResponse.value) return
   busy.value = true
   actionError.value = ''
   notice.value = ''
   try {
     await call('automation_response', {
-      responseId: selectedResponse.value.id,
+      responseId: (selectedResponse.value as any).id,
       decision,
       ...(decision === 'send' ? { text: responseText.value } : {}),
     })
@@ -206,10 +207,10 @@ watch(
   (accounts) => {
     if (
       !accounts.some(
-        (account) => account.id === accountId.value && account.permissions?.view_results,
+        (account) => (account as any).id === accountId.value && (account as any).permissions?.view_results,
       )
     )
-      accountId.value = accounts.find((account) => account.permissions?.view_results)?.id || ''
+      accountId.value = (accounts.find((account) => (account as any).permissions?.view_results) as any)?.id || ''
   },
   { immediate: true },
 )
@@ -221,7 +222,7 @@ watch(
   { immediate: true },
 )
 watch(selectedResponse, (response) => {
-  responseText.value = response?.body || ''
+  responseText.value = (response as any)?.body || ''
 })
 </script>
 
@@ -254,8 +255,8 @@ watch(selectedResponse, (response) => {
         </button>
         <button type="button" :aria-pressed="pane === 'responses'" @click="pane = 'responses'">
           {{ W['responses-tab'] }}
-          <span v-if="responses.some((item) => item.status === 'draft')" class="sa-count">
-            {{ responses.filter((item) => item.status === 'draft').length }}
+          <span v-if="responses.some((item: any) => item.status === 'draft')" class="sa-count">
+            {{ responses.filter((item: any) => item.status === 'draft').length }}
           </span>
         </button>
       </nav>
@@ -290,7 +291,7 @@ watch(selectedResponse, (response) => {
               <strong>{{ rule.keyword }}</strong>
               <small
                 >{{ eventLabel(rule.event_kind) }} ·
-                {{ bots.find((bot) => bot.slug === rule.bot_slug)?.name || rule.bot_slug }}</small
+                {{ bots.find((bot: any) => bot.slug === rule.bot_slug)?.name || rule.bot_slug }}</small
               >
             </span>
             <span class="sa-rule-meta">
@@ -331,12 +332,12 @@ watch(selectedResponse, (response) => {
               :value="form.eventKind"
               class="ui-select"
               :disabled="!canPublish || !routes.length"
-              @change="chooseEvent($event.target.value)"
+              @change="chooseEvent(($event.target as any).value)"
             >
-              <option v-if="routes.some((route) => route.eventKind === 'comment')" value="comment">
+              <option v-if="routes.some((route: any) => route.eventKind === 'comment')" value="comment">
                 {{ W['comment-event'] }}
               </option>
-              <option v-if="routes.some((route) => route.eventKind === 'dm')" value="dm">
+              <option v-if="routes.some((route: any) => route.eventKind === 'dm')" value="dm">
                 {{ W['dm-event'] }}
               </option>
             </select>

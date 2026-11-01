@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * THE COMMENT THREAD ON ITS OWN PAGE, FOR AN IFRAME: /embed/comments?kind=&subject=&title=&url=
  *
@@ -62,6 +62,7 @@ function ancestor() {
 
 const state = ref('reading')   /* reading | ok | refused | nothing */
 onMounted(async () => {
+  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   setHead({ title: title || 'Comments', path: props.path || '/embed/comments', noindex: true })
   /* the host's page shows through: the site's own ground inside a frame on somebody's white blog
      reads as a grey box they forgot to style. The words and the rules are ours; the paper is theirs. */
@@ -69,9 +70,10 @@ onMounted(async () => {
   if (!subject) { state.value = 'nothing'; return }
   let domains = []
   if (configured) {
-    const { data } = await supabase.rpc('comment_domains')
+    const { data } = await (supabase as any).rpc('comment_domains')
     domains = Array.isArray(data) ? data : []
   }
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'.
   state.value = embedAllowed(ancestor(), domains, location.origin) ? 'ok' : 'refused'
   tell()
 })
@@ -83,8 +85,8 @@ onMounted(async () => {
  * document's own height, and in a frame two hundred pixels tall it would open mostly off the
  * bottom — a sign-in nobody can reach, which is the one thing this frame exists to offer. So
  * whatever is over the page is measured too, and the frame grows while it is there. */
-let ro = null, mo = null
-const root = ref(null)
+let ro: any = null, mo: any = null
+const root = ref<any>(null)
 function tell() {
   if (typeof ResizeObserver === 'undefined' || !root.value) return
   const say = () => {

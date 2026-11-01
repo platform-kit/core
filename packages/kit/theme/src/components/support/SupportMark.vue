@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import SiteMark from '../SiteMark.vue'
 /*
  * Who is on the other side, as a round mark: the site's own mark until a person has answered,

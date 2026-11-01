@@ -26,7 +26,7 @@
   COLOUR COMES FROM THE LOOK, read off the element rather than passed as a hue, so a visualizer in
   a site's palette is the default. No colour literal anywhere below.
 -->
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { frame } from 'platformkit/lib/copilot/levels.js'
 import VoiceAura from './VoiceAura.vue'
@@ -40,11 +40,11 @@ const props = defineProps({
   label: { type: String, default: '' },          /* the state in words, for anybody not watching */
 })
 
-const canvas = ref(null)
-const root = ref(null)
+const canvas = ref<any>(null)
+const root = ref<any>(null)
 let raf = 0, started = 0
 const level = ref(0)
-const live = ref(null)
+const live = ref<any>(null)
 let ink = '', accent = '', soft = ''
 /* THE AURA IS A SHADER and the other four are drawn; it is the only one that is per-pixel (see
    VoiceAura.vue). A browser with no WebGL, or one that loses the context, falls back to the
@@ -58,7 +58,7 @@ const hue = ref('#1FD5F9')
 const still = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 const stillNow = still()
 
-function colours(el) {
+function colours(el: any) {
   const s = getComputedStyle(el)
   accent = s.getPropertyValue('--accent').trim() || s.color
   ink = s.getPropertyValue('--ink3').trim() || s.color
@@ -66,7 +66,7 @@ function colours(el) {
 }
 
 /* the aura needs the same numbers but paints none of them itself, so the loop still runs */
-function tick(now) {
+function tick(now: any) {
   const at = still() ? 0 : now - started
   const f = frame({ state: props.state, mine: props.mine, theirs: props.theirs, previous: level.value, at })
   level.value = f.level; live.value = f.live
@@ -74,8 +74,8 @@ function tick(now) {
   if (!still()) raf = requestAnimationFrame(tick)
 }
 
-function draw(now) {
-  const el = canvas.value
+function draw(now: any) {
+  const el: any = canvas.value
   if (!el) return
   const ctx = el.getContext('2d')
   const dpr = Math.min(2, window.devicePixelRatio || 1)

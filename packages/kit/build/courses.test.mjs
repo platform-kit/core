@@ -157,7 +157,7 @@ ok('…owning its schema, its push, its function, its routes and its sweep', mod
   /* the app area once held the reader's courses: that address is the library, ahead of a place claiming /app */
   ok('/app/courses is the library', libraryOf('/app/courses') === '/courses' && libraryOf('/app/courses/writing-plainly') === '/courses/writing-plainly')
   ok('…and nothing else in the app area moves', libraryOf('/app/coursework') === null && libraryOf('/app') === null && libraryOf('/app/results') === null)
-  ok('…a rule the router asks before any place\'s claim', (() => { const r = fs.readFileSync(new URL('../src/lib/router.js', import.meta.url), 'utf8'); return r.indexOf('appCourses(p)') > 0 && r.indexOf('appCourses(p)') < r.indexOf('forwardOf(p, CLAIMS') })())
+  ok('…a rule the router asks before any place\'s claim', (() => { const r = fs.readFileSync(new URL('../src/lib/router.ts', import.meta.url), 'utf8'); return r.indexOf('appCourses(p)') > 0 && r.indexOf('appCourses(p)') < r.indexOf('forwardOf(p, CLAIMS') })())
 }
 
 /* EVERY QUIZ PASSED EARNS AN ACHIEVEMENT (openspec: courses): declared from the course, one per scored form lesson */

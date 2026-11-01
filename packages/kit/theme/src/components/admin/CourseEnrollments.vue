@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * ENROLLMENTS (openspec: courses): who is taking a course, how far each person is, how many finish, and the lesson
  * where most of those who have not are stopped. One course at a time, picked at the top. It lists names and
@@ -10,28 +10,28 @@ import { supabase } from 'platformkit/lib/supabase.js'
 import AdminHead from './AdminHead.vue'
 
 const W = computed(() => ((us('courses').admin || {}).enrollments) || {})
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : String(m[k])))
-const day = (iso) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso)) } catch { return '' } }
-const pct = (d, t) => (t ? Math.round((100 * d) / t) : 0)
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : String(m[k])))
+const day = (iso: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso)) } catch { return '' } }
+const pct = (d: any, t: any) => (t ? Math.round((100 * d) / t) : 0)
 
-const courses = ref([]), pick = ref(''), view = ref(null), loading = ref(true), error = ref('')
-const course = computed(() => courses.value.find((c) => c.slug === pick.value) || null)
+const courses = ref<any>([]), pick = ref(''), view = ref<any>(null), loading = ref(true), error = ref('')
+const course = computed<any>(() => courses.value.find((c: any) => (c as any).slug === pick.value) || null)
 /* a course with a form lesson shows each person's scores */
-const quizzed = computed(() => !!(view.value && (view.value.people || []).some((p) => (p.quizzes || []).length)))
-const lessonTitle = (key) => { const s = view.value && view.value.lessons; return (s && s[key]) || key }
+const quizzed = computed(() => !!(view.value && (view.value.people || []).some((p: any) => (p.quizzes || []).length)))
+const lessonTitle = (key: any) => { const s = view.value && view.value.lessons; return (s && s[key]) || key }
 
 onMounted(async () => {
-  const { data } = await supabase.rpc('courses_list')
+  const { data } = await (supabase as any).rpc('courses_list')
   courses.value = data || []
-  pick.value = (courses.value[0] && courses.value[0].slug) || ''
+  pick.value = (courses.value[0] && (courses.value[0] as any).slug) || ''
   if (!pick.value) loading.value = false
 })
 watch(pick, async (slug) => {
   if (!slug) return
   loading.value = true; error.value = ''
-  const [{ data, error: e }, { data: state }] = await Promise.all([supabase.rpc('admin_course_enrollments', { p_course: slug }), supabase.rpc('course_state', { p_course: slug })])
+  const [{ data, error: e }, { data: state }] = await Promise.all([(supabase as any).rpc('admin_course_enrollments', { p_course: slug }), (supabase as any).rpc('course_state', { p_course: slug })])
   if (e || (data && data.error)) { error.value = data && data.error === 'not-allowed' ? W.value.denied : (e && e.message) || ''; view.value = null }
-  else view.value = { ...data, lessons: Object.fromEntries(((state && state.lessons) || []).map((l) => [l.key, l.title])) }
+  else view.value = { ...data, lessons: Object.fromEntries(((state && state.lessons) || []).map((l: any) => [l.key, l.title])) }
   loading.value = false
 })
 </script>

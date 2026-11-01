@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The body editor for the content admin — TipTap, editing markdown. The
  * tiptap-markdown extension parses the incoming markdown and serialises it back
@@ -37,7 +37,7 @@ const editor = useEditor({
     StarterKit.configure({ heading: props.prose ? false : { levels: [1, 2, 3, 4] }, codeBlock: props.prose ? false : {}, horizontalRule: props.prose ? false : {}, hardBreak: false }),
     /* a hard break goes back out as two trailing spaces — the form the books use —
        rather than tiptap-markdown's backslash, so verse round-trips as written */
-    HardBreak.extend({ addStorage() { return { markdown: { serialize(state, node, parent, index) {
+    HardBreak.extend({ addStorage() { return { markdown: { serialize(state: any, node: any, parent: any, index: any) {
       for (let i = index + 1; i < parent.childCount; i++) if (parent.child(i).type !== node.type) { state.write('  \n'); return }
     }, parse: {} } } } }),
     Link.configure({ openOnClick: false, autolink: true, protocols: ['http', 'https', 'mailto'] }),
@@ -61,32 +61,32 @@ watch(() => props.modelValue, (val) => {
 })
 
 /* dev only: the tests read the live editor to check the markdown round trip */
-if (import.meta.env.DEV && typeof window !== 'undefined') window.__dlEditor = editor
+if (import.meta.env.DEV && typeof window !== 'undefined') (window as any).__dlEditor = editor
 onBeforeUnmount(() => editor.value && editor.value.destroy())
 
 function setLink() {
-  const prev = editor.value.getAttributes('link').href || ''
+  const prev = (editor as any).value.getAttributes('link').href || ''
   const url = window.prompt('Link URL', prev)
   if (url === null) return
-  if (url === '') editor.value.chain().focus().extendMarkRange('link').unsetLink().run()
-  else editor.value.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  if (url === '') (editor as any).value.chain().focus().extendMarkRange('link').unsetLink().run()
+  else (editor as any).value.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
 }
 /* the image button offers two ways in — a file uploaded to content/uploads, or one chosen from the library — and
    inserts the picture by its address; no URL typing */
 const MF = us('media').page.field
 const { choose } = useMediaPick()
-const fileInput = ref(null), imgMenu = ref(false)
+const fileInput = ref<any>(null), imgMenu = ref(false)
 function addImage() { imgMenu.value = !imgMenu.value }
 function uploadImage() { imgMenu.value = false; fileInput.value && fileInput.value.click() }
-async function libraryImage() { imgMenu.value = false; const url = await choose('image'); if (url) editor.value.chain().focus().setImage({ src: url }).run() }
-async function onPickImage(e) {
+async function libraryImage() { imgMenu.value = false; const url = await choose('image'); if (url) (editor as any).value.chain().focus().setImage({ src: url }).run() }
+async function onPickImage(e: any) {
   const file = e.target.files && e.target.files[0]
   e.target.value = ''
   if (!file) return
   try {
     const j = await pipe.uploadImage(file)
-    editor.value.chain().focus().setImage({ src: j.path }).run()
-  } catch (err) { window.alert(MF.failed.replace('{error}', err.message || err)) }
+    ;(editor as any).value.chain().focus().setImage({ src: j.path }).run()
+  } catch (err) { window.alert(MF.failed.replace('{error}', (err as any).message || err)) }
 }
 
 /* ---- system-highlight bubble menu: apply / recolour / clear ==text=={colour}
@@ -99,24 +99,24 @@ const HL_COLORS = [
   { k: 'leaf', name: 'Earth', hex: '#4CA646' },
   { k: 'ocean', name: 'Emotions', hex: '#1785A0' },
 ]
-const isHl = (k) => editor.value && editor.value.isActive('systemHighlight', { color: k })
+const isHl = (k: any) => editor.value && editor.value.isActive('systemHighlight', { color: k })
 const anyHl = () => editor.value && editor.value.isActive('systemHighlight')
-function shouldShowHl({ editor: e, from, to }) {
+function shouldShowHl({ editor: e, from, to }: any) {
   return from !== to || e.isActive('systemHighlight')   /* a real selection, or sitting inside a mark */
 }
-function applyHl(k) {
-  const chain = editor.value.chain().focus()
-  if (editor.value.state.selection.empty && anyHl()) chain.extendMarkRange('systemHighlight')
+function applyHl(k: any) {
+  const chain = (editor as any).value.chain().focus()
+  if ((editor as any).value.state.selection.empty && anyHl()) chain.extendMarkRange('systemHighlight')
   if (isHl(k)) chain.unsetMark('systemHighlight')
   else chain.setMark('systemHighlight', { color: k, raw: '' })
   chain.run()
 }
 function clearHl() {
-  editor.value.chain().focus().extendMarkRange('systemHighlight').unsetMark('systemHighlight').run()
+  ;(editor as any).value.chain().focus().extendMarkRange('systemHighlight').unsetMark('systemHighlight').run()
 }
 
 /* clean line icons (lucide) */
-const ICONS = {
+const ICONS: any = {
   bold: '<path d="M14 12a4 4 0 0 0 0-8H6v8"/><path d="M15 20a4 4 0 0 0 0-8H6v8Z"/>',
   italic: '<line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/>',
   strike: '<path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><line x1="4" y1="12" x2="20" y2="12"/>',
@@ -134,35 +134,36 @@ const ICONS = {
   undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
   redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
 }
-const svg = (name) => `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`
+const svg = (name: any) => `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`
 
 const TOOLS = [
-  { icon: 'bold', title: 'Bold', compact: true, active: (e) => e.isActive('bold'), run: (e) => e.chain().focus().toggleBold().run() },
-  { icon: 'italic', title: 'Italic', compact: true, active: (e) => e.isActive('italic'), run: (e) => e.chain().focus().toggleItalic().run() },
-  { icon: 'strike', title: 'Strikethrough', active: (e) => e.isActive('strike'), run: (e) => e.chain().focus().toggleStrike().run() },
-  { icon: 'code', title: 'Inline code', active: (e) => e.isActive('code'), run: (e) => e.chain().focus().toggleCode().run() },
+  { icon: 'bold', title: 'Bold', compact: true, active: (e: any) => e.isActive('bold'), run: (e: any) => e.chain().focus().toggleBold().run() },
+  { icon: 'italic', title: 'Italic', compact: true, active: (e: any) => e.isActive('italic'), run: (e: any) => e.chain().focus().toggleItalic().run() },
+  { icon: 'strike', title: 'Strikethrough', active: (e: any) => e.isActive('strike'), run: (e: any) => e.chain().focus().toggleStrike().run() },
+  { icon: 'code', title: 'Inline code', active: (e: any) => e.isActive('code'), run: (e: any) => e.chain().focus().toggleCode().run() },
   { sep: true },
-  { icon: 'h1', title: 'Heading 1', compact: true, active: (e) => e.isActive('heading', { level: 1 }), run: (e) => e.chain().focus().toggleHeading({ level: 1 }).run() },
-  { icon: 'h2', title: 'Heading 2', compact: true, active: (e) => e.isActive('heading', { level: 2 }), run: (e) => e.chain().focus().toggleHeading({ level: 2 }).run() },
-  { icon: 'h3', title: 'Heading 3', active: (e) => e.isActive('heading', { level: 3 }), run: (e) => e.chain().focus().toggleHeading({ level: 3 }).run() },
+  { icon: 'h1', title: 'Heading 1', compact: true, active: (e: any) => e.isActive('heading', { level: 1 }), run: (e: any) => e.chain().focus().toggleHeading({ level: 1 }).run() },
+  { icon: 'h2', title: 'Heading 2', compact: true, active: (e: any) => e.isActive('heading', { level: 2 }), run: (e: any) => e.chain().focus().toggleHeading({ level: 2 }).run() },
+  { icon: 'h3', title: 'Heading 3', active: (e: any) => e.isActive('heading', { level: 3 }), run: (e: any) => e.chain().focus().toggleHeading({ level: 3 }).run() },
   { sep: true },
-  { icon: 'list', title: 'Bullet list', compact: true, active: (e) => e.isActive('bulletList'), run: (e) => e.chain().focus().toggleBulletList().run() },
-  { icon: 'ordered', title: 'Numbered list', compact: true, active: (e) => e.isActive('orderedList'), run: (e) => e.chain().focus().toggleOrderedList().run() },
-  { icon: 'quote', title: 'Quote', compact: true, active: (e) => e.isActive('blockquote'), run: (e) => e.chain().focus().toggleBlockquote().run() },
-  { icon: 'codeblock', title: 'Code block', active: (e) => e.isActive('codeBlock'), run: (e) => e.chain().focus().toggleCodeBlock().run() },
-  { icon: 'rule', title: 'Divider', run: (e) => e.chain().focus().setHorizontalRule().run() },
+  { icon: 'list', title: 'Bullet list', compact: true, active: (e: any) => e.isActive('bulletList'), run: (e: any) => e.chain().focus().toggleBulletList().run() },
+  { icon: 'ordered', title: 'Numbered list', compact: true, active: (e: any) => e.isActive('orderedList'), run: (e: any) => e.chain().focus().toggleOrderedList().run() },
+  { icon: 'quote', title: 'Quote', compact: true, active: (e: any) => e.isActive('blockquote'), run: (e: any) => e.chain().focus().toggleBlockquote().run() },
+  { icon: 'codeblock', title: 'Code block', active: (e: any) => e.isActive('codeBlock'), run: (e: any) => e.chain().focus().toggleCodeBlock().run() },
+  { icon: 'rule', title: 'Divider', run: (e: any) => e.chain().focus().setHorizontalRule().run() },
   { sep: true },
-  { icon: 'link', title: 'Link', active: (e) => e.isActive('link'), run: () => setLink() },
+  { icon: 'link', title: 'Link', active: (e: any) => e.isActive('link'), run: () => setLink() },
   { icon: 'image', title: 'Image', run: () => addImage() },
   { sep: true, end: true },
-  { icon: 'undo', title: 'Undo', run: (e) => e.chain().focus().undo().run(), disabled: (e) => !e.can().undo() },
-  { icon: 'redo', title: 'Redo', run: (e) => e.chain().focus().redo().run(), disabled: (e) => !e.can().redo() },
+  { icon: 'undo', title: 'Undo', run: (e: any) => e.chain().focus().undo().run(), disabled: (e: any) => !e.can().undo() },
+  { icon: 'redo', title: 'Redo', run: (e: any) => e.chain().focus().redo().run(), disabled: (e: any) => !e.can().redo() },
 ]
 const PROSE = new Set(['bold', 'italic', 'strike', 'list', 'ordered', 'quote', 'link', 'undo', 'redo'])
 const tools = computed(() => {
   const list = props.compact ? TOOLS.filter((t) => t.compact) : TOOLS
   if (!props.prose) return list
   /* the prose set, with no separator left standing beside another or at an end */
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
   const out = list.filter((t) => t.sep || PROSE.has(t.icon))
   return out.filter((t, i) => !t.sep || (i > 0 && i < out.length - 1 && !out[i - 1].sep))
 })
@@ -180,7 +181,7 @@ const tools = computed(() => {
             <button type="button" @click="libraryImage">{{ MF.choose }}</button>
           </span>
         </span>
-        <button v-else type="button" class="md-btn" :class="{ on: t.active && t.active(editor) }"
+        <!-- @vue-expect-error TS2722, from the conversion: Cannot invoke an object which is possibly 'undefined'. --><button v-else type="button" class="md-btn" :class="{ on: t.active && t.active(editor) }"
                 :disabled="t.disabled && t.disabled(editor)" :title="t.title"
                 @click="t.run(editor)" v-html="svg(t.icon)" />
       </template>

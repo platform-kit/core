@@ -4,11 +4,11 @@ description: platformkit.config.js in one table, with defaults.
 order: 82
 sources:
   [
-    packages/kit/build/site.mjs,
-    packages/kit/build/dev-runtime.mjs,
-    packages/kit/vite/index.mjs,
+    packages/kit/build/site.mts,
+    packages/kit/build/dev-runtime.mts,
+    packages/kit/vite/index.mts,
     packages/kit/supabase/config.toml.template,
-    packages/kit/build/payment-provider-registry.mjs,
+    packages/kit/build/payment-provider-registry.mts,
     packages/kit/build/modules/manifest.mts,
   ]
 reviewed: 2026-10-31

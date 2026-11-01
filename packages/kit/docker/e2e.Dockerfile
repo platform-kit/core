@@ -29,6 +29,6 @@ WORKDIR /work
 COPY . .
 RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
 # a fetched site is not a workspace and has no lockfile of its own: what it needs beyond the workspace's install
-RUN --mount=type=cache,target=/root/.npm node node_modules/platformkit/build/e2e-container.mjs --install-fetched
+RUN --mount=type=cache,target=/root/.npm node --import ./node_modules/platformkit/build/workspace-ts.mjs node_modules/platformkit/build/e2e-container.mjs --install-fetched
 
 CMD ["sleep", "infinity"]

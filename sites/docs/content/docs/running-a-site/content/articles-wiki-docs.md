@@ -2,7 +2,7 @@
 title: Articles, wiki and docs
 description: The three prose collections — a magazine, a canon, and a manual — and how each is arranged.
 order: 13
-reviewed: 2026-10-18
+reviewed: 2026-11-01
 sources:
   [
     packages/kit/theme/src/components/content/TreeSection.vue,

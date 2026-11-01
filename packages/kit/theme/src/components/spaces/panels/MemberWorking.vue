@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Where somebody is working: the level the sheet placed them at, what is already secure under it,
  * and the areas they have taken. The scoring runs in the reader's own browser and is written to
@@ -15,20 +15,20 @@ import { LEVELS } from '#site/instrument'
 
 const props = defineProps({ user: { type: String, default: '' }, mine: { type: Boolean, default: false } })
 const W = computed(() => us('spaces')['member-panels'].main)
-const row = ref(null)
+const row = ref<any>(null)
 const done = ref(false)
 
 watch(() => props.user, async (id) => {
   done.value = false
   row.value = null
   if (!id) return
-  const { data } = await supabase.rpc('member_working', { p_user: id })
+  const { data } = await (supabase as any).rpc('member_working', { p_user: id })
   row.value = data || null
   done.value = true
 }, { immediate: true })
 
 /* a level is named once, in the glossary, and read from there by everything — never as a literal */
-const nameOf = (lv) => (lv && LEVELS[lv] && LEVELS[lv].name) || ''
+const nameOf = (lv: any) => (lv && (LEVELS as any)[lv] && (LEVELS as any)[lv].name) || ''
 const working = computed(() => nameOf(row.value && row.value.working))
 const secured = computed(() => nameOf(row.value && row.value.secured))
 const areas = computed(() => (row.value && row.value.areas) || [])

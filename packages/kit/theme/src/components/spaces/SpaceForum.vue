@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A CHANNEL READ AS A BOARD — the index of its conversations, not a list of its first lines.
  *
@@ -28,10 +29,10 @@ import SpaceAvatar from './SpaceAvatar.vue'
 import SpaceIcon from './SpaceIcon.vue'
 
 const props = defineProps({
-  posts: { type: Array, default: () => [] },
-  names: { type: Object, default: () => ({}) },
-  flair: { type: Object, default: () => ({}) },
-  faces: { type: Object, default: () => ({}) },
+  posts: { type: Array as PropType<any[]>, default: () => [] },
+  names: { type: Object as PropType<any>, default: () => ({}) },
+  flair: { type: Object as PropType<any>, default: () => ({}) },
+  faces: { type: Object as PropType<any>, default: () => ({}) },
   me: { type: String, default: '' },
   channel: { type: String, default: '' },     /* its name, for the line an empty board says */
   channelId: { type: String, default: '' },   /* what the reader's sort is remembered against */
@@ -46,18 +47,19 @@ const EN = computed(() => us('spaces').encryption)
 
 /* saidBy, not a bare names lookup: a bot has no author_id and carries its name on meta, so a lookup
    by id called every one of its posts "someone" while the thread beside it said The Scribe */
-const named = (m) => saidBy(m, props.names, P.value.someone)
-const who = (m) => (m.author_id && m.author_id === props.me ? P.value.you : named(m))
-const nameOf = (id) => (id && id === props.me ? P.value.you : (props.names[id] || P.value.someone))
+const named = (m: any) => saidBy(m, props.names, P.value.someone)
+const who = (m: any) => (m.author_id && m.author_id === props.me ? P.value.you : named(m))
+const nameOf = (id: any) => (id && id === props.me ? P.value.you : (props.names[id] || P.value.someone))
 /* the name a FACE draws its initials from is always the person's own: initials of "You" is a Y, and
    that is nobody. "You" belongs in the sentence under the title, not on the avatar. */
-const faceOf = (id) => props.names[id] || P.value.someone
+const faceOf = (id: any) => props.names[id] || P.value.someone
 
 /* HOW LONG AGO, in as few characters as it takes. A board is scanned, and "20m" is scanned; "20
    September 2026 at 14:03" is read, which is a different and slower thing. Anything older than a
    week is a date, because by then the exact hour has stopped mattering. */
-function ago(v) {
+function ago(v: any) {
   const d = new Date(v)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   if (isNaN(d)) return ''
   const s = Math.max(0, (Date.now() - d.getTime()) / 1000)
   if (s < 60) return W.value['just-now']
@@ -66,12 +68,12 @@ function ago(v) {
   if (s < 604800) return Math.floor(s / 86400) + 'd'
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }
-const moved = (p) => p.last_reply_at || p.created_at
-const replies = (p) => Number(p.reply_count) || 0
+const moved = (p: any) => p.last_reply_at || p.created_at
+const replies = (p: any) => Number(p.reply_count) || 0
 
 /* the line under the title: who spoke last and when, or who started it and when. Never both — a
    card with two dates on it makes a reader work out which one they are looking at. */
-function line(p) {
+function line(p: any) {
   const n = replies(p)
   if (n && p.last_reply_by) return (W.value.replied || '').replace('{who}', nameOf(p.last_reply_by)).replace('{when}', ago(p.last_reply_at))
   /* nobody to name — the last word was a bot's, which carries no author. "someone replied" is worse
@@ -84,13 +86,13 @@ function line(p) {
 /* the faces: whoever has spoken in the post, most recent first. A BOT has no author_id — it carries
    its name on the row — so its post is drawn under its own face rather than off a blank gutter,
    which left every one of them indented by 36 pixels for nothing. */
-const voices = (p) => {
+const voices = (p: any) => {
   const ids = (Array.isArray(p.voices) ? p.voices : []).filter(Boolean)
   const all = ids.length ? ids : (p.author_id ? [p.author_id] : [])
   const out = [...new Set(all)].slice(0, 4).map((id) => ({ id, name: faceOf(id) }))
   return out.length ? out : [{ id: 'bot', name: named(p) }]
 }
-const countWord = (n) => (n === 1 ? W.value['replies-one'] : (W.value['replies-many'] || '').replace('{n}', n))
+const countWord = (n: any) => (n === 1 ? W.value['replies-one'] : (W.value['replies-many'] || '').replace('{n}', n))
 
 /* THE READER'S OWN ORDER, kept per channel: whoever sorts a board by what is unanswered is
    answering it, and will be back tomorrow to answer more. */
@@ -109,16 +111,19 @@ function recall() {
   } catch (e) { sort.value = 'active'; show.value = 'all' }
 }
 watch(key, recall, { immediate: true })
-function pick(what, v) { (what === 'sort' ? sort : show).value = v; menu.value = ''; remember() }
+function pick(what: any, v: any) { (what === 'sort' ? sort : show).value = v; menu.value = ''; remember() }
 
 const shown = computed(() => {
-  let list = props.posts.filter((p) => (show.value === 'open' ? !replies(p) : show.value === 'mine' ? p.author_id === props.me : true))
-  const by = sort.value === 'new' ? (a, b) => new Date(b.created_at) - new Date(a.created_at)
-    : sort.value === 'busy' ? (a, b) => replies(b) - replies(a) || new Date(moved(b)) - new Date(moved(a))
-    : (a, b) => new Date(moved(b)) - new Date(moved(a))
+  let list = props.posts.filter((p) => (show.value === 'open' ? !replies(p) : show.value === 'mine' ? (p as any).author_id === props.me : true))
+  // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+  const by = sort.value === 'new' ? (a: any, b: any) => new Date(b.created_at) - new Date(a.created_at)
+    // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+    : sort.value === 'busy' ? (a: any, b: any) => replies(b) - replies(a) || new Date(moved(b)) - new Date(moved(a))
+    // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+    : (a: any, b: any) => new Date(moved(b)) - new Date(moved(a))
   list = [...list].sort(by)
   /* what the room pinned stands above whatever the reader chose: it was pinned to be seen */
-  return [...list.filter((p) => p.pinned), ...list.filter((p) => !p.pinned)]
+  return [...list.filter((p) => (p as any).pinned), ...list.filter((p) => !(p as any).pinned)]
 })
 </script>
 
@@ -181,7 +186,7 @@ const shown = computed(() => {
           <button type="button" class="sf-post" :class="{ pin: p.pinned }" @click="emit('open', p.id)">
             <!-- the faces first: a conversation is people before it is a subject -->
             <span class="sf-faces" :style="{ width: Math.max(22, 22 + (voices(p).length - 1) * 15) + 'px' }">
-              <span v-for="(v, i) in voices(p)" :key="v.id || i" class="sf-face" :style="{ left: (i * 15) + 'px', zIndex: 5 - i }">
+              <!-- @vue-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'PropertyKey | undefined'. --><span v-for="(v, i) in voices(p)" :key="v.id || i" class="sf-face" :style="{ left: (i * 15) + 'px', zIndex: 5 - i }">
                 <SpaceAvatar :name="v.name" :size="22" />
               </span>
             </span>

@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* a fact's word under its number: "{n} members" and "1 member" both say the noun alone, since the
    number stands over it */
-const factWord = (w) => String(w || '').replace('{n}', '').replace(/^\s*1\s+/, '').trim()
+const factWord = (w: any) => String(w || '').replace('{n}', '').replace(/^\s*1\s+/, '').trim()
 /*
  * THE FRONT PAGE OF A COMMUNITY — what /spaces opens on.
  *
@@ -38,21 +39,21 @@ import SpaceAvatar from './SpaceAvatar.vue'
 import SpaceIcon from './SpaceIcon.vue'
 
 const props = defineProps({
-  spaces: { type: Array, default: () => [] },
-  rows: { type: Array, default: () => [] },        /* the unread counters, per channel */
-  people: { type: Array, default: () => [] },
-  names: { type: Object, default: () => ({}) },
+  spaces: { type: Array as PropType<any[]>, default: () => [] },
+  rows: { type: Array as PropType<any[]>, default: () => [] },        /* the unread counters, per channel */
+  people: { type: Array as PropType<any[]>, default: () => [] },
+  names: { type: Object as PropType<any>, default: () => ({}) },
   me: { type: String, default: '' },
   myName: { type: String, default: '' },
   /* …and their record, so the composer wears the face they designed rather than one made from the name */
-  myPerson: { type: Object, default: null },
+  myPerson: { type: Object as PropType<any>, default: null },
 })
 const emit = defineEmits(['space', 'open', 'events', 'find', 'start', 'who'])
 
 const W = computed(() => us('spaces').index.main)
 const C = computed(() => us('spaces').calendar.main)
 const P = computed(() => us('spaces').page.main)
-const feed = ref([])
+const feed = ref<any>([])
 const loading = ref(true)
 const now = Date.now()
 
@@ -77,7 +78,7 @@ const greeting = computed(() => {
 })
 /* nobody signed in: the band invites them in, and nothing offers to post in their name */
 const guest = computed(() => !props.me)
-const signIn = () => { if (window.DLauth) window.DLauth.open() }
+const signIn = () => { if ((window as any).DLauth) (window as any).DLauth.open() }
 const waiting = computed(() => (props.rows || []).reduce((n, r) => n + unreadOf(r), 0))
 const line = computed(() => (!waiting.value ? W.value['line-quiet']
   : waiting.value === 1 ? W.value['line-one']
@@ -89,7 +90,7 @@ const line = computed(() => (!waiting.value ? W.value['line-quiet']
 /* the rule that makes a colour out of a name is shared — the store asks the same question of a
    product with no photograph (lib/tint.js). */
 const band = computed(() => tint((props.spaces[0] || {}).slug || (props.spaces[0] || {}).name || 'community'))
-const rooms = computed(() => (props.rows || []).filter((r) => r.kind !== 'dm').length)
+const rooms = computed(() => (props.rows || []).filter((r) => (r as any).kind !== 'dm').length)
 /* WHAT THE OWNER HAS SAID ABOUT THIS PAGE (content/community.md): its name and tagline, the picture
    behind its head, and which parts of it are drawn. Every one of those is a decision about how the
    place feels rather than about how the code is put together, so none of it is in the config and
@@ -97,16 +98,17 @@ const rooms = computed(() => (props.rows || []).filter((r) => r.kind !== 'dm').l
 const C2 = computed(() => settings())
 const home = computed(() => C2.value.home)
 
-const on = computed(() => (calendar.upcoming || []).slice(0, 4))
+const on = computed<any>(() => (calendar.upcoming || []).slice(0, 4))
 const here = computed(() => (props.people || []).slice(0, 8))
 const more = computed(() => Math.max(0, (props.people || []).length - here.value.length))
-const unreadIn = (id) => (props.rows || []).filter((r) => r.space === id).reduce((n, r) => n + unreadOf(r), 0)
-const roomsIn = (id) => (props.rows || []).filter((r) => r.space === id && r.kind !== 'dm').length
+const unreadIn = (id: any) => (props.rows || []).filter((r) => (r as any).space === id).reduce((n, r) => n + unreadOf(r), 0)
+const roomsIn = (id: any) => (props.rows || []).filter((r) => (r as any).space === id && (r as any).kind !== 'dm').length
 
 /* HOW LONG AGO, in as few characters as it takes: a feed is scanned, and a card that says the full
    date makes a reader work out for themselves whether it is new. */
-function ago(v) {
+function ago(v: any) {
   const d = new Date(v)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   if (isNaN(d)) return ''
   const s = Math.max(0, (now - d.getTime()) / 1000)
   if (s < 60) return W.value['ago-now']
@@ -122,12 +124,12 @@ function ago(v) {
    empty card attributed to "Someone", which is two wrongs: there is no someone, and there were
    words to show. */
 const EV = computed(() => us('spaces').events || {})
-const isSystem = (m) => m.kind === 'system' && !m.bot
-const said = (m) => {
+const isSystem = (m: any) => m.kind === 'system' && !m.bot
+const said = (m: any) => {
   if (m.kind === 'system') return saidIn({ ...m, kind: 'system' }, { names: props.names, words: EV.value, money: (v) => String(v ?? '') })
   return m.title ? m.title : titleOf({ body: m.body }, props.names, { max: 150 })
 }
-const replies = (n) => (n === 1 ? W.value['replies-one'] : String(W.value['replies-many']).replace('{n}', n))
+const replies = (n: any) => (n === 1 ? W.value['replies-one'] : String(W.value['replies-many']).replace('{n}', n))
 
 /* WHAT THE FEED IS SHOWING. Everything is the default; Unread is what a room still owes them, which
    is the one filter anybody uses twice; Your spaces is for somebody in several, where the whole
@@ -135,14 +137,14 @@ const replies = (n) => (n === 1 ? W.value['replies-one'] : String(W.value['repli
    same way every time. */
 const SHOWS = ['all', 'unread', 'mine']
 const show = ref('all')
-const unreadRooms = computed(() => new Set((props.rows || []).filter((r) => unreadOf(r) > 0).map((r) => r.channel)))
+const unreadRooms = computed(() => new Set((props.rows || []).filter((r) => unreadOf(r) > 0).map((r) => (r as any).channel)))
 const shown = computed(() => {
   let list = feed.value
-  if (show.value === 'unread') list = list.filter((m) => unreadRooms.value.has(m.channel))
-  else if (show.value === 'mine') list = list.filter((m) => (props.spaces || []).some((s) => s.id === m.space))
+  if (show.value === 'unread') list = list.filter((m: any) => unreadRooms.value.has((m as any).channel))
+  else if (show.value === 'mine') list = list.filter((m: any) => (props.spaces || []).some((s) => (s as any).id === (m as any).space))
   /* a row with nothing in it is not news: a platform line whose event this site has no words for
      says nothing, and a card saying nothing is worse than one fewer card */
-  return list.filter((m) => String(said(m) || '').trim())
+  return list.filter((m: any) => String(said(m) || '').trim())
 })
 </script>
 
@@ -241,7 +243,7 @@ const shown = computed(() => {
                   </span>
                   <span class="si-onwhat">
                     <b>{{ o.title }}</b>
-                    <small>{{ whenWord(o.starts_at, now, { today: C.today, tomorrow: C.tomorrow }) }} · {{ clockOf(o.starts_at) }}</small>
+                    <small><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(o.starts_at, now, { today: C.today, tomorrow: C.tomorrow }) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clockOf(o.starts_at) }}</small>
                   </span>
                   <SpaceIcon class="si-go" name="fwd" :size="13" />
                 </button>

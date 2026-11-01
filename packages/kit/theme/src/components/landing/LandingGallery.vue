@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { md } from './md.js'
 import { us } from 'platformkit/lib/strings.js'
@@ -19,18 +20,18 @@ const props = defineProps({
   shape: { type: String, default: 'square' },   /* square | wide | tall | natural */
   layout: { type: String, default: 'grid' },    /* grid | masonry | polaroids | scatter | arc | mosaic | lookbook */
   filters: { type: Boolean, default: false },   /* buttons over the grid, one per tag the pictures carry */
-  items: { type: Array, default: () => [] },     /* [{ image, alt?, caption?, tag?, title?, price?, href? }] */
+  items: { type: Array as PropType<any[]>, default: () => [] },     /* [{ image, alt?, caption?, tag?, title?, price?, href? }] */
 })
 const tag = ref('')
-const tags = computed(() => [...new Set(props.items.map((p) => p.tag).filter(Boolean))])
-const shownItems = computed(() => (props.filters && tag.value ? props.items.filter((p) => p.tag === tag.value) : props.items))
+const tags = computed(() => [...new Set(props.items.map((p) => (p as any).tag).filter(Boolean))])
+const shownItems = computed(() => (props.filters && tag.value ? props.items.filter((p) => (p as any).tag === tag.value) : props.items))
 const W2 = (us('sections').gallery || {}).filter || {}
 const W = (us('sections').gallery || {}).dialog || {}
-const dlg = ref(null), at = ref(-1)
-function open(i) { at.value = i; if (dlg.value && !dlg.value.open) dlg.value.showModal() }
+const dlg = ref<any>(null), at = ref(-1)
+function open(i: any) { at.value = i; if (dlg.value && !dlg.value.open) dlg.value.showModal() }
 function close() { if (dlg.value && dlg.value.open) dlg.value.close(); at.value = -1 }
-const step = (d) => { const n = props.items.length; at.value = (at.value + d + n) % n }
-function onKey(e) { if (at.value < 0) return; if (e.key === 'ArrowRight') step(1); if (e.key === 'ArrowLeft') step(-1) }
+const step = (d: any) => { const n = props.items.length; at.value = (at.value + d + n) % n }
+function onKey(e: any) { if (at.value < 0) return; if (e.key === 'ArrowRight') step(1); if (e.key === 'ArrowLeft') step(-1) }
 watch(at, (v) => { if (v >= 0) document.addEventListener('keydown', onKey); else document.removeEventListener('keydown', onKey) })
 onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 </script>

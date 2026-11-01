@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { md } from './md.js'
 import { us } from 'platformkit/lib/strings.js'
@@ -28,11 +28,11 @@ function close() { gone.value = true; if (!props.remember) return; try { session
 const copied = ref(false)
 /* the site's header sits over the landing (absolute, at the top): a bar that is the page's first section hands
    it its own height, so the header comes below the bar rather than across it, and takes it back when dismissed */
-const el = ref(null)
-let ro = null
+const el = ref<any>(null)
+let ro: any = null
 /* the offset is the first section's to give and take back: a strip further down never clears one it did not set */
 let held = false
-const offset = (h) => { if (!h && !held) return; held = !!h; try { document.documentElement.style.setProperty('--sitehead-top', h ? h + 'px' : '') } catch (e) { /* no document */ } }
+const offset = (h: any) => { if (!h && !held) return; held = !!h; try { document.documentElement.style.setProperty('--sitehead-top', h ? h + 'px' : '') } catch (e) { /* no document */ } }
 const first = () => el.value && el.value.parentElement && el.value.parentElement.querySelector('section, .lpwrap') === el.value
 function measure() { if (!el.value || gone.value || !first()) return offset(0); offset(el.value.offsetHeight) }
 onMounted(() => { measure(); if (typeof ResizeObserver !== 'undefined' && el.value) { ro = new ResizeObserver(measure); ro.observe(el.value) } })
@@ -41,7 +41,7 @@ onBeforeUnmount(() => { offset(0); if (ro) ro.disconnect() })
 async function copy() { try { await navigator.clipboard.writeText(props.code); copied.value = true; setTimeout(() => { copied.value = false }, 1600) } catch (e) { /* no clipboard */ } }
 </script>
 <template>
-  <section v-if="!gone" ref="el" class="lpsec lpann" :class="{ 'lpann-sticky': sticky, 'lpann-alert': tone === 'alert' }" :role="tone === 'alert' ? 'alert' : null">
+  <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><section v-if="!gone" ref="el" class="lpsec lpann" :class="{ 'lpann-sticky': sticky, 'lpann-alert': tone === 'alert' }" :role="tone === 'alert' ? 'alert' : null">
     <div class="lpwrap lpann-in">
       <span v-if="badge" class="lpann-badge" v-html="md(badge)"></span>
       <span class="lpann-text" v-html="md(text)"></span>

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 import { glyph } from './icons.js'
 /*
@@ -9,7 +10,7 @@ import { glyph } from './icons.js'
  * Slots for a look's skin: `items`.
  */
 defineProps({
-  items: { type: Array, default: () => [] },   /* [{ icon, title, body?, image? }] — an image (a payment method's mark) in place of the glyph */
+  items: { type: Array as PropType<any[]>, default: () => [] },   /* [{ icon, title, body?, image? }] — an image (a payment method's mark) in place of the glyph */
   align: { type: String, default: 'center' },  /* center | left */
   layout: { type: String, default: 'strip' },  /* strip | cards | grid | inline */
 })

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * One product in a grid or a rail: the image (swapping to the second on hover
  * when there is one), the badge, the title, a line of context, the live price,
@@ -20,7 +21,7 @@ import Book3D from '../Book3D.vue'
 import Stars from '../landing/Stars.vue'
 
 const props = defineProps({
-  product: { type: Object, required: true },
+  product: { type: Object as PropType<any>, required: true },
   eager: { type: Boolean, default: false } /* above the fold: no lazy loading */,
 })
 const P = us('store').product.ui
@@ -115,7 +116,7 @@ const priceText = computed(() => {
   if (printP.value && printP.value.available) {
     const m = money(printP.value.unit_amount, printP.value.currency)
     const more = (printP.value.print.formats || []).some(
-      (f) => f.kind === 'print' && f.price * 100 > printP.value.unit_amount,
+      (f: any) => f.kind === 'print' && f.price * 100 > printP.value.unit_amount,
     )
     return more && HC['main-price'] ? HC['main-price'] + ' ' + m : m
   }
@@ -128,7 +129,7 @@ const context = computed(
   () => (p.value.bookMeta && p.value.bookMeta.author) || p.value.subtitle || '',
 )
 const added = ref(false)
-function quickAdd(e) {
+function quickAdd(e: any) {
   e.preventDefault()
   e.stopPropagation()
   cart.add({

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Blasts: one email, written once, sent once to everyone who matches — a file under
  * content/blasts with an audience, a subject and its markdown. The list is one line per blast;
@@ -17,7 +17,7 @@ import './admin-ui.css'
 const props = defineProps({ name: { type: String, default: '' } })
 const emit = defineEmits(['open', 'back', 'analytics'])
 const GW = (us('emails').funnel || {}).editor || {}
-const goalOk = (g) => !String(g || '').trim() || /^\/[^\s]*$/.test(String(g).trim())
+const goalOk = (g: any) => !String(g || '').trim() || /^\/[^\s]*$/.test(String(g).trim())
 import pipe from '../../lib/admin/api.js'
 import { us, ug } from 'platformkit/lib/strings.js'
 import AdminHead from './AdminHead.vue'
@@ -29,23 +29,23 @@ const A = ug('admin', 'actions')['blasts'] || {}
 /* the view the editor holds: the funnels (each with its steps and its audience described), the blasts, the policy, the compiled designs */
 async function loadView() {
   const [funnels, blasts, policy, designs] = await Promise.all([pipe.items('funnels'), pipe.items('blasts'), pipe.read('policy', 'policy'), pipe.options('designs')])
-  return { funnels, blasts, policy: policy.data || {}, designs: designs.map((d) => d.value) }
+  return { funnels, blasts, policy: policy.data || {}, designs: designs.map((d: any) => d.value) }
 }
 
-const data = ref(null), stats = ref(null), loading = ref(true), msg = ref('')
-async function load() { loading.value = true; try { data.value = await loadView(); await loadStats() } catch (e) { msg.value = e.message } finally { loading.value = false } }
-async function loadStats() { if (!supabaseOn || !isSignedIn.value) return; try { const { data: s } = await supabase.rpc('email_stats'); stats.value = s } catch (e) { /* none */ } }
+const data = ref<any>(null), stats = ref<any>(null), loading = ref(true), msg = ref('')
+async function load() { loading.value = true; try { data.value = await loadView(); await loadStats() } catch (e) { msg.value = (e as any).message } finally { loading.value = false } }
+async function loadStats() { if (!supabaseOn || !isSignedIn.value) return; try { const { data: s } = await (supabase as any).rpc('email_stats'); stats.value = s } catch (e) { /* none */ } }
 onMounted(load)
-onIdentity((id) => { if (id) loadStats() })
-const statOf = (id) => { const rows = stats.value && stats.value.sent ? stats.value.sent.filter((x) => x.email_id === id) : []; return { n: rows.reduce((a, x) => a + x.n, 0), opened: rows.reduce((a, x) => a + x.opened, 0), clicked: rows.reduce((a, x) => a + x.clicked, 0) } }
-const pct = (a, b) => (b ? Math.round((a / b) * 100) + '%' : '—')
-const when = (iso) => (iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '')
-const line = (b) => { if (b.data.status !== 'sent') return 'draft'; const s = statOf(b.data.id); const n = s.n || b.data.sent || 0; return `sent to ${n} · ${pct(s.opened, n)} opened · ${pct(s.clicked, n)} clicked · ${when(b.data.sent_at)}` }
+onIdentity((id: any) => { if (id) loadStats() })
+const statOf = (id: any) => { const rows = stats.value && stats.value.sent ? stats.value.sent.filter((x: any) => x.email_id === id) : []; return { n: rows.reduce((a: any, x: any) => a + x.n, 0), opened: rows.reduce((a: any, x: any) => a + x.opened, 0), clicked: rows.reduce((a: any, x: any) => a + x.clicked, 0) } }
+const pct = (a: any, b: any) => (b ? Math.round((a / b) * 100) + '%' : '—')
+const when = (iso: any) => (iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '')
+const line = (b: any) => { if (b.data.status !== 'sent') return 'draft'; const s = statOf(b.data.id); const n = s.n || b.data.sent || 0; return `sent to ${n} · ${pct(s.opened, n)} opened · ${pct(s.clicked, n)} clicked · ${when(b.data.sent_at)}` }
 
 const VIEWS = [['email', 'Email'], ['audience', 'Audience'], ['send', 'Send']]
 const view = ref('email')
-const cur = computed(() => (data.value && props.name ? data.value.blasts.find((b) => b.name === props.name) || null : null))
-const form = ref(null), saved = ref(''), creating = ref(false)
+const cur = computed(() => (data.value && props.name ? data.value.blasts.find((b: any) => b.name === props.name) || null : null))
+const form = ref<any>(null), saved = ref(''), creating = ref(false)
 const dirty = computed(() => !!form.value && JSON.stringify(form.value) !== saved.value)
 const sent = computed(() => !!cur.value && cur.value.data.status === 'sent' && !creating.value)
 function begin() {
@@ -57,65 +57,65 @@ function begin() {
 watch([cur, data], () => { if (!creating.value) begin() }, { immediate: true })
 watch(() => props.name, () => { view.value = sent.value ? 'send' : 'email' })
 function startNew() { creating.value = true; view.value = 'email'; form.value = { name: '', title: '', subject: '', design: 'campaign', respect: true, goal: '', audience: {}, body: '' }; saved.value = '' }
-const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+const slug = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 watch(() => form.value && form.value.title, (t) => { if (creating.value && form.value) form.value.name = slug(t) })
 const saving = ref(false)
 async function save() {
   if (!form.value) return
   saving.value = true; msg.value = ''
   try {
-    const f = form.value
+    const f: any = form.value
     await pipe.save('blasts', f.name, { data: { title: f.title, subject: f.subject, design: f.design, audience: f.audience, 'respect-cooldown': f.respect, goal: (f.goal || '').trim() || undefined }, content: f.body }, { create: creating.value })
     data.value = await loadView()
     const was = creating.value; creating.value = false
     if (was) emit('open', f.name); else begin()
     msg.value = 'Saved'
-  } catch (e) { msg.value = e.message } finally { saving.value = false }
+  } catch (e) { msg.value = (e as any).message } finally { saving.value = false }
 }
 async function remove() {
   if (!cur.value || !confirm(`Delete “${cur.value.data.title || cur.value.name}”?${sent.value ? ' It was sent; the log keeps what went.' : ''}`)) return
-  try { await pipe.remove('blasts', cur.value.name); data.value = await loadView(); emit('back') } catch (e) { msg.value = e.message }
+  try { await pipe.remove('blasts', cur.value.name); data.value = await loadView(); emit('back') } catch (e) { msg.value = (e as any).message }
 }
 function discard() { if (creating.value) { creating.value = false; form.value = null; emit('back') } else begin() }
 const NAME_TAG = '{{name}}'
 
 /* the preview through the design */
 const preview = ref(''), previewErr = ref(''), previewing = ref(false), showPreview = ref(true)
-let timer = null
+let timer: any = null
 async function renderPreview() {
   if (!form.value || !showPreview.value) return
   previewing.value = true; previewErr.value = ''
   try {
     const { html } = await pipe.action('funnels', 'preview', { body: form.value.body })
     if (!supabaseOn || !isSignedIn.value) { preview.value = html; return }
-    const { data: r, error } = await supabase.functions.invoke('send-email', { body: { kind: form.value.design, sample: { subject: form.value.subject, body: html, name: 'Ada' }, subject: form.value.subject } })
+    const { data: r, error } = await (supabase as any).functions.invoke('send-email', { body: { kind: form.value.design, sample: { subject: form.value.subject, body: html, name: 'Ada' }, subject: form.value.subject } })
     if (error) throw error
     if (r && r.error) throw new Error(r.error)
     preview.value = r.html
-  } catch (e) { previewErr.value = e.message || 'Could not render' } finally { previewing.value = false }
+  } catch (e) { previewErr.value = (e as any).message || 'Could not render' } finally { previewing.value = false }
 }
 watch([() => form.value && [form.value.body, form.value.subject, form.value.design].join('|'), showPreview, view], () => { clearTimeout(timer); timer = setTimeout(renderPreview, 500) })
-const me = computed(() => (session.value && session.value.user && session.value.user.email) || '')
+const me = computed(() => (session.value && (session.value as any).user && (session.value as any).user.email) || '')
 const testing = ref(false)
 async function sendTest() {
   if (!form.value || !me.value) return
   testing.value = true; msg.value = ''
   try {
     const { html } = await pipe.action('funnels', 'preview', { body: form.value.body })
-    const { data: r, error } = await supabase.functions.invoke('send-email', { body: { kind: form.value.design, to: me.value, sample: { subject: form.value.subject, body: html, name: 'Ada' }, subject: form.value.subject } })
+    const { data: r, error } = await (supabase as any).functions.invoke('send-email', { body: { kind: form.value.design, to: me.value, sample: { subject: form.value.subject, body: html, name: 'Ada' }, subject: form.value.subject } })
     if (error) throw error
     if (r && r.error) throw new Error(r.error)
     msg.value = r.ok ? `Test sent to ${me.value}` : 'Not sent — the relay refused it'
-  } catch (e) { msg.value = e.message } finally { testing.value = false }
+  } catch (e) { msg.value = (e as any).message } finally { testing.value = false }
 }
 
 /* the send: a count, a confirm, the send, the file marked */
-const sending = ref(false), result = ref(null)
+const sending = ref(false), result = ref<any>(null)
 async function count() {
   if (!cur.value) return
   sending.value = true; msg.value = ''
-  try { const { data: d, error } = await supabase.functions.invoke('email-blast', { body: { name: cur.value.name, dry: true } }); if (error) throw error; if (d && d.error) throw new Error(d.error); result.value = d }
-  catch (e) { msg.value = e.message } finally { sending.value = false }
+  try { const { data: d, error } = await (supabase as any).functions.invoke('email-blast', { body: { name: cur.value.name, dry: true } }); if (error) throw error; if (d && d.error) throw new Error(d.error); result.value = d }
+  catch (e) { msg.value = (e as any).message } finally { sending.value = false }
 }
 async function sendBlast() {
   if (!cur.value || dirty.value || !result.value || !result.value.sent) return
@@ -123,13 +123,13 @@ async function sendBlast() {
   if (!confirm(`Send “${form.value.subject}” to ${n} ${n === 1 ? 'person' : 'people'} now? This cannot be recalled.`)) return
   sending.value = true; msg.value = ''
   try {
-    const { data: r, error } = await supabase.functions.invoke('email-blast', { body: { name: cur.value.name } })
+    const { data: r, error } = await (supabase as any).functions.invoke('email-blast', { body: { name: cur.value.name } })
     if (error) throw error
     if (r && r.error) throw new Error(r.error)
     result.value = r
     await pipe.action('blasts', 'sent', { name: cur.value.name, n: (cur.value.data.sent || 0) + r.sent }); data.value = await loadView(); await loadStats()
     msg.value = `Sent to ${r.sent}${r.failed ? ', ' + r.failed + ' failed' : ''}`
-  } catch (e) { msg.value = e.message } finally { sending.value = false }
+  } catch (e) { msg.value = (e as any).message } finally { sending.value = false }
 }
 </script>
 

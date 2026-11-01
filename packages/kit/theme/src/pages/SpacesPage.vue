@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The spaces surface, in the shape a workspace chat has: the spaces down the far edge, the open
  * space's channels beside them, the channel itself, and a thread or a search beside that. People
@@ -50,6 +50,7 @@ import {
   makePoll, vote, unvote, closePoll, chooseOffer, votes, loadVotes, firstReplies,
 } from 'platformkit/lib/spaces/api.js'
 import { toast } from 'platformkit/lib/toast.js'
+// @ts-expect-error TS2305, from the conversion: Module '"#content"' has no exported member 'spaces'.
 import { spaces as declaredSpaces } from '#content'
 import { daySections, runsOf, badgesBySpace, dmTitle, sidedRoom, mentionsOf, unreadOf, mutedNow, plainBody, BOT_PICK, ROLE_PICK } from 'platformkit/lib/spaces/model.js'
 import { commandOf, isTyping, stepRoom } from 'platformkit/lib/spaces/keys.js'
@@ -103,33 +104,33 @@ const me = computed(() => (session.value && session.value.user && session.value.
 /* THE COMMANDS THIS PERSON MAY RUN HERE. Compiled from content/commands/*.md, gated by what the
    reader holds — the same audience grammar as everything else — and offered by the composer's `/`.
    What each one asks its bot is not here: that stays in the file and is filled in by the worker. */
-const myCommands = computed(() => COMMANDS.filter((c) =>
+const myCommands = computed(() => (COMMANDS as any).filter((c: any) =>
   (c.surfaces || ['spaces']).includes('spaces') && mayRun(c.audience)))
 
 /* THE BOTS THAT ANSWER TO THEIR NAME HERE. A bot is summoned by being named, like a colleague, but
    only where its own file says `hears: mention` — otherwise naming it is just words about it. */
-const myBots = computed(() => BOTS.filter((b) =>
+const myBots = computed(() => (BOTS as any).filter((b: any) =>
   (b.surfaces || []).includes('spaces')
-  && (b.hears || []).some((h) => h.kind === 'mention')
+  && (b.hears || []).some((h: any) => h.kind === 'mention')
   && mayRun(b.audience)))
 /* the names the drawing looks up, keyed as the token stores them */
-const botNames = computed(() => Object.fromEntries(myBots.value.map((b) => [BOT_PICK(b.slug), b.name])))
+const botNames = computed(() => Object.fromEntries(myBots.value.map((b: any) => [BOT_PICK(b.slug), b.name])))
 
 /* WHAT WENT WRONG, to the person who asked. The room hears the bot's own ending; whoever pressed
    the button hears the reason, because the commonest failures — no credits, a bad key, a rate
    limit — are theirs to fix and nobody else's business. */
-const botTrouble = ref(null)   /* { name, why } */
-let watching = null
+const botTrouble = ref<any>(null)   /* { name, why } */
+let watching: any = null
 let troubleName = ''
-function watchBot(name) {
+function watchBot(name: any) {
   troubleName = name || ''
   clearInterval(watching)
   watching = setInterval(async () => {
     if (!open.id) return clearInterval(watching)
     const all = await runsHere(open.id)
-    const bad = all.find((r) => r.mine && r.status === 'failed' && r.error)
+    const bad = all.find((r: any) => r.mine && r.status === 'failed' && r.error)
     if (bad) {
-      const b = BOTS.find((x) => x.slug === bad.bot)
+      const b = (BOTS as any).find((x: any) => x.slug === bad.bot)
       botTrouble.value = { name: (b && b.name) || bad.bot, why: whyFailed(bad.error) }
       clearInterval(watching)
     }
@@ -145,10 +146,10 @@ onBeforeUnmount(() => clearInterval(watching))
  * fetched by the bot on its own account: a bot can then only ever have read what the person who
  * summoned it could read, and what it was given is a matter of record beside what it did with it.
  */
-async function runCommand({ name, bot, args }) {
+async function runCommand({ name, bot, args }: any) {
   if (!bot || !open.id) return
   botTrouble.value = null
-  const its = BOTS.find((x) => x.slug === bot)
+  const its = (BOTS as any).find((x: any) => x.slug === bot)
   const shown = (its && its.name) || bot
   const said = await summon(bot, { surface: 'spaces', channel: open.id, root: open.id, command: name, args })
   if (said && said.error) { botTrouble.value = { name: shown, why: said.error }; return }
@@ -162,22 +163,22 @@ const myName = computed(() => {
   return (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) || String(u.email || '').split('@')[0] || ''
 })
 
-const people = ref([])
+const people = ref<any>([])
 /* every name a line may carry, keyed as its token stores it: the people, the bots, the groups */
-const groupNames = computed(() => Object.fromEntries(groups.value.map((g) => [ROLE_PICK(g.slug), g.name])))
+const groupNames = computed(() => Object.fromEntries(groups.value.map((g: any) => [ROLE_PICK(g.slug), g.name])))
 /* the people every DM row already names — the rail draws a title before any space's people are
    loaded, and a DM's peers need not be in that space's list at all. Without this a conversation
    reads "someone, someone" until it is opened. */
 const dmNames = computed(() => Object.fromEntries(
-  (dms.value || []).flatMap((d) => (d.people || []).map((x) => [x.id, x.name])).filter(([, n]) => n)))
-const names = computed(() => ({ ...Object.fromEntries(people.value.map((p) => [p.id, p.name])), ...dmNames.value, ...botNames.value, ...groupNames.value }))
+  (dms.value || []).flatMap((d: any) => (d.people || []).map((x: any) => [x.id, x.name])).filter(([, n]: any) => n)))
+const names = computed(() => ({ ...Object.fromEntries(people.value.map((p: any) => [p.id, p.name])), ...dmNames.value, ...botNames.value, ...groupNames.value }))
 /* AND WHO EACH OF THEM IS, for the face: the picture they chose, the style they picked, and the
    seed the database made for them. A face drawn from a display name changes the day somebody
    renames themselves, which is the one thing a face must not do. */
-const faces = computed(() => Object.fromEntries(people.value.map((p) => [p.id, p])))
+const faces = computed(() => Object.fromEntries(people.value.map((p: any) => [p.id, p])))
 /* AND WHAT EACH OF THEM WEARS HERE. One map for the open space, built where the names are built
    and from the same read, so drawing a badge beside a name in a room costs nothing per line. */
-const flairs = computed(() => Object.fromEntries(people.value.filter((p) => (p.flair || []).length).map((p) => [p.id, p.flair])))
+const flairs = computed(() => Object.fromEntries(people.value.filter((p: any) => (p.flair || []).length).map((p: any) => [p.id, p.flair])))
 /* the names the places that cross every space are given: the open space's people, and the reader
    themselves — a mention is usually OF them, and reading "@someone" about yourself is absurd */
 /*
@@ -187,11 +188,11 @@ const flairs = computed(() => Object.fromEntries(people.value.filter((p) => (p.f
  * their account page and in the member list, and found a different one looking back at them from
  * the corner of every room. A face is a person's record or it is not their face.
  */
-const myPerson = computed(() => (people.value || []).find((x) => x.id === me.value) || myFace.value || null)
+const myPerson = computed(() => (people.value || []).find((x: any) => x.id === me.value) || myFace.value || null)
 const namesOut = computed(() => (me.value ? { ...names.value, [me.value]: myName.value } : names.value))
-const scroller = ref(null)
+const scroller = ref<any>(null)
 /* the network's column, in the chat layout: refreshed when a space is pinned beside it */
-const netColumn = ref(null)
+const netColumn = ref<any>(null)
 const railOpen = ref(false)
 const finding = ref(false)
 /*
@@ -203,13 +204,13 @@ const finding = ref(false)
 const helping = ref(false)
 /* the rooms as the rail shows them, which is the order the arrows move through */
 const roomOrder = computed(() => channels.value
-  .filter((c) => !space.value || c.space_id === space.value.id)
-  .filter((c) => !c.archived_at))
-const hasUnread = (c) => {
-  const row = unread.value.find((r) => r.channel === c.id)
+  .filter((c: any) => !space.value || c.space_id === space.value.id)
+  .filter((c: any) => !c.archived_at))
+const hasUnread = (c: any) => {
+  const row = unread.value.find((r: any) => r.channel === c.id)
   return !!row && unreadOf(row) > 0 && !mutedNow(row)
 }
-async function pressed(e) {
+async function pressed(e: any) {
   const what = commandOf(e, { typing: isTyping(e.target) })
   if (!what) return
   /* a shortcut that did something has used the press; one that did nothing leaves it alone */
@@ -238,27 +239,27 @@ async function pressed(e) {
   if (act() === false) return
   e.preventDefault()
 }
-function step(by, only) {
+function step(by: any, only: any) {
   const id = stepRoom(roomOrder.value, open.id, by, { only })
   if (id) pick(id)
 }
-const found = ref([])
+const found = ref<any>([])
 const busy = ref(false)
 const posting = ref(false)
 const postTitle = ref('')
 /* the huddle is the page's, not the channel's: it is a panel over the surface, it survives moving
    from one room to another, and the only things that end it are leaving and closing the tab */
-const huddle = ref(null)
-const spaceId = ref(null)
-const members = ref({})        /* channel id → the ids in it, so a direct message can be named */
+const huddle = ref<any>(null)
+const spaceId = ref<any>(null)
+const members = ref<any>({})        /* channel id → the ids in it, so a direct message can be named */
 const composing = ref(false)   /* the new-message picker */
 const browsing = ref(false)    /* every channel of the space, to join one */
-const chosen = ref([])
+const chosen = ref<any>([])
 const whoQ = ref('')
 const whoShown = computed(() => {
   const q = whoQ.value.trim().toLowerCase()
-  const list = people.value.filter((x) => x.id !== me.value)
-  return q ? list.filter((x) => String(x.name || '').toLowerCase().includes(q)) : list
+  const list = people.value.filter((x: any) => x.id !== me.value)
+  return q ? list.filter((x: any) => String(x.name || '').toLowerCase().includes(q)) : list
 })
 const belling = ref(false)   /* the channel's own little menu */
 /* What a community adds and a staff space never asks for: whether this person keeps this room,
@@ -268,25 +269,26 @@ const belling = ref(false)   /* the channel's own little menu */
 /* WHAT IS WAITING TO BE SENT, in this room. A decision already made, so it sits above the composer
    where the person who made it will see it — not in Drafts, which is for what is unfinished. */
 const showLater = ref(false)
-const laterHere = computed(() => scheduled.value.filter((s) => s.channel_id === open.id))
+const laterHere = computed(() => scheduled.value.filter((s: any) => s.channel_id === open.id))
 const LW = computed(() => us('spaces').later.main)
 const BotW = computed(() => us('spaces').bots.main)
 const laterLabel = computed(() => (laterHere.value.length === 1
   ? LW.value['waiting-one']
   : (LW.value['waiting-many'] || '').replace('{n}', laterHere.value.length)))
-const sayWhenFull = (iso) => {
+const sayWhenFull = (iso: any) => {
   const d = new Date(iso)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   if (isNaN(d)) return ''
   const today = new Date().toDateString() === d.toDateString()
   const at = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
   return today ? at : d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + at
 }
-async function scheduleIt({ body, when }) {
+async function scheduleIt({ body, when }: any) {
   await sendLater(open.id, body, when)
 }
 /* sending one now is sending it and dropping the plan: two acts, in that order, so a failure to
    send leaves the plan standing rather than losing the words */
-async function sendNow(row) {
+async function sendNow(row: any) {
   await send(row.channel_id, row.body, { thread: row.thread_root_id })
   await unschedule(row.id)
   await toFoot()
@@ -302,13 +304,13 @@ vueWatch(() => open.id, async (id) => {
   if (!id) return
   try { mayPinHere.value = !!(await mayModerate(id)) } catch { mayPinHere.value = false }
 }, { immediate: true })
-const pinnedIds = computed(() => new Set((open.pins || []).map((x) => x.message_id)))
+const pinnedIds = computed(() => new Set((open.pins || []).map((x: any) => x.message_id)))
 const pinLabel = computed(() => (open.pins.length === 1
   ? CW.value['pinned-one']
   : (CW.value['pinned-many'] || '').replace('{n}', open.pins.length)))
-async function togglePin(id, on) { await pin(id, on) }
+async function togglePin(id: any, on: any) { await pin(id, on) }
 /* opening a pin is going to the message: the panel closes behind you, as a search result does */
-async function goToPin(row) {
+async function goToPin(row: any) {
   pinning.value = false
   if (row.thread_root_id) await openThread(row.thread_root_id)
   await nextTick()
@@ -318,13 +320,13 @@ async function goToPin(row) {
 
 const moderating = ref(false)
 const waitingReports = ref(0)
-const reporting = ref(null)
+const reporting = ref<any>(null)
 const REASONS = ['spam', 'rude', 'wrong-place', 'other']
 /* which of the platform's own events this room hears is the CHANNEL's own line — `hears` in
    content/spaces/<space>/<channel>.md — and not a switch in a menu: it is part of what the site is,
    so it is declared where the room is declared and projected into space_hooks by the build. */
 
-const channel = computed(() => channels.value.find((c) => c.id === open.id) || null)
+const channel = computed(() => channels.value.find((c: any) => c.id === open.id) || null)
 const RW = computed(() => us('spaces').rail.main)
 const dmWords = computed(() => ({ self: RW.value.self, more: RW.value.more, someone: RW.value.someone }))
 const channelTitle = computed(() => (!channel.value ? '' : channel.value.kind === 'dm'
@@ -332,27 +334,27 @@ const channelTitle = computed(() => (!channel.value ? '' : channel.value.kind ==
   : channel.value.name))
 const dmPeer = computed(() => {
   if (!channel.value || channel.value.kind !== 'dm') return null
-  const ids = (members.value[channel.value.id] || []).filter((id) => id !== me.value)
+  const ids = (members.value[channel.value.id] || []).filter((id: any) => id !== me.value)
   return ids.length === 1 ? ids[0] : null
 })
-const mentionCount = computed(() => unread.value.reduce((n, r) => n + mentionsOf(r), 0))
+const mentionCount = computed(() => unread.value.reduce((n: any, r: any) => n + mentionsOf(r), 0))
 /* a mention landing live is in the community's one list too: its count is asked again */
 vueWatch(mentionCount, (n, was) => { if (COMMUNITY && n > was) refreshNetUnread() })
 /* the badge on the DMs place: how many conversations have something unread, not how many lines —
    the counters are already in hand from space_unread, so the place needs no read to say it */
 const dmUnread = computed(() => {
-  const isDm = new Set(channels.value.filter((c) => c.kind === 'dm').map((c) => c.id))
-  return unread.value.filter((r) => isDm.has(r.channel) && unreadOf(r) > 0 && !mutedNow(r)).length
+  const isDm = new Set(channels.value.filter((c: any) => c.kind === 'dm').map((c: any) => c.id))
+  return unread.value.filter((r: any) => isDm.has(r.channel) && unreadOf(r) > 0 && !mutedNow(r)).length
 })
 /* HOW MANY ARE WAITING, from the counters the rail already holds — not a second read. A muted room
    is left out, because muting is somebody saying they do not want to be told. */
-const unreadCount = computed(() => unread.value.reduce((n, r) => {
-  const row = channels.value.find((c) => c.id === r.channel)
+const unreadCount = computed(() => unread.value.reduce((n: any, r: any) => {
+  const row = channels.value.find((c: any) => c.id === r.channel)
   if (row && (row.notify === 'none' || mutedNow(row))) return n
   return n + unreadOf(r)
 }, 0))
 /* a row of the DMs place opens where it lives: the space first when it is not the one in front */
-async function openDmRow(row) {
+async function openDmRow(row: any) {
   if (!row) return
   if (!space.value || space.value.id !== row.space) enterSpace(row.space)
   await pick(row.channel)
@@ -361,12 +363,12 @@ async function openDmRow(row) {
    in and the words so far, newest room first by where it sits in the rail */
 const spaceOf = computed(() => {
   if (spaces.value.length < 2) return {}
-  const byId = Object.fromEntries(spaces.value.map((s) => [s.id, s.name]))
-  return Object.fromEntries(channels.value.map((c) => [c.id, byId[c.space_id] || '']))
+  const byId = Object.fromEntries(spaces.value.map((s: any) => [s.id, s.name]))
+  return Object.fromEntries(channels.value.map((c: any) => [c.id, byId[c.space_id] || '']))
 })
 const draftRows = computed(() => Object.keys(drafts)
   .map((id) => {
-    const c = channels.value.find((x) => x.id === id)
+    const c = channels.value.find((x: any) => x.id === id)
     if (!c) return null
     return { channel_id: id, channel: c.name, channel_kind: c.kind, body: String(drafts[id] || '').trim() }
   })
@@ -384,14 +386,14 @@ const commentsWaiting = computed(() => (isStaff.value ? waiting.value.comments.w
 const socialDesk = computed(() => isStaff.value && deskSources.value.includes('social')
   && deskSourceStatus.social?.available === true)
 const socialCommentsWaiting = computed(() => socialDesk.value
-  ? deskRows.value.filter((row) => row.source === 'social' && row.conversationKind === 'comment' && row.waiting_since && !row.resolved).length
+  ? deskRows.value.filter((row: any) => row.source === 'social' && row.conversationKind === 'comment' && row.waiting_since && !row.resolved).length
   : 0)
 const socialDmsWaiting = computed(() => socialDesk.value
-  ? deskRows.value.filter((row) => row.source === 'social' && row.conversationKind === 'dm' && row.waiting_since && !row.resolved).length
+  ? deskRows.value.filter((row: any) => row.source === 'social' && row.conversationKind === 'dm' && row.waiting_since && !row.resolved).length
   : 0)
 /* the work, as against the conversation: the desk's open tickets, or a person's own */
 const ticketsOpen = computed(() => (isSupport.value ? deskTickets.list.filter(isLive).length : 0))
-const myTicketCount = computed(() => myTickets.list.filter((t) => t.status !== 'resolved' && t.status !== 'closed').length)
+const myTicketCount = computed(() => myTickets.list.filter((t: any) => t.status !== 'resolved' && t.status !== 'closed').length)
 /* COACHING, the other side of the Clients queue. Where the business answers coaching here rather
    than on the results sheet (platformkit.config.js coaching.where), a member gets a place of their
    own for it — the conversation and their sessions together — the same conversation, the same rows, the same unread count the header used to
@@ -401,7 +403,7 @@ const myTicketCount = computed(() => myTickets.list.filter((t) => t.status !== '
    same one: does this reach me with a noise. Nothing is hidden by it — a muted room opens and reads
    as it always did — so none of it is a policy, and all of it is undone by pressing the same thing. */
 const MuW = computed(() => us('spaces').mute.main)
-const hour = (n) => () => new Date(Date.now() + n * 3600e3).toISOString()
+const hour = (n: any) => () => new Date(Date.now() + n * 3600e3).toISOString()
 const MUTES = [
   { key: 'hour', at: hour(1) },
   { key: 'day', at: hour(24) },
@@ -417,13 +419,14 @@ const mutedSays = computed(() => {
   if (!m) return ''
   if (!m.until) return MuW.value['muted-ever']
   const d = new Date(m.until)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   return (MuW.value['muted-until'] || '').replace('{when}', isNaN(d) ? '' : d.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }))
 })
 /* the place and what is in it: the conversation where they may write to a coach — a coach always, a
    member, somebody whose paid session's week is still running (read from the booking: the coaches they
    have one with), or anybody with a line waiting — and their sessions where the sessions module is on
    (places.js coachingPlace, held by community-nav) */
-const sessionCoaches = ref([])
+const sessionCoaches = ref<any>([])
 vueWatch(() => me.value, async (id) => {
   sessionCoaches.value = []
   if (!id || !supabase) return
@@ -436,13 +439,13 @@ const coachPlace = computed(() => coachingPlace({
   chatOn: moduleOn('coaching'), sessionsOn: moduleOn('sessions'),
 }))
 const coachingHere = computed(() => !!coachPlace.value)
-const notJoined = computed(() => channels.value.filter((c) => c.kind !== 'dm' && (!spaceId.value || c.space_id === spaceId.value) && !unread.value.some((r) => r.channel === c.id)))
+const notJoined = computed(() => channels.value.filter((c: any) => c.kind !== 'dm' && (!spaceId.value || c.space_id === spaceId.value) && !unread.value.some((r: any) => r.channel === c.id)))
 const roomsHere = computed(() => channels.value
-  .filter((c) => c.kind !== 'dm' && (!spaceId.value || c.space_id === spaceId.value))
-  .map((c) => ({ ...c, joined: unread.value.some((r) => r.channel === c.id) }))
-  .sort((a, b) => (a.position || 0) - (b.position || 0) || a.name.localeCompare(b.name)))
-const space = computed(() => spaces.value.find((s) => s.id === (spaceId.value || (channel.value && channel.value.space_id))) || spaces.value[0] || null)
-const myRow = computed(() => unread.value.find((r) => r.channel === open.id) || null)
+  .filter((c: any) => c.kind !== 'dm' && (!spaceId.value || c.space_id === spaceId.value))
+  .map((c: any) => ({ ...c, joined: unread.value.some((r: any) => r.channel === c.id) }))
+  .sort((a: any, b: any) => (a.position || 0) - (b.position || 0) || a.name.localeCompare(b.name)))
+const space = computed(() => spaces.value.find((s: any) => s.id === (spaceId.value || (channel.value && channel.value.space_id))) || spaces.value[0] || null)
+const myRow = computed(() => unread.value.find((r: any) => r.channel === open.id) || null)
 const badges = computed(() => badgesBySpace(unread.value))
 /* what this person may do here is the database's answer, carried on the channel's own counters */
 const mentionHere = computed(() => !!open.id && mayMention(open.id))
@@ -453,18 +456,18 @@ const mentionHere = computed(() => !!open.id && mayMention(open.id))
  * a room this way rather than another.
  */
 const feedPosts = computed(() => (channel.value && channel.value.mode === 'feed'
-  ? open.messages.filter((m) => !m.thread_root_id && m.kind !== 'system').slice().sort((a, b) => Number(b.seq) - Number(a.seq))
+  ? open.messages.filter((m: any) => !m.thread_root_id && m.kind !== 'system').slice().sort((a: any, b: any) => Number(b.seq) - Number(a.seq))
   : []))
-const feedReplies = ref({})
+const feedReplies = ref<any>({})
 let feedTick = 0
-vueWatch(() => [open.id, feedPosts.value.map((m) => m.id + ':' + (m.reply_count || 0)).join(','), thread.root ? thread.root.id : ''], async () => {
-  const roots = feedPosts.value.filter((m) => (m.reply_count || 0) > 0 && !String(m.id).startsWith('tmp-')).map((m) => m.id)
+vueWatch(() => [open.id, feedPosts.value.map((m: any) => m.id + ':' + (m.reply_count || 0)).join(','), thread.root ? thread.root.id : ''], async () => {
+  const roots = feedPosts.value.filter((m: any) => (m.reply_count || 0) > 0 && !String(m.id).startsWith('tmp-')).map((m: any) => m.id)
   const n = ++feedTick
   const got = roots.length ? await firstReplies(roots).catch(() => ({})) : {}
   if (n === feedTick) feedReplies.value = got
 })
 const sections = computed(() => daySections(open.messages, Date.now(), { today: W.value.today, yesterday: W.value.yesterday }))
-const runs = (list) => runsOf(list)
+const runs = (list: any) => runsOf(list)
 /* the words are a string with a slot, never two strings joined here */
 const composerSays = computed(() => {
   const C = us('spaces').composer.main
@@ -475,8 +478,8 @@ const composerSays = computed(() => {
 /* how this room is read — by side between two people, by author where anybody may speak */
 const sided = computed(() => sidedRoom(channel.value))
 const typingNow = computed(() => whoIsTyping(open.id).map((id) => names.value[id]).filter(Boolean))
-const reactionsFor = (id) => {
-  const by = new Map()
+const reactionsFor = (id: any) => {
+  const by: any = new Map()
   for (const r of open.reactions) {
     if (r.message_id !== id) continue
     if (!by.has(r.emoji)) by.set(r.emoji, { emoji: r.emoji, users: [], mine: false })
@@ -486,21 +489,21 @@ const reactionsFor = (id) => {
   }
   return [...by.values()]
 }
-const mentionsMe = (m) => !!m.body && m.body.includes('<@' + me.value + '>')
+const mentionsMe = (m: any) => !!m.body && m.body.includes('<@' + me.value + '>')
 /* who is in a thread, for the summary row under its root */
-const repliersOf = (id) => [...new Set(open.messages.filter((m) => m.thread_root_id === id).map((m) => m.author_id))]
+const repliersOf = (id: any) => [...new Set(open.messages.filter((m: any) => m.thread_root_id === id).map((m: any) => m.author_id))]
 
 async function loadMembers() {
-  const { data } = await supabase.from('channel_members').select('channel_id, user_id')
+  const { data } = await (supabase as any).from('channel_members').select('channel_id, user_id')
   const by = {}
-  for (const r of data || []) (by[r.channel_id] = by[r.channel_id] || []).push(r.user_id)
+  for (const r of data || []) ((by as any)[r.channel_id] = (by as any)[r.channel_id] || []).push(r.user_id)
   members.value = by
 }
 
 /* the event whose own page is open, inside the events view */
 const openEvent = ref('')
 /* the spaces with something coming up: their Events row in the social navigation */
-const eventSpaces = computed(() => [...new Set((calendar.upcoming || []).map((o) => o.space).filter(Boolean))])
+const eventSpaces = computed(() => [...new Set((calendar.upcoming || []).map((o: any) => o.space).filter(Boolean))])
 /* a session from the sidebar: the reader's sessions, in the community's coaching place where coaching
    lives here, else on the sheet */
 function openSessions() {
@@ -508,13 +511,13 @@ function openSessions() {
   else navigate('/app/coaching')
 }
 /* a space's place from the navigation (a space of several rooms carries them there, not as tabs) */
-function openPlace(id, key) {
+function openPlace(id: any, key: any) {
   if (!space.value || space.value.id !== id) enterSpace(id)
   if (key === 'events') { eventsAll.value = false; openEvent.value = '' }
   goTo(key)
 }
 /* does this space run anything? the rail carries an Events item only where it does */
-const hasEvents = computed(() => (calendar.upcoming || []).some((o) => !space.value || o.space === space.value.id))
+const hasEvents = computed(() => (calendar.upcoming || []).some((o: any) => !space.value || o.space === space.value.id))
 
 /*
  * WHAT A CALENDAR'S BUTTONS DO. All three of these used to be emitted by the space's home and listened for
@@ -522,12 +525,12 @@ const hasEvents = computed(() => (calendar.upcoming || []).some((o) => !space.va
  * A button that does nothing is worse than no button: somebody presses it twice, then stops
  * believing the page.
  */
-async function joinOccurrence(o) {
+async function joinOccurrence(o: any) {
   if (!o) return
-  const id = o.channel || o.channel_id || (space.value && channels.value.find((c) => c.space_id === space.value.id && c.kind !== 'dm')?.id)
+  const id = o.channel || o.channel_id || (space.value && channels.value.find((c: any) => c.space_id === space.value.id && c.kind !== 'dm')?.id)
   if (id) { await pick(id); huddle.value = id }
 }
-async function bookSession(s) {
+async function bookSession(s: any) {
   if (s && s.slug) window.location.href = '/app/coaching?book=' + encodeURIComponent(s.slug)
 }
 
@@ -553,7 +556,7 @@ const SOCIAL = (site.community && site.community.layout) === 'social'
    its place. Signed in, the database's answers (admission(), asked by the navigation); a guest is outside
    every gated place. Home keeps its own card in the network's column, which also knows read from write. */
 const GATED_PLACES = (site.community && site.community.gated) || []
-const PLACE_OF_VIEW = { 'net-notes': 'notifications', mentions: 'notifications', events: 'events', dms: 'messages' }
+const PLACE_OF_VIEW: any = { 'net-notes': 'notifications', mentions: 'notifications', events: 'events', dms: 'messages' }
 const lockedHere = computed(() => {
   const word = PLACE_OF_VIEW[view.value] || view.value
   if (!GATED_PLACES.includes(word)) return false
@@ -572,12 +575,12 @@ const workList = computed(() => [
 /* Events from the navigation is everything on, in every space; from a space's tab, that space's */
 const eventsAll = ref(false)
 /* the open space's tabs: its feed, its rooms, what is on, who is in it, what it is, keeping it */
-const firstOf = (pred) => channels.value.find((c) => space.value && c.space_id === space.value.id && c.kind !== 'dm' && !c.archived_at && pred(c))
+const firstOf = (pred: any) => channels.value.find((c: any) => space.value && c.space_id === space.value.id && c.kind !== 'dm' && !c.archived_at && pred(c))
 const spaceTabs = computed(() => {
   if (!space.value) return []
   const SH = us('network').shell.main, RW = us('spaces').rail.main
-  const feedRoom = firstOf((c) => c.mode === 'feed')
-  const chatRoom = firstOf((c) => c.mode !== 'feed')
+  const feedRoom = firstOf((c: any) => c.mode === 'feed')
+  const chatRoom = firstOf((c: any) => c.mode !== 'feed')
   return [
     ...(feedRoom ? [{ key: 'feed', word: RW.feed, on: view.value === 'channel' && open.id === feedRoom.id, go: () => pick(feedRoom.id) }] : []),
     ...(chatRoom ? [{ key: 'chat', word: SH.chat, on: view.value === 'channel' && !!channel.value && channel.value.mode !== 'feed', go: () => pick(chatRoom.id) }] : []),
@@ -589,7 +592,7 @@ const spaceTabs = computed(() => {
 /* WHAT THE SPACE IS, in one line under its name: the first paragraph of its own file, its marks
    taken off — the words it is offered with on Browse spaces, not new ones */
 const spaceLine = computed(() => {
-  const d = space.value && (declaredSpaces || []).find((x) => x.slug === space.value.slug)
+  const d = space.value && (declaredSpaces || []).find((x: any) => x.slug === space.value.slug)
   if (!d) return ''
   /* .velite/spaces.json is written by velite (the body as html) and by the spaces compile (the body
      as markdown, `about`), whichever ran last; either is read */
@@ -610,7 +613,7 @@ const roomInHead = computed(() => SOCIAL && inSpace.value && !!space.value && vi
 const roomTitled = computed(() => roomInHead.value && channel.value.mode !== 'feed')
 /* PIN TO HOME: a space whose feed the reader may pin, from its own header (the network's spaces) */
 const NT = computed(() => us('network').timeline.main)
-const pinOf = computed(() => (COMMUNITY && space.value ? (net.spaces || []).find((x) => x.space_id === space.value.id) || null : null))
+const pinOf = computed(() => (COMMUNITY && space.value ? (net.spaces || []).find((x: any) => x.space_id === space.value.id) || null : null))
 const pinBusy = ref(false)
 async function togglePinHome() {
   if (!pinOf.value) return
@@ -621,7 +624,7 @@ async function togglePinHome() {
    take the width beside the navigation, with no sidebar, the way a desk does. A member's coaching
    place is the same shape — a conversation in two panes, or their sessions — and takes the same room. */
 const WORK_VIEWS = ['support', 'tickets', 'clients', 'comments', 'social-comments', 'social-dms']
-const WIDE = computed(() => SOCIAL && (WORK_VIEWS.includes(view.value) || !!(placeOf(view.value) && placeOf(view.value).wide)))
+const WIDE = computed(() => SOCIAL && (WORK_VIEWS.includes(view.value) || !!(placeOf(view.value) && (placeOf(view.value) as any).wide)))
 /* the navigation's Events is every space's: a space's own events are its tab, not that place */
 const navView = computed(() => (view.value === 'events' && !eventsAll.value ? 'space-events'
   /* without the network, Notifications is Mentions and Threads as tabs: either is that place */
@@ -630,15 +633,15 @@ const navView = computed(() => (view.value === 'events' && !eventsAll.value ? 's
   : view.value === 'net' && (route.value || '') === ROUTES.feed + '/explore' ? 'net-explore' : view.value))
 const noteTabs = computed(() => (SOCIAL && !COMMUNITY && (view.value === 'mentions' || view.value === 'threads')
   ? NOTE_TABS.map((k) => ({ key: k, word: us('spaces').feed.main[k + '-title'] })) : []))
-function socialGo(v) {
+function socialGo(v: any) {
   railOpen.value = false
   if (v === 'events') { eventsAll.value = true; openEvent.value = '' }
   goTo(v)
 }
-const onFeed = (p) => COMMUNITY && (p === ROUTES.feed || p.startsWith(ROUTES.feed + '/'))
-const netViewOf = (p) => (p === ROUTES.feed + '/notifications' ? 'net-notes' : 'net')
+const onFeed = (p: any) => COMMUNITY && (p === ROUTES.feed || p.startsWith(ROUTES.feed + '/'))
+const netViewOf = (p: any) => (p === ROUTES.feed + '/notifications' ? 'net-notes' : 'net')
 /* /feed/<place>: one of the reader's own places (OWN_ADDR), else null */
-const ownViewOf = (p) => {
+const ownViewOf = (p: any) => {
   if (!p || !p.startsWith(ROUTES.feed + '/')) return null
   const rest = p.slice(ROUTES.feed.length + 1).replace(/\/$/, '')
   /* a registered place owns its address and everything under it */
@@ -653,7 +656,7 @@ vueWatch(route, (p) => {
   else if (!own) view.value = netViewOf(p)
 })
 
-async function goTo(where) {
+async function goTo(where: any) {
   if (where === 'net-explore') { navigate(ROUTES.feed + '/explore'); view.value = 'net'; return }
   if (where === 'net' || where === 'net-notes') {
     navigate(where === 'net-notes' ? ROUTES.feed + '/notifications' : ROUTES.feed)
@@ -684,14 +687,14 @@ vueWatch(socialDesk, (available) => {
 /* May this person keep this room, and how much is waiting on them? Asked of one of the space's own
    rooms, because moderating is a grant like any other and may sit on a single room. */
 async function loadModeration() {
-  const room = space.value ? channels.value.find((c) => c.space_id === space.value.id && c.kind !== 'dm') : null
+  const room = space.value ? channels.value.find((c: any) => c.space_id === space.value.id && c.kind !== 'dm') : null
   if (!room || !space.value || space.value.kind === 'staff') { moderating.value = false; waitingReports.value = 0; return }
   try {
     moderating.value = !!(await mayModerate(room.id))
     waitingReports.value = moderating.value ? ((await reportsOf(space.value.id)) || []).length : 0
   } catch { moderating.value = false; waitingReports.value = 0 }
 }
-async function sendReport(reason) {
+async function sendReport(reason: any) {
   const m = reporting.value
   reporting.value = null
   if (!m) return
@@ -714,7 +717,7 @@ const REGISTRY = [
   { key: 'coaching', component: SpaceCoaching, wide: true, props: () => ({ place: coachPlace.value }) },
   ...(SITE_PLACES || []).map((x) => ({ ...x, component: x.load ? defineAsyncComponent(x.load) : null, props: () => ({ rest: placeRest.value }) })),
 ]
-const placeOf = (k) => REGISTRY.find((x) => x.key === k) || null
+const placeOf: any = (k: any) => REGISTRY.find((x) => x.key === k) || null
 const MINE = [...SITE_PLACE_KEYS, 'net', 'net-notes', 'index', 'support', 'clients', 'comments', 'social-comments', 'social-dms', 'tickets', 'my-tickets', 'coaching', 'dms', 'unreads', 'threads', 'mentions', 'saved', 'drafts', 'discover']
 const inSpace = computed(() => !MINE.includes(view.value) && !(view.value === 'events' && eventsAll.value))
 const reportable = computed(() => !!space.value && space.value.kind !== 'staff' && !!channel.value && channel.value.kind !== 'dm')
@@ -731,16 +734,18 @@ const takesVotes = computed(() => !!(channel.value && channel.value.votes))
 
 /* a mention read is the channel's own cursor moved past it — there is no second counter for a
    mention, and inventing one would be a number that could disagree with the first */
-async function readOne(row) {
+async function readOne(row: any) {
   await markRead(row.channel_id, Number(row.seq) || 0)
+  // @ts-expect-error TS2304, from the conversion: Cannot find name 'loadActivity'.
   await loadActivity()
 }
 async function readAll() {
-  for (const r of mentions.value.filter((x) => x.unread)) await markRead(r.channel_id, Number(r.seq) || 0)
+  for (const r of mentions.value.filter((x: any) => x.unread)) await markRead(r.channel_id, Number(r.seq) || 0)
+  // @ts-expect-error TS2304, from the conversion: Cannot find name 'loadActivity'.
   await loadActivity()
 }
 
-async function openFromFeed(at) {
+async function openFromFeed(at: any) {
   await pick(at.channel)
   if (at.thread) await openThread(at.thread)
 }
@@ -768,18 +773,18 @@ async function startDm() {
 
 async function loadPeople() {
   if (!space.value) { people.value = []; return }
-  const { data } = await supabase.rpc('space_people', { p_space: space.value.id, p_channel: open.id })
+  const { data } = await (supabase as any).rpc('space_people', { p_space: space.value.id, p_channel: open.id })
   people.value = data || []
 }
 
-async function pick(id) {
+async function pick(id: any) {
   /* A ROOM OPENS ON THE ROOM. A thread left open from the last time somebody was in here is not
      where they meant to go: they pressed the channel, and the channel is the board or the stream.
      Carrying the old thread over meant pressing #the-books and landing inside one post of it,
      with no way of knowing why — the anti-pattern this line exists to stop. */
   closeThread()
   await openChannel(id)
-  const c = channels.value.find((x) => x.id === id)
+  const c = channels.value.find((x: any) => x.id === id)
   if (c) spaceId.value = c.space_id
   await loadPeople()
   await loadMembers()
@@ -792,15 +797,15 @@ async function pick(id) {
    is what makes a link to a room a link and a refresh keep the place. It is written with
    replaceState rather than navigated, because moving between rooms is not moving between pages —
    the back button should leave the surface, not walk back through every room that was opened. */
-function address(c) {
+function address(c: any) {
   if (!c || typeof history === 'undefined') return
-  const sp = spaces.value.find((x) => x.id === c.space_id)
+  const sp = spaces.value.find((x: any) => x.id === c.space_id)
   if (!sp) return
   put(c.kind === 'dm' ? `${ROUTES.spaces}/${sp.slug}` : `${ROUTES.spaces}/${sp.slug}/${c.slug}`)
 }
 /* a space with no room in front of it (a space whose rooms the reader cannot see) is the space's own address */
-function addressOf(id) {
-  const sp = spaces.value.find((x) => x.id === id)
+function addressOf(id: any) {
+  const sp = spaces.value.find((x: any) => x.id === id)
   if (sp) put(`${ROUTES.spaces}/${sp.slug}`)
 }
 
@@ -821,7 +826,7 @@ const PLACES = ['people', 'events', 'keeping']
    space's events — belong to no space, so they never wear one's address (they used to keep the last
    space's, which read as Coaching being a room of it). Where the network is one place with the spaces
    they sit beside Home under /feed, and an address opens its place; without it, the community's own. */
-const OWN_ADDR = { coaching: 'coaching', dms: 'messages', saved: 'saved', drafts: 'drafts', 'my-tickets': 'my-tickets',
+const OWN_ADDR: any = { coaching: 'coaching', dms: 'messages', saved: 'saved', drafts: 'drafts', 'my-tickets': 'my-tickets',
   support: 'support', tickets: 'tickets', clients: 'clients', comments: 'comments', 'social-comments': 'social-comments', 'social-dms': 'social-messages' }
 const OWN_VIEW = Object.fromEntries([...Object.entries(OWN_ADDR).map(([v, a]) => [a, v]), ['events', 'events']])
 
@@ -840,14 +845,14 @@ function addressOfView() {
   put(`${ROUTES.spaces}/${sp.slug}${tail}`)
 }
 vueWatch([view, openEvent], addressOfView)
-function put(at) {
+function put(at: any) {
   if (typeof history === 'undefined' || window.location.pathname === at) return
   history.replaceState(history.state, '', at + window.location.search)
 }
 
 /* the space in front changes: the groups belong to the space, so they are read when it changes and
    not per room */
-function enterSpace(id) {
+function enterSpace(id: any) {
   spaceId.value = id
   closeThread()
   loadGroups(id)
@@ -857,10 +862,10 @@ function enterSpace(id) {
    repeated its tabs. A space whose rooms the reader cannot see opens on its people, which every
    space has. Every way in comes here: the navigation, joining, an address naming no room, the
    shortcut. */
-async function pickSpace(id) {
+async function pickSpace(id: any) {
   enterSpace(id)
   const front = frontOf(id, channels.value)
-  if (front) return pick(front.id)
+  if (front) return pick((front as any).id)
   view.value = 'people'
   addressOfView()
 }
@@ -871,7 +876,7 @@ async function toFoot() {
   if (el) el.scrollTop = el.scrollHeight
 }
 
-async function say(payload) {
+async function say(payload: any) {
   await send(open.id, payload.body, { echo: payload.echo })
   await toFoot()
 }
@@ -893,12 +898,12 @@ async function say(payload) {
  * they got there first — so the room summons the bot with the answer exactly as if it had been
  * typed, and a second press finds the offer gone rather than starting a second run.
  */
-async function tookOffer({ message, key, text }) {
+async function tookOffer({ message, key, text }: any) {
   const m = [...open.messages, thread.root, ...thread.replies].find((x) => x && x.id === message)
   const made = await chooseOffer(message, key)
   if (!made) return
   const slug = m && m.meta && m.meta.bot
-  const bot = slug ? myBots.value.find((b) => b.slug === slug) : null
+  const bot = slug ? myBots.value.find((b: any) => b.slug === slug) : null
   if (!bot) return
   botTrouble.value = null
   const said = await summon(bot.slug, {
@@ -910,19 +915,19 @@ async function tookOffer({ message, key, text }) {
 /* What the room said is read by the SERVER now (agent_transcript), with the same roomAsProse the
    line beside it is drawn with. It used to be sent from here — and anything a client sends, a
    client can make up, which is how three forged lines once made a bot promise free shipping. */
-async function sayInThread(payload) {
+async function sayInThread(payload: any) {
   await send(open.id, payload.body, { thread: thread.root.id, echo: payload.echo })
 }
-async function saidAloud(take) { await sendVoice(open.id, take.blob, take.seconds, { transcript: take.transcript }); await toFoot() }
-async function saidAloudInThread(take) { await sendVoice(open.id, take.blob, take.seconds, { thread: thread.root.id, transcript: take.transcript }) }
+async function saidAloud(take: any) { await sendVoice(open.id, take.blob, take.seconds, { transcript: take.transcript }); await toFoot() }
+async function saidAloudInThread(take: any) { await sendVoice(open.id, take.blob, take.seconds, { thread: thread.root.id, transcript: take.transcript }) }
 /* a file goes where the words would have gone, and what was in the box when it was chosen goes
    with it as its caption */
 /* a feed post's pictures and videos: up, then one message carrying them */
-async function postedMedia({ files, said }) { await sendMedia(open.id, files, { body: said }) }
+async function postedMedia({ files, said }: any) { await sendMedia(open.id, files, { body: said }) }
 /* the feed's media, signed as its posts arrive */
-vueWatch(() => feedPosts.value.map((m) => m.id).join(), () => signMedia(feedPosts.value))
-async function attached({ file, said }) { await sendFile(open.id, file, { body: said }); await toFoot() }
-async function attachedInThread({ file, said }) { await sendFile(open.id, file, { body: said, thread: thread.root.id }) }
+vueWatch(() => feedPosts.value.map((m: any) => m.id).join(), () => signMedia(feedPosts.value))
+async function attached({ file, said }: any) { await sendFile(open.id, file, { body: said }); await toFoot() }
+async function attachedInThread({ file, said }: any) { await sendFile(open.id, file, { body: said, thread: thread.root.id }) }
 /* speaking is membership, as the insert policy has it: a button somebody cannot act on is a
    button that lies, so an offer is dead for anybody who is not in the room */
 const mayWriteHere = computed(() => !!open.id && joined(open.id))
@@ -932,17 +937,17 @@ const fileHere = computed(() => !!open.id && mayFile(open.id))
 /* the search answers what it found AND how many rooms it could not look in — a sealed room leaves
    nothing in the index, and missing it silently reads as a broken search */
 const sealedOut = ref(0)
-async function find(q) {
+async function find(q: any) {
   busy.value = true
   try { const r = await search(q); found.value = r.rows; sealedOut.value = r.sealed }
   finally { busy.value = false }
 }
-async function openHit(hit) {
+async function openHit(hit: any) {
   if (hit.channel_id !== open.id) await pick(hit.channel_id)
   if (hit.thread_root_id) await openThread(hit.thread_root_id)
   finding.value = false
 }
-async function newPost(payload) {
+async function newPost(payload: any) {
   const title = postTitle.value.trim()
   if (!title) return
   await send(open.id, payload.body, { title })
@@ -968,9 +973,10 @@ const pollIds = computed(() => [...open.messages, ...(thread.root ? [thread.root
    single channel opening */
 vueWatch(() => pollIds.value.join(','), (ids) => {
   const want = ids ? ids.split(',') : []
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'.
   if (want.length) loadVotes(want); else votes.value = []
 }, { immediate: true })
-async function askRoom(p) {
+async function askRoom(p: any) {
   polling.value = false
   await makePoll(open.id, p.question, p.options, { multi: p.multi })
   await toFoot()
@@ -1024,9 +1030,9 @@ async function hydrate() {
   /* what the address names comes first: /spaces/<space>/<channel>, or /spaces/<space> for the space
      with whatever is most recent in it. With no room named, the room with something unread in it. */
   const named = /^\/spaces\/([^/]+)(?:\/([^/]+))?(?:\/([^/]+))?\/?$/.exec(path())
-  const sp = named && spaces.value.find((x) => x.slug === named[1])
+  const sp = named && spaces.value.find((x: any) => x.slug === named[1])
   const asked = named && named[2]
-  const room = sp && asked && channels.value.find((x) => x.space_id === sp.id && x.slug === asked)
+  const room = sp && asked && channels.value.find((x: any) => x.space_id === sp.id && x.slug === asked)
   if (room) await pick(room.id)
   else if (sp && asked && PLACES.includes(asked)) {
     /* a place rather than a room: /spaces/<space>/events, /people, and /events/<slug> for one */
@@ -1063,7 +1069,7 @@ onMounted(() => {
 })
 /* and again whenever somebody arrives: the modules reload themselves, this is the page's own half.
    Registered for as long as the page is mounted and no longer. */
-const offIdentity = onIdentity((id) => {
+const offIdentity = onIdentity((id: any) => {
   if (!id) return   /* signing out reloads the page; there is nothing to hydrate for a guest here */
   hydrate()
 })
@@ -1073,6 +1079,7 @@ vueWatch(() => space.value && space.value.id, loadModeration)
 onBeforeUnmount(() => { document.removeEventListener('visibilitychange', onVisible); stop(); deskStop() })
 /* a message lands in the channel that is open — but only reading it marks it read, and a member
    of staff on the Desk is not reading it: the row would vanish from under them as it arrived */
+// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'channel') markRead(open.id) })
 </script>
 
@@ -1096,7 +1103,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
           @place="(id, key) => { railOpen = false; openPlace(id, key) }"
           @drawer="railOpen = true" />
         <template v-else>
-        <SpaceBar
+        <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><SpaceBar
           class="sp-bar" :spaces="spaces" :badges="badges" :open-id="space ? space.id : ''" :in-space="inSpace"
           :view="view" :events="EVENTS_ON" :work="workList" :my-tickets="myTicketCount"
           :coaching="coachingHere" :coaching-unread="coachingHere ? chatUnread : 0"
@@ -1193,7 +1200,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
 
       <SpaceDiscover
         v-else-if="view === 'discover'" class="sp-plain" :token="joinToken"
-        @joined="async (id) => { await boot(); const sp = spaces.value.find((x) => x.id === id || x.slug === id) || space.value; if (sp) await pickSpace(sp.id) }" />
+        @joined="async (id) => { await boot(); const sp = spaces.value.find((x: any) => x.id === id || x.slug === id) || space.value; if (sp) await pickSpace(sp.id) }" />
 
       <SpaceDms
         v-else-if="view === 'dms'" class="sp-plain" :rows="dms" :me="me" :spaces="spaces"
@@ -1291,7 +1298,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
                 </li>
                 <template v-else>
                   <li v-for="w in MUTES" :key="w.key">
-                    <button type="button" @click="hush('channel', open.id, w.at()); belling = false">
+                    <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'null | undefined'. --><button type="button" @click="hush('channel', open.id, w.at()); belling = false">
                       <b>{{ (MuW['mute-for'] || '').replace('{span}', MuW['for-' + w.key]) }}</b>
                     </button>
                   </li>
@@ -1337,7 +1344,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
           :channel="channelTitle" :reactions="reactionsFor" :may-pin="mayPinHere" :pinned="pinnedIds.has(thread.root.id)"
           :reportable="reportable"
           @back="closeThread" @react="(id, e) => react(id, e)" @withdraw="(id) => withdraw(id)"
-          @report="(id) => { reporting = (thread.replies.find((r) => r.id === id) || thread.root) }"
+          @report="(id) => { reporting = (thread.replies.find((r: any) => r.id === id) || thread.root) }"
           @choose="tookOffer"
           @pin="(on) => togglePin(thread.root.id, on)" />
 
@@ -1349,7 +1356,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
             <div v-if="mayWriteHere" class="sp-fwrite">
               <SpaceComposer
                 :key="'f:' + open.id"
-                :people="people.filter((p) => p.id !== me)" :may-mention-channel="mentionHere"
+                :people="people.filter((p: any) => p.id !== me)" :may-mention-channel="mentionHere"
                 :channel-name="channel ? channel.name : ''"
                 :placeholder="(CW['feed-write'] || '').replace('{name}', (space && space.name) || channelTitle)"
                 :draft="drafts[open.id] || ''"
@@ -1477,7 +1484,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
         <SpaceComposer
           v-if="readingPost"
           :key="'p:' + thread.root.id"
-          :people="people.filter((p) => p.id !== me)" :may-mention-channel="mentionHere" :thread="true" :may-echo="false"
+          :people="people.filter((p: any) => p.id !== me)" :may-mention-channel="mentionHere" :thread="true" :may-echo="false"
           :bots="myBots" :groups="groups" :channel-name="channel ? channel.name : ''"
           :placeholder="us('spaces').composer.main['placeholder-thread']"
           :may-voice="voiceHere" :may-file="fileHere"
@@ -1485,7 +1492,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
         <SpaceComposer
           v-else-if="open.id && (channel && channel.mode !== 'forum' && channel.mode !== 'feed' || posting)"
           :key="'c:' + open.id + (posting ? ':post' : '')"
-          :people="people.filter((p) => p.id !== me)" :may-mention-channel="mentionHere"
+          :people="people.filter((p: any) => p.id !== me)" :may-mention-channel="mentionHere"
           :channel-name="channel ? channel.name : ''"
           :placeholder="composerSays"
           :draft="drafts[open.id] || ''"
@@ -1588,7 +1595,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
         </div>
         <SpaceComposer
           :key="'t:' + (thread.root ? thread.root.id : '')"
-          :people="people.filter((p) => p.id !== me)" :may-mention-channel="mentionHere" :thread="true" :bots="myBots" :groups="groups"
+          :people="people.filter((p: any) => p.id !== me)" :may-mention-channel="mentionHere" :thread="true" :bots="myBots" :groups="groups"
           :channel-name="channel ? channel.name : ''" :placeholder="us('spaces').composer.main['placeholder-thread']"
           :may-voice="voiceHere" :may-file="fileHere"
           @send="sayInThread" @voice="saidAloudInThread" @file="attachedInThread" @typing="saidSomething(open.id)" />

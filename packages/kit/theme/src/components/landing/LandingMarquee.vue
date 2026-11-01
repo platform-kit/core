@@ -1,11 +1,12 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* the moving line between the hero and the rest: benefits and qualifiers taking turns, from the
    page's markdown (the arrays are zipped, so keep them the same length). The default slot lets a
    look's skin replace the band. */
 import { onMounted } from 'vue'
 const props = defineProps({
-  benefits: { type: Array, default: () => ['Read anywhere', 'Keep your place', 'Learn by chapter', 'Ask a coach'] },
-  qualifiers: { type: Array, default: () => ['Free to start', 'No credit card', 'Cancel anytime', 'Private & secure'] },
+  benefits: { type: Array as PropType<any[]>, default: () => ['Read anywhere', 'Keep your place', 'Learn by chapter', 'Ask a coach'] },
+  qualifiers: { type: Array as PropType<any[]>, default: () => ['Free to start', 'No credit card', 'Cancel anytime', 'Private & secure'] },
 })
 /* filled twice, so the -50% loop is seamless; the effects module animates it */
 onMounted(() => {

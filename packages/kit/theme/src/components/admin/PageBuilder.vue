@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The page builder: the page as an ordered list of section blocks — each a sketch of its
  * layout, its name and a line of what it says — dragged into order, added at any point
@@ -18,35 +19,36 @@ import SectionFields from './SectionFields.vue'
 import SectionPicker from './SectionPicker.vue'
 
 const props = defineProps({
-  modelValue: { type: Array, default: () => [] },
+  modelValue: { type: Array as PropType<any[]>, default: () => [] },
   compact: { type: Boolean, default: false },
   pick: { type: Number, default: -1 },   /* a section chosen in the preview: its index, opened here */
 })
 const emit = defineEmits(['update:modelValue', 'valid', 'focus'])
 
 if (import.meta.env.DEV) {
-  const a = new Set(SECTION_KEYS), b = new Set(SECTION_NAMES)
+  const a = new Set(SECTION_KEYS), b: any = new Set(SECTION_NAMES)
   for (const k of SECTION_NAMES) if (!a.has(k)) console.warn('[pages] section without a schema:', k)
   for (const k of SECTION_KEYS) if (!b.has(k)) console.warn('[pages] schema without a section:', k)
 }
 
 let seq = 0
-const blocks = ref([])
-const clone = (v) => JSON.parse(JSON.stringify(v == null ? null : v))
+const blocks = ref<any>([])
+const clone = (v: any) => JSON.parse(JSON.stringify(v == null ? null : v))
 /* `key:` with nothing after it is null in YAML; the form treats it as blank */
-const blankNulls = (v) => (v === null ? undefined : Array.isArray(v) ? v.map(blankNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, blankNulls(x)])) : v)
-const def = (b) => SECTION_SCHEMAS[b.component] || null
+// @ts-expect-error TS7023, from the conversion: 'blankNulls' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in 
+const blankNulls = (v: any) => (v === null ? undefined : Array.isArray(v) ? v.map(blankNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, blankNulls(x)])) : v)
+const def = (b: any) => SECTION_SCHEMAS[b.component] || null
 /* the section against its schema, and its conditional record against the chosen kind's: { errors by path, valid } */
-function check(b) {
+function check(b: any) {
   const d = def(b); if (!d) return { errors: {}, valid: b.valid }
-  const errors = {}
+  const errors: any = {}
   const r = d.schema.safeParse(blankNulls(b.props || {}))
   if (!r.success) for (const e of r.error.issues) errors[e.path.join('.')] = errors[e.path.join('.')] || e.message
   const sub = subSchema(d, b.props)
   if (sub) { const q = sub.schema.safeParse(blankNulls((b.props || {})[d.conditional.field] || {})); if (!q.success) for (const e of q.error.issues) errors[d.conditional.field + '.' + e.path.join('.')] = e.message }
   return { errors, valid: !Object.keys(errors).length }
 }
-const hydrate = (list) => (Array.isArray(list) ? list : []).map((s) => {
+const hydrate = (list: any) => (Array.isArray(list) ? list : []).map((s) => {
   const b = { id: ++seq, component: s.component, props: { ...((SECTION_SCHEMAS[s.component] && SECTION_SCHEMAS[s.component].defaults) || {}), ...(s.props || {}) }, open: false, valid: true, errors: {}, rawText: '' }
   Object.assign(b, check(b)); return b
 })
@@ -57,34 +59,34 @@ watch(() => props.modelValue, (v) => {
   const json = JSON.stringify(v || [])
   if (json === lastEmitted) return
   blocks.value = hydrate(v)
-  emit('valid', blocks.value.every((b) => b.valid))
+  emit('valid', blocks.value.every((b: any) => (b as any).valid))
 }, { immediate: true, deep: true })
 
 function serialize() {
-  return blocks.value.map((b) => {
-    const d = def(b), p = clone(b.props || {})
+  return blocks.value.map((b: any) => {
+    const d = def(b), p = clone((b as any).props || {})
     if (d && d.conditional && !subSchema(d, p)) delete p[d.conditional.field]   /* a stage's words go with the stage */
-    return Object.keys(p).length ? { component: b.component, props: p } : { component: b.component }
+    return Object.keys(p).length ? { component: (b as any).component, props: p } : { component: (b as any).component }
   })
 }
 function emitAll() {
   const out = serialize()
   lastEmitted = JSON.stringify(out)
   emit('update:modelValue', out)
-  emit('valid', blocks.value.every((b) => b.valid))
+  emit('valid', blocks.value.every((b: any) => (b as any).valid))
 }
-const plain = (s) => String(s || '').replace(/[*_`~]+/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-const summary = (b) => { const d = def(b); try { return plain((d && d.summary(b.props)) || '') } catch (e) { return '' } }
+const plain = (s: any) => String(s || '').replace(/[*_`~]+/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+const summary = (b: any) => { const d = def(b); try { return plain((d && d.summary(b.props)) || '') } catch (e) { return '' } }
 /* what the block holds, in a word: "6 features", "3 tiers" */
-const meta = (b) => {
+const meta = (b: any) => {
   const d = def(b); if (!d) return ''
   const p = b.props || {}
   for (const k of Object.keys(p)) if (Array.isArray(p[k]) && p[k].length && typeof p[k][0] === 'object') { const n = p[k].length, cfg = (d.fieldConfig || {})[k] || {}, one = (cfg.item || k.replace(/s$/, '')).toLowerCase(); return n + ' ' + (n === 1 ? one : (cfg.items || one + 's')) }
   return ''
 }
-const allValid = computed(() => blocks.value.every((b) => b.valid))
+const allValid = computed(() => blocks.value.every((b: any) => (b as any).valid))
 
-function onChange(b, values) {
+function onChange(b: any, values: any) {
   const d = def(b)
   /* the conditional record: seed the chosen kind's defaults the first time it is chosen */
   if (d && d.conditional) { const sub = subSchema(d, values); if (sub && !(values[d.conditional.field] && Object.keys(values[d.conditional.field]).length)) values = { ...values, [d.conditional.field]: clone(sub.defaults || {}) } }
@@ -92,40 +94,40 @@ function onChange(b, values) {
   emitAll()
 }
 /* a preset lays its props over the block's (the section keeps what the preset does not say) */
-function preset(b, pr) { b.props = { ...b.props, ...clone(pr.props) }; Object.assign(b, check(b)); b.open = false; nextTick(() => { b.open = true }); emitAll() }
-function onSub(b, values) { b.props = { ...b.props, [def(b).conditional.field]: values }; Object.assign(b, check(b)); emitAll() }
-const subOf = (b) => { const d = def(b); return d ? subSchema(d, b.props) : null }
+function preset(b: any, pr: any) { b.props = { ...b.props, ...clone(pr.props) }; Object.assign(b, check(b)); b.open = false; nextTick(() => { b.open = true }); emitAll() }
+function onSub(b: any, values: any) { b.props = { ...b.props, [def(b).conditional.field]: values }; Object.assign(b, check(b)); emitAll() }
+const subOf = (b: any) => { const d = def(b); return d ? subSchema(d, b.props) : null }
 
 /* adding: at the foot, or at the seam the + was pressed on */
 const pickerOpen = ref(false), insertAt = ref(-1)
 function askAdd(at = -1) { insertAt.value = at; pickerOpen.value = true }
-async function add(key) {
+async function add(key: any) {
   const d = SECTION_SCHEMAS[key]
   const b = { id: ++seq, component: key, props: clone(d.defaults || {}), open: true, valid: true, errors: {}, rawText: '' }
   Object.assign(b, check(b))
-  for (const x of blocks.value) x.open = false
+  for (const x of blocks.value) (x as any).open = false
   if (insertAt.value >= 0) blocks.value.splice(insertAt.value, 0, b); else blocks.value.push(b)
   emitAll(); await nextTick(); scrollTo(b); emit('focus', blocks.value.indexOf(b))
 }
-function duplicate(i) {
+function duplicate(i: any) {
   const b = blocks.value[i]
-  blocks.value.splice(i + 1, 0, { ...clone({ component: b.component, props: b.props }), id: ++seq, open: false, valid: b.valid, errors: clone(b.errors), rawText: '' })
+  blocks.value.splice(i + 1, 0, { ...clone({ component: (b as any).component, props: (b as any).props }), id: ++seq, open: false, valid: (b as any).valid, errors: clone((b as any).errors), rawText: '' })
   emitAll()
 }
-function remove(i) {
+function remove(i: any) {
   const b = blocks.value[i]
-  if (b.props && Object.keys(b.props).length && !confirm('Remove this section?')) return
+  if ((b as any).props && Object.keys((b as any).props).length && !confirm('Remove this section?')) return
   blocks.value.splice(i, 1)
   emitAll()
 }
-function moveBy(i, d) { const j = i + d; if (j < 0 || j >= blocks.value.length) return; const [b] = blocks.value.splice(i, 1); blocks.value.splice(j, 0, b); emitAll() }
-function toggle(b) { b.open = !b.open; if (b.open) { for (const x of blocks.value) if (x !== b) x.open = false; emit('focus', blocks.value.indexOf(b)) } }
-const list = ref(null)
-function scrollTo(b) { const el = list.value && list.value.$el && list.value.$el.querySelector(`[data-block="${b.id}"]`); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }
+function moveBy(i: any, d: any) { const j = i + d; if (j < 0 || j >= blocks.value.length) return; const [b] = blocks.value.splice(i, 1); blocks.value.splice(j, 0, b); emitAll() }
+function toggle(b: any) { b.open = !b.open; if (b.open) { for (const x of blocks.value) if (x !== b) (x as any).open = false; emit('focus', blocks.value.indexOf(b)) } }
+const list = ref<any>(null)
+function scrollTo(b: any) { const el: any = list.value && list.value.$el && list.value.$el.querySelector(`[data-block="${b.id}"]`); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }
 /* the preview's click: open that block */
-watch(() => props.pick, (i) => { const b = blocks.value[i]; if (!b) return; for (const x of blocks.value) x.open = x === b; nextTick(() => scrollTo(b)) })
+watch(() => props.pick, (i) => { const b = blocks.value[i]; if (!b) return; for (const x of blocks.value) (x as any).open = x === b; nextTick(() => scrollTo(b)) })
 /* an unknown component (a typo in the file): editable as text so the page is not stuck */
-function setRaw(b, text) {
+function setRaw(b: any, text: any) {
   b.rawText = text
   try { b.props = JSON.parse(text || '{}'); b.valid = true } catch (e) { b.valid = false }
   emitAll()
@@ -180,7 +182,7 @@ function setRaw(b, text) {
               <p v-else-if="def(b)" class="pb-none">This section has nothing to set.</p>
               <div v-else class="pb-unknown">
                 <p>Unknown section “{{ b.component }}”. Sections available: {{ SECTION_KEYS.join(', ') }}.</p>
-                <textarea :value="b.rawText || JSON.stringify(b.props, null, 2)" rows="6" spellcheck="false" @input="setRaw(b, $event.target.value)" />
+                <textarea :value="b.rawText || JSON.stringify(b.props, null, 2)" rows="6" spellcheck="false" @input="setRaw(b, ($event.target as any).value)" />
               </div>
             </div>
           </div>

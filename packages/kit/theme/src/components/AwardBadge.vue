@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A BADGE. The achievement's own glyph in its own colour, on a disc — and the same disc, drained
  * of colour and outlined rather than filled, for one the reader has not earned.
@@ -11,7 +12,7 @@ import { computed } from 'vue'
 import SpaceIcon from './spaces/SpaceIcon.vue'
 
 const props = defineProps({
-  award: { type: Object, required: true },
+  award: { type: Object as PropType<any>, required: true },
   size: { type: Number, default: 48 },
   held: { type: Boolean, default: true },
 })

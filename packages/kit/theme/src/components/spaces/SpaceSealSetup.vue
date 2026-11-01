@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * WHAT A SEALED ROOM ASKS OF THE READER, and the only place it is asked. Three states, one at a
  * time, each a card above the composer in the room they apply to — never a modal and never a

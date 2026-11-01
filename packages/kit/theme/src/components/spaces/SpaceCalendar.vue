@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * WHAT IS ON. The two things a community puts side by side and a chat app has no idea about: what
  * is HAPPENING — the Tuesday call, the first-Friday sit, an evening somebody is putting on — and
@@ -18,9 +19,9 @@ import SpaceAvatar from './SpaceAvatar.vue'
 import SpaceIcon from './SpaceIcon.vue'
 
 const props = defineProps({
-  occurrences: { type: Array, default: () => [] },
+  occurrences: { type: Array as PropType<any[]>, default: () => [] },
   /* the booking types this space offers, from the records the sessions module already keeps */
-  sessions: { type: Array, default: () => [] },
+  sessions: { type: Array as PropType<any[]>, default: () => [] },
   /* a strip on a home, or the whole calendar */
   full: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
@@ -30,21 +31,24 @@ const W = computed(() => us('spaces').calendar.main)
 
 /* the clock ticks so "in 5m" and "on now" are true while somebody is looking at them */
 const now = ref(Date.now())
-let tick = null
+let tick: any = null
 onMounted(() => { tick = setInterval(() => { now.value = Date.now() }, 30000) })
 onBeforeUnmount(() => clearInterval(tick))
 
 const shown = computed(() => (props.full ? props.occurrences : props.occurrences.slice(0, 4)))
+// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 const days = computed(() => byDay(shown.value))
 const words = computed(() => ({ today: W.value.today, tomorrow: W.value.tomorrow }))
 const untilWords = computed(() => ({ now: W.value['on-now'], mins: W.value['in-mins'], hours: W.value['in-hours'], days: W.value['in-days'] }))
 
-const when = (o) => whenWord(o.starts_at, now.value, words.value)
-const at = (o) => clockOf(o.starts_at)
-const until = (o) => untilWord(new Date(o.starts_at).getTime(), now.value, untilWords.value)
-const live = (o) => isOn(o, now.value)
-const noRoom = (o) => !!o.capacity && Number(o.going) >= Number(o.capacity) && o.mine !== 'going'
-const placeWord = (o) => {
+// @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
+const when = (o: any) => whenWord(o.starts_at, now.value, words.value)
+// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
+const at = (o: any) => clockOf(o.starts_at)
+const until = (o: any) => untilWord(new Date(o.starts_at).getTime(), now.value, untilWords.value)
+const live = (o: any) => isOn(o, now.value)
+const noRoom = (o: any) => !!o.capacity && Number(o.going) >= Number(o.capacity) && o.mine !== 'going'
+const placeWord = (o: any) => {
   const p = o.place || {}
   if (p.kind === 'room') return W.value['in-a-room']
   if (p.kind === 'link') return W.value.online
@@ -54,7 +58,7 @@ const placeWord = (o) => {
 }
 
 const busy = ref('')
-async function say(o, state) {
+async function say(o: any, state: any) {
   busy.value = o.id
   await rsvp(o.id, o.mine === state ? 'out' : state)
   busy.value = ''
@@ -72,7 +76,7 @@ async function say(o, state) {
     <p v-else-if="!occurrences.length && !sessions.length" class="sc-none">{{ W.nothing }}</p>
 
     <div v-for="d in days" :key="d.day" class="sc-day">
-      <h4 v-if="full" class="sc-date">{{ whenWord(d.at, now, words) }}</h4>
+      <h4 v-if="full" class="sc-date"><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(d.at, now, words) }}</h4>
       <article v-for="o in d.items" :key="o.id" class="sc-item" :class="{ on: live(o), off: !!o.cancelled_at }">
         <!-- the time is the thing somebody scans for, so it leads and never moves -->
         <div class="sc-when">

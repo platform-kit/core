@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { inline } from '../inline.js'
 
@@ -15,12 +16,12 @@ import { inline } from '../inline.js'
  * skip's label when it does). Every word here is the screen's own (questions.js
  * reads them from content/app/ui/quiz.md).
  */
-const props = defineProps({ screen: { type: Object, required: true } })
+const props = defineProps({ screen: { type: Object as PropType<any>, required: true } })
 const emit = defineEmits(['answer'])
 
 const typed = ref('')
-const input = ref(null)
-let t0 = 0, first = null, last = null, sent = false, hid = false, armed = false
+const input = ref<any>(null)
+let t0 = 0, first: any = null, last: any = null, sent = false, hid = false, armed = false
 
 /* the sentence around its slot, each side with its marks (inline.js) */
 const parts = computed(() => { const t = String(props.screen.headline || ''); const i = t.indexOf('____')
@@ -37,7 +38,7 @@ function onInput() {
   if (first === null && typed.value.trim()) first = now
   if (first !== null) last = now
 }
-function send(text) {
+function send(text: any) {
   if (sent) return
   sent = true
   emit('answer', text, { firstMs: first, lastMs: last, hidden: hid })

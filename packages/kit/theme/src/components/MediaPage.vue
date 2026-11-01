@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Content → Media: the library — VueFinder over the site's two file roots (Uploads: content/uploads, Site files:
  * public) through the kit's driver (lib/admin/media-driver.js), which speaks to the content pipe, so the checkout and
@@ -53,7 +53,7 @@ watch([isSignedIn, roleKnown, mayEditContent], load)
 
 /* VueFinder's own theme follows the site's (what the skin does not reach still switches with it) */
 const dark = ref(document.documentElement.dataset.theme === 'dark')
-let mo = null
+let mo: any = null
 onMounted(() => { mo = new MutationObserver(() => { dark.value = document.documentElement.dataset.theme === 'dark' }); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }) })
 onBeforeUnmount(() => { if (mo) mo.disconnect() })
 /* the tiles: a card the size of a small cover, the list a comfortable row */
@@ -62,27 +62,27 @@ const config = computed(() => ({ theme: dark.value ? 'midnight' : 'silver', pers
 const features = { edit: false, newfile: false, newfolder: true, preview: true, archive: false, unarchive: false, search: true, rename: true, upload: true, delete: true, fullscreen: false, download: true, language: false, move: true, copy: true, history: true, theme: false, pinned: !props.pick }
 
 /* the selection, shared with the slot components (the toolbar's actions, the status bar's address) */
-const selection = shallowRef([])
-const withUrl = (it) => ({ ...it, url: it.url || driver.urlOf(toStore(it.path)) })
-function onSelect(items) { selection.value = (items || []).map(withUrl); askUsage() }
+const selection = shallowRef<any>([])
+const withUrl = (it: any) => ({ ...it, url: it.url || driver.urlOf(toStore(it.path)) })
+function onSelect(items: any) { selection.value = (items || []).map(withUrl); askUsage() }
 provide(SELECTION, selection)
 /* a file in use: the records that name each chosen entry, asked of the pipe a beat after the selection settles */
-const usage = shallowRef({})
-let usageTimer = null
+const usage = shallowRef<any>({})
+let usageTimer: any = null
 function askUsage() {
   clearTimeout(usageTimer)
-  const paths = selection.value.map((i) => toStore(i.path))
+  const paths = selection.value.map((i: any) => toStore((i as any).path))
   if (!paths.length) { usage.value = {}; return }
-  usageTimer = setTimeout(async () => { try { const u = await driver.usage(paths); if (selection.value.map((i) => toStore(i.path)).join() === paths.join()) usage.value = u } catch (e) { usage.value = {} } }, 120)
+  usageTimer = setTimeout(async () => { try { const u = await driver.usage(paths); if (selection.value.map((i: any) => toStore((i as any).path)).join() === paths.join()) usage.value = u } catch (e) { usage.value = {} } }, 120)
 }
 provide(USAGE, usage)
 
 /* the picker: one file at a time; the chosen entry's address is what the field takes */
-const chosen = computed(() => (selection.value.length ? selection.value[selection.value.length - 1] : null))
-function use() { const c = chosen.value; if (c && c.type !== 'dir') emit('pick', { path: toStore(c.path), url: c.url, name: c.basename, mime: c.mime_type }) }
-function onDclick(e) { if (props.pick && e && e.item && e.item.type === 'file') { selection.value = [withUrl(e.item)]; use() } }
+const chosen = computed<any>(() => (selection.value.length ? selection.value[selection.value.length - 1] : null))
+function use() { const c: any = chosen.value; if (c && c.type !== 'dir') emit('pick', { path: toStore(c.path), url: c.url, name: c.basename, mime: c.mime_type }) }
+function onDclick(e: any) { if (props.pick && e && e.item && e.item.type === 'file') { selection.value = [withUrl(e.item)]; use() } }
 const mimes = computed(() => (props.pictures ? ['image/'] : []))
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 
 <template>
@@ -95,7 +95,7 @@ function openAuth() { if (window.DLauth) window.DLauth.open() }
     <template v-else>
       <div class="md-frame" :class="{ dark }">
         <div v-if="count === 0" class="md-empty">{{ F.empty }}</div>
-        <VueFinder :id="pick ? 'media-picker' : 'media'" :driver="driver" :config="config" :features="features" locale="en"
+        <!-- @vue-expect-error TS2322, from the conversion: Type 'MediaDriver' is not assignable to type 'Driver'. --><VueFinder :id="pick ? 'media-picker' : 'media'" :driver="driver" :config="config" :features="features" locale="en"
                    :selection-mode="pick ? 'single' : 'multiple'" :selection-filter-type="pick ? 'files' : 'both'" :selection-filter-mime-includes="mimes"
                    @select="onSelect" @file-dclick="onDclick">
           <template #menubar-start><MediaRoots /></template>

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Every response to every form, as it came in: a row each (the form, who — a reader's name or Guest —
  * started, finished, a quiz's score), filtered by form, by finished or not, and exported as CSV from the
@@ -25,71 +25,71 @@ const props = defineProps({ name: { type: String, default: '' } })
 const emit = defineEmits(['open', 'back'])
 const R = us('forms').responses || {}
 const W = R.list || {}, W1 = R.one || {}
-const rows = ref([]), loading = ref(true), msg = ref('')
+const rows = ref<any>([]), loading = ref(true), msg = ref('')
 const form = ref(''), status = ref('all')
-const names = ref({})
+const names = ref<any>({})
 async function load() {
   if (!supabaseOn || !isSignedIn.value) return
   loading.value = true; msg.value = ''
   try {
-    const { data, error } = await supabase.from('form_responses').select('id, form, user_id, anon_id, started_at, completed_at, score, total, passed, webhook_at, webhook_error').order('started_at', { ascending: false }).limit(500)
+    const { data, error } = await (supabase as any).from('form_responses').select('id, form, user_id, anon_id, started_at, completed_at, score, total, passed, webhook_at, webhook_error').order('started_at', { ascending: false }).limit(500)
     if (error) throw error
     rows.value = data || []
-    const ids = [...new Set(rows.value.map((r) => r.user_id).filter(Boolean))]
-    if (ids.length) { const { data: p } = await supabase.from('profiles').select('id, display_name, email').in('id', ids); for (const x of p || []) names.value[x.id] = x.display_name || x.email || x.id.slice(0, 8) }
-  } catch (e) { msg.value = e.message } finally { loading.value = false }
+    const ids = [...new Set(rows.value.map((r: any) => (r as any).user_id).filter(Boolean))]
+    if (ids.length) { const { data: p } = await (supabase as any).from('profiles').select('id, display_name, email').in('id', ids); for (const x of p || []) names.value[x.id] = x.display_name || x.email || x.id.slice(0, 8) }
+  } catch (e) { msg.value = (e as any).message } finally { loading.value = false }
 }
 onMounted(load)
-onIdentity((id) => { if (id) load() })
-const formsList = computed(() => [...new Set([...(FORMS || []).map((f) => f.slug), ...rows.value.map((r) => r.form)])])
-const shown = computed(() => rows.value.filter((r) => (!form.value || r.form === form.value) && (status.value === 'all' || (status.value === 'done' ? !!r.completed_at : !r.completed_at))))
-const who = (r) => (r.user_id ? names.value[r.user_id] || r.user_id.slice(0, 8) : W.guest)
-const when = (s) => (s ? new Date(s).toLocaleString() : '')
+onIdentity((id: any) => { if (id) load() })
+const formsList = computed(() => [...new Set([...(FORMS || []).map((f: any) => f.slug), ...rows.value.map((r: any) => (r as any).form)])])
+const shown = computed(() => rows.value.filter((r: any) => (!form.value || (r as any).form === form.value) && (status.value === 'all' || (status.value === 'done' ? !!(r as any).completed_at : !(r as any).completed_at))))
+const who = (r: any) => (r.user_id ? names.value[r.user_id] || r.user_id.slice(0, 8) : W.guest)
+const when = (s: any) => (s ? new Date(s).toLocaleString() : '')
 /* the grid: every response a row; a click opens it */
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
-const getRowId = (q) => q.data.id
+const getRowId = (q: any) => q.data.id
 const columnDefs = computed(() => {
   void names.value
   return [
     { headerName: W.form, field: 'form', pinned: 'left', flex: 1.2, minWidth: 160, cellClass: 'fr-gform' },
-    { headerName: W.who, flex: 1, minWidth: 140, valueGetter: (q) => who(q.data) },
-    { headerName: W.started, flex: 1, minWidth: 170, valueGetter: (q) => q.data.started_at, valueFormatter: (q) => when(q.value), sort: 'desc' },
-    { headerName: W.finished, flex: 1, minWidth: 170, valueGetter: (q) => q.data.completed_at || '', valueFormatter: (q) => (q.value ? when(q.value) : W.unfinished), cellClass: (q) => (q.value ? '' : 'fr-gopen') },
-    { headerName: W.score, width: 96, type: 'numericColumn', valueGetter: (q) => (q.data.total ? q.data.score + '/' + q.data.total : '') },
+    { headerName: W.who, flex: 1, minWidth: 140, valueGetter: (q: any) => who(q.data) },
+    { headerName: W.started, flex: 1, minWidth: 170, valueGetter: (q: any) => q.data.started_at, valueFormatter: (q: any) => when(q.value), sort: 'desc' },
+    { headerName: W.finished, flex: 1, minWidth: 170, valueGetter: (q: any) => q.data.completed_at || '', valueFormatter: (q: any) => (q.value ? when(q.value) : W.unfinished), cellClass: (q: any) => (q.value ? '' : 'fr-gopen') },
+    { headerName: W.score, width: 96, type: 'numericColumn', valueGetter: (q: any) => (q.data.total ? q.data.score + '/' + q.data.total : '') },
   ]
 })
-const fieldsOf = (slug) => { const f = (FORMS || []).find((x) => x.slug === slug); return f ? f.model.fields : [] }
+const fieldsOf = (slug: any) => { const f = (FORMS || []).find((x: any) => x.slug === slug); return f ? f.model.fields : [] }
 
 /* one response */
-const cur = computed(() => rows.value.find((r) => r.id === props.name) || null)
-const answers = ref([]), files = ref({})
+const cur = computed<any>(() => rows.value.find((r: any) => (r as any).id === props.name) || null)
+const answers = ref<any>([]), files = ref<any>({})
 async function loadOne() {
   answers.value = []; files.value = {}
   if (!cur.value) return
-  const { data } = await supabase.from('form_answers').select('field, value, file_path, file_name, file_type, file_size, slide, answered_at').eq('response_id', cur.value.id)
-  const order = fieldsOf(cur.value.form).map((f) => f.name)
-  answers.value = (data || []).sort((a, b) => (order.indexOf(a.field) - order.indexOf(b.field)) || a.answered_at.localeCompare(b.answered_at))
-  const paths = answers.value.filter((a) => a.file_path).map((a) => a.file_path)
-  if (paths.length) { const { data: s } = await supabase.storage.from('forms').createSignedUrls(paths, 3600); for (const x of s || []) if (x.signedUrl) files.value[x.path] = x.signedUrl }
+  const { data } = await (supabase as any).from('form_answers').select('field, value, file_path, file_name, file_type, file_size, slide, answered_at').eq('response_id', (cur.value as any).id)
+  const order = fieldsOf((cur.value as any).form).map((f: any) => f.name)
+  answers.value = (data || []).sort((a: any, b: any) => (order.indexOf(a.field) - order.indexOf(b.field)) || a.answered_at.localeCompare(b.answered_at))
+  const paths = answers.value.filter((a: any) => (a as any).file_path).map((a: any) => (a as any).file_path)
+  if (paths.length) { const { data: s } = await (supabase as any).storage.from('forms').createSignedUrls(paths, 3600); for (const x of s || []) if (x.signedUrl) files.value[x.path] = x.signedUrl }
 }
 watch([cur, rows], loadOne, { immediate: true })
-const question = (slug, name) => { const f = fieldsOf(slug).find((x) => x.name === name); return f && f.question && f.question !== '...' ? f.question : name }
-const show = (a) => (a.file_path ? a.file_name : Array.isArray(a.value) ? a.value.join(', ') : a.value == null ? '' : typeof a.value === 'object' ? JSON.stringify(a.value) : String(a.value))
-async function remove() { if (!cur.value || !confirm(W1.delete + '?')) return; await supabase.from('form_responses').delete().eq('id', cur.value.id); rows.value = rows.value.filter((r) => r.id !== cur.value.id); emit('back') }
+const question = (slug: any, name: any) => { const f = fieldsOf(slug).find((x: any) => x.name === name); return f && f.question && f.question !== '...' ? f.question : name }
+const show = (a: any) => (a.file_path ? a.file_name : Array.isArray(a.value) ? a.value.join(', ') : a.value == null ? '' : typeof a.value === 'object' ? JSON.stringify(a.value) : String(a.value))
+async function remove() { if (!cur.value || !confirm(W1.delete + '?')) return; await (supabase as any).from('form_responses').delete().eq('id', (cur.value as any).id); rows.value = rows.value.filter((r: any) => (r as any).id !== (cur as any).value.id); emit('back') }
 
 /* CSV: the rows shown, every answer of each as a column */
 async function exportCsv() {
   const list = shown.value
-  const ids = list.map((r) => r.id)
+  const ids = list.map((r: any) => (r as any).id)
   const all = []
-  for (let i = 0; i < ids.length; i += 200) { const { data } = await supabase.from('form_answers').select('response_id, field, value, file_name').in('response_id', ids.slice(i, i + 200)); all.push(...(data || [])) }
-  const byResp = {}
+  for (let i = 0; i < ids.length; i += 200) { const { data } = await (supabase as any).from('form_answers').select('response_id, field, value, file_name').in('response_id', ids.slice(i, i + 200)); all.push(...(data || [])) }
+  const byResp: any = {}
   for (const a of all) (byResp[a.response_id] = byResp[a.response_id] || {})[a.field] = a.file_name || (Array.isArray(a.value) ? a.value.join('; ') : a.value == null ? '' : String(a.value))
   const fields = [...new Set(all.map((a) => a.field))]
-  const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'
+  const esc = (v: any) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'
   const head = ['id', 'form', 'who', 'started', 'finished', 'score', 'total', 'passed', ...fields]
   const lines = [head.map(esc).join(',')]
-  for (const r of list) lines.push([r.id, r.form, who(r), r.started_at, r.completed_at || '', r.score ?? '', r.total ?? '', r.passed == null ? '' : r.passed, ...fields.map((f) => (byResp[r.id] || {})[f] ?? '')].map(esc).join(','))
+  for (const r of list) lines.push([(r as any).id, (r as any).form, who(r), (r as any).started_at, (r as any).completed_at || '', (r as any).score ?? '', (r as any).total ?? '', (r as any).passed == null ? '' : (r as any).passed, ...fields.map((f) => (byResp[(r as any).id] || {})[f] ?? '')].map(esc).join(','))
   const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (form.value || 'responses') + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000)
 }
@@ -122,7 +122,7 @@ async function exportCsv() {
       <p v-if="loading" class="ui-muted">…</p>
       <p v-else-if="!shown.length" class="ui-muted">{{ W.empty }}</p>
       <div v-else class="fr-grid">
-        <AgGridVue class="fr-aggrid" :theme="theme" :row-data="shown" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
+        <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: any; field: string; pinned: string; flex: number; minWidth: number; cellClass: string; valueGetter?: undefined; valueFo --><AgGridVue class="fr-aggrid" :theme="theme" :row-data="shown" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
                    :suppress-cell-focus="true" @row-clicked="emit('open', $event.data.id)" />
       </div>
     </template>

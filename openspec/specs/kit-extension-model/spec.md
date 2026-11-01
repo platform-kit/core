@@ -22,7 +22,7 @@ Verified by: the kit's CI against `sites/demo`
 - **WHEN** a site's config names `routes` (`{ path, component, prefix?, prerender? }`), `nav` (`links` and `cta`, or neither for the theme's default), `landing.sections` and `landing.schemas`, `analytics.panels`, `app.tabs`, `overrides`, `looks`, `instrumentComponent`, `enrichment.briefs` and `build.tests`
 - **THEN** the page answers at its path and is prerendered, the header shows the links and the call to action, a landing page may name the section and the admin's page builder offers it, the panel renders after the kit's on Content analytics, `/app` mounts the site's instrument, the enrichment writes in the site's voice, and `npm test` runs the site's checks after the kit's — each reached through a `#site/*` module the Vite plugin answers from the config and a Node fallback answers for the build scripts
 
-Verified by: on 2026-09-17 a stub of each (a `/hello` page, a `Hello` link and a redirected CTA, a `Stub` section on /pricing and in the builder, a panel on Content analytics) seen in the browser and then removed; `packages/kit/build/test.mjs` in `npm test`
+Verified by: on 2026-09-17 a stub of each (a `/hello` page, a `Hello` link and a redirected CTA, a `Stub` section on /pricing and in the builder, a panel on Content analytics) seen in the browser and then removed; `packages/kit/build/test.mts` in `npm test`
 
 ### Requirement: Every module has a switch, and the switch removes the whole module
 

@@ -11,7 +11,7 @@ sources:
     packages/kit/src/payment-provider.d.ts,
     packages/kit/build/ledger.test.mjs,
     packages/kit/theme/src/components/landing/LandingPricing.vue,
-    packages/kit/src/lib/auth.js,
+    packages/kit/src/lib/auth.ts,
   ]
 reviewed: 2026-10-16
 ---

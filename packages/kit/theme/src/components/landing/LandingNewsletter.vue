@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 import SectionHead from './SectionHead.vue'
 import EmailCapture from './EmailCapture.vue'
@@ -20,8 +21,8 @@ defineProps({
   name: { type: Boolean, default: false },   /* ask a first name too */
   button: { type: String, default: '' }, placeholder: { type: String, default: '' }, fine: { type: String, default: '' },
   image: { type: String, default: '' }, alt: { type: String, default: '' },
-  avatars: { type: Object, default: () => ({}) },
-  rating: { type: Object, default: () => ({}) },
+  avatars: { type: Object as PropType<any>, default: () => ({}) },
+  rating: { type: Object as PropType<any>, default: () => ({}) },
 })
 </script>
 

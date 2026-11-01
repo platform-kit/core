@@ -8,7 +8,7 @@ What exists today, as a starting point for the review:
 - **Webhooks:** `stripe-webhook` verifies Stripe's signature; `payment-provider-webhook` reuses it for the selected provider; `cal-webhook` verifies cal.com's signature; `webhook-doors.test.mjs` proves unsigned Stripe and cal.com bodies are refused. Social webhooks are handled separately and not yet covered by that test.
 - **Links:** customer files and recordings are signed for an hour (`book-files`, `session-files`, recordings); print jobs sign links for seven days (`_shared/print.ts`, `print-render`), for the printer to fetch.
 - **Roles:** roles are written through `set_roles`, which refuses removing the last administrator; `policies.test.mjs` covers who may read orders and bookings on the seed.
-- **Browser keys:** the Vite build exposes `VITE_*` variables plus a few named flags (`packages/kit/vite/index.mjs` `envPrefix`); `.env.example`'s `VITE_` keys are all public by design.
+- **Browser keys:** the Vite build exposes `VITE_*` variables plus a few named flags (`packages/kit/vite/index.mts` `envPrefix`); `.env.example`'s `VITE_` keys are all public by design.
 
 ## Decisions
 

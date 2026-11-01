@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* Settings → API: the content API's keys (content-api). The space, the environment and the base a Contentful client
    is pointed at; every key with its name, kind, creation and last use, and Revoke; New key — a name, a kind, whether
    gated content is allowed — with the key shown once. The key is made here in the browser (random, base62) and only
@@ -21,15 +21,15 @@ const H = W.head || {}, K = W.keys || {}, WH = W.webhooks || {}, R = (us('api').
 const S = Array.isArray(SITE) ? SITE[0] : SITE
 const base = computed(() => String((S && S.url) || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/+$/, ''))
 const state = computed(() => (!roleKnown.value ? 'loading' : !isSignedIn.value ? 'idle' : !isAdmin.value ? 'denied' : 'ok'))
-const keys = ref([]), hooks = ref([]), loading = ref(false), making = ref(false), form = ref(null), reveal = ref(null), copied = ref(false), failed = ref('')
+const keys = ref<any>([]), hooks = ref<any>([]), loading = ref(false), making = ref(false), form = ref<any>(null), reveal = ref<any>(null), copied = ref(false), failed = ref('')
 /* the content API's three kinds, then a kind per door the site has on: forms (the Forms API), scheduling (the Scheduling API) */
 const KINDS = ['delivery', 'preview', 'management', ...(moduleOn('forms') ? ['forms'] : []), ...(moduleOn('sessions') ? ['scheduling'] : []), ...(moduleOn('store') ? ['storefront'] : []), ...(moduleOn('support') ? ['support'] : [])]
 
 async function load() {
   loading.value = true
-  const { data } = await supabase.from('api_keys').select('id, name, kind, gated, prefix, created_at, last_used_at, revoked_at').order('created_at', { ascending: false })
+  const { data } = await (supabase as any).from('api_keys').select('id, name, kind, gated, prefix, created_at, last_used_at, revoked_at').order('created_at', { ascending: false })
   keys.value = data || []
-  const { data: h } = await supabase.from('content_webhooks').select('id, name, url, topics, active, last_at, last_error').order('created_at')
+  const { data: h } = await (supabase as any).from('content_webhooks').select('id, name, url, topics, active, last_at, last_error').order('created_at')
   hooks.value = h || []
   loading.value = false
 }
@@ -39,8 +39,8 @@ import AdminHead from './admin/AdminHead.vue'
 watch(state, (s) => { if (s === 'ok') load() })
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-const random = (n) => { const bytes = new Uint8Array(n); crypto.getRandomValues(bytes); return [...bytes].map((b) => ALPHABET[b % ALPHABET.length]).join('') }
-const sha256 = async (s) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
+const random = (n: any) => { const bytes = new Uint8Array(n); crypto.getRandomValues(bytes); return [...bytes].map((b) => ALPHABET[b % ALPHABET.length]).join('') }
+const sha256 = async (s: any) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
 
 function startNew() { form.value = { name: '', kind: 'delivery', gated: false }; failed.value = ''; reveal.value = null }
 async function create() {
@@ -49,22 +49,23 @@ async function create() {
   try {
     const key = `pk_${form.value.kind}_${random(32)}`
     const row = { name: form.value.name.trim().slice(0, 80), kind: form.value.kind, gated: !!form.value.gated, prefix: key.slice(0, 12), hash: await sha256(key), created_by: user.value ? user.value.id : null }
-    const { error } = await supabase.from('api_keys').insert(row)
+    const { error } = await (supabase as any).from('api_keys').insert(row)
     if (error) throw error
     reveal.value = { key, name: row.name, kind: row.kind }
     form.value = null
     await load()
-  } catch (e) { failed.value = K.failed + (e && e.message ? ' ' + e.message : '') }
+  } catch (e) { failed.value = K.failed + (e && (e as any).message ? ' ' + (e as any).message : '') }
   finally { making.value = false }
 }
-async function revoke(k) {
+async function revoke(k: any) {
   if (!window.confirm(K['revoke-confirm'])) return
-  await supabase.from('api_keys').update({ revoked_at: new Date().toISOString() }).eq('id', k.id)
+  await (supabase as any).from('api_keys').update({ revoked_at: new Date().toISOString() }).eq('id', k.id)
   await load()
 }
 async function copy() { try { await navigator.clipboard.writeText(reveal.value.key); copied.value = true; setTimeout(() => { copied.value = false }, 1600) } catch { /* the field is selectable */ } }
-const when = (iso) => { if (!iso) return K.never; const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const when = (iso: any) => { if (!iso) return K.never; const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 
 <template>

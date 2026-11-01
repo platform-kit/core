@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* Bars or a line: the one switch for every series over time on the analytics pages (chartKind in charts-theme.js,
    remembered per browser). Words: `## page / ### head` in analytics.md. */
 import { chartKind } from '../lib/charts-theme.js'

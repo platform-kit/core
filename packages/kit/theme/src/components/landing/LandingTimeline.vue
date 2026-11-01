@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md, mdBlock } from './md.js'
 import SectionHead from './SectionHead.vue'
 /*
@@ -14,7 +15,7 @@ defineProps({
   heading: { type: String, default: '' },
   lead: { type: String, default: '' },
   layout: { type: String, default: 'list' },   /* list | columns */
-  items: { type: Array, default: () => [] },   /* [{ date, title, body?, points?, upcoming?, percent? }] */
+  items: { type: Array as PropType<any[]>, default: () => [] },   /* [{ date, title, body?, points?, upcoming?, percent? }] */
 })
 </script>
 

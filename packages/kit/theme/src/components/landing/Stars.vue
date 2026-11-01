@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* a star rating: n of five, drawn in the accent; a half is a half. Beside it, a line ("4.9 from 1,200 reviews") */
 import { md } from './md.js'
 defineProps({ value: { type: Number, default: 5 }, line: { type: String, default: '' } })

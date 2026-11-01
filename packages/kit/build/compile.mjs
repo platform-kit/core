@@ -21,11 +21,15 @@ import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { createRequire, stripTypeScriptTypes } from 'node:module'
 import { fileURLToPath } from 'node:url'
+import { isMain } from './is-main.mjs'
 
 const KIT = fileURLToPath(new URL('..', import.meta.url))
 const OUT = path.join(KIT, '.tsbuild')
 const LIST = path.join(KIT, '.compiled.json')
 const ROOTS = ['bin', 'build', 'src', 'vite']
+/* the theme's TypeScript, which tsc cannot build beside its components: stripped file by file, since a site's Node
+   reads theme.js and its schemas at build time and Node strips nothing inside node_modules (Vite reads the .ts) */
+const THEME = 'theme/src'
 /* Deno's own TypeScript, run by deno test and copied into the functions as it is */
 const DENO = (rel) => /\.test\.ts$/.test(rel) || rel === 'build/hyperswitch-browser.steps.ts'
 
@@ -67,19 +71,34 @@ function strip(ts) {
   return copied
 }
 
+/* every TypeScript file of the theme, as paths under the kit */
+function themeSources() {
+  const out = []
+  const walk = (rel) => {
+    for (const e of fs.readdirSync(path.join(KIT, rel), { withFileTypes: true })) {
+      const r = rel + '/' + e.name
+      if (e.isDirectory()) { walk(r); continue }
+      if (/\.ts$/.test(e.name) && !/\.d\.ts$/.test(e.name)) out.push(r)
+    }
+  }
+  if (fs.existsSync(path.join(KIT, THEME))) walk(THEME)
+  return out
+}
+
 export function compile() {
   clean()
+  const theme = strip(themeSources())
   const ts = sources()
-  if (!ts.length) return []
+  if (!ts.length) { fs.writeFileSync(LIST, JSON.stringify(theme, null, 2) + '\n'); return theme }
   let tsc
   try { tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc') } catch {
-    const copied = strip(ts)
+    const copied = [...theme, ...strip(ts)]
     fs.writeFileSync(LIST, JSON.stringify(copied, null, 2) + '\n')
     return copied
   }
   const r = spawnSync(process.execPath, [tsc, '--project', path.join(KIT, 'tsconfig.build.json')], { cwd: KIT, encoding: 'utf8' })
   if (r.status !== 0) throw new Error('compile: tsc refused the kit\n' + (r.stdout + r.stderr).trim().split('\n').slice(0, 20).join('\n'))
-  const copied = []
+  const copied = [...theme]
   for (const rel of ts) {
     const base = rel.replace(/\.(m?)ts$/, '')
     const m = rel.endsWith('.mts') ? 'm' : ''
@@ -96,7 +115,7 @@ export function compile() {
   return copied
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+if (isMain(import.meta.url)) {
   if (process.argv.includes('--clean')) console.log(`compile: removed ${clean()} compiled file(s)`)
   else { const c = compile(); console.log(`compile: ${c.filter((f) => !/\.d\.m?ts$/.test(f)).length} TypeScript source(s) compiled beside themselves`) }
 }

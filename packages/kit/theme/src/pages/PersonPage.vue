@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A PERSON. Two pages that are one route, because they are one thing seen from two sides:
  *
@@ -49,26 +49,27 @@ const NETWORK = moduleOn('network')
 /* other apps signing in is the site owner's choice (network.apps), off unless the config says so */
 const APPS = NETWORK && !!(site.network && site.network.apps)
 /* a site that lists following in community.hide draws no follow control or count (follows are kept) */
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const FOLLOWING = showsFollowing((site.community || {}).hide)
 const NP = computed(() => us('network').person.main)
-const fillN = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-const rel = ref(null)
-const feed = ref(null)
+const fillN = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const rel = ref<any>(null)
+const feed = ref<any>(null)
 const relBusy = ref(false)
 const relErr = ref('')
 const relMenu = ref(false)
 const reportingPerson = ref(false)
-const reportingPost = ref(null)
+const reportingPost = ref<any>(null)
 const itsMe = computed(() => !!(user.value && them.value && user.value.id === them.value.id))
 /* MESSAGE THEM — where the two share a space whose direct messages are on and they have not declined
    them there (space_dm_where asks exactly the rules space_dm_open keeps); otherwise the page says so */
 const SPACES = moduleOn('spaces')
-const dmSpace = ref(null)
+const dmSpace = ref<any>(null)
 const dmKnown = ref(false)
-async function loadDm(t) {
+async function loadDm(t: any) {
   dmSpace.value = null; dmKnown.value = false
   if (!SPACES || !isSignedIn.value || !t || (user.value && user.value.id === t.id)) return
-  const { data } = await supabase.rpc('space_dm_where', { p_with: t.id })
+  const { data } = await (supabase as any).rpc('space_dm_where', { p_with: t.id })
   dmSpace.value = data || null; dmKnown.value = true
 }
 const dmBusy = ref(false)
@@ -77,11 +78,11 @@ async function message() {
   try {
     const cid = await openDm(dmSpace.value, [them.value.id])
     if (!cid) { dmSpace.value = null; return }
-    const { data } = await supabase.from('channels').select('slug, spaces(slug)').eq('id', cid).single()
-    if (data && data.spaces) navigate(ROUTES.spaces + '/' + data.spaces.slug + '/' + data.slug)
+    const { data } = await (supabase as any).from('channels').select('slug, spaces(slug)').eq('id', cid).single()
+    if (data && data.spaces) navigate(ROUTES.spaces + '/' + (data.spaces as any).slug + '/' + data.slug)
   } finally { dmBusy.value = false }
 }
-async function loadNetwork(t) {
+async function loadNetwork(t: any) {
   rel.value = null; feed.value = null
   loadDm(t).catch(() => {})
   if (!NETWORK || !t) return
@@ -89,11 +90,11 @@ async function loadNetwork(t) {
   feed.value = authorFeed(t.id)
   feed.value.load(true)
 }
-async function act(fn, on) {
-  if (!isSignedIn.value) { if (window.DLauth) window.DLauth.open(); return }
+async function act(fn: any, on: any) {
+  if (!isSignedIn.value) { if ((window as any).DLauth) (window as any).DLauth.open(); return }
   relBusy.value = true; relErr.value = ''; relMenu.value = false
   try { await fn(them.value.id, on); rel.value = await networkPerson(them.value.id); if (fn === block) loadNetwork(them.value) }
-  catch (e) { relErr.value = e.message || String(e) } finally { relBusy.value = false }
+  catch (e) { relErr.value = (e as any).message || String(e) } finally { relBusy.value = false }
 }
 
 const W = computed(() => us('account').page.main)
@@ -101,21 +102,21 @@ const F = computed(() => us('account').fields.main)
 const G = computed(() => us('awards').gallery.main)
 const OF = computed(() => us('account').offers.main)
 const TM = computed(() => (us('teams').mine || {}).main || {})
-const fillW = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-const moneyOf = (c, cur) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format((Number(c) || 0) / 100) } catch (e) { return '' } }
+const fillW = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const moneyOf = (c: any, cur: any) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format((Number(c) || 0) / 100) } catch (e) { return '' } }
 /* WHAT THEY SELL, if anything. The read is the same one the booking surface uses, narrowed to them:
    only live offerings, only where the site allows them at all, and only while they are on terms they
    have agreed to — none of which is a browser's to work out. */
-const offers = ref([])
+const offers = ref<any>([])
 
 /* WHAT THEY HAVE DONE. The read answers nothing unless the profile is public (or it is their own),
    so the page need not decide that; what it decides is what to draw beside it — the ones still to
    earn, quietly, because a gallery that shows only what somebody has never says what else there is. */
-const awards = ref([])
+const awards = ref<any>([])
 const locked = computed(() => {
   const ALL = allAwards()
   if (!awards.value.length && !ALL.length) return []
-  const got = new Set(awards.value.map((x) => x.slug))
+  const got = new Set(awards.value.map((x: any) => (x as any).slug))
   return ALL.filter((x) => x.shown !== false && !got.has(x.slug)).sort((a, b) => (a.order || 99) - (b.order || 99))
 })
 /* the username in the path, or nothing — which means the reader's own settings */
@@ -126,7 +127,7 @@ const handle = computed(() => {
 const mine = computed(() => !handle.value)
 
 /* ----- somebody else's page ----- */
-const them = ref(null)
+const them = ref<any>(null)
 const looking = ref(true)
 watch(handle, async (h) => {
   if (!h) { them.value = null; looking.value = false; return }
@@ -142,12 +143,12 @@ watch(handle, async (h) => {
   } catch { them.value = null } finally { looking.value = false }
 }, { immediate: true })
 watch(them, (t) => {
-  if (t) setHead({ title: t.name, description: t.about || '' })
+  if (t) setHead({ title: (t as any).name, description: (t as any).about || '' })
   loadNetwork(t)
 })
 
 /* ----- the reader's own settings ----- */
-const draft = ref(null)
+const draft = ref<any>(null)
 const saving = ref(false)
 const saved = ref(false)
 const err = ref('')
@@ -155,20 +156,20 @@ const nameState = ref('')   /* '' | checking | free | taken | bad */
 
 async function mineLoad() {
   if (!mine.value || !isSignedIn.value) return
-  try { await loadMe(); draft.value = { ...(me.value || {}) }; awards.value = me.value ? await awardsOf(me.value.id) : []; loadCatalogue() }
-  catch (e) { err.value = e.message || String(e) }
+  try { await loadMe(); draft.value = { ...(me.value || {}) }; awards.value = me.value ? await awardsOf((me.value as any).id) : []; loadCatalogue() }
+  catch (e) { err.value = (e as any).message || String(e) }
 }
 /* THE TEAMS THEY ARE IN — theirs, on their own account. A team is a group the site points work
    at, so somebody may be in one without ever having asked to be: the page says which and why, and
    leaving is not offered, because a rule that swept them in would sweep them back on the next pass
    and a button that undoes itself is worse than none. */
-const teams = ref([])
+const teams = ref<any>([])
 async function teamsLoad() {
   if (!mine.value || !isSignedIn.value) { teams.value = []; return }
   try { teams.value = await myTeams() } catch (e) { teams.value = [] }
 }
-const joinedWord = (t) => (t.source === 'fill' ? TM.value['by-fill'] : t.source === 'invite' ? TM.value['by-invite'] : TM.value['by-manual'])
-const joinedWhen = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch (e) { return '' } }
+const joinedWord = (t: any) => (t.source === 'fill' ? TM.value['by-fill'] : t.source === 'invite' ? TM.value['by-invite'] : TM.value['by-manual'])
+const joinedWhen = (iso: any) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch (e) { return '' } }
 
 /* where the site sells the network, whether this reader may follow anybody (network.access) — asked once
    who they are is known */
@@ -181,7 +182,7 @@ watch(() => draft.value && draft.value.username, async (u) => {
   const want = String(u || '').trim().toLowerCase()
   if (!want) { nameState.value = ''; return }
   if (!usernameOk(want)) { nameState.value = 'bad'; return }
-  if (me.value && want === me.value.username) { nameState.value = 'free'; return }
+  if (me.value && want === (me.value as any).username) { nameState.value = 'free'; return }
   nameState.value = 'checking'
   const n = ++tick
   try { const free = await nameFree(want); if (n === tick) nameState.value = free ? 'free' : 'taken' }
@@ -193,7 +194,7 @@ async function save() {
   if (!draft.value || saving.value) return
   saving.value = true; err.value = ''; saved.value = false
   try {
-    const d = draft.value
+    const d: any = draft.value
     await saveMe({
       username: String(d.username || '').trim().toLowerCase() || null,
       display_name: String(d.display_name || '').trim() || null,
@@ -208,23 +209,23 @@ async function save() {
     })
     draft.value = { ...(me.value || {}) }
     saved.value = true
-  } catch (e) { err.value = e.message || String(e) } finally { saving.value = false }
+  } catch (e) { err.value = (e as any).message || String(e) } finally { saving.value = false }
 }
 /* the picker writes into the draft; nothing is saved until they press save, so trying faces on
    costs nothing and leaving the page changes nothing */
-const pickFace = ({ style, seed, options }) => {
+const pickFace = ({ style, seed, options }: any) => {
   draft.value.avatar = null
   draft.value.avatar_style = style
   /* the seed the database resolved is the default, so choosing it back means choosing nothing */
-  draft.value.avatar_seed = seed === (me.value && me.value.seed) ? null : seed
+  draft.value.avatar_seed = seed === (me.value && (me.value as any).seed) ? null : seed
   draft.value.seed = seed
   /* and the parts they designed; nothing chosen is null rather than {}, so "I left it alone" and
      "I chose these" are different answers in the row as well as in the picker */
   draft.value.avatar_options = options && Object.keys(options).length ? options : null
 }
-async function upload(file) {
+async function upload(file: any) {
   err.value = ''
-  try { draft.value.avatar = await uploadAvatar(file) } catch (e) { err.value = e.message || String(e) }
+  try { draft.value.avatar = await uploadAvatar(file) } catch (e) { err.value = (e as any).message || String(e) }
 }
 const clearFace = () => { draft.value.avatar = null }
 </script>
@@ -287,7 +288,7 @@ const clearFace = () => { draft.value.avatar = null }
             <span v-if="o.sub" class="pp-o-sub">{{ o.sub }}</span>
             <p v-if="o.about" class="pp-o-about">{{ o.about }}</p>
             <span class="pp-o-facts">{{ o.minutes }} {{ OF.minutes }} · {{ o.priceText || (o.price_cents > 0 ? moneyOf(o.price_cents, o.currency) : OF.free) }}</span>
-            <a class="pp-o-book" :href="ROUTES.app + '/coaching'">{{ OF.book }}</a>
+            <!-- @vue-expect-error TS2339, from the conversion: Property 'app' does not exist on type '{ home: string; diagnostics: string; content: string; admin: string; preview: string; share: string;  --><a class="pp-o-book" :href="ROUTES.app + '/coaching'">{{ OF.book }}</a>
           </li>
         </ul>
       </section>

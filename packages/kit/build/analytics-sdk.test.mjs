@@ -23,7 +23,7 @@ const ta = async (msg, fn) => { try { await fn(); pass++ } catch (e) { fail++; c
 
 const ROOT = process.cwd()
 const OUT = path.join(ROOT, 'dist/analytics.js')
-if (!fs.existsSync(OUT)) execFileSync(process.execPath, [new URL('./analytics-sdk.mjs', import.meta.url).pathname], { stdio: 'inherit' })
+if (!fs.existsSync(OUT)) execFileSync(process.execPath, [new URL('./analytics-sdk.mts', import.meta.url).pathname], { stdio: 'inherit' })
 const built = fs.readFileSync(OUT, 'utf8')
 ok('the built file is under 40 KB gzipped', () => assert.ok(gzipSync(built).length < 40 * 1024, gzipSync(built).length + ' bytes'))
 ok('dist/static/array.js is the same file', () => assert.equal(fs.readFileSync(path.join(ROOT, 'dist/static/array.js'), 'utf8'), built))

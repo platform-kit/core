@@ -5,39 +5,39 @@ order: 44
 sources:
   [
     packages/kit/supabase/functions/_shared/gate.js,
-    packages/kit/build/velite.mjs,
-    packages/kit/build/content-node.mjs,
-    packages/kit/src/lib/content.js,
-    packages/kit/src/lib/markdown.js,
-    packages/kit/src/lib/entry.js,
-    packages/kit/src/lib/content-live.js,
+    packages/kit/build/velite.mts,
+    packages/kit/build/content-node.mts,
+    packages/kit/src/lib/content.ts,
+    packages/kit/src/lib/markdown.ts,
+    packages/kit/src/lib/entry.ts,
+    packages/kit/src/lib/content-live.ts,
     packages/kit/build/entry.test.mjs,
-    packages/kit/build/content-file-node.mjs,
-    packages/kit/build/write-if-changed.mjs,
-    packages/kit/src/lib/search-rows.js,
-    packages/kit/src/lib/search-index.js,
-    packages/kit/src/lib/strings-groups.js,
-    packages/kit/build/content-kinds.mjs,
+    packages/kit/build/content-file-node.mts,
+    packages/kit/build/write-if-changed.mts,
+    packages/kit/src/lib/search-rows.ts,
+    packages/kit/src/lib/search-index.ts,
+    packages/kit/src/lib/strings-groups.ts,
+    packages/kit/build/content-kinds.mts,
     packages/kit/build/content-kinds.test.mjs,
-    packages/kit/build/pipe-closure.mjs,
-    packages/kit/build/artefacts.mjs,
+    packages/kit/build/pipe-closure.mts,
+    packages/kit/build/artefacts.mts,
     packages/kit/build/artefacts.test.mjs,
-    packages/kit/build/content-rules.mjs,
+    packages/kit/build/content-rules.mts,
     packages/kit/build/content-rules.test.mjs,
-    packages/kit/build/content-refresh.mjs,
+    packages/kit/build/content-refresh.mts,
     packages/kit/build/content-refresh.test.mjs,
     packages/kit/build/projection-safety.test.mjs,
-    packages/kit/build/events-db.mjs,
-    packages/kit/build/search-db.mjs,
-    packages/kit/build/teams-io.mjs,
-    packages/kit/vite/index.mjs,
-    packages/kit/build/steps.mjs,
+    packages/kit/build/events-db.mts,
+    packages/kit/build/search-db.mts,
+    packages/kit/build/teams-io.mts,
+    packages/kit/vite/index.mts,
+    packages/kit/build/steps.mts,
     packages/kit/build/steps.test.mjs,
   ]
 reviewed: 2026-11-01
 ---
 
-Content authors edit Markdown files under `content/`. During the build, Velite validates those files, renders their Markdown, and writes one JSON file per collection plus an `index.js` under `.velite/`. The app imports the generated collections through `#content`. The kit defines this pipeline in `packages/kit/build/velite.mjs`; a site's `velite.config.js` calls `kitConfig()`.
+Content authors edit Markdown files under `content/`. During the build, Velite validates those files, renders their Markdown, and writes one JSON file per collection plus an `index.js` under `.velite/`. The app imports the generated collections through `#content`. The kit defines this pipeline in `packages/kit/build/velite.mts`; a site's `velite.config.js` calls `kitConfig()`.
 
 Collections are content declarations. In deployments that use a database, database tables may contain projections generated from those declarations; people and other runtime activity remain database state. See [Declarations and state](/content/docs/building-a-site/declarations-and-state).
 
@@ -124,6 +124,6 @@ Read content through `platformkit/lib/content.js` rather than importing generate
 
 ## A declaration that contradicts itself is refused
 
-A collection schema checks individual field types. Cross-field rules in `packages/kit/build/content-rules.mjs` check combinations that would otherwise be valid in isolation but inconsistent together. For example, a session record cannot specify both a cal.com URL and `scheduler: native`.
+A collection schema checks individual field types. Cross-field rules in `packages/kit/build/content-rules.mts` check combinations that would otherwise be valid in isolation but inconsistent together. For example, a session record cannot specify both a cal.com URL and `scheduler: native`.
 
 These rules run during Velite's `prepare` phase and fail the build when a record violates one. A site's collection module can add rules by exporting `rules`, or disable named kit rules with `rulesOff`. Each rule needs tests for both a record it rejects and one it accepts. Rules that depend on whether a field was explicitly set must account for schema defaults: after compilation, a default value is indistinguishable from the same value written in the file.

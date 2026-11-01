@@ -9,17 +9,17 @@ sources:
     packages/kit/supabase/schemas/87-api-rate.sql,
     packages/kit/supabase/schemas/91-matrix.sql,
     packages/kit/supabase/schemas/92-encryption.sql,
-    packages/kit/build/plan.mjs,
-    packages/kit/build/runtime-paths.mjs,
-    packages/kit/build/destructive.mjs,
-    packages/kit/build/assemble.mjs,
+    packages/kit/build/plan.mts,
+    packages/kit/build/runtime-paths.mts,
+    packages/kit/build/destructive.mts,
+    packages/kit/build/assemble.mts,
     packages/kit/build/assembled-tree.test.mjs,
     packages/kit/build/cron.mts,
     packages/kit/build/modules/manifest.mts,
     packages/kit/build/modules/kit.mts,
     packages/kit/build/schema.test.mjs,
     packages/kit/supabase/seed.sql,
-    packages/kit/build/dev-account.mjs,
+    packages/kit/build/dev-account.mts,
     packages/kit/supabase/schemas/12-content.sql,
     packages/kit/supabase/schemas/15-library.sql,
     packages/kit/supabase/schemas/20-instrument.sql,
@@ -140,7 +140,7 @@ A paid session selected in the app and purchased through the selected payment pr
 
 ## The plan
 
-Every database is brought to the declaration by a **plan** — `platformkit migrate` (`packages/kit/build/plan.mjs`) — in three parts, applied in order, each in its own transaction:
+Every database is brought to the declaration by a **plan** — `platformkit migrate` (`packages/kit/build/plan.mts`) — in three parts, applied in order, each in its own transaction:
 
 1. **Renames.** A table or column carries its former names on its own line:
    ```sql

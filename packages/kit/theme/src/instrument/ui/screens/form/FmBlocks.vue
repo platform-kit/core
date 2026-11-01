@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* a slide's blocks in order — copy, fields, divs (their blocks inside, their classes on) — each shown
    while its display condition holds over the answers as they are typed */
 import { computed } from 'vue'
@@ -11,20 +12,20 @@ import FmRating from './FmRating.vue'
 import FmScale from './FmScale.vue'
 import FmFile from './FmFile.vue'
 import FmRecord from './FmRecord.vue'
-const props = defineProps({ blocks: { type: Array, default: () => [] }, ctx: { type: Object, default: () => ({}) }, values: { type: Object, required: true }, errors: { type: Object, default: () => ({}) }, words: { type: Object, default: () => ({}) }, autofocusAll: { type: Boolean, default: false } })
+const props = defineProps({ blocks: { type: Array as PropType<any[]>, default: () => [] }, ctx: { type: Object as PropType<any>, default: () => ({}) }, values: { type: Object as PropType<any>, required: true }, errors: { type: Object as PropType<any>, default: () => ({}) }, words: { type: Object as PropType<any>, default: () => ({}) }, autofocusAll: { type: Boolean, default: false } })
 const emit = defineEmits(['enter'])
-const KIND = { text: FmText, email: FmText, url: FmText, tel: FmText, password: FmText, number: FmText, date: FmText, time: FmText, datetime: FmText, select: FmSelect, choice: FmChoice, picture: FmChoice, rating: FmRating, scale: FmScale, file: FmFile, voice: FmRecord, video: FmRecord }
-const shown = computed(() => props.blocks.filter((b) => holds(b.condition, props.ctx)))
-const classes = (b) => ['fdiv', ...(b.attrs && b.attrs.classes ? b.attrs.classes.map((c) => 'fmd-' + c) : [])]
+const KIND: any = { text: FmText, email: FmText, url: FmText, tel: FmText, password: FmText, number: FmText, date: FmText, time: FmText, datetime: FmText, select: FmSelect, choice: FmChoice, picture: FmChoice, rating: FmRating, scale: FmScale, file: FmFile, voice: FmRecord, video: FmRecord }
+const shown = computed(() => props.blocks.filter((b) => holds((b as any).condition, props.ctx)))
+const classes = (b: any) => ['fdiv', ...(b.attrs && b.attrs.classes ? b.attrs.classes.map((c: any) => 'fmd-' + c) : [])]
 /* the first field of the slide takes focus when the document asks for it on every slide, or the field does */
 let focusGiven = false
-const focus = (b) => { if (b.params && b.params.autofocus !== undefined) return true; if (props.autofocusAll && !focusGiven) { focusGiven = true; return true } return false }
+const focus = (b: any) => { if (b.params && b.params.autofocus !== undefined) return true; if (props.autofocusAll && !focusGiven) { focusGiven = true; return true } return false }
 </script>
 
 <template>
   <template v-for="(b, i) in shown" :key="b.line + ':' + i">
     <FmCopy v-if="b.type === 'markdown'" :md="b.md" :ctx="ctx" />
-    <component :is="KIND[b.kind] || FmText" v-else-if="b.type === 'field'" :field="b" :model-value="values[b.name]" :ctx="ctx" :words="words" :error="errors[b.name] || ''" :autofocus="focus(b)" @update:model-value="(v) => (values[b.name] = v)" @enter="(how) => emit('enter', how)" />
+    <component :is="KIND[b.kind] || FmText" v-else-if="b.type === 'field'" :field="b" :model-value="values[b.name]" :ctx="ctx" :words="words" :error="errors[b.name] || ''" :autofocus="focus(b)" @update:model-value="(v: any) => (values[b.name] = v)" @enter="(how: any) => emit('enter', how)" />
     <div v-else-if="b.type === 'div'" :class="classes(b)" :id="b.attrs && b.attrs.id || null">
       <FmBlocks :blocks="b.blocks" :ctx="ctx" :values="values" :errors="errors" :words="words" @enter="(how) => emit('enter', how)" />
     </div>

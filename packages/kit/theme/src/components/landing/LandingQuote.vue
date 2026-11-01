@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { md } from './md.js'
 /*
  * Quote: one pull quote, large, with its source — a line from a review, a reader, the founder,

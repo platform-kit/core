@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { moduleOn } from 'platformkit/lib/modules.js'
 import { computed, defineAsyncComponent } from 'vue'
 import { md } from './md.js'
@@ -26,11 +27,12 @@ const props = defineProps({
   mapLabel: { type: String, default: '' },
   form: { type: String, default: '' },
   layout: { type: String, default: 'beside' },   /* beside | card | cards | quote */
-  quote: { type: Object, default: () => ({}) },  /* { text, name, role, image } — the quote layout */
+  quote: { type: Object as PropType<any>, default: () => ({}) },  /* { text, name, role, image } — the quote layout */
 })
-const form = computed(() => (FormRun && (FORMS || []).find((f) => f.slug === props.form && f.published !== false)) || null)
-const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])   /* an address is text, never marked down: marked would link it inside the link */
-const rows = computed(() => [
+const form = computed(() => (FormRun && (FORMS || []).find((f: any) => f.slug === props.form && f.published !== false)) || null)
+// @ts-expect-error TS2769, from the conversion: No overload matches this call.
+const esc = (t: any) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])   /* an address is text, never marked down: marked would link it inside the link */
+const rows = computed<any>(() => [
   props.address && { icon: 'map', html: md(props.address).replace(/\n/g, '<br>'), href: props.map || '' },
   props.email && { icon: 'mail', html: esc(props.email), href: 'mailto:' + props.email },
   props.phone && { icon: 'chat', html: esc(props.phone), href: 'tel:' + props.phone.replace(/[^\d+]/g, '') },
@@ -43,7 +45,7 @@ const rows = computed(() => [
     <div class="lpwrap lpct" :class="['lpct-' + layout, { 'lpct-two': !!form && layout !== 'cards' }]">
       <!-- the info as cards above the form -->
       <ul v-if="layout === 'cards' && rows.length" class="lpct-infocards lprv">
-        <li v-for="(r, i) in rows" :key="i" class="lpcard lpk" :style="{ '--k': (0.05 + i * 0.08) + 's' }"><span class="lpct-ico" v-html="glyph(r.icon)"></span><component :is="r.href ? 'a' : 'span'" :href="r.href || undefined" v-html="r.html"></component></li>
+        <!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. --><li v-for="(r, i) in rows" :key="i" class="lpcard lpk" :style="{ '--k': (0.05 + i * 0.08) + 's' }"><span class="lpct-ico" v-html="glyph(r.icon)"></span><component :is="r.href ? 'a' : 'span'" :href="r.href || undefined" v-html="r.html"></component></li>
       </ul>
       <div class="lpct-left">
         <slot name="head" :eyebrow="eyebrow" :heading="heading" :lead="lead"><SectionHead :eyebrow="eyebrow" :heading="heading" :lead="lead" :center="layout === 'cards'" /></slot>
@@ -53,7 +55,7 @@ const rows = computed(() => [
         </figure>
         <slot name="details" :rows="rows" :map="map" :md="md">
           <ul v-if="rows.length && layout !== 'cards' && layout !== 'quote'" class="lpct-rows lprv lpd1">
-            <li v-for="(r, i) in rows" :key="i" class="lpk" :style="{ '--k': (0.1 + i * 0.1) + 's' }">
+            <!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. --><li v-for="(r, i) in rows" :key="i" class="lpk" :style="{ '--k': (0.1 + i * 0.1) + 's' }">
               <span class="lpct-ico" v-html="glyph(r.icon)"></span>
               <component :is="r.href ? 'a' : 'span'" :href="r.href || undefined" v-html="r.html"></component>
             </li>

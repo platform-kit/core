@@ -1,22 +1,23 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* A condition as rows — a field, a comparison, a value — never as the expression it becomes
    (src/lib/forms/condition.js writes that). A condition written by hand that rows cannot say is
    shown as it is, and can only be cleared. */
 import { computed } from 'vue'
 import { rowsOf, exprOf, OPS } from 'platformkit/lib/forms/condition.js'
 import { us } from 'platformkit/lib/strings.js'
-const props = defineProps({ modelValue: { type: String, default: '' }, fields: { type: Array, default: () => [] }, label: { type: String, default: '' } })
+const props = defineProps({ modelValue: { type: String, default: '' }, fields: { type: Array as PropType<any[]>, default: () => [] }, label: { type: String, default: '' } })
 const emit = defineEmits(['update:modelValue'])
 const W = (us('forms').admin || {}).condition || {}
-const rows = computed(() => rowsOf(props.modelValue))
+const rows = computed<any>(() => rowsOf(props.modelValue))
 const custom = computed(() => rows.value === null)
-function set(list) { emit('update:modelValue', exprOf(list)) }
-function change(i, k, v) { const list = rows.value.map((r) => ({ ...r })); list[i][k] = v; if (k === 'op' && (v === 'set' || v === 'unset')) list[i].value = ''; set(list) }
-function add() { set([...(rows.value || []), { field: (props.fields[0] && props.fields[0].name) || '', op: 'is', value: '' }]) }
-function remove(i) { const list = rows.value.slice(); list.splice(i, 1); set(list) }
-const needsValue = (op) => op !== 'set' && op !== 'unset'
+function set(list: any) { emit('update:modelValue', exprOf(list)) }
+function change(i: any, k: any, v: any) { const list = (rows as any).value.map((r: any) => ({ ...r })); (list as any)[i][k] = v; if (k === 'op' && (v === 'set' || v === 'unset')) list[i].value = ''; set(list) }
+function add() { set([...(rows.value || []), { field: (props.fields[0] && (props.fields[0] as any).name) || '', op: 'is', value: '' }]) }
+function remove(i: any) { const list = (rows as any).value.slice(); list.splice(i, 1); set(list) }
+const needsValue = (op: any) => op !== 'set' && op !== 'unset'
 /* a field by its question (a block's params, or a compiled field's own), else its name */
-const label_ = (f) => { const q = f.question || (f.params && f.params.question); return q && q !== '...' ? q : f.name }
+const label_ = (f: any) => { const q = f.question || (f.params && f.params.question); return q && q !== '...' ? q : f.name }
 </script>
 
 <template>
@@ -26,14 +27,14 @@ const label_ = (f) => { const q = f.question || (f.params && f.params.question);
     <template v-else>
       <p v-if="!rows.length" class="ui-hint ce-none">{{ W.none }}</p>
       <div v-for="(r, i) in rows" :key="i" class="ce-row">
-        <select class="ui-select" :value="r.field" :aria-label="W.field" @change="change(i, 'field', $event.target.value)">
+        <select class="ui-select" :value="r.field" :aria-label="W.field" @change="change(i, 'field', ($event.target as any).value)">
           <option v-for="f in fields" :key="f.name" :value="f.name">{{ label_(f) }}</option>
           <option v-if="!fields.some((f) => f.name === r.field)" :value="r.field">{{ r.field }}</option>
         </select>
-        <select class="ui-select ce-op" :value="r.op" :aria-label="W.op" @change="change(i, 'op', $event.target.value)">
+        <select class="ui-select ce-op" :value="r.op" :aria-label="W.op" @change="change(i, 'op', ($event.target as any).value)">
           <option v-for="o in OPS" :key="o" :value="o">{{ W[o] }}</option>
         </select>
-        <input v-if="needsValue(r.op)" class="ui-input" :value="r.value" :aria-label="W.value" @input="change(i, 'value', $event.target.value)" />
+        <input v-if="needsValue(r.op)" class="ui-input" :value="r.value" :aria-label="W.value" @input="change(i, 'value', ($event.target as any).value)" />
         <button type="button" class="ui-iconbtn" title="Remove" @click="remove(i)">×</button>
       </div>
       <button type="button" class="ui-btn ui-ghost ui-sm ce-add" @click="add">{{ W.add }}</button>

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A POST'S PICTURES AND VIDEOS (streamline-social-layout). One item shows at its own shape, held
  * between 4:5 and 1.91:1; two or more are a carousel — it swipes on touch (scroll snap), steps with
@@ -14,52 +15,52 @@ import { net } from 'platformkit/lib/network/api.js'
 import { shapeOf, kindOf } from 'platformkit/lib/network/model.js'
 
 const props = defineProps({
-  media: { type: Array, default: () => [] },
+  media: { type: Array as PropType<any[]>, default: () => [] },
   /* in the For You viewer: as large as the room allows, no cropping */
   full: { type: Boolean, default: false },
   /* where the signed addresses are: the network's (net.images), or a space's (the spaces store's) */
-  urls: { type: Object, default: null },
+  urls: { type: Object as PropType<any>, default: null },
 })
 const M = computed(() => us('network').media.main)
 const at_ = computed(() => props.urls || net.images)
-const items = computed(() => props.media.map((m) => ({ ...m, kind: kindOf(m), url: at_.value[m.path] || '', posterUrl: m.poster ? at_.value[m.poster] || '' : '' })))
+const items = computed(() => props.media.map((m) => ({ ...m, kind: kindOf(m), url: at_.value[(m as any).path] || '', posterUrl: (m as any).poster ? at_.value[(m as any).poster] || '' : '' })))
 const shape = computed(() => shapeOf(items.value[0] || {}))
 const many = computed(() => items.value.length > 1)
 
 /* the carousel: where it is, and stepping */
-const track = ref(null)
+const track = ref<any>(null)
 const at = ref(0)
 function onScroll() {
-  const el = track.value
+  const el: any = track.value
   if (!el) return
   at.value = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
 }
-function go(i) {
+function go(i: any) {
   const el = track.value
   if (!el) return
   const n = Math.max(0, Math.min(items.value.length - 1, i))
-  el.scrollTo({ left: n * el.clientWidth, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+  ;(el as any).scrollTo({ left: n * (el as any).clientWidth, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
 }
 
 /* videos: play while most of one is in view, muted, unless the reader asked for less motion */
-const root = ref(null)
+const root = ref<any>(null)
 const sound = ref(false)
-let io = null
+let io: any = null
 onMounted(async () => {
   await nextTick()
   if (!root.value || typeof IntersectionObserver === 'undefined') return
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches
   io = new IntersectionObserver((entries) => {
     for (const e of entries) {
-      const v = e.target
+      const v: any = e.target
       if (e.isIntersecting && e.intersectionRatio >= 0.6 && !still) v.play().catch(() => {})
       else v.pause()
     }
   }, { threshold: [0, 0.6, 1] })
-  root.value.querySelectorAll('video').forEach((v) => io.observe(v))
+  root.value.querySelectorAll('video').forEach((v: any) => io.observe(v))
 })
 onBeforeUnmount(() => { if (io) io.disconnect() })
-function toggleSound(e) {
+function toggleSound(e: any) {
   sound.value = !sound.value
   const v = e.currentTarget.closest('.nm-item').querySelector('video')
   if (v) { v.muted = !sound.value; if (sound.value) v.play().catch(() => {}) }

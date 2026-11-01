@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 import { us } from 'platformkit/lib/strings.js'
 import SectionHead from './SectionHead.vue'
@@ -14,12 +15,12 @@ defineProps({
   eyebrow: { type: String, default: '' },
   heading: { type: String, default: '' },
   lead: { type: String, default: '' },
-  columns: { type: Array, default: () => [] },   /* [{ name, note?, featured?, cta?, href? }] */
-  rows: { type: Array, default: () => [] },      /* [{ label, cells: ['yes' | 'no' | 'words'] }] */
+  columns: { type: Array as PropType<any[]>, default: () => [] },   /* [{ name, note?, featured?, cta?, href? }] */
+  rows: { type: Array as PropType<any[]>, default: () => [] },      /* [{ label, cells: ['yes' | 'no' | 'words'] }] */
 })
 const W = (us('sections').compare || {}).cell || {}
 const YES = /^(yes|true|✓|✔|included)$/i, NO = /^(no|false|—|-|×|✗|not included)$/i
-const kind = (c) => (c == null || c === '' ? 'blank' : YES.test(String(c).trim()) ? 'yes' : NO.test(String(c).trim()) ? 'no' : 'text')
+const kind = (c: any) => (c == null || c === '' ? 'blank' : YES.test(String(c).trim()) ? 'yes' : NO.test(String(c).trim()) ? 'no' : 'text')
 </script>
 
 <template>

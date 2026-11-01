@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * What somebody has bought: paid purchases, newest first, said in the store's own words where the
  * offers know the sku and by the sku itself where they do not — a book that has been taken off sale
@@ -12,27 +12,28 @@ import { products } from '#content'
 
 const props = defineProps({ user: { type: String, default: '' }, mine: { type: Boolean, default: false } })
 const W = computed(() => us('spaces')['member-panels'].main)
-const rows = ref([])
+const rows = ref<any>([])
 const done = ref(false)
 
 watch(() => props.user, async (id) => {
   done.value = false
   rows.value = []
   if (!id) return
-  const { data } = await supabase.rpc('member_bought', { p_user: id })
+  const { data } = await (supabase as any).rpc('member_bought', { p_user: id })
   rows.value = data || []
   done.value = true
 }, { immediate: true })
 
-const titleOf = (sku) => {
-  const p = (products || []).find((x) => x.sku === sku)
+const titleOf = (sku: any) => {
+  const p = (products || []).find((x: any) => x.sku === sku)
   return (p && p.title) || sku
 }
-const money = (n, cur) => (typeof n === 'number'
+const money = (n: any, cur: any) => (typeof n === 'number'
   ? new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format(n / 100)
   : '')
-const when = (v) => {
+const when = (v: any) => {
   const d = new Date(v)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
 }
 </script>

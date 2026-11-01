@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Content analytics — what gets read, how long it holds people and how far they go: piece by piece (views, readers,
  * engaged minutes, time, depth, recirculation, the change on the window before), by kind, by author, by topic and tag,
@@ -42,25 +42,25 @@ const days = ref(30)
 const AUD = ['all', 'guest', 'user', 'member']
 const audience = ref('all')
 const { forRead: filtersForRead } = useFilters(T.page.filters || {})
-const now = ref(null)
+const now = ref<any>(null)
 /* the collections the events point at, by the kind a view carries: for an author and a publish date the events do not hold */
-const COLL = { article: ARTICLES || [], book: BOOKS || [], wiki: WIKI || [], docs: DOCS || [] }
-const recordOf = (kind, id) => (COLL[kind] || []).find((x) => x.slug === id || (x.path || '').split('/').pop() === id) || null
-const authorOf = (r) => { const x = recordOf(r.kind, r.id); return x && x.author ? x.author : '' }
-const PUBLISHED = Object.fromEntries(Object.entries(COLL).flatMap(([kind, list]) => list.filter((x) => x.date).map((x) => [kind + ':' + (x.slug || (x.path || '').split('/').pop()), String(x.date).slice(0, 10)])))
+const COLL: any = { article: ARTICLES || [], book: BOOKS || [], wiki: WIKI || [], docs: DOCS || [] }
+const recordOf = (kind: any, id: any) => (COLL[kind] || []).find((x: any) => x.slug === id || (x.path || '').split('/').pop() === id) || null
+const authorOf = (r: any) => { const x = recordOf(r.kind, r.id); return x && x.author ? x.author : '' }
+const PUBLISHED = Object.fromEntries(Object.entries(COLL).flatMap(([kind, list]) => (list as any).filter((x: any) => x.date).map((x: any) => [kind + ':' + (x.slug || (x.path || '').split('/').pop()), String(x.date).slice(0, 10)])))
 const state = ref('idle')      /* idle | loading | ok | denied | error */
-const content = ref(null)
-const find = ref(null)
-const series = ref([])
-const hasAuthors = computed(() => ((content.value && content.value.items) || []).some((r) => authorOf(r)))
+const content = ref<any>(null)
+const find = ref<any>(null)
+const series = ref<any>([])
+const hasAuthors = computed(() => ((content.value && content.value.items) || []).some((r: any) => authorOf(r)))
 
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; content.value = null; find.value = null; return }
   state.value = 'loading'
   const [c, f, s] = await Promise.all([
-    supabase.rpc('admin_content', { days: days.value, audience: audience.value, published: PUBLISHED, filters: filtersForRead.value }),
-    supabase.rpc('admin_find', { days: days.value }),
-    supabase.rpc('admin_series', { days: days.value, audience: audience.value, filters: filtersForRead.value }),
+    (supabase as any).rpc('admin_content', { days: days.value, audience: audience.value, published: PUBLISHED, filters: filtersForRead.value }),
+    (supabase as any).rpc('admin_find', { days: days.value }),
+    (supabase as any).rpc('admin_series', { days: days.value, audience: audience.value, filters: filtersForRead.value }),
   ])
   const err = c.error || f.error || s.error
   if (err) { state.value = (err.code === '42501' || /admin only|permission/i.test(err.message || '')) ? 'denied' : 'error'; return }
@@ -70,8 +70,8 @@ async function load() {
   state.value = 'ok'
   loadNow()
 }
-async function loadNow() { if (!configured || !isSignedIn.value) return; const { data: n } = await supabase.rpc('admin_now'); if (n) now.value = n }
-let nowTimer = null
+async function loadNow() { if (!configured || !isSignedIn.value) return; const { data: n } = await (supabase as any).rpc('admin_now'); if (n) now.value = n }
+let nowTimer: any = null
 onMounted(() => { nowTimer = setInterval(() => { if (document.visibilityState !== 'hidden' && state.value === 'ok') loadNow() }, 60000) })
 onBeforeUnmount(() => clearInterval(nowTimer))
 /* the tabs: overview · pieces · topics · readers, then the features the site has, then the site's own panels */
@@ -93,25 +93,26 @@ watch([isSignedIn, days, audience, () => JSON.stringify(filtersForRead.value)], 
 /* the pieces table as a CSV: every row in hand, every column */
 function exportCsv() {
   const cols = ['kind', 'id', 'title', 'author', 'views', 'readers', 'minutes', 'avg_seconds', 'depth', 'recirculation', 'prev_views', 'signups', 'subscriptions', 'purchases', 'revenue']
-  const esc = (v) => { const t = String(v == null ? '' : v); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t }
-  const csv = [cols.join(',')].concat(items.value.map((r) => cols.map((c) => esc(r[c])).join(','))).join('\n')
+  const esc = (v: any) => { const t = String(v == null ? '' : v); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t }
+  const csv = [cols.join(',')].concat(items.value.map((r: any) => cols.map((c) => esc(r[c])).join(','))).join('\n')
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'content-' + days.value + 'd.csv'; a.click()
 }
 
 /* ---- helpers ---- */
-const num = (n) => new Intl.NumberFormat().format(Math.round(n || 0))
-const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0)
-const money = (n, c) => new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase(), maximumFractionDigits: 0 }).format((n || 0) / 100)
-const secs = (s) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
-const dayKey = (d) => String(d || '').slice(0, 10)
-const day = (d) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
-const bars = (list, key) => { const rows = list || []; const max = Math.max(1, ...rows.map((x) => x[key] || 0)); return rows.map((x) => ({ ...x, w: ((x[key] || 0) / max) * 100 })) }
-const open = reactive({})
-function L(name, arr, key, cap = 8) { const all = bars(arr || [], key); return { rows: open[name] ? all : all.slice(0, cap), more: all.length > cap, open: !!open[name], total: all.length } }
-const toggle = (name) => { open[name] = !open[name] }
-function openAuth() { if (window.DLauth) window.DLauth.open() }
-const delta = (now, before) => { if (!before) return null; const d = Math.round(((now - before) / before) * 100); return { dir: d > 0 ? 'up' : d < 0 ? 'down' : 'flat', text: (d > 0 ? '+' : '') + d + '%' } }
-const kindName = (k) => KN[k] || k
+const num = (n: any) => new Intl.NumberFormat().format(Math.round(n || 0))
+const pct = (a: any, b: any) => (b ? Math.round((a / b) * 100) : 0)
+const money = (n: any, c: any) => new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase(), maximumFractionDigits: 0 }).format((n || 0) / 100)
+const secs = (s: any) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
+const dayKey = (d: any) => String(d || '').slice(0, 10)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const bars = (list: any, key: any) => { const rows = list || []; const max = Math.max(1, ...rows.map((x: any) => x[key] || 0)); return rows.map((x: any) => ({ ...x, w: ((x[key] || 0) / max) * 100 })) }
+const open = reactive<any>({})
+function L(name: any, arr: any, key: any, cap = 8) { const all = bars(arr || [], key); return { rows: open[name] ? all : all.slice(0, cap), more: all.length > cap, open: !!open[name], total: all.length } }
+const toggle = (name: any) => { open[name] = !open[name] }
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
+const delta = (now: any, before: any) => { if (!before) return null; const d = Math.round(((now - before) / before) * 100); return { dir: d > 0 ? 'up' : d < 0 ? 'down' : 'flat', text: (d > 0 ? '+' : '') + d + '%' } }
+const kindName = (k: any) => KN[k] || k
 const rangeLabel = computed(() => H.range.replace('{days}', days.value))
 const chartKey = ref(0)
 onMounted(() => { const mo = new MutationObserver(() => chartKey.value++); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }) })
@@ -120,36 +121,36 @@ onMounted(() => { const mo = new MutationObserver(() => chartKey.value++); mo.ob
 const totals = computed(() => (content.value && content.value.totals) || {})
 const prev = computed(() => (content.value && content.value.prev) || {})
 const reading = computed(() => (content.value && content.value.reading) || {})
-const hasContent = computed(() => (totals.value.views || 0) > 0)
-const finishRate = (r) => (r.reads ? Math.round((r.finished / r.reads) * 100) : 0)
+const hasContent = computed(() => ((totals.value as any).views || 0) > 0)
+const finishRate = (r: any) => (r.reads ? Math.round((r.finished / r.reads) * 100) : 0)
 const tiles = computed(() => [
-  { label: KP.views, value: num(totals.value.views), d: delta(totals.value.views, prev.value.views), spark: 'views' },
-  { label: KP.readers, value: num(totals.value.readers), d: delta(totals.value.readers, prev.value.readers), spark: 'readers' },
-  { label: KP.engaged, value: num(totals.value.minutes), d: delta(totals.value.minutes, prev.value.minutes) },
-  { label: KP.time, value: secs(reading.value.avg_seconds), d: delta(reading.value.avg_seconds, reading.value.prev_avg_seconds) },
-  { label: KP.finish, value: finishRate(reading.value) + '%', d: delta(finishRate(reading.value), reading.value.prev_reads ? Math.round((reading.value.prev_finished / reading.value.prev_reads) * 100) : 0) },
-  { label: KP.recirculation, value: (totals.value.recirculation || 0) + '%', d: delta(totals.value.recirculation, prev.value.recirculation), help: KP['recirculation-help'] },
-  { label: KP.items, value: num(totals.value.items), d: delta(totals.value.items, prev.value.items) },
-  { label: KP['signed-in'], value: num(totals.value.signed_in), d: delta(totals.value.signed_in, prev.value.signed_in) },
+  { label: KP.views, value: num((totals.value as any).views), d: delta((totals.value as any).views, (prev.value as any).views), spark: 'views' },
+  { label: KP.readers, value: num((totals.value as any).readers), d: delta((totals.value as any).readers, (prev.value as any).readers), spark: 'readers' },
+  { label: KP.engaged, value: num((totals.value as any).minutes), d: delta((totals.value as any).minutes, (prev.value as any).minutes) },
+  { label: KP.time, value: secs((reading.value as any).avg_seconds), d: delta((reading.value as any).avg_seconds, (reading.value as any).prev_avg_seconds) },
+  { label: KP.finish, value: finishRate(reading.value) + '%', d: delta(finishRate(reading.value), (reading.value as any).prev_reads ? Math.round(((reading.value as any).prev_finished / (reading.value as any).prev_reads) * 100) : 0) },
+  { label: KP.recirculation, value: ((totals.value as any).recirculation || 0) + '%', d: delta((totals.value as any).recirculation, (prev.value as any).recirculation), help: KP['recirculation-help'] },
+  { label: KP.items, value: num((totals.value as any).items), d: delta((totals.value as any).items, (prev.value as any).items) },
+  { label: KP['signed-in'], value: num((totals.value as any).signed_in), d: delta((totals.value as any).signed_in, (prev.value as any).signed_in) },
 ])
-const sparkOn = (key) => win.value.now.some((r) => (r[key] || 0) > 0)
+const sparkOn = (key: any) => win.value.now.some((r: any) => (r[key] || 0) > 0)
 /* the window's days and the same days before them */
 const win = computed(() => { const all = (content.value && content.value.series) || []; return { now: all.slice(-days.value), before: all.slice(0, Math.max(0, all.length - days.value)) } })
-const sparkPath = (key) => { const rows = win.value.now; if (rows.length < 2) return ''; const max = Math.max(1, ...rows.map((r) => r[key] || 0)); return rows.map((r, i) => `${(i / (rows.length - 1)) * 100},${30 - ((r[key] || 0) / max) * 26 - 2}`).join(' ') }
+const sparkPath = (key: any) => { const rows = win.value.now; if (rows.length < 2) return ''; const max = Math.max(1, ...rows.map((r: any) => r[key] || 0)); return rows.map((r: any, i: any) => `${(i / (rows.length - 1)) * 100},${30 - ((r[key] || 0) / max) * 26 - 2}`).join(' ') }
 const overTimeOption = computed(() => {
   void chartKey.value; void chartKind.value
   const b = base(), t = tokens()
   const now = win.value.now, before = win.value.before
-  return { ...b, xAxis: timeAxis({ ...b.xAxis, data: now.map((r) => day(r.day)) }), series: [
-    timeSeries({ name: KP.views, color: t.accent, area: true, data: now.map((r) => r.views) }),
-    timeSeries({ name: KP.readers, color: PALETTE[1], data: now.map((r) => r.readers) }),
-    timeSeries({ name: CS['prev-series'], color: t.ink3, reference: true, data: now.map((_, i) => (before[i] ? before[i].views : null)) }),
+  return { ...b, xAxis: timeAxis({ ...b.xAxis, data: now.map((r: any) => day((r as any).day)) }), series: [
+    timeSeries({ name: KP.views, color: t.accent, area: true, data: now.map((r: any) => (r as any).views) }),
+    timeSeries({ name: KP.readers, color: PALETTE[1], data: now.map((r: any) => (r as any).readers) }),
+    timeSeries({ name: CS['prev-series'], color: t.ink3, reference: true, data: now.map((_: any, i: any) => (before[i] ? (before[i] as any).views : null)) }),
   ] }
 })
 /* what the content led to: a sign-up, a subscription, a purchase attributed to the last piece read in the week before */
 const CV = T.content ? T.content.conversions || {} : {}
 const conv = computed(() => (content.value && content.value.conversions) || {})
-const convTiles = computed(() => { const c = conv.value; const cur = (content.value && content.value.currency) || 'usd'; return [
+const convTiles = computed(() => { const c: any = conv.value; const cur = (content.value && content.value.currency) || 'usd'; return [
   { label: CV.signups, value: num(c.signups_content), of: num(c.signups) },
   { label: CV.subscriptions, value: num(c.subscriptions_content), of: num(c.subscriptions) },
   { label: CV.purchases, value: num(c.purchases_content), of: num(c.purchases) },
@@ -157,48 +158,49 @@ const convTiles = computed(() => { const c = conv.value; const cur = (content.va
 ] })
 const convSort = ref('all')
 const convRows = computed(() => {
-  const rows = ((conv.value.items) || []).map((r) => ({ ...r, all: (r.signups || 0) + (r.subscriptions || 0) + (r.purchases || 0) }))
-  const k = convSort.value
-  const sorted = rows.slice().sort((a, b) => (b[k] || 0) - (a[k] || 0) || (b.all || 0) - (a.all || 0))
-  const max = Math.max(1, ...sorted.map((r) => r.all))
-  return sorted.map((r) => ({ ...r, w: (r.all / max) * 100, rate: r.readers ? Math.round((r.all / r.readers) * 1000) / 10 : 0 }))
+  const rows = (((conv.value as any).items) || []).map((r: any) => ({ ...r, all: (r.signups || 0) + (r.subscriptions || 0) + (r.purchases || 0) }))
+  const k: any = convSort.value
+  const sorted = rows.slice().sort((a: any, b: any) => (b[k] || 0) - (a[k] || 0) || (b.all || 0) - (a.all || 0))
+  const max = Math.max(1, ...sorted.map((r: any) => r.all))
+  return sorted.map((r: any) => ({ ...r, w: (r.all / max) * 100, rate: r.readers ? Math.round((r.all / r.readers) * 1000) / 10 : 0 }))
 })
 
 /* what people read: every piece, filtered by kind and by a search, sorted by a column */
 const kind = ref('all'), q = ref(''), sortBy = ref('views')
-const kinds = computed(() => ((content.value && content.value.kinds) || []).map((k) => k.kind))
+const kinds = computed(() => ((content.value && content.value.kinds) || []).map((k: any) => k.kind))
 const items = computed(() => {
   const all = (content.value && content.value.items) || []
   const needle = q.value.trim().toLowerCase()
-  const rows = all.filter((r) => (kind.value === 'all' || r.kind === kind.value) && (!needle || String(r.title || '').toLowerCase().includes(needle) || String(r.id || '').toLowerCase().includes(needle)))
+  const rows = all.filter((r: any) => (kind.value === 'all' || (r as any).kind === kind.value) && (!needle || String((r as any).title || '').toLowerCase().includes(needle) || String((r as any).id || '').toLowerCase().includes(needle)))
   const k = sortBy.value
-  const sorted = rows.slice().sort((a, b) => (b[k] || 0) - (a[k] || 0) || (b.views || 0) - (a.views || 0))
-  const max = Math.max(1, ...sorted.map((r) => r.views || 0))
-  return sorted.map((r) => ({ ...r, author: authorOf(r), w: ((r.views || 0) / max) * 100, d: delta(r.views, r.prev_views) }))
+  const sorted = rows.slice().sort((a: any, b: any) => (b[k] || 0) - (a[k] || 0) || ((b as any).views || 0) - ((a as any).views || 0))
+  const max = Math.max(1, ...sorted.map((r: any) => (r as any).views || 0))
+  return sorted.map((r: any) => ({ ...r, author: authorOf(r), w: (((r as any).views || 0) / max) * 100, d: delta((r as any).views, (r as any).prev_views) }))
 })
 /* by author: every piece with one, added up — views, readers, engaged minutes, what it led to */
 const authors = computed(() => {
-  const by = {}
-  for (const r of (content.value && content.value.items) || []) { const a = authorOf(r); if (!a) continue; const x = by[a] || (by[a] = { author: a, pieces: 0, views: 0, readers: 0, minutes: 0, conversions: 0, revenue: 0 }); x.pieces++; x.views += r.views || 0; x.readers += r.readers || 0; x.minutes += r.minutes || 0; x.conversions += (r.signups || 0) + (r.subscriptions || 0) + (r.purchases || 0); x.revenue += r.revenue || 0 }
-  const rows = Object.values(by).sort((a, b) => b.views - a.views); const max = Math.max(1, ...rows.map((r) => r.views))
-  return rows.map((r) => ({ ...r, w: (r.views / max) * 100 }))
+  const by: any = {}
+  for (const r of (content.value && content.value.items) || []) { const a = authorOf(r); if (!a) continue; const x = by[a] || (by[a] = { author: a, pieces: 0, views: 0, readers: 0, minutes: 0, conversions: 0, revenue: 0 }); x.pieces++; x.views += (r as any).views || 0; x.readers += (r as any).readers || 0; x.minutes += (r as any).minutes || 0; x.conversions += ((r as any).signups || 0) + ((r as any).subscriptions || 0) + ((r as any).purchases || 0); x.revenue += (r as any).revenue || 0 }
+  const rows = Object.values(by).sort((a, b) => (b as any).views - (a as any).views); const max = Math.max(1, ...rows.map((r) => (r as any).views))
+  // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
+  return rows.map((r) => ({ ...r, w: ((r as any).views / max) * 100 }))
 })
-const channelName = (c) => ((T.acquisition && T.acquisition.ui) || {})['channel-' + c] || c
+const channelName = (c: any) => ((T.acquisition && T.acquisition.ui) || {})['channel-' + c] || c
 const audienceLine = computed(() => (audience.value === 'all' ? '' : String(H['audience-line'] || '').replace('{audience}', H['audience-' + audience.value] || audience.value)))
 const shownItems = computed(() => (open.items ? items.value : items.value.slice(0, 12)))
-const depthQ = computed(() => { const d = (content.value && content.value.depth) || {}; const n = (d.q1 || 0) + (d.q2 || 0) + (d.q3 || 0) + (d.q4 || 0); return ['q1', 'q2', 'q3', 'q4'].map((k) => ({ k, n: d[k] || 0, p: n ? Math.round(((d[k] || 0) / n) * 100) : 0 })) })
+const depthQ = computed(() => { const d = (content.value && content.value.depth) || {}; const n = ((d as any).q1 || 0) + ((d as any).q2 || 0) + ((d as any).q3 || 0) + ((d as any).q4 || 0); return ['q1', 'q2', 'q3', 'q4'].map((k) => ({ k, n: (d as any)[k] || 0, p: n ? Math.round((((d as any)[k] || 0) / n) * 100) : 0 })) })
 
 /* ---- the features (as before) ---- */
-const bookTitle = (slug) => { const b = BOOKS.find((x) => x.slug === slug); return b ? b.title : slug }
-const lookingLabel = (c) => (c ? (FD['choice-' + c] || c) : FD['choice-none'] || '—')
-const paceLabel = (c) => (c ? (FD['pace-' + c] || c) : FD['choice-none'] || '—')
+const bookTitle = (slug: any) => { const b = BOOKS.find((x: any) => x.slug === slug); return b ? b.title : slug }
+const lookingLabel = (c: any) => (c ? (FD['choice-' + c] || c) : FD['choice-none'] || '—')
+const paceLabel = (c: any) => (c ? (FD['pace-' + c] || c) : FD['choice-none'] || '—')
 
 /* the round, day by day: started and finished */
 const roundOption = computed(() => {
   void chartKey.value; void chartKind.value
   const b = base(), t = tokens()
-  const line = (name, key, color) => timeSeries({ name, color, area: true, data: series.value.map((r) => r[key] || 0) })
-  return { ...b, xAxis: timeAxis({ ...b.xAxis, data: series.value.map((r) => day(r.day)) }), series: [line(MN['find-starts'], 'find_starts', t.accent), line(MN['find-results'], 'find_results', PALETTE[1])] }
+  const line = (name: any, key: any, color: any) => timeSeries({ name, color, area: true, data: series.value.map((r: any) => r[key] || 0) })
+  return { ...b, xAxis: timeAxis({ ...b.xAxis, data: series.value.map((r: any) => day((r as any).day)) }), series: [line(MN['find-starts'], 'find_starts', t.accent), line(MN['find-results'], 'find_results', PALETTE[1])] }
 })
 
 </script>

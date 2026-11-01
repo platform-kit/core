@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A book, as the reference draws one (the "Animated 3D Book Collection" pen by filipz, after
  * realvjy's book-cover effect — the look, redone here): the cover square to the reader on a
@@ -22,23 +23,23 @@ const props = defineProps({
   slug: { type: String, default: '' },                /* the book: its printed softcover is worn when it has one */
   art: { type: String, default: '' },                 /* the cover: a picture, or the printed sheet */
   fallbackArt: { type: String, default: '' },          /* the ordinary cover from the book's markdown */
-  dims: { type: Object, default: null },              /* the sheet's dimensions in points: { width, height, spine, bleed, flap } */
+  dims: { type: Object as PropType<any>, default: null },              /* the sheet's dimensions in points: { width, height, spine, bleed, flap } */
   trim: { type: String, default: '6x9' },
   pages: { type: Number, default: 120 },              /* thickness: how far the leaves and the back board stand out */
   binding: { type: String, default: 'softcover' },
   title: { type: String, default: '' },
   alt: { type: String, default: '' },
-  sheets: { type: Array, default: () => [] },         /* pictures of printed pages, on the leaves */
+  sheets: { type: Array as PropType<any[]>, default: () => [] },         /* pictures of printed pages, on the leaves */
   flat: { type: Boolean, default: false },
   eager: { type: Boolean, default: false },
   /* kept for the callers: this book has one face */
   cloth: { type: String, default: '' }, foil: { type: String, default: '' }, foilLayer: { type: String, default: '' }, jacket: { type: Boolean, default: true },
   edges: { type: [String, Object], default: null }, endpapers: { type: [String, Object], default: null }, paper: { type: String, default: 'cream' },
-  mode: { type: String, default: 'still' }, pose: { type: Object, default: null }, fill: { type: Number, default: 0.8 },
-  anchor: { type: String, default: 'center' },        /* where the book stands in a wider room: center, or left — against the words under it */ author: { type: String, default: '' }, words: { type: Object, default: () => ({}) },
+  mode: { type: String, default: 'still' }, pose: { type: Object as PropType<any>, default: null }, fill: { type: Number, default: 0.8 },
+  anchor: { type: String, default: 'center' },        /* where the book stands in a wider room: center, or left — against the words under it */ author: { type: String, default: '' }, words: { type: Object as PropType<any>, default: () => ({}) },
 })
 
-const TRIM_PT = { '6x9': { w: 432, h: 648 }, '5x8': { w: 360, h: 576 }, '6.14x9.21': { w: 442, h: 663 } }
+const TRIM_PT: any = { '6x9': { w: 432, h: 648 }, '5x8': { w: 360, h: 576 }, '6.14x9.21': { w: 442, h: 663 } }
 /* what the book wears: the printed softcover by slug, else what the caller passed */
 const printed = computed(() => (props.slug && !props.flat ? printedArtOf(props.slug) : null))
 const art = computed(() => (printed.value ? printed.value.art : props.art))
@@ -70,7 +71,7 @@ const cover = computed(() => {
   }
 })
 /* the leaves' pictures: the listing's pages, their right edge toward the fore-edge */
-const leaf = (i) => (sheets.value[i] ? { '--leaf': `url("${sheets.value[i]}")` } : null)
+const leaf = (i: any) => (sheets.value[i] ? { '--leaf': `url("${sheets.value[i]}")` } : null)
 const LEAVES = 6
 /* how far the block stands out, from the pages: a thin book a little, a thick one more */
 const thick = computed(() => Math.max(2.5, Math.min(6, 2 + pages.value / 90)))

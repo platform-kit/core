@@ -9,7 +9,7 @@
 
 ## 2. Integrate Prism with payment workflows
 
-- [ ] 2.1 Register Prism and its server-only configuration in provider assembly, module validation, and deployment preflight while keeping Stripe as the default; verify `node packages/kit/build/payment-providers.test.mjs` and `node packages/kit/build/deploy-checks.mjs --test`.
+- [ ] 2.1 Register Prism and its server-only configuration in provider assembly, module validation, and deployment preflight while keeping Stripe as the default; verify `node packages/kit/build/payment-providers.test.mjs` and `node packages/kit/build/deploy-checks.mts --test`.
 - [ ] 2.2 Implement the Prism adapter for verified hosted checkout and other initially supported operations using the Edge-resident WASM bindings, checking capabilities before side effects; verify connector fixtures cover success, invalid responses, unsupported operations, and no fallback.
 - [ ] 2.3 Connect Deno payment functions directly to the selected processor through Prism-generated requests using site-validated offer amounts, provider-scoped references, and stable idempotency keys; verify focused checkout tests reject client-supplied prices and require no gateway URL or Node process.
 - [ ] 2.4 Implement Prism webhook verification inside the Edge Function against the original body and normalize only verified events into the existing durable inbox; verify offline webhook tests cover invalid signatures, replay, event deduplication, and zero writes on rejection.
@@ -24,7 +24,7 @@
 
 ## 4. Document and verify the complete change
 
-- [ ] 4.1 Update `sites/docs/content/docs/building-a-site/payment-providers.md`, `sites/docs/content/docs/reference/environment-variables.md`, `sites/docs/content/docs/building-a-site/configuration.md`, `sites/docs/content/docs/building-a-site/dev-build-and-deploy.md`, and any other page that still describes Hyperswitch; verify `node packages/kit/build/docs-check.mjs`.
+- [ ] 4.1 Update `sites/docs/content/docs/building-a-site/payment-providers.md`, `sites/docs/content/docs/reference/environment-variables.md`, `sites/docs/content/docs/building-a-site/configuration.md`, `sites/docs/content/docs/building-a-site/dev-build-and-deploy.md`, and any other page that still describes Hyperswitch; verify `node packages/kit/build/docs-check.mts`.
 - [ ] 4.2 Verify Prism and Stripe scenarios with the focused provider, webhook, checkout, ledger, deployment, Edge-runtime/WASM, and migration-fixture tests; exercise a live connector only when credentials are available, and report it as not verified rather than blocking completion if credentials are absent.
 - [ ] 4.3 Inspect the rendered checkout redirect, unsupported-capability error, and failure state at mobile and desktop sizes in light and dark themes; record the inspected states and viewport sizes.
 - [ ] 4.4 Run the final relevant OpenSpec and documentation checks, then report every Prism, deployment, webhook, and retirement scenario as passed, failed, or not verified with the reason; verify native Stripe regression tests remain green.

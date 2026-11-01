@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The chapter read aloud. One player for the file the current chapter and mode
  * have (the text, or the summary), drawn as a waveform with the playhead on it
@@ -21,8 +21,8 @@ const props = defineProps({
 })
 const A = (us('library').reader || {}).audio || {}
 
-const box = ref(null)
-let ws = null
+const box = ref<any>(null)
+let ws: any = null
 const playing = ref(false)
 const ready = ref(false)
 const failed = ref(false)
@@ -31,7 +31,7 @@ const total = ref(props.seconds || 0)
 const RATES = [1, 1.25, 1.5]
 const rate = ref(1)
 
-const fmt = (s) => { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') }
+const fmt = (s: any) => { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') }
 const clock = computed(() => fmt(now.value) + ' / ' + fmt(total.value))
 const eyebrow = computed(() => (props.kind === 'summary' ? A['eyebrow-summary'] : props.kind === 'intro' ? A['eyebrow-intro'] : A.eyebrow) || '')
 
@@ -48,8 +48,8 @@ function make() {
     container: box.value, url: props.src, height: 36, waveColor: c.wave, progressColor: c.progress, cursorColor: c.progress,
     cursorWidth: 1, barWidth: 2, barGap: 2, barRadius: 2, normalize: true, dragToSeek: true, audioRate: rate.value,
   })
-  ws.on('ready', (d) => { ready.value = true; total.value = d || total.value })
-  ws.on('timeupdate', (t) => { now.value = t })
+  ws.on('ready', (d: any) => { ready.value = true; total.value = d || total.value })
+  ws.on('timeupdate', (t: any) => { now.value = t })
   ws.on('play', () => { playing.value = true })
   ws.on('pause', () => { playing.value = false })
   ws.on('finish', () => { playing.value = false })
@@ -61,7 +61,7 @@ function nextRate() { rate.value = RATES[(RATES.indexOf(rate.value) + 1) % RATES
 
 /* the colours again when the theme changes, so the waveform is never left in the other scheme's ink */
 function recolour() { if (!ws || !box.value) return; const c = colours(); ws.setOptions({ waveColor: c.wave, progressColor: c.progress, cursorColor: c.progress }) }
-let mo = null
+let mo: any = null
 onMounted(() => { make(); mo = new MutationObserver(recolour); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-look'] }) })
 onBeforeUnmount(() => { drop(); if (mo) mo.disconnect() })
 /* a new chapter or mode is a new file: start again, quietly */

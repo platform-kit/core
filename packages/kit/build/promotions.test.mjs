@@ -213,7 +213,7 @@ ok('and applying the same promotion twice in one pass stacks on the remainder, d
  * somebody remembered to.
  * ========================================================================================== */
 {
-  const src = await import('node:fs').then((fs) => fs.readFileSync(new URL('./velite.mjs', import.meta.url), 'utf8'))
+  const src = await import('node:fs').then((fs) => fs.readFileSync(new URL('./velite.mts', import.meta.url), 'utf8'))
   const block = src.slice(src.indexOf('    promotions: {'), src.indexOf('    collections: {', src.indexOf('    promotions: {')))
   const enumOf = (field) => {
     const m = new RegExp(field + ": s\\.enum\\(\\[([^\\]]*)\\]").exec(block)

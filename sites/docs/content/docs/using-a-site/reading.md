@@ -4,12 +4,12 @@ description: The library, the reader, summaries, highlights, the quiz, the spoke
 order: 30
 sources:
   [
-    packages/kit/src/lib/gated.js,
+    packages/kit/src/lib/gated.ts,
     packages/kit/theme/src/components/content,
     packages/kit/src/lib/tts,
-    packages/kit/src/lib/interests.js,
-    packages/kit/src/lib/rank.js,
-    packages/kit/src/lib/records.js,
+    packages/kit/src/lib/interests.ts,
+    packages/kit/src/lib/rank.ts,
+    packages/kit/src/lib/records.ts,
     packages/kit/theme/src/pages/DiagnosticsPage.vue,
   ]
 reviewed: 2026-10-30

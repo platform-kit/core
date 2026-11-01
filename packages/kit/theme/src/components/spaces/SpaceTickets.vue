@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * THE DESK'S TICKETS. A chat is a conversation; a ticket is a piece of work. This is the second
  * side of the support surface: a list of what is open, ordered by what is most urgent rather than
@@ -33,22 +34,22 @@ import MessageText from '../chat/MessageText.vue'
 const props = defineProps({
   me: { type: String, default: '' },
   /* who a ticket may be put on: the staff, as the desk already knows them */
-  agents: { type: Array, default: () => [] },
+  agents: { type: Array as PropType<any[]>, default: () => [] },
 })
 const W = computed(() => us('spaces').tickets.main)
 
 const order = ref('busy')
 const status = ref('open')
-const assignee = ref(null)
+const assignee = ref<any>(null)
 const q = ref('')
 /* WHAT THEY WERE RAISED WITH. A site that asks a form before a ticket is raised has told the desk
    something in every answer, and this is where that pays: the desk offers whatever the site asked —
    "the urgent ones", "the ones about the reader" — for fields this kit has never heard of. */
-const answer = ref(null)
-const values = ref([])
+const answer = ref<any>(null)
+const values = ref<any>([])
 const fields = computed(() => {
-  const by = {}
-  for (const v of values.value) (by[v.field] = by[v.field] || []).push(v)
+  const by: any = {}
+  for (const v of values.value) (by[(v as any).field] = by[(v as any).field] || []).push(v)
   return Object.entries(by).map(([field, vs]) => ({ field, values: vs }))
 })
 const now = ref(Date.now())
@@ -56,25 +57,26 @@ let tick = null
 
 onMounted(async () => { await loadTickets(); values.value = await answerValues(true).catch(() => []); tick = setInterval(() => { now.value = Date.now() }, 60000) })
 
-const shown = computed(() => sortTickets(narrow(tickets.list, {
+const shown = computed<any>(() => sortTickets(narrow(tickets.list, {
   status: status.value, assignee: assignee.value, q: q.value, answer: answer.value,
+// @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
 }, props.me), order.value))
 
-const open = computed(() => tickets.open && tickets.open.ticket)
-const timeline = computed(() => (tickets.open && tickets.open.timeline) || [])
-const assignees = computed(() => (tickets.open && tickets.open.assignees) || [])
-const chats = computed(() => (tickets.open && tickets.open.chats) || [])
+const open = computed<any>(() => tickets.open && (tickets.open as any).ticket)
+const timeline = computed<any>(() => (tickets.open && (tickets.open as any).timeline) || [])
+const assignees = computed(() => (tickets.open && (tickets.open as any).assignees) || [])
+const chats = computed<any>(() => (tickets.open && (tickets.open as any).chats) || [])
 
-const owed = (t) => owedOn(t, W.value, now.value)
-const stateWord = (s) => W.value['state-' + s] || s
-const priorityWord = (p) => W.value['priority-' + p] || p
+const owed: any = (t: any) => owedOn(t, W.value, now.value)
+const stateWord = (s: any) => W.value['state-' + s] || s
+const priorityWord = (p: any) => W.value['priority-' + p] || p
 /* a ticket written before the shape was two states still reads: shape.js carries what each old
    word means now, and every surface asks it rather than comparing a string of its own */
-const stateOf = (t) => statusOfTicket(t)
-const urgencyOf = (t) => priorityOf(t)
-const viaWord = (v) => W.value['via-' + v] || ''
-const nameOf = (id) => (props.agents.find((a) => a.id === id) || {}).name || W.value.someone
-const said = (e) => {
+const stateOf = (t: any) => statusOfTicket(t)
+const urgencyOf = (t: any) => priorityOf(t)
+const viaWord = (v: any) => W.value['via-' + v] || ''
+const nameOf = (id: any) => (props.agents.find((a) => (a as any).id === id) || {}).name || W.value.someone
+const said = (e: any) => {
   const d = e.data || {}
   if (e.kind === 'opened') return W.value['said-opened']
   if (e.kind === 'status') return (W.value['said-status'] || '').replace('{from}', stateWord(d.from)).replace('{to}', stateWord(d.to))
@@ -87,10 +89,10 @@ const said = (e) => {
   return ''
 }
 /* what was SAID is drawn as a message; what HAPPENED is a quiet line */
-const isSaid = (e) => e.kind === 'reply' || e.kind === 'note' || (e.kind === 'opened' && e.body) || e.kind === 'file'
+const isSaid = (e: any) => e.kind === 'reply' || e.kind === 'note' || (e.kind === 'opened' && e.body) || e.kind === 'file'
 
-async function pick(t) { await openTicket(t.id) ; await nextTick(); foot.value && foot.value.scrollIntoView({ block: 'end' }) }
-const foot = ref(null)
+async function pick(t: any) { await openTicket(t.id) ; await nextTick(); foot.value && foot.value.scrollIntoView({ block: 'end' }) }
+const foot = ref<any>(null)
 
 /* --- answering --- */
 const text = ref('')
@@ -100,7 +102,7 @@ async function say() {
   const body = text.value.trim()
   if (!body || busy.value || !open.value) return
   busy.value = true
-  await sayOnTicket(open.value.id, body, internal.value)
+  await sayOnTicket((open.value as any).id, body, internal.value)
   text.value = ''
   busy.value = false
   await nextTick(); foot.value && foot.value.scrollIntoView({ block: 'end' })
@@ -118,7 +120,7 @@ async function make() {
   draft.value = { title: '', body: '', priority: 'normal', assign: [] }
   if (r && r.id) await openTicket(r.id)
 }
-const onIt = (id) => assignees.value.some((a) => a.id === id)
+const onIt = (id: any) => assignees.value.some((a: any) => (a as any).id === id)
 </script>
 
 <template>
@@ -161,9 +163,9 @@ const onIt = (id) => assignees.value.some((a) => a.id === id)
             <span>{{ f.field }}</span>
             <select
               :value="answer && answer.field === f.field ? answer.value : ''"
-              @change="answer = $event.target.value ? { field: f.field, value: $event.target.value } : null">
+              @change="answer = ($event.target as any).value ? { field: f.field, value: ($event.target as any).value } : null">
               <option value="">{{ W['filter-any'] }}</option>
-              <option v-for="v in f.values" :key="v.value" :value="v.value">{{ v.value }} ({{ v.tickets }})</option>
+              <!-- @vue-expect-error TS2339, from the conversion: Property 'value' does not exist on type 'never'. --><option v-for="v in f.values" :key="v.value" :value="v.value"><!-- @vue-expect-error TS2339, from the conversion: Property 'value' does not exist on type 'never'. -->{{ v.value }} (<!-- @vue-expect-error TS2339, from the conversion: Property 'tickets' does not exist on type 'never'. -->{{ v.tickets }})</option>
             </select>
           </label>
         </div>
@@ -215,13 +217,13 @@ const onIt = (id) => assignees.value.some((a) => a.id === id)
         <div class="st-bars">
           <label class="st-bar">
             <span>{{ W.state }}</span>
-            <select :value="stateOf(open)" @change="setTicket(open.id, { status: $event.target.value })">
+            <select :value="stateOf(open)" @change="setTicket(open.id, { status: ($event.target as any).value })">
               <option v-for="s in STATES" :key="s" :value="s">{{ stateWord(s) }}</option>
             </select>
           </label>
           <label class="st-bar">
             <span>{{ W.priority }}</span>
-            <select :value="open.priority" @change="setTicket(open.id, { priority: $event.target.value })">
+            <select :value="open.priority" @change="setTicket(open.id, { priority: ($event.target as any).value })">
               <option v-for="p in PRIORITIES" :key="p" :value="p">{{ priorityWord(p) }}</option>
             </select>
           </label>
@@ -254,8 +256,8 @@ const onIt = (id) => assignees.value.some((a) => a.id === id)
         <div class="st-when wq-scroll">
           <!-- WHAT IT WAS RAISED WITH, where a form raised it — at the head of the ticket, so
                nobody spends their first three replies asking what a form already asked. -->
-          <div v-if="(tickets.open.answers || []).length" class="st-asked">
-            <div v-for="a in tickets.open.answers" :key="a.field">
+          <!-- @vue-expect-error TS18047, from the conversion: 'tickets.value.open' is possibly 'null'. --><div v-if="(tickets.open.answers || []).length" class="st-asked">
+            <!-- @vue-expect-error TS18047, from the conversion: 'tickets.value.open' is possibly 'null'. --><div v-for="a in tickets.open.answers" :key="a.field">
               <b>{{ a.field }}</b><span>{{ Array.isArray(a.value) ? a.value.join(', ') : a.value }}</span>
             </div>
           </div>
@@ -266,11 +268,11 @@ const onIt = (id) => assignees.value.some((a) => a.id === id)
             <div v-if="isSaid(e)" class="wq-msg" :class="{ mine: !e.by_contact }">
               <em v-if="e.internal" class="st-noteflag">{{ W['note-only'] }}</em>
               <p class="st-text"><MessageText :blocks="messageBlocks(e.body)" /></p>
-              <footer>{{ e.by_contact ? ((open.contact || {}).name || W.someone) : (e.agent_name || W.someone) }} · <time :datetime="e.created_at">{{ stampOf(e.created_at, now) }}</time></footer>
+              <footer>{{ e.by_contact ? ((open.contact || {}).name || W.someone) : (e.agent_name || W.someone) }} · <time :datetime="e.created_at"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ stampOf(e.created_at, now) }}</time></footer>
             </div>
             <p v-else class="st-happened">
               <i>{{ e.agent_name || W.someone }}</i> {{ said(e) }}
-              <time :datetime="e.created_at">{{ stampOf(e.created_at, now) }}</time>
+              <time :datetime="e.created_at"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ stampOf(e.created_at, now) }}</time>
             </p>
           </article>
           <div ref="foot"></div>
@@ -308,7 +310,7 @@ const onIt = (id) => assignees.value.some((a) => a.id === id)
         <div class="st-makewho">
           <span>{{ W['new-assign'] }}</span>
           <div class="st-whos">
-            <button
+            <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'. --><button
               v-for="a in agents" :key="a.id" type="button" class="st-chip" :class="{ on: draft.assign.includes(a.id) }"
               @click="draft.assign = draft.assign.includes(a.id) ? draft.assign.filter((x) => x !== a.id) : [...draft.assign, a.id]">
               <SpaceAvatar :name="a.name" :size="18" /><span>{{ a.name }}</span>

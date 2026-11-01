@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* a picture inside a device: a browser window (three dots, the site's host in the bar), a phone, or a
    laptop — the frames drawn from the tokens, the picture cropped to the screen */
 import { site as SITE_RAW } from '#content'

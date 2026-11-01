@@ -39,15 +39,15 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { VERBOSE } from '../build/verbose.mjs'
-import { defaultSite, platformKitWorkspaceRoot, workspaceRoot } from '../build/sites.mjs'
-import { installPlatformKitSource } from '../build/source-install.mjs'
+import * as nodeModule from 'node:module'
 
 /* THE KIT'S TYPESCRIPT, RUN FROM THE WORKSPACE: every process this starts resolves a .mjs that is a .mts in the source
    (build/workspace-ts.mjs). In a site's node_modules the .mjs is there and nothing is added. */
 const TS_HOOK = fileURLToPath(new URL('../build/workspace-ts.mjs', import.meta.url))
 if (!TS_HOOK.includes(path.sep + 'node_modules' + path.sep) && fs.existsSync(TS_HOOK) && !String(process.env.NODE_OPTIONS || '').includes('workspace-ts.mjs')) {
   process.env.NODE_OPTIONS = (String(process.env.NODE_OPTIONS || '') + ' --import=' + pathToFileURL(TS_HOOK).href).trim()
+  /* and this process too, before it imports any of the kit: its own imports below are of the kit's TypeScript */
+  if (typeof nodeModule.registerHooks === 'function') await import(pathToFileURL(TS_HOOK).href)
 }
 
 if (process.versions.node.split('.')[0] !== '22') {
@@ -72,6 +72,11 @@ if (process.versions.node.split('.')[0] !== '22') {
   console.error(`✖ PlatformKit requires Node.js 22.x (found ${process.version}). Install Node 22 with nvm, run "nvm use" from the repository root, or reopen the Dev Container.`)
   process.exit(1)
 }
+
+/* the kit's own modules, once Node is 22 and the hook is in place */
+const { VERBOSE } = await import('../build/verbose.mjs')
+const { defaultSite, platformKitWorkspaceRoot, workspaceRoot } = await import('../build/sites.mjs')
+const { installPlatformKitSource } = await import('../build/source-install.mjs')
 
 let kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const KIT = (f) => path.join(kitRoot, 'build', f)

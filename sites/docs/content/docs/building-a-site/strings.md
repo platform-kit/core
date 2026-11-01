@@ -4,10 +4,10 @@ description: The rule that no user-facing word lives in a component, the scopes,
 order: 45
 sources:
   [
-    packages/kit/build/strings-io.mjs,
+    packages/kit/build/strings-io.mts,
     packages/kit/theme/src/content/ui,
-    packages/kit/src/lib/strings.js,
-    packages/kit/build/strings-admin.mjs,
+    packages/kit/src/lib/strings.ts,
+    packages/kit/build/strings-admin.mts,
   ]
 reviewed: 2026-10-29
 ---

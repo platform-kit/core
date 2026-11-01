@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref } from 'vue'
 import { md, mdBlock } from './md.js'
 import SectionHead from './SectionHead.vue'
@@ -16,14 +17,14 @@ defineProps({
   eyebrow: { type: String, default: '' },
   heading: { type: String, default: '' },
   lead: { type: String, default: '' },
-  items: { type: Array, default: () => [] },   /* [{ question, answer }] */
+  items: { type: Array as PropType<any[]>, default: () => [] },   /* [{ question, answer }] */
   layout: { type: String, default: 'beside' }, /* beside | stacked | columns | picture | icons | gallery */
   prefix: { type: String, default: '' },       /* a mark before each question: "Q." */
   image: { type: String, default: '' }, alt: { type: String, default: '' },
-  more: { type: Object, default: () => ({}) }, /* { heading, body, cta, href, faces: [{ image, name }] } */
+  more: { type: Object as PropType<any>, default: () => ({}) }, /* { heading, body, cta, href, faces: [{ image, name }] } */
 })
 const open = ref(-1)
-function toggle(i, e) { open.value = e.target.open ? i : open.value === i ? -1 : open.value }
+function toggle(i: any, e: any) { open.value = e.target.open ? i : open.value === i ? -1 : open.value }
 </script>
 
 <template>

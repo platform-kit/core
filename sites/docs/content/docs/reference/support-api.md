@@ -9,7 +9,7 @@ sources:
     packages/kit/supabase/functions/_shared/api/chatwoot,
     packages/kit/supabase/functions/_shared/api/keys.ts,
     packages/kit/supabase/schemas/70-support.sql,
-    packages/kit/src/lib/support/chat-widget.js,
+    packages/kit/src/lib/support/chat-widget.ts,
     packages/kit/build/support-api.test.mjs,
   ]
 reviewed: 2026-10-31

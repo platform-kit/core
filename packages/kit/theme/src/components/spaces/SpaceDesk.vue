@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The desk: one list of everyone waiting on a member of staff, and the conversation beside it.
  *
@@ -42,9 +43,9 @@ const props = defineProps({
   /* which queue this is. It is a place of its own in the person's column, so the component is told
      rather than asking: Support for the desk, Clients for the conversations they are having. */
   queue: { type: String, required: true },
-  names: { type: Object, default: () => ({}) },
-  members: { type: Object, default: () => ({}) },
-  channels: { type: Array, default: () => [] },
+  names: { type: Object as PropType<any>, default: () => ({}) },
+  members: { type: Object as PropType<any>, default: () => ({}) },
+  channels: { type: Array as PropType<any[]>, default: () => [] },
   me: { type: String, default: '' },
 })
 
@@ -52,26 +53,26 @@ const W = computed(() => us('spaces').desk.main)
 const text = ref('')
 const sending = ref(false)
 const failed = ref(false)
-const foot = ref(null)
+const foot = ref<any>(null)
 const now = ref(Date.now())
-let tick = null
+let tick: any = null
 
 /* a voice note is the recorder's own mp3 and carries what the browser wrote down while it was
    spoken; a file carries whatever words were in the box as its caption */
-async function saidAloud(take) {
+async function saidAloud(take: any) {
   failed.value = false
   const made = await replyWith(take.blob, { kind: 'voice', seconds: take.seconds, said: take.transcript || '' })
   if (made) await toFoot(); else failed.value = true
 }
-async function attached({ file, said }) {
+async function attached({ file, said }: any) {
   failed.value = false
   const made = await replyWith(file, { kind: 'file', said: said || '' })
   if (made) await toFoot(); else failed.value = true
 }
-const personOf = (row) => {
+const personOf = (row: any) => {
   const person = row && row.person || {}
   if (!row || row.source !== 'social' || !thread.row || thread.row.key !== row.key || !thread.messages.length) return person
-  const last = thread.messages.slice().reverse().find((message) => !message.mine) || thread.messages[thread.messages.length - 1]
+  const last = thread.messages.slice().reverse().find((message: any) => !message.mine) || thread.messages[thread.messages.length - 1]
   return {
     ...person,
     name: last.author || person.name,
@@ -80,28 +81,28 @@ const personOf = (row) => {
     profileUnavailable: last.authorProfileUnavailable || person.profileUnavailable,
   }
 }
-const nameOf = (row) => {
+const nameOf = (row: any) => {
   const person = personOf(row)
   return person.name || props.names[person.id] || W.value.someone
 }
-const handleOf = (row) => {
+const handleOf = (row: any) => {
   const username = personOf(row).username
   if (!username) return ''
   const handle = username.startsWith('@') ? username : '@' + username
   return handle.toLowerCase() === String(nameOf(row)).toLowerCase() ? '' : handle
 }
-const avatarOf = (row) => personOf(row).avatarUrl || ''
-const profileUnavailableOf = (row) => !!personOf(row).profileUnavailable
-const handleForMessage = (message) => {
+const avatarOf = (row: any) => personOf(row).avatarUrl || ''
+const profileUnavailableOf = (row: any) => !!personOf(row).profileUnavailable
+const handleForMessage = (message: any) => {
   if (!message || !message.authorUsername) return ''
   const handle = message.authorUsername.startsWith('@') ? message.authorUsername : '@' + message.authorUsername
   return handle.toLowerCase() === String(message.author || '').toLowerCase() ? '' : handle
 }
-const kindOf = (row) => W.value['kind-' + ((row.person && row.person.kind) || 'guest')] || ''
-const sourceOf = (row) => W.value['source-' + row.source] || ''
+const kindOf = (row: any) => W.value['kind-' + ((row.person && row.person.kind) || 'guest')] || ''
+const sourceOf = (row: any) => W.value['source-' + row.source] || ''
 /* where they wrote from, where a queue has such a thing: the support desk keeps the page they
    were on, and a client's conversation has nowhere to point */
-const whereOf = (row) => {
+const whereOf = (row: any) => {
   if (row.source === 'social') {
     const platform = String(row.platform || '').trim()
     const label = platform.toLowerCase() === 'x' ? 'X' : platform
@@ -113,15 +114,15 @@ const whereOf = (row) => {
     : (W.value['on-page'] || '').replace('{path}', row.detail)
 }
 const queueStatusName = computed(() => props.queue.startsWith('social-') ? 'social' : props.queue)
-const queueRows = computed(() => filterQueue(rows.value, props.queue, showDone.value))
+const queueRows = computed<any>(() => filterQueue(rows.value, props.queue, showDone.value))
 const queueDoneCount = computed(() => filterQueue(rows.value, props.queue, true).length)
 const queueStatus = computed(() => sourceStatus[queueStatusName.value] || {})
-const owed = (row) => owedOf(row, W.value, now.value)
-const audienceKey = (row) => row && row.source === 'social'
+const owed: any = (row: any) => owedOf(row, W.value, now.value)
+const audienceKey = (row: any) => row && row.source === 'social'
   ? row.conversationKind === 'comment' ? 'public-reply' : 'private-dm'
   : ''
 const profileIncomplete = computed(() => thread.row && thread.row.source === 'social'
-  && (profileUnavailableOf(thread.row) || thread.messages.some((message) => message.authorProfileUnavailable)))
+  && (profileUnavailableOf(thread.row) || thread.messages.some((message: any) => message.authorProfileUnavailable)))
 const sourcePost = computed(() => thread.row && thread.row.source === 'social'
   && thread.row.conversationKind === 'comment'
   ? thread.row.social && (thread.row.social.postBody || thread.row.social.postTitle)
@@ -129,8 +130,8 @@ const sourcePost = computed(() => thread.row && thread.row.source === 'social'
 
 /* A PICTURE IS A PICTURE wherever it came from: the support desk hands its rows a signed url, the
    clients' queue a path the chat's own module fetches through the signed-in client. */
-const isPic = (m) => !!m && m.kind === 'file' && !!m.url && (!m.type || /^image\//.test(m.type))
-const saidIn = (m) => messageBlocks(m && m.body)
+const isPic = (m: any) => !!m && m.kind === 'file' && !!m.url && (!m.type || /^image\//.test(m.type))
+const saidIn = (m: any) => messageBlocks(m && m.body)
 /* RAISING A TICKET OUT OF A CONVERSATION. This is the join between the two halves of a desk: a
    chat is where somebody said it, a ticket is the work that follows, and one chat may throw up
    several. The title is offered from what they said, because retyping it is how a desk ends up
@@ -140,10 +141,10 @@ const TW = computed(() => us('spaces').tickets.main)
 const BW = computed(() => us('spaces').bots.main)
 const raising = ref(false)
 const newTitle = ref('')
-const onIt = ref([])
+const onIt = ref<any>([])
 async function raiseIt() {
   if (!newTitle.value.trim() || !thread.row) return
-  const r = await raise({
+  const r: any = await raise({
     title: newTitle.value, contact: (thread.row.person || {}).id ? null : null,
     conversation: thread.row.source === 'support' ? thread.row.id : null,
   })
@@ -155,16 +156,16 @@ watch(() => thread.row && thread.row.id, async (id) => {
   onIt.value = []
   if (!id || !thread.row || thread.row.source !== 'support') return
   const got = await ticketsFor(id)
-  onIt.value = (got || []).map((x) => x.ref)
+  onIt.value = (got || []).map((x: any) => x.ref)
 })
 
 /* ASKING THE BOT, AND STOPPING IT. A desk bot is a first draft, not an answer: it reads the
    thread, looks things up, and writes something the person on the desk can send, change or
    ignore. The Stop beside it is the whole reason an agent is allowed to take its time — one that
    cannot be stopped is one somebody has to sit and watch. */
-const deskBots = computed(() => BOTS.filter((b) => (b.surfaces || []).includes('support') && mayRun(b.audience)))
-const thinking = computed(() => runs.here.filter((r) => ['queued', 'running'].includes(r.status)))
-async function askBot(bot) {
+const deskBots = computed(() => (BOTS as any).filter((b: any) => (b.surfaces || []).includes('support') && mayRun(b.audience)))
+const thinking = computed<any>(() => runs.here.filter((r: any) => ['queued', 'running'].includes((r as any).status)))
+async function askBot(bot: any) {
   if (!thread.row) return
   /* what it is given is written on the run, so what it was told is a matter of record beside what
      it did with it — never fetched by the bot behind anybody's back */
@@ -182,7 +183,7 @@ async function askBot(bot) {
    default looks like.) Seeding the box means remounting it, hence the stamp on the key. */
 const draft = ref('')
 const draftAt = ref(0)
-let runTick = null
+let runTick: any = null
 const seen = new Set()
 function watchRun() {
   clearInterval(runTick)
@@ -201,40 +202,41 @@ function watchRun() {
 onBeforeUnmount(() => clearInterval(runTick))
 
 /* a mention is read back as the name it stands for: a preview never shows a token */
-const preview = (row) => (row.last
+const preview = (row: any) => (row.last
   ? (row.last.mine ? W.value.you + ': ' : '')
     + previewOf({ ...row.last, body: plainBody(row.last.body, props.names, { someone: W.value.someone }), sender_id: null },
       { deleted: W.value.withdrawn, 'voice-label': W.value.voice, 'file-label': W.value.file })
   : '')
-const unreadOf = (row) => (row.unread === 1 ? W.value['unread-one'] : (W.value['unread-many'] || '').replace('{n}', row.unread))
-const count = computed(() => queueRows.value.filter((r) => r.waiting_since && !r.resolved).length)
+const unreadOf = (row: any) => (row.unread === 1 ? W.value['unread-one'] : (W.value['unread-many'] || '').replace('{n}', row.unread))
+const count = computed(() => queueRows.value.filter((r: any) => (r as any).waiting_since && !(r as any).resolved).length)
 const assigning = ref(false)
 const assignedTo = computed(() => {
   const id = thread.row && thread.row.assignee
-  const a = id && agents.value.find((x) => x.id === id)
+  const a: any = id && agents.value.find((x: any) => (x as any).id === id)
   return a ? a.name : ''
 })
-async function finish(row, done) { await resolve(row, done); if (done) closeRow() }
+async function finish(row: any, done: any) { await resolve(row, done); if (done) closeRow() }
 
 /* A HELD COMMENT IS NOT FINISHED WITH, IT IS DECIDED — and the two ways of deciding are not one
    control with two meanings. Publishing it and refusing it are named, side by side, because a tick
    that means "publish" on the way down and "refuse" on the way back is a tick somebody will press
    by accident on somebody else's words. */
-const held = (row) => !!row && row.source === 'comments' && row.state === 'waiting'
-async function decide(row, yes) {
+const held = (row: any) => !!row && row.source === 'comments' && row.state === 'waiting'
+async function decide(row: any, yes: any) {
   await resolve(row, yes)
   closeRow()
 }
 /* what stopped it, for the moderator alone. The author is never told which word caught them: a
    list somebody can probe is a list somebody can walk around. */
-const heldWhy = (row) => (row && row.flagged
+const heldWhy = (row: any) => (row && row.flagged
   ? (W.value['held-flagged'] || '').replace('{word}', row.flagged)
   : held(row) ? W.value.held || '' : '')
 const placeholder = computed(() => (thread.row ? (W.value.placeholder || '').replace('{name}', nameOf(thread.row)) : W.value['placeholder-plain']))
 
 
-const when = (v) => {
+const when = (v: any) => {
   const d = new Date(v)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   if (isNaN(d)) return ''
   const mins = Math.max(1, Math.round((now.value - d.getTime()) / 60000))
   if (mins < 60) return mins + 'm'
@@ -244,8 +246,8 @@ const when = (v) => {
 /* the time of day is said one way across the surface (clockOf in spaces/model.js); chat/model's
    clock() is a duration — a voice note's length — and reading a timestamp with it gives 0:00 */
 
-async function pick(row) { text.value = ''; failed.value = false; await openRow(row); await toFoot() }
-async function say(said) {
+async function pick(row: any) { text.value = ''; failed.value = false; await openRow(row); await toFoot() }
+async function say(said: any) {
   const body = String((said && said.body) || '').trim()
   if (!body || sending.value) return
   sending.value = true
@@ -254,14 +256,14 @@ async function say(said) {
   sending.value = false
   if (id) { text.value = ''; draft.value = ''; await toFoot() } else failed.value = true
 }
-async function toFoot() { await nextTick(); const el = foot.value; if (el) el.scrollTop = el.scrollHeight }
+async function toFoot() { await nextTick(); const el: any = foot.value; if (el) el.scrollTop = el.scrollHeight }
 
 /* the place IS the narrowing: a queue is a source, set when it opens and cleared when it closes,
    so nothing in here chooses and nothing remembers a choice made somewhere else */
 watch(() => props.queue, (q) => { source.value = sourceForQueue(q) }, { immediate: true })
 onMounted(() => { start(); load(); loadAgents(); tick = setInterval(() => { now.value = Date.now() }, 60000) })
 const bothPanes = () => { try { return window.matchMedia('(min-width: 901px)').matches } catch (e) { return true } }
-watch(() => queueRows.value.length && queueRows.value[0] && queueRows.value[0].id, (first) => {
+watch(() => queueRows.value.length && queueRows.value[0] && (queueRows.value[0] as any).id, (first) => {
   if (first && !thread.row && bothPanes()) pick(queueRows.value[0])
 }, { immediate: true })
 onBeforeUnmount(() => { clearInterval(tick); stop(); closeRow() })
@@ -410,7 +412,7 @@ onBeforeUnmount(() => { clearInterval(tick); stop(); closeRow() })
               <p v-if="m.body && m.kind !== 'text'" class="sd-body sd-caption"><MessageText :blocks="saidIn(m)" /></p>
               <p v-else-if="m.kind === 'text' || !m.kind" class="sd-body"><MessageText :blocks="saidIn(m)" /></p>
             </template>
-            <time :datetime="m.created_at">{{ clock(m.created_at) }}</time>
+            <time :datetime="m.created_at"><!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clock(m.created_at) }}</time>
           </div>
         </div>
         <p v-if="thread.row.resolved" class="sd-closed">{{ W['closed-note'] }}</p>

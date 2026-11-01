@@ -4,24 +4,24 @@ description: A site ships in three shapes — static, git and cloud — and whic
 order: 41
 sources:
   [
-    packages/kit/build/modes.mjs,
+    packages/kit/build/modes.mts,
     packages/kit/build/modules/kit.mts,
     packages/kit/build/modules/manifest.mts,
     packages/kit/build/modes.test.mjs,
     packages/kit/build/static-site.test.mjs,
     packages/kit/build/cloud-lane.test.mjs,
-    packages/kit/build/test.mjs,
-    packages/kit/build/site.mjs,
-    packages/kit/build/deploy.mjs,
-    packages/kit/build/deploy-checks.mjs,
+    packages/kit/build/test.mts,
+    packages/kit/build/site.mts,
+    packages/kit/build/deploy.mts,
+    packages/kit/build/deploy-checks.mts,
     packages/kit/bin/platformkit.mjs,
     packages/kit/build/admin-cms-mode.test.mjs,
-    packages/kit/build/declarations.mjs,
-    packages/kit/build/content-kinds.mjs,
-    packages/kit/build/artefacts.mjs,
+    packages/kit/build/declarations.mts,
+    packages/kit/build/content-kinds.mts,
+    packages/kit/build/artefacts.mts,
     packages/kit/supabase/functions/admin/index.ts,
     packages/kit/theme/src/pages/AdminPage.vue,
-    packages/kit/src/lib/router.js,
+    packages/kit/src/lib/router.ts,
   ]
 reviewed: 2026-10-31
 ---

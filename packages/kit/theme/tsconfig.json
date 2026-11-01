@@ -21,9 +21,9 @@
       "@/*": ["./src/*"],
       "platformkit/theme/*": ["./src/*"],
       "platformkit/*": ["../src/*"],
-      "#content": ["./src/content-types.d.ts"]
+      "#content": ["../build/content-node.mts"]
     }
   },
-  "include": ["src/**/*.vue", "src/**/*.ts", "src/**/*.js"],
+  "include": ["src/**/*.vue", "src/**/*.ts", "src/**/*.js", "../build/types/*.d.ts"],
   "exclude": ["node_modules"]
 }

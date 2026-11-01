@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * WHAT IS ON — a space's events board.
  *
@@ -24,7 +25,7 @@ import { loadCalendar, calendar, whenWord, clockOf, rsvp } from 'platformkit/lib
 import SpaceAvatar from './SpaceAvatar.vue'
 import SpaceIcon from './SpaceIcon.vue'
 
-const props = defineProps({ space: { type: Object, default: null } })
+const props = defineProps({ space: { type: Object as PropType<any>, default: null } })
 const emit = defineEmits(['open', 'join', 'book'])
 
 const C = computed(() => us('spaces').calendar.main)
@@ -38,45 +39,46 @@ onMounted(load)
 watch(() => props.space && props.space.id, load)
 
 const all = computed(() => calendar.upcoming || [])
-const upcoming = computed(() => all.value.filter((o) => new Date(o.starts_at).getTime() >= now))
-const past = computed(() => all.value.filter((o) => new Date(o.starts_at).getTime() < now).reverse())
+const upcoming = computed(() => all.value.filter((o: any) => new Date((o as any).starts_at).getTime() >= now))
+const past = computed(() => all.value.filter((o: any) => new Date((o as any).starts_at).getTime() < now).reverse())
 const shown = computed(() => (showing.value === 'past' ? past.value : upcoming.value))
-const next = computed(() => (showing.value === 'upcoming' ? upcoming.value[0] || null : null))
+const next = computed<any>(() => (showing.value === 'upcoming' ? upcoming.value[0] || null : null))
 const rest = computed(() => (showing.value === 'upcoming' ? upcoming.value.slice(1) : past.value))
 
 /* grouped by month, because a calendar is read in months and a flat list of forty is not read */
 const months = computed(() => {
-  const out = []
+  const out: any = []
   for (const o of rest.value) {
-    const d = new Date(o.starts_at)
+    const d = new Date((o as any).starts_at)
     const key = d.getFullYear() + '-' + d.getMonth()
     const label = d.toLocaleString(undefined, { month: 'long', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' })
-    const had = out.find((m) => m.key === key)
+    const had: any = out.find((m: any) => m.key === key)
     if (had) had.items.push(o); else out.push({ key, label, items: [o] })
   }
   return out
 })
 
-const day = (iso) => new Date(iso).getDate()
-const mon = (iso) => new Date(iso).toLocaleString(undefined, { month: 'short' })
+const day = (iso: any) => new Date(iso).getDate()
+const mon = (iso: any) => new Date(iso).toLocaleString(undefined, { month: 'short' })
 const dayWords = computed(() => ({ today: C.value.today, tomorrow: C.value.tomorrow }))
-const placeWord = (o) => (o.place && o.place.kind === 'place' ? B.value['in-person'] : B.value.online)
-const hostWord = (o) => {
+const placeWord = (o: any) => (o.place && o.place.kind === 'place' ? B.value['in-person'] : B.value.online)
+const hostWord = (o: any) => {
   const h = o.hosts || []
   if (!h.length) return ''
   const name = h[0].name || h[0].email || h[0].role || ''
   return h.length === 1 ? String(B.value['host-one']).replace('{name}', name)
+    // @ts-expect-error TS2769, from the conversion: No overload matches this call.
     : String(B.value['host-many']).replace('{name}', name).replace('{n}', h.length - 1)
 }
 /* a ground of its own, from the slug, so an event with no artwork still looks like something and
    looks like the SAME something every time */
-const ground = (o) => {
+const ground = (o: any) => {
   let n = 0
   for (const ch of String(o.slug || o.id || '')) n = (n * 31 + ch.charCodeAt(0)) % 360
   return { '--a': `hsl(${n} 52% 46%)`, '--b': `hsl(${(n + 42) % 360} 56% 38%)` }
 }
 
-async function going(o, state) {
+async function going(o: any, state: any) {
   if (busy.value) return
   busy.value = o.id
   await rsvp(o.id, o.mine === state ? 'out' : state)
@@ -113,7 +115,7 @@ async function going(o, state) {
           <h2><button type="button" @click="emit('open', next.slug)">{{ next.title }}</button></h2>
           <p v-if="next.sub" class="sv-sub">{{ next.sub }}</p>
           <dl class="sv-when">
-            <div><dt><SpaceIcon name="clock" :size="14" /></dt><dd>{{ whenWord(next.starts_at, now, dayWords) }} · {{ clockOf(next.starts_at) }}</dd></div>
+            <div><dt><SpaceIcon name="clock" :size="14" /></dt><dd><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(next.starts_at, now, dayWords) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clockOf(next.starts_at) }}</dd></div>
             <div><dt><SpaceIcon name="pin" :size="14" /></dt><dd>{{ placeWord(next) }}</dd></div>
             <div v-if="hostWord(next)"><dt><SpaceIcon name="people" :size="14" /></dt><dd>{{ hostWord(next) }}</dd></div>
           </dl>
@@ -137,7 +139,7 @@ async function going(o, state) {
               </button>
               <div class="sv-card-body">
                 <h4><button type="button" @click="emit('open', o.slug)">{{ o.title }}</button></h4>
-                <p class="sv-cardwhen">{{ whenWord(o.starts_at, now, dayWords) }} · {{ clockOf(o.starts_at) }}</p>
+                <p class="sv-cardwhen"><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(o.starts_at, now, dayWords) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clockOf(o.starts_at) }}</p>
                 <p class="sv-cardwhere">{{ placeWord(o) }}<template v-if="o.going"> · {{ o.going === 1 ? C['going-one'] : C['going-many'].replace('{n}', o.going) }}</template></p>
                 <div class="sv-cardact">
                   <button v-if="o.rsvp && !o.cancelled_at && showing === 'upcoming'" type="button" class="sv-go sm" :class="{ on: o.mine === 'going' }"

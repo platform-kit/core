@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { products } from '#content'
 import { us } from 'platformkit/lib/content.js'
@@ -8,16 +8,16 @@ const W = computed(() => us('analytics').usage?.page || {})
 const state = ref('loading')
 const fault = ref('')
 const retrying = ref(false)
-const report = ref({ usage: [], inference: [], unresolved: [] })
+const report = ref<any>({ usage: [], inference: [], unresolved: [] })
 const offers = computed(() => products || [])
-const safeReportsExist = computed(() => report.value.unresolved.some((item) => item.status === 'pending'))
+const safeReportsExist = computed(() => report.value.unresolved.some((item: any) => (item as any).status === 'pending'))
 
-const money = (micros, currency = 'usd') => new Intl.NumberFormat(undefined, {
+const money = (micros: any, currency = 'usd') => new Intl.NumberFormat(undefined, {
   style: 'currency', currency: String(currency || 'usd').toUpperCase(), maximumFractionDigits: 4,
 }).format(Number(micros || 0) / 1_000_000)
-const offerFor = (key) => offers.value.find((offer) => offer.key === key) || null
-const titleFor = (key) => offerFor(key)?.title || key
-const customerRate = (row) => {
+const offerFor = (key: any) => offers.value.find((offer: any) => offer.key === key) || null
+const titleFor = (key: any) => offerFor(key)?.title || key
+const customerRate = (row: any) => {
   const offer = offerFor(row.offer_key)
   if (!offer?.usage) return null
   if (offer.usage.meter) return Math.round(Number(offer.usage.overagePrice) * 1_000_000) || null
@@ -26,7 +26,7 @@ const customerRate = (row) => {
   if (!grant || !price || String(offer.currency || 'usd').toLowerCase() !== 'usd') return null
   return Math.round(price * 1_000_000 / grant)
 }
-const belowCost = (row) => {
+const belowCost = (row: any) => {
   const offer = offerFor(row.offer_key)
   const billedRate = customerRate(row)
   return String(offer?.currency || 'usd').toLowerCase() === 'usd' &&
@@ -36,7 +36,7 @@ const belowCost = (row) => {
 async function load() {
   state.value = 'loading'
   fault.value = ''
-  const { data, error } = await supabase.rpc('admin_usage', { p_days: 30 })
+  const { data, error } = await (supabase as any).rpc('admin_usage', { p_days: 30 })
   if (error) {
     state.value = 'error'
     fault.value = error.message
@@ -51,11 +51,11 @@ async function retryReports() {
   retrying.value = true
   fault.value = ''
   try {
-    const { error } = await supabase.functions.invoke('usage-meter-report', { body: {} })
+    const { error } = await (supabase as any).functions.invoke('usage-meter-report', { body: {} })
     if (error) throw new Error(error.message)
     await load()
   } catch (error) {
-    fault.value = String(error?.message || error)
+    fault.value = String((error as any)?.message || error)
   } finally {
     retrying.value = false
   }

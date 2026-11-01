@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The trophy: one drawing, three metals. Bronze for the first chapter of a
  * book, silver at halfway, gold for the whole book (src/lib/mastery.js), and
@@ -17,7 +17,7 @@ const props = defineProps({
   still: { type: Boolean, default: false },
   label: { type: String, default: '' },
 })
-const METAL = {
+const METAL: any = {
   gold: { hi: '#fff1a8', mid: '#f2c94c', lo: '#b8811c', deep: '#8a5a0c', spark: '#fff6cc' },
   silver: { hi: '#f7f9fc', mid: '#c9d0da', lo: '#8a94a3', deep: '#5d6673', spark: '#ffffff' },
   bronze: { hi: '#ffd8b0', mid: '#d4914f', lo: '#a3612c', deep: '#6e3f18', spark: '#ffe6c8' },
@@ -30,7 +30,7 @@ const uid = 'tr' + Math.random().toString(36).slice(2, 9)
 </script>
 
 <template>
-  <span class="trophy" :class="['is-' + tier, { 'is-still': still, 'is-empty': empty }]" :style="{ width: size + 'px', height: size + 'px' }"
+  <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><span class="trophy" :class="['is-' + tier, { 'is-still': still, 'is-empty': empty }]" :style="{ width: size + 'px', height: size + 'px' }"
         :role="label ? 'img' : null" :aria-label="label || null" :aria-hidden="label ? null : 'true'">
     <svg viewBox="0 0 64 64" width="100%" height="100%">
       <defs>

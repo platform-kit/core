@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Funnel analytics — what the funnels and the blasts did, as Forms → Analytics is: an index, then one funnel or blast
  * at a time. The index: the window's sent · open rate · click rate · unsubscribed · conversions · revenue against the
@@ -26,33 +26,33 @@ const emit = defineEmits(['open', 'back', 'edit'])
 const T = us('analytics')
 const H = T.page.head
 const FW = T.funnels ? T.funnels.ui : {}
-const wn = (key, n, m) => String(FW[key] || '').replace('{n}', n).replace('{m}', m == null ? '' : m)
+const wn = (key: any, n: any, m: any) => String(FW[key] || '').replace('{n}', n).replace('{m}', m == null ? '' : m)
 /* the funnels' shape: names, steps, goals, audiences — the database knows the log alone */
-const INDEX = Object.values(import.meta.glob('#content/funnels-index.json', { eager: true, import: 'default' }))[0] || { funnels: [], blasts: [] }
+const INDEX: any = Object.values(import.meta.glob('#content/funnels-index.json', { eager: true, import: 'default' }))[0] || { funnels: [], blasts: [] }
 const FUNNELS = INDEX.funnels || [], BLASTS = INDEX.blasts || []
 const days = ref(30)
 const state = ref('idle')      /* idle | loading | ok | denied | error */
-const index = ref(null)
-const one = ref(null)
+const index = ref<any>(null)
+const one = ref<any>(null)
 const openStep = ref('')
 
-const def = computed(() => (props.kind === 'blast' ? BLASTS.find((b) => b.name === props.name) : FUNNELS.find((f) => f.name === props.name)) || null)
+const def = computed(() => (props.kind === 'blast' ? BLASTS.find((b: any) => b.name === props.name) : FUNNELS.find((f: any) => f.name === props.name)) || null)
 /* a blast is one step: its own id, sent once */
 const stepDefs = computed(() => { const d = def.value; if (!d) return []; return props.kind === 'blast' ? [{ id: d.id, title: d.title, channel: 'email', after: 0, subject: d.subject }] : d.steps || [] })
-const goalsMap = () => Object.fromEntries([...FUNNELS.map((f) => ['funnel:' + f.name, f.goal]), ...BLASTS.map((b) => ['blast:' + b.name, b.goal])].filter(([, g]) => g))
+const goalsMap = () => Object.fromEntries([...FUNNELS.map((f: any) => ['funnel:' + f.name, f.goal]), ...BLASTS.map((b: any) => ['blast:' + b.name, b.goal])].filter(([, g]) => g))
 
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; index.value = null; one.value = null; return }
   state.value = 'loading'
-  const fail = (error) => { state.value = (error.code === '42501' || /admin only|permission/i.test(error.message || '')) ? 'denied' : 'error' }
+  const fail = (error: any) => { state.value = (error.code === '42501' || /admin only|permission/i.test(error.message || '')) ? 'denied' : 'error' }
   if (props.name) {
     const d = def.value
     const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch (e) { return 'UTC' } })()
-    const { data, error } = await supabase.rpc('admin_funnel', { kind: props.kind, name: props.name, days: days.value, steps: stepDefs.value.map((s) => ({ id: s.id, after: s.after || 0, channel: s.channel })), rules: d && d.rules && Object.keys(d.rules).length ? d.rules : null, goal: d ? d.goal || null : null, tz })
+    const { data, error } = await (supabase as any).rpc('admin_funnel', { kind: props.kind, name: props.name, days: days.value, steps: stepDefs.value.map((s: any) => ({ id: s.id, after: s.after || 0, channel: s.channel })), rules: d && d.rules && Object.keys(d.rules).length ? d.rules : null, goal: d ? d.goal || null : null, tz })
     if (error) return fail(error)
     one.value = data || null
   } else {
-    const { data, error } = await supabase.rpc('admin_funnels', { days: days.value, goals: goalsMap() })
+    const { data, error } = await (supabase as any).rpc('admin_funnels', { days: days.value, goals: goalsMap() })
     if (error) return fail(error)
     index.value = data || null
   }
@@ -65,25 +65,27 @@ const chartKey = ref(0)
 onMounted(() => { const mo = new MutationObserver(() => chartKey.value++); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }) })
 
 /* ---- helpers ---- */
-const num = (n) => new Intl.NumberFormat().format(Math.round(n || 0))
-const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0)
-const money = (n, c) => new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase(), maximumFractionDigits: 0 }).format((n || 0) / 100)
-const delta = (now, before) => { if (!before) return null; const d = Math.round(((now - before) / before) * 100); return { dir: d > 0 ? 'up' : d < 0 ? 'down' : 'flat', text: (d > 0 ? '+' : '') + d + '%' } }
-const dayKey = (d) => String(d || '').slice(0, 10)
-const day = (d) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
-const when = (d) => { if (!d) return FW['last-none']; const t = new Date(d); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' + t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) }
-const dateOnly = (d) => { if (!d) return ''; const t = new Date(d); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const num = (n: any) => new Intl.NumberFormat().format(Math.round(n || 0))
+const pct = (a: any, b: any) => (b ? Math.round((a / b) * 100) : 0)
+const money = (n: any, c: any) => new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase(), maximumFractionDigits: 0 }).format((n || 0) / 100)
+const delta = (now: any, before: any) => { if (!before) return null; const d = Math.round(((now - before) / before) * 100); return { dir: d > 0 ? 'up' : d < 0 ? 'down' : 'flat', text: (d > 0 ? '+' : '') + d + '%' } }
+const dayKey = (d: any) => String(d || '').slice(0, 10)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const when = (d: any) => { if (!d) return FW['last-none']; const t = new Date(d); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' + t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) }
+const dateOnly = (d: any) => { if (!d) return ''; const t = new Date(d); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
 const rangeLabel = computed(() => H.range.replace('{days}', days.value))
-function openAuth() { if (window.DLauth) window.DLauth.open() }
-const pathOf = (u) => { try { const x = new URL(u); return x.pathname + x.search } catch (e) { return u } }
-const choiceWords = (c) => c.text || String(c.choice || '').split('/').pop().replace(/-/g, ' ')
-const stepsWord = (n) => (n === 1 ? FW['steps-one'] : wn('steps', n))
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
+const pathOf = (u: any) => { try { const x: any = new URL(u); return x.pathname + x.search } catch (e) { return u } }
+const choiceWords = (c: any) => c.text || (String(c.choice || '') as any).split('/').pop().replace(/-/g, ' ')
+// @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
+const stepsWord = (n: any) => (n === 1 ? FW['steps-one'] : wn('steps', n))
 
 /* ---- the index ---- */
 const inow = computed(() => (index.value && index.value.now) || {})
 const iprev = computed(() => (index.value && index.value.prev) || {})
-const rate = (o, k) => (o.sent ? Math.round(((o[k] || 0) / o.sent) * 100) : 0)
-const indexTiles = computed(() => { const n = inow.value, p = iprev.value; if (!index.value) return []; return [
+const rate = (o: any, k: any) => (o.sent ? Math.round(((o[k] || 0) / o.sent) * 100) : 0)
+const indexTiles = computed(() => { const n: any = inow.value, p: any = iprev.value; if (!index.value) return []; return [
   { label: FW.sent, value: num(n.sent), d: delta(n.sent, p.sent), spark: 'sent' },
   { label: FW.opened, value: rate(n, 'opened') + '%', d: delta(rate(n, 'opened'), rate(p, 'opened')), spark: 'opened' },
   { label: FW.clicked, value: rate(n, 'clicked') + '%', d: delta(rate(n, 'clicked'), rate(p, 'clicked')), spark: 'clicked' },
@@ -94,28 +96,28 @@ const indexTiles = computed(() => { const n = inow.value, p = iprev.value; if (!
 /* every funnel and blast the files know, with the window's numbers laid over; then anything the log knows that the files no longer do */
 const cards = computed(() => {
   const items = (index.value && index.value.items) || []
-  const find = (k, n) => items.find((x) => x.kind === k && x.name === n) || { sent: 0, opened: 0, clicked: 0, unsubscribed: 0, conversions: 0, revenue: 0, active: 0, done: 0, last: null }
-  const pr = (index.value && index.value.prompts) || {}
-  const fs = FUNNELS.map((f) => ({ kind: 'funnel', name: f.name, title: f.title, published: f.published, steps: (f.steps || []).length, chat: (f.steps || []).filter((s) => s.channel === 'chat').length, emails: (f.steps || []).filter((s) => s.channel !== 'chat').length, prompt: pr[f.name] || null, ...find('funnel', f.name) }))
-  const bs = BLASTS.map((b) => ({ kind: 'blast', name: b.name, title: b.title, published: b.status === 'sent', steps: 1, chat: 0, ...find('blast', b.name) }))
-  const gone = items.filter((x) => !(x.kind === 'funnel' ? FUNNELS.some((f) => f.name === x.name) : BLASTS.some((b) => b.name === x.name))).map((x) => ({ ...x, title: x.name, published: false, steps: 0, chat: 0 }))
-  return { funnels: fs, blasts: [...bs, ...gone.filter((x) => x.kind === 'blast')], gone: gone.filter((x) => x.kind === 'funnel') }
+  const find = (k: any, n: any) => items.find((x: any) => x.kind === k && x.name === n) || { sent: 0, opened: 0, clicked: 0, unsubscribed: 0, conversions: 0, revenue: 0, active: 0, done: 0, last: null }
+  const pr: any = (index.value && index.value.prompts) || {}
+  const fs = FUNNELS.map((f: any) => ({ kind: 'funnel', name: f.name, title: f.title, published: f.published, steps: (f.steps || []).length, chat: (f.steps || []).filter((s: any) => s.channel === 'chat').length, emails: (f.steps || []).filter((s: any) => s.channel !== 'chat').length, prompt: pr[f.name] || null, ...find('funnel', f.name) }))
+  const bs = BLASTS.map((b: any) => ({ kind: 'blast', name: b.name, title: b.title, published: b.status === 'sent', steps: 1, chat: 0, ...find('blast', b.name) }))
+  const gone = items.filter((x: any) => !(x.kind === 'funnel' ? FUNNELS.some((f: any) => f.name === x.name) : BLASTS.some((b: any) => b.name === x.name))).map((x: any) => ({ ...x, title: x.name, published: false, steps: 0, chat: 0 }))
+  return { funnels: fs, blasts: [...bs, ...gone.filter((x: any) => x.kind === 'blast')], gone: gone.filter((x: any) => x.kind === 'funnel') }
 })
-const seriesOf = (rows, keys) => {
-  const by = Object.fromEntries((rows || []).map((r) => [dayKey(r.day), r]))
+const seriesOf = (rows: any, keys: any) => {
+  const by = Object.fromEntries((rows || []).map((r: any) => [dayKey(r.day), r]))
   const out = []; const t = new Date(); t.setHours(0, 0, 0, 0)
-  for (let i = days.value - 1; i >= 0; i--) { const d = new Date(t); d.setDate(d.getDate() - i); const k = d.toISOString().slice(0, 10); const o = { day: k }; for (const key of keys) o[key] = (by[k] || {})[key] || 0; out.push(o) }
+  for (let i = days.value - 1; i >= 0; i--) { const d = new Date(t); d.setDate(d.getDate() - i); const k = d.toISOString().slice(0, 10); const o: any = { day: k }; for (const key of keys) o[key] = (by[k] || {})[key] || 0; out.push(o) }
   return out
 }
 const indexSeries = computed(() => seriesOf(index.value && index.value.series, ['sent', 'opened', 'clicked']))
-const sparkPath = (rows, key) => { if (rows.length < 2 || !rows.some((r) => r[key] > 0)) return ''; const max = Math.max(1, ...rows.map((r) => r[key] || 0)); return rows.map((r, i) => `${(i / (rows.length - 1)) * 100},${30 - ((r[key] || 0) / max) * 26 - 2}`).join(' ') }
+const sparkPath = (rows: any, key: any) => { if (rows.length < 2 || !rows.some((r: any) => r[key] > 0)) return ''; const max = Math.max(1, ...rows.map((r: any) => r[key] || 0)); return rows.map((r: any, i: any) => `${(i / (rows.length - 1)) * 100},${30 - ((r[key] || 0) / max) * 26 - 2}`).join(' ') }
 const indexChart = computed(() => {
   void chartKey.value; void chartKind.value
   const b = base(), t = tokens(), rows = indexSeries.value
   return { ...b, xAxis: timeAxis({ ...b.xAxis, data: rows.map((r) => day(r.day)) }), yAxis: { ...b.yAxis, minInterval: 1 }, series: [
-    timeSeries({ name: FW.sent, color: t.accent, area: true, data: rows.map((r) => r.sent) }),
-    timeSeries({ name: FW['opened-n'], color: PALETTE[1], data: rows.map((r) => r.opened) }),
-    timeSeries({ name: FW['clicked-n'], color: PALETTE[2], data: rows.map((r) => r.clicked) }),
+    timeSeries({ name: FW.sent, color: t.accent, area: true, data: rows.map((r) => (r as any).sent) }),
+    timeSeries({ name: FW['opened-n'], color: PALETTE[1], data: rows.map((r) => (r as any).opened) }),
+    timeSeries({ name: FW['clicked-n'], color: PALETTE[2], data: rows.map((r) => (r as any).clicked) }),
   ] }
 })
 
@@ -143,23 +145,23 @@ const oneChart = computed(() => {
   void chartKey.value; void chartKind.value
   const b = base(), t = tokens(), rows = oneSeries.value
   return { ...b, xAxis: timeAxis({ ...b.xAxis, data: rows.map((r) => day(r.day)) }), yAxis: { ...b.yAxis, minInterval: 1 }, series: [
-    ...(isBlast.value ? [] : [timeSeries({ name: FW.entered, color: PALETTE[3], data: rows.map((r) => r.entered) })]),
-    timeSeries({ name: FW.sent, color: t.accent, area: true, data: rows.map((r) => r.sent) }),
-    timeSeries({ name: FW['opened-n'], color: PALETTE[1], data: rows.map((r) => r.opened) }),
-    timeSeries({ name: FW['clicked-n'], color: PALETTE[2], data: rows.map((r) => r.clicked) }),
+    ...(isBlast.value ? [] : [timeSeries({ name: FW.entered, color: PALETTE[3], data: rows.map((r) => (r as any).entered) })]),
+    timeSeries({ name: FW.sent, color: t.accent, area: true, data: rows.map((r) => (r as any).sent) }),
+    timeSeries({ name: FW['opened-n'], color: PALETTE[1], data: rows.map((r) => (r as any).opened) }),
+    timeSeries({ name: FW['clicked-n'], color: PALETTE[2], data: rows.map((r) => (r as any).clicked) }),
   ] }
 })
 /* the journey: the steps in file order joined to their numbers; an email step's counts as shares of the email step
    before it (the first of the first), and what stands between this step and the one before it */
 const journey = computed(() => {
   const got = (one.value && one.value.steps) || []
-  const first = got.find((g) => g.channel === 'email')
-  let prevEmail = null, n = 0
-  return stepDefs.value.map((s) => {
-    const g = got.find((x) => x.id === s.id) || {}
-    if (s.channel === 'chat') return { ...s, g, n: ++n, chat: true, choices: (g.choices || []).map((c) => ({ ...c, w: pct(c.n, Math.max(1, ...(g.choices || []).map((x) => x.n))) })) }
-    const row = { ...s, g, n: ++n, chat: false,
-      width: first && first.sent ? Math.max(3, pct(g.sent, first.sent)) : 0,
+  const first = got.find((g: any) => g.channel === 'email')
+  let prevEmail: any = null, n = 0
+  return stepDefs.value.map((s: any) => {
+    const g: any = got.find((x: any) => x.id === s.id) || {}
+    if (s.channel === 'chat') return { ...s, g, n: ++n, chat: true, choices: (g.choices || []).map((c: any) => ({ ...c, w: pct(c.n, Math.max(1, ...(g.choices || []).map((x: any) => x.n))) })) }
+    const row: any = { ...s, g, n: ++n, chat: false,
+      width: first && (first as any).sent ? Math.max(3, pct(g.sent, (first as any).sent)) : 0,
       ofPrev: prevEmail ? pct(g.sent, prevEmail.sent) : null,
       between: prevEmail ? { waiting: g.waiting || 0, held: g.held || 0, left: g.left || 0 } : null,
       marks: [
@@ -172,22 +174,22 @@ const journey = computed(() => {
     prevEmail = g; return row
   })
 })
-const hasSends = computed(() => (now.value.sent || 0) > 0 || (prev.value.sent || 0) > 0)
+const hasSends = computed(() => ((now.value as any).sent || 0) > 0 || ((prev.value as any).sent || 0) > 0)
 /* a funnel of chat prompts alone has no emails to count: its journey is the prompts, and the tiles stay away */
-const hasEmails = computed(() => stepDefs.value.some((s) => s.channel !== 'chat'))
-const hasPrompts = computed(() => ((one.value && one.value.steps) || []).some((g) => g.channel === 'chat' && (g.shown || 0) > 0))
+const hasEmails = computed(() => stepDefs.value.some((s: any) => s.channel !== 'chat'))
+const hasPrompts = computed(() => ((one.value && one.value.steps) || []).some((g: any) => g.channel === 'chat' && (g.shown || 0) > 0))
 const hasAny = computed(() => hasSends.value || hasPrompts.value)
-const stepLabel = (s) => (s.chat ? s.title : s.subject || s.title)
-const toggleStep = (id) => { openStep.value = openStep.value === id ? '' : id }
+const stepLabel = (s: any) => (s.chat ? s.title : s.subject || s.title)
+const toggleStep = (id: any) => { openStep.value = openStep.value === id ? '' : id }
 /* a step's detail: the 7 × 24 grid of opens (rows the days of the week, from Monday), the links, the versions */
 const DOW = (() => { const b = new Date(2024, 0, 1); return [1, 2, 3, 4, 5, 6, 0].map((d) => { const t = new Date(b); t.setDate(b.getDate() + ((d - 1 + 7) % 7)); return { d, label: t.toLocaleDateString(undefined, { weekday: 'short' }) } }) })()
-const hoursOf = (g) => {
-  const cells = {}; let max = 0
+const hoursOf = (g: any) => {
+  const cells: any = {}; let max = 0
   for (const [dow, hr, n] of g.hours || []) { cells[dow + ':' + hr] = n; max = Math.max(max, n) }
   return { max, rows: DOW.map((w) => ({ ...w, cells: Array.from({ length: 24 }, (_, h) => ({ h, n: cells[w.d + ':' + h] || 0, a: max ? (cells[w.d + ':' + h] || 0) / max : 0 })) })) }
 }
-const toOpen = (g) => (g.to_open == null ? '—' : g.to_open < 1 ? Math.round(g.to_open * 60) + 'm' : g.to_open < 48 ? Math.round(g.to_open * 10) / 10 + 'h' : Math.round(g.to_open / 24) + 'd')
-const hourLabel = (h) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
+const toOpen = (g: any) => (g.to_open == null ? '—' : g.to_open < 1 ? Math.round(g.to_open * 60) + 'm' : g.to_open < 48 ? Math.round(g.to_open * 10) / 10 + 'h' : Math.round(g.to_open / 24) + 'd')
+const hourLabel = (h: any) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
 </script>
 
 <template>
@@ -249,7 +251,7 @@ const hourLabel = (h) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
                 <template v-if="s.chat">
                   <div class="an-jstep an-jchat">
                     <div class="an-jhead">
-                      <span class="an-stepn">{{ wn('step', s.n) }} · {{ FW.chat }}</span>
+                      <span class="an-stepn"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ wn('step', s.n) }} · {{ FW.chat }}</span>
                       <span class="an-stepq">{{ s.title }}</span>
                       <span v-if="s.text" class="an-jtext">{{ s.text }}</span>
                     </div>
@@ -268,7 +270,7 @@ const hourLabel = (h) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
                 <template v-else>
                   <div class="an-jstep">
                     <div class="an-jhead">
-                      <span class="an-stepn">{{ wn('step', s.n) }} · {{ FW.email }}</span>
+                      <span class="an-stepn"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ wn('step', s.n) }} · {{ FW.email }}</span>
                       <span class="an-stepq">{{ stepLabel(s) }}</span>
                     </div>
                     <div class="an-jrow"><div class="an-jbar"><span class="an-jfill" :style="{ width: s.width + '%' }" /></div><span class="an-jsent"><b>{{ num(s.g.sent) }}</b> {{ FW.reached.toLowerCase() }}<i v-if="s.ofPrev !== null"> · {{ s.ofPrev }}% {{ FW['of-previous'] }}</i></span></div>
@@ -301,7 +303,7 @@ const hourLabel = (h) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
                       <div v-if="(s.g.versions || []).length > 1" class="an-jversions">
                         <h3>{{ FW.versions }} <small>· {{ FW['versions-subtitle'] }}</small></h3>
                         <table class="an-table"><thead><tr><th>{{ FW.version }}</th><th>{{ FW['first-sent'] }}</th><th class="an-td-num">{{ FW.sent }}</th><th class="an-td-num">{{ FW.opened }}</th><th class="an-td-num">{{ FW.clicked }}</th></tr></thead>
-                          <tbody><tr v-for="(v, i) in s.g.versions" :key="v.version"><td><code>{{ i + 1 }}</code></td><td>{{ dateOnly(v.first) }}</td><td class="an-td-num">{{ num(v.sent) }}</td><td class="an-td-num">{{ pct(v.opened, v.sent) }}%</td><td class="an-td-num">{{ pct(v.clicked, v.sent) }}%</td></tr></tbody></table>
+                          <tbody><tr v-for="(v, i) in s.g.versions" :key="v.version"><td><code><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ i + 1 }}</code></td><td>{{ dateOnly(v.first) }}</td><td class="an-td-num">{{ num(v.sent) }}</td><td class="an-td-num">{{ pct(v.opened, v.sent) }}%</td><td class="an-td-num">{{ pct(v.clicked, v.sent) }}%</td></tr></tbody></table>
                       </div>
                     </div>
                   </div>
@@ -375,7 +377,7 @@ const hourLabel = (h) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
         <div v-else class="an-grid2">
           <button v-for="b in cards.blasts" :key="b.kind + b.name" type="button" class="an-card an-formcard an-fcard" @click="emit('open', { kind: 'blast', name: b.name })">
             <span class="an-formtitle">{{ b.title }} <span class="an-pill" :class="b.published ? 'on' : 'off'">{{ FW['kind-blast'] }}</span></span>
-            <span class="an-fmeta">{{ b.last ? wn('sent-on', '').replace('{when}', dateOnly(b.last)) : FW['none-blast'] }}</span>
+            <span class="an-fmeta"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ b.last ? wn('sent-on', '').replace('{when}', dateOnly(b.last)) : FW['none-blast'] }}</span>
             <span class="an-formnums an-fnums">
               <span><i>{{ FW.sent }}</i><b>{{ num(b.sent) }}</b></span>
               <span><i>{{ FW.opened }}</i><b>{{ rate(b, 'opened') }}%</b></span>

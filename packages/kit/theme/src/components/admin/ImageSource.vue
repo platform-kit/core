@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A PICTURE FROM SOMEWHERE THAT IS NOT THE LIBRARY YET.
  *
@@ -27,13 +27,13 @@ const emit = defineEmits(['pick'])
 
 const W = computed(() => us('media').page.sources)
 const q = ref('')
-const results = ref([])
+const results = ref<any>([])
 const looking = ref(false)
 const taking = ref('')
 const trouble = ref('')
 const searched = ref(false)
 
-const fill = (t, v) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m))
+const fill = (t: any, v: any) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m))
 
 async function look() {
   const term = q.value.trim()
@@ -42,18 +42,18 @@ async function look() {
   try {
     const got = await images('search', { source: props.source, q: term, perPage: 24 })
     results.value = got.results || []
-  } catch (e) { trouble.value = e.message || String(e); results.value = [] } finally { looking.value = false }
+  } catch (e) { trouble.value = (e as any).message || String(e); results.value = [] } finally { looking.value = false }
 }
 
 /* the moment a picture is actually chosen: the source does whatever its terms ask, the bytes
    come back, and the library holds them before the field is told anything */
-async function take(r) {
+async function take(r: any) {
   if (taking.value) return
   taking.value = r.id; trouble.value = ''
   try {
     const got = await images('take', { source: props.source, result: r, dir: props.dir })
     emit('pick', got.entry || { url: got.path, path: got.path })
-  } catch (e) { trouble.value = W.value.failed + ' — ' + (e.message || String(e)) } finally { taking.value = '' }
+  } catch (e) { trouble.value = W.value.failed + ' — ' + ((e as any).message || String(e)) } finally { taking.value = '' }
 }
 
 watch(() => props.source, () => { results.value = []; searched.value = false; q.value = ''; trouble.value = '' })

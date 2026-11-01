@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount, inject } from 'vue'
 import { docTree, loadDoc, us } from 'platformkit/lib/content.js'
 import MarkdownDoc from '../MarkdownDoc.vue'
@@ -34,41 +34,42 @@ const title = props.title || W.title || ''
 const subtitle = props.subtitle || W.subtitle || ''
 /* where a page of this collection is addressed: the docs at their own root on a docs-only site */
 const base = props.collection === 'docs' ? DOCS_BASE : ROUTES.content + '/' + props.collection
-const fill = (t, v) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m))
+const fill = (t: any, v: any) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m))
 
 const tree = docTree(props.collection)
 /* the tree flattened: every page carries the section (the nearest heading above it) it sits in, so the
    sidebar can fold sections — only the open page's section stands open by default, the rest fold to
    their headings, and any heading toggles; a page with no heading above it is always shown */
-const flat = []
-const walk = (node, depth, sec) => {
-  node.docs.forEach((d) => flat.push({ ...d, depth, sec }))
-  node.dirs.forEach((dir) => { const key = (sec ? sec + '/' : '') + dir.slug; flat.push({ heading: dir.title, depth, key, sec }); walk(dir, depth + 1, key) })
+const flat: any = []
+const walk = (node: any, depth: any, sec: any) => {
+  node.docs.forEach((d: any) => flat.push({ ...d, depth, sec }))
+  node.dirs.forEach((dir: any) => { const key = (sec ? sec + '/' : '') + dir.slug; flat.push({ heading: dir.title, depth, key, sec }); walk(dir, depth + 1, key) })
 }
 walk(tree, 0, '')
 const openSecs = ref(new Set())
 /* a section and every section above it */
-const chain = (key) => { const out = []; let k = key; while (k) { out.push(k); k = k.includes('/') ? k.slice(0, k.lastIndexOf('/')) : '' } return out }
-const toggleSec = (key) => { const n = new Set(openSecs.value); n.has(key) ? n.delete(key) : n.add(key); openSecs.value = n }
-const secOpen = (key) => !key || chain(key).every((k) => openSecs.value.has(k))
+const chain = (key: any) => { const out = []; let k = key; while (k) { out.push(k); k = k.includes('/') ? k.slice(0, k.lastIndexOf('/')) : '' } return out }
+const toggleSec = (key: any) => { const n = new Set(openSecs.value); n.has(key) ? n.delete(key) : n.add(key); openSecs.value = n }
+const secOpen = (key: any) => !key || chain(key).every((k) => openSecs.value.has(k))
 
-const doc = ref(null)
+const doc = ref<any>(null)
 const missing = ref(false)
-const docEl = ref(null)
+const docEl = ref<any>(null)
 /* the root (no id) is a landing, not the first article */
 const isLanding = computed(() => !props.id)
 const currentId = computed(() => props.id)
 /* the plain shell at phone width folds the tree behind a toggle naming the open page, so a long tree does
    not stand between the reader and the page; it closes again when a page is opened */
 const navOpen = ref(false)
-const currentTitle = computed(() => { const e = flat.find((x) => x.id === currentId.value); return e ? e.title : '' })
+const currentTitle = computed(() => { const e: any = flat.find((x: any) => x.id === currentId.value); return e ? e.title : '' })
 
 /* landing cards: pages grouped by their section (loose top-level pages first) */
-const landingSections = computed(() => {
+const landingSections: any = computed(() => {
   const secs = [{ title: '', docs: [] }]
   let cur = secs[0]
   for (const e of flat) {
     if (e.heading) { cur = { title: e.heading, docs: [] }; secs.push(cur) }
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     else cur.docs.push(e)
   }
   return secs.filter((s) => s.docs.length)
@@ -76,52 +77,52 @@ const landingSections = computed(() => {
 const fm = computed(() => (doc.value && doc.value.data) || {})
 /* a canAccess bar in the frontmatter closes the page body until the reader clears it */
 /* asked of the ability, as the article's is */
-const allowed = computed(() => can('read', entrySubject({ kind: props.kind, slug: fm.value && fm.value.slug, canAccess: fm.value.canAccess })))
+const allowed = computed(() => can('read', entrySubject({ kind: (props as any).kind, slug: fm.value && (fm.value as any).slug, canAccess: (fm.value as any).canAccess })))
 
 /* the admin's live preview provides a draft entry in place of the compiled one */
-const preview = inject('dl-preview', null)
+const preview = inject<any>('dl-preview', null)
 /* a gated page ships without its body (_shared/gate.js); a reader who may read it is sent it by reader-content */
 const GW = us('library').reader.gated || {}
-const page = useGatedPage(props.collection, () => !preview && doc.value && { id: currentId.value, html: doc.value.html, gated: fm.value.gated }, () => allowed.value)
+const page = useGatedPage(props.collection, () => !preview && doc.value && { id: currentId.value, html: doc.value.html, gated: (fm.value as any).gated }, () => allowed.value)
 watch(() => page.state.value, (st) => { if (st === 'done') nextTick(() => setupSpy()) })
-async function show(id) {
+async function show(id: any) {
   missing.value = false; doc.value = null
   if (preview) {
-    const p = preview.value
+    const p = (preview as any).value
     if (!p) return
     doc.value = { data: p, html: p.body, toc: p.toc }
     await nextTick(); setupSpy()
     return
   }
   if (!id) return
-  const d = await loadDoc(props.collection, id)
+  const d: any = await loadDoc(props.collection, id)
   if (!d) { missing.value = true; return }
   doc.value = d
   contentView({ kind: props.collection, id, title: d.data && d.data.title, tags: d.data && d.data.tags })
-  const entry = flat.find((e) => e.id === id)
+  const entry: any = flat.find((e: any) => e.id === id)
   if (entry && d.data.title) entry.title = d.data.title
   await nextTick(); setupSpy(); window.scrollTo(0, 0)
 }
 watch(currentId, show, { immediate: true })
 /* the open page's section unfolds as the page is opened; what the reader unfolded by hand stays */
-watch(currentId, (id) => { const e = flat.find((x) => x.id === id); if (e && e.sec) openSecs.value = new Set([...openSecs.value, ...chain(e.sec)]) }, { immediate: true })
+watch(currentId, (id) => { const e: any = flat.find((x: any) => x.id === id); if (e && e.sec) openSecs.value = new Set([...openSecs.value, ...chain(e.sec)]) }, { immediate: true })
 if (preview) watch(preview, () => show(currentId.value))
 /* inside the preview the tree is for looking at, not leaving the editor by */
-const open = (id) => { navOpen.value = false; if (!preview) navigate(base + '/' + id) }
+const open = (id: any) => { navOpen.value = false; if (!preview) navigate(base + '/' + id) }
 /* the in-page search opens the full-site palette, pre-narrowed to this collection */
-const openSearch = () => { if (window.DLsearch) window.DLsearch({ kind: props.collection === 'wiki' ? 'wiki' : 'doc' }) }
+const openSearch = () => { if ((window as any).DLsearch) (window as any).DLsearch({ kind: props.collection === 'wiki' ? 'wiki' : 'doc' }) }
 
 /* ---- hero + metadata ---- */
 const eyebrow = W.eyebrow || ''
 const heroStyle = computed(() => {
-  const c = fm.value.cover
+  const c = (fm.value as any).cover
   return c && c.src ? { backgroundImage: `url("${c.src}")` } : {}
 })
-function fmtDate(iso) {
+function fmtDate(iso: any) {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 }
-function agoText(iso) {
+function agoText(iso: any) {
   if (!iso) return ''
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
   if (days < 1) return SH.today
@@ -133,37 +134,37 @@ function agoText(iso) {
 }
 /* the plain shell's meta line: only what the page has, a separator between each */
 const metaBits = computed(() => [
-  fm.value.author && { text: fm.value.author, cls: 'wk-author' },
-  fm.value.date && { text: fmtDate(fm.value.date) },
+  (fm.value as any).author && { text: (fm.value as any).author, cls: 'wk-author' },
+  (fm.value as any).date && { text: fmtDate((fm.value as any).date) },
   readMins.value && { text: fill(SH.read, { n: readMins.value }) },
-  fm.value.updated && { text: fill(SH.updated, { ago: agoText(fm.value.updated) }), cls: 'wk-upd' },
+  (fm.value as any).updated && { text: fill(SH.updated, { ago: agoText((fm.value as any).updated) }), cls: 'wk-upd' },
 ].filter(Boolean))
 /* the section a page sits in, for the plain shell's breadcrumb */
-const crumb = computed(() => { const i = flat.findIndex((e) => e.id === currentId.value); for (let j = i; j >= 0; j--) if (flat[j].heading) return flat[j].heading; return '' })
-const readMins = computed(() => (fm.value.metadata && fm.value.metadata.readingTime) || 0)
+const crumb: any = computed(() => { const i: any = flat.findIndex((e: any) => e.id === currentId.value); for (let j = i; j >= 0; j--) if (flat[j].heading) return flat[j].heading; return '' })
+const readMins = computed(() => ((fm.value as any).metadata && (fm.value as any).metadata.readingTime) || 0)
 
 /* ---- related ---- */
-const related = computed(() =>
-  (fm.value.related || []).map((id) => flat.find((e) => e.id === id)).filter(Boolean))
+const related: any = computed(() =>
+  ((fm.value as any).related || []).map((id: any) => flat.find((e: any) => e.id === id)).filter(Boolean))
 
 /* ---- prev / next through the tree ---- */
-const pages = flat.filter((e) => e.id)
-const curIndex = computed(() => pages.findIndex((e) => e.id === currentId.value))
+const pages: any = flat.filter((e: any) => e.id)
+const curIndex = computed(() => pages.findIndex((e: any) => e.id === currentId.value))
 const prev = computed(() => (curIndex.value > 0 ? pages[curIndex.value - 1] : null))
 const next = computed(() => (curIndex.value >= 0 && curIndex.value < pages.length - 1 ? pages[curIndex.value + 1] : null))
 
 /* ---- on this page ---- */
-const tocFlat = computed(() => {
-  const out = []
-  const wk = (items, lvl) => (items || []).forEach((it) => { out.push({ title: it.title, url: it.url, lvl }); wk(it.items, lvl + 1) })
+const tocFlat: any = computed(() => {
+  const out: any = []
+  const wk = (items: any, lvl: any) => (items || []).forEach((it: any) => { out.push({ title: it.title, url: it.url, lvl }); wk(it.items, lvl + 1) })
   wk(doc.value && doc.value.toc, 0)
   return out
 })
 const activeHash = ref('')
-let io = null
+let io: any = null
 function setupSpy() {
   if (io) { io.disconnect(); io = null }
-  const root = docEl.value
+  const root: any = docEl.value
   if (!root) return
   const heads = [...root.querySelectorAll('h1[id],h2[id],h3[id]')]
   if (!heads.length) { activeHash.value = ''; return }

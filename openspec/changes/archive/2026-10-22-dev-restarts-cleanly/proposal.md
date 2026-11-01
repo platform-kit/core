@@ -38,7 +38,7 @@ What the person sees on a start after a closed tab:
 
 ## Impact
 
-- `packages/kit/build/dev.mjs`, `dev-workspace.mjs`, `dev-stop.mjs` (its identification shared, not
+- `packages/kit/build/dev.mts`, `dev-workspace.mjs`, `dev-stop.mjs` (its identification shared, not
   copied), `dev-runtime.mjs` (the run record says whose a process is).
 - The docs page on running the dev server.
 - No production code, no schema, no content.

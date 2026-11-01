@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * One part of a message's line, drawn with the element that MEANS it: **bold** is <strong> and not
  * a span wearing a weight, so a screen reader says it, a copy carries it, and a stylesheet is not
@@ -7,11 +8,11 @@
  */
 import { computed } from 'vue'
 const props = defineProps({
-  part: { type: Object, required: true },
+  part: { type: Object as PropType<any>, required: true },
   me: { type: String, default: '' },
 })
-const TAG = { b: 'strong', i: 'em', s: 's', code: 'code' }
-const marks = computed(() => (props.part.marks || []).filter((m) => TAG[m]))
+const TAG: any = { b: 'strong', i: 'em', s: 's', code: 'code' }
+const marks = computed(() => (props.part.marks || []).filter((m: any) => TAG[m]))
 const inner = computed(() => ({ ...props.part, marks: marks.value.slice(1) }))
 </script>
 

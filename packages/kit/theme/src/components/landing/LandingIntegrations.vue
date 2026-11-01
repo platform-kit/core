@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 import SectionHead from './SectionHead.vue'
 import Ticker from './Ticker.vue'
@@ -17,10 +18,10 @@ const props = defineProps({
   columns: { type: Number, default: 3 },
   centre: { type: String, default: '' },        /* the orbit's centre: a picture */
   cta: { type: String, default: '' }, href: { type: String, default: '' },
-  items: { type: Array, default: () => [] },    /* [{ name, body?, image?, href? }] */
+  items: { type: Array as PropType<any[]>, default: () => [] },    /* [{ name, body?, image?, href? }] */
 })
 const half = () => Math.ceil(props.items.length / 2)
-const initials = (n) => String(n || '').slice(0, 2).toUpperCase()
+const initials = (n: any) => String(n || '').slice(0, 2).toUpperCase()
 </script>
 
 <template>

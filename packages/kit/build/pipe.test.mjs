@@ -78,7 +78,7 @@ await ta('the registry on this site: the core, the site\'s own, every published 
 })
 await ta('the route table: the pipe\'s endpoints and the three beside it, and no retired path under the theme', async () => {
   /* the pipe's routes are admin-pipe.mjs's (the function's too); the runs are the dev server's own */
-  const src = fs.readFileSync(path.join(HERE, 'admin-server.mjs'), 'utf8') + fs.readFileSync(path.join(HERE, 'admin-pipe.mjs'), 'utf8')
+  const src = fs.readFileSync(path.join(HERE, 'admin-server.mts'), 'utf8') + fs.readFileSync(path.join(HERE, 'admin-pipe.mts'), 'utf8')
   const routes = [...src.matchAll(/seg === '([a-z/-]+)'/g)].map((m) => m[1]).filter((v, i, a) => a.indexOf(v) === i).sort()
   assert.deepEqual(routes, ['action', 'asset', 'collections', 'drafts', 'file', 'images', 'keep', 'list', 'media', 'media-file', 'options', 'preview', 'publish', 'run', 'run/stop', 'upload', 'upload-image'])   /* drafts · publish · keep: cloud mode's, answered from the checkout as empty and no-ops */
   const theme = path.join(HERE, '../theme/src')
@@ -137,7 +137,7 @@ await ta('every bare name a function reaches is in its own import map', async ()
   if (!fs.existsSync(fns)) return   /* not assembled here */
   const BARE = /^\s*(?:import|export)\s[^'"\n]*?from\s*['"]([^'"]+)['"]/gm
   const PLAIN = /^\s*import\s*['"]([^'"]+)['"]/gm
-  const ext = (p) => (fs.existsSync(p) ? p : ['.ts', '.js', '.mjs', '/index.ts', '/index.js', '/index.mjs'].map((e) => p + e).find((c) => fs.existsSync(c)))
+  const ext = (p) => (fs.existsSync(p) ? p : ['.ts', '.js', '.mjs', '/index.ts', '/index.ts', '/index.mts'].map((e) => p + e).find((c) => fs.existsSync(c)))
   const specs = (text) => [...text.matchAll(BARE), ...text.matchAll(PLAIN)].map((m) => m[1])
   function reach(entry) {
     const seen = new Set(), names = new Set(), queue = [entry]
@@ -206,7 +206,7 @@ await ta('shared pipe imports do not depend on a function-scoped import map', as
  * Nothing failed, which is the point of checking it here.
  */
 {
-  const src = fs.readFileSync(new URL('./models/core/collections.mjs', import.meta.url), 'utf8')
+  const src = fs.readFileSync(new URL('./models/core/collections.mts', import.meta.url), 'utf8')
   const stray = [...src.matchAll(/^.*\bwhen: \{.*$/gm)].map((m) => m[0].trim().slice(0, 90))
   ta('no model uses `when:` where the admin reads `shown:`', () => assert.deepEqual(stray, [], 'these conditions are ignored:\n      ' + stray.join('\n      ')))
   /* and every `shown` names a field the model actually has. Fields come two ways — a zod key,

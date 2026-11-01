@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A landing page, assembled from its markdown: the sections it names, in
  * order, each with its props. The root page and any other page route land
@@ -19,22 +19,22 @@ import ScrollProgress from '../components/landing/ScrollProgress.vue'
 import { siteFooterOff } from 'platformkit/lib/chrome.js'
 
 const props = defineProps({ path: { type: String, default: '/' } })
-const preview = inject('dl-preview', null)
-const page = computed(() => (preview ? preview.value : choosePage(PAGES.filter((p) => p.route === props.path))))
+const preview = inject<any>('dl-preview', null)
+const page = computed(() => (preview ? (preview as any).value : choosePage(PAGES.filter((p: any) => p.route === props.path))))
 /* each section as the current look renders it; the key carries the look so a
    change of look remounts the sections (and restarts the effects below) */
-const sections = computed(() => ((page.value && page.value.sections) || []).map((s, i) => {
+const sections = computed(() => ((page.value && page.value.sections) || []).map((s: any, i: any) => {
   const comp = resolve(s.component, look.value)
   if (!SECTIONS[s.component] && import.meta.env.DEV) console.warn('[pages] unknown section', s.component)
   /* a section's tone and anchor are the page's to set and the ground's to draw: stamped on the section's root, never handed to it as props */
   const { tone, anchor, glow, ground, spacing, width, reveal, ...props } = s.props || {}
-  const or = (v, none) => (v && v !== none ? v : undefined)
+  const or = (v: any, none: any) => (v && v !== none ? v : undefined)
   return comp ? { key: look.value + ':' + i + ':' + s.component, comp, props, tone: or(tone, 'paper'), anchor: anchor || undefined, glow: or(glow, 'none'), ground: or(ground, 'none'), spacing: or(spacing, 'normal'), width: or(width, 'normal'), reveal: or(reveal, 'none') } : null
 }).filter(Boolean))
 
 /* the effects read the DOM the sections just produced, so they wait a tick;
    a page change (another variant in the preview) restarts them */
-let teardown = null
+let teardown: any = null
 watch([page, look], async ([p]) => {
   if (teardown) { teardown(); teardown = null }
   if (!preview) headForPage(p)
@@ -53,7 +53,7 @@ onBeforeUnmount(() => { if (teardown) teardown() })
 watchEffect(() => {
   const pg = page.value || {}
   siteFooterOff.value = pg.footer === false
-    || ((pg.sections || []).some((x) => String((x && x.component) || '') === 'Footer'))
+    || ((pg.sections || []).some((x: any) => String((x && x.component) || '') === 'Footer'))
 })
 onBeforeUnmount(() => { siteFooterOff.value = false })
 </script>

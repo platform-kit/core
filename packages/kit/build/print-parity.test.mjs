@@ -53,7 +53,7 @@ const SEAM = path.join(PRINT, 'typeset')
   ok('nothing under build/print/ imports Typst but the drivers', offenders.length === 0, offenders.join(', '))
 
   /* and print.mjs itself goes through the seam */
-  const main = fs.readFileSync(path.join(KIT_BUILD, 'print.mjs'), 'utf8')
+  const main = fs.readFileSync(path.join(KIT_BUILD, 'print.mts'), 'utf8')
   ok('print.mjs imports the seam, not a compiler', /print\/typeset\/compiler\.js/.test(main) && !/@myriaddreamin/.test(main))
 }
 

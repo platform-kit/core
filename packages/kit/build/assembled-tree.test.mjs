@@ -18,7 +18,7 @@ let pass = 0, fail = 0
 const ok = (msg, cond, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + detail.trim().split('\n').slice(-6).join('\n        ') : '')) } }
 
 /* the test step lists both commands, unconditionally */
-const runner = fs.readFileSync(path.join(HERE, 'test.mjs'), 'utf8')
+const runner = fs.readFileSync(path.join(HERE, 'test.mts'), 'utf8')
 ok('test.mjs assembles before it checks, whatever is on disk',
   /\n\s*\['assemble\.mjs'\],\s*\n\s*\['assemble\.mjs', '--check'\],/.test(runner) && !/\.assembled\.json'\)\) \? \['assemble\.mjs'/.test(runner))
 

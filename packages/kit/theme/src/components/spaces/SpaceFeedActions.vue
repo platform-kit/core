@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * UNDER A POST IN A SPACE'S FEED — the bar every group feed has: Like (a heart, said as a reaction
  * like any other, so the chat and the forum count it too), Comment (into the post's thread), and
@@ -13,8 +14,8 @@ import SpaceAvatar from './SpaceAvatar.vue'
 
 const LIKE = '❤️'
 const props = defineProps({
-  message: { type: Object, required: true },
-  reactions: { type: Array, default: () => [] },
+  message: { type: Object as PropType<any>, required: true },
+  reactions: { type: Array as PropType<any[]>, default: () => [] },
   mayReact: { type: Boolean, default: true },
   mayWrite: { type: Boolean, default: true },
   /* where the comment box goes: under the answers, so it is said after what it answers */
@@ -24,9 +25,9 @@ const props = defineProps({
 })
 const emit = defineEmits(['react', 'comment'])
 const W = computed(() => us('spaces').channel.main)
-const like = computed(() => props.reactions.find((r) => r.emoji === LIKE) || null)
-const liked = computed(() => !!(like.value && like.value.mine))
-const likes = computed(() => (like.value ? like.value.users.length : 0))
+const like = computed(() => props.reactions.find((r) => (r as any).emoji === LIKE) || null)
+const liked = computed(() => !!(like.value && (like.value as any).mine))
+const likes = computed(() => (like.value ? (like.value as any).users.length : 0))
 const comments = computed(() => props.message.reply_count || 0)
 const copied = ref(false)
 async function share() {

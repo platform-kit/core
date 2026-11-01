@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The queue. A report is a row and not an email — a moderator sent an email for every report learns
  * to ignore them — so this is where they are answered, with a count in the rail beside it.
@@ -21,7 +22,7 @@ import { reportsOf, recordOf, answerReport, removeMessage, mute, removeMember, a
 import SpaceAvatar from './SpaceAvatar.vue'
 import SpaceIcon from './SpaceIcon.vue'
 
-const props = defineProps({ space: { type: Object, default: null } })
+const props = defineProps({ space: { type: Object as PropType<any>, default: null } })
 const W = computed(() => us('spaces').moderation.main)
 /* what a sealed room says about itself, where the words of a reported message would be */
 const EN = computed(() => us('spaces').encryption)
@@ -31,17 +32,17 @@ const EN = computed(() => us('spaces').encryption)
    It shows only where the space actually has a door that waits — an open one has no queue. */
 const VIEWS = ['open', 'door', 'record']
 const view = ref('open')
-const reports = ref([])
-const record = ref([])
-const asks = ref([])
+const reports = ref<any>([])
+const record = ref<any>([])
+const asks = ref<any>([])
 const busy = ref('')
 const err = ref('')
 /* how long a mute lasts, in minutes: chosen from a few rather than typed */
 const SPANS = [60, 60 * 24, 60 * 24 * 7]
 /* a day by default: long enough to mean something, short enough that forgetting about it is not a
    punishment of its own */
-const spanFor = ref({})
-const spanOf = (id) => spanFor.value[id] || SPANS[1]
+const spanFor = ref<any>({})
+const spanOf = (id: any) => spanFor.value[id] || SPANS[1]
 
 async function load() {
   if (!props.space) { reports.value = []; record.value = []; asks.value = []; return }
@@ -50,12 +51,12 @@ async function load() {
     reports.value = (await reportsOf(props.space.id)) || []
     record.value = (await recordOf(props.space.id)) || []
     asks.value = (await asksOf(props.space.id)) || []
-  } catch (e) { err.value = e.message || String(e) }
+  } catch (e) { err.value = (e as any).message || String(e) }
 }
 onMounted(load)
 watch(() => props.space && props.space.id, load)
 
-async function act(r, what) {
+async function act(r: any, what: any) {
   busy.value = r.id; err.value = ''
   try {
     if (what === 'seen') await answerReport(r.id)
@@ -63,15 +64,15 @@ async function act(r, what) {
     if (what === 'mute') await mute(props.space.id, r.about_id, spanOf(r.id), r.reason)
     if (what === 'out') await removeMember(props.space.id, r.about_id, r.reason)
     await load()
-  } catch (e) { err.value = e.message || String(e) } finally { busy.value = '' }
+  } catch (e) { err.value = (e as any).message || String(e) } finally { busy.value = '' }
 }
 /* letting somebody in, or not. Either way the row is answered and stamped with who did it. */
-async function answer(a, yes) {
+async function answer(a: any, yes: any) {
   busy.value = a.id; err.value = ''
-  try { await answerAsk(a.id, yes); await load() } catch (e) { err.value = e.message || String(e) } finally { busy.value = '' }
+  try { await answerAsk(a.id, yes); await load() } catch (e) { err.value = (e as any).message || String(e) } finally { busy.value = '' }
 }
-const when = (iso) => new Date(iso).toLocaleString()
-const spanWord = (m) => (W.value['span-' + m] || String(m))
+const when = (iso: any) => new Date(iso).toLocaleString()
+const spanWord = (m: any) => (W.value['span-' + m] || String(m))
 </script>
 
 <template>
@@ -118,7 +119,7 @@ const spanWord = (m) => (W.value['span-' + m] || String(m))
             <button type="button" :disabled="busy === r.id" @click="act(r, 'seen')">{{ W.seen }}</button>
             <button v-if="!r.withdrawn" type="button" :disabled="busy === r.id" @click="act(r, 'remove')">{{ W.remove }}</button>
             <span class="sm-mute">
-              <select :value="spanOf(r.id)" :aria-label="W.mute" @change="spanFor[r.id] = Number($event.target.value)">
+              <select :value="spanOf(r.id)" :aria-label="W.mute" @change="spanFor[r.id] = Number(($event.target as any).value)">
                 <option v-for="m in SPANS" :key="m" :value="m">{{ spanWord(m) }}</option>
               </select>
               <button type="button" :disabled="busy === r.id" @click="act(r, 'mute')">{{ W.mute }}</button>

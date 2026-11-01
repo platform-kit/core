@@ -7,7 +7,7 @@ sources:
     packages/kit/theme/src/pages/AdminPage.vue,
     packages/kit/theme/src/components/admin/PaymentsAdmin.vue,
     packages/kit/theme/src/components/admin/PeopleAdmin.vue,
-    packages/kit/build/admin-server.mjs,
+    packages/kit/build/admin-server.mts,
     packages/kit/theme/src/components/Orders.vue,
     packages/kit/theme/src/components/Bookings.vue,
   ]

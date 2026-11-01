@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Print orders — every hardcover bought, as the ledger wrote it (fulfilments:
  * the address Stripe collected, the edition printed, the printer's job and its
@@ -20,20 +20,20 @@ const H = T.page.head
 const ST = T.page.status
 const R = T.page.row
 /* a status's word: the keys are hyphenated, the column's values underscored */
-const statusWord = (st) => ST[String(st || '').replace(/_/g, '-')] || st
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const statusWord = (st: any) => ST[String(st || '').replace(/_/g, '-')] || st
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const state = ref('idle')      /* idle | loading | ok | denied | error */
-const rows = ref([])
+const rows = ref<any>([])
 const filter = ref('all')
-const busy = reactive({})
-const said = reactive({})
-let channel = null
+const busy = reactive<any>({})
+const said = reactive<any>({})
+let channel: any = null
 
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; rows.value = []; return }
   state.value = 'loading'
-  const { data, error } = await supabase.from('fulfilments').select('*').order('created_at', { ascending: false }).limit(500)
+  const { data, error } = await (supabase as any).from('fulfilments').select('*').order('created_at', { ascending: false }).limit(500)
   if (error) { state.value = (error.code === '42501' || /permission/i.test(error.message || '')) ? 'denied' : 'error'; return }
   rows.value = data || []
   state.value = 'ok'
@@ -42,36 +42,38 @@ async function load() {
 function listen() {
   if (channel || !supabase) return
   channel = supabase.channel('fulfilments').on('postgres_changes', { event: '*', schema: 'public', table: 'fulfilments' }, (p) => {
-    if (p.eventType === 'DELETE') { rows.value = rows.value.filter((r) => r.id !== p.old.id); return }
-    const i = rows.value.findIndex((r) => r.id === p.new.id)
+    if (p.eventType === 'DELETE') { rows.value = rows.value.filter((r: any) => (r as any).id !== p.old.id); return }
+    const i = rows.value.findIndex((r: any) => (r as any).id === p.new.id)
     if (i >= 0) rows.value.splice(i, 1, p.new); else rows.value.unshift(p.new)
   }).subscribe()
 }
 onMounted(load)
 onIdentity(load)
-onBeforeUnmount(() => { if (channel) supabase.removeChannel(channel); channel = null })
+onBeforeUnmount(() => { if (channel) (supabase as any).removeChannel(channel); channel = null })
 
 const OPEN = ['new', 'submitted', 'in_production'], TROUBLE = ['failed', 'rejected']
-const shown = computed(() => rows.value.filter((r) => filter.value === 'all' || (filter.value === 'open' ? OPEN.includes(r.status) : filter.value === 'shipped' ? r.status === 'shipped' : TROUBLE.includes(r.status))))
-const counts = computed(() => ({ all: rows.value.length, open: rows.value.filter((r) => OPEN.includes(r.status)).length, shipped: rows.value.filter((r) => r.status === 'shipped').length, trouble: rows.value.filter((r) => TROUBLE.includes(r.status)).length }))
+const shown = computed(() => rows.value.filter((r: any) => filter.value === 'all' || (filter.value === 'open' ? OPEN.includes((r as any).status) : filter.value === 'shipped' ? (r as any).status === 'shipped' : TROUBLE.includes((r as any).status))))
+const counts = computed(() => ({ all: rows.value.length, open: rows.value.filter((r: any) => OPEN.includes((r as any).status)).length, shipped: rows.value.filter((r: any) => (r as any).status === 'shipped').length, trouble: rows.value.filter((r: any) => TROUBLE.includes((r as any).status)).length }))
 
-const bookTitle = (slug) => { const b = BOOKS.find((x) => x.slug === slug); return b ? b.title : slug }
-const when = (d) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
-const addressLines = (a) => [a.name, a.line1, a.line2, [a.city, a.state, a.postal_code].filter(Boolean).join(' '), a.country].filter((x) => x && String(x).trim())
-const money = (c) => (c && typeof c.print === 'number' ? new Intl.NumberFormat(undefined, { style: 'currency', currency: c.currency || 'USD' }).format(c.print + (c.shipping || 0)) : '')
-const canSubmit = (r) => r.status === 'new' || r.status === 'failed'
+const bookTitle = (slug: any) => { const b = BOOKS.find((x: any) => x.slug === slug); return b ? b.title : slug }
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const when = (d: any) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+const addressLines = (a: any) => [a.name, a.line1, a.line2, [a.city, a.state, a.postal_code].filter(Boolean).join(' '), a.country].filter((x) => x && String(x).trim())
+const money = (c: any) => (c && typeof c.print === 'number' ? new Intl.NumberFormat(undefined, { style: 'currency', currency: c.currency || 'USD' }).format(c.print + (c.shipping || 0)) : '')
+const canSubmit = (r: any) => r.status === 'new' || r.status === 'failed'
 
-async function act(r, action) {
+async function act(r: any, action: any) {
   busy[r.id] = action
   try {
-    const { data, error } = await supabase.functions.invoke('print-order', { body: { id: r.id, action } })
+    const { data, error } = await (supabase as any).functions.invoke('print-order', { body: { id: r.id, action } })
     if (error) throw error
-    if (data && data.order) { const i = rows.value.findIndex((x) => x.id === r.id); if (i >= 0) rows.value.splice(i, 1, data.order) }
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
+    if (data && data.order) { const i = rows.value.findIndex((x) => (x as any).id === r.id); if (i >= 0) rows.value.splice(i, 1, data.order) }
     said[r.id] = action === 'submit' && data && data.ok ? R.sent : ''
-  } catch (e) { said[r.id] = (e && e.message) || 'failed' }
+  } catch (e) { said[r.id] = (e && (e as any).message) || 'failed' }
   busy[r.id] = ''
 }
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 
 <template>

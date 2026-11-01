@@ -15,7 +15,7 @@ A theme SHALL be a package whose `theme.js` (reached as `<theme>/theme.js`) expo
 - **WHEN** a theme has two `.vue` files of the same name in different folders
 - **THEN** the kit refuses to load the theme, naming both
 
-Verified by: `loadTheme` in `packages/kit/build/theme.mjs`
+Verified by: `loadTheme` in `packages/kit/build/theme.mts`
 
 #### Scenario: every import of an overridden component
 

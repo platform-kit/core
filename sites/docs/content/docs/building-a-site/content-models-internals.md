@@ -4,17 +4,17 @@ description: The model record and its grammar, one derivation for velite and the
 order: 56.7
 sources:
   [
-    packages/kit/build/model-io.mjs,
-    packages/kit/build/models.mjs,
-    packages/kit/build/models-check.mjs,
+    packages/kit/build/model-io.mts,
+    packages/kit/build/models.mts,
+    packages/kit/build/models-check.mts,
     packages/kit/build/models.test.mjs,
     packages/kit/build/fixtures/models,
     packages/kit/src/lib/models,
-    packages/kit/build/admin-schemas.mjs,
-    packages/kit/build/velite.mjs,
-    packages/kit/vite/index.mjs,
-    packages/kit/src/lib/router.js,
-    packages/kit/build/routes.mjs,
+    packages/kit/build/admin-schemas.mts,
+    packages/kit/build/velite.mts,
+    packages/kit/vite/index.mts,
+    packages/kit/src/lib/router.ts,
+    packages/kit/build/routes.mts,
     packages/kit/theme/src/pages/EntriesPage.vue,
     packages/kit/theme/src/components/landing/LandingEntries.vue,
   ]

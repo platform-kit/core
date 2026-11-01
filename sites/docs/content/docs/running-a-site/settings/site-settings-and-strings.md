@@ -4,15 +4,15 @@ description: The site's name and look, and every word of the interface, editable
 order: 40
 sources:
   [
-    packages/kit/build/strings-io.mjs,
+    packages/kit/build/strings-io.mts,
     packages/kit/theme/src/components/admin/NavField.vue,
-    packages/kit/theme/src/lib/theme-nav.js,
-    packages/kit/src/lib/nav.js,
+    packages/kit/theme/src/lib/theme-nav.ts,
+    packages/kit/src/lib/nav.ts,
     packages/kit/theme/src/content/ui,
     packages/kit/theme/src/components/admin/StringsEditor.vue,
     packages/kit/theme/src/components/admin/PaymentsAdmin.vue,
     packages/kit/theme/src/pages/AdminPage.vue,
-    packages/kit/src/lib/look.js,
+    packages/kit/src/lib/look.ts,
   ]
 reviewed: 2026-10-29
 ---

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* a button of the page's: the words, a link, a style — primary (the ink pill), secondary (outlined), ghost (quiet), link (words with an arrow) — a glyph before the words when named, and a glow behind it when asked */
 import { md } from './md.js'
 import { glyph } from './icons.js'

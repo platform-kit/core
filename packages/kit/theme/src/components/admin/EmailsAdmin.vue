@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Emails: every one the site sends — the store's three, the chat's, the two Supabase Auth
  * sends (their link is Supabase's own token, left intact), and the frame every funnel step and
@@ -18,7 +18,7 @@ import './admin-ui.css'
 
 import pipe from '../../lib/admin/api.js'
 /* the designs by kind, as the records carry them: { content: the design, subject } */
-async function loadEmails() { const out = {}; for (const kind of KINDS) { const r = await pipe.read('emails', kind); out[kind] = { content: r.parsed, subject: r.data.subject || '' } } return out }
+async function loadEmails() { const out: any = {}; for (const kind of KINDS) { const r = await pipe.read('emails', kind); out[kind] = { content: r.parsed, subject: r.data.subject || '' } } return out }
 
 /* the rail: each email, what it is and when it goes, in groups */
 const GROUPS = [
@@ -30,33 +30,34 @@ const GROUPS = [
   ['Providers', [['provider-terms', 'New terms', 'to every provider on an earlier version, the moment a new one is published']]],
   ['Funnels & blasts', [['campaign', 'Campaign frame', 'every funnel step and blast goes through it']]],
 ]
-const NAMES = Object.fromEntries(GROUPS.flatMap(([, l]) => l.map(([k, name, when]) => [k, { name, when }])))
-const NOTE = {
+const NAMES = Object.fromEntries(GROUPS.flatMap(([, l]) => (l as any).map(([k, name, when]: any) => [k, { name, when }])))
+const NOTE: any = {
   'magic-link': 'Sent by Supabase Auth. The button must go to its link — the “The link” tag.',
   recovery: 'Sent by Supabase Auth. The button must go to its link — the “The link” tag.',
   campaign: 'The written email — a funnel step, a blast — is dropped in as the HTML block. Keep that block, and the unsubscribe link.',
 }
 const kind = ref('order')
-const emails = ref(null)
+const emails = ref<any>(null)
 const loading = ref(true), saving = ref(false), msg = ref(''), note = ref('')
 const subject = ref(''), savedSubject = ref('')
 const editorDirty = ref(false)
 const dirty = computed(() => editorDirty.value || subject.value !== savedSubject.value)
-const me = computed(() => (session.value && session.value.user && session.value.user.email) || '')
+const me = computed(() => (session.value && (session.value as any).user && (session.value as any).user.email) || '')
 const gotrue = computed(() => GOTRUE.includes(kind.value))
 
 /* the site's colours as the designs use them (an email is fixed hex, never a token) */
 const INK = '#0c0d0b', INK3 = '#6c6f69', PAPER = '#fbfaf3', HAIR = '#e6e2d6', ACCENT = '#b8402e'
 
-let editor = null, mjml = null
-const host = ref(null)
-async function compile(content) {
+let editor: any = null, mjml: any = null
+const host = ref<any>(null)
+async function compile(content: any) {
   const { renderToMjml } = await import('@templatical/renderer')
+  // @ts-expect-error TS7016, from the conversion: Could not find a declaration file for module 'mjml-browser'. '/Users/jameshuntercarter/htdocs/dharmalab/node_modules/mjml-browser/lib/index.
   if (!mjml) mjml = (await import('mjml-browser')).default
   const mj = await renderToMjml(content, { allowHtmlBlocks: true })
   const r = mjml(mj, { validationLevel: 'soft' })
-  const bad = (r.errors || []).filter((e) => e && e.level !== 'warning')
-  if (bad.length) throw new Error(bad.map((e) => e.formattedMessage || e.message).join('; '))
+  const bad = (r.errors || []).filter((e: any) => e && e.level !== 'warning')
+  if (bad.length) throw new Error(bad.map((e: any) => e.formattedMessage || e.message).join('; '))
   return r.html
 }
 async function mount() {
@@ -67,19 +68,20 @@ async function mount() {
   const k = kind.value
   editor = await init({
     container: host.value,
-    content: emails.value[k].content || undefined,
+    content: (emails.value[k] as any).content || undefined,
     branding: false, smallScreenNotice: false, uiTheme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light', changeDebounce: 400,
     onChange() { editorDirty.value = true },
     onDirtyChange(d) { editorDirty.value = d },
     onError(e) { note.value = (e && e.message) || String(e) },
-    mergeTags: { syntax: 'handlebars', tags: TAGS[k], autocomplete: true, showRawValue: false },
-    displayConditions: { conditions: PAIRS[k], allowCustom: true },
-    logicTags: { pairs: PAIRS[k] },
+    mergeTags: { syntax: 'handlebars', tags: (TAGS as any)[k], autocomplete: true, showRawValue: false },
+    displayConditions: { conditions: (PAIRS as any)[k], allowCustom: true },
+    logicTags: { pairs: (PAIRS as any)[k] },
     htmlBlockPreview: true,
     fonts: { defaultFont: 'Georgia', defaultFallback: 'Georgia, Times New Roman, serif' },
     colors: { presets: [INK, INK3, PAPER, HAIR, ACCENT, '#ffffff'], allowCustom: true },
     templateDefaults: { width: 600, backgroundColor: PAPER, textColor: INK, linkColor: INK, fontFamily: 'Georgia' },
     blockDefaults: { button: { backgroundColor: INK, textColor: PAPER, borderRadius: 999, fontSize: 15, align: 'left' }, divider: { color: HAIR, thickness: 1 } },
+    // @ts-expect-error TS7016, from the conversion: Could not find a declaration file for module 'mjml-browser'. '/Users/jameshuntercarter/htdocs/dharmalab/node_modules/mjml-browser/lib/index.
     render: { compileMjml: async (mj) => { if (!mjml) mjml = (await import('mjml-browser')).default; return mjml(mj, { validationLevel: 'soft' }).html } },
     testEmail: {
       defaultRecipient: me.value,
@@ -90,9 +92,9 @@ async function mount() {
   editorDirty.value = false
 }
 async function unmount() { if (editor) { try { editor.unmount() } catch (e) { /* gone */ } editor = null } }
-async function sendTo(to, html) {
+async function sendTo(to: any, html: any) {
   if (!supabaseOn || !isSignedIn.value) throw new Error('Sign in as an admin to send a test')
-  const { data, error } = await supabase.functions.invoke('send-email', { body: { kind: kind.value, to, html, subject: subject.value } })
+  const { data, error } = await (supabase as any).functions.invoke('send-email', { body: { kind: kind.value, to, html, subject: subject.value } })
   if (error) throw error
   if (data && data.error) throw new Error(data.error)
   if (!data || !data.ok) throw new Error('Not sent — the relay refused it')
@@ -101,15 +103,15 @@ async function sendTo(to, html) {
 async function load() {
   loading.value = true; msg.value = ''
   try { emails.value = await loadEmails(); subject.value = emails.value[kind.value].subject; savedSubject.value = subject.value }
-  catch (e) { msg.value = e.message }
+  catch (e) { msg.value = (e as any).message }
   finally { loading.value = false }
   await nextTick(); await mount()
 }
 /* the editor's chrome follows the admin's theme */
-let themeWatch = null
+let themeWatch: any = null
 onMounted(() => { load(); themeWatch = new MutationObserver(() => { if (editor) editor.setTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light') }); themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }) })
 onBeforeUnmount(() => { unmount(); if (themeWatch) themeWatch.disconnect() })
-async function pick(k) {
+async function pick(k: any) {
   if (k === kind.value) return
   if (dirty.value && !confirm('Leave this email with unsaved changes?')) return
   kind.value = k
@@ -125,7 +127,7 @@ async function save() {
     emails.value[kind.value] = { content, subject: subject.value }
     savedSubject.value = subject.value; editorDirty.value = false
     msg.value = 'Saved and compiled'
-  } catch (e) { msg.value = e.message }
+  } catch (e) { msg.value = (e as any).message }
   finally { saving.value = false }
 }
 async function discard() { if (!emails.value) return; subject.value = savedSubject.value; await mount() }
@@ -136,7 +138,7 @@ async function discard() { if (!emails.value) return; subject.value = savedSubje
     <p v-if="loading" class="ui-muted">Loading…</p>
     <template v-else-if="emails">
       <nav class="em-rail ui-rail" aria-label="Emails">
-        <template v-for="[group, list] in GROUPS" :key="group">
+        <!-- @vue-expect-error TS2322, from the conversion: Type 'string | string[][]' is not assignable to type 'PropertyKey | undefined'. --><template v-for="[group, list] in GROUPS" :key="group">
           <div class="ui-railhead">{{ group }}</div>
           <button v-for="[k, name, when] in list" :key="k" type="button" class="ui-railitem" :class="{ 'ui-on': kind === k }" @click="pick(k)"><b>{{ name }}</b><small>{{ when }}</small></button>
         </template>

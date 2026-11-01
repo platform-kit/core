@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* REPORTING a post or a person: a reason from the list, a line of the reader's own if they want,
    and a person reads it — nothing here is judged by a machine (the moderation spec). A modal of its
    own, over a dimmed page, with the choices as rows. Words from network.md (report). */
@@ -7,7 +8,7 @@ import { us } from 'platformkit/lib/content.js'
 import { report } from 'platformkit/lib/network/api.js'
 
 const props = defineProps({
-  post: { type: Object, default: null },
+  post: { type: Object as PropType<any>, default: null },
   person: { type: String, default: '' },
 })
 const emit = defineEmits(['close'])
@@ -21,7 +22,7 @@ const err = ref('')
 async function send() {
   busy.value = true; err.value = ''
   try { await report({ post: props.post ? props.post.id : null, person: props.post ? null : props.person, reason: reason.value, note: note.value }); sent.value = true }
-  catch (e) { err.value = e.message || String(e) } finally { busy.value = false }
+  catch (e) { err.value = (e as any).message || String(e) } finally { busy.value = false }
 }
 </script>
 

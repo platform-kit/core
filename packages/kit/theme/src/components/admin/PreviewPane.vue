@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The live preview in the admin: a banner (status, split toggle, exit) over a
  * frame that loads /__preview (PreviewPage.vue) and is fed the draft entry
@@ -11,21 +12,21 @@ import { LOOKS, look as siteLook } from 'platformkit/lib/look.js'
 
 const props = defineProps({
   col: { type: String, required: true },      /* the collection key */
-  entry: { type: Object, default: null },     /* the last good compiled entry */
-  issues: { type: Array, default: () => [] }, /* schema issues, when the draft does not compile */
+  entry: { type: Object as PropType<any>, default: null },     /* the last good compiled entry */
+  issues: { type: Array as PropType<any[]>, default: () => [] }, /* schema issues, when the draft does not compile */
   busy: { type: Boolean, default: false },
   split: { type: Boolean, default: false },   /* beside the editor rather than in its place */
   focus: { type: Number, default: -1 },       /* the page section being edited: the frame scrolls to it */
 })
 const emit = defineEmits(['close', 'toggle-split', 'pick'])
 
-const frame = ref(null)
+const frame = ref<any>(null)
 let ready = false
 /* the look the frame wears: starts as the site's, flips without saving */
 const look = ref(siteLook.value)
-function setLook(l) {
+function setLook(l: any) {
   look.value = l
-  const w = frame.value && frame.value.contentWindow
+  const w: any = frame.value && frame.value.contentWindow
   if (w && ready) w.postMessage({ type: 'dl-look', look: l }, window.location.origin)
 }
 function post() {
@@ -35,7 +36,7 @@ function post() {
   const entry = props.entry ? JSON.parse(JSON.stringify(props.entry)) : null
   w.postMessage({ type: 'dl-preview', col: props.col, entry }, window.location.origin)
 }
-function onMessage(e) {
+function onMessage(e: any) {
   if (e.origin !== window.location.origin || !e.data) return
   if (e.data.type === 'dl-preview-ready') { ready = true; post(); setLook(look.value) }
   if (e.data.type === 'dl-preview-close') emit('close')
@@ -43,7 +44,7 @@ function onMessage(e) {
 }
 watch(() => [props.col, props.entry], post)
 watch(() => props.focus, (i) => { const w = frame.value && frame.value.contentWindow; if (w && ready && i >= 0) w.postMessage({ type: 'dl-focus', index: i }, window.location.origin) })
-function onKey(e) { if (e.key === 'Escape' && !e.defaultPrevented) emit('close') }
+function onKey(e: any) { if (e.key === 'Escape' && !e.defaultPrevented) emit('close') }
 onMounted(() => { window.addEventListener('message', onMessage); document.addEventListener('keydown', onKey) })
 onBeforeUnmount(() => { window.removeEventListener('message', onMessage); document.removeEventListener('keydown', onKey) })
 </script>

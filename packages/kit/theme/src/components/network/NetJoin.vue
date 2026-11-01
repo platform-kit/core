@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * JOINING THE WIDER NETWORK, on the reader's own account page — offered only where the site federates
  * (network.federate). Joining is the member's own act: a portable identity is made for them, their
@@ -13,7 +13,7 @@ import { networkStatus, joinNetwork, leaveNetwork, describe } from 'platformkit/
 const props = defineProps({ username: { type: String, default: '' } })
 const emit = defineEmits(['changed'])
 const W = computed(() => us('network').join.main)
-const status = ref(null)
+const status = ref<any>(null)
 const domain = ref('')
 const busy = ref(false)
 const err = ref('')
@@ -26,12 +26,12 @@ onMounted(async () => {
 })
 async function go() {
   busy.value = true; err.value = ''
-  try { await joinNetwork(); status.value = await networkStatus(); emit('changed') } catch (e) { err.value = e.message || W.value.failed } finally { busy.value = false }
+  try { await joinNetwork(); status.value = await networkStatus(); emit('changed') } catch (e) { err.value = (e as any).message || W.value.failed } finally { busy.value = false }
 }
 async function leave() {
   if (!window.confirm(W.value['leave-confirm'])) return
   busy.value = true; err.value = ''
-  try { await leaveNetwork(); status.value = await networkStatus(); emit('changed') } catch (e) { err.value = e.message || W.value.failed } finally { busy.value = false }
+  try { await leaveNetwork(); status.value = await networkStatus(); emit('changed') } catch (e) { err.value = (e as any).message || W.value.failed } finally { busy.value = false }
 }
 </script>
 

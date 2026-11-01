@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The site's one toast — src/lib/toast.js says what it holds. A card at the
  * foot of the window: an icon for its kind, a title, a line, a dismiss. It

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Funnels: the drip emails, each a file under content/funnels — an audience (who), steps (what,
  * and how long after the last), a cooldown of its own — sent by the funnels-run function every
@@ -34,50 +34,50 @@ const A = ug('admin', 'actions')['funnels'] || {}
 /* the view the editor holds: the funnels (each with its steps and its audience described), the blasts, the policy, the compiled designs */
 async function loadView() {
   const [funnels, blasts, policy, designs] = await Promise.all([pipe.items('funnels'), pipe.items('blasts'), pipe.read('policy', 'policy'), pipe.options('designs')])
-  return { funnels, blasts, policy: policy.data || {}, designs: designs.map((d) => d.value) }
+  return { funnels, blasts, policy: policy.data || {}, designs: designs.map((d: any) => d.value) }
 }
 
-const data = ref(null), stats = ref(null)
+const data = ref<any>(null), stats = ref<any>(null)
 const loading = ref(true), msg = ref('')
-async function load() { loading.value = true; try { data.value = await loadView(); await loadStats() } catch (e) { msg.value = e.message } finally { loading.value = false } }
-async function loadStats() { if (!supabaseOn || !isSignedIn.value) return; try { const { data: s } = await supabase.rpc('email_stats'); stats.value = s } catch (e) { /* none */ } }
+async function load() { loading.value = true; try { data.value = await loadView(); await loadStats() } catch (e) { msg.value = (e as any).message } finally { loading.value = false } }
+async function loadStats() { if (!supabaseOn || !isSignedIn.value) return; try { const { data: s } = await (supabase as any).rpc('email_stats'); stats.value = s } catch (e) { /* none */ } }
 onMounted(load)
-onIdentity((id) => { if (id) loadStats() })
-const statOf = (id) => { const rows = stats.value && stats.value.sent ? stats.value.sent.filter((x) => x.email_id === id) : []; return { n: rows.reduce((a, x) => a + x.n, 0), opened: rows.reduce((a, x) => a + x.opened, 0), clicked: rows.reduce((a, x) => a + x.clicked, 0) } }
-const pct = (a, b) => (b ? Math.round((a / b) * 100) + '%' : '—')
-const totals = (steps) => steps.reduce((t, s) => { const x = statOf(s.id); return { n: t.n + x.n, opened: t.opened + x.opened, clicked: t.clicked + x.clicked } }, { n: 0, opened: 0, clicked: 0 })
-const membersOf = (name) => (stats.value && stats.value.members && stats.value.members.find((m) => m.funnel === name)) || { n: 0, done: 0 }
+onIdentity((id: any) => { if (id) loadStats() })
+const statOf = (id: any) => { const rows = stats.value && stats.value.sent ? stats.value.sent.filter((x: any) => x.email_id === id) : []; return { n: rows.reduce((a: any, x: any) => a + x.n, 0), opened: rows.reduce((a: any, x: any) => a + x.opened, 0), clicked: rows.reduce((a: any, x: any) => a + x.clicked, 0) } }
+const pct = (a: any, b: any) => (b ? Math.round((a / b) * 100) + '%' : '—')
+const totals = (steps: any) => steps.reduce((t: any, s: any) => { const x = statOf(s.id); return { n: t.n + x.n, opened: t.opened + x.opened, clicked: t.clicked + x.clicked } }, { n: 0, opened: 0, clicked: 0 })
+const membersOf = (name: any) => (stats.value && stats.value.members && stats.value.members.find((m: any) => m.funnel === name)) || { n: 0, done: 0 }
 /* one line saying what a funnel is: its numbers when it has any, else its shape */
-const line = (f) => { const t = totals(f.steps), m = membersOf(f.name); const em = f.steps.filter((s) => s.channel !== 'chat').length, ch = f.steps.length - em; const n = em + (em === 1 ? ' email' : ' emails') + (ch ? ' · ' + ch + (ch === 1 ? ' chat prompt' : ' chat prompts') : ''); return t.n ? `${n} · ${m.n} in it · ${t.n} sent · ${pct(t.opened, t.n)} opened · ${pct(t.clicked, t.n)} clicked` : `${n} · nothing sent yet` }
+const line = (f: any) => { const t = totals(f.steps), m = membersOf(f.name); const em = f.steps.filter((s: any) => s.channel !== 'chat').length, ch = f.steps.length - em; const n = em + (em === 1 ? ' email' : ' emails') + (ch ? ' · ' + ch + (ch === 1 ? ' chat prompt' : ' chat prompts') : ''); return t.n ? `${n} · ${m.n} in it · ${t.n} sent · ${pct(t.opened, t.n)} opened · ${pct(t.clicked, t.n)} clicked` : `${n} · nothing sent yet` }
 
 /* ---- the sending rules: the policy, behind a button ---- */
 const rulesOpen = ref(false)
 const policy = ref({ daily: 1, weekly: 3, monthly: 8, 'blasts-respect-cooldown': true, 'recordings-keep': 0, 'session-reminders': [24, 1] })
 /* the counts, and the one clock this panel edits — a call's recording's keep (session-recordings); the desk's clocks stay in the file */
-const policyOf = (d) => ({ daily: d.policy.daily ?? 1, weekly: d.policy.weekly ?? 3, monthly: d.policy.monthly ?? 8, 'blasts-respect-cooldown': d.policy['blasts-respect-cooldown'] !== false, 'recordings-keep': d.policy['recordings-keep'] ?? 0, 'session-reminders': remindersOf(d.policy['session-reminders']) })
+const policyOf = (d: any) => ({ daily: d.policy.daily ?? 1, weekly: d.policy.weekly ?? 3, monthly: d.policy.monthly ?? 8, 'blasts-respect-cooldown': d.policy['blasts-respect-cooldown'] !== false, 'recordings-keep': d.policy['recordings-keep'] ?? 0, 'session-reminders': remindersOf(d.policy['session-reminders']) })
 /* the reminders before a native session: hours, largest first — a list of number fields to add and remove, never a comma string (absent in the file = 24 and 1) */
-const remindersOf = (v) => (v === undefined || v === null ? [24, 1] : (Array.isArray(v) ? v : String(v).split(/[,\s]+/)).map(Number).filter((x) => Number.isFinite(x) && x > 0))
+const remindersOf = (v: any) => (v === undefined || v === null ? [24, 1] : (Array.isArray(v) ? v : String(v).split(/[,\s]+/)).map(Number).filter((x) => Number.isFinite(x) && x > 0))
 const RW = (us('emails').policy || {}).reminders || {}
 const GW = (us('emails').funnel || {}).editor || {}
 function addReminder() { policy.value['session-reminders'] = [...policy.value['session-reminders'], 1] }
-function dropReminder(i) { policy.value['session-reminders'] = policy.value['session-reminders'].filter((_, j) => j !== i) }
+function dropReminder(i: any) { policy.value['session-reminders'] = policy.value['session-reminders'].filter((_, j) => j !== i) }
 const PW = (us('emails').policy || {}).recordings || {}
 watch(data, (d) => { if (d) policy.value = policyOf(d) }, { immediate: true })
 const policyDirty = computed(() => data.value && JSON.stringify(policy.value) !== JSON.stringify(policyOf(data.value)))
 const savingPolicy = ref(false)
-async function savePolicy() { savingPolicy.value = true; try { await pipe.save('policy', 'policy', { data: policy.value }); data.value = await loadView(); msg.value = '' } catch (e) { msg.value = e.message } finally { savingPolicy.value = false } }
+async function savePolicy() { savingPolicy.value = true; try { await pipe.save('policy', 'policy', { data: policy.value }); data.value = await loadView(); msg.value = '' } catch (e) { msg.value = (e as any).message } finally { savingPolicy.value = false } }
 
 /* ---- the editor ---- */
 const VIEWS = [['audience', 'Audience'], ['emails', 'Emails'], ['settings', 'Settings']]
 const view = ref('emails')
-const cur = computed(() => (data.value && props.name ? data.value.funnels.find((f) => f.name === props.name) || null : null))
-const form = ref(null), saved = ref(''), creating = ref(false)
-const goalOk = (g) => !String(g || '').trim() || /^\/[^\s]*$/.test(String(g).trim())
+const cur = computed(() => (data.value && props.name ? data.value.funnels.find((f: any) => f.name === props.name) || null : null))
+const form = ref<any>(null), saved = ref(''), creating = ref(false)
+const goalOk = (g: any) => !String(g || '').trim() || /^\/[^\s]*$/.test(String(g).trim())
 const dirty = computed(() => !!form.value && JSON.stringify(form.value) !== saved.value)
 function begin() {
-  const f = cur.value
+  const f: any = cur.value
   if (!f) { form.value = null; return }
-  form.value = { name: f.name, title: f.data.title || f.name, published: f.data.published !== false, design: f.data.design || 'campaign', cooldown: f.data.cooldown || '3d', goal: f.data.goal || '', audience: { ...(f.data.audience || {}) }, steps: f.steps.map((s) => ({ ...s })) }
+  form.value = { name: f.name, title: f.data.title || f.name, published: f.data.published !== false, design: f.data.design || 'campaign', cooldown: f.data.cooldown || '3d', goal: f.data.goal || '', audience: { ...(f.data.audience || {}) }, steps: f.steps.map((s: any) => ({ ...s })) }
   saved.value = JSON.stringify(form.value); open.value = 0; report.value = null
 }
 watch([cur, data], () => { if (!creating.value) begin() }, { immediate: true })
@@ -87,7 +87,7 @@ function startNew() {
   form.value = { name: '', title: '', published: false, design: 'campaign', cooldown: '3d', goal: '', audience: {}, steps: [{ title: 'The first note', after: '0d', subject: '', body: '' }] }
   saved.value = ''; open.value = 0
 }
-const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+const slug = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 watch(() => form.value && form.value.title, (t) => { if (creating.value && form.value) form.value.name = slug(t) })
 const saving = ref(false)
 async function save() {
@@ -95,17 +95,17 @@ async function save() {
   saving.value = true; msg.value = ''
   try {
     const f = form.value
-    const steps = f.steps.map((s) => ({ ...s, title: s.title && !/^(Step \d+|The first note)$/.test(s.title) ? s.title : (s.channel === 'chat' ? (s.body || 'Prompt').split('\n')[0].replace(/[#*_]/g, '').trim().slice(0, 40) : (s.subject || s.title || 'Step')) }))
+    const steps = f.steps.map((s: any) => ({ ...s, title: s.title && !/^(Step \d+|The first note)$/.test(s.title) ? s.title : (s.channel === 'chat' ? (s.body || 'Prompt').split('\n')[0].replace(/[#*_]/g, '').trim().slice(0, 40) : (s.subject || s.title || 'Step')) }))
     await pipe.save('funnels', f.name, { data: { title: f.title, published: f.published, design: f.design, cooldown: f.cooldown, goal: (f.goal || '').trim() || undefined, audience: f.audience }, parsed: { steps } }, { create: creating.value })
     data.value = await loadView()
     const was = creating.value; creating.value = false
     if (was) emit('open', f.name); else begin()
     msg.value = 'Saved'
-  } catch (e) { msg.value = e.message } finally { saving.value = false }
+  } catch (e) { msg.value = (e as any).message } finally { saving.value = false }
 }
 async function remove() {
   if (!cur.value || !confirm(`Delete the funnel “${cur.value.data.title || cur.value.name}”? Its file goes; what was sent stays in the log.`)) return
-  try { await pipe.remove('funnels', cur.value.name); data.value = await loadView(); emit('back') } catch (e) { msg.value = e.message }
+  try { await pipe.remove('funnels', cur.value.name); data.value = await loadView(); emit('back') } catch (e) { msg.value = (e as any).message }
 }
 function discard() { if (creating.value) { creating.value = false; form.value = null; emit('back') } else begin() }
 
@@ -113,22 +113,22 @@ function discard() { if (creating.value) { creating.value = false; form.value = 
 const open = ref(0)
 const addStep = (channel = 'email') => { form.value.steps.push({ title: `Step ${form.value.steps.length + 1}`, channel, after: '3d', subject: '', when: channel === 'chat' ? 'on-site 30s' : '', teaser: '', image: '', body: '' }); open.value = form.value.steps.length - 1 }
 /* an email's place among the emails (a chat prompt is outside the sequence) */
-const emailIndex = (i) => form.value.steps.slice(0, i + 1).filter((s) => !isChat(s)).length
-const dropStep = (i) => { if (form.value.steps.length <= 1) return; form.value.steps.splice(i, 1); open.value = Math.max(0, Math.min(open.value, form.value.steps.length - 1)) }
-const move = (i, d) => { const s = form.value.steps; const j = i + d; if (j < 0 || j >= s.length) return; [s[i], s[j]] = [s[j], s[i]]; open.value = j }
-const spanOk = (v) => /^\s*\d+(\.\d+)?\s*[dwh]?\s*$/i.test(String(v || ''))
+const emailIndex = (i: any) => form.value.steps.slice(0, i + 1).filter((s: any) => !isChat(s)).length
+const dropStep = (i: any) => { if (form.value.steps.length <= 1) return; form.value.steps.splice(i, 1); open.value = Math.max(0, Math.min(open.value, form.value.steps.length - 1)) }
+const move = (i: any, d: any) => { const s: any = form.value.steps; const j = i + d; if (j < 0 || j >= s.length) return; [s[i], s[j]] = [s[j], s[i]]; open.value = j }
+const spanOk = (v: any) => /^\s*\d+(\.\d+)?\s*[dwh]?\s*$/i.test(String(v || ''))
 /* a chat step's triggers: the line as words, and what is wrong with it */
-const whenOf = (s) => parseWhen(s.when)
-const whenWords = (s) => { const { when, errors } = whenOf(s); return errors.length ? errors[0] : Object.keys(when).length ? describeWhen(when) : 'no trigger yet' }
+const whenOf = (s: any) => parseWhen(s.when)
+const whenWords = (s: any) => { const { when, errors } = whenOf(s); return errors.length ? errors[0] : Object.keys(when).length ? describeWhen(when) : 'no trigger yet' }
 
-const isChat = (s) => s && s.channel === 'chat'
-const promptOf = (s) => splitChoices(s ? s.body : '')
-const isDefault = (s) => !!whenOf(s).when.default
+const isChat = (s: any) => s && s.channel === 'chat'
+const promptOf: any = (s: any) => splitChoices(s ? s.body : '')
+const isDefault = (s: any) => !!whenOf(s).when.default
 const NAME_TAG = '{{name}}'
 
 /* the preview: the open step's markdown as html (the server), through the design (the function) */
 const preview = ref(''), previewing = ref(false), previewErr = ref(''), showPreview = ref(true)
-let timer = null
+let timer: any = null
 async function renderPreview() {
   const s = form.value && form.value.steps[open.value]
   if (s && s.channel === 'chat') return
@@ -137,34 +137,34 @@ async function renderPreview() {
   try {
     const { html } = await pipe.action('funnels', 'preview', { body: s.body })
     if (!supabaseOn || !isSignedIn.value) { preview.value = html; return }
-    const { data: r, error } = await supabase.functions.invoke('send-email', { body: { kind: form.value.design, sample: { subject: s.subject, body: html, name: 'Ada' }, subject: s.subject } })
+    const { data: r, error } = await (supabase as any).functions.invoke('send-email', { body: { kind: form.value.design, sample: { subject: s.subject, body: html, name: 'Ada' }, subject: s.subject } })
     if (error) throw error
     if (r && r.error) throw new Error(r.error)
     preview.value = r.html
-  } catch (e) { previewErr.value = e.message || 'Could not render' } finally { previewing.value = false }
+  } catch (e) { previewErr.value = (e as any).message || 'Could not render' } finally { previewing.value = false }
 }
 watch([() => form.value && JSON.stringify(form.value.steps[open.value]), () => form.value && form.value.design, open, showPreview, view], () => { clearTimeout(timer); timer = setTimeout(renderPreview, 500) })
-const me = computed(() => (session.value && session.value.user && session.value.user.email) || '')
+const me = computed(() => (session.value && (session.value as any).user && (session.value as any).user.email) || '')
 const testing = ref(false)
 async function sendTest() {
   const s = form.value && form.value.steps[open.value]; if (!s || !me.value) return
   testing.value = true; msg.value = ''
   try {
     const { html } = await pipe.action('funnels', 'preview', { body: s.body })
-    const { data: r, error } = await supabase.functions.invoke('send-email', { body: { kind: form.value.design, to: me.value, sample: { subject: s.subject, body: html, name: 'Ada' }, subject: s.subject } })
+    const { data: r, error } = await (supabase as any).functions.invoke('send-email', { body: { kind: form.value.design, to: me.value, sample: { subject: s.subject, body: html, name: 'Ada' }, subject: s.subject } })
     if (error) throw error
     if (r && r.error) throw new Error(r.error)
     msg.value = r.ok ? `Test sent to ${me.value}` : 'Not sent — the relay refused it'
-  } catch (e) { msg.value = e.message } finally { testing.value = false }
+  } catch (e) { msg.value = (e as any).message } finally { testing.value = false }
 }
 
 /* what the runner would send for this funnel now */
-const running = ref(false), report = ref(null)
+const running = ref(false), report = ref<any>(null)
 async function previewRun() {
   if (!cur.value) return
   running.value = true; report.value = null
-  try { const { data: r, error } = await supabase.functions.invoke('funnels-run', { body: { dry: true, funnel: cur.value.name } }); if (error) throw error; if (r && r.error) throw new Error(r.error); report.value = r.funnels[cur.value.name] || { off: true } }
-  catch (e) { msg.value = e.message } finally { running.value = false }
+  try { const { data: r, error } = await (supabase as any).functions.invoke('funnels-run', { body: { dry: true, funnel: cur.value.name } }); if (error) throw error; if (r && r.error) throw new Error(r.error); report.value = r.funnels[cur.value.name] || { off: true } }
+  catch (e) { msg.value = (e as any).message } finally { running.value = false }
 }
 </script>
 
@@ -245,7 +245,7 @@ async function previewRun() {
       <!-- emails -->
       <div v-show="view === 'emails'" class="ui-card fn-stepcard">
         <div class="ui-steps">
-          <button v-for="(s, i) in form.steps" :key="i" type="button" class="ui-step" :class="{ 'ui-on': open === i, 'fn-chatstep': isChat(s) }" @click="open = i"><i>{{ isChat(s) ? '💬' : emailIndex(i) }}</i><b>{{ isChat(s) ? (s.title && !/^Step \d+$/.test(s.title) ? s.title : (s.body || 'Untitled').split('\n')[0]) : (s.subject || s.title || 'Untitled') }}</b><small>{{ isChat(s) ? 'chat' : (emailIndex(i) === 1 ? 'on entering' : '+' + s.after) }}</small></button>
+          <!-- @vue-expect-error TS2322, from the conversion: Type 'string | number' is not assignable to type 'number'. --><button v-for="(s, i) in form.steps" :key="i" type="button" class="ui-step" :class="{ 'ui-on': open === i, 'fn-chatstep': isChat(s) }" @click="open = i"><i>{{ isChat(s) ? '💬' : emailIndex(i) }}</i><b>{{ isChat(s) ? (s.title && !/^Step \d+$/.test(s.title) ? s.title : (s.body || 'Untitled').split('\n')[0]) : (s.subject || s.title || 'Untitled') }}</b><small>{{ isChat(s) ? 'chat' : (emailIndex(i) === 1 ? 'on entering' : '+' + s.after) }}</small></button>
           <button type="button" class="ui-step ui-add" @click="addStep('email')">+ Add an email</button>
           <button type="button" class="ui-step ui-add" @click="addStep('chat')">+ Add a chat prompt</button>
         </div>

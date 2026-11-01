@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * BESIDE THE TIMELINE — what every social app keeps on its right: a search for people, Who to
  * follow, and (where the site has spaces) the spaces whose feeds the reader runs through Home, each
@@ -12,6 +12,7 @@ import { isSignedIn } from 'platformkit/lib/auth.js'
 import { net, suggestions, loadSpaces, pin, PINNING } from 'platformkit/lib/network/api.js'
 import site from '#site'
 import { showsFollowing } from 'platformkit/lib/community/places.js'
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const FOLLOWING = showsFollowing((site.community || {}).hide)
 import NetPersonRow from './NetPersonRow.vue'
 
@@ -19,7 +20,7 @@ const emit = defineEmits(['pinned'])
 const S = computed(() => us('network').shell.main)
 const T = computed(() => us('network').timeline.main)
 const q = ref('')
-const who = ref([])
+const who = ref<any>([])
 const whoLoaded = ref(false)
 const pinBusy = ref('')
 const spaces = computed(() => net.spaces || [])
@@ -32,7 +33,7 @@ async function load() {
 onMounted(load)
 watch(isSignedIn, load)
 function search() { const s = q.value.trim(); navigate(ROUTES.feed + '/explore' + (s ? '?q=' + encodeURIComponent(s) : '')) }
-async function togglePin(s) { pinBusy.value = s.space_id; try { await pin(s.space_id, !s.pinned); emit('pinned') } finally { pinBusy.value = '' } }
+async function togglePin(s: any) { pinBusy.value = s.space_id; try { await pin(s.space_id, !s.pinned); emit('pinned') } finally { pinBusy.value = '' } }
 </script>
 
 <template>

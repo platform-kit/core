@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The player's slot when a chapter has no recording and this browser could
  * make one: a button, and then the state of the making — the voice being
@@ -10,14 +11,14 @@ import { computed } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 
 const props = defineProps({
-  status: { type: Object, required: true },   /* the book's: phase, download, error */
-  track: { type: Object, default: null },     /* this chapter's: status, piece, pieces */
+  status: { type: Object as PropType<any>, required: true },   /* the book's: phase, download, error */
+  track: { type: Object as PropType<any>, default: null },     /* this chapter's: status, piece, pieces */
   ahead: { type: Number, default: 0 },
 })
 const emit = defineEmits(['generate'])
 const G = (us('library').reader || {}).generate || {}
-const fill = (s, a) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (a[k] != null ? a[k] : ''))
-const mb = (n) => Math.round((n || 0) / 1048576)
+const fill = (s: any, a: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (a[k] != null ? a[k] : ''))
+const mb = (n: any) => Math.round((n || 0) / 1048576)
 
 const line = computed(() => {
   const t = props.track, s = props.status

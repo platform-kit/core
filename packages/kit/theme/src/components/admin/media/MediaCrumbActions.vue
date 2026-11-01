@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* breadcrumb-actions: Up one level and Refresh, beside the path */
 import { ArrowUpIcon, RefreshCwIcon } from 'lucide-vue-next'
 import { useMedia } from './use-media.js'

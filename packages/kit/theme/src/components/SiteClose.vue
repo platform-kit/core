@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The close at the foot of a page — the landing's own Close section, worded by an
  * ad in the 'footer' placement (content/ads/*.md), so the footer's call to action
@@ -15,9 +16,9 @@ import { pickAd, markDismissed } from 'platformkit/lib/ads.js'
 import { capture } from 'platformkit/lib/analytics.js'
 import { expose } from 'platformkit/lib/experiments.js'
 
-const props = defineProps({ topics: { type: Array, default: () => [] } })
+const props = defineProps({ topics: { type: Array as PropType<any[]>, default: () => [] } })
 const D = (us('library').article || {}).close || {}
-const ad = ref(null)
+const ad = ref<any>(null)
 const comp = computed(() => resolve('Close', look.value))
 const words = computed(() => ad.value
   ? { heading: ad.value.headline || D.heading, cta: ad.value.button || D.cta, href: ad.value.href || D.href }
@@ -30,7 +31,7 @@ onMounted(async () => {
   expose(b)
 })
 /* the close's button is a plain link; a click on it is the goal */
-function onClick(e) {
+function onClick(e: any) {
   if (!ad.value || !e.target.closest('a')) return
   capture('cta_click', { ad_id: ad.value.id, mode: 'footer' })
   markDismissed(ad.value.id)

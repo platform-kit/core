@@ -32,4 +32,4 @@ None.
 
 ## Impact
 
-- `packages/kit/build/sites.mjs` and `dev-workspace.mjs`; the multiple-sites docs page.
+- `packages/kit/build/sites.mts` and `dev-workspace.mjs`; the multiple-sites docs page.

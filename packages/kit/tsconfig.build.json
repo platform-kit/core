@@ -6,8 +6,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
-    "allowJs": false,
-    "noImplicitAny": false,
+    "allowJs": true,
     "outDir": ".tsbuild",
     "rootDir": ".",
     "declaration": true,

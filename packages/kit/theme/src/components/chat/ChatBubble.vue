@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * One message. Mine on the right in the accent, the peer's on the left on
  * paper; a tail on the last of a run; the time and, on mine, the tick
@@ -19,30 +20,30 @@ import MessageText from './MessageText.vue'
 import { messageBlocks } from 'platformkit/lib/chat/markup.js'
 
 const props = defineProps({
-  message: { type: Object, required: true },     /* with first/last from groupRuns */
+  message: { type: Object as PropType<any>, required: true },     /* with first/last from groupRuns */
   me: { type: String, default: '' },
   peerReadAt: { type: String, default: null },
-  reactions: { type: Array, default: () => [] }, /* this message's */
-  quoted: { type: Object, default: null },       /* the message it replies to */
+  reactions: { type: Array as PropType<any[]>, default: () => [] }, /* this message's */
+  quoted: { type: Object as PropType<any>, default: null },       /* the message it replies to */
   /* the name of whoever sent a quoted message */
   nameOf: { type: Function, default: () => '' },
   /* the reader may write (a lapsed member may not) */
   canWrite: { type: Boolean, default: true },
   /* which of the strip's actions this chat offers (the support chat: withdraw alone) */
-  actions: { type: Array, default: () => ['react', 'reply', 'remove'] },
+  actions: { type: Array as PropType<any[]>, default: () => ['react', 'reply', 'remove'] },
   flash: { type: Boolean, default: false },
 })
 const emit = defineEmits(['react', 'reply', 'remove', 'jump'])
 const C = us('chat').composer.main
 const T = us('chat').ticks.main
 
-const saidIn = (m) => messageBlocks(m && m.body)
+const saidIn = (m: any) => messageBlocks(m && m.body)
 const own = computed(() => props.message.sender_id === props.me)
 const tick = computed(() => tickOf(props.message, props.me, props.peerReadAt))
 const chips = computed(() => reactionChips(props.reactions, props.me))
 const gone = computed(() => !!props.message.deleted_at)
 const quick = reactionSet(C.reactions)
-const has = (a) => props.actions.includes(a)
+const has = (a: any) => props.actions.includes(a)
 const time = computed(() => timeOf(props.message.created_at))
 const isImage = computed(() => props.message.kind === 'file' && /^image\//.test(String(props.message.attachment_type || '')))
 /* WHERE THE FILE IS. The support chat's rows arrive with a signed url of their own; the coaching
@@ -53,16 +54,16 @@ watch(() => [props.message.url, props.message.attachment_path], async () => {
   if (props.message.kind !== 'file') return
   at.value = props.message.url || (await attachmentUrl(props.message))
 }, { immediate: true })
-const sizeOf = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? Math.round(n / 1024) + ' KB' : n ? n + ' B' : '')
+const sizeOf = (n: any) => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? Math.round(n / 1024) + ' KB' : n ? n + ' B' : '')
 const quotedText = computed(() => previewOf(props.quoted, C))
 
 /* the strip: on hover through css; pinned open by a long press until a tap elsewhere */
 const open = ref(false)
-let press = null
-function down(e) { if (e.pointerType === 'mouse' || gone.value) return; press = setTimeout(() => { open.value = true; press = null }, 420) }
+let press: any = null
+function down(e: any) { if (e.pointerType === 'mouse' || gone.value) return; press = setTimeout(() => { open.value = true; press = null }, 420) }
 function up() { if (press) { clearTimeout(press); press = null } }
 function away() { open.value = false }
-function act(fn) { fn(); open.value = false }
+function act(fn: any) { fn(); open.value = false }
 </script>
 
 <template>

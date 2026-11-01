@@ -39,7 +39,7 @@ const FORBIDDEN = [...BOOKISH, ...CLOTHISH]
    Listed rather than globbed so that adding a file is a deliberate act with this rule in view. */
 const GENERAL = [
   'build/kinds/index.js',
-  'build/variants.mjs',
+  'build/variants.mts',
   'build/store-separation.test.mjs',   /* itself: it may NAME the words, which is why it is checked apart */
 ]
 const SELF = 'build/store-separation.test.mjs'
@@ -72,7 +72,7 @@ const READERS = [
 ]
 
 /* and the files that are allowed — required — to hold them */
-const PRINTS = ['build/print', 'src/lib/print-offers.js', 'supabase/functions/_shared/print.ts']
+const PRINTS = ['build/print', 'src/lib/print-offers.ts', 'supabase/functions/_shared/print.ts']
 /* and the garment's, for the same reason in the other direction: a refactor that emptied the
    apparel kind would otherwise pass check (1) with flying colours */
 const CLOTHES = ['build/kinds/apparel.js', 'supabase/functions/_shared/suppliers/printify.js']

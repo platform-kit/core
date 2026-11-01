@@ -7,18 +7,18 @@ sources:
     packages/kit/supabase/schemas/44-print-jobs.sql,
     packages/kit/build/print-jobs-db.test.mjs,
     packages/kit/build/suppliers.test.mjs,
-    packages/kit/build/print.mjs,
+    packages/kit/build/print.mts,
     packages/kit/build/print,
     packages/kit/src/lib/print,
-    packages/kit/theme/src/components/admin/pdf-pages.js,
+    packages/kit/theme/src/components/admin/pdf-pages.ts,
     packages/kit/supabase/functions/print-render,
-    packages/kit/build/models/core/print.mjs,
+    packages/kit/build/models/core/print.mts,
     packages/kit/supabase/functions/_shared/suppliers,
     packages/kit/supabase/functions/_shared/print.ts,
     packages/kit/theme/src/components/Book3D.vue,
     packages/kit/theme/src/components/admin/PrintAdmin.vue,
     packages/kit/build/print/typeset/interior.js,
-    packages/kit/build/git-push.mjs,
+    packages/kit/build/git-push.mts,
     packages/kit/supabase/functions/print-order,
     packages/kit/supabase/functions/print-webhook,
     packages/kit/supabase/functions/lulu-webhook,
@@ -139,7 +139,7 @@ A rendered file is in the print bucket rather than on a disk, so `pipe.fileUrl(c
 
 Two things have to be in place before it will work at all, and it says which is missing rather than failing obscurely:
 
-- **The type.** An Edge Function has no fonts. The deploy's `print-type` step uploads them to the `print` bucket (`node packages/kit/build/print/templates.mjs --fonts` does it by hand — a local stack loses them on every `supabase start`), and the function refuses to set anything without them. A book set in a fallback face is wrong in a way nobody notices until it is printed.
+- **The type.** An Edge Function has no fonts. The deploy's `print-type` step uploads them to the `print` bucket (`node packages/kit/build/print/templates.mts --fonts` does it by hand — a local stack loses them on every `supabase start`), and the function refuses to set anything without them. A book set in a fallback face is wrong in a way nobody notices until it is printed.
 - **Storage's image transform**, for a paperback only — its front _is_ the e-book's picture, and there is no `sharp` in a function. It is a Pro-plan feature on the hosted platform, and the kit's `config.toml` template turns it on locally (`[storage.image_transformation]`). The transform keeps the original's format, so the picture is named by what its bytes are (PNG, JPEG, WebP or GIF), never by its file name: a WebP saved as `.png` is still set. Without it the paperback is **left unset and said so** (`incomplete` in the answer), never drawn blank: a cover without its picture would be a different sheet under the same edition id, which is the one thing this whole path exists to make impossible. A hardcover is set in type and needs none of it.
 
 ## The block and the offers

@@ -105,7 +105,7 @@ const ours = (rows) => Object.fromEntries(Object.entries(rows).filter(([k]) => k
   ok('a tag already in the list keeps working after the switch is turned off', after.values.join() === 'astrology' && !after.refused.length)
   nodefs.rmSync(dir, { recursive: true, force: true })
 
-  const wiring = nodefs.readFileSync(new URL('./models/index.mjs', import.meta.url), 'utf8')
+  const wiring = nodefs.readFileSync(new URL('./models/index.mts', import.meta.url), 'utf8')
   ok('every save that carries tags goes through it, in one place rather than per collection',
     /learnTags/.test(wiring), 'models/index.mjs does not call learnTags — the switch would be decoration')
 }

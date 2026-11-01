@@ -32,7 +32,7 @@
   </SiteLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { route, ROUTES } from 'platformkit/lib/router.js'
 import { us } from 'platformkit/lib/content.js'
@@ -46,11 +46,11 @@ import CoursesView from '../components/courses/CoursesView.vue'
 const SITE_NAME = (site && site.name) || ''
 const W = computed(() => us('courses').page || {})
 const L = computed(() => W.value.list || {}), C = computed(() => W.value.certificate || {})
-const day = (iso) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso)) } catch { return String(iso || '') } }
+const day = (iso: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso)) } catch { return String(iso || '') } }
 
 const isCert = computed(() => route.value.startsWith(ROUTES.certificates + '/'))
 const rest = computed(() => (route.value.startsWith(ROUTES.courses + '/') ? route.value.slice(ROUTES.courses.length + 1) : ''))
-const loading = ref(false), cert = ref(null)
+const loading = ref(false), cert = ref<any>(null)
 watch(route, async () => {
   if (!isCert.value) return
   loading.value = true
@@ -60,7 +60,7 @@ watch(route, async () => {
 }, { immediate: true })
 
 function downloadPdf() {
-  const c = cert.value; if (!c) return
+  const c: any = cert.value; if (!c) return
   const bytes = certificatePdf({ heading: C.value.title, line: C.value.line, name: c.name, completed: C.value.completed, course: c.course, on: C.value.on, date: day(c.issued_at), by: SITE_NAME, check: C.value.check, url: location.origin + location.pathname })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }))

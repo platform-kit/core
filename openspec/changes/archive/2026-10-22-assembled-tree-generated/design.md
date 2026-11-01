@@ -2,7 +2,7 @@
 
 ## Context
 
-`packages/kit/build/assemble.mjs` writes a site's `supabase/` from two owners: the kit's data layer and the site's `db/`. `dev`, `migrate` and `deploy` already run it before they use the tree. `platformkit test` (`build/test.mjs`) runs `assemble.mjs --check` when `supabase/.assembled.json` exists and a plain assembly otherwise. `--check` compares every planned file with the copy on disk, looks for strays, unresolved imports and a `migrations` folder, and checks the `config.toml` seed line.
+`packages/kit/build/assemble.mts` writes a site's `supabase/` from two owners: the kit's data layer and the site's `db/`. `dev`, `migrate` and `deploy` already run it before they use the tree. `platformkit test` (`build/test.mjs`) runs `assemble.mjs --check` when `supabase/.assembled.json` exists and a plain assembly otherwise. `--check` compares every planned file with the copy on disk, looks for strays, unresolved imports and a `migrations` folder, and checks the `config.toml` seed line.
 
 Two statements contradict how the tree is actually produced: the assembler's header says "The assembled tree is committed", and the `--check` failure ends "then commit". The PlatformKit workspace already ignores each site's assembled tree, and `sites/demo` tracks only `supabase/config.toml`. A separately owned site has no such guidance; DharmaLab committed its tree, and the committed copy drifted from the kit.
 

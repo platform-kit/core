@@ -30,7 +30,7 @@ ok('neither is an empty object rather than a throw', JSON.stringify(under(undefi
 
 /* and the real thing: strings.js must read a default layer at all */
 const { readFileSync } = await import('node:fs')
-const src = readFileSync(new URL('../src/lib/strings.js', import.meta.url), 'utf8')
+const src = readFileSync(new URL('../src/lib/strings.ts', import.meta.url), 'utf8')
 ok('strings.js reads the theme\'s defaults', /from '#site\/strings-default'/.test(src))
 ok('…and merges them UNDER the compiled collection', /under\(BY\[scope\]/.test(src),
   'the other way round would let a stale default beat what the site actually says')

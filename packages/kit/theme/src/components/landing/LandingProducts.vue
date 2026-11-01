@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { computed, ref } from 'vue'
 import { md } from './md.js'
 import { us } from 'platformkit/lib/strings.js'
@@ -24,7 +25,7 @@ const props = defineProps({
   source: { type: String, default: 'all' },     /* all | featured | collection | tag | skus */
   collection: { type: String, default: '' },
   tag: { type: String, default: '' },
-  skus: { type: Array, default: () => [] },     /* a hand-picked list, in this order */
+  skus: { type: Array as PropType<any[]>, default: () => [] },     /* a hand-picked list, in this order */
   layout: { type: String, default: 'cards' },   /* cards | bordered | rail | list */
   columns: { type: Number, default: 4 },
   limit: { type: Number, default: 8 },
@@ -34,23 +35,23 @@ const props = defineProps({
 const W = (us('sections').products || {}).card || {}
 const P = us('store').product.ui
 const items = computed(() => {
-  let list = PRODUCTS.value.filter((p) => !p.hidden && p.kind !== 'membership' && p.kind !== 'session')
-  if (props.source === 'featured') list = list.filter((p) => p.featured)
+  let list = PRODUCTS.value.filter((p: any) => !p.hidden && p.kind !== 'membership' && p.kind !== 'session')
+  if (props.source === 'featured') list = list.filter((p: any) => p.featured)
   else if (props.source === 'collection' && props.collection) { const c = collectionOf(props.collection); list = c ? c.items : [] }
-  else if (props.source === 'tag' && props.tag) list = list.filter((p) => (p.tags || []).includes(props.tag))
-  else if (props.source === 'skus' && props.skus.length) list = props.skus.map((s) => list.find((p) => p.sku === s)).filter(Boolean)
-  if (props.sort === 'price-asc') list = list.slice().sort((a, b) => (a.unit_amount || 0) - (b.unit_amount || 0))
-  if (props.sort === 'price-desc') list = list.slice().sort((a, b) => (b.unit_amount || 0) - (a.unit_amount || 0))
+  else if (props.source === 'tag' && props.tag) list = list.filter((p: any) => (p.tags || []).includes(props.tag))
+  else if (props.source === 'skus' && props.skus.length) list = props.skus.map((s) => list.find((p: any) => p.sku === s)).filter(Boolean)
+  if (props.sort === 'price-asc') list = list.slice().sort((a: any, b: any) => (a.unit_amount || 0) - (b.unit_amount || 0))
+  if (props.sort === 'price-desc') list = list.slice().sort((a: any, b: any) => (b.unit_amount || 0) - (a.unit_amount || 0))
   return props.limit > 0 ? list.slice(0, props.limit) : list
 })
 const added = ref('')
-function quickAdd(p, e) {
+function quickAdd(p: any, e: any) {
   e.preventDefault()
   cart.add({ sku: p.sku, slug: p.id, name: p.title, variant: '', unit_amount: p.unit_amount, currency: p.currency, kind: p.kindKey, image: p.image ? p.image.src : null })
   capture('click', { kind: 'add_to_cart', product_id: p.sku, from: 'section' })
   added.value = p.sku; setTimeout(() => { added.value = '' }, 1400); cart.openCart()
 }
-const quick = (p) => p.available && p.kind !== 'print' && p.kind !== 'book' && !(p.sizes && p.sizes.length)
+const quick = (p: any) => p.available && p.kind !== 'print' && p.kind !== 'book' && !(p.sizes && p.sizes.length)
 </script>
 <template>
   <section class="lpsec lpproducts" :class="'lppd-' + layout">
@@ -62,7 +63,7 @@ const quick = (p) => p.available && p.kind !== 'print' && p.kind !== 'book' && !
       <slot name="products" :items="items" :md="md">
         <!-- the list: a row per product -->
         <div v-if="layout === 'list' && items.length" class="lppd-rows lprv lpd1">
-          <a v-for="(p, i) in items" :key="p.id" :href="p.href" class="lppd-row lpk" :style="{ '--k': (0.05 + i * 0.05) + 's' }">
+          <!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. --><a v-for="(p, i) in items" :key="p.id" :href="p.href" class="lppd-row lpk" :style="{ '--k': (0.05 + i * 0.05) + 's' }">
             <span class="lppd-thumb"><img v-if="p.image" :src="p.image.src" :alt="p.title" loading="lazy" /></span>
             <span class="lppd-roww"><span v-if="p.tags && p.tags[0]" class="lppd-tag">{{ p.tags[0] }}</span><b>{{ p.title }}</b><span v-if="p.subtitle" class="lppd-sub">{{ p.subtitle }}</span><Stars v-if="p.rating" :value="Number(p.rating)" :line="p.reviews ? (W.reviews || '').replace('{n}', p.reviews) : ''" class="lppd-stars" /></span>
             <span class="lppd-price lpnum"><b>{{ p.available ? money(p.unit_amount, p.currency) : P.unavailable }}</b><s v-if="p.compare" class="lpnum">{{ p.compare }}</s></span>
@@ -72,7 +73,7 @@ const quick = (p) => p.available && p.kind !== 'print' && p.kind !== 'book' && !
         </div>
         <!-- cards, bordered, and the rail -->
         <div v-else-if="items.length" class="lppd-grid lprv lpd1" :class="'lppd-c' + Math.min(5, Math.max(2, columns))">
-          <div v-for="(p, i) in items" :key="p.id" class="lppd-cell lpk" :style="{ '--k': (0.05 + i * 0.05) + 's' }">
+          <!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. --><div v-for="(p, i) in items" :key="p.id" class="lppd-cell lpk" :style="{ '--k': (0.05 + i * 0.05) + 's' }">
             <ProductCard :product="p" />
           </div>
         </div>

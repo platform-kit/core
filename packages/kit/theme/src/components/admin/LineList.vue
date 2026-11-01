@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A list of one-line strings edited as rows: an input each, a grip to drag
  * them into order, remove, and add. Used for a test's statements and a
@@ -6,20 +7,20 @@
  */
 import draggable from 'vuedraggable'
 const props = defineProps({
-  modelValue: { type: Array, default: () => [] },
+  modelValue: { type: Array as PropType<any[]>, default: () => [] },
   placeholder: { type: String, default: '' },
   addLabel: { type: String, default: '+ Add line' },
   numbered: { type: Boolean, default: false },
   multiline: { type: Boolean, default: false },   /* a line that is a sentence: a field that grows with it, never truncated */
 })
-const fit = (el) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }
+const fit = (el: any) => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }
 const vAutosize = { mounted: fit, updated: fit }
 const emit = defineEmits(['update:modelValue'])
 const rows = () => props.modelValue.map((text, i) => ({ text, i }))
-function set(i, v) { const a = props.modelValue.slice(); a[i] = v; emit('update:modelValue', a) }
-function remove(i) { const a = props.modelValue.slice(); a.splice(i, 1); emit('update:modelValue', a) }
+function set(i: any, v: any) { const a = props.modelValue.slice(); a[i] = v; emit('update:modelValue', a) }
+function remove(i: any) { const a = props.modelValue.slice(); a.splice(i, 1); emit('update:modelValue', a) }
 function add() { emit('update:modelValue', props.modelValue.concat('')) }
-function onEnd(e) { if (e.oldIndex === e.newIndex) return; const a = props.modelValue.slice(); const [m] = a.splice(e.oldIndex, 1); a.splice(e.newIndex, 0, m); emit('update:modelValue', a) }
+function onEnd(e: any) { if (e.oldIndex === e.newIndex) return; const a = props.modelValue.slice(); const [m] = a.splice(e.oldIndex, 1); a.splice(e.newIndex, 0, m); emit('update:modelValue', a) }
 </script>
 
 <template>
@@ -29,8 +30,8 @@ function onEnd(e) { if (e.oldIndex === e.newIndex) return; const a = props.model
         <div class="ll-row">
           <button type="button" class="ll-grip" tabindex="-1" aria-label="Drag to reorder">⋮⋮</button>
           <span v-if="numbered" class="ll-n">{{ index + 1 }}</span>
-          <textarea v-if="multiline" v-autosize :value="element.text" rows="1" :placeholder="placeholder" @input="fit($event.target); set(index, $event.target.value)" />
-          <input v-else :value="element.text" type="text" :placeholder="placeholder" @input="set(index, $event.target.value)" />
+          <textarea v-if="multiline" v-autosize :value="element.text" rows="1" :placeholder="placeholder" @input="fit($event.target); set(index, ($event.target as any).value)" />
+          <input v-else :value="element.text" type="text" :placeholder="placeholder" @input="set(index, ($event.target as any).value)" />
           <button type="button" class="ll-rm" title="Remove" @click="remove(index)">×</button>
         </div>
       </template>

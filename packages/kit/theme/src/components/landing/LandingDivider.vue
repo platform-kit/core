@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* a divider between sections: a hairline, three dots, the ornament (a rule with a diamond), plain space, or an edge — a wave, a curve, an angle — drawn in the next section's tone so a band meets the paper with a shape */
 defineProps({ kind: { type: String, default: 'line' }, size: { type: String, default: 'normal' } })   /* line | dots | ornament | space | wave | curve | angle; small | normal | large */
 </script>

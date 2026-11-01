@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * AN ANSWER SOMEBODY SAYS — a voice note, or a video of themselves — rather than one they type.
  *
@@ -18,10 +19,10 @@ import FmLabel from './FmLabel.vue'
 import { createRecorder, micUsable } from 'platformkit/lib/chat/recorder.js'
 
 const props = defineProps({
-  field: { type: Object, required: true },
+  field: { type: Object as PropType<any>, required: true },
   modelValue: { default: null },
-  ctx: { type: Object, default: () => ({}) },
-  words: { type: Object, default: () => ({}) },
+  ctx: { type: Object as PropType<any>, default: () => ({}) },
+  words: { type: Object as PropType<any>, default: () => ({}) },
   error: { type: String, default: '' },
 })
 const emit = defineEmits(['update:modelValue', 'enter'])
@@ -35,18 +36,18 @@ const busy = ref(false)
 const shot = ref('')          /* the object url of what they have, for playing it back */
 const secs = ref(0)
 const denied = ref('')
-const live = ref(null)        /* the preview element, while a video is recording */
+const live = ref<any>(null)        /* the preview element, while a video is recording */
 
 /* THE VIDEO SIDE IS ITS OWN: MediaRecorder, not the audio graph. Whether it is running has to be
    a ref and not the recorder object: a plain variable is not something Vue watches, so the button
    never changed and the preview never appeared — which is what happened the first time. */
-let mr = null, vstream = null, chunks = [], vtick = null
+let mr: any = null, vstream: any = null, chunks: any = [], vtick: any = null
 const vrec = ref(false)
 const recording = computed(() => (isVideo.value ? vrec.value : rec.state.recording))
 const seconds = computed(() => (isVideo.value ? secs.value : rec.state.seconds))
 const left = computed(() => Math.max(0, cap.value - seconds.value))
 
-const clock = (s) => {
+const clock = (s: any) => {
   const n = Math.floor(s)
   return String(Math.floor(n / 60)) + ':' + String(n % 60).padStart(2, '0')
 }
@@ -62,7 +63,7 @@ async function startVideo() {
     vstream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: true })
   } catch (e) { vrec.value = false; denied.value = props.words['record-denied'] || 'No camera'; return }
   mr = new MediaRecorder(vstream)
-  mr.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data) }
+  mr.ondataavailable = (e: any) => { if (e.data && e.data.size) chunks.push(e.data) }
   mr.start(250)
   vrec.value = true
   secs.value = 0
@@ -76,7 +77,7 @@ function stopVideo() {
     if (!mr) return done(null)
     const type = mr.mimeType || 'video/webm'
     mr.onstop = () => {
-      const blob = new Blob(chunks, { type })
+      const blob: any = new Blob(chunks, { type })
       const ext = /mp4/.test(type) ? 'mp4' : 'webm'
       done(new File([blob], 'answer.' + ext, { type }))
     }
@@ -101,7 +102,7 @@ async function stop() {
   if (isVideo.value) {
     clearInterval(vtick); vtick = null
     file = await stopVideo()
-    try { vstream.getTracks().forEach((t) => t.stop()) } catch { /* gone */ }
+    try { vstream.getTracks().forEach((t: any) => t.stop()) } catch { /* gone */ }
     if (live.value) live.value.srcObject = null
     mr = null; vstream = null; vrec.value = false
   } else {
@@ -110,6 +111,7 @@ async function stop() {
     const out = rec.stop()
     if (out && out.blob) { file = new File([out.blob], 'answer.mp3', { type: out.blob.type || 'audio/mpeg' }); secs.value = out.seconds || 0 }
   }
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{}' is not assignable to parameter of type 'Blob | MediaSource'.
   if (file) { shot.value = URL.createObjectURL(file); emit('update:modelValue', file) }
 }
 

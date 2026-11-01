@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A PERSON, IN A SPACE. Opened from the directory and from a name in a room, in the same column the
  * thread and the search use — so it joins their one-at-a-time rule rather than inventing a fourth.
@@ -31,10 +32,10 @@ import SpaceIcon from './SpaceIcon.vue'
 import SpaceFlair from './SpaceFlair.vue'
 
 const props = defineProps({
-  space: { type: Object, default: null },
+  space: { type: Object as PropType<any>, default: null },
   userId: { type: String, default: '' },
   me: { type: String, default: '' },
-  here: { type: Object, default: () => ({}) },   /* the live presence the rail and directory already show */
+  here: { type: Object as PropType<any>, default: () => ({}) },   /* the live presence the rail and directory already show */
 })
 const emit = defineEmits(['close', 'write'])
 const M = computed(() => us('spaces').mute.main)
@@ -51,14 +52,14 @@ const FW = computed(() => us('spaces').flair.main)
    somebody who can give one opens the panel — a member's card never fetches it. What they already
    wear is on the card, so the panel is a list with a tick, not a form. */
 const giving = ref(false)
-const badges = ref([])
+const badges = ref<any>([])
 const busyFlair = ref('')
-const worn = computed(() => new Set(((card.value && card.value.flair) || []).map((x) => x.slug)))
+const worn = computed(() => new Set(((card.value && card.value.flair) || []).map((x: any) => (x as any).slug)))
 async function openGiving() {
   giving.value = !giving.value
   if (giving.value && !badges.value.length) badges.value = (await flairsOf(props.space.id)) || []
 }
-async function toggleFlair(b) {
+async function toggleFlair(b: any) {
   if (!card.value) return
   busyFlair.value = b.slug
   try {
@@ -67,11 +68,11 @@ async function toggleFlair(b) {
     /* the card is the record of what they wear, so it is what gets updated */
     card.value.flair = on
       ? [...(card.value.flair || []), { slug: b.slug, name: b.name, colour: b.colour, icon: b.icon, note: b.note, inline: b.inline }]
-      : (card.value.flair || []).filter((x) => x.slug !== b.slug)
+      : (card.value.flair || []).filter((x: any) => x.slug !== b.slug)
   } finally { busyFlair.value = '' }
 }
 
-const card = ref(null)
+const card = ref<any>(null)
 const loading = ref(true)
 const editing = ref(false)
 const draft = ref('')
@@ -83,15 +84,16 @@ const said = computed(() => {
   if (!n) return W.value['said-none']
   return n === 1 ? W.value['said-one'] : (W.value['said-many'] || '').replace('{n}', n)
 })
-const when = (v) => {
+const when = (v: any) => {
   const d = new Date(v)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
 }
 /* A PANEL'S TITLE KNOWS WHOSE CARD IT IS. On your own card "What they have read" is about you, and
    a site cannot word that from a single string — so a title may be a word or a function given
    { mine }, and the panel's own component is told too, for the sentence it says when it has
    nothing to show. */
-const titleOf = (p) => (typeof p.title === 'function' ? p.title({ mine: mine.value }) : p.title)
+const titleOf = (p: any) => (typeof p.title === 'function' ? p.title({ mine: mine.value }) : p.title)
 const left = computed(() => (W.value['about-left'] || '').replace('{n}', 280 - draft.value.length))
 
 async function load() {

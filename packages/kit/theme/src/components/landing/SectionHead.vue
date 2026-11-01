@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { md } from './md.js'
 import RevealText from './RevealText.vue'
 /* the words above a section — a badge, an eyebrow, a heading, a lead — as every section sets them, centred or left; drawn only for what the page gives; the heading arriving word by word when the section says so */

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * THE BUTTONS UNDER A MESSAGE THAT OFFERS CHOICES — one control, every surface.
  *
@@ -17,7 +18,7 @@
  */
 defineProps({
   /* [{ key, text, form?, href?, children? }] — as the grammar cut them */
-  choices: { type: Array, default: () => [] },
+  choices: { type: Array as PropType<any[]>, default: () => [] },
   /* may they be pressed */
   live: { type: Boolean, default: true },
   /* the key of the one taken, where one was */

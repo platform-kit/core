@@ -13,7 +13,7 @@ A usage offer with an omitted or blank unit SHALL resolve to “credits” durin
 #### Scenario: A usage offer without a unit defaults to credits
 - **WHEN** a site compiles a usage offer with its unit omitted or blank
 - **THEN** the resulting offer uses “credits”, and a metered offer is not rejected solely because its unit was omitted
-- **Verified by:** `node --test packages/kit/build/usage.test.mjs` and `node --test packages/kit/build/deploy-checks.mjs --test`
+- **Verified by:** `node --test packages/kit/build/usage.test.mjs` and `node --test packages/kit/build/deploy-checks.mts --test`
 
 #### Scenario: A recorded activity unit is used for legacy activity
 - **WHEN** an activity record has a non-empty recorded unit but its historical offer has no unit

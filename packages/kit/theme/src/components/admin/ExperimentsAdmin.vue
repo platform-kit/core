@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The Experiments view: one card per experiment — what it tests, its status
  * and dates, and each variant's numbers (exposures, conversions, rate, lift
@@ -13,93 +14,93 @@ import { supabase, configured } from 'platformkit/lib/supabase.js'
 import { statusOf, endsAt, TWO_WEEKS } from 'platformkit/lib/experiments.js'
 import { listItems, nextKey, duplicateItem, patchExperiment, today, plusDays, colFor } from './experimentOps.js'
 
-const props = defineProps({ items: { type: Array, default: () => [] } })
+const props = defineProps({ items: { type: Array as PropType<any[]>, default: () => [] } })
 const emit = defineEmits(['changed'])
 
 /* the numbers */
-const results = ref([])
+const results = ref<any>([])
 const resultsErr = ref('')
 async function loadResults() {
   if (!configured) { resultsErr.value = 'Supabase is not configured — no numbers.'; return }
   try {
-    const { data, error } = await supabase.rpc('experiment_results')
+    const { data, error } = await (supabase as any).rpc('experiment_results')
     if (error) throw error
     results.value = data || []; resultsErr.value = ''
-  } catch (e) { resultsErr.value = e.message || String(e) }
+  } catch (e) { resultsErr.value = (e as any).message || String(e) }
 }
 /* titles for the things variants point at */
-const names = ref({ page: {}, ad: {} })
+const names = ref<any>({ page: {}, ad: {} })
 async function loadNames() {
   for (const kind of ['page', 'ad']) {
-    try { const m = {}; for (const i of await listItems(kind)) m[i.name] = i; names.value[kind] = m } catch (e) { /* none */ }
+    try { const m: any = {}; for (const i of await listItems(kind)) m[i.name] = i; names.value[kind] = m } catch (e) { /* none */ }
   }
 }
 onMounted(() => { loadResults(); loadNames() })
 watch(() => props.items, loadNames)
 
-const fmtDate = (ms) => (ms ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—')
-const fmtN = (n) => (n == null ? '—' : Number(n).toLocaleString())
+const fmtDate = (ms: any) => (ms ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—')
+const fmtN = (n: any) => (n == null ? '—' : Number(n).toLocaleString())
 
 const cards = computed(() => props.items.map((it) => {
-  const rec = { id: it.name, ...it.data, variants: it.data.variants || [] }
-  const state = results.value.find((r) => r.experiment === it.name) || null
+  const rec = { id: (it as any).name, ...(it as any).data, variants: (it as any).data.variants || [] }
+  const state: any = results.value.find((r: any) => (r as any).experiment === (it as any).name) || null
   const rows = (state && state.variants) || []
-  const total = rec.variants.reduce((n, v) => n + (v.weight > 0 ? v.weight : 0), 0)
-  const variants = rec.variants.map((v) => {
-    const r = rows.find((x) => x.variant === v.key) || { exposures: 0, conversions: 0 }
+  const total = rec.variants.reduce((n: any, v: any) => n + (v.weight > 0 ? v.weight : 0), 0)
+  const variants = rec.variants.map((v: any) => {
+    const r: any = rows.find((x: any) => (x as any).variant === v.key) || { exposures: 0, conversions: 0 }
     const it2 = (names.value[rec.kind === 'ad' ? 'ad' : 'page'] || {})[v.item]
     return { ...v, title: it2 ? it2.title : v.item, missing: !it2 && Object.keys(names.value.page).length > 0,
       exposures: r.exposures || 0, conversions: r.conversions || 0, rate: r.exposures ? r.conversions / r.exposures : 0,
       share: total ? Math.round(((v.weight > 0 ? v.weight : 0) / total) * 100) : 0 }
   })
-  const seen = variants.filter((v) => v.exposures > 0)
-  const leader = seen.slice().sort((a, b) => b.rate - a.rate)[0] || null
-  const others = leader ? seen.filter((v) => v !== leader) : []
-  const runnerUp = others.length ? Math.max(...others.map((v) => v.rate)) : 0
+  const seen = variants.filter((v: any) => v.exposures > 0)
+  const leader = seen.slice().sort((a: any, b: any) => b.rate - a.rate)[0] || null
+  const others = leader ? seen.filter((v: any) => v !== leader) : []
+  const runnerUp = others.length ? Math.max(...others.map((v: any) => v.rate)) : 0
   const lift = leader && runnerUp ? Math.round(((leader.rate - runnerUp) / runnerUp) * 100) : null
   const status = statusOf(rec, state)
   const ends = endsAt(rec, state)
   const started = state && state.started_at ? Date.parse(state.started_at) : null
   const winnerKey = rec.winner || (status === 'ended' && leader ? leader.key : '')
   const goal = rec.kind === 'ad' && !rec.goal ? 'a click on the ad' : 'a visit to ' + (rec.goal || '/app')
-  const route = rec.kind === 'page' ? (variants.map((v) => ((names.value.page || {})[v.item] || {}).route).find(Boolean) || '') : ''
+  const route = rec.kind === 'page' ? (variants.map((v: any) => ((names.value.page || {})[v.item] || {}).route).find(Boolean) || '') : ''
   return { ...rec, variants, leader, lift, status, ends, started, winnerKey, goal, route,
-    exposures: variants.reduce((n, v) => n + v.exposures, 0), maxRate: Math.max(0.0001, ...variants.map((v) => v.rate)),
+    exposures: variants.reduce((n: any, v: any) => n + v.exposures, 0), maxRate: Math.max(0.0001, ...variants.map((v: any) => v.rate)),
     endsDefault: !rec.ends && !started }
 }))
 
 /* ---- actions ---- */
 const busy = ref('')
-async function act(name, label, change) {
+async function act(name: any, label: any, change: any) {
   busy.value = name + ':' + label
   try { await patchExperiment(name, change); emit('changed'); await loadResults() }
-  catch (e) { alert(e.message) }
+  catch (e) { alert((e as any).message) }
   finally { busy.value = '' }
 }
-const toggleActive = (c) => act(c.id, 'active', (d) => { d.active = c.active === false })
-const endNow = (c) => act(c.id, 'end', (d) => { d.ends = today() })
-const extend = (c) => act(c.id, 'extend', (d) => { const from = d.ends && d.ends > today() ? d.ends : (c.ends ? new Date(Math.max(c.ends, Date.now())).toISOString().slice(0, 10) : today()); d.ends = plusDays(from, 14) })
-const reopen = (c) => act(c.id, 'reopen', (d) => { delete d.winner; d.ends = plusDays(today(), 14); d.active = true })
-function declare(c, key) {
+const toggleActive = (c: any) => act(c.id, 'active', (d: any) => { d.active = c.active === false })
+const endNow = (c: any) => act(c.id, 'end', (d: any) => { d.ends = today() })
+const extend = (c: any) => act(c.id, 'extend', (d: any) => { const from = d.ends && d.ends > today() ? d.ends : (c.ends ? new Date(Math.max(c.ends, Date.now())).toISOString().slice(0, 10) : today()); d.ends = plusDays(from, 14) })
+const reopen = (c: any) => act(c.id, 'reopen', (d: any) => { delete d.winner; d.ends = plusDays(today(), 14); d.active = true })
+function declare(c: any, key: any) {
   if (!confirm(`Declare ${key} the winner of "${c.title}"? Everyone will see it from now on.`)) return
-  act(c.id, 'winner', (d) => { d.winner = key })
+  act(c.id, 'winner', (d: any) => { d.winner = key })
 }
-async function addVariant(c) {
+async function addVariant(c: any) {
   const src = c.variants[c.variants.length - 1]
   if (!src) return edit(c)
   busy.value = c.id + ':add'
   try {
     const key = nextKey(c.variants)
     const item = await duplicateItem(c.kind, src.item, key)
-    await patchExperiment(c.id, (d) => { d.variants = [...(d.variants || []), { key, item, weight: src.weight == null ? 1 : src.weight }] })
+    await patchExperiment(c.id, (d: any) => { d.variants = [...(d.variants || []), { key, item, weight: src.weight == null ? 1 : src.weight }] })
     emit('changed')
     navigate(ROUTES.admin + '/' + colFor(c.kind) + '/' + item)
-  } catch (e) { alert(e.message) }
+  } catch (e) { alert((e as any).message) }
   finally { busy.value = '' }
 }
-const edit = (c) => navigate(ROUTES.admin + '/experiments/' + c.id)
-const openItem = (c, v) => navigate(ROUTES.admin + '/' + colFor(c.kind) + '/' + v.item)
-const STATUS = { running: 'Running', paused: 'Paused', ended: 'Ended' }
+const edit = (c: any) => navigate(ROUTES.admin + '/experiments/' + c.id)
+const openItem = (c: any, v: any) => navigate(ROUTES.admin + '/' + colFor(c.kind) + '/' + v.item)
+const STATUS: any = { running: 'Running', paused: 'Paused', ended: 'Ended' }
 </script>
 
 <template>

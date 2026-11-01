@@ -18,8 +18,8 @@
         <button type="button" class="crs-icon-btn crs-pbar-list" :aria-expanded="sideOpen || drawer" :aria-label="sideOpen ? S['hide-lessons'] : S['show-lessons']" :title="sideOpen ? S['hide-lessons'] : S['show-lessons']" @click="toggleSide">
           <CourseIcon name="list" :size="18" /><span class="crs-pbar-word">{{ S.steps }}</span>
         </button>
-        <a class="crs-icon-btn" :class="{ 'is-off': !prev }" :href="prev ? courseHref + '/' + prev.key : null" :aria-label="S.previous" :title="prev ? S.previous + ': ' + prev.title : S.previous"><CourseIcon name="back" :size="18" /></a>
-        <a class="crs-icon-btn" :class="{ 'is-off': !after }" :href="after ? courseHref + '/' + after.key : null" :aria-label="S.next" :title="after ? S.next + ': ' + after.title : S.next"><CourseIcon name="chev" :size="18" /></a>
+        <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><a class="crs-icon-btn" :class="{ 'is-off': !prev }" :href="prev ? courseHref + '/' + prev.key : null" :aria-label="S.previous" :title="prev ? S.previous + ': ' + prev.title : S.previous"><CourseIcon name="back" :size="18" /></a>
+        <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><a class="crs-icon-btn" :class="{ 'is-off': !after }" :href="after ? courseHref + '/' + after.key : null" :aria-label="S.next" :title="after ? S.next + ': ' + after.title : S.next"><CourseIcon name="chev" :size="18" /></a>
       </span>
     </div>
 
@@ -44,7 +44,7 @@
           <span v-else-if="state.enrollment && !m.measured && m.done > 0 && !m.finished" class="crs-pmod-bar" :class="{ 'is-done': m.finished }"><span :style="{ width: pct(m.done, m.total) + '%' }" /></span>
           <ol class="crs-plist">
             <li v-for="l in m.lessons" :key="l.key">
-              <a :href="courseHref + '/' + l.key" :class="['is-' + stateOf(l), { 'is-here': l.key === lessonKey, 'is-closed': !l.open, 'is-done': l.done, 'has-score': l.quiz && l.quiz.total }]" :aria-current="l.key === lessonKey ? 'page' : null">
+              <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "page" | "time" | Booleanish | "date" | "location" | undefined'. --><a :href="courseHref + '/' + l.key" :class="['is-' + stateOf(l), { 'is-here': l.key === lessonKey, 'is-closed': !l.open, 'is-done': l.done, 'has-score': l.quiz && l.quiz.total }]" :aria-current="l.key === lessonKey ? 'page' : null">
                 <CourseIcon :name="markOf(l)" :size="18" class="crs-mark" />
                 <span class="crs-plist-title">{{ l.title }}</span>
                 <!-- at the end: a quiz's score, else what kind of lesson it is where that is anything but reading -->
@@ -162,7 +162,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { computed, ref, watch } from 'vue'
 import { ROUTES } from 'platformkit/lib/router.js'
 import { bookShelf, coverTint } from 'platformkit/lib/content.js'
@@ -176,36 +177,36 @@ import { words, fill, pct, day, modulesOf, kindOf, stateOf, markOf, nextOpening,
 
 const props = defineProps({
   base: { type: String, required: true },
-  state: { type: Object, required: true },
+  state: { type: Object as PropType<any>, required: true },
   lessonKey: { type: String, required: true },
-  lesson: { type: Object, default: null },
+  lesson: { type: Object as PropType<any>, default: null },
   loading: { type: Boolean, default: false },
   busy: { type: Boolean, default: false },
   problem: { type: String, default: '' },
   outcome: { type: String, default: '' },
   /* the achievement a passed quiz on this lesson has earned, where the reader holds it: { slug, title } */
-  earned: { type: Object, default: null },   /* after Complete and continue: 'lesson-done' (nothing open next yet) · 'course-done' */
+  earned: { type: Object as PropType<any>, default: null },   /* after Complete and continue: 'lesson-done' (nothing open next yet) · 'course-done' */
 })
 const emit = defineEmits(['enroll', 'sign-in', 'complete', 'form-done'])
 const { K, S } = words()
 
 const courseHref = computed(() => props.base + '/' + props.state.slug)
-const lessons = computed(() => (props.state.lessons || []).map((l, i) => ({ ...l, n: i + 1 })))
+const lessons = computed(() => (props.state.lessons || []).map((l: any, i: any) => ({ ...l, n: i + 1 })))
 /* the reader's measures for the sections a site's own kind measures */
 const { measures, refresh } = useMeasures(() => props.state)
 const modules = computed(() => modulesOf(props.state.lessons || [], measures))
-const hereAt = computed(() => lessons.value.findIndex((l) => l.key === props.lessonKey))
+const hereAt = computed(() => lessons.value.findIndex((l: any) => l.key === props.lessonKey))
 /* where the lesson sits in its own module: "Lesson 2 of 5" counts within it, not across the course */
 const hereIn = computed(() => {
-  const m = modules.value.find((x) => x.lessons.some((l) => l.key === props.lessonKey))
-  return m ? { n: m.lessons.findIndex((l) => l.key === props.lessonKey) + 1, total: m.lessons.length } : { n: hereAt.value + 1, total: lessons.value.length }
+  const m = modules.value.find((x: any) => x.lessons.some((l: any) => l.key === props.lessonKey))
+  return m ? { n: m.lessons.findIndex((l: any) => l.key === props.lessonKey) + 1, total: m.lessons.length } : { n: hereAt.value + 1, total: lessons.value.length }
 })
 const here = computed(() => lessons.value[hereAt.value] || null)
 const prev = computed(() => (hereAt.value > 0 ? lessons.value[hereAt.value - 1] : null))
 const after = computed(() => (hereAt.value >= 0 && hereAt.value < lessons.value.length - 1 ? lessons.value[hereAt.value + 1] : null))
-const opening = computed(() => nextOpening(lessons.value))
+const opening = computed<any>(() => nextOpening(lessons.value))
 /* the last required lesson still to do: finishing it finishes the course */
-const finishes = computed(() => !!here.value && here.value.required && lessons.value.filter((l) => l.required && !l.done).length === 1)
+const finishes = computed(() => !!here.value && here.value.required && lessons.value.filter((l: any) => l.required && !l.done).length === 1)
 
 /* the curriculum: beside the lesson on a wide screen (the reader may fold it away), a sheet on a phone */
 const sideOpen = ref(true), drawer = ref(false)
@@ -214,28 +215,28 @@ function toggleSide() { if (narrow()) drawer.value = !drawer.value; else sideOpe
 watch(() => props.lessonKey, () => { drawer.value = false })
 
 const player = computed(() => sitePlayer(props.lesson))
-const tracks = computed(() => ((props.lesson && props.lesson.media) || []).filter((m) => m.type !== 'file'))
-const downloads = computed(() => ((props.lesson && props.lesson.media) || []).filter((m) => m.type === 'file'))
+const tracks = computed(() => ((props.lesson && props.lesson.media) || []).filter((m: any) => m.type !== 'file'))
+const downloads = computed(() => ((props.lesson && props.lesson.media) || []).filter((m: any) => m.type === 'file'))
 const bookSlug = computed(() => String((props.lesson && props.lesson.ref) || '').split('#')[0])
 const chapterN = computed(() => String((props.lesson && props.lesson.ref) || '').split('#')[1] || '')
-const book = computed(() => bookShelf().find((b) => b.slug === bookSlug.value) || null)
+const book = computed(() => bookShelf().find((b: any) => b.slug === bookSlug.value) || null)
 const bookCover = computed(() => (bookSlug.value ? bookCoverOf(bookSlug.value) : ''))
-const goWord = computed(() => ({ article: S.value['read-article'], form: S.value['answer-form'], session: S.value['book-session'] }[props.lesson && props.lesson.kind] || S.value.open))
+const goWord = computed(() => (({ article: S.value['read-article'], form: S.value['answer-form'], session: S.value['book-session'] } as any)[props.lesson && props.lesson.kind] || S.value.open))
 /* A FORM LESSON'S FORM, run here. Its result replaces the form's own end: the attempt just made, or, opening a lesson
    already passed, the reader's best. Finishing it is recorded by the server as the response completes, so the course
    is only asked again. Try again and Take it again start the form afresh; a retake never undoes the lesson. */
-const formDoc = computed(() => (props.lesson && props.lesson.kind === 'form' ? (FORMS || []).find((f) => f.slug === props.lesson.ref && f.published !== false) || null : null))
+const formDoc = computed(() => (props.lesson && props.lesson.kind === 'form' ? (FORMS || []).find((f: any) => f.slug === props.lesson.ref && f.published !== false) || null : null))
 const passMark = computed(() => (formDoc.value && formDoc.value.model.kit && formDoc.value.model.kit.pass) || 0)
-const result = ref(null), runs = ref(0)
+const result = ref<any>(null), runs = ref(0)
 watch(() => [props.lessonKey, here.value && here.value.quiz && here.value.quiz.passed], ([, passed], was) => {
   if (was && was[0] === props.lessonKey && result.value) return
   const q = here.value && here.value.quiz
   result.value = passed ? { ...q, best: true } : here.value && here.value.done && !q ? { passed: true } : null
 }, { immediate: true })
-function onForm({ grade }) {
+function onForm({ grade }: any) {
   result.value = grade ? { score: grade.score, total: grade.total, passed: grade.passed } : { passed: true }
   emit('form-done')
 }
 function again() { result.value = null; runs.value++ }
-const whyWord = (l) => (l.why === 'not-yet' ? fill(S.value['not-yet'], { date: day(l.opens_at) }) : S.value[l.why] || '')
+const whyWord = (l: any) => (l.why === 'not-yet' ? fill(S.value['not-yet'], { date: day(l.opens_at) }) : S.value[l.why] || '')
 </script>

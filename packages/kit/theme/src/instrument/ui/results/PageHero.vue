@@ -1,9 +1,10 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* Every page opens the same way: a small label saying what you are looking at,
    then the finding as a short statement, then the prose. The words come from the
    page that uses it. */
 import { us } from '../strings.js'
-defineProps({ hero: { type: Object, default: () => ({}) } });
+defineProps({ hero: { type: Object as PropType<any>, default: () => ({}) } });
 const H = ((us('pages').hero || {}).labels) || {}
 </script>
 

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The model builder: a content model (content/models/<key>.md) edited as what it is — fields as rows down the
  * page, the picked one's controls beside them (ModelField.vue); its options (the title field, the slug, a
@@ -20,21 +20,21 @@ const M = us('models'), A = M.admin || {}
 const W = A.builder || {}, WF = A.fields || {}, WO = A.options || {}, WD = A.delivery || {}, WP = A.page || {}, K = M.kinds || {}
 import pipe from '../../lib/admin/api.js'
 
-const model = ref(null), saved = ref(''), msg = ref(''), loading = ref(true), saving = ref(false), entries = ref(0), models = ref([])
-const view = ref('fields'), picked = ref(0), failing = ref(null), renames = ref([])
+const model = ref<any>(null), saved = ref(''), msg = ref(''), loading = ref(true), saving = ref(false), entries = ref(0), models = ref<any>([])
+const view = ref('fields'), picked = ref(0), failing = ref<any>(null), renames = ref<any>([])
 const isNew = computed(() => !props.name)
 const blank = () => ({ key: '', name: '', singular: '', published: true, title: '', slug: 'title', singleton: false, body: false, access: [], order: { by: '', dir: 'asc' }, deliver: { data: true, pages: false, json: false, section: false }, fields: [] })
-const strip = (m) => JSON.parse(JSON.stringify(m, (k, v) => (k.startsWith('_') ? undefined : v)))
+const strip = (m: any) => JSON.parse(JSON.stringify(m, (k, v) => (k.startsWith('_') ? undefined : v)))
 const snapshot = () => JSON.stringify(strip(model.value))
 const dirty = computed(() => !!model.value && (snapshot() !== saved.value || renames.value.length > 0))
 async function load() {
   loading.value = true; msg.value = ''; failing.value = null; renames.value = []
   try {
-    models.value = (await pipe.items('models')).filter((m) => !m.errors.length)
+    models.value = (await pipe.items('models')).filter((m: any) => !m.errors.length)
     if (isNew.value) { model.value = blank(); entries.value = 0 }
-    else { const r = await pipe.read('models', props.name); model.value = r.data || blank(); entries.value = r.entries; if (r.errors && r.errors.length) msg.value = r.errors.join('\n') }
+    else { const r: any = await pipe.read('models', props.name); model.value = r.data || blank(); entries.value = r.entries; if (r.errors && r.errors.length) msg.value = r.errors.join('\n') }
     saved.value = snapshot(); picked.value = 0
-  } catch (e) { msg.value = e.message } finally { loading.value = false }
+  } catch (e) { msg.value = (e as any).message } finally { loading.value = false }
 }
 onMounted(load)
 watch(() => props.name, load)
@@ -42,39 +42,39 @@ watch(() => props.name, load)
 /* ---- the fields ---- */
 const fields = computed(() => (model.value ? model.value.fields : []))
 const cur = computed(() => fields.value[picked.value] || null)
-const keyOf = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-function setName(v) { model.value.name = v; if (isNew.value) model.value.key = keyOf(v) }
-function addField() { let i = fields.value.length + 1; let key = 'field' + i; while (fields.value.some((f) => f.key === key)) key = 'field' + ++i; fields.value.push({ key, kind: 'text', label: '', _new: true }); picked.value = fields.value.length - 1; if (!model.value.title) model.value.title = key }
-function removeField(i) { if (!window.confirm(WF['remove-confirm'].replace('{label}', fields.value[i].label || fields.value[i].key))) return; const k = fields.value[i].key; fields.value.splice(i, 1); if (model.value.title === k) model.value.title = (fields.value[0] && fields.value[0].key) || ''; if (model.value.order.by === k) model.value.order.by = ''; if (model.value.slug === k) model.value.slug = 'title'; picked.value = Math.max(0, i - 1) }
-function rename({ from, to }) {
-  const f = fields.value.find((x) => x.key === from); if (!f) return
+const keyOf = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+function setName(v: any) { model.value.name = v; if (isNew.value) model.value.key = keyOf(v) }
+function addField() { let i = fields.value.length + 1; let key = 'field' + i; while (fields.value.some((f: any) => f.key === key)) key = 'field' + ++i; fields.value.push({ key, kind: 'text', label: '', _new: true }); picked.value = fields.value.length - 1; if (!model.value.title) model.value.title = key }
+function removeField(i: any) { if (!window.confirm(WF['remove-confirm'].replace('{label}', fields.value[i].label || fields.value[i].key))) return; const k = fields.value[i].key; fields.value.splice(i, 1); if (model.value.title === k) model.value.title = (fields.value[0] && fields.value[0].key) || ''; if (model.value.order.by === k) model.value.order.by = ''; if (model.value.slug === k) model.value.slug = 'title'; picked.value = Math.max(0, i - 1) }
+function rename({ from, to }: any) {
+  const f = fields.value.find((x: any) => x.key === from); if (!f) return
   f.key = to
   if (model.value.title === from) model.value.title = to
   if (model.value.order.by === from) model.value.order.by = to
   if (model.value.slug === from) model.value.slug = to
   for (const x of fields.value) if (x.shown && x.shown.field === from) x.shown.field = to
-  const prev = renames.value.find((r) => r.to === from)
-  if (prev) prev.to = to; else renames.value.push({ from, to })
+  const prev = renames.value.find((r: any) => (r as any).to === from)
+  if (prev) (prev as any).to = to; else renames.value.push({ from, to })
 }
-const kindChanged = computed(() => fields.value.some((f) => f._kindChanged && !f._new))
+const kindChanged = computed(() => fields.value.some((f: any) => f._kindChanged && !f._new))
 const canSave = computed(() => !!(model.value && model.value.name && fields.value.length))
-const fieldOptions = computed(() => fields.value.map((f) => ({ value: f.key, label: f.label || f.key })))
-const slugOptions = computed(() => [{ value: 'title', label: WO['slug-title'] }, ...fields.value.filter((f) => f.kind === 'text').map((f) => ({ value: f.key, label: f.label || f.key }))])
+const fieldOptions = computed(() => fields.value.map((f: any) => ({ value: f.key, label: f.label || f.key })))
+const slugOptions = computed(() => [{ value: 'title', label: WO['slug-title'] }, ...fields.value.filter((f: any) => f.kind === 'text').map((f: any) => ({ value: f.key, label: f.label || f.key }))])
 
 /* ---- save ---- */
-async function save(force) {
+async function save(force: any) {
   if (!model.value) return
   saving.value = true; msg.value = ''; failing.value = null
   try {
     const m = strip(model.value)
     /* a new field's key follows its label until saved, so what named it earlier may be stale */
-    const keys = m.fields.map((f) => f.key)
+    const keys = m.fields.map((f: any) => f.key)
     if (!keys.includes(m.title)) m.title = keys[0] || ''
     if (!keys.includes(m.order.by)) m.order.by = m.title
     if (m.slug !== 'title' && !keys.includes(m.slug)) m.slug = 'title'
     if (!m.singular) m.singular = m.name
     /* a field renamed under entries: the entries first, then the model that names it */
-    for (const r of renames.value) if (!isNew.value) await pipe.action('models', 'rename-field', { key: props.name || m.key, from: r.from, to: r.to })
+    for (const r of renames.value) if (!isNew.value) await pipe.action('models', 'rename-field', { key: props.name || m.key, from: (r as any).from, to: (r as any).to })
     renames.value = []
     const r = await pipe.save('models', m.key, { data: m }, { create: isNew.value, check: !force && kindChanged.value && entries.value > 0 })
     if (r.ok === false && r.failing) { failing.value = r.failing; return }
@@ -82,17 +82,17 @@ async function save(force) {
     saved.value = snapshot()
     emit('saved')
     if (isNew.value) { try { sessionStorage.setItem('dl.admin.saved', 'models') } catch (e) { /* private */ } emit('open', m.key) }
-  } catch (e) { msg.value = e.message } finally { saving.value = false }
+  } catch (e) { msg.value = (e as any).message } finally { saving.value = false }
 }
 function discard() { load() }
 async function remove() {
   if (entries.value) { window.alert(WP['delete-refused'].replace('{name}', model.value.name).replace('{n}', entries.value)); return }
   if (!window.confirm(WP['delete-confirm'].replace('{name}', model.value.name))) return
-  try { await pipe.remove('models', props.name); emit('saved'); emit('back') } catch (e) { msg.value = e.message }
+  try { await pipe.remove('models', props.name); emit('saved'); emit('back') } catch (e) { msg.value = (e as any).message }
 }
 const here = typeof location !== 'undefined' ? location.origin : ''
 const ACCESS = ['guest', 'authenticated', 'paid', 'subscribed']
-function toggleAccess(a) { const i = model.value.access.indexOf(a); if (i >= 0) model.value.access.splice(i, 1); else model.value.access.push(a) }
+function toggleAccess(a: any) { const i = model.value.access.indexOf(a); if (i >= 0) model.value.access.splice(i, 1); else model.value.access.push(a) }
 </script>
 
 <template>
@@ -101,16 +101,16 @@ function toggleAccess(a) { const i = model.value.access.indexOf(a); if (i >= 0) 
       <button type="button" class="ui-btn ui-ghost ui-sm" @click="emit('back')">← {{ W.back }}</button>
       <h2 class="mb-title">{{ model && model.name ? model.name : (isNew ? W.new : W.untitled) }}</h2>
       <span class="ui-grow" />
-      <label v-if="model" class="ui-switch mb-pub"><input type="checkbox" :checked="model.published" @change="model.published = $event.target.checked" /><i /><span>{{ W.published }}</span></label>
+      <label v-if="model" class="ui-switch mb-pub"><input type="checkbox" :checked="model.published" @change="model.published = ($event.target as any).checked" /><i /><span>{{ W.published }}</span></label>
       <span class="ui-seg"><button type="button" :class="{ 'ui-on': view === 'fields' }" @click="view = 'fields'">{{ W['tab-fields'] }}</button><button type="button" :class="{ 'ui-on': view === 'options' }" @click="view = 'options'">{{ W['tab-options'] }}</button><button type="button" :class="{ 'ui-on': view === 'delivery' }" @click="view = 'delivery'">{{ W['tab-delivery'] }}</button></span>
     </div>
     <p v-if="loading" class="ui-muted">…</p>
     <template v-else-if="model">
       <p v-if="isNew" class="ui-hint mb-lead">{{ W['new-lead'] }}</p>
       <div class="ui-card mb-top">
-        <label class="ui-field"><span>{{ W.name }} <small>· {{ W['name-help'] }}</small></span><input class="ui-input" :value="model.name" @input="setName($event.target.value)" /></label>
-        <label class="ui-field"><span>{{ W.singular }}</span><input class="ui-input" :value="model.singular" :placeholder="model.name" @input="model.singular = $event.target.value" /></label>
-        <label class="ui-field"><span>{{ W.key }} <small>· {{ W['key-help'] }}</small></span><input class="ui-input ui-mono" :value="model.key" :readonly="!isNew" @input="isNew && (model.key = keyOf($event.target.value))" /></label>
+        <label class="ui-field"><span>{{ W.name }} <small>· {{ W['name-help'] }}</small></span><input class="ui-input" :value="model.name" @input="setName(($event.target as any).value)" /></label>
+        <label class="ui-field"><span>{{ W.singular }}</span><input class="ui-input" :value="model.singular" :placeholder="model.name" @input="model.singular = ($event.target as any).value" /></label>
+        <label class="ui-field"><span>{{ W.key }} <small>· {{ W['key-help'] }}</small></span><input class="ui-input ui-mono" :value="model.key" :readonly="!isNew" @input="isNew && (model.key = keyOf(($event.target as any).value))" /></label>
       </div>
 
       <!-- ===== fields ===== -->
@@ -148,13 +148,13 @@ function toggleAccess(a) { const i = model.value.access.indexOf(a); if (i >= 0) 
             <label class="ui-field"><span>{{ WO.slug }} <small>· {{ WO['slug-help'] }}</small></span><Select :model-value="model.slug" :options="slugOptions" optionLabel="label" optionValue="value" fluid @update:model-value="(v) => { if (v) model.slug = v }" /></label>
           </div>
           <div class="mb-optrow">
-            <label class="ui-switch"><input type="checkbox" :checked="model.singleton" @change="model.singleton = $event.target.checked" /><i /><span>{{ WO.singleton }}</span></label>
+            <label class="ui-switch"><input type="checkbox" :checked="model.singleton" @change="model.singleton = ($event.target as any).checked" /><i /><span>{{ WO.singleton }}</span></label>
             <span class="ui-hint">{{ WO['singleton-help'] }}</span>
           </div>
           <div class="mb-optrow">
-            <label class="ui-switch"><input type="checkbox" :checked="!!model.body" @change="model.body = $event.target.checked ? 'Body' : false" /><i /><span>{{ WO.body }}</span></label>
+            <label class="ui-switch"><input type="checkbox" :checked="!!model.body" @change="model.body = ($event.target as any).checked ? 'Body' : false" /><i /><span>{{ WO.body }}</span></label>
             <span class="ui-hint">{{ WO['body-help'] }}</span>
-            <input v-if="model.body" class="ui-input mb-bodylabel" :value="model.body" :aria-label="WO['body-label']" @input="model.body = $event.target.value || 'Body'" />
+            <input v-if="model.body" class="ui-input mb-bodylabel" :value="model.body" :aria-label="WO['body-label']" @input="model.body = ($event.target as any).value || 'Body'" />
           </div>
         </div>
         <div class="ui-card">
@@ -173,9 +173,9 @@ function toggleAccess(a) { const i = model.value.access.indexOf(a); if (i >= 0) 
       <div v-show="view === 'delivery'" class="mb-panel">
         <div class="ui-card mb-delivery">
           <div class="mb-deliver"><label class="ui-switch"><input type="checkbox" checked disabled /><i /><span>{{ WD.data }}</span></label><div class="mb-delivertext"><span class="ui-hint">{{ WD['data-help'] }}</span><code class="ui-key">#content/models/{{ model.key || '…' }}</code></div></div>
-          <div class="mb-deliver"><label class="ui-switch"><input type="checkbox" :checked="model.deliver.pages" @change="model.deliver.pages = $event.target.checked" /><i /><span>{{ WD.pages }}</span></label><div class="mb-delivertext"><span class="ui-hint">{{ WD['pages-help'] }}</span><code v-if="model.deliver.pages" class="ui-key">{{ here }}/c/{{ model.key || '…' }}</code></div></div>
-          <div class="mb-deliver"><label class="ui-switch"><input type="checkbox" :checked="model.deliver.json" @change="model.deliver.json = $event.target.checked" /><i /><span>{{ WD.json }}</span></label><div class="mb-delivertext"><span class="ui-hint">{{ WD['json-help'] }}</span><code v-if="model.deliver.json" class="ui-key">{{ here }}/data/models/{{ model.key || '…' }}.json</code></div></div>
-          <div class="mb-deliver"><label class="ui-switch"><input type="checkbox" :checked="model.deliver.section" @change="model.deliver.section = $event.target.checked" /><i /><span>{{ WD.section }}</span></label><div class="mb-delivertext"><span class="ui-hint">{{ WD['section-help'] }}</span></div></div>
+          <div class="mb-deliver"><label class="ui-switch"><input type="checkbox" :checked="model.deliver.pages" @change="model.deliver.pages = ($event.target as any).checked" /><i /><span>{{ WD.pages }}</span></label><div class="mb-delivertext"><span class="ui-hint">{{ WD['pages-help'] }}</span><code v-if="model.deliver.pages" class="ui-key">{{ here }}/c/{{ model.key || '…' }}</code></div></div>
+          <div class="mb-deliver"><label class="ui-switch"><input type="checkbox" :checked="model.deliver.json" @change="model.deliver.json = ($event.target as any).checked" /><i /><span>{{ WD.json }}</span></label><div class="mb-delivertext"><span class="ui-hint">{{ WD['json-help'] }}</span><code v-if="model.deliver.json" class="ui-key">{{ here }}/data/models/{{ model.key || '…' }}.json</code></div></div>
+          <div class="mb-deliver"><label class="ui-switch"><input type="checkbox" :checked="model.deliver.section" @change="model.deliver.section = ($event.target as any).checked" /><i /><span>{{ WD.section }}</span></label><div class="mb-delivertext"><span class="ui-hint">{{ WD['section-help'] }}</span></div></div>
         </div>
       </div>
 

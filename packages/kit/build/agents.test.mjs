@@ -178,7 +178,7 @@ const toolStep = (name, result, call = 'c1') => ({ kind: 'tool', name, response:
 /* ---- what a person is told, in words somebody can edit ---- */
 {
   /* the words are the bot's, resolved by the compile from markdown — NO ENGLISH LIVES IN THE LOOP */
-  const src = fs.readFileSync(new URL('../src/lib/agents/loop.js', import.meta.url), 'utf8')
+  const src = fs.readFileSync(new URL('../src/lib/agents/loop.ts', import.meta.url), 'utf8')
   const endingFn = src.slice(src.indexOf('export function endingOf'), src.indexOf('export function endingOf') + 400)
   ok('the loop keeps no sentences of its own', !/'[A-Z][a-z]+ [a-z]/.test(endingFn.replace(/\/\*[\s\S]*?\*\//g, '')))
 

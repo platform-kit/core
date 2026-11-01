@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Notifications, for the staff: this browser on or off, what it wants to hear about (a support
  * topic for anyone on the desk, the rest for administrators), a test, and the account's other
@@ -16,13 +16,13 @@ import AdminHead from './admin/AdminHead.vue'
 
 const W = us('push').page
 const H = W.head, D = W.device, T = W.topics, O = W.devices
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const state = ref('idle')          /* idle | denied | ok */
-const row = ref(null)              /* this browser's row */
-const others = ref([])
+const row = ref<any>(null)              /* this browser's row */
+const others = ref<any>([])
 const busy = ref(false), said = ref(''), saved = ref('')
-const picked = ref([])
+const picked = ref<any>([])
 const allowed = computed(() => (isAdmin.value ? TOPICS : STAFF_TOPICS))
 const on = computed(() => !!row.value)
 /* the topics by who they are for: the desk's, then — for an administrator — the accounts and the sales */
@@ -31,6 +31,7 @@ const groups = computed(() => {
   return [{ key: 'support', items: desk }, { key: 'site', items: site }].filter((g) => g.items.length)
 })
 /* what stands in the way, if anything: the deployment, the browser, its permission */
+// @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types 'Ref<NotificationPermission, NotificationPermission>' and 'string' have no ove
 const notice = computed(() => (!KEY ? H.unconfigured : !supported() ? H.unsupported : permission === 'denied' ? H.blocked : ''))
 const canTurnOn = computed(() => !busy.value && !notice.value)
 
@@ -40,17 +41,18 @@ async function load() {
   state.value = 'ok'
   row.value = await mine().catch(() => null)
   picked.value = row.value ? row.value.topics.slice() : allowed.value.slice()
-  others.value = (await devices().catch(() => [])).filter((d) => !row.value || d.id !== row.value.id)
+  others.value = (await devices().catch(() => [])).filter((d: any) => !row.value || d.id !== row.value.id)
 }
 onMounted(load)
 watch([isSignedIn, roleKnown, isStaff], load)
 
 async function turnOn() {
   busy.value = true; said.value = ''
-  try { await enable(picked.value); await load() } catch (e) { said.value = e.message === 'denied' ? H.blocked : D.failed } finally { busy.value = false }
+  try { await enable(picked.value); await load() } catch (e) { said.value = (e as any).message === 'denied' ? H.blocked : D.failed } finally { busy.value = false }
 }
 async function turnOff() { busy.value = true; said.value = ''; try { await disable(); await load() } finally { busy.value = false } }
-async function toggle(t) {
+async function toggle(t: any) {
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
   picked.value = picked.value.includes(t) ? picked.value.filter((x) => x !== t) : picked.value.concat([t])
   if (on.value) { await setTopics(picked.value); saved.value = T.saved; setTimeout(() => { saved.value = '' }, 1500) }
 }
@@ -58,11 +60,11 @@ async function sendTest() {
   busy.value = true; said.value = ''
   try { const r = await test(); said.value = r && r.sent ? D['test-sent'] : D['test-none'] } catch (e) { said.value = D.failed } finally { busy.value = false }
 }
-async function drop(d) { await forget(d.id); await load() }
-const when = (iso) => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
-const kindOf = (ua) => { const s = String(ua || ''); return /iPhone|iPad/.test(s) ? 'ios' : /Android/.test(s) ? 'android' : /Mac/.test(s) ? 'mac' : /Windows/.test(s) ? 'windows' : 'other' }
-const phone = (k) => k === 'ios' || k === 'android'
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+async function drop(d: any) { await forget(d.id); await load() }
+const when = (iso: any) => { const d: any = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const kindOf = (ua: any) => { const s = String(ua || ''); return /iPhone|iPad/.test(s) ? 'ios' : /Android/.test(s) ? 'android' : /Mac/.test(s) ? 'mac' : /Windows/.test(s) ? 'windows' : 'other' }
+const phone = (k: any) => k === 'ios' || k === 'android'
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 
 <template>
@@ -130,7 +132,7 @@ function openAuth() { if (window.DLauth) window.DLauth.open() }
               <span class="pu-dev-words">
                 <b>{{ O[kindOf(d.ua)] }}</b>
                 <small>{{ fill(O.since, { when: when(d.created_at) }) }}<template v-if="d.last_sent_at"> · {{ fill(O.last, { when: when(d.last_sent_at) }) }}</template></small>
-                <small class="pu-dev-topics">{{ d.topics.length ? d.topics.map((t) => T[t] || t).join(' · ') : O['topics-none'] }}</small>
+                <small class="pu-dev-topics">{{ d.topics.length ? d.topics.map((t: any) => T[t] || t).join(' · ') : O['topics-none'] }}</small>
               </span>
               <span v-if="d.failures > 2" class="ui-badge ui-warn">{{ O.failing }}</span>
               <button type="button" class="ui-btn ui-ghost ui-sm" @click="drop(d)">{{ O.forget }}</button>

@@ -6,20 +6,20 @@ sources:
   [
     packages/kit/build/one-package.test.mjs,
     packages/kit/build/check.test.mjs,
-    packages/kit/build/browser.mjs,
-    packages/kit/build/e2e.mjs,
-    packages/kit/build/e2e-container.mjs,
+    packages/kit/build/browser.mts,
+    packages/kit/build/e2e.mts,
+    packages/kit/build/e2e-container.mts,
     packages/kit/docker/e2e.Dockerfile,
-    packages/kit/build/test-stack.mjs,
-    packages/kit/build/test-guard.mjs,
-    packages/kit/build/reset-seed.mjs,
+    packages/kit/build/test-stack.mts,
+    packages/kit/build/test-guard.mts,
+    packages/kit/build/reset-seed.mts,
     packages/kit/build/e2e-runner.test.mjs,
     packages/kit/build/fixtures/e2e-probe.mjs,
     packages/kit/build/test-coverage.test.mjs,
     packages/kit/build/test-stack.test.mjs,
     packages/kit/build/function-bodies.test.mjs,
     packages/kit/build/function-doors.test.mjs,
-    packages/kit/build/functions-data.mjs,
+    packages/kit/build/functions-data.mts,
     sites/club/platformkit.config.js,
     packages/kit/build/manifests.test.mjs,
     packages/kit/build/modules/manifest.mts,
@@ -41,9 +41,9 @@ sources:
     packages/kit/build/guards-db.test.mjs,
     packages/kit/build/sell-rules.test.mjs,
     packages/kit/build/suppliers.test.mjs,
-    packages/kit/build/identity-probe.mjs,
-    packages/kit/build/test.mjs,
-    packages/kit/build/models/yaml-keep.mjs,
+    packages/kit/build/identity-probe.mts,
+    packages/kit/build/test.mts,
+    packages/kit/build/models/yaml-keep.mts,
     packages/kit/build/yaml-keep.test.mjs,
     packages/kit/build/site-nav.test.mjs,
     packages/kit/build/variants.test.mjs,
@@ -54,22 +54,22 @@ sources:
     packages/kit/build/dev.test.mjs,
     packages/kit/build/bootstrap-env.test.mjs,
     packages/kit/build/workspace-root.test.mjs,
-    packages/kit/build/phone-probe.mjs,
+    packages/kit/build/phone-probe.mts,
     .github/workflows/kit.yml,
     .github/workflows/publish.yml,
-    packages/kit/build/docs-check.mjs,
-    packages/kit/build/docs-review-date.mjs,
+    packages/kit/build/docs-check.mts,
+    packages/kit/build/docs-review-date.mts,
     packages/kit/build/docs-review-date.test.mjs,
-    packages/kit/build/sql-columns.mjs,
+    packages/kit/build/sql-columns.mts,
     packages/kit/build/sql-columns.test.mjs,
-    packages/kit/build/content-rules.mjs,
+    packages/kit/build/content-rules.mts,
     packages/kit/build/content-rules.test.mjs,
     packages/kit/build/fonts.test.mjs,
-    packages/kit/build/typefaces.mjs,
+    packages/kit/build/typefaces.mts,
     packages/kit/build/proposal-trace.test.mjs,
     packages/kit/build/site-boundary.test.mjs,
-    packages/kit/build/source-install.mjs,
-    packages/kit/build/runtime-paths.mjs,
+    packages/kit/build/source-install.mts,
+    packages/kit/build/runtime-paths.mts,
   ]
 reviewed: 2026-11-01
 ---
@@ -168,7 +168,7 @@ The navigation editor's options are checked against the pages and membership tie
 
 The module-manifest checks match build steps to their declared owners across the kit, theme and site, validate registered payment-provider declarations, and hold a site-registered module to the same ownership rules as a kit module. The YAML front-matter writer is also checked for no-op saves: unchanged records retain their original formatting, including the spacing inside inline maps.
 
-`packages/kit/build/test.mjs`, what every site's `npm test` calls. Run it from the site directory: the runner takes `process.cwd()` as the site root and resolves shared packages, docs and specs from the workspace root. CI runs it from the generic `sites/docs` and `sites/demo` fixtures; the workspace-root, dev-directory and stop tests cover the shared front door and managed local processes. The source-CLI test invokes a local Git source without requiring publication and checks that standalone help does not need workspace Vite dependencies; the runtime-path test pins the shared cache location. Before the demo bundle build, CI starts and resets its local Supabase stack and passes the local URL and keys to the build; it does not use hosted backend credentials.
+`packages/kit/build/test.mts`, what every site's `npm test` calls. Run it from the site directory: the runner takes `process.cwd()` as the site root and resolves shared packages, docs and specs from the workspace root. CI runs it from the generic `sites/docs` and `sites/demo` fixtures; the workspace-root, dev-directory and stop tests cover the shared front door and managed local processes. The source-CLI test invokes a local Git source without requiring publication and checks that standalone help does not need workspace Vite dependencies; the runtime-path test pins the shared cache location. Before the demo bundle build, CI starts and resets its local Supabase stack and passes the local URL and keys to the build; it does not use hosted backend credentials.
 
 CI installs Deno because `social-provider-matrix.test.mjs` runs a real SDK capability probe with `deno eval`.
 
@@ -234,7 +234,7 @@ In the run itself, `build/function-bodies.test.mjs` compiles every SQL function 
 
 ## Who is here, told once
 
-`node packages/kit/build/identity-probe.mjs` asks one question of every surface: **does signing in on a page give you the page you would have got by reloading it?**
+`node packages/kit/build/identity-probe.mts` asks one question of every surface: **does signing in on a page give you the page you would have got by reloading it?**
 
 It cannot be answered by reading code. Half a dozen modules each hold a slice of what a person may see — the spaces, the chats, the desk, the records, the support widget — and the question is whether every one of them heard that the person changed. A module that did not is invisible: the page simply shows a little less than it should, and only somebody who reloads finds out.
 

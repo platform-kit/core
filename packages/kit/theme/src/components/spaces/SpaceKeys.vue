@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * THE KEYBOARD MAP, shown. `?` opens it, and it is the only place the shortcuts are written down —
  * read from the same list the handler reads, so a shortcut can never be documented as something it

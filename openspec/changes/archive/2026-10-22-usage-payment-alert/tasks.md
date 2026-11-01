@@ -2,7 +2,7 @@
 
 ## 1. The rules and the server read
 
-- [x] 1.1 Add `packages/kit/src/lib/usage-alert.js` with the statuses that need the customer and the paths the banner stays off, and `packages/kit/build/usage-alert.test.mjs` covering requires-action, failed, pending, none, signed-out, and each quiet path. Register it in `test.mjs`. Verified by running it.
+- [x] 1.1 Add `packages/kit/src/lib/usage-alert.ts` with the statuses that need the customer and the paths the banner stays off, and `packages/kit/build/usage-alert.test.mjs` covering requires-action, failed, pending, none, signed-out, and each quiet path. Register it in `test.mjs`. Verified by running it.
 - [x] 1.2 Add the `attention` action to `packages/kit/supabase/functions/usage-topup/index.ts`, answered after the sign-in check from the customer's own subscriptions. Verified against the local stack with a seeded settlement, and an unauthenticated request refused.
 
 ## 2. The banner

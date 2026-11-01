@@ -8,10 +8,10 @@ sources:
     sites/demo/platformkit.config.js,
     sites/docs/platformkit.config.js,
     packages/kit/bin/platformkit.mjs,
-    packages/kit/build/check.mjs,
+    packages/kit/build/check.mts,
     sites/demo/package.json,
     package.json,
-    packages/kit/build/sites.mjs,
+    packages/kit/build/sites.mts,
   ]
 reviewed: 2026-11-01
 ---

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * Where a message is written: a textarea that grows with it (Enter sends,
  * Shift+Enter breaks a line), the message being answered above it, and the
@@ -16,7 +17,7 @@ import VoiceRecorder from './VoiceRecorder.vue'
 
 const props = defineProps({
   canWrite: { type: Boolean, default: true },
-  replyTo: { type: Object, default: null },
+  replyTo: { type: Object as PropType<any>, default: null },
   nameOf: { type: Function, default: () => '' },
   busy: { type: Boolean, default: false },
   error: { type: String, default: '' },
@@ -26,7 +27,7 @@ const C = us('chat').composer.main
 const P = us('chat').page.main
 
 const text = ref('')
-const box = ref(null)
+const box = ref<any>(null)
 const recording = ref(false)
 const mic = ref(false)
 const canSend = computed(() => text.value.trim().length > 0 && !props.busy)
@@ -34,12 +35,12 @@ const canSend = computed(() => text.value.trim().length > 0 && !props.busy)
 onMounted(async () => { mic.value = await micUsable() })
 
 function grow() {
-  const el = box.value
+  const el: any = box.value
   if (!el) return
   el.style.height = 'auto'
   el.style.height = Math.min(160, el.scrollHeight) + 'px'
 }
-function key(e) {
+function key(e: any) {
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send() }
   if (e.key === 'Escape' && props.replyTo) emit('cancel-reply')
 }
@@ -50,16 +51,16 @@ function send() {
   text.value = ''
   nextTick(grow)
 }
-function voice({ blob, seconds, transcript }) { recording.value = false; emit('voice', { blob, seconds, transcript }) }
+function voice({ blob, seconds, transcript }: any) { recording.value = false; emit('voice', { blob, seconds, transcript }) }
 
 /* A FILE. The table has taken one since the support desk's did; what the coaching chat lacked was
    the button — so a coach could be sent a screenshot and could not send one back. */
-const clip = ref(null)
-function chose(e) { const f = e.target.files && e.target.files[0]; if (f) emit('file', f); e.target.value = '' }
+const clip = ref<any>(null)
+function chose(e: any) { const f = e.target.files && e.target.files[0]; if (f) emit('file', f); e.target.value = '' }
 
 /* THE MARKS, the same three every other surface here offers: a selection wrapped, or the marks
    dropped where the cursor is. Nothing else — a chat is not a document. */
-function wrap(mark) {
+function wrap(mark: any) {
   const el = box.value
   if (!el) return
   const s = el.selectionStart, e = el.selectionEnd

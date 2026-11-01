@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * One product: its gallery, what it costs (live), the choices before buying
  * (a size, a quantity), the way into the bag or straight to checkout, what the
@@ -47,12 +47,12 @@ const T = us('store')
 const HD = T.page.head
 const P = T.product.ui
 const HC = T.product.print || {}
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const S = T.home.sections
 const PR = T.home.promise
-const preview = inject('dl-preview', null)
+const preview = inject<any>('dl-preview', null)
 
-const p = computed(() => (preview ? (preview.value ? resolveProduct(preview.value) : null) : product(props.id)))
+const p = computed(() => (preview ? ((preview as any).value ? resolveProduct((preview as any).value) : null) : product(props.id)))
 const col = computed(() => (p.value ? collectionOf(p.value) : null))
 const others = computed(() => (p.value && !preview ? related(p.value, 6) : []))
 const isMember = computed(() => userClass.value === 'subscribed')
@@ -94,24 +94,24 @@ watch(offer, (o) => {
 }, { immediate: true })
 const shipsNow = computed(() => (formats.value.length ? PRINTED.includes(fmt.value) : ships(p.value)))
 const chosen = computed(() => (pr.value ? { contents: cnt.value, cloth: fmt.value === 'hardcover' ? cloth.value : '', foil: fmt.value === 'hardcover' ? foil.value : '' } : null))
-const pagesOf = computed(() => { const e = edition.value && edition.value.editions && edition.value.editions[cnt.value]; return e && e.pages ? e.pages : 0 })
+const pagesOf = computed(() => { const e: any = edition.value && edition.value.editions && edition.value.editions[cnt.value]; return e && e.pages ? e.pages : 0 })
 const editionLine = computed(() => {
   if (!pr.value || !isPrint.value) return ''
-  const c = chosen.value
+  const c: any = chosen.value
   const line = fill(HC['edition-' + fmt.value] || '', { trim: String(pr.value.trim || '').replace('x', ' × '), paper: pr.value.paper, cloth: HC['cloth-' + c.cloth] || c.cloth, foil: HC['foil-' + c.foil] || c.foil })
   return pagesOf.value && PRINTED.includes(fmt.value) ? line + ' · ' + fill(HC.pages, { n: pagesOf.value }) : line
 })
 /* what the chosen format comes with: the files, worded */
 const comesWith = computed(() => {
   if (!isPrint.value || !offer.value.includes || !offer.value.includes.length) return ''
-  const names = offer.value.includes.map((f) => HC['file-' + f] || f.toUpperCase())
+  const names = offer.value.includes.map((f: any) => HC['file-' + f] || f.toUpperCase())
   return fill(HC['comes-with'], { files: names.length > 1 ? names.slice(0, -1).join(', ') + ' ' + (HC.and || 'and') + ' ' + names[names.length - 1] : names[0] })
 })
 /* the line as the store shows it: the format, the colours, what is inside */
 const lineLabel = computed(() => {
   if (!isPrint.value) return ''
   const c = chosen.value
-  return [HC['format-' + fmt.value] || fmt.value, c.cloth ? (HC['cloth-' + c.cloth] || c.cloth) + ' · ' + (HC['foil-' + c.foil] || c.foil) : '', HC['contents-' + c.contents] || c.contents].filter(Boolean).join(' · ')
+  return [HC['format-' + fmt.value] || fmt.value, (c as any).cloth ? (HC['cloth-' + (c as any).cloth] || (c as any).cloth) + ' · ' + (HC['foil-' + (c as any).foil] || (c as any).foil) : '', HC['contents-' + (c as any).contents] || (c as any).contents].filter(Boolean).join(' · ')
 })
 /* "yours" only while the book online is the format in hand */
 const owned = computed(() => isOnline.value && ownedOnline.value)
@@ -130,7 +130,7 @@ const priceText = computed(() => {
   return loose ? fill(P['from-price'] || '{price}', { price: m }) : m
 })
 /* a buyer's files: asked for once they are signed in, on a print page */
-const files = ref(null)
+const files = ref<any>(null)
 watch([printP, isSignedIn], async ([v, on]) => { files.value = null; if (v && on) { try { files.value = await filesFor(v.book) } catch (e) { files.value = [] } } }, { immediate: true })
 
 /* the body: the opening is "About"; each ## section is a panel of its own */
@@ -165,26 +165,26 @@ const bookArt = computed(() => {
 const at = ref(0)
 const images = computed(() => (p.value && p.value.images) || [])
 const shots = computed(() => { const ed = edition.value && edition.value.editions && edition.value.editions[cnt.value]; return ed && ed.shots ? ed.shots : null })
-const missingPageArt = ref({})
+const missingPageArt = ref<any>({})
 const previewRenderer = renderer()
 const markPattern = /==(?=\S)([\s\S]*?\S)==(?:\{(sun|leaf|sky|ocean|ember)\})?/g
 const previewWords = 220
-function chapterKey(title) {
+function chapterKey(title: any) {
   return String(title || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .replace(/^\s*(?:chapter\s+)?(?:\d+|[ivxlcdm]+)(?=[.)\s:–—-])(?:[.)\s:–—-]+)/i, '')
     .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 }
-function chapterNumber(chapters, index) {
+function chapterNumber(chapters: any, index: any) {
   const ownNumber = /^(?:chapter\s+)?(\d+)[.:)]\s+/i
-  const titles = chapters.map((chapter) => String(chapter.title || '').trim())
-  const bare = titles.every((title) => /^(?:[ivxlcdm]+|\d+)$/i.test(title))
-  const structured = titles.filter((title) => /^(?:part|lesson|book|section|letter)\s+(?:\d+|[ivxlc]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/i.test(title)).length >= titles.length / 2
+  const titles = chapters.map((chapter: any) => String(chapter.title || '').trim())
+  const bare = titles.every((title: any) => /^(?:[ivxlcdm]+|\d+)$/i.test(title))
+  const structured = titles.filter((title: any) => /^(?:part|lesson|book|section|letter)\s+(?:\d+|[ivxlc]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/i.test(title)).length >= titles.length / 2
   if (bare || structured) return null
   const own = ownNumber.exec(titles[index])
   if (own) return Number(own[1])
-  return titles.some((title) => ownNumber.test(title)) ? null : index + 1
+  return titles.some((title: any) => ownNumber.test(title)) ? null : index + 1
 }
-function boundedMarkdown(markdown) {
+function boundedMarkdown(markdown: any) {
   const blocks = String(markdown || '').trim().split(/\n\s*\n/).filter(Boolean)
   const excerpt = []
   let remaining = previewWords
@@ -203,8 +203,8 @@ function boundedMarkdown(markdown) {
   }
   return excerpt.join('\n\n')
 }
-function previewHtml(markdown) {
-  const marks = []
+function previewHtml(markdown: any) {
+  const marks: any = []
   const source = String(markdown || '').replace(markPattern, (_, text) => {
     const token = `DLPREVIEWMARK${marks.length}TOKEN`
     marks.push({ token, text })
@@ -212,15 +212,16 @@ function previewHtml(markdown) {
   })
   let html = String(previewRenderer.parse(source))
   for (const { token, text } of marks) {
-    const safeText = text.replace(/[&<>"']/g, (character) => ({
+    // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ '&': string; '<': string; '>': string; 
+    const safeText = text.replace(/[&<>"']/g, (character: any) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     })[character])
     html = html.replace(token, `<mark class="print-preview-mark">${safeText}</mark>`)
   }
   return html
 }
-function sourcePreview(page, title, marks = false) {
-  const book = BOOKS.find((entry) => entry.slug === (printP.value && printP.value.book))
+function sourcePreview(page: any, title: any, marks = false) {
+  const book = BOOKS.find((entry: any) => entry.slug === (printP.value && printP.value.book))
   if (!book) return {
     title, html: '', page: Number(page.page) || 0, number: null, chapterWord: HC['chapter-word'] || '',
     previewLabel: HC['shot-preview-label'] || '',
@@ -261,11 +262,11 @@ function sourcePreview(page, title, marks = false) {
     previewLabel: HC['shot-preview-label'] || '',
   }
 }
-function pageArtFailed(art) {
+function pageArtFailed(art: any) {
   if (!art || missingPageArt.value[art]) return
   missingPageArt.value = { ...missingPageArt.value, [art]: true }
 }
-function zoomPage(slide) {
+function zoomPage(slide: any) {
   zoom.value = slide.page.art && !missingPageArt.value[slide.page.art]
     ? { art: slide.page.art }
     : { preview: slide.preview }
@@ -286,46 +287,50 @@ const slides = computed(() => {
     const kind = p.value && p.value.kind
     if ((kind === 'book' || kind === 'print') && ims.length) {
       return [{ book: { plain: true, art: ims[0].src, key: 'plain' }, caption: '' },
-        ...ims.slice(1).map((im) => ({ image: im, caption: '' }))]
+        ...ims.slice(1).map((im: any) => ({ image: im, caption: '' }))]
     }
-    return ims.map((im) => ({ image: im, caption: '' }))
+    return ims.map((im: any) => ({ image: im, caption: '' }))
   }
   const out = [{ book: bookArt.value, caption: HC['shot-book'] || '' }]
   const sh = shots.value
   if (sh) {
-    const cap = (k) => fill(HC['shot-' + k] || '', { chapter: sh.chapter || '' })
-    const previewThumb = (contents) => ({
+    const cap = (k: any) => fill(HC['shot-' + k] || '', { chapter: sh.chapter || '' })
+    // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ full: any; summary: any; parts: any; bo
+    const previewThumb = (contents: any) => ({
       full: HC['shot-thumb-full'],
       summary: HC['shot-thumb-summary'],
       parts: HC['shot-thumb-parts'],
       both: HC['shot-thumb-both'],
     })[contents] || HC['shot-thumb-page'] || ''
+    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'page' does not exist in type '{ book: { key: any; format: any; provider: any; art: an
     if (sh.edition) out.push({ page: sh.edition, preview: sourcePreview(sh.edition, sh.chapter), thumbLabel: previewThumb(sh.edition.contents), caption: cap(sh.edition.contents) })
+    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'page' does not exist in type '{ book: { key: any; format: any; provider: any; art: an
     if (sh.other) out.push({ page: sh.other, preview: sourcePreview(sh.other, sh.chapter), thumbLabel: previewThumb(sh.other.contents), caption: cap(sh.other.contents) })
+    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'page' does not exist in type '{ book: { key: any; format: any; provider: any; art: an
     if (sh.marks) out.push({ page: sh.marks, preview: sourcePreview(sh.marks, sh.chapter, true), thumbLabel: HC['shot-thumb-highlights'] || '', caption: cap('marks') })
   }
   return out
 })
 const caption = computed(() => (slides.value[at.value] && slides.value[at.value].caption) || '')
 /* a page, large: the print file's page at full size over the page, until a click or Escape */
-const zoom = ref(null)
-function onKey(e) { if (e.key === 'Escape') zoom.value = null }
+const zoom = ref<any>(null)
+function onKey(e: any) { if (e.key === 'Escape') zoom.value = null }
 watch(zoom, (v) => { if (v) window.addEventListener('keydown', onKey); else window.removeEventListener('keydown', onKey) })
-const rail = ref(null)
-function show(i) { at.value = i; const el = rail.value; if (el && el.children[i]) el.children[i].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' }) }
+const rail = ref<any>(null)
+function show(i: any) { at.value = i; const el: any = rail.value; if (el && el.children[i]) el.children[i].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' }) }
 function onRailScroll() { const el = rail.value; if (!el) return; const w = el.clientWidth || 1; at.value = Math.round(el.scrollLeft / w) }
-function slideLabel(sl, i) {
+function slideLabel(sl: any, i: any) {
   if (sl.book) return HC['mock-thumb'] || String(i + 1)
   if (sl.page) return sl.thumbLabel || fill(HC['shot-thumb-page'] || '', { n: sl.page.page }) || String(i + 1)
   return String(i + 1)
 }
-let gallerySwipe = null
-function startGallerySwipe(e) {
+let gallerySwipe: any = null
+function startGallerySwipe(e: any) {
   if (e.pointerType !== 'touch' || !rail.value) return
   gallerySwipe = { id: e.pointerId, x: e.clientX, y: e.clientY, left: rail.value.scrollLeft, slide: at.value, horizontal: false }
 }
-function moveGallerySwipe(e) {
-  const swipe = gallerySwipe, el = rail.value
+function moveGallerySwipe(e: any) {
+  const swipe: any = gallerySwipe, el = rail.value
   if (!swipe || !el || e.pointerId !== swipe.id) return
   const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y
   if (!swipe.horizontal) {
@@ -336,8 +341,8 @@ function moveGallerySwipe(e) {
   e.preventDefault()
   el.scrollLeft = swipe.left - dx
 }
-function endGallerySwipe(e) {
-  const swipe = gallerySwipe, el = rail.value
+function endGallerySwipe(e: any) {
+  const swipe: any = gallerySwipe, el = rail.value
   if (!swipe || !el || e.pointerId !== swipe.id) return
   gallerySwipe = null
   if (!swipe.horizontal) return
@@ -345,18 +350,18 @@ function endGallerySwipe(e) {
   const threshold = Math.max(36, el.clientWidth * 0.12)
   const next = Math.abs(dx) < threshold ? swipe.slide : swipe.slide + (dx < 0 ? 1 : -1)
   show(Math.max(0, Math.min(slides.value.length - 1, next)))
-  const stop = (event) => { event.stopPropagation(); event.preventDefault() }
+  const stop = (event: any) => { event.stopPropagation(); event.preventDefault() }
   el.addEventListener('click', stop, { capture: true, once: true })
   setTimeout(() => el.removeEventListener('click', stop, { capture: true }), 0)
 }
-function cancelGallerySwipe(e) {
+function cancelGallerySwipe(e: any) {
   if (gallerySwipe && e.pointerId === gallerySwipe.id) gallerySwipe = null
 }
 
 /* choosing */
 /* WHAT IS CHOSEN, an option name to a value. `sizes` is one option now (build/variants.mjs
    folds it in), so there is no separate size any more and no second code path for it. */
-const picked = ref({})
+const picked = ref<any>({})
 const needSize = ref(false)
 const qty = ref(1)
 const sku = computed(() => (offer.value ? offer.value.sku : p.value ? p.value.sku : ''))
@@ -397,16 +402,16 @@ const wasAmount = computed(() => (resolved.value && resolved.value.original) || 
    number somebody will not be charged */
 const fromAmount = computed(() => {
   if (!p.value || !pickedOptions.value.length) return p.value ? p.value.unit_amount : 0
-  const all = Object.values(p.value.variants || {}).map((v) => (v && v.price != null ? Math.round(Number(v.price) * 100) : null)).filter((n) => n != null)
+  const all = Object.values(p.value.variants || {}).map((v) => (v && (v as any).price != null ? Math.round(Number((v as any).price) * 100) : null)).filter((n) => n != null)
   return Math.min(p.value.unit_amount, ...(all.length ? all : [p.value.unit_amount]))
 })
 const everyShapeCosts = computed(() => {
   if (!p.value || !pickedOptions.value.length) return null
-  const amounts = new Set([p.value.unit_amount, ...Object.values(p.value.variants || {}).map((v) => (v && v.price != null ? Math.round(Number(v.price) * 100) : p.value.unit_amount))])
+  const amounts = new Set([p.value.unit_amount, ...Object.values(p.value.variants || {}).map((v) => (v && (v as any).price != null ? Math.round(Number((v as any).price) * 100) : p.value.unit_amount))])
   return amounts.size === 1 ? [...amounts][0] : null
 })
 const variant = computed(() => (isPrint.value
-  ? variantOf(chosen.value.contents, chosen.value.cloth, chosen.value.foil)
+  ? variantOf((chosen as any).value.contents, (chosen as any).value.cloth, (chosen as any).value.foil)
   : variantKey(pickedOptions.value.map((o) => ({ value: picked.value[o.name] || '' })))))
 const inBag = computed(() => p.value && p.value.available && cart.hasProduct(sku.value))
 const added = ref(false)
@@ -455,11 +460,11 @@ function addToBag() {
   added.value = true; setTimeout(() => { added.value = false }, 1600)
   cart.openCart()
 }
-async function run(fn, evt, guestOk = false) {
-  if (!isSignedIn.value && !guestOk) { if (window.DLauth) window.DLauth.open(); return }
+async function run(fn: any, evt: any, guestOk = false) {
+  if (!isSignedIn.value && !guestOk) { if ((window as any).DLauth) (window as any).DLauth.open(); return }
   busy.value = true; error.value = ''; errorCode.value = ''
   if (evt) capture('click', evt)
-  try { await fn() } catch (e) { error.value = (e && e.message) || HD['error-heading']; errorCode.value = (e && e.code) || '' } finally { busy.value = false }
+  try { await fn() } catch (e) { error.value = (e && (e as any).message) || HD['error-heading']; errorCode.value = (e && (e as any).code) || '' } finally { busy.value = false }
 }
 function buyNow() {
   if (!canAdd()) return
@@ -468,6 +473,7 @@ function buyNow() {
   run(() => checkout(cart.items.value), { kind: 'buy_now', product_id: sku.value }, guestCart(cart.items.value))
 }
 const join = () => run(() => subscribe(p.value.sku), { kind: 'subscribe', product_id: p.value.sku })
+// @ts-expect-error TS2554, from the conversion: Expected 2-3 arguments, but got 1.
 const manage = () => run(() => openPortal())
 
 watch(p, (v) => {

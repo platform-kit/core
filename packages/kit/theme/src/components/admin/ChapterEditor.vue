@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A body split into chapters at its `# ` headings — the top level of division
  * in any of our markdown. One chapter is open at a time in its own TipTap
@@ -19,10 +19,10 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'chapters'])
 
 /* ---- split / join ---- */
-function split(md) {
+function split(md: any) {
   const lines = (md || '').split('\n')
-  const pre = [], chapters = []
-  let cur = null, fence = false
+  const pre: any = [], chapters = []
+  let cur: any = null, fence = false
   for (const line of lines) {
     if (/^(```|~~~)/.test(line)) fence = !fence
     const h = !fence && /^#\s+(.+?)\s*#*\s*$/.exec(line)
@@ -31,7 +31,7 @@ function split(md) {
   }
   return { pre: pre.join('\n'), chapters: chapters.map((c) => ({ title: c.title, body: c.lines.join('\n') })) }
 }
-function join(pre, chapters) {
+function join(pre: any, chapters: any) {
   const parts = []
   if (pre.trim()) parts.push(pre.replace(/\n+$/, ''))
   for (const c of chapters) parts.push('# ' + c.title.trim() + '\n\n' + c.body.replace(/^\n+/, '').replace(/\n+$/, ''))
@@ -40,10 +40,10 @@ function join(pre, chapters) {
 
 let ids = 0
 const pre = ref('')
-const chapters = ref([])   /* [{ id, title, body }] */
+const chapters = ref<any>([])   /* [{ id, title, body }] */
 const active = ref(0)
-let lastEmitted = null
-function hydrate(md) {
+let lastEmitted: any = null
+function hydrate(md: any) {
   if (md === lastEmitted) return
   const s = split(md)
   pre.value = s.pre
@@ -59,23 +59,23 @@ function emitAll() {
 
 const whole = computed(() => chapters.value.length === 0)   /* no chapters: edit the body as one */
 const cur = computed(() => chapters.value[active.value] || null)
-const words = (s) => (s || '').trim().split(/\s+/).filter(Boolean).length
-const marks = (s) => ((s || '').match(/==[^=]+==/g) || []).length
+const words = (s: any) => (s || '').trim().split(/\s+/).filter(Boolean).length
+const marks = (s: any) => ((s || '').match(/==[^=]+==/g) || []).length
 
-function onBody(v) { if (cur.value) { cur.value.body = v; emitAll() } }
-function onTitle(v) { if (cur.value) { cur.value.title = v; emitAll() } }
-function onPre(v) { pre.value = v; emitAll() }
+function onBody(v: any) { if (cur.value) { (cur.value as any).body = v; emitAll() } }
+function onTitle(v: any) { if (cur.value) { (cur.value as any).title = v; emitAll() } }
+function onPre(v: any) { pre.value = v; emitAll() }
 function add() { chapters.value.push({ id: ++ids, title: 'New chapter', body: '' }); active.value = chapters.value.length - 1; emitAll() }
-function remove(i) {
+function remove(i: any) {
   const c = chapters.value[i]
-  if (!confirm(`Remove “${c.title}” and its ${words(c.body)} words?`)) return
+  if (!confirm(`Remove “${(c as any).title}” and its ${words((c as any).body)} words?`)) return
   chapters.value.splice(i, 1); active.value = Math.max(0, Math.min(active.value, chapters.value.length - 1)); emitAll()
 }
-function onEnd(e) {
+function onEnd(e: any) {
   if (e.oldIndex === e.newIndex) return
-  const id = cur.value && cur.value.id
+  const id = cur.value && (cur.value as any).id
   const [m] = chapters.value.splice(e.oldIndex, 1); chapters.value.splice(e.newIndex, 0, m)
-  active.value = Math.max(0, chapters.value.findIndex((c) => c.id === id))
+  active.value = Math.max(0, chapters.value.findIndex((c: any) => (c as any).id === id))
   emitAll()
 }
 const showPre = ref(false)
@@ -113,7 +113,7 @@ const showPre = ref(false)
       <template v-else-if="cur">
         <div class="ce-head">
           <span class="ce-label">Chapter {{ active + 1 }}</span>
-          <input class="ce-titlein" :value="cur.title" type="text" placeholder="Chapter title" @input="onTitle($event.target.value)" />
+          <input class="ce-titlein" :value="cur.title" type="text" placeholder="Chapter title" @input="onTitle(($event.target as any).value)" />
           <button type="button" class="ce-rm" title="Remove this chapter" @click="remove(active)">Remove</button>
         </div>
         <MarkdownEditor :key="cur.id" :model-value="cur.body" :compact="compact" @update:model-value="onBody" />

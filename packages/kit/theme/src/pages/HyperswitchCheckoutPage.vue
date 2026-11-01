@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { ROUTES, navigate } from '../router.js'
 import { setHead } from 'platformkit/lib/seo.js'
@@ -18,22 +18,23 @@ import SiteMark from '../components/SiteMark.vue'
 const SITE_NAME = ((Array.isArray(SITE_RAW) ? SITE_RAW[0] : SITE_RAW) || {}).name || 'Site'
 const state = ref('loading')
 const message = ref('')
-const checkout = ref(null)
+const checkout = ref<any>(null)
 const W = computed(() => us('store').page.head || {})
 const title = computed(() => state.value === 'failed'
   ? W.value['checkout-unavailable-title'] || 'Checkout unavailable'
   : W.value['checkout-title'] || 'Complete your payment')
-let hyper
-let paymentMethodElements
+let hyper: any
+let paymentMethodElements: any
 let paymentMethodWidget
 
+// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 watch(title, (value) => setHead({ title: value, description: '', path: ROUTES.hyperswitchCheckout, noindex: true }), { immediate: true })
 
-function checkoutKey(sessionId) {
+function checkoutKey(sessionId: any) {
   return `platformkit:hyperswitch-checkout:${sessionId}`
 }
 
-function validSummary(summary) {
+function validSummary(summary: any) {
   const intervals = ['day', 'week', 'month', 'year']
   if (!summary || typeof summary !== 'object' || Array.isArray(summary) ||
       !['payment', 'subscription'].includes(summary.mode) ||
@@ -42,7 +43,7 @@ function validSummary(summary) {
       !Number.isSafeInteger(summary.amountTotalMinor) || summary.amountTotalMinor < 0 ||
       !Number.isSafeInteger(summary.amountDueMinor) || summary.amountDueMinor < 0 ||
       summary.amountDueMinor > summary.amountTotalMinor) return false
-  const total = summary.items.reduce((sum, item) => {
+  const total = summary.items.reduce((sum: any, item: any) => {
     if (!item || typeof item !== 'object' || Array.isArray(item) ||
         typeof item.name !== 'string' || !item.name.trim() || item.name.length > 300 ||
         !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 1000 ||
@@ -58,7 +59,7 @@ function validSummary(summary) {
       (Number.isSafeInteger(summary.trialDays) && summary.trialDays >= 1 && summary.trialDays <= 365))
 }
 
-function validCheckout(value) {
+function validCheckout(value: any) {
   if (!value || value.provider !== 'hyperswitch' ||
       typeof value.apiBaseUrl !== 'string' ||
       typeof value.publishableKey !== 'string' ||
@@ -83,18 +84,18 @@ function validCheckout(value) {
   }
 }
 
-function intervalLabel(interval) {
+function intervalLabel(interval: any) {
   return W.value[`checkout-interval-${interval}`] || interval
 }
 
-function itemTerm(item) {
+function itemTerm(item: any) {
   if (item.billing !== 'subscription') return W.value['checkout-once'] || 'One-time purchase'
   const cadence = intervalLabel(item.interval || 'month')
   return String(W.value['checkout-frequency'] || 'Billed every {interval}')
     .replace('{interval}', cadence)
 }
 
-function safePaymentError(error) {
+function safePaymentError(error: any) {
   const code = String(error?.code || error?.type || '').toLowerCase()
   if (code === 'card_declined' || code === 'payment_method_invalid') {
     return W.value['checkout-declined'] || 'The payment method was declined. Try another payment method or check with your bank.'
@@ -105,7 +106,7 @@ function safePaymentError(error) {
   return W.value['checkout-error'] || 'Your payment could not be completed. Check your details and try again.'
 }
 
-async function loadSdk(data) {
+async function loadSdk(data: any) {
   const Hyper = await loadHyperswitchSdk(data.clientUrl)
   return createHyperswitchClient(Hyper, data.publishableKey, data.apiBaseUrl, data.profileId)
 }
@@ -171,7 +172,7 @@ async function initialize() {
     if (returnError || returnStatus) message.value = safePaymentError(returnError || { code: returnStatus })
   } catch (error) {
     state.value = 'failed'
-    message.value = error?.code === HYPERSWITCH_V2_BROWSER_UNAVAILABLE_CODE
+    message.value = (error as any)?.code === HYPERSWITCH_V2_BROWSER_UNAVAILABLE_CODE
       ? W.value['checkout-v2-unavailable'] ||
         'The secure V2 payment form could not be loaded. No card details were submitted and the payment was not confirmed. Return to the store and try again later.'
       : W.value['checkout-error'] || 'Your payment could not be completed. Check your details and try again.'

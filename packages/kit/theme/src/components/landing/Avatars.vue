@@ -1,8 +1,9 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* a stack of faces — pictures, or initials from names — overlapping, and a line beside ("Join 5,482 others") */
 import { md } from './md.js'
-defineProps({ items: { type: Array, default: () => [] }, line: { type: String, default: '' }, size: { type: Number, default: 34 } })   /* [{ image?, name? }] */
-const initials = (n) => String(n || '').split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '·'
+defineProps({ items: { type: Array as PropType<any[]>, default: () => [] }, line: { type: String, default: '' }, size: { type: Number, default: 34 } })   /* [{ image?, name? }] */
+const initials = (n: any) => String(n || '').split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '·'
 </script>
 
 <template>

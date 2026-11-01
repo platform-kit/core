@@ -10,7 +10,7 @@
     "./build/*": "./build/*",
     "./supabase/*": "./supabase/*",
     "./vendor/*": "./vendor/*",
-    "./theme": "./theme/src/main.js",
+    "./theme": "./theme/src/main.ts",
     "./theme/*": "./theme/src/*",
     "./*": "./src/*"
   },

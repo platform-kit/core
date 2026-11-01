@@ -4,22 +4,22 @@ description: Every key of platformkit.config.js, what it registers, and where th
 order: 42
 sources:
   [
-    packages/kit/src/lib/member-panels.js,
+    packages/kit/src/lib/member-panels.ts,
     packages/kit/theme/src/components/spaces/panels,
     packages/kit/build/member-panels.test.mjs,
     packages/kit/build/member-panels-db.test.mjs,
-    packages/kit/build/site.mjs,
+    packages/kit/build/site.mts,
     packages/kit/src/config.mts,
-    packages/kit/vite/index.mjs,
-    packages/kit/build/cloud-config.mjs,
-    packages/kit/build/webhooks-config.mjs,
-    packages/kit/build/deploy.mjs,
-    packages/kit/build/deploy-checks.mjs,
-    packages/kit/build/inference-config.mjs,
+    packages/kit/vite/index.mts,
+    packages/kit/build/cloud-config.mts,
+    packages/kit/build/webhooks-config.mts,
+    packages/kit/build/deploy.mts,
+    packages/kit/build/deploy-checks.mts,
+    packages/kit/build/inference-config.mts,
     packages/kit/build/inference-config.test.mjs,
     packages/kit/build/usage.test.mjs,
     packages/kit/bin/platformkit.mjs,
-    packages/kit/build/source-install.mjs,
+    packages/kit/build/source-install.mts,
     packages/kit/build/admin-cms-mode.test.mjs,
   ]
 reviewed: 2026-10-31
@@ -180,4 +180,4 @@ instead is refused: that package's exports map has a single entry.
 
 ## Reading the config in code
 
-The kit loads it with `loadSite()` (`packages/kit/build/site.mjs`), which fills defaults, resolves paths, and resolves the [module manifests](/content/docs/building-a-site/modules) — so `site.moduleKeys` is every module that exists and a name outside it is refused rather than read as "on". In the browser the config's public part is `#site`; each registration is its own virtual module (`#site/nav`, `#site/landing`, `#site/app`…) — see [The theme and overrides](/content/docs/building-a-site/the-theme-and-overrides).
+The kit loads it with `loadSite()` (`packages/kit/build/site.mts`), which fills defaults, resolves paths, and resolves the [module manifests](/content/docs/building-a-site/modules) — so `site.moduleKeys` is every module that exists and a name outside it is refused rather than read as "on". In the browser the config's public part is `#site`; each registration is its own virtual module (`#site/nav`, `#site/landing`, `#site/app`…) — see [The theme and overrides](/content/docs/building-a-site/the-theme-and-overrides).

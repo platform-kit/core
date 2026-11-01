@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * An experiment's variants, edited as a list: for each, its key (A, B, C …),
  * the page or ad it shows (chosen from the collection, never typed), and its
@@ -14,30 +15,30 @@ import { ROUTES, navigate } from '../../router.js'
 import { listItems, nextKey, duplicateItem, colFor } from './experimentOps.js'
 
 const props = defineProps({
-  modelValue: { type: Array, default: () => [] },
+  modelValue: { type: Array as PropType<any[]>, default: () => [] },
   kind: { type: String, default: 'page' },
   winner: { type: String, default: '' },
 })
 const emit = defineEmits(['update:modelValue', 'valid'])
 
-const rows = ref([])
+const rows = ref<any>([])
 let lastEmitted = ''
-const clone = (v) => JSON.parse(JSON.stringify(v || []))
-function hydrate(v) {
+const clone = (v: any) => JSON.parse(JSON.stringify(v || []))
+function hydrate(v: any) {
   const json = JSON.stringify(v || [])
   if (json === lastEmitted) return
-  rows.value = clone(v).map((r) => ({ key: r.key || '', item: r.item || '', weight: typeof r.weight === 'number' ? r.weight : 1 }))
+  rows.value = clone(v).map((r: any) => ({ key: r.key || '', item: r.item || '', weight: typeof r.weight === 'number' ? r.weight : 1 }))
 }
 watch(() => props.modelValue, hydrate, { immediate: true, deep: true })
 function emitAll() {
-  const out = rows.value.map((r) => ({ key: String(r.key || '').trim(), item: r.item || '', weight: r.weight == null ? 1 : Number(r.weight) }))
+  const out = rows.value.map((r: any) => ({ key: String((r as any).key || '').trim(), item: (r as any).item || '', weight: (r as any).weight == null ? 1 : Number((r as any).weight) }))
   lastEmitted = JSON.stringify(out)
   emit('update:modelValue', out)
   emit('valid', problems.value.length === 0)
 }
 
 /* the pages or ads a variant can show */
-const items = ref([])
+const items = ref<any>([])
 const loadingItems = ref(false)
 async function load() {
   loadingItems.value = true
@@ -46,36 +47,36 @@ async function load() {
 }
 onMounted(load)
 watch(() => props.kind, load)
-const itemOf = (name) => items.value.find((i) => i.name === name) || null
-const options = computed(() => items.value.map((i) => ({ value: i.name, label: i.title + (props.kind === 'page' ? '  ·  ' + i.route : '') })))
+const itemOf = (name: any) => items.value.find((i: any) => (i as any).name === name) || null
+const options = computed(() => items.value.map((i: any) => ({ value: (i as any).name, label: (i as any).title + (props.kind === 'page' ? '  ·  ' + (i as any).route : '') })))
 
 /* the share each weight works out to */
-const total = computed(() => rows.value.reduce((n, r) => n + (r.weight > 0 ? r.weight : 0), 0))
-const share = (r) => (total.value ? Math.round(((r.weight > 0 ? r.weight : 0) / total.value) * 100) : 0)
+const total = computed(() => rows.value.reduce((n: any, r: any) => n + ((r as any).weight > 0 ? (r as any).weight : 0), 0))
+const share = (r: any) => (total.value ? Math.round(((r.weight > 0 ? r.weight : 0) / total.value) * 100) : 0)
 
 /* what is wrong, if anything — the same checks the server makes on save */
 const problems = computed(() => {
   const out = [], keys = new Set(), routes = new Set()
-  rows.value.forEach((r, i) => {
-    const k = String(r.key || '').trim().toUpperCase()
+  rows.value.forEach((r: any, i: any) => {
+    const k = String((r as any).key || '').trim().toUpperCase()
     if (!k) out.push({ i, msg: 'needs a key' })
     else if (keys.has(k)) out.push({ i, msg: 'key "' + k + '" is used twice' })
     keys.add(k)
-    if (!r.item) out.push({ i, msg: 'choose what it shows' })
-    else { const it = itemOf(r.item); if (it && props.kind === 'page') routes.add(it.route) }
+    if (!(r as any).item) out.push({ i, msg: 'choose what it shows' })
+    else { const it = itemOf((r as any).item); if (it && props.kind === 'page') routes.add((it as any).route) }
   })
   if (routes.size > 1) out.push({ i: -1, msg: 'these pages are on different routes (' + [...routes].join(', ') + ') — an experiment compares pages on one route' })
   if (rows.value.length === 1) out.push({ i: -1, msg: 'one variant is not a test yet — add a second' })
   return out
 })
-const rowProblem = (i) => (problems.value.find((p) => p.i === i) || {}).msg || ''
+const rowProblem = (i: any) => (problems.value.find((p) => p.i === i) || {}).msg || ''
 watch(problems, () => emit('valid', problems.value.length === 0), { immediate: true })
 
 function add() { rows.value.push({ key: nextKey(rows.value), item: '', weight: 1 }); emitAll() }
-function remove(i) { rows.value.splice(i, 1); emitAll() }
+function remove(i: any) { rows.value.splice(i, 1); emitAll() }
 const busy = ref(-1)
-async function duplicate(i) {
-  const src = rows.value[i]
+async function duplicate(i: any) {
+  const src: any = rows.value[i]
   if (!src.item || busy.value >= 0) return
   busy.value = i
   try {
@@ -84,10 +85,10 @@ async function duplicate(i) {
     await load()
     rows.value.push({ key, item: name, weight: src.weight == null ? 1 : src.weight })
     emitAll()
-  } catch (e) { alert(e.message) }
+  } catch (e) { alert((e as any).message) }
   finally { busy.value = -1 }
 }
-const openItem = (name) => navigate(ROUTES.admin + '/' + colFor(props.kind) + '/' + name)
+const openItem = (name: any) => navigate(ROUTES.admin + '/' + colFor(props.kind) + '/' + name)
 </script>
 
 <template>

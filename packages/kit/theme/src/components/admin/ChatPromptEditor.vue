@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A funnel's chat step, edited as what it is — never as the grammar the file holds. The line
  * it says is a sentence; the choices are a list of rows (add, reorder, remove); how it shows
@@ -16,32 +17,32 @@ import { computed, ref } from 'vue'
 import { parseWhen, serialiseWhen, splitChoices, joinChoices, TRIGGER_KEYS } from 'platformkit/lib/support/when.js'
 import ChoiceTree from './ChoiceTree.vue'
 
-const props = defineProps({ step: { type: Object, required: true } })
+const props = defineProps({ step: { type: Object as PropType<any>, required: true } })
 
 /* ---- the line and the choices, over step.body ---- */
 const parts = computed(() => splitChoices(props.step.body))
 const line = computed({ get: () => parts.value.text, set: (v) => { props.step.body = joinChoices(v, parts.value.choices) } })
 const choices = computed(() => parts.value.choices)
-function setChoices(tree) { props.step.body = joinChoices(parts.value.text, tree) }
+function setChoices(tree: any) { props.step.body = joinChoices(parts.value.text, tree) }
 
 /* ---- the picture: a file uploaded to content/uploads, or one chosen from the library ---- */
 const MF = us('media').page.field
 const { choose } = useMediaPick()
 async function fromLibrary() { const url = await choose('image'); if (url) props.step.image = url }
 const uploading = ref(false), uploadErr = ref('')
-async function pickImage(e) {
+async function pickImage(e: any) {
   const file = e.target.files && e.target.files[0]; e.target.value = ''
   if (!file) return
   uploading.value = true; uploadErr.value = ''
   try {
     const j = await pipe.uploadImage(file)
     props.step.image = j.path
-  } catch (err) { uploadErr.value = err.message || 'upload failed' } finally { uploading.value = false }
+  } catch (err) { uploadErr.value = (err as any).message || 'upload failed' } finally { uploading.value = false }
 }
 
 /* ---- how it shows, over step.when ---- */
 const when = computed(() => parseWhen(props.step.when).when)
-function setWhen(w) { props.step.when = serialiseWhen(w) }
+function setWhen(w: any) { props.step.when = serialiseWhen(w) }
 const isDefault = computed({ get: () => !!when.value.default, set: (v) => { setWhen(v ? { default: true } : {}) } })
 const SPAN = ['on-site', 'page-time']
 const KINDS = [
@@ -51,21 +52,21 @@ const KINDS = [
 const label = Object.fromEntries(KINDS)
 const rows = computed(() => TRIGGER_KEYS.filter((k) => k !== 'default' && when.value[k] != null))
 const unused = computed(() => KINDS.filter(([k]) => when.value[k] == null))
-const defaults = { 'on-site': 30, 'page-time': 10, 'on-page': '/store/**', 'signed-in': true, returning: true, cart: true }
-function addTrigger(k) { if (!k) return; setWhen({ ...when.value, [k]: defaults[k] }) }
-function dropTrigger(k) { const w = { ...when.value }; delete w[k]; setWhen(w) }
-function setTrigger(k, v) { setWhen({ ...when.value, [k]: v }) }
+const defaults: any = { 'on-site': 30, 'page-time': 10, 'on-page': '/store/**', 'signed-in': true, returning: true, cart: true }
+function addTrigger(k: any) { if (!k) return; setWhen({ ...when.value, [k]: defaults[k] }) }
+function dropTrigger(k: any) { const w = { ...when.value }; delete w[k]; setWhen(w) }
+function setTrigger(k: any, v: any) { setWhen({ ...when.value, [k]: v }) }
 /* a span as a number and a unit: 90 → 90 s; 120 → 2 min; 3600 → 1 h */
-const unitOf = (s) => (s && s % 3600 === 0 ? 3600 : s && s % 60 === 0 ? 60 : 1)
-const spanNum = (k) => Math.round((when.value[k] || 0) / unitOf(when.value[k] || 0))
-const spanUnit = (k) => unitOf(when.value[k] || 0)
-function setSpan(k, num, unit) { const n = Math.max(0, Number(num) || 0); setTrigger(k, n * Number(unit)) }
+const unitOf = (s: any) => (s && s % 3600 === 0 ? 3600 : s && s % 60 === 0 ? 60 : 1)
+const spanNum = (k: any) => Math.round((when.value[k] || 0) / unitOf(when.value[k] || 0))
+const spanUnit = (k: any) => unitOf(when.value[k] || 0)
+function setSpan(k: any, num: any, unit: any) { const n = Math.max(0, Number(num) || 0); setTrigger(k, n * Number(unit)) }
 </script>
 
 <template>
   <div class="cp">
     <label class="ui-field"><span>Above the launcher <small>· a short line shown as a waiting message before the panel opens; a click opens it; blank shows nothing</small></span><input v-model="step.teaser" class="ui-input" placeholder="Do you have a question? We are here to help." /></label>
-    <label class="ui-field"><span>The line it says <small>· inside the panel, opening the conversation</small></span><textarea :value="line" class="ui-textarea cp-line" rows="2" placeholder="Hi there! Anything I can help you with?" @input="line = $event.target.value" /></label>
+    <label class="ui-field"><span>The line it says <small>· inside the panel, opening the conversation</small></span><textarea :value="line" class="ui-textarea cp-line" rows="2" placeholder="Hi there! Anything I can help you with?" @input="line = ($event.target as any).value" /></label>
 
     <div class="ui-field">
       <span>A picture <small>· shown with the line, above the launcher and in the panel; a gif moves</small></span>
@@ -98,17 +99,17 @@ function setSpan(k, num, unit) { const n = Math.max(0, Number(num) || 0); setTri
         <div v-for="k in rows" :key="k" class="cp-row cp-trigger">
           <b class="cp-kind">{{ label[k] }}</b>
           <template v-if="SPAN.includes(k)">
-            <input type="number" min="0" step="1" class="ui-input ui-mono cp-num" :value="spanNum(k)" @input="setSpan(k, $event.target.value, spanUnit(k))" />
-            <select class="ui-select cp-unit" :value="spanUnit(k)" @change="setSpan(k, spanNum(k), $event.target.value)"><option :value="1">seconds</option><option :value="60">minutes</option><option :value="3600">hours</option></select>
+            <input type="number" min="0" step="1" class="ui-input ui-mono cp-num" :value="spanNum(k)" @input="setSpan(k, ($event.target as any).value, spanUnit(k))" />
+            <select class="ui-select cp-unit" :value="spanUnit(k)" @change="setSpan(k, spanNum(k), ($event.target as any).value)"><option :value="1">seconds</option><option :value="60">minutes</option><option :value="3600">hours</option></select>
           </template>
-          <input v-else-if="k === 'on-page'" class="ui-input ui-mono" :value="when[k]" placeholder="/store/**" title="A path; * is one segment, ** any depth" @input="setTrigger(k, $event.target.value)" />
-          <select v-else-if="k === 'signed-in'" class="ui-select" :value="when[k] ? 'yes' : 'no'" @change="setTrigger(k, $event.target.value === 'yes')"><option value="yes">Only signed-in readers</option><option value="no">Only guests</option></select>
+          <input v-else-if="k === 'on-page'" class="ui-input ui-mono" :value="when[k]" placeholder="/store/**" title="A path; * is one segment, ** any depth" @input="setTrigger(k, ($event.target as any).value)" />
+          <select v-else-if="k === 'signed-in'" class="ui-select" :value="when[k] ? 'yes' : 'no'" @change="setTrigger(k, ($event.target as any).value === 'yes')"><option value="yes">Only signed-in readers</option><option value="no">Only guests</option></select>
           <span v-else class="ui-hint cp-flag">{{ k === 'returning' ? 'has been here before this visit' : 'has something in the bag' }}</span>
           <span class="ui-grow" />
           <button type="button" class="ui-btn ui-ghost ui-danger ui-sm" title="Remove" @click="dropTrigger(k)">×</button>
         </div>
         <p v-if="!rows.length" class="ui-err">No trigger yet — a pop-up with none never shows.</p>
-        <select v-if="unused.length" class="ui-select cp-add" :value="''" @change="addTrigger($event.target.value); $event.target.value = ''">
+        <select v-if="unused.length" class="ui-select cp-add" :value="''" @change="addTrigger(($event.target as any).value); ($event.target as any).value = ''">
           <option value="" disabled>+ Add a trigger</option>
           <option v-for="[k, l] in unused" :key="k" :value="k">{{ l }}</option>
         </select>

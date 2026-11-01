@@ -92,7 +92,7 @@ Verified by: `openspec validate` plus reading; phase 0 adds the section to every
 - **WHEN** the Typeform, Contentful, Shopify, Crisp, Elementor, Calendly, Zoom, Circle, Bluesky/Mastodon, Kajabi, Buffer, Stripe Billing, Intercom Fin and Practice Better rows are read in the spec's table and in the comparison document (`docs/COMPETITORS.md`, the docs site's copy)
 - **THEN** they say the same thing in the first three columns, and `docs-check.mjs` holds them equal
 
-Verified by: `node packages/kit/build/docs-check.mjs` in `npm test`
+Verified by: `node packages/kit/build/docs-check.mts` in `npm test`
 
 ### Requirement: Files are the truth, so there is no lock-in
 
@@ -234,7 +234,7 @@ the check SHALL hold them equal.
 - **WHEN** the overview doc and this spec's table are compared
 - **THEN** the Slack row is identical in both, naming the Matrix surface and what it leaves out
 
-Verified by: `packages/kit/build/docs-check.mjs`, in `npm test`
+Verified by: `packages/kit/build/docs-check.mts`, in `npm test`
 
 ### Requirement: Core explains its purpose and supported features
 
@@ -251,7 +251,7 @@ content, or policies.
 - **THEN** they can understand PlatformKit's purpose and its supported capabilities without
   mistaking a downstream site's product features for Core behavior
 
-Verified by: `packages/kit/build/site-boundary.test.mjs`, `packages/kit/build/docs-check.mjs`, and a
+Verified by: `packages/kit/build/site-boundary.test.mjs`, `packages/kit/build/docs-check.mts`, and a
 feature-claim audit against the named specs and implementation tests
 
 #### Scenario: a site-specific reference is added to Core

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 import { withBooker } from 'platformkit/lib/booking.js'
 /*
@@ -15,7 +16,7 @@ defineProps({
   role: { type: String, default: '' },
   image: { type: String, default: '' },
   statement: { type: String, default: '' },     /* the first-person paragraph(s), markdown */
-  facts: { type: Array, default: () => [] },     /* [{ label, body }] */
+  facts: { type: Array as PropType<any[]>, default: () => [] },     /* [{ label, body }] */
   cta: { type: String, default: '' },
   href: { type: String, default: '' },
   fine: { type: String, default: '' },

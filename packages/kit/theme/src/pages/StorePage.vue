@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * /store and everything beneath it: the storefront, a collection, a product.
  * Products and collections are written in content/store and priced live from

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* The site's mark — the small emblem beside the name in the header, the admin, the share cards and
    the support chat. The theme's is a plain circle-and-dot; a site draws its own by overriding this
    component by name (platformkit.config.js overrides: { SiteMark: './src/components/SiteMark.vue' }),

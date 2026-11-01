@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * WHAT YOU OFFER — a provider's own surface for their own offerings, on the Coaching tab beside
  * their hours. Deliberately NOT the admin: what somebody sells of their own time is theirs to write,
@@ -22,18 +22,18 @@ const emit = defineEmits(['terms'])
 const O = us('library').coaching.offerings || {}
 /* the booker's word for a session that costs nothing, so the two surfaces never disagree about it */
 const FREE = (us('library').coaching.booker || {}).free
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const open = ref(false), loading = ref(true), error = ref(''), saving = ref(false), saved = ref(false)
-const rows = ref([]), standing = ref(null), editing = ref(null), draft = ref(null)
+const rows = ref<any>([]), standing = ref<any>(null), editing = ref<any>(null), draft = ref<any>(null)
 
 const WHERES = computed(() => [
   ['none', O['where-none']], ['video', O['where-video']], ['link', O['where-link']],
   ['place', O['where-place']], ['phone', O['where-phone']],
 ])
 const placeLabel = computed(() => (draft.value?.where === 'link' ? O['place-link'] : draft.value?.where === 'phone' ? O['place-phone'] : O.place))
-const STATE = computed(() => ({ draft: O['state-draft'], waiting: O['state-waiting'], live: O['state-live'], retired: O['state-retired'] }))
-const LINE = computed(() => ({ draft: O['draft-line'], waiting: O['waiting-line'], live: O['live-line'], retired: O['retired-line'] }))
+const STATE = computed<any>(() => ({ draft: O['state-draft'], waiting: O['state-waiting'], live: O['state-live'], retired: O['state-retired'] }))
+const LINE = computed<any>(() => ({ draft: O['draft-line'], waiting: O['waiting-line'], live: O['live-line'], retired: O['retired-line'] }))
 /* the fold's one line: each state that is actually there, counted and named — never two of them
    rolled into one word, which read '2 draft' over one draft and one waiting */
 const summary = computed(() => {
@@ -41,24 +41,24 @@ const summary = computed(() => {
   if (!rows.value.length) return O.empty
   const order = ['live', 'waiting', 'draft', 'retired']
   return order
-    .map((k) => [rows.value.filter((r) => r.state === k).length, STATE.value[k]])
+    .map((k) => [rows.value.filter((r: any) => (r as any).state === k).length, (STATE as any).value[k]])
     .filter(([n]) => n > 0)
     .map(([n, name]) => n + ' ' + String(name || '').toLowerCase())
     .join(' · ')
 })
-const money = (c, cur) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format((Number(c) || 0) / 100) } catch (e) { return '' } }
+const money = (c: any, cur: any) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format((Number(c) || 0) / 100) } catch (e) { return '' } }
 
 async function load() {
   if (!configured || !user.value) { loading.value = false; return }
   loading.value = true
   try {
     const [{ data: st }, { data }] = await Promise.all([
-      supabase.rpc('provider_standing'),
-      supabase.from('provider_offerings').select('*').order('created_at', { ascending: true }),
+      (supabase as any).rpc('provider_standing'),
+      (supabase as any).from('provider_offerings').select('*').order('created_at', { ascending: true }),
     ])
     standing.value = st || null
     rows.value = data || []
-  } catch (e) { error.value = e.message } finally { loading.value = false }
+  } catch (e) { error.value = (e as any).message } finally { loading.value = false }
 }
 onMounted(load)
 /* the page reloads this after a signature, since what they may do has just changed */
@@ -66,16 +66,16 @@ defineExpose({ reload: load })
 
 const blank = () => ({ id: null, title: '', sub: '', about: '', minutes: 60, price_cents: 0, currency: 'usd', where: 'none', place: '', state: 'draft' })
 function add() { draft.value = blank(); editing.value = 'new'; open.value = true }
-function edit(r) { draft.value = { ...r }; editing.value = r.id }
+function edit(r: any) { draft.value = { ...r }; editing.value = r.id }
 function cancel() { draft.value = null; editing.value = null }
 
 /* a slug is made from the title and never typed: it is an address, not a thing to write */
-const slugOf = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'session'
+const slugOf = (s: any) => String(s || '').toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 60) || 'session'
 
 async function save() {
   if (!draft.value || !draft.value.title.trim()) return
   saving.value = true; error.value = ''
-  const d = draft.value
+  const d: any = draft.value
   const row = {
     title: d.title.trim(), sub: d.sub || null, about: d.about || null,
     minutes: Math.max(5, Math.min(600, Number(d.minutes) || 60)),
@@ -84,18 +84,18 @@ async function save() {
     place: ['link', 'place', 'phone'].includes(d.where) ? (d.place || null) : null,
   }
   try {
-    if (d.id) { const { error: e } = await supabase.from('provider_offerings').update(row).eq('id', d.id); if (e) throw e }
-    else { const { error: e } = await supabase.from('provider_offerings').insert({ ...row, provider_id: user.value.id, slug: slugOf(row.title) + '-' + Math.random().toString(36).slice(2, 6) }); if (e) throw e }
+    if (d.id) { const { error: e } = await (supabase as any).from('provider_offerings').update(row).eq('id', d.id); if (e) throw e }
+    else { const { error: e } = await (supabase as any).from('provider_offerings').insert({ ...row, provider_id: user.value.id, slug: slugOf(row.title) + '-' + Math.random().toString(36).slice(2, 6) }); if (e) throw e }
     saved.value = true; setTimeout(() => { saved.value = false }, 1800)
     cancel(); await load()
-  } catch (e) { error.value = e.message || O.error } finally { saving.value = false }
+  } catch (e) { error.value = (e as any).message || O.error } finally { saving.value = false }
 }
 
-async function move(r, state) {
+async function move(r: any, state: any) {
   if (state === 'retired' && !window.confirm(O['retire-ask'])) return
   error.value = ''
-  try { const { error: e } = await supabase.from('provider_offerings').update({ state }).eq('id', r.id); if (e) throw e; await load() }
-  catch (e) { error.value = e.message || O.error }
+  try { const { error: e } = await (supabase as any).from('provider_offerings').update({ state }).eq('id', r.id); if (e) throw e; await load() }
+  catch (e) { error.value = (e as any).message || O.error }
 }
 /* what putting one out means here: on sale where the site takes their word for it, sent to be read
    where it does not */
@@ -140,7 +140,7 @@ const maySell = computed(() => !standing.value || standing.value.may_sell !== fa
             <label class="po-field po-wide"><span>{{ O.sub }}</span><input v-model="draft.sub" type="text" maxlength="160" /></label>
             <label class="po-field po-wide"><span>{{ O.about }}</span><textarea v-model="draft.about" rows="3" :placeholder="O['about-hint']"></textarea></label>
             <label class="po-field"><span>{{ O.minutes }}</span><span class="po-num"><input v-model.number="draft.minutes" type="number" min="5" max="600" step="5" /><small>{{ O['minutes-unit'] }}</small></span></label>
-            <label class="po-field"><span>{{ O.price }}</span><span class="po-num"><input :value="(draft.price_cents / 100).toFixed(2)" type="number" min="0" step="1" @input="draft.price_cents = Math.round(Number($event.target.value || 0) * 100)" /><small>{{ (draft.currency || 'usd').toUpperCase() }}</small></span></label>
+            <label class="po-field"><span>{{ O.price }}</span><span class="po-num"><input :value="(draft.price_cents / 100).toFixed(2)" type="number" min="0" step="1" @input="draft.price_cents = Math.round(Number(($event.target as any).value || 0) * 100)" /><small>{{ (draft.currency || 'usd').toUpperCase() }}</small></span></label>
             <label class="po-field"><span>{{ O.where }}</span><select v-model="draft.where"><option v-for="[k, label] in WHERES" :key="k" :value="k">{{ label }}</option></select></label>
             <label v-if="['link', 'place', 'phone'].includes(draft.where)" class="po-field po-wide"><span>{{ placeLabel }}</span><input v-model="draft.place" type="text" maxlength="200" /></label>
             <div class="po-save">
@@ -156,7 +156,7 @@ const maySell = computed(() => !standing.value || standing.value.may_sell !== fa
         <label class="po-field po-wide"><span>{{ O.sub }}</span><input v-model="draft.sub" type="text" maxlength="160" /></label>
         <label class="po-field po-wide"><span>{{ O.about }}</span><textarea v-model="draft.about" rows="3" :placeholder="O['about-hint']"></textarea></label>
         <label class="po-field"><span>{{ O.minutes }}</span><span class="po-num"><input v-model.number="draft.minutes" type="number" min="5" max="600" step="5" /><small>{{ O['minutes-unit'] }}</small></span></label>
-        <label class="po-field"><span>{{ O.price }}</span><span class="po-num"><input :value="(draft.price_cents / 100).toFixed(2)" type="number" min="0" step="1" @input="draft.price_cents = Math.round(Number($event.target.value || 0) * 100)" /><small>{{ (draft.currency || 'usd').toUpperCase() }}</small></span></label>
+        <label class="po-field"><span>{{ O.price }}</span><span class="po-num"><input :value="(draft.price_cents / 100).toFixed(2)" type="number" min="0" step="1" @input="draft.price_cents = Math.round(Number(($event.target as any).value || 0) * 100)" /><small>{{ (draft.currency || 'usd').toUpperCase() }}</small></span></label>
         <label class="po-field"><span>{{ O.where }}</span><select v-model="draft.where"><option v-for="[k, label] in WHERES" :key="k" :value="k">{{ label }}</option></select></label>
         <label v-if="['link', 'place', 'phone'].includes(draft.where)" class="po-field po-wide"><span>{{ placeLabel }}</span><input v-model="draft.place" type="text" maxlength="200" /></label>
         <div class="po-save">

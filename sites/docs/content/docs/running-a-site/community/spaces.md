@@ -5,7 +5,7 @@ order: 52.1
 sources:
   [
     packages/kit/supabase/functions/spaces,
-    packages/kit/build/spaces-disk.mjs,
+    packages/kit/build/spaces-disk.mts,
     packages/kit/src/lib/community,
     packages/kit/theme/src/pages/SpacesPage.vue,
   ]

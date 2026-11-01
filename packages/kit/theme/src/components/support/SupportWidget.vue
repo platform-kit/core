@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The support chat's launcher, on every public page: a round button in the corner with the
  * unread count, the card a chat prompt shows above it — a pop-up's, or the desk's default nudging
@@ -23,15 +23,16 @@ import SupportTeaser from './SupportTeaser.vue'
    click: a chunk arriving mid-transition is what makes an open pop instead of grow */
 /* held as a plain component once loaded, never an async wrapper: an async wrapper mounts a placeholder
    first and the real element after, and the enter transition would run on the placeholder */
-const SupportPanel = shallowRef(null)
-let panelChunk = null
-const warmPanel = () => { if (!panelChunk) panelChunk = import('./SupportPanel.vue').then((m) => { SupportPanel.value = m.default; return m.default }); return panelChunk }
+const SupportPanel = shallowRef<any>(null)
+let panelChunk: any = null
+const warmPanel: any = () => { if (!panelChunk) panelChunk = import('./SupportPanel.vue').then((m) => { SupportPanel.value = m.default; return m.default }); return panelChunk }
 const L = us('support').widget.launcher
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
+// @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'.
 const quiet = computed(() => IN_PREVIEW || !mayInterrupt(route.value, INTERRUPT_ROUTES) || isStaff.value || staff.value)
-const prompt = ref(null)   /* the prompt being answered, handed to the panel */
-const choice = ref(null)   /* the choice picked on the teaser, if any */
+const prompt = ref<any>(null)   /* the prompt being answered, handed to the panel */
+const choice = ref<any>(null)   /* the choice picked on the teaser, if any */
 
 onMounted(async () => {
   setTimeout(warmPanel, 1200)
@@ -45,8 +46,10 @@ onMounted(async () => {
     history.replaceState({}, '', location.pathname + (q ? '?' + q : '') + location.hash)
   }
 })
+// @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
 async function toggle() { if (panelOpen.value) { close(); prompt.value = null; choice.value = null } else { quietNudge(); resolveDefault(); await warmPanel(); open() } }
-async function answer(c) { choice.value = c || null; prompt.value = reply(); if (c && prompt.value) track.chose(prompt.value, c); quietNudge(); await warmPanel(); open() }
+// @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
+async function answer(c: any) { choice.value = c || null; prompt.value = reply(); if (c && prompt.value) track.chose(prompt.value, c); quietNudge(); await warmPanel(); open() }
 /* the card's one button: a pop-up's opens the panel on that prompt; the nudge's opens the panel on the desk's default */
 function enter() { if (teaser.value) answer(null); else toggle() }
 function putAway() { if (teaser.value) dismiss(); else quietNudge() }
@@ -54,7 +57,7 @@ function putAway() { if (teaser.value) dismiss(); else quietNudge() }
 watch(quiet, (q) => { document.documentElement.toggleAttribute('data-support', !q) }, { immediate: true })
 /* window.$chatwidget (and $chatwoot, the same object) — the page-side object over this widget (support-api): the launcher hidden or shown on its say-so, the panel's chunk warmed as it opens */
 const bubbleHidden = ref(false)
-installChatWidget({ inbox: API.space, bubble: (visible) => { bubbleHidden.value = !visible }, popout: (typeof location !== 'undefined' ? location.origin : '') + ROUTES.support })
+installChatWidget({ inbox: API.space, bubble: (visible: any) => { bubbleHidden.value = !visible }, popout: (typeof location !== 'undefined' ? location.origin : '') + ROUTES.support })
 watch(panelOpen, (o) => { if (o && !SupportPanel.value) { resolveDefault(); warmPanel() } })
 </script>
 

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* One control for one leaf kind of a content model's field — the same controls the drawer draws at the top
    level, so a group's sub-field and a list's row are edited exactly as a field is: text, long text, markdown,
    number, a switch, a date, a date and time, a select, a multi-select, tags, a reference (the other model's
@@ -16,17 +17,17 @@ import DatePicker from 'primevue/datepicker'
 import MarkdownEditor from './MarkdownEditor.vue'
 import { us } from 'platformkit/lib/strings.js'
 import { useMediaPick } from '../../lib/admin/media-pick.js'
-const props = defineProps({ field: { type: Object, required: true }, modelValue: { default: undefined }, col: { type: String, default: '' } })
+const props = defineProps({ field: { type: Object as PropType<any>, required: true }, modelValue: { default: undefined }, col: { type: String, default: '' } })
 const emit = defineEmits(['update:modelValue'])
 const W = (us('models').drawer || {}).entry || {}
 const MF = us('media').page.field
 const { choose } = useMediaPick()
 async function fromLibrary() { const url = await choose(kind.value === 'image' ? 'image' : 'file'); if (url) set(url) }
-const set = (v) => emit('update:modelValue', v)
+const set = (v: any) => emit('update:modelValue', v)
 const kind = computed(() => props.field.kind)
 /* a reference's choices: the other model's entries, fetched once per model per page */
-const cache = (window.__dlModelOptions = window.__dlModelOptions || {})
-const refOptions = ref([])
+const cache = ((window as any).__dlModelOptions = (window as any).__dlModelOptions || {})
+const refOptions = ref<any>([])
 async function loadRef() { const key = props.field.options; if (!key) return; if (!cache[key]) cache[key] = pipe.options(key); refOptions.value = await cache[key] }
 /* a tags field offers a list too — the site's own tags — so it loads the same way */
 onMounted(() => { if (kind.value === 'reference' || (kind.value === 'tags' && props.field.options)) loadRef() })
@@ -40,31 +41,31 @@ const choices = computed(() => (kind.value === 'reference' || kind.value === 'ta
  * is what stops one subject becoming two spellings of itself. On, it suggests from the list and
  * takes what is typed.
  */
-const freeTags = computed(() => choices.value.some((o) => o && o.value === '__free__'))
-const tagChoices = computed(() => choices.value.filter((o) => o && o.value !== '__free__'))
-const suggestions = ref([])
-const suggest = (e) => {
+const freeTags = computed(() => choices.value.some((o: any) => o && o.value === '__free__'))
+const tagChoices = computed(() => choices.value.filter((o: any) => o && o.value !== '__free__'))
+const suggestions = ref<any>([])
+const suggest = (e: any) => {
   const q = String((e && e.query) || '').trim().toLowerCase()
   const have = new Set((props.modelValue || []).map((v) => String(v).toLowerCase()))
-  suggestions.value = tagChoices.value.filter((o) => !have.has(String(o.value).toLowerCase()) && (!q || o.label.toLowerCase().includes(q))).map((o) => o.value)
+  suggestions.value = tagChoices.value.filter((o: any) => !have.has(String(o.value).toLowerCase()) && (!q || o.label.toLowerCase().includes(q))).map((o: any) => o.value)
 }
 /* dates: the file holds YYYY-MM-DD, or YYYY-MM-DDTHH:mm for a date and time */
-const toDate = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0)) : null }
-const p2 = (n) => String(n).padStart(2, '0')
-const toYMD = (d) => (d ? `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}` : '')
-const toYMDHM = (d) => (d ? toYMD(d) + `T${p2(d.getHours())}:${p2(d.getMinutes())}` : '')
+const toDate = (s: any) => { const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0)) : null }
+const p2 = (n: any) => String(n).padStart(2, '0')
+const toYMD = (d: any) => (d ? `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}` : '')
+const toYMDHM = (d: any) => (d ? toYMD(d) + `T${p2(d.getHours())}:${p2(d.getMinutes())}` : '')
 /* uploads go under the model's folder of the library, through the collection's asset store; the field holds the address */
 const uploading = ref(false), err = ref('')
-async function upload(e) {
+async function upload(e: any) {
   const file = e.target.files && e.target.files[0]; e.target.value = ''
   if (!file) return
   uploading.value = true; err.value = ''
   try {
     const j = await pipe.upload(props.col, file)
     set(j.path)
-  } catch (x) { err.value = x.message } finally { uploading.value = false }
+  } catch (x) { err.value = (x as any).message } finally { uploading.value = false }
 }
-const previewSrc = (v) => (!v ? '' : /^(https?:)?\/\//.test(v) || v.startsWith('/') ? v : pipe.assetUrl(props.col, v))
+const previewSrc = (v: any) => (!v ? '' : /^(https?:)?\/\//.test(v) || v.startsWith('/') ? v : pipe.assetUrl(props.col, v))
 </script>
 
 <template>

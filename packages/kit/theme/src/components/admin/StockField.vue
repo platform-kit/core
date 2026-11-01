@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * HOW MANY ARE LEFT, SET WHERE THE EDITOR ALREADY IS.
  *
@@ -20,11 +21,11 @@ import { supabase, configured } from 'platformkit/lib/supabase.js'
 import { optionsOf, variantsOf } from 'platformkit/lib/variants.js'
 import { us } from 'platformkit/lib/content.js'
 
-const props = defineProps({ form: { type: Object, default: () => ({}) } })
+const props = defineProps({ form: { type: Object as PropType<any>, default: () => ({}) } })
 
 const W = computed(() => (us('models').stock || {}).main || {})
-const rows = ref(null)
-const moves = ref([])
+const rows = ref<any>(null)
+const moves = ref<any>([])
 const busy = ref('')
 const said = ref('')
 
@@ -35,31 +36,31 @@ const shapes = computed(() => {
   const made = variantsOf({ sku: props.form.sku || '', key: props.form.key || '' }, opts, { sold: { not: props.form.unsold || [] } })
   return made.filter((v) => v.sold)
 })
-const countOf = (variant) => (rows.value || []).find((r) => r.variant === (variant || '')) || null
-const availableOf = (variant) => { const r = countOf(variant); return r ? Math.max(0, r.stocked - r.reserved) : null }
+const countOf: any = (variant: any) => (rows.value || []).find((r: any) => (r as any).variant === (variant || '')) || null
+const availableOf = (variant: any) => { const r = countOf(variant); return r ? Math.max(0, (r as any).stocked - (r as any).reserved) : null }
 
 async function load() {
   if (!configured || !props.form.sku) { rows.value = []; return }
-  const { data } = await supabase.from('inventory').select('variant, stocked, reserved, updated_at').eq('sku', props.form.sku)
+  const { data } = await (supabase as any).from('inventory').select('variant, stocked, reserved, updated_at').eq('sku', props.form.sku)
   rows.value = data || []
-  const { data: m } = await supabase.from('inventory_movements').select('variant, delta, reason, note, at').eq('sku', props.form.sku).order('at', { ascending: false }).limit(8)
+  const { data: m } = await (supabase as any).from('inventory_movements').select('variant, delta, reason, note, at').eq('sku', props.form.sku).order('at', { ascending: false }).limit(8)
   moves.value = m || []
 }
 watch(() => props.form.sku, load, { immediate: true })
 
-async function set(variant, value) {
+async function set(variant: any, value: any) {
   const n = Number(value)
-  if (!Number.isInteger(n) || n < 0) { said.value = W['whole-number']; return }
+  if (!Number.isInteger(n) || n < 0) { said.value = (W as any)['whole-number']; return }
   busy.value = variant; said.value = ''
-  const { data, error } = await supabase.rpc('inventory_set', { p_sku: props.form.sku, p_variant: variant || '', p_stocked: n, p_note: null })
+  const { data, error } = await (supabase as any).rpc('inventory_set', { p_sku: props.form.sku, p_variant: variant || '', p_stocked: n, p_note: null })
   busy.value = ''
   if (error) { said.value = error.message; return }
-  said.value = data === 0 ? W.same : fill(W.moved, { n: data > 0 ? '+' + data : String(data) })
+  said.value = data === 0 ? (W as any).same : fill((W as any).moved, { n: data > 0 ? '+' + data : String(data) })
   await load()
 }
 
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-const when = (at) => { try { return new Date(at).toLocaleDateString() } catch { return '' } }
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const when = (at: any) => { try { return new Date(at).toLocaleDateString() } catch { return '' } }
 </script>
 
 <template>
@@ -72,7 +73,7 @@ const when = (at) => { try { return new Date(at).toLocaleDateString() } catch { 
           type="number" min="0" step="1" class="ui-input ui-stockin" :disabled="busy === v.variant"
           :value="countOf(v.variant) ? countOf(v.variant).stocked : 0"
           :aria-label="W.stocked"
-          @change="set(v.variant, $event.target.value)"
+          @change="set(v.variant, ($event.target as any).value)"
         />
         <span class="ui-stockheld">
           <template v-if="countOf(v.variant) && countOf(v.variant).reserved">{{ fill(W.held, { n: countOf(v.variant).reserved }) }}</template>

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * EVERY COMMENT ON THE SITE, in one place, for whoever is responsible for all of them.
  *
@@ -28,25 +28,25 @@ const A = computed(() => us('comments').admin || {})
 const H = computed(() => A.value.head || {})
 const FL = computed(() => A.value.filters || {})
 const R = computed(() => A.value.row || {})
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const state = ref('idle')      /* idle | loading | ok | denied | error */
-const rows = ref([])
+const rows = ref<any>([])
 const busy = ref('')
-const open = ref(null)         /* the comment being answered */
+const open = ref<any>(null)         /* the comment being answered */
 const draft = ref('')
 
 /* the narrowings, remembered per browser */
 const PREF = 'dl.comments.admin'
 const read = () => { try { return JSON.parse(localStorage.getItem(PREF) || '{}') } catch (e) { return {} } }
-const f = reactive({ state: 'waiting', kind: 'all', where: 'all', ...read() })
+const f = reactive<any>({ state: 'waiting', kind: 'all', where: 'all', ...read() })
 watch(f, () => { try { localStorage.setItem(PREF, JSON.stringify({ ...f })) } catch (e) { /* private mode */ } })
 
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; rows.value = []; return }
   if (roleKnown.value && !isStaff.value) { state.value = 'denied'; return }
   if (state.value !== 'ok') state.value = 'loading'
-  const { data, error } = await supabase.rpc('comment_queue', {
+  const { data, error } = await (supabase as any).rpc('comment_queue', {
     p_state: f.state === 'all' ? null : f.state,
     p_kind: f.kind === 'all' ? null : f.kind,
     p_attached: f.where === 'all' ? null : f.where === 'rooms',
@@ -62,14 +62,14 @@ watch([isSignedIn, roleKnown], load)
 
 /* the kinds actually in hand, so the narrowing offers what there is rather than a list of every
    kind a site could ever have */
-const kinds = computed(() => [...new Set(rows.value.map((r) => r.kind))].sort())
-const waiting = computed(() => rows.value.filter((r) => r.state === 'waiting').length)
+const kinds = computed(() => [...new Set(rows.value.map((r: any) => (r as any).kind))].sort())
+const waiting = computed(() => rows.value.filter((r: any) => (r as any).state === 'waiting').length)
 
-async function decide(row, yes) {
+async function decide(row: any, yes: any) {
   if (busy.value) return
   busy.value = row.id
   try {
-    const { data, error } = await supabase.rpc(yes ? 'comment_approve' : 'comment_refuse', { p_comment: row.id })
+    const { data, error } = await (supabase as any).rpc(yes ? 'comment_approve' : 'comment_refuse', { p_comment: row.id })
     if (error || (data && data.error)) throw new Error((error && error.message) || data.error)
     row.state = yes ? 'live' : 'removed'
     if (!yes) row.body = null
@@ -78,19 +78,20 @@ async function decide(row, yes) {
 
 /* AN ANSWER IS A COMMENT LIKE ANYBODY'S — under the moderator's own name, in the open, a reply to
    the line it answers. Never a note that appears to come from the site. */
-async function answer(row) {
+async function answer(row: any) {
   const body = draft.value.trim()
   if (!body || busy.value) return
   busy.value = row.id
   try {
-    const { data, error } = await supabase.rpc('comment_say', { p_kind: row.kind, p_subject: row.subject, p_body: body, p_parent: row.id })
+    const { data, error } = await (supabase as any).rpc('comment_say', { p_kind: row.kind, p_subject: row.subject, p_body: body, p_parent: row.id })
     if (error || (data && data.error)) throw new Error((error && error.message) || data.error)
     draft.value = ''
     open.value = null
   } catch (e) { state.value = 'error' } finally { busy.value = '' }
 }
 
-const when = (v) => { const d = new Date(v); return isNaN(d) ? '' : spanOf(Date.now() - d.getTime()) }
+// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
+const when = (v: any) => { const d = new Date(v); return isNaN(d) ? '' : spanOf(Date.now() - d.getTime()) }
 </script>
 
 <template>
@@ -123,7 +124,7 @@ const when = (v) => { const d = new Date(v); return isNaN(d) ? '' : spanOf(Date.
         <label v-if="kinds.length > 1">{{ FL.kind }}
           <select v-model="f.kind">
             <option value="all">{{ FL['kind-all'] }}</option>
-            <option v-for="k in kinds" :key="k" :value="k">{{ k }}</option>
+            <!-- @vue-expect-error TS2322, from the conversion: Type 'unknown' is not assignable to type 'PropertyKey | undefined'. --><option v-for="k in kinds" :key="k" :value="k">{{ k }}</option>
           </select>
         </label>
       </div>

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The full modal an ad takes at most once an hour, for a reader who has shown
  * interest. Presentational, like AdCard: the host owns the timing and the
@@ -9,7 +10,7 @@ import { us } from 'platformkit/lib/content.js'
 import MediaBlock from './content/MediaBlock.vue'
 
 defineProps({
-  ad: { type: Object, required: true },
+  ad: { type: Object as PropType<any>, required: true },
   inline: { type: Boolean, default: false },
 })
 const emit = defineEmits(['go', 'dismiss'])

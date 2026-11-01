@@ -4,15 +4,15 @@ description: A group of people the site can point work at — declared as a file
 order: 27
 sources:
   [
-    packages/kit/build/teams-io.mjs,
-    packages/kit/build/models/core/teams.mjs,
-    packages/kit/build/teams.mjs,
-    packages/kit/build/teams-push.mjs,
-    packages/kit/build/steps/teams.mjs,
+    packages/kit/build/teams-io.mts,
+    packages/kit/build/models/core/teams.mts,
+    packages/kit/build/teams.mts,
+    packages/kit/build/teams-push.mts,
+    packages/kit/build/steps/teams.mts,
     packages/kit/supabase/schemas/56-teams.sql,
     packages/kit/build/teams.test.mjs,
     packages/kit/build/teams-db.test.mjs,
-    packages/kit/src/lib/teams.js,
+    packages/kit/src/lib/teams.ts,
     packages/kit/theme/src/components/admin/TeamMembers.vue,
     packages/kit/theme/src/content/ui/teams.md,
     packages/kit/theme/src/pages/PersonPage.vue,

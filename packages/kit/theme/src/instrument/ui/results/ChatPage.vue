@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The Chat tab of the results sheet, /app/chat — the coaching chat, where a business runs it here
  * rather than in the community (platformkit.config.js coaching.where; the tab itself is switched off
@@ -16,14 +16,14 @@ import CoachingPanel from '../../../components/chat/CoachingPanel.vue'
 import { appPath } from '../../../router.js'
 
 const HOME = appPath('chat')
-const panel = ref(null)
+const panel = ref<any>(null)
 const gate = computed(() => (panel.value ? panel.value.gate : null))
 const ready = computed(() => !!panel.value && panel.value.ready)
 
-const root = ref(null)
+const root = ref<any>(null)
 const height = ref(0)
 function fit() {
-  const el = root.value
+  const el: any = root.value
   if (!el) return
   const stage = el.closest('.qzstage')
   if (stage) stage.scrollTop = 0
@@ -38,7 +38,7 @@ onBeforeUnmount(() => { window.removeEventListener('resize', fit) })
 </script>
 
 <template>
-  <div ref="root" class="chat" :style="{ height: height ? height + 'px' : null }">
+  <!-- @vue-expect-error TS2345, from the conversion: Argument of type '{ style: { height: string | null; }; class: string; ref: string; }' is not assignable to parameter of type 'HTMLAttributes --><div ref="root" class="chat" :style="{ height: height ? height + 'px' : null }">
     <div v-show="!ready" class="chat-wait" aria-busy="true" />
     <div v-if="ready && gate" class="chat-gate">
       <Gate kind="chat" :required="gate" />

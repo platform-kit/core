@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The call page — a booking's video room on the site, /app/call/<uid>: a lobby (the reader's own
  * camera, a microphone and a camera to choose, whether the call is recorded), the call (every person
@@ -17,53 +17,53 @@ import { admit, startRecording, endRoom } from 'platformkit/lib/room.js'
 import { Room, RoomEvent, Track, createLocalTracks } from 'livekit-client'
 
 const W = us('library').call.page
-const fill = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const uid = computed(() => { const m = /\/call\/([^/]+)/.exec(route.value || ''); return m ? m[1] : '' })
 
 /* the states: loading → lobby → joining → call → ended; or a refusal: early | over | not-yours | no-room | signin | failed */
 const state = ref('loading'), refusal = ref(''), opens = ref(''), errorLine = ref('')
-const grant = ref(null)   /* what session-room answered: url, token, role, title, record, start_at, end_at */
+const grant = ref<any>(null)   /* what session-room answered: url, token, role, title, record, start_at, end_at */
 async function load() {
   if (!uid.value) { state.value = 'refused'; refusal.value = 'no-room'; return }
   if (!isSignedIn.value) { if (roleKnown.value) { state.value = 'refused'; refusal.value = 'signin' } return }
   state.value = 'loading'
   try { grant.value = await admit(uid.value); state.value = 'lobby'; await nextTick(); preview() }
-  catch (e) { state.value = 'refused'; refusal.value = e.code === 'early' ? 'early' : e.code === 'over' ? 'over' : e.code === 'no-room' ? 'no-room' : e.status === 403 ? 'not-yours' : 'failed'; opens.value = e.opens || ''; errorLine.value = e.message || '' }
+  catch (e) { state.value = 'refused'; refusal.value = (e as any).code === 'early' ? 'early' : (e as any).code === 'over' ? 'over' : (e as any).code === 'no-room' ? 'no-room' : (e as any).status === 403 ? 'not-yours' : 'failed'; opens.value = (e as any).opens || ''; errorLine.value = (e as any).message || '' }
 }
 onMounted(load)
 watch([isSignedIn, roleKnown], () => { if (state.value === 'loading' || state.value === 'refused') load() })
 
 /* the lobby: a preview of the reader's own camera, the devices to choose from */
-const previewEl = ref(null), mics = ref([]), cams = ref([]), micId = ref(''), camId = ref(''), noDevices = ref(false)
-let previewTracks = []
+const previewEl = ref<any>(null), mics = ref<any>([]), cams = ref<any>([]), micId = ref(''), camId = ref(''), noDevices = ref(false)
+let previewTracks: any = []
 async function preview() {
   try {
     previewTracks = await createLocalTracks({ audio: micId.value ? { deviceId: micId.value } : true, video: camId.value ? { deviceId: camId.value } : true })
-    const v = previewTracks.find((t) => t.kind === Track.Kind.Video)
+    const v = previewTracks.find((t: any) => t.kind === Track.Kind.Video)
     if (v && previewEl.value) v.attach(previewEl.value)
     const list = await Room.getLocalDevices()
     mics.value = list.filter((d) => d.kind === 'audioinput'); cams.value = list.filter((d) => d.kind === 'videoinput')
-    if (!micId.value && mics.value[0]) micId.value = mics.value[0].deviceId
-    if (!camId.value && cams.value[0]) camId.value = cams.value[0].deviceId
+    if (!micId.value && mics.value[0]) micId.value = (mics.value[0] as any).deviceId
+    if (!camId.value && cams.value[0]) camId.value = (cams.value[0] as any).deviceId
   } catch (e) { noDevices.value = true }
 }
 function stopPreview() { for (const t of previewTracks) { try { t.stop() } catch (e) { /* gone */ } } previewTracks = [] }
 watch([micId, camId], async () => { if (state.value === 'lobby') { stopPreview(); await preview() } })
 
 /* the call */
-const room = shallowRef(null)
-const tiles = ref([])          /* [{ id, name, me, speaking, muted, cameraOff }] */
-const stage = ref(null)        /* a shared screen: { id, name } */
+const room = shallowRef<any>(null)
+const tiles = ref<any>([])          /* [{ id, name, me, speaking, muted, cameraOff }] */
+const stage = ref<any>(null)        /* a shared screen: { id, name } */
 const micOn = ref(true), camOn = ref(true), sharing = ref(false), recording = ref(false), asking = ref(false)
 const tileEls = new Map()
-const setTileEl = (id, el) => { if (el) tileEls.set(id, el); else tileEls.delete(id) }
-const stageEl = ref(null)
+const setTileEl = (id: any, el: any) => { if (el) tileEls.set(id, el); else tileEls.delete(id) }
+const stageEl = ref<any>(null)
 const isHost = computed(() => grant.value && grant.value.role === 'host')
-const others = computed(() => tiles.value.filter((t) => !t.me))
+const others = computed(() => tiles.value.filter((t: any) => !(t as any).me))
 function refresh() {
-  const r = room.value; if (!r) return
-  const list = []
-  const one = (p, me) => {
+  const r: any = room.value; if (!r) return
+  const list: any = []
+  const one = (p: any, me: any) => {
     const cam = p.getTrackPublication(Track.Source.Camera), mic = p.getTrackPublication(Track.Source.Microphone), screen = p.getTrackPublication(Track.Source.ScreenShare)
     list.push({ id: p.identity, name: me ? W.you : p.name || p.identity, me, speaking: p.isSpeaking, muted: !mic || mic.isMuted || !mic.track, cameraOff: !cam || cam.isMuted || !cam.track })
     if (screen && screen.track) stage.value = { id: p.identity, name: me ? W.you : p.name || p.identity, track: screen.track }
@@ -76,7 +76,7 @@ function refresh() {
 }
 function attach() {
   const r = room.value; if (!r) return
-  const all = [r.localParticipant, ...r.remoteParticipants.values()]
+  const all = [(r as any).localParticipant, ...(r as any).remoteParticipants.values()]
   for (const p of all) {
     const el = tileEls.get(p.identity); if (!el) continue
     const cam = p.getTrackPublication(Track.Source.Camera)
@@ -108,14 +108,14 @@ async function join() {
     if (isHost.value && grant.value.record && !recording.value) startRecording(uid.value).then((r) => { if (r && r.started) recording.value = true }).catch(() => {})
   } catch (e) { state.value = 'lobby'; errorLine.value = W.failed; await preview() }
 }
-async function toggleMic() { const r = room.value; if (!r) return; await r.localParticipant.setMicrophoneEnabled(!micOn.value); micOn.value = r.localParticipant.isMicrophoneEnabled; refresh() }
-async function toggleCam() { const r = room.value; if (!r) return; await r.localParticipant.setCameraEnabled(!camOn.value); camOn.value = r.localParticipant.isCameraEnabled; refresh() }
-async function toggleShare() { const r = room.value; if (!r) return; try { await r.localParticipant.setScreenShareEnabled(!sharing.value); sharing.value = r.localParticipant.isScreenShareEnabled } catch (e) { /* refused by the browser */ } refresh() }
-async function leave() { const r = room.value; if (r) { await r.disconnect() } ended() }
+async function toggleMic() { const r = room.value; if (!r) return; await (r as any).localParticipant.setMicrophoneEnabled(!micOn.value); micOn.value = (r as any).localParticipant.isMicrophoneEnabled; refresh() }
+async function toggleCam() { const r = room.value; if (!r) return; await (r as any).localParticipant.setCameraEnabled(!camOn.value); camOn.value = (r as any).localParticipant.isCameraEnabled; refresh() }
+async function toggleShare() { const r = room.value; if (!r) return; try { await (r as any).localParticipant.setScreenShareEnabled(!sharing.value); sharing.value = (r as any).localParticipant.isScreenShareEnabled } catch (e) { /* refused by the browser */ } refresh() }
+async function leave() { const r = room.value; if (r) { await (r as any).disconnect() } ended() }
 async function endAll() { asking.value = false; try { await endRoom(uid.value) } catch (e) { /* the room may already be gone */ } await leave() }
-function ended() { state.value = 'ended'; const r = room.value; room.value = null; if (r) { try { r.removeAllListeners() } catch (e) { /* gone */ } } }
-onBeforeUnmount(() => { stopPreview(); const r = room.value; if (r) r.disconnect() })
-const when = (iso) => { try { return new Intl.DateTimeFormat(undefined, { weekday: 'long', hour: 'numeric', minute: '2-digit' }).format(new Date(iso)) } catch (e) { return iso } }
+function ended() { state.value = 'ended'; const r = room.value; room.value = null; if (r) { try { (r as any).removeAllListeners() } catch (e) { /* gone */ } } }
+onBeforeUnmount(() => { stopPreview(); const r = room.value; if (r) (r as any).disconnect() })
+const when = (iso: any) => { try { return new Intl.DateTimeFormat(undefined, { weekday: 'long', hour: 'numeric', minute: '2-digit' }).format(new Date(iso)) } catch (e) { return iso } }
 const back = () => navigate(ROUTES.diagnostics + '/coaching')
 const cols = computed(() => { const n = tiles.value.length; return n <= 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4 })
 </script>

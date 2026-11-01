@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * OTHER APPS, on the reader's own account page (the network module): the address and the handle to
  * give Bluesky's app or any other atproto client, and the app passwords to sign in with — made here,
@@ -12,14 +12,14 @@ import { user } from 'platformkit/lib/auth.js'
 
 const props = defineProps({ username: { type: String, default: '' } })
 const W = computed(() => us('network').apps.main)
-const fill = (s, m) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const server = typeof window !== 'undefined' ? window.location.origin : ''
 const domain = ref('')
-const rows = ref([])
+const rows = ref<any>([])
 const name = ref('')
 const busy = ref(false)
 const err = ref('')
-const made = ref(null)
+const made = ref<any>(null)
 const copied = ref(false)
 /* the handle the protocol knows them by: their username, or until they take one, 'm' and the last
    twelve hex of their id (the same rule the server's own reads use) */
@@ -27,7 +27,7 @@ const handle = computed(() => {
   const name = props.username || (user.value ? 'm' + user.value.id.replace(/-/g, '').slice(-12) : '')
   return name && domain.value ? `${name}.${domain.value}` : ''
 })
-const when = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch { return '' } }
+const when = (iso: any) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch { return '' } }
 
 async function load() {
   const [d, list] = await Promise.all([describe().catch(() => null), listAppPasswords().catch(() => [])])
@@ -40,14 +40,14 @@ async function make() {
   if (!name.value.trim() || busy.value) return
   busy.value = true; err.value = ''; copied.value = false
   try { made.value = await makeAppPassword(name.value); name.value = ''; rows.value = await listAppPasswords() }
-  catch (e) { err.value = e.message || W.value.failed } finally { busy.value = false }
+  catch (e) { err.value = (e as any).message || W.value.failed } finally { busy.value = false }
 }
 async function copy() {
   try { await navigator.clipboard.writeText(made.value.password); copied.value = true } catch { copied.value = false }
 }
-async function revoke(r) {
+async function revoke(r: any) {
   if (!window.confirm(W.value['revoke-confirm'])) return
-  try { await revokeAppPassword(r.id); rows.value = rows.value.filter((x) => x.id !== r.id) } catch (e) { err.value = W.value.failed }
+  try { await revokeAppPassword(r.id); rows.value = rows.value.filter((x: any) => (x as any).id !== r.id) } catch (e) { err.value = W.value.failed }
 }
 </script>
 

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { md, mdBlock } from './md.js'
 import { glyph } from './icons.js'
@@ -20,15 +21,15 @@ const props = defineProps({
   device: { type: String, default: 'none' },       /* none | browser | phone | laptop */
   side: { type: String, default: 'right' },        /* the pictures' side: left | right */
   hover: { type: Boolean, default: true },         /* tabs switch on hover too */
-  items: { type: Array, default: () => [] },       /* [{ icon?, title, body, image, video? }] */
+  items: { type: Array as PropType<any[]>, default: () => [] },       /* [{ icon?, title, body, image, video? }] */
 })
 const at = ref(0)
-const list = ref(null)
-let io = null
+const list = ref<any>(null)
+let io: any = null
 onMounted(() => {
   if (props.layout !== 'scroll' || !list.value) return
   const els = [...list.value.querySelectorAll('.lpsc-item')]
-  io = new IntersectionObserver((es) => { es.forEach((e) => { if (e.isIntersecting) at.value = Number(e.target.dataset.i) }) }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 })
+  io = new IntersectionObserver((es) => { es.forEach((e) => { if (e.isIntersecting) at.value = Number((e.target as any).dataset.i) }) }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 })
   els.forEach((e) => io.observe(e))
 })
 onBeforeUnmount(() => io && io.disconnect())

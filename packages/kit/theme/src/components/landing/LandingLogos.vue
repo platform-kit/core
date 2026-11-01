@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 import Ticker from './Ticker.vue'
 import Stars from './Stars.vue'
@@ -16,9 +17,9 @@ const props = defineProps({
   heading: { type: String, default: '' },
   lead: { type: String, default: '' },
   layout: { type: String, default: 'row' },   /* row | chips | beside | marquee | tiles */
-  logos: { type: Array, default: () => [] },  /* [{ name, image, href? }] */
+  logos: { type: Array as PropType<any[]>, default: () => [] },  /* [{ name, image, href? }] */
   mono: { type: Boolean, default: true },     /* washed to one ink until hovered */
-  rating: { type: Object, default: () => ({}) },   /* { stars, line } */
+  rating: { type: Object as PropType<any>, default: () => ({}) },   /* { stars, line } */
 })
 const half = () => Math.ceil(props.logos.length / 2)
 </script>

@@ -4,11 +4,11 @@ description: The email designs, the editor, test sends, subjects, and which emai
 order: 35
 sources:
   [
-    packages/kit/build/emails.mjs,
+    packages/kit/build/emails.mts,
     packages/kit/supabase/functions/_shared/email.ts,
     packages/kit/supabase/functions/_shared/emails/tags.js,
     packages/kit/theme/src/components/admin/EmailsAdmin.vue,
-    packages/kit/build/auth-config.mjs,
+    packages/kit/build/auth-config.mts,
   ]
 reviewed: 2026-10-22
 ---

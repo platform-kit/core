@@ -15,7 +15,7 @@
   It degrades rather than fails: no WebGL, or a context lost, and the canvas simply goes away and
   the shape falls back to the drawn one.
 -->
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 
 const props = defineProps({
@@ -26,12 +26,12 @@ const props = defineProps({
   still: { type: Boolean, default: false },
 })
 const emit = defineEmits(['fail'])
-const canvas = ref(null)
-let gl = null, raf = 0, u = {}, t0 = 0, lost = null
+const canvas = ref<any>(null)
+let gl: any = null, raf = 0, u: any = {}, t0 = 0, lost: any = null
 /* what each state looks like: how fast it turns, how far it wobbles, how wide it sits, how
    bright. The person's own voice is tighter and cooler than the assistant's, which is the same
    distinction the drawn shapes make in outline and fill. */
-const MOOD = {
+const MOOD: any = {
   connecting: { speed: 0.35, wobble: 0.5, radius: 0.30, thick: 0.030, bright: 0.95, pulse: 0.5 },
   listening: { speed: 0.5, wobble: 0.85, radius: 0.31, thick: 0.032, bright: 1.1, pulse: 0.35 },
   thinking: { speed: 1.25, wobble: 1.15, radius: 0.30, thick: 0.030, bright: 1.1, pulse: 1.1 },
@@ -116,18 +116,18 @@ void main(){
 }`,
 }
 
-const rgb = (hex) => {
+const rgb = (hex: any) => {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex).trim())
   return m ? [1, 2, 3].map((i) => parseInt(m[i], 16) / 255) : [0.12, 0.84, 0.98]
 }
 
 function build() {
-  const el = canvas.value
+  const el: any = canvas.value
   if (!el) return false
   gl = el.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: false, depth: false })
   if (!gl) return false
-  const sh = (kind, src) => {
-    const s = gl.createShader(kind); gl.shaderSource(s, src); gl.compileShader(s)
+  const sh: any = (kind: any, src: any) => {
+    const s: any = gl.createShader(kind); gl.shaderSource(s, src); gl.compileShader(s)
     if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) || 'shader')
     return s
   }
@@ -150,14 +150,14 @@ function build() {
 }
 
 /* the mood eases toward the state rather than snapping, so a turn change is a swell */
-const now = { ...MOOD.listening }
+const now: any = { ...MOOD.listening }
 /*
  * The rotation is INTEGRATED rather than computed from the clock. Multiplying the time by a
  * speed that changes makes the whole picture jump backwards and forwards as the speed moves —
  * the phase has to accumulate, so it only ever goes on turning, faster or slower.
  */
 let spin = 0, lastMs = 0
-function draw(ms) {
+function draw(ms: any) {
   const el = canvas.value
   if (!el || !gl) return
   if (!t0) t0 = ms
@@ -194,7 +194,7 @@ function draw(ms) {
 
 onMounted(() => {
   try { if (!build()) return emit('fail') } catch { return emit('fail') }
-  lost = (e) => { e.preventDefault(); cancelAnimationFrame(raf); emit('fail') }
+  lost = (e: any) => { e.preventDefault(); cancelAnimationFrame(raf); emit('fail') }
   canvas.value.addEventListener('webglcontextlost', lost)
   raf = requestAnimationFrame(draw)
 })

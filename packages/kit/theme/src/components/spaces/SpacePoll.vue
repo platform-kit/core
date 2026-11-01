@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A question asked of a room, and what came back. The poll IS the message — the question is its
  * body, its options ride on its meta — so this draws inside the line rather than beside it, and
@@ -16,14 +17,15 @@ import { us } from 'platformkit/lib/content.js'
 import { tallyPoll } from 'platformkit/lib/spaces/model.js'
 
 const props = defineProps({
-  message: { type: Object, required: true },
-  votes: { type: Array, default: () => [] },
-  names: { type: Object, default: () => ({}) },
+  message: { type: Object as PropType<any>, required: true },
+  votes: { type: Array as PropType<any[]>, default: () => [] },
+  names: { type: Object as PropType<any>, default: () => ({}) },
   me: { type: String, default: '' },
   mayClose: { type: Boolean, default: false },
 })
 const emit = defineEmits(['vote', 'unvote', 'close'])
 const W = computed(() => us('spaces').poll.main)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const tally = computed(() => tallyPoll(props.message, props.votes, props.me))
 
 const said = computed(() => {
@@ -31,13 +33,13 @@ const said = computed(() => {
   if (!t || !t.people) return W.value['none-yet']
   return t.people === 1 ? W.value['people-one'] : (W.value['people-many'] || '').replace('{n}', t.people)
 })
-const countOf = (n) => (n === 1 ? W.value['votes-one'] : (W.value['votes-many'] || '').replace('{n}', n))
-const pct = (share) => Math.round(share * 100)
+const countOf = (n: any) => (n === 1 ? W.value['votes-one'] : (W.value['votes-many'] || '').replace('{n}', n))
+const pct = (share: any) => Math.round(share * 100)
 /* who answered, said as names — a community poll is not a secret ballot, and this is the half of it
    that makes one worth asking */
-const whoOf = (o) => (o.who || []).map((id) => props.names[id] || '').filter(Boolean).join(', ')
+const whoOf = (o: any) => (o.who || []).map((id: any) => props.names[id] || '').filter(Boolean).join(', ')
 
-function press(o) {
+function press(o: any) {
   if (!tally.value || tally.value.closed) return
   if (o.mine) emit('unvote', o.key)
   else emit('vote', { key: o.key, multi: tally.value.multi })

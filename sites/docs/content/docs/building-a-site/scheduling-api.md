@@ -9,7 +9,7 @@ sources:
     packages/kit/supabase/functions/_shared/scheduling-events.ts,
     packages/kit/supabase/functions/_shared/booking.ts,
     packages/kit/supabase/functions/_shared/schedulers/cal.js,
-    packages/kit/src/lib/cal-embed.js,
+    packages/kit/src/lib/cal-embed.ts,
     packages/kit/theme/src/pages/BookPage.vue,
     packages/kit/build/scheduling-api.test.mjs,
   ]

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The paywall / sign-in gate, one component for every locked surface:
  *   kind='results'  the full diagnostic results — login is all it asks; or,
@@ -20,7 +21,7 @@ import { user, resendConfirmation } from 'platformkit/lib/auth.js'
 const props = defineProps({
   kind: { type: String, default: 'doc' },
   required: { type: String, default: 'authenticated' },
-  progress: { type: Object, default: null },   /* { n, total } for a book */
+  progress: { type: Object as PropType<any>, default: null },   /* { n, total } for a book */
   teaser: { type: String, default: '' },       /* a faded glimpse of what's behind the gate */
   bookSlug: { type: String, default: '' },     /* a book's unlock goes straight into the cart */
 })
@@ -43,14 +44,14 @@ async function resend() {
   if (busy.value || resent.value || !email.value) return
   busy.value = true; note.value = ''
   try { await resendConfirmation(email.value); resent.value = true; note.value = S.value['sent-verify'] || '' }
-  catch (e) { const w = /after (\d+) seconds/i.exec((e && e.message) || ''); note.value = w ? (us('auth').modal.errors.wait || '').replace('{n}', w[1]) : (us('auth').modal.errors.rate || '') }
+  catch (e) { const w = /after (\d+) seconds/i.exec((e && (e as any).message) || ''); note.value = w ? (us('auth').modal.errors.wait || '').replace('{n}', w[1]) : (us('auth').modal.errors.rate || '') }
   busy.value = false
 }
 const progressText = computed(() => (props.progress && S.value.progress
   ? S.value.progress.replace('{n}', props.progress.n).replace('{total}', props.progress.total) : ''))
 const needsSignin = computed(() => variant.value === 'signin')
 
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 
 <template>

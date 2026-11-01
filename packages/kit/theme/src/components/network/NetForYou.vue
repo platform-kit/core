@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * FOR YOU (community.forYou) — Explore as Instagram keeps it: a grid of the posts with pictures or
  * video the reader may read, ranked by what people did with them and who the reader is close to
@@ -18,7 +18,7 @@ import NetMedia from './NetMedia.vue'
 import NetPost from './NetPost.vue'
 
 const F = computed(() => us('network').foryou.main)
-const items = ref([])
+const items = ref<any>([])
 const busy = ref(false)
 const done = ref(false)
 const failed = ref(false)
@@ -28,41 +28,41 @@ async function more() {
   busy.value = true
   try {
     const page = await forYou(items.value.length)
-    const have = new Set(items.value.map((x) => x.id))
+    const have = new Set(items.value.map((x: any) => (x as any).id))
     items.value = items.value.concat(page.items.filter((x) => !have.has(x.id)))
     done.value = page.done
   } catch { failed.value = true } finally { busy.value = false }
 }
 
 /* what a tile shows: the first item's picture, or a video's poster */
-const urlsOf = (it) => (it.kind === 'space' ? mediaUrls : net.images)
-function coverOf(it) {
+const urlsOf = (it: any) => (it.kind === 'space' ? mediaUrls : net.images)
+function coverOf(it: any) {
   const m = (it.post.media || [])[0] || {}
   const at = urlsOf(it)
   return kindOf(m) === 'video' ? (m.poster ? at[m.poster] : '') : at[m.path] || ''
 }
-const isVideo = (it) => kindOf((it.post.media || [])[0] || {}) === 'video'
-const isMany = (it) => (it.post.media || []).length > 1
-const likes = (it) => (it.post.like_count || 0)
-const replies = (it) => (it.post.reply_count || 0)
+const isVideo = (it: any) => kindOf((it.post.media || [])[0] || {}) === 'video'
+const isMany = (it: any) => (it.post.media || []).length > 1
+const likes = (it: any) => (it.post.like_count || 0)
+const replies = (it: any) => (it.post.reply_count || 0)
 
 /* the viewer */
 const open = ref(-1)
-const current = computed(() => (open.value >= 0 ? items.value[open.value] : null))
-function show(i) { open.value = i; document.documentElement.style.overflow = 'hidden' }
+const current = computed<any>(() => (open.value >= 0 ? items.value[open.value] : null))
+function show(i: any) { open.value = i; document.documentElement.style.overflow = 'hidden' }
 function close() { open.value = -1; document.documentElement.style.overflow = '' }
-function step(d) { const n = open.value + d; if (n >= 0 && n < items.value.length) open.value = n }
-function onKey(e) {
+function step(d: any) { const n = open.value + d; if (n >= 0 && n < items.value.length) open.value = n }
+function onKey(e: any) {
   if (open.value < 0) return
   if (e.key === 'Escape') close()
   else if (e.key === 'ArrowRight') step(1)
   else if (e.key === 'ArrowLeft') step(-1)
 }
-const threadOf = (it) => (it.kind === 'space' ? '' : ROUTES.feed + '/post/' + it.id)
+const threadOf = (it: any) => (it.kind === 'space' ? '' : ROUTES.feed + '/post/' + it.id)
 
 /* more as the foot of the grid comes into view */
-const foot = ref(null)
-let io = null
+const foot = ref<any>(null)
+let io: any = null
 onMounted(async () => {
   window.addEventListener('keydown', onKey)
   await more()
@@ -78,7 +78,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', onKey); if (io) io
 <template>
   <div class="fy">
     <div v-if="items.length" class="fy-grid">
-      <button v-for="(it, i) in items" :key="it.kind + it.id" type="button" class="fy-tile" :class="{ tall: isVideo(it) }"
+      <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'number'. --><button v-for="(it, i) in items" :key="it.kind + it.id" type="button" class="fy-tile" :class="{ tall: isVideo(it) }"
         :style="{ '--d': Math.min(i, 12) * 0.03 + 's' }" :aria-label="(it.post.text || '').slice(0, 80) || F.open" @click="show(i)">
         <img v-if="coverOf(it)" :src="coverOf(it)" alt="" loading="lazy" />
         <span v-else class="fy-wait" aria-hidden="true"></span>

@@ -5,11 +5,11 @@ order: 56.8
 sources:
   [
     packages/kit/src/sdk,
-    packages/kit/build/analytics-sdk.mjs,
-    packages/kit/build/analytics-config.mjs,
+    packages/kit/build/analytics-sdk.mts,
+    packages/kit/build/analytics-config.mts,
     packages/kit/supabase/functions/ingest,
-    packages/kit/src/lib/analytics.js,
-    packages/kit/src/lib/arrival.js,
+    packages/kit/src/lib/analytics.ts,
+    packages/kit/src/lib/arrival.ts,
     packages/kit/build/analytics-sdk.test.mjs,
     packages/kit/supabase/functions/_shared/posthog-wire.js,
   ]

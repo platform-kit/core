@@ -1,6 +1,7 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { us } from '../strings.js'
-defineProps({ items: { type: Array, default: () => [] } })
+defineProps({ items: { type: Array as PropType<any[]>, default: () => [] } })
 const G = (us('pages').grid || {}).chrome || {}
 </script>
 

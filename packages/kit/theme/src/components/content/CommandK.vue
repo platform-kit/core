@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { contentCorpus, searchContent, semanticSearch, allTags, KIND_LABEL, parseQuery, embedText, warmEmbedder } from 'platformkit/lib/content.js'
 import { navigate } from '../../router.js'
@@ -10,23 +10,24 @@ import { ROUTES } from 'platformkit/lib/router.js'
 /* PEOPLE, where the network is on: the people with a page the reader may see, by name — the search
    the social layout's sidebar used to hold, kept where search already is */
 const PEOPLE = moduleOn('network')
-const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
-async function peopleHits(text) {
+// @ts-expect-error TS2769, from the conversion: No overload matches this call.
+const esc = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+async function peopleHits(text: any) {
   if (!PEOPLE || !isSignedIn.value || !text.trim() || kind.value) return []
   const { findPeople, net } = await import('platformkit/lib/network/api.js')
   const ids = await findPeople(text.trim()).catch(() => [])
-  return ids.map((id) => net.people[id]).filter((p) => p && p.username && p.page).slice(0, 5)
-    .map((p) => ({ kind: 'person', href: ROUTES.people + '/' + p.username, titleHtml: esc(p.name || p.username), excerpt: '@' + esc(p.handle || p.username) }))
+  return ids.map((id: any) => net.people[id]).filter((p: any) => p && p.username && p.page).slice(0, 5)
+    .map((p: any) => ({ kind: 'person', href: ROUTES.people + '/' + p.username, titleHtml: esc(p.name || p.username), excerpt: '@' + esc(p.handle || p.username) }))
 }
 
 /* The command palette: cmd-K anywhere, search everything, arrow, enter. */
 const open = ref(false)
 const q = ref('')
 const kind = ref('')          /* '' = everything; chips narrow it */
-const hits = ref([])
+const hits = ref<any>([])
 const sel = ref(0)
-const input = ref(null)
-let corpus = null
+const input = ref<any>(null)
+let corpus: any = null
 
 /* the date filter is buttons and pickers, never typed syntax */
 const RANGES = [
@@ -39,11 +40,12 @@ const RANGES = [
 const range = ref('')
 const from = ref('')
 const to = ref('')
-const iso = (d) => d.toISOString().slice(0, 10)
+const iso = (d: any) => d.toISOString().slice(0, 10)
 function rangeBounds() {
   if (range.value === 'custom') return { after: from.value || null, before: to.value || null }
   if (!range.value) return { after: null, before: null }
   const days = { week: 7, month: 31, year: 366 }[range.value]
+  // @ts-expect-error TS18048, from the conversion: 'days' is possibly 'undefined'.
   return { after: iso(new Date(Date.now() - days * 86400000)), before: null }
 }
 
@@ -56,34 +58,34 @@ const KINDS = [
   { v: 'product', label: 'Store' },
 ]
 const dd = ref('') /* which dropdown is open: '', 'kind', 'date', 'tags' */
-const tags = ref([])          /* the selected ones */
-const tagOptions = ref([])    /* what the shelf actually carries; empty = no Tags UI */
+const tags = ref<any>([])          /* the selected ones */
+const tagOptions = ref<any>([])    /* what the shelf actually carries; empty = no Tags UI */
 const kindLabel = computed(() => KINDS.find((k) => k.v === kind.value)?.label || 'All types')
 /* the kinds the shelf actually holds; an empty kind is not offered */
 const kindsHere = ref(KINDS)
 const rangeLabel = computed(() => RANGES.find((r) => r.v === range.value)?.label || 'Any time')
-function closeMenus(e) { if (!e.target.closest || !e.target.closest('.ck-dd')) dd.value = '' }
+function closeMenus(e: any) { if (!e.target.closest || !e.target.closest('.ck-dd')) dd.value = '' }
 
 async function ensure() {
   if (!corpus) {
     corpus = await contentCorpus()
-    tagOptions.value = allTags(corpus.filter((r) => r.kind !== 'product'))
-    const have = new Set(corpus.map((r) => r.kind))
+    tagOptions.value = allTags(corpus.filter((r: any) => r.kind !== 'product'))
+    const have = new Set(corpus.map((r: any) => r.kind))
     kindsHere.value = KINDS.filter((k) => !k.v || have.has(k.v))
   }
 }
 
-let semTimer = null
+let semTimer: any = null
 async function run() {
   await ensure()
   const { after, before } = rangeBounds()
-  const opts = { kind: kind.value || null, after, before, tags: tags.value.map((t) => t.toLowerCase()) }
-  const kw = searchContent(corpus, q.value, opts)
+  const opts = { kind: kind.value || null, after, before, tags: tags.value.map((t: any) => (t as any).toLowerCase()) }
+  const kw: any = searchContent(corpus, q.value, opts)
   hits.value = kw
   sel.value = 0
   /* people come back from the database, a beat after the shelf's own results */
   const asked = q.value
-  peopleHits(asked).then((ppl) => { if (ppl.length && q.value === asked) hits.value = ppl.concat(hits.value.filter((h) => h.kind !== 'person')) })
+  peopleHits(asked).then((ppl) => { if (ppl.length && q.value === asked) hits.value = ppl.concat(hits.value.filter((h: any) => (h as any).kind !== 'person')) })
 
   /* the semantic pass only runs when there are real words to mean something */
   const words = parseQuery(q.value).toks
@@ -94,29 +96,29 @@ async function run() {
     let qvec
     try { qvec = await embedText(snapshot) } catch (e) { return }
     if (q.value !== snapshot) return                     /* the query moved on */
-    const sem = semanticSearch(corpus, qvec, { ...opts, query: snapshot, min: 0.2, topK: 8 })
-    const have = new Set(kw.map((h) => h.href))
-    const extra = sem.filter((s) => !have.has(s.href)).map((s) => ({ ...s, semantic: true }))
+    const sem: any = semanticSearch(corpus, qvec, { ...opts, query: snapshot, min: 0.2, topK: 8 })
+    const have = new Set(kw.map((h: any) => h.href))
+    const extra = sem.filter((s: any) => !have.has(s.href)).map((s: any) => ({ ...s, semantic: true }))
     hits.value = kw.concat(extra)
   }, 180)
 }
 watch([q, kind, range, from, to, tags], run, { deep: true })
-function toggleTag(t) {
+function toggleTag(t: any) {
   const i = tags.value.indexOf(t)
   if (i >= 0) tags.value.splice(i, 1); else tags.value.push(t)
 }
 
 const grouped = computed(() => {
-  const g = []
+  const g: any = []
   for (const h of hits.value) {
-    let grp = g.find((x) => x.kind === h.kind)
-    if (!grp) { grp = { kind: h.kind, label: h.kind === 'person' ? us('network').shell.main['explore-people'] : KIND_LABEL[h.kind], rows: [] }; g.push(grp) }
+    let grp: any = g.find((x: any) => x.kind === (h as any).kind)
+    if (!grp) { grp = { kind: (h as any).kind, label: (h as any).kind === 'person' ? us('network').shell.main['explore-people'] : (KIND_LABEL as any)[(h as any).kind], rows: [] }; g.push(grp) }
     grp.rows.push(h)
   }
   return g
 })
 
-async function show(preset) {
+async function show(preset: any) {
   open.value = true
   /* opened with a scope (e.g. from the wiki/docs search field): reset to a clean
      search narrowed to that kind */
@@ -130,9 +132,10 @@ async function show(preset) {
   input.value && input.value.focus()
 }
 function hide() { open.value = false; q.value = '' }
-function go(h) { hide(); navigate(h.href) }
+function go(h: any) { hide(); navigate(h.href) }
 
-function onKey(e) {
+function onKey(e: any) {
+  // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); open.value ? hide() : show(); return }
   if (!open.value) return
   if (e.key === 'Escape') { hide() }
@@ -143,11 +146,11 @@ function onKey(e) {
 onMounted(() => {
   document.addEventListener('keydown', onKey)
   /* let any component open the palette (optionally scoped) without a ref chain */
-  window.DLsearch = show
+  ;(window as any).DLsearch = show
 })
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKey)
-  if (window.DLsearch === show) delete window.DLsearch
+  if ((window as any).DLsearch === show) delete (window as any).DLsearch
 })
 
 defineExpose({ show })

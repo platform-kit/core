@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * BESIDE THE COLUMN IN THE SOCIAL LAYOUT — what is coming up for this reader: the next events across
  * every space they are in, and their own sessions — the ones they booked and the ones they give —
@@ -22,20 +22,21 @@ const now = new Date()
 
 /* THE READER'S OWN SESSIONS, attended or given. An administrator may read every booking, so the
    rows are narrowed to the reader's own here rather than trusted to the policy alone. */
-const sessions = ref([])
+const sessions = ref<any>([])
 async function loadSessions() {
   const me = user.value && user.value.id
   if (!me || !configured || !moduleOn('sessions')) { sessions.value = []; return }
   try {
-    const { data } = await supabase.from('bookings').select('uid, title, start_at, end_at, status, user_id, provider_id, host_id')
+    const { data } = await (supabase as any).from('bookings').select('uid, title, start_at, end_at, status, user_id, provider_id, host_id')
       .in('status', ['accepted', 'pending']).gt('end_at', new Date().toISOString()).order('start_at').limit(20)
-    sessions.value = (data || []).filter((b) => b.user_id === me || b.host_id === me || b.provider_id === me)
+    sessions.value = (data || []).filter((b: any) => b.user_id === me || b.host_id === me || b.provider_id === me)
   } catch (e) { sessions.value = [] }
 }
 /* one list, by time: an event is a way to its page, a session a way to the reader's sessions */
 const next = computed(() => [
-  ...(calendar.upcoming || []).map((o) => ({ kind: 'event', key: 'e' + o.id, at: o.starts_at, title: o.title, slug: o.slug })),
-  ...sessions.value.map((b) => ({ kind: 'session', key: 's' + b.uid, at: b.start_at, title: b.title, hosting: b.user_id !== (user.value || {}).id })),
+  ...(calendar.upcoming || []).map((o: any) => ({ kind: 'event', key: 'e' + (o as any).id, at: (o as any).starts_at, title: (o as any).title, slug: (o as any).slug })),
+  ...sessions.value.map((b: any) => ({ kind: 'session', key: 's' + (b as any).uid, at: (b as any).start_at, title: (b as any).title, hosting: (b as any).user_id !== (user.value || {}).id })),
+// @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
 ].sort((a, b) => new Date(a.at) - new Date(b.at)).slice(0, 4))
 const titleWord = computed(() => (sessions.value.length ? S.value['coming-up'] : S.value.events))
 onMounted(() => { loadCalendar(null, { days: 60, limit: 20 }).catch(() => {}); loadSessions() })
@@ -50,7 +51,7 @@ watch(() => user.value && user.value.id, loadSessions)
         <li v-for="o in next" :key="o.key">
           <button type="button" class="sa-row" :class="{ 'sa-session': o.kind === 'session' }" @click="o.kind === 'event' ? emit('event', o.slug) : emit('session')">
             <span class="sa-date"><b>{{ new Date(o.at).getDate() }}</b><small>{{ new Date(o.at).toLocaleString(undefined, { month: 'short' }) }}</small></span>
-            <span class="sa-what"><b>{{ o.title }}</b><small>{{ whenWord(o.at, now, { today: C.today, tomorrow: C.tomorrow }) }} · {{ clockOf(o.at) }}<template v-if="o.kind === 'session'"> · {{ o.hosting ? S['aside-hosting'] : S['aside-session'] }}</template></small></span>
+            <span class="sa-what"><b>{{ o.title }}</b><small><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(o.at, now, { today: C.today, tomorrow: C.tomorrow }) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clockOf(o.at) }}<template v-if="o.kind === 'session'"> · {{ o.hosting ? S['aside-hosting'] : S['aside-session'] }}</template></small></span>
           </button>
         </li>
       </ul>

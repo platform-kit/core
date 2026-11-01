@@ -8,8 +8,8 @@ sources:
     packages/kit/theme/src/pages/BillingPortalPage.vue,
     packages/kit/theme/src/pages/SignInPage.vue,
     packages/kit/theme/src/components/store/ProductPage.vue,
-    packages/kit/src/lib/downloads.js,
-    packages/kit/src/lib/booking.js,
+    packages/kit/src/lib/downloads.ts,
+    packages/kit/src/lib/booking.ts,
   ]
 reviewed: 2026-10-15
 ---

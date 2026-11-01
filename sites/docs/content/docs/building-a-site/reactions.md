@@ -5,7 +5,7 @@ order: 56.6
 sources:
   [
     packages/kit/supabase/schemas/99-reactions.sql,
-    packages/kit/src/lib/comments/model.js,
+    packages/kit/src/lib/comments/model.ts,
     packages/kit/build/reactions.test.mjs,
   ]
 reviewed: 2026-10-31

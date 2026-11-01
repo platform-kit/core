@@ -20,7 +20,7 @@ function ok(msg, cond) { if (cond) pass++; else { fail++; console.log('  FAIL  '
 console.log('\nTAILWIND\n');
 
 /* ---- the wiring ---- */
-const cfg = fs.readFileSync(new URL('../vite/tailwind.config.js', import.meta.url), 'utf8');   /* the kit's, applied by the plugin */
+const cfg = fs.readFileSync(new URL('../vite/tailwind.config.ts', import.meta.url), 'utf8');   /* the kit's, applied by the plugin */
 ok('preflight is off', /preflight:\s*false/.test(cfg));
 ok('the content globs cover the theme\'s components and the site\'s', /theme\.src \+ '\/\*\*\/\*\.\{vue/.test(cfg) && /site\.root \+ '\/src\/\*\*\/\*\.\{vue/.test(cfg));
 
@@ -28,7 +28,8 @@ ok('the content globs cover the theme\'s components and the site\'s', /theme\.sr
 const { loadSite } = await import('./site.mjs'); const { loadTheme } = await import('./theme.mjs')
 const THEME = await loadTheme(await loadSite())
 /* the entry, and the app module it imports once the content is in place (main.js → app.js) */
-const appJs = path.join(path.dirname(THEME.main), 'app.js')
+/* app.js as a site has it, or its TypeScript in the workspace */
+const appJs = ['app.js', 'app.ts'].map((f) => path.join(path.dirname(THEME.main), f)).find((f) => fs.existsSync(f)) || ''
 const entry = fs.readFileSync(THEME.main, 'utf8') + (fs.existsSync(appJs) ? fs.readFileSync(appJs, 'utf8') : '');
 ok('the directives are imported', /tailwind\.css/.test(entry));
 ok('...before the app stylesheet, so nothing existing loses a tie',

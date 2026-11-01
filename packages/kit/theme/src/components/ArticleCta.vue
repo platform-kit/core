@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The inline CTA at the foot of an article — the same targeted ad the host
  * would show elsewhere, rendered as an organic part of the piece rather than a
@@ -13,12 +14,12 @@ import { capture } from 'platformkit/lib/analytics.js'
 import { expose } from 'platformkit/lib/experiments.js'
 import MediaBlock from './content/MediaBlock.vue'
 
-const props = defineProps({ topics: { type: Array, default: () => [] } })
+const props = defineProps({ topics: { type: Array as PropType<any[]>, default: () => [] } })
 const U = us('cta').card.ui
-const ad = ref(null)
+const ad = ref<any>(null)
 
 onMounted(async () => {
-  const b = await pickAd({ placement: 'inline', pageTopics: props.topics })
+  const b: any = await pickAd({ placement: 'inline', pageTopics: props.topics })
   if (!b) return
   ad.value = b
   capture('cta_impression', { ad_id: b.id, mode: 'inline' })

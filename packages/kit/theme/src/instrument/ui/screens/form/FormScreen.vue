@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * One slide of a form, on the runner: its copy and its fields together, as forms.md shows a slide,
  * drawn in the site's design. The values typed here join the answers so far for the conditions and
@@ -14,20 +15,20 @@ import { validateSlide } from 'platformkit/lib/forms/validate.js'
 import FmBlocks from './FmBlocks.vue'
 import FmCopy from './FmCopy.vue'
 
-const props = defineProps({ screen: { type: Object, required: true } })
+const props = defineProps({ screen: { type: Object as PropType<any>, required: true } })
 const emit = defineEmits(['answer'])
 const S = computed(() => props.screen.state)   /* the host's state: answers, data, words, submit, grade, already, signin, restart */
 const W = computed(() => S.value.words)
-const values = reactive({})
+const values = reactive<any>({})
 for (const f of props.screen.fields) values[f.name] = S.value.answers[f.name] !== undefined ? S.value.answers[f.name] : (f.params && f.params.value !== undefined ? f.params.value : f.params && f.params.checked ? (f.params.multiple !== undefined ? f.params.checked : f.params.checked[0]) : f.params && f.params.selected !== undefined ? f.params.selected : undefined)
 const ctx = computed(() => context(S.value.data, { ...S.value.answers, ...values }))
-const errors = reactive({})
+const errors = reactive<any>({})
 const sending = ref(false)
 const sendError = ref('')
 /* the fields shown now: a field behind a false condition is neither checked nor sent */
 function visibleFields() {
-  const out = []
-  const walk = (blocks, on) => { for (const b of blocks) { const ok = on && (!b.condition || holds(b.condition, ctx.value)); if (b.type === 'field' && ok) out.push(b); if (b.blocks) walk(b.blocks, ok) } }
+  const out: any = []
+  const walk = (blocks: any, on: any) => { for (const b of blocks) { const ok = on && (!b.condition || holds(b.condition, ctx.value)); if (b.type === 'field' && ok) out.push(b); if (b.blocks) walk(b.blocks, ok) } }
   walk(props.screen.blocks, true)
   return out
 }
@@ -39,17 +40,17 @@ async function submit() {
   Object.assign(errors, validateSlide(fields, values, W.value))
   if (Object.keys(errors).length) { const first = document.querySelector('.ff-err'); if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' }); return }
   const out = {}
-  for (const f of fields) if (values[f.name] !== undefined) out[f.name] = values[f.name]
+  for (const f of fields) if (values[f.name] !== undefined) (out as any)[f.name] = values[f.name]
   sendError.value = ''
   if (props.screen.post && S.value.submit) {
     sending.value = true
     try { await S.value.submit(out, props.screen) }
-    catch (e) { sendError.value = (e && e.message) || W.value['not-sent']; sending.value = false; return }
+    catch (e) { sendError.value = (e && (e as any).message) || W.value['not-sent']; sending.value = false; return }
     sending.value = false
   }
   emit('answer', out)
 }
-function onEnter(how) { if (how !== 'pick') submit() }
+function onEnter(how: any) { if (how !== 'pick') submit() }
 const buttonText = computed(() => {
   const s = props.screen
   if (s.type === 'start') return s.button || W.value.start

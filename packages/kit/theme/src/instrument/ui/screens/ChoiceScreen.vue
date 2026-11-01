@@ -1,8 +1,9 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import ScreenHead from './ScreenHead.vue'
 
 /* One statement, and the ways of answering it. */
-defineProps({ screen: { type: Object, required: true } })
+defineProps({ screen: { type: Object as PropType<any>, required: true } })
 const emit = defineEmits(['answer'])
 </script>
 
@@ -23,7 +24,7 @@ const emit = defineEmits(['answer'])
         :style="o.multiline ? 'align-items:flex-start;padding:16px 20px' : null"
         @click="emit('answer', o.v)"
       >
-        <span class="k">{{ n + 1 }}</span>
+        <span class="k"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ n + 1 }}</span>
         <span v-if="o.colour" class="sw" :style="{ background: o.colour }" />
         <span class="qoptl">
           {{ o.label }}

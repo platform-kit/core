@@ -54,7 +54,7 @@ ok('no stack test leaves early with a pass except through skip() or notHere()', 
 
 /* and every Deno test is one test.mjs runs (DENO_TESTS) — two ran nowhere before */
 {
-  const runnerText = fs.readFileSync(path.join(HERE, 'test.mjs'), 'utf8')
+  const runnerText = fs.readFileSync(path.join(HERE, 'test.mts'), 'utf8')
   const listed = new Set([...(/DENO_TESTS = \[([^\]]*)\]/.exec(runnerText)?.[1] || '').matchAll(/'([^']+)'/g)].map((m) => m[1]))
   const deno = fs.readdirSync(HERE).filter((f) => /\.test\.ts$/.test(f))
   /* or driven by a wrapper test.mjs registers (the live integrations: stripe-testmode.integration.mjs runs its .test.ts) */
@@ -97,7 +97,7 @@ ok('no stack test reads `supabase status` or falls back to a fixed port', !fixed
 /* every browser launch honours PLAYWRIGHT_CHROMIUM_PATH (or goes through browser.mjs, which does): a machine where
    Playwright's own build is not installed names its own, and a launch that ignores it fails there — six did */
 {
-  const launches = fs.readdirSync(HERE).filter((f) => f.endsWith('.mjs') && f !== 'browser.mjs').flatMap((f) => fs.readFileSync(path.join(HERE, f), 'utf8').split('\n').map((l, i) => [f, l, i]).filter(([, l]) => /chromium\.launch\(/.test(l) && !/PLAYWRIGHT_CHROMIUM_PATH|executablePath: exe\b|\{ executablePath \}/.test(l)).map(([f, l, i]) => `${f}:${i + 1}  ${l.trim().slice(0, 100)}`))
+  const launches = fs.readdirSync(HERE).filter((f) => f.endsWith('.mjs') && f !== 'browser.mts').flatMap((f) => fs.readFileSync(path.join(HERE, f), 'utf8').split('\n').map((l, i) => [f, l, i]).filter(([, l]) => /chromium\.launch\(/.test(l) && !/PLAYWRIGHT_CHROMIUM_PATH|executablePath: exe\b|\{ executablePath \}/.test(l)).map(([f, l, i]) => `${f}:${i + 1}  ${l.trim().slice(0, 100)}`))
   ok('every browser launch honours PLAYWRIGHT_CHROMIUM_PATH', !launches.length, launches.join('\n'))
 }
 
@@ -109,7 +109,7 @@ const unverified = Object.entries(source).filter(([f, s]) => f !== 'test-stack.t
 ok('no test but the helper\'s own reads the run\'s stack unverified', !unverified.length, unverified.join(', '))
 
 /* ─── 3. every claim names a test that runs ─── */
-const runner = fs.readFileSync(path.join(HERE, 'test.mjs'), 'utf8')
+const runner = fs.readFileSync(path.join(HERE, 'test.mts'), 'utf8')
 const registered = new Set([...runner.matchAll(/\['([\w.-]+\.(?:test|integration)\.m[jt]s)'/g)].map((m) => m[1]).concat(['cloud-lane.test.mjs', 'static-site.test.mjs', 'e2e-runner.test.mjs']))
 const specFiles = []
 const walk = (d) => { if (!fs.existsSync(d)) return; for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory() && e.name !== 'archive') walk(p); else if (e.name === 'spec.md') specFiles.push(p) } }

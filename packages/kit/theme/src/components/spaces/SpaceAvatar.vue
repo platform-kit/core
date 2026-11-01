@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* A person as a rounded square, the way a workspace chat draws them.
  *
  * The square holds a FACE, drawn for them by DiceBear from their own seed (lib/avatar.js) — the same
@@ -22,7 +23,7 @@ const props = defineProps({
      A caller with only a name (a guest, a label) passes none and gets a face drawn from the name,
      which is honest; a caller with an id must pass the record, because a face drawn from a display
      name changes the day somebody renames themselves. */
-  person: { type: Object, default: null },
+  person: { type: Object as PropType<any>, default: null },
   /* what the face is drawn from, where a caller has a seed but no record */
   seed: { type: String, default: '' },
   /* a picture they chose themselves always wins: this component is the fallback, not the rule */

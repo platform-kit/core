@@ -4,8 +4,8 @@ description: How a community lists events, repeats a schedule, takes RSVPs, and 
 order: 52.2
 sources:
   [
-    packages/kit/build/events.mjs,
-    packages/kit/build/events-push.mjs,
+    packages/kit/build/events.mts,
+    packages/kit/build/events-push.mts,
     packages/kit/supabase/schemas/95-events.sql,
     packages/kit/supabase/functions/event-reminders,
     packages/kit/theme/src/pages/SpacesPage.vue,

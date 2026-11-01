@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { moduleOn } from 'platformkit/lib/modules.js'
 import { mayInterrupt } from 'platformkit/lib/interrupt.js'
 import { watch, defineAsyncComponent } from 'vue'
@@ -73,7 +73,7 @@ const TITLES = {
 
 /* the public pages set their own title and meta (src/lib/seo.js); only the
    dev-only admin, which has no page of its own to do it, is titled here */
-function applyRouteMeta(path) {
+function applyRouteMeta(path: any) {
   if (path === ROUTES.admin || path.startsWith(ROUTES.admin + '/')) document.title = TITLES[ROUTES.admin]
 }
 
@@ -127,5 +127,5 @@ watch(route, (path) => { applyRouteMeta(path); if (path !== ROUTES.preview) page
   <!-- the support chat's launcher, on every public page (it hides itself on the admin and for the staff) -->
   <!-- the launcher appears only where something may: a place of work is not a place to be sold to,
        and that rule is one rule (lib/interrupt.js), asked by the chat and by the ad alike -->
-  <SupportWidget v-if="moduleOn('support') && mayInterrupt(route, INTERRUPT_ROUTES)" />
+  <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'. --><SupportWidget v-if="moduleOn('support') && mayInterrupt(route, INTERRUPT_ROUTES)" />
 </template>

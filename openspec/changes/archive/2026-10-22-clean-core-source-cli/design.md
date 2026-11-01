@@ -2,7 +2,7 @@
 
 ## Context
 
-The Core CLI resolves workspace and fetched sites in `packages/kit/build/sites.mjs`; development runs, asset downloads, and database shadows also currently write below `.platformkit`. The root package is a private npm workspace and has no CLI bin, while the kit and theme are workspace packages.
+The Core CLI resolves workspace and fetched sites in `packages/kit/build/sites.mts`; development runs, asset downloads, and database shadows also currently write below `.platformkit`. The root package is a private npm workspace and has no CLI bin, while the kit and theme are workspace packages.
 
 ## Goals / Non-Goals
 

@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { computed } from 'vue'
 import { md } from './md.js'
 import { glyph } from './icons.js'
@@ -24,12 +25,12 @@ const props = defineProps({
   layout: { type: String, default: 'stacked' }, /* stacked (words above) | beside (words beside the grid) */
   cascade: { type: Boolean, default: false },   /* the tiles scroll up forever, faded top and bottom */
   gap: { type: String, default: 'normal' },     /* tight | normal */
-  items: { type: Array, default: () => [] },    /* [{ kind, size, tone, icon, title, body, image, video, href, value, label, points, quote, name }] */
+  items: { type: Array as PropType<any[]>, default: () => [] },    /* [{ kind, size, tone, icon, title, body, image, video, href, value, label, points, quote, name }] */
 })
-const tiles = computed(() => props.items.map((t) => ({ ...t, kind: t.kind || 'feature', size: t.size || '1x1', tone: t.tone || 'paper' })))
-const src = (t) => { const e = embedOf(t.video); return e && e.kind === 'file' ? e.src : '' }
+const tiles = computed(() => props.items.map((t) => ({ ...t, kind: (t as any).kind || 'feature', size: (t as any).size || '1x1', tone: (t as any).tone || 'paper' })))
+const src = (t: any) => { const e = embedOf(t.video); return e && e.kind === 'file' ? e.src : '' }
 /* the spotlight: the pointer's place on each tile, as custom properties its ::before reads */
-function move(e) { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', (e.clientX - r.left) + 'px'); e.currentTarget.style.setProperty('--my', (e.clientY - r.top) + 'px') }
+function move(e: any) { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', (e.clientX - r.left) + 'px'); e.currentTarget.style.setProperty('--my', (e.clientY - r.top) + 'px') }
 </script>
 
 <template>

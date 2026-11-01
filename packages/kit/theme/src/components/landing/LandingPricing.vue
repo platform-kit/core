@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref, computed, watch } from 'vue'
 import { md } from './md.js'
 import { withBooker } from 'platformkit/lib/booking.js'
@@ -36,15 +37,15 @@ const props = defineProps({
   eyebrow: { type: String, default: '' },
   heading: { type: String, default: '' },
   lead: { type: String, default: '' },
-  tiers: { type: Array, default: () => [] },   /* [{ name, price, per, tagline, features: [], cta, href, featured }] */
+  tiers: { type: Array as PropType<any[]>, default: () => [] },   /* [{ name, price, per, tagline, features: [], cta, href, featured }] */
   fine: { type: String, default: '' },
   layout: { type: String, default: 'columns' },       /* columns | rows | single | choice | selector */
   /* choice: the rungs as a list of radio rows and one button; selector: the rungs as options that add up to a total */
   selectorLabel: { type: String, default: '' },      /* the word before the total */
   featuredTone: { type: String, default: 'outline' }, /* outline | ink | accent */
-  compare: { type: Object, default: () => ({}) },     /* { heading, rows: [{ label, cells: ['yes' | 'no' | 'words'] }] } */
+  compare: { type: Object as PropType<any>, default: () => ({}) },     /* { heading, rows: [{ label, cells: ['yes' | 'no' | 'words'] }] } */
   featuredLabel: { type: String, default: '' },   /* the word on the featured rung's flag, e.g. "Most popular" */
-  filter: { type: Object, default: () => ({}) },  /* { label, default, options: [{ tag, label }] } */
+  filter: { type: Object as PropType<any>, default: () => ({}) },  /* { label, default, options: [{ tag, label }] } */
   /* a subscriber's rungs: the one they are on, and the others as a switch */
   ctaCurrent: { type: String, default: '' },
   ctaSwitch: { type: String, default: '' },
@@ -54,18 +55,18 @@ const props = defineProps({
   switchedLater: { type: String, default: '' },   /* the toast after a step down; {name}, {date} */
   kept: { type: String, default: '' },            /* the toast after calling a step down off; {name} */
 })
-const when = (iso) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' }).format(new Date(iso)) } catch (e) { return '' } }
-const options = computed(() => ((props.filter && props.filter.options) || []).filter((o) => o && o.tag && o.label))
+const when = (iso: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' }).format(new Date(iso)) } catch (e) { return '' } }
+const options = computed(() => ((props.filter && props.filter.options) || []).filter((o: any) => o && o.tag && o.label))
 const toggled = computed(() => options.value.length >= 2)
 const active = ref((props.filter && props.filter.default) || (options.value[0] && options.value[0].tag) || '')
-const shown = (t) => !toggled.value || !Array.isArray(t.tags) || !t.tags.length || t.tags.includes(active.value)
+const shown = (t: any) => !toggled.value || !Array.isArray(t.tags) || !t.tags.length || t.tags.includes(active.value)
 /* a feature line written "- Priority support" is one the rung lacks: drawn crossed */
-const featLines = (t) => (t.features || []).map((f) => (/^-\s+/.test(f) ? { text: f.replace(/^-\s+/, ''), off: true } : { text: f, off: false }))
+const featLines = (t: any) => (t.features || []).map((f: any) => (/^-\s+/.test(f) ? { text: f.replace(/^-\s+/, ''), off: true } : { text: f, off: false }))
 const chosen = ref(0)
-const ticked = ref({})
+const ticked = ref<any>({})
 const selTotal = computed(() => rows.value.reduce((n, t, i) => n + (ticked.value[i] ? Number(String(t.price || '').replace(/[^\d.]/g, '')) || 0 : 0), 0))
 const rows = computed(() => props.tiers.map((t) => {
-  const offer = t.sku ? PRODUCTS.find((p) => p.sku === t.sku) : null
+  const offer = (t as any).sku ? PRODUCTS.find((p: any) => p.sku === (t as any).sku) : null
   const subscription = !!offer && offer.billing === 'subscription'
   /* a rung is the reader's by the offer's key, so a renamed sku still finds its subscriber */
   const current = subscription && !!planKey.value && planKey.value === offer.key
@@ -75,8 +76,8 @@ const rows = computed(() => props.tiers.map((t) => {
      subscribe should know the first days are free before they press, and the only place that can
      say so is here — Stripe's own page is the one after the decision. */
   const trialDays = Number(offer && offer.trial) || 0
-  return { ...t, priceText: t.price || '', perText: t.per || '', link: withBooker(t.href || ''), buys: !!offer, current, pending, switching, trialDays,
-    label: current ? (props.ctaCurrent || t.cta) : pending ? (props.ctaPending || t.cta).replace('{date}', when(planNextAt.value)) : switching ? (props.ctaSwitch || t.cta) : t.cta }
+  return { ...t, priceText: (t as any).price || '', perText: (t as any).per || '', link: withBooker((t as any).href || ''), buys: !!offer, current, pending, switching, trialDays,
+    label: current ? (props.ctaCurrent || (t as any).cta) : pending ? (props.ctaPending || (t as any).cta).replace('{date}', when(planNextAt.value)) : switching ? (props.ctaSwitch || (t as any).cta) : (t as any).cta }
 }))
 
 /* buying from the page: sign in first when there is none, then the offer's own
@@ -84,17 +85,17 @@ const rows = computed(() => props.tiers.map((t) => {
 const SW = (us('store').page || {}).head || {}
 const busy = ref('')
 let pending = ''
-async function buy(t) {
+async function buy(t: any) {
   if (!t.buys || busy.value) return
-  if (!isSignedIn.value) { pending = t.sku; if (window.DLauth) window.DLauth.open({ intent: 'buy' }); return }
-  const offer = PRODUCTS.find((p) => p.sku === t.sku)
+  if (!isSignedIn.value) { pending = t.sku; if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'buy' }); return }
+  const offer = PRODUCTS.find((p: any) => p.sku === t.sku)
   busy.value = t.sku
   try {
     /* the plan they are on: its button opens the portal (cancel, cards, invoices) */
     if (t.current) { await openPortal(); return }
     if (offer.billing === 'subscription') {
       /* the rung a step down is waiting for: pressing it again calls the step down off (their own plan, asked for again) */
-      const own = PRODUCTS.find((p) => p.key === planKey.value)
+      const own = PRODUCTS.find((p: any) => p.key === planKey.value)
       const d = await subscribe(t.pending ? (own ? own.sku : plan.value) : t.sku)
       if (d && d.switched) {
         await refreshEntitlements().catch(() => {})
@@ -105,15 +106,15 @@ async function buy(t) {
     } else await checkout([{ sku: t.sku, quantity: 1 }])
   }
   catch (e) {
-    const off = e && e.code === 'stripe_unconfigured'
-    toast({ kind: 'warn', title: off ? SW['unconfigured-heading'] : SW['error-heading'], body: off ? SW['unconfigured-subtitle'] : (e && e.message) || '', dismiss: SW.dismiss || '' })
+    const off = e && (e as any).code === 'stripe_unconfigured'
+    toast({ kind: 'warn', title: off ? SW['unconfigured-heading'] : SW['error-heading'], body: off ? SW['unconfigured-subtitle'] : (e && (e as any).message) || '', dismiss: SW.dismiss || '' })
   } finally { busy.value = '' }
 }
 watch(isSignedIn, (on) => { if (on && pending) { const t = rows.value.find((r) => r.sku === pending); pending = ''; if (t) buy(t) } })
 /* the rungs in the order written, grouped: a band stands alone, columns between bands share a row */
-const groups = computed(() => {
-  const out = []
-  let run = null
+const groups: any = computed(() => {
+  const out: any = []
+  let run: any = null
   rows.value.forEach((t, i) => {
     if (!shown(t)) return
     if (t.wide || props.layout === 'rows') { run = null; out.push({ kind: 'band', tiers: [{ ...t, i }] }) }
@@ -124,7 +125,7 @@ const groups = computed(() => {
 /* the compare table: a column per rung shown as a column */
 const compareCols = computed(() => rows.value.filter((t) => shown(t)))
 const YES = /^(yes|true|✓|✔|included)$/i, NO = /^(no|false|—|-|×|✗|not included)$/i
-const cell = (c) => (c == null || c === '' ? 'blank' : YES.test(String(c).trim()) ? 'yes' : NO.test(String(c).trim()) ? 'no' : 'text')
+const cell = (c: any) => (c == null || c === '' ? 'blank' : YES.test(String(c).trim()) ? 'yes' : NO.test(String(c).trim()) ? 'no' : 'text')
 </script>
 
 <template>
@@ -160,9 +161,9 @@ const cell = (c) => (c == null || c === '' ? 'blank' : YES.test(String(c).trim()
       </div>
       <!-- the selector: options ticked add up -->
       <div v-else-if="layout === 'selector'" class="lpr-sellist lprv lpd1">
-        <p class="lpr-total"><span v-if="selectorLabel" v-html="md(selectorLabel)"></span><b class="lpnum">{{ money(Math.round(selTotal * 100), 'usd') }}</b></p>
+        <p class="lpr-total"><span v-if="selectorLabel" v-html="md(selectorLabel)"></span><b class="lpnum"><!-- @vue-expect-error TS2339, from the conversion: Property 'money' does not exist on type '{ filter: any; tiers: any[]; fine: string; layout: string; eyebrow: string; heading: string; lead:  -->{{ money(Math.round(selTotal * 100), 'usd') }}</b></p>
         <label v-for="(t, i) in rows" :key="t.i" class="lpr-opt-row lpr-check" :class="{ on: ticked[i] }">
-          <input type="checkbox" :checked="!!ticked[i]" @change="ticked = { ...ticked, [i]: $event.target.checked }" />
+          <input type="checkbox" :checked="!!ticked[i]" @change="ticked = { ...ticked, [i]: ($event.target as any).checked }" />
           <span class="lpr-box"></span>
           <span class="lpr-optw"><b v-html="md(t.name)"></b><span v-if="t.tagline" v-html="md(t.tagline)"></span></span>
           <span class="lpr-optp"><b v-html="md(t.priceText)"></b></span>

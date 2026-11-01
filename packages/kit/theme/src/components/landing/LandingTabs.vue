@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref } from 'vue'
 import { md, mdBlock } from './md.js'
 import { glyph } from './icons.js'
@@ -13,7 +14,7 @@ import SectionHead from './SectionHead.vue'
 defineProps({
   badge: { type: String, default: '' }, eyebrow: { type: String, default: '' }, heading: { type: String, default: '' }, lead: { type: String, default: '' },
   variant: { type: String, default: 'pills' },      /* pills | underline */
-  items: { type: Array, default: () => [] },      /* [{ label, icon?, body, image? }] */
+  items: { type: Array as PropType<any[]>, default: () => [] },      /* [{ label, icon?, body, image? }] */
 })
 const at = ref(0)
 </script>

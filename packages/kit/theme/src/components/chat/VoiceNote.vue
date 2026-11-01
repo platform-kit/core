@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A voice note in a bubble: play/pause, the waveform with the playhead on it
  * (wavesurfer.js, as the book's player), the time left, and a speed. The sound
@@ -12,14 +13,14 @@ import { voiceUrl } from 'platformkit/lib/chat/audio.js'
 import { clock } from 'platformkit/lib/chat/model.js'
 
 const props = defineProps({
-  message: { type: Object, required: true },
+  message: { type: Object as PropType<any>, required: true },
   /* drawn on one's own (accent) bubble or the peer's */
   own: { type: Boolean, default: false },
 })
 const V = us('chat').voice.main
 
-const box = ref(null)
-let ws = null
+const box = ref<any>(null)
+let ws: any = null
 const playing = ref(false)
 const ready = ref(false)
 const failed = ref(false)
@@ -33,7 +34,7 @@ const shown = computed(() => clock(playing.value || now.value > 0 ? Math.max(0, 
 /* the colours as the canvas needs them: real rgb, read off two probe spans that
    wear the tokens (a token's own value can be a color-mix() the canvas will not
    take), and read again when the theme changes */
-const waveEl = ref(null), progEl = ref(null)
+const waveEl = ref<any>(null), progEl = ref<any>(null)
 const colours = () => ({
   wave: (waveEl.value && getComputedStyle(waveEl.value).color) || '#888',
   progress: (progEl.value && getComputedStyle(progEl.value).color) || '#0b6e6e',
@@ -43,7 +44,7 @@ function recolour() {
   const c = colours()
   ws.setOptions({ waveColor: c.wave, progressColor: c.progress, cursorColor: c.progress })
 }
-let mo = null, mql = null
+let mo: any = null, mql: any = null
 const onScheme = () => recolour()
 
 async function make() {
@@ -55,8 +56,8 @@ async function make() {
     container: box.value, url, height: 26, waveColor: c.wave, progressColor: c.progress, cursorColor: c.progress,
     cursorWidth: 1, barWidth: 2, barGap: 2, barRadius: 2, normalize: true, dragToSeek: true, audioRate: rate.value,
   })
-  ws.on('ready', (d) => { ready.value = true; if (d) total.value = d })
-  ws.on('timeupdate', (t) => { now.value = t })
+  ws.on('ready', (d: any) => { ready.value = true; if (d) total.value = d })
+  ws.on('timeupdate', (t: any) => { now.value = t })
   ws.on('play', () => { playing.value = true })
   ws.on('pause', () => { playing.value = false })
   ws.on('finish', () => { playing.value = false; now.value = 0 })

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * What a tab looks like before it has anything behind it.
  *

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import Book3D from '../Book3D.vue'
 import { articleIndex, docTree, contentCorpus, forYou, embedText, warmEmbedder, concepts, booksForConcept, bookShelf, bookProgress, dropFinished, coverTint, us } from 'platformkit/lib/content.js'
@@ -23,13 +23,14 @@ const PROG = us('library').progress.label
 /* a shelf is shown when anything published is on it */
 const LANE_MIN = 1
 const articles = articleIndex().length >= LANE_MIN ? articleIndex().slice(0, 4) : []
-const flatten = (node, out = []) => {
-  node.docs.forEach((d) => out.push(d))
-  node.dirs.forEach((dir) => flatten(dir, out))
+const flatten = (node: any, out = []) => {
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
+  node.docs.forEach((d: any) => out.push(d))
+  node.dirs.forEach((dir: any) => flatten(dir, out))
   return out
 }
-const wiki = flatten(docTree('wiki')).length >= LANE_MIN ? flatten(docTree('wiki')).slice(0, 6) : []
-const docs = flatten(docTree('docs')).length >= LANE_MIN ? flatten(docTree('docs')).slice(0, 6) : []
+const wiki: any = flatten(docTree('wiki')).length >= LANE_MIN ? flatten(docTree('wiki')).slice(0, 6) : []
+const docs: any = flatten(docTree('docs')).length >= LANE_MIN ? flatten(docTree('docs')).slice(0, 6) : []
 const hasBooks = bookShelf().length > 0
 
 /* ---- discovery ---- */
@@ -61,7 +62,7 @@ if (isSignedIn.value) hydrate()
  */
 const mine = ref(NO_INTERESTS)
 const askInterests = async () => { mine.value = await interests() }
-const canRecommend = computed(() => { void sessionRev.value; return !!((sig.value && sig.value.has) || mine.value.has) })
+const canRecommend = computed(() => { void sessionRev.value; return !!((sig.value && (sig.value as any).has) || mine.value.has) })
 /*
  * WHETHER THE VIEW IS OFFERED AT ALL. There when there is something in it — and, on a site that can
  * EARN recommendations for somebody who has none, there anyway, because then the empty view is not
@@ -87,7 +88,7 @@ const askedView = (() => { try { const v = sessionStorage.getItem('dl.hub.view')
  */
 const mode = ref('all')
 const loading = ref(false)
-const ranked = ref(null)
+const ranked = ref<any>(null)
 
 /* In the Everything (fallback) state, books are browsed by concept — the
    dropdown lives here and nowhere else. "Everything" leads it and shows the
@@ -98,7 +99,7 @@ const conceptOptions = [{ slug: 'all', name: HUB.browse['all-books'] }].concat(c
 const concept = ref('all')
 const conceptBooks = computed(() => {
   const list = concept.value === 'all' ? bookShelf() : booksForConcept(concept.value)
-  return dropFinished(list).slice(0, BOOK_ROW).map((b) => ({ ...b, prog: bookProgress(b.slug) }))
+  return dropFinished(list).slice(0, BOOK_ROW).map((b: any) => ({ ...b, prog: bookProgress(b.slug) }))
 })
 
 /* whether the READER picked the view, as against the page picking it for them. Signing in moves
@@ -106,7 +107,7 @@ const conceptBooks = computed(() => {
    never moves somebody who has, because a page that changes tab under you is worse than a page
    that opens on the wrong one. */
 let chose = false
-async function show(m, byHand = true) {
+async function show(m: any, byHand = true) {
   if (byHand) chose = true
   mode.value = m
   if (m === 'foryou') await rank()
@@ -118,8 +119,8 @@ async function show(m, byHand = true) {
 let rankedFor = ''
 async function rank() {
   if (!canRecommend.value) return
-  const at = { themeTags: (sig.value && sig.value.themeTags) || [], prescribed: (sig.value && sig.value.prescribed) || [], weights: mine.value.weights }
-  const text = profileText(mine.value.weights, (sig.value && sig.value.text) || '')
+  const at = { themeTags: (sig.value && (sig.value as any).themeTags) || [], prescribed: (sig.value && (sig.value as any).prescribed) || [], weights: mine.value.weights }
+  const text = profileText(mine.value.weights, (sig.value && (sig.value as any).text) || '')
   const key = text + '|' + JSON.stringify(at)
   if (!text || key === rankedFor) return
   rankedFor = key
@@ -137,16 +138,16 @@ async function rank() {
    offered, which is right — it is the piece they meant to come back to. A book is governed by its
    own rule instead, since a chapter's depth says nothing about the book: it is left in while there
    is progress to continue, and dropFinished takes it once there is not. */
-const unread = (r) => !mine.value.read.has(seenKey(r.kind, r.id)) ||
+const unread = (r: any) => !mine.value.read.has(seenKey(r.kind, r.id)) ||
   (r.kind === 'book' && bookProgress(r.id).opened)
-const byKind = (k, n) => (ranked.value || []).filter((r) => r.kind === k && unread(r)).slice(0, n)
+const byKind = (k: any, n: any) => (ranked.value || []).filter((r: any) => (r as any).kind === k && unread(r)).slice(0, n)
 /* the books lane is the ranking's own books, given back their shelf record — the cover as Book3D
    wants it, the author, and the reader's progress — since a corpus row carries none of those.
    Finished books drop out while enough unfinished remain, so the lane keeps offering something new. */
 const recBooks = computed(() => { void sessionRev.value
-  const by = Object.fromEntries(bookShelf().map((b) => [b.slug, b]))
-  return dropFinished(byKind('book', 12).map((r) => by[r.id]).filter(Boolean))
-    .slice(0, BOOK_ROW).map((b) => ({ ...b, prog: bookProgress(b.slug) })) })
+  const by = Object.fromEntries(bookShelf().map((b: any) => [b.slug, b]))
+  return dropFinished(byKind('book', 12).map((r: any) => by[(r as any).id]).filter(Boolean))
+    .slice(0, BOOK_ROW).map((b: any) => ({ ...b, prog: bookProgress(b.slug) })) })
 /* lead with the recommendations when there are any; that view needs the model,
    so load it. Otherwise stay in browse and just warm it in case they toggle. */
 onMounted(async () => {
@@ -165,7 +166,7 @@ watch(offerForYou, (can) => {
   if (can && !chose && askedView !== 'all' && isSignedIn.value) show('foryou', false)
   else if (!can && mode.value === 'foryou') mode.value = 'all'
 })
-const offIdentity = onIdentity(async (id) => {
+const offIdentity = onIdentity(async (id: any) => {
   /* the interests belong to whoever they were read for, so they go with the identity */
   forgetInterests(); mine.value = NO_INTERESTS; ranked.value = null; rankedFor = ''
   if (!id) return
@@ -175,9 +176,9 @@ const offIdentity = onIdentity(async (id) => {
   show('foryou', false)
 })
 onBeforeUnmount(offIdentity)
-const badge = (a) => a.data.media ? (Array.isArray(a.data.media) ? 'Playlist' : (a.data.media.type === 'audio' ? 'Audio' : 'Video')) : null
+const badge = (a: any) => a.data.media ? (Array.isArray(a.data.media) ? 'Playlist' : (a.data.media.type === 'audio' ? 'Audio' : 'Video')) : null
 /* an article's cover: its own hero image, or the poster off its media */
-const img = (a) => a.data.image || (Array.isArray(a.data.media) ? a.data.media.find((m) => m.poster)?.poster : a.data.media?.poster) || null
+const img = (a: any) => a.data.image || (Array.isArray(a.data.media) ? a.data.media.find((m: any) => m.poster)?.poster : a.data.media?.poster) || null
 </script>
 
 <template>

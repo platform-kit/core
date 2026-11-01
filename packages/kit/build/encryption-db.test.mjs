@@ -218,7 +218,7 @@ try {
 /*
  * THE ONLY HONEST PROOF THE TRANSPORT IS RIGHT. Everything above asks the database what it holds;
  * this asks the crypto library whether two devices can actually talk — because the transport in
- * `src/lib/spaces/crypto.js` is a sequence of five request kinds answered against our own tables,
+ * `src/lib/spaces/crypto.ts` is a sequence of five request kinds answered against our own tables,
  * and a mistake in any of them does not throw. It withholds the key and the room goes quiet.
  *
  * It runs under node by making two CONTEXTS: two people, two devices, two signed-in clients, the

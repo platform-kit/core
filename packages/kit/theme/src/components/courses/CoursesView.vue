@@ -16,13 +16,13 @@
     <CourseOverview
       v-else-if="view === 'course' || !state" :base="base" :state="state" :loading="loading" :busy="busy" :problem="problem"
       @enroll="enroll" @sign-in="signIn" />
-    <CoursePlayer
+    <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string'. --><CoursePlayer
       v-else :base="base" :state="state" :lesson-key="lessonKey" :lesson="lesson" :loading="loading" :busy="busy" :problem="problem" :outcome="outcome"
       :earned="earned" @enroll="enroll" @sign-in="signIn" @complete="complete" @form-done="formDone" />
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { navigate } from 'platformkit/lib/router.js'
 import { user } from 'platformkit/lib/auth.js'
@@ -51,7 +51,7 @@ const slug = computed(() => parts.value[0] || null)
 const lessonKey = computed(() => (view.value === 'lesson' ? parts.value[1] : null))
 
 const loading = ref(false), busy = ref(false), problem = ref(''), outcome = ref('')
-const lesson = ref(null)
+const lesson = ref<any>(null)
 const state = computed(() => (slug.value ? courseState(slug.value) : null))
 
 async function load() {
@@ -65,10 +65,10 @@ async function load() {
     ])
     lesson.value = l
     setHead({ title: l && l.title ? `${l.title} — ${s && s.title}` : s ? s.title : K.value.missing, description: s ? leadOf(s.about) : '' })
-  } catch (e) { console.warn('courses:', e.message || e) }
+  } catch (e) { console.warn('courses:', (e as any).message || e) }
   loading.value = false
 }
-let who
+let who: any
 watch([() => props.path, () => (user.value ? user.value.id : null)], ([, id]) => {
   /* somebody signing in or out sees every course afresh */
   if (who !== undefined && id !== who) forgetCourses()
@@ -82,26 +82,26 @@ watch([() => props.path, () => (user.value ? user.value.id : null)], ([, id]) =>
   }
 }, { immediate: true })
 
-function signIn() { if (window.DLauth) window.DLauth.open({}) }
+function signIn() { if ((window as any).DLauth) (window as any).DLauth.open({}) }
 async function enroll() {
   busy.value = true; problem.value = ''
   try {
     const r = await rpc('course_enroll', { p_course: slug.value })
     if (r && r.error) problem.value = S.value[r.error] || r.error
     else { keepCourse(slug.value, r); capture('course_started', { course: slug.value }); if (view.value === 'lesson') await load() }
-  } catch (e) { problem.value = String(e.message || e) }
+  } catch (e) { problem.value = String((e as any).message || e) }
   busy.value = false
 }
 /* THE ACHIEVEMENT A QUIZ EARNS (openspec: courses): awarded in the database as the quiz is passed, so this only looks
    it up, by the slug the achievements push gives it. Where the achievements module is off there is none to find. */
-const earned = ref(null)
+const earned = ref<any>(null)
 async function lookUpEarned(force = false) {
   earned.value = null
-  const l = state.value && lessonKey.value ? (state.value.lessons || []).find((x) => x.key === lessonKey.value) : null
+  const l = state.value && lessonKey.value ? (state.value.lessons || []).find((x: any) => x.key === lessonKey.value) : null
   if (!l || l.kind !== 'form' || !l.done) return
   try {
     const held = await loadMine(force)
-    earned.value = (held || []).find((a) => a.slug === `quiz-${slug.value}-${lessonKey.value}`) || null
+    earned.value = (held || []).find((a: any) => (a as any).slug === `quiz-${slug.value}-${lessonKey.value}`) || null
   } catch { /* no achievements here */ }
 }
 watch(() => [lessonKey.value, state.value && state.value.slug], () => lookUpEarned(), { immediate: true })
@@ -113,10 +113,10 @@ async function formDone() {
   const was = !!(state.value && state.value.enrollment && state.value.enrollment.completed_at)
   try {
     const s = await loadCourse(slug.value)
-    const l = s && (s.lessons || []).find((x) => x.key === at)
+    const l = s && (s.lessons || []).find((x: any) => x.key === at)
     if (l && l.done) { capture('lesson_completed', { course: slug.value, lesson: at }); await lookUpEarned(true) }
     if (s && s.enrollment && s.enrollment.completed_at && !was) outcome.value = 'course-done'
-  } catch (e) { problem.value = String(e.message || e) }
+  } catch (e) { problem.value = String((e as any).message || e) }
 }
 /* COMPLETE AND CONTINUE: the lesson is recorded done, then the next open lesson opens; where there is none yet, the
    player says when the next one opens; where that was the course, it says the course is finished */
@@ -130,12 +130,12 @@ async function complete() {
     if (r && r.error) { problem.value = S.value[r.error] || r.error; busy.value = false; return }
     keepCourse(slug.value, r)
     capture('lesson_completed', { course: slug.value, lesson: at })
-    const ls = r.lessons || [], i = ls.findIndex((l) => l.key === at)
-    const go = ls.find((l, j) => j > i && l.open && !l.done) || ls.find((l) => l.open && !l.done && l.required)
+    const ls = r.lessons || [], i = ls.findIndex((l: any) => l.key === at)
+    const go = ls.find((l: any, j: any) => j > i && l.open && !l.done) || ls.find((l: any) => l.open && !l.done && l.required)
     if (r.enrollment && r.enrollment.completed_at && !was) outcome.value = 'course-done'
     else if (go) navigate(props.base + '/' + slug.value + '/' + go.key)
     else outcome.value = 'lesson-done'
-  } catch (e) { problem.value = String(e.message || e) }
+  } catch (e) { problem.value = String((e as any).message || e) }
   busy.value = false
 }
 </script>

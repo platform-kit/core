@@ -4,11 +4,11 @@ description: The one question that decides where anything lives, the manifest ev
 order: 42
 sources:
   [
-    packages/kit/build/declarations.mjs,
+    packages/kit/build/declarations.mts,
     packages/kit/build/declarations.test.mjs,
-    packages/kit/build/cloud-config.mjs,
-    packages/kit/build/webhooks-config.mjs,
-    packages/kit/build/webhooks-push.mjs,
+    packages/kit/build/cloud-config.mts,
+    packages/kit/build/webhooks-config.mts,
+    packages/kit/build/webhooks-push.mts,
     packages/kit/build/webhooks.test.mjs,
   ]
 reviewed: 2026-10-31

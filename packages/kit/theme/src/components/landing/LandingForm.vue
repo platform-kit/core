@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * Form: a form of the site inline on a landing page — the runner in the page, under an optional
  * eyebrow, heading and lead of the page's own. The form is chosen by slug from content/forms in the
@@ -15,7 +15,7 @@ const props = defineProps({
   lead: { type: String, default: '' },
   form: { type: String, default: '' },
 })
-const form = computed(() => (FORMS || []).find((f) => f.slug === props.form && f.published !== false) || null)
+const form = computed(() => (FORMS || []).find((f: any) => f.slug === props.form && f.published !== false) || null)
 </script>
 
 <template>

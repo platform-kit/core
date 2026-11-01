@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A ticker: the slot's content, doubled and moved forever — across, or down for a cascade — at a
  * speed in pixels a second, the edges faded, paused under the pointer, and still under
@@ -12,9 +12,9 @@ const props = defineProps({
   fade: { type: Boolean, default: true },
   reverse: { type: Boolean, default: false },
 })
-const track = ref(null), dur = ref(30)
-let ro = null
-function size() { const el = track.value; if (!el) return; const len = props.vertical ? el.scrollHeight / 2 : el.scrollWidth / 2; dur.value = Math.max(8, len / props.speed) }
+const track = ref<any>(null), dur = ref(30)
+let ro: any = null
+function size() { const el: any = track.value; if (!el) return; const len = props.vertical ? el.scrollHeight / 2 : el.scrollWidth / 2; dur.value = Math.max(8, len / props.speed) }
 onMounted(() => { size(); ro = new ResizeObserver(size); ro.observe(track.value) })
 onBeforeUnmount(() => ro && ro.disconnect())
 </script>

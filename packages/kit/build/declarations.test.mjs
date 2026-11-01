@@ -91,7 +91,7 @@ for (const t of Object.keys(DECLARED)) {
 }
 
 /* ---- 4. a projection names a path a collection produces ---- */
-const velite = readFileSync(join(KIT, 'build', 'velite.mjs'), 'utf8')
+const velite = readFileSync(join(KIT, 'build', 'velite.mts'), 'utf8')
 for (const [t, d] of Object.entries(DECLARED)) {
   if (pendingOf(t)) continue
   /* a projection drawn from several collections names them all, and each must exist — an index

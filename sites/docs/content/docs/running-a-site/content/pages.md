@@ -5,17 +5,17 @@ order: 12
 reviewed: 2026-10-10
 sources:
   [
-    packages/kit/src/lib/chrome.js,
+    packages/kit/src/lib/chrome.ts,
     packages/kit/theme/src/components/admin/PageBuilder.vue,
     packages/kit/theme/src/components/admin/SectionFields.vue,
     packages/kit/theme/src/components/admin/SectionPicker.vue,
     packages/kit/theme/src/components/admin/GlyphPicker.vue,
-    packages/kit/theme/src/components/landing/schemas.js,
-    packages/kit/theme/src/components/landing/index.js,
-    packages/kit/theme/src/components/landing/icons.js,
+    packages/kit/theme/src/components/landing/schemas.ts,
+    packages/kit/theme/src/components/landing/index.ts,
+    packages/kit/theme/src/components/landing/icons.ts,
     packages/kit/theme/src/components/SiteClose.vue,
     packages/kit/theme/src/pages/LandingPage.vue,
-    packages/kit/build/icons.mjs,
+    packages/kit/build/icons.mts,
     sites/demo/content/pages/sections.md,
     sites/demo/content/pages/shop.md,
     packages/kit/theme/src/pages/PreviewPage.vue,

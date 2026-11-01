@@ -4,9 +4,9 @@ description: Calls to action in three placements, chosen by audience and topic; 
 order: 37
 sources:
   [
-    packages/kit/src/lib/interrupt.js,
-    packages/kit/src/lib/ads.js,
-    packages/kit/src/lib/experiments.js,
+    packages/kit/src/lib/interrupt.ts,
+    packages/kit/src/lib/ads.ts,
+    packages/kit/src/lib/experiments.ts,
     packages/kit/theme/src/components/admin/ExperimentsAdmin.vue,
     packages/kit/theme/src/components/CtaHost.vue,
     packages/kit/theme/src/components/AdCard.vue,

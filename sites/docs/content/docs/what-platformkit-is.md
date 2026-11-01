@@ -3,7 +3,7 @@ title: What PlatformKit is
 description: How PlatformKit combines a framework, theme, and site-specific content and modules, with example configurations and product comparisons.
 order: 2
 reviewed: 2026-10-22
-sources: [openspec/specs/kit-principles/spec.md, packages/kit/src/lib/router.js]
+sources: [openspec/specs/kit-principles/spec.md, packages/kit/src/lib/router.ts]
 ---
 
 ## What it is

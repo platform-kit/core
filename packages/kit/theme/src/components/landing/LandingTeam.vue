@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { md } from './md.js'
 import SectionHead from './SectionHead.vue'
 import Ticker from './Ticker.vue'
@@ -15,14 +16,14 @@ defineProps({
   heading: { type: String, default: '' },
   lead: { type: String, default: '' },
   layout: { type: String, default: 'grid' },    /* grid | circles | rows | photo | mono | tiles | marquee | solo */
-  logos: { type: Array, default: () => [] },    /* [{ name, image }] under the people (mono) */
+  logos: { type: Array as PropType<any[]>, default: () => [] },    /* [{ name, image }] under the people (mono) */
   columns: { type: Number, default: 3 },
   image: { type: String, default: '' }, alt: { type: String, default: '' },   /* the group photograph */
   cta: { type: String, default: '' }, href: { type: String, default: '' },
-  people: { type: Array, default: () => [] },   /* [{ name, role?, image?, bio?, links?: [{ label, href }] }] */
+  people: { type: Array as PropType<any[]>, default: () => [] },   /* [{ name, role?, image?, bio?, links?: [{ label, href }] }] */
 })
-const initials = (name) => String(name || '').split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
-const NET = {
+const initials = (name: any) => String(name || '').split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
+const NET: any = {
   linkedin: '<path d="M4 8h3v9H4zM5.5 3.5a1.7 1.7 0 1 1 0 3.4 1.7 1.7 0 0 1 0-3.4zM9 8h2.8v1.3c.4-.8 1.4-1.5 2.9-1.5 3 0 3.3 2 3.3 4.4V17h-3v-4.2c0-1.1 0-2.3-1.4-2.3s-1.6 1.1-1.6 2.2V17H9z"/>',
   x: '<path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2" fill="none"/>',
   twitter: '<path d="M4 4l12 12M16 4L4 16" stroke="currentColor" stroke-width="2" fill="none"/>',
@@ -30,7 +31,7 @@ const NET = {
   instagram: '<rect x="3" y="3" width="14" height="14" rx="4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="10" cy="10" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="14.2" cy="5.8" r="1"/>',
   mail: '<rect x="2.5" y="4.5" width="15" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 6.5l7.5 5 7.5-5" fill="none" stroke="currentColor" stroke-width="1.8"/>',
 }
-const net = (label) => NET[String(label || '').trim().toLowerCase()] || ''
+const net = (label: any) => NET[String(label || '').trim().toLowerCase()] || ''
 </script>
 
 <template>

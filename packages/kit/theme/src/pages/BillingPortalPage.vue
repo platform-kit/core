@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { supabase } from 'platformkit/lib/supabase.js'
 import { authSettled, isSignedIn } from 'platformkit/lib/auth.js'
@@ -17,6 +17,7 @@ const signInCopy = computed(() => ({
   title: W.value['billing-signin-title'],
   description: W.value['billing-signin-description'],
 }))
+// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: W.value['billing-title'], description: '', path: ROUTES.billing, noindex: true })
 const state = ref('auth-loading')
 const authenticated = computed(() => authSettled.value && isSignedIn.value)
@@ -26,9 +27,9 @@ const usageRelevant = computed(() => hasPublishedMeteredUsagePlan(products))
 const busy = ref(false)
 const fault = ref('')
 const notice = ref('')
-const subscription = ref(null)
+const subscription = ref<any>(null)
 const hasPaymentMethod = ref(false)
-const usagePanel = ref(null)
+const usagePanel = ref<any>(null)
 let loadGeneration = 0
 
 const periodEnd = computed(() => {
@@ -38,7 +39,7 @@ const periodEnd = computed(() => {
 const plan = computed(() => {
   const key = subscription.value?.key
   const sku = subscription.value?.sku
-  return products.find((offer) => offer.key === key || offer.sku === sku)?.title || sku || key || ''
+  return products.find((offer: any) => offer.key === key || offer.sku === sku)?.title || sku || key || ''
 })
 const statusLabel = computed(() => W.value[`billing-status-${subscription.value?.status}`] || subscription.value?.status || '')
 const statusTone = computed(() => ['active', 'trialing'].includes(subscription.value?.status)
@@ -49,8 +50,8 @@ const activeTabLabel = computed(() => activeTab.value === 'usage'
   ? W.value['billing-usage-tab']
   : W.value['billing-membership-tab'])
 
-async function request(action) {
-  const { data, error } = await supabase.functions.invoke('create-portal-session', { body: { action } })
+async function request(action: any) {
+  const { data, error } = await (supabase as any).functions.invoke('create-portal-session', { body: { action } })
   if (error) {
     let message = error.message || ''
     try { message = (await error.context?.clone?.json())?.error || message } catch {}
@@ -96,7 +97,7 @@ async function load() {
   }
 }
 
-async function update(action) {
+async function update(action: any) {
   if (busy.value) return
   busy.value = true
   fault.value = ''
@@ -119,7 +120,7 @@ async function update(action) {
   }
 }
 
-function selectTab(tab) {
+function selectTab(tab: any) {
   if (tab === 'usage' && !usageRelevant.value) return
   const wasUsageActive = activeTab.value === 'usage'
   activeTab.value = tab
@@ -140,7 +141,7 @@ function syncActiveTab() {
   }
 }
 
-function onTabKeydown(event) {
+function onTabKeydown(event: any) {
   const tabs = [...event.currentTarget.querySelectorAll('[role="tab"]')]
   const currentIndex = tabs.indexOf(event.target)
   if (currentIndex < 0 || tabs.length < 2) return

@@ -7,9 +7,9 @@ sources:
     packages/kit/theme/src/components/admin/PrintAdmin.vue,
     packages/kit/theme/src/components/PrintOrders.vue,
     packages/kit/theme/src/pages/AdminPage.vue,
-    packages/kit/build/print.mjs,
-    packages/kit/build/print/block.mjs,
-    packages/kit/src/lib/print-offers.js,
+    packages/kit/build/print.mts,
+    packages/kit/build/print/block.mts,
+    packages/kit/src/lib/print-offers.ts,
   ]
 reviewed: 2026-10-29
 ---

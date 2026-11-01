@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, watch } from 'vue'
 import SiteLayout from '../layouts/SiteLayout.vue'
 import { ROUTES, route, DOCS_ONLY, KINDS_ON } from '../router.js'

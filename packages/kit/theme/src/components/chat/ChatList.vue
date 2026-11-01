@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The left pane: the reader's conversations, latest first, each with the
  * other party, the last line and how many are unread. Below them, whoever
@@ -23,8 +24,8 @@ import ChatAvatar from './ChatAvatar.vue'
 
 const props = defineProps({
   coach: { type: Boolean, default: false },       /* the reader is a coach */
-  conversations: { type: Array, default: () => [] },
-  people: { type: Array, default: () => [] },     /* chat_people(): coaches + peers */
+  conversations: { type: Array as PropType<any[]>, default: () => [] },
+  people: { type: Array as PropType<any[]>, default: () => [] },     /* chat_people(): coaches + peers */
   activeId: { type: String, default: null },
   me: { type: String, default: '' },
   loading: { type: Boolean, default: false },
@@ -33,39 +34,41 @@ const emit = defineEmits(['pick', 'start', 'new'])
 const P = us('chat').page.main
 const C = us('chat').composer.main
 
-const withThread = computed(() => new Set(props.conversations.map((c) => c.peer && c.peer.id)))
+const withThread = computed(() => new Set(props.conversations.map((c) => (c as any).peer && (c as any).peer.id)))
 /* a member's coaches not yet written to */
 /* chat_people answers with each person's set of roles; a coach is somebody holding `coach` */
-const isProviderOf = (p) => !!p && ((p.roles || []).includes('provider') || (p.roles || []).includes('coach'))
-const coaches = computed(() => (props.coach ? [] : props.people.filter((p) => isProviderOf(p) && !withThread.value.has(p.id))))
-const lastLine = (c) => (c.last ? (c.last.sender_id === props.me ? P.you + ': ' : '') + previewOf(c.last, C) : '')
-function start(id) { emit('start', id) }
+const isProviderOf = (p: any) => !!p && ((p.roles || []).includes('provider') || (p.roles || []).includes('coach'))
+const coaches = computed(() => (props.coach ? [] : props.people.filter((p) => isProviderOf(p) && !withThread.value.has((p as any).id))))
+const lastLine = (c: any) => (c.last ? (c.last.sender_id === props.me ? P.you + ': ' : '') + previewOf(c.last, C) : '')
+function start(id: any) { emit('start', id) }
 
 /* ---- the coach's view: the order, and what each member is owed ---- */
 const ORDERS = ['activity', 'created', 'awaiting']
+// @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'.
 const order = ref((() => { try { return ORDERS.includes(localStorage.getItem('dl.chat.order')) ? localStorage.getItem('dl.chat.order') : 'activity' } catch (e) { return 'activity' } })())
-function setOrder(o) { order.value = o; try { localStorage.setItem('dl.chat.order', o) } catch (e) { /* private mode */ } }
+function setOrder(o: any) { order.value = o; try { localStorage.setItem('dl.chat.order', o) } catch (e) { /* private mode */ } }
+// @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string | undefined'.
 const rows = computed(() => (props.coach ? sortInbox(props.conversations, order.value) : props.conversations))
 /* the reply time a member's membership promises: their highest tier's product, else the paid session's */
-const HOURS = { tier: {}, session: 0 }
+const HOURS: any = { tier: {}, session: 0 }
 for (const p of PRODUCTS) { if (p['chat-hours'] > 0) { if (p.kind === 'membership' && p.tier) HOURS.tier[p.tier] = Math.max(HOURS.tier[p.tier] || 0, p['chat-hours']); if (p.kind === 'session') HOURS.session = HOURS.session ? Math.min(HOURS.session, p['chat-hours']) : p['chat-hours'] } }
-const hoursFor = (peer) => {
+const hoursFor = (peer: any) => {
   if (!peer) return 0
-  const tiers = (peer.tiers || []).filter((t) => HOURS.tier[t]).sort((a, b) => tierRank(b) - tierRank(a))
+  const tiers = (peer.tiers || []).filter((t: any) => HOURS.tier[t]).sort((a: any, b: any) => tierRank(b) - tierRank(a))
   if (tiers.length) return HOURS.tier[tiers[0]]
   return peer.session_chat ? HOURS.session : 0
 }
 const now = ref(Date.now())
-let tick = null
+let tick: any = null
 onMounted(() => { tick = setInterval(() => { now.value = Date.now() }, 60000) })
 onBeforeUnmount(() => clearInterval(tick))
-const owed = (c) => { if (!props.coach) return null; const d = dueOf(c, hoursFor(c.peer), now.value); return d ? { over: d.over, text: (d.over ? P['due-over'] : P['due-in']).replace('{span}', spanOf(d.left)) } : c.awaiting_since ? { over: false, text: P.awaiting, soft: true } : null }
+const owed: any = (c: any) => { if (!props.coach) return null; const d = dueOf(c, hoursFor(c.peer), now.value); return d ? { over: d.over, text: (d.over ? P['due-over'] : P['due-in']).replace('{span}', spanOf(d.left)) } : c.awaiting_since ? { over: false, text: P.awaiting, soft: true } : null }
 </script>
 
 <template>
   <nav class="cl" :aria-label="P.conversations">
     <div class="cl-head">
-      <span class="cl-eyebrow">{{ say(P.eyebrow) }}</span>
+      <span class="cl-eyebrow"><!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ say(P.eyebrow) }}</span>
       <h1 class="cl-h">{{ P.heading }}</h1>
       <button v-if="coach" type="button" class="cl-new" @click="emit('new')">
         <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
@@ -82,7 +85,7 @@ const owed = (c) => { if (!props.coach) return null; const d = dueOf(c, hoursFor
       <p v-else-if="!conversations.length && !coaches.length" class="cl-empty">{{ P['empty-list'] }}</p>
       <TransitionGroup name="cl-move">
       <button v-for="c in rows" :key="c.id" type="button" class="cl-row" :class="{ on: c.id === activeId, unread: c.unread > 0, owed: !!owed(c), over: owed(c) && owed(c).over }"
-              :aria-current="c.id === activeId ? 'true' : null" @click="emit('pick', c.id)">
+              :aria-current="c.id === activeId ? 'true' : undefined" @click="emit('pick', c.id)">
         <ChatAvatar :name="c.peer ? c.peer.name : ''" :size="44" :coach="isProviderOf(c.peer)" />
         <span class="cl-body">
           <span class="cl-line1"><b>{{ c.peer ? c.peer.name : '' }}</b><time :datetime="c.last_message_at || c.created_at">{{ whenOf(c.last_message_at || c.created_at, now, P) }}</time></span>

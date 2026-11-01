@@ -106,7 +106,7 @@ const dirsUnder = (site) => {
 
 /* ---- 3. a named collection exists ---- */
 {
-  const velite = readFileSync(join(KIT, 'build', 'velite.mjs'), 'utf8')
+  const velite = readFileSync(join(KIT, 'build', 'velite.mts'), 'utf8')
   const declared = new Set([...velite.matchAll(/^ {4}(\w+): \{$/gm)].map((m) => m[1]))
   const wrong = Object.entries(KINDS).filter(([, v]) => v.collection && !declared.has(v.collection)).map(([d, v]) => `${d} → ${v.collection}`)
   ok('every collection a kind names is declared in velite', !wrong.length, wrong.join(', '))

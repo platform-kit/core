@@ -19,8 +19,8 @@ const ok = (cond, msg) => { if (cond) pass++; else { fail++; console.log('  ✗ 
 
 /* the registry and the schemas agree, both ways */
 const { SECTION_SCHEMAS } = await import(pathToFileURL(theme.schemas).href)
-const registry = fs.readFileSync(path.join(dir, 'index.js'), 'utf8')
-const between = registry.slice(registry.indexOf('export const SECTIONS = {'), registry.indexOf('export const SECTION_NAMES'))
+const registry = fs.readFileSync(path.join(dir, 'index.ts'), 'utf8')
+const between = registry.slice(registry.search(/export const SECTIONS(?:: [\w<>]+)? = \{/), registry.indexOf('export const SECTION_NAMES'))
 const registered = [...between.matchAll(/^\s+(\w+): (?:Landing\w+|defineAsyncComponent)/gm)].map((m) => m[1])
 const conditional = [...between.matchAll(/[{,] (\w+): (?:Landing\w+|defineAsyncComponent)/g)].map((m) => m[1])   /* the module-switched ones: every key inside a `{ … }` spread */
 const site = c.landing && c.landing.schemas ? Object.keys((await import(pathToFileURL(path.resolve(ROOT, c.landing.schemas)).href)).SECTION_SCHEMAS || {}) : []

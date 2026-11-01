@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { md, mdBlock } from './md.js'
 /*
  * Prose: a heading and a passage of markdown — the section for anything the others do not say: a

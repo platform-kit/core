@@ -1,8 +1,9 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* an opinion scale (NPS): the numbers from `startat` to `outof` in a row, a label at each end */
 import { computed } from 'vue'
 import FmLabel from './FmLabel.vue'
-const props = defineProps({ field: { type: Object, required: true }, modelValue: { default: null }, ctx: { type: Object, default: () => ({}) }, words: { type: Object, default: () => ({}) }, error: { type: String, default: '' } })
+const props = defineProps({ field: { type: Object as PropType<any>, required: true }, modelValue: { default: null }, ctx: { type: Object as PropType<any>, default: () => ({}) }, words: { type: Object as PropType<any>, default: () => ({}) }, error: { type: String, default: '' } })
 const emit = defineEmits(['update:modelValue', 'enter'])
 const p = computed(() => props.field.params || {})
 const start = computed(() => Number(p.value.startat ?? 0))
@@ -11,7 +12,7 @@ const steps = computed(() => { const a = []; for (let i = start.value; i <= end.
 const value = computed(() => (props.modelValue == null || props.modelValue === '' ? null : Number(props.modelValue)))
 const labelStart = computed(() => (p.value.labelstart !== undefined ? p.value.labelstart : props.words['nps-label-start']))
 const labelEnd = computed(() => (p.value.labelend !== undefined ? p.value.labelend : props.words['nps-label-end']))
-function pick(i) { if (p.value.disabled !== undefined) return; emit('update:modelValue', i); emit('enter', 'pick') }
+function pick(i: any) { if (p.value.disabled !== undefined) return; emit('update:modelValue', i); emit('enter', 'pick') }
 </script>
 
 <template>

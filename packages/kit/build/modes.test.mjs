@@ -38,6 +38,7 @@
  * nobody knows they have.
  */
 import { readFileSync, existsSync, readdirSync } from 'node:fs'
+import { stripTypeScriptTypes } from 'node:module'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { MODES, FEATURES, SURFACES, ALL, exceptions, modeOf, DEPLOYMENT_DEFAULTS } from './modes.mjs'
@@ -289,11 +290,12 @@ ok('the defaults are what a site already was', DEPLOYMENT_DEFAULTS.backend === t
  * cannot drift — which is the only reason a check on a deploy is worth anything.
  */
 {
-  const src = readFileSync(join(KIT, 'build', 'deploy.mjs'), 'utf8')
-  const m = /export const deployPlan = \(shape\) => \{[\s\S]*?\n\}/.exec(src)
-  ok('the deploy declares its plan', !!m, 'deployPlan is gone from build/deploy.mjs')
+  const src = readFileSync(join(KIT, 'build', 'deploy.mts'), 'utf8')
+  const m = /export const deployPlan = \(shape(?:: [\w<>\[\]]+)?\)(?:: [\w<>\[\]]+)? => \{[\s\S]*?\n\}/.exec(src)
+  ok('the deploy declares its plan', !!m, 'deployPlan is gone from build/deploy.mts')
   if (m) {
-    const deployPlan = eval('(' + m[0].replace('export const deployPlan = ', '') + ')')
+    /* the source is TypeScript: its types are blanked before it is read as JavaScript */
+    const deployPlan = eval('(' + stripTypeScriptTypes(m[0].replace('export const deployPlan = ', ''), { mode: 'strip' }) + ')')
     const STATIC = deployPlan({ backend: false, content: 'files', repo: false, mode: 'static' })
     const GIT = deployPlan({ backend: true, content: 'files', repo: true, mode: 'git' })
     const CLOUD = deployPlan({ backend: true, content: 'rows', repo: false, mode: 'cloud' })

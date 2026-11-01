@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The open conversation: the other party at the top, the messages by day and
  * by run, the composer at the foot. The scroll holds at the bottom while the
@@ -20,7 +21,7 @@ import ChatComposer from './ChatComposer.vue'
 const props = defineProps({
   id: { type: String, required: true },
   me: { type: String, required: true },
-  peer: { type: Object, default: null },
+  peer: { type: Object as PropType<any>, default: null },
   canWrite: { type: Boolean, default: true },
   /* a name for any sender id in this thread */
   nameOf: { type: Function, required: true },
@@ -31,26 +32,26 @@ const emit = defineEmits(['back'])
 const P = us('chat').page.main
 const V = us('chat').voice.main
 
-const scroller = ref(null)
-const top = ref(null)
-const composer = ref(null)
+const scroller = ref<any>(null)
+const top = ref<any>(null)
+const composer = ref<any>(null)
 const atBottom = ref(true)
 const fresh = ref(0)          /* messages that arrived while scrolled up */
-const replyTo = ref(null)
-const flashId = ref(null)
+const replyTo = ref<any>(null)
+const flashId = ref<any>(null)
 const error = ref('')
 const busy = ref(false)
 
-const byId = computed(() => Object.fromEntries(thread.messages.map((m) => [m.id, m])))
+const byId = computed(() => Object.fromEntries(thread.messages.map((m: any) => [(m as any).id, m])))
 const sections = computed(() => daySections(groupRuns(thread.messages), Date.now(), P).map((s) => ({ ...s })))
 const readAt = computed(() => { void thread.members; return peerReadAt() })
-const reactionsOf = (id) => thread.reactions.filter((r) => r.message_id === id)
-const peerName = computed(() => (props.peer && props.peer.name) || (thread.peer && thread.peer.name) || '')
+const reactionsOf = (id: any) => thread.reactions.filter((r: any) => (r as any).message_id === id)
+const peerName = computed(() => (props.peer && props.peer.name) || (thread.peer && (thread.peer as any).name) || '')
 /* whether the other party answers as a coach is the ROLES they hold, not the one word the profile
    used to carry: this compared role === 'admin' and so called every coach a member, and drew MEMBER
    under a coach's own name at the head of their own thread. */
 const peerIsCoach = computed(() => {
-  const r = props.peer || thread.peer || {}
+  const r: any = props.peer || thread.peer || {}
   const roles = Array.isArray(r.roles) ? r.roles : (r.role ? [r.role] : [])
   return roles.includes('provider') || roles.includes('coach') || roles.includes('admin')
 })
@@ -59,14 +60,14 @@ const role = computed(() => (peerIsCoach.value ? titleOf(props.peer) : P['member
 
 const NEAR = 80
 function onScroll() {
-  const el = scroller.value
+  const el: any = scroller.value
   if (!el) return
   const near = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR
   atBottom.value = near
   setWantsRead(near && document.visibilityState === 'visible')
   if (near) fresh.value = 0
 }
-function toBottom(smooth) {
+function toBottom(smooth: any) {
   const el = scroller.value
   if (!el) return
   el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' })
@@ -85,9 +86,9 @@ useIntersectionObserver(top, async ([entry]) => {
 
 /* a new last message: follow it down if the reader was at the foot (or sent it), else count it */
 watch(() => thread.messages.length && thread.messages[thread.messages.length - 1], async (last, prev) => {
-  if (!last || (prev && last.id === prev.id)) return
+  if (!last || (prev && (last as any).id === (prev as any).id)) return
   await nextTick()
-  if (atBottom.value || last.sender_id === props.me) toBottom(!!prev)
+  if (atBottom.value || (last as any).sender_id === props.me) toBottom(!!prev)
   else fresh.value += 1
 })
 
@@ -103,7 +104,7 @@ watch(() => props.id, load)
 onMounted(load)
 /* the content grows after it is drawn — a waveform decoding, chips landing, a
    textarea growing — and the foot stays the foot while the reader is there */
-let ro = null, mo = null
+let ro: any = null, mo: any = null
 onMounted(() => {
   if (typeof ResizeObserver === 'undefined' || !scroller.value) return
   ro = new ResizeObserver(() => { if (atBottom.value) toBottom(false) })
@@ -117,11 +118,11 @@ function visible() { if (document.visibilityState === 'visible') { setWantsRead(
 onMounted(() => document.addEventListener('visibilitychange', visible))
 onBeforeUnmount(() => document.removeEventListener('visibilitychange', visible))
 
-async function onSend(text) {
+async function onSend(text: any) {
   error.value = ''
-  try { await sendText(text, replyTo.value && replyTo.value.id); replyTo.value = null } catch (e) { error.value = (e && e.message) || 'failed' }
+  try { await sendText(text, replyTo.value && replyTo.value.id); replyTo.value = null } catch (e) { error.value = (e && (e as any).message) || 'failed' }
 }
-async function onVoice({ blob, seconds, transcript }) {
+async function onVoice({ blob, seconds, transcript }: any) {
   error.value = ''; busy.value = true
   try { await sendVoice(blob, seconds, replyTo.value && replyTo.value.id, transcript); replyTo.value = null } catch (e) { error.value = V.failed }
   busy.value = false
@@ -129,21 +130,21 @@ async function onVoice({ blob, seconds, transcript }) {
 /* A FILE: the same path a voice note takes — the bytes under the message's own id, then the row.
    Ten megabytes is the bucket's own limit; anything over it is refused here rather than half sent. */
 const MAX_FILE = 10 * 1024 * 1024
-async function onFile(file) {
+async function onFile(file: any) {
   if (!file) return
   if (file.size > MAX_FILE) { error.value = V['too-big']; return }
   error.value = ''; busy.value = true
   try { await sendFile(file, replyTo.value && replyTo.value.id); replyTo.value = null } catch (e) { error.value = V['file-failed'] }
   busy.value = false
 }
-function jump(id) {
+function jump(id: any) {
   const el = scroller.value && scroller.value.querySelector('[data-id="' + id + '"]')
   if (!el) return
   el.scrollIntoView({ block: 'center', behavior: 'smooth' })
   flashId.value = id
   setTimeout(() => { if (flashId.value === id) flashId.value = null }, 1500)
 }
-function reply(m) { replyTo.value = m; if (composer.value) composer.value.focus() }
+function reply(m: any) { replyTo.value = m; if (composer.value) composer.value.focus() }
 </script>
 
 <template>
@@ -165,7 +166,7 @@ function reply(m) { replyTo.value = m; if (composer.value) composer.value.focus(
       <p v-else-if="!thread.done && thread.messages.length" class="ct-note ct-earlier">{{ P['load-earlier'] }}</p>
       <template v-for="s in sections" :key="s.key">
         <div class="ct-day"><span>{{ s.label }}</span></div>
-        <ChatBubble v-for="m in s.messages" :key="m.id" :message="m" :me="me" :peer-read-at="readAt" :reactions="reactionsOf(m.id)"
+        <!-- @vue-expect-error TS2339, from the conversion: Property 'id' does not exist on type 'never'. --><ChatBubble v-for="m in s.messages" :key="m.id" :message="m" :me="me" :peer-read-at="readAt" :reactions="reactionsOf(m.id)"
                     :quoted="m.reply_to ? byId[m.reply_to] || null : null" :name-of="nameOf" :can-write="canWrite" :flash="flashId === m.id"
                     @react="(e) => react(m.id, e)" @reply="reply(m)" @remove="remove(m.id)" @jump="jump" />
       </template>

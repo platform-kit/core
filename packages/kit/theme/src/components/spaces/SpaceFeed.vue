@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * The places that are not a room: Threads (every thread the reader is in, its root and its last
  * few replies), Mentions (what has been said to them) and Saved (what they kept to come back to). Each is a
@@ -13,14 +14,14 @@ import SpaceIcon from './SpaceIcon.vue'
 
 const props = defineProps({
   kind: { type: String, required: true },          /* threads | mentions | saved | drafts */
-  rows: { type: Array, default: () => [] },
-  names: { type: Object, default: () => ({}) },
-  members: { type: Object, default: () => ({}) },
+  rows: { type: Array as PropType<any[]>, default: () => [] },
+  names: { type: Object as PropType<any>, default: () => ({}) },
+  members: { type: Object as PropType<any>, default: () => ({}) },
   me: { type: String, default: '' },
-  spaceOf: { type: Object, default: () => ({}) },   /* channel id → the space's name, where saying it helps */
+  spaceOf: { type: Object as PropType<any>, default: () => ({}) },   /* channel id → the space's name, where saying it helps */
   /* where several of these lists are one place (Notifications without the network: Mentions and
      Threads), their names as tabs in place of the title: [{ key, word }] */
-  tabs: { type: Array, default: () => [] },
+  tabs: { type: Array as PropType<any[]>, default: () => [] },
 })
 const emit = defineEmits(['open', 'unsave', 'done', 'read', 'read-all', 'drop', 'tab'])
 const F = computed(() => us('spaces').feed.main)
@@ -31,14 +32,15 @@ const emptyLine = computed(() => F.value[props.kind + '-empty-line'])
 /* Who said it. These places cross every space, and the names a page holds are the open space's —
    so a row that crosses brings its own name and that one wins; the map is the fallback for a row
    from the space in front. */
-const who = (row, id) => (row && row.author) || props.names[id] || R.value.someone
-const whereOf = (row) => {
+const who = (row: any, id: any) => (row && row.author) || props.names[id] || R.value.someone
+const whereOf = (row: any) => {
   const space = props.spaceOf[row.channel_id] || ''
   const dm = row.channel_kind === 'dm'
   /* a row that crosses spaces brings its own names (`peers`); one from the open space is named
      from the members the page holds, as it always was */
   const who = !dm ? ''
     : (row.peers && row.peers.length) ? row.peers.slice(0, 3).join(', ')
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     : dmTitle(props.members[row.channel_id] || [], props.names, props.me, { self: R.value.self, more: R.value.more, someone: R.value.someone })
   if (space) {
     return dm
@@ -49,16 +51,16 @@ const whereOf = (row) => {
     ? (F.value['in-dm'] || '').replace('{who}', who)
     : (F.value['in-channel'] || '').replace('{channel}', row.channel)
 }
-const when = (v) => {
-  const d = new Date(v)
+const when = (v: any) => {
+  const d: any = new Date(v)
   if (isNaN(d)) return ''
   const mins = Math.max(1, Math.round((Date.now() - d.getTime()) / 60000))
   if (mins < 60) return mins + 'm'
   const hrs = Math.round(mins / 60)
   return hrs < 24 ? hrs + 'h' : Math.round(hrs / 24) + 'd'
 }
-const count = (n) => (Number(n) === 1 ? F.value['replies-one'] : (F.value['replies-many'] || '').replace('{n}', Number(n) || 0))
-const unread = computed(() => props.rows.filter((r) => r.unread).length)
+const count = (n: any) => (Number(n) === 1 ? F.value['replies-one'] : (F.value['replies-many'] || '').replace('{n}', Number(n) || 0))
+const unread = computed(() => props.rows.filter((r) => (r as any).unread).length)
 </script>
 
 <template>

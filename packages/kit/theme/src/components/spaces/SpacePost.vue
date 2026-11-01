@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /*
  * A FORUM POST, READ WHOLE.
  *
@@ -27,11 +28,11 @@ import ChatChoices from '../chat/ChatChoices.vue'
 import MessageText from '../chat/MessageText.vue'
 
 const props = defineProps({
-  root: { type: Object, required: true },
-  replies: { type: Array, default: () => [] },
-  names: { type: Object, default: () => ({}) },
-  flair: { type: Object, default: () => ({}) },
-  faces: { type: Object, default: () => ({}) },
+  root: { type: Object as PropType<any>, required: true },
+  replies: { type: Array as PropType<any[]>, default: () => [] },
+  names: { type: Object as PropType<any>, default: () => ({}) },
+  flair: { type: Object as PropType<any>, default: () => ({}) },
+  faces: { type: Object as PropType<any>, default: () => ({}) },
   me: { type: String, default: '' },
   channel: { type: String, default: '' },
   reactions: { type: Function, default: () => () => [] },
@@ -53,10 +54,12 @@ const title = computed(() => props.root.title || titleOf(props.root, props.names
 const blocks = computed(() => lineBlocks(props.root.body, props.names, { someone: P.value.someone, channel: P.value['channel-word'] }))
 const when = computed(() => {
   const d = new Date(props.root.created_at)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   if (isNaN(d)) return ''
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
     + ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 })
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const runs = computed(() => runsOf(props.replies))
 /* a post a bot opened may offer choices, exactly as its line in a stream would — the board is
    where a question to the room most often belongs, so leaving them out here would leave them out

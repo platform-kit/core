@@ -18,4 +18,4 @@ Verified by: `openspec validate` plus reading; phase 0 adds the section to every
 - **WHEN** the Typeform, Contentful, Shopify, Crisp, Elementor, Calendly, Zoom, Circle and Bluesky/Mastodon rows are read in the spec's table and in the comparison document (`docs/COMPETITORS.md`, the docs site's copy)
 - **THEN** they say the same thing in the first three columns, and `docs-check.mjs` holds them equal
 
-Verified by: `node packages/kit/build/docs-check.mjs` in `npm test`
+Verified by: `node packages/kit/build/docs-check.mts` in `npm test`

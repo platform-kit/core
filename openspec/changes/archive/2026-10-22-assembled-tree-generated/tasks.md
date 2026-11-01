@@ -2,8 +2,8 @@
 
 ## 1. The test step and the check
 
-- [x] 1.1 In `packages/kit/build/test.mjs`, replace the conditional assembled-tree step with an assembly followed by `assemble.mjs --check`, for every site with a backend. Verified by `node build/assembled-tree.test.mjs` (task 2.1).
-- [x] 1.2 In `packages/kit/build/assemble.mjs`, rewrite the header's statement that the tree is committed, and change the `--check` failure message to the copy quoted in the proposal. Verified by the stray-file case in `node build/assembled-tree.test.mjs`, which asserts the message names the assembler and does not tell the reader to commit (no "then commit").
+- [x] 1.1 In `packages/kit/build/test.mts`, replace the conditional assembled-tree step with an assembly followed by `assemble.mjs --check`, for every site with a backend. Verified by `node build/assembled-tree.test.mjs` (task 2.1).
+- [x] 1.2 In `packages/kit/build/assemble.mts`, rewrite the header's statement that the tree is committed, and change the `--check` failure message to the copy quoted in the proposal. Verified by the stray-file case in `node build/assembled-tree.test.mjs`, which asserts the message names the assembler and does not tell the reader to commit (no "then commit").
 
 ## 2. A test of the generated tree
 

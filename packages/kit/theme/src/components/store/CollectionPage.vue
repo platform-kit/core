@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * One collection: its banner, its introduction, and every piece in it. A draft
  * from the admin's live preview arrives through inject in place of the
@@ -16,7 +16,7 @@ const T = us('store')
 const HD = T.page.head
 const CU = T.collection.ui
 const preview = inject('dl-preview', null)
-const c = computed(() => (preview ? (preview.value ? resolveCollection(preview.value) : null) : collection(props.id)))
+const c = computed(() => (preview ? ((preview as any).value ? resolveCollection((preview as any).value) : null) : collection(props.id)))
 watch(c, (v) => { if (v && !preview) { contentView({ kind: 'collection', id: v.id, title: v.title }) } }, { immediate: true })
 </script>
 
@@ -39,7 +39,7 @@ watch(c, (v) => { if (v && !preview) { contentView({ kind: 'collection', id: v.i
       </div>
     </header>
     <div v-if="c.items.length" class="cp-grid">
-      <ProductCard v-for="(p, i) in c.items" :key="p.id" :product="p" :eager="i < 4" />
+      <!-- @vue-expect-error TS2365, from the conversion: Operator '<' cannot be applied to types 'string | number' and 'number'. --><ProductCard v-for="(p, i) in c.items" :key="p.id" :product="p" :eager="i < 4" />
     </div>
     <p v-else class="cp-empty">{{ CU.empty }}</p>
   </div>

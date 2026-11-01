@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, watch, inject } from 'vue'
 import { articleView } from 'platformkit/lib/content.js'
 import { article } from 'platformkit/lib/content.js'
@@ -11,7 +11,7 @@ import { can, entrySubject } from 'platformkit/lib/auth.js'
 import SiteClose from '../SiteClose.vue'
 import CommentThread from './CommentThread.vue'
 /* the date as a person would say it: September 14th, 2024 */
-function longDate(d) {
+function longDate(d: any) {
   const m = String(d || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
   if (!m) return d
   const dt = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])),
@@ -39,9 +39,9 @@ import { us } from 'platformkit/lib/content.js'
 
 const props = defineProps({ id: { type: String, required: true } })
 /* the admin's live preview provides a draft entry in place of the compiled one */
-const preview = inject('dl-preview', null)
+const preview = inject<any>('dl-preview', null)
 const a = computed(() =>
-  preview ? (preview.value ? articleView(preview.value) : null) : article(props.id),
+  preview ? ((preview as any).value ? articleView((preview as any).value) : null) : article(props.id),
 )
 /* a canAccess bar in the frontmatter closes the body (hero stays) until the reader clears it */
 /* ASKED, NOT DECIDED: the entry carries its own bar and the ability answers (lib/permissions.js).
@@ -64,7 +64,7 @@ const img = computed(
     a.value &&
     (a.value.data.image ||
       (Array.isArray(a.value.data.media)
-        ? a.value.data.media.find((m) => m.poster)?.poster
+        ? a.value.data.media.find((m: any) => m.poster)?.poster
         : a.value.data.media?.poster) ||
       null),
 )

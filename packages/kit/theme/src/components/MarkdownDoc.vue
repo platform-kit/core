@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * A markdown document, rendered in the house style. The source string is passed
  * in — callers import their .md with vite's ?raw — so the page can never drift

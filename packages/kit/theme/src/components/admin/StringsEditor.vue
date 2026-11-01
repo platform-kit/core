@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The `## group / ### key / field: value` files — the UI strings (dir=ui) and
  * the results copy (dir=results) — a file picked from a dropdown, every string
@@ -12,53 +12,56 @@ import Select from 'primevue/select'
 const props = defineProps({ dir: { type: String, default: 'ui' } })
 import pipe from '../../lib/admin/api.js'
 /* the two families of files are two models: the UI strings (`strings`) and a site's results copy (`results`) */
-const MODEL = { ui: 'strings', results: 'results' }
-const files = shallowRef([])
+const MODEL: any = { ui: 'strings', results: 'results' }
+const files = shallowRef<any>([])
 const active = ref('')
 const q = ref('')
 const saving = ref(false)
 const msg = ref('')
 const err = ref('')
-const current = computed(() => files.value.find((f) => f.file === active.value) || null)
-const label = (f) => f.scope || f.title || f.file
+const current = computed(() => files.value.find((f: any) => (f as any).file === active.value) || null)
+const label = (f: any) => f.scope || f.title || f.file
 async function load() {
   err.value = ''
   try {
-    files.value = (await pipe.items(MODEL[props.dir] || props.dir)).map((f) => ({ ...f, name: f.name }))
-    if (!active.value || !files.value.find((f) => f.file === active.value)) active.value = files.value[0]?.file || ''
-  } catch (e) { err.value = e.message }
+    files.value = (await pipe.items(MODEL[props.dir] || props.dir)).map((f: any) => ({ ...f, name: f.name }))
+    if (!active.value || !files.value.find((f: any) => (f as any).file === active.value)) active.value = (files.value[0] as any)?.file || ''
+  } catch (e) { err.value = (e as any).message }
 }
 onMounted(load)
 watch(() => props.dir, load)
 
 /* the search: a key, a field name, a group name or the text itself */
 const needle = computed(() => q.value.trim().toLowerCase())
-const hit = (s) => String(s ?? '').toLowerCase().includes(needle.value)
-function matches(file) {
-  const out = {}
+const hit = (s: any) => String(s ?? '').toLowerCase().includes(needle.value)
+function matches(file: any) {
+  const out: any = {}
   for (const [g, keys] of Object.entries(file.groups || {})) {
+    // @ts-expect-error TS2769, from the conversion: No overload matches this call.
     for (const [k, fields] of Object.entries(keys)) {
+      // @ts-expect-error TS2769, from the conversion: No overload matches this call.
       if (!needle.value || hit(g) || hit(k) || Object.entries(fields).some(([fn, v]) => hit(fn) || hit(v))) (out[g] = out[g] || {})[k] = fields
     }
   }
   return out
 }
 const visible = computed(() => (current.value ? matches(current.value) : {}))
-const visibleCount = (groups) => Object.values(groups).reduce((n, keys) => n + Object.keys(keys).length, 0)
-const countFor = (f) => (needle.value ? visibleCount(matches(f)) : null)
+// @ts-expect-error TS18046, from the conversion: 'n' is of type 'unknown'.
+const visibleCount = (groups: any) => Object.values(groups).reduce((n, keys) => n + Object.keys(keys).length, 0)
+const countFor = (f: any) => (needle.value ? visibleCount(matches(f)) : null)
 /* the dropdown: each file, with how many of its strings match while searching */
-const fileOptions = computed(() => files.value.map((f) => ({ value: f.file, label: label(f), count: countFor(f), total: visibleCount(f.groups || {}) })))
-const total = computed(() => (current.value ? visibleCount(current.value.groups || {}) : 0))
+const fileOptions = computed(() => files.value.map((f: any) => ({ value: (f as any).file, label: label(f), count: countFor(f), total: visibleCount((f as any).groups || {}) })))
+const total = computed(() => (current.value ? visibleCount((current.value as any).groups || {}) : 0))
 /* only show the fields that matched when the text itself is what matched */
-function fieldShown(g, k, fn, v) {
+function fieldShown(g: any, k: any, fn: any, v: any) {
   if (!needle.value || hit(g) || hit(k)) return true
   return hit(fn) || hit(v)
 }
 async function save() {
-  const f = current.value; if (!f) return
+  const f: any = current.value; if (!f) return
   saving.value = true; msg.value = ''; err.value = ''
   try { await pipe.save(MODEL[props.dir] || props.dir, f.name, { data: { scope: f.scope, title: f.title }, parsed: { fmRaw: f.fmRaw, spaced: f.spaced, groups: f.groups } }); msg.value = 'Saved.' }
-  catch (e) { err.value = e.message }
+  catch (e) { err.value = (e as any).message }
   finally { saving.value = false; setTimeout(() => { msg.value = '' }, 2500) }
 }
 </script>
@@ -70,7 +73,7 @@ async function save() {
         <span>File</span>
         <Select v-model="active" :options="fileOptions" optionLabel="label" optionValue="value" class="se-select" :placeholder="'Choose a file'">
           <template #value="{ value }">
-            <span v-if="value" class="se-opt"><b>{{ (fileOptions.find((o) => o.value === value) || {}).label }}</b><em v-if="needle" class="se-count">{{ (fileOptions.find((o) => o.value === value) || {}).count }}</em></span>
+            <span v-if="value" class="se-opt"><b>{{ (fileOptions.find((o: any) => o.value === value) || {}).label }}</b><em v-if="needle" class="se-count">{{ (fileOptions.find((o: any) => o.value === value) || {}).count }}</em></span>
           </template>
           <template #option="{ option }">
             <span class="se-opt" :class="{ dim: needle && option.count === 0 }"><b>{{ option.label }}</b><em class="se-count">{{ needle ? option.count + ' of ' + option.total : option.total }}</em></span>

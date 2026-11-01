@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /* The last tab: a standing invitation to book a session, booked here in the app —
    the option cards, then SessionBooker (the month, the times, the confirm) —
    never on cal.com's page; upcoming sessions are moved and cancelled here too. */
@@ -24,37 +24,37 @@ const C = us("library").coaching.page;
 /* the ways to book, for this reader — the site's own declared types (content/sessions) AND the live
    offerings of its providers, in one list, because a reader choosing a time is not thinking about
    which of the two kinds of record they are choosing from */
-const offerings = ref([]);
+const offerings = ref<any>([]);
 /* WHERE THIS PERSON STANDS as a provider — one read, and the only thing the page does with it is
    offer the terms. Failing to sign stops nothing here; it stops a NEW thing going on sale, which the
    database holds and the offerings surface says. */
-const standing = ref(null), termsOpen = ref(false), offeringsEl = ref(null);
-async function loadStanding() { if (!isProvider.value || !configured) return; try { const { data } = await supabase.rpc("provider_standing"); standing.value = data || null; } catch (e) { standing.value = null; } }
+const standing = ref<any>(null), termsOpen = ref(false), offeringsEl = ref<any>(null);
+async function loadStanding() { if (!isProvider.value || !configured) return; try { const { data } = await (supabase as any).rpc("provider_standing"); standing.value = data || null; } catch (e) { standing.value = null; } }
 function askTerms() { termsOpen.value = true; }
 async function onSigned() { await loadStanding(); if (offeringsEl.value && offeringsEl.value.reload) await offeringsEl.value.reload(); }
 const options = computed(() => sessionOptions(attending.value, offerings.value));
 /* moving a booked session: the same picker on its option, with the uid */
-const moving = ref(null);
+const moving = ref<any>(null);
 const movingOption = computed(() => (moving.value ? options.value.find((o) => o.event === moving.value.event) || null : null));
-function startMove(b) { moving.value = b; tab.value = 'book'; }
+function startMove(b: any) { moving.value = b; tab.value = 'book'; }
 /* cancelling one: asked once, then through the app */
-const asking = ref(null), cancelling = ref(false), cancelErr = ref('');
+const asking = ref<any>(null), cancelling = ref(false), cancelErr = ref('');
 async function doCancel(run = false) {
   if (!asking.value) return;
   cancelling.value = true; cancelErr.value = '';
   try { await cancelSession(asking.value.uid, undefined, run === true); asking.value = null; await load(); }
-  catch (e) { cancelErr.value = e.message || B['cal-error']; }
+  catch (e) { cancelErr.value = (e as any).message || B['cal-error']; }
   finally { cancelling.value = false; }
 }
 const B = us("library").coaching.booker || {};
-const mine = (b) => !!user.value && b.user_id === user.value.id;
+const mine = (b: any) => !!user.value && b.user_id === user.value.id;
 /* a host may move and cancel a session the site scheduled at any time, and mark a no-show once its time has passed */
-const hostOf = (b) => !!user.value && b.provider === "native" && (b.host_id === user.value.id || b.provider_id === user.value.id) && b.user_id !== user.value.id;
+const hostOf = (b: any) => !!user.value && b.provider === "native" && (b.host_id === user.value.id || b.provider_id === user.value.id) && b.user_id !== user.value.id;
 /* MAY THIS PERSON MOVE OR CANCEL THIS ONE — the type's own switches, through the same pure module
    cancel-session and book-session ask (_shared/sessions/page.js). A button that refuses when it is
    pressed is worse than no button; a host is not held to the reader's switches, because they cancel
    a session they are giving whenever they need to. */
-function may(b, what) {
+function may(b: any, what: any) {
   if (!(mine(b) || hostOf(b))) return false
   if (hostOf(b)) return true
   const type = (options.value || []).find((o) => o.event === b.event) || null
@@ -63,24 +63,24 @@ function may(b, what) {
 /* THE HOST'S WORD. Saying yes is the booking being made — the invitation, the room and the week of
    chat all follow from it — so it goes through the same function a booking goes through. */
 const answering = ref('')
-async function answer(b, yes) {
+async function answer(b: any, yes: any) {
   answering.value = b.uid
   try { await answerBooking(b.uid, yes); await load() }
-  catch (e) { cancelErr.value = e.message || String(e) }
+  catch (e) { cancelErr.value = (e as any).message || String(e) }
   finally { answering.value = '' }
 }
-const canNoShow = (b) => hostOf(b) && !b.no_show && b.end_at && new Date(b.end_at).getTime() < Date.now() && (b.status === "accepted" || b.status === "ended");
+const canNoShow = (b: any) => hostOf(b) && !b.no_show && b.end_at && new Date(b.end_at).getTime() < Date.now() && (b.status === "accepted" || b.status === "ended");
 const noShowing = ref("");
-async function doNoShow(b) { noShowing.value = b.uid; try { await markNoShow(b.uid); await load(); } catch (e) { cancelErr.value = e.message; } finally { noShowing.value = ""; } }
-const placeLine = (b) => placeOf(b.where, B);
+async function doNoShow(b: any) { noShowing.value = b.uid; try { await markNoShow(b.uid); await load(); } catch (e) { cancelErr.value = (e as any).message; } finally { noShowing.value = ""; } }
+const placeLine = (b: any) => placeOf(b.where, B);
 /* a host books for people: every published type, offered whatever the host's own tier */
 const HW = us("library").coaching.host || {};
 const forOthers = ref(false);
-const hostOptions = computed(() => (ALL_SESSIONS || []).filter((s) => s.published !== false).sort((a, b) => (a.order || 99) - (b.order || 99)).map((s) => ({ ...s, event: eventOfType(s), scheduler: schedulerOf(s), blocked: false, paid: false, credits: 0 })));
+const hostOptions = computed(() => (ALL_SESSIONS || []).filter((s: any) => s.published !== false).sort((a: any, b: any) => (a.order || 99) - (b.order || 99)).map((s: any) => ({ ...s, event: eventOfType(s), scheduler: schedulerOf(s), blocked: false, paid: false, credits: 0 })));
 function onBookedFor() { load(); }
-const madeBy = (b) => (b.made_by_name ? fill(HW["made-by"], { name: b.made_by_name }) : "");
+const madeBy = (b: any) => (b.made_by_name ? fill(HW["made-by"], { name: b.made_by_name }) : "");
 /* a room on this site opens in this tab (the router takes the click); a link elsewhere opens a new one */
-const ours = (u) => !!u && (u.startsWith('/') || (typeof location !== 'undefined' && u.startsWith(location.origin + '/')));
+const ours = (u: any) => !!u && (u.startsWith('/') || (typeof location !== 'undefined' && u.startsWith(location.origin + '/')));
 function onBooked() { moving.value = null; load(); }
 /* the chat is a member's or a coach's (src/pages/ChatPage.vue decides the same way) */
 
@@ -89,68 +89,69 @@ function onBooked() { moving.value = null; load(); }
    the ones they attend and — for a coach — the ones they give; upcoming ones with
    the way in, past ones with the recording when it has landed. The rows follow
    the webhook live: any change to a booking the reader is on reloads them. */
-const rows = ref([]);
+const rows = ref<any>([]);
 async function load() {
   if (!configured) { rows.value = []; offerings.value = []; standing.value = null; return; }
   if (!isSignedIn.value) { rows.value = []; offerings.value = []; standing.value = null; return; }
-  const { data } = await supabase.from("bookings").select("uid,title,name,event,start_at,end_at,status,no_show,user_id,provider_id,provider_email,host_id,provider,where,join_url,credit_id,made_by,made_by_name,recording_path,transcript_path,recording_state,recording_error,run_of").order("start_at", { ascending: false }).limit(50);
+  const { data } = await (supabase as any).from("bookings").select("uid,title,name,event,start_at,end_at,status,no_show,user_id,provider_id,provider_email,host_id,provider,where,join_url,credit_id,made_by,made_by_name,recording_path,transcript_path,recording_state,recording_error,run_of").order("start_at", { ascending: false }).limit(50);
   rows.value = data || [];
   try { offerings.value = await loadOfferings(); } catch (e) { offerings.value = []; }
   await loadStanding();
 }
 /* a call's recording: ours, in the bucket, signed for the attendee and the coach when Watch is pressed (session-files);
    the state while it is on its way, or after the keep took it — never a cal.com link */
-const watching = ref(null), media = ref({}), mediaBusy = ref("");
-const fill = (t, m) => String(t || "").replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? "" : m[k]));
-async function watch_(b) {
+const watching = ref<any>(null), media = ref<any>({}), mediaBusy = ref("");
+const fill = (t: any, m: any) => String(t || "").replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? "" : m[k]));
+async function watch_(b: any) {
   if (watching.value === b.uid) { watching.value = null; return; }
-  if (!media.value[b.uid]) { mediaBusy.value = b.uid; try { media.value = { ...media.value, [b.uid]: await recordingFor(b.uid) }; } catch (e) { media.value = { ...media.value, [b.uid]: { error: e.message } }; } finally { mediaBusy.value = ""; } }
+  if (!media.value[b.uid]) { mediaBusy.value = b.uid; try { media.value = { ...media.value, [b.uid]: await recordingFor(b.uid) }; } catch (e) { media.value = { ...media.value, [b.uid]: { error: (e as any).message } }; } finally { mediaBusy.value = ""; } }
   watching.value = b.uid;
 }
-async function transcript(b) { const m = media.value[b.uid] || (await recordingFor(b.uid)); media.value = { ...media.value, [b.uid]: m }; if (m && m.transcript) window.open(m.transcript, "_blank", "noopener"); }
-let channel = null;
+async function transcript(b: any) { const m = media.value[b.uid] || (await recordingFor(b.uid)); media.value = { ...media.value, [b.uid]: m }; if (m && m.transcript) window.open(m.transcript, "_blank", "noopener"); }
+let channel: any = null;
 function listen() {
   if (channel || !configured || !isSignedIn.value) return;
-  channel = supabase.channel("bookings:mine")
+  channel = (supabase as any).channel("bookings:mine")
     .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, load)
-    .subscribe((status) => { if (status === "SUBSCRIBED") load(); });
+    .subscribe((status: any) => { if (status === "SUBSCRIBED") load(); });
 }
-function unlisten() { if (channel) { try { supabase.removeChannel(channel); } catch (e) { /* gone */ } channel = null; } }
+function unlisten() { if (channel) { try { (supabase as any).removeChannel(channel); } catch (e) { /* gone */ } channel = null; } }
 onMounted(() => { load(); listen(); });
 onBeforeUnmount(unlisten);
 watch(user, () => { unlisten(); load(); listen(); });
 const now = () => Date.now();
 /* a booking the reader gives rather than attends */
-const asCoach = (b) => !!user.value && (b.provider_id === user.value.id || (!!b.provider_email && !!user.value.email && b.provider_email.toLowerCase() === user.value.email.toLowerCase()) ) && b.user_id !== user.value.id;
-const attending = computed(() => rows.value.filter((b) => !asCoach(b)));
-const live = (b) => (b.status === "accepted" || b.status === "pending") && b.end_at && new Date(b.end_at).getTime() > now();
-const upcoming = computed(() => rows.value.filter(live).sort((a, b) => new Date(a.start_at) - new Date(b.start_at)));
+const asCoach = (b: any) => !!user.value && (b.provider_id === user.value.id || (!!b.provider_email && !!user.value.email && b.provider_email.toLowerCase() === user.value.email.toLowerCase()) ) && b.user_id !== user.value.id;
+const attending = computed(() => rows.value.filter((b: any) => !asCoach(b)));
+const live = (b: any) => (b.status === "accepted" || b.status === "pending") && b.end_at && new Date(b.end_at).getTime() > now();
+// @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+const upcoming = computed(() => rows.value.filter(live).sort((a, b) => new Date((a as any).start_at) - new Date((b as any).start_at)));
 /* HOW MANY SESSIONS THE RUN HOLDS, for the row that says "One of 6". Counted from the rows in hand
    rather than asked for: they are all the reader's own, so they are all here already. */
 const runOf = computed(() => {
-  const n = {}
-  for (const b of rows.value) if (b.run_of) n[b.run_of] = (n[b.run_of] || 0) + 1
-  const out = {}
-  for (const b of rows.value) if (b.run_of && n[b.run_of] > 1) out[b.uid] = n[b.run_of]
+  const n: any = {}
+  for (const b of rows.value) if ((b as any).run_of) n[(b as any).run_of] = (n[(b as any).run_of] || 0) + 1
+  const out: any = {}
+  for (const b of rows.value) if ((b as any).run_of && n[(b as any).run_of] > 1) out[(b as any).uid] = n[(b as any).run_of]
   return out
 })
 /* WHO ELSE IS COMING to each group booking the reader holds a seat of, where its type says to show
    it. One ask per such row as the list changes: the whole value of knowing is knowing before you
    turn up, so it is not put behind a tap. */
-const company = ref({})
+const company = ref<any>({})
 watch([upcoming, options], async ([rows, opts]) => {
   const out = {}
   for (const b of rows || []) {
-    const type = (opts || []).find((o) => o.event === b.event)
+    const type = (opts || []).find((o) => o.event === (b as any).event)
     if (!type || (type.page || {}).attendees !== true || !(type.seats > 0)) continue
-    const names = await companyOf(b.uid).catch(() => [])
-    if (names.length) out[b.uid] = names
+    const names = await companyOf((b as any).uid).catch(() => [])
+    if (names.length) (out as any)[(b as any).uid] = names
   }
   company.value = out
 }, { immediate: true })
-const past = computed(() => rows.value.filter((b) => !live(b) && b.status !== "rescheduled"));
+const past = computed(() => rows.value.filter((b: any) => !live(b) && (b as any).status !== "rescheduled"));
 /* what a row says after its title: who it is with (for the coach), and its state */
-const note = (b) => [asCoach(b) && b.name ? C.with + " " + b.name : "", placeLine(b), madeBy(b), b.status === "pending" ? C.pending : b.status === "cancelled" ? C.cancelled : b.status === "rejected" ? C.rejected : "", b.no_show ? C["no-show"] : ""].filter(Boolean);
+const note = (b: any) => [asCoach(b) && b.name ? C.with + " " + b.name : "", placeLine(b), madeBy(b), b.status === "pending" ? C.pending : b.status === "cancelled" ? C.cancelled : b.status === "rejected" ? C.rejected : "", b.no_show ? C["no-show"] : ""].filter(Boolean);
 const tab = ref('book')
 const tabs = computed(() => [
   ...(props.framed ? [{ k: 'book', label: C.book, n: 0 }] : []),
@@ -166,7 +167,7 @@ const tabs = computed(() => [
 let picked = false
 watch(upcoming, (u) => { if (!picked && !props.framed) tab.value = u.length ? 'upcoming' : 'book' }, { immediate: true })
 watch(tab, () => { picked = true })
-const when = (iso) => { try { return new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)); } catch (e) { return iso || ""; } };
+const when = (iso: any) => { try { return new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)); } catch (e) { return iso || ""; } };
 </script>
 
 <template>
@@ -207,7 +208,7 @@ const when = (iso) => { try { return new Intl.DateTimeFormat(undefined, { weekda
           <span class="sess-when">{{ when(b.start_at) }}</span>
           <span class="sess-title">{{ b.title }}<i v-for="n in note(b)" :key="n"> · {{ n }}</i><i v-if="runOf[b.uid]"> · {{ fill(B['in-run'], { n: runOf[b.uid] }) }}</i></span>
           <span class="sess-acts">
-            <a v-if="b.join_url" class="sess-join" :href="b.join_url" :target="ours(b.join_url) ? null : '_blank'" :rel="ours(b.join_url) ? null : 'noopener'">{{ C.join }}</a>
+            <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><a v-if="b.join_url" class="sess-join" :href="b.join_url" :target="ours(b.join_url) ? null : '_blank'" :rel="ours(b.join_url) ? null : 'noopener'">{{ C.join }}</a>
             <!-- A BOOKING WAITING FOR THE HOST'S WORD is one decision, so it is the only one offered
                  until it is answered: Move and Cancel are for a session that exists. -->
             <!-- THE TITLE ALREADY SAYS IT IS AWAITING CONFIRMATION, so the right-hand side carries the

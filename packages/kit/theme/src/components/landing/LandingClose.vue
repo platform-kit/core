@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { md } from './md.js'
 /* the last word, and the button */
 /*

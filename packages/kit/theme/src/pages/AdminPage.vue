@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * The content admin — local-dev only (App.vue gates the route on import.meta.env.DEV;
  * the API it talks to is a dev-server-only Vite middleware, build/admin-server.mjs).
@@ -82,8 +82,8 @@ import { look } from 'platformkit/lib/look.js'
 /* what this site would show having declared no header of its own: its config's, else the theme's.
    The same two layers SiteLayout falls through, from the same module, so the editor's promise and
    the header agree. */
-const INHERITED_NAV = (Array.isArray(CONFIG_NAV) && CONFIG_NAV.length) ? CONFIG_NAV : themeNav({ storeOn: moduleOn('store') })
-const LOOK_TOKENS = (LOOK_TOKEN_FILE && (LOOK_TOKEN_FILE[look.value] || Object.values(LOOK_TOKEN_FILE)[0])) || {}
+const INHERITED_NAV = (Array.isArray(CONFIG_NAV) && (CONFIG_NAV as any).length) ? CONFIG_NAV : themeNav({ storeOn: moduleOn('store') })
+const LOOK_TOKENS = (LOOK_TOKEN_FILE && ((LOOK_TOKEN_FILE as any)[look.value] || Object.values(LOOK_TOKEN_FILE)[0])) || {}
 import { checkEntry, shownHolds } from 'platformkit/lib/models/entry.js'
 import { us, ug } from 'platformkit/lib/strings.js'
 import FormResponses from '../components/admin/FormResponses.vue'
@@ -114,17 +114,17 @@ function toggleFS() { fsPref.value = !fsPref.value; try { localStorage.setItem('
 import pipe from '../lib/admin/api.js'
 const API = '/__admin'
 /* the enrichment runs (the Books grid's scripts) are the dev server's own endpoint, beside the pipe — a machine's work, none of it in cloud mode */
-async function api(path, opts) {
+async function api(path: any, opts: any) {
   if (CLOUD) throw new Error('this runs from a checkout or the deploy, not the live admin')
-  const r = await fetch(API + path, opts)
-  const j = await r.json().catch(() => ({}))
+  const r: any = await fetch(API + path, opts)
+  const j: any = await r.json().catch(() => ({}))
   if (!r.ok) throw Object.assign(new Error(j.error || r.statusText), { issues: j.issues })
   return j
 }
 
 /* ---------------- collections ---------------- */
-const collections = ref({})          /* key → config */
-const items = ref([])
+const collections = ref<any>({})          /* key → config */
+const items = ref<any>([])
 const loading = ref(false)
 const loadError = ref('')
 
@@ -159,7 +159,7 @@ async function refreshSocialAccess() {
   socialAccessKnown.value = false
   const params = new URLSearchParams(window.location.search)
   if (params.get('invitation') === 'accepted') {
-    const { error } = await supabase.functions.invoke('social', { body: { action: 'accept_invitation' } })
+    const { error } = await (supabase as any).functions.invoke('social', { body: { action: 'accept_invitation' } })
     if (request !== socialAccessRequest) return
     if (error) {
       console.error('social invitation acceptance failed', error.message)
@@ -172,7 +172,7 @@ async function refreshSocialAccess() {
     const query = params.toString()
     history.replaceState(history.state, '', window.location.pathname + (query ? `?${query}` : '') + window.location.hash)
   }
-  const { data, error } = await supabase.rpc('social_has_access')
+  const { data, error } = await (supabase as any).rpc('social_has_access')
   if (request !== socialAccessRequest) return
   if (error) {
     console.error('social access lookup failed', error.code)
@@ -188,7 +188,7 @@ watch([authSettled, isSignedIn, () => route.value], refreshSocialAccess, { immed
    administrator to answer a member and an editor had to be one to write an article. A section
    names a capability; the reads behind it ask the same one in the database, so the rail is a
    convenience and never the fence — an address typed by hand answers nothing either. */
-const NEEDS = {
+const NEEDS: any = {
   /* anybody who runs any part of the site */
   notifications: 'staff',
   social: 'social',
@@ -211,7 +211,7 @@ const NEEDS = {
   courses: 'content',
 }
 const CONTENT = 'content'
-const meets = (need) => {
+const meets = (need: any) => {
   if (need === 'social') return socialAccessKnown.value && socialAccess.value
   if (!roleKnown.value) return true
   if (need === 'content-or-own-page') return mayEditContent.value || isProvider.value
@@ -223,7 +223,7 @@ const meets = (need) => {
   return isAdmin.value
 }
 const COLLECTION_VIEWS = computed(() => new Set(Object.keys(collections.value || {}).map((k) => k.replace(/^models\//, ''))))
-const allowed = (k) => {
+const allowed = (k: any) => {
   if (!isSignedIn.value) return false
   if (roleKnown.value && !isStaff.value && !(k === 'social' && socialAccess.value)) return false
   /* everything else is decided by the group it sits in: Content and Marketing are an editor's —
@@ -253,13 +253,13 @@ const gate = computed(() => {
 })
 const GW = (us('analytics').page || {}).head || {}
 const AG = ((us('admin').gate || {}).social || {})
-function openAuth() { if (window.DLauth) window.DLauth.open() }
+function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 /* `print-orders` was a page and is a filter: the old address still answers, as Orders */
-const MOVED = { 'print-orders': 'orders' }
+const MOVED: any = { 'print-orders': 'orders' }
 const view = computed(() => { const v = MOVED[parsed.value.view] || parsed.value.view; if (!v || (v === 'publishing' && !CLOUD) || !allowed(v)) return homeView.value; return v })   /* Publishing is cloud mode's; a view the desk does not offer opens the home view */
 /* the generic grid and drawer draw a model with no editor of its own; a model with one (the forms, the funnels, the strings, the
    print editions, a site's tests…) is drawn by that editor below, and never by the drawer */
-const col = computed(() => { const c = collections.value[view.value]; return c && !c.editor ? c : null })
+const col = computed(() => { const c: any = collections.value[view.value]; return c && !c.editor ? c : null })
 /* the full-screen preference applies to drawer editors only: a settings page
    (a single-file collection) is already the main surface, so it ignores it and
    the preference is kept for the next book or article */
@@ -275,18 +275,18 @@ const MW = us('models')
 const FW = (MW.drawer || {}).foot || {}   /* the drawer's footer: Save · Create · Delete · Cancel, and cloud mode's Save draft · Publish */
 const modelOf = computed(() => {
   const c = col.value; if (!c || !c.model) return null
-  const leaf = (g) => ({ key: g.key, label: g.label, kind: g.kind, required: !!g.required, rules: g.rules || [], model: g.options && g.options.startsWith('model:') ? g.options.slice(6) : undefined })
-  return { fields: c.fields.filter((f) => f.kind).map((f) => ({ key: f.name, label: f.label, kind: f.kind, required: !!f.required, rules: f.rules || [], unique: !!f.unique, shown: f.shown || undefined, of: f.of || undefined, model: f.options && f.options.startsWith('model:') ? f.options.slice(6) : undefined, fields: (f.fields || []).map(leaf) })) }
+  const leaf = (g: any) => ({ key: g.key, label: g.label, kind: g.kind, required: !!g.required, rules: g.rules || [], model: g.options && g.options.startsWith('model:') ? g.options.slice(6) : undefined })
+  return { fields: c.fields.filter((f: any) => f.kind).map((f: any) => ({ key: f.name, label: f.label, kind: f.kind, required: !!f.required, rules: f.rules || [], unique: !!f.unique, shown: f.shown || undefined, of: f.of || undefined, model: f.options && f.options.startsWith('model:') ? f.options.slice(6) : undefined, fields: (f.fields || []).map(leaf) })) }
 })
-const touched = reactive({})
+const touched = reactive<any>({})
 const entryErrs = computed(() => {
   if (!modelOf.value || !drawer.value) return {}
-  const siblings = items.value.filter((x) => x.name !== form.name).map((x) => x.data)
-  const out = {}
+  const siblings = items.value.filter((x: any) => (x as any).name !== form.name).map((x: any) => (x as any).data)
+  const out: any = {}
   for (const e of checkEntry(modelOf.value, form.data, { siblings, words: MW })) { const k = e.field.split(/[.[]/)[0]; if (!out[k]) out[k] = e.message }
   return out
 })
-const fieldShown = (f) => !f.shown || shownHolds(f.shown, form.data)
+const fieldShown = (f: any) => !f.shown || shownHolds(f.shown, form.data)
 const slugSource = computed(() => (col.value && col.value.model && col.value.model.slug !== 'title' ? col.value.model.slug : col.value && col.value.title))
 async function renameEntry() {
   const W = (MW.drawer || {}).entry || {}
@@ -294,26 +294,26 @@ async function renameEntry() {
   try {
     await pipe.rename(view.value, form.name, to)
     form.name = to; drawer.value = { create: false, name: to }; navigate(ROUTES.admin + '/' + view.value + '/' + to); await loadList()
-  } catch (e) { saveError.value = e.message }
+  } catch (e) { saveError.value = (e as any).message }
 }
 const savedMsg = ref('')
-let savedTimer = null
-const fill = (str, m) => String(str || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-function showSaved(word) { savedMsg.value = word || 'Saved.'; clearTimeout(savedTimer); savedTimer = setTimeout(() => { savedMsg.value = '' }, 3000) }
-const inlineSlot = ref(null)   /* the element the editor teleports into; it exists only for a single-file collection */
+let savedTimer: any = null
+const fill = (str: any, m: any) => String(str || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+function showSaved(word: any) { savedMsg.value = word || 'Saved.'; clearTimeout(savedTimer); savedTimer = setTimeout(() => { savedMsg.value = '' }, 3000) }
+const inlineSlot = ref<any>(null)   /* the element the editor teleports into; it exists only for a single-file collection */
 
 /* the rail: four sections. A key is a collection (label and count from the
    server) or one of the three views with their own editors. Any collection not
    named here still appears, under Other, so a new content type is never lost. */
 /* which module each view or collection belongs to: off in platformkit.config.js, it leaves the rail */
-const MODULE_OF = { notifications: 'push', api: 'api', articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s) => s.module).map((s) => [s.key, s.module])), emails: 'emails', funnels: 'funnels', blasts: 'funnels', 'funnel-analytics': 'funnels', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', print: 'print', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models', courses: 'courses', 'course-enrollments': 'courses' }
+const MODULE_OF: any = { notifications: 'push', api: 'api', articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => (s as any).module).map((s: any) => [(s as any).key, (s as any).module])), emails: 'emails', funnels: 'funnels', blasts: 'funnels', 'funnel-analytics': 'funnels', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', print: 'print', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models', courses: 'courses', 'course-enrollments': 'courses' }
 const modelWords = (us('models').admin || {}).page || {}
 /* IS THE VIEW BEHIND THIS KEY AVAILABLE? A VIEW key, not a module id — `products` is a view and
    `store` is the module behind it (MODULE_OF). It was called moduleOn, which is the kit's own name
    for a different question, and a shadow like that is read by whoever comes next as the thing it is
    named after: converting two switch reads in this file to the kit's moduleOn bound them to this
    instead, and the admin would not load. */
-const viewOn = (k) => (k.startsWith('models/') ? moduleOn('models') : !MODULE_OF[k] || moduleOn(MODULE_OF[k]))
+const viewOn = (k: any) => (k.startsWith('models/') ? moduleOn('models') : !MODULE_OF[k] || moduleOn(MODULE_OF[k]))
 /*
  * THE RAIL.
  *
@@ -357,13 +357,13 @@ const NAV = [
 ]
 /* the group's NAME, from the words — falling back to the key so a group a site invents still
    reads as something rather than as nothing */
-const secName = (k) => ((ug('admin', 'rail').sections || {})[k]) || k.replace(/(^|-)([a-z])/g, (_, d, c) => (d ? ' ' : '') + c.toUpperCase())
+const secName = (k: any) => ((ug('admin', 'rail').sections || {})[k]) || k.replace(/(^|-)([a-z])/g, (_: any, d: any, c: any) => (d ? ' ' : '') + c.toUpperCase())
 const RAILVIEWS = ug('admin', 'rail').views || {}
 /* the rail's own chrome: the tag, the collapse's title, the heading over the stack's own link */
 const CH = ug('admin', 'chrome').main || {}
 /* the sentence under a page's title, where the page is drawn by this shell rather than a component */
 const LEAD = ug('admin', 'leads').main || {}
-const fillW = (t, m) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fillW = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const VIEWS = {
   ...RAILVIEWS,
   /* a page whose own strings file already names it keeps that name: one name, one place */
@@ -372,17 +372,17 @@ const VIEWS = {
   people: ((us('people').page || {}).main || {}).title || RAILVIEWS.people,
   media: ((us('media').page || {}).head || {}).rail || RAILVIEWS.media,
   publishing: ((us('publishing').page || {}).head || {}).rail || RAILVIEWS.publishing,
-  ...Object.fromEntries(SITE_SECTIONS.map((s) => [s.key, RAILVIEWS[s.key] || s.label])),
+  ...Object.fromEntries(SITE_SECTIONS.map((s: any) => [(s as any).key, RAILVIEWS[(s as any).key] || (s as any).label])),
 }
 /* the site's sections join the rail: under their group where it exists, else in a group of their own after the theme's */
-const SITE_BY_KEY = Object.fromEntries(SITE_SECTIONS.map((s) => [s.key, s]))
+const SITE_BY_KEY = Object.fromEntries(SITE_SECTIONS.map((s: any) => [(s as any).key, s]))
 for (const s of SITE_SECTIONS) {
   /* a site names a group by its key or by the name it reads under, since both have been written */
-  const match = (x, want) => x.key === want || secName(x.key) === want
-  const g = NAV.find((x) => match(x, s.sec))
-  if (g) { if (!g.items.includes(s.key)) g.items.push(s.key); continue }
-  const at = s.after ? NAV.findIndex((x) => match(x, s.after)) : -1   /* a new group goes after the one it names, else last */
-  NAV.splice(at >= 0 ? at + 1 : NAV.length, 0, { key: s.sec, items: [s.key] })
+  const match = (x: any, want: any) => x.key === want || secName(x.key) === want
+  const g = NAV.find((x) => match(x, (s as any).sec))
+  if (g) { if (!g.items.includes((s as any).key)) g.items.push((s as any).key); continue }
+  const at = (s as any).after ? NAV.findIndex((x) => match(x, (s as any).after)) : -1   /* a new group goes after the one it names, else last */
+  NAV.splice(at >= 0 ? at + 1 : NAV.length, 0, { key: (s as any).sec, items: [(s as any).key] })
 }
 /* WHICH GROUP EACH SECTION IS IN, and so what it needs — read once, after the site's sections have
    joined the rail. Naming every item would mean remembering to name the next one; the group already
@@ -400,21 +400,22 @@ for (const s of SITE_SECTIONS) {
  * now wrong besides, since the group also holds the emails, the funnels and the blasts, which are
  * an administrator's. A group need is only ever right where EVERY item in the group shares it.
  */
-const GROUP_NEED = { content: CONTENT }
+const GROUP_NEED: any = { content: CONTENT }
 const GROUP_OF = Object.fromEntries(NAV.flatMap((g) => g.items.map((k) => [k, g.key])))
 
 /* a companion is a book's own second file, so the admin shows the two collections as
    one rail item with two tabs (Books · Companions); the path still says which */
-const TABBED = {
+const TABBED: any = {
   books: ['books', 'companions'],
   comments: ['comments', 'comment-policy'],   /* the queue, and the rules it is judged by */
   community: ['community', 'spaces'],         /* the place, and the rooms in it */
   emails: ['emails', 'blasts'],               /* the designs, and what was sent through them */
   funnels: ['funnels', 'funnel-analytics'],   /* the campaigns, and what they did */
 }
-const tabsOf = (v) => Object.values(TABBED).find((t) => t.includes(v)) || null
-const railKey = (v) => Object.keys(TABBED).find((k) => TABBED[k].includes(v)) || v
+const tabsOf = (v: any) => Object.values(TABBED).find((t) => (t as any).includes(v)) || null
+const railKey = (v: any) => Object.keys(TABBED).find((k) => TABBED[k].includes(v)) || v
 const navGroups = computed(() => {
+  // @ts-expect-error TS2769, from the conversion: No overload matches this call.
   const named = new Set(NAV.flatMap((g) => g.items).concat(Object.values(TABBED).flat()))
   const groups = NAV.map((g) => ({ key: g.key, sec: secName(g.key), items: g.items.filter((k) => viewOn(k) && allowed(k) && (k !== 'publishing' || CLOUD) && (VIEWS[k] || collections.value[k])) })).filter((g) => g.items.length)
   /* one row per content model, closing the Content group after the built-in kinds, by the models' order (the server lists them by name) */
@@ -432,7 +433,7 @@ const navGroups = computed(() => {
 const slim = ref((() => { try { const v = localStorage.getItem('dl.admin.rail'); return v ? v === 'slim' : matchMedia('(max-width: 760px)').matches } catch (e) { return false } })())
 watch(slim, (v) => { try { localStorage.setItem('dl.admin.rail', v ? 'slim' : 'wide') } catch (e) { /* private mode */ } })
 const openSec = ref('')
-const secOf = (v) => { const g = navGroups.value.find((x) => x.items.includes(railKey(v))); return g ? g.key : '' }
+const secOf = (v: any) => { const g = navGroups.value.find((x) => x.items.includes(railKey(v))); return g ? g.key : '' }
 /*
  * WHETHER THE PAGE SHOWING IS PART OF A SET, handed down rather than asked for. Every page draws
  * its head with AdminHead; a page in a set gets the tab row in place of its title without knowing
@@ -442,7 +443,7 @@ const TABWORDS = ug('admin', 'rail').tabs || {}
 const SETWORDS = ug('admin', 'rail').sets || {}
 /* and the one line under a set's title, which reads the same on every tab of it */
 const SETLEADS = ug('admin', 'leads').sets || {}
-const tabLabel = (k) => TABWORDS[k] || navLabel(k)
+const tabLabel = (k: any) => TABWORDS[k] || navLabel(k)
 provide('adminTabs', computed(() => {
   const t = tabsOf(view.value)
   if (!t) return null
@@ -450,16 +451,16 @@ provide('adminTabs', computed(() => {
   return { tabs: t, on: view.value, label: tabLabel, count: navCount, pick, title: SETWORDS[set] || navLabel(set), lead: SETLEADS[set] || '' }
 }))
 watch([() => railKey(view.value), navGroups], ([k], [was]) => { if (k !== was || !openSec.value) openSec.value = secOf(view.value) }, { immediate: true })
-const isOpen = (sec) => openSec.value === sec
-const toggleSec = (sec) => { openSec.value = isOpen(sec) ? '' : sec }
-const navLabel = (k) => VIEWS[k] || (collections.value[k] && collections.value[k].label) || k
+const isOpen = (sec: any) => openSec.value === sec
+const toggleSec = (sec: any) => { openSec.value = isOpen(sec) ? '' : sec }
+const navLabel = (k: any) => VIEWS[k] || (collections.value[k] && collections.value[k].label) || k
 /* cloud mode: how many drafts wait, on the Publishing item (refreshed after a save, a delete or a publish) */
 const draftCount = ref(0)
 async function countDrafts() { if (!CLOUD) return; try { const j = await pipe.drafts(); draftCount.value = (j.drafts || []).length } catch (e) { /* the count is a hint */ } }
-const navCount = (k) => { if (k === 'publishing') return draftCount.value || null; const c = collections.value[k]; return c && !c.single && c.count != null ? c.count : null }
+const navCount = (k: any) => { if (k === 'publishing') return draftCount.value || null; const c = collections.value[k]; return c && !c.single && c.count != null ? c.count : null }
 
 /* sidebar icons, keyed by collection */
-const IC = {
+const IC: any = {
   books: '<path d="M10 6C8.6 5 6.3 4.6 4.5 5v10c1.8-.4 4.1 0 5.5 1 1.4-1 3.7-1.4 5.5-1V5c-1.8-.4-4.1 0-5.5 1Z"/><path d="M10 6v10"/>',
   articles: '<path d="M5 4.8A1.8 1.8 0 0 1 6.8 3H12l4 4v8.2A1.8 1.8 0 0 1 14.2 17H6.8A1.8 1.8 0 0 1 5 15.2Z"/><path d="M12 3v4h4"/><path d="M8 11h5M8 14h4"/>',
   wiki: '<circle cx="10" cy="10" r="6.5"/><path d="M3.5 10h13M10 3.5c2.2 2 2.2 11 0 13M10 3.5c-2.2 2-2.2 11 0 13"/>',
@@ -499,7 +500,7 @@ const IC = {
   experiments: '<path d="M3.5 10h4"/><path d="M7.5 10c2.5 0 2.5-4.5 5-4.5h4"/><path d="M7.5 10c2.5 0 2.5 4.5 5 4.5h4"/><circle cx="14.5" cy="5.5" r="1.3"/><circle cx="14.5" cy="14.5" r="1.3"/>',
   sessions: '<circle cx="10" cy="10" r="6.5"/><path d="M10 6.5V10l2.5 1.5"/>',
   site: '<circle cx="10" cy="10" r="6.5"/><path d="M3.5 10h13"/><path d="M10 3.5c2.2 2 2.2 11 0 13"/><path d="M10 3.5c-2.2 2-2.2 11 0 13"/><path d="M5 6.5h10M5 13.5h10"/>',
-  ...Object.fromEntries(SITE_SECTIONS.filter((s) => s.icon).map((s) => [s.key, s.icon])),
+  ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => (s as any).icon).map((s: any) => [(s as any).key, (s as any).icon])),
   'api-docs': '<path d="M7.5 4 5 10l2.5 6"/><path d="M12.5 4 15 10l-2.5 6"/><path d="M11 5.5 9 14.5"/>',   /* braces and a slash: a reference */
   studio: '<ellipse cx="10" cy="5.5" rx="6" ry="2.5"/><path d="M4 5.5v9c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-9"/><path d="M4 10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5"/>',
   /* ───── drawn for the rows that used to fall back to the generic square ───── */
@@ -514,7 +515,7 @@ const IC = {
   payouts: '<path d="M3.5 6.5h13v8h-13z"/><circle cx="10" cy="10.5" r="2"/><path d="M3.5 9h1.5M15 12h1.5"/><path d="M6 4.5h8"/>',   /* a note paid out */
   default: '<rect x="4" y="4" width="12" height="12" rx="2.5"/>',
 }
-const icon = (k) => `<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${IC[k] || (k.startsWith('models/') ? IC.entries : IC.default)}</svg>`
+const icon = (k: any) => `<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${IC[k] || (k.startsWith('models/') ? IC.entries : IC.default)}</svg>`
 
 /* The local Supabase Studio, offered only when the admin is opened from this
    machine (localhost / loopback). It is the dev stack's own UI: from any other
@@ -538,47 +539,47 @@ const devLinks = computed(() => [
 ])
 
 /* canonical option lists for the constrained multi-selects (topics, concepts) */
-const optionsCache = reactive({})
-const groupedCache = reactive({})    /* the same options nested for PrimeVue's grouping */
-async function loadOptions(key) {
+const optionsCache = reactive<any>({})
+const groupedCache = reactive<any>({})    /* the same options nested for PrimeVue's grouping */
+async function loadOptions(key: any) {
   if (optionsCache[key]) return
   try {
     /* the hosts a booking type may name are accounts, read from the database (admin_hosts: every account that gives appointments) */
-    const opts = key === 'hosts' ? ((await supabase.rpc('admin_hosts')).data || []).map((h) => ({ value: h.email, label: h.name ? `${h.name} · ${h.email}` : h.email })) : await pipe.options(key)
+    const opts = key === 'hosts' ? ((await (supabase as any).rpc('admin_hosts')).data || []).map((h: any) => ({ value: h.email, label: h.name ? `${h.name} · ${h.email}` : h.email })) : await pipe.options(key)
     optionsCache[key] = opts
-    if (opts.some((o) => o.group)) {
-      const map = {}, out = []
+    if (opts.some((o: any) => o.group)) {
+      const map: any = {}, out = []
       for (const o of opts) { if (!map[o.group]) { map[o.group] = { group: o.group, items: [] }; out.push(map[o.group]) } map[o.group].items.push(o) }
       groupedCache[key] = out
     }
   } catch (e) { optionsCache[key] = [] }
 }
-const grouped = (key) => !!groupedCache[key]
+const grouped = (key: any) => !!groupedCache[key]
 /* a value the list no longer offers stays choosable, named for what it is */
 /* the drawer's title: the title field — or, where that field picks from a list (a companion's
    book), the list's label for it rather than the slug */
 const headTitle = computed(() => {
   if (!col.value) return ''
-  const f = col.value.fields.find((x) => x.name === col.value.title)
+  const f = col.value.fields.find((x: any) => x.name === col.value.title)
   const v = form.data[col.value.title]
-  if (f && f.options && v) { const o = msOptions(f.options).find((x) => x.value === v); if (o) return o.label }
-  return v || form.data.title || form.name
+  if (f && f.options && v) { const o = msOptions(f.options).find((x: any) => x.value === v); if (o) return o.label }
+  return v || (form.data as any).title || form.name
 })
-const withCurrent = (opts, v) => (v && Array.isArray(opts) && !opts.some((o) => o.value === v || (o.items || []).some((x) => x.value === v))) ? opts.concat({ value: v, label: v + ' (no such option now)' }) : opts
-const msOptions = (key) => groupedCache[key] || optionsCache[key] || []
+const withCurrent = (opts: any, v: any) => (v && Array.isArray(opts) && !opts.some((o) => o.value === v || (o.items || []).some((x: any) => x.value === v))) ? opts.concat({ value: v, label: v + ' (no such option now)' }) : opts
+const msOptions = (key: any) => groupedCache[key] || optionsCache[key] || []
 /* the tag vocabulary, and whether a writer may add to it — see the field's comment in the drawer */
-const freeTags = (key) => msOptions(key).some((o) => o && o.value === '__free__')
-const tagChoices = (key) => msOptions(key).filter((o) => o && o.value !== '__free__')
-const tagSuggestions = ref([])
-const suggestTags = (e, f) => {
+const freeTags = (key: any) => msOptions(key).some((o: any) => o && o.value === '__free__')
+const tagChoices = (key: any) => msOptions(key).filter((o: any) => o && o.value !== '__free__')
+const tagSuggestions = ref<any>([])
+const suggestTags = (e: any, f: any) => {
   const q = String((e && e.query) || '').trim().toLowerCase()
-  const have = new Set((form.data[f.name] || []).map((v) => String(v).toLowerCase()))
-  tagSuggestions.value = tagChoices(f.options).filter((o) => !have.has(String(o.value).toLowerCase()) && (!q || o.label.toLowerCase().includes(q))).map((o) => o.value)
+  const have = new Set((form.data[f.name] || []).map((v: any) => String(v).toLowerCase()))
+  tagSuggestions.value = tagChoices(f.options).filter((o: any) => !have.has(String(o.value).toLowerCase()) && (!q || o.label.toLowerCase().includes(q))).map((o: any) => o.value)
 }
 async function loadCollections() {
   collections.value = await pipe.collections()
   const keys = new Set()
-  for (const c of Object.values(collections.value)) for (const f of c.fields) if ((f.widget === 'multiselect' || f.widget === 'select' || f.widget === 'tags') && f.options) keys.add(f.options)
+  for (const c of Object.values(collections.value)) for (const f of (c as any).fields) if ((f.widget === 'multiselect' || f.widget === 'select' || f.widget === 'tags') && f.options) keys.add(f.options)
   await Promise.all([...keys].map(loadOptions))
 }
 async function loadList() {
@@ -593,7 +594,7 @@ async function loadList() {
   if (['analytics', 'content-analytics', 'notifications', 'api', 'publishing', 'media', 'print-orders', 'orders', 'bookings', 'emails', 'funnels', 'blasts', 'support', 'comments', 'spaces', 'people', 'forms', 'form-responses', 'form-analytics', 'funnel-analytics', 'models', 'payouts', 'social', 'network'].includes(view.value)) return   /* the dashboards fetch their own data */
   loading.value = true; loadError.value = ''
   try { items.value = await pipe.items(view.value) }
-  catch (e) { loadError.value = e.message; items.value = [] }
+  catch (e) { loadError.value = (e as any).message; items.value = [] }
   finally { loading.value = false }
   /* the grid keeps its row nodes by id and redraws a cell only for a value it saw change: the File cell's mark (a draft come or gone) is drawn again outright */
   await nextTick(); if (gridApi.value) { try { gridApi.value.refreshCells({ columns: ['name'], force: true }) } catch (e) { /* the grid may be gone */ } }
@@ -602,13 +603,14 @@ async function loadList() {
   if (view.value === 'books') attachRun()
   if (col.value && col.value.single && !drawer.value) {
     await openEdit(col.value.single)
+    // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
     try { if (sessionStorage.getItem('dl.admin.saved') === view.value) { sessionStorage.removeItem('dl.admin.saved'); showSaved() } } catch (e) { /* private */ }
   }
 }
-function pick(v) { navigate(ROUTES.admin + '/' + v) }
+function pick(v: any) { navigate(ROUTES.admin + '/' + v) }
 
 /* ---------------- grid ---------------- */
-const fmtCell = (p) => {
+const fmtCell = (p: any) => {
   const v = p.value
   if (Array.isArray(v)) return v.join(', ')
   if (v === true) return '✓'; if (v === false) return '—'
@@ -619,40 +621,40 @@ const columnDefs = computed(() => {
   if (!col.value) return []
   /* only the fields flagged for the grid — the rest live in the edit drawer, so the
      table stays scannable and fits the width instead of overflowing */
-  const fields = col.value.fields.filter((f) => f.grid)
+  const fields = col.value.fields.filter((f: any) => f.grid)
   void companionsIndex.value   /* the Companion column reads the index; recompute when it loads */
   return [
-    { field: 'name', headerName: 'File', pinned: 'left', flex: 1.4, minWidth: 190, valueGetter: (p) => (p.data && p.data.draft ? '\u0000' : '') + (p.data ? p.data.name : ''),   /* the draft mark is part of the value, so the cell redraws when it flips */
-      valueGetter: (p) => p.data.name,
-      cellRenderer: (p) => `${p.data && p.data.draft ? `<i class="ad-draftpill">${FW.draft}</i>` : ''}<span class="ad-file">${p.data ? p.data.name : ''}</span>` },
-    ...fields.map((f) => {
+    { field: 'name', headerName: 'File', pinned: 'left', flex: 1.4, minWidth: 190, valueGetter: (p: any) => (p.data && p.data.draft ? '\u0000' : '') + (p.data ? p.data.name : ''),   /* the draft mark is part of the value, so the cell redraws when it flips */
+      valueGetter: (p: any) => p.data.name,
+      cellRenderer: (p: any) => `${p.data && p.data.draft ? `<i class="ad-draftpill">${FW.draft}</i>` : ''}<span class="ad-file">${p.data ? p.data.name : ''}</span>` },
+    ...fields.map((f: any) => {
       const base = { headerName: f.label.replace(/\s*\(.*\)$/, ''),
-        valueGetter: (p) => p.data.data[f.name], valueFormatter: fmtCell }
-      if (f.name === 'published') return { ...base, width: 110, valueGetter: (p) => p.data.data.published !== false }
+        valueGetter: (p: any) => p.data.data[f.name], valueFormatter: fmtCell }
+      if (f.name === 'published') return { ...base, width: 110, valueGetter: (p: any) => p.data.data.published !== false }
       if (f.type === 'boolean') return { ...base, width: 110 }
       if (f.type === 'number') return { ...base, width: 96, type: 'numericColumn' }
       /* a select shows its choice's label, never the value the file holds */
-      if (f.choices && f.choices.length) return { ...base, flex: 1, minWidth: 120, valueFormatter: (q) => { const c = f.choices.find((x) => x.value === q.value); return c ? c.label : fmtCell(q) } }
+      if (f.choices && f.choices.length) return { ...base, flex: 1, minWidth: 120, valueFormatter: (q: any) => { const c = f.choices.find((x: any) => x.value === q.value); return c ? c.label : fmtCell(q) } }
       return { ...base, flex: f.name === col.value.title ? 2 : 1.2, minWidth: 130 }
     }),
     /* a content model without a body has no words to count */
     ...(col.value.model && !col.value.body ? [] : [{ field: 'words', headerName: 'Words', width: 96, type: 'numericColumn' }]),
     /* books: what the two scripts have written, so a batch can be chosen by eye */
     ...(view.value === 'books' ? [
-      { headerName: 'Intro', width: 90, valueGetter: (p) => !!(p.data.data.introduction && String(p.data.data.introduction).trim()), valueFormatter: fmtCell },
-      { headerName: 'Companion', width: 118, valueGetter: (p) => { const c = compByBook[p.data.name]; return c ? (c.headings || 0) + ' / ' + (p.data.headings || 0) : '—' } },
+      { headerName: 'Intro', width: 90, valueGetter: (p: any) => !!(p.data.data.introduction && String(p.data.data.introduction).trim()), valueFormatter: fmtCell },
+      { headerName: 'Companion', width: 118, valueGetter: (p: any) => { const c = compByBook[p.data.name]; return c ? (c.headings || 0) + ' / ' + (p.data.headings || 0) : '—' } },
     ] : []),
   ]
 })
 /* books are selectable (checkbox column, header selects all); other grids are not */
 const rowSelection = computed(() => (view.value === 'books' ? { mode: 'multiRow', enableClickSelection: false } : undefined))
-const getRowId = (p) => p.data.name
-const gridApi = shallowRef(null)
-const selected = ref([])
-function onGridReady(e) { gridApi.value = e.api }
-function onSelectionChanged(e) { selected.value = e.api.getSelectedRows().map((r) => r.name) }
+const getRowId = (p: any) => p.data.name
+const gridApi = shallowRef<any>(null)
+const selected = ref<any>([])
+function onGridReady(e: any) { gridApi.value = e.api }
+function onSelectionChanged(e: any) { selected.value = e.api.getSelectedRows().map((r: any) => r.name) }
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
-function onRowClicked(e) {
+function onRowClicked(e: any) {
   /* a click on the checkbox chooses the row for a batch; anywhere else opens it */
   if (e.event && e.event.target && e.event.target.closest && e.event.target.closest('.ag-selection-checkbox, .ag-checkbox')) return
   navigate(ROUTES.admin + '/' + view.value + '/' + e.data.name)
@@ -663,36 +665,37 @@ function onRowClicked(e) {
    build/introduce.mjs (the whole-book introduction) run in the dev server as a
    child process; the log streams into a panel under the bar and the list reloads
    when the run ends. One run at a time. */
-const RUNS = {
+const RUNS: any = {
   enrich: { label: 'Enrich', doing: 'Enriching', title: 'The whole pipeline: the map of the book, its introduction, then every chapter extracted, written and audited' },
   introduce: { label: 'Introduction only', doing: 'Writing introductions', title: 'Stops after the introduction' },
 }
-const job = ref(null)
+const job = ref<any>(null)
 const runForce = ref(false)
 const runError = ref('')
-const logEl = ref(null)
-let poll = null
+const logEl = ref<any>(null)
+let poll: any = null
 function stopPoll() { if (poll) { clearInterval(poll); poll = null } }
 async function refreshJob() {
   if (!job.value) return
   try {
+    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     const { jobs } = await api('/run?id=' + job.value.id)
     if (!jobs[0]) return
     const wasRunning = job.value.running
     job.value = jobs[0]
     await nextTick(); if (logEl.value) logEl.value.scrollTop = logEl.value.scrollHeight
     if (wasRunning && !job.value.running) { stopPoll(); await loadList() }
-  } catch (e) { runError.value = e.message; stopPoll() }
+  } catch (e) { runError.value = (e as any).message; stopPoll() }
 }
 function watchJob() { stopPoll(); if (job.value && job.value.running) poll = setInterval(refreshJob, 1500) }
-async function startRun(script) {
+async function startRun(script: any) {
   runError.value = ''
   if (!selected.value.length) return
   if (CLOUD) return await startJobs(script)
   try {
     job.value = (await api('/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ script, books: selected.value, force: runForce.value }) })).job
     watchJob()
-  } catch (e) { runError.value = e.message }
+  } catch (e) { runError.value = (e as any).message }
 }
 /*
  * THE SAME BUTTON, WHERE THERE IS NO MACHINE. A dev server starts a process and streams its output;
@@ -704,8 +707,8 @@ async function startRun(script) {
  * a bill nobody looked at first. The rule this project has about spending exists because of exactly
  * that, so the refusal is explicit and says where the pass is run instead.
  */
-const cloudRuns = ref([])
-async function startJobs(script) {
+const cloudRuns = ref<any>([])
+async function startJobs(script: any) {
   const A = await import('platformkit/lib/agents/api.js')
   if (selected.value.length > 1) { runError.value = ENR().many || ''; return }
   const book = selected.value[0]
@@ -714,28 +717,28 @@ async function startJobs(script) {
   cloudRuns.value = [{ id: r.id, book, status: r.status || 'queued', spent: 0, steps: [], said: '', error: null }]
   watchCloud()
 }
-let cloudPoll = null
+let cloudPoll: any = null
 function watchCloud() {
   if (cloudPoll) clearInterval(cloudPoll)
   cloudPoll = setInterval(async () => {
     const A = await import('platformkit/lib/agents/api.js')
     let moving = false
     for (const r of cloudRuns.value) {
-      const got = await A.progress(r.id); if (!got) continue
+      const got = await A.progress((r as any).id); if (!got) continue
       Object.assign(r, { status: got.status, spent: Number(got.spent_cents) || 0, steps: got.steps || [], said: got.said || '', error: got.error })
       if (got.status === 'queued' || got.status === 'running') moving = true
     }
     if (!moving) { clearInterval(cloudPoll); cloudPoll = null; await loadList() }
   }, 2000)
 }
-async function stopCloud(id) { const A = await import('platformkit/lib/agents/api.js'); await A.stop(id) }
-const money = (c) => '$' + (Number(c || 0) / 100).toFixed(2)
+async function stopCloud(id: any) { const A = await import('platformkit/lib/agents/api.js'); await A.stop(id) }
+const money = (c: any) => '$' + (Number(c || 0) / 100).toFixed(2)
 /* what a job has to show for itself: what it said as it went, or failing that a line per step with
    the stage it was for and what it cost. Built here rather than in the template, because a newline
    inside a template expression is an entity the compiler decodes into a broken string literal. */
-function logOf(r) {
+function logOf(r: any) {
   if (r.said) return r.said + (r.error ? '\n\n' + r.error : '')
-  const lines = (r.steps || []).map((x) => [x.request && x.request.stage ? x.request.stage : x.kind, x.error || '', x.cost_cents ? money(x.cost_cents) : ''].filter(Boolean).join('  '))
+  const lines = (r.steps || []).map((x: any) => [x.request && x.request.stage ? x.request.stage : x.kind, x.error || '', x.cost_cents ? money(x.cost_cents) : ''].filter(Boolean).join('  '))
   if (r.error) lines.push('', r.error)
   return lines.join('\n') || '…'
 }
@@ -744,12 +747,13 @@ const ENR = () => ((us('models').enrichment || {}).run || {})
 
 async function stopRun() {
   if (!job.value) return
-  try { job.value = (await api('/run/stop', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: job.value.id }) })).job } catch (e) { runError.value = e.message }
+  try { job.value = (await api('/run/stop', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: job.value.id }) })).job } catch (e) { runError.value = (e as any).message }
 }
 /* a run started before a reload is still going in the server: show it again */
 async function attachRun() {
   if (job.value) return
-  try { const { jobs } = await api('/run'); const live = jobs.find((j) => j.running); if (live) { job.value = live; watchJob() } } catch (e) { /* no runs */ }
+  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
+  try { const { jobs } = await api('/run'); const live = jobs.find((j: any) => j.running); if (live) { job.value = live; watchJob() } } catch (e) { /* no runs */ }
 }
 const jobState = computed(() => {
   const j = job.value; if (!j) return ''
@@ -761,14 +765,14 @@ const jobState = computed(() => {
 onBeforeUnmount(stopPoll)
 
 /* ---------------- the edit / create drawer ---------------- */
-const drawer = ref(null)            /* { create, name } */
-const form = reactive({ name: '', data: {}, content: '' })
+const drawer = ref<any>(null)            /* { create, name } */
+const form = reactive<any>({ name: '', data: {}, content: '' })
 const saving = ref(false)
 const saveError = ref('')
-const issues = ref([])
+const issues = ref<any>([])
 
 function blankData() {
-  const d = {}
+  const d: any = {}
   /* published is on unless the file says otherwise — so a file with no key opens as
      published and stays so on save (the server writes the key only when it is false) */
   for (const f of col.value.fields) d[f.name] = f.widget === 'builder' || f.widget === 'variants' || f.type === 'list' ? [] : f.type === 'boolean' ? f.name === 'published' : ''
@@ -778,30 +782,30 @@ function blankData() {
 }
 
 /* which experiments this page or ad is a variant of — the strip in its drawer */
-const experimentsIndex = ref([])
+const experimentsIndex = ref<any>([])
 async function loadExperimentsIndex() {
   try { experimentsIndex.value = await pipe.items('experiments') } catch (e) { experimentsIndex.value = [] }
 }
 /* the companion a book has, for the strip in its drawer */
-const companionsIndex = ref([])
-let compByBook = {}
-watch(companionsIndex, (list) => { compByBook = {}; for (const c of list) if (c.data && c.data.book) compByBook[c.data.book] = c }, { immediate: true })
+const companionsIndex = ref<any>([])
+let compByBook: any = {}
+watch(companionsIndex, (list) => { compByBook = {}; for (const c of list) if ((c as any).data && (c as any).data.book) compByBook[(c as any).data.book] = c }, { immediate: true })
 async function loadCompanionsIndex() {
   try { companionsIndex.value = await pipe.items('companions') } catch (e) { companionsIndex.value = [] }
 }
 const companionOf = computed(() => {
   if (!drawer.value || drawer.value.create || view.value !== 'books') return null
-  const c = companionsIndex.value.find((x) => x.data.book === form.name)
+  const c = companionsIndex.value.find((x: any) => (x as any).data.book === form.name)
   const total = (form.content.match(/^# /gm) || []).length
-  return { name: c ? c.name : null, chapters: c ? (c.headings || 0) : 0, total }
+  return { name: c ? (c as any).name : null, chapters: c ? ((c as any).headings || 0) : 0, total }
 })
 const memberships = computed(() => {
   if (!drawer.value || drawer.value.create || !['pages', 'ads'].includes(view.value)) return []
   const kind = view.value === 'ads' ? 'ad' : 'page'
-  return experimentsIndex.value.filter((e) => (e.data.kind || 'page') === kind && (e.data.variants || []).some((v) => v.item === form.name))
-    .map((e) => ({ name: e.name, title: e.data.title || e.name, key: e.data.variants.find((v) => v.item === form.name).key, active: e.data.active !== false, winner: e.data.winner || '' }))
+  return experimentsIndex.value.filter((e: any) => ((e as any).data.kind || 'page') === kind && ((e as any).data.variants || []).some((v: any) => v.item === form.name))
+    .map((e: any) => ({ name: (e as any).name, title: (e as any).data.title || (e as any).name, key: (e as any).data.variants.find((v: any) => v.item === form.name).key, active: (e as any).data.active !== false, winner: (e as any).data.winner || '' }))
 })
-async function openEdit(name) {
+async function openEdit(name: any) {
   saveError.value = ''; issues.value = []
   try {
     const f = await pipe.read(view.value, name)
@@ -810,7 +814,7 @@ async function openEdit(name) {
     form.content = f.content || ''
     initMedia()
     drawer.value = { create: false, name }
-  } catch (e) { loadError.value = e.message; drawer.value = null }
+  } catch (e) { loadError.value = (e as any).message; drawer.value = null }
 }
 function openNew() {
   saveError.value = ''; issues.value = []
@@ -843,13 +847,13 @@ function toggleSplit() {
   previewSplit.value = !previewSplit.value
   try { localStorage.setItem('dl.admin.pvsplit', previewSplit.value ? '1' : '0') } catch (e) { /* private */ }
 }
-const previewEntry = ref(null)
+const previewEntry = ref<any>(null)
 /* the builder and the preview point at each other: the block being edited scrolls the preview to its section, a click on a section opens its block */
 const previewFocus = ref(-1), builderPick = ref(-1)
-const previewIssues = ref([])
+const previewIssues = ref<any>([])
 const previewBusy = ref(false)
 function togglePreview() { previewOn.value = !previewOn.value }
-let pvTimer = null, pvSeq = 0
+let pvTimer: any = null, pvSeq = 0
 async function refreshPreview() {
   const my = ++pvSeq
   previewBusy.value = true
@@ -860,7 +864,7 @@ async function refreshPreview() {
     if (j.entry) { previewEntry.value = j.entry; previewIssues.value = [] }
     else previewIssues.value = j.issues || [{ path: '', message: j.error || 'Preview failed' }]
   } catch (e) {
-    if (my === pvSeq) previewIssues.value = [{ path: '', message: String((e && e.message) || e) }]
+    if (my === pvSeq) previewIssues.value = [{ path: '', message: String((e && (e as any).message) || e) }]
   } finally {
     if (my === pvSeq) previewBusy.value = false
   }
@@ -873,16 +877,16 @@ function schedulePreview() {
 watch([() => form.name, () => form.content, () => JSON.stringify(form.data), previewOn, drawer], schedulePreview)
 
 /* list fields are edited as one-per-line text */
-function listText(name) { return (form.data[name] || []).join('\n') }
-function setList(name, text) { form.data[name] = text.split('\n').map((s) => s.trim()).filter(Boolean) }
+function listText(name: any) { return (form.data[name] || []).join('\n') }
+function setList(name: any, text: any) { form.data[name] = text.split('\n').map((s: any) => s.trim()).filter(Boolean) }
 /* raw fields (e.g. media) are edited as JSON */
-const rawText = reactive({})
-const rawErr = reactive({})
-function rawFor(name) {
+const rawText = reactive<any>({})
+const rawErr = reactive<any>({})
+function rawFor(name: any) {
   if (!(name in rawText)) rawText[name] = form.data[name] != null ? JSON.stringify(form.data[name], null, 2) : ''
   return rawText[name]
 }
-function setRaw(name, text) {
+function setRaw(name: any, text: any) {
   rawText[name] = text; rawErr[name] = ''
   if (!text.trim()) { delete form.data[name]; return }
   try { form.data[name] = JSON.parse(text) } catch (e) { rawErr[name] = 'invalid JSON' }
@@ -890,74 +894,74 @@ function setRaw(name, text) {
 /* image / file uploads: a file put under the model's folder of the library, or one chosen from it — the field holds the address either way */
 const MF = us('media').page.field
 const { choose: chooseMedia } = useMediaPick()
-const uploading = reactive({})
-async function onChoose(name) { const url = await chooseMedia('image'); if (url) form.data[name] = url }
-async function onUpload(name, e) {
+const uploading = reactive<any>({})
+async function onChoose(name: any) { const url = await chooseMedia('image'); if (url) form.data[name] = url }
+async function onUpload(name: any, e: any) {
   const file = e.target.files && e.target.files[0]; e.target.value = ''
   if (!file) return
   uploading[name] = true; saveError.value = ''
   try {
     const r = await pipe.upload(view.value, file)
     form.data[name] = r.path
-  } catch (err) { saveError.value = MF.failed.replace('{error}', err.message) }
+  } catch (err) { saveError.value = MF.failed.replace('{error}', (err as any).message) }
   finally { uploading[name] = false }
 }
-function previewSrc(val) {
+function previewSrc(val: any) {
   if (!val) return ''
   if (/^https?:\/\//.test(val) || val.startsWith('/')) return val
   return pipe.assetUrl(view.value, val)
 }
 /* the path field is only for entering a URL — hide it once the value is a managed
    local/relative path (uploaded or pasted); Remove clears it and brings it back */
-const showImgPath = (val) => !val || /^https?:\/\//.test(val)
+const showImgPath = (val: any) => !val || /^https?:\/\//.test(val)
 
 /* date fields are stored as plain YYYY-MM-DD strings; the picker works in Dates */
 /* a book's print block is edited on the Print editions page (PrintAdmin.vue), never here:
    the Books drawer shows what it is and opens it there */
-const hcLine = (v) => { const s = printSpec(v); if (!s) return 'Not in print'; const on = FORMATS.filter((f) => s.formats[f]).map((f) => { const p = formatPrice(s, f, editionOf(form.name)); return f + (p ? ' $' + p : s.formats[f].markup != null ? ' $' + s.formats[f].markup + ' over' : '') }); return [on.join(', ') || 'no format', s.rights ? 'on sale' : 'no rights line'].join(' · ') }
-function toDate(s) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null }
-function toYMD(d) { if (!d) return ''; const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` }
+const hcLine = (v: any) => { const s = printSpec(v); if (!s) return 'Not in print'; const on = FORMATS.filter((f) => s.formats[f]).map((f) => { const p = formatPrice(s, f, editionOf(form.name)); return f + (p ? ' $' + p : s.formats[f].markup != null ? ' $' + s.formats[f].markup + ' over' : '') }); return [on.join(', ') || 'no format', s.rights ? 'on sale' : 'no rights line'].join(' · ') }
+function toDate(s: any) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null }
+function toYMD(d: any) { if (!d) return ''; const p = (n: any) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` }
 
 /* media (articles): a list of tracks. One track plays inline; two or more become a
    playlist. Frontmatter is a single object for one, an array for several. */
-const mediaRows = ref([])
+const mediaRows = ref<any>([])
 const AUDIO_RE = /\.(mp3|m4a|wav|aac|ogg|oga|flac)(\?|#|$)/i
 const YT_RE = /(?:youtube\.com|youtu\.be)/i
 const VIMEO_RE = /vimeo\.com/i
-const isEmbed = (src) => YT_RE.test(src || '') || VIMEO_RE.test(src || '')
+const isEmbed = (src: any) => YT_RE.test(src || '') || VIMEO_RE.test(src || '')
 /* YouTube/Vimeo are video; otherwise fall back to the file extension */
-const detectType = (src) => (isEmbed(src) ? 'video' : (AUDIO_RE.test(src || '') ? 'audio' : 'video'))
-const providerLabel = (src, type) => (YT_RE.test(src || '') ? 'YouTube' : VIMEO_RE.test(src || '') ? 'Vimeo' : type === 'audio' ? 'audio' : 'video')
-const toRow = (t) => (typeof t === 'string'
+const detectType = (src: any) => (isEmbed(src) ? 'video' : (AUDIO_RE.test(src || '') ? 'audio' : 'video'))
+const providerLabel = (src: any, type: any) => (YT_RE.test(src || '') ? 'YouTube' : VIMEO_RE.test(src || '') ? 'Vimeo' : type === 'audio' ? 'audio' : 'video')
+const toRow = (t: any) => (typeof t === 'string'
   ? { src: t, type: detectType(t), title: '', poster: '' }
   : { src: t.src || '', type: t.type || detectType(t.src), title: t.title || '', poster: t.poster || '' })
 function initMedia() {
-  const m = form.data.media
+  const m = (form.data as any).media
   mediaRows.value = Array.isArray(m) ? m.map(toRow) : (m ? [toRow(m)] : [])
   editing.value = -1
 }
 /* which track's edit panel is open; a track with no source yet is always open */
 const editing = ref(-1)
-const isEd = (i) => editing.value === i || !(mediaRows.value[i] && (mediaRows.value[i].src || '').trim())
-function editTrack(i) { editing.value = editing.value === i ? -1 : i }
+const isEd = (i: any) => editing.value === i || !(mediaRows.value[i] && ((mediaRows.value[i] as any).src || '').trim())
+function editTrack(i: any) { editing.value = editing.value === i ? -1 : i }
 function addTrack() { mediaRows.value.push({ src: '', type: 'video', title: '', poster: '' }); editing.value = mediaRows.value.length - 1 }
-function removeTrack(i) { mediaRows.value.splice(i, 1); if (editing.value >= i) editing.value = -1 }
+function removeTrack(i: any) { mediaRows.value.splice(i, 1); if (editing.value >= i) editing.value = -1 }
 /* the poster shown on a collapsed item: an explicit poster, else a YouTube thumb */
-function ytId(src) { const m = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/.exec(src || ''); return m ? m[1] : '' }
-function posterFor(t) { if (t.poster && t.poster.trim()) return t.poster.trim(); const id = ytId(t.src); return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : '' }
-function trackLabel(t) { if (t.title && t.title.trim()) return t.title.trim(); const s = (t.src || '').split(/[?#]/)[0].split('/').pop(); return s || 'Untitled track' }
+function ytId(src: any) { const m = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/.exec(src || ''); return m ? m[1] : '' }
+function posterFor(t: any) { if (t.poster && t.poster.trim()) return t.poster.trim(); const id = ytId(t.src); return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : '' }
+function trackLabel(t: any) { if (t.title && t.title.trim()) return t.title.trim(); const s = (t.src || '').split(/[?#]/)[0].split('/').pop(); return s || 'Untitled track' }
 function serializeMedia() {
-  const tracks = mediaRows.value.filter((r) => r.src.trim()).map((r) => {
-    const t = { type: r.type || detectType(r.src), src: r.src.trim() }
-    if (r.title.trim()) t.title = r.title.trim()
-    if (r.poster.trim()) t.poster = r.poster.trim()
+  const tracks = mediaRows.value.filter((r: any) => (r as any).src.trim()).map((r: any) => {
+    const t = { type: (r as any).type || detectType((r as any).src), src: (r as any).src.trim() }
+    if ((r as any).title.trim()) (t as any).title = (r as any).title.trim()
+    if ((r as any).poster.trim()) (t as any).poster = (r as any).poster.trim()
     return t
   })
-  if (!tracks.length) delete form.data.media
-  else form.data.media = tracks.length === 1 ? tracks[0] : tracks
+  if (!tracks.length) delete (form.data as any).media
+  else (form.data as any).media = tracks.length === 1 ? tracks[0] : tracks
 }
 
-const slug = (t) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const slug = (t: any) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 /* a body split into chapters wants the wide, two-column drawer */
 const bodyChapters = ref(0)
 /* the page builder says whether every section's form is valid */
@@ -977,13 +981,14 @@ async function save() {
       /* the settings page stays open. Velite re-embeds the file and Vite reloads the
          page a moment later, so the message rides across that reload */
       try { sessionStorage.setItem('dl.admin.saved', view.value) } catch (e) { /* private */ }
+      // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
       showSaved()
       return
     }
     drawer.value = null
     if (parsed.value.name) navigate(ROUTES.admin + '/' + view.value)
     await loadList(); countDrafts()
-  } catch (e) { saveError.value = e.message; issues.value = e.issues || [] }
+  } catch (e) { saveError.value = (e as any).message; issues.value = (e as any).issues || [] }
   finally { saving.value = false }
 }
 /* cloud mode: this record saved (as a draft) and published — live, and to the repository as its own commit */
@@ -1005,7 +1010,7 @@ async function publishOne() {
     drawer.value = null
     if (parsed.value.name) navigate(ROUTES.admin + '/' + view.value)
     await loadList(); countDrafts()
-  } catch (e) { saveError.value = e.message; issues.value = e.issues || [] }
+  } catch (e) { saveError.value = (e as any).message; issues.value = (e as any).issues || [] }
   finally { publishing.value = false }
 }
 async function del() {
@@ -1016,7 +1021,7 @@ async function del() {
     drawer.value = null
     if (parsed.value.name) navigate(ROUTES.admin + '/' + view.value)
     await loadList(); countDrafts()
-  } catch (e) { saveError.value = e.message }
+  } catch (e) { saveError.value = (e as any).message }
   finally { saving.value = false }
 }
 
@@ -1027,6 +1032,7 @@ watch(() => parsed.value.name, (name) => {
   else if (!(drawer.value && drawer.value.create)) drawer.value = null
 })
 /* the session is restored asynchronously: the pipe (cloud mode's function wants the JWT) waits for it */
+// @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
 const settled = () => new Promise((r) => { if (authSettled.value) return r(); const stop = watch(authSettled, (v) => { if (v) { stop(); r() } }) })
 onMounted(async () => {
   await settled()
@@ -1077,7 +1083,7 @@ onMounted(async () => {
           </button>
           <div class="ad-navgroup" :class="{ open: isOpen('developers') || slim }" :inert="!(isOpen('developers') || slim) || undefined">
             <div class="ad-navinner">
-              <a v-for="l in devLinks" :key="l.key" class="ad-navitem ad-navlink" :href="l.href" :target="l.out ? '_blank' : null" :rel="l.out ? 'noopener' : null" :title="slim ? navLabel(l.key) : ''">
+              <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><a v-for="l in devLinks" :key="l.key" class="ad-navitem ad-navlink" :href="l.href" :target="l.out ? '_blank' : null" :rel="l.out ? 'noopener' : null" :title="slim ? navLabel(l.key) : ''">
                 <span class="ad-navico" v-html="icon(l.key)" />
                 <span class="ad-navlabel ad-fade">{{ navLabel(l.key) }}</span>
                 <span class="ad-navext ad-fade" aria-hidden="true">↗</span>
@@ -1146,7 +1152,7 @@ onMounted(async () => {
           <!-- a job has no room to say anything in, so it says it here: a line per stage, and its cost -->
           <pre v-for="r in cloudRuns" :key="'log-' + r.id" class="ad-batchlog">{{ logOf(r) }}</pre>
           <div class="ad-grid">
-            <AgGridVue class="ad-aggrid" :theme="theme" :row-data="items" :column-defs="columnDefs" :default-col-def="defaultColDef"
+            <!-- @vue-expect-error TS2322, from the conversion: Type '{ mode: string; enableClickSelection: boolean; } | undefined' is not assignable to type '"multiple" | "single" | RowSelectionOptions<a --><AgGridVue class="ad-aggrid" :theme="theme" :row-data="items" :column-defs="columnDefs" :default-col-def="defaultColDef"
                        :row-selection="rowSelection" :get-row-id="getRowId"
                        :suppress-cell-focus="true" @row-clicked="onRowClicked" @grid-ready="onGridReady" @selection-changed="onSelectionChanged" />
           </div>
@@ -1320,7 +1326,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div v-for="f in col.fields.filter((x) => x.widget !== 'builder' && x.widget !== 'variants' && x.widget !== 'none' && fieldShown(x))" :key="f.name" class="ad-f" :class="{ 'ad-half': f.half }" @focusout="touched[f.name] = true">
+          <div v-for="f in col.fields.filter((x: any) => x.widget !== 'builder' && x.widget !== 'variants' && x.widget !== 'none' && fieldShown(x))" :key="f.name" class="ad-f" :class="{ 'ad-half': f.half }" @focusout="touched[f.name] = true">
             <span>{{ f.label }}<em v-if="f.required">required</em><small v-if="f.help"> — {{ f.help }}</small></span>
             <ModelLeaf v-if="f.kind === 'markdown' || f.kind === 'datetime' || f.kind === 'file'" :field="f" v-model="form.data[f.name]" :col="view" />
             <GroupField v-else-if="f.widget === 'group'" :fields="f.fields || []" v-model="form.data[f.name]" :col="view" />
@@ -1343,7 +1349,7 @@ onMounted(async () => {
                  for this widget and none of them drew anything, so a colour was a field with a
                  label and no control under it. -->
             <div v-else-if="f.widget === 'colour'" class="ad-col">
-              <input type="color" :value="form.data[f.name] || '#000000'" :aria-label="f.label" @input="form.data[f.name] = $event.target.value" />
+              <input type="color" :value="form.data[f.name] || '#000000'" :aria-label="f.label" @input="form.data[f.name] = ($event.target as any).value" />
               <InputText v-model="form.data[f.name]" fluid placeholder="#000000" />
               <button v-if="form.data[f.name]" type="button" class="ad-imgrm" @click="form.data[f.name] = ''">{{ MF.remove }}</button>
             </div>
@@ -1396,7 +1402,7 @@ onMounted(async () => {
               <div v-for="(t, i) in mediaRows" :key="i" class="ad-mitem" :class="{ editing: isEd(i) }">
                 <div class="ad-mitem-row" @click="!isEd(i) && editTrack(i)">
                   <span class="ad-mthumb">
-                    <img v-if="posterFor(t)" :src="posterFor(t)" alt="" @error="$event.target.remove()" />
+                    <img v-if="posterFor(t)" :src="posterFor(t)" alt="" @error="($event.target as any).remove()" />
                     <svg v-else viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                       <polygon v-if="isEmbed(t.src) || t.type === 'video'" points="7 4 20 12 7 20" fill="currentColor" stroke="none" />
                       <g v-else><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></g>
@@ -1449,7 +1455,7 @@ onMounted(async () => {
               <button type="button" class="ad-hcgo" :disabled="!form.name" @click="navigate(ROUTES.admin + '/print/' + form.name)">Open the print edition ↗</button>
             </div>
             <template v-else-if="f.widget === 'raw'">
-              <textarea :value="rawFor(f.name)" rows="5" class="ad-mono" placeholder="JSON" @input="setRaw(f.name, $event.target.value)" />
+              <textarea :value="rawFor(f.name)" rows="5" class="ad-mono" placeholder="JSON" @input="setRaw(f.name, ($event.target as any).value)" />
               <em v-if="rawErr[f.name]" class="ad-fielderr">{{ rawErr[f.name] }}</em>
             </template>
             <em v-if="entryErrs[f.name] && (touched[f.name] || issues.length)" class="ad-fielderr">{{ entryErrs[f.name] }}</em>

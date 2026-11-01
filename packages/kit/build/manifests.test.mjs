@@ -58,7 +58,7 @@ const t = (name, fn) => { n++; try { fn() } catch (e) { bad++; console.log('  FA
     }
     return out
   }
-  const ONE = nodePath.join('lib', 'modules.js')
+  const ONE = nodePath.join('lib', 'modules.ts')
   const srcRoots = [KIT_SRC, THEME_SRC, nodePath.join(process.cwd(), 'src')]
   const all = srcRoots.flatMap((r) => walkSrc(r))
   const raw = []
@@ -362,7 +362,7 @@ if (CRON_SITE.deployment.backend) {
  * Playwright's default is 30 seconds and applies to any call given no explicit budget, so a file
  * that writes 60 on the waits it thought about still runs the rest at 30 — and under load, which
  * is when a suite is slowest, those are the ones that fail. A context made anywhere but
- * `build/browser.mjs` inherits that 30 back, so it is refused here rather than discovered by an
+ * `build/browser.mts` inherits that 30 back, so it is refused here rather than discovered by an
  * afternoon spent reading the wrong surface.
  */
 {
@@ -406,7 +406,7 @@ if (CRON_SITE.deployment.backend) {
  * taken from that map as well as from the source.
  */
 {
-  const src = readFileSync(new URL('./deploy-checks.mjs', import.meta.url), 'utf8')
+  const src = readFileSync(new URL('./deploy-checks.mts', import.meta.url), 'utf8')
   const { DEPLOYMENT_ENV, declaredEnv, PRINTER_KEYS } = await import('./deploy-checks.mjs')
 
   /* what it can demand: a need(…) call, and the paired lists that feed the same call */

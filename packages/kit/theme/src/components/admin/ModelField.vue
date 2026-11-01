@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* One field of a content model, edited as controls: its kind from a grouped list, key, label, help, a default
    of its kind, Required · Unique · In the grid, Shown when as one condition row, Rules as rows (the rule from
    the list the kind takes, its parameters as the controls rules.js says), and the kind's own — options as rows,
@@ -9,7 +10,7 @@ import Select from 'primevue/select'
 import { KINDS, KIND_KEYS, LEAF_KINDS, GROUPS, RULES, rulesFor } from 'platformkit/lib/models/rules.js'
 import { us } from 'platformkit/lib/strings.js'
 import './admin-ui.css'
-const props = defineProps({ field: { type: Object, required: true }, fields: { type: Array, default: () => [] }, models: { type: Array, default: () => [] }, nested: { type: Boolean, default: false }, saved: { type: Boolean, default: false } })
+const props = defineProps({ field: { type: Object as PropType<any>, required: true }, fields: { type: Array as PropType<any[]>, default: () => [] }, models: { type: Array as PropType<any[]>, default: () => [] }, nested: { type: Boolean, default: false }, saved: { type: Boolean, default: false } })
 const emit = defineEmits(['remove', 'rename'])
 const M = us('models'), A = M.admin || {}
 const W = A.fields || {}, WS = A.shown || {}, WR = A.rules || {}, K = M.kinds || {}, KG = M.groups || {}, R = M.rules || {}, WE = (M.pages || {}).entry || {}
@@ -18,10 +19,10 @@ const kinds = computed(() => (props.nested ? LEAF_KINDS : KIND_KEYS))
 /* the kinds grouped for the select: Text · Choices · Media · Structure */
 const grouped = computed(() => GROUPS.map((g) => ({ group: (KG[g] || {}).name || g, items: kinds.value.filter((k) => KINDS[k].group === g).map((k) => ({ value: k, label: (K[k] || {}).name || k, line: (K[k] || {}).line || '' })) })).filter((g) => g.items.length))
 const rowKinds = computed(() => grouped.value.map((g) => ({ ...g, items: g.items.filter((x) => x.value !== 'list') })))
-const kindName = (k) => (K[k] || {}).name || k
-const camel = (s) => String(s || '').trim().replace(/[^A-Za-z0-9]+(.)?/g, (_, c) => (c ? c.toUpperCase() : '')).replace(/^[A-Z]/, (c) => c.toLowerCase()).replace(/^[^a-z]+/, '')
-function setLabel(v) { f.value.label = v; if (f.value._new) f.value.key = camel(v) || 'field' }
-function setKind(k) {
+const kindName = (k: any) => (K[k] || {}).name || k
+const camel = (s: any) => String(s || '').trim().replace(/[^A-Za-z0-9]+(.)?/g, (_, c) => (c ? c.toUpperCase() : '')).replace(/^[A-Z]/, (c) => c.toLowerCase()).replace(/^[^a-z]+/, '')
+function setLabel(v: any) { f.value.label = v; if (f.value._new) f.value.key = camel(v) || 'field' }
+function setKind(k: any) {
   const was = f.value.kind
   if (!k || was === k) return
   f.value.kind = k
@@ -32,62 +33,62 @@ function setKind(k) {
   if (k !== 'list') delete f.value.of
   if (k === 'list' && !f.value.of) f.value.of = 'text'
   if ((k === 'select' || k === 'multi-select') && !f.value.options) f.value.options = [{ value: '', label: '' }]
-  if (k === 'reference' && !f.value.model) f.value.model = (props.models[0] && props.models[0].key) || ''
+  if (k === 'reference' && !f.value.model) f.value.model = (props.models[0] && (props.models[0] as any).key) || ''
   if (k === 'group' && !f.value.fields) f.value.fields = []
   if (f.value.unique && !(KINDS[k].base === 'string' && k !== 'markdown')) delete f.value.unique
-  if (f.value.rules) f.value.rules = f.value.rules.filter((r) => rulesFor(k).includes(r.rule))
+  if (f.value.rules) f.value.rules = f.value.rules.filter((r: any) => rulesFor(k).includes(r.rule))
   if (!f.value.rules || !f.value.rules.length) delete f.value.rules
   delete f.value.default
   f.value._kindChanged = true
 }
-function setOf(of) {
+function setOf(of: any) {
   if (!of) return
   f.value.of = of
   if (of === 'select' && !f.value.options) f.value.options = [{ value: '', label: '' }]
   if (of !== 'select') delete f.value.options
-  if (of === 'reference' && !f.value.model) f.value.model = (props.models[0] && props.models[0].key) || ''
+  if (of === 'reference' && !f.value.model) f.value.model = (props.models[0] && (props.models[0] as any).key) || ''
   if (of !== 'reference') { delete f.value.model; delete f.value.many }
   if (of === 'group' && !f.value.fields) f.value.fields = []
   if (of !== 'group') delete f.value.fields
   f.value._kindChanged = true
 }
 const uniqueOk = computed(() => !props.nested && KINDS[f.value.kind] && KINDS[f.value.kind].base === 'string' && f.value.kind !== 'markdown')
-const defaultKind = computed(() => ({ text: 'text', url: 'url', email: 'email', number: 'number', boolean: 'boolean', date: 'date', datetime: 'datetime-local', 'long-text': 'textarea', select: 'select' }[f.value.kind] || null))
-function setDefault(v) { if (v === '' || v === undefined || v === null) delete f.value.default; else f.value.default = f.value.kind === 'number' ? Number(v) : v }
-function setHelp(v) { if (v) f.value.help = v; else delete f.value.help }
-function flag(k, on) { if (on) f.value[k] = true; else delete f.value[k]; if (k === 'required') f.value._kindChanged = true }
+const defaultKind = computed(() => (({ text: 'text', url: 'url', email: 'email', number: 'number', boolean: 'boolean', date: 'date', datetime: 'datetime-local', 'long-text': 'textarea', select: 'select' } as any)[f.value.kind] || null))
+function setDefault(v: any) { if (v === '' || v === undefined || v === null) delete f.value.default; else f.value.default = f.value.kind === 'number' ? Number(v) : v }
+function setHelp(v: any) { if (v) f.value.help = v; else delete f.value.help }
+function flag(k: any, on: any) { if (on) f.value[k] = true; else delete f.value[k]; if (k === 'required') f.value._kindChanged = true }
 const yesNo = [{ value: 'true', label: WE.yes || 'Yes' }, { value: 'false', label: WE.no || 'No' }]
 
 /* ---- shown when ---- */
-const others = computed(() => props.fields.filter((x) => x !== f.value && x.key).map((x) => ({ value: x.key, label: x.label || x.key, field: x })))
+const others = computed(() => props.fields.filter((x) => x !== f.value && (x as any).key).map((x) => ({ value: (x as any).key, label: (x as any).label || (x as any).key, field: x })))
 const target = computed(() => (f.value.shown ? others.value.find((x) => x.value === f.value.shown.field) : null))
 const comparisons = [{ value: 'is', label: WS.is }, { value: 'is-not', label: WS['is-not'] }, { value: 'empty', label: WS.empty }, { value: 'not-empty', label: WS['not-empty'] }]
-function setShown(on) { if (!on) delete f.value.shown; else { f.value.shown = { field: (others.value[0] && others.value[0].value) || '', is: 'is', value: '' }; shownField(f.value.shown.field) } }
-function shownField(k) { if (!k) return; f.value.shown.field = k; const t = others.value.find((x) => x.value === k); const tf = t && t.field; f.value.shown.value = tf && tf.kind === 'boolean' ? true : tf && tf.options && tf.options[0] ? tf.options[0].value : '' }
-function shownIs(v) { if (!v) return; f.value.shown.is = v; if (v === 'empty' || v === 'not-empty') delete f.value.shown.value; else if (!('value' in f.value.shown)) f.value.shown.value = '' }
-const targetOptions = computed(() => (target.value && target.value.field.options ? target.value.field.options.map((o) => ({ value: o.value, label: o.label || o.value })) : []))
+function setShown(on: any) { if (!on) delete f.value.shown; else { f.value.shown = { field: (others.value[0] && others.value[0].value) || '', is: 'is', value: '' }; shownField(f.value.shown.field) } }
+function shownField(k: any) { if (!k) return; f.value.shown.field = k; const t = others.value.find((x) => x.value === k); const tf: any = t && t.field; f.value.shown.value = tf && tf.kind === 'boolean' ? true : tf && tf.options && tf.options[0] ? tf.options[0].value : '' }
+function shownIs(v: any) { if (!v) return; f.value.shown.is = v; if (v === 'empty' || v === 'not-empty') delete f.value.shown.value; else if (!('value' in f.value.shown)) f.value.shown.value = '' }
+const targetOptions = computed(() => (target.value && (target as any).value.field.options ? (target as any).value.field.options.map((o: any) => ({ value: o.value, label: o.label || o.value })) : []))
 
 /* ---- rules ---- */
 const ruleKeys = computed(() => rulesFor(f.value.kind === 'list' ? 'list' : f.value.kind))
 const ruleOptions = computed(() => ruleKeys.value.map((k) => ({ value: k, label: (R[k] || {}).name || k })))
-const shape = (rule) => (RULES[rule] || {}).params
-function addRule() { const rule = ruleKeys.value.find((r) => !(f.value.rules || []).some((x) => x.rule === r)) || ruleKeys.value[0]; if (!rule) return; f.value.rules = [...(f.value.rules || []), fresh(rule)]; f.value._kindChanged = true }
-function fresh(rule) { const s = shape(rule); return s === 'none' ? { rule } : s === 'range' ? { rule, params: [0, 10] } : s === 'list' ? { rule, params: [''] } : s === 'n' ? { rule, params: 1 } : { rule, params: '' } }
-function setRule(i, rule) { if (!rule) return; f.value.rules.splice(i, 1, fresh(rule)); f.value._kindChanged = true }
-function setParam(i, v, j) { const r = f.value.rules[i]; const s = shape(r.rule); if (s === 'n') r.params = Number(v); else if (s === 'range') { r.params = [...r.params]; r.params[j] = Number(v) } else r.params = v; f.value._kindChanged = true }
-function setListParam(i, j, v) { const r = f.value.rules[i]; r.params = [...r.params]; r.params[j] = v; f.value._kindChanged = true }
-function addListParam(i) { f.value.rules[i].params = [...f.value.rules[i].params, '']; f.value._kindChanged = true }
-function removeListParam(i, j) { const r = f.value.rules[i]; r.params = r.params.filter((_, k) => k !== j); if (!r.params.length) r.params = ['']; f.value._kindChanged = true }
-function removeRule(i) { f.value.rules.splice(i, 1); if (!f.value.rules.length) delete f.value.rules; f.value._kindChanged = true }
+const shape = (rule: any) => (RULES[rule] || {}).params
+function addRule() { const rule = ruleKeys.value.find((r) => !(f.value.rules || []).some((x: any) => x.rule === r)) || ruleKeys.value[0]; if (!rule) return; f.value.rules = [...(f.value.rules || []), fresh(rule)]; f.value._kindChanged = true }
+function fresh(rule: any) { const s = shape(rule); return s === 'none' ? { rule } : s === 'range' ? { rule, params: [0, 10] } : s === 'list' ? { rule, params: [''] } : s === 'n' ? { rule, params: 1 } : { rule, params: '' } }
+function setRule(i: any, rule: any) { if (!rule) return; f.value.rules.splice(i, 1, fresh(rule)); f.value._kindChanged = true }
+function setParam(i: any, v: any, j: any) { const r = f.value.rules[i]; const s = shape(r.rule); if (s === 'n') r.params = Number(v); else if (s === 'range') { r.params = [...r.params]; r.params[j] = Number(v) } else r.params = v; f.value._kindChanged = true }
+function setListParam(i: any, j: any, v: any) { const r = f.value.rules[i]; r.params = [...r.params]; r.params[j] = v; f.value._kindChanged = true }
+function addListParam(i: any) { f.value.rules[i].params = [...f.value.rules[i].params, '']; f.value._kindChanged = true }
+function removeListParam(i: any, j: any) { const r = f.value.rules[i]; r.params = r.params.filter((_: any, k: any) => k !== j); if (!r.params.length) r.params = ['']; f.value._kindChanged = true }
+function removeRule(i: any) { f.value.rules.splice(i, 1); if (!f.value.rules.length) delete f.value.rules; f.value._kindChanged = true }
 
 /* ---- options, sub-fields ---- */
 function addOption() { f.value.options = [...(f.value.options || []), { value: '', label: '' }] }
-function setOption(i, k, v) { const o = { ...f.value.options[i], [k]: v }; if (k === 'label' && (!o.value || o.value === camel(f.value.options[i].label))) o.value = camel(v); f.value.options.splice(i, 1, o) }
-function removeOption(i) { f.value.options.splice(i, 1) }
+function setOption(i: any, k: any, v: any) { const o = { ...f.value.options[i], [k]: v }; if (k === 'label' && (!o.value || o.value === camel(f.value.options[i].label))) o.value = camel(v); f.value.options.splice(i, 1, o) }
+function removeOption(i: any) { f.value.options.splice(i, 1) }
 function addSub() { f.value.fields = [...(f.value.fields || []), { key: 'field' + ((f.value.fields || []).length + 1), kind: 'text', label: '', _new: true, _open: true }] }
-function removeSub(i) { f.value.fields.splice(i, 1) }
-function rename() { const to = window.prompt(W['rename-prompt'], f.value.key); if (!to || to === f.value.key) return; if (props.fields.some((x) => x !== f.value && x.key === to)) { window.alert(W['rename-refused']); return } emit('rename', { from: f.value.key, to }) }
-const modelOptions = computed(() => props.models.map((m) => ({ value: m.key, label: m.name })))
+function removeSub(i: any) { f.value.fields.splice(i, 1) }
+function rename() { const to = window.prompt(W['rename-prompt'], f.value.key); if (!to || to === f.value.key) return; if (props.fields.some((x) => x !== f.value && (x as any).key === to)) { window.alert(W['rename-refused']); return } emit('rename', { from: f.value.key, to }) }
+const modelOptions = computed(() => props.models.map((m) => ({ value: (m as any).key, label: (m as any).name })))
 </script>
 
 <template>
@@ -95,7 +96,7 @@ const modelOptions = computed(() => props.models.map((m) => ({ value: m.key, lab
     <!-- what it is -->
     <div class="mf-block">
       <div class="mf-grid2">
-        <label class="ui-field"><span>{{ W.label }}</span><input class="ui-input" :value="f.label" @input="setLabel($event.target.value)" /></label>
+        <label class="ui-field"><span>{{ W.label }}</span><input class="ui-input" :value="f.label" @input="setLabel(($event.target as any).value)" /></label>
         <label class="ui-field"><span>{{ W.kind }}</span>
           <Select :model-value="f.kind" :options="grouped" optionLabel="label" optionValue="value" optionGroupLabel="group" optionGroupChildren="items" fluid @update:model-value="setKind">
             <template #option="{ option }"><span class="mf-kopt"><b>{{ option.label }}</b><small>{{ option.line }}</small></span></template>
@@ -103,9 +104,9 @@ const modelOptions = computed(() => props.models.map((m) => ({ value: m.key, lab
         </label>
       </div>
       <label class="ui-field"><span>{{ W.key }} <small>· {{ W['key-help'] }}</small></span>
-        <span class="mf-keyrow"><input class="ui-input ui-mono" :value="f.key" :readonly="!f._new" @input="f._new && (f.key = $event.target.value)" /><button v-if="!f._new && !nested && saved" type="button" class="ui-btn ui-ghost ui-sm" @click="rename">{{ W.rename }}</button></span>
+        <span class="mf-keyrow"><input class="ui-input ui-mono" :value="f.key" :readonly="!f._new" @input="f._new && (f.key = ($event.target as any).value)" /><button v-if="!f._new && !nested && saved" type="button" class="ui-btn ui-ghost ui-sm" @click="rename">{{ W.rename }}</button></span>
       </label>
-      <label class="ui-field"><span>{{ W.help }} <small>· {{ W['help-help'] }}</small></span><input class="ui-input" :value="f.help || ''" @input="setHelp($event.target.value)" /></label>
+      <label class="ui-field"><span>{{ W.help }} <small>· {{ W['help-help'] }}</small></span><input class="ui-input" :value="f.help || ''" @input="setHelp(($event.target as any).value)" /></label>
     </div>
 
     <!-- the kind's own -->
@@ -115,7 +116,7 @@ const modelOptions = computed(() => props.models.map((m) => ({ value: m.key, lab
       </label>
       <div v-if="f.kind === 'select' || f.kind === 'multi-select' || (f.kind === 'list' && f.of === 'select')" class="ui-field"><span>{{ W.options }}</span>
         <div class="mf-rows">
-          <div v-for="(o, i) in f.options || []" :key="i" class="mf-row mf-opt"><input class="ui-input" :placeholder="W['option-label']" :value="o.label" @input="setOption(i, 'label', $event.target.value)" /><input class="ui-input ui-mono" :placeholder="W['option-value']" :value="o.value" @input="setOption(i, 'value', $event.target.value)" /><button type="button" class="ui-iconbtn" @click="removeOption(i)">×</button></div>
+          <div v-for="(o, i) in f.options || []" :key="i" class="mf-row mf-opt"><input class="ui-input" :placeholder="W['option-label']" :value="o.label" @input="setOption(i, 'label', ($event.target as any).value)" /><input class="ui-input ui-mono" :placeholder="W['option-value']" :value="o.value" @input="setOption(i, 'value', ($event.target as any).value)" /><button type="button" class="ui-iconbtn" @click="removeOption(i)">×</button></div>
           <button type="button" class="ui-btn ui-ghost ui-sm" @click="addOption">+ {{ W['options-add'] }}</button>
         </div>
       </div>
@@ -137,24 +138,24 @@ const modelOptions = computed(() => props.models.map((m) => ({ value: m.key, lab
     <!-- the checks -->
     <div class="mf-block">
       <div class="mf-switches">
-        <label class="ui-switch"><input type="checkbox" :checked="!!f.required" @change="flag('required', $event.target.checked)" /><i /><span>{{ W.required }}</span></label>
-        <label v-if="uniqueOk" class="ui-switch"><input type="checkbox" :checked="!!f.unique" @change="flag('unique', $event.target.checked)" /><i /><span>{{ W.unique }}</span></label>
-        <label v-if="!nested" class="ui-switch"><input type="checkbox" :checked="!!f.grid" @change="flag('grid', $event.target.checked)" /><i /><span>{{ W.grid }}</span></label>
+        <label class="ui-switch"><input type="checkbox" :checked="!!f.required" @change="flag('required', ($event.target as any).checked)" /><i /><span>{{ W.required }}</span></label>
+        <label v-if="uniqueOk" class="ui-switch"><input type="checkbox" :checked="!!f.unique" @change="flag('unique', ($event.target as any).checked)" /><i /><span>{{ W.unique }}</span></label>
+        <label v-if="!nested" class="ui-switch"><input type="checkbox" :checked="!!f.grid" @change="flag('grid', ($event.target as any).checked)" /><i /><span>{{ W.grid }}</span></label>
       </div>
-      <label v-if="defaultKind && defaultKind !== 'select' && defaultKind !== 'boolean' && defaultKind !== 'textarea'" class="ui-field"><span>{{ W.default }}</span><input class="ui-input" :type="defaultKind" :value="f.default ?? ''" @input="setDefault($event.target.value)" /></label>
-      <label v-else-if="defaultKind === 'textarea'" class="ui-field"><span>{{ W.default }}</span><textarea class="ui-input mf-ta" rows="2" :value="f.default ?? ''" @input="setDefault($event.target.value)" /></label>
-      <label v-else-if="defaultKind === 'select'" class="ui-field"><span>{{ W.default }}</span><Select :model-value="f.default ?? null" :options="(f.options || []).map((o) => ({ value: o.value, label: o.label || o.value }))" optionLabel="label" optionValue="value" showClear fluid @update:model-value="setDefault($event ?? '')" /></label>
+      <label v-if="defaultKind && defaultKind !== 'select' && defaultKind !== 'boolean' && defaultKind !== 'textarea'" class="ui-field"><span>{{ W.default }}</span><input class="ui-input" :type="defaultKind" :value="f.default ?? ''" @input="setDefault(($event.target as any).value)" /></label>
+      <label v-else-if="defaultKind === 'textarea'" class="ui-field"><span>{{ W.default }}</span><textarea class="ui-input mf-ta" rows="2" :value="f.default ?? ''" @input="setDefault(($event.target as any).value)" /></label>
+      <label v-else-if="defaultKind === 'select'" class="ui-field"><span>{{ W.default }}</span><Select :model-value="f.default ?? null" :options="(f.options || []).map((o: any) => ({ value: o.value, label: o.label || o.value }))" optionLabel="label" optionValue="value" showClear fluid @update:model-value="setDefault($event ?? '')" /></label>
       <label v-else-if="defaultKind === 'boolean'" class="ui-field"><span>{{ W.default }}</span><Select :model-value="f.default === undefined ? null : String(f.default)" :options="yesNo" optionLabel="label" optionValue="value" showClear fluid @update:model-value="(v) => (v == null ? delete f.default : (f.default = v === 'true'))" /></label>
 
       <div v-if="ruleKeys.length" class="ui-field"><span>{{ WR.label }}</span>
         <div class="mf-rows">
           <div v-for="(r, i) in f.rules || []" :key="i" class="mf-row mf-rule">
             <Select class="mf-rulesel" :model-value="r.rule" :options="ruleOptions" optionLabel="label" optionValue="value" @update:model-value="(v) => setRule(i, v)" />
-            <input v-if="shape(r.rule) === 'n'" class="ui-input mf-num" type="number" :aria-label="(R[r.rule] || {}).param" :value="r.params" @input="setParam(i, $event.target.value)" />
-            <template v-else-if="shape(r.rule) === 'range'"><input class="ui-input mf-num" type="number" :aria-label="(R[r.rule] || {})['param-min']" :value="r.params[0]" @input="setParam(i, $event.target.value, 0)" /><span class="mf-dash">–</span><input class="ui-input mf-num" type="number" :aria-label="(R[r.rule] || {})['param-max']" :value="r.params[1]" @input="setParam(i, $event.target.value, 1)" /></template>
-            <input v-else-if="shape(r.rule) === 'date'" class="ui-input mf-date" type="date" :aria-label="(R[r.rule] || {}).param" :value="r.params" @input="setParam(i, $event.target.value)" />
-            <input v-else-if="shape(r.rule) === 'text' || shape(r.rule) === 'pattern'" class="ui-input" :class="{ 'ui-mono': shape(r.rule) === 'pattern' }" :aria-label="(R[r.rule] || {}).param" :value="r.params" @input="setParam(i, $event.target.value)" />
-            <span v-else-if="shape(r.rule) === 'list'" class="mf-list"><span v-for="(v, j) in r.params" :key="j" class="mf-listitem"><input class="ui-input" :value="v" :aria-label="(R[r.rule] || {}).param" @input="setListParam(i, j, $event.target.value)" /><button type="button" class="ui-iconbtn" @click="removeListParam(i, j)">×</button></span><button type="button" class="ui-btn ui-ghost ui-sm" @click="addListParam(i)">+</button></span>
+            <!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. --><input v-if="shape(r.rule) === 'n'" class="ui-input mf-num" type="number" :aria-label="(R[r.rule] || {}).param" :value="r.params" @input="setParam(i, ($event.target as any).value)" />
+            <template v-else-if="shape(r.rule) === 'range'"><input class="ui-input mf-num" type="number" :aria-label="(R[r.rule] || {})['param-min']" :value="r.params[0]" @input="setParam(i, ($event.target as any).value, 0)" /><span class="mf-dash">–</span><input class="ui-input mf-num" type="number" :aria-label="(R[r.rule] || {})['param-max']" :value="r.params[1]" @input="setParam(i, ($event.target as any).value, 1)" /></template>
+            <!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. --><input v-else-if="shape(r.rule) === 'date'" class="ui-input mf-date" type="date" :aria-label="(R[r.rule] || {}).param" :value="r.params" @input="setParam(i, ($event.target as any).value)" />
+            <!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. --><input v-else-if="shape(r.rule) === 'text' || shape(r.rule) === 'pattern'" class="ui-input" :class="{ 'ui-mono': shape(r.rule) === 'pattern' }" :aria-label="(R[r.rule] || {}).param" :value="r.params" @input="setParam(i, ($event.target as any).value)" />
+            <span v-else-if="shape(r.rule) === 'list'" class="mf-list"><span v-for="(v, j) in r.params" :key="j" class="mf-listitem"><input class="ui-input" :value="v" :aria-label="(R[r.rule] || {}).param" @input="setListParam(i, j, ($event.target as any).value)" /><button type="button" class="ui-iconbtn" @click="removeListParam(i, j)">×</button></span><button type="button" class="ui-btn ui-ghost ui-sm" @click="addListParam(i)">+</button></span>
             <span v-else class="ui-grow" />
             <button type="button" class="ui-iconbtn" :title="WR.remove" @click="removeRule(i)">×</button>
           </div>
@@ -170,7 +171,7 @@ const modelOptions = computed(() => props.models.map((m) => ({ value: m.key, lab
           <template v-if="f.shown.is === 'is' || f.shown.is === 'is-not'">
             <Select v-if="target && target.field.kind === 'boolean'" class="mf-shownval" :model-value="String(f.shown.value)" :options="yesNo" optionLabel="label" optionValue="value" @update:model-value="(v) => { if (v != null) f.shown.value = v === 'true' }" />
             <Select v-else-if="targetOptions.length" class="mf-shownval" :model-value="f.shown.value" :options="targetOptions" optionLabel="label" optionValue="value" @update:model-value="(v) => { if (v != null) f.shown.value = v }" />
-            <input v-else class="ui-input mf-shownval" :value="f.shown.value ?? ''" :aria-label="WS.value" @input="f.shown.value = $event.target.value" />
+            <input v-else class="ui-input mf-shownval" :value="f.shown.value ?? ''" :aria-label="WS.value" @input="f.shown.value = ($event.target as any).value" />
           </template>
           <button type="button" class="ui-iconbtn" :title="WS.clear" @click="setShown(false)">×</button>
         </div>

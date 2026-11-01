@@ -5,23 +5,23 @@ order: 43
 sources:
   [
     packages/kit/supabase/functions/reader-content/index.ts,
-    packages/kit/src/lib/content-live.js,
-    packages/kit/src/lib/print-index.js,
-    packages/kit/src/lib/bucket-host.js,
-    packages/kit/src/lib/entry.js,
-    packages/kit/build/content-export.mjs,
+    packages/kit/src/lib/content-live.ts,
+    packages/kit/src/lib/print-index.ts,
+    packages/kit/src/lib/bucket-host.ts,
+    packages/kit/src/lib/entry.ts,
+    packages/kit/build/content-export.mts,
     packages/kit/supabase/functions/admin/index.ts,
     packages/kit/supabase/functions/_shared/github.js,
     packages/kit/theme/src/components/PublishingPage.vue,
     packages/kit/theme/src/content/ui/publishing.md,
-    packages/kit/build/models/index.mjs,
+    packages/kit/build/models/index.mts,
     packages/kit/supabase/functions/_shared/compiled.ts,
     packages/kit/supabase/schemas/12-compiled.sql,
-    packages/kit/build/catalog.mjs,
-    packages/kit/build/funnels.mjs,
-    packages/kit/build/forms.mjs,
+    packages/kit/build/catalog.mts,
+    packages/kit/build/funnels.mts,
+    packages/kit/build/forms.mts,
     packages/kit/supabase/functions/_shared/mjml.ts,
-    packages/kit/build/emails-compile.mjs,
+    packages/kit/build/emails-compile.mts,
   ]
 reviewed: 2026-10-29
 ---

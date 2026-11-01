@@ -1,4 +1,5 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { ref, computed } from 'vue'
 import { md } from './md.js'
 import { us } from 'platformkit/lib/strings.js'
@@ -22,17 +23,17 @@ const props = defineProps({
   layout: { type: String, default: 'grid' },    /* grid | wall | one | switcher | marquee | tweets | bubbles | photo | faces | stack */
   columns: { type: Number, default: 3 },
   more: { type: String, default: '' }, moreHref: { type: String, default: '' },   /* "See all 120 reviews" */
-  items: { type: Array, default: () => [] },    /* [{ quote, name, role?, image?, stars?, logo?, stats?: [{ value, label }] }] */
+  items: { type: Array as PropType<any[]>, default: () => [] },    /* [{ quote, name, role?, image?, stars?, logo?, stats?: [{ value, label }] }] */
 })
 const W = (us('sections').testimonials || {}).nav || {}
 const at = ref(0)
 const n = computed(() => props.items.length)
-const go = (d) => { at.value = (at.value + d + n.value) % n.value }
-const initials = (name) => String(name || '').split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
+const go = (d: any) => { at.value = (at.value + d + n.value) % n.value }
+const initials = (name: any) => String(name || '').split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
 const big = computed(() => props.items[at.value] || {})
 /* the video the page names, opened large */
 const playing = ref(-1)
-const embedOfSafe = (u) => { try { return (u && /\.(mp4|webm|mov)(\?|$)/i.test(u)) ? { kind: 'file', src: u } : u ? { kind: 'embed', src: u } : null } catch (e) { return null } }
+const embedOfSafe: any = (u: any) => { try { return (u && /\.(mp4|webm|mov)(\?|$)/i.test(u)) ? { kind: 'file', src: u } : u ? { kind: 'embed', src: u } : null } catch (e) { return null } }
 </script>
 
 <template>

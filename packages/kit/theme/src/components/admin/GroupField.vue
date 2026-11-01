@@ -1,14 +1,15 @@
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 /* A group field of a content model in the drawer: its sub-fields inline, each with the control of its kind
    (ModelLeaf.vue), under a rule with the group's label; the value is one mapping in the entry's frontmatter. */
 import ModelLeaf from './ModelLeaf.vue'
 import { shownHolds } from 'platformkit/lib/models/entry.js'
-const props = defineProps({ fields: { type: Array, default: () => [] }, modelValue: { type: Object, default: undefined }, col: { type: String, default: '' }, errors: { type: Object, default: () => ({}) } })
+const props = defineProps({ fields: { type: Array as PropType<any[]>, default: () => [] }, modelValue: { type: Object as PropType<any>, default: undefined }, col: { type: String, default: '' }, errors: { type: Object as PropType<any>, default: () => ({}) } })
 const emit = defineEmits(['update:modelValue'])
 /* a field of a row that only one kind of row has — "which event" on a mention is a question with no
    answer, and asking it is how a form starts teaching a grammar */
-const on = (g) => !g.shown || shownHolds(g.shown, props.modelValue || {})
-function setSub(key, v) { const next = { ...(props.modelValue || {}) }; if (v === undefined || v === '' || v === null) delete next[key]; else next[key] = v; emit('update:modelValue', Object.keys(next).length ? next : undefined) }
+const on = (g: any) => !g.shown || shownHolds(g.shown, props.modelValue || {})
+function setSub(key: any, v: any) { const next = { ...(props.modelValue || {}) }; if (v === undefined || v === '' || v === null) delete next[key]; else next[key] = v; emit('update:modelValue', Object.keys(next).length ? next : undefined) }
 </script>
 
 <template>

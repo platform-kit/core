@@ -1,0 +1,38 @@
+const imageOf = (image: any) => (typeof image === 'string' ? image : image && image.src) || ''
+
+export function resolveHead({ title = '', description = '', image = '', path = null } = {}, site: any = {}, defaultImage = '') {
+  const base = String(site.url || '').replace(/\/+$/, '')
+  const url = path != null && base ? base + (path === '/' ? '/' : path) : ''
+  const selectedImage = imageOf(image) || imageOf(site.image) || defaultImage
+  return {
+    title: title ? `${title} · ${site.name || 'Site'}` : (site.tagline ? `${site.name || 'Site'} — ${site.tagline}` : (site.name || 'Site')),
+    description: (description || site.description || '').slice(0, 300),
+    url,
+    image: selectedImage && selectedImage.startsWith('/') && base ? base + selectedImage : selectedImage,
+  }
+}
+
+export function resolveSiteHomeHead({ site, pages = [], ui = [], modules = {} }: any = {}, defaultImage = '/share/default.png') {
+  const page: any = pages.find((entry: any) => entry.route === '/')
+  if (page) {
+    return resolveHead({
+      title: page.seoTitle || (page.route === '/' ? '' : page.title),
+      description: page.description,
+      image: page.image || defaultImage,
+      path: page.route || '/',
+    }, site, defaultImage)
+  }
+
+  const on = (name: any) => (modules as any)[name] !== false
+  const accounts = ['store', 'memberships', 'sessions', 'coaching', 'support', 'instrument', 'recommendations'].some(on)
+  const docsOnly = on('docs') && !['articles', 'books', 'wiki'].some(on) && !accounts
+  const index = docsOnly ? 'docs' : 'hub'
+  const pagesWords: any = ui.find((entry: any) => entry.scope === 'pages')
+  const indexWords: any = pagesWords && pagesWords.groups && pagesWords.groups.seo && pagesWords.groups.seo[index]
+  return resolveHead({
+    title: (indexWords && indexWords.title) || '',
+    description: (indexWords && indexWords.description) || '',
+    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
+    path: docsOnly ? '/docs' : '/content',
+  }, site, defaultImage)
+}
