@@ -42,6 +42,9 @@ export default {
      and is reached from the footer, because a header with everything in it is a header with
      nothing in it. */
   nav: { links: [{ key: 'content', href: '/content', prefix: true }, { key: 'pricing', href: '/pricing' }, { key: 'store', href: '/store' }, { key: 'about', href: '/about' }] },
+  /* A LESSON KIND OF THE PRESS'S OWN, which the kit knows nothing about: the reader rates how sure they are of what a
+     section taught, and the section's bar shows the rating — the proof that a site can put its own thing in a course. */
+  courses: { kinds: { 'self-rating': { label: 'Self-rating', icon: 'form', component: './src/self-rating/SelfRating.vue', check: './src/self-rating/check.mts', progress: './src/self-rating/rating.ts' } } },
   routes: [{ path: '/stockists', component: './src/stockists/StockistsPage.vue', module: 'stockists' }],
   /* the section is the screen; the model is what it saves through, so the shops can be edited by a
      Northlight with no checkout at all. A section without a model is a page that only works on a laptop. */

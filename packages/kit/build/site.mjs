@@ -7,6 +7,7 @@ import { MODULES } from './modules/kit.mjs'
 import { readManifests } from './modules/manifest.mjs'
 import { inferenceOf } from './inference-config.mjs'
 import { paymentProviderPublicSettingsOf } from './payment-provider-registry.mjs'
+import { KINDS } from './courses-io.mjs'
 
 /*
  * THE RESOLVED MODULE SET. The manifests are the kit's own for now; a site's own module joins them
@@ -261,6 +262,25 @@ export const coursesOf = (c) => {
   if (m.where != null) throw new Error('courses.where: removed — courses have their own pages at /courses and, where the community is on, a Courses place in it as well; take the key out')
   const on = (k) => (c.modules || {})[k] !== false
   return { place: on('courses') && on('spaces') && on('network') }
+}
+/*
+ * THE SITE'S OWN LESSON KINDS (openspec: courses). `courses.kinds` names each: `{ <name>: { component, check?, progress?,
+ * label?, icon? } }`. `component` plays it in the player (a .vue file the site owns); `check` is a module whose default
+ * export is handed a lesson's ref at build time and answers what is wrong with it (a word, a list, or nothing);
+ * `progress` is a module, run in the browser, whose default export answers the reader's measure for the lesson's section
+ * (0–100, or null for nothing yet). A name is a lower-case word or words joined by hyphens, and never one of the kit's.
+ */
+export const courseKindsOf = (c) => {
+  const m = (c.courses || {}).kinds || {}
+  if (typeof m !== 'object' || Array.isArray(m)) throw new Error('courses.kinds: an object naming each kind — { <name>: { component, check?, progress? } }')
+  const out = {}
+  for (const [name, k] of Object.entries(m)) {
+    if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)) throw new Error(`courses.kinds: "${name}" is not a kind's name — lower-case words joined by hyphens`)
+    if (KINDS.includes(name)) throw new Error(`courses.kinds: "${name}" is the kit's own kind; name the site's something else`)
+    if (!k || typeof k.component !== 'string' || !k.component) throw new Error(`courses.kinds.${name}: names no component to play it`)
+    out[name] = { component: k.component, check: k.check ? String(k.check) : null, progress: k.progress ? String(k.progress) : null, label: k.label ? String(k.label) : null, icon: k.icon ? String(k.icon) : null }
+  }
+  return out
 }
 /* the kit's own places in the community, before the site's: Courses, where the community is there to hold it */
 function kitPlacesOf(c) {

@@ -75,6 +75,10 @@
       "node": "platformkit/build/site-avatar-node.mjs",
       "default": "platformkit/build/site-avatar-node.mjs"
     },
+    "#site/courses": {
+      "node": "platformkit/build/site-courses-node.mjs",
+      "default": "platformkit/build/site-courses-node.mjs"
+    },
     "#site/member": {
       "node": "platformkit/build/site-member-node.mjs",
       "default": "platformkit/build/site-member-node.mjs"

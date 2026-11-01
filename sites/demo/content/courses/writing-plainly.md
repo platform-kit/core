@@ -33,6 +33,11 @@ lessons:
     downloads:
       - title: The one-page worksheet
         src: /uploads/books/plain-words.png
+  - key: how-sure
+    title: How sure are you now
+    section: Practice
+    kind: self-rating
+    ref: How sure are you that you can cut a page down to its point?
   - key: check
     title: A short check
     section: Finishing
@@ -45,7 +50,7 @@ lessons:
     ref: one-on-one
     required: false
 ---
-Six lessons, two days apart, on saying what you mean in as few words as it takes. Read a chapter of *Plain Words*, try it on a page of your own, and finish with a short check.
+Seven lessons, two days apart, on saying what you mean in as few words as it takes. Read a chapter of *Plain Words*, try it on a page of your own, rate how sure you are, and finish with a short check.
 
 ## welcome
 

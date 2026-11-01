@@ -4,12 +4,12 @@
  * member card's Courses panel gated by the module, and the module's own declaration. The rules a reader meets — what is
  * open, who gets in, completion — are the database's, and courses-db.test.mjs holds them.
  */
-import { parseCourse, bodyParts, lessonHref, KINDS, quizAchievements } from './courses-io.mjs'
+import { parseCourse, bodyParts, lessonHref, KINDS, quizAchievements, siteKinds, readCourses } from './courses-io.mjs'
 import model, { courseFile } from './models/core/courses.mjs'
 import { certificatePdf } from '../src/lib/certificate-pdf.js'
 import { gatesOf } from '../src/lib/member-panels.js'
 import { MODULES } from './modules/kit.mjs'
-import { coursesOf, communityOf, publicSite } from './site.mjs'
+import { coursesOf, communityOf, publicSite, courseKindsOf } from './site.mjs'
 import { forwardOf } from '../src/lib/community/places.js'
 import { libraryOf } from '../src/lib/courses-paths.js'
 import fs from 'node:fs'
@@ -77,12 +77,42 @@ Cross out every word that does not change the meaning.
   const back = model.grammar.serialise({ data: p.data, content: p.content })
   ok('a save writes the same course', JSON.stringify(parseCourse('writing-plainly', back)) === JSON.stringify(parseCourse('writing-plainly', FILE)), back)
   ok('…and the form reads it back the same', JSON.stringify(model.grammar.parse(back).data) === JSON.stringify(p.data))
-  const checks = model.checks[0]({ data: { ...p.data, title: '' }, content: '' }, { name: 'writing-plainly.md' })
+  const checks = await model.checks[0]({ data: { ...p.data, title: '' }, content: '' }, { name: 'writing-plainly.md' })
   ok('the builder refuses what the grammar refuses, on the field', checks.some((c) => c.path === 'title' && /no title/.test(c.message)), JSON.stringify(checks))
   ok('a new course from an empty form is refused, not written half-made', parseCourse('x', courseFile({}, '')).problems.length > 0)
   const many = FILE.replace('media: { type: video, src: https://example.com/a.mp4 } }', 'media: [{ type: video, src: https://example.com/a.mp4, title: A film }, { type: audio, src: https://example.com/b.mp3 }], downloads: [{ title: One, src: /1.pdf }, { title: Two, src: /2.pdf }] }')
   const pm = model.grammar.parse(many)
   ok('a save keeps a track\'s title, and every track and download beyond the one the form edits', JSON.stringify(parseCourse('writing-plainly', model.grammar.serialise({ data: pm.data, content: pm.content }))) === JSON.stringify(parseCourse('writing-plainly', many)))
+}
+
+/* A SITE'S OWN LESSON KIND (openspec: courses, kit-extension-model): registered in its config, checked at build time,
+   refused by name when nobody registers it */
+{
+  const kinds = { stub: { check: (ref) => (ref.endsWith('?') ? null : 'a stub asks a question') } }
+  const file = (kind, ref) => `---\ntitle: S\naccess: { free: true }\nlessons:\n  - { key: a, title: A }\n  - { key: b, section: Two, kind: ${kind}, ref: '${ref}' }\n---\n`
+  const c = parseCourse('s', file('stub', 'Are you sure?'), { kinds })
+  ok('a course may name a kind the site registers', !c.problems.length && c.lessons[1].kind === 'stub' && c.lessons[1].ref === 'Are you sure?' && c.lessons[1].body === null, c.problems.join('; '))
+  ok('…its check runs on the lesson\'s ref, and what it says is named against the lesson', parseCourse('s', file('stub', 'Sure'), { kinds }).problems.join() === 'lesson b: a stub asks a question')
+  ok('…a check that throws is a problem, not a crash', parseCourse('s', file('stub', 'x'), { kinds: { stub: { check: () => { throw new Error('broke') } } } }).problems.join() === 'lesson b: broke')
+  const gone = parseCourse('s', file('stub', 'Are you sure?')).problems.join()
+  ok('with the registration gone, the course naming it is refused, naming the lesson and the kind', /lesson b: kind is stub, which the site does not register/.test(gone), gone)
+  ok('…while a course of the kit\'s kinds alone is as it was', !parseCourse('writing-plainly', FILE).problems.length && JSON.stringify(parseCourse('writing-plainly', FILE)) === JSON.stringify(parseCourse('writing-plainly', FILE, { kinds })))
+  ok('a site kind names what it plays, as any lesson that is not text', /is a stub and names none/.test(parseCourse('s', `---\ntitle: S\naccess: { free: true }\nlessons: [{ key: a, kind: stub }]\n---\n`, { kinds }).problems.join()))
+  const refusal = (k) => { try { courseKindsOf({ courses: { kinds: k } }); return '' } catch (e) { return e.message } }
+  ok('a kind named after one of the kit\'s is refused when the config is read', /"text" is the kit's own kind/.test(refusal({ text: { component: './x.vue' } })))
+  ok('…as is one with no component, and a name that is not one', /names no component/.test(refusal({ stub: {} })) && /not a kind's name/.test(refusal({ 'Two Words': { component: './x.vue' } })))
+  ok('…and a site that registers nothing has none', JSON.stringify(courseKindsOf({})) === '{}')
+  const p = model.grammar.parse(file('stub', 'Are you sure?'))
+  ok('the course builder carries a site kind to the file and back', JSON.stringify(parseCourse('s', model.grammar.serialise({ data: p.data, content: p.content }), { kinds })) === JSON.stringify(parseCourse('s', file('stub', 'Are you sure?'), { kinds })))
+  /* the demo registers one: read from its config, its check imported from the site's own TypeScript */
+  const demo = new URL('../../../sites/demo', import.meta.url).pathname
+  const own = await siteKinds(demo)
+  ok('the demo\'s self-rating kind is read from its config, with its check', typeof (own['self-rating'] || {}).check === 'function' && own['self-rating'].check('How sure?') === null && !!own['self-rating'].check('Sure'))
+  const courses = await readCourses(demo, { kinds: own })
+  ok('…and the demo course using it is accepted', courses.every((x) => !x.problems.length) && courses.some((x) => x.lessons.some((l) => l.kind === 'self-rating')), courses.map((x) => x.problems).flat().join('; '))
+  ok('a root with no config registers nothing', JSON.stringify(await siteKinds(new URL('./fixtures', import.meta.url).pathname)) === '{}')
+  const options = await model.options['course-kinds']({ root: demo })
+  ok('the builder offers the kit\'s kinds and then the site\'s, in its own word', options.map((o) => o.value).join() === 'text,chapter,article,form,session,self-rating' && options[5].label === 'Self-rating', JSON.stringify(options))
 }
 
 /* where a lesson sends the reader */

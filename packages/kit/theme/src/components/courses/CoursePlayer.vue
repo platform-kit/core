@@ -35,10 +35,13 @@
         <div v-for="m in modules" :key="m.n" class="crs-pmod">
           <p class="crs-pmod-head">
             <span class="crs-pmod-name"><b class="crs-pmod-num" :class="{ 'is-done': m.finished }">{{ m.n }}</b>{{ m.name || fill(K['module-n'], { n: m.n }) }}</span>
-            <span v-if="state.enrollment && m.total" class="crs-pmod-n" :class="{ 'is-done': m.finished }"><CourseIcon v-if="m.finished" name="done" :size="13" />{{ m.done }}/{{ m.total }}</span>
+            <!-- a measured section says the reader's measure (nothing until there is one); any other, lessons done -->
+            <span v-if="state.enrollment && m.measured" class="crs-pmod-n" :class="{ 'is-done': m.measure === 100 }">{{ m.measure == null ? '' : fill(K.percent, { n: m.measure }) }}</span>
+            <span v-else-if="state.enrollment && m.total" class="crs-pmod-n" :class="{ 'is-done': m.finished }"><CourseIcon v-if="m.finished" name="done" :size="13" />{{ m.done }}/{{ m.total }}</span>
           </p>
           <!-- how far through the section: a bar under its name -->
-          <span v-if="state.enrollment && m.done > 0 && !m.finished" class="crs-pmod-bar" :class="{ 'is-done': m.finished }"><span :style="{ width: pct(m.done, m.total) + '%' }" /></span>
+          <span v-if="state.enrollment && m.measured && m.measure != null" class="crs-pmod-bar" :class="{ 'is-done': m.measure === 100 }"><span :style="{ width: m.measure + '%' }" /></span>
+          <span v-else-if="state.enrollment && !m.measured && m.done > 0 && !m.finished" class="crs-pmod-bar" :class="{ 'is-done': m.finished }"><span :style="{ width: pct(m.done, m.total) + '%' }" /></span>
           <ol class="crs-plist">
             <li v-for="l in m.lessons" :key="l.key">
               <a :href="courseHref + '/' + l.key" :class="['is-' + stateOf(l), { 'is-here': l.key === lessonKey, 'is-closed': !l.open, 'is-done': l.done, 'has-score': l.quiz && l.quiz.total }]" :aria-current="l.key === lessonKey ? 'page' : null">
@@ -103,6 +106,8 @@
               </div>
               <FormRun v-else :key="lessonKey + ':' + runs" :form="formDoc" embed class="crs-quiz-run" @complete="onForm" />
             </div>
+            <!-- a lesson of the site's own kind: the site's component plays it, and finishes it when the reader has -->
+            <component :is="player" v-else-if="player" :key="lessonKey" class="crs-site-kind" :lesson="lesson" :course="state.slug" :enrollment="state.enrollment" :done="!!(here && here.done)" @complete="emit('complete')" @measure="refresh" />
             <a v-else-if="lesson.kind !== 'text'" class="crs-pointer" :href="pointerHref(lesson)">
               <span class="crs-pointer-ico"><CourseIcon :name="lesson.kind" :size="24" /></span>
               <span class="crs-pointer-text"><strong>{{ S['kind-' + lesson.kind] }}</strong></span>
@@ -128,7 +133,7 @@
                   <a v-if="after && after.open" class="btn solid crs-btn-ico" :href="courseHref + '/' + after.key">{{ S['next-lesson'] }}<CourseIcon name="arrow" :size="15" /></a>
                 </template>
                 <!-- a form lesson finishes itself when the form is passed; the button is only for one passed before it opened -->
-                <button v-else-if="state.enrollment && (lesson.kind !== 'form' || !formDoc || (here && here.quiz && here.quiz.passed))" type="button" class="btn solid crs-btn-ico" :disabled="busy" @click="emit('complete')">
+                <button v-else-if="state.enrollment && !player && (lesson.kind !== 'form' || !formDoc || (here && here.quiz && here.quiz.passed))" type="button" class="btn solid crs-btn-ico" :disabled="busy" @click="emit('complete')">
                   {{ finishes ? S['complete-finish'] : S['complete-continue'] }}<CourseIcon name="arrow" :size="15" />
                 </button>
               </span>
@@ -167,7 +172,7 @@ import MarkdownDoc from '../MarkdownDoc.vue'
 import MediaBlock from '../content/MediaBlock.vue'
 import FormRun from '../forms/FormRun.vue'
 import CourseIcon from './CourseIcon.vue'
-import { words, fill, pct, day, modulesOf, kindOf, stateOf, markOf, nextOpening, pointerHref } from './course-ui.js'
+import { words, fill, pct, day, modulesOf, kindOf, stateOf, markOf, nextOpening, pointerHref, sitePlayer, useMeasures } from './course-ui.js'
 
 const props = defineProps({
   base: { type: String, required: true },
@@ -186,7 +191,9 @@ const { K, S } = words()
 
 const courseHref = computed(() => props.base + '/' + props.state.slug)
 const lessons = computed(() => (props.state.lessons || []).map((l, i) => ({ ...l, n: i + 1 })))
-const modules = computed(() => modulesOf(props.state.lessons || []))
+/* the reader's measures for the sections a site's own kind measures */
+const { measures, refresh } = useMeasures(() => props.state)
+const modules = computed(() => modulesOf(props.state.lessons || [], measures))
 const hereAt = computed(() => lessons.value.findIndex((l) => l.key === props.lessonKey))
 /* where the lesson sits in its own module: "Lesson 2 of 5" counts within it, not across the course */
 const hereIn = computed(() => {
@@ -206,6 +213,7 @@ const narrow = () => typeof window !== 'undefined' && window.matchMedia('(max-wi
 function toggleSide() { if (narrow()) drawer.value = !drawer.value; else sideOpen.value = !sideOpen.value }
 watch(() => props.lessonKey, () => { drawer.value = false })
 
+const player = computed(() => sitePlayer(props.lesson))
 const tracks = computed(() => ((props.lesson && props.lesson.media) || []).filter((m) => m.type !== 'file'))
 const downloads = computed(() => ((props.lesson && props.lesson.media) || []).filter((m) => m.type === 'file'))
 const bookSlug = computed(() => String((props.lesson && props.lesson.ref) || '').split('#')[0])

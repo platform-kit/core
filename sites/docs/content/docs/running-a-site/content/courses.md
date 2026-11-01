@@ -6,6 +6,9 @@ sources:
   [
     packages/kit/supabase/schemas/46-courses.sql,
     packages/kit/build/courses-io.mjs,
+    packages/kit/build/site.mjs,
+    packages/kit/build/site-courses-node.mjs,
+    packages/kit/vite/index.mjs,
     packages/kit/build/courses-push.mjs,
     packages/kit/build/steps/courses.mjs,
     packages/kit/build/models/core/courses.mjs,
@@ -26,20 +29,21 @@ sources:
     packages/kit/build/courses.test.mjs,
     packages/kit/build/courses-db.test.mjs,
   ]
-reviewed: 2026-10-27
+reviewed: 2026-10-31
 ---
 
 A course is sections and lessons in order, which a reader works through and finishes. The `courses` module adds them: the course builder in the admin, the reader's pages, enrollments, release over time, completion, certificates and the emails that go with them.
 
 ## What a lesson can be
 
-Each lesson is one of five kinds:
+Each lesson is one of the kit's five kinds, or a kind the site adds:
 
 - **Its own text**, with a video or audio track and files to download. The text can mark the lines a student must grasp the way the e-book does, `==You choose, and God does the work.=={sun}`: a wavy underline in sun, leaf, sky, ocean or ember (sun when no colour is given), with no background.
 - **A book chapter**, which opens the book at that chapter.
 - **An article**.
 - **A form or quiz**. It runs inside the lesson. The lesson is finished the moment the reader completes it, and passes it where it is scored; nobody marks it by hand. The reader then sees their score: passed, with the way on to the next lesson, or the pass mark and **Try again**. A quiz already passed shows their best score and can be taken again without undoing the lesson. The curriculum shows each reader their best score, and the enrollments screen shows administrators every person's best score and how many attempts it took.
 - **A session to book**. It counts as finished once the reader has booked one.
+- **A kind of the site's own**, which the site registers in its config as `courses.kinds`. The site's own component plays it inside the lesson, and the lesson is finished when that component says so, recorded the way a text lesson is. A kind can also measure the reader: then its section's bar shows that measure, from 0 to 100, instead of how many of its lessons are done. The course's overall progress and its certificate still count lessons. The demo registers a self-rating, in which the reader rates how sure they are of what the section taught.
 
 A lesson is required to finish the course unless it is marked optional.
 
@@ -127,6 +131,8 @@ What the course is about.
 
 The welcome lesson's own words.
 ```
+
+A lesson of a kind the site registers is written the same way, with that kind's name and its `ref`. The build runs the kind's own check on the `ref` where it has one, and refuses a kind nobody registered, naming the lesson and the kind. With the registration removed, a course that still names the kind is refused rather than half-played.
 
 The text before the first `## ` heading is the course's description. Each lesson of its own text takes the section headed with its key. A chapter is written `<book>#<n>`, counted from 1. A course with a mistake in its file is not published, and the build names the mistake.
 

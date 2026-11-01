@@ -89,7 +89,9 @@
                   <strong>{{ m.name || fill(K['module-n'], { n: m.n }) }}</strong>
                 </span>
                 <span class="crs-module-state">
-                  <template v-if="m.finished">{{ K['module-complete'] }}</template>
+                  <!-- a measured section: the reader's measure, once there is one -->
+                  <template v-if="state.enrollment && m.measured && m.measure != null">{{ fill(K.percent, { n: m.measure }) }}</template>
+                  <template v-else-if="m.finished">{{ K['module-complete'] }}</template>
                   <template v-else-if="state.enrollment && m.quizState === 'failed'"><CourseIcon name="missed" :size="14" />{{ S['quiz-not-passed'] }} · {{ fill(K['module-done'], { done: m.done, total: m.total }) }}</template>
                   <template v-else-if="state.enrollment && m.open">{{ fill(K['module-done'], { done: m.done, total: m.total }) }}</template>
                   <template v-else-if="state.enrollment && m.opensAt"><CourseIcon name="clock" :size="14" />{{ fill(K['module-opens'], { date: shortDay(m.opensAt) }) }}</template>
@@ -97,7 +99,8 @@
                 </span>
                 <CourseIcon name="down" :size="18" class="crs-module-chev" />
               </button>
-              <span v-if="state.enrollment && m.open && m.done > 0 && !m.finished" class="crs-module-bar"><span :style="{ width: pct(m.done, m.total) + '%' }" /></span>
+              <span v-if="state.enrollment && m.measured && m.measure != null" class="crs-module-bar"><span :style="{ width: m.measure + '%' }" /></span>
+              <span v-else-if="state.enrollment && !m.measured && m.open && m.done > 0 && !m.finished" class="crs-module-bar"><span :style="{ width: pct(m.done, m.total) + '%' }" /></span>
               <ol v-show="isOpen(m)" class="crs-lessons">
                 <li v-for="l in m.lessons" :key="l.key">
                   <a class="crs-lesson-row" :class="['is-' + stateOf(l), { 'is-closed': !l.open, 'is-done': l.done, 'is-next': next && l.key === next.key }]" :href="courseHref + '/' + l.key">
@@ -132,7 +135,7 @@ import { ROUTES } from 'platformkit/lib/router.js'
 import MarkdownDoc from '../MarkdownDoc.vue'
 import CourseCover from './CourseCover.vue'
 import CourseIcon from './CourseIcon.vue'
-import { words, fill, pct, day, shortDay, leadOf, restOf, modulesOf, kindOf, stateOf, markOf, nextOpen, nextOpening, cadenceOf } from './course-ui.js'
+import { words, fill, pct, day, shortDay, leadOf, restOf, modulesOf, kindOf, stateOf, markOf, nextOpen, nextOpening, cadenceOf, siteKind, useMeasures } from './course-ui.js'
 
 const props = defineProps({
   base: { type: String, required: true },
@@ -159,7 +162,9 @@ ProgressRing.props = ['value']
 
 const courseHref = computed(() => props.base + '/' + (props.state ? props.state.slug : ''))
 const lessons = computed(() => (props.state && props.state.lessons) || [])
-const modules = computed(() => modulesOf(lessons.value))
+/* the reader's measures for the sections a site's own kind measures */
+const { measures } = useMeasures(() => props.state)
+const modules = computed(() => modulesOf(lessons.value, measures))
 const next = computed(() => (props.state && props.state.enrollment && !props.state.enrollment.completed_at ? nextOpen(lessons.value) : null))
 const opening = computed(() => nextOpening(lessons.value))
 const first = computed(() => lessons.value[0] || null)
@@ -173,7 +178,7 @@ const metaLine = computed(() => {
   return m > 1 ? `${ls} · ${fill(L.value.modules, { n: m })}` : ls
 })
 const accessLine = computed(() => { const s = props.state || {}; return s.free ? K.value.free : s.tiers && s.tiers.length && !(s.skus && s.skus.length) ? K.value.included : K.value.sold })
-const kindWord = (l) => { const k = kindOf(l); return S.value['tag-' + k] || S.value['kind-' + k] || '' }
+const kindWord = (l) => { const own = siteKind(l); if (own) return S.value['tag-' + l.kind] || own.label || ''; const k = kindOf(l); return S.value['tag-' + k] || S.value['kind-' + k] || '' }
 
 /* which modules are unfolded: the one holding the next lesson, or the first; the reader's own choice after that */
 const shut = ref(null)

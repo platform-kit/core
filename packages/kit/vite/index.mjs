@@ -17,6 +17,7 @@
  *   #site/recommendations the site's recommendation scorer: the reader's profile, its books, its signals (RECOMMENDATIONS)
  *   #site/permissions   the site's own permission rules, run after the kit's (PERMISSIONS)
  *   #site/admin   exports sections — the site's own admin sections, their components imported
+ *   #site/courses exports kinds — the site's own lesson kinds (courses.kinds), each its label, icon, component and progress measure
  *   #site/content/* the site's content directory (a raw file, print.json say); #content/* its .velite
  *
  * Overrides: a site replaces any theme component by name (platformkit.config.js `overrides`): every
@@ -28,7 +29,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { gatesOf } from '../src/lib/member-panels.js'
-import { loadSite, publicSite, communityOf, avatarsOf, INSTRUMENT, RECOMMENDATIONS, PERMISSIONS, DESK, deskSourcesOf, navOf, ctaOf } from '../build/site.mjs'
+import { loadSite, publicSite, communityOf, courseKindsOf, avatarsOf, INSTRUMENT, RECOMMENDATIONS, PERMISSIONS, DESK, deskSourcesOf, navOf, ctaOf } from '../build/site.mjs'
 import { loadTheme, resolveOverrides } from '../build/theme.mjs'
 export { loadSite, publicSite, loadTheme, resolveOverrides }
 import vue from '@vitejs/plugin-vue'
@@ -60,7 +61,7 @@ function site(c, theme, keys = []) {
   const overrides = resolveOverrides(c, theme)
   const overrideFiles = new Set(Object.values(overrides))
   /* a virtual id must not hold a '#': the browser would read it as a fragment */
-  const V = Object.fromEntries(['site', 'site/looks', 'site/landing', 'site/app', 'site/routes', 'site/nav', 'site/analytics', 'site/instrument', 'site/recommendations', 'site/admin', 'site/member', 'site/permissions', 'site/desk', 'site/strings-default'].map((k) => ['#' + k, '\0platformkit:' + k.replace('/', '-')]))
+  const V = Object.fromEntries(['site', 'site/looks', 'site/landing', 'site/app', 'site/routes', 'site/nav', 'site/analytics', 'site/instrument', 'site/recommendations', 'site/admin', 'site/courses', 'site/member', 'site/permissions', 'site/desk', 'site/strings-default'].map((k) => ['#' + k, '\0platformkit:' + k.replace('/', '-')]))
   const abs = (p) => path.resolve(c.root, p)
   const J = JSON.stringify
   /* where the generated modules are written (see writeFiles below), and how one imports a site's file from there:
@@ -150,6 +151,13 @@ function site(c, theme, keys = []) {
       /* the site's own admin sections: a module exporting `sections` — each { sec, key, label, icon?, module?, title?, lead?, component } */
       const m = c.admin && c.admin.sections
       return m ? `import * as M from ${J(from(m))}\nexport const sections = M.sections || []\n` : 'export const sections = []\n'
+    }
+    if (id === V['#site/courses']) {
+      /* the site's own lesson kinds: each component fetched when a lesson of it is first opened (load), each progress measure (a
+         module whose default export answers the reader's measure for the lesson's section) with it; none with the module off */
+      const kinds = c.modules.courses === false ? [] : Object.entries(courseKindsOf(c))
+      return kinds.map(([, k], i) => (k.progress ? `import * as P${i} from ${J(from(k.progress))}\n` : '')).join('')
+        + `export const kinds = { ${kinds.map(([n, k], i) => `${J(n)}: { label: ${J(k.label)}, icon: ${J(k.icon)}, load: () => import(${J(from(k.component))}), progress: ${k.progress ? `P${i}.default || null` : 'null'} }`).join(', ')} }\n`
     }
     if (id === V['#site/instrument']) return contract(c.modules.instrument && c.instrument && c.instrument.module, INSTRUMENT)
     if (id === V['#site/recommendations']) return contract(c.modules.recommendations && c.recommendations && c.recommendations.module, RECOMMENDATIONS)

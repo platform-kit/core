@@ -185,6 +185,19 @@ try {
   ok('…and not somebody who is not', (await service.rpc('space_fill_matches', { p_user: buyerId, p_fill: { course: FREE } })).data === false)
   ok('…nor somebody outside the cohort the rule names', (await service.rpc('space_fill_matches', { p_user: memberId, p_fill: { course: FREE, cohort: 'spring' } })).data === false)
 
+  /* a lesson of a kind the site registers: written by the push, finished by the reader as a text lesson is */
+  const OWN = `courses-db-own-${STAMP}`
+  const own = parseCourse(OWN, file(`title: Own kind\naccess: { free: true }\nlessons:\n  - { key: rate, title: Rate it, kind: self-rating, ref: How sure are you? }`), { kinds: { 'self-rating': { check: null } } })
+  const ownPush = await projectCourses({ courses: [...courses, own], db: service })
+  ok('a course with a site kind\'s lesson is written', !ownPush.refused.length && (await service.from('course_lessons').select('kind').eq('course', OWN).single()).data?.kind === 'self-rating', ownPush)
+  await call(member, 'course_enroll', { p_course: OWN })
+  const ownDone = await call(member, 'course_complete', { p_course: OWN, p_lesson: 'rate' })
+  ok('…the reader finishes it, and the course with it', ownDone.done === 1 && ownDone.lessons[0].done === true && !!ownDone.enrollment.completed_at, ownDone)
+  const { data: ownRow } = await service.from('lesson_progress').select('how, enrollments!inner(course)').eq('enrollments.course', OWN).single()
+  ok('…recorded as marked, as a text lesson is', ownRow && ownRow.how === 'marked', ownRow)
+  const { error: oddKind } = await service.from('course_lessons').insert({ course: OWN, key: 'odd', position: 2, title: 'Odd', kind: 'Not a kind', ref: 'x' })
+  ok('the database refuses a kind that is no kind\'s name', !!oddKind && /course_lessons_kind_check/.test(oddKind.message), oddKind)
+
   /* a course whose file has gone */
   await projectCourses({ courses: [courses[1]], db: service })
   ok('a course whose file has gone is unpublished, not deleted', (await call(member, 'course_state', { p_course: FREE })) === null)
@@ -193,7 +206,7 @@ try {
 } finally {
   for (const id of purchases) await service.from('purchases').delete().eq('id', id)
   await service.from('events').delete().eq('type', 'course_completed').contains('props', { course: FREE })
-  await service.from('courses').delete().in('slug', [FREE, SOLD])
+  await service.from('courses').delete().in('slug', [FREE, SOLD, `courses-db-own-${STAMP}`])
 }
 
 console.log(fail ? `courses-db: ${fail} failed, ${pass} passed` : `courses-db: all ${pass} checks passed`)

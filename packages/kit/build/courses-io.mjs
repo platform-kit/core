@@ -14,11 +14,16 @@
  *   article   an article: `ref: <slug>`
  *   form      a form or quiz: `ref: <slug>`; finished when the reader has answered it (and passed, where it is scored)
  *   session   a booking type: `ref: <slug>`; finished when the reader has booked one
+ * and any kind the site registers (platformkit.config.js `courses.kinds`): its `ref` is what the site's check says it
+ * is, its own component plays it, and it is finished as a text lesson is, by the reader. A kind nobody registers is
+ * refused by name; with the registration gone, a course naming it is refused, never half-played.
  *
  * The body before the first `## ` heading is what the course is about. A file says what exists and the push makes the
  * database agree; nothing reads a row back into a file. A course whose file has gone is unpublished, never deleted:
  * people's enrolments, progress and certificates hang off it.
  */
+import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import matter from 'gray-matter'
 import { asStore } from './store/index.mjs'
 
@@ -28,6 +33,32 @@ export const RELEASES = ['all', 'drip', 'cohort']
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const list = (v) => (Array.isArray(v) ? v : v == null || v === '' ? [] : [v]).map((x) => String(x).trim()).filter(Boolean)
 const dateOf = (v) => { const d = v instanceof Date ? v : new Date(String(v || '')); return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10) }
+
+/*
+ * THE KINDS A SITE REGISTERS, ready for the parser: each name with its check, imported from the site's module (whose
+ * default export is handed a lesson's ref and answers what is wrong with it). `courses.kinds` is read by site.mjs,
+ * which refuses a malformed one; a root with no config registers nothing.
+ */
+export async function siteKinds(root = process.cwd()) {
+  const { loadSite, courseKindsOf } = await import('./site.mjs')
+  let c
+  try { c = await loadSite(root) } catch (e) { if (e && e.code === 'ERR_MODULE_NOT_FOUND' && /platformkit\.config\.js/.test(String(e.message))) return {}; throw e }
+  const out = {}
+  for (const [name, k] of Object.entries(courseKindsOf(c))) {
+    const mod = k.check ? await import(pathToFileURL(path.resolve(root, k.check)).href) : null
+    const check = mod && (mod.default || mod.check)
+    if (k.check && typeof check !== 'function') throw new Error(`courses.kinds.${name}: ${k.check} exports no check (its default export)`)
+    out[name] = { check: check || null }
+  }
+  return out
+}
+
+/* what a site kind's check said, as a list of problems with the lesson named */
+function checked(key, kind, ref, check) {
+  let said
+  try { said = check(ref) } catch (e) { said = e && e.message ? e.message : String(e) }
+  return (Array.isArray(said) ? said : said ? [said] : []).map((x) => `lesson ${key}: ${String(x)}`)
+}
 
 /* the body, split: what the course is about, and each text lesson's words by its key */
 export function bodyParts(body) {
@@ -49,7 +80,7 @@ export function lessonHref(l) {
 }
 
 /* a course's file, parsed, with every problem in it named — a course with problems is not pushed */
-export function parseCourse(slug, raw) {
+export function parseCourse(slug, raw, { kinds = {} } = {}) {
   const f = matter(String(raw || ''))
   const d = f.data || {}
   const problems = []
@@ -79,8 +110,10 @@ export function parseCourse(slug, raw) {
     if (!SLUG.test(key)) problems.push(`lesson ${i + 1} has no key`)
     else if (seen.has(key)) problems.push(`lesson ${key} is there twice`)
     seen.add(key)
-    if (!KINDS.includes(kind)) problems.push(`lesson ${key}: kind is ${kind}; it is one of ${KINDS.join(', ')}`)
+    const own = Object.hasOwn(kinds, kind) ? kinds[kind] : null
+    if (!KINDS.includes(kind) && !own) problems.push(`lesson ${key}: kind is ${kind}, which the site does not register; it is one of ${[...KINDS, ...Object.keys(kinds)].join(', ')}`)
     const ref = l && l.ref != null ? String(l.ref).trim() : null
+    if (own && own.check && ref) problems.push(...checked(key, kind, ref, own.check))
     if (kind !== 'text' && !ref) problems.push(`lesson ${key} is a ${kind} and names none (ref)`)
     if (kind === 'chapter' && ref && !/^[a-z0-9-]+#\d+$/.test(ref)) problems.push(`lesson ${key}: a chapter is <book>#<n>, not ${ref}`)
     return {
@@ -141,11 +174,12 @@ export function quizAchievements(courses, { scored = () => true } = {}) {
   return out
 }
 
-export async function readCourses(store) {
+export async function readCourses(store, { kinds } = {}) {
   const st = asStore(store)
+  const own = kinds || await siteKinds(typeof store === 'string' ? store : process.cwd())
   const names = (await st.list(COURSES_DIR, { ext: 'md' })).filter((n) => !n.includes('/'))
   const out = []
-  for (const n of names.sort()) { const slug = n.replace(/\.md$/, ''); out.push(parseCourse(slug, await st.read(`${COURSES_DIR}/${slug}.md`))) }
+  for (const n of names.sort()) { const slug = n.replace(/\.md$/, ''); out.push(parseCourse(slug, await st.read(`${COURSES_DIR}/${slug}.md`), { kinds: own })) }
   return out
 }
 

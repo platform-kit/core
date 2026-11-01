@@ -10,7 +10,8 @@
 import { z } from 'zod/v4'
 import matter from 'gray-matter'
 import { Refusal } from '../util.mjs'
-import { COURSES_DIR, KINDS, bodyParts, parseCourse, readCourses, projectCourses } from '../../courses-io.mjs'
+import { COURSES_DIR, KINDS, bodyParts, parseCourse, readCourses, projectCourses, siteKinds } from '../../courses-io.mjs'
+import { loadSite, courseKindsOf } from '../../site.mjs'
 
 const KIND_WORD = { text: 'Its own text', chapter: 'A book chapter', article: 'An article', form: 'A form or quiz', session: 'A session to book' }
 const clean = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && !v.length)))
@@ -86,8 +87,8 @@ export default {
       { key: 'title', label: 'Title', kind: 'text' },
       { key: 'key', label: 'Address', kind: 'text', help: 'lower-case words joined by hyphens; keep it once people have started' },
       { key: 'section', label: 'Section', kind: 'text' },
-      { key: 'kind', label: 'Lesson', kind: 'select', choices: KINDS.map((k) => ({ value: k, label: KIND_WORD[k] })) },
-      { key: 'ref', label: 'Which one', kind: 'text', help: 'a chapter is <book>#<n>; an article, a form or a session type is its address', shown: { field: 'kind', is: 'in', value: ['chapter', 'article', 'form', 'session'] } },
+      { key: 'kind', label: 'Lesson', kind: 'reference', options: 'course-kinds' },
+      { key: 'ref', label: 'Which one', kind: 'text', help: 'a chapter is <book>#<n>; an article, a form or a session type is its address; a lesson of the site\'s own kind is what that kind asks for', shown: { field: 'kind', is: 'not-in', value: ['text', undefined, ''] } },
       { key: 'text', label: 'Text', kind: 'markdown', shown: { field: 'kind', is: 'in', value: ['text', undefined, ''] } },
       { key: 'video', label: 'Video or audio', kind: 'url' },
       { key: 'videoTitle', label: 'Its title', kind: 'text' },
@@ -97,9 +98,9 @@ export default {
     ] }).optional(),
   }),
   checks: [
-    (rec, ctx) => {
+    async (rec, ctx) => {
       const name = String((ctx && ctx.name) || 'course').replace(/\.md$/, '')
-      return parseCourse(name, courseFile(rec.data || {}, rec.content)).problems.map((message) => ({ path: /lesson/.test(message) ? 'lessons' : /cohort/.test(message) ? 'cohorts' : /access/.test(message) ? 'free' : 'title', message }))
+      return parseCourse(name, courseFile(rec.data || {}, rec.content), { kinds: await siteKinds((ctx && ctx.root) || process.cwd()) }).problems.map((message) => ({ path: /lesson/.test(message) ? 'lessons' : /cohort/.test(message) ? 'cohorts' : /access/.test(message) ? 'free' : 'title', message }))
     },
   ],
   /* over a checkout the script writes the rows; over rows the store is holding a database, so the projection runs here */
@@ -111,6 +112,12 @@ export default {
     await projectCourses({ courses: await readCourses(ctx.store), db })
   },
   options: {
+    /* the kinds a lesson may be: the kit's, then the site's own (courses.kinds), each in its own words */
+    'course-kinds': async (ctx) => {
+      let own = {}
+      try { own = courseKindsOf(await loadSite((ctx && ctx.root) || process.cwd())) } catch { own = {} }
+      return [...KINDS.map((k) => ({ value: k, label: KIND_WORD[k] })), ...Object.entries(own).map(([k, v]) => ({ value: k, label: v.label || k }))]
+    },
     /* the membership tiers this site sells, read through the store, as the teams' ways read theirs */
     'course-tiers': async (ctx) => {
       const out = []

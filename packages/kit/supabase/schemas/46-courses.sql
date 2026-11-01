@@ -49,7 +49,8 @@ CREATE TABLE IF NOT EXISTS "public"."course_lessons" (
     "media" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
     "required" boolean DEFAULT true NOT NULL,
     CONSTRAINT "course_lessons_pkey" PRIMARY KEY ("course", "key"),
-    CONSTRAINT "course_lessons_kind_check" CHECK (("kind" = ANY (ARRAY['text'::"text", 'chapter'::"text", 'article'::"text", 'form'::"text", 'session'::"text"]))),
+    -- the kit's five kinds, or one the site registers (courses.kinds): the push, the only writer, refuses any other by name
+    CONSTRAINT "course_lessons_kind_check" CHECK (("kind" ~ '^[a-z][a-z0-9]*(-[a-z0-9]+)*$'::"text")),
     CONSTRAINT "course_lessons_ref_check" CHECK ((("kind" = 'text'::"text") OR ("ref" IS NOT NULL)))
 );
 ALTER TABLE ONLY "public"."course_lessons" ADD CONSTRAINT "course_lessons_course_fkey" FOREIGN KEY ("course") REFERENCES "public"."courses"("slug") ON DELETE CASCADE;
@@ -356,6 +357,7 @@ end;
 $$;
 
 -- A LESSON FINISHED. What the server can see it checks: the form answered (and passed, where it is scored), the session booked.
+-- A lesson of a kind the site registers is finished by the reader, as a text lesson is.
 CREATE OR REPLACE FUNCTION "public"."course_complete"("p_course" "text", "p_lesson" "text") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -368,7 +370,7 @@ begin
   select * into f from public.course_lessons_for(p_course, me) x where x.key = p_lesson;
   if f.key is null then return jsonb_build_object('error', 'no-lesson'); end if;
   if not f.open then return jsonb_build_object('error', coalesce(f.why, 'closed')); end if;
-  how_ := case f.kind when 'text' then 'marked' when 'chapter' then 'read' when 'article' then 'read' when 'form' then 'form' else 'booked' end;
+  how_ := case f.kind when 'chapter' then 'read' when 'article' then 'read' when 'form' then 'form' when 'session' then 'booked' else 'marked' end;
   if f.kind = 'form' and not exists (select 1 from public.form_responses r where r.user_id = me and r.form = f.ref and r.completed_at is not null and coalesce(r.passed, true)) then
     return jsonb_build_object('error', 'form-not-finished');
   end if;

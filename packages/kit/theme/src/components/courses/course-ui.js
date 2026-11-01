@@ -5,9 +5,37 @@
  *
  * Everything here is the database's answer for this reader (course_state, courses_list); nothing decides what is open.
  */
-import { computed, reactive } from 'vue'
+import { computed, reactive, defineAsyncComponent, watch } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import { supabase } from 'platformkit/lib/supabase.js'
+import { kinds as SITE_KINDS } from '#site/courses'
+
+/*
+ * THE SITE'S OWN LESSON KINDS (platformkit.config.js courses.kinds): a lesson of one is played by the site's component,
+ * which finishes it as a reader marks a text lesson, and a kind with a progress measure says how far the reader has come
+ * in the lesson's section. The kit knows nothing of what any of them is.
+ */
+const players = {}
+export const siteKind = (l = {}) => (l.kind && Object.hasOwn(SITE_KINDS, l.kind) ? SITE_KINDS[l.kind] : null)
+export const sitePlayer = (l) => { const k = siteKind(l); if (!k) return null; return players[l.kind] || (players[l.kind] = defineAsyncComponent(k.load)) }
+const measureOf = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Math.max(0, Math.min(100, Math.round(Number(v)))))
+/* the reader's measures, by lesson key, for every lesson of a measured kind: asked when the course's state arrives or
+   changes, and again when `refresh` is called (a site's component says it has recorded something) */
+export function useMeasures(stateOf) {
+  const out = reactive({})
+  let asked = 0
+  async function refresh() {
+    const s = stateOf()
+    const mine = ++asked
+    const measured = ((s && s.lessons) || []).filter((l) => { const k = siteKind(l); return k && typeof k.progress === 'function' })
+    const got = await Promise.all(measured.map(async (l) => { try { return measureOf(await siteKind(l).progress({ course: s.slug, lesson: l, ref: l.ref })) } catch { return null } }))
+    if (mine !== asked) return
+    for (const k of Object.keys(out)) delete out[k]
+    measured.forEach((l, i) => { out[l.key] = got[i] })
+  }
+  watch(stateOf, refresh, { immediate: true })
+  return { measures: out, refresh }
+}
 
 /* the words, from the theme's content/ui/courses.md */
 export const words = () => {
@@ -40,7 +68,7 @@ export const stateOf = (l = {}) => {
 }
 export const markOf = (l) => ({ passed: 'done', done: 'done', failed: 'missed', open: 'open', closed: 'closed' })[stateOf(l)]
 
-export function modulesOf(lessons = []) {
+export function modulesOf(lessons = [], measures = {}) {
   const out = []
   lessons.forEach((l, i) => {
     const row = { ...l, n: i + 1 }
@@ -58,6 +86,10 @@ export function modulesOf(lessons = []) {
     /* the section's quiz, where it has one, and how it stands */
     m.quiz = m.lessons.find((l) => l.kind === 'form' && l.required && l.quiz && l.quiz.total) || null
     m.quizState = m.quiz ? stateOf(m.quiz) : null
+    /* a section holding a lesson of a measured site kind shows that measure, not lessons done: null until there is one */
+    const gauge = m.lessons.find((l) => { const k = siteKind(l); return k && typeof k.progress === 'function' })
+    m.measured = !!gauge
+    m.measure = gauge ? (measures[gauge.key] ?? null) : null
   }
   return out
 }
@@ -66,6 +98,8 @@ export function modulesOf(lessons = []) {
 export function kindOf(l = {}) {
   const has = l.has || []
   if (l.kind === 'text') return has.includes('video') ? 'video' : has.includes('audio') ? 'audio' : 'text'
+  const own = siteKind(l)
+  if (own) return own.icon || 'form'
   return l.kind || 'text'
 }
 

@@ -191,7 +191,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 
 ### Courses (`courses`)
 
-- Courses of sections and lessons in order, built in the admin by dragging lessons into place. A lesson is its own text with video, audio and downloads, or a book chapter, an article, a form or quiz, or a session to book.
+- Courses of sections and lessons in order, built in the admin by dragging lessons into place. A lesson is its own text with video, audio and downloads, or a book chapter, an article, a form or quiz, or a session to book. A site can add lesson kinds of its own in its config (`courses.kinds`): its component plays the lesson, the build runs its check on the lesson's reference and refuses a kind nobody registered, and a kind that measures the reader shows that measure as its section's bar.
 - Free to anyone signed in, sold in the store, or included in a membership tier; buying it or joining the tier enrolls somebody on the way in.
 - Released all at once, one lesson or section every few days, or from a cohort's start date, optionally only once the lesson before is finished. A closed lesson's text is never sent to the browser, and the page says when it opens.
 - A lesson finishes when it is marked done, read, answered (and passed, where scored) or booked; finishing every required lesson completes the course, awards an achievement that watches for it, and issues a certificate with a public address and a PDF.
