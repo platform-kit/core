@@ -22,7 +22,7 @@ sources:
     packages/kit/build/functions-data.mjs,
     sites/club/platformkit.config.js,
     packages/kit/build/manifests.test.mjs,
-    packages/kit/build/modules/manifest.mjs,
+    packages/kit/build/modules/manifest.mts,
     packages/kit/build/modules-off.test.mjs,
     packages/kit/build/dryrun-db.test.mjs,
     packages/kit/build/sales.test.mjs,

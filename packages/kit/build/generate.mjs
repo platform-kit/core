@@ -24,6 +24,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { stripTypeScriptTypes } from 'node:module'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 export const KIT_ROOT = path.resolve(HERE, '..')
@@ -44,7 +45,9 @@ const fill = (text, v) => text.replace(/@@(\w+)@@/g, (m, k) => (k in v ? String(
 
 /* ---- the parser, for positions only ---- */
 let parseAst = null
-const parse = async (text) => { parseAst ||= (await import('rollup/parseAst')).parseAst; return parseAst(text, { allowReturnOutsideFunction: false }) }
+/* a TypeScript file (kit.mts) is read with its types blanked out, which keeps every position — so an edit found in
+   the stripped text lands in the same place in the file */
+const parse = async (text) => { parseAst ||= (await import('rollup/parseAst')).parseAst; return parseAst(stripTypeScriptTypes(text, { mode: 'strip' }), { allowReturnOutsideFunction: false }) }
 const keyOf = (p) => p.key && (p.key.type === 'Identifier' ? p.key.name : p.key.value)
 const propOf = (obj, key) => obj && obj.type === 'ObjectExpression' ? obj.properties.find((p) => p.type === 'Property' && keyOf(p) === key) : null
 const indentAt = (text, pos) => { const s = text.lastIndexOf('\n', pos - 1) + 1; return /^[ \t]*/.exec(text.slice(s))[0] }
@@ -196,7 +199,7 @@ const fragment = (dir, name, v) => fill(fs.readFileSync(path.join(dir, name), 'u
 export function kitCheckout(kitRoot = KIT_ROOT) {
   if (kitRoot.split(path.sep).includes('node_modules')) return null
   const ws = path.resolve(kitRoot, '..', '..')
-  return path.basename(path.dirname(kitRoot)) === 'packages' && fs.existsSync(path.join(ws, 'package.json')) && fs.existsSync(path.join(kitRoot, 'build', 'modules', 'kit.mjs')) ? ws : null
+  return path.basename(path.dirname(kitRoot)) === 'packages' && fs.existsSync(path.join(ws, 'package.json')) && fs.existsSync(path.join(kitRoot, 'build', 'modules', 'kit.mts')) ? ws : null
 }
 
 /*
@@ -218,7 +221,7 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
   const writes = filesOf(dir, v).map((f) => ({ path: path.join(root, f.rel), text: f.text }))
   const edits = []
   const cfg = path.join(siteRoot, 'platformkit.config.js')
-  const kitMods = path.join(kitRoot, 'build', 'modules', 'kit.mjs')
+  const kitMods = path.join(kitRoot, 'build', 'modules', 'kit.mts')
 
   /* a module name, or an owner, is checked against every module there is */
   const known = new Set()

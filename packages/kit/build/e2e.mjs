@@ -261,7 +261,7 @@ async function runSite(site, reserved) {
       SUPABASE_URL: st.API_URL, VITE_SUPABASE_URL: st.API_URL, SUPABASE_ANON_KEY: st.ANON_KEY, VITE_SUPABASE_ANON_KEY: st.ANON_KEY,
       SUPABASE_SERVICE_ROLE_KEY: st.SERVICE_ROLE_KEY, APP_URL: appUrl, VITE_APP_URL: appUrl,
     }
-    const seeded = runSeedSteps({ cwd: site.directory, env: { ...process.env, ...parseEnv(base), ...stackEnv }, stdio: 'pipe' })
+    const seeded = await runSeedSteps({ cwd: site.directory, env: { ...process.env, ...parseEnv(base), ...stackEnv }, stdio: 'pipe' })
     if (!seeded.ok) throw new Error(`the seed step ${seeded.step} failed:\n${seeded.output}`)
     /* a site whose content is rows has them filled from its files, as its deploy does (build/content-export.mjs) */
     if (site.config.deployment && site.config.deployment.content === 'rows') {

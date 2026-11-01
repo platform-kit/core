@@ -9,7 +9,7 @@ sources:
     packages/kit/vite/index.mjs,
     packages/kit/supabase/config.toml.template,
     packages/kit/build/payment-provider-registry.mjs,
-    packages/kit/build/modules/manifest.mjs,
+    packages/kit/build/modules/manifest.mts,
   ]
 reviewed: 2026-10-31
 ---

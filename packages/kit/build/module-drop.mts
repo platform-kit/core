@@ -19,14 +19,26 @@
 import path from 'node:path'
 import { loadSite } from './site.mjs'
 import { moduleSet } from './steps.mjs'
-import { isOn } from './modules/manifest.mjs'
+import { isOn, type Switches } from './modules/manifest.mjs'
 import { kitTables, tablesIn } from './modules/backend.mjs'
 import { readDeclaration, localUrl, withDb, costsIn, commitOf } from './plan.mjs'
 import { guard, destructive, describe } from './destructive.mjs'
 
 /* the drop for a module: what it would remove, and the verdict on it. `target` is a database url; `site` the site's
    config, read from `root` unless given */
-export async function planDrop({ root = process.cwd(), key, target, env = process.env, site: given = null }) {
+export interface Drop {
+  key: string
+  /* every table the module owns, and those of them this database holds */
+  owned: string[]
+  present: string[]
+  rows: Record<string, number | null>
+  sql: string
+  verdict: ReturnType<typeof guard>
+}
+
+export async function planDrop({ root = process.cwd(), key, target, env = process.env, site: given = null }: {
+  root?: string, key: string, target: string, env?: NodeJS.ProcessEnv, site?: { root?: string, modules?: Switches, [k: string]: unknown } | null
+}): Promise<Drop> {
   const site = given || await loadSite(root)
   const modules = await moduleSet(site)
   if (!modules.has(key)) throw new Error(`module drop: no module is called "${key}" — the modules are ${[...modules.keys()].sort().join(', ')}`)
@@ -35,30 +47,32 @@ export async function planDrop({ root = process.cwd(), key, target, env = proces
   const declared = new Set(tablesIn(readDeclaration(root).schema))
   const still = owned.filter((t) => declared.has(t))
   if (still.length) throw new Error(`module drop: the site's declaration still has ${still.join(', ')} — run platformkit assemble, so the tree is the module-off one, and try again`)
-  return withDb(target, async (db) => {
+  return withDb(target, async (db: { query: (q: string, p?: unknown[]) => Promise<{ rows: any[] }> }) => {
     const present = (await db.query("select tablename from pg_tables where schemaname = 'public' and tablename = any($1)", [owned])).rows.map((r) => r.tablename).sort()
     /* one statement a table, so the guard counts each one's rows; applied together, in one transaction */
     const sql = present.map((t) => `drop table public.${t} cascade;\n`).join('')
     const costs = await costsIn(db, destructive(sql))
     const verdict = guard(sql, env, { costs, commit: commitOf(root, env) })
-    const rows = Object.fromEntries(present.map((t) => [t, costs[`public.${t}`]?.rows ?? null]))
+    const rows = Object.fromEntries(present.map((t: string) => [t, (costs as Record<string, { rows: number | null }>)[`public.${t}`]?.rows ?? null]))
     return { key, owned, present, rows, sql, verdict }
   })
 }
 
-export async function applyDrop(drop, target) {
+export async function applyDrop(drop: Drop, target: string): Promise<void> {
   if (!drop.sql) return
   if (!drop.verdict.ok) throw new Error(`module drop: refused — ${drop.verdict.refused.length} table(s) hold rows; set PLATFORMKIT_ALLOW_DESTRUCTIVE=${drop.verdict.digest} for this run to drop them`)
-  await withDb(target, async (db) => {
+  await withDb(target, async (db: { query: (q: string) => Promise<unknown> }) => {
     await db.query('begin')
-    try { await db.query(drop.sql); await db.query('commit') } catch (e) { await db.query('rollback'); throw new Error('module drop: the drop failed and was rolled back — ' + e.message) }
+    try { await db.query(drop.sql); await db.query('commit') } catch (e: any) { await db.query('rollback'); throw new Error('module drop: the drop failed and was rolled back — ' + e.message) }
   })
 }
 
-const isMain = process.argv[1] && path.resolve(process.argv[1]) === new URL(import.meta.url).pathname
+/* run as itself: by its .mjs name, which in the workspace resolves to this .mts */
+const bare = (p: string) => p.replace(/\.m?[jt]s$/, '')
+const isMain = process.argv[1] && bare(path.resolve(process.argv[1])) === bare(new URL(import.meta.url).pathname)
 if (isMain) {
   process.on('uncaughtException', (e) => { console.error('✖ ' + (e.message || e)); process.exit(1) })
-  process.on('unhandledRejection', (e) => { console.error('✖ ' + (e.message || e)); process.exit(1) })
+  process.on('unhandledRejection', (e: any) => { console.error('✖ ' + (e.message || e)); process.exit(1) })
   const args = process.argv.slice(2)
   const key = args.find((a) => !a.startsWith('--'))
   if (!key) { console.error('usage: platformkit module drop <key> [--linked] [--plan]'); process.exit(2) }

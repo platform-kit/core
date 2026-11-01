@@ -111,7 +111,7 @@ assert.throws(() => normalizePostMetrics(null), /provider returned/i)
 assert.throws(() => normalizePostMetrics({ payload: 'x'.repeat(33 * 1024) }), { code: 'metrics_response_too_large' })
 
 const schema = fs.readFileSync(new URL('../supabase/schemas/99-social.sql', import.meta.url), 'utf8')
-const kitModules = fs.readFileSync(new URL('./modules/kit.mjs', import.meta.url), 'utf8')
+const kitModules = fs.readFileSync(new URL('./modules/kit.mts', import.meta.url), 'utf8')
 const assembledData = fs.readFileSync('supabase/data.sql', 'utf8')
 const worker = fs.readFileSync(new URL('../supabase/functions/social-publish/index.ts', import.meta.url), 'utf8')
 const socialApi = fs.readFileSync(new URL('../supabase/functions/social/index.ts', import.meta.url), 'utf8')

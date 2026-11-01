@@ -26,12 +26,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { isOn } from './manifest.mjs'
+import { isOn, type Modules, type Switches } from './manifest.mjs'
 
 export const KIT_SUPABASE = fileURLToPath(new URL('../../supabase/', import.meta.url))
 
 /* what every site has */
-export const CORE = {
+export const CORE: { schema: string[], functions: string[] } = {
   schema: [
     '10-foundation.sql', '12-compiled.sql', '12-content.sql', '13-search.sql', '14-audience.sql', '15-library.sql',
     '30-analytics.sql', '40-commerce.sql', '87-api-rate.sql', '97-comments.sql', '98-achievements.sql', '99-reactions.sql',
@@ -43,17 +43,18 @@ export const CORE = {
 }
 
 /* a function with nothing to serve unless every module named is on */
-export const GLUE_FUNCTIONS = {
+export const GLUE_FUNCTIONS: Record<string, string[]> = {
   /* the store served as Shopify's Storefront API: the store's offers, behind the api module's keys and its carts */
   'storefront-api': ['api', 'store'],
 }
 
-const sqlIn = (dir) => fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).sort() : []
+const sqlIn = (dir: string): string[] => fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).sort() : []
 /* the owners a glue's name says, or null where it is not a glue's name */
-export const glueOwners = (name) => { const parts = name.replace(/\.sql$/, '').split('+'); return parts.length > 1 ? parts : null }
+export const glueOwners = (name: string): string[] | null => { const parts = name.replace(/\.sql$/, '').split('+'); return parts.length > 1 ? parts : null }
 
 /* every file of the kit's backend, as names */
-export function kitBackend(kit = KIT_SUPABASE) {
+export interface BackendFiles { schema: string[], glue: string[], rows: string[], seed: string[], functions: string[] }
+export function kitBackend(kit = KIT_SUPABASE): BackendFiles {
   const fnDir = path.join(kit, 'functions')
   return {
     schema: sqlIn(path.join(kit, 'schemas')),
@@ -69,13 +70,13 @@ export function kitBackend(kit = KIT_SUPABASE) {
  * naming a module nobody declares, a claim on a file that is not there. `modules` is the manifests as moduleSet
  * reads them (a Map of key → manifest).
  */
-export function ownership(modules, kit = KIT_SUPABASE) {
+export function ownership(modules: Modules, kit = KIT_SUPABASE): { schema: Map<string, string[]>, functions: Map<string, string[]>, files: BackendFiles, faults: string[] } {
   const files = kitBackend(kit)
-  const faults = []
-  const known = (k) => k === 'core' || modules.has(k)
-  const schema = new Map(), functions = new Map()
-  const claim = (map, what, name, owner) => {
-    if (map.has(name)) faults.push(`${what} ${name} is claimed by both ${map.get(name).join('+')} and ${owner.join('+')}`)
+  const faults: string[] = []
+  const known = (k: string) => k === 'core' || modules.has(k)
+  const schema = new Map<string, string[]>(), functions = new Map<string, string[]>()
+  const claim = (map: Map<string, string[]>, what: string, name: string, owner: string[]) => {
+    if (map.has(name)) faults.push(`${what} ${name} is claimed by both ${map.get(name)!.join('+')} and ${owner.join('+')}`)
     else map.set(name, owner)
   }
   for (const f of CORE.schema) claim(schema, 'schema file', f, ['core'])
@@ -90,16 +91,16 @@ export function ownership(modules, kit = KIT_SUPABASE) {
   for (const [f, o] of schema) if (!files.schema.includes(f)) faults.push(`${o.join('+')} claims schema file ${f}, which is not in supabase/schemas/`)
   for (const [f, o] of functions) if (!files.functions.includes(f)) faults.push(`${o.join('+')} claims function ${f}, which is not in supabase/functions/`)
   for (const o of Object.values(GLUE_FUNCTIONS)) for (const k of o) if (!known(k)) faults.push(`GLUE_FUNCTIONS names \`${k}\`, which no manifest declares`)
-  const named = (what, dir, f, { glue }) => {
+  const named = (dir: string, f: string, { glue }: { glue: boolean }) => {
     const owners = glueOwners(f) || (glue ? null : [f.replace(/\.sql$/, '')])
     if (!owners) { faults.push(`${dir}/${f} is not named for the two (or more) modules it joins: <a>+<b>.sql`); return }
     for (const k of owners) if (!known(k)) faults.push(`${dir}/${f} names \`${k}\`, which no manifest declares`)
     if (owners.length > 1 && new Set(owners).size !== owners.length) faults.push(`${dir}/${f} names one module twice`)
     if (owners.length > 1 && owners.every((k) => k === 'core')) faults.push(`${dir}/${f} joins core to itself — it belongs in a core file`)
   }
-  for (const f of files.glue) named('glue', 'schemas/glue', f, { glue: true })
-  for (const f of files.rows) named('rows', 'data', f, { glue: false })
-  for (const f of files.seed) named('seed', 'seed', f, { glue: false })
+  for (const f of files.glue) named('schemas/glue', f, { glue: true })
+  for (const f of files.rows) named('data', f, { glue: false })
+  for (const f of files.seed) named('seed', f, { glue: false })
   return { schema, functions, files, faults }
 }
 
@@ -108,14 +109,14 @@ export function ownership(modules, kit = KIT_SUPABASE) {
  * is on and requires one that is off has no consistent backend at all (its schema builds on the other's), so it is
  * refused here rather than written out half-made.
  */
-export function backendFor(modules, switches = {}, kit = KIT_SUPABASE) {
+export function backendFor(modules: Modules, switches: Switches = {}, kit = KIT_SUPABASE) {
   const own = ownership(modules, kit)
   if (own.faults.length) throw new Error('the backend has files no module owns, or owns twice:\n  ' + own.faults.join('\n  '))
-  const on = (k) => k === 'core' || (modules.has(k) && isOn(k, switches))
+  const on = (k: string): boolean => k === 'core' || (modules.has(k) && isOn(k, switches))
   for (const m of modules.values()) if (on(m.key)) for (const r of m.requires) if (!on(r.module)) {
     throw new Error(`the ${m.key} module is on and requires ${r.module}, which is off — ${r.why || `${m.key} cannot work without it`}. Switch ${r.module} on, or ${m.key} off.`)
   }
-  const all = (owners) => owners.every(on)
+  const all = (owners: string[] | null | undefined): boolean => !!owners && owners.every(on)
   return {
     on,
     off: [...modules.keys()].filter((k) => !on(k)),
@@ -128,23 +129,23 @@ export function backendFor(modules, switches = {}, kit = KIT_SUPABASE) {
 }
 
 /* the tables a schema file declares */
-export const tablesIn = (sql) => [...String(sql).matchAll(/CREATE TABLE (?:IF NOT EXISTS )?"?public"?\."?([a-z_][a-z0-9_]*)"?/gi)].map((m) => m[1])
+export const tablesIn = (sql: string): string[] => [...String(sql).matchAll(/CREATE TABLE (?:IF NOT EXISTS )?"?public"?\."?([a-z_][a-z0-9_]*)"?/gi)].map((m) => m[1])
 
 /*
  * EVERY TABLE THE KIT DECLARES, by owner, whether or not a site has the module on: what a plan keeps rather than
  * drops when a module is switched off, and what `module drop` takes away.
  */
-export function kitTables(modules, kit = KIT_SUPABASE) {
+export function kitTables(modules: Modules, kit = KIT_SUPABASE): Map<string, string[]> {
   const own = ownership(modules, kit)
-  const out = new Map()
-  const add = (owners, file) => { for (const t of tablesIn(fs.readFileSync(file, 'utf8'))) out.set(t, owners) }
+  const out = new Map<string, string[]>()
+  const add = (owners: string[], file: string) => { for (const t of tablesIn(fs.readFileSync(file, 'utf8'))) out.set(t, owners) }
   for (const f of own.files.schema) add(own.schema.get(f) || [], path.join(kit, 'schemas', f))
-  for (const f of own.files.glue) add(glueOwners(f), path.join(kit, 'schemas', 'glue', f))
+  for (const f of own.files.glue) add(glueOwners(f) || [], path.join(kit, 'schemas', 'glue', f))
   return out
 }
 
 /* the name of every table any kit schema or glue file declares, whatever a site has on */
-export function kitDeclaredTables(kit = KIT_SUPABASE) {
+export function kitDeclaredTables(kit = KIT_SUPABASE): Set<string> {
   const files = kitBackend(kit)
   return new Set([...files.schema.map((f) => path.join(kit, 'schemas', f)), ...files.glue.map((f) => path.join(kit, 'schemas', 'glue', f))]
     .flatMap((f) => tablesIn(fs.readFileSync(f, 'utf8'))))

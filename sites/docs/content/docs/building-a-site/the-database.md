@@ -14,9 +14,9 @@ sources:
     packages/kit/build/destructive.mjs,
     packages/kit/build/assemble.mjs,
     packages/kit/build/assembled-tree.test.mjs,
-    packages/kit/build/cron.mjs,
-    packages/kit/build/modules/manifest.mjs,
-    packages/kit/build/modules/kit.mjs,
+    packages/kit/build/cron.mts,
+    packages/kit/build/modules/manifest.mts,
+    packages/kit/build/modules/kit.mts,
     packages/kit/build/schema.test.mjs,
     packages/kit/supabase/seed.sql,
     packages/kit/build/dev-account.mjs,
@@ -28,8 +28,8 @@ sources:
     packages/kit/supabase/schemas/glue,
     packages/kit/supabase/data,
     packages/kit/supabase/seed,
-    packages/kit/build/modules/backend.mjs,
-    packages/kit/build/module-drop.mjs,
+    packages/kit/build/modules/backend.mts,
+    packages/kit/build/module-drop.mts,
     packages/kit/build/modules-off-db.test.mjs,
   ]
 reviewed: 2026-10-31
@@ -185,7 +185,7 @@ Locally the CLI's Docker shadow takes about fifteen seconds the first time and a
 
 ## A module switched off is not in the backend
 
-Every schema file, Edge Function, file of rows and file of seed under `packages/kit/supabase` is owned by exactly one module, or by **core** — what every site has: accounts, content, the ledger, the admin, comments, reactions, analytics and the audience grammar every rule is written in (`14-audience.sql`). A module names its own in its manifest (`owns.schema`, `owns.functions`); core's are named in `build/modules/backend.mjs`. The assembler copies core, the modules that are on, and nothing of a module that is off — the club fixture, with most modules off, serves 18 of the kit's 58 functions.
+Every schema file, Edge Function, file of rows and file of seed under `packages/kit/supabase` is owned by exactly one module, or by **core** — what every site has: accounts, content, the ledger, the admin, comments, reactions, analytics and the audience grammar every rule is written in (`14-audience.sql`). A module names its own in its manifest (`owns.schema`, `owns.functions`); core's are named in `build/modules/backend.mts`. The assembler copies core, the modules that are on, and nothing of a module that is off — the club fixture, with most modules off, serves 18 of the kit's 58 functions.
 
 **What joins two modules is glue, owned by both.** A trigger on another module's table, a key across two, the reading of one module's tables that another's function needs: each is in `supabase/schemas/glue/<a>+<b>.sql` (`core` may be one of the two), assembled under `schemas/glue/` only while both are on, and loaded after every module's own file. Where a module's function needs something only another module has, the asking module declares a small function answering nothing — no enrolments, no bookings, no push — and the glue declares it again, reading the other module's table. So a course lesson of kind `form` asks `course_form_done`, which is `false` without forms; a fill rule naming a booking asks `space_fill_booking`, which matches nobody without sessions; `push_notify` does nothing without push. Every caller is the same either way, and each piece of SQL is written once. A module that cannot exist without another says `requires` (space encryption and events require spaces; the network does not), and the assembler refuses a module that is on while one it requires is off. A module's rows and seed are `supabase/data/<key>.sql` and `supabase/seed/<key>.sql`, after the kit's own. `platformkit assemble --off <keys> --out <dir>` assembles a site as though those modules were off, into a tree of its own.
 

@@ -24,7 +24,7 @@ sources:
     packages/kit/supabase/functions/_shared/hyperswitch-api.mjs,
     packages/kit/supabase/config.toml.template,
     packages/kit/build/test.mjs,
-    packages/kit/build/modules/manifest.mjs,
+    packages/kit/build/modules/manifest.mts,
     packages/kit/build/steps/print.mjs,
     packages/kit/src/lib/book-art.js,
     packages/kit/src/lib/storefront.js,

@@ -5,8 +5,8 @@ order: 41
 sources:
   [
     packages/kit/build/modes.mjs,
-    packages/kit/build/modules/kit.mjs,
-    packages/kit/build/modules/manifest.mjs,
+    packages/kit/build/modules/kit.mts,
+    packages/kit/build/modules/manifest.mts,
     packages/kit/build/modes.test.mjs,
     packages/kit/build/static-site.test.mjs,
     packages/kit/build/cloud-lane.test.mjs,

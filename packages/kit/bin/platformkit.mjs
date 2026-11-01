@@ -43,6 +43,13 @@ import { VERBOSE } from '../build/verbose.mjs'
 import { defaultSite, platformKitWorkspaceRoot, workspaceRoot } from '../build/sites.mjs'
 import { installPlatformKitSource } from '../build/source-install.mjs'
 
+/* THE KIT'S TYPESCRIPT, RUN FROM THE WORKSPACE: every process this starts resolves a .mjs that is a .mts in the source
+   (build/workspace-ts.mjs). In a site's node_modules the .mjs is there and nothing is added. */
+const TS_HOOK = fileURLToPath(new URL('../build/workspace-ts.mjs', import.meta.url))
+if (!TS_HOOK.includes(path.sep + 'node_modules' + path.sep) && fs.existsSync(TS_HOOK) && !String(process.env.NODE_OPTIONS || '').includes('workspace-ts.mjs')) {
+  process.env.NODE_OPTIONS = (String(process.env.NODE_OPTIONS || '') + ' --import=' + pathToFileURL(TS_HOOK).href).trim()
+}
+
 if (process.versions.node.split('.')[0] !== '22') {
   const nvmDir = process.env.NVM_DIR || path.join(os.homedir(), '.nvm')
   const nvmScript = path.join(nvmDir, 'nvm.sh')
@@ -236,7 +243,7 @@ switch (cmd) {
      one layer over — a reset empties the buckets as well as the tables, and a typesetter with no
      fonts fails with "there is no type in the bucket", which reads as a broken build rather than
      an emptied bucket. If a new projection is added to the `after` phase, it is added here too. */
-  case 'migrate': node('assemble.mjs'); if (rest[0] === 'reset') { npx(['supabase', 'db', 'reset', ...rest.slice(1)]); const { runSeedSteps } = await import(pathToFileURL(KIT('reset-seed.mjs')).href); const seeded = runSeedSteps({ cwd: site }); if (!seeded.ok) { console.error(`✖ the reset's seed step ${seeded.step} failed`); process.exit(1) } } else node('plan.mjs', rest); break
+  case 'migrate': node('assemble.mjs'); if (rest[0] === 'reset') { npx(['supabase', 'db', 'reset', ...rest.slice(1)]); const { runSeedSteps } = await import(pathToFileURL(KIT('reset-seed.mjs')).href); const seeded = await runSeedSteps({ cwd: site }); if (!seeded.ok) { console.error(`✖ the reset's seed step ${seeded.step} failed`); process.exit(1) } } else node('plan.mjs', rest); break
   /* the same by hand, for an account lost to a reset run some other way */
   case 'dev-account': node('dev-account.mjs'); break
   case 'functions': node('assemble.mjs'); npx(rest[0] === 'deploy' ? ['supabase', 'functions', 'deploy', ...rest.slice(1)] : ['supabase', 'functions', 'serve', '--env-file', '.env', ...rest]); break

@@ -42,22 +42,73 @@
  *                env       the environment variables the deploy asks for while it is on
  */
 
+/* ---- the shapes, as a site writes a module (ModuleDeclaration) and as the kit reads it (Module) ---- */
+export type Shape = 'static' | 'git' | 'cloud'
+export type GapKind = 'projection' | 'artefact' | 'editing' | 'machine' | 'browser'
+/* true, false, or the one operation the module lacks in that shape, why, and the change that closes it */
+export type Cell = boolean | { kind: GapKind, except: string, why: string, change?: string }
+export interface CronJob { name: string, schedule: string, command: string }
+export interface Owns {
+  routes?: string[]
+  admin?: string[]
+  schema?: string[]
+  functions?: string[]
+  cron?: CronJob[]
+  steps?: string[]
+  env?: string[]
+}
+export type OwnsKind = keyof Owns
+export interface Requirement { module: string, why?: string }
+export interface PaymentProviderRegistration {
+  id: string
+  adapter: string
+  capabilities: string[]
+  secrets: string[]
+  webhookPath: string
+}
+export interface ModuleDeclaration {
+  key: string
+  what: string
+  needs?: string
+  requires?: Array<string | Requirement>
+  static: Cell
+  git: Cell
+  cloud: Cell
+  owns?: Owns
+  paymentProviders?: PaymentProviderRegistration[]
+}
+/* a declaration read: every `owns` kind present, a requirement always { module, why } */
+export interface Module {
+  key: string
+  what: string
+  needs: string | null
+  static: Cell
+  git: Cell
+  cloud: Cell
+  requires: Array<{ module: string, why: string | null }>
+  owns: Required<Owns>
+  paymentProviders: PaymentProviderRegistration[]
+  where?: string
+}
+export type Modules = Map<string, Module>
+export type Switches = Record<string, boolean | undefined>
+
 /* every field a manifest may carry, so a typo is refused rather than ignored */
 export const FIELDS = ['key', 'what', 'needs', 'requires', 'static', 'git', 'cloud', 'owns', 'paymentProviders']
-export const OWNS = ['routes', 'admin', 'schema', 'functions', 'cron', 'steps', 'env']
+export const OWNS: OwnsKind[] = ['routes', 'admin', 'schema', 'functions', 'cron', 'steps', 'env']
 /* what exactly one module may claim. Everything a switch takes away with it — and not `env`, which
    is the deployment's and is shared: see the collision check in readManifests for why. */
 export const EXCLUSIVE = OWNS.filter((k) => k !== 'env')
-export const SHAPES = ['static', 'git', 'cloud']
+export const SHAPES: Shape[] = ['static', 'git', 'cloud']
 /* what sort of gap an exception is — the same vocabulary the matrix has always used */
-export const KINDS = ['projection', 'artefact', 'editing', 'machine', 'browser']
+export const KINDS: GapKind[] = ['projection', 'artefact', 'editing', 'machine', 'browser']
 
-const isCell = (v) => v === true || v === false || (v && typeof v === 'object' && KINDS.includes(v.kind) && typeof v.except === 'string' && typeof v.why === 'string')
+const isCell = (v: any): v is Cell => v === true || v === false || (v && typeof v === 'object' && KINDS.includes(v.kind) && typeof v.except === 'string' && typeof v.why === 'string')
 
 const CRON_NAME = /^[a-z][a-z0-9-]*$/
-const CRON_FIELDS = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 7]]
+const CRON_FIELDS: Array<[number, number]> = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 7]]
 
-function validCronSchedule(value) {
+function validCronSchedule(value: unknown): boolean {
   if (typeof value !== 'string') return false
   const fields = value.trim().split(/\s+/)
   if (fields.length !== 5) return false
@@ -76,7 +127,7 @@ function validCronSchedule(value) {
   })
 }
 
-export function sqlStructure(value) {
+export function sqlStructure(value: string): string | null {
   let out = ''
   for (let i = 0; i < value.length;) {
     if (value.startsWith('--', i)) {
@@ -129,7 +180,7 @@ export function sqlStructure(value) {
   return out
 }
 
-function validCronCommand(value) {
+function validCronCommand(value: unknown): boolean {
   if (typeof value !== 'string' || value.includes('\0')) return false
   const command = value.trim()
   if (!/^(?:select|call)\b/i.test(command)) return false
@@ -140,7 +191,7 @@ function validCronCommand(value) {
   return !structural.includes(';')
 }
 
-function paymentProvidersOf(value, owns, where, faults) {
+function paymentProvidersOf(value: unknown, owns: any, where: string, faults: string[]): PaymentProviderRegistration[] {
   if (value == null) return []
   if (!Array.isArray(value)) {
     faults.push(`${where}: \`paymentProviders\` must be a list`)
@@ -210,8 +261,9 @@ function paymentProvidersOf(value, owns, where, faults) {
  * READ ONE. Every fault is collected rather than thrown on the first, because somebody writing a
  * manifest wants to be told everything that is wrong with it, not one thing at a time.
  */
-export function readManifest(m, where = 'a manifest') {
-  const faults = []
+export function readManifest(input: unknown, where = 'a manifest'): { manifest: Module | null, faults: string[] } {
+  const m = input as any
+  const faults: string[] = []
   if (!m || typeof m !== 'object') return { manifest: null, faults: [`${where}: not an object`] }
 
   const key = m.key
@@ -229,7 +281,7 @@ export function readManifest(m, where = 'a manifest') {
   /* a name, or a name with its own reason — the reason belongs to the COUPLING, not to the
      module: "an answer is written to an account" says why the instrument needs a backend, and
      nothing at all about why it needs forms. */
-  const reqs = []
+  const reqs: Array<{ module: string, why: string | null }> = []
   if (m.requires != null) {
     if (!Array.isArray(m.requires)) faults.push(`${where}: \`requires\` must be a list`)
     else for (const r of m.requires) {
@@ -242,7 +294,7 @@ export function readManifest(m, where = 'a manifest') {
   const owns = m.owns || {}
   if (typeof owns !== 'object') faults.push(`${where}: \`owns\` must be an object`)
   else {
-    for (const k of Object.keys(owns)) if (!OWNS.includes(k)) faults.push(`${where}: \`owns.${k}\` is not a thing a module owns (${OWNS.join(' · ')})`)
+    for (const k of Object.keys(owns)) if (!(OWNS as string[]).includes(k)) faults.push(`${where}: \`owns.${k}\` is not a thing a module owns (${OWNS.join(' · ')})`)
     for (const k of OWNS) {
       if (owns[k] == null) continue
       if (!Array.isArray(owns[k])) {
@@ -275,7 +327,7 @@ export function readManifest(m, where = 'a manifest') {
     manifest: faults.length ? null : {
       key, what: m.what, needs: m.needs || null,
       static: m.static, git: m.git, cloud: m.cloud, requires: reqs,
-      owns: Object.fromEntries(OWNS.map((k) => [k, owns[k] || []])),
+      owns: Object.fromEntries(OWNS.map((k) => [k, owns[k] || []])) as Required<Owns>,
       paymentProviders,
     },
     faults,
@@ -287,13 +339,13 @@ export function readManifest(m, where = 'a manifest') {
  * whichever was loaded last — and where a site overrides one of the kit's, that has to be a
  * deliberate thing somebody asked for rather than an accident of order.
  */
-export function readManifests(entries) {
-  const faults = [], by = new Map()
+export function readManifests(entries: Array<{ manifest: unknown, where: string }>): { modules: Modules, faults: string[] } {
+  const faults: string[] = [], by: Modules = new Map()
   for (const { manifest: raw, where } of entries) {
     const { manifest, faults: f } = readManifest(raw, where)
     faults.push(...f)
     if (!manifest) continue
-    if (by.has(manifest.key)) faults.push(`two manifests declare \`${manifest.key}\`: ${by.get(manifest.key).where} and ${where}`)
+    if (by.has(manifest.key)) faults.push(`two manifests declare \`${manifest.key}\`: ${by.get(manifest.key)!.where} and ${where}`)
     else by.set(manifest.key, { ...manifest, where })
   }
   /* a module that needs one nobody declares can never be satisfied */
@@ -337,18 +389,18 @@ export function readManifests(entries) {
 }
 
 /* the matrix cell, in the shape modes.mjs has always printed */
-export const cellOf = (m, shape) => (m ? m[shape] : undefined)
+export const cellOf = (m: Module | null | undefined, shape: Shape): Cell | undefined => (m ? m[shape] : undefined)
 
 /* on unless the config says false — the one reading, in one place at last */
-export const isOn = (key, modules = {}) => modules[key] !== false
+export const isOn = (key: string, modules: Switches = {}): boolean => modules[key] !== false
 
 /*
  * WHAT IS LIVE, AND WHAT A LIVE MODULE NEEDS THAT IS NOT. The deploy refuses a configuration where
  * something switched on cannot work because something it needs is switched off, and names both —
  * which is the instrument on the forms module's runner, said once instead of as an `if`.
  */
-export function unmetRequirements(modules, config = {}) {
-  const out = []
+export function unmetRequirements(modules: Modules, config: Switches = {}): Array<{ module: string, needs: string, why: string }> {
+  const out: Array<{ module: string, needs: string, why: string }> = []
   for (const m of modules.values()) {
     if (!isOn(m.key, config)) continue
     for (const r of m.requires) if (!isOn(r.module, config)) out.push({ module: m.key, needs: r.module, why: r.why || `${m.key} cannot work without ${r.module}` })

@@ -22,3 +22,7 @@ A file that runs in Node is `.mts` and compiles to the `.mjs` name it had as Jav
 5. The theme, component by component.
 
 Each step keeps every test green.
+
+## As built: the import convention
+
+Every import, from JavaScript or TypeScript, names the file a site gets (`./site.mjs`), which is TypeScript's own convention: `tsc` reads `./site.mjs` as `site.mts`. So converting a file changes no importer and no export of the package. The workspace holds only the source, and Node never looks for a module under another extension, so `build/workspace-ts.mjs` — a `module.registerHooks` resolve hook — resolves a missing `.mjs` to the `.mts` beside it. The CLI puts it on `NODE_OPTIONS` for every process it starts, and the end-to-end runner passes it into its container. The content pipe copies a TypeScript module into the Edge Functions stripped of its types, under the `.mjs` name its importers use. This replaces the earlier plan of importing `.mts` names and rewriting them, which would have broken every JavaScript importer inside a site's `node_modules` and every workspace site reaching a converted file through the package's exports.

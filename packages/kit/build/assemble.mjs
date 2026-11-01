@@ -23,7 +23,7 @@
  *
  * A MODULE SWITCHED OFF IS NOT IN THE TREE. Of the kit's own data layer only what is the site's is copied: core, the
  * modules that are on, and the glue between modules that are all on — schema files, rows, seed and functions, each
- * owned as build/modules/backend.mjs says (openspec: module-switch-removes-backend). The glue loads after every
+ * owned as build/modules/backend.mts says (openspec: module-switch-removes-backend). The glue loads after every
  * module's file, from schemas/glue/.
  *
  * Run: node packages/kit/build/assemble.mjs [--check] [--off <key>,<key>] [--out <dir>]
@@ -36,6 +36,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createHash } from 'node:crypto'
+import { stripTypeScriptTypes } from 'node:module'
 import { loadSite, deploymentShape, pipeSiteConfigSource } from './site.mjs'
 import { moduleSet } from './steps.mjs'
 import { backendFor } from './modules/backend.mjs'
@@ -219,7 +220,8 @@ const sharedStaticImportPattern = /^(\s*(?:import|export)\s+(?:[^'"]*?\s+from\s+
 const sharedDynamicImportPattern = /(\bimport\s*\(\s*)(['"])([^'"]+)\2/g
 for (const [r, abs] of closure(KIT_PKG, PIPE_ROOTS, PIPE_SKIP)) {
   const target = 'functions/_shared/pipe/' + r
-  plan.set(target, { from: abs, content: fs.readFileSync(abs) })
+  /* a module the kit keeps as TypeScript is copied as the JavaScript its importers name */
+  plan.set(target, { from: abs, content: /\.m?ts$/.test(abs) ? Buffer.from(stripTypeScriptTypes(fs.readFileSync(abs, 'utf8'), { mode: 'strip' })) : fs.readFileSync(abs) })
 }
 
 /* THE PRINT FUNCTION'S OWN. print-render sets a book where there is no machine, and the three
@@ -455,9 +457,17 @@ function unresolved(plan) {
  * kept in the site's file here, as [db.seed] is; a section the site wrote itself is left as it is.
  */
 const PUBLIC_FUNCTIONS = [...fs.readFileSync(path.join(KIT, 'config.toml.template'), 'utf8').matchAll(/^\[functions\.([a-z0-9-]+)\]\s*\nverify_jwt = false/gm)].map((m) => m[1])
+/* AND THE OTHER WAY: the CLI refuses to start a stack whose config names a function that is not in the tree, so the
+   section the kit added for one of its own functions goes when the site stops serving it — a module switched off. Only
+   the kit's own form is taken back; a section the site wrote with anything else in it is the site's. */
+const KIT_FUNCTIONS = new Set(fs.readdirSync(path.join(KIT, 'functions')).filter((d) => !d.startsWith('_')))
 function withPublicFunctions(toml) {
   const missing = PUBLIC_FUNCTIONS.filter((fn) => plan.has(`functions/${fn}/index.ts`) && !new RegExp(`^\\[functions\\.${fn}\\]`, 'm').test(toml))
-  return { toml: missing.length ? toml.trimEnd() + '\n' + missing.map((fn) => `\n[functions.${fn}]\nverify_jwt = false\n`).join('') : toml, missing }
+  const unserved = [...toml.matchAll(/^\[functions\.([a-z0-9-]+)\]\nverify_jwt = false[^\n]*\n/gm)].map((m) => m[1]).filter((fn) => KIT_FUNCTIONS.has(fn) && !plan.has(`functions/${fn}/index.ts`))
+  let out = toml
+  for (const fn of unserved) out = out.replace(new RegExp(`\\n?\\[functions\\.${fn}\\]\\nverify_jwt = false[^\\n]*\\n`), '\n')
+  out = out.replace(/\n{3,}/g, '\n\n')
+  return { toml: missing.length ? out.trimEnd() + '\n' + missing.map((fn) => `\n[functions.${fn}]\nverify_jwt = false\n`).join('') : out, missing, unserved }
 }
 
 const manifest = { assembled: [...plan.keys()].sort(), sha: Object.fromEntries([...plan].map(([k, v]) => [k, sha(v.content)])) }
@@ -470,6 +480,7 @@ if (check) {
   for (const u of unresolved(plan)) bad.push(`unresolved ${u} — the edge runtime resolves every literal specifier it sees, so this is the whole runtime refusing to boot, not one function failing`)
   if (migrations.length) bad.push(`supabase/migrations/ holds ${migrations.length} file(s) — nothing reads a migration now: the declaration is supabase/schemas/, and git keeps the history; delete the folder`)
   if (fs.existsSync(cfg) && withSeed(fs.readFileSync(cfg, 'utf8')) !== fs.readFileSync(cfg, 'utf8')) bad.push('config.toml: [db.seed] does not name the declaration, the rows and the seed')
+  if (fs.existsSync(cfg)) for (const fn of withPublicFunctions(fs.readFileSync(cfg, 'utf8')).unserved) bad.push(`config.toml: [functions.${fn}] names a function this site does not serve — the CLI refuses to start the stack`)
   if (fs.existsSync(cfg)) for (const fn of withPublicFunctions(fs.readFileSync(cfg, 'utf8')).missing) bad.push(`config.toml: [functions.${fn}] verify_jwt = false is missing — the gateway refuses its callers before it runs`)
   for (const d of fs.existsSync(path.join(OUT, 'functions')) ? fs.readdirSync(path.join(OUT, 'functions')) : []) { const dir = path.join(OUT, 'functions', d); if (fs.statSync(dir).isDirectory() && !walk(dir).length) bad.push(`stray functions/${d}/ — an empty directory a removed function left`) }
   if (bad.length) { console.error('✖ supabase/ is not what its sources assemble to — run node packages/kit/build/assemble.mjs; the tree is generated, never edited or committed:\n  ' + bad.join('\n  ')); process.exit(1) }
@@ -491,6 +502,6 @@ const migDir = path.join(OUT, 'migrations')
 if (fs.existsSync(migDir) && !walk(migDir).length) fs.rmSync(migDir, { recursive: true })
 if (walk(migDir).length) console.warn(`  ! supabase/migrations/ still holds ${walk(migDir).length} file(s) nothing reads — delete the folder (git keeps the history); --check refuses it`)
 { const t = fs.readFileSync(cfg, 'utf8'); const u = withSeed(t); if (u !== t) { fs.writeFileSync(cfg, u); console.log('  config.toml: [db.seed] names the declaration, the rows and the seed') } }
-{ const { toml, missing } = withPublicFunctions(fs.readFileSync(cfg, 'utf8')); if (missing.length) { fs.writeFileSync(cfg, toml); console.log(`  config.toml: the gateway lets ${missing.join(', ')} through without a Supabase JWT, as the kit's template does`) } }
+{ const { toml, missing, unserved } = withPublicFunctions(fs.readFileSync(cfg, 'utf8')); if (missing.length || unserved.length) { fs.writeFileSync(cfg, toml); if (missing.length) console.log(`  config.toml: the gateway lets ${missing.join(', ')} through without a Supabase JWT, as the kit's template does`); if (unserved.length) console.log(`  config.toml: ${unserved.join(', ')} taken out — this site does not serve them`) } }
 fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + '\n')
 console.log(`supabase/ ← the kit's data layer + ${D.schemas}, ${D.rows}, ${D.functions}, ${D.seed}: ${plan.size} file(s), ${wrote} written`)

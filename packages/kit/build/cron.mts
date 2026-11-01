@@ -1,21 +1,23 @@
-import { isOn, sqlStructure } from './modules/manifest.mjs'
+import { isOn, sqlStructure, type CronJob, type Modules, type Switches } from './modules/manifest.mjs'
 
-const sqlText = (value) => {
+export interface ActiveCronJob extends CronJob { module: string }
+
+const sqlText = (value: unknown): string => {
   if (typeof value !== 'string' || value.includes('\0')) throw new Error('cron registration: SQL values must be strings without NUL bytes')
   return `'${value.replaceAll("'", "''")}'`
 }
 
-export function activeCronJobs(modules, switches = {}) {
+export function activeCronJobs(modules: Modules, switches: Switches = {}): ActiveCronJob[] {
   return [...modules.values()]
     .filter((module) => isOn(module.key, switches))
     .flatMap((module) => module.owns.cron.map((job) => ({ ...job, module: module.key })))
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-export function assertNoManualCron(source, origin) {
+export function assertNoManualCron(source: string, origin: string): void {
   const structure = sqlStructure(source)
   if (structure === null) throw new Error(`${origin}: unterminated SQL comment or quoted value`)
-  const findCall = (sql, depth = 0) => {
+  const findCall = (sql: string, depth = 0): string | null => {
     const code = sqlStructure(sql)
     if (code === null) return null
     const match = /\bcron\s*\.\s*(schedule|unschedule)\s*\(/i.exec(code)
@@ -43,7 +45,7 @@ export function assertNoManualCron(source, origin) {
   if (call) throw new Error(`${origin}: handwritten cron.${call} calls are not allowed; declare jobs in a module manifest`)
 }
 
-export function cronSql(modules, switches = {}) {
+export function cronSql(modules: Modules, switches: Switches = {}): string {
   const declared = [...modules.values()].flatMap((module) => module.owns.cron.map((job) => job.name)).sort()
   const active = activeCronJobs(modules, switches)
   const declaredNames = `ARRAY[${declared.map(sqlText).join(', ')}]::text[]`

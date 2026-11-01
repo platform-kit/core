@@ -249,7 +249,6 @@ otp_expiry = 3600
 # admin_email = "env(SMTP_USER)"
 # sender_name = "Northlight Club"
 
-
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"
@@ -436,11 +435,6 @@ skip_nonce_check = false
 # function itself (_shared/copilot/grant.js), which is why the platform's own check is off.
 # the grant IS the authorisation here too, and the browser never holds the upstream's key: the
 # site names a speech endpoint and this calls it, passing the audio through as it arrives.
-[functions.copilot-speak]
-verify_jwt = false
-
-[functions.copilot-llm]
-verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
@@ -448,45 +442,10 @@ verify_jwt = false
 [functions.payment-provider-webhook]
 verify_jwt = false
 
-[functions.cal-webhook]
-verify_jwt = false
-
 # Meta, LinkedIn and Zernio call with their own signature, checked over the raw body before anything is read
-[functions.social-webhook]
-verify_jwt = false
-
-[functions.lulu-webhook]
-verify_jwt = false
-
-[functions.email-unsubscribe]
-verify_jwt = false
-
-[functions.email-track]
-verify_jwt = false
-
-[functions.funnels-run]
-verify_jwt = false
-
-[functions.print-webhook]
-verify_jwt = false
 
 [functions.support]
 verify_jwt = false
-
-[functions.social-oauth]
-verify_jwt = false
-
-[functions.push]
-verify_jwt = false
-
-[functions.session-recordings]
-verify_jwt = false
-
-[functions.session-reminders]
-verify_jwt = false   # the service bearer, checked inside
-
-[functions.livekit-webhook]
-verify_jwt = false   # LiveKit signs the body; the SDK checks it inside   # pg_cron with the service key, or an administrator's JWT checked inside
 
 [functions.form]
 verify_jwt = false
@@ -503,17 +462,6 @@ verify_jwt = false   # the Images API on the content API's assets: public pictur
 [functions.forms-api]
 verify_jwt = false   # the Forms API (Typeform's Create read, Responses, Webhooks, Insights): a key of kind forms, checked inside
 
-[functions.scheduling-api]
-verify_jwt = false   # the Scheduling API (cal.com's v2): a key of kind scheduling, or a reader's JWT read inside
-
-[functions.storefront-api]
-verify_jwt = false   # the Store API (Shopify's Storefront): a key of kind storefront, checked inside; the handoff's cart read by its token
-
 [functions.support-api]
 verify_jwt = false   # the Support API (Chatwoot's): the Client API a contact's own door, the Application API under a key of kind support, the deliveries by the service bearer
 
-[functions.matrix-api]
-verify_jwt = false   # the Matrix Client-Server API: a client holds a token of OURS, opaque to it, exchanged inside for the person's own session — so the platform's JWT check would refuse every real client before the function saw it
-
-[functions.atproto]
-verify_jwt = false   # the social network as an atproto server: a client holds tokens of OURS (an app password's session), exchanged inside for the person's own session — the platform's JWT check would refuse every real client

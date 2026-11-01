@@ -51,7 +51,8 @@ const kitFile = (name, fn) => { const f = path.join(SCR, 'supabase', 'schemas', 
 fs.rmSync(SCR, { recursive: true, force: true })
 fs.mkdirSync(path.join(SCR, 'supabase', 'migrations'), { recursive: true })
 fs.cpSync(path.join(KIT, 'schemas'), path.join(SCR, 'supabase', 'schemas'), { recursive: true })
-fs.copyFileSync(path.join(KIT, 'data.sql'), path.join(SCR, 'supabase', 'data.sql'))
+/* the rows of the kit and of every module, since the scratch declares every module (assemble.mjs joins them the same way) */
+fs.writeFileSync(path.join(SCR, 'supabase', 'data.sql'), [path.join(KIT, 'data.sql'), ...fs.readdirSync(path.join(KIT, 'data')).filter((f) => f.endsWith('.sql')).sort().map((f) => path.join(KIT, 'data', f))].map((f) => fs.readFileSync(f, 'utf8').trimEnd()).join('\n\n') + '\n')
 const major = (/major_version\s*=\s*(\d+)/.exec(fs.existsSync(path.join(ROOT, 'supabase', 'config.toml')) ? fs.readFileSync(path.join(ROOT, 'supabase', 'config.toml'), 'utf8') : '') || [])[1] || '17'
 fs.writeFileSync(path.join(SCR, 'supabase', 'config.toml'), `project_id = "${PROJECT}"\n[db]\nport = ${PORT}\nshadow_port = ${SHADOW}\nmajor_version = ${major}\n[db.seed]\nenabled = true\nsql_paths = ["./schemas/*.sql", "./schemas/glue/*.sql", "./schemas/site/*.sql", "./data.sql"]\n`)
 sb(['stop', '--no-backup'], { stdio: 'ignore' })

@@ -1,2 +1,2 @@
 npx lint-staged
-node packages/kit/build/docs-check.mjs --staged --no-message-rule
+node --import ./packages/kit/build/workspace-ts.mjs packages/kit/build/docs-check.mjs --staged --no-message-rule

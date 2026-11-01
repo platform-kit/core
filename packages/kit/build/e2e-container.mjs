@@ -142,6 +142,8 @@ export async function runInContainer(script, args) {
   for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => { removeAll(); process.exit(130) })
 
   const env = Object.entries(process.env).filter(([k]) => PASS.test(k)).flatMap(([k, v]) => ['-e', `${k}=${v}`])
+  /* the kit's TypeScript, run from the source in the container as in the workspace (build/workspace-ts.mjs) */
+  env.push('-e', `NODE_OPTIONS=--import=file://${inside(fileURLToPath(new URL('./workspace-ts.mjs', import.meta.url)))}`)
   const cwd = (() => { const rel = path.relative(root, process.cwd()); return rel.startsWith('..') ? WORK : path.posix.join(WORK, rel.split(path.sep).join('/')) })()
   /* the daemon answers before the script starts */
   const wait = 'i=0; until docker info >/dev/null 2>&1; do i=$((i+1)); [ $i -gt 120 ] && { echo "the run\'s Docker daemon did not start" >&2; exit 1; }; sleep 1; done; exec "$@"'

@@ -18,10 +18,19 @@ export const SEED_STEPS = [
   ['print/templates.mjs', '--fonts'], ['dev-account.mjs'],
 ]
 
-/* every step in the site's folder, with the stack's env; the first that fails stops the rest and is named */
-export function runSeedSteps({ cwd, env = process.env, stdio = 'inherit', skip = [] } = {}) {
+/* every step in the site's folder, with the stack's env; the first that fails stops the rest and is named. A step that
+   is a build step of a module the site has off is left out: its tables are not in the site's declaration
+   (openspec: module-switch-removes-backend), and the build step's own `module:` says whose it is */
+export async function runSeedSteps({ cwd, env = process.env, stdio = 'inherit', skip = [] } = {}) {
+  const { loadSite } = await import('./site.mjs')
+  const { loadSteps } = await import('./steps.mjs')
+  const { isOn } = await import('./modules/manifest.mjs')
+  const site = await loadSite(cwd)
+  const owner = new Map((await loadSteps(site)).map((s) => [s.key, s.module]))
   for (const [script, ...args] of SEED_STEPS) {
     if (skip.includes(script)) continue
+    const module = owner.get(path.basename(script, '.mjs'))
+    if (module && !isOn(module, site.modules || {})) continue
     const r = spawnSync(process.execPath, [path.join(HERE, script), ...args], { cwd, env, stdio, encoding: 'utf8' })
     if (r.status !== 0) return { ok: false, step: script, output: ((r.stdout || '') + (r.stderr || '')).trim().split('\n').slice(-12).join('\n') }
   }

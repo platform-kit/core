@@ -165,13 +165,21 @@ export async function pushComments({ root = process.cwd(), store, log = console.
   const db = client || createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
   const st = asStore(store || root)
 
-  /* the channels a subject may point at, by "<space>/<channel>" */
-  const { data: spaceRows, error: spaceError } = await db.from('spaces').select('id, slug')
-  if (spaceError) throw new Error(`comments: could not read spaces: ${spaceError.message}`)
-  if (!Array.isArray(spaceRows)) throw new Error('comments: could not read spaces: expected a row list')
-  const { data: chanRows, error: chanError } = await db.from('channels').select('id, slug, space_id')
-  if (chanError) throw new Error(`comments: could not read channels: ${chanError.message}`)
-  if (!Array.isArray(chanRows)) throw new Error('comments: could not read channels: expected a row list')
+  /* the channels a subject may point at, by "<space>/<channel>" — none where the site has the spaces module off,
+     whose tables are then not in its declaration (openspec: module-switch-removes-backend) */
+  const { loadSite } = await import('./site.mjs')
+  const { isOn } = await import('./modules/manifest.mjs')
+  const rooms = isOn('spaces', (await loadSite(root)).modules || {})
+  let spaceRows = [], chanRows = []
+  if (rooms) {
+    const { data: s, error: spaceError } = await db.from('spaces').select('id, slug')
+    if (spaceError) throw new Error(`comments: could not read spaces: ${spaceError.message}`)
+    if (!Array.isArray(s)) throw new Error('comments: could not read spaces: expected a row list')
+    const { data: c, error: chanError } = await db.from('channels').select('id, slug, space_id')
+    if (chanError) throw new Error(`comments: could not read channels: ${chanError.message}`)
+    if (!Array.isArray(c)) throw new Error('comments: could not read channels: expected a row list')
+    spaceRows = s; chanRows = c
+  }
   const channelId = (space, channel) => {
     if (!channel) return null
     const sid = (spaceRows || []).find((s) => s.slug === space)?.id

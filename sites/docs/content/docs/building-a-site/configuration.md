@@ -9,6 +9,7 @@ sources:
     packages/kit/build/member-panels.test.mjs,
     packages/kit/build/member-panels-db.test.mjs,
     packages/kit/build/site.mjs,
+    packages/kit/src/config.mts,
     packages/kit/vite/index.mjs,
     packages/kit/build/cloud-config.mjs,
     packages/kit/build/webhooks-config.mjs,
@@ -78,6 +79,8 @@ export default {
 When a site registers `admin.models` and has a backend, its production content store must be rows. The build resolves the declared shape into the content-store flag before compiling the browser bundle, so both a repository-backed deployment and a Supabase-only deployment include the CMS. A file-backed build for such a site is refused rather than shipping a production admin without its editors. A backend-free static build remains valid and has no deployed CMS or authentication.
 
 ## The keys
+
+The config is typed by `SiteConfig` (`src/config.mts`): `import { defineSite } from 'platformkit/config.mjs'` and `export default defineSite({ … })` returns the object unchanged and lets an editor, or `tsc` in a site written in TypeScript, refuse a mistyped key. A site's own module is written with `defineModule`, typed by the manifest's shape (`build/modules/manifest.mts`).
 
 | Key                                   | What it is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

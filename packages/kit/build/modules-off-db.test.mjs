@@ -39,7 +39,8 @@ const ROOT = process.cwd()
 const ASSEMBLE = fileURLToPath(new URL('./assemble.mjs', import.meta.url))
 const note = (m) => console.log('modules off: ' + m)
 const SITE = (process.env.PLATFORMKIT_TEST_SITE || '').toLowerCase()
-if (process.env.PLATFORMKIT_E2E === '1' && SITE && SITE !== 'demo') { note(`skipped on ${SITE} — run on the demo site, which has every module on`); process.exit(0) }
+/* the demo site has every module on, so its run covers every switch; on another site this is not the site's question */
+if (process.env.PLATFORMKIT_E2E === '1' && SITE && SITE !== 'demo') { console.log(`  — modules off: not on this site (${SITE}; the demo site, which has every module on, runs it)`); process.exit(0) }
 if (spawnSync('docker', ['info'], { stdio: 'ignore' }).status !== 0) { note('skipped — Docker is not running'); process.exit(0) }
 
 const SCR = path.join(ROOT, 'node_modules', '.cache', 'platformkit', 'modules-off-test')

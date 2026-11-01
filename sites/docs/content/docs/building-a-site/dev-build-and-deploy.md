@@ -6,6 +6,7 @@ sources:
   [
     packages/kit/build/check.mjs,
     packages/kit/build/compile.mjs,
+    packages/kit/build/workspace-ts.mjs,
     packages/kit/build/typecheck.test.mts,
     packages/kit/tsconfig.json,
     packages/kit/tsconfig.build.json,
@@ -176,9 +177,9 @@ The Apache example uses a `.htaccess` fallback so deep links reach the single-pa
 
 ## The kit's TypeScript
 
-The kit is being converted to TypeScript (openspec: `typescript-throughout`). A file that runs in Node is `.mts` and compiles to the `.mjs` name it had as JavaScript, so a published path does not change; a library shared with the browser is `.ts`; a component is `<script setup lang="ts">`. A converted source imports its neighbours by their `.mts` or `.ts` names.
+The kit is being converted to TypeScript (openspec: `typescript-throughout`). A file that runs in Node is `.mts` and compiles to the `.mjs` name it had as JavaScript, so a published path does not change; a library shared with the browser is `.ts`; a component is `<script setup lang="ts">`. Every import names the file a site gets — `./site.mjs`, `platformkit/build/plan.mjs` — which is TypeScript's own convention: while it checks, `./site.mjs` is read as `site.mts`. So a JavaScript file and a TypeScript one import a converted module the same way, and the package's exports do not change.
 
-- **In the workspace, nothing is built.** Node 22 strips the types and runs the source as it is, and Vite compiles the theme.
+- **In the workspace, nothing is built.** Node 22 strips the types and runs the source as it is, and Vite compiles the theme. Node never looks for a module under another extension, so `build/workspace-ts.mjs` — a resolve hook, loaded with `--import` — resolves a `.mjs` that is not there to the `.mts` beside it. The CLI puts it on `NODE_OPTIONS`, so every process it starts has it — the test run, the dev server, the deploy, and every npm script, since each runs through the CLI; a file run with plain `node` from the workspace takes `--import platformkit/build/workspace-ts.mjs`. In a site's `node_modules` the `.mjs` is there and the hook is never asked. The same rule holds where the kit copies its own modules into the Edge Functions (the content pipe, `build/pipe-closure.mjs`): a module kept as TypeScript is copied with its types stripped, under the `.mjs` name its importers use, and the code generator reads a TypeScript file (`build/modules/kit.mts`) with its types blanked out so its edits land where they belong.
 - **For a site, the JavaScript is emitted.** Node never strips types inside `node_modules`, so `build/compile.mjs` compiles the kit with `tsconfig.build.json` before it is packed (`prepack`) and before a source install, and copies the output beside each source: `x.mts` gives `x.mjs` and `x.d.mts`. Where TypeScript is not installed, as in a source install from GitHub, it strips each file with Node's own `module.stripTypeScriptTypes` instead. What it copied is listed in `.compiled.json`, and `--clean` (`postpack`) removes exactly that.
 - **`npm run typecheck`** runs `tsc` over the engine (`packages/kit/tsconfig.json`) and `vue-tsc` over the theme (`packages/kit/theme/tsconfig.json`), and CI runs it. JavaScript not yet converted is allowed and not checked. `typecheck.test.mts` runs both and hands each config a planted type error it must refuse: both once passed while reading nothing, because `npx` runs from the workspace package's root.
 - **New tests are `node:test` files** (`*.test.mts`), which run every case and report every failure.

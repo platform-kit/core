@@ -29,6 +29,12 @@ export async function pushProviders({ root = process.cwd(), store, log = console
   const url = client ? '' : supabaseUrl()
   const key = client ? '' : serviceKey()
   if (!client && (!url || !key)) { log('providers: no database to push to'); return { policy: null } }
+  /* the policy and the terms are the sessions module's tables: a site with it off has neither (module-switch-removes-backend) */
+  if (!client) {
+    const { loadSite } = await import('./site.mjs')
+    const { isOn } = await import('./modules/manifest.mjs')
+    if (!isOn('sessions', (await loadSite(root)).modules || {})) { log('providers: the sessions module is off — no policy to push'); return { policy: null } }
+  }
   const db = client || createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 
   const { data, body } = await readPolicy(store || root)

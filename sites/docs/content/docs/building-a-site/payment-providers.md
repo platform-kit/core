@@ -9,7 +9,7 @@ sources:
     packages/kit/build/payment-provider-registry.mjs,
     packages/kit/build/payment-provider-registry.test.mjs,
     packages/kit/build/site-payment-provider.test.mjs,
-    packages/kit/build/modules/manifest.mjs,
+    packages/kit/build/modules/manifest.mts,
     packages/kit/build/assemble.mjs,
     packages/kit/build/deploy.mjs,
     packages/kit/build/deploy-checks.mjs,

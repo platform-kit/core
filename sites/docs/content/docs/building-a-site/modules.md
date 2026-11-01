@@ -14,10 +14,10 @@ sources:
     packages/kit/build/site.mjs,
     packages/kit/build/site-node.mjs,
     packages/kit/vite/index.mjs,
-    packages/kit/build/modules/kit.mjs,
-    packages/kit/build/modules/manifest.mjs,
-    packages/kit/build/cron.mjs,
-    packages/kit/build/modules/kit.mjs,
+    packages/kit/build/modules/kit.mts,
+    packages/kit/build/modules/manifest.mts,
+    packages/kit/build/cron.mts,
+    packages/kit/build/modules/kit.mts,
     packages/kit/build/steps.mjs,
     packages/kit/build/modules-off.test.mjs,
     packages/kit/build/modes.mjs,
@@ -27,8 +27,8 @@ sources:
     packages/kit/build/source-cli.test.mjs,
     packages/kit/build/runtime-paths.test.mjs,
     packages/kit/theme/src/pages/AdminPage.vue,
-    packages/kit/build/modules/backend.mjs,
-    packages/kit/build/module-drop.mjs,
+    packages/kit/build/modules/backend.mts,
+    packages/kit/build/module-drop.mts,
     packages/kit/build/modules-off-db.test.mjs,
   ]
 reviewed: 2026-10-31
@@ -143,7 +143,7 @@ The demo was verified with each of nine modules off in turn: the site builds, th
 
 ## Scheduled work belongs to its module
 
-A module that needs recurring database work declares each job beside its other owned resources: a stable `name`, a pg_cron `schedule` and one SQL `command`. Kit declarations live in `build/modules/kit.mjs`; site modules use the same manifest shape, and theme modules may contribute declarations too. Assembly resolves the enabled module set and generates reconciliation SQL after the kit and site row scripts. This is build-time registration: modules do not edit a separate cron list or register jobs dynamically at runtime.
+A module that needs recurring database work declares each job beside its other owned resources: a stable `name`, a pg_cron `schedule` and one SQL `command`. Kit declarations live in `build/modules/kit.mts`; site modules use the same manifest shape, and theme modules may contribute declarations too. Assembly resolves the enabled module set and generates reconciliation SQL after the kit and site row scripts. This is build-time registration: modules do not edit a separate cron list or register jobs dynamically at runtime.
 
 The generated reconciliation remembers only PlatformKit-owned names in `app_settings.platformkit_cron_jobs`. It updates a declared job by its stable name, removes jobs no longer declared by enabled modules, adopts the known legacy declared names on first application, and refuses a same-named job it does not own. Unrelated operator jobs are left alone. A job is unscheduled only when it is there, so a fresh database with a scheduled module off resets cleanly. Reset and deploy apply the same assembled declaration. For example, memberships declares a renewal job for Hyperswitch subscriptions; it runs every 15 minutes. Stripe subscriptions renew through Stripe's own recurring-billing service.
 
@@ -268,11 +268,11 @@ things in. Same rule as a landing section registered under a name the theme alre
 
 ## Switching a module off removes its backend
 
-Its schema files, its functions, its cron jobs, its rows and the glue that joins it to other modules are all left out of the site's assembled `supabase/` tree — so a site without the store serves no store function and declares no store table. What every site has is `core`, named in `build/modules/backend.mjs` beside the glue functions that need two modules (`storefront-api` needs both the api and the store). Switching off keeps the module's data on a database that already holds it; `platformkit module drop <key>` is the separate, guarded act that removes it. [The database](/content/docs/building-a-site/the-database) has how.
+Its schema files, its functions, its cron jobs, its rows and the glue that joins it to other modules are all left out of the site's assembled `supabase/` tree — so a site without the store serves no store function and declares no store table. What every site has is `core`, named in `build/modules/backend.mts` beside the glue functions that need two modules (`storefront-api` needs both the api and the store). Switching off keeps the module's data on a database that already holds it; `platformkit module drop <key>` is the separate, guarded act that removes it. [The database](/content/docs/building-a-site/the-database) has how.
 
 ## What each module does in each deployment shape
 
-Each module declares this in its own manifest (`build/modules/kit.mjs` for the kit's), and
+Each module declares this in its own manifest (`build/modules/kit.mts` for the kit's), and
 `build/modes.mjs` reads them into the matrix the code is checked against — not a list kept by hand. **✓** works, **—** absent in that shape, **◑** works apart from the named operation.
 See [The three deployment shapes](/content/docs/building-a-site/deployment-modes).
 

@@ -38,6 +38,9 @@ export const PIPE_SKIP = /^build\/(print\.mjs|print\/(epub|pages|pdf\.min|raster
 
 const IMPORT_RE = /(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g
 const rel = (base, f) => path.relative(base, f).split(path.sep).join('/')
+/* the file a specifier names: itself, or — for a .mjs (.js) the source keeps as TypeScript — the .mts (.ts) beside it,
+   which the copy is stripped from (openspec: typescript-throughout). Null where neither is there. */
+export const sourceOf = (abs) => fs.existsSync(abs) ? abs : /\.m?js$/.test(abs) && fs.existsSync(abs.replace(/\.(m?)js$/, '.$1ts')) ? abs.replace(/\.(m?)js$/, '.$1ts') : null
 
 /* every file reachable from the roots by a relative import, as { relative path → absolute } */
 export function closure(base, roots = PIPE_ROOTS, skip = PIPE_SKIP) {
@@ -46,8 +49,8 @@ export function closure(base, roots = PIPE_ROOTS, skip = PIPE_SKIP) {
   while (queue.length) {
     const r = queue.shift()
     if (seen.has(r) || skip.test(r)) continue
-    const abs = path.join(base, r)
-    if (!fs.existsSync(abs)) continue
+    const abs = sourceOf(path.join(base, r))
+    if (!abs) continue
     const src = fs.readFileSync(abs, 'utf8')
     seen.set(r, abs)
     for (const m of src.matchAll(IMPORT_RE)) {
@@ -70,7 +73,7 @@ export function closureResolves(base, roots = PIPE_ROOTS, skip = PIPE_SKIP) {
       const spec = m[1] || m[2]
       if (!spec || !spec.startsWith('.')) continue
       const target = rel(base, path.resolve(path.dirname(abs), spec))
-      if (!inside.has(target) && fs.existsSync(path.join(base, target))) bad.push(`${r} → ${target}`)
+      if (!inside.has(target) && sourceOf(path.join(base, target))) bad.push(`${r} → ${target}`)
     }
   }
   return bad

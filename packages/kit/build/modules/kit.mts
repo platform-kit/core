@@ -12,10 +12,12 @@
  *
  * `owns.schema` and `owns.functions` are the whole of a module's backend, and switching it off leaves none of it
  * in the site's assembled supabase/ tree (openspec: module-switch-removes-backend). What every site has is `core`,
- * and what joins two modules is glue owned by both — both in build/modules/backend.mjs, which the manifests check
+ * and what joins two modules is glue owned by both — both in build/modules/backend.mts, which the manifests check
  * holds the tree to: a schema file or a function nobody owns is refused by name.
  */
-export const MODULES = [
+import type { ModuleDeclaration } from './manifest.mjs'
+
+export const MODULES: ModuleDeclaration[] = [
   {
     key: 'articles', what: 'the magazine and its lane on the hub',
     static: true, git: true, cloud: true,

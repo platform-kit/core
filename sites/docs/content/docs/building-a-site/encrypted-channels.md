@@ -8,7 +8,7 @@ sources:
     packages/kit/supabase/functions/_shared/matrix/keys.js,
     packages/kit/build/encryption.test.mjs,
     packages/kit/build/encryption-db.test.mjs,
-    packages/kit/build/modules/kit.mjs,
+    packages/kit/build/modules/kit.mts,
     packages/kit/build/spaces-io.mjs,
     packages/kit/build/spaces.mjs,
     packages/kit/build/spaces-push.mjs,

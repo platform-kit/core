@@ -6,4 +6,4 @@
 # used it. The escape was documented, committed, and unusable.
 #
 # commit-msg is handed the message file as $1, which is the whole reason it exists.
-node packages/kit/build/docs-check.mjs --staged --message-file "$1"
+node --import ./packages/kit/build/workspace-ts.mjs packages/kit/build/docs-check.mjs --staged --message-file "$1"

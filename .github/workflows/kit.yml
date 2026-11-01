@@ -79,10 +79,10 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - name: the end-to-end run over the demo and the club
-        run: node packages/kit/build/e2e.mjs --only demo,club
+        run: node --import ./packages/kit/build/workspace-ts.mjs packages/kit/build/e2e.mjs --only demo,club
         env: { STRIPE_SECRET_KEY: '${{ secrets.STRIPE_TEST_SECRET_KEY }}' }
       - name: the runner's own test
-        run: node packages/kit/build/e2e-runner.test.mjs
+        run: node --import ./packages/kit/build/workspace-ts.mjs packages/kit/build/e2e-runner.test.mjs
         env: { STRIPE_SECRET_KEY: '${{ secrets.STRIPE_TEST_SECRET_KEY }}' }
       - name: the run's logs
         if: failure()

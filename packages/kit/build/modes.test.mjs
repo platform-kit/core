@@ -128,7 +128,7 @@ const artefactsOf = (mod) => Object.entries(FEEDS).filter(([k]) => moduleOfModel
  * switches, so `choice` — a key inside an instrument's round settings — was reported as a module
  * nobody had answered for. A scrape that can invent a module is not a forcing function.
  *
- * A module declares itself. The kit's are build/modules/kit.mjs, and every one of them must be in
+ * A module declares itself. The kit's are build/modules/kit.mts, and every one of them must be in
  * FEATURES — which is now true by construction, since FEATURES is derived from exactly that list,
  * so what this really holds is that the derivation has not silently lost one.
  */

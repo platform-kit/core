@@ -106,7 +106,7 @@ fs.rmSync(SITE, { recursive: true, force: true })
       const r = node([gen, ...args, '--level', 'core'], DEMO2)
       ok(`core ${args[0]}: written and registered`, r.status === 0 && /^Wrote /.test(out(r)) && !/by hand/.test(out(r)), out(r))
     }
-    ok('core: the files are where PlatformKit keeps them', ['build/modules/kit.mjs', 'theme/src/pages/LoyaltyPage.vue', 'build/models/core/badges.mjs', 'supabase/functions/loyalty-points/index.ts', 'build/loyalty-rules.test.mjs', 'build/steps/loyalty-tally.mjs'].every((p) => fs.existsSync(path.join(KIT, p))) && /key: 'loyalty'/.test(fs.readFileSync(path.join(KIT, 'build/modules/kit.mjs'), 'utf8')))
+    ok('core: the files are where PlatformKit keeps them', ['build/modules/kit.mts', 'theme/src/pages/LoyaltyPage.vue', 'build/models/core/badges.mjs', 'supabase/functions/loyalty-points/index.ts', 'build/loyalty-rules.test.mjs', 'build/steps/loyalty-tally.mjs'].every((p) => fs.existsSync(path.join(KIT, p))) && /key: 'loyalty'/.test(fs.readFileSync(path.join(KIT, 'build/modules/kit.mts'), 'utf8')))
     const cov = node([path.join(KIT, 'build', 'test-coverage.test.mjs')], WS)
     ok('core: the coverage checks pass (the new function is named by its test)', cov.status === 0, out(cov))
     node([path.join(KIT, 'build', 'assemble.mjs')], DEMO2)
