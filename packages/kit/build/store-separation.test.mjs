@@ -38,7 +38,7 @@ const FORBIDDEN = [...BOOKISH, ...CLOTHISH]
 /* THE STORE'S OWN MACHINERY — what this change builds. A path here must never speak of a kind.
    Listed rather than globbed so that adding a file is a deliberate act with this rule in view. */
 const GENERAL = [
-  'build/kinds/index.js',
+  'build/kinds/index.ts',
   'build/variants.mts',
   'build/store-separation.test.mjs',   /* itself: it may NAME the words, which is why it is checked apart */
 ]
@@ -75,7 +75,7 @@ const READERS = [
 const PRINTS = ['build/print', 'src/lib/print-offers.ts', 'supabase/functions/_shared/print.ts']
 /* and the garment's, for the same reason in the other direction: a refactor that emptied the
    apparel kind would otherwise pass check (1) with flying colours */
-const CLOTHES = ['build/kinds/apparel.js', 'supabase/functions/_shared/suppliers/printify.js']
+const CLOTHES = ['build/kinds/apparel.ts', 'supabase/functions/_shared/suppliers/printify.js']
 
 const read = (rel) => { try { return fs.readFileSync(path.join(KIT, rel), 'utf8') } catch { return null } }
 /* A WORD IN A COMMENT IS DOCUMENTATION; A WORD IN CODE IS THE LEAK. `build/kinds` explains

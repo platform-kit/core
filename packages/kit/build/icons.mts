@@ -21,6 +21,9 @@ const DIR = path.dirname(require.resolve('lucide-vue-next/package.json')) + '/di
 /* THE THEME'S OWN FEW, so a name it draws is not reported as one nothing can draw. The theme is
    found the way everything else here is found — through the site's own resolution — and a theme
    with no glyphs of its own simply has none. */
+/* the file a site has as .js, which the workspace holds as its .ts */
+const resolved = (spec: string): string => { try { return require.resolve(spec) } catch { return require.resolve(spec.replace(/\.js$/, '.ts')) } }
+
 function themeGlyphs(theme: any) {
   const own = new Set()
   /* the theme's own few, drawn by glyph() — its package exports its source as ./*, so this is the
@@ -28,7 +31,7 @@ function themeGlyphs(theme: any) {
   for (const spec of [theme && theme + '/components/landing/glyphs.js', 'platformkit/theme/components/landing/glyphs.js']) {
     if (!spec) continue
     try {
-      const src = fs.readFileSync(require.resolve(spec), 'utf8')
+      const src = fs.readFileSync(resolved(spec), 'utf8')
       for (const m of src.matchAll(/^\s{2}'?([a-z][a-z0-9-]*)'?:/gm)) own.add(m[1])
       break
     } catch { /* not this one */ }
@@ -43,7 +46,7 @@ function themeGlyphs(theme: any) {
   for (const spec of [theme && theme + '/components/landing/index.js', 'platformkit/theme/components/landing/index.js']) {
     if (!spec) continue
     try {
-      const home = path.dirname(require.resolve(spec))
+      const home = path.dirname(resolved(spec))
       for (const file of fs.readdirSync(home).filter((x) => x.endsWith('.vue'))) {
         const src = fs.readFileSync(path.join(home, file), 'utf8')
         for (const line of src.split('\n')) {

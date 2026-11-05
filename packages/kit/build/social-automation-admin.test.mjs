@@ -7,8 +7,10 @@ const WORKSPACE = new URL('../../..', import.meta.url).pathname
 const adminPath = join(WORKSPACE, 'packages/kit/theme/src/components/admin/SocialAdmin.vue')
 const componentPath = join(WORKSPACE, 'packages/kit/theme/src/components/admin/social/SocialAutomations.vue')
 const stringsPath = join(WORKSPACE, 'packages/kit/theme/src/content/ui/social.md')
-const admin = fs.readFileSync(adminPath, 'utf8')
-const component = fs.readFileSync(componentPath, 'utf8')
+/* these read the source's text: the conversion's own `any` is not what they are about */
+const untyped = (src) => src.replace(/\(([^()]+?) as any\)/g, '$1').replace(/: any\b/g, '')
+const admin = untyped(fs.readFileSync(adminPath, 'utf8'))
+const component = untyped(fs.readFileSync(componentPath, 'utf8'))
 const strings = parseGroups(fs.readFileSync(stringsPath, 'utf8')).automations
 
 assert.match(admin, /canViewAutomations[\s\S]*?permissions\?\.view_results === true/)

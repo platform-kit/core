@@ -337,7 +337,7 @@ const walk = (dir, out = []) => {
    FUNCTIONS are the same exception seen from the other end: a callback that arrives with no
    `provider` is Lulu's, because Lulu is the only printer that posts to a registered url, and
    `lulu-webhook` is that url's original name kept as an alias. */
-const ALLOWED = /suppliers\/|print\/suppliers\.mjs|print\/webhook\.mjs|steps\/lulu-webhook\.mjs|functions\/lulu-webhook\/|functions\/print-webhook\/|PrintAdmin\.vue|print-offers\.js|deploy-checks\.mjs|\.test\.mjs/
+const ALLOWED = /suppliers\/|print\/suppliers\.mjs|print\/webhook\.mjs|steps\/lulu-webhook\.mjs|functions\/lulu-webhook\/|functions\/print-webhook\/|PrintAdmin\.vue|print-offers\.ts|deploy-checks\.mjs|\.test\.mjs/
 t('no module outside the printers names a printer id in code', () => {
   const said = []
   for (const f of walk(KIT)) {

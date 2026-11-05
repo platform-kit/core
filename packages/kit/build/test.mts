@@ -170,7 +170,7 @@ const KIT_TESTS = [
      library Element is built on — against the served function */
   on('spaces') && c.modules.api !== false && ['matrix-api.test.mjs'],   /* the desk as Chatwoot's APIs: the shapes under Node; the Client and Application APIs, the webhooks and the snippet against the served function */   /* the store as Shopify's Storefront API: the products from the offers under Node; the official client, the cart and the handoff against the served function */   /* the sessions as cal.com's API v2: the shapes under Node; cal.js pointed at the site, the judge, the webhooks and cal.com's embed against the served function */   /* the forms as Typeform's API: the shapes under Node; the official client, the webhooks and the embed against the served function */
   c.modules.models !== false && ['models.test.mjs'],
-  c.modules.models !== false && ['models.mjs', '--check'],
+  c.modules.models !== false && ['models-check.mjs', '--check'],
   ['steps.test.mjs'],
   ['content-refresh.test.mjs'],
   ['social-adapter.test.mjs'],

@@ -169,9 +169,14 @@ else {
   else {
     const real = lexicalIndex(rows)
     t('the real index separates the shelf on an ordinary word', () => {
-      const s = bm25(real, 'money')
+      /* a word of the first book's that another book lacks: whichever shelf this is */
+      const words = (text) => String(text).toLowerCase().match(/[a-z]{5,}/g) || []
+      const others = new Set(words(rows[1].text))
+      const word = words(rows[0].text).find((w) => !others.has(w))
+      assert.ok(word, 'the first two books hold the same words')
+      const s = bm25(real, word)
       const vals = Object.values(s)
-      assert.ok(vals.some((x) => x > 0), 'no book scored on "money"')
+      assert.ok(vals.some((x) => x > 0), `no book scored on "${word}"`)
       assert.ok(new Set(vals).size > 1, 'every book scored the same — the index is not discriminating')
     })
     t('and a word in no book scores nothing anywhere', () => {

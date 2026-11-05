@@ -194,6 +194,7 @@ export function toEntry(collection: any, row: any, ctx: any) {
       const was = bundle('books').find((b: any) => b.slug === slug) || {}
       const raw = md
       const e = { ...document(d, { dates: ['date'] }), tags: arr(d.tags), topics: arr(d.topics), concepts: arr(d.concepts), path, raw, metadata: metadata(raw), slug, chapters: raw.split(/^(?=# )/m).filter((s: any) => s.trim()).length, audio: was.audio || null }
+      e.fullText = bool(d.fullText, true)   /* velite's default: a book holds its text unless it says not */
       if (typeof d.gatedFrom === 'number') e.gatedFrom = d.gatedFrom   /* a row reader-content cut for a guest: where the reader asks for the rest */
       if (d.print) e.print = { ebook: true, contents: ['parts'], formats: {}, includes: [], files: [], cloth: 'black', foil: 'gold', trim: '6x9', paper: 'cream', currency: 'usd', ...d.print }
       e.cover = coverOf(d, was)

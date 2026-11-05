@@ -34,7 +34,7 @@ sources:
     packages/kit/build/steps.mts,
     packages/kit/build/steps.test.mjs,
   ]
-reviewed: 2026-11-01
+reviewed: 2026-11-04
 ---
 
 Content authors edit Markdown files under `content/`. During the build, Velite validates those files, renders their Markdown, and writes one JSON file per collection plus an `index.js` under `.velite/`. The app imports the generated collections through `#content`. The kit defines this pipeline in `packages/kit/build/velite.mts`; a site's `velite.config.js` calls `kitConfig()`.
