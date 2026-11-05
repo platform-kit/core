@@ -97,7 +97,7 @@ ok('no stack test reads `supabase status` or falls back to a fixed port', !fixed
 /* every browser launch honours PLAYWRIGHT_CHROMIUM_PATH (or goes through browser.mjs, which does): a machine where
    Playwright's own build is not installed names its own, and a launch that ignores it fails there — six did */
 {
-  const launches = fs.readdirSync(HERE).filter((f) => f.endsWith('.mjs') && f !== 'browser.mts').flatMap((f) => fs.readFileSync(path.join(HERE, f), 'utf8').split('\n').map((l, i) => [f, l, i]).filter(([, l]) => /chromium\.launch\(/.test(l) && !/PLAYWRIGHT_CHROMIUM_PATH|executablePath: exe\b|\{ executablePath \}/.test(l)).map(([f, l, i]) => `${f}:${i + 1}  ${l.trim().slice(0, 100)}`))
+  const launches = fs.readdirSync(HERE).filter((f) => /\.m?[jt]s$/.test(f) && !/\.d\.m?ts$/.test(f) && !/^browser\.m[jt]s$/.test(f)).flatMap((f) => fs.readFileSync(path.join(HERE, f), 'utf8').split('\n').map((l, i) => [f, l, i]).filter(([, l]) => /chromium\.launch\(/.test(l) && !/PLAYWRIGHT_CHROMIUM_PATH|executablePath: exe\b|\{ executablePath \}/.test(l)).map(([f, l, i]) => `${f}:${i + 1}  ${l.trim().slice(0, 100)}`))
   ok('every browser launch honours PLAYWRIGHT_CHROMIUM_PATH', !launches.length, launches.join('\n'))
 }
 

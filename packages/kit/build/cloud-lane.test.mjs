@@ -92,7 +92,7 @@ const store = rowsStore({ client: db })
   const { readdirSync, readFileSync: rf } = await import('node:fs')
   const dir = join(KIT, 'build')
   const bad = []
-  const walkJs = (d) => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) { if (e.name !== 'node_modules') walkJs(p) } else if (/\.(mjs|js)$/.test(e.name) && !e.name.endsWith('.test.mjs')) {
+  const walkJs = (d) => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) { if (e.name !== 'node_modules') walkJs(p) } else if (/\.(mjs|js|mts|ts)$/.test(e.name) && !/\.d\.m?ts$/.test(e.name) && !/\.test\.m?[jt]s$/.test(e.name)) {
     /* comments stripped first: the note in store/git.mjs explains the trap by quoting it, and a
        guard that flags its own explanation is a guard people delete */
     const src = rf(p, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')

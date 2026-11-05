@@ -16,6 +16,7 @@ import path from 'node:path'
 const DIST = process.env.PLATFORMKIT_DIST || 'dist'
 import { build } from 'vite'
 import { loadSite, loadTheme } from '../vite/index.mjs'
+import { sourceOf } from './pipe-closure.mjs'
 
 const c = await loadSite()
 const theme = await loadTheme(c)
@@ -29,7 +30,7 @@ await build({
   publicDir: false,   /* the site's public/ is the site's: nothing copied beside the script */
   build: {
     outDir: path.join(DIST, 'packs/js'), emptyOutDir: false, cssCodeSplit: false, sourcemap: false,
-    lib: { entry: path.join(theme.src, 'comments-embed.js'), name: 'PlatformKitComments', formats: ['iife'], fileName: () => 'comments.js' },
+    lib: { entry: sourceOf(path.join(theme.src, 'comments-embed.js')) || path.join(theme.src, 'comments-embed.js'), name: 'PlatformKitComments', formats: ['iife'], fileName: () => 'comments.js' },
     rollupOptions: { output: { inlineDynamicImports: true } },
   },
 })

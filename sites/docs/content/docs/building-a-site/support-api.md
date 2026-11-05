@@ -17,7 +17,7 @@ sources:
     packages/kit/build/interrupt.test.mjs,
     packages/kit/build/support-api.test.mjs,
   ]
-reviewed: 2026-10-21
+reviewed: 2026-11-04
 ---
 
 ## What it is

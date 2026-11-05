@@ -14,6 +14,8 @@ import { build } from 'vite'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import { platformkit, loadSite, loadTheme, publicSite } from '../vite/index.mjs'
+/* the entry by the name a site has, or — kept as TypeScript in the source — its .ts */
+import { sourceOf } from './pipe-closure.mjs'
 const KIT_SRC = fileURLToPath(new URL('../src/', import.meta.url))
 
 const c = await loadSite()
@@ -23,7 +25,9 @@ const theme = await loadTheme(c)
    anything has says so rather than failing inside a resolver */
 if (!existsSync(path.join(c.root, '.velite')))
   throw new Error('the content has not been built: this is a step of the site phase — run platformkit build, or platformkit steps --run prepare first')
-const entry = path.join(theme.src, 'support-embed.js')
+/* a file of the kit's src by the name a site has, or — kept as TypeScript in the source — its .ts */
+const kitSrc = (p: string) => sourceOf(path.join(KIT_SRC, p)) || path.join(KIT_SRC, p)
+const entry = sourceOf(path.join(theme.src, 'support-embed.js')) || path.join(theme.src, 'support-embed.js')
 await build({
   configFile: false,
   root: c.root,
@@ -46,20 +50,20 @@ export const modules = site.modules
 export const moduleKeys = ${JSON.stringify(c.moduleKeys)}
 export const places = ${JSON.stringify(places)}`
       } },
-    { name: 'embed-light-store', enforce: 'pre', resolveId(id, importer) { if (/(^|\/)lib\/store\.js$/.test(id) || (/^\.\.?\/(\.\.\/)*store\.js$/.test(id) && importer && importer.startsWith(KIT_SRC + 'lib/'))) return path.join(KIT_SRC, 'lib/store-light.js') } },
+    { name: 'embed-light-store', enforce: 'pre', resolveId(id, importer) { if (/(^|\/)lib\/store\.js$/.test(id) || (/^\.\.?\/(\.\.\/)*store\.js$/.test(id) && importer && importer.startsWith(KIT_SRC + 'lib/'))) return kitSrc('lib/store-light.js') } },
     /* Keep the smaller APIs local to the widget; the rest of the theme still needs the full modules. */
     { name: 'embed-light-content', enforce: 'pre', resolveId(id, importer) {
       const supportComponent = importer && importer.startsWith(path.join(theme.src, 'components/support') + path.sep)
       const supportDependency = importer && (
         importer.startsWith(path.join(KIT_SRC, 'lib/support') + path.sep) ||
-        importer === path.join(KIT_SRC, 'lib/auth.js') ||
-        importer === path.join(KIT_SRC, 'lib/lockdown.js')
+        importer === kitSrc('lib/auth.js') ||
+        importer === kitSrc('lib/lockdown.js')
       )
       const supportVoiceRecorder = importer && importer.startsWith(path.join(theme.src, 'components/chat/VoiceRecorder.vue'))
       if (/(^|\/)lib\/content\.js$/.test(id) && (supportComponent || supportDependency))
-        return path.join(KIT_SRC, 'lib/strings.js')
+        return kitSrc('lib/strings.js')
       if (/(^|\/)lib\/chat\/recorder\.js$/.test(id) && (supportComponent || supportVoiceRecorder))
-        return path.join(KIT_SRC, 'lib/chat/recorder-light.js')
+        return kitSrc('lib/chat/recorder-light.js')
       return null
     } },
     { name: 'embed-content', enforce: 'pre',
@@ -67,7 +71,7 @@ export const places = ${JSON.stringify(places)}`
       load(id) {
         if (id !== '\0embed-content') return
         const dir = path.join(c.root, '.velite')
-        const names = [...fs.readFileSync(path.join(dir, 'index.ts'), 'utf8').matchAll(/export \{ default as (\w+) \} from '\.\/(\w+)\.json'/g)].map((m) => [m[1], m[2]])
+        const names = [...fs.readFileSync(path.join(dir, 'index.js'), 'utf8').matchAll(/export \{ default as (\w+) \} from '\.\/(\w+)\.json'/g)].map((m) => [m[1], m[2]])
         const read = (f: any) => JSON.parse(fs.readFileSync(path.join(dir, f + '.json'), 'utf8'))
         return names.map(([name, file]) => {
           if (name === 'site') return `export const ${name} = ${JSON.stringify(read(file))}`

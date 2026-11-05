@@ -13,10 +13,12 @@ const DIST = process.env.PLATFORMKIT_DIST || 'dist'
 import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 import { gzipSync } from 'node:zlib'
+/* the entry by the name a site has, or — kept as TypeScript in the source — its .ts */
+import { sourceOf } from './pipe-closure.mjs'
 
 const KIT_SRC = fileURLToPath(new URL('../src/', import.meta.url))
 const root = process.cwd()
-const entry = path.join(KIT_SRC, 'sdk/entry.js')
+const entry = sourceOf(path.join(KIT_SRC, 'sdk/entry.js')) || path.join(KIT_SRC, 'sdk/entry.js')
 await build({
   configFile: false, root, logLevel: 'warn',
   define: { 'process.env.NODE_ENV': '"production"' },

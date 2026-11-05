@@ -11,7 +11,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const bare = (p) => p.replace(/\.m?[jt]s$/, '')
-const real = (p) => { try { return globalThis.process.getBuiltinModule('node:fs').realpathSync(p) } catch { return path.resolve(p) } }
+/* the folder's real path: the file itself may be named by the .mjs a site has, which the workspace holds as its .mts */
+const real = (p) => { try { return path.join(globalThis.process.getBuiltinModule('node:fs').realpathSync(path.dirname(p)), path.basename(p)) } catch { return path.resolve(p) } }
 export function isMain(url) {
   const argv = globalThis.process?.argv
   if (!argv || !argv[1]) return false

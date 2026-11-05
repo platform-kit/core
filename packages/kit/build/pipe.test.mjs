@@ -83,7 +83,7 @@ await ta('the route table: the pipe\'s endpoints and the three beside it, and no
   assert.deepEqual(routes, ['action', 'asset', 'collections', 'drafts', 'file', 'images', 'keep', 'list', 'media', 'media-file', 'options', 'preview', 'publish', 'run', 'run/stop', 'upload', 'upload-image'])   /* drafts · publish · keep: cloud mode's, answered from the checkout as empty and no-ops */
   const theme = path.join(HERE, '../theme/src')
   const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
-  const hits = walk(theme).filter((f) => /\.(vue|js)$/.test(f)).filter((f) => /__admin\/(forms|funnels|emails|strings|models|print|quiz|recommendations)\b/.test(fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))
+  const hits = walk(theme).filter((f) => /\.(vue|js|ts)$/.test(f)).filter((f) => /__admin\/(forms|funnels|emails|strings|models|print|quiz|recommendations)\b/.test(fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))
   assert.deepEqual(hits.map((f) => path.relative(theme, f)), [])
 })
 await ta('a save through the pipe: refused before the write and the hook; a good save writes once and runs the hook once', async () => {
@@ -137,7 +137,7 @@ await ta('every bare name a function reaches is in its own import map', async ()
   if (!fs.existsSync(fns)) return   /* not assembled here */
   const BARE = /^\s*(?:import|export)\s[^'"\n]*?from\s*['"]([^'"]+)['"]/gm
   const PLAIN = /^\s*import\s*['"]([^'"]+)['"]/gm
-  const ext = (p) => (fs.existsSync(p) ? p : ['.ts', '.js', '.mjs', '/index.ts', '/index.ts', '/index.mts'].map((e) => p + e).find((c) => fs.existsSync(c)))
+  const ext = (p) => (fs.existsSync(p) ? p : ['.ts', '.js', '.mjs', '/index.ts', '/index.js', '/index.mjs'].map((e) => p + e).find((c) => fs.existsSync(c)))
   const specs = (text) => [...text.matchAll(BARE), ...text.matchAll(PLAIN)].map((m) => m[1])
   function reach(entry) {
     const seen = new Set(), names = new Set(), queue = [entry]

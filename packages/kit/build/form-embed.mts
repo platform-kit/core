@@ -12,6 +12,8 @@ import { build } from 'vite'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import { platformkit, loadSite, loadTheme } from '../vite/index.mjs'
+/* the entry by the name a site has, or — kept as TypeScript in the source — its .ts */
+import { sourceOf } from './pipe-closure.mjs'
 const KIT_SRC = fileURLToPath(new URL('../src/', import.meta.url))
 
 const c = await loadSite()
@@ -21,14 +23,16 @@ const theme = await loadTheme(c)
    anything has says so rather than failing inside a resolver */
 if (!existsSync(path.join(c.root, '.velite')))
   throw new Error('the content has not been built: this is a step of the site phase — run platformkit build, or platformkit steps --run prepare first')
-const entry = path.join(theme.src, 'embed.js')
+/* a file of the kit's src by the name a site has, or — kept as TypeScript in the source — its .ts */
+const kitSrc = (p: string) => sourceOf(path.join(KIT_SRC, p)) || path.join(KIT_SRC, p)
+const entry = sourceOf(path.join(theme.src, 'embed.js')) || path.join(theme.src, 'embed.js')
 await build({
   configFile: false,
   root: c.root,
   logLevel: 'warn',
   plugins: [
     /* the CRDT store and its wasm stay on the site: the embed keeps a guest's id in plain localStorage (lib/store-light.js) */
-    { name: 'embed-light-store', enforce: 'pre', resolveId(id, importer) { if (/(^|\/)lib\/store\.js$/.test(id) || (id === './store.js' && importer && importer.startsWith(KIT_SRC + 'lib/'))) return path.join(KIT_SRC, 'lib/store-light.js') } },
+    { name: 'embed-light-store', enforce: 'pre', resolveId(id, importer) { if (/(^|\/)lib\/store\.js$/.test(id) || (id === './store.js' && importer && importer.startsWith(KIT_SRC + 'lib/'))) return kitSrc('lib/store-light.js') } },
     /* The shared diagnostic runner reaches the semantic search embedder, but forms never use it.
        Keep its top-level-await WASM out of this single-file IIFE rather than eagerly shipping it. */
     { name: 'embed-no-semantic-model', enforce: 'pre',
@@ -41,7 +45,7 @@ await build({
       load(id) {
         if (id !== '\0embed-content') return
         const dir = path.join(c.root, '.velite')
-        const names = [...fs.readFileSync(path.join(dir, 'index.ts'), 'utf8').matchAll(/export \{ default as (\w+) \} from '\.\/(\w+)\.json'/g)].map((m) => [m[1], m[2]])
+        const names = [...fs.readFileSync(path.join(dir, 'index.js'), 'utf8').matchAll(/export \{ default as (\w+) \} from '\.\/(\w+)\.json'/g)].map((m) => [m[1], m[2]])
         const read = (f: any) => JSON.parse(fs.readFileSync(path.join(dir, f + '.json'), 'utf8'))
         return names.map(([name, file]) => {
           if (name === 'forms' || name === 'site') return `export const ${name} = ${JSON.stringify(read(file))}`

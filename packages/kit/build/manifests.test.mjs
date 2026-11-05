@@ -374,13 +374,13 @@ if (CRON_SITE.deployment.backend) {
       const p = join(dir, e.name)
       if (/node_modules|\.cache/.test(p)) continue
       if (e.isDirectory()) walk(p, out)
-      else if (/\.mjs$/.test(e.name)) out.push(p)
+      else if (/\.m[jt]s$/.test(e.name)) out.push(p)
     }
     return out
   }
   void statSync
   const offenders = walk(HERE)
-    .filter((p) => !/\/browser\.mjs$/.test(p) && !/\/manifests\.test\.mjs$/.test(p))
+    .filter((p) => !/\/browser\.m[jt]s$/.test(p) && !/\/manifests\.test\.mjs$/.test(p))
     .filter((p) => /\.newContext\s*\(/.test(rf(p, 'utf8')))
     .map((p) => p.replace(HERE, ''))
   t('every browser context is made through build/browser.mjs, which sets the floor', () => {

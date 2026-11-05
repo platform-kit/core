@@ -40,7 +40,7 @@ const SEAM = path.join(PRINT, 'typeset')
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
       const p = path.join(d, e.name)
       if (e.isDirectory()) walk(p, out)
-      else if (/\.(mjs|js)$/.test(e.name)) out.push(p)
+      else if (/\.(mjs|js|mts|ts)$/.test(e.name)) out.push(p)
     }
     return out
   }

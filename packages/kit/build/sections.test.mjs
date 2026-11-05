@@ -39,7 +39,7 @@ for (const k of Object.keys(SECTION_SCHEMAS)) {
 
 /* no site's vocabulary belongs in the theme's landing components, defaults or labels */
 const WORDS = /kybalion|neville|circumstance|realization|autopilot|co-creation|rising agency|self-mastery|diagnostic|recommendation|\blevels?\b/i
-for (const f of fs.readdirSync(dir).filter((f) => f.endsWith('.vue') || f.endsWith('.js'))) {
+for (const f of fs.readdirSync(dir).filter((f) => f.endsWith('.vue') || f.endsWith('.js') || f.endsWith('.ts'))) {
   const text = fs.readFileSync(path.join(dir, f), 'utf8').replace(/https?:\/\/\S+/g, '')
   const hit = text.match(WORDS)
   ok(!hit, `${f} carries site-specific vocabulary: "${hit && hit[0]}"`)
