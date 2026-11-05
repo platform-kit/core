@@ -26,7 +26,7 @@
  */
 
 /* the drivers, by name. A site never picks one — the caller does, from where it is running. */
-const DRIVERS = {
+const DRIVERS: any = {
   node: () => import('./node-compiler.js'),
   wasm: () => import('./wasm-compiler.js'),
 }
@@ -36,7 +36,7 @@ const DRIVERS = {
  * node on a machine that has it and wasm where there is no filesystem to have it on. It is asked
  * once per compiler rather than per call, because making one is the expensive part.
  */
-export async function typesetter({ driver, workspace, fonts } = {}) {
+export async function typesetter({ driver, workspace, fonts }: any = {}) {
   const pick = driver || (typeof process !== 'undefined' && process.versions && process.versions.node ? 'node' : 'wasm')
   const load = DRIVERS[pick]
   if (!load) throw new Error(`typeset: no such compiler driver "${pick}" — one of ${Object.keys(DRIVERS).join(', ')}`)
@@ -44,9 +44,9 @@ export async function typesetter({ driver, workspace, fonts } = {}) {
   const c = await mod.create({ workspace, fonts })
   return {
     driver: pick,
-    pdf: (file) => c.pdf(file),
-    svg: (file) => c.svg(file),
-    query: (file, selector) => c.query(file, selector),
+    pdf: (file: any) => c.pdf(file),
+    svg: (file: any) => c.svg(file),
+    query: (file: any, selector: any) => c.query(file, selector),
   }
 }
 

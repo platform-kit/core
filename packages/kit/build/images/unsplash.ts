@@ -29,11 +29,11 @@ export const needs = ['UNSPLASH_ACCESS_KEY']
 export const configured = (env = (typeof process !== 'undefined' ? process.env : {})) =>
   !!String(env.UNSPLASH_ACCESS_KEY || '').trim()
 
-const accessKey = (env) => String((env || (typeof process !== 'undefined' ? process.env : {})).UNSPLASH_ACCESS_KEY || '').trim()
-const headers = (env) => ({ Authorization: `Client-ID ${accessKey(env)}`, 'Accept-Version': 'v1' })
+const accessKey = (env: any) => String((env || (typeof process !== 'undefined' ? process.env : {})).UNSPLASH_ACCESS_KEY || '').trim()
+const headers = (env: any) => ({ Authorization: `Client-ID ${accessKey(env)}`, 'Accept-Version': 'v1' })
 
 /* one of theirs → one of ours. `meta` is theirs and comes back untouched at take() time. */
-const shape = (it) => ({
+const shape = (it: any) => ({
   id: it.id,
   thumb: it.urls && (it.urls.small || it.urls.thumb),
   full: it.urls && (it.urls.regular || it.urls.full),
@@ -49,7 +49,7 @@ const shape = (it) => ({
   meta: { download: (it.links && it.links.download_location) || '', full: it.urls && (it.urls.full || it.urls.regular) },
 })
 
-export async function search(q, { page = 1, perPage = 24, env, orientation = '' } = {}) {
+export async function search(q: any, { page = 1, perPage = 24, env, orientation = '' }: any = {}) {
   const term = String(q || '').trim()
   if (!term) return { total: 0, results: [] }
   const u = new URL(API + '/search/photos')
@@ -74,7 +74,7 @@ export async function search(q, { page = 1, perPage = 24, env, orientation = '' 
  * the photographer, and it is asked of us by the terms — and then the bytes are fetched, so that
  * a failure to count never leaves us with a picture we did not report.
  */
-export async function take(result, { env } = {}) {
+export async function take(result: any, { env }: any = {}) {
   const meta = (result && result.meta) || {}
   if (meta.download) {
     try {

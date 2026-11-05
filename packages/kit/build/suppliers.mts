@@ -46,6 +46,7 @@ export async function storeRegistry(root = process.cwd()) {
       s = storeOf(mod.default || mod)
     } catch { /* no config (a kit test, a bare checkout): the kit's own, which is every shop until one needs a bindery */ }
     const P = printers(ENV, await own(root, s.suppliers))
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'. Type 'unknown' is not assignable to type 'never'.
     return { ...P, kinds: registerKinds(await own(root, s.kinds)) }
   })()
   CACHE.set(root, p)

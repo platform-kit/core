@@ -42,7 +42,7 @@ sources:
     packages/kit/supabase/functions/usage-meter-report,
     packages/kit/build/usage.test.mjs,
     packages/kit/src/lib/commerce.ts,
-    packages/kit/src/payment-provider.mjs,
+    packages/kit/src/payment-provider.mts,
     packages/kit/src/payment-provider.d.ts,
     packages/kit/supabase/schemas/40-commerce.sql,
     packages/kit/build/policies.test.mjs,

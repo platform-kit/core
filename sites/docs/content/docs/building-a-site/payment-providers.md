@@ -5,7 +5,7 @@ order: 50
 sources:
   [
     packages/kit/src/payment-provider.d.ts,
-    packages/kit/src/payment-provider.mjs,
+    packages/kit/src/payment-provider.mts,
     packages/kit/build/payment-provider-registry.mts,
     packages/kit/build/payment-provider-registry.test.mjs,
     packages/kit/build/site-payment-provider.test.mjs,

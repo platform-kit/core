@@ -22,7 +22,7 @@
 
 /* a design on the garment: an address, where it goes, and how big. The address is the library's
    (`/uploads/...`) like every other file field — there is no second uploader. */
-const placementOf = (offer) => {
+const placementOf = (offer: any) => {
   const d = (offer && offer.design) || {}
   return {
     artwork: String(d.artwork || d.image || ''),
@@ -35,7 +35,7 @@ const placementOf = (offer) => {
 
 /* the blueprint a file names, as a number — a file that names none has nothing to be checked
    against, which is a different fault from naming one that does not exist */
-export const blueprintOf = (offer) => {
+export const blueprintOf = (offer: any) => {
   const v = (offer && (offer.blueprint ?? (offer.options_for || {}).blueprint)) ?? null
   return v == null || v === '' ? null : Number(v)
 }
@@ -47,7 +47,7 @@ export const blueprintOf = (offer) => {
  * `types` is what the supplier's catalogue answered. A supplier that publishes none cannot say,
  * and then an offer naming a blueprint is a fault in itself: the shop has invented a product type.
  */
-export function checkBlueprint(offer, types) {
+export function checkBlueprint(offer: any, types: any) {
   const id = blueprintOf(offer)
   if (id == null) return 'this names no product type — choose one from the supplier’s catalogue'
   if (!Array.isArray(types)) return null                     /* nothing to check against, this run */
@@ -63,13 +63,13 @@ export function checkBlueprint(offer, types) {
  * in black and white cannot be sold in red, however the file came to say so. The message names
  * the value, because "invalid variant" sends somebody to read the whole file.
  */
-export function checkValues(options, axes) {
+export function checkValues(options: any, axes: any) {
   if (!Array.isArray(axes) || !axes.length) return null
   const bad = []
   for (const o of options || []) {
     const axis = axes.find((a) => String(a.name).toLowerCase() === String(o.name).toLowerCase())
     if (!axis) continue                                      /* the shop's own axis, not the supplier's */
-    const has = new Set(axis.values.map((v) => String(v.value)))
+    const has = new Set(axis.values.map((v: any) => String(v.value)))
     for (const v of o.values || []) {
       const value = String(v && typeof v === 'object' ? v.value : v)
       if (value && !has.has(value)) bad.push(`${o.name} ${value}`)
@@ -88,10 +88,10 @@ export const apparel = {
    * fetched at request time — `ctx.catalogue` is what the build (or the admin's refresh, or the
    * publish in cloud mode) already asked for, so a product page never waits on a supplier.
    */
-  options: async (offer, ctx = {}) => {
+  options: async (offer: any, ctx: any = {}) => {
     const axes = ctx.catalogue || null
     if (!axes) return []
-    return axes.map((a) => ({ ...a, from: ctx.supplier || 'printify' }))
+    return axes.map((a: any) => ({ ...a, from: ctx.supplier || 'printify' }))
   },
 
   /*
@@ -103,10 +103,10 @@ export const apparel = {
    * The mockup is an ADDRESS like a book's cover art — resolved through the build's own asset
    * path, never read off the disk beside the record.
    */
-  artefacts: async (variant, ctx = {}) => {
+  artefacts: async (variant: any, ctx: any = {}) => {
     const place = placementOf(ctx.offer || {})
     if (!place.artwork) return null
-    const colour = (variant.chosen || []).find((c) => String(c.slug) === 'colour' || String(c.slug) === 'color')
+    const colour = (variant.chosen || []).find((c: any) => String(c.slug) === 'colour' || String(c.slug) === 'color')
     const mockups = (ctx.mockups || {})
     return {
       artwork: place.artwork,

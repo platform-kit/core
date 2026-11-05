@@ -22,7 +22,7 @@ import { readback } from './readback.js'
 import { padFor } from '../plan-pieces.mjs'
 
 /* the pages in a PDF, by its page tree's counts (print-render reads it the same way) */
-export const pageCount = (pdf) => {
+export const pageCount = (pdf: any) => {
   const s = new TextDecoder('latin1').decode(pdf)
   const m = s.match(/\/Count\s+(\d+)/g)
   return m ? Math.max(...m.map((x) => Number(x.replace(/\D/g, '')))) : 0
@@ -33,7 +33,7 @@ export const pageCount = (pdf) => {
  * which the function works out and hands over), then the document's own account of where its chapters open and where
  * its highlights fall. A query that does not answer costs the listing's pictures, never the book.
  */
-export async function setInterior({ files, fonts, min, step, wasm }) {
+export async function setInterior({ files, fonts, min, step, wasm }: any) {
   const c = await create({ files, fonts, wasm })
   let pdf = c.pdf('interior.typ')
   const bare = pageCount(pdf)
@@ -53,8 +53,8 @@ export async function setInterior({ files, fonts, min, step, wasm }) {
  * function's own addresses are joined to, because inside the functions runtime the gateway has a name no browser
  * resolves.
  */
-export async function finishWaiting({ job, ask, base, wasm, fetch: get = globalThis.fetch, onStep = () => {} }) {
-  const at = (p) => String(base).replace(/\/+$/, '') + p
+export async function finishWaiting({ job, ask, base, wasm, fetch: get = globalThis.fetch, onStep = () => {} }: any) {
+  const at = (p: any) => String(base).replace(/\/+$/, '') + p
   onStep('handover')
   const h = await ask({ job, interior: 'handover' })
   if (!h || !h.files || !h.upload) throw new Error('print: the job handed over no interior — ' + JSON.stringify(h).slice(0, 200))

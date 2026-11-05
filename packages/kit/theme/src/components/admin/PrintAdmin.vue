@@ -49,7 +49,6 @@ async function askPrintRender(body: any) {
 async function setInteriors(waiting: any) {
   for (const w of waiting) {
     const name = CONTENTS_NAMES[w.contents] || w.contents
-    // @ts-expect-error TS2322, from the conversion: Type '(step: any) => void' is not assignable to type '() => void'.
     await finishWaiting({ job: w.job, ask: askPrintRender, base: supabaseUrl, wasm: typstWasm, onStep: (step: any) => { interiorStep.value = `${name}: ${((us('orders').editions || {}).interior || {})[step] || step}` } })
   }
   interiorStep.value = ''

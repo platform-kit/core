@@ -35,7 +35,7 @@ const SPEED = Number(process.env.TTS_SPEED || 1.0)     /* the engine's own defau
 const GAP = Number(process.env.TTS_GAP || 0.45)        /* seconds between pieces */
 
 const say = (o: any) => process.stdout.write(JSON.stringify(o) + '\n')
-const tts = await loadTextToSpeech(path.join(MODELS, 'onnx'), false)
+const tts: any = await loadTextToSpeech(path.join(MODELS, 'onnx'), false)
 const style = loadVoiceStyle([path.join(MODELS, 'voice_styles', VOICE + '.json')], false)
 say({ ready: true, voice: VOICE, steps: STEPS, speed: SPEED, sampleRate: tts.sampleRate })
 

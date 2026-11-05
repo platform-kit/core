@@ -59,9 +59,9 @@ const SEAM = path.join(PRINT, 'typeset')
 
 /* ---- both drivers answer the same shape ---- */
 {
-  const seam = fs.readFileSync(path.join(SEAM, 'compiler.js'), 'utf8')
+  const seam = fs.readFileSync(path.join(SEAM, 'compiler.ts'), 'utf8')
   for (const call of ['pdf', 'svg', 'query']) ok(`the seam offers ${call}()`, new RegExp('\\b' + call + ':').test(seam))
-  for (const d of ['node-compiler.js', 'wasm-compiler.js']) {
+  for (const d of ['node-compiler.ts', 'wasm-compiler.ts']) {
     const src = fs.readFileSync(path.join(SEAM, d), 'utf8')
     ok(`${d} exports create()`, /export async function create|export function create/.test(src))
     for (const call of ['pdf', 'svg', 'query']) ok(`${d} implements ${call}()`, new RegExp('\\b' + call + '\\s*\\(').test(src))

@@ -36,14 +36,14 @@ import { apparel } from './apparel.js'
 const KIT = [apparel]
 
 /* what a kind must be, checked once when it is registered rather than discovered at a call site */
-const SHAPE = {
+const SHAPE: any = {
   key: 'a slug naming this kind',
   produces: 'the artefact names it derives, so a supplier\'s needs can be matched against it',
   options: 'async (offer, ctx) → [{ name, values: [{ value, label? }], from? }]',
   artefacts: 'async (variant, ctx) → a record, or null where there is nothing to derive',
 }
 
-export function checkKind(k) {
+export function checkKind(k: any) {
   const bad = []
   if (!k || typeof k !== 'object') return ['a kind must be a module exporting an object']
   if (typeof k.key !== 'string' || !/^[a-z][a-z0-9-]*$/.test(k.key)) bad.push(`key: ${SHAPE.key}`)
@@ -76,15 +76,15 @@ export function kinds(own = []) {
   return all
 }
 
-export const kindOf = (all, key) => all.find((k) => k.key === key) || null
+export const kindOf = (all: any, key: any) => all.find((k: any) => k.key === key) || null
 
 /*
  * WHAT A SUPPLIER NEEDS AND A KIND MAKES, matched now rather than at the till.
  * Answers the missing names, so a refusal can say which artefact rather than "cannot fulfil".
  */
-export function unmet(kind, supplier) {
+export function unmet(kind: any, supplier: any) {
   const makes = new Set((kind && kind.produces) || [])
-  return ((supplier && supplier.needs) || []).filter((n) => !makes.has(n))
+  return ((supplier && supplier.needs) || []).filter((n: any) => !makes.has(n))
 }
 
 /*
@@ -95,10 +95,10 @@ export function unmet(kind, supplier) {
  * `null` artefacts means a kind with nothing to derive, which is ready; an empty object means a
  * kind that should have derived something and has not, which is not.
  */
-export function ready(kind, artefacts) {
+export function ready(kind: any, artefacts: any) {
   const want = (kind && kind.produces) || []
   if (!want.length) return { ready: true, missing: [] }
   const has = artefacts && typeof artefacts === 'object' ? artefacts : {}
-  const missing = want.filter((n) => has[n] === undefined || has[n] === null || has[n] === '')
+  const missing = want.filter((n: any) => has[n] === undefined || has[n] === null || has[n] === '')
   return { ready: missing.length === 0, missing }
 }

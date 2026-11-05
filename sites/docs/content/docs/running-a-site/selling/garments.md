@@ -4,7 +4,7 @@ description: Upload a design, pick a product type from the supplier's catalogue,
 order: 24
 sources:
   [
-    packages/kit/build/kinds/apparel.js,
+    packages/kit/build/kinds/apparel.ts,
     packages/kit/supabase/functions/_shared/suppliers/printify.js,
     packages/kit/build/store-kinds.test.mjs,
   ]

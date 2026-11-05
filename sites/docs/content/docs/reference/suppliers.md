@@ -11,7 +11,7 @@ sources:
     packages/kit/build/store-kinds.test.mjs,
     sites/demo/build/suppliers.mjs,
   ]
-reviewed: 2026-10-01
+reviewed: 2026-11-04
 ---
 
 A **supplier** is anything that makes or sends what a shop sells: a print-on-demand press, a

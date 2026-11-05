@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+// @ts-expect-error TS2307, from the conversion: Cannot find module 'onnxruntime-node' or its corresponding type declarations.
 import * as ort from 'onnxruntime-node';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,11 +15,11 @@ const AVAILABLE_LANGS = ["en", "ko", "ja", "ar", "bg", "cs", "da", "de", "el", "
  * Unicode text processor
  */
 class UnicodeProcessor {
-    constructor(unicodeIndexerJsonPath) {
-        this.indexer = JSON.parse(fs.readFileSync(unicodeIndexerJsonPath, 'utf8'));
+    constructor(unicodeIndexerJsonPath: any) {
+        ;(this as any).indexer = JSON.parse(fs.readFileSync(unicodeIndexerJsonPath, 'utf8'));
     }
 
-    _preprocessText(text, lang) {
+    _preprocessText(text: any, lang: any) {
         // TODO: Need advanced normalizer for better performance
         text = text.normalize('NFKD');
 
@@ -102,17 +103,17 @@ class UnicodeProcessor {
         return text;
     }
 
-    _textToUnicodeValues(text) {
-        return Array.from(text).map(char => char.charCodeAt(0));
+    _textToUnicodeValues(text: any) {
+        return Array.from(text).map((char: any) => char.charCodeAt(0));
     }
 
-    _getTextMask(textIdsLengths) {
+    _getTextMask(textIdsLengths: any) {
         return lengthToMask(textIdsLengths);
     }
 
-    call(textList, langList) {
-        const processedTexts = textList.map((t, i) => this._preprocessText(t, langList[i]));
-        const textIdsLengths = processedTexts.map(t => t.length);
+    call(textList: any, langList: any) {
+        const processedTexts = textList.map((t: any, i: any) => this._preprocessText(t, langList[i]));
+        const textIdsLengths = processedTexts.map((t: any) => t.length);
         const maxLen = Math.max(...textIdsLengths);
         
         const textIds = [];
@@ -120,7 +121,7 @@ class UnicodeProcessor {
             const row = new Array(maxLen).fill(0);
             const unicodeVals = this._textToUnicodeValues(processedTexts[i]);
             for (let j = 0; j < unicodeVals.length; j++) {
-                row[j] = this.indexer[unicodeVals[j]];
+                row[j] = (this as any).indexer[unicodeVals[j]];
             }
             textIds.push(row);
         }
@@ -134,9 +135,9 @@ class UnicodeProcessor {
  * Style class
  */
 class Style {
-    constructor(styleTtlOnnx, styleDpOnnx) {
-        this.ttl = styleTtlOnnx;
-        this.dp = styleDpOnnx;
+    constructor(styleTtlOnnx: any, styleDpOnnx: any) {
+        ;(this as any).ttl = styleTtlOnnx;
+        ;(this as any).dp = styleDpOnnx;
     }
 }
 
@@ -144,25 +145,25 @@ class Style {
  * TextToSpeech class
  */
 class TextToSpeech {
-    constructor(cfgs, textProcessor, dpOrt, textEncOrt, vectorEstOrt, vocoderOrt) {
-        this.cfgs = cfgs;
-        this.textProcessor = textProcessor;
-        this.dpOrt = dpOrt;
-        this.textEncOrt = textEncOrt;
-        this.vectorEstOrt = vectorEstOrt;
-        this.vocoderOrt = vocoderOrt;
-        this.sampleRate = cfgs.ae.sample_rate;
-        this.baseChunkSize = cfgs.ae.base_chunk_size;
-        this.chunkCompressFactor = cfgs.ttl.chunk_compress_factor;
-        this.ldim = cfgs.ttl.latent_dim;
+    constructor(cfgs: any, textProcessor: any, dpOrt: any, textEncOrt: any, vectorEstOrt: any, vocoderOrt: any) {
+        ;(this as any).cfgs = cfgs;
+        ;(this as any).textProcessor = textProcessor;
+        ;(this as any).dpOrt = dpOrt;
+        ;(this as any).textEncOrt = textEncOrt;
+        ;(this as any).vectorEstOrt = vectorEstOrt;
+        ;(this as any).vocoderOrt = vocoderOrt;
+        ;(this as any).sampleRate = cfgs.ae.sample_rate;
+        ;(this as any).baseChunkSize = cfgs.ae.base_chunk_size;
+        ;(this as any).chunkCompressFactor = cfgs.ttl.chunk_compress_factor;
+        ;(this as any).ldim = cfgs.ttl.latent_dim;
     }
 
-    sampleNoisyLatent(duration) {
-        const wavLenMax = Math.max(...duration) * this.sampleRate;
-        const wavLengths = duration.map(d => Math.floor(d * this.sampleRate));
-        const chunkSize = this.baseChunkSize * this.chunkCompressFactor;
+    sampleNoisyLatent(duration: any) {
+        const wavLenMax = Math.max(...duration) * (this as any).sampleRate;
+        const wavLengths = duration.map((d: any) => Math.floor(d * (this as any).sampleRate));
+        const chunkSize = (this as any).baseChunkSize * (this as any).chunkCompressFactor;
         const latentLen = Math.floor((wavLenMax + chunkSize - 1) / chunkSize);
-        const latentDim = this.ldim * this.chunkCompressFactor;
+        const latentDim = (this as any).ldim * (this as any).chunkCompressFactor;
 
         // Generate random noise
         const noisyLatent = [];
@@ -184,7 +185,7 @@ class TextToSpeech {
             noisyLatent.push(batch);
         }
 
-        const latentMask = getLatentMask(wavLengths, this.baseChunkSize, this.chunkCompressFactor);
+        const latentMask = getLatentMask(wavLengths, (this as any).baseChunkSize, (this as any).chunkCompressFactor);
         
         // Apply mask
         for (let b = 0; b < noisyLatent.length; b++) {
@@ -198,31 +199,31 @@ class TextToSpeech {
         return { noisyLatent, latentMask };
     }
 
-    async _infer(textList, langList, style, totalStep, speed = 1.05) {
+    async _infer(textList: any, langList: any, style: any, totalStep: any, speed = 1.05) {
         if (textList.length !== style.ttl.dims[0]) {
             throw new Error('Number of texts must match number of style vectors');
         }
         const bsz = textList.length;
-        const { textIds, textMask } = this.textProcessor.call(textList, langList);
+        const { textIds, textMask } = (this as any).textProcessor.call(textList, langList);
         const textIdsShape = [bsz, textIds[0].length];
         const textMaskShape = [bsz, 1, textMask[0][0].length];
         
         const textMaskTensor = arrayToTensor(textMask, textMaskShape);
         
-        const dpResult = await this.dpOrt.run({
+        const dpResult = await (this as any).dpOrt.run({
             text_ids: intArrayToTensor(textIds, textIdsShape),
             style_dp: style.dp,
             text_mask: textMaskTensor
         });
         
-        const durOnnx = Array.from(dpResult.duration.data);
+        const durOnnx: any = Array.from(dpResult.duration.data);
         
         // Apply speed factor to duration
         for (let i = 0; i < durOnnx.length; i++) {
             durOnnx[i] /= speed;
         }
         
-        const textEncResult = await this.textEncOrt.run({
+        const textEncResult = await (this as any).textEncOrt.run({
             text_ids: intArrayToTensor(textIds, textIdsShape),
             style_ttl: style.ttl,
             text_mask: textMaskTensor
@@ -243,7 +244,7 @@ class TextToSpeech {
         for (let step = 0; step < totalStep; step++) {
             const currentStepArray = new Array(bsz).fill(step);
 
-            const vectorEstResult = await this.vectorEstOrt.run({
+            const vectorEstResult = await (this as any).vectorEstOrt.run({
                 noisy_latent: arrayToTensor(noisyLatent, latentShape),
                 text_emb: textEmbTensor,
                 style_ttl: style.ttl,
@@ -260,13 +261,14 @@ class TextToSpeech {
             for (let b = 0; b < noisyLatent.length; b++) {
                 for (let d = 0; d < noisyLatent[b].length; d++) {
                     for (let t = 0; t < noisyLatent[b][d].length; t++) {
+                        // @ts-expect-error TS2322, from the conversion: Type 'unknown' is not assignable to type 'number'.
                         noisyLatent[b][d][t] = denoisedLatent[idx++];
                     }
                 }
             }
         }
 
-        const vocoderResult = await this.vocoderOrt.run({
+        const vocoderResult = await (this as any).vocoderOrt.run({
             latent: arrayToTensor(noisyLatent, latentShape)
         });
 
@@ -274,7 +276,7 @@ class TextToSpeech {
         return { wav, duration: durOnnx };
     }
 
-    async call(text, lang, style, totalStep, speed = 1.05, silenceDuration = 0.3) {
+    async call(text: any, lang: any, style: any, totalStep: any, speed = 1.05, silenceDuration = 0.3) {
         if (style.ttl.dims[0] !== 1) {
             throw new Error('Single speaker text to speech only supports single style');
         }
@@ -290,17 +292,17 @@ class TextToSpeech {
                 wavCat = wav;
                 durCat = duration[0];
             } else {
-                const silenceLen = Math.floor(silenceDuration * this.sampleRate);
+                const silenceLen = Math.floor(silenceDuration * (this as any).sampleRate);
                 const silence = new Array(silenceLen).fill(0);
                 wavCat = [...wavCat, ...silence, ...wav];
-                durCat += duration[0] + silenceDuration;
+                durCat += (duration as any)[0] + silenceDuration;
             }
         }
         
         return { wav: wavCat, duration: [durCat] };
     }
 
-    async batch(textList, langList, style, totalStep, speed = 1.05) {
+    async batch(textList: any, langList: any, style: any, totalStep: any, speed = 1.05) {
         return await this._infer(textList, langList, style, totalStep, speed);
     }
 }
@@ -308,11 +310,13 @@ class TextToSpeech {
 /**
  * Convert lengths to binary mask
  */
-function lengthToMask(lengths, maxLen = null) {
+function lengthToMask(lengths: any, maxLen = null) {
+    // @ts-expect-error TS2322, from the conversion: Type 'number' is not assignable to type 'null'.
     maxLen = maxLen || Math.max(...lengths);
     const mask = [];
     for (let i = 0; i < lengths.length; i++) {
         const row = [];
+        // @ts-expect-error TS18047, from the conversion: 'maxLen' is possibly 'null'.
         for (let j = 0; j < maxLen; j++) {
             row.push(j < lengths[i] ? 1.0 : 0.0);
         }
@@ -324,9 +328,9 @@ function lengthToMask(lengths, maxLen = null) {
 /**
  * Get latent mask from wav lengths
  */
-function getLatentMask(wavLengths, baseChunkSize, chunkCompressFactor) {
+function getLatentMask(wavLengths: any, baseChunkSize: any, chunkCompressFactor: any) {
     const latentSize = baseChunkSize * chunkCompressFactor;
-    const latentLengths = wavLengths.map(len => 
+    const latentLengths = wavLengths.map((len: any) => 
         Math.floor((len + latentSize - 1) / latentSize)
     );
     return lengthToMask(latentLengths);
@@ -335,14 +339,14 @@ function getLatentMask(wavLengths, baseChunkSize, chunkCompressFactor) {
 /**
  * Load ONNX model
  */
-async function loadOnnx(onnxPath, opts) {
+async function loadOnnx(onnxPath: any, opts: any) {
     return await ort.InferenceSession.create(onnxPath, opts);
 }
 
 /**
  * Load all ONNX models for TTS
  */
-async function loadOnnxAll(onnxDir, opts) {
+async function loadOnnxAll(onnxDir: any, opts: any) {
     const dpPath = path.join(onnxDir, 'duration_predictor.onnx');
     const textEncPath = path.join(onnxDir, 'text_encoder.onnx');
     const vectorEstPath = path.join(onnxDir, 'vector_estimator.onnx');
@@ -361,7 +365,7 @@ async function loadOnnxAll(onnxDir, opts) {
 /**
  * Load configuration
  */
-function loadCfgs(onnxDir) {
+function loadCfgs(onnxDir: any) {
     const cfgPath = path.join(onnxDir, 'tts.json');
     const cfgs = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
     return cfgs;
@@ -370,7 +374,7 @@ function loadCfgs(onnxDir) {
 /**
  * Load text processor
  */
-function loadTextProcessor(onnxDir) {
+function loadTextProcessor(onnxDir: any) {
     const unicodeIndexerPath = path.join(onnxDir, 'unicode_indexer.json');
     const textProcessor = new UnicodeProcessor(unicodeIndexerPath);
     return textProcessor;
@@ -379,7 +383,7 @@ function loadTextProcessor(onnxDir) {
 /**
  * Load voice style from JSON file
  */
-export function loadVoiceStyle(voiceStylePaths, verbose = false) {
+export function loadVoiceStyle(voiceStylePaths: any, verbose = false) {
     const bsz = voiceStylePaths.length;
     
     // Read first file to get dimensions
@@ -424,7 +428,7 @@ export function loadVoiceStyle(voiceStylePaths, verbose = false) {
 /**
  * Load text to speech components
  */
-export async function loadTextToSpeech(onnxDir, useGpu = false) {
+export async function loadTextToSpeech(onnxDir: any, useGpu = false) {
     const opts = {};
     if (useGpu) {
         throw new Error('GPU mode is not supported yet');
@@ -443,7 +447,7 @@ export async function loadTextToSpeech(onnxDir, useGpu = false) {
 /**
  * Convert 3D array to ONNX tensor
  */
-function arrayToTensor(array, dims) {
+function arrayToTensor(array: any, dims: any) {
     // Flatten the array
     const flat = array.flat(Infinity);
     return new ort.Tensor('float32', Float32Array.from(flat), dims);
@@ -452,15 +456,15 @@ function arrayToTensor(array, dims) {
 /**
  * Convert 2D int array to ONNX tensor
  */
-function intArrayToTensor(array, dims) {
+function intArrayToTensor(array: any, dims: any) {
     const flat = array.flat(Infinity);
-    return new ort.Tensor('int64', BigInt64Array.from(flat.map(x => BigInt(x))), dims);
+    return new ort.Tensor('int64', BigInt64Array.from(flat.map((x: any) => BigInt(x))), dims);
 }
 
 /**
  * Write WAV file
  */
-export function writeWavFile(filename, audioData, sampleRate) {
+export function writeWavFile(filename: any, audioData: any, sampleRate: any) {
     const numChannels = 1;
     const bitsPerSample = 16;
     const byteRate = sampleRate * numChannels * bitsPerSample / 8;
@@ -501,7 +505,7 @@ export function writeWavFile(filename, audioData, sampleRate) {
 /**
  * Timer utility for measuring execution time
  */
-export async function timer(name, fn) {
+export async function timer(name: any, fn: any) {
     const start = Date.now();
     console.log(`${name}...`);
     const result = await fn();
@@ -513,7 +517,7 @@ export async function timer(name, fn) {
 /**
  * Sanitize filename by replacing non-alphanumeric characters with underscores (supports Unicode)
  */
-export function sanitizeFilename(text, maxLen) {
+export function sanitizeFilename(text: any, maxLen: any) {
     const prefix = text.substring(0, maxLen);
     // \p{L} matches any Unicode letter, \p{N} matches any Unicode number
     return prefix.replace(/[^\p{L}\p{N}_]/gu, '_');
@@ -522,7 +526,7 @@ export function sanitizeFilename(text, maxLen) {
 /**
  * Chunk text into manageable segments
  */
-export function chunkText(text, maxLen = 300) {
+export function chunkText(text: any, maxLen = 300) {
     if (typeof text !== 'string') {
         throw new Error(`chunkText expects a string, got ${typeof text}`);
     }

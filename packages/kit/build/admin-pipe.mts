@@ -157,7 +157,6 @@ export async function adminRequest(env: any, { method, seg, q, body }: any) {
       if (missing.length) throw refuse(`${src.key} is not configured here — ${missing.join(', ')} ${missing.length > 1 ? 'are' : 'is'} not set`)
 
       if (op === 'search') {
-        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'env' does not exist in type '{ page?: number | undefined; perPage?: number | undefine
         const got = await src.search(String(a.q || ''), { page: Number(a.page) || 1, perPage: Number(a.perPage) || 24, orientation: a.orientation || '', env: process.env })
         if (got.error) throw refuse(got.error)
         return { status: 200, body: got }

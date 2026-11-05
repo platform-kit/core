@@ -17,7 +17,7 @@ sources:
     packages/kit/supabase/functions/_shared/print.ts,
     packages/kit/theme/src/components/Book3D.vue,
     packages/kit/theme/src/components/admin/PrintAdmin.vue,
-    packages/kit/build/print/typeset/interior.js,
+    packages/kit/build/print/typeset/interior.ts,
     packages/kit/build/git-push.mts,
     packages/kit/supabase/functions/print-order,
     packages/kit/supabase/functions/print-webhook,

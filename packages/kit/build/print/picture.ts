@@ -24,7 +24,7 @@ export const MAX_HEIGHT = 2800
  * A machine's: sharp, decoded as it is, rotated by its EXIF and capped. Never enlarged — a small
  * picture made big is a blurry cover, and the printer would rather have the pixels there are.
  */
-export async function resizeWithSharp(src, { height = MAX_HEIGHT } = {}) {
+export async function resizeWithSharp(src: any, { height = MAX_HEIGHT } = {}) {
   const sharp = (await import('sharp')).default
   return sharp(src).rotate().resize({ height, withoutEnlargement: true }).png().toBuffer()
 }
@@ -37,7 +37,7 @@ export async function resizeWithSharp(src, { height = MAX_HEIGHT } = {}) {
  * `fetchFn` is taken rather than assumed so this can be tested without a network, the way the
  * github and the printer modules take theirs.
  */
-export function transformUrl(url, { height = MAX_HEIGHT } = {}) {
+export function transformUrl(url: any, { height = MAX_HEIGHT } = {}) {
   const u = String(url || '')
   if (!u) return ''
   /* public and signed objects both live under /storage/v1/object/…; the transform is /render/image/ */
@@ -50,7 +50,7 @@ export function transformUrl(url, { height = MAX_HEIGHT } = {}) {
   return `${rendered}${sep}height=${height}&resize=contain`
 }
 
-export async function resizeFromStorage(url, { height = MAX_HEIGHT, fetchFn = fetch } = {}) {
+export async function resizeFromStorage(url: any, { height = MAX_HEIGHT, fetchFn = fetch } = {}) {
   const at = transformUrl(url, { height })
   if (!at) throw new Error('print: no picture to size')
   const r = await fetchFn(at)
@@ -63,7 +63,7 @@ export async function resizeFromStorage(url, { height = MAX_HEIGHT, fetchFn = fe
  * path on a disk and Storage where it is a url, which is exactly the difference between the two
  * places this runs.
  */
-export async function sizePicture(src, { height = MAX_HEIGHT, driver, fetchFn } = {}) {
+export async function sizePicture(src: any, { height = MAX_HEIGHT, driver, fetchFn }: any = {}) {
   const isUrl = /^https?:\/\//i.test(String(src || ''))
   const pick = driver || (isUrl ? 'storage' : 'sharp')
   return pick === 'storage'

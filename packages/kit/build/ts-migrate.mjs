@@ -86,7 +86,12 @@ function pass(round) {
       }
       if (IMPLICIT_ANY.has(d.code)) {
         const param = up(n, ts.isParameter)
-        if (param && !param.type) { add(file, (param.questionToken || param.name).getEnd(), param.dotDotDotToken ? ': any[]' : ': any'); continue }
+        if (param && !param.type) {
+          /* `t => …` has no parentheses for the annotation to sit in */
+          const bare = ts.isArrowFunction(param.parent) && param.parent.parameters.length === 1 && sf.text[param.getStart(sf) - 1] !== '(' && !sf.text.slice(param.parent.getStart(sf), param.getStart(sf)).includes('(')
+          if (bare) { add(file, param.getStart(sf), '('); add(file, param.getEnd(), ': any)'); continue }
+          add(file, (param.questionToken || param.name).getEnd(), param.dotDotDotToken ? ': any[]' : ': any'); continue
+        }
         const decl = up(n, ts.isVariableDeclaration)
         /* a loop's variable takes no annotation: its iterable is read as any instead */
         const loop = decl && decl.parent && decl.parent.parent && (ts.isForOfStatement(decl.parent.parent) || ts.isForInStatement(decl.parent.parent)) ? decl.parent.parent : null
@@ -121,7 +126,8 @@ function pass(round) {
           if (ts.isIdentifier(obj)) {
             const sym = program.getTypeChecker().getSymbolAtLocation(obj)
             const dec = sym?.valueDeclaration
-            if (dec && ts.isVariableDeclaration(dec) && !dec.type && dec.getSourceFile() === sf && ts.isIdentifier(dec.name)) { add(file, dec.name.getEnd(), ': any'); continue }
+            const inLoop = dec && dec.parent?.parent && (ts.isForOfStatement(dec.parent.parent) || ts.isForInStatement(dec.parent.parent))
+            if (dec && ts.isVariableDeclaration(dec) && !dec.type && !inLoop && dec.getSourceFile() === sf && ts.isIdentifier(dec.name)) { add(file, dec.name.getEnd(), ': any'); continue }
             if (dec && ts.isParameter(dec) && !dec.type && dec.getSourceFile() === sf) { add(file, (dec.questionToken || dec.name).getEnd(), ': any'); continue }
           }
           /* a ( that would open a line would be read as a call on the line before: it opens with ; */

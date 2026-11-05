@@ -10,6 +10,7 @@ import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
+import { stripTypeScriptTypes } from 'node:module'
 import { fileURLToPath } from 'node:url'
 
 const KIT = fileURLToPath(new URL('..', import.meta.url))
@@ -55,4 +56,21 @@ test('the theme\'s config refuses a type error in a component', () => {
     assert.notEqual(r.status, 0, 'a string assigned to a number passed in a component')
     assert.match(r.stdout + r.stderr, /TS2322/)
   } finally { fs.rmSync(dir, { recursive: true, force: true }) }
+})
+
+/* A passing check does not prove a file runs: an expect-error comment can hold a syntax TypeScript reports and Node refuses */
+test('Node can strip every converted module', () => {
+  const refused: string[] = []
+  const walk = (dir: string): void => {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name.startsWith('.')) continue
+      const p = path.join(dir, e.name)
+      if (e.isDirectory()) walk(p)
+      else if (/\.m?ts$/.test(e.name) && !/\.d\.m?ts$/.test(e.name)) {
+        try { stripTypeScriptTypes(fs.readFileSync(p, 'utf8')) } catch (err) { refused.push(`${path.relative(KIT, p)}: ${(err as Error).message.split('\n')[0]}`) }
+      }
+    }
+  }
+  for (const dir of ['build', 'src', 'vite', 'theme/src']) walk(path.join(KIT, dir))
+  assert.deepEqual(refused, [])
 })

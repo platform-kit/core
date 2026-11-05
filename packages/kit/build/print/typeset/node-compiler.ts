@@ -7,7 +7,8 @@
  */
 import path from 'node:path'
 
-export async function create({ workspace, fonts } = {}) {
+export async function create({ workspace, fonts }: any = {}) {
+  // @ts-expect-error TS2307, from the conversion: Cannot find module '@myriaddreamin/typst-ts-node-compiler' or its corresponding type declarations.
   const { NodeCompiler } = await import('@myriaddreamin/typst-ts-node-compiler')
   const c = NodeCompiler.create({
     workspace: workspace || process.cwd(),
@@ -15,14 +16,14 @@ export async function create({ workspace, fonts } = {}) {
   })
   /* a compile that failed prints its errors where somebody setting a book will see them, then
      throws: a half-document is worse than no document, because it is a book nobody checks */
-  const must = (file) => {
+  const must = (file: any) => {
     const r = c.compile({ mainFilePath: file })
     if (r.hasError()) { r.printErrors(); throw new Error('typst: ' + path.basename(file)) }
     return r
   }
   return {
-    pdf(file) { must(file); return c.pdf({ mainFilePath: file }) },
-    svg(file) { must(file); return c.svg({ mainFilePath: file }) },
-    query(file, selector) { return c.query(must(file).result, { selector }) },
+    pdf(file: any) { must(file); return c.pdf({ mainFilePath: file }) },
+    svg(file: any) { must(file); return c.svg({ mainFilePath: file }) },
+    query(file: any, selector: any) { return c.query(must(file).result, { selector }) },
   }
 }
