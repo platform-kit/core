@@ -39,7 +39,7 @@ function save() {
 </script>
 
 <style scoped>
-.nl-rating { display: grid; gap: 1rem; margin: 1.5rem 0; padding: 1.25rem; border: 1px solid var(--line, rgba(0, 0, 0, .12)); border-radius: 12px; }
+.nl-rating { display: grid; gap: 1rem; margin: 1.5rem 0; padding: 1.25rem; border: 1px solid var(--hair); border-radius: 12px; background: var(--card); }
 .nl-rating-q { margin: 0; font-size: 1.1rem; font-weight: 600; }
 .nl-rating-scale { display: flex; align-items: center; gap: 1rem; }
 .nl-rating-scale input { flex: 1; min-width: 0; accent-color: var(--accent, currentColor); }
