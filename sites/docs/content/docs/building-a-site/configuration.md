@@ -6,8 +6,8 @@ sources:
   [
     packages/kit/src/lib/member-panels.ts,
     packages/kit/theme/src/components/spaces/panels,
-    packages/kit/build/member-panels.test.mjs,
-    packages/kit/build/member-panels-db.test.mjs,
+    packages/kit/build/member-panels.test.mts,
+    packages/kit/build/member-panels-db.test.mts,
     packages/kit/build/site.mts,
     packages/kit/src/config.mts,
     packages/kit/vite/index.mts,
@@ -16,16 +16,18 @@ sources:
     packages/kit/build/deploy.mts,
     packages/kit/build/deploy-checks.mts,
     packages/kit/build/inference-config.mts,
-    packages/kit/build/inference-config.test.mjs,
-    packages/kit/build/usage.test.mjs,
+    packages/kit/build/inference-config.test.mts,
+    packages/kit/build/usage.test.mts,
     packages/kit/bin/platformkit.mjs,
     packages/kit/build/source-install.mts,
-    packages/kit/build/admin-cms-mode.test.mjs,
+    packages/kit/build/admin-cms-mode.test.mts,
   ]
 reviewed: 2026-10-31
 ---
 
 `platformkit.config.js` is the one place the kit and the theme learn about a site. It exports a plain object. A change to it restarts the dev server. While it runs, the Vite plugin also watches Markdown edits and refreshes only the build steps whose declared inputs match the changed path.
+
+The file is `platformkit.config.ts` or `platformkit.config.js`, and TypeScript wins where both are there. In TypeScript, end it with `satisfies SiteConfig`, imported as a type from `platformkit/config.mjs`, so a misspelled setting is a type error. It needs Node 22.18 or later.
 
 From the Core checkout, a site command reads this config from the selected site. When that site is a separate checkout, the Git-source CLI installs the kit and theme into its `node_modules` from the same Core source, without writing the site's manifest or lockfile. Its receipt checks the files npm actually packs for each package, so development-only files in the Core checkout do not cause a false mismatch. A production host can do the same by running `npx --yes --package=github:platform-kit/core platformkit deploy` from the site checkout; deploying from Core source does not depend on publishing the packages to npm.
 

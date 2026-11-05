@@ -72,21 +72,21 @@ Verified by: the seed's accounts against the local stack (admin, member) in a ki
 - **WHEN** an anonymous client selects from `content` while one row has a draft and no live version, and another has a live version and a draft
 - **THEN** the first is not returned; the second is returned with its live version, and its draft is not readable — not from `content_drafts`, not through the join
 
-Verified by: `store.test.mjs` against the local stack
+Verified by: `store.test.mts` against the local stack
 
 #### Scenario: a member reads a coach's hours
 
 - **WHEN** a member's client selects from the hours table
 - **THEN** it receives no rows, while the coach's own client receives theirs and an administrator's every coach's
 
-Verified by: `build/scheduling.test.mjs` with the seed's accounts
+Verified by: `build/scheduling.test.mts` with the seed's accounts
 
 #### Scenario: a reader asks what they are interested in
 
 - **WHEN** a signed-in reader asks for their interests
 - **THEN** they get their own and no others, and an attempt to set one is refused
 
-Verified by: `build/recommendations.test.mjs` against the local stack — another account seeing none of it, the call refused when given an argument naming somebody, a guest getting nothing, and the index itself not writable by a reader
+Verified by: `build/recommendations.test.mts` against the local stack — another account seeing none of it, the call refused when given an argument naming somebody, a guest getting nothing, and the index itself not writable by a reader
 
 ### Requirement: The buckets
 
@@ -97,7 +97,7 @@ Verified by: `build/recommendations.test.mjs` against the local stack — anothe
 - **WHEN** an authenticated client tries to overwrite an existing audio object
 - **THEN** the policy refuses it
 
-Verified by: `build/webhook-doors.test.mjs` — a signed-in reader uploads a recording nobody has made, and is then refused a second upload, an `upsert` (the single call that replaces, which a policy written only against insert would let through) and a delete
+Verified by: `build/webhook-doors.test.mts` — a signed-in reader uploads a recording nobody has made, and is then refused a second upload, an `upsert` (the single call that replaces, which a policy written only against insert would let through) and a delete
 
 ### Requirement: The clocks
 
@@ -113,14 +113,14 @@ that are no longer declared by an enabled module, without changing jobs owned by
 - **WHEN** the local database is reset
 - **THEN** `cron.job` lists the four named jobs and every other scheduled job declared by an enabled module, each exactly once, and no job owned only by a disabled module
 
-Verified by: `build/guards-db.test.mjs` and `build/cron-registration.test.mjs`, reading `cron.job` directly from Postgres
+Verified by: `build/guards-db.test.mts` and `build/cron-registration.test.mts`, reading `cron.job` directly from Postgres
 
 #### Scenario: a schedule changes or is removed
 
 - **WHEN** a module's declared schedule or database action changes, or the module stops declaring a job, and the assembled database declaration is applied
 - **THEN** the job has the current schedule and action or is absent, there are no duplicates, and jobs owned by unrelated modules are unchanged
 
-Verified by: `build/cron-registration.test.mjs` against the local database, applying declarations repeatedly and checking updates, removal and an unrelated job
+Verified by: `build/cron-registration.test.mts` against the local database, applying declarations repeatedly and checking updates, removal and an unrelated job
 
 ### Requirement: The reader's state is a CRDT, synced to the account
 
@@ -142,7 +142,7 @@ Access SHALL be one monotonic ladder — guest, authenticated, paid, subscribed 
 - **WHEN** a subscription's entitlement expires
 - **THEN** the reader is `authenticated`, reads the chat but cannot send, and the paid chapters close
 
-Verified by: `build/doors-db.test.mjs` — the entitlement is dated into yesterday and the same person can still read their thread and can no longer write to it
+Verified by: `build/doors-db.test.mts` — the entitlement is dated into yesterday and the same person can still read their thread and can no longer write to it
 
 ### Requirement: Placement in PlatformKit
 
@@ -226,7 +226,7 @@ Verified by: a kit test — the data declaration changed, run twice against one 
 - **WHEN** an enabled kit, site or theme module declares a scheduled job and the database is reset or deployed
 - **THEN** the assembled data script installs the job exactly once, and applying it again leaves the schedule unchanged
 
-Verified by: `build/cron-registration.test.mjs` against the assembled data and local database
+Verified by: `build/cron-registration.test.mts` against the assembled data and local database
 
 ### Requirement: A derived column is not data
 
@@ -257,7 +257,7 @@ generated column lives in.
   `PLATFORMKIT_ALLOW_DESTRUCTIVE=1`, and every existing row has the column
   recomputed
 
-Verified by: `build/destructive.test.mjs`, and the same plan run against the
+Verified by: `build/destructive.test.mts`, and the same plan run against the
 local stack — refused before the guard was told, applied after
 
 #### Scenario: a column that holds something
@@ -265,7 +265,7 @@ local stack — refused before the guard was told, applied after
 - **WHEN** a plan drops a column the database does not compute
 - **THEN** it is refused as before, whatever else the plan does
 
-Verified by: `build/destructive.test.mjs`
+Verified by: `build/destructive.test.mts`
 
 ### Requirement: What a Matrix client holds is state, and is classified as such
 
@@ -281,7 +281,7 @@ client SHALL be granted a write to a projected table by this surface.
 - **THEN** each is classified as state with its reason, none is projected, and a table in neither
   list fails
 
-Verified by: `build/declarations.test.mjs`
+Verified by: `build/declarations.test.mts`
 
 ### Requirement: The store's new tables answer the declaration question
 
@@ -289,10 +289,10 @@ Verified by: `build/declarations.test.mjs`
 
 #### Scenario: every table is in one class
 
-- **WHEN** `declarations.test.mjs` runs
+- **WHEN** `declarations.test.mts` runs
 - **THEN** each new table is state or projected, with its content path where it is projected
 
-Verified by: `declarations.test.mjs`
+Verified by: `declarations.test.mts`
 
 ### Requirement: The store still sells with no backend
 
@@ -303,7 +303,7 @@ A site in the static shape SHALL still build a storefront, a product page and a 
 - **WHEN** the static lane builds a fixture with the store on and no Supabase in the environment
 - **THEN** every store route renders, and no request reaches a backend
 
-Verified by: `modes.test.mjs`; the static lane
+Verified by: `modes.test.mts`; the static lane
 
 ### Requirement: A billable invocation is reserved against its site's provider chain and rates
 
@@ -314,35 +314,35 @@ A billable invocation SHALL resolve its operation policy, providers, fallback or
 - **WHEN** the same operation and model name are invoked for two sites with different provider tariffs
 - **THEN** each reservation and settlement uses only the owning site's provider chain and rates
 
-Verified by: `build/usage-db.test.mjs` and the isolated multi-site provider configuration test
+Verified by: `build/usage-db.test.mts` and the isolated multi-site provider configuration test
 
 #### Scenario: a fallback attempt may also incur cost
 
 - **WHEN** a provider attempt fails and the site's policy allows another provider
 - **THEN** each attempt remains covered by an authorization reservation and is settled or conservatively estimated separately before unused reservation is released
 
-Verified by: `build/usage.test.mjs` with a billed fallback chain and provider-call counters
+Verified by: `build/usage.test.mts` with a billed fallback chain and provider-call counters
 
 #### Scenario: the chain cannot be fully reserved
 
 - **WHEN** available credits or the active subscription policy cannot cover the configured maximum provider-attempt cost
 - **THEN** the invocation is refused before any external provider call
 
-Verified by: `build/usage-db.test.mjs` with an insufficient-balance provider-call counter
+Verified by: `build/usage-db.test.mts` with an insufficient-balance provider-call counter
 
 #### Scenario: a site-funded operation still records upstream spend
 
 - **WHEN** an explicitly site-funded operation completes a provider attempt
 - **THEN** the site can audit its provider cost and actual operation without debiting reader credits or reporting reader-metered units
 
-Verified by: `build/usage-db.test.mjs` and the usage report fixture
+Verified by: `build/usage-db.test.mts` and the usage report fixture
 
 #### Scenario: deleting a reader anonymizes but retains attempt accounting
 
 - **WHEN** a reader account that has inference attempts is deleted
 - **THEN** its attempts retain provider, operation, cost, sponsor, and measurement evidence while the reader identity is removed
 
-Verified by: `build/usage-db.test.mjs`
+Verified by: `build/usage-db.test.mts`
 
 ### Requirement: Missing provider usage is never recorded as zero-cost work
 
@@ -353,14 +353,14 @@ When a provider may have processed a billable request but returns no valid usage
 - **WHEN** a provider may have performed billable work but its response has no valid usage counters
 - **THEN** the user is not granted free work through a zero-cost settlement; the reserved maximum is charged and the event is marked estimated
 
-Verified by: `build/usage-db.test.mjs` and `build/usage.test.mjs`
+Verified by: `build/usage-db.test.mts` and `build/usage.test.mts`
 
 #### Scenario: a transport failure is known to precede provider receipt
 
 - **WHEN** the server can establish that no provider received the request
 - **THEN** that attempt's reservation is released and no provider cost is recorded for it
 
-Verified by: `build/usage.test.mjs` with a pre-send transport failure fixture
+Verified by: `build/usage.test.mts` with a pre-send transport failure fixture
 
 ### Requirement: Usage is a record of what happened, and nothing is billed twice
 
@@ -375,35 +375,35 @@ of it.
 - **WHEN** a run is retried after a failure, or a provider notification arrives twice, for work already recorded and reported
 - **THEN** no second record is written, no balance moves, and nothing further is reported to the provider
 
-Verified by: `build/usage-db.test.mjs` against a reset stack — the same work submitted twice and the row count unchanged
+Verified by: `build/usage-db.test.mts` against a reset stack — the same work submitted twice and the row count unchanged
 
 #### Scenario: a meter-event acknowledgement is uncertain
 
 - **WHEN** Stripe's response to a meter event is uncertain and the event is retried inside Stripe's rolling identifier-uniqueness window
 - **THEN** the same stable identifier is reused so Stripe does not count the usage twice
 
-Verified by: `build/usage.test.mjs`
+Verified by: `build/usage.test.mts`
 
 #### Scenario: an uncertain meter event outlives Stripe's uniqueness window
 
 - **WHEN** an unconfirmed meter event is still unresolved after the documented 24-hour minimum uniqueness period
 - **THEN** automatic resubmission stops and the usage is surfaced for reconciliation rather than risking a duplicate charge
 
-Verified by: `build/usage.test.mjs`
+Verified by: `build/usage.test.mts`
 
 #### Scenario: a person reads their usage
 
 - **WHEN** a person asks what they have used and what they have left
 - **THEN** they see their own and nobody else's, and can change none of it
 
-Verified by: `build/usage-db.test.mjs` under the policies, as each of two people
+Verified by: `build/usage-db.test.mts` under the policies, as each of two people
 
 #### Scenario: a balance is derived, and whatever writes it owns it
 
 - **WHEN** a balance is read
 - **THEN** it equals what was granted less what was used, and nothing but the platform's own writer has ever written it
 
-Verified by: `build/declarations.test.mjs` (state, not projected, no write granted to `authenticated`); `build/usage-db.test.mjs` recomputing the balance from the records and comparing
+Verified by: `build/declarations.test.mts` (state, not projected, no write granted to `authenticated`); `build/usage-db.test.mts` recomputing the balance from the records and comparing
 
 ### Requirement: Speech is measured as well as thinking
 
@@ -417,14 +417,14 @@ other usage record is, so a reconnection bills nothing twice.
 - **WHEN** a person holds a spoken conversation with a billed bot
 - **THEN** the speech and the thinking are both recorded against them, and the total is what the conversation cost rather than the thinking alone
 
-Verified by: `build/usage.test.mjs` with a recorded session; one live spoken conversation whose recorded total is compared with the providers' own figures
+Verified by: `build/usage.test.mts` with a recorded session; one live spoken conversation whose recorded total is compared with the providers' own figures
 
 #### Scenario: the listener reconnects
 
 - **WHEN** the listener drops and rejoins the same conversation
 - **THEN** the seconds already recorded are not recorded again
 
-Verified by: `build/usage.test.mjs`
+Verified by: `build/usage.test.mts`
 
 ### Requirement: Speculative work is never charged to anybody
 
@@ -438,7 +438,7 @@ than a hidden loss.
 - **WHEN** a reply or its speech is produced speculatively and then thrown away because the person had not finished speaking
 - **THEN** nothing is charged to them, and the site can still see what it spent
 
-Verified by: `build/usage.test.mjs` — a discarded speculative turn recorded as cost with no billed units
+Verified by: `build/usage.test.mts` — a discarded speculative turn recorded as cost with no billed units
 
 ### Requirement: Every configured billable invocation is authorized before paid work
 
@@ -460,35 +460,35 @@ second charge on retry.
 - **WHEN** a site server operation outside the bot and voice surfaces requests billable work for an authenticated subject
 - **THEN** it can use the same gate with its offer and invocation identity, and the provider runs only after authorization
 
-Verified by: `build/usage.test.mjs` with a non-bot invocation fixture
+Verified by: `build/usage.test.mts` with a non-bot invocation fixture
 
 #### Scenario: neither prepaid units nor an active usage subscription exists
 
 - **WHEN** an invocation has insufficient reservable credits and no active subscription authorizing that usage offer
 - **THEN** it is refused before the provider call, with no billable usage or meter event recorded
 
-Verified by: `build/usage-db.test.mjs` with a provider-call counter
+Verified by: `build/usage-db.test.mts` with a provider-call counter
 
 #### Scenario: concurrent invocations compete for the last prepaid units
 
 - **WHEN** concurrent invocations request reservations whose combined maximum exceeds the subject's available credits
 - **THEN** authorization admits no more work than the credits can cover
 
-Verified by: `build/usage-db.test.mjs` with concurrent reservation attempts
+Verified by: `build/usage-db.test.mts` with concurrent reservation attempts
 
 #### Scenario: an active subscription authorizes metered work
 
 - **WHEN** the subject has an active subscription for the same usage offer and the offer permits metered usage
 - **THEN** the invocation may proceed and its measured billable usage is reported once under that offer
 
-Verified by: `build/usage-db.test.mjs` and `build/usage.test.mjs` with an active and an expired subscription
+Verified by: `build/usage-db.test.mts` and `build/usage.test.mts` with an active and an expired subscription
 
 #### Scenario: a long-running invocation reaches its reservation
 
 - **WHEN** a stream or other long-running invocation reaches its currently authorized maximum
 - **THEN** further billable work proceeds only after another authorization succeeds; otherwise the work stops before more provider usage is incurred
 
-Verified by: `build/usage.test.mjs` with a bounded streaming fixture
+Verified by: `build/usage.test.mts` with a bounded streaming fixture
 
 ### Requirement: Automatic top-up charges are reader-authorized, capped by the reader, and idempotent
 
@@ -507,18 +507,18 @@ authorize provider work.
 - **WHEN** multiple invocations observe the same reader below their configured threshold
 - **THEN** the platform makes at most one charge for the top-up attempt and inserts at most one corresponding grant
 
-Verified by: `build/usage-db.test.mjs` and mocked Stripe idempotency assertions in `build/usage.test.mjs`
+Verified by: `build/usage-db.test.mts` and mocked Stripe idempotency assertions in `build/usage.test.mts`
 
 #### Scenario: payment succeeds but grant persistence is delayed
 
 - **WHEN** Stripe confirms a top-up payment but the grant write is retried after a transient failure
 - **THEN** the same payment identity is used, the grant is recorded once, and no invocation is authorized until the grant is visible in the balance
 
-Verified by: `build/usage-db.test.mjs` with repeated payment-grant delivery
+Verified by: `build/usage-db.test.mts` with repeated payment-grant delivery
 
 #### Scenario: reader's cap or site switch blocks top-up
 
 - **WHEN** the site disables automatic top-up or the reader's personal monthly cap is exhausted
 - **THEN** the platform attempts no charge and refuses any invocation the available balance cannot cover before its provider is called
 
-Verified by: `build/usage.test.mjs` with a provider-call counter
+Verified by: `build/usage.test.mts` with a provider-call counter

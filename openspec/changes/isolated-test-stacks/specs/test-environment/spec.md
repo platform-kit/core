@@ -53,7 +53,7 @@ Each stack's functions SHALL be served with a test environment the run owns: a k
 - **WHEN** the webhook tests run for a site
 - **THEN** every forged, altered, stale and replayed event check runs against a real secret, and none is skipped for want of one
 
-Verified by: `webhook-doors.test.mjs` under `platformkit test --e2e`, reporting no skipped check
+Verified by: `webhook-doors.test.mts` under `platformkit test --e2e`, reporting no skipped check
 
 #### Scenario: a live key
 
@@ -104,7 +104,7 @@ The kit SHALL make an untested function or a silently skipped check a failure ra
 - **WHEN** a function is added under the kit's or a site's functions and no test names it
 - **THEN** `npm test` fails, naming the function
 
-Verified by: `build/test-coverage.test.mjs`
+Verified by: `build/test-coverage.test.mts`
 
 #### Scenario: a function no test calls
 
@@ -118,11 +118,11 @@ Verified by: the runner's coverage gate, read from the functions' own log
 - **WHEN** a test exits successfully before its end other than through the helper's skip or not-on-this-site
 - **THEN** `npm test` fails, naming the test and the line
 
-Verified by: `build/test-coverage.test.mjs`
+Verified by: `build/test-coverage.test.mts`
 
 #### Scenario: a claim with no test behind it
 
 - **WHEN** a specification's scenario names a test that does not exist or is not run
 - **THEN** `npm test` fails, naming the scenario
 
-Verified by: `build/test-coverage.test.mjs`
+Verified by: `build/test-coverage.test.mts`

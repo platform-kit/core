@@ -1,0 +1,11 @@
+{
+  // The workspace's sites, checked by `npm run typecheck` (openspec: typescript-throughout).
+  "extends": "./packages/kit/tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "vite/client"],
+    "paths": { "platformkit/config.mjs": ["./packages/kit/src/config.mts"], "@typeform/api-client": ["./packages/kit/build/types/typeform-client.d.ts"] }
+  },
+  "files": ["./packages/kit/supabase/functions/deno-shim.d.ts", "./packages/kit/build/types/untyped-modules.d.ts"],
+  "include": ["sites/*/platformkit.config.ts", "sites/*/vite.config.ts", "sites/*/velite.config.ts", "sites/demo/build", "sites/demo/src/stockists/*.ts"],
+  "exclude": ["sites/external", "**/node_modules"]
+}

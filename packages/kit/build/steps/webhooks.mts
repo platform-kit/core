@@ -2,7 +2,7 @@
    real against the project (build/webhooks-push.mjs), with the secrets read from the environment */
 export const webhooksConfigStep = {
   key: 'webhooks-config', title: 'The shipped webhook subscriptions', phase: 'functions',
-  inputs: ['platformkit.config.js'],
+  inputs: ['platformkit.config.{js,ts}'],
   run: ({ script }: any) => script('webhooks-config.mjs'),
 }
 export const webhooksPushStep = {

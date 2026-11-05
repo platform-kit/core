@@ -6,8 +6,8 @@ sources:
   [
     packages/kit/supabase/schemas/92-encryption.sql,
     packages/kit/supabase/functions/_shared/matrix/keys.ts,
-    packages/kit/build/encryption.test.mjs,
-    packages/kit/build/encryption-db.test.mjs,
+    packages/kit/build/encryption.test.mts,
+    packages/kit/build/encryption-db.test.mts,
     packages/kit/build/modules/kit.mts,
     packages/kit/build/spaces-io.mts,
     packages/kit/build/spaces.mts,

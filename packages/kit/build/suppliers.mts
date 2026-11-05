@@ -22,6 +22,7 @@ import { printers, PRINTER_IDS, SUPPLIER_IDS, FORMATS_PRINTED } from '../supabas
 import { kinds as registerKinds } from './kinds/index.js'
 import { storeOf } from './site.mjs'
 import { loadDotEnv } from './tts/storage.mjs'
+import { siteFile } from './site-file.mjs'
 
 loadDotEnv()   /* the keys from .env, for a process that has not read it (the admin server) */
 const ENV = (k: any) => process.env[k] || ''
@@ -42,7 +43,7 @@ export async function storeRegistry(root = process.cwd()) {
   const p = (async () => {
     let s = { suppliers: null, kinds: null }
     try {
-      const mod = await import(/* @vite-ignore */ pathToFileURL(path.join(root, 'platformkit.config.js')).href)
+      const mod = await import(/* @vite-ignore */ pathToFileURL(siteFile(root)).href)
       s = storeOf(mod.default || mod)
     } catch { /* no config (a kit test, a bare checkout): the kit's own, which is every shop until one needs a bindery */ }
     // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'. Type 'unknown' is not assignable to type 'never'.

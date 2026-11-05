@@ -4,6 +4,7 @@ description: The dev server and the local stack, the production build, and the d
 order: 51
 sources:
   [
+    packages/kit/build/site-file.mts,
     packages/kit/build/check.mts,
     packages/kit/build/compile.mjs,
     packages/kit/build/workspace-ts.mjs,
@@ -16,7 +17,7 @@ sources:
     packages/kit/theme/tsconfig.json,
     packages/kit/build/dev-directory.mts,
     packages/kit/build/dev-directory.css,
-    packages/kit/build/dev-directory.test.mjs,
+    packages/kit/build/dev-directory.test.mts,
     packages/kit/src/lib/seo-head.ts,
     packages/kit/src/lib/seo.ts,
     packages/kit/theme/src/content/ui/site-directory.md,
@@ -27,12 +28,12 @@ sources:
     packages/kit/build/dev-ports.mts,
     packages/kit/build/dev-stop.mts,
     packages/kit/build/dev-owner.mts,
-    packages/kit/build/dev-workspace.test.mjs,
-    packages/kit/build/dev.test.mjs,
-    packages/kit/build/dev-stop.test.mjs,
+    packages/kit/build/dev-workspace.test.mts,
+    packages/kit/build/dev.test.mts,
+    packages/kit/build/dev-stop.test.mts,
     packages/kit/build/deploy.mts,
     packages/kit/build/deploy-pins.mts,
-    packages/kit/build/deploy-pins.test.mjs,
+    packages/kit/build/deploy-pins.test.mts,
     packages/kit/build/test.mts,
     packages/kit/build/deploy-checks.mts,
     packages/kit/build/prerender.mts,
@@ -41,17 +42,17 @@ sources:
     packages/kit/bin/platformkit.mjs,
     packages/kit/build/verbose.mts,
     packages/kit/build/collections.mts,
-    packages/kit/build/collections.test.mjs,
+    packages/kit/build/collections.test.mts,
     .devcontainer,
     packages/kit/build/rewrites.mts,
     packages/kit/build/steps/rewrites.mts,
-    packages/kit/build/rewrites.test.mjs,
+    packages/kit/build/rewrites.test.mts,
     packages/kit/build/steps,
     packages/kit/build/steps.mts,
     packages/kit/build/steps/print.mts,
     packages/kit/build/functions-data.mts,
     packages/kit/build/content-refresh.mts,
-    packages/kit/build/content-refresh.test.mjs,
+    packages/kit/build/content-refresh.test.mts,
     packages/kit/build/sites.mts,
     packages/kit/build/runtime-paths.mts,
     packages/kit/build/hosts.mts,
@@ -152,7 +153,7 @@ any test reads one; and the deploy already ran those steps before `supabase func
 It runs the steps that write those files and no others — not a whole phase, since `prepare` holds
 the search index and `functions` holds three steps that are not data at all (`print` renders
 books with Typst, `print-type` uploads a typeface, `lulu-webhook` registers a webhook with a
-printer). `steps.test.mjs` holds the division honest: every path `assemble` knows as the build's
+printer). `steps.test.mts` holds the division honest: every path `assemble` knows as the build's
 own must exist after it runs, and none of them may be tracked by git. A new generated file that
 nobody adds to the list fails the suite instead of answering 503 on somebody's machine a week later.
 
@@ -180,7 +181,7 @@ The Apache example uses a `.htaccess` fallback so deep links reach the single-pa
 
 ## The kit's TypeScript
 
-The kit's conversion to TypeScript is in progress (openspec: `typescript-throughout`). The engine, the CLI's modules, the libraries, the Vite plugin, the theme's modules and every component (`<script setup lang="ts">`) are converted, though much of that code is typed `any` so far (see below). Still JavaScript: the tests, the integration scripts (`build/*.integration.mjs`), the conversion tools, and the fixture and demo sites' files. Four bootstraps stay JavaScript for good, because they run before anything can read TypeScript: the CLI's own entry (`bin/platformkit.mjs`), the publish build (`build/compile.mjs`), the resolve hook (`build/workspace-ts.mjs`) and `build/is-main.mjs`, which every script asks whether it is the one Node was asked to run (by its path without the extension, since in the workspace `node build/plan.mjs` runs `plan.mts`). A file that runs in Node is `.mts` and compiles to the `.mjs` name it had as JavaScript, so a published path does not change; a library shared with the browser is `.ts`; a component is `<script setup lang="ts">`. Every import names the file a site gets — `./site.mjs`, `platformkit/build/plan.mjs` — which is TypeScript's own convention: while it checks, `./site.mjs` is read as `site.mts`. So a JavaScript file and a TypeScript one import a converted module the same way, and the package's exports do not change.
+The kit's source is converted to TypeScript (openspec: `typescript-throughout`): the engine, the CLI's modules, the libraries, the Vite plugin, the theme's modules, every component (`<script setup lang="ts">`), the Edge Functions, the voice agent, the tests and the workspace's sites. Much of it is typed `any` so far (see below), so the files are TypeScript and most of the types are still to write. Still JavaScript on purpose: the conversion tools, the vendored code, `_shared/recurrence.js` (a placeholder `assemble` overwrites), the fixture that proves a site's JavaScript payment adapter works, and the generators that write a site's own files. Four bootstraps stay JavaScript for good, because they run before anything can read TypeScript: the CLI's own entry (`bin/platformkit.mjs`), the publish build (`build/compile.mjs`), the resolve hook (`build/workspace-ts.mjs`) and `build/is-main.mjs`, which every script asks whether it is the one Node was asked to run (by its path without the extension, since in the workspace `node build/plan.mjs` runs `plan.mts`). A file that runs in Node is `.mts` and compiles to the `.mjs` name it had as JavaScript, so a published path does not change; a library shared with the browser is `.ts`; a component is `<script setup lang="ts">`. Every import names the file a site gets — `./site.mjs`, `platformkit/build/plan.mjs` — which is TypeScript's own convention: while it checks, `./site.mjs` is read as `site.mts`. So a JavaScript file and a TypeScript one import a converted module the same way, and the package's exports do not change.
 
 - **In the workspace, nothing is built.** Node 22 strips the types and runs the source as it is, and Vite compiles the theme. Node never looks for a module under another extension, so `build/workspace-ts.mjs` — a resolve hook, loaded with `--import` — resolves a `.mjs` that is not there to the `.mts` beside it. The CLI puts it on `NODE_OPTIONS`, so every process it starts has it — the test run, the dev server, the deploy, and every npm script, since each runs through the CLI; a file run with plain `node` from the workspace takes `--import platformkit/build/workspace-ts.mjs`. In a site's `node_modules` the `.mjs` is there and the hook is never asked. The same rule holds where the kit copies its own modules into the Edge Functions (the content pipe, `build/pipe-closure.mjs`): a module kept as TypeScript is copied with its types stripped, under the `.mjs` name its importers use, and the code generator reads a TypeScript file (`build/modules/kit.mts`) with its types blanked out so its edits land where they belong.
 - **For a site, the JavaScript is emitted.** Node never strips types inside `node_modules`, so `build/compile.mjs` compiles the kit with `tsconfig.build.json` before it is packed (`prepack`) and before a source install, and copies the output beside each source: `x.mts` gives `x.mjs` and `x.d.mts`. Where TypeScript is not installed, as in a source install from GitHub, it strips each file with Node's own `module.stripTypeScriptTypes` instead. What it copied is listed in `.compiled.json`, and `--clean` (`postpack`) removes exactly that.
@@ -188,6 +189,7 @@ The kit's conversion to TypeScript is in progress (openspec: `typescript-through
 - **`npm run typecheck`** runs `tsc` over the engine (`packages/kit/tsconfig.json`) and the functions (`packages/kit/tsconfig.functions.json`, which reads Deno's globals and `npm:` imports as `any` through `supabase/functions/deno-shim.d.ts`), and `vue-tsc` over the theme (`packages/kit/theme/tsconfig.json`), and CI runs it. It does not read the real types of the functions' npm packages; only the Deno tests do, so a function's comment for such a line is `@ts-ignore`, not `@ts-expect-error`. JavaScript not yet converted is allowed and not checked. `typecheck.test.mts` runs both and hands each config a planted type error it must refuse: both once passed while reading nothing, because `npx` runs from the workspace package's root. It also puts every converted module through Node's own type stripper, because a passing check does not prove a file runs: an expect-error comment can hold a syntax Node refuses.
 - **The conversion was mechanical and is visible.** `build/ts-migrate.mjs` (files) and `build/vue-migrate.mjs` (components, through `vue-tsc`) renamed each file and made the strict check pass without changing what the code does — the approach Airbnb's ts-migrate takes: an implicit `any` written out (`: any`), a reactive value made with no type given `<any>` (`ref<any>([])`), a runtime prop typed `as PropType<any[]>`, an object read as `any` where the code grows it, and anything else kept on its line as `// @ts-expect-error TS<code>, from the conversion: …` (`<!-- @vue-expect-error … -->` in a template). So every place still to be typed is a search for `: any` or `from the conversion` away, and the check fails the day a marker's error is fixed, which is when it comes out. Typing them is ordinary work from here, file by file.
 - **The theme is published as TypeScript and as JavaScript.** Vite reads the `.ts` and the components; a site's Node reads the theme's manifest and schemas at build time, so `compile.mjs` strips the theme's TypeScript to `.js` beside it when the kit is packed, and `loadTheme` reads a manifest path a site has as `.js` from its `.ts` in the workspace.
+- **A site may be TypeScript or JavaScript.** `platformkit.config.ts` is read where it is there and `platformkit.config.js` otherwise (`build/site-file.mts`), and the same goes for `velite.config`. Node strips a site's TypeScript itself, since a site's files are not in `node_modules`, which takes Node 22.18 or later. The workspace's sites are TypeScript and are checked by `tsconfig.sites.json`. A test that copies a site puts the copy in the workspace's `.cache`, for the same reason.
 - **New tests are `node:test` files** (`*.test.mts`), which run every case and report every failure.
 
 ## Package releases and site deployment ownership
@@ -261,4 +263,4 @@ The digest is over the statements rather than the commit because a removal has t
 
 The whole of it — what a host must do, the one file of rewrites, Netlify, Render, your own nginx — is [Hosting and the rewrites](/content/docs/building-a-site/dev-build-and-deploy); the short form:
 
-The site is a static build served by the host (Render today), and everything else it needs from the host is a handful of **rewrite rules** to the project's Edge Functions, written once in the site's `deploy/_redirects` — Netlify's format (`source destination status`, `:splat`, 200 a rewrite), `$SUPABASE_URL` standing for the project's address — the one place the rules live: `/api/media/*` to the images function, `/api/scheduling/v2/*` to `scheduling-api` (the Scheduling API, with `sessions` on), `/api/*` to `storefront-api` (the Store API, with `store` on — and the doors it tells apart and hands on: `/api/desk/api/v1/*` to `support-api`, `/api/content/spaces/*` and `/api/content/content/v1/*` to `content`, which is where the content API answers because `/spaces` on the site is the community's own address), `/api/desk/public/*` to `support-api` (the Support API's Client door, with `support` on), `/v1/*` to the functions (the emails' links and pixels, the analytics door at `/api/events`, the Forms API at `/api` — always), `/share/*` to the `share-image` function (the share pictures, where a host cannot run a browser — a redirect applies only where no file matches, so the build's own photograph wins and only a record published since it reaches the function), and `/* /index.html 200` last (a prerendered page as it is, else the shell). `build/rewrites.mjs` reads it: the `rewrites` build step (`site` phase) writes `dist/_redirects` with the address filled from `VITE_SUPABASE_URL` — Netlify takes it as is; Render's Redirects/Rewrites are the same lines typed in, action Rewrite, in that order — and the nginx template under `deploy/nginx`; `--check` in `npm test` refuses a rule a module needs and the file lacks, one for a module that is off, an order a first-match host would get wrong, a missing fallback, or a stale template, so the file is never behind the code. `PUBLIC_FUNCTIONS_URL` and `VITE_PUBLIC_FUNCTIONS_URL` then say `https://<domain>/v1`; without the rewrites the site's shell forwards the paths before anything loads (the open pixel alone cannot). A PostHog SDK with `api_host` set to the bare domain needs PostHog's eight paths rewritten too — optional, so not in the file; the deploy's notes say them. **Anywhere else**, `deploy/nginx/` is the site on nginx: a Dockerfile over `nginx:1.27-alpine` with the static build and the file's rules as a generated `location` per rule (`rewrites.inc.template`, filled from `SUPABASE_URL` at start), the fallback last — which hands an unmatched path to `@page` rather than straight to the shell, because that is where the crawler branch lives ([the prerender sidecar](/content/docs/building-a-site/dev-build-and-deploy)); a rule nginx implements its own way is left out of the generated include and says so (`NGINX_OWN` in rewrites.mjs — today the share pictures, which prerender.inc serves file-first and photographs with the sidecar, and rendering the rule twice would be a second `location ^~ /share/` and a refusal to start); `build/rewrites.test.mjs` builds and runs it in Docker against the local stack and proves each rule reaches its function. The deploy runs as the host's build. A push to `main` deploys, so **the push is a decision**: commit locally, and push when the change is meant to go live.
+The site is a static build served by the host (Render today), and everything else it needs from the host is a handful of **rewrite rules** to the project's Edge Functions, written once in the site's `deploy/_redirects` — Netlify's format (`source destination status`, `:splat`, 200 a rewrite), `$SUPABASE_URL` standing for the project's address — the one place the rules live: `/api/media/*` to the images function, `/api/scheduling/v2/*` to `scheduling-api` (the Scheduling API, with `sessions` on), `/api/*` to `storefront-api` (the Store API, with `store` on — and the doors it tells apart and hands on: `/api/desk/api/v1/*` to `support-api`, `/api/content/spaces/*` and `/api/content/content/v1/*` to `content`, which is where the content API answers because `/spaces` on the site is the community's own address), `/api/desk/public/*` to `support-api` (the Support API's Client door, with `support` on), `/v1/*` to the functions (the emails' links and pixels, the analytics door at `/api/events`, the Forms API at `/api` — always), `/share/*` to the `share-image` function (the share pictures, where a host cannot run a browser — a redirect applies only where no file matches, so the build's own photograph wins and only a record published since it reaches the function), and `/* /index.html 200` last (a prerendered page as it is, else the shell). `build/rewrites.mjs` reads it: the `rewrites` build step (`site` phase) writes `dist/_redirects` with the address filled from `VITE_SUPABASE_URL` — Netlify takes it as is; Render's Redirects/Rewrites are the same lines typed in, action Rewrite, in that order — and the nginx template under `deploy/nginx`; `--check` in `npm test` refuses a rule a module needs and the file lacks, one for a module that is off, an order a first-match host would get wrong, a missing fallback, or a stale template, so the file is never behind the code. `PUBLIC_FUNCTIONS_URL` and `VITE_PUBLIC_FUNCTIONS_URL` then say `https://<domain>/v1`; without the rewrites the site's shell forwards the paths before anything loads (the open pixel alone cannot). A PostHog SDK with `api_host` set to the bare domain needs PostHog's eight paths rewritten too — optional, so not in the file; the deploy's notes say them. **Anywhere else**, `deploy/nginx/` is the site on nginx: a Dockerfile over `nginx:1.27-alpine` with the static build and the file's rules as a generated `location` per rule (`rewrites.inc.template`, filled from `SUPABASE_URL` at start), the fallback last — which hands an unmatched path to `@page` rather than straight to the shell, because that is where the crawler branch lives ([the prerender sidecar](/content/docs/building-a-site/dev-build-and-deploy)); a rule nginx implements its own way is left out of the generated include and says so (`NGINX_OWN` in rewrites.mjs — today the share pictures, which prerender.inc serves file-first and photographs with the sidecar, and rendering the rule twice would be a second `location ^~ /share/` and a refusal to start); `build/rewrites.test.mts` builds and runs it in Docker against the local stack and proves each rule reaches its function. The deploy runs as the host's build. A push to `main` deploys, so **the push is a decision**: commit locally, and push when the change is meant to go live.

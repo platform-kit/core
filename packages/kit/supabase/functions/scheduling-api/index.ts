@@ -67,7 +67,6 @@ Deno.serve(async (req: any) => {
   else if (token) { const user = await getUser(req); if (user) { const { data: prof } = await admin.from('profiles').select('email, email_verified_at, display_name, role, roles').eq('id', user.id).maybeSingle(); caller = { kind: 'jwt', id: user.id, email: prof?.email_verified_at ? (prof?.email ?? '').toLowerCase() : '', role: (Array.isArray(prof?.roles) && prof.roles.includes('admin')) || prof?.role === 'admin' ? 'admin' : 'user', name: (user.user_metadata?.full_name ?? user.user_metadata?.name ?? prof?.display_name ?? '') as string } } }
   if (!caller) return err(401, 'A key of kind scheduling, or a signed-in reader.')
   const rl = await rateLimit(caller.id); extra = rl.headers
-  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   if (rl.over) return reply(fail(429, 'TOO_MANY_REQUESTS', 'Rate limit exceeded.').body, 429, { 'Retry-After': String(rl.reset) })
   const isKey = caller.kind === 'key'
   const admitted = async (s: Session) => { if (isKey) return true; const c = caller as Extract<Caller, { kind: 'jwt' }>; if (c.role === 'admin') return true; const { rank, tiers } = await tiersOf(c.id); return forRank(s, rank, true, tiers) }

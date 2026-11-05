@@ -36,6 +36,7 @@ import { loadTheme } from './theme.mjs'
 import { loadSite } from './site.mjs'
 import { VeliteFile } from 'velite'
 import { loadDotEnv } from './tts/storage.mjs'
+import { siteFile } from './site-file.mjs'
 
 /* The keys from .env, for a process that has not read them. Vite puts only VITE_-prefixed values
    on import.meta.env and nothing on process.env, so a server-side key an admin route needs — an
@@ -44,7 +45,7 @@ import { loadDotEnv } from './tts/storage.mjs'
    side effect of the print module importing the same loader, so a site with print off lost it. */
 loadDotEnv()
 /* the site's velite config, from cwd (the collections are the site's) */
-const veliteConfig = (await import(pathToFileURL(path.join(process.cwd(), 'velite.config.js')).href)).default
+const veliteConfig = (await import(pathToFileURL(siteFile(process.cwd(), 'velite.config')).href)).default
 
 const MIME: any = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', avif: 'image/avif' }
 const ROOT = process.cwd()   /* the site: the kit's scripts run in the site's root */
@@ -68,7 +69,7 @@ function previewConfig() {
   const o = veliteConfig.output || {}
   PREVIEW_CONFIG = {
     ...veliteConfig,
-    configPath: path.join(ROOT, 'velite.config.js'),
+    configPath: siteFile(ROOT, 'velite.config'),
     root: path.resolve(ROOT, veliteConfig.root || 'content'),
     output: {
       data: path.resolve(ROOT, o.data || '.velite'),

@@ -22,7 +22,7 @@ Verified by: `loadTheme` in `packages/kit/build/theme.mts`
 - **WHEN** a site overrides a component and the theme imports it by package specifier, by relative path and by the `@/` alias
 - **THEN** all three resolve to the site's file, and the same import from the site's file resolves to the theme's original
 
-Verified by: `packages/kit/build/overrides.test.mjs` in `npm test` — every component of the theme overridden by a stub, each resolved the three ways through the real plugin on a Vite server; and on 2026-09-17 a wrapping override of `SiteClose` seen at the foot of /store in dev and found in the production bundle
+Verified by: `packages/kit/build/overrides.test.mts` in `npm test` — every component of the theme overridden by a stub, each resolved the three ways through the real plugin on a Vite server; and on 2026-09-17 a wrapping override of `SiteClose` seen at the foot of /store in dev and found in the production bundle
 
 ### Requirement: Movable Types is complete and switchable
 
@@ -66,7 +66,7 @@ Verified by: `design-rules`
 - **WHEN** a site supplies colours and nothing else
 - **THEN** it looks like itself throughout, because the design those colours paint is the theme's and is shared
 
-Verified by: `build/theme-look.test.mjs`; the root site, which supplies a palette and little else
+Verified by: `build/theme-look.test.mts`; the root site, which supplies a palette and little else
 (the demo and sites/brochure supply none at all and wear the theme's, which is the other half of
 the same claim)
 
@@ -75,7 +75,7 @@ the same claim)
 - **WHEN** a site declares no look at all
 - **THEN** it wears the theme's own, is told that is the default, and offers no switcher
 
-Verified by: `build/theme-look.test.mjs` (the real plugin, a config with no looks and one with its
+Verified by: `build/theme-look.test.mts` (the real plugin, a config with no looks and one with its
 own); `sites/brochure` and `sites/demo` in a browser, both schemes
 
 #### Scenario: a site changes its appearance by more than a palette
@@ -97,14 +97,14 @@ NOT be read as the theme having no defaults.
 - **WHEN** a site registers no `looks` and renders any page the theme draws
 - **THEN** it wears the theme's default look, and every colour resolves — no element draws its text in the same colour as its own background
 
-Verified by: `build/theme-look.test.mjs`; the static lane against `sites/brochure`, which registers no look; pixels of its landing page in both themes
+Verified by: `build/theme-look.test.mts`; the static lane against `sites/brochure`, which registers no look; pixels of its landing page in both themes
 
 #### Scenario: a site with a palette of its own
 
 - **WHEN** a site registers `looks: { <name>: { css } }`
 - **THEN** its own palette is worn and the theme's default is not, and `LOOKS` offers only what the site declared
 
-Verified by: `build/theme-look.test.mjs`; the ROOT site, which registers `classic` (the demo registers none at all and the docs site names the theme's default by name, so neither is an example of this)
+Verified by: `build/theme-look.test.mts`; the ROOT site, which registers `classic` (the demo registers none at all and the docs site names the theme's default by name, so neither is an example of this)
 
 ### Requirement: A default palette is complete
 
@@ -120,11 +120,11 @@ palette does not look wrong in review, it looks wrong on one page nobody opened.
 - **WHEN** the theme's CSS reads `var(--x)` and the default look defines no `--x`
 - **THEN** the build fails, naming `--x` and the file that reads it
 
-Verified by: `build/theme-look.test.mjs`, proved by deleting a token from the default and watching it fail
+Verified by: `build/theme-look.test.mts`, proved by deleting a token from the default and watching it fail
 
 #### Scenario: the dark scheme is as complete as the light
 
 - **WHEN** the default look defines a token for the light scheme
 - **THEN** it defines it for the dark scheme too, unless the token is deliberately shared
 
-Verified by: `build/theme-look.test.mjs`; pixels of the demo's `/sections` in both themes
+Verified by: `build/theme-look.test.mts`; pixels of the demo's `/sections` in both themes

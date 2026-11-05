@@ -9,7 +9,7 @@ The `recommendations` module SHALL show a personal "For You" shelf drawn from wh
 - **WHEN** a reader has read several pieces on one subject
 - **THEN** their interests include that subject, computed from the rows and not stored
 
-Verified by: `build/recommendations.test.mjs` under `platformkit test --e2e`
+Verified by: `build/recommendations.test.mts` under `platformkit test --e2e`
 
 ### Requirement: Recommendations on assessment results
 

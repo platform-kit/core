@@ -140,21 +140,21 @@ for*.
 - **WHEN** any file that runs imports the client of a product this project stands in for
 - **THEN** the check fails and names the file and the client
 
-Verified by: `build/first-party.test.mjs`
+Verified by: `build/first-party.test.mts`
 
 #### Scenario: a vendor client is installed as a dependency
 
 - **WHEN** such a client appears under `dependencies` rather than `devDependencies`
 - **THEN** the check fails and names the package
 
-Verified by: `build/first-party.test.mjs`
+Verified by: `build/first-party.test.mts`
 
 #### Scenario: a client nothing drives
 
 - **WHEN** such a client is installed but no test drives it
 - **THEN** the check fails, because a client that proves nothing should be dropped
 
-Verified by: `build/first-party.test.mjs`
+Verified by: `build/first-party.test.mts`
 
 ### Requirement: A site ships in three shapes, and which features each carries is declared
 
@@ -173,35 +173,35 @@ The kit SHALL support three deployment shapes, and a feature's support in each S
 - **WHEN** a module is added to the kit and `build/modes.mjs` does not name it
 - **THEN** the guard refuses, so the question is answered in the same commit
 
-Verified by: `build/modes.test.mjs`
+Verified by: `build/modes.test.mts`
 
 #### Scenario: a claim the code does not support
 
 - **WHEN** a module claims **static** and owns a table, an Edge Function or a build step needing a backend; or claims **cloud** and owns a projected table with no `projected()` hook, an artefact in `FIXED`, an action in `MACHINE`, or a content directory with no admin model
 - **THEN** the guard refuses, naming the module, the claim and the evidence against it
 
-Verified by: `build/modes.test.mjs`
+Verified by: `build/modes.test.mts`
 
 #### Scenario: a debt paid and still listed
 
 - **WHEN** a module's cloud path is finished — as print's was, over `print-render` and the print bucket
 - **THEN** the derived lists stop naming it without anybody editing a list, because they are computed from the code
 
-Verified by: `build/modes.test.mjs` — the derivation asserted against print, whose paid debt outlived its entry once
+Verified by: `build/modes.test.mts` — the derivation asserted against print, whose paid debt outlived its entry once
 
 #### Scenario: a gap carried on purpose
 
 - **WHEN** a module answers **yes except** for an operation
 - **THEN** the exception names the operation and a live change, and the run prints it; a named change that is archived without closing the gap fails the guard
 
-Verified by: `build/modes.test.mjs`
+Verified by: `build/modes.test.mts`
 
 #### Scenario: a site claiming a shape it does not keep
 
 - **WHEN** a site declares `backend: false` and a module the matrix says needs a backend is switched on
 - **THEN** the guard refuses at that commit, naming the site, the module and what it needs
 
-Verified by: `build/modes.test.mjs` — the store switched on in `sites/docs` and the check watched to fail
+Verified by: `build/modes.test.mts` — the store switched on in `sites/docs` and the check watched to fail
 
 #### Scenario: a declaration and a stray key
 
@@ -251,7 +251,7 @@ content, or policies.
 - **THEN** they can understand PlatformKit's purpose and its supported capabilities without
   mistaking a downstream site's product features for Core behavior
 
-Verified by: `packages/kit/build/site-boundary.test.mjs`, `packages/kit/build/docs-check.mts`, and a
+Verified by: `packages/kit/build/site-boundary.test.mts`, `packages/kit/build/docs-check.mts`, and a
 feature-claim audit against the named specs and implementation tests
 
 #### Scenario: a site-specific reference is added to Core
@@ -260,7 +260,7 @@ feature-claim audit against the named specs and implementation tests
   content
 - **THEN** the boundary check refuses the change
 
-Verified by: `packages/kit/build/site-boundary.test.mjs`
+Verified by: `packages/kit/build/site-boundary.test.mts`
 
 ### Requirement: PlatformKit's maintained material does not depend on downstream sites
 
@@ -271,18 +271,18 @@ PlatformKit's living documentation, configuration, and specifications SHALL desc
 - **WHEN** a reader uses PlatformKit's current guides, feature overview, or specifications
 - **THEN** they can understand PlatformKit without encountering or needing a particular site's identity or product documentation
 
-Verified by: `packages/kit/build/site-boundary.test.mjs`
+Verified by: `packages/kit/build/site-boundary.test.mts`
 
 #### Scenario: A public Core snapshot excludes downstream-specific history
 
 - **WHEN** a sanitized public snapshot is prepared from the current PlatformKit tree
 - **THEN** the snapshot contains no downstream-specific changelogs, archived change records, generated verification workspaces, site deployment templates, or inherited commits
 
-Verified by: `git grep` and `git rev-list --count` against the sanitized snapshot, plus `packages/kit/build/site-boundary.test.mjs`
+Verified by: `git grep` and `git rev-list --count` against the sanitized snapshot, plus `packages/kit/build/site-boundary.test.mts`
 
 #### Scenario: A site-specific document is moved
 
 - **WHEN** a purpose, feature, or operating document describes only one site
 - **THEN** it is present in that site's repository and is absent from PlatformKit's living documentation
 
-Verified by: `packages/kit/build/site-boundary.test.mjs`
+Verified by: `packages/kit/build/site-boundary.test.mts`

@@ -7,9 +7,9 @@ sources:
     packages/kit/supabase/functions/_shared/suppliers,
     packages/kit/build/suppliers.mts,
     packages/kit/build/kinds,
-    packages/kit/build/suppliers.test.mjs,
-    packages/kit/build/store-kinds.test.mjs,
-    sites/demo/build/suppliers.mjs,
+    packages/kit/build/suppliers.test.mts,
+    packages/kit/build/store-kinds.test.mts,
+    sites/demo/build/suppliers.mts,
   ]
 reviewed: 2026-11-04
 ---
@@ -131,7 +131,7 @@ yours as one list, refuses a supplier that does not keep the shape **by name at 
 rather than halfway through a sale, and refuses two suppliers sharing an id. Nothing downstream
 knows which list yours came from.
 
-`sites/demo/build/suppliers.mjs` has two worked examples: a hand bindery with no API at all, and
+`sites/demo/build/suppliers.mts` has two worked examples: a hand bindery with no API at all, and
 a garment printer that publishes a catalogue.
 
 ## Asking for them

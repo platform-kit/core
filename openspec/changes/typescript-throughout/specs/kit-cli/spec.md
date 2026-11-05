@@ -16,4 +16,4 @@ Verified by: `build/typecheck.test.mts`
 - **WHEN** the package is installed into a site from npm or from GitHub
 - **THEN** its CLI runs from compiled JavaScript, and its types resolve
 
-Verified by: `build/source-cli.test.mjs`
+Verified by: `build/source-cli.test.mts`

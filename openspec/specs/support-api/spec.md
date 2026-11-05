@@ -15,7 +15,7 @@ A site with the `support` and `api` modules on SHALL serve its desk as Chatwoot'
 - **WHEN** a client `POST`s a contact to the inbox, creates a conversation for it, posts a message, reads the messages, toggles typing and updates last seen
 - **THEN** the contact is a guest of the desk (a `support_contacts` row under the token's hash, Guest in the inbox), the conversation opens on the desk's default prompt as the panel's does, the message is the contact's line, the acknowledgement follows as a system line (`message_type` 2), typing shows in the inbox, and a sixth guest from one address in an hour is refused as the widget's would be
 
-Verified by: `build/support-api.test.mjs` on the demo and the root, the rows read back
+Verified by: `build/support-api.test.mts` on the demo and the root, the rows read back
 
 #### Scenario: the desk through the Application API
 

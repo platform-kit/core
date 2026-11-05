@@ -56,7 +56,7 @@ const day = (d: any) => {
   return Number.isNaN(t.getTime()) ? s : t.toISOString()
 }
 const str = (v: any) => (v == null ? undefined : String(v))
-const num = (v: any, d: any) => (v == null || v === '' ? d : Number(v))
+const num = (v: any, d?: any) => (v == null || v === '' ? d : Number(v))
 const bool = (v: any, d: any) => (v == null ? d : !!v)
 const arr = (v: any) => (Array.isArray(v) ? v : v == null ? [] : [v])
 const opt = (o: any) => { for (const k of Object.keys(o)) if (o[k] === undefined) delete o[k]; return o }
@@ -112,7 +112,6 @@ export function toEntry(collection: any, row: any, ctx: any) {
         currency: d.currency || 'usd', starts: day(d.starts), ends: day(d.ends), priority: num(d.priority, 0), rules: rules(d.rules),
         prices: arr(d.prices).map((p) => opt({
           sku: p.sku, variant: p.variant || '', amount: num(p.amount, 0),
-          // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
           min_quantity: num(p.min_quantity), max_quantity: num(p.max_quantity),
         })),
         body: ctx.render(md), raw: md, id: id(path, 'store/prices'),
@@ -123,7 +122,6 @@ export function toEntry(collection: any, row: any, ctx: any) {
       return opt({
         published: bool(d.published, true), path, title: d.title, kind: d.kind || 'standard', status: d.status || 'active',
         method: d.method || 'percentage', value: d.value, target: d.target || 'items', allocation: d.allocation || 'each',
-        // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
         max_quantity: num(d.max_quantity), applies: arr(d.applies).map((a) => opt({ sku: a.sku, variant: a.variant || '' })),
         starts: day(d.starts), ends: day(d.ends), rules: rules(d.rules),
         budget: d.budget ? opt({ kind: d.budget.kind || 'usage', limit: d.budget.limit }) : undefined,

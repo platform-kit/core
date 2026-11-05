@@ -2,7 +2,7 @@ export const HYPERSWITCH_V2_BROWSER_UNAVAILABLE_CODE = 'hyperswitch_v2_browser_u
 
 let sdkLoadPromise: any
 
-export function createHyperswitchClient(Hyper: any, publishableKey: any, apiBaseUrl: any, profileId: any) {
+export function createHyperswitchClient(Hyper: any, publishableKey: any, apiBaseUrl: any, profileId?: any) {
   const options = apiBaseUrl ? { customBackendUrl: apiBaseUrl } : {}
   return profileId
     ? Hyper({ publishableKey, profileId }, options)
@@ -48,7 +48,7 @@ function validSdkUrl(value: any) {
   }
 }
 
-export async function loadHyperswitchSdk(clientUrl: any) {
+export async function loadHyperswitchSdk(clientUrl?: any) {
   if (!validSdkUrl(clientUrl)) {
     throw sdkUnavailable('A valid V2 Hyperswitch SDK URL is required.')
   }

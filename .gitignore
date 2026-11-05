@@ -98,3 +98,6 @@ sites/demo/build/.sheet.png
 # the TypeScript build: compiled beside the sources on pack and on a source install, and removed after (build/compile.mjs)
 packages/kit/.tsbuild/
 packages/kit/.compiled.json
+
+# the tests' copies of a site, outside node_modules so Node strips their TypeScript
+/.cache/

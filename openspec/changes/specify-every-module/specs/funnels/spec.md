@@ -9,7 +9,7 @@ The `funnels` module SHALL send multi-step email funnels and one-off blasts to a
 - **WHEN** a funnel's audience rules are applied to the seeded accounts
 - **THEN** exactly the matching accounts are enrolled, and an opted-out one is not
 
-Verified by: `build/marketing.test.mjs` under `platformkit test --e2e`
+Verified by: `build/marketing.test.mts` under `platformkit test --e2e`
 
 ### Requirement: Nothing is sent twice
 
@@ -20,7 +20,7 @@ A funnel's steps SHALL be timed by elapsed time, under daily, weekly and monthly
 - **WHEN** a blast is interrupted part-way and resumed
 - **THEN** nobody who already had it is sent it again
 
-Verified by: `build/marketing.test.mjs` under `platformkit test --e2e`
+Verified by: `build/marketing.test.mts` under `platformkit test --e2e`
 
 ### Requirement: Every marketing email can be refused in one click
 
@@ -31,7 +31,7 @@ Every marketing email SHALL carry one-click unsubscribe with a confirmation page
 - **WHEN** a reader who unsubscribed buys something
 - **THEN** they receive the order email and no further marketing email
 
-Verified by: `build/marketing.test.mjs` under `platformkit test --e2e`
+Verified by: `build/marketing.test.mts` under `platformkit test --e2e`
 
 ### Requirement: Each funnel reports its results
 
@@ -42,7 +42,7 @@ Each funnel and blast SHALL report delivery, opens, clicks per link, unsubscribe
 - **WHEN** the funnel analytics are asked for a seeded funnel
 - **THEN** each count equals the count recomputed from the rows
 
-Verified by: `build/funnels-analytics.test.mjs` under `platformkit test --e2e`
+Verified by: `build/funnels-analytics.test.mts` under `platformkit test --e2e`
 
 ### Requirement: Chat prompts are funnel steps
 

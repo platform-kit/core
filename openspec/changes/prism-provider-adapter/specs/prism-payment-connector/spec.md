@@ -22,7 +22,7 @@ Verified by: Prism provider registry and Edge Function Prism/WASM contract tests
 - **WHEN** the selected Prism connector has no verified PlatformKit capability declaration
 - **THEN** configuration or deployment fails clearly and no connector request or fallback occurs
 
-Verified by: `packages/kit/build/payment-providers.test.mjs` and `packages/kit/build/deploy-checks.mts --test`
+Verified by: `packages/kit/build/payment-providers.test.mts` and `packages/kit/build/deploy-checks.mts --test`
 
 ### Requirement: Prism executes entirely within Supabase Edge Functions
 
@@ -44,7 +44,7 @@ For each supported connector, PlatformKit SHALL advertise only operations whose 
 - **WHEN** an offer or action requires a capability absent from the connector's verified declaration
 - **THEN** the action is refused before provider or ledger side effects and the error identifies the unsupported capability
 
-Verified by: `packages/kit/build/payment-providers.test.mjs`, `packages/kit/build/checkout-params.test.mjs`, and payout database tests
+Verified by: `packages/kit/build/payment-providers.test.mts`, `packages/kit/build/checkout-params.test.mts`, and payout database tests
 
 #### Scenario: A connector lacks secure payout enrollment
 

@@ -5,11 +5,11 @@ order: 42
 sources:
   [
     packages/kit/build/declarations.mts,
-    packages/kit/build/declarations.test.mjs,
+    packages/kit/build/declarations.test.mts,
     packages/kit/build/cloud-config.mts,
     packages/kit/build/webhooks-config.mts,
     packages/kit/build/webhooks-push.mts,
-    packages/kit/build/webhooks.test.mjs,
+    packages/kit/build/webhooks.test.mts,
   ]
 reviewed: 2026-10-31
 ---
@@ -66,7 +66,7 @@ table.
 ## Table classification and checks
 
 `build/declarations.mjs` classifies each kit table as projected, state, or derived. A projected
-table names the content path that produces it. `build/declarations.test.mjs` checks:
+table names the content path that produces it. `build/declarations.test.mts` checks:
 
 1. Each table appears in exactly one classification.
 2. Projected tables do not grant writes to signed-in clients.

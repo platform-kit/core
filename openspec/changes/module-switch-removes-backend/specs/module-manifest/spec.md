@@ -9,25 +9,25 @@ Every Edge Function, schema file and cron job SHALL be owned by exactly one modu
 - **WHEN** a site is assembled with a module off
 - **THEN** none of that module's functions, schema files or cron jobs is in it, the declaration applies to a fresh database, and every function it serves boots
 
-Verified by: `build/modules-off-db.test.mjs` under `platformkit test --e2e`
+Verified by: `build/modules-off-db.test.mts` under `platformkit test --e2e`
 
 #### Scenario: off keeps the data
 
 - **WHEN** a module with rows is switched off and the site deployed, then switched back on
 - **THEN** its functions are gone while it is off, and its rows are all there when it is on again
 
-Verified by: `build/modules-off-db.test.mjs` under `platformkit test --e2e`
+Verified by: `build/modules-off-db.test.mts` under `platformkit test --e2e`
 
 #### Scenario: dropping the data
 
 - **WHEN** `platformkit module drop <key>` is run for a module that is off
 - **THEN** it lists the tables and row counts, refuses without consent, and with consent drops them
 
-Verified by: `build/modules-off-db.test.mjs` under `platformkit test --e2e`
+Verified by: `build/modules-off-db.test.mts` under `platformkit test --e2e`
 
 #### Scenario: something nobody owns
 
 - **WHEN** a function, schema file or cron job is added that no manifest claims
 - **THEN** the manifests check fails, naming it
 
-Verified by: `build/manifests.test.mjs`
+Verified by: `build/manifests.test.mts`

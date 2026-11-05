@@ -17,7 +17,7 @@ export function bookvault(env: any) {
   const configured = () => !!env('BOOKVAULT_API_KEY')
   const mock = () => on(env('PRINT_MOCK')) || on(env('BOOKVAULT_MOCK')) || !configured()
   const base = 'https://api.bookvault.app/v3'
-  async function call(path: any, body: any, method = body ? 'POST' : 'GET') {
+  async function call(path: any, body?: any, method = body ? 'POST' : 'GET') {
     const r = await fetch(base + path, { method, headers: { 'content-type': 'application/json', accept: 'application/json', authorization: 'basic ' + env('BOOKVAULT_API_KEY') }, body: body ? JSON.stringify(body) : undefined })
     const text = await r.text()
     if (!r.ok) throw new Error(`bookvault ${method} ${path}: ${r.status} ${text.slice(0, 300)}`)
@@ -123,7 +123,6 @@ export function bookvault(env: any) {
         await call(`/Title?LibID=${ref}&UpdateType=Full`, { ...body, LibID: ref }, 'PUT')
       }
       for (const d of drops) await call('/FileDrop', { ...d, LibID: ref })
-      // @ts-expect-error TS2554, from the conversion: Expected 2-3 arguments, but got 1.
       const t = await call(`/Title?LibID=${ref}`)
       return { ref, paid: true, validated: !!t?.Validated, isbn: t?.ISBN || null }
     },
@@ -140,7 +139,6 @@ export function bookvault(env: any) {
     },
     async status(id: any) {
       if (mock() || id.startsWith('bv_mock_')) { const age = Date.now() - Number(id.split('_')[2] || 0); const s = age < 20_000 ? 'CREATED' : age < 60_000 ? 'PRODUCTION' : 'DISPATCHED'; return { id, status: s, tracking: s === 'DISPATCHED' ? { carrier: 'MOCK', id: 'MOCK' + id.slice(-6), url: null } : null, cost: null } }
-      // @ts-expect-error TS2554, from the conversion: Expected 2-3 arguments, but got 1.
       const o = await call(`/Order?PodRef=${id}`)
       const t = o?.Tracking
       return { id, status: String(o?.Status || ''), tracking: t && (t.TrackingNumber || t.Number) ? { carrier: t.Carrier || null, id: t.TrackingNumber || t.Number, url: t.URL || t.Url || null } : null, cost: null }

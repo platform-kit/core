@@ -55,7 +55,7 @@
     "probe": "platformkit probe",
     "tts:setup": "platformkit site-run tts:setup",
     "prepare": "husky",
-    "typecheck": "tsc --project packages/kit/tsconfig.json && tsc --project packages/kit/tsconfig.functions.json && vue-tsc --project packages/kit/theme/tsconfig.json"
+    "typecheck": "tsc --project packages/kit/tsconfig.json && tsc --project packages/kit/tsconfig.functions.json && tsc --project tsconfig.sites.json && vue-tsc --project packages/kit/theme/tsconfig.json"
   },
   "lint-staged": {
     "sites/*/content/{articles,wiki,docs}/**/*.md": "prettier --write"

@@ -163,11 +163,11 @@ with its text in the same colour as its background.
 - **WHEN** a look is checked against the stylesheets that read it
 - **THEN** a token read and not defined fails, naming the token and the file that reads it
 
-Verified by: `build/theme-look.test.mjs`
+Verified by: `build/theme-look.test.mts`
 
 #### Scenario: a site's own look is held to the same bar
 
 - **WHEN** a site registers a look of its own
 - **THEN** it is checked for completeness exactly as the theme's default is
 
-Verified by: `build/theme-look.test.mjs` against the demo's and the docs site's own looks
+Verified by: `build/theme-look.test.mts` against the demo's and the docs site's own looks

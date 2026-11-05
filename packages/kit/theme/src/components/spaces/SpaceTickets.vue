@@ -268,11 +268,11 @@ const onIt = (id: any) => assignees.value.some((a: any) => (a as any).id === id)
             <div v-if="isSaid(e)" class="wq-msg" :class="{ mine: !e.by_contact }">
               <em v-if="e.internal" class="st-noteflag">{{ W['note-only'] }}</em>
               <p class="st-text"><MessageText :blocks="messageBlocks(e.body)" /></p>
-              <footer>{{ e.by_contact ? ((open.contact || {}).name || W.someone) : (e.agent_name || W.someone) }} · <time :datetime="e.created_at"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ stampOf(e.created_at, now) }}</time></footer>
+              <footer>{{ e.by_contact ? ((open.contact || {}).name || W.someone) : (e.agent_name || W.someone) }} · <time :datetime="e.created_at">{{ stampOf(e.created_at, now) }}</time></footer>
             </div>
             <p v-else class="st-happened">
               <i>{{ e.agent_name || W.someone }}</i> {{ said(e) }}
-              <time :datetime="e.created_at"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ stampOf(e.created_at, now) }}</time>
+              <time :datetime="e.created_at">{{ stampOf(e.created_at, now) }}</time>
             </p>
           </article>
           <div ref="foot"></div>

@@ -115,7 +115,7 @@ const usage = () => {
   process.exit(cmd && !['help', '--help'].includes(cmd) ? 1 : 0)
 }
 if (!cmd || cmd === 'help' || cmd === '--help') usage()
-if (!['dev', 'sites', 'stop'].includes(cmd) && !fs.existsSync(path.join(site, 'platformkit.config.js'))) {
+if (!['dev', 'sites', 'stop'].includes(cmd) && !['ts', 'js'].some((e) => fs.existsSync(path.join(site, 'platformkit.config.' + e)))) {
   console.error(`✖ ${site} holds no platformkit.config.js — run from a site directory, set PLATFORMKIT_DEFAULT_SITE, or pass --site <path> (use "platformkit sites" to list workspace sites)`)
   process.exit(1)
 }

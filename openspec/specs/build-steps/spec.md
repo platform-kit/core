@@ -15,7 +15,7 @@ A build step SHALL be a module exporting one record: `key` (unique), `title`, `p
 - **WHEN** `platformkit steps` runs on a site
 - **THEN** every kit step is listed with its phase, whether it is on (and if off, why: its module, its `when`), and what it needs; the spoken books show `off — TTS is not 1` on a site without it
 
-Verified by: `build/steps.test.mjs` (the list, the reasons); the command on a site and the demo
+Verified by: `build/steps.test.mts` (the list, the reasons); the command on a site and the demo
 
 ### Requirement: One runner, in phases, by `after`
 
@@ -26,14 +26,14 @@ Verified by: `build/steps.test.mjs` (the list, the reasons); the command on a si
 - **WHEN** a phase holds steps with `after` edges
 - **THEN** they run in an order that respects every edge, and two steps with no edge between them keep the declaration's order
 
-Verified by: `build/steps.test.mjs`
+Verified by: `build/steps.test.mts`
 
 #### Scenario: a failed step
 
 - **WHEN** a step throws or exits non-zero
 - **THEN** the run stops there, naming the step, and nothing after it runs
 
-Verified by: `build/steps.test.mjs`; the demo build with a step made to fail
+Verified by: `build/steps.test.mts`; the demo build with a step made to fail
 
 ### Requirement: A site or a theme registers steps
 
@@ -44,7 +44,7 @@ A site SHALL register steps in `platformkit.config.js` as `build.steps`, a list 
 - **WHEN** the demo is built
 - **THEN** its own step (registered in its config) runs in its phase and writes its file into `dist`, and `platformkit steps` lists it beside the kit's
 
-Verified by: the demo's build; `build/steps.test.mjs` over a fixture config
+Verified by: the demo's build; `build/steps.test.mts` over a fixture config
 
 ### Requirement: A step brings its own packages
 
@@ -55,7 +55,7 @@ A step's packages SHALL be the package of whoever declares the step: a site's or
 - **WHEN** a site switches `tts` on without `onnxruntime-node` in its `package.json`
 - **THEN** `npm test` refuses naming the spoken books and the package, and the docs site, with `tts` off, installs none of them
 
-Verified by: `build/steps.test.mjs` (the resolution against a fixture root); `npm ls` on the docs site
+Verified by: `build/steps.test.mts` (the resolution against a fixture root); `npm ls` on the docs site
 
 ### Requirement: The deploy asks for what the steps need
 

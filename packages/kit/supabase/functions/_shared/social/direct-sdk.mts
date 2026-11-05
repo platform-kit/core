@@ -104,7 +104,7 @@ async function mediaContent(items: any) {
   })))
 }
 
-function clientFor(account: any, tokens: any, webhookSecret: any) {
+function clientFor(account: any, tokens: any, webhookSecret?: any) {
   return createSocial({ backend: backendFor(socialAccount(account), tokens, webhookSecret) })
 }
 
@@ -138,7 +138,6 @@ function createAdapter(id: any, displayName: any) {
     defaultScopes: scopes,
     allowedScopes: scopes,
     capabilities({ account, tokens }: any) {
-      // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
       const manifest = clientFor(account, tokens).capabilities().default
       if (id !== 'instagram' || !tokens.scopes?.includes('instagram_business_manage_comments')) return manifest
       return {
@@ -150,11 +149,9 @@ function createAdapter(id: any, displayName: any) {
       }
     },
     createClient({ account, tokens }: any) {
-      // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
       return clientFor(account, tokens)
     },
     async validatePost({ account, tokens, text, attachments, options }: any) {
-      // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
       const social = clientFor(account, tokens)
       const prepared = social.posts.prepare({
         targets: [{ account: refFor(account), ...(options ? { options } : {}) }],
@@ -166,14 +163,12 @@ function createAdapter(id: any, displayName: any) {
       }
     },
     async uploadMedia({ account, media, tokens }: any) {
-      // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
       const social = clientFor(account, tokens)
       const [content] = await mediaContent([media])
       const ref = await social.media.upload(content, refFor(account))
       return { providerMediaId: JSON.stringify(ref) }
     },
     async publish({ account, text, media, tokens, idempotencyKey, options }: any) {
-      // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
       const social = clientFor(account, tokens)
       const result = await social.posts.publish({
         targets: [{ account: refFor(account), ...(options ? { options } : {}) }],
@@ -206,7 +201,6 @@ function createAdapter(id: any, displayName: any) {
       return { outcome: 'failed', code: outcome.reason, message: 'The Social SDK did not submit this target.' }
     },
     async reconcile({ account, tokens, providerPostId, text, submittedAt }: any) {
-      // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
       const social = clientFor(account, tokens)
       const page = await social.posts.list(refFor(account), { limit: 100 })
       if (providerPostId) {

@@ -39,7 +39,6 @@ export function installChatWidget(o: any = {}) {
   const api = {
     hasLoaded: true,
     get isOpen() { return panelOpen.value },
-    // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
     toggle(state: any) { const want = state === 'open' ? true : state === 'close' ? false : !panelOpen.value; if (want) open(); else close() },
     toggleBubbleVisibility(state: any) { hidden = state === 'hide' ? true : state === 'show' ? false : !hidden; if (o.bubble) o.bubble(!hidden) },
     popoutChatWindow() { if (o.popout) window.open(o.popout, '_blank', 'noopener') },

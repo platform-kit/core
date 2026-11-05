@@ -34,13 +34,13 @@ build steps and the router SHALL each derive what they know about a module from 
   hand-written `modules.<name> !== false`, or a local binding that shadows the reading's own name
 - **THEN** the build refuses it, naming the file and the line
 
-Verified by: `build/manifests.test.mjs`, both halves proved by reintroducing each fault.
+Verified by: `build/manifests.test.mts`, both halves proved by reintroducing each fault.
 
 Note: this scenario replaces "a module named in two places", which asked for a sweep for a quoted
 module id outside the manifests. That sweep cannot be written. The ids are ordinary words —
 `docs`, `store`, `books`, `print`, `events`, `api`, `models` — and a sweep of the kit, the theme
 and the site finds 1267 occurrences in 291 of 1005 files, almost none of them a module reference.
-A check that cries wolf is one somebody switches off, which is why `store-separation.test.mjs`
+A check that cries wolf is one somebody switches off, which is why `store-separation.test.mts`
 keeps `book`, `cover`, `page` and `size` out of its own word list. What the sweep was FOR — a
 module name nobody declares must never be read as ON, because `modules.stor !== false` is `true` —
 is answerable, and is what is checked.
@@ -51,7 +51,7 @@ is answerable, and is what is checked.
   invalid schedule or action
 - **THEN** the build refuses it, naming what is missing or invalid
 
-Verified by: `build/manifests.test.mjs` and `build/cron-registration.test.mjs`.
+Verified by: `build/manifests.test.mts` and `build/cron-registration.test.mts`.
 
 #### Scenario: a declared job has one source
 
@@ -59,7 +59,7 @@ Verified by: `build/manifests.test.mjs` and `build/cron-registration.test.mjs`.
 - **THEN** assembly includes that job from its owning declaration, and a duplicate name across
   modules is refused
 
-Verified by: `build/cron-registration.test.mjs` with kit, site and theme fixtures.
+Verified by: `build/cron-registration.test.mts` with kit, site and theme fixtures.
 
 ### Requirement: A module answers for all three deployment shapes
 
@@ -74,14 +74,14 @@ projection hook, and an exception whose gap has since been closed.
 - **WHEN** a manifest omits one of the three shapes
 - **THEN** the build refuses it — a module answers for all three in the commit that adds it
 
-Verified by: `build/modes.test.mjs`, which derives the matrix from the manifests
+Verified by: `build/modes.test.mts`, which derives the matrix from the manifests
 
 #### Scenario: an exception that is no longer true
 
 - **WHEN** a manifest declares an exception whose gap the code has since closed
 - **THEN** the check fails, because a feature nobody knows they have costs as much as one that is missing
 
-Verified by: `build/modes.test.mjs` (the existing derivation, reading manifests)
+Verified by: `build/modes.test.mts` (the existing derivation, reading manifests)
 
 ### Requirement: Switching a module off removes exactly that module
 
@@ -99,7 +99,7 @@ configuration that switches off something a live module needs, naming both.
   absent after the assembled database declaration is applied; no step starts, no step or job
   belonging to another module stops, and the deploy asks for nothing it did not ask for before
 
-Verified by: `build/modules-off.test.mjs` and `build/cron-registration.test.mjs`, including a
+Verified by: `build/modules-off.test.mts` and `build/cron-registration.test.mts`, including a
 database check that unrelated scheduled jobs remain.
 
 #### Scenario: a module switched off that another needs
@@ -123,9 +123,9 @@ the kit or the other package.
 - **WHEN** a site registers a module with a route, a build step, a scheduled job and an environment variable, and switches it on
 - **THEN** the route answers and is prerendered, the step runs in its phase, the deploy asks for the variable, the job is installed, and the deployment matrix carries a row for it
 
-Verified by: `build/site-module.test.mjs` against `sites/demo`, which registers one — a
-separate file because modules-off.test.mjs and modes.test.mjs run against whatever site the suite
-was started in; `build/cron-registration.test.mjs` for the site's job; the static lane, which
+Verified by: `build/site-module.test.mts` against `sites/demo`, which registers one — a
+separate file because modules-off.test.mts and modes.test.mts run against whatever site the suite
+was started in; `build/cron-registration.test.mts` for the site's job; the static lane, which
 builds and walks that fixture with no backend
 
 #### Scenario: a theme's own module
@@ -133,11 +133,11 @@ builds and walks that fixture with no backend
 - **WHEN** a theme registers a module with a scheduled job and the site enables that module
 - **THEN** the job is assembled and installed without a kit or site code change
 
-Verified by: `build/cron-registration.test.mjs` with a theme module fixture
+Verified by: `build/cron-registration.test.mts` with a theme module fixture
 
 #### Scenario: that module switched off
 
 - **WHEN** the same site or theme switches its own module off
 - **THEN** its route stops answering, its step stops running, its variable stops being asked for, and its scheduled job is removed without changing other modules' jobs
 
-Verified by: `build/site-module.test.mjs` and `build/cron-registration.test.mjs` against the same fixtures
+Verified by: `build/site-module.test.mts` and `build/cron-registration.test.mts` against the same fixtures

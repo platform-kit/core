@@ -51,6 +51,6 @@ Two things put themselves over a page uninvited — an ad and the support chat �
 
 **In one page view the corner belongs to whoever takes it first**, and to nobody else. If an ad is going to show, the chat's pop-up is off for that page view; if the chat is already saying something, the ad waits for another page rather than stacking on it. The claim is dropped when the person goes somewhere else, because that is a new page view — and dismissing either gives the corner back, so the other may still speak later on the same page.
 
-The rules are pure and pinned by `build/interrupt.test.mjs`, which is where to add a path that should be left alone. After an asynchronous ad lookup, the current route and the shared quiet-route predicate are checked again before the ad claims the corner, so navigation to an ineligible page cannot reveal a late card.
+The rules are pure and pinned by `build/interrupt.test.mts`, which is where to add a path that should be left alone. After an asynchronous ad lookup, the current route and the shared quiet-route predicate are checked again before the ad claims the corner, so navigation to an ineligible page cannot reveal a late card.
 
 Checkout pages (`/checkout/…`) are also quiet: neither ads nor the support launcher appears over payment-entry controls.

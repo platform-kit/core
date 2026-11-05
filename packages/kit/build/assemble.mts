@@ -306,7 +306,7 @@ if (c.admin && c.admin.models) {
    function that imported either failed to boot — content, storefront-api, agent-run, admin, providers. Outside the
    pipe a bare import no function maps is left as written: only Node and the browser read such a module. */
 for (const [target, entry] of plan) {
-  if (!target.startsWith('functions/_shared/') || !/\.(?:[cm]?js|ts)$/.test(target)) continue
+  if (!target.startsWith('functions/_shared/') || !/\.(?:[cm]?js|m?ts)$/.test(target)) continue
   const lenient = !target.startsWith('functions/_shared/pipe/')
   const rewrite = (_: any, prefix: any, quote: any, specifier: any) => `${prefix}${quote}${sharedSpecifier(specifier, target, { lenient })}${quote}`
   const content = entry.content.toString('utf8')
@@ -318,7 +318,7 @@ for (const [target, entry] of plan) {
    (images failed on its own `@cf-wasm/photon/others`, which its deno.json maps), and a written-out npm: target needs
    none — so what boots does not depend on how a runtime reads deno.json, here or deployed. */
 for (const [target, entry] of plan) {
-  const fn = /^functions\/([^/_][^/]*)\/.+\.(?:[cm]?js|ts)$/.exec(target)?.[1]
+  const fn = /^functions\/([^/_][^/]*)\/.+\.(?:[cm]?js|m?ts)$/.exec(target)?.[1]
   if (!fn || !plan.has(`functions/${fn}/deno.json`)) continue
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   const rewrite = (_: any, prefix: any, quote: any, specifier: any) => `${prefix}${quote}${sharedSpecifier(specifier, target, { lenient: true, only: `functions/${fn}/deno.json` })}${quote}`
@@ -443,7 +443,7 @@ const SPEC_RE = /(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]|impo
 function unresolved(plan: any) {
   const bad = []
   for (const [k, v] of plan) {
-    if (!/^functions\/.*\.(m?js|ts)$/.test(k)) continue
+    if (!/^functions\/.*\.(m?js|m?ts)$/.test(k)) continue
     let text; try { text = v.content.toString('utf8') } catch { continue }
     for (const m of text.matchAll(SPEC_RE)) {
       const spec = m[1] || m[2]

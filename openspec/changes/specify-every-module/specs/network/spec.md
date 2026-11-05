@@ -9,7 +9,7 @@ The `network` module SHALL give each member a page, follows, a following timelin
 - **WHEN** a composer is handed more than 10 items, or an item of a kind it does not take
 - **THEN** it refuses the post
 
-Verified by: `build/network-media.test.mjs`
+Verified by: `build/network-media.test.mts`
 
 ### Requirement: A post's audience holds by every path
 
@@ -20,7 +20,7 @@ A post's audience SHALL be everyone, the site's members, or a space's members, a
 - **WHEN** posts for everyone, for members and for one space are read by a guest, a member and a space member
 - **THEN** each reader sees exactly the posts their audience allows, by every read path
 
-Verified by: `build/network-db.test.mjs` under `platformkit test --e2e`, `build/network.test.mjs`
+Verified by: `build/network-db.test.mts` under `platformkit test --e2e`, `build/network.test.mts`
 
 ### Requirement: Safety and moderation
 
@@ -42,4 +42,4 @@ The network SHALL be served as an atproto personal data server and app view, so 
 - **WHEN** `@atproto/api` signs in with an app password and reads the timeline
 - **THEN** it reads the member's own timeline, and a post it makes appears on the site
 
-Verified by: `build/atproto.test.mjs`, `build/atproto-interop.test.mjs` under `platformkit test --e2e`
+Verified by: `build/atproto.test.mts`, `build/atproto-interop.test.mts` under `platformkit test --e2e`

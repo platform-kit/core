@@ -40,6 +40,7 @@ import autoprefixer from 'autoprefixer'
 import { tailwindConfig } from './tailwind.config.js'
 import { resolveSiteHomeHead } from '../src/lib/seo-head.js'
 import { loadEnv } from 'vite'
+import { siteFile } from '../build/site-file.mjs'
 
 /*
  * THE SOCIAL NETWORK'S DOORS, IN DEVELOPMENT. An atproto client asks /xrpc/<method> at the ROOT of
@@ -233,7 +234,7 @@ function site(c: any, theme: any, keys = []) {
        are declared from it — so a model saved in the builder, added or removed touches velite.config.js, and
        velite, which watches its own config, starts over with the new collections; the site's #content follows */
     configureServer(server: any) {
-      const cfg = abs('platformkit.config.js'), vcfg = abs('velite.config.js')
+      const cfg = siteFile(abs('.')), vcfg = siteFile(abs('.'), 'velite.config')
       const modelsDir = abs('content/models')
       const isModel = (f: any) => f.startsWith(modelsDir + path.sep) && f.endsWith('.md') && !f.slice(modelsDir.length + 1).includes(path.sep)
       server.watcher.add(cfg)

@@ -24,6 +24,6 @@
       "#content": ["../build/content-node.mts"]
     }
   },
-  "include": ["src/**/*.vue", "src/**/*.ts", "src/**/*.js", "../build/types/*.d.ts"],
+  "include": ["../supabase/functions/deno-shim.d.ts", "src/**/*.vue", "src/**/*.ts", "src/**/*.js", "../build/types/*.d.ts"],
   "exclude": ["node_modules"]
 }

@@ -90,7 +90,7 @@ const untilWord = (s: any) => (s.until ? fill(W.value.until, { when: new Date(s.
           <li v-for="r in reports" :key="r.id" class="nwa-row">
             <div class="nwa-meta">
               <b>{{ r.post_id ? fill(W['reported-by'], { name: nameOf(r.actor_id) }) : fill(W['reported-person'], { name: nameOf(r.subject_id) }) }}</b>
-              <span>{{ W.reason }}: {{ reasonWord(r.reason) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 1. -->{{ agoOf(r.created_at) }}</span>
+              <span>{{ W.reason }}: {{ reasonWord(r.reason) }} · {{ agoOf(r.created_at) }}</span>
               <q v-if="r.note">{{ r.note }}</q>
             </div>
             <div v-if="r.post_id" class="nwa-post">
@@ -119,7 +119,7 @@ const untilWord = (s: any) => (s.until ? fill(W.value.until, { when: new Date(s.
           <li v-for="s in suspended" :key="s.id" class="nwa-row nwa-row-flat">
             <div class="nwa-meta">
               <b>{{ nameOf(s.subject_id) }}</b>
-              <span>{{ untilWord(s) }} · {{ fill(W['suspended-by'], { name: nameOf(s.actor_id) }) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 1. -->{{ agoOf(s.created_at) }}</span>
+              <span>{{ untilWord(s) }} · {{ fill(W['suspended-by'], { name: nameOf(s.actor_id) }) }} · {{ agoOf(s.created_at) }}</span>
               <span v-if="s.reason">{{ W.reason }}: {{ reasonWord(s.reason) }}</span>
             </div>
             <div class="nwa-acts"><button type="button" :disabled="busy === s.id" @click="lift(s)">{{ W.lift }}</button></div>

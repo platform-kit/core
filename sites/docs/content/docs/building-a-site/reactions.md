@@ -6,7 +6,7 @@ sources:
   [
     packages/kit/supabase/schemas/99-reactions.sql,
     packages/kit/src/lib/comments/model.ts,
-    packages/kit/build/reactions.test.mjs,
+    packages/kit/build/reactions.test.mts,
   ]
 reviewed: 2026-10-31
 ---
@@ -78,7 +78,7 @@ downs. A comment **9 up and 1 down** beats one **40 up and 30 down**, because th
 and the first is not, while `top` puts them the other way round. A raw score rewards whatever was
 seen most, and the difference between the two orders is the whole reason both exist: a system with
 only one of them is a system where the loudest thread wins, which is the thing sorting was supposed
-to fix. `build/reactions.test.mjs` pins it on exactly those numbers.
+to fix. `build/reactions.test.mts` pins it on exactly those numbers.
 
 `controversial` needs both halves: two people disagreeing is not a controversy, and forty people
 agreeing is not one either.

@@ -15,21 +15,21 @@ A site SHALL select one registered payment provider for its payment workflows wi
 - **WHEN** a site has Stripe credentials and no provider selection
 - **THEN** its checkout, billing, and reconciliation continue through Stripe with the existing behavior
 
-Verified by: `build/payment-providers.test.mjs` and existing checkout, ledger, and usage tests
+Verified by: `build/payment-providers.test.mts` and existing checkout, ledger, and usage tests
 
 #### Scenario: Site selects a registered provider
 
 - **WHEN** a site sets `payments.provider` to a configured provider and supplies that adapter's required secrets
 - **THEN** payment operations use only that provider, and no provider secret is exposed to browser code
 
-Verified by: `build/payment-providers.test.mjs` and `build/deploy-checks.mjs` tests
+Verified by: `build/payment-providers.test.mts` and `build/deploy-checks.mjs` tests
 
 #### Scenario: Site selects an unregistered or disabled provider
 
 - **WHEN** `payments.provider` names no built-in provider or enabled site-owned registration
 - **THEN** configuration or deployment validation fails with the provider id; no provider fallback is attempted
 
-Verified by: `build/payment-providers.test.mjs` and `build/deploy-checks.mjs` tests
+Verified by: `build/payment-providers.test.mts` and `build/deploy-checks.mjs` tests
 
 ### Requirement: A site can implement and register its own provider
 
@@ -40,14 +40,14 @@ A site SHALL be able to implement a complete payment adapter in site-owned serve
 - **WHEN** a site module implements the contract, declares its required secrets and webhook route, registers the adapter, and the site selects it
 - **THEN** the assembled site serves its payment workflows through that adapter, deploy validation requests its declared secrets, and no PlatformKit source change is needed
 
-Verified by: `build/site-payment-provider.test.mjs` using a site-owned mock adapter fixture and deploy checks
+Verified by: `build/site-payment-provider.test.mts` using a site-owned mock adapter fixture and deploy checks
 
 #### Scenario: An unregistered provider is selected
 
 - **WHEN** site configuration names an adapter that no built-in or site-owned module registered
 - **THEN** assembly or deployment fails with the missing provider named; no Stripe fallback or payment request is attempted
 
-Verified by: `build/site-payment-provider.test.mjs`
+Verified by: `build/site-payment-provider.test.mts`
 
 ### Requirement: Payment workflows use provider-independent outcomes
 
@@ -58,28 +58,28 @@ The site SHALL retain its own offer catalog and order, subscription, and entitle
 - **WHEN** a supported checkout is paid and the provider sends a valid completion event
 - **THEN** the site records the purchase and grants the same entitlements as the equivalent Stripe purchase, without using provider product descriptions as the source of the offer
 
-Verified by: `build/payment-providers.test.mjs` and `build/ledger.test.mjs`
+Verified by: `build/payment-providers.test.mts` and `build/ledger.test.mts`
 
 #### Scenario: Site-owned adapter produces a normalized purchase event
 
 - **WHEN** a site-owned adapter verifies and normalizes its provider's successful payment event
 - **THEN** the shared ledger records the purchase and grants the offer's entitlement without requiring a provider-specific ledger path
 
-Verified by: `build/site-payment-provider.test.mjs` and `build/ledger.test.mjs`
+Verified by: `build/site-payment-provider.test.mts` and `build/ledger.test.mts`
 
 #### Scenario: Invalid provider webhook
 
 - **WHEN** a webhook fails the selected provider's configured authentication or integrity checks
 - **THEN** the event is rejected and no purchase, subscription, entitlement, usage grant, or payout state is changed
 
-Verified by: `build/payment-providers.test.mjs` and `build/webhook-doors.test.mjs`
+Verified by: `build/payment-providers.test.mts` and `build/webhook-doors.test.mts`
 
 #### Scenario: Provider event is delivered more than once
 
 - **WHEN** the same normalized provider event is delivered repeatedly
 - **THEN** its effects are applied at most once, with event identity scoped to that provider
 
-Verified by: `build/payment-providers.test.mjs` and `build/ledger.test.mjs`
+Verified by: `build/payment-providers.test.mts` and `build/ledger.test.mts`
 
 ### Requirement: Provider capabilities are explicit
 
@@ -90,14 +90,14 @@ Each provider SHALL declare the payment operations and optional features it supp
 - **WHEN** an offer requests a feature the selected provider does not support
 - **THEN** checkout is refused before a provider session is created, and the response identifies the unsupported feature
 
-Verified by: `build/payment-providers.test.mjs` and `build/checkout-params.test.mjs`
+Verified by: `build/payment-providers.test.mts` and `build/checkout-params.test.mts`
 
 #### Scenario: Unsupported connected-account operation
 
 - **WHEN** provider payouts are enabled but the selected adapter does not support connected-account onboarding, readiness checks, or payouts
 - **THEN** the requested operation is refused before a provider request or payout-ledger claim, and no payout is attempted through another provider
 
-Verified by: `build/payment-providers.test.mjs` and `build/payouts-db.test.mjs`
+Verified by: `build/payment-providers.test.mts` and `build/payouts-db.test.mts`
 
 ### Requirement: Metered usage can be charged incrementally
 
@@ -140,7 +140,7 @@ The Stripe adapter SHALL preserve the currently supported Stripe checkout, subsc
 - **WHEN** the existing commerce, webhook, payout, and usage test suites run using the Stripe mock
 - **THEN** their existing outcomes remain unchanged, including guest purchases, subscription changes, usage grants and reports, refunds, and payouts
 
-Verified by: `build/ledger.test.mjs`, `build/checkout-params.test.mjs`, `build/usage.test.mjs`, `build/usage-db.test.mjs`, `build/payouts-db.test.mjs`, and `build/webhook-doors.test.mjs`
+Verified by: `build/ledger.test.mts`, `build/checkout-params.test.mts`, `build/usage.test.mts`, `build/usage-db.test.mts`, `build/payouts-db.test.mts`, and `build/webhook-doors.test.mts`
 
 ### Requirement: Markdown remains the payment catalog source
 
@@ -151,14 +151,14 @@ The site's Markdown product and offer files SHALL remain authoritative for Strip
 - **WHEN** a Stripe site deploys or updates its catalog
 - **THEN** the existing catalog build compiles the Markdown offers and the Stripe push creates or updates their Stripe products and prices by stable offer identity
 
-Verified by: `build/catalog.mjs --check` (the offers compile), `build/stripe-testmode.integration.mjs` (the push against Stripe's test mode, by stable offer identity), and `build/payment-providers.test.mjs`
+Verified by: `build/catalog.mjs --check` (the offers compile), `build/stripe-testmode.integration.mts` (the push against Stripe's test mode, by stable offer identity), and `build/payment-providers.test.mts`
 
 #### Scenario: A site-owned adapter synchronizes Markdown offers
 
 - **WHEN** a site selects an adapter that declares catalog synchronization and deploys or updates its catalog
 - **THEN** the adapter receives the compiled Markdown offers, maps them to provider catalog objects, and repeating the push reuses or updates matching records rather than creating duplicate sellable offers
 
-Verified by: `build/site-payment-provider.test.mjs` using the site-owned mock adapter fixture
+Verified by: `build/site-payment-provider.test.mts` using the site-owned mock adapter fixture
 
 ### Requirement: Site-owned adapters declare implemented operations
 
@@ -169,4 +169,4 @@ Each site-owned adapter SHALL advertise only capabilities whose corresponding op
 - **WHEN** a site registers a custom adapter with declared capabilities and provider-operation implementations
 - **THEN** the assembled provider registry exposes only that adapter's declared operations, and selecting an unavailable operation fails before a provider request
 
-Verified by: `build/site-payment-provider.test.mjs` and `build/payment-providers.test.mjs`
+Verified by: `build/site-payment-provider.test.mts` and `build/payment-providers.test.mts`

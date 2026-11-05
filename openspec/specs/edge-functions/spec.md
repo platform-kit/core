@@ -23,91 +23,91 @@ The functions SHALL be, by who may call them:
 - **WHEN** `stripe-webhook` or `cal-webhook` is called with a bad signature
 - **THEN** it answers 400 and writes nothing
 
-Verified by: `build/webhook-doors.test.mjs` — against the functions as served: `cal-webhook` refuses a missing, empty, malformed and well-shaped-but-wrong signature, on a CREATED and on a CANCELLED, and names the signature each time; `stripe-webhook` in an environment with no secret refuses every body with a named code rather than falling through. Then the tables are checked: no purchase, no booking, no entitlement. Removing the signature line makes it write five forged bookings and fails ten checks.
+Verified by: `build/webhook-doors.test.mts` — against the functions as served: `cal-webhook` refuses a missing, empty, malformed and well-shaped-but-wrong signature, on a CREATED and on a CANCELLED, and names the signature each time; `stripe-webhook` in an environment with no secret refuses every body with a named code rather than falling through. Then the tables are checked: no purchase, no booking, no entitlement. Removing the signature line makes it write five forged bookings and fails ten checks.
 
 #### Scenario: a social operation by an uninvited reader
 
 - **WHEN** a reader without social-publishing access calls `social` to read accounts, upload media, edit a post, or grant access
 - **THEN** it is refused and no protected row, storage object or credential is disclosed or changed
 
-Verified by: `build/social-publishing.test.mjs` against the served local functions with reader, invitee and administrator accounts
+Verified by: `build/social-publishing.test.mts` against the served local functions with reader, invitee and administrator accounts
 
 #### Scenario: a callback with forged or replayed state
 
 - **WHEN** `social-oauth` receives state that is missing, expired, altered or already consumed
 - **THEN** it refuses the callback and creates or changes no connected account or credential
 
-Verified by: `build/social-publishing.test.mjs` against the served local function
+Verified by: `build/social-publishing.test.mts` against the served local function
 
 #### Scenario: a scheduled call without the service bearer
 
 - **WHEN** `social-publish` is called without the scheduled-job credential, or with a due delivery identifier that is not claimable
 - **THEN** it refuses the request or claims no delivery and publishes nothing
 
-Verified by: `build/social-publishing.test.mjs` against the served local function
+Verified by: `build/social-publishing.test.mts` against the served local function
 
 #### Scenario: a social webhook without its provider verification
 
 - **WHEN** `social-webhook` receives an event with a missing, invalid, or unsupported signature mechanism
 - **THEN** it refuses the event and writes no webhook inbox row or provider state
 
-Verified by: `build/social-webhooks.test.mjs` against the served local Supabase function
+Verified by: `build/social-webhooks.test.mts` against the served local Supabase function
 
 #### Scenario: a publish by a reader
 
 - **WHEN** `admin` is called with `publish` under a reader's JWT
 - **THEN** it is refused (403) and no row changes
 
-Verified by: the door test in `store.test.mjs` with the seed's accounts
+Verified by: the door test in `store.test.mts` with the seed's accounts
 
 #### Scenario: the library by a reader
 
 - **WHEN** `admin` is called with `media` under a reader's JWT
 - **THEN** it is refused (403) and nothing in the bucket is read or moved
 
-Verified by: the door test in `store.test.mjs` with the seed's accounts
+Verified by: the door test in `store.test.mts` with the seed's accounts
 
 #### Scenario: another coach's hours
 
 - **WHEN** `coach-hours` is asked to set hours under a member's JWT, or a coach asks for another coach's
 - **THEN** it is refused (403) and no row changes
 
-Verified by: `build/scheduling.test.mjs` with the seed's accounts
+Verified by: `build/scheduling.test.mts` with the seed's accounts
 
 #### Scenario: a stranger asks for a room token
 
 - **WHEN** `session-room` is asked for a token under the JWT of a reader who is not on the booking
 - **THEN** it is refused (403); the attendee and the host each receive one, the host's carrying the room's controls
 
-Verified by: `build/meetings.test.mjs` with the seed's accounts
+Verified by: `build/meetings.test.mts` with the seed's accounts
 
 #### Scenario: a reader books for others
 
 - **WHEN** `book-session` is asked with `for` under a member's JWT
 - **THEN** it is refused (403) and nothing is booked
 
-Verified by: `build/scheduling.test.mjs`
+Verified by: `build/scheduling.test.mts`
 
 #### Scenario: a batch under an unknown key
 
 - **WHEN** `ingest` receives a batch with a source key the config does not register, or from an origin the source does not allow
 - **THEN** it answers 403 and writes nothing
 
-Verified by: `analytics-sdk.test.mjs` against the served function
+Verified by: `analytics-sdk.test.mts` against the served function
 
 #### Scenario: a draft asked with a delivery key
 
 - **WHEN** `content` is asked for an unpublished entry, or a query with `preview: true`, under a delivery key or no key
 - **THEN** it answers `NotFound` for the entry and `AccessDenied` for the query, and a revoked key of any kind answers `AccessTokenInvalid`
 
-Verified by: `content-api.test.mjs`
+Verified by: `content-api.test.mts`
 
 #### Scenario: a space's door asked for another space
 
 - **WHEN** `spaces` is called under a reader's JWT for a channel of a space they are not a member of, by every call it answers
 - **THEN** each is refused and nothing of that space is disclosed, its existence included
 
-Verified by: `build/spaces-db.test.mjs`
+Verified by: `build/spaces-db.test.mts`
 
 ### Requirement: The ledger is one module
 
@@ -118,7 +118,7 @@ What a payment writes — purchases, subscriptions, entitlements, credits, print
 - **WHEN** the webhook and the confirmation both write one session
 - **THEN** one purchase, one order and one email result
 
-Verified by: `build/ledger.test.mjs` for the decisions (every grant’s source id is a function of the payment and nothing else) and `build/money-db.test.mjs` for the database enforcing them against the stack: one session is one purchase, the second insert refused and the upsert both writers use accepted, one grant is one row, and three credits from one payment are THREE — with the shared-id case shown folding into one, which is why the per-unit id exists. Weakening the constraint fails four checks.
+Verified by: `build/ledger.test.mts` for the decisions (every grant’s source id is a function of the payment and nothing else) and `build/money-db.test.mts` for the database enforcing them against the stack: one session is one purchase, the second insert refused and the upsert both writers use accepted, one grant is one row, and three credits from one payment are THREE — with the shared-id case shown folding into one, which is why the per-unit id exists. Weakening the constraint fails four checks.
 
 ### Requirement: Shared modules, shared words
 

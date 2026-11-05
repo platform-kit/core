@@ -1,8 +1,7 @@
 {
   // The kit's TypeScript, checked by `npm run typecheck` (openspec: typescript-throughout).
   // Node runs the source in the workspace through tsx; `tsc -p tsconfig.build.json` emits the JavaScript a site gets.
-  // JavaScript not yet converted is allowed and not checked; a converted directory is checked strictly. A test still in
-  // JavaScript is left out, since it is not checked and its imports reach packages that ship raw TypeScript.
+  // JavaScript not yet converted is allowed and not checked; a converted directory is checked strictly.
   // The Edge Functions are checked by tsconfig.functions.json. A module of theirs the engine imports is checked here too.
   // The Deno tests beside the engine in build/ are Deno's.
   "compilerOptions": {
@@ -19,8 +18,11 @@
     "verbatimModuleSyntax": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "types": ["node", "vite/client"]
+    "types": ["node", "vite/client"],
+    // ships raw TypeScript that does not pass this config; only a test imports it
+    "paths": { "@typeform/api-client": ["./build/types/typeform-client.d.ts"] }
   },
-  "include": ["bin", "build", "src", "vite"],
-  "exclude": ["node_modules", "supabase/functions", "build/fixtures", "theme", "build/**/*.test.ts", "build/hyperswitch-browser.steps.ts", "build/**/*.test.mjs", "build/**/*.integration.mjs"]
+  "files": ["supabase/functions/deno-shim.d.ts", "build/fixtures/e2e-probe.mts", "build/fixtures/social-adapter.mts", "build/fixtures/print-interior-browser.ts"],
+  "include": ["agent", "bin", "build", "src", "vite"],
+  "exclude": ["node_modules", "supabase/functions", "build/fixtures", "theme", "build/**/*.test.ts", "build/hyperswitch-browser.steps.ts"]
 }

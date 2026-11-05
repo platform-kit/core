@@ -3,6 +3,7 @@
   // tsc here: Deno's globals and URL imports are declared in supabase/functions/deno-shim.d.ts.
   "extends": "./tsconfig.json",
   "compilerOptions": { "types": ["node"], "lib": ["ES2023", "DOM", "DOM.Iterable", "DOM.AsyncIterable"] },
+  "files": ["supabase/functions/deno-shim.d.ts", "build/types/untyped-modules.d.ts"],
   "include": ["supabase/functions"],
   "exclude": ["node_modules"]
 }

@@ -9,7 +9,7 @@ The `space-encryption` module SHALL let a space or a channel be declared encrypt
 - **WHEN** a message is sent to an encrypted channel
 - **THEN** the database holds no plaintext of it, and the room keys it stores are sealed under a recovery key it has never seen
 
-Verified by: `build/encryption-db.test.mjs` under `platformkit test --e2e`, `build/encryption.test.mjs`
+Verified by: `build/encryption-db.test.mts` under `platformkit test --e2e`, `build/encryption.test.mts`
 
 ### Requirement: What an encrypted room gives up
 
@@ -20,4 +20,4 @@ An encrypted room SHALL have no search, no bots and no moderation of message con
 - **WHEN** a channel's file says `encrypted: true` and the module is off
 - **THEN** the spaces compile refuses it by name
 
-Verified by: `build/modules-off.test.mjs`
+Verified by: `build/modules-off.test.mts`

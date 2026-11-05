@@ -9,7 +9,7 @@ sources:
     packages/kit/supabase/functions/_shared/scheduling-events.ts,
     packages/kit/supabase/functions/_shared/api/keys.ts,
     packages/kit/supabase/schemas/55-sessions.sql,
-    packages/kit/build/scheduling-api.test.mjs,
+    packages/kit/build/scheduling-api.test.mts,
   ]
 reviewed: 2026-11-04
 ---

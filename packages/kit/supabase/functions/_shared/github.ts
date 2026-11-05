@@ -140,7 +140,7 @@ export async function saveGithubSettings(sb: any, { repo, branch, token }: any) 
 const API = 'https://api.github.com'
 const headers = (token: any) => ({ Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' })
 const b64 = (text: any) => { const bytes = new TextEncoder().encode(text); let s = ''; for (const b of bytes) s += String.fromCharCode(b); return btoa(s) }
-async function call(fetchFn: any, token: any, method: any, url: any, body: any) {
+async function call(fetchFn: any, token: any, method: any, url: any, body?: any) {
   const r = await fetchFn(API + url, { method, headers: headers(token), ...(body ? { body: JSON.stringify(body) } : {}) })
   if (!r.ok) throw new Error(`GitHub ${r.status} on ${method} ${url}: ${String(await r.text().catch(() => '')).slice(0, 200)}`)
   return r.json()
@@ -148,10 +148,8 @@ async function call(fetchFn: any, token: any, method: any, url: any, body: any) 
 /* the files as one commit on the branch: every blob made, one tree over the branch's head (a removed file's entry
    gone), one commit, the ref moved — the commit's sha, or a throw with nothing moved */
 export async function commitFiles({ fetchFn = fetch, token, repo, branch, files, message }: any) {
-  // @ts-expect-error TS2554, from the conversion: Expected 5 arguments, but got 4.
   const ref = await call(fetchFn, token, 'GET', `/repos/${repo}/git/ref/heads/${encodeURIComponent(branch)}`).catch((e) => { throw new Error(/404/.test(e.message) ? `the branch ${branch} has no commit yet — push an initial commit first` : e.message) })
   const head = ref.object.sha
-  // @ts-expect-error TS2554, from the conversion: Expected 5 arguments, but got 4.
   const base = (await call(fetchFn, token, 'GET', `/repos/${repo}/git/commits/${head}`)).tree.sha
   const tree = []
   for (const f of files) {

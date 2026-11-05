@@ -76,7 +76,7 @@ So a comment may reply to any comment, to any depth, and the depth is kept. What
 | `depth`    | how far replies indent before the rest continue in one flat run (3 by default; **1 for the embed**)    |
 | `collapse` | how many replies under one comment are shown before the rest fold behind a control saying how many (5) |
 
-`src/lib/comments/model.js` works it out — pure, so the page and `build/comments.test.mjs` read the
+`src/lib/comments/model.js` works it out — pure, so the page and `build/comments.test.mts` read the
 same arithmetic. `shape(rows, { depth, collapse, open })` returns the lines in order, each with the
 indent to draw it at and, where it is drawn shallower than it really is, **who it answers**: once
 the indent stops, the shape no longer carries that, and a flat run answering four different people

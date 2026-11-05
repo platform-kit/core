@@ -164,7 +164,7 @@ export function operationAvailable(manifest: any, operation: any, platform: any)
   )
 }
 
-export function availableSocialOperations(manifest: any, platform: any, client: any, backend = 'default') {
+export function availableSocialOperations(manifest: any, platform: any, client?: any, backend = 'default') {
   const webhooks = client?.adapter(backend, { acknowledgeUnsafe: true })?.webhooks
   return OPERATION_DEFINITIONS.filter(
     ({ operation }) =>

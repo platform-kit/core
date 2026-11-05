@@ -108,7 +108,7 @@ export function bookChapters(body: any) {
 /* what a page is read with: the introduction as itself; a chapter as its
    spoken title, a pause, then its text — or its summary when one is given.
    Empty when there is nothing to say. */
-export function chapterSpeech(chapter: any, summaryMd: any) {
+export function chapterSpeech(chapter: any, summaryMd?: any) {
   if (!chapter) return ''
   if (chapter.intro) return speakable(chapter.md)
   const body = summaryMd != null ? summaryMd : chapter.md

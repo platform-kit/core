@@ -20,11 +20,11 @@ Each scored form lesson of a published course SHALL have an achievement, declare
 - **WHEN** an enrolled reader passes a quiz lesson for the first time
 - **THEN** a `quiz_passed` event is recorded, the reader holds that quiz's achievement, and a second pass records no second event
 
-Verified by: `build/courses-db.test.mjs`
+Verified by: `build/courses-db.test.mts`
 
 #### Scenario: the declaration
 
 - **WHEN** the achievements push runs over a site whose course has scored form lessons
 - **THEN** each has an achievement titled after its section, one with its own `achievement` uses that, and one that says `achievement: false` has none
 
-Verified by: `build/courses.test.mjs`
+Verified by: `build/courses.test.mts`

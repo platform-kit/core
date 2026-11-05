@@ -18,7 +18,7 @@ beside it.
 - **WHEN** a site declares an assistant, an offer selling units, and the assistant billed to that offer
 - **THEN** somebody can buy units, hold a spoken or typed conversation, see what they have left, and be stopped when it runs out — with no code in the site
 
-Verified by: `build/usage-db.test.mjs` end to end through the mock checkout; one live conversation read before it is trusted
+Verified by: `build/usage-db.test.mts` end to end through the mock checkout; one live conversation read before it is trusted
 
 #### Scenario: what it costs is shown beside what it sells for
 
@@ -39,11 +39,11 @@ from any configured operation.
 - **WHEN** a reader opens past conversations in the voice assistant
 - **THEN** they can browse and resume their conversations, and the conversation-history surface is not replaced by usage statistics
 
-Verified by: `build/usage.test.mjs` and the reader-page browser probe
+Verified by: `build/usage.test.mts` and the reader-page browser probe
 
 #### Scenario: a reader reviews usage from different operations
 
 - **WHEN** a reader opens `/billing#usage` or follows the former `/app/usage` address
 - **THEN** the usage page shows their own balance and recorded usage across all configured billable operations, without requiring a bot or conversation
 
-Verified by: `build/usage.test.mjs` and the reader-page browser probe
+Verified by: `build/usage.test.mts` and the reader-page browser probe

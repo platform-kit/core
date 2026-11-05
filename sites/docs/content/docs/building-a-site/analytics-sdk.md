@@ -10,7 +10,7 @@ sources:
     packages/kit/supabase/functions/ingest,
     packages/kit/src/lib/analytics.ts,
     packages/kit/src/lib/arrival.ts,
-    packages/kit/build/analytics-sdk.test.mjs,
+    packages/kit/build/analytics-sdk.test.mts,
     packages/kit/supabase/functions/_shared/posthog-wire.ts,
   ]
 reviewed: 2026-11-04
@@ -54,7 +54,7 @@ const client = new PostHog('pk_landing_7f3a9c2e51d4', { host: 'https://example.c
 client.capture({ distinctId: 'u-7', event: 'signup', properties: { plan: 'monthly' } })
 ```
 
-The door's routes and shapes are in the site's OpenAPI document and on its reference page at `/api`, under Analytics (see [the content API](/content/docs/building-a-site/contentful-api)). Two spellings of the address: `https://<domain>/api/events` works through the `/v1/*` rewrite every site with the emails' links already has (the SDK appends `/e/`, `/flags/`, `/array/…` to it; the snippet's `/static/array.js` under it redirects to the site's file); the bare domain, `https://<domain>`, needs the host to rewrite PostHog's eight paths as well — `/e/*`, `/i/*`, `/capture/*`, `/batch/*`, `/flags/*`, `/decide/*`, `/array/*`, `/s/*` → `functions/v1/<ref>…/ingest/…` — which `deploy-checks` lists in its notes when a source is registered. Feature flags, surveys, session recording, heatmaps, site apps, the toolbar and error tracking are answered as off, never implemented; a page that relies on a flag being _on_ sees it off. `build/analytics-sdk.test.mjs` runs the real `posthog-js` build in a headless page against the served door (its `opt_out_useragent_filter` on, since PostHog takes a headless browser for a bot) and posts `/batch/` plain and gzipped.
+The door's routes and shapes are in the site's OpenAPI document and on its reference page at `/api`, under Analytics (see [the content API](/content/docs/building-a-site/contentful-api)). Two spellings of the address: `https://<domain>/api/events` works through the `/v1/*` rewrite every site with the emails' links already has (the SDK appends `/e/`, `/flags/`, `/array/…` to it; the snippet's `/static/array.js` under it redirects to the site's file); the bare domain, `https://<domain>`, needs the host to rewrite PostHog's eight paths as well — `/e/*`, `/i/*`, `/capture/*`, `/batch/*`, `/flags/*`, `/decide/*`, `/array/*`, `/s/*` → `functions/v1/<ref>…/ingest/…` — which `deploy-checks` lists in its notes when a source is registered. Feature flags, surveys, session recording, heatmaps, site apps, the toolbar and error tracking are answered as off, never implemented; a page that relies on a flag being _on_ sees it off. `build/analytics-sdk.test.mts` runs the real `posthog-js` build in a headless page against the served door (its `opt_out_useragent_filter` on, since PostHog takes a headless browser for a bot) and posts `/batch/` plain and gzipped.
 
 ## The script
 
@@ -73,4 +73,4 @@ A page that wants no dependency at all loads the site's own file instead — Pos
 
 What the script does not do — feature flags, surveys, session recording, click autocapture, the toolbar, early access — is present with PostHog's names and return shapes: `isFeatureEnabled` answers `false`, `getFeatureFlag` `undefined`, `getAllFeatureFlags` `{}`, `getSurveys(cb)` calls back with `[]`, `sessionRecordingStarted` `false`, `get_session_replay_url` `null`; nothing throws. A page that relies on a flag being _on_ will see it off.
 
-On the dashboard, the **Source** select (This site · each source) reads one source's visitors, channels, audience, pages, events and goals; Content analytics stays this site's. `build/analytics-sdk.test.mjs` loads the built file in a headless page against the served door and checks the surface, the size (under 40 KB gzipped), the `$pageview`, the identify, an opted-out page, PostHog's snippet, two contexts of one browser giving one anonymous id, the wire decoder on each encoding, and the official SDK.
+On the dashboard, the **Source** select (This site · each source) reads one source's visitors, channels, audience, pages, events and goals; Content analytics stays this site's. `build/analytics-sdk.test.mts` loads the built file in a headless page against the served door and checks the surface, the size (under 40 KB gzipped), the `$pageview`, the identify, an opted-out page, PostHog's snippet, two contexts of one browser giving one anonymous id, the wire decoder on each encoding, and the official SDK.

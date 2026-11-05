@@ -34,7 +34,7 @@ export const thread = reactive<any>({
   loading: false, done: false, error: null,
 })
 
-const rpc = async (name: any, args: any) => {
+const rpc = async (name: any, args?: any) => {
   const { data, error } = await (supabase as any).rpc(name, args || {})
   if (error) throw error
   return data
@@ -43,13 +43,11 @@ const rpc = async (name: any, args: any) => {
 export async function loadInbox() {
   if (!on()) { inbox.value = []; return }
   loadingInbox.value = true
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   try { inbox.value = (await rpc('chat_inbox')) || [] } catch (e) { /* offline: keep what we had */ }
   loadingInbox.value = false
 }
 export async function loadPeople() {
   if (!on()) { people.value = []; return }
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   try { people.value = (await rpc('chat_people')) || [] } catch (e) { /* offline */ }
 }
 /* the members matching a search, a page at a time; the newest call wins */

@@ -22,14 +22,14 @@ Verified by: the demo in the kit's CI
 - **WHEN** `platformkit check` runs in a site with nothing wrong
 - **THEN** it reports every check passed and exits zero
 
-Verified by: `build/check.test.mjs`
+Verified by: `build/check.test.mts`
 
 #### Scenario: generate is a command
 
 - **WHEN** `platformkit generate` runs with no kind
 - **THEN** it lists the kinds and exits without writing anything
 
-Verified by: `build/generate.test.mjs`
+Verified by: `build/generate.test.mts`
 
 ### Requirement: The deploy checks read the modules
 
@@ -49,7 +49,7 @@ The Core repository SHALL expose a `platformkit` executable that can be invoked 
 #### Scenario: use the GitHub source without published packages
 - **WHEN** a user invokes `npx --package=github:platform-kit/core platformkit` for a site while PlatformKit packages are unavailable from npm
 - **THEN** the command runs using the kit and theme from the GitHub source and leaves the site's package manifest and lockfile unchanged
-- **Verified by**: `packages/kit/build/source-cli.test.mjs` using a local Git source fixture and a site with no published PlatformKit packages
+- **Verified by**: `packages/kit/build/source-cli.test.mts` using a local Git source fixture and a site with no published PlatformKit packages
 
 ### Requirement: Site management is rooted in the Core repository
 
@@ -58,12 +58,12 @@ The site registry SHALL be stored at the Core repository root, and separately fe
 #### Scenario: fetch an independently owned site
 - **WHEN** a user fetches a site through the PlatformKit CLI
 - **THEN** its checkout and registry entry are stored in the Core repository's visible site-management locations without adding the checkout to the workspace's package installation
-- **Verified by**: `packages/kit/build/site-repositories.test.mjs`
+- **Verified by**: `packages/kit/build/site-repositories.test.mts`
 
 #### Scenario: preserve generic fixture sites
 - **WHEN** external site checkouts are ignored by Git
 - **THEN** the ignore rule excludes only the dedicated external-sites directory and leaves tracked fixture sites visible to Git
-- **Verified by**: `packages/kit/build/site-repositories.test.mjs`
+- **Verified by**: `packages/kit/build/site-repositories.test.mts`
 
 ### Requirement: Registered site repositories can be fetched and updated
 
@@ -74,14 +74,14 @@ The `platformkit sites` commands SHALL fetch and update site repositories using 
 - **WHEN** `platformkit sites fetch <name>` is run for a registered site that has no checkout
 - **THEN** it fetches the registered revision into the managed site location and reports the checkout and commit
 
-Verified by: `packages/kit/build/site-repositories.test.mjs`
+Verified by: `packages/kit/build/site-repositories.test.mts`
 
 #### Scenario: Update to a new pin
 
 - **WHEN** `platformkit sites update <name>` is run after the registration's pin changes
 - **THEN** it updates to that pin only if the checkout can be changed without losing local work
 
-Verified by: `packages/kit/build/site-repositories.test.mjs`
+Verified by: `packages/kit/build/site-repositories.test.mts`
 
 ### Requirement: PlatformKit is one package, run from npm or from GitHub
 
@@ -92,7 +92,7 @@ PlatformKit SHALL be published as one npm package, `platformkit`, from this one 
 - **WHEN** `npx platformkit dev` runs in a site's folder
 - **THEN** the site starts, with nothing else installed by hand
 
-Verified by: `node build/one-package.test.mjs`, which packs the package and runs its command from the packed file in an empty folder
+Verified by: `node build/one-package.test.mts`, which packs the package and runs its command from the packed file in an empty folder
 
 #### Scenario: from GitHub
 
@@ -106,4 +106,4 @@ Verified by: `npx --yes github:platform-kit/core#main --help` from an empty fold
 - **WHEN** the repository is searched outside its history
 - **THEN** no import, dependency or configuration names `@platform-kit/kit` or `@platform-kit/movable-types`
 
-Verified by: `node build/one-package.test.mjs`
+Verified by: `node build/one-package.test.mts`

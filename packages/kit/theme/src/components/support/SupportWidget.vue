@@ -46,9 +46,7 @@ onMounted(async () => {
     history.replaceState({}, '', location.pathname + (q ? '?' + q : '') + location.hash)
   }
 })
-// @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
 async function toggle() { if (panelOpen.value) { close(); prompt.value = null; choice.value = null } else { quietNudge(); resolveDefault(); await warmPanel(); open() } }
-// @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
 async function answer(c: any) { choice.value = c || null; prompt.value = reply(); if (c && prompt.value) track.chose(prompt.value, c); quietNudge(); await warmPanel(); open() }
 /* the card's one button: a pop-up's opens the panel on that prompt; the nudge's opens the panel on the desk's default */
 function enter() { if (teaser.value) answer(null); else toggle() }

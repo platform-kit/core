@@ -5,7 +5,7 @@ order: 22
 sources:
   [
     packages/kit/supabase/schemas/43-orders.sql,
-    packages/kit/build/orders-db.test.mjs,
+    packages/kit/build/orders-db.test.mts,
     packages/kit/theme/src/components/Orders.vue,
     packages/kit/supabase/functions/_shared/ledger.ts,
   ]
@@ -102,6 +102,6 @@ The six columns themselves survive one more deploy, and that is a property of th
 rather than a plan anybody has to remember. A plan applies renames, then the schema diff, then the
 data script — so a deploy that dropped the columns would drop them _before_ the script that carries
 their values into `chosen`, and every printed copy ordered before the change would lose what it
-was. So the backfill ships first and the drop follows, and `store-separation.test.mjs` fails
+was. So the backfill ships first and the drop follows, and `store-separation.test.mts` fails
 either way: add a seventh column and it fails, drop the six and it fails until the exception is
 deleted with them. An exception that cannot outlive its reason is the only kind worth writing down.

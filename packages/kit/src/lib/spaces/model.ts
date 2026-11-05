@@ -199,7 +199,7 @@ export function saidIn(m: any, { names = {}, words = {}, money = (v: any) => Str
  * so a bot's answer became "**Breakthrough co" and "you'll need to contact th". A heading is a
  * sentence, or the start of one, and it never ends mid-word.
  */
-export function titleOf(m: any, names = {}, { max = 80 } = {}) {
+export function titleOf(m?: any, names = {}, { max = 80 } = {}) {
   const said = plainMarkup(plainBody((m && m.body) || '', names)).replace(/\s+/g, ' ').trim()
   if (!said) return ''
   /* a first sentence, where there is one short enough to be a heading */
@@ -602,7 +602,7 @@ export const clockOf = (when: any, zone: any) => new Intl.DateTimeFormat(undefin
 /* WHEN SOMETHING HAPPENED, on a thing that may be months old: the time alone while it is today,
    and the day in front of it once it is not. A ticket's timeline runs for weeks — a column of bare
    times on it says nothing at all — while a chat's is nearly always one afternoon. */
-export function stampOf(when: any, now = Date.now(), zone: any) {
+export function stampOf(when: any, now = Date.now(), zone?: any) {
   if (!when) return ''
   const d = new Date(when)
   if (Number.isNaN(d.getTime())) return ''

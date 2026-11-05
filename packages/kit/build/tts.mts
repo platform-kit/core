@@ -415,11 +415,9 @@ async function doBook(pool: any, slug: any) {
   manifest.engine = ENGINE
   /* every recording the book needs, handed to the pool at once so every engine is busy */
   const jobs = []
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   if (intro && (!CHAPTER || CHAPTER === INTRO_KEY) && ONLY !== 'summary') jobs.push({ title: INTRO_KEY, kind: 'full', text: chapterSpeech({ intro: true, md: intro }) })
   for (const c of chapters) {
     if (CHAPTER && c.title !== CHAPTER) continue
-    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     if (ONLY !== 'summary' && !withheld) jobs.push({ title: c.title, kind: 'full', text: chapterSpeech(c) })
     if (ONLY !== 'full' && summaries[c.title]) jobs.push({ title: c.title, kind: 'summary', text: chapterSpeech(c, summaries[c.title]) })
   }

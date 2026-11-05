@@ -19,14 +19,14 @@ today.
 - **WHEN** the model a bot uses is changed to one that costs twice as much per word
 - **THEN** what a person is charged per unit is unchanged, and the site's own margin per unit falls
 
-Verified by: `build/usage.test.mjs`
+Verified by: `build/usage.test.mts`
 
 #### Scenario: an offer with no unit
 
 - **WHEN** an offer declares neither a unit nor a meter
 - **THEN** it is pushed to Stripe and sold exactly as before, with no usage recorded against it
 
-Verified by: `build/usage.test.mjs`; `build/catalog.mjs --check` in `npm test`
+Verified by: `build/usage.test.mts`; `build/catalog.mjs --check` in `npm test`
 
 #### Scenario: a rate that would lose money
 
@@ -46,14 +46,14 @@ choose per offer, and both SHALL be expressible in the offer's own file with no 
 - **WHEN** somebody buys an offer that grants units
 - **THEN** their balance rises by that quantity, once, and is theirs to spend against any bot billed to that offer
 
-Verified by: `build/usage-db.test.mjs` against a reset stack, through the mock checkout
+Verified by: `build/usage-db.test.mts` against a reset stack, through the mock checkout
 
 #### Scenario: a metered subscription is used
 
 - **WHEN** a subscriber on a metered offer uses units
 - **THEN** the usage is reported to the provider against their subscription, and the provider's invoice is the sum of what was reported
 
-Verified by: `build/usage.test.mjs` against the Stripe mock — the events reported, and their sum compared with the usage rows
+Verified by: `build/usage.test.mts` against the Stripe mock — the events reported, and their sum compared with the usage rows
 
 #### Scenario: a metered offer with no provider configured
 
@@ -67,7 +67,7 @@ Verified by: `build/deploy-checks.mjs --test`
 - **WHEN** two metered offers share one Stripe meter event name, or a metered offer is assigned a price in another currency
 - **THEN** catalog compilation refuses the configuration before it can be sold
 
-Verified by: `build/usage.test.mjs`
+Verified by: `build/usage.test.mts`
 
 ### Requirement: Usage offers authorize access before provider work
 
@@ -84,21 +84,21 @@ authorize paid provider work. Offers without usage settings SHALL retain their e
 - **WHEN** a prepaid subject's remaining units are less than the invocation's maximum reservation and no active usage subscription authorizes it
 - **THEN** the invocation is refused before provider work, and the balance is unchanged
 
-Verified by: `build/usage-db.test.mjs` and `build/usage.test.mjs`
+Verified by: `build/usage-db.test.mts` and `build/usage.test.mts`
 
 #### Scenario: an active matching subscription covers metered use
 
 - **WHEN** a subject has an active subscription for the usage offer and the offer declares metered overage
 - **THEN** work may proceed under that offer, including after its included allowance is used, and overage is attributed to its stable offer identity
 
-Verified by: `build/usage-db.test.mjs` and `build/usage.test.mjs`
+Verified by: `build/usage-db.test.mts` and `build/usage.test.mts`
 
 #### Scenario: the matching subscription is no longer active
 
 - **WHEN** a subscription has expired or is not associated with the invocation's usage offer
 - **THEN** it authorizes no new provider work, regardless of the client's claim about its status
 
-Verified by: `build/usage-db.test.mjs`
+Verified by: `build/usage-db.test.mts`
 
 ### Requirement: Automatic top-up is enabled by the site and controlled by the reader
 
@@ -121,35 +121,35 @@ is declined, requires interactive authentication, or has not yet produced a reco
 - **WHEN** a reader has previously opted in but the site disables automatic top-up
 - **THEN** no automatic charge is attempted and the billable invocation is refused before provider work if the available balance cannot cover it
 
-Verified by: `build/usage.test.mjs` with the site switch off and a provider-call counter
+Verified by: `build/usage.test.mts` with the site switch off and a provider-call counter
 
 #### Scenario: a reader's balance reaches their threshold
 
 - **WHEN** the site enables automatic top-up, a reader has opted in with a saved payment method, the balance is at or below their threshold, and their personal monthly cap has room
 - **THEN** the server charges one selected eligible pack off-session, records its confirmed grant once, and admits the invocation only if the resulting balance covers its bounded reservation
 
-Verified by: `build/usage.test.mjs` and `build/usage-db.test.mjs` with the Stripe mock and a usage balance
+Verified by: `build/usage.test.mts` and `build/usage-db.test.mts` with the Stripe mock and a usage balance
 
 #### Scenario: a reader reaches their personal monthly cap
 
 - **WHEN** the next automatic top-up would exceed the reader's own monthly cap
 - **THEN** no charge or grant is created and the invocation is refused before provider work; the site owner does not override or raise that cap
 
-Verified by: `build/usage.test.mjs` with repeated top-up attempts and a provider-call counter
+Verified by: `build/usage.test.mts` with repeated top-up attempts and a provider-call counter
 
 #### Scenario: a top-up is retried or races with another invocation
 
 - **WHEN** the same top-up attempt is retried, or concurrent invocations reach the low-balance threshold together
 - **THEN** no duplicate charge or grant is created for that attempt, and no invocation proceeds without enough confirmed credits for its reservation
 
-Verified by: `build/usage.test.mjs` and concurrent cases in `build/usage-db.test.mjs`
+Verified by: `build/usage.test.mts` and concurrent cases in `build/usage-db.test.mts`
 
 #### Scenario: payment is declined or requires authentication
 
 - **WHEN** Stripe declines the off-session payment or requires the reader to authenticate it
 - **THEN** no usage grant is written, the paid provider is not called, and the reader is told that payment action is needed
 
-Verified by: `build/usage.test.mjs` with declined and authentication-required payment fixtures
+Verified by: `build/usage.test.mts` with declined and authentication-required payment fixtures
 
 ### Requirement: Readers manage usage outside chatbot conversations
 
@@ -164,7 +164,7 @@ The former `/app/usage` address SHALL redirect to `/billing#usage`, preserving q
 - **WHEN** a reader opens `/billing#usage` or follows the former `/app/usage` address
 - **THEN** they see their own balance and usage history across all billable operations, with no chatbot required
 
-Verified by: `build/usage.test.mjs` and the reader-page browser probe
+Verified by: `build/usage.test.mts` and the reader-page browser probe
 
 #### Scenario: usage management is opened from an assistant conversation surface
 

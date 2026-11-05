@@ -25,4 +25,4 @@ Verified by: Prism Edge Function runtime tests and the function bundle check
 - **WHEN** a Prism webhook passes connector verification and has a valid normalized event
 - **THEN** the event is durably deduplicated before processing and is applied at most once
 
-Verified by: Prism webhook integration tests and `packages/kit/build/ledger.test.mjs`
+Verified by: Prism webhook integration tests and `packages/kit/build/ledger.test.mts`

@@ -18,14 +18,14 @@ today.
 - **WHEN** a bot billed to an offer answers once in a shared channel and once in a private conversation
 - **THEN** both are billed to the person it answered for, the same way, against the same offer
 
-Verified by: `build/usage.test.mjs`
+Verified by: `build/usage.test.mts`
 
 #### Scenario: a bot that is not billed
 
 - **WHEN** a bot names no offer
 - **THEN** nothing is recorded against anybody and nothing is reported to the provider
 
-Verified by: `build/usage.test.mjs`
+Verified by: `build/usage.test.mts`
 
 ### Requirement: Somebody out of units is told, and the spending ceiling still comes first
 
@@ -39,11 +39,11 @@ cannot let a bill run away.
 - **WHEN** a person's last unit is spent and they ask again
 - **THEN** the bot says they are out, in the site's words, offers where to get more, and makes no paid call
 
-Verified by: `build/usage-db.test.mjs`; the words pinned by `build/strings.test.mjs`
+Verified by: `build/usage-db.test.mts`; the words pinned by `build/strings.test.mts`
 
 #### Scenario: billed and over the ceiling
 
 - **WHEN** a person is inside their balance but over the per-person ceiling for the window
 - **THEN** the run is still refused, and the refusal says which limit it was
 
-Verified by: `build/usage.test.mjs` over `agent_over_cap`
+Verified by: `build/usage.test.mts` over `agent_over_cap`

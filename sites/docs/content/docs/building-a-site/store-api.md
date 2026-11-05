@@ -7,7 +7,7 @@ sources:
     packages/kit/supabase/functions/storefront-api,
     packages/kit/supabase/functions/_shared/api/shopify,
     packages/kit/theme/src/pages/CartHandoffPage.vue,
-    packages/kit/build/storefront-api.test.mjs,
+    packages/kit/build/storefront-api.test.mts,
     packages/kit/src/lib/cart.ts,
     packages/kit/src/lib/shipto.ts,
   ]
@@ -64,7 +64,7 @@ Two rewrites on the host: `/api/store/*` — the room, as every API has one — 
 
 ## Where the shapes are, and what checks them
 
-`_shared/api/shopify/` — `products.js` (the offers and the records → the products, variants, options and collections; the ids and their inverse), `schema.js` (the Storefront schema's core as SDL, with resolvers over the store and a cart store), `cart.js` (a cart's rows, arithmetic and errors) — plain JavaScript the function and the test share. The function reads the store from the live content index (never a draft) and the catalog, kept a few seconds; carts are `storefront_carts` (service role only; the nightly sweep clears those older than thirty days). `build/storefront-api.test.mjs` (in `platformkit test` with store and api on; `STOREFRONT_API_TEST=0` skips it) pins the products from a fixture and the schema under Node, and — with the stack up — the official client against the served door (shop, products, a product by handle, a collection, introspection, the cart's life, the refusals), and on Playwright the checkout url followed: a guest's paperback paid under the Stripe mock, a book online landing on the bag with the sign-in, an expired token (`STOREFRONT_API_SHOTS` a directory for its screenshots).
+`_shared/api/shopify/` — `products.js` (the offers and the records → the products, variants, options and collections; the ids and their inverse), `schema.js` (the Storefront schema's core as SDL, with resolvers over the store and a cart store), `cart.js` (a cart's rows, arithmetic and errors) — plain JavaScript the function and the test share. The function reads the store from the live content index (never a draft) and the catalog, kept a few seconds; carts are `storefront_carts` (service role only; the nightly sweep clears those older than thirty days). `build/storefront-api.test.mts` (in `platformkit test` with store and api on; `STOREFRONT_API_TEST=0` skips it) pins the products from a fixture and the schema under Node, and — with the stack up — the official client against the served door (shop, products, a product by handle, a collection, introspection, the cart's life, the refusals), and on Playwright the checkout url followed: a guest's paperback paid under the Stripe mock, a book online landing on the bag with the sign-in, an expired token (`STOREFRONT_API_SHOTS` a directory for its screenshots).
 
 ## What is not there, on purpose
 

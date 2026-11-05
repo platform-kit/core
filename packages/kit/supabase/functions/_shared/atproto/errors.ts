@@ -16,7 +16,7 @@ export const REFUSALS = {
   noHandle: () => xerr(400, 'InvalidRequest', 'This account has no username yet: choose one on your account page, and it becomes your handle.'),
   notFound: (what = 'Record') => xerr(400, 'RecordNotFound', `${what} not found`),
   noProfile: () => xerr(400, 'InvalidRequest', 'Profile not found'),
-  forbidden: (m: any) => xerr(403, 'Forbidden', m || 'Not allowed'),
+  forbidden: (m?: any) => xerr(403, 'Forbidden', m || 'Not allowed'),
   invalid: (m: any) => xerr(400, 'InvalidRecord', m),
   closed: () => xerr(400, 'MethodNotImplemented', 'This network is closed to the outside: it answers only its own people, and asks nothing of other servers.'),
   notJoined: () => xerr(400, 'InvalidRequest', 'Reaching people elsewhere on the network needs your account to have joined the wider network, on your account page.'),

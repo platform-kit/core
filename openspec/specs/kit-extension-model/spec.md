@@ -46,7 +46,7 @@ Verified by: the demo run with `instrument: false` in the kit's CI; `deploy-chec
 - **WHEN** any single module is switched off and every other left as it was
 - **THEN** only that module's steps stop, only its secrets stop being demanded, and nothing starts
 
-Verified by: `build/modules-off.test.mjs` over every module the manifests declare
+Verified by: `build/modules-off.test.mts` over every module the manifests declare
 
 ### Requirement: A site overrides by name and extends by registration, never by patching
 
@@ -59,14 +59,14 @@ Where the kit has **behaviour of its own** at an extension point, a registration
 - **WHEN** a site's config names `SiteClose` with its own component
 - **THEN** every place the theme renders the close renders the site's, and nothing else changes
 
-Verified by: `packages/kit/build/overrides.test.mjs` (every component overridden by a stub, each import resolved to it through the real plugin); an override naming a component the theme has not is refused when the config is read
+Verified by: `packages/kit/build/overrides.test.mts` (every component overridden by a stub, each import resolved to it through the real plugin); an override naming a component the theme has not is refused when the config is read
 
 #### Scenario: a missing string override
 
 - **WHEN** a site's strings file lacks a field the theme's default for that scope has
 - **THEN** the theme's default renders — never blank, never `undefined`; a field the site writes wins, a group or a scope only the site has is the site's alone, and every build script that reads a word (the emails' tags, the checkout's line, the chat's follow-ups) reads the same merge
 
-Verified by: `packages/kit/build/strings.test.mjs` in `npm test` (the grammar, the merge, no default lost and no site word overwritten over the real files); on 2026-09-17 the store hero's `from` line removed from the site's store.md showed the theme's default on /store
+Verified by: `packages/kit/build/strings.test.mts` in `npm test` (the grammar, the merge, no default lost and no site word overwritten over the real files); on 2026-09-17 the store hero's `from` line removed from the site's store.md showed the theme's default on /store
 
 #### Scenario: a registration at a point the kit already answers
 
@@ -82,7 +82,7 @@ Verified by: `packages/kit/build/strings.test.mjs` in `npm test` (the grammar, t
 - **WHEN** a site registers a module with its own manifest — a route, a build step, an environment variable — and switches it on
 - **THEN** it behaves as one of the kit's: the route answers, the step runs, the deploy asks for the variable, and switching it off takes all three away and nothing else
 
-Verified by: `build/modules-off.test.mjs` and `build/modes.test.mjs` against a fixture site that registers one
+Verified by: `build/modules-off.test.mts` and `build/modes.test.mts` against a fixture site that registers one
 
 ### Requirement: Core assembles the data layer from both owners
 
@@ -116,21 +116,21 @@ Verified by: the kit's CI; `supabase db reset` locally
 - **WHEN** a site's checkout holds its `db/` and `supabase/config.toml` and no other file under `supabase/`
 - **THEN** the test step assembles the tree and its check passes, with nothing for the reader to commit
 
-Verified by: `node build/assembled-tree.test.mjs`, which runs the test step's assembled-tree commands on a copy of `sites/demo` with its generated tree removed
+Verified by: `node build/assembled-tree.test.mts`, which runs the test step's assembled-tree commands on a copy of `sites/demo` with its generated tree removed
 
 #### Scenario: a stale local copy is replaced, not reported
 
 - **WHEN** the tree on disk was assembled from an older kit, so one assembled file differs from its source
 - **THEN** the test step assembles over it and its check passes, rather than failing and asking for a commit
 
-Verified by: `node build/assembled-tree.test.mjs`, with one assembled file altered before the step runs
+Verified by: `node build/assembled-tree.test.mts`, with one assembled file altered before the step runs
 
 #### Scenario: a hand-added file is refused
 
 - **WHEN** a file under `supabase/functions` or `supabase/schemas` comes from neither the kit nor the site's `db/`
 - **THEN** the check refuses it by name, says to run the assembler, and does not tell the reader to commit
 
-Verified by: `node build/assembled-tree.test.mjs`, with a stray function file added before the step runs
+Verified by: `node build/assembled-tree.test.mts`, with a stray function file added before the step runs
 
 ### Requirement: A site registers what a member's card says about somebody
 
@@ -149,7 +149,7 @@ Every panel, the kit's and a site's, SHALL be drawn only after the database has 
 - **WHEN** a site turns every kit panel off and registers none of its own, and a card is opened
 - **THEN** the card draws its public half and nothing else, and no read for any panel is attempted
 
-Verified by: `build/spaces.test.mjs` and `build/member-panels.test.mjs`
+Verified by: `build/spaces.test.mts` and `build/member-panels.test.mts`
 
 #### Scenario: the panels are site-registered
 
@@ -157,28 +157,28 @@ Verified by: `build/spaces.test.mjs` and `build/member-panels.test.mjs`
 - **THEN** the card draws them with the kit's, in the order the site set, for staff and for the person
 - **AND** no site-specific name appears in the theme or the kit
 
-Verified by: `build/sections.test.mjs`, `build/overrides.test.mjs` and `build/member-panels.test.mjs`
+Verified by: `build/sections.test.mts`, `build/overrides.test.mts` and `build/member-panels.test.mts`
 
 #### Scenario: a site with every module on
 
 - **WHEN** a member opens their own card on a site with the library, analytics and store on and no instrument of its own
 - **THEN** the private half shows Read and Bought, titled for them ("What you have read", "What you have bought"), and no Working panel
 
-Verified by: `build/member-panels-db.test.mjs` under `platformkit test --e2e`, and the demo's card rendered at phone and desktop width in both themes
+Verified by: `build/member-panels-db.test.mts` under `platformkit test --e2e`, and the demo's card rendered at phone and desktop width in both themes
 
 #### Scenario: a module that is off
 
 - **WHEN** a site has the store off and a card is opened by staff
 - **THEN** no Bought panel is drawn and no read of purchases is made for it
 
-Verified by: `build/member-panels-db.test.mjs` under `platformkit test --e2e` on `sites/club`
+Verified by: `build/member-panels-db.test.mts` under `platformkit test --e2e` on `sites/club`
 
 #### Scenario: another member asks
 
 - **WHEN** a signed-in member who is not staff asks for somebody else's read, bought or working answer directly
 - **THEN** each answers exactly as it would for a person with nothing to show
 
-Verified by: `build/member-panels-db.test.mjs` and `build/ownership.test.mjs` under `platformkit test --e2e`
+Verified by: `build/member-panels-db.test.mts` and `build/ownership.test.mts` under `platformkit test --e2e`
 
 #### Scenario: a site rewords, turns off and adds
 
@@ -186,21 +186,21 @@ Verified by: `build/member-panels-db.test.mjs` and `build/ownership.test.mjs` un
 - **THEN** the card shows its words, no Bought panel, and its own panel in the place it set
 - **AND** no site's name, wording or panel appears in the kit, the theme or a kit specification
 
-Verified by: `build/member-panels.test.mjs`
+Verified by: `build/member-panels.test.mts`
 
 #### Scenario: the card and the admin agree on purchases
 
 - **WHEN** a person's purchases are read by the card's Bought panel and by the admin's person page
 - **THEN** both list the same purchases in the same order
 
-Verified by: `build/member-panels-db.test.mjs` under `platformkit test --e2e`
+Verified by: `build/member-panels-db.test.mts` under `platformkit test --e2e`
 
 #### Scenario: the instrument's own words
 
 - **WHEN** a site names an instrument whose vocabulary names its levels
 - **THEN** the Working panel shows the site's names for the levels, and never a level's internal key
 
-Verified by: `build/member-panels.test.mjs`, and DharmaLab's card rendered before and after its copies are removed, which must match
+Verified by: `build/member-panels.test.mts`, and DharmaLab's card rendered before and after its copies are removed, which must match
 
 ### Requirement: A site declares its header
 
@@ -238,25 +238,25 @@ about who sees a link belongs where the link is written.
 - **WHEN** a site has no `nav` in its config and none in `content/site.md`
 - **THEN** the header shows the theme's own links exactly as it does today, and nothing about the site changes
 
-Verified by: `packages/kit/build/site-nav.test.mjs`; the demo and a site headers screenshotted at 1440, light and dark
+Verified by: `packages/kit/build/site-nav.test.mts`; the demo and a site headers screenshotted at 1440, light and dark
 
 #### Scenario: the administrator writes one
 
 - **WHEN** a nav is written in `content/site.md`
 - **THEN** it is the whole list — the theme's own and the config's are not merged into it — and it is live on the site at the next publish
 
-Verified by: `packages/kit/build/site-nav.test.mjs`; the demo's header screenshotted before and after an item is added in the admin
+Verified by: `packages/kit/build/site-nav.test.mts`; the demo's header screenshotted before and after an item is added in the admin
 
 #### Scenario: who sees it
 
 - **WHEN** an item names an audience
 - **THEN** a visitor on a lower rung never sees it, a visitor on that rung or higher does, an item naming `guest` disappears once somebody signs in, and a `tier:` item is shown only to a member of that tier or higher
 
-Verified by: `packages/kit/build/site-nav.test.mjs` over the class ladder in `_shared/access.ts`; the demo's header screenshotted signed out and as `member@example.com`
+Verified by: `packages/kit/build/site-nav.test.mts` over the class ladder in `_shared/access.ts`; the demo's header screenshotted signed out and as `member@example.com`
 
 #### Scenario: a module goes off
 
 - **WHEN** an item points at a module's route and that module is switched off
 - **THEN** the item is not drawn, whether the theme, the config or the site's content wrote it — there is never a link to a route that does not answer
 
-Verified by: `packages/kit/build/site-nav.test.mjs`; the demo run with `store: false`
+Verified by: `packages/kit/build/site-nav.test.mts`; the demo run with `store: false`

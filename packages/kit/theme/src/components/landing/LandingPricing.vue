@@ -6,7 +6,7 @@ import { withBooker } from 'platformkit/lib/booking.js'
 import { products as PRODUCTS } from '#content'
 import { us } from 'platformkit/lib/content.js'
 import { isSignedIn, plan, planKey, planNextKey, planNextAt, refreshEntitlements } from 'platformkit/lib/auth.js'
-import { subscribe, checkout, openPortal } from 'platformkit/lib/commerce.js'
+import { subscribe, checkout, openPortal, money } from 'platformkit/lib/commerce.js'
 import { toast } from 'platformkit/lib/toast.js'
 import { glyph } from './icons.js'
 /*
@@ -161,7 +161,7 @@ const cell = (c: any) => (c == null || c === '' ? 'blank' : YES.test(String(c).t
       </div>
       <!-- the selector: options ticked add up -->
       <div v-else-if="layout === 'selector'" class="lpr-sellist lprv lpd1">
-        <p class="lpr-total"><span v-if="selectorLabel" v-html="md(selectorLabel)"></span><b class="lpnum"><!-- @vue-expect-error TS2339, from the conversion: Property 'money' does not exist on type '{ filter: any; tiers: any[]; fine: string; layout: string; eyebrow: string; heading: string; lead:  -->{{ money(Math.round(selTotal * 100), 'usd') }}</b></p>
+        <p class="lpr-total"><span v-if="selectorLabel" v-html="md(selectorLabel)"></span><b class="lpnum">{{ money(Math.round(selTotal * 100), 'usd') }}</b></p>
         <label v-for="(t, i) in rows" :key="t.i" class="lpr-opt-row lpr-check" :class="{ on: ticked[i] }">
           <input type="checkbox" :checked="!!ticked[i]" @change="ticked = { ...ticked, [i]: ($event.target as any).checked }" />
           <span class="lpr-box"></span>

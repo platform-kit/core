@@ -45,7 +45,7 @@ async function readAll(res: any, file: any, onProgress: any) {
 }
 
 /* one file, as bytes: from the cache, else fetched (Hugging Face, then the bucket) and cached */
-export async function fetchWeight(file: any, onProgress: any) {
+export async function fetchWeight(file: any, onProgress?: any) {
   const cache = await cacheOpen()
   if (cache) {
     const hit = await cache.match(KEY(file))
@@ -76,7 +76,7 @@ export async function weightsCached() {
 /* the pre-warm: fill the cache, smallest files first so an interrupted tab keeps
    something; never when the browser says it has no room. One run per page. */
 let warming: any = null
-export function prefetchWeights(onProgress: any) {
+export function prefetchWeights(onProgress?: any) {
   if (!warming) warming = (async () => {
     if (await weightsCached()) return true
     try {

@@ -9,21 +9,21 @@ A lesson SHALL complete when the reader marks it done, or finishes the chapter i
 - **WHEN** a reader completes the last required lesson
 - **THEN** the enrollment is complete, the achievement is awarded, and a certificate answers at its public address
 
-Verified by: `build/courses-db.test.mjs` and `build/courses.test.mjs` in a browser
+Verified by: `build/courses-db.test.mts` and `build/courses.test.mts` in a browser
 
 #### Scenario: a quiz passed
 
 - **WHEN** an enrolled reader finishes an open form lesson's scored form with at least its pass mark
 - **THEN** the lesson is recorded done by the server as the response completes, and finishing the course's last required lesson this way completes the course
 
-Verified by: `build/courses-db.test.mjs`
+Verified by: `build/courses-db.test.mts`
 
 #### Scenario: a quiz not passed
 
 - **WHEN** a reader finishes a scored form below its pass mark
 - **THEN** the lesson stays open and not done
 
-Verified by: `build/courses-db.test.mjs`
+Verified by: `build/courses-db.test.mts`
 
 ## ADDED Requirements
 
@@ -55,4 +55,4 @@ Verified by: the player driven in a browser on the demo
 - **WHEN** an administrator opens a course's enrollments
 - **THEN** each person shows their best score on each scored form lesson and how many attempts they made
 
-Verified by: `build/courses-db.test.mjs`
+Verified by: `build/courses-db.test.mts`

@@ -71,7 +71,6 @@ const media = computed(() => live.value.media || [])
 const threadHref = computed(() => (live.value.kind === 'space'
   ? ROUTES.spaces + '/' + (live.value.space ? live.value.space.slug + '/' + (live.value.space.channel || '') : '')
   : ROUTES.feed + '/post/' + live.value.id))
-// @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 1.
 const when = computed(() => agoOf(live.value.created_at))
 const whenFull = computed(() => { try { return new Date(live.value.created_at).toLocaleString() } catch { return '' } })
 

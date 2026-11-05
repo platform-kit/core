@@ -764,7 +764,7 @@ onBeforeUnmount(() => {
             <article v-for="offer in usagePacks" :key="offer.key" class="usage-card">
               <div>
                 <h3>{{ offer.title }}</h3>
-                <p><!-- @vue-expect-error TS2339, from the conversion: Property 'size' does not exist on type '{ active: boolean; $props: { readonly active: boolean; }; $: ComponentInternalInstance; $data: {}; $ -->{{ W.pack-size.replace('{amount}', numberOf(Number(offer.usage.grant) * 1_000_000)).replace('{unit}', unitOf(offer.key)) }}</p>
+                <p><!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ W['pack-size'].replace('{amount}', numberOf(Number(offer.usage.grant) * 1_000_000)).replace('{unit}', unitOf(offer.key)) }}</p>
               </div>
               <div class="usage-pack-buy">
                 <strong>{{ moneyOf(offer.price, offer.currency) }}</strong>
@@ -797,7 +797,7 @@ onBeforeUnmount(() => {
               </select>
             </label>
             <label>
-              <span><!-- @vue-expect-error TS2554, from the conversion: Expected 2-3 arguments, but got 1. -->{{ W.threshold.replace('{unit}', resolveUsageUnit(selectedTopupPack?.unit)) }}</span>
+              <span>{{ W.threshold.replace('{unit}', resolveUsageUnit(selectedTopupPack?.unit)) }}</span>
               <input v-model="threshold" type="number" min="0" step="0.01" :disabled="busy" />
             </label>
             <label>

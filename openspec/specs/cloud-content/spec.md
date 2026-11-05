@@ -39,7 +39,7 @@ Verified by: a kit test against the local stack's function with the seed's accou
 - **WHEN** an administrator opens `/admin/articles` on a cloud-mode site and saves an edit
 - **THEN** the grid, the drawer, the preview and the save work as they do in dev, the row's text is byte-identical to what git mode writes, and the browser never held the service key or the token
 
-Verified by: Playwright against the demo in cloud mode on the local stack (`supabase functions serve`), screenshots of the grid, the drawer and the preview; `pipe.test.mjs --roundtrip` under both stores
+Verified by: Playwright against the demo in cloud mode on the local stack (`supabase functions serve`), screenshots of the grid, the drawer and the preview; `pipe.test.mts --roundtrip` under both stores
 
 ### Requirement: An edit shows on the live site at once
 
@@ -71,7 +71,7 @@ Verified by: a kit test of the row store (a first save leaves `text` null and th
 - **WHEN** the demo's content is built by velite and loaded as rows through the adapter
 - **THEN** every field the components read is equal entry for entry
 
-Verified by: `build/entry.test.mjs`
+Verified by: `build/entry.test.mts`
 
 #### Scenario: the database is unreachable
 
@@ -85,7 +85,7 @@ Verified by: a Playwright run with the REST route blocked
 - **WHEN** an entry is updated through the Management API under a management key
 - **THEN** it is a row of `content_drafts` the admin lists under Content → Publishing with the API key's maker as who, the live version untouched until it is published — through the API or by a person — and the publish is the same publish, pushed as one commit
 
-Verified by: `content-api.test.mjs` on the demo in cloud mode — the draft row, the admin's Publishing page by Playwright
+Verified by: `content-api.test.mts` on the demo in cloud mode — the draft row, the admin's Publishing page by Playwright
 
 ### Requirement: Every edit is pushed to the repository
 
@@ -214,7 +214,7 @@ larger by the words that were added and smaller again when they were taken out
 - **THEN** the draft moves nothing and the publish writes the rows — the team's row renamed, the
   delay in `app_settings` — with no machine anywhere
 
-Verified by: the same run; `build/teams-db.test.mjs` and `build/providers-db.test.mjs` pin the two
+Verified by: the same run; `build/teams-db.test.mts` and `build/providers-db.test.mts` pin the two
 projections
 
 #### Scenario: the row is only ever a cache
@@ -222,7 +222,7 @@ projections
 - **WHEN** `public.compiled` is emptied
 - **THEN** every function answers from the file the deploy shipped, as it did before the table existed
 
-Verified by: `build/declarations.test.mjs` classifies it derived and refuses a grant to a session;
+Verified by: `build/declarations.test.mts` classifies it derived and refuses a grant to a session;
 the demo's suite with the table empty
 
 #### Scenario: an artefact that says nothing about the three shapes
@@ -230,7 +230,7 @@ the demo's suite with the table empty
 - **WHEN** a new compiled `.json` appears beside the functions and is named in none of the three lists
 - **THEN** `npm test` fails and says which file and which decision is missing
 
-Verified by: `build/artefacts.test.mjs`
+Verified by: `build/artefacts.test.mts`
 
 #### Scenario: a compile that can only work from a disk
 
@@ -238,7 +238,7 @@ Verified by: `build/artefacts.test.mjs`
   theme's manifest — and so produces less from content alone than it does for the build
 - **THEN** `npm test` fails and names the part of the artefact the two disagree about
 
-Verified by: `build/artefacts.test.mjs`, which runs each compile twice over the checkout — once as
+Verified by: `build/artefacts.test.mts`, which runs each compile twice over the checkout — once as
 the build runs it, once through a store that answers nothing outside `content/`
 
 ### Requirement: A publish can ask the host to rebuild

@@ -9,7 +9,7 @@ sources:
     packages/kit/supabase/functions/_shared/api/typeform,
     packages/kit/supabase/functions/_shared/api/keys.ts,
     packages/kit/supabase/schemas/25-forms.sql,
-    packages/kit/build/forms-api.test.mjs,
+    packages/kit/build/forms-api.test.mts,
   ]
 ---
 

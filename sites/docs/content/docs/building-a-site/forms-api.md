@@ -12,7 +12,7 @@ sources:
     packages/kit/src/lib/forms/api-shape.ts,
     packages/kit/supabase/functions/_shared/forms-live.ts,
     packages/kit/src/lib/forms/typeform-embed.ts,
-    packages/kit/build/forms-api.test.mjs,
+    packages/kit/build/forms-api.test.mts,
     packages/kit/theme/src/components/forms/FormRun.vue,
     packages/kit/theme/src/components/admin/FormBuilder.vue,
   ]
@@ -87,7 +87,7 @@ The popup, the slider and the side tab work the same way. The form's Share tab i
 
 ## Where the shapes are, and what checks them
 
-`_shared/api/typeform/` — `definition.js` (a compiled form to Typeform's definition), `response.js` (a row to an item; the webhook payload), `query.js` (the Responses arguments as one plan), `insights.js`, `errors.js` — plain JavaScript the function and the test share. `build/forms.mjs` compiles beside the contract what the definition needs — `src/lib/forms/api-shape.js`: each field's words and choices, the slides with their jump conditions as rows and their free markdown, the start and end slides; the file's times — as the `forms` build step (`platformkit run forms`); the admin runs it on every save. `build/forms-api.test.mjs` (in `platformkit test` with forms and api on; `FORMS_API_TEST=0` skips it) pins the shapes under Node over a document of every kind, and — with the stack up — runs `@typeform/api-client` against the served function, the refusals, a webhook delivered and verified with its secret, a response deleted, the insights, and `@typeform/embed` on a page of another origin under Playwright.
+`_shared/api/typeform/` — `definition.js` (a compiled form to Typeform's definition), `response.js` (a row to an item; the webhook payload), `query.js` (the Responses arguments as one plan), `insights.js`, `errors.js` — plain JavaScript the function and the test share. `build/forms.mjs` compiles beside the contract what the definition needs — `src/lib/forms/api-shape.js`: each field's words and choices, the slides with their jump conditions as rows and their free markdown, the start and end slides; the file's times — as the `forms` build step (`platformkit run forms`); the admin runs it on every save. `build/forms-api.test.mts` (in `platformkit test` with forms and api on; `FORMS_API_TEST=0` skips it) pins the shapes under Node over a document of every kind, and — with the stack up — runs `@typeform/api-client` against the served function, the refusals, a webhook delivered and verified with its secret, a response deleted, the insights, and `@typeform/embed` on a page of another origin under Playwright.
 
 ## What is not there, on purpose
 

@@ -2,8 +2,8 @@
 
 ## 1. The server
 
-- [x] 1.1 A form response that completes, passed or unscored, records every open form lesson pointing at that form as done for that person, and checks the course for completion. Verified by `build/courses-db.test.mjs`: passed completes, failed does not, the last lesson completes the course.
-- [x] 1.2 `course_state` gives each scored form lesson the reader's best attempt (score, total, passed, attempts), and `admin_course_enrollments` each person's. Verified by `build/courses-db.test.mjs`.
+- [x] 1.1 A form response that completes, passed or unscored, records every open form lesson pointing at that form as done for that person, and checks the course for completion. Verified by `build/courses-db.test.mts`: passed completes, failed does not, the last lesson completes the course.
+- [x] 1.2 `course_state` gives each scored form lesson the reader's best attempt (score, total, passed, attempts), and `admin_course_enrollments` each person's. Verified by `build/courses-db.test.mts`.
 
 ## 2. The player
 

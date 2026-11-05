@@ -8,8 +8,9 @@
 - [x] The theme: its modules converted, every component `<script setup lang="ts">`, published compiled for Node and as source for Vite
 - [x] Docs: the build page, configuration, the CLI; source paths across the docs
 - [x] The Edge Functions' JavaScript modules (`supabase/functions`), checked by `tsc` through `tsconfig.functions.json`; `deno check` over every function is still to do
-- [ ] The integration scripts (`build/*.integration.mjs`)
-- [ ] The tests themselves to TypeScript and `node:test`
-- [ ] The fixture and demo sites' files, and the generator templates that can be
+- [x] The integration scripts and the tests, to TypeScript and under the strict check
+- [ ] The tests that are not yet `node:test`, moved to it
+- [x] The voice agent, the kit's fixtures and the generators that write the kit's own files
+- [x] A site may be TypeScript (`platformkit.config.ts`, `build/site-file.mts`), and the workspace's sites are
 - [ ] Type what the conversion left as `any` and the `from the conversion` markers, file by file
 - [ ] The full end-to-end suite on the converted kit

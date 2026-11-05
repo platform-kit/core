@@ -322,7 +322,7 @@ export async function upload(file: any, { kind = 'file', seconds = 0, transcript
 }
 
 /* the panel: opened on a thread from the away email's link (?support=<id>) */
-export function open(id: any) {
+export function open(id?: any) {
   panelOpen.value = true
   if (id) openThread(id)
 }

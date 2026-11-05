@@ -33,7 +33,7 @@ A module that is off is left out of the assembled declaration entirely. On a liv
 
 ## Verification
 
-`modules-off-db.test.mjs`, in the end-to-end run: for each module, assemble a site with that module off (and everything it is required by), apply the declaration to a fresh database, serve the functions, and check that every served function boots and none of the module's is served.
+`modules-off-db.test.mts`, in the end-to-end run: for each module, assemble a site with that module off (and everything it is required by), apply the declaration to a fresh database, serve the functions, and check that every served function boots and none of the module's is served.
 
 ## As built
 

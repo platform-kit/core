@@ -15,7 +15,7 @@ The Hero section SHALL take, beside its words (headline lines, a sub-line, a fir
 - **WHEN** a site's landing page is built after the change
 - **THEN** the site-provided stage renders beside the hero's words, and the kit's landing components contain no site-specific concepts
 
-Verified by: screenshots of `/` before and after, both themes; `build/sections.test.mjs` (the kit's landing components contain no site-specific concepts)
+Verified by: screenshots of `/` before and after, both themes; `build/sections.test.mts` (the kit's landing components contain no site-specific concepts)
 
 #### Scenario: a hero with a frame
 
@@ -60,6 +60,6 @@ Theme sections SHALL use generic defaults. Site-specific meaning and data SHALL 
 #### Scenario: the defaults
 
 - **WHEN** a new section is added to a page in the builder
-- **THEN** its defaults read as a generic example, and `build/sections.test.mjs` finds no site-specific vocabulary in the theme's landing defaults
+- **THEN** its defaults read as a generic example, and `build/sections.test.mts` finds no site-specific vocabulary in the theme's landing defaults
 
-Verified by: `build/sections.test.mjs`
+Verified by: `build/sections.test.mts`

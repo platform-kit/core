@@ -26,7 +26,7 @@ Verified by: `npm test`
 - **WHEN** `npm test` runs
 - **THEN** each lane runs and reports, and a failure names the shape it failed in
 
-Verified by: `build/modes.test.mjs` and the lane runners it drives
+Verified by: `build/modes.test.mts` and the lane runners it drives
 
 #### Scenario: the static lane over more than the docs site
 
@@ -40,7 +40,7 @@ Verified by: the static lane, over `sites/docs` and a library fixture
 - **WHEN** a lane is too slow for the default run
 - **THEN** it is skipped with a note naming what is not covered, and reported at the end of the run
 
-Verified by: `build/modes.test.mjs`
+Verified by: `build/modes.test.mts`
 
 #### Scenario: a check that needs a stack
 

@@ -9,7 +9,7 @@ The `forms` module SHALL hold each form as a forms.md document under `content/fo
 - **WHEN** forms.md's own tests run over the parts of it the kit vendored
 - **THEN** they pass unchanged
 
-Verified by: `build/forms.test.mjs`
+Verified by: `build/forms.test.mts`
 
 ### Requirement: Every answer is kept as it is given
 
@@ -20,7 +20,7 @@ Every answer SHALL be saved as a row as it is given, with files in a bucket, and
 - **WHEN** a respondent reads responses
 - **THEN** they read only their own
 
-Verified by: `build/ownership.test.mjs` under `platformkit test --e2e`
+Verified by: `build/ownership.test.mts` under `platformkit test --e2e`
 
 ### Requirement: Paid forms, scores and tickets
 
@@ -31,7 +31,7 @@ A paid form SHALL take the price at checkout first, and each purchase SHALL buy 
 - **WHEN** a response to a scored form passes
 - **THEN** every open course lesson pointing at that form is recorded done for the respondent
 
-Verified by: `build/courses-db.test.mjs` under `platformkit test --e2e`
+Verified by: `build/courses-db.test.mts` under `platformkit test --e2e`
 
 ### Requirement: Webhooks and the Typeform API
 
@@ -42,4 +42,4 @@ A completed response SHALL be delivered to the form's webhooks, signed and retri
 - **WHEN** `@typeform/api-client` lists forms, reads one and its responses
 - **THEN** it answers every published form, the served definition has the form's fields, and each response its typed answers
 
-Verified by: `build/forms-api.test.mjs` under `platformkit test --e2e`, `build/webhooks.test.mjs`
+Verified by: `build/forms-api.test.mts` under `platformkit test --e2e`, `build/webhooks.test.mts`

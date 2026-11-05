@@ -8,7 +8,7 @@ export const ERR: any = {
   TOO_MANY_REQUESTS: [429, 'TOO_MANY_REQUESTS', 'Rate limit exceeded.'],
   VALIDATION_ERROR: [400, 'VALIDATION_ERROR', 'The request is not valid.'],
 }
-export function errorOf(code: any, description: any, details: any) {
+export function errorOf(code: any, description?: any, details?: any) {
   const [status, c, d] = ERR[code] || ERR.BAD_REQUEST
   return { status, body: { code: c, description: description || d, ...(details ? { details } : {}) } }
 }

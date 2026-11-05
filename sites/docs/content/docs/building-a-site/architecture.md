@@ -18,7 +18,7 @@ sources:
     packages/kit/build/hyperswitch-v2-test.compose.yml,
     packages/kit/bin/platformkit.mjs,
     sites/docs/package.json,
-    sites/docs/platformkit.config.js,
+    sites/docs/platformkit.config.ts,
   ]
 reviewed: 2026-11-04
 ---

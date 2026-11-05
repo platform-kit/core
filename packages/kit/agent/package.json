@@ -6,8 +6,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "start": "node agent.mjs start",
-    "test": "node --test *.test.mjs"
+    "start": "node agent.mts start",
+    "test": "node --test *.test.mts"
   },
   "dependencies": {
     "@livekit/agents": "1.9.1",

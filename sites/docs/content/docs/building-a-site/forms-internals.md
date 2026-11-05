@@ -9,7 +9,7 @@ sources:
     packages/kit/build/forms.mts,
     packages/kit/build/form-io.mts,
     packages/kit/build/form-embed.mts,
-    packages/kit/build/forms.test.mjs,
+    packages/kit/build/forms.test.mts,
     packages/kit/supabase/functions/form,
     packages/kit/supabase/functions/_shared/forms/score.ts,
     packages/kit/supabase/schemas/25-forms.sql,
@@ -51,7 +51,7 @@ A document begins with `#!` lines, never with `---` (velite would read a leading
 
 ## The vendored parts
 
-`packages/kit/vendor/formsmd` holds the separable parts of `formsmd@1.1.3` (Apache-2.0; `NOTICE` names every change): `settings-parse.js` (the sixty settings and their validation), `attrs-parse.js` (the `[#id .class attr="v"]` grammar), `data-blocks-parse.js` (the ` ```data ` JSON blocks), `phone-numbers.js` (placeholders and calling codes by country), `composer.js` (the Composer: a document written from calls) and `field-parse.js` — the field-line pattern and every kind's parameter parsing factored out of the original `form-field-create.js` as a pure function, the HTML it emitted left behind. Their own tests are under `vendor/formsmd/tests`, run as they were written by `build/forms.test.mjs` over a small Jest shim. Not vendored: the renderer, the stylesheet, the translations (a form's words are the kit's `forms` strings scope), the Google Apps Script, the CLI.
+`packages/kit/vendor/formsmd` holds the separable parts of `formsmd@1.1.3` (Apache-2.0; `NOTICE` names every change): `settings-parse.js` (the sixty settings and their validation), `attrs-parse.js` (the `[#id .class attr="v"]` grammar), `data-blocks-parse.js` (the ` ```data ` JSON blocks), `phone-numbers.js` (placeholders and calling codes by country), `composer.js` (the Composer: a document written from calls) and `field-parse.js` — the field-line pattern and every kind's parameter parsing factored out of the original `form-field-create.js` as a pure function, the HTML it emitted left behind. Their own tests are under `vendor/formsmd/tests`, run as they were written by `build/forms.test.mts` over a small Jest shim. Not vendored: the renderer, the stylesheet, the translations (a form's words are the kit's `forms` strings scope), the Google Apps Script, the CLI.
 
 ## The parser and the model
 
@@ -91,4 +91,4 @@ The `form` function (no JWT required): a multipart POST is a slide — `_form`, 
 
 ## Tests
 
-`build/forms.test.mjs`: the vendored tests, the parser over `build/fixtures/forms/every-kind.md` (every kind, conditions, a jump, a binding, a data block, a div, an if/else), the refusals, the writer's round trip, the logic, the screens by page mode, the validation by kind, the grade. `deploy-checks` refuses `instrument` on with `forms` off. The parity with forms.md was established once, in the build (the change's `verify.md`), and is not kept as a suite: the fixtures are the pin.
+`build/forms.test.mts`: the vendored tests, the parser over `build/fixtures/forms/every-kind.md` (every kind, conditions, a jump, a binding, a data block, a div, an if/else), the refusals, the writer's round trip, the logic, the screens by page mode, the validation by kind, the grade. `deploy-checks` refuses `instrument` on with `forms` off. The parity with forms.md was established once, in the build (the change's `verify.md`), and is not kept as a suite: the fixtures are the pin.

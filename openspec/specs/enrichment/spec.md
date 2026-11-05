@@ -26,7 +26,7 @@ Verified by: the working rule (no automation; by design)
 - **WHEN** a run fails mid-book
 - **THEN** the next run resumes from the stage that failed, paying for nothing already cached
 
-Verified by: `build/enrich.test.mjs` — a stage whose inputs have not moved is read back and costs nothing; an edited chapter invalidates its own stage and NOT the reading of the whole book; a changed prompt version invalidates everything under it; and a run that died halfway keeps every stage it finished and invents none it did not
+Verified by: `build/enrich.test.mts` — a stage whose inputs have not moved is read back and costs nothing; an edited chapter invalidates its own stage and NOT the reading of the whole book; a changed prompt version invalidates everything under it; and a run that died halfway keeps every stage it finished and invents none it did not
 
 ### Requirement: The output is in the file's own shape
 
@@ -35,7 +35,7 @@ The companion SHALL be written through `build/companion-io.mjs` in the same gram
 #### Scenario: the written companion
 
 - **WHEN** a run writes with `--write`
-- **THEN** `node build/companions.test.mjs` passes on the result
+- **THEN** `node build/companions.test.mts` passes on the result
 
 Verified by: `npm test`
 
@@ -59,14 +59,14 @@ An enrichment run SHALL be an `agent_runs` row carrying a job (the script and it
 - **WHEN** the worker holding an enrichment run stops between stages
 - **THEN** its lease expires, another worker picks the run up, keeps every stage already done, and carries on from the first one that is not
 
-Verified by: `build/agents-db.test.mjs` (the job branch against the stack — a job run is queued, walks its stages in order, finishes, and its cache is the run's own state rather than a file); `build/enrich.test.mjs` ("a second worker does not discard what the first one paid for", "a run that died halfway keeps every stage it finished")
+Verified by: `build/agents-db.test.mts` (the job branch against the stack — a job run is queued, walks its stages in order, finishes, and its cache is the run's own state rather than a file); `build/enrich.test.mts` ("a second worker does not discard what the first one paid for", "a run that died halfway keeps every stage it finished")
 
 #### Scenario: an administrator stops a run
 
 - **WHEN** `agent_cancel` is called on an enrichment run
 - **THEN** it stops before the next paid call, keeps what it has done, and says it was cancelled
 
-Verified by: `build/agents-db.test.mjs` — the one `agent_cancel`, proved on a run and the run stopping. There is deliberately no second test for a job: this requirement forbids a second cancel existing, so the same statement covers both branches by construction.
+Verified by: `build/agents-db.test.mts` — the one `agent_cancel`, proved on a run and the run stopping. There is deliberately no second test for a job: this requirement forbids a second cancel existing, so the same statement covers both branches by construction.
 
 ### Requirement: The stage cache is the run's, and the same shape as the checkout's
 
@@ -77,7 +77,7 @@ A stage's result SHALL be cached by a hash of its inputs and the prompt version,
 - **WHEN** a book is enriched again with one chapter edited
 - **THEN** only that chapter's stages are made again, in either mode
 
-Verified by: `build/enrich.test.mjs` — "a stage whose inputs have not moved is read back rather than bought again", "a cache written by one is readable by the other", and both backings exercised through the one accessor (a mangled cache file reads as empty rather than stopping a run)
+Verified by: `build/enrich.test.mts` — "a stage whose inputs have not moved is read back rather than bought again", "a cache written by one is readable by the other", and both backings exercised through the one accessor (a mangled cache file reads as empty rather than stopping a run)
 
 ### Requirement: The spend rule holds wherever the run happens
 
@@ -88,7 +88,7 @@ A run started from the admin SHALL be one book; its cost SHALL be recorded on it
 - **WHEN** somebody tries to start a library-wide pass from the admin
 - **THEN** it is refused, and the refusal says where that is run instead
 
-Verified by: `build/enrich.test.mjs` ("a book cannot spend more than its budget" — the per-book guard checked before every paid call) and the one-book-per-run rule in `agent_job`. NOT VERIFIED: the library-wide refusal itself has no pinned test — it is the admin's own action and was checked by hand.
+Verified by: `build/enrich.test.mts` ("a book cannot spend more than its budget" — the per-book guard checked before every paid call) and the one-book-per-run rule in `agent_job`. NOT VERIFIED: the library-wide refusal itself has no pinned test — it is the admin's own action and was checked by hand.
 
 ### Requirement: A deployment says yes to spending before a job starts
 

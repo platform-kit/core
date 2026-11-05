@@ -6,14 +6,14 @@ sources:
   [
     packages/kit/supabase/functions/atproto/index.ts,
     packages/kit/supabase/functions/_shared/atproto,
-    packages/kit/build/atproto.test.mjs,
+    packages/kit/build/atproto.test.mts,
     packages/kit/src/lib/network/apps.ts,
     packages/kit/theme/src/components/network/NetApps.vue,
     deploy/_redirects,
     packages/kit/vite/index.mts,
     packages/kit/supabase/functions/_shared/atproto/federation.ts,
     packages/kit/supabase/functions/_shared/atproto/appview.ts,
-    packages/kit/build/atproto-interop.test.mjs,
+    packages/kit/build/atproto-interop.test.mts,
   ]
 reviewed: 2026-10-31
 ---
@@ -34,7 +34,7 @@ The dev server proxies the same three paths to the function (the kit's Vite plug
 
 ## Other apps are the site owner's choice
 
-Other apps signing in is off unless the site's config says `network: { apps: true }`. Off, every method an app would use — `com.atproto.server.createSession`, `refreshSession`, `createAppPassword`, every `app.bsky.*` read and write, a space's feed generator — answers 403 `Forbidden`, "This site does not let other apps sign in. Use the site itself." (`clientAllowed` in `_shared/atproto/ids.ts`, pinned by `build/network.test.mjs`). What still answers: `com.atproto.server.describeServer`, which the site's own account page reads, and, where the site federates, `com.atproto.sync.*`, `com.atproto.identity.resolveHandle` and the public repository reads (`describeRepo`, `getRecord`, `listRecords`), which relays and other servers need.
+Other apps signing in is off unless the site's config says `network: { apps: true }`. Off, every method an app would use — `com.atproto.server.createSession`, `refreshSession`, `createAppPassword`, every `app.bsky.*` read and write, a space's feed generator — answers 403 `Forbidden`, "This site does not let other apps sign in. Use the site itself." (`clientAllowed` in `_shared/atproto/ids.ts`, pinned by `build/network.test.mts`). What still answers: `com.atproto.server.describeServer`, which the site's own account page reads, and, where the site federates, `com.atproto.sync.*`, `com.atproto.identity.resolveHandle` and the public repository reads (`describeRepo`, `getRecord`, `listRecords`), which relays and other servers need.
 
 ## Identity
 
@@ -114,4 +114,4 @@ A commit event carries the new blocks and the blocks its proofs pass through, an
 
 ## Testing
 
-`build/atproto.test.mjs` drives the served function with Bluesky's own client: app passwords, signing in by handle and address and refusing the site password, three posts and three readers by every method, a space's post by record, in a list and in a thread, a space's feed to a member and an outsider, the timeline, likes, reposts, replies, notifications, a picture uploaded and posted, a record read back, the closed site's refusals, and revoking an app password. It skips itself, saying why, when the function is not served.
+`build/atproto.test.mts` drives the served function with Bluesky's own client: app passwords, signing in by handle and address and refusing the site password, three posts and three readers by every method, a space's post by record, in a list and in a thread, a space's feed to a member and an outsider, the timeline, likes, reposts, replies, notifications, a picture uploaded and posted, a record read back, the closed site's refusals, and revoking an app password. It skips itself, saying why, when the function is not served.

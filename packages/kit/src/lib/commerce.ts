@@ -16,7 +16,7 @@ import { ug } from './strings.js'
 /* the page checkout was started from — where a cancelled checkout comes back to */
 /* where a checkout comes back to: this page, or a path the caller names (a paid form sends them
    back to the form itself, so the answer is the next thing they see). A path on this site only. */
-const here = (path: any) => (path && String(path).startsWith('/') ? String(path) : window.location.pathname + window.location.search)
+const here = (path?: any) => (path && String(path).startsWith('/') ? String(path) : window.location.pathname + window.location.search)
 async function call(name: any, body: any) {
   const { data, error } = await (supabase as any).functions.invoke(name, { body })
   const fail = (msg: any, code: any) => {
@@ -57,7 +57,6 @@ export async function checkout(items: any, opts: any = {}) {
     items: items.map((i: any) => ({ sku: i.sku, quantity: i.quantity, variant: i.variant || undefined })),
     /* where a cancel comes back to: where they started unless the caller says otherwise — a paid
        form sends them back to the form, so the answer is the next thing they see */
-    // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
     return: opts.return ? here(opts.return) : here(),
     ...(items.some(lineShips) ? { country: shipTo.value } : {}),
   })
@@ -66,14 +65,12 @@ export async function checkout(items: any, opts: any = {}) {
 /* a session paid as it is booked: the chosen time rides with the payment, and
    the webhook books it the moment the payment lands; back on the Coaching tab */
 export async function payAndBook(sku: any, booking: any) {
-  // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
   const d = await call('create-checkout-session', { items: [{ sku, quantity: 1 }], booking, return: here(), success: '/app/coaching' })
   return followCheckout(d)
 }
 /* a membership starts through Checkout in subscription mode; a subscriber
    choosing another plan is switched in place and told (no page leaves) */
 export async function subscribe(sku: any) {
-  // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
   const d = await call('create-checkout-session', { items: [{ sku, quantity: 1 }], return: here() })
   return followCheckout(d)
 }

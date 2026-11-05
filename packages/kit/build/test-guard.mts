@@ -15,7 +15,7 @@
  */
 import { execFileSync } from 'node:child_process'
 
-export const isTestProcess = () => process.env.PLATFORMKIT_TEST_PROCESS === '1' || /\.(test|integration)\.m?js$/.test(process.argv[1] || '')
+export const isTestProcess = () => process.env.PLATFORMKIT_TEST_PROCESS === '1' || /\.(test|integration)\.m?[jt]s$/.test(process.argv[1] || '')
 if (isTestProcess()) process.env.PLATFORMKIT_TEST_PROCESS = '1'
 
 const trim = (u: any) => String(u || '').trim().replace(/\/+$/, '')

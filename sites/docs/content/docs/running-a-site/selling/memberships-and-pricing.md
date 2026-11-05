@@ -9,7 +9,7 @@ sources:
     packages/kit/supabase/functions/_shared/ledger-rules.ts,
     packages/kit/supabase/functions/_shared/payment-provider.mts,
     packages/kit/src/payment-provider.d.ts,
-    packages/kit/build/ledger.test.mjs,
+    packages/kit/build/ledger.test.mts,
     packages/kit/theme/src/components/landing/LandingPricing.vue,
     packages/kit/src/lib/auth.ts,
   ]
@@ -30,7 +30,7 @@ The ledger writes what somebody owns after they have paid, and **what it decides
 - **a session, an offering or a form is one credit PER UNIT**, each its own row: three bought is three owed, and sharing a source id would collide on the upsert and quietly make three into one.
 - **the same payment decides the same thing every time it is seen.** Stripe retries events and the client's `confirm-checkout` writes the same rows as the webhook, so every grant's source id is a function of the payment and nothing else.
 
-`ledger.test.mjs` pins all of it. Before this the most consequential file in the kit had no test of its own, for a structural reason rather than a careless one: every decision sat between two database writes.
+`ledger.test.mts` pins all of it. Before this the most consequential file in the kit had no test of its own, for a structural reason rather than a careless one: every decision sat between two database writes.
 
 Stripe is the compatibility default, but a site may register its own payment adapter for the
 checkout, subscription changes, and customer portal operations it supports. Shared membership

@@ -8,6 +8,7 @@ import { readManifests } from './modules/manifest.mjs'
 import { inferenceOf } from './inference-config.mjs'
 import { paymentProviderPublicSettingsOf } from './payment-provider-registry.mjs'
 import { KINDS } from './courses-io.mjs'
+import { siteFile } from './site-file.mjs'
 
 /*
  * THE RESOLVED MODULE SET. The manifests are the kit's own for now; a site's own module joins them
@@ -27,7 +28,7 @@ export function resolveModules(root = process.cwd()) {
 
 export async function loadSite(root = process.cwd()) {
   /* the query defeats the module cache, so a restart reads the file as it is now */
-  const mod = await import(/* @vite-ignore */ pathToFileURL(path.join(root, 'platformkit.config.js')).href + '?t=' + Date.now())
+  const mod = await import(/* @vite-ignore */ pathToFileURL(siteFile(root)).href + '?t=' + Date.now())
   const c = mod.default || mod
   const manifests = resolveModules(root)
   return { root, ...c, manifests, moduleKeys: [...manifests.keys()], looks: c.looks || {}, modules: c.modules || {}, deployment: deploymentOf(c), defaultLook: c.defaultLook || Object.keys(c.looks || {})[0] || 'classic', languages: c.languages || ['en'] }

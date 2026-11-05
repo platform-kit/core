@@ -100,6 +100,16 @@ function pass(round) {
         const member = up(n, (x) => ts.isPropertyDeclaration(x) || ts.isPropertySignature(x))
         if (member && !member.type) { add(file, member.name.getEnd(), ': any'); continue }
       }
+      /* a call that leaves out trailing arguments, which JavaScript allows: those parameters are optional */
+      if (d.code === 2554 || d.code === 2555) {
+        const call = up(n, (x) => ts.isCallExpression(x) || ts.isNewExpression(x))
+        const dec = call && program.getTypeChecker().getResolvedSignature(call)?.declaration
+        const given = call?.arguments?.length ?? 0
+        if (dec && dec.parameters && dec.parameters.length > given && !dec.getSourceFile().isDeclarationFile && !dec.getSourceFile().fileName.includes('node_modules')) {
+          for (const p of dec.parameters.slice(given)) if (!p.questionToken && !p.initializer && !p.dotDotDotToken) add(dec.getSourceFile().fileName, p.name.getEnd(), '?')
+          continue
+        }
+      }
       /* a declaration file cannot name the inferred type: the export says what it is — any, until somebody writes it */
       if (d.code === 2742) {
         const v = up(n, ts.isVariableDeclaration)

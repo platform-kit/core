@@ -7,7 +7,7 @@ sources:
     packages/kit/supabase/functions/matrix-api,
     packages/kit/supabase/functions/_shared/matrix,
     packages/kit/supabase/schemas/91-matrix.sql,
-    packages/kit/build/matrix-api.test.mjs,
+    packages/kit/build/matrix-api.test.mts,
   ]
 reviewed: 2026-11-04
 ---

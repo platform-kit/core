@@ -135,7 +135,7 @@ export function native({ db, env }: any) {
    * function (offer() in times.js), which is where the rules actually live. The booker, the API and
    * the booking itself all come through here, so they cannot disagree about what is open.
    */
-  async function offerOf(type: any, from: any, to: any, now: any, span: any) {
+  async function offerOf(type: any, from: any, to: any, now: any, span?: any) {
     const hosts = await hostsOf(type)
     if (!hosts.length) return { hosts: [], slots: [] }
     const each = []
@@ -301,7 +301,6 @@ export function native({ db, env }: any) {
       }
       /* AT THE LENGTH THEY ARE CHOOSING, since a ninety-minute session fits in fewer places than
          an hour does and showing the hour's times would offer what cannot be booked */
-      // @ts-expect-error TS2554, from the conversion: Expected 5 arguments, but got 4.
       const { hosts, each, slots } = await offerOf(minutes ? { ...type, duration: lengthChosen(type, minutes).minutes } : type, from, to, now)
       /* narrowed to ONE host where the caller asked for one: the times THEY are free at, which is
          what a host booking for somebody needs — the ordinary answer is the union, and a time only
@@ -358,7 +357,6 @@ export function native({ db, env }: any) {
     async book(type: any, { start, attendee, attendees, user_id, notes, phone, credit_id, made_by, made_by_name, host: wanted, minutes, count, checkout_identity, stripe_checkout_session_id }: any) {
       const startMs = Date.parse(start)
       const day = new Date(startMs).toISOString().slice(0, 10)
-      // @ts-expect-error TS2554, from the conversion: Expected 5 arguments, but got 4.
       const { hosts, slots } = await offerOf(type, day, day, Date.now())
       if (!hosts.length) throw Object.assign(new Error('no host'), { code: 'no-host' })
       const named = wanted ? hosts.find((h: any) => h.id === wanted || h.email === String(wanted).toLowerCase()) : null

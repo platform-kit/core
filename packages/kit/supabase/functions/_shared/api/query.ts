@@ -14,19 +14,16 @@ const MIME_GROUPS: any = { image: /^image\//, audio: /^audio\//, video: /^video\
 
 /* the settled arguments, or an error */
 export function parse(q: any, { kind = 'entries', types = [], locales = [] } = {}) {
-  const err = (id: any, message: any, details: any) => ({ error: { id, message, details } })
-  // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
+  const err = (id: any, message: any, details?: any) => ({ error: { id, message, details } })
   const num = (k: any, d: any, lo: any, hi: any) => { if (q[k] == null || q[k] === '') return d; const n = Number(q[k]); if (!Number.isInteger(n) || n < lo || n > hi) throw err('BadQuery', `The query parameter ${k} must be an integer between ${lo} and ${hi}.`); return n }
   try {
     const limit = num('limit', 100, 1, 1000), skip = num('skip', 0, 0, 1e9), include = num('include', 1, 0, 10)
     const locale = q.locale == null || q.locale === '' ? null : String(q.locale)
-    // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
     if (locale && locale !== '*' && !locales.some((l: any) => l.code === locale)) throw err('BadQuery', `Unknown locale: ${locale}`)
     const contentType = q.content_type ? String(q.content_type) : null
     const type = contentType ? types.find((t: any) => t.sys.id === contentType) : null
     if (contentType && !type) throw err('InvalidQuery', 'The content type could not be found.', { errors: [{ name: 'unknownContentType', value: contentType }] })
     const select = q.select ? list(q.select) : null
-    // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
     if (select && select.some((s) => s.split('.').length > 2)) throw err('BadQuery', 'The select operator only supports up to two levels of nesting (fields.title)')
     const order = q.order ? list(q.order).map((o) => ({ desc: o.startsWith('-'), key: o.replace(/^-/, '') })) : [{ desc: true, key: 'sys.createdAt' }]
     const filters = []
@@ -34,17 +31,13 @@ export function parse(q: any, { kind = 'entries', types = [], locales = [] } = {
       const m = /^(sys|fields|metadata)\.([A-Za-z0-9_.-]+?)(?:\[([a-z]+)\])?$/.exec(k)
       if (!m) continue
       const op = m[3] || 'eq'
-      // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
       if (m[3] && !OPS.includes(m[3])) throw err('InvalidQuery', `The query operator ${m[3]} is not supported.`)
-      // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
       if (op === 'near' || op === 'within') throw err('InvalidQuery', `The ${op} operator needs a Location field, and this site has none.`)
       if (m[1] === 'fields' && kind === 'entries' && !type) throw err('BadQuery', 'You need to specify a content_type to filter on fields.', { errors: [{ name: 'queryWithFieldButNoContentType', value: k }] })
       filters.push({ scope: m[1], path: m[2], op, value: String(v) })
     }
-    // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
     if (kind === 'entries' && !type && order.some((o) => o.key.startsWith('fields.'))) throw err('BadQuery', 'You need to specify a content_type to order by a field.')
     const mimeGroup = q.mimetype_group ? String(q.mimetype_group) : null
-    // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
     if (mimeGroup && !MIME_GROUPS[mimeGroup]) throw err('BadQuery', `Unknown mimetype_group: ${mimeGroup}`)
     return { limit, skip, include, locale, contentType, type, select, order, filters, query: q.query ? String(q.query).toLowerCase() : '', linksToEntry: q.links_to_entry ? String(q.links_to_entry) : null, linksToAsset: q.links_to_asset ? String(q.links_to_asset) : null, mimeGroup }
   } catch (e: any) { if (e && e.error) return e; throw e }
@@ -79,7 +72,7 @@ function sysOf(r: any, key: any) {
   return undefined
 }
 const asStrings = (v: any) => (Array.isArray(v) ? v.map(String) : v == null ? [] : [String(v)])
-function holds(actual: any, f: any, def: any) {
+function holds(actual: any, f: any, def?: any) {
   const { op, value } = f
   if (op === 'exists') return (value === 'true') === (actual != null && actual !== '' && !(Array.isArray(actual) && !actual.length))
   if (actual == null) return op === 'ne' || op === 'nin'
@@ -147,11 +140,8 @@ export function applyAssets(assets: any, a: any) {
   let out = assets
   if (a.mimeGroup) out = out.filter((x: any) => MIME_GROUPS[a.mimeGroup].test(x.mime || ''))
   for (const f of a.filters) {
-    // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
     if (f.scope === 'sys' && f.path === 'id') out = out.filter((x: any) => holds(assetId(x.address), f))
-    // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
     else if (f.scope === 'fields' && (f.path === 'title' || f.path === 'file.fileName')) out = out.filter((x: any) => holds(f.path === 'title' ? x.name.replace(/\.[a-z0-9]+$/i, '') : x.name, f))
-    // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
     else if (f.scope === 'fields' && f.path === 'file.contentType') out = out.filter((x: any) => holds(x.mime, f))
   }
   if (a.query) out = out.filter((x: any) => x.name.toLowerCase().includes(a.query))

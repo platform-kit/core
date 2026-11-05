@@ -47,4 +47,4 @@ Community and social networking are related but separate: one row describes spac
 
 **Sources:** `openspec/specs/kit-principles/spec.md`, `packages/kit/src/lib/router.ts`
 
-**Reviewed:** `2026-10-22`
+**Reviewed:** `2026-11-04`

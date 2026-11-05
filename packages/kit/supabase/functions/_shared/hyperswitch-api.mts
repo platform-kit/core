@@ -31,7 +31,7 @@ const PAYOUT_STATUSES: any = Object.freeze({
   payout_not_permitted: 'not_permitted',
 })
 
-export function hyperswitchClientUrl(value: any) {
+export function hyperswitchClientUrl(value?: any) {
   const configured = typeof value === 'string' && value.trim()
     ? value.trim()
     : HYPERSWITCH_DEFAULT_CLIENT_URL
@@ -167,7 +167,7 @@ export function createHyperswitchApi(secrets: any, configuration: any, runtime: 
     }
     return payload
   }
-  const request = (method: any, path: any, body: any, idempotencyKey: any) =>
+  const request = (method: any, path: any, body?: any, idempotencyKey?: any) =>
     requestWithAuth(method, path, body, idempotencyKey, `api-key=${apiKey}`)
   const requestWithClientSecret = (method: any, path: any, body: any, idempotencyKey: any, clientSecret: any) => {
     if (typeof clientSecret !== 'string' || !clientSecret.trim()) {

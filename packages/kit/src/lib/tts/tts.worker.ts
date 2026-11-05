@@ -50,7 +50,6 @@ async function styleFor(name: any) {
   /* one at a time: two turns asking for the same new voice at once would fetch it twice */
   loadingStyle = (loadingStyle || Promise.resolve()).then(async () => {
     if (styles[want]) return
-    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     const bytes = await fetchWeight('voice_styles/' + want + '.json')
     styles[want] = E.loadVoiceStyle(JSON.parse(new TextDecoder().decode(bytes)))
   })
@@ -58,7 +57,7 @@ async function styleFor(name: any) {
   return styles[want] || styles[OWN_DEFAULT]
 }
 let cancelId: any = null
-const post = (m: any, transfer: any) => self.postMessage(m, transfer || [])
+const post = (m: any, transfer?: any) => self.postMessage(m, transfer || [])
 
 async function build() {
   const E = await import('./engine.js')
@@ -75,11 +74,10 @@ async function build() {
     let last = 0
     got[f] = await fetchWeight(f, (file: any, done: any, total: any) => {
       totals[file] = total; doneBytes += done - last; last = done
-      // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
+      // @ts-expect-error TS18046, from the conversion: 'a' is of type 'unknown'.
       post({ type: 'download', file, done: doneBytes, total: Object.values(totals).reduce((a, b) => a + b, 0) })
     })
   }
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   post({ type: 'loading' })
   const text = new TextDecoder()
   const cfgs = JSON.parse(text.decode(got['onnx/tts.json']))
@@ -105,7 +103,6 @@ async function build() {
   }
   for (const k of Object.keys(got)) got[k] = null
   if (!engine) throw lastErr || new Error('no runtime could load the voice')
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   post({ type: 'ready', provider })
 }
 
@@ -133,7 +130,6 @@ async function speak({ id, text, live, engine: settings }: any) {
     if (i) { writer.writeSilence(gap); samples += Math.floor(gap * engine.sampleRate) }
     writer.write(wav)
     samples += wav.length; n = pieces
-    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     post({ type: 'progress', id, piece: i + 1, pieces })
     if (live) {
       /* a copy, because the writer keeps the original and the buffer is transferred away */
@@ -142,19 +138,15 @@ async function speak({ id, text, live, engine: settings }: any) {
       post({ type: 'piece', id, i, pcm, rate: engine.sampleRate }, [pcm.buffer])
     }
   }, cancelled, live ? { cut: (t: any) => talkPieces(t, { first }), stepsAt: (i: any) => stepsFor(i, { steps, opening }) } : {})
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   if (r.cancelled) { post({ type: 'error', id, message: 'cancelled' }); return }
   const blob = writer.finish()
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   post({ type: 'done', id, blob, seconds: Math.round(samples / engine.sampleRate), pieces: n, format: { codec: 'mp3', bitrate: KBPS * 1000, sampleRate: engine.sampleRate, channels: 1 } })
 }
 
 let chain = Promise.resolve()
 self.onmessage = (e) => {
   const m = e.data || {}
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   if (m.type === 'load') { load().catch((err: any) => post({ type: 'error', message: String(err && err.message || err) })); return }
   if (m.type === 'cancel') { cancelId = m.id; return }
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   if (m.type === 'speak') chain = chain.then(() => speak(m)).catch((err) => post({ type: 'error', id: m.id, message: String(err && err.message || err) }))
 }

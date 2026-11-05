@@ -11,10 +11,10 @@ sources:
     packages/kit/theme/src/components/AvatarPicker.vue,
     packages/kit/theme/src/content/ui/account.md,
     packages/kit/build/admin-pipe.mts,
-    packages/kit/build/admin-fence.test.mjs,
+    packages/kit/build/admin-fence.test.mts,
     packages/kit/supabase/functions/admin,
     packages/kit/src/lib/auth.ts,
-    packages/kit/build/avatar.test.mjs,
+    packages/kit/build/avatar.test.mts,
     packages/kit/theme/src/components/spaces/SpaceAvatar.vue,
   ]
 reviewed: 2026-11-04
@@ -69,7 +69,7 @@ The parts live on `profiles.avatar_options`, and changing style clears them — 
 
 Three things make a drawn face: the **seed**, the **style**, and the **parts**. All three have to travel together, through every read and into every component, and the failure when one does not is the same each time — a reader designs a face, sees it on their settings page, and finds a different one looking back at them from the corner of every room. A save that looks like it half worked is worse than one that plainly did not.
 
-Two rules hold it, and `build/avatar.test.mjs` reads the code for both:
+Two rules hold it, and `build/avatar.test.mts` reads the code for both:
 
 - **Every read that hands out a style hands out the parts.** `space_people`, `space_member_card`, the team's roster, a provider's card, `my_profile`, `public_profile` — a read that gave the style and left the parts behind drew the right style with the wrong face.
 - **Nothing draws the reader's own face out of their display name.** `SpaceAvatar` takes a `person`, and a caller who knows who somebody is must pass the record. A face made from "Member Person" changes the day they rename themselves, and was never the face they designed; a caller with only a label — a guest, the word "You" — passes a name on purpose and is drawn from it.
@@ -153,7 +153,7 @@ A page claiming that exact route **wins** over the profile page, which is what s
 
 ### They edit one thing, and the server is what decides that
 
-A coach is **not** an editor and must not become one by being let through the admin's door. So the `admin` function gives them a **fence** — one collection, and the records whose `owner` is their username — and the pipe honours it on every verb: the collections listing shows Pages alone, the list is filtered, and every read, save, create, rename, delete and publish of a record that is not theirs is **refused**, not merely hidden. A surface that only hid other people's rows would leave every one of them a hand-written request away. `build/admin-fence.test.mjs` asks each verb twice — once for a record that is theirs and once for one that is not.
+A coach is **not** an editor and must not become one by being let through the admin's door. So the `admin` function gives them a **fence** — one collection, and the records whose `owner` is their username — and the pipe honours it on every verb: the collections listing shows Pages alone, the list is filtered, and every read, save, create, rename, delete and publish of a record that is not theirs is **refused**, not merely hidden. A surface that only hid other people's rows would leave every one of them a hand-written request away. `build/admin-fence.test.mts` asks each verb twice — once for a record that is theirs and once for one that is not.
 
 `owner` is read-only in the form, because a coach who could edit it could sign themselves somebody else's page. A coach who has not taken a username has no page to own and is refused like anybody else.
 

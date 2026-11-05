@@ -73,7 +73,7 @@ let presence: any = null                  /* the space's own topic */
 const lastTyped = new Map()          /* channelId → when we last said we were typing */
 let typingTimer: any = null
 
-const rpc = async (name: any, args: any) => {
+const rpc = async (name: any, args?: any) => {
   const { data, error } = await (supabase as any).rpc(name, args || {})
   if (error) throw error
   return data
@@ -98,7 +98,6 @@ export async function boot() {
          which heading (group), and every member sees the same one */
       (supabase as any).from('spaces').select('*').is('archived_at', null).order('position').order('name'),
       (supabase as any).from('channels').select('*').is('archived_at', null).order('name'),
-      // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
       rpc('space_unread'),
       /* THE SPACES THIS PERSON IS IN, which is not the same as the spaces they may SELECT: an
          administrator's policy shows them every space on the instance, and the surface listing one
@@ -339,7 +338,6 @@ export async function openChannel(id: any) {
     await loadReactions(id)
     await loadPins(id)
     watch(id)
-    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     await markRead(id)
   } catch (e) {
     open.error = e
@@ -783,7 +781,7 @@ export async function setDms(spaceId: any, want: any) {
   } catch (e) { return null }
 }
 
-export async function markRead(channelId: any, seq: any) {
+export async function markRead(channelId: any, seq?: any) {
   if (!on() || !channelId) return
   const last = seq != null ? seq : lastSeqOf(channelId)
   await rpc('space_read', { p_channel: channelId, p_seq: last })
@@ -808,7 +806,6 @@ export async function setNotify(channelId: any, notify: any) {
    is called a hush in the code so the two can never be confused at a call site. Both are "Mute" to a
    reader, because to a reader they are never in the same menu. */
 export const hushes = ref<any>([])
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 export async function loadHushes() { if (on()) hushes.value = (await rpc('space_my_mutes')) || [] }
 export const hushOf = (kind: any, ref: any) => (hushes.value || []).find((m: any) => m.kind === kind && m.ref === ref) || null
 export const isHushed = (kind: any, ref: any) => !!hushOf(kind, ref)
@@ -821,7 +818,6 @@ export async function hush(kind: any, ref: any, until = null) {
   if (had) had.until = until
   else hushes.value = [...hushes.value, { kind, ref, until }]
   /* the rooms this touches go quiet at once rather than at the next read */
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   if (kind !== 'person') unread.value = (await rpc('space_unread')) || []
 }
 export async function unhush(kind: any, ref: any) {
@@ -829,14 +825,12 @@ export async function unhush(kind: any, ref: any) {
   const { error } = await (supabase as any).rpc('space_unmute', { p_kind: kind, p_ref: ref })
   if (error) return
   hushes.value = hushes.value.filter((m: any) => !(m.kind === kind && m.ref === ref))
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   if (kind !== 'person') unread.value = (await rpc('space_unread')) || []
 }
 
 export async function join(channelId: any) {
   if (!on() || !channelId) return
   const { error } = await (supabase as any).from('channel_members').insert({ channel_id: channelId, user_id: uid() })
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   if (!error) { unread.value = (await rpc('space_unread')) || []; watch(channelId) }
 }
 
@@ -877,28 +871,22 @@ export async function openDm(spaceId: any, peers: any) {
     return null
   }
   if (!id) return null
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   unread.value = (await rpc('space_unread')) || []
   channels.value = ((await (supabase as any).from('channels').select('*').is('archived_at', null)).data) || []
   watch(id)
   return id
 }
 
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 export async function loadThreads() { if (on()) threads.value = (await rpc('space_threads')) || [] }
 /* the read keeps the database's own name — it answers the mention rows, which is what this is */
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 export async function loadMentions() { if (on()) mentions.value = (await rpc('space_activity')) || [] }
 /* everything not read yet, across every room: the other half of the question the rail's counters
    answer — not how many, but what. Muted rooms and one's own messages are left out in the read. */
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 export async function loadUnreads() { if (on()) unreads.value = (await rpc('space_unseen')) || [] }
 /* the read keeps the database's own name; what it answers is what they saved */
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 export async function loadSaved() { if (on()) saved.value = (await rpc('space_later')) || [] }
 /* the DMs view: one read for every direct message, whichever space it is in. It brings the other
    people's names with it, because a name a page holds belongs to the space it has open. */
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 export async function loadDms() { if (on()) dms.value = (await rpc('space_dms')) || [] }
 
 export async function save(message: any) {
@@ -1051,7 +1039,6 @@ function watch(channelId: any) {
     .on('broadcast', { event: 'reaction' }, ({ payload }: any) => reacted(channelId, payload))
     /* a pin is the room's, so everybody looking at the room learns of it at once */
     .on('broadcast', { event: 'pins' }, () => { if (open.id === channelId) loadPins(channelId) })
-    // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
     .on('broadcast', { event: 'typing' }, ({ payload }: any) => saw(channelId, payload))
     .on('broadcast', { event: 'read' }, ({ payload }: any) => saw(channelId, payload, true))
     /* A subscription is acknowledged a moment before the server is actually sending on the topic, so
@@ -1095,7 +1082,7 @@ function reacted(channelId: any, p: any) {
 }
 
 /* typing and read receipts: the client's own, never written down */
-function saw(channelId: any, p: any, isRead: any) {
+function saw(channelId: any, p: any, isRead?: any) {
   if (!p || !p.user || p.user === uid()) return
   if (isRead) return
   if (!typing[channelId]) typing[channelId] = {}
@@ -1152,7 +1139,6 @@ export async function catchUp() {
     for (const m of a.messages || []) land(m)
     if (a.more && a.channel === open.id) await openChannel(open.id)
   }
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   unread.value = (await rpc('space_unread')) || []
 }
 
@@ -1165,7 +1151,6 @@ export async function catchUp() {
    is the only place it exists. */
 
 /* every space this reader could be in, with what each would take and whether it is already theirs */
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 export const discover = () => rpc('space_discover')
 /* knocking on a space's own door, and — for whoever keeps it — what is waiting there. What the
    door asks (terms, a form) is enforced by space_ask, never by the page that draws it. */
@@ -1240,7 +1225,6 @@ export const report = (message: any, reason: any, note = null) => rpc('space_rep
 export const reportsOf = (space: any, open = true) => rpc('space_reports', { p_space: space, p_open: open })
 export const answerReport = (id: any) => rpc('space_report_answered', { p_id: id })
 export const recordOf = (space: any) => rpc('space_record', { p_space: space })
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 export const myRecord = () => rpc('space_my_record')
 export const removeMessage = (space: any, message: any, reason = null) => rpc('space_moderate', { p_kind: 'remove-message', p_space: space, p_message: message, p_reason: reason })
 export const mute = (space: any, user: any, minutes: any, reason = null) => rpc('space_moderate', { p_kind: 'mute', p_space: space, p_user: user, p_minutes: minutes, p_reason: reason })
@@ -1289,7 +1273,6 @@ export const scheduled = ref<any>([])
 
 export async function loadScheduled() {
   if (!on()) return []
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   scheduled.value = (await rpc('space_scheduled_mine')) || []
   return scheduled.value
 }

@@ -9,7 +9,7 @@ sources:
     packages/kit/supabase/functions/_shared/api/shopify,
     packages/kit/supabase/functions/_shared/api/keys.ts,
     packages/kit/supabase/schemas/85-api.sql,
-    packages/kit/build/storefront-api.test.mjs,
+    packages/kit/build/storefront-api.test.mts,
   ]
 ---
 

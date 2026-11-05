@@ -33,14 +33,14 @@ A model SHALL be one file, `content/models/<key>.md`, holding everything about i
 - **WHEN** an admin makes a new model, adds a field of every kind, a rule on one, a shown-when on another, and saves
 - **THEN** `content/models/<key>.md` holds every field in that order with what was set, the file parses back to the same model, and a rerun of the writer over it changes nothing
 
-Verified by: `build/models.test.mjs` (the round trip over a fixture with every kind, every option and a rule of every family); screenshots of the builder with each kind's inspector open, a rule row and a condition row, both themes
+Verified by: `build/models.test.mts` (the round trip over a fixture with every kind, every option and a rule of every family); screenshots of the builder with each kind's inspector open, a rule row and a condition row, both themes
 
 #### Scenario: a hand-written model with a fault
 
 - **WHEN** a model file names a kind, a rule or a referenced model the kit does not have
 - **THEN** the build refuses it with a line naming the file, the field and the fault
 
-Verified by: `build/models.test.mjs` over the refused fixtures
+Verified by: `build/models.test.mts` over the refused fixtures
 
 ### Requirement: The kinds, in four groups
 
@@ -51,7 +51,7 @@ The builder SHALL offer these kinds and no others, grouped as they are listed. *
 - **WHEN** an entry of a model with one field of every kind is filled in the drawer and saved
 - **THEN** the file's frontmatter holds each value in its own shape (a number as a number, a boolean as a boolean, a date as a date string, a list as a list, a group as a mapping, a reference as the referenced entry's slug, an upload as a relative path to the file beside it), and the build reads it back into the collection with the same values
 
-Verified by: `build/models.test.mjs` (the fixture entry); a Playwright run over the drawer; screenshots of the drawer with every kind, both themes
+Verified by: `build/models.test.mts` (the fixture entry); a Playwright run over the drawer; screenshots of the drawer with every kind, both themes
 
 ### Requirement: The rules are validatorjs, and every check runs in two places
 
@@ -62,7 +62,7 @@ A field's rules SHALL be validatorjs's (the Laravel port): `min`, `max`, `betwee
 - **WHEN** a text field carries `min:3` and an entry is saved with two characters, in the drawer and then by hand in the file
 - **THEN** the drawer refuses the field with the rule's message before the save, and `npm test` refuses the hand-written file with the same message
 
-Verified by: `build/models.test.mjs` (every rule family against a passing and a failing value; unique; shown-when skipping); a Playwright run over the drawer
+Verified by: `build/models.test.mts` (every rule family against a passing and a failing value; unique; shown-when skipping); a Playwright run over the drawer
 
 ### Requirement: An entry is a markdown file, and a model is a full CMS over its entries
 
@@ -84,14 +84,14 @@ A change to a model that has entries SHALL be carried into them: a field renamed
 - **WHEN** a field `speaker` is renamed `teacher` in a model with five entries
 - **THEN** every entry's frontmatter says `teacher` with the value it had, and nothing else in the files changed
 
-Verified by: `build/models.test.mjs` (the carry over fixture entries, byte-compared outside the renamed line)
+Verified by: `build/models.test.mts` (the carry over fixture entries, byte-compared outside the renamed line)
 
 #### Scenario: a kind changed under entries
 
 - **WHEN** a text field with entries holding words is changed to a number
 - **THEN** the builder says "{n} entries would no longer pass" and names them before anything is written
 
-Verified by: `build/models.test.mjs` (the count); a screenshot of the warning
+Verified by: `build/models.test.mts` (the count); a screenshot of the warning
 
 ### Requirement: Delivery, per model, any combination
 
@@ -109,7 +109,7 @@ Verified by: the build's output on the demo; screenshots of the index and a deta
 - **WHEN** a model with JSON on is built
 - **THEN** `dist/data/models/<key>.json` holds the published entries in the model's order with every field, and a model with JSON off has no file
 
-Verified by: `build/models.test.mjs` over the writer; the demo's build
+Verified by: `build/models.test.mts` over the writer; the demo's build
 
 #### Scenario: the Entries section
 
@@ -127,7 +127,7 @@ Every word the kit says about a model — the builder's, the kinds' and rules' n
 - **WHEN** a site's `content/app/ui/models.md` sets `pages.empty`
 - **THEN** the index of an empty model shows the site's line, and every other word stays the theme's
 
-Verified by: `packages/kit/build/strings.test.mjs` (the merge); a screenshot
+Verified by: `packages/kit/build/strings.test.mts` (the merge); a screenshot
 
 ### Requirement: A tag is chosen from the site's own vocabulary, and typing one is a switch
 
@@ -179,18 +179,18 @@ already reads. No site SHALL need to edit its `index.html` to change a typeface.
 - **WHEN** `content/site.md` names a heading, body or mono family
 - **THEN** the built page loads exactly those families and the theme's type is set in them throughout — headings, prose, the reader, the admin, the landing
 
-Verified by: `build/fonts.test.mjs`; pixels of the demo's `/sections` with a face changed
+Verified by: `build/fonts.test.mts`; pixels of the demo's `/sections` with a face changed
 
 #### Scenario: a site names none
 
 - **WHEN** `content/site.md` names no typeface
 - **THEN** the theme's own defaults are used and the page is never left with an unstyled fallback
 
-Verified by: `build/fonts.test.mjs`; `sites/brochure`, which names none
+Verified by: `build/fonts.test.mts`; `sites/brochure`, which names none
 
 #### Scenario: a family that is not a real one
 
 - **WHEN** a site names a family Google Fonts does not serve
 - **THEN** the build says so, naming the family, rather than shipping a page whose link 404s and whose type silently falls back
 
-Verified by: `build/fonts.test.mjs`
+Verified by: `build/fonts.test.mts`

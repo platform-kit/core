@@ -22,7 +22,7 @@ Verified by: NOT VERIFIED by a pinned test — needs a built `dist/` served in t
 - **WHEN** a file with an extra frontmatter key is opened and saved in the admin
 - **THEN** the key is still in the file
 
-Verified by: `build/pipe.test.mjs` (the round trip)
+Verified by: `build/pipe.test.mts` (the round trip)
 
 #### Scenario: the drawer in cloud mode
 
@@ -54,7 +54,7 @@ Verified by: screenshots of each in both themes
 - **WHEN** an editor opens the address of a section only an administrator reaches
 - **THEN** they are refused there, and the reads behind it answer them nothing
 
-Verified by: `build/policies.test.mjs`
+Verified by: `build/policies.test.mts`
 
 #### Scenario: the content pipe admits an editor
 
@@ -62,7 +62,7 @@ Verified by: `build/policies.test.mjs`
 - **THEN** the pipe writes it, as it does for an administrator
 - **AND** the same editor is refused a write to anything that is not content
 
-Verified by: `build/pipe.test.mjs`
+Verified by: `build/pipe.test.mts`
 
 #### Scenario: a module-scoped publisher enters only its section
 
@@ -71,7 +71,7 @@ Verified by: `build/pipe.test.mjs`
   its administrator-only Settings view and controls are not shown or reachable, and every unrelated
   section and backing operation remains refused
 
-Verified by: `build/social-publishing.test.mjs` against the served local functions and CMS, plus
+Verified by: `build/social-publishing.test.mts` against the served local functions and CMS, plus
 screenshots of the invitee's rail and Social navigation in both themes
 
 #### Scenario: the rail's rows
@@ -220,7 +220,7 @@ developer, because the only place to say so was a file of code.
 - **WHEN** an administrator adds a row, names it, picks a route and saves
 - **THEN** `content/site.md` carries the item, the header shows it in that position, and no other line of the file has moved
 
-Verified by: `packages/kit/build/yaml-keep.test.mjs` (the save moves no line it did not change); the editor and the header screenshotted, light and dark
+Verified by: `packages/kit/build/yaml-keep.test.mts` (the save moves no line it did not change); the editor and the header screenshotted, light and dark
 
 #### Scenario: nothing is typed as its grammar
 
@@ -251,11 +251,11 @@ decision — which face — with a control that fits it.
 - **WHEN** an editor picks a family from the list and saves
 - **THEN** `content/site.md` carries the family name alone, and the build makes the stack, the weights and the link from it
 
-Verified by: pixels of Site settings with the picker open, both themes; `build/fonts.test.mjs` for what is written
+Verified by: pixels of Site settings with the picker open, both themes; `build/fonts.test.mts` for what is written
 
 #### Scenario: nothing asks for a font stack
 
 - **WHEN** Site settings is rendered
 - **THEN** no field asks for a comma-separated stack, a weights list or a stylesheet url, and no placeholder teaches one
 
-Verified by: pixels; `build/fonts.test.mjs` refuses a field whose placeholder is a stack
+Verified by: pixels; `build/fonts.test.mts` refuses a field whose placeholder is a stack

@@ -1,16 +1,12 @@
 /* Contentful's error envelope and ids — plain JavaScript */
-const make = (id: any, message: any, status: any, details: any) => ({ status, body: { sys: { type: 'Error', id }, message, ...(details ? { details } : {}), requestId: Math.random().toString(36).slice(2, 12) } })
+const make = (id: any, message: any, status: any, details?: any) => ({ status, body: { sys: { type: 'Error', id }, message, ...(details ? { details } : {}), requestId: Math.random().toString(36).slice(2, 12) } })
 export const ERR = {
-  notFound: (what = 'The resource could not be found.', details: any) => make('NotFound', what, 404, details),
+  notFound: (what = 'The resource could not be found.', details?: any) => make('NotFound', what, 404, details),
   badQuery: (message: any, details: any) => make('BadQuery', message, 400, details),
   invalidQuery: (message: any, details: any) => make('InvalidQuery', message, 400, details),
   unknownType: (id: any) => make('InvalidQuery', 'The content type could not be found.', 400, { errors: [{ name: 'unknownContentType', value: 'DOESNOTEXIST' }] }),
-  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   token: (message = 'The access token you sent could not be found or is invalid.') => make('AccessTokenInvalid', message, 401),
-  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   denied: (message = 'You do not have permission to perform this action.') => make('AccessDenied', message, 403),
-  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   rate: (reset: any) => make('RateLimitExceeded', 'You have exceeded the rate limit of the Organization for this action. Retry after ' + reset + ' seconds.', 429),
-  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   method: () => make('BadRequest', 'This method is not allowed.', 405),
 }

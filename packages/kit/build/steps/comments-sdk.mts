@@ -3,6 +3,6 @@
    build/comments-sdk.mjs */
 export default {
   key: 'comments-sdk', title: 'The comments script', phase: 'site', after: ['support-sdk'],
-  inputs: ['platformkit.config.js'],
+  inputs: ['platformkit.config.{js,ts}'],
   run: ({ script }: any) => script('comments-sdk.mjs'),
 }

@@ -26,8 +26,8 @@ sources:
     packages/kit/theme/src/components/admin/CourseEnrollments.vue,
     packages/kit/theme/src/components/spaces/panels/MemberCourses.vue,
     packages/kit/theme/src/content/ui/courses.md,
-    packages/kit/build/courses.test.mjs,
-    packages/kit/build/courses-db.test.mjs,
+    packages/kit/build/courses.test.mts,
+    packages/kit/build/courses-db.test.mts,
   ]
 reviewed: 2026-11-04
 ---

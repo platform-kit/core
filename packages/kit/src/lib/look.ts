@@ -34,7 +34,6 @@ export function applyLook(name: any) {
   look.value = l
   if (typeof document === 'undefined') return
   document.documentElement.dataset.look = l
-  // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
   applyTokens()
 }
 
@@ -58,7 +57,7 @@ export function applyLook(name: any) {
  * is retuned.
  */
 let sheet: any = null
-export function applyTokens(over: any) {
+export function applyTokens(over?: any) {
   if (typeof document === 'undefined') return
   const chosen = over || (SITE && SITE.tokens) || {}
   const l = look.value

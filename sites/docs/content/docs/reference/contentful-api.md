@@ -24,8 +24,8 @@ sources:
     packages/kit/supabase/functions/_shared/api/richtext.ts,
     packages/kit/supabase/functions/_shared/api/types.ts,
     packages/kit/supabase/functions/_shared/content-index.ts,
-    packages/kit/build/content-api.test.mjs,
-    packages/kit/build/management.test.mjs,
+    packages/kit/build/content-api.test.mts,
+    packages/kit/build/management.test.mts,
     packages/kit/supabase/schemas/85-api.sql,
   ]
 reviewed: 2026-10-21

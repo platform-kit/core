@@ -6,8 +6,8 @@ sources:
   [
     packages/kit/build/catalog.mts,
     packages/kit/src/lib/usage-unit.ts,
-    packages/kit/build/usage.test.mjs,
-    packages/kit/build/usage-db.test.mjs,
+    packages/kit/build/usage.test.mts,
+    packages/kit/build/usage-db.test.mts,
     packages/kit/build/site.mts,
     packages/kit/build/bots.mts,
     packages/kit/build/bots-db.mts,
@@ -53,7 +53,7 @@ sources:
     packages/kit/theme/src/content/ui/usage.md,
     packages/kit/theme/src/components/UsagePaymentAlert.vue,
     packages/kit/src/lib/usage-alert.ts,
-    packages/kit/build/usage-alert.test.mjs,
+    packages/kit/build/usage-alert.test.mts,
     packages/kit/theme/src/content/ui/auth.md,
     packages/kit/theme/src/content/ui/analytics.md,
     packages/kit/theme/src/content/ui/copilot.md,
@@ -202,8 +202,8 @@ meter reports require the adapter's `usage.metered` capability. Hyperswitch-mana
 PlatformKit's usage records and does not require a Hyperswitch native-meter declaration. Incremental
 charges require a subscription with a saved off-session payment method. Sites with no published
 metered offer do not need meter configuration. The targeted
-checks are `node packages/kit/build/usage.test.mjs`,
+checks are `node packages/kit/build/usage.test.mts`,
 `node packages/kit/build/deploy-checks.mts --test`, and `node packages/kit/build/assemble.mts
 --check` from the site directory. The database integration check,
-`node packages/kit/build/usage-db.test.mjs`, needs a local database with the declared schema
+`node packages/kit/build/usage-db.test.mts`, needs a local database with the declared schema
 already applied; do not run a database reset merely to test it if that would erase data.

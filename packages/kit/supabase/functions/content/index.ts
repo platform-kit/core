@@ -59,7 +59,6 @@ Deno.serve(async (req: any) => {
     return new Response(text, { status, headers: h })
   }
   const fail = (e: { status: number; body: unknown }) => reply(e.body, e.status)
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   if (!API_ON) return fail(ERR.notFound('The content API is not on for this site.'))
   if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'].includes(req.method)) return fail(ERR.method())
 

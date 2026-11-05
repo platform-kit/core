@@ -5,8 +5,8 @@ order: 41
 sources:
   [
     .nvmrc,
-    sites/demo/platformkit.config.js,
-    sites/docs/platformkit.config.js,
+    sites/demo/platformkit.config.ts,
+    sites/docs/platformkit.config.ts,
     packages/kit/bin/platformkit.mjs,
     packages/kit/build/check.mts,
     sites/demo/package.json,

@@ -1077,7 +1077,6 @@ vueWatch(() => space.value && space.value.id, loadModeration)
 onBeforeUnmount(() => { document.removeEventListener('visibilitychange', onVisible); stop(); deskStop() })
 /* a message lands in the channel that is open — but only reading it marks it read, and a member
    of staff on the Desk is not reading it: the row would vanish from under them as it arrived */
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'channel') markRead(open.id) })
 </script>
 

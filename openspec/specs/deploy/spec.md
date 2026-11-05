@@ -140,7 +140,7 @@ The deploy SHALL need a connection to the production database for this (`SUPABAS
 - **WHEN** `PLATFORMKIT_ALLOW_DESTRUCTIVE=1` is set, anywhere
 - **THEN** the plan applies, and the log says this is a standing permission rather than consent for this plan and prints the digest that would have scoped it
 
-Verified by: `build/destructive.test.mjs` (the verdict, the digest over the statements and its stability, the commit match, the object scope, the interactive rule, unknown-refuses); the kit's schema test (a column removed with values, the plan refused, nothing applied; the same column empty, applied); `platformkit migrate --plan --linked` against production, which counts and applies nothing
+Verified by: `build/destructive.test.mts` (the verdict, the digest over the statements and its stability, the commit match, the object scope, the interactive rule, unknown-refuses); the kit's schema test (a column removed with values, the plan refused, nothing applied; the same column empty, applied); `platformkit migrate --plan --linked` against production, which counts and applies nothing
 
 ### Requirement: Nothing reaches production by accident
 
@@ -193,7 +193,7 @@ that need one.
 - **WHEN** a site with every module off is deployed with no backend in the environment
 - **THEN** it builds and the pages are written, and no database or function command runs
 
-Verified by: `build/static-site.test.mjs`, which runs the deploy's own plan over that environment and
+Verified by: `build/static-site.test.mts`, which runs the deploy's own plan over that environment and
 asserts which commands it would run
 
 #### Scenario: the pages of a site with no backend
@@ -201,7 +201,7 @@ asserts which commands it would run
 - **WHEN** such a site is built, prerendered and served
 - **THEN** every route renders, no page logs an error, and nothing asks a backend for anything
 
-Verified by: `build/static-site.test.mjs` — the docs site built with no Supabase in the environment,
+Verified by: `build/static-site.test.mts` — the docs site built with no Supabase in the environment,
 served, and every route visited with the console and the network watched
 
 ### Requirement: The deploy knows which shape it is deploying
@@ -213,14 +213,14 @@ The deploy SHALL decide its shape before it runs anything, from the site's own d
 - **WHEN** the deploy runs with no backend in the environment
 - **THEN** it links no project, computes no plan, deploys no function and sets no secret, and the target guards that demand a project ref and an access token do not run
 
-Verified by: `build/modes.test.mjs`, asserting the commands the deploy plans in each shape
+Verified by: `build/modes.test.mts`, asserting the commands the deploy plans in each shape
 
 #### Scenario: a build step that needs a backend
 
 - **WHEN** a build step declares that it needs one and the shape is static
 - **THEN** the deploy skips it and says so, rather than running it against nothing
 
-Verified by: `build/modes.test.mjs`
+Verified by: `build/modes.test.mts`
 
 ### Requirement: A cloud deployment may run a prerender sidecar
 
@@ -231,21 +231,21 @@ The nginx app SHALL be able to run a Chrome-backed prerender service beside the 
 - **WHEN** a crawler requests a record published after the last build
 - **THEN** it is served rendered HTML with that record's own head
 
-Verified by: `build/share-cloud.test.mjs`, over the compose stack
+Verified by: `build/share-cloud.test.mts`, over the compose stack
 
 #### Scenario: a reader on the same page
 
 - **WHEN** a person requests it
 - **THEN** they are served the app as before, not the prerenderer's output
 
-Verified by: `build/share-cloud.test.mjs`
+Verified by: `build/share-cloud.test.mts`
 
 #### Scenario: the shapes that do not run it
 
 - **WHEN** the deploy runs in the static or git shape
 - **THEN** no sidecar is started and every picture is the build's
 
-Verified by: `build/modes.test.mjs`, which asserts the commands each shape plans
+Verified by: `build/modes.test.mts`, which asserts the commands each shape plans
 
 ### Requirement: A deployment builds the checked-out site independently
 
@@ -256,14 +256,14 @@ A production build SHALL use the site repository and commit selected by the depl
 - **WHEN** the existing deploy command is invoked with the Core GitHub-source CLI from a standalone site repository
 - **THEN** the deployment uses that site's checked-out content, configuration, and code, with the kit and theme installed from Core source
 
-Verified by: `packages/kit/build/source-cli.test.mjs` and `packages/kit/build/deploy-pins.test.mjs`
+Verified by: `packages/kit/build/source-cli.test.mts` and `packages/kit/build/deploy-pins.test.mts`
 
 #### Scenario: Source provenance is absent or inconsistent
 
 - **WHEN** the deploy preflight finds no source-install receipt or finds that installed package contents no longer match it
 - **THEN** deployment fails with the missing or inconsistent source installation identified before production-facing steps begin
 
-Verified by: `packages/kit/build/deploy-pins.test.mjs`
+Verified by: `packages/kit/build/deploy-pins.test.mts`
 
 ### Requirement: Several sites answer on one host, each on its own subdomain
 
@@ -291,7 +291,7 @@ separates them.
 - **THEN** `/etc/nginx/conf.d/default.conf` is byte-identical to the file the single-site image
   writes today, and the site answers on any host
 
-Verified by: `build/sites-host.test.mjs` — the generator run both ways over the same tree
+Verified by: `build/sites-host.test.mts` — the generator run both ways over the same tree
 
 #### Scenario: three sites, three hosts
 
@@ -301,14 +301,14 @@ Verified by: `build/sites-host.test.mjs` — the generator run both ways over th
   `brochure.platformkit.com`, each with its own root, and a request for `brochure.platformkit.com`
   reaches none of them
 
-Verified by: `build/sites-host.test.mjs`, and by hand against a built image
+Verified by: `build/sites-host.test.mts`, and by hand against a built image
 
 #### Scenario: a name that cannot be a subdomain
 
 - **WHEN** a directory under `sites/` is named with a character a DNS label cannot carry
 - **THEN** the entrypoint refuses to start, naming the directory and the rule
 
-Verified by: `build/sites-host.test.mjs`
+Verified by: `build/sites-host.test.mts`
 
 ### Requirement: The bare domain is named, never guessed
 
@@ -326,14 +326,14 @@ are most likely to type.
 - **THEN** a request to the bare domain gets 404 from a block that exists, and no site's block
   answers it
 
-Verified by: `build/sites-host.test.mjs`
+Verified by: `build/sites-host.test.mts`
 
 #### Scenario: www
 
 - **WHEN** `PLATFORMKIT_APEX=demo` and a request arrives for `www.<domain>`
 - **THEN** it is redirected to `demo.<domain>`, not served
 
-Verified by: `build/sites-host.test.mjs`
+Verified by: `build/sites-host.test.mts`
 
 ### Requirement: A site never reaches another site's backend
 
@@ -352,14 +352,14 @@ notice until somebody read the data.
 - **THEN** each site's `/api/content` proxies to its own project, and neither block names the
   other's address
 
-Verified by: `build/sites-host.test.mjs`
+Verified by: `build/sites-host.test.mts`
 
 #### Scenario: a site with no backend named
 
 - **WHEN** a site is in `PLATFORMKIT_SITES` and its `SUPABASE_URL` is unset
 - **THEN** the entrypoint exits non-zero naming the site and the variable, and nginx does not start
 
-Verified by: `build/sites-host.test.mjs`
+Verified by: `build/sites-host.test.mts`
 
 ### Requirement: A cookie belongs to its site, never to the parent domain
 
@@ -375,4 +375,4 @@ separation this whole arrangement exists for. Nothing sets one today — the ses
 - **WHEN** the kit's source is searched for a cookie whose domain attribute names a parent
 - **THEN** there is none
 
-Verified by: `build/sites-host.test.mjs`
+Verified by: `build/sites-host.test.mts`

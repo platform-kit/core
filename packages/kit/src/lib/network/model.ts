@@ -99,7 +99,7 @@ export function segmentsOf(text: any) {
 }
 
 /* how long ago, in the reader's own language: the browser's words, not ours */
-export function agoOf(iso: any, now = Date.now(), locale: any) {
+export function agoOf(iso: any, now = Date.now(), locale?: any) {
   const then = new Date(iso).getTime()
   if (!Number.isFinite(then)) return ''
   const s = Math.round((then - now) / 1000)

@@ -36,6 +36,7 @@ import { execSync } from 'node:child_process'
 import { loadEnv } from 'vite'
 import { defaultSite, workspaceRoot } from './sites.mjs'
 import { isReviewedForCurrentDate } from './docs-review-date.mjs'
+import { siteFile } from './site-file.mjs'
 
 const ROOT = workspaceRoot(process.cwd())
 const DOCS = 'sites/docs/content/docs'
@@ -43,8 +44,8 @@ const REPO_DOCS = ['docs/PLATFORMKIT.md', 'docs/COMPETITORS.md', 'docs/PURPOSE.m
 const SETTINGS = { ...loadEnv('development', ROOT, 'PLATFORMKIT_'), ...process.env }
 const SITE_ROOT = (() => {
   const cwd = path.resolve(process.cwd())
-  if (fs.existsSync(path.join(cwd, 'platformkit.config.js'))) return cwd
-  if (fs.existsSync(path.join(ROOT, 'platformkit.config.js'))) return ROOT
+  if (fs.existsSync(siteFile(cwd))) return cwd
+  if (fs.existsSync(siteFile(ROOT))) return ROOT
   return defaultSite(ROOT, SETTINGS).directory
 })()
 const ENV_EXAMPLE = [
@@ -200,7 +201,7 @@ for (const rel of uncovered(changed)) fault(rel, `no docs-site page names it in 
 
 /* The public documentation is generic. A workspace package is not the customer site at its root. */
 {
-  const rootConfig = path.join(ROOT, 'platformkit.config.js')
+  const rootConfig = siteFile(ROOT)
   const readName = () => {
     try {
       const cfg = fs.readFileSync(rootConfig, 'utf8')
@@ -238,8 +239,8 @@ const walk2 = (d: any, exts: any) => fs.existsSync(d) ? fs.readdirSync(d, { with
   const doc = page('reference/environment-variables')
   if (doc) {
     const codeFiles = ['packages/kit/build', 'packages/kit/src', 'packages/kit/vite', 'packages/kit/bin', 'packages/kit/agent', 'packages/kit/supabase/functions', 'packages/kit/theme/src']
-      .flatMap((dir) => walk2(path.join(ROOT, dir), ['.mjs', '.js', '.ts', '.vue']))
-      .filter((file) => !file.endsWith('.integration.mjs'))
+      .flatMap((dir) => walk2(path.join(ROOT, dir), ['.mjs', '.mts', '.js', '.ts', '.vue']))
+      .filter((file) => !/\.integration\.m[jt]s$/.test(file))
     const code = codeFiles.map((file) => fs.readFileSync(file, 'utf8')).join('\n')
     const read = new Set([...code.matchAll(/(?:process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g)].map((m) => m[1]))
     for (const m of code.matchAll(/need\('([A-Z_]+)'|has\(env, '([A-Z_]+)'\)|\['([A-Z_]{4,})', "|\benv\.([A-Z][A-Z0-9_]{3,})/g)) read.add(m[1] || m[2] || m[3] || m[4])
@@ -291,7 +292,7 @@ const walk2 = (d: any, exts: any) => fs.existsSync(d) ? fs.readdirSync(d, { with
    * example nobody can run is worse than none. sites/demo declares one; the page must name it.
    */
   {
-    const t = fs.existsSync(path.join(ROOT, 'sites/demo/platformkit.config.js')) ? fs.readFileSync(path.join(ROOT, 'sites/demo/platformkit.config.js'), 'utf8') : ''
+    const t = fs.existsSync(siteFile(path.join(ROOT, 'sites/demo'))) ? fs.readFileSync(siteFile(path.join(ROOT, 'sites/demo')), 'utf8') : ''
     const m = /modules:\s*\{([\s\S]*?)\}/.exec(t)
     const own = m ? [...m[1].matchAll(/(\w+):\s*(?:true|false)/g)].map((x) => x[1]).filter((k) => !known.has(k)) : []
     if (doc) for (const k of own) if (!ticks(doc.text).has(k)) fault(doc.file, `sites/demo adds the module ${k} and the page does not show it as the worked example`)

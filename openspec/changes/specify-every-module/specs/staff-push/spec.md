@@ -20,4 +20,4 @@ The push function SHALL refuse a caller who is not staff, and a subscription SHA
 - **WHEN** a signed-in reader who is not staff calls the push function
 - **THEN** it is refused
 
-Verified by: `build/function-doors.test.mjs`, `build/doors-db.test.mjs` under `platformkit test --e2e`
+Verified by: `build/function-doors.test.mts`, `build/doors-db.test.mts` under `platformkit test --e2e`

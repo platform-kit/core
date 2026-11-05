@@ -5,8 +5,8 @@ order: 57
 sources:
   [
     packages/kit/supabase/schemas/44-print-jobs.sql,
-    packages/kit/build/print-jobs-db.test.mjs,
-    packages/kit/build/suppliers.test.mjs,
+    packages/kit/build/print-jobs-db.test.mts,
+    packages/kit/build/suppliers.test.mts,
     packages/kit/build/print.mts,
     packages/kit/build/print,
     packages/kit/src/lib/print,
@@ -68,7 +68,7 @@ Typst is behind **`build/print/typeset/compiler.js`** — `create`, `pdf`, `svg`
 | `node` | a machine with a build box                       | `@myriaddreamin/typst-ts-node-compiler`, a native binary of about 44 MB — an optional peer, so a site with the print module off installs none of it                                                  |
 | `wasm` | the administrator's browser and an Edge Function | the same compiler built for WebAssembly, because a cloud-only site has nothing else: the browser sets the interior, the function the covers. An ordinary dependency, since the admin bundle needs it |
 
-They are the same program built twice, and that is the point. An **edition** is a hash of the source, the templates and the trim, and `print.json` says which file a printer has — so if the two paths could diverge, nobody could tell which edition a printed book actually is. `PRINT_DRIVER=wasm` sets a book with the other one, and `build/print-parity.test.mjs` holds them to the same bytes.
+They are the same program built twice, and that is the point. An **edition** is a hash of the source, the templates and the trim, and `print.json` says which file a printer has — so if the two paths could diverge, nobody could tell which edition a printed book actually is. `PRINT_DRIVER=wasm` sets a book with the other one, and `build/print-parity.test.mts` holds them to the same bytes.
 
 The seam exists so the two can be held to each other, and a measurement decides where each piece runs. A book's interior is compiled in one step: it is typeset as one document, so its contents page and highlights index can name every page, and there is no piece planner or PDF merge. Natively that compile is quick, but as WebAssembly in an Edge Function a 164-page book's interior took **1.74 seconds** of the 2 seconds of CPU a request gets, before any of the work around it. A longer book could never be set there, however often it was retried. So **the function does not compile the interior; the administrator's browser does** (`build/print/typeset/interior.js`), with the same WebAssembly and the same type, and the function makes the covers and the EPUB, which fit.
 
@@ -93,7 +93,7 @@ Deploy generation is separate and opt-in: only `PRINT_BUILD=1` runs the print st
 
 What it does, in order: reads the book and its companion from `public.content` **through `entry.js`** — the one adapter, so the function sees the same book the build does; reads the print words through the store, so a site's own `library.md` wins over the theme's; sizes the paperback's picture; typesets with `build/print/typeset.mjs` unchanged; works out what the printers will bind (`padFor`, the shared rule) and takes the interior back, or waits for the administrator's browser to set it (above), with the templates (`_shared/print/templates.json`) and the type from the `print` bucket; quotes the printers and draws a cover per printed format, and per cloth × foil for a linen, each to that printer's own dimensions; and stores everything under `<slug>/<edition>/` — the same names the native path uses.
 
-The edition id is the shared rule (`build/print/edition.mjs`), which is the claim worth stating plainly: **the function and the build give the same book the same edition.** The Golden Key comes out as `25e674ffcaa1d9cf` either way, with a byte-identical `interior.typ`. `build/print-cloud.test.mjs` runs the function against the stack and compares both, and when the ids differ it names the part that moved — because the hash has fifteen parts and guessing which one is a bad afternoon. `PRINT_PARTS=1` prints the same list on the build side, and a call with `parts: true` on the function side; a call with `typ: true` keeps the Typst sources in the bucket beside the PDFs, as `--typ` does on a machine.
+The edition id is the shared rule (`build/print/edition.mjs`), which is the claim worth stating plainly: **the function and the build give the same book the same edition.** The Golden Key comes out as `25e674ffcaa1d9cf` either way, with a byte-identical `interior.typ`. `build/print-cloud.test.mts` runs the function against the stack and compares both, and when the ids differ it names the part that moved — because the hash has fifteen parts and guessing which one is a bad afternoon. `PRINT_PARTS=1` prints the same list on the build side, and a call with `parts: true` on the function side; a call with `typ: true` keeps the Typst sources in the bucket beside the PDFs, as `--typ` does on a machine.
 
 It finishes the job: the printers validate the files from the bucket and quote them, a printer that keeps a title is asked for ours by SKU before one is ever made (and what is made is written to the bucket's `<slug>/registry.json` and to `print.json` the same moment, since a setup fee paid twice is money gone), the EPUB is made from the same words by the same module, and `print.json` is written **through the store** — a file in a checkout, a row of `public.content` here, and the code does not know which. A cloud render carries forward the store art and the page pictures a machine made for the same edition rather than emptying a gallery it cannot draw itself.
 

@@ -318,7 +318,7 @@ defineExpose({ refresh: () => posted() })
             </span>
             <span class="fd-note-line"><template v-for="(r, i) in noteRuns(g)" :key="i"><b v-if="r.b">{{ r.t }}</b><template v-else>{{ r.t }}</template></template></span>
             <span v-if="noteText(g)" class="fd-note-text">{{ noteText(g) }}</span>
-            <span class="fd-note-meta"><time v-if="g.source !== 'event'" :datetime="g.at"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 1. -->{{ agoOf(g.at) }}</time><template v-if="noteWhere(g)">{{ g.source !== 'event' ? ' · ' : '' }}{{ noteWhere(g) }}</template><template v-if="g.source === 'event'">{{ noteWhere(g) ? ' · ' : '' }}<span class="fd-note-go">{{ N['event-open'] }}</span></template></span>
+            <span class="fd-note-meta"><time v-if="g.source !== 'event'" :datetime="g.at">{{ agoOf(g.at) }}</time><template v-if="noteWhere(g)">{{ g.source !== 'event' ? ' · ' : '' }}{{ noteWhere(g) }}</template><template v-if="g.source === 'event'">{{ noteWhere(g) ? ' · ' : '' }}<span class="fd-note-go">{{ N['event-open'] }}</span></template></span>
           </span>
           <i v-if="g.fresh" class="fd-note-dot" :aria-label="N.new"></i>
         </a>

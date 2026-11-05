@@ -14,28 +14,28 @@ A record's text SHALL be readable on the site's pages only by a reader the acces
 - **WHEN** the demo is built with a members-only article and a book whose later chapters are gated, and every published file is read as a guest
 - **THEN** no sentence past a teaser — from a locked chapter, a short locked chapter, a locked chapter's summary, the gated article or a gated wiki page — appears in any of them, while their titles, the free chapter and the locked chapters' titles do
 
-Verified by: `node build/gated-content.test.mjs`, which builds a copy of the demo with gated fixtures carrying marker sentences and searches every file in its output, its pre-rendered pages and its search data for each marker
+Verified by: `node build/gated-content.test.mts`, which builds a copy of the demo with gated fixtures carrying marker sentences and searches every file in its output, its pre-rendered pages and its search data for each marker
 
 #### Scenario: readers of the same book
 
 - **WHEN** a guest, a signed-in non-member, the buyer of a book and a member ask for a gated book
 - **THEN** each is sent exactly the chapters their class allows — one chapter where a guest's allowance is one, more for a higher class, every chapter for a member, a bought book lifting its buyer to paying for that book (never past a members-only bar) — and a refusal returns no text
 
-Verified by: `node build/gate.test.mjs` (the allowance for every class, the lift, the bars) and `node build/reader-content.test.mjs` against the local stack (the demo's members-only book for a guest, `free@example.com`, a buyer and a member)
+Verified by: `node build/gate.test.mts` (the allowance for every class, the lift, the bars) and `node build/reader-content.test.mts` against the local stack (the demo's members-only book for a guest, `free@example.com`, a buyer and a member)
 
 #### Scenario: a request without sign-in or with a forged class
 
 - **WHEN** a request for gated text carries no session, an expired session, or claims a class the account does not hold
 - **THEN** the server answers from the account's own entitlements and returns only what that account may read
 
-Verified by: `node build/reader-content.test.mjs`
+Verified by: `node build/reader-content.test.mts`
 
 #### Scenario: cloud content rows
 
 - **WHEN** a guest reads the published content rows directly from the backend in cloud mode
 - **THEN** gated records come back without their gated text, and an administrator's session still sees it
 
-Verified by: `node build/reader-content.test.mjs` in cloud mode against the local stack
+Verified by: `node build/reader-content.test.mts` in cloud mode against the local stack
 
 ### Requirement: Readers with access see gated text as they do today
 
@@ -64,4 +64,4 @@ A site whose deployment shape has no backend SHALL NOT publish gated text, becau
 - **WHEN** a static site declares a members-only article
 - **THEN** the build succeeds without the article's text and names the article in its report, and the record editor's access field says gated content needs a backend
 
-Verified by: `node build/gated-content.test.mjs` in the static shape; the access field's help in `build/models/core/collections.mjs`
+Verified by: `node build/gated-content.test.mts` in the static shape; the access field's help in `build/models/core/collections.mjs`

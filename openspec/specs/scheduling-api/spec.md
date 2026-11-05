@@ -17,14 +17,14 @@ A site with the `sessions` and `api` modules on SHALL serve its session types, o
 - **THEN** every call answers in cal.com's shapes and the bookings are the site's own rows, judged
   by the same judge the app's booker asks
 
-Verified by: `build/scheduling-api.test.mjs` against the served function with the kit's `cal.js`
+Verified by: `build/scheduling-api.test.mts` against the served function with the kit's `cal.js`
 
 #### Scenario: the site's own client, pointed at the site
 
 - **WHEN** `cal.js` is made with its base set to `<domain>/v2` and a scheduling key, and asked for the seeded native type's slots, a booking for the seeded member at an open time, its reschedule and its cancellation
-- **THEN** the slots are the native scheduler's (the coach's hours less bookings, as `scheduling.test.mjs` pins them), the booking is a `bookings` row with `provider: native` that the Coaching tab shows, the move and the cancellation land on the row with the site's emails sent, and every answer is in cal.com's envelope with the shapes `cal.js` already reads
+- **THEN** the slots are the native scheduler's (the coach's hours less bookings, as `scheduling.test.mts` pins them), the booking is a `bookings` row with `provider: native` that the Coaching tab shows, the move and the cancellation land on the row with the site's emails sent, and every answer is in cal.com's envelope with the shapes `cal.js` already reads
 
-Verified by: `build/scheduling-api.test.mjs` on the demo against the served function; the shapes against cal.com's published v2 responses field for field
+Verified by: `build/scheduling-api.test.mts` on the demo against the served function; the shapes against cal.com's published v2 responses field for field
 
 #### Scenario: the judge holds through the API
 
@@ -106,7 +106,7 @@ offers are the same times, computed once.
   `priority` and `weight`; the slots are the times the fixed host and at least one rotating host are
   free; and the booking names the hosts it was assigned
 
-Verified by: `build/scheduling-api.test.mjs` against the served function, and the kit's own `cal.js`
+Verified by: `build/scheduling-api.test.mts` against the served function, and the kit's own `cal.js`
 pointed at the site
 
 #### Scenario: every schedule, not one
@@ -114,7 +114,7 @@ pointed at the site
 - **WHEN** a host keeps two named sets of hours and a scheduling key reads the schedules
 - **THEN** both come back, each with its name and its own overrides, one marked `isDefault`
 
-Verified by: `build/scheduling-api.test.mjs`
+Verified by: `build/scheduling-api.test.mts`
 
 #### Scenario: held, confirmed and declined through the API
 
@@ -123,7 +123,7 @@ Verified by: `build/scheduling-api.test.mjs`
   the second is freed and its time offered again, and both refuse a caller who is neither the host
   nor an administrator
 
-Verified by: `build/scheduling-api.test.mjs`
+Verified by: `build/scheduling-api.test.mts`
 
 #### Scenario: the API's times are the booker's times
 
@@ -131,4 +131,4 @@ Verified by: `build/scheduling-api.test.mjs`
   one week, with a limit and a window in force
 - **THEN** they are the same times
 
-Verified by: `build/scheduling-api.test.mjs` comparing both answers
+Verified by: `build/scheduling-api.test.mts` comparing both answers

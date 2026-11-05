@@ -11,7 +11,7 @@ sources:
     packages/kit/supabase/functions/_shared/schedulers/cal.ts,
     packages/kit/src/lib/cal-embed.ts,
     packages/kit/theme/src/pages/BookPage.vue,
-    packages/kit/build/scheduling-api.test.mjs,
+    packages/kit/build/scheduling-api.test.mts,
   ]
 reviewed: 2026-10-21
 ---
@@ -62,11 +62,11 @@ The modal and the floating button work the same way (`Cal("modal", …)`, `Cal("
 
 ## The closed loop
 
-`cal.js` reads `CAL_API_BASE` (default `https://api.cal.com/v2`). Set to a site's `/v2`, the kit's cal.com client — `eventTypes`, `slots`, `book`, `reschedule`, `cancel` — talks to that site's Scheduling API, which is what `build/scheduling-api.test.mjs` does against the site itself: the same client that would book on cal.com books on the native calendar, and every answer is a shape it already reads.
+`cal.js` reads `CAL_API_BASE` (default `https://api.cal.com/v2`). Set to a site's `/v2`, the kit's cal.com client — `eventTypes`, `slots`, `book`, `reschedule`, `cancel` — talks to that site's Scheduling API, which is what `build/scheduling-api.test.mts` does against the site itself: the same client that would book on cal.com books on the native calendar, and every answer is a shape it already reads.
 
 ## What checks it
 
-`build/scheduling-api.test.mjs` (in `platformkit test` with sessions and api on; `SCHEDULING_API_TEST=0` skips it) pins the shapes under Node against cal.com's published v2 responses and — with the stack up and a native type hosted by the seeded coach, the demo's — runs the closed loop, the judge's four refusals, a person's JWT, the webhooks with a local receiver verifying `X-Cal-Signature-256`, the schedule, and cal.com's embed on a page of another origin under Playwright (the person signing in inside the frame, booking a time, `bookingSuccessfulV2` on the parent). `deploy-checks` notes the `/api/scheduling/v2/*` rewrite; where the host has none, the site's shell forwards `/v2/…` to the function as it does `/v1/…`.
+`build/scheduling-api.test.mts` (in `platformkit test` with sessions and api on; `SCHEDULING_API_TEST=0` skips it) pins the shapes under Node against cal.com's published v2 responses and — with the stack up and a native type hosted by the seeded coach, the demo's — runs the closed loop, the judge's four refusals, a person's JWT, the webhooks with a local receiver verifying `X-Cal-Signature-256`, the schedule, and cal.com's embed on a page of another origin under Playwright (the person signing in inside the frame, booking a time, `bookingSuccessfulV2` on the parent). `deploy-checks` notes the `/api/scheduling/v2/*` rewrite; where the host has none, the site's shell forwards `/v2/…` to the function as it does `/v1/…`.
 
 ## What is not there, on purpose
 

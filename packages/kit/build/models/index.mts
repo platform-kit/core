@@ -74,7 +74,7 @@ export function fileOf(model: any, name: any, root: any) {
   if (!file.startsWith(model.dir + '/')) throw new Refusal(400, 'bad path')
   return file
 }
-export async function namesOf(model: any, root: any, store: any) {
+export async function namesOf(model: any, root: any, store?: any) {
   const st = store || gitStore(root)
   if (model.names) return model.names({ root, store: st })
   if (model.single) return [model.single]
@@ -321,7 +321,7 @@ export async function optionList(models: any, key: any, root: any, extra = {}) {
   return []   /* a list no model of this site provides (the theme's `topics` on a site with no instrument): the field simply offers nothing */
 }
 /* the client's shape: the nav, the grid and the drawer are drawn from this */
-export async function describe(model: any, root: any, store: any) {
+export async function describe(model: any, root: any, store?: any) {
   let count = 1
   /* the rail's number. A model whose records are a tree says its own — the spaces' number is its
      spaces, not the rooms under them, and "4" beside Spaces would say four spaces to anybody. */

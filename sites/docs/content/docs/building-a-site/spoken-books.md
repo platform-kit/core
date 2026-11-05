@@ -27,7 +27,7 @@ The deploy's side of it is a build step, `packages/kit/build/steps/tts.mts`: pha
 
 ## The words and the names are one module
 
-`lib/speech.js` — pure, no imports — is shared by the script and the browser: `ENGINE`, `INTRO_KEY`, `speakable` (markdown → speech: headings as sentences, capitals as words, dashes as pauses, years in pairs, numbers in words), `bookChapters` (the split the reader makes), `chapterSpeech`, `hashInput`. Every recording is named by sha1 of `hashInput` (engine, voice, settings, the exact words; 16 hex), so text that has not changed is never spoken twice and a chapter a browser speaks has the same name the script would give it. `speech.test.mjs` reproduces every file name in every committed manifest from the books as they are. Never change how words are prepared in one place: change the module, and every existing name changes with it.
+`lib/speech.js` — pure, no imports — is shared by the script and the browser: `ENGINE`, `INTRO_KEY`, `speakable` (markdown → speech: headings as sentences, capitals as words, dashes as pauses, years in pairs, numbers in words), `bookChapters` (the split the reader makes), `chapterSpeech`, `hashInput`. Every recording is named by sha1 of `hashInput` (engine, voice, settings, the exact words; 16 hex), so text that has not changed is never spoken twice and a chapter a browser speaks has the same name the script would give it. `speech.test.mts` reproduces every file name in every committed manifest from the books as they are. Never change how words are prepared in one place: change the module, and every existing name changes with it.
 
 ## The store, the bucket, LFS
 
@@ -58,7 +58,7 @@ A chosen one is cached like any other weight and paid for once.
 characters, speaks every piece at the engine's own steps, and posts one finished mp3 — and it must,
 because **a recording's name is a hash of the engine's settings**: a default changed here would
 quietly rename every file in the store and the next run would speak the whole library again.
-`build/speech.test.mjs` reproduces every committed name and is what holds that.
+`build/speech.test.mts` reproduces every committed name and is what holds that.
 
 **The bucket fills as people read.** Before a chapter is made in a browser, the bucket is asked for its name (a HEAD, once per name): a recording any reader has already made plays at once. A chapter a **signed-in** reader's browser finishes is uploaded to the same place with its metadata; guests generate for themselves only. The policy lets the authenticated role insert under exactly that name shape and nothing else — never update, never delete — so a name once taken is never replaced by a reader. The script's `adoptFromBucket` makes browser-made chapters the copy of record on the next local run. The reader never writes a manifest; the script owns it.
 

@@ -12,7 +12,7 @@ The tests that need a database, the functions and a browser run against whatever
 - **The functions are served with a test environment made for the run**: a known test value for every webhook secret, mail to the stack's own catcher, and the provider services a site's configuration names (the Hyperswitch router, a LiveKit dev server) started inside the same environment — so every check runs rather than skipping for want of a secret.
 - **Tests find their stack only from the runner**: no test asks `supabase status` in whatever folder it was started from, and no test hard-codes a port. One helper gives each test its site's URL, keys, database and mail catcher.
 - **In this run a skip is a failure**: a missing stack, service or secret fails the run, naming what is missing. The quick checks that need no stack stay in `npm test` as they are.
-- **The schema check moves into the same run**: `schema.test.mjs` runs under `platformkit test --e2e`, in the run's Docker, not in `npm test`. It keeps a throwaway database of its own, because it tests the planner by renaming tables and dropping columns, which would wreck a site's stack mid-run.
+- **The schema check moves into the same run**: `schema.test.mts` runs under `platformkit test --e2e`, in the run's Docker, not in `npm test`. It keeps a throwaway database of its own, because it tests the planner by renaming tables and dropping columns, which would wreck a site's stack mid-run.
 - **CI runs the same command** on every push, for the kit's own sites.
 - **Torn down afterwards**: stacks and volumes are removed when the run ends, unless asked to keep them for a look.
 
@@ -39,7 +39,7 @@ Whether the selection of sites is right — every registered site locally, the k
 ## Impact
 
 - `packages/kit/build/test.mts` and a new runner beside it; `packages/kit/bin/platformkit.mjs` (`test --e2e`); the root `package.json`.
-- Every stack-backed test under `packages/kit/build/` (how it finds its stack); `schema.test.mjs`.
+- Every stack-backed test under `packages/kit/build/` (how it finds its stack); `schema.test.mts`.
 - The seed steps of `platformkit migrate reset`, shared rather than copied.
 - `.github/workflows/kit.yml`.
 - The docs site's testing page and the CLI reference.

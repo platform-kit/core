@@ -128,25 +128,25 @@ A usage offer with an omitted or blank unit SHALL resolve to “credits” durin
 
 - **WHEN** a balance or activity record is shown for an offer with a configured unit
 - **THEN** the Usage view labels the quantity with that offer unit, even if an activity record has a different recorded unit
-- **Verified by:** `node --test packages/kit/build/usage-unit.test.mjs`
+- **Verified by:** `node --test packages/kit/build/usage-unit.test.mts`
 
 #### Scenario: A usage offer without a unit defaults to credits
 
 - **WHEN** a site compiles a usage offer with its unit omitted or blank
 - **THEN** the resulting offer uses “credits”, and a metered offer is not rejected solely because its unit was omitted
-- **Verified by:** `cd sites/demo && node --test ../../packages/kit/build/usage.test.mjs` and `cd sites/demo && node ../../packages/kit/build/deploy-checks.mts --test`
+- **Verified by:** `cd sites/demo && node --test ../../packages/kit/build/usage.test.mts` and `cd sites/demo && node ../../packages/kit/build/deploy-checks.mts --test`
 
 #### Scenario: A recorded activity unit is used for legacy activity
 
 - **WHEN** an activity record has a non-empty recorded unit but its historical offer has no unit
 - **THEN** the Usage view labels the quantity with the recorded unit
-- **Verified by:** `node --test packages/kit/build/usage-unit.test.mjs`
+- **Verified by:** `node --test packages/kit/build/usage-unit.test.mts`
 
 #### Scenario: Credits label activity with no available unit
 
 - **WHEN** an activity record has neither an offer unit nor a non-empty recorded unit
 - **THEN** the Usage view labels the unchanged quantity in “credits”
-- **Verified by:** `node --test packages/kit/build/usage-unit.test.mjs`
+- **Verified by:** `node --test packages/kit/build/usage-unit.test.mts`
 
 ### Requirement: A usage payment needing the customer is announced on every page
 
@@ -157,21 +157,21 @@ When a signed-in customer has an incremental usage payment that needs them — v
 - **WHEN** a signed-in customer has a usage payment whose verification is required
 - **THEN** every page shows the red banner with the verification line and a link to the Usage view
 
-Verified by: `node build/usage-alert.test.mjs` (the status-to-banner rule), and the rendered banner on a landing page, a content page and Billing at 1280×900 and 390×844 in light and dark
+Verified by: `node build/usage-alert.test.mts` (the status-to-banner rule), and the rendered banner on a landing page, a content page and Billing at 1280×900 and 390×844 in light and dark
 
 #### Scenario: a payment failed
 
 - **WHEN** a signed-in customer has a usage payment that failed
 - **THEN** every page shows the red banner with the failed-payment line
 
-Verified by: `node build/usage-alert.test.mjs`
+Verified by: `node build/usage-alert.test.mts`
 
 #### Scenario: a processing payment, or none
 
 - **WHEN** a customer's only usage payment is processing, or they have none, or they are signed out
 - **THEN** no banner appears
 
-Verified by: `node build/usage-alert.test.mjs`, and a rendered page for a signed-out visitor
+Verified by: `node build/usage-alert.test.mts`, and a rendered page for a signed-out visitor
 
 #### Scenario: dismissal lasts one page view
 
@@ -185,7 +185,7 @@ Verified by: the rendered banner dismissed, then a navigation, in a real browser
 - **WHEN** the customer is on a checkout page, an embed, or a preview or share render
 - **THEN** the banner does not appear
 
-Verified by: `node build/usage-alert.test.mjs` (the path rule)
+Verified by: `node build/usage-alert.test.mts` (the path rule)
 
 #### Scenario: the server answers for the signed-in customer only
 

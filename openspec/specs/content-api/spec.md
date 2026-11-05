@@ -17,42 +17,42 @@ The API SHALL answer under **`/api`** and never under `/spaces`, which is the co
 - **WHEN** `/spaces/the-practice` is requested of the site
 - **THEN** the app answers, never the content API — whether or not the host has declared the rewrite
 
-Verified by: `content-api.test.mjs` and `rewrites.test.mjs` (the served rules: `/spaces/<space>` answered by the app)
+Verified by: `content-api.test.mts` and `rewrites.test.mts` (the served rules: `/spaces/<space>` answered by the app)
 
 #### Scenario: the official client, one host changed
 
 - **WHEN** `contentful.js` is created with `{ space: <the site's space>, accessToken: <a delivery key>, host: <the site> }` and asks `getEntries({ content_type: 'article', include: 2, order: '-sys.createdAt', limit: 5, skip: 5 })`, `getEntries({ 'fields.tags[in]': 'craft' })`, `getEntries({ query: 'reading' })`, `getEntry(<an article's id>)`, `getAsset(<its picture's id>)`, `getContentTypes()`, `getLocales()`
 - **THEN** each answers as Contentful would — the totals, the second page's five, the author and the picture in `includes`, the tagged articles, the searched ones, the one entry and asset, every content type with its fields, the locales — and the client's own link resolution (`resolveResponse`) fills `fields.author` and `fields.image` with the included records
 
-Verified by: `content-api.test.mjs` running `contentful.js` against the served function on the demo
+Verified by: `content-api.test.mts` running `contentful.js` against the served function on the demo
 
 #### Scenario: a Contentful source, unchanged
 
 - **WHEN** a Next.js page written for Contentful's Delivery API (a fetch of `entries?content_type=book&select=fields.title,fields.cover&include=1`) is pointed at the site
 - **THEN** it renders the books with their covers from the response alone, nothing in it changed but the host and the keys
 
-Verified by: `content-api.test.mjs` fetching that query and asserting the shape field for field against a fixture taken from Contentful's documentation
+Verified by: `content-api.test.mts` fetching that query and asserting the shape field for field against a fixture taken from Contentful's documentation
 
 #### Scenario: every operator
 
 - **WHEN** `fields.title[match]=quiet`, `fields.difficulty[in]=beginner,intermediate`, `fields.date[gte]=2026-09-01`, `fields.cover[exists]=false`, `fields.tags[all]=attention,rest`, `links_to_entry=<a book's id>` (its companion) and `links_to_asset=<a picture's id>` (the entries that use it) are asked one at a time
 - **THEN** each returns exactly the entries the rule admits, recomputed from the index in the test; an operator a field's type does not take answers `InvalidQuery`
 
-Verified by: `content-api.test.mjs`
+Verified by: `content-api.test.mts`
 
 #### Scenario: a link that cannot be resolved
 
 - **WHEN** an entry links to an entry that is unpublished or gone
 - **THEN** the link stands in `fields`, the target is absent from `includes`, and `errors` names it as `notResolvable`, as Contentful does
 
-Verified by: `content-api.test.mjs` — the shared shaping over a record given a link to nothing, and a real link resolved beside it
+Verified by: `content-api.test.mts` — the shared shaping over a record given a link to nothing, and a real link resolved beside it
 
 #### Scenario: cached and rate-limited
 
 - **WHEN** a collection is fetched twice with the first answer's `ETag` in `If-None-Match`, and then a hundred and twenty times at once
 - **THEN** the second fetch is 304 with no body, and past the limit the answer is 429 `RateLimitExceeded` with `X-Contentful-RateLimit-Reset` saying when
 
-Verified by: `content-api.test.mjs`
+Verified by: `content-api.test.mts`
 
 ### Requirement: Content types are what the admin knows about every model
 
@@ -63,7 +63,7 @@ The Delivery API SHALL describe every collection the site has on and every publi
 - **WHEN** the demo's `teachers` model (a name, a role as a select, a portrait, a markdown body) and its `events` model (a markdown field, a reference to a teacher) are read through `content_types/teacher`, `content_types/event` and their entries
 - **THEN** the types list those fields with their Contentful types and the select's choices as a validation, and an entry's markdown is a Rich Text document whose paragraphs are the markdown's with the markdown beside it, the portrait a Link to an Asset in `includes`, the teacher a Link to the teacher's entry
 
-Verified by: `content-api.test.mjs` on the demo (the demo's teachers carry portraits in the library)
+Verified by: `content-api.test.mts` on the demo (the demo's teachers carry portraits in the library)
 
 #### Scenario: a field added in the builder
 
@@ -81,7 +81,7 @@ Every file in the site's media library — both roots, the bucket in cloud mode 
 - **WHEN** an asset's URL is fetched with `?w=400&h=300&fit=fill&f=top&fm=webp&q=70`
 - **THEN** the answer is a 400 × 300 WebP, the top of the picture kept, under `Cache-Control: public, max-age=31536000, immutable`; the same URL with `fm=avif` is a WebP of the same size; `w=0` or `q=200` is `BadQuery`
 
-Verified by: `content-api.test.mjs` decoding the answer's dimensions and format
+Verified by: `content-api.test.mts` decoding the answer's dimensions and format
 
 ### Requirement: The Preview API answers drafts under a preview key
 
@@ -92,7 +92,7 @@ The same routes SHALL answer as Contentful's Preview API when the key is a previ
 - **WHEN** an article is edited and saved but not published in cloud mode, and its entry is fetched with a preview key and then with a delivery key
 - **THEN** the preview answer carries the draft's title, the delivery answer the live one; an entry set `published: false` is on the preview answer and absent from the delivery one
 
-Verified by: the demo in cloud mode, by hand (no pinned test); the unpublished entry by `content-api.test.mjs` on the demo
+Verified by: the demo in cloud mode, by hand (no pinned test); the unpublished entry by `content-api.test.mts` on the demo
 
 ### Requirement: GraphQL is Contentful's, generated from the content types
 
@@ -103,14 +103,14 @@ The site SHALL serve Contentful's GraphQL Content API at `<domain>/api/content/v
 - **WHEN** `graphql-codegen` introspects the endpoint and a query `{ articleCollection(limit: 3, order: date_DESC, where: { tags_contains_some: ["craft"] }) { total items { sys { id } title body { json } image { url width } } } }` is posted with a delivery key
 - **THEN** the schema introspects with `Article`, `ArticleCollection`, `ArticleFilter`, `ArticleOrder`, `Asset` and `Sys`, and the query answers three articles with their Rich Text json and their picture's URL
 
-Verified by: `content-api.test.mjs` posting the introspection query and the query above against the served endpoint
+Verified by: `content-api.test.mts` posting the introspection query and the query above against the served endpoint
 
 #### Scenario: preview through GraphQL
 
 - **WHEN** a query says `preview: true` with a delivery key, and again with a preview key
 - **THEN** the first is refused `AccessDenied` as Contentful refuses it, the second answers with the drafts
 
-Verified by: `content-api.test.mjs` (the refusal); the drafts by hand in cloud mode
+Verified by: `content-api.test.mts` (the refusal); the drafts by hand in cloud mode
 
 ### Requirement: Sync gives what changed since
 
@@ -121,7 +121,7 @@ Verified by: `content-api.test.mjs` (the refusal); the drafts by hand in cloud m
 - **WHEN** a sync is started, an entry is then unpublished (or its file removed) and another edited, and the `nextSyncUrl` is fetched
 - **THEN** the answer holds the edited entry and a `DeletedEntry` for the removed one and nothing else, and a second fetch of the new `nextSyncUrl` holds nothing
 
-Verified by: `content-api.test.mjs` on the demo — a deletion in the repository's history synced under a token from before it, nothing under a fresh one; the cloud path by hand
+Verified by: `content-api.test.mts` on the demo — a deletion in the repository's history synced under a token from before it, nothing under a fresh one; the cloud path by hand
 
 ### Requirement: Keys open the doors, and Delivery may be public
 
@@ -132,21 +132,21 @@ An administrator SHALL make keys in the admin — each with a name and a kind (*
 - **WHEN** an administrator makes a delivery key and a preview key on Settings → API, reads with each, then revokes the delivery key
 - **THEN** the page shows the key once with a copy control and never again; each key's row shows its kind and its last use after the read; the revoked key answers `AccessTokenInvalid` and the other still reads
 
-Verified by: `content-api.test.mjs` making and revoking keys as the page does (the key's sha256 in `api_keys`) and reading with them; screenshots of the API page (the list, the new-key form, the one-time reveal), both themes, 1280 and 390
+Verified by: `content-api.test.mts` making and revoking keys as the page does (the key's sha256 in `api_keys`) and reading with them; screenshots of the API page (the list, the new-key form, the one-time reveal), both themes, 1280 and 390
 
 #### Scenario: gated content
 
 - **WHEN** a book gated to members is fetched with no key, with a delivery key not allowed gated content, and with one that is
 - **THEN** the first two answer the entry with its title, description and cover and no body fields; the third the whole book
 
-Verified by: `content-api.test.mjs` on the demo
+Verified by: `content-api.test.mts` on the demo
 
 #### Scenario: Delivery made private
 
 - **WHEN** the site's config says Delivery is not public
 - **THEN** a request with no key answers `AccessTokenInvalid`; where it is public, a token that is not one of the site's keys reads as the public does (a Contentful client always sends one) and a revoked key of the site's is refused
 
-Verified by: `content-api.test.mjs` (the public site: the foreign token, the revoked key); the private site by hand on the demo with `api.public: false` assembled (no pinned test)
+Verified by: `content-api.test.mts` (the public site: the foreign token, the revoked key); the private site by hand on the demo with `api.public: false` assembled (no pinned test)
 
 ### Requirement: Placement in PlatformKit
 
@@ -165,14 +165,14 @@ This capability SHALL land in the layers above, SHALL be switched by its module,
 - **WHEN** a site runs with the `wiki` kind off
 - **THEN** `content_types` does not list `wiki`, `entries?content_type=wiki` answers `InvalidQuery` naming the unknown type, and the GraphQL schema has no `Wiki`
 
-Verified by: `content-api.test.mjs` on the docs site (docs alone)
+Verified by: `content-api.test.mts` on the docs site (docs alone)
 
 #### Scenario: the module off
 
 - **WHEN** a site's config says `api: false`
 - **THEN** `/spaces/…`, `/content/v1/…` and `/images/…` answer nothing but the site's own 404, the API page is not in the admin, and the deploy asks for no rewrite
 
-Verified by: `content-api.test.mjs` over the switch on a fixture site; the rail on such a site
+Verified by: `content-api.test.mts` over the switch on a fixture site; the rail on such a site
 
 ### Requirement: The API documents itself
 
@@ -183,7 +183,7 @@ A site SHALL serve an OpenAPI 3.1 document describing what it serves — generat
 - **WHEN** `/openapi.json` is fetched from the served function on the demo
 - **THEN** it is a valid OpenAPI 3.1 document (Scalar's own parser accepts it), its `paths` hold every route the Delivery, Preview, Management (the writing methods, the uploads, the webhook definitions), GraphQL, Images and analytics doors answer and every route of the Forms API (the writes among them), the Scheduling API, the Store API and the Support API (on the docs site, forms, sessions, store and support off, none of them), its `components.schemas` hold one schema per content type the site has (`Article`, `Book`, `Teacher`, `Event`…) whose properties are the type's fields, and the `content_type` parameter's enum is the types' ids
 
-Verified by: `content-api.test.mjs` — the document parsed and validated with `@scalar/openapi-parser`, the paths and schemas compared with the index
+Verified by: `content-api.test.mts` — the document parsed and validated with `@scalar/openapi-parser`, the paths and schemas compared with the index
 
 #### Scenario: the reference page
 
@@ -201,7 +201,7 @@ In cloud mode (`CONTENT_STORE=cloud`) a site SHALL take writes as Contentful's M
 - **WHEN** `contentful-management` is created with `{ accessToken: <a management key>, host }` against the demo in cloud mode and asked to create an entry of the demo's `teacher` type (`createEntryWithId`, fields by locale), update it with its version, publish it, then read it through the Delivery API and the site's page, unpublish it and delete it
 - **THEN** each call answers Contentful's shape with the version advancing, the entry is a draft in the admin (Content → Publishing lists it) until published, then live on the Delivery API and the site within a moment and pushed as a commit, gone from the Delivery API on unpublish and from the admin on delete; a second update with a stale version is 409; a create with a field the model refuses is 422 with the issue named
 
-Verified by: `content-api.test.mjs` on the demo in cloud mode (`CONTENT_STORE=cloud npm run dev` after `content-export.mjs`), the client against the served function, the rows and the drafts read back, the page by Playwright
+Verified by: `content-api.test.mts` on the demo in cloud mode (`CONTENT_STORE=cloud npm run dev` after `content-export.mjs`), the client against the served function, the rows and the drafts read back, the page by Playwright
 
 #### Scenario: an asset through the upload flow
 
@@ -270,7 +270,7 @@ reason SHALL be written beside the rule so that nobody tidies it away.
 - **THEN** each answers as itself — its own shapes, its own refusals — and `/api` itself is still
   the reference page
 
-Verified by: `build/rewrites.test.mjs` (the rules rendered as nginx, built and run in Docker against
+Verified by: `build/rewrites.test.mts` (the rules rendered as nginx, built and run in Docker against
 the local stack)
 
 #### Scenario: the product's own client works, and is made to prove it
@@ -284,8 +284,8 @@ and where no client of theirs exists to drive, the page SHALL say so rather than
 - **THEN** each builds a URL the host routes to the right function, and each is answered in its own
   product's shape
 
-Verified by: `build/content-api.test.mjs`, `build/forms-api.test.mjs`,
-`build/storefront-api.test.mjs` and `build/rewrites.test.mjs` (Chatwoot's and cal.com's, through
+Verified by: `build/content-api.test.mts`, `build/forms-api.test.mts`,
+`build/storefront-api.test.mts` and `build/rewrites.test.mts` (Chatwoot's and cal.com's, through
 nginx)
 
 #### Scenario: a client changes its base and no more
@@ -295,8 +295,8 @@ nginx)
   `api_host: <site>/api/events`, and a cal.com client the base `<site>/api/scheduling/v2`
 - **THEN** each works unchanged in every other respect, the repeated segments included
 
-Verified by: `build/content-api.test.mjs`, `build/scheduling-api.test.mjs`,
-`build/forms-api.test.mjs`, `build/analytics-sdk.test.mjs`, `build/support-api.test.mjs`
+Verified by: `build/content-api.test.mts`, `build/scheduling-api.test.mts`,
+`build/forms-api.test.mts`, `build/analytics-sdk.test.mts`, `build/support-api.test.mts`
 
 #### Scenario: a client that discards the path still reaches the room
 
@@ -304,7 +304,7 @@ Verified by: `build/content-api.test.mjs`, `build/scheduling-api.test.mjs`,
 - **THEN** the path is discarded and the endpoint asked for is `/api/<version>/graphql.json` — and
   that address answers exactly as the store's own room does, the same door under two names
 
-Verified by: `build/storefront-api.test.mjs` (the client) and `build/rewrites.test.mjs` (both
+Verified by: `build/storefront-api.test.mts` (the client) and `build/rewrites.test.mts` (both
 addresses, through nginx)
 
 #### Scenario: the rooms cannot collide
@@ -313,14 +313,14 @@ addresses, through nginx)
 - **THEN** it is one segment and one rule, and no existing rule has to move or be reordered for it
   to be correct
 
-Verified by: `build/rewrites.test.mjs`
+Verified by: `build/rewrites.test.mts`
 
 #### Scenario: the door that cannot move
 
 - **WHEN** an unsubscribe link from an email already sent is followed
 - **THEN** it still reaches the function, at the same address the app itself uses
 
-Verified by: `build/rewrites.test.mjs`
+Verified by: `build/rewrites.test.mts`
 
 ### Requirement: A server-side search names its asker and shows only what that person may see
 
@@ -332,12 +332,12 @@ nobody SHALL return only rows with no audience.
 #### Scenario: a gated record is not found by someone who may not read it
 - **WHEN** a record carrying `for: tier:inner` is searched for by a reader with no membership
 - **THEN** it is absent from the results entirely — not returned without its excerpt
-- **AND** verified by `build/search.test.mjs` and `build/spaces-db.test.mjs`
+- **AND** verified by `build/search.test.mts` and `build/spaces-db.test.mts`
 
 #### Scenario: an ungated record is unchanged
 - **WHEN** a record declares no audience
 - **THEN** it is returned to anyone, including a search naming nobody
-- **AND** verified by `build/search.test.mjs`
+- **AND** verified by `build/search.test.mts`
 
 ### Requirement: What a search matches on is not what it may quote back
 
@@ -349,12 +349,12 @@ read, and a new kind of content SHALL state which it is.
 #### Scenario: a paywalled book is findable but not readable
 - **WHEN** a search matches a phrase that appears only in the body of a book
 - **THEN** the book is returned, and its excerpt contains no words from the body
-- **AND** verified by `build/search.test.mjs`
+- **AND** verified by `build/search.test.mts`
 
 #### Scenario: a new kind must answer
 - **WHEN** a kind of content is added to the index without saying whether its body may be quoted
 - **THEN** it is treated as free to quote, and the list of kinds that must answer is asserted
-- **AND** verified by `build/search.test.mjs`
+- **AND** verified by `build/search.test.mts`
 
 ### Requirement: The server's index is the server's
 
@@ -365,5 +365,5 @@ SHALL be revoked by name; the index table SHALL carry no read policy for any rea
 #### Scenario: the public cannot call it
 - **WHEN** the search is called as `anon` or as `authenticated`
 - **THEN** permission is denied
-- **AND** verified by `build/search.test.mjs` (the schema is asserted) and by a role-switched call
-  in `build/spaces-db.test.mjs`
+- **AND** verified by `build/search.test.mts` (the schema is asserted) and by a role-switched call
+  in `build/spaces-db.test.mts`

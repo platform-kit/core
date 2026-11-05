@@ -59,7 +59,7 @@ export function buyable(offer: any, variant: any, counts: any) {
 
 /* WHY a shape cannot be had, which is not the same question as whether it can — the reader is told
    a different thing for each, and `null` is "it can". */
-export function whyNot(offer: any, variant: any, counts: any, unsold: any) {
+export function whyNot(offer: any, variant: any, counts: any, unsold?: any) {
   if (!offer) return null
   if (Array.isArray(unsold) ? unsold.includes(variant) : (offer.unsold || []).includes(variant)) return 'unsold'
   return buyable(offer, variant, counts) ? null : 'out'

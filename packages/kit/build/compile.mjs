@@ -50,7 +50,7 @@ function sources() {
   const walk = (rel) => {
     for (const e of fs.readdirSync(path.join(KIT, rel), { withFileTypes: true })) {
       const r = rel + '/' + e.name
-      if (e.isDirectory()) { if (e.name !== 'node_modules' && e.name !== 'fixtures') walk(r); continue }
+      if (e.isDirectory()) { if (e.name !== 'node_modules') walk(r); continue }
       if (/\.d\.m?ts$/.test(e.name) || !/\.m?ts$/.test(e.name) || DENO(r)) continue
       out.push(r)
     }
@@ -81,7 +81,7 @@ function typescriptIn(root) {
     for (const e of fs.readdirSync(path.join(KIT, rel), { withFileTypes: true })) {
       const r = rel + '/' + e.name
       if (e.isDirectory()) { walk(r); continue }
-      if (/\.ts$/.test(e.name) && !/\.d\.ts$/.test(e.name)) out.push(r)
+      if (/\.m?ts$/.test(e.name) && !/\.d\.m?ts$/.test(e.name)) out.push(r)
     }
   }
   if (fs.existsSync(path.join(KIT, root))) walk(root)
@@ -93,6 +93,8 @@ const functionSources = () => typescriptIn(FUNCTIONS)
 export function compile() {
   clean()
   const theme = strip(themeSources())
+  /* before anything else can fail: --clean must find what is already beside the sources */
+  fs.writeFileSync(LIST, JSON.stringify(theme, null, 2) + '\n')
   const ts = sources()
   const shared = functionSources()
   if (!ts.length) { fs.writeFileSync(LIST, JSON.stringify(theme, null, 2) + '\n'); return theme }

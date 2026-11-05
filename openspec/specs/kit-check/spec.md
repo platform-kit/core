@@ -14,21 +14,21 @@
 - **WHEN** a build step's key is unset
 - **THEN** `check` warns about it and exits zero, and `check --production` fails on it
 
-Verified by: `build/check.test.mjs`
+Verified by: `build/check.test.mts`
 
 #### Scenario: two problems at once
 
 - **WHEN** Docker is not running and the test browser is missing
 - **THEN** both are reported in one run, each with its fix, and the command exits non-zero
 
-Verified by: `build/check.test.mjs`
+Verified by: `build/check.test.mts`
 
 #### Scenario: one list of needs
 
 - **WHEN** a module's manifest adds a required setting
 - **THEN** `check` and `deploy` both ask for it, with no second list edited
 
-Verified by: `build/check.test.mjs`
+Verified by: `build/check.test.mts`
 
 ### Requirement: Online checks are opt-in and change nothing
 
@@ -39,11 +39,11 @@ With `--online`, check SHALL make one read-only call per configured outside serv
 - **WHEN** `platformkit check` runs without `--online`
 - **THEN** no request leaves the machine
 
-Verified by: `build/check.test.mjs`, with outside network calls refused
+Verified by: `build/check.test.mts`, with outside network calls refused
 
 #### Scenario: a refused key
 
 - **WHEN** `--online` runs with a Stripe test key that Stripe rejects
 - **THEN** the report says the key was refused, not that Stripe was unreachable
 
-Verified by: `build/check.test.mjs`, against a stub service
+Verified by: `build/check.test.mts`, against a stub service

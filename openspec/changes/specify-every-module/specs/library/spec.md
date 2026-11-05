@@ -9,14 +9,14 @@ The `articles`, `books`, `wiki` and `docs` modules SHALL each be a collection of
 - **WHEN** a record is marked `published: false` and the site is built
 - **THEN** nothing of it is in the compiled bundle, the search rows or the sitemap
 
-Verified by: `build/unpublished.test.mjs`
+Verified by: `build/unpublished.test.mts`
 
 #### Scenario: every record is valid
 
 - **WHEN** the site's content is compiled
 - **THEN** every record is checked against its collection's schema, and a record that does not fit fails the build naming its field
 
-Verified by: `build/content.test.mjs`
+Verified by: `build/content.test.mts`
 
 ### Requirement: Gated text never reaches a reader who may not read it
 
@@ -27,7 +27,7 @@ Access rules SHALL decide who reads what by visitor class: guest, signed-in read
 - **WHEN** a guest and a member each ask for a members-only book
 - **THEN** the guest is sent the free chapters and the opening only, and the member the whole text
 
-Verified by: `build/gated-content.test.mjs`, `build/reader-content.test.mjs`
+Verified by: `build/gated-content.test.mts`, `build/reader-content.test.mts`
 
 ### Requirement: A book is read chapter by chapter, and the reader's place is kept
 
@@ -38,7 +38,7 @@ A book SHALL be read chapter by chapter with a contents list, next and previous,
 - **WHEN** a reader reads one piece in three sittings
 - **THEN** the library's figures count one read of it, not three
 
-Verified by: `build/reads-db.test.mjs` under `platformkit test --e2e`
+Verified by: `build/reads-db.test.mts` under `platformkit test --e2e`
 
 ### Requirement: A chapter can be mastered
 
@@ -49,7 +49,7 @@ A book's companion SHALL carry, per chapter, its summary, key points and a quiz,
 - **WHEN** a companion names a book the site does not host, or carries a chapter that book does not have
 - **THEN** the check fails, naming the companion and the chapter
 
-Verified by: `build/companions.test.mjs`
+Verified by: `build/companions.test.mts`
 
 ### Requirement: The library searches itself
 
@@ -60,7 +60,7 @@ The library SHALL build one search index of every published record, searched ins
 - **WHEN** the index is built
 - **THEN** the palette's rows and the server's rows come from the same grammar, record for record
 
-Verified by: `build/search.test.mjs`, `build/ranking.test.mjs`
+Verified by: `build/search.test.mts`, `build/ranking.test.mts`
 
 ### Requirement: Wiki and docs are trees
 
@@ -71,4 +71,4 @@ The wiki and the docs SHALL be ordered trees of folders and pages, each page wit
 - **WHEN** the docs site is built with no backend and walked
 - **THEN** every route answers, and every page has its navigation and contents rail
 
-Verified by: `build/static-site.test.mjs`
+Verified by: `build/static-site.test.mts`

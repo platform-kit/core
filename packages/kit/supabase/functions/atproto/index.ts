@@ -126,7 +126,6 @@ Deno.serve(async (req: any) => {
   /* ---------------------------------------------------------------- the database asking */
   /* a joined member's public records changed: every queued member's repository is made to agree */
   if (path === '/internal/project' && req.method === 'POST') {
-    // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
     if (!(await isServiceBearer(req))) return no(REFUSALS.forbidden())
     const { data: dirty } = await admin.from('network_dirty').select('user_id').order('at').limit(50)
     const done: any[] = []
@@ -139,7 +138,6 @@ Deno.serve(async (req: any) => {
 
   /* the relay asked to crawl the site again (the daily job), where the site federates */
   if (path === '/internal/crawl' && req.method === 'POST') {
-    // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
     if (!(await isServiceBearer(req))) return no(REFUSALS.forbidden())
     if (FEDERATES) await requestCrawl()
     return json({ asked: FEDERATES })

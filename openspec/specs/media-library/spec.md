@@ -14,7 +14,7 @@ A record's file field — a cover, a share image, a section's picture, a model's
 - **WHEN** a book says `cover: /uploads/books/example-cover.png` and the site is built
 - **THEN** the shelves show the sized webp under `/static`, the paperback's picture is that file, the edition's hash includes its bytes, and the share card draws it — as it did when the file sat beside the book
 
-Verified by: `entry.test.mjs` and the build on a site after the migration; `print.mjs --dry` reporting the same editions; a kit test of the resolver (the three address kinds and the old way)
+Verified by: `entry.test.mts` and the build on a site after the migration; `print.mjs --dry` reporting the same editions; a kit test of the resolver (the three address kinds and the old way)
 
 #### Scenario: a cover uploaded in cloud mode reaches the build
 
@@ -96,5 +96,5 @@ Verified by: a kit test over the scratch directory and the local stack's bucket
 - **WHEN** a scratch site's book says `cover: /uploads/books/a.png` and a page's section says `image: /img/b.jpg`, and the store is asked to remove, rename or move `content/uploads/books/a.png`, `public/img/b.jpg`, or the folder `content/uploads/books`
 - **THEN** each is refused with the book, or the page, named, the files are still there, and a file no record names goes through; in cloud mode a reference held only in a draft counts
 
-Verified by: a kit test of `assetUsage` over a scratch site (`assets.test.mjs`) and of the pipe's refusal over both stores (`store.test.mjs`)
+Verified by: a kit test of `assetUsage` over a scratch site (`assets.test.mts`) and of the pipe's refusal over both stores (`store.test.mts`)
 

@@ -4,12 +4,12 @@ description: Find accounts, assign staff roles, and distinguish account, content
 order: 41
 sources:
   [
-    packages/kit/build/who-can.test.mjs,
-    packages/kit/build/signed-in-as.test.mjs,
+    packages/kit/build/who-can.test.mts,
+    packages/kit/build/signed-in-as.test.mts,
     packages/kit/src/lib/auth.ts,
     packages/kit/supabase/functions/_shared/permissions.ts,
-    packages/kit/build/permissions.test.mjs,
-    packages/kit/build/permissions-db.test.mjs,
+    packages/kit/build/permissions.test.mts,
+    packages/kit/build/permissions-db.test.mts,
     packages/kit/build/site-permissions-node.mts,
     packages/kit/src/lib/identity.ts,
     packages/kit/build/identity-probe.mts,

@@ -11,28 +11,28 @@ sources:
     packages/kit/src/lib/markdown.ts,
     packages/kit/src/lib/entry.ts,
     packages/kit/src/lib/content-live.ts,
-    packages/kit/build/entry.test.mjs,
+    packages/kit/build/entry.test.mts,
     packages/kit/build/content-file-node.mts,
     packages/kit/build/write-if-changed.mts,
     packages/kit/src/lib/search-rows.ts,
     packages/kit/src/lib/search-index.ts,
     packages/kit/src/lib/strings-groups.ts,
     packages/kit/build/content-kinds.mts,
-    packages/kit/build/content-kinds.test.mjs,
+    packages/kit/build/content-kinds.test.mts,
     packages/kit/build/pipe-closure.mts,
     packages/kit/build/artefacts.mts,
-    packages/kit/build/artefacts.test.mjs,
+    packages/kit/build/artefacts.test.mts,
     packages/kit/build/content-rules.mts,
-    packages/kit/build/content-rules.test.mjs,
+    packages/kit/build/content-rules.test.mts,
     packages/kit/build/content-refresh.mts,
-    packages/kit/build/content-refresh.test.mjs,
-    packages/kit/build/projection-safety.test.mjs,
+    packages/kit/build/content-refresh.test.mts,
+    packages/kit/build/projection-safety.test.mts,
     packages/kit/build/events-db.mts,
     packages/kit/build/search-db.mts,
     packages/kit/build/teams-io.mts,
     packages/kit/vite/index.mts,
     packages/kit/build/steps.mts,
-    packages/kit/build/steps.test.mjs,
+    packages/kit/build/steps.test.mts,
   ]
 reviewed: 2026-11-04
 ---
@@ -49,7 +49,7 @@ The browser bundle includes the collection fields imported by application code. 
 
 ## Adding a content type
 
-When you add a content directory or a file directly under `content/`, register it in `build/content-kinds.mjs` and provide the admin model that edits it. `content-kinds.test.mjs` checks that every content path has a matching admin model; without one, the type is not editable through the cloud CMS. A folder that a build script reads itself, and that never becomes a Velite collection, is registered with `collection: null`. Teams and courses work this way; a course stays out of the browser bundle so that a lesson's text leaves the database only when the lesson is open.
+When you add a content directory or a file directly under `content/`, register it in `build/content-kinds.mjs` and provide the admin model that edits it. `content-kinds.test.mts` checks that every content path has a matching admin model; without one, the type is not editable through the cloud CMS. A folder that a build script reads itself, and that never becomes a Velite collection, is registered with `collection: null`. Teams and courses work this way; a course stays out of the browser bundle so that a lesson's text leaves the database only when the lesson is open.
 
 If a content declaration produces database rows, add a `projected(ctx)` action to its admin model. That action lets the content pipeline update projections when content is published in cloud mode, where no site build may run. The declarations checks require a projection source and ensure that clients cannot write projected tables directly. See [Declarations and state](/content/docs/building-a-site/declarations-and-state).
 
@@ -116,7 +116,7 @@ With `CONTENT_STORE=cloud`, `main.js` loads the published rows before evaluating
 
 Whatever Velite writes is what a guest may read. Its `prepare` step cuts every gated record with the shared rule in `functions/_shared/gate.ts` before anything is written: a book keeps its free chapters and each locked chapter's title and opening lines, a gated page its title, description and excerpt, and a companion its free chapters and whether each locked chapter has a quiz. The bundle, the pre-rendered pages and both search indexes are made from that output, so none of them carries gated text. Print, the spoken books and enrichment read the source files and are unaffected. A book with `fullText: false` is cut harder, to its chapter titles alone, by the same rule wherever its text could leave: Velite's output, the content index, a cloud row and what `reader-content` sends a member. Print sets only its summary edition, and the spoken book records only its introduction and summaries.
 
-This live replacement applies only to collections included in the bundle. Site-defined collections and new content models require a deploy. If the database query fails or times out, the app keeps the bundled content. `build/entry.test.mjs` compares the adapter's output with Velite's output field by field. Cloud-mode admin previews use the same adapter to display drafts.
+This live replacement applies only to collections included in the bundle. Site-defined collections and new content models require a deploy. If the database query fails or times out, the app keeps the bundled content. `build/entry.test.mts` compares the adapter's output with Velite's output field by field. Cloud-mode admin previews use the same adapter to display drafts.
 
 ## Reading content in code
 

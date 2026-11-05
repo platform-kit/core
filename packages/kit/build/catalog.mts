@@ -60,7 +60,6 @@ export function compileUsage(file: any, usage: any, billing: any, currency: any,
     err(`${file}: usage must be a group of fields`)
     return null
   }
-  // @ts-expect-error TS2554, from the conversion: Expected 2-3 arguments, but got 1.
   const unit = resolveUsageUnit(usage.unit)
   const micros = (value: any, field: any, { positive = false } = {}) => {
     const n = Number(value)

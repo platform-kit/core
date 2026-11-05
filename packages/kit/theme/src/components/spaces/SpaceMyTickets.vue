@@ -80,12 +80,12 @@ const said = (e: any) => {
               <div class="mt-bubble">
                 <header>
                   <b>{{ e.by_contact ? W.you : (e.agent_name || W.someone) }}</b>
-                  <time :datetime="e.created_at"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ stampOf(e.created_at, now) }}</time>
+                  <time :datetime="e.created_at">{{ stampOf(e.created_at, now) }}</time>
                 </header>
                 <p><MessageText :blocks="messageBlocks(e.body)" /></p>
               </div>
             </template>
-            <p v-else-if="said(e)" class="mt-happened">{{ said(e) }}<time :datetime="e.created_at"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ stampOf(e.created_at, now) }}</time></p>
+            <p v-else-if="said(e)" class="mt-happened">{{ said(e) }}<time :datetime="e.created_at">{{ stampOf(e.created_at, now) }}</time></p>
           </article>
         </div>
       </template>

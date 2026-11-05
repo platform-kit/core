@@ -4,9 +4,9 @@ description: The fifteen switches, what each turns on, and what the deploy asks 
 order: 43
 sources:
   [
-    packages/kit/build/site-module.test.mjs,
+    packages/kit/build/site-module.test.mts,
     packages/kit/build/generate.mts,
-    packages/kit/build/generate.test.mjs,
+    packages/kit/build/generate.test.mts,
     packages/kit/build/generators,
     packages/kit/vite/index.mts,
     packages/kit/src/lib/modules.ts,
@@ -19,17 +19,17 @@ sources:
     packages/kit/build/cron.mts,
     packages/kit/build/modules/kit.mts,
     packages/kit/build/steps.mts,
-    packages/kit/build/modules-off.test.mjs,
+    packages/kit/build/modules-off.test.mts,
     packages/kit/build/modes.mts,
     packages/kit/src/lib/router.ts,
     packages/kit/build/deploy-checks.mts,
     packages/kit/build/test.mts,
-    packages/kit/build/source-cli.test.mjs,
-    packages/kit/build/runtime-paths.test.mjs,
+    packages/kit/build/source-cli.test.mts,
+    packages/kit/build/runtime-paths.test.mts,
     packages/kit/theme/src/pages/AdminPage.vue,
     packages/kit/build/modules/backend.mts,
     packages/kit/build/module-drop.mts,
-    packages/kit/build/modules-off-db.test.mjs,
+    packages/kit/build/modules-off-db.test.mts,
   ]
 reviewed: 2026-11-04
 ---
@@ -38,7 +38,7 @@ reviewed: 2026-11-04
 
 Modules are enabled by default. Set a module to `false` in `platformkit.config.js` to disable it; its routes, navigation, admin sections, and build steps are excluded, and the deploy skips that module's environment requirements. Settings required independently of a module, such as the SMTP relay used for authentication email, still apply. A backend site with registered admin models must use row-backed content in production; the build rejects a file-backed bundle for that configuration.
 
-`build/modules-off.test.mjs` disables each module in turn and checks that its steps and required secrets are removed without affecting other modules. It also checks that build steps name a declared module. The instrument depends on the `forms` module's runner, so a site enabling `instrument` must also enable `forms`.
+`build/modules-off.test.mts` disables each module in turn and checks that its steps and required secrets are removed without affecting other modules. It also checks that build steps name a declared module. The instrument depends on the `forms` module's runner, so a site enabling `instrument` must also enable `forms`.
 
 ## Content kinds
 
@@ -126,7 +126,7 @@ Node's own `#site` the same list is exported, so a script refuses a typo too.
 and it was not used everywhere: thirty-seven `modules.X !== false` reads remained across thirteen
 files of the kit and the theme. Each was correct, and each was one typo away from switching a
 feature on for a site that had switched it off. They all go through `moduleOn` now, and
-`manifests.test.mjs` fails on a raw read anywhere but `lib/modules.js` itself, naming the file and
+`manifests.test.mts` fails on a raw read anywhere but `lib/modules.js` itself, naming the file and
 the line.
 
 It also fails if anything else **binds the name** `moduleOn`, which is not a hypothetical tidiness
@@ -154,7 +154,7 @@ and gets everything one of the kit's twenty-four gets — a switch, a row in the
 its route answered and prerendered, its step run in its phase, its variable asked for at deploy —
 without editing a single file of the kit or the theme.
 
-`sites/demo` is the worked example, and `build/site-module.test.mjs` holds it to all of it Northlight Press — `sites/demo` — adds `stockists`, the shops that carry its books: a page, a build step that reads `content/stockists`, an admin section and a setting for the wholesaler, none of which the kit has ever heard of.
+`sites/demo` is the worked example, and `build/site-module.test.mts` holds it to all of it Northlight Press — `sites/demo` — adds `stockists`, the shops that carry its books: a page, a build step that reads `content/stockists`, an admin section and a setting for the wholesaler, none of which the kit has ever heard of.
 
 **Start from the generator.** `platformkit generate <kind> <name>` writes a new module, page, content type, backend function, test or build step in exactly this shape and registers it in `platformkit.config.js`, inserting each entry where it belongs and leaving every comment and line already there untouched:
 
@@ -315,6 +315,6 @@ has nowhere to keep an order or a booking, and switching one on in a site that d
 
 Most switches take a feature away and that is the end of it: the route is gone, the step does not run, the deploy stops asking for the secret. Encryption cannot work that way, because the ask is in the CONTENT.
 
-A channel's file says `encrypted: true`. With `space-encryption` off there is no schema to keep a key in and no client to seal with, so the room would be served as plain text — sealed in the repository and readable in the database, and nobody told. That is worse than either a sealed room or an open one. So the spaces compile refuses it, naming both the module and the channel's own file, and the refusal is pinned in `build/modules-off.test.mjs` along with the two directions above.
+A channel's file says `encrypted: true`. With `space-encryption` off there is no schema to keep a key in and no client to seal with, so the room would be served as plain text — sealed in the repository and readable in the database, and nobody told. That is worse than either a sealed room or an open one. So the spaces compile refuses it, naming both the module and the channel's own file, and the refusal is pinned in `build/modules-off.test.mts` along with the two directions above.
 
 The same holds for a space that seals every room under it. A compile that was told nothing about the modules — the admin's Edge Function, which has no config to read — refuses nothing: an unanswerable question is not a fault.

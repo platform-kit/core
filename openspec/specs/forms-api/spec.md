@@ -15,7 +15,7 @@ A site with the `forms` and `api` modules on SHALL serve its forms as Typeform's
 - **WHEN** `@typeform/api-client` is created with `{ token: <a forms key>, apiBaseUrl: <domain>/v1/forms-api }` on the demo and asked `forms.list()`, `forms.get({ uid })`, `responses.list({ uid, pageSize, completed: 'true' })`, `me()` and `workspaces.list()`
 - **THEN** every call answers Typeform's shape: the list names every published form with its display link, the definition holds a field per document field in Typeform's type (the demo's every-kind form: `short_text`, `long_text`, `email`, `website`, `phone_number`, `number`, `dropdown`, `multiple_choice` with its `choices`, `picture_choice`, `rating`, `opinion_scale`, `date`, `file_upload`) and a `logic` entry for its jump, and the responses list carries the seeded responses with `answers[]` typed by kind, the file as a `file_url` that downloads
 
-Verified by: `build/forms-api.test.mjs` on the demo — the client against the served function, the shapes against Typeform's documented ones field for field
+Verified by: `build/forms-api.test.mts` on the demo — the client against the served function, the shapes against Typeform's documented ones field for field
 
 #### Scenario: no key, a wrong key, a delivery key
 
@@ -62,4 +62,4 @@ In cloud mode the Forms API SHALL take Typeform's Create API writes under a form
 - **WHEN** `@typeform/api-client` on the demo in cloud mode calls `forms.create({ data })` with a definition of two groups, a short_text, an email, a multiple_choice with three choices, an opinion_scale, a statement, a welcome and a thank-you screen and one logic jump, then `forms.update` changing a title, then publishes it through the Management API's publish route
 - **THEN** the document under `content/forms/<id>.md` parses as forms.md, the runner shows it at `/to/<id>` with the fields as given, `forms.get` answers the definition back with the same fields and logic, and `forms.delete` removes it
 
-Verified by: `forms-api.test.mjs` on the demo in cloud mode — the round trip definition → document → definition, the page by Playwright
+Verified by: `forms-api.test.mts` on the demo in cloud mode — the round trip definition → document → definition, the page by Playwright

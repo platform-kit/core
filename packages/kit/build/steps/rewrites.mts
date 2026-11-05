@@ -5,6 +5,6 @@ import path from 'node:path'
 export default {
   key: 'rewrites', title: 'The rewrite rules', phase: 'site',
   when: (env: any, site: any) => fs.existsSync(path.join(site.root || process.cwd(), 'deploy', '_redirects')), whenText: 'the site keeps no deploy/_redirects',
-  inputs: ['deploy/_redirects', 'platformkit.config.js'],
+  inputs: ['deploy/_redirects', 'platformkit.config.{js,ts}'],
   run: ({ script }: any) => script('rewrites.mjs'),
 }

@@ -54,4 +54,4 @@ Build scripts should use `uiScope(scope)` from `strings-io.mjs` rather than read
 
 When a term must be worded consistently across multiple surfaces, keep its canonical wording in one content record and have each surface read from that record. For example, the instrument's level labels are records in the site's `glossary` scope and are read by its taxonomy module.
 
-`strings-io.mjs` merges site values over theme defaults, and `strings.test.mjs` checks that merge. Standard UI-string files under `content/app` are not formatted with Prettier because formatting can change their group/key/field structure.
+`strings-io.mjs` merges site values over theme defaults, and `strings.test.mts` checks that merge. Standard UI-string files under `content/app` are not formatted with Prettier because formatting can change their group/key/field structure.

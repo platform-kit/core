@@ -14,14 +14,14 @@ The built-in Hyperswitch provider SHALL use the documented Router APIs of a V2 R
 - **WHEN** a site selects and configures the built-in Hyperswitch provider
 - **THEN** every V2-backed capability declared for the configured profile is available with the same PlatformKit-level behavior, using Hyperswitch for payment movement and the shared commerce layer for PlatformKit-managed behavior
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs` capability-contract matrix, V2 adapter tests, and V2 Router integration coverage
+Verified by: `build/hyperswitch-payment-provider.test.mts` capability-contract matrix, V2 adapter tests, and V2 Router integration coverage
 
 #### Scenario: Checkout preserves the site's requested terms
 
 - **WHEN** a site's checkout requests a subscription, trial, tax collection, payment-method selection, adjustable quantity, shipping address, or shipping option
 - **THEN** the Hyperswitch checkout honors each requested term and returns a normalized checkout result, or reports the specific unavailable term before creating a payment or checkout
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs` checkout capability cases and Hyperswitch sandbox integration coverage
+Verified by: `build/hyperswitch-payment-provider.test.mts` checkout capability cases and Hyperswitch sandbox integration coverage
 
 #### Scenario: Web SDK checkout is confirmed on a PlatformKit page
 
@@ -42,7 +42,7 @@ Verified by: `build/hyperswitch-payment-provider-adapter.test.ts` request-path a
 - **WHEN** a site enables connected-account payouts through Hyperswitch while the documented V2 API has no payout operation
 - **THEN** Hyperswitch does not declare that capability and refuses the request before any provider or commerce side effect
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs` capability checks and `build/hyperswitch-payment-provider-adapter.test.ts` no-side-effect assertions
+Verified by: `build/hyperswitch-payment-provider.test.mts` capability checks and `build/hyperswitch-payment-provider-adapter.test.ts` no-side-effect assertions
 
 #### Scenario: A card checkout uses the V2 browser flow
 
@@ -50,7 +50,7 @@ Verified by: `build/hyperswitch-payment-provider.test.mjs` capability checks and
 - **THEN** card entry remains inside the V2-compatible Hyperswitch SDK's secure fields, PlatformKit does not receive card data, and access is granted only after the V2 Router confirms the payment through retrieval or an authenticated webhook
 - **AND** a declined card leaves the customer on the checkout page with its error
 
-Verified by: `build/hyperswitch-browser.integration.mjs` in a real browser against a local V2 Router, Card Vault and self-hosted SDK, with `build/hyperswitch-fake-processor.mjs` as the processor: V2 request-path capture, no card number in any request to the site, server-side paid status, saved-card cleanup, refund, and a declined card. A Stripe connector behind the Router additionally requires the Stripe account to accept card data from Hyperswitch, which the account owner enables with Stripe; that is an operator prerequisite outside PlatformKit, documented on the payment providers page, and is not part of this verification.
+Verified by: `build/hyperswitch-browser.integration.mts` in a real browser against a local V2 Router, Card Vault and self-hosted SDK, with `build/hyperswitch-fake-processor.mjs` as the processor: V2 request-path capture, no card number in any request to the site, server-side paid status, saved-card cleanup, refund, and a declined card. A Stripe connector behind the Router additionally requires the Stripe account to accept card data from Hyperswitch, which the account owner enables with Stripe; that is an operator prerequisite outside PlatformKit, documented on the payment providers page, and is not part of this verification.
 
 #### Scenario: A self-hosted Web SDK can be selected
 
@@ -66,14 +66,14 @@ Verified by: Hyperswitch SDK URL and adapter contract tests and deploy checks; t
 - **WHEN** a site changes or cancels a subscription, opens a customer portal, synchronizes its catalog, refunds a payment, reports usage, or performs a prepaid top-up
 - **THEN** payment movement is performed through Hyperswitch and other behavior is performed through Hyperswitch or PlatformKit's shared commerce layer, returning the corresponding normalized result without changing the site's source-of-truth offers or ledger rules
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs` operation matrix and Hyperswitch sandbox integration coverage
+Verified by: `build/hyperswitch-payment-provider.test.mts` operation matrix and Hyperswitch sandbox integration coverage
 
 #### Scenario: PlatformKit-managed behavior does not introduce another processor
 
 - **WHEN** the selected provider lacks a documented native API for catalog synchronization, recurring billing management, usage accounting, or a customer portal session
 - **THEN** PlatformKit supplies that behavior through its shared commerce layer, and any payment movement still uses the selected Hyperswitch provider
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs` operation matrix and shared commerce checks
+Verified by: `build/hyperswitch-payment-provider.test.mts` operation matrix and shared commerce checks
 
 ### Requirement: Hyperswitch supports optional incremental usage charges
 
@@ -102,21 +102,21 @@ PlatformKit SHALL treat Hyperswitch as the site's single selected payment provid
 - **WHEN** a site has multiple eligible processor connectors and routing rules configured in Hyperswitch
 - **THEN** PlatformKit sends the operation to Hyperswitch and Hyperswitch applies that profile's routing without PlatformKit selecting, calling, or requiring a single underlying processor
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs` request mapping and Hyperswitch sandbox integration coverage using a multi-connector profile
+Verified by: `build/hyperswitch-payment-provider.test.mts` request mapping and Hyperswitch sandbox integration coverage using a multi-connector profile
 
 #### Scenario: A configured profile cannot honor a requested term
 
 - **WHEN** no backend available to the selected Hyperswitch profile can honor a required checkout term
 - **THEN** the site receives an explicit provider error naming the unmet term and no checkout, payment, or ledger claim is created
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs` pre-side-effect failure cases
+Verified by: `build/hyperswitch-payment-provider.test.mts` pre-side-effect failure cases
 
 #### Scenario: PlatformKit selects Hyperswitch as one provider
 
 - **WHEN** a site configures Hyperswitch with its account or instance, profile, and server credentials
 - **THEN** PlatformKit uses Hyperswitch for all payment operations, while processor credentials and connector configuration remain managed through Hyperswitch
 
-Verified by: `build/payment-provider-registry.test.mjs`, `build/deploy-checks.mjs --test`, and the Hyperswitch sandbox integration suite
+Verified by: `build/payment-provider-registry.test.mts`, `build/deploy-checks.mjs --test`, and the Hyperswitch sandbox integration suite
 
 ### Requirement: Hyperswitch events are authenticated and normalized
 
@@ -127,28 +127,28 @@ The Hyperswitch provider SHALL verify outgoing webhook signatures against the or
 - **WHEN** Hyperswitch delivers an event with a valid signature for the configured profile
 - **THEN** the adapter returns its normalized event and PlatformKit applies the corresponding shared ledger transition
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs` webhook signature and normalization cases
+Verified by: `build/hyperswitch-payment-provider.test.mts` webhook signature and normalization cases
 
 #### Scenario: Invalid signature has no side effects
 
 - **WHEN** an event has a missing or invalid signature, or its body differs from the signed bytes
 - **THEN** the webhook is rejected and no commerce state changes
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs` raw-body signature cases
+Verified by: `build/hyperswitch-payment-provider.test.mts` raw-body signature cases
 
 #### Scenario: Hyperswitch retries an event
 
 - **WHEN** Hyperswitch delivers the same event more than once
 - **THEN** the duplicate is acknowledged idempotently and the associated order, known subscription invoice, or payout event is applied at most once
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs` duplicate-event cases and `build/payment-provider-db.test.mjs`
+Verified by: `build/hyperswitch-payment-provider.test.mts` duplicate-event cases and `build/payment-provider-db.test.mts`
 
 #### Scenario: Non-terminal payment event does not grant access
 
 - **WHEN** Hyperswitch delivers a valid `payment_processing`, `payment_authorized`, or `action_required` event
 - **THEN** PlatformKit acknowledges the delivery without treating the payment as complete
 
-Verified by: `build/hyperswitch-payment-provider.test.mjs`
+Verified by: `build/hyperswitch-payment-provider.test.mts`
 
 ### Requirement: Hyperswitch secrets remain server-side and provider-scoped
 
@@ -159,14 +159,14 @@ Hyperswitch API credentials and the webhook signing key SHALL be available only 
 - **WHEN** a site is assembled or deployed with Hyperswitch selected
 - **THEN** Hyperswitch server credentials are delivered only to the server runtime and are absent from browser-visible configuration and assets
 
-Verified by: `build/payment-provider-registry.test.mjs`, `build/deploy-checks.mjs --test`, and the assembly check
+Verified by: `build/payment-provider-registry.test.mts`, `build/deploy-checks.mjs --test`, and the assembly check
 
 #### Scenario: External identifiers collide across providers
 
 - **WHEN** Hyperswitch and another provider return the same external customer, payment, or event identifier
 - **THEN** their records and event processing remain separate by provider identity
 
-Verified by: `build/payment-provider-db.test.mjs`
+Verified by: `build/payment-provider-db.test.mts`
 
 ### Requirement: Hyperswitch preserves the Stripe customer journey
 

@@ -9,14 +9,14 @@ A course file SHALL be able to name, as a lesson's `kind`, any kind the site reg
 - **WHEN** the demo registers its self-rating kind and a demo course names a lesson of it
 - **THEN** the build accepts the course, the player shows the self-rating where the lesson's words would be, finishing it marks the lesson complete, and the next lesson opens as after any other
 
-Verified by: `build/courses.test.mjs` and the demo course in the player
+Verified by: `build/courses.test.mts` and the demo course in the player
 
 #### Scenario: a kind nobody registered
 
 - **WHEN** a course names a kind that is neither the kit's nor registered
 - **THEN** the build refuses the course, naming the lesson and the kind
 
-Verified by: `build/courses.test.mjs`
+Verified by: `build/courses.test.mts`
 
 ### Requirement: A section can show a site kind's measure
 

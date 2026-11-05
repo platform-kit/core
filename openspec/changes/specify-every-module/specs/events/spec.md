@@ -9,7 +9,7 @@ The `events` module SHALL read events from `content/events/*.md` and project the
 - **WHEN** a weekly event's dates are expanded across a daylight-saving change
 - **THEN** every occurrence keeps its local time
 
-Verified by: `build/recurrence.test.mjs`, `build/events-db.test.mjs` under `platformkit test --e2e`
+Verified by: `build/recurrence.test.mts`, `build/events-db.test.mts` under `platformkit test --e2e`
 
 ### Requirement: RSVP, capacity and paid registration
 
@@ -31,4 +31,4 @@ A booking or a registration SHALL be sent with a calendar invitation, a move SHA
 - **WHEN** a booking is moved
 - **THEN** its invitation carries SEQUENCE 1 and the new time
 
-Verified by: `build/ics.test.mjs`
+Verified by: `build/ics.test.mts`

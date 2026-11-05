@@ -18,7 +18,7 @@ function headers() {
   if (origin) h['x-form-origin'] = origin
   return h
 }
-async function call(body: any, h: any) {
+async function call(body: any, h?: any) {
   if (!client) throw new Error('no backend')
   const { data, error } = await client.functions.invoke('form', { body, headers: { ...headers(), ...(h || {}) } })
   if (error) {
@@ -45,9 +45,7 @@ export function postSlide(slug: any, values: any, { end = false, slide = 0 } = {
     else fd.append(k, String(v))
   }
   if (files.length) fd.append('_fileFields', files.join(','))
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   return call(fd)
 }
 /* what this person has answered so far on a form, and whether they finished it */
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 export function getResponse(slug: any) { return call({ action: 'get', form: slug }) }

@@ -12,7 +12,7 @@ export const VIDEO_IDS = ['livekit', 'cal-video', 'mesh']
 
 export const hasVideoAccount = (env: any) => !!(env && env('LIVEKIT_URL') && env('LIVEKIT_API_KEY') && env('LIVEKIT_API_SECRET'))
 
-export function videoIdOf(type: any, env: any) {
+export function videoIdOf(type: any, env?: any) {
   if (!type) return null
   if (type.scheduler === 'cal' || (!type.scheduler && type.url)) return 'cal-video'
   if (!(type.where && type.where.kind === 'video')) return null

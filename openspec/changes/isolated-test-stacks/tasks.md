@@ -11,7 +11,7 @@
 
 - [x] 2.1 Add `build/test-stack.mjs`: a test's site, app URL, API URL, keys, database, functions and mail catcher from the run's variables; outside the run, "no stack" and the existing skip; inside it, a skip exits non-zero naming what was missing. Verified by its own unit test.
 - [x] 2.2 Move every stack-backed test onto it, removing `npx supabase status` and hard-coded ports (Mailpit at 54324 among them), and mark them in `test.mjs` as the e2e run's. Verified by task 4.1's check that no stack-backed test reads `supabase status` or a fixed port.
-- [x] 2.3 Run `schema.test.mjs` under the end-to-end run, on a throwaway database of its own (it renames and drops what it works on), and out of `npm test`. Verified by it passing under the run.
+- [x] 2.3 Run `schema.test.mts` under the end-to-end run, on a throwaway database of its own (it renames and drops what it works on), and out of `npm test`. Verified by it passing under the run.
 - [x] 2.4 Have `npm test` name the stack-backed checks in one line instead of reporting them. Verified by `npm test`.
 
 ## 3. CI and a second site
@@ -21,7 +21,7 @@
 
 ## 5. Nothing untested by construction
 
-- [x] 5.1 Add `build/test-coverage.test.mjs` to `npm test`: every function named by a test; no test exiting successfully before its end except through `skip()` or `notHere()`; every specification's "Verified by" naming a test that exists and is registered. Verified by running it, and by it failing on a function with no test, an early exit and a missing test.
+- [x] 5.1 Add `build/test-coverage.test.mts` to `npm test`: every function named by a test; no test exiting successfully before its end except through `skip()` or `notHere()`; every specification's "Verified by" naming a test that exists and is registered. Verified by running it, and by it failing on a function with no test, an early exit and a missing test.
 - [x] 5.2 Move every stack test's early exits onto `skip()` / `notHere()`. Verified by 5.1 passing.
 - [x] 5.3 Add the runner's coverage gate: every function called during the run, read from the functions' log. Verified by the run failing on an uncalled function.
 - [x] 5.4 Write the tests that close the coverage gate for every function it names. Verified by the run passing the gate over every site.

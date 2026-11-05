@@ -155,7 +155,7 @@ export function abilityFor(identity: any, extra = null) {
  * caller holds — the catalog's on the server, the storefront's in the browser — because the ranks
  * are data and not a rule.
  */
-export const sessionSubject = (session: any, identity: any, ranks: any, admitted: any) => ({
+export const sessionSubject = (session: any, identity: any, ranks: any, admitted?: any) => ({
   __caslSubjectType__: 'Session',
   slug: session && session.slug,
   /*

@@ -8,8 +8,8 @@ RUN apt-get update -qq \
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
-COPY agent.mjs protocol.mjs providers.mjs ./
+COPY agent.mts protocol.mts providers.mts ./
 
 ENV NODE_ENV=production
 USER node
-CMD ["node", "agent.mjs", "start"]
+CMD ["node", "agent.mts", "start"]

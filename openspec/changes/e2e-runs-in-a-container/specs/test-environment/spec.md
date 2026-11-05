@@ -9,18 +9,18 @@ The end-to-end run SHALL build an image from the project's files as git lists th
 - **WHEN** a run over two sites probes each from its tests
 - **THEN** the probe and the functions each stack serves are the image's files in the run's own volume, nothing of the checkout is mounted but settings files, and the stacks run on the run's own Docker daemon
 
-Verified by: `build/e2e-runner.test.mjs`
+Verified by: `build/e2e-runner.test.mts`
 
 #### Scenario: nothing an earlier build left
 
 - **WHEN** a run starts from an image with no installed leftovers, no compiled content and no built drop-in scripts
 - **THEN** the run compiles and builds them itself and reaches its tests
 
-Verified by: `build/e2e-runner.test.mjs`
+Verified by: `build/e2e-runner.test.mts`
 
 #### Scenario: the container is removed with everything in it
 
 - **WHEN** a run ends, passing or failing, without `--keep`
 - **THEN** its container and every stack in it are gone, and its logs are in `node_modules/.cache/platformkit/e2e/`
 
-Verified by: `build/e2e-runner.test.mjs`
+Verified by: `build/e2e-runner.test.mts`

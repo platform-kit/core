@@ -163,7 +163,7 @@ export const roleSlugOk = (s: any) => /^[a-z0-9][a-z0-9-]{0,38}$/.test(String(s 
 
 /* ---- a grant's target, the one bit of grammar in the file ---- */
 /* 'everyone' | 'tier:inner' | 'role:founder' | 'bought:guild-pass' → { scope, tier, role, sku } */
-export function parseTarget(to: any) {
+export function parseTarget(to?: any) {
   const t = String(to == null ? 'everyone' : to).trim()
   if (!t || t === 'everyone') return { scope: 'everyone' }
   const i = t.indexOf(':')

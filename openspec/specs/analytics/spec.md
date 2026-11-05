@@ -15,42 +15,42 @@ Every reader action worth knowing SHALL be an `events` row with a stable anonymo
 - **WHEN** a script sends an event named `<script>alert(1)` or one 200 characters long
 - **THEN** the door refuses the batch (400) and nothing is written; `Signed up for the webinar` is kept as sent
 
-Verified by: `analytics.test.mjs` against the served `ingest`
+Verified by: `analytics.test.mts` against the served `ingest`
 
 #### Scenario: a source's events
 
 - **WHEN** the demo's config registers a source `landing` allowed from `landing.example`, and a page there loads `/analytics.js`, calls `posthog.init(<the key>, { api_host })`, `posthog.identify('u-42')` and `posthog.capture('signup', { plan: 'monthly' })`
 - **THEN** a `$pageview` and a `signup` land with `source = landing`, `distinct_id = u-42`, no `user_id`, the page's `$current_url`, `$referrer`, `$host` and `$pathname`; the same batch under a key the config does not know, or from an origin the source does not allow, is refused (403) and nothing lands
 
-Verified by: `analytics-sdk.test.mjs` — the built script in a headless page against the served function, the rows read back
+Verified by: `analytics-sdk.test.mts` — the built script in a headless page against the served function, the rows read back
 
 #### Scenario: the same guest, twice
 
 - **WHEN** a guest opens the site, clears the browser's storage (or opens a private window) and opens it again
 - **THEN** both visits carry the same anonymous id, and Audience counts one returning visitor, not two new ones
 
-Verified by: `analytics-sdk.test.mjs` — two headless contexts of one browser giving the same `anon_id`; the arrival parser's test unchanged
+Verified by: `analytics-sdk.test.mts` — two headless contexts of one browser giving the same `anon_id`; the arrival parser's test unchanged
 
 #### Scenario: PostHog's surface
 
 - **WHEN** a page written for PostHog changes only the script's URL — to `<domain>/analytics.js`, or keeps PostHog's own snippet with `api_host` set to this site, which loads `<domain>/static/array.js` — and calls any public method of `posthog-js`'s `PostHog` (every one its type declarations list, `people.set` among them) with PostHog's arguments
 - **THEN** every one exists as a function with PostHog's return shape and none throws: the super properties ride on every later event, an opted-out page keeps sending under a random id and no fingerprint (where PostHog's would fall silent — the docs say so), a reset drops the identified person and the super properties, and the flags, surveys and recording answer `false`, `undefined` or nothing
 
-Verified by: `analytics-sdk.test.mjs` — the public methods read from the installed `posthog-js` type declarations and each checked on the built object, then the behaviours in a headless page
+Verified by: `analytics-sdk.test.mts` — the public methods read from the installed `posthog-js` type declarations and each checked on the built object, then the behaviours in a headless page
 
 #### Scenario: a tagged arrival
 
 - **WHEN** a browser lands on `/store?utm_source=newsletter&utm_medium=email&utm_campaign=autumn` from a Safari on an iPhone in Amsterdam
 - **THEN** its `session_start` carries `utm.source = newsletter`, `medium = email`, `campaign = autumn`, `device = phone`, `browser = safari`, `os = ios`, `tz = Europe/Amsterdam`, `lang = en-GB` (as the browser says it), and no later event of the session repeats them
 
-Verified by: `analytics.test.mjs`, a kit test of the arrival parser with fixed user agents and addresses
+Verified by: `analytics.test.mts`, a kit test of the arrival parser with fixed user agents and addresses
 
 #### Scenario: the official SDK, one host changed
 
 - **WHEN** the real `posthog-js` build is loaded in a page with `posthog.init(<a registered key>, { api_host: <the site> })` and calls `identify('u-7')` and `capture('signup', { plan: 'monthly' })`, and a server posts PostHog's `/batch/` shape with the same key and a gzipped body
 - **THEN** the `$pageview`, the `signup` and the batch's events land as the source's rows with `distinct_id = u-7`, the session and the anonymous id from PostHog's ids, every property kept; the SDK's flags request is answered with no flags and its remote-config request with an empty config, and nothing errors in the page; the same under an unregistered token is refused and nothing lands
 
-Verified by: `analytics-sdk.test.mjs` — the installed `posthog-js` dist in a headless page against the served door, and a `/batch/` post in each encoding
+Verified by: `analytics-sdk.test.mts` — the installed `posthog-js` dist in a headless page against the served door, and a `/batch/` post in each encoding
 
 ### Requirement: The dashboards summarise, never list
 
@@ -63,14 +63,14 @@ The dashboard SHALL lead with **visitors** (distinct browsers), views, sessions,
 - **WHEN** Dashboard → Analytics opens
 - **THEN** the tab row reads Overview · Acquisition · Audience · Content · Commerce · Experiments · Explore, one view at a time, the last chosen one remembered on the next visit
 
-Verified by: `build/interaction.test.mjs` — a tab that is not the first is chosen, the admin is left and re-entered, and that tab must still be the one marked; picking the first would pass by landing on the default
+Verified by: `build/interaction.test.mts` — a tab that is not the first is chosen, the admin is left and re-entered, and that tab must still be the one marked; picking the first would pass by landing on the default
 
 #### Scenario: a channel that converts
 
 - **WHEN** the seed holds sessions that arrived from a search engine, from a social site, direct, from a tagged email link and from another site, some of which signed up in the session
 - **THEN** Acquisition lists the six channels with each one's visitors, sessions, bounce, sign-ups and rate, the referrers grouped under their channel, the email campaign under Campaigns; the sessions across channels sum to the Overview's sessions and the sign-ups across channels to the sign-ups credited to a session (a sign-up made with no session on record is in the count and under no channel; a browser that came by two channels is a visitor in each)
 
-Verified by: `analytics.test.mjs`, the channel rule on fixed referrers and tags; `admin_kpis` over the seed compared with the rows in the same test
+Verified by: `analytics.test.mts`, the channel rule on fixed referrers and tags; `admin_kpis` over the seed compared with the rows in the same test
 
 #### Scenario: the audience filter
 
@@ -91,21 +91,21 @@ Verified by: `admin_now` in the kit test with rows written just before; the stri
 - **WHEN** Search is clicked on Acquisition and then Phone on Audience
 - **THEN** two chips stand beside the range, every tile, list and series on the dashboard and on Content analytics counts sessions that came by search on a phone, the Acquisition table's sessions sum to the Overview's, and clearing the chips restores the whole
 
-Verified by: `analytics.test.mjs` (`admin_kpis` with filters partitioning the unfiltered sessions); the chips screenshotted
+Verified by: `analytics.test.mts` (`admin_kpis` with filters partitioning the unfiltered sessions); the chips screenshotted
 
 #### Scenario: a site's own goal
 
 - **WHEN** the demo's config registers `{ key: 'newsletter_signup', label: 'Newsletter sign-up', goal: true }` and the seed carries such events
 - **THEN** the Overview's goals row shows *Newsletter sign-up* with its count and rate, Acquisition's table has its column, the Events tab lists it by its label, and Explore offers it as a metric
 
-Verified by: the demo screenshotted; `analytics.test.mjs` reading `admin_kpis` with the registered goals passed in
+Verified by: the demo screenshotted; `analytics.test.mts` reading `admin_kpis` with the registered goals passed in
 
 #### Scenario: retention
 
 - **WHEN** the seed holds browsers first seen over eight weeks, some back in later weeks
 - **THEN** the grid's first column is each week's cohort size and each later cell the share seen again, recomputed from the rows in the test
 
-Verified by: `analytics.test.mjs` (`admin_retention` against the rows); the grid screenshotted
+Verified by: `analytics.test.mts` (`admin_retention` against the rows); the grid screenshotted
 
 #### Scenario: the Support chat section
 
@@ -123,7 +123,7 @@ Opening a piece of content SHALL write a `content_view` (kind, id, title, tags, 
 - **WHEN** a reader opens a piece, hides the tab, returns, walks away for ten minutes, comes back and leaves
 - **THEN** one `content_read` per leaving is written, its seconds excluding the hidden time and the away time beyond the first idle minute, and `admin_content` sums the segments of one session on one piece into one read and keeps its deepest point
 
-Verified by: `build/reads-db.test.mjs` — against the stack, as an administrator (the service role is refused, which is the function working): the page is asked, one session is written in three segments on a real piece, and the page is asked again. The reads must go up by exactly ONE, the depth must not fall, and the minutes must grow. Removing the fold makes it go up by three and fails it.
+Verified by: `build/reads-db.test.mts` — against the stack, as an administrator (the service role is refused, which is the function working): the page is asked, one session is written in three segments on a real piece, and the page is asked again. The reads must go up by exactly ONE, the depth must not fall, and the minutes must grow. Removing the fold makes it go up by three and fails it.
 
 #### Scenario: a sign-up after a read
 
@@ -137,7 +137,7 @@ Verified by: the demo's and a site's seeds (accounts made after reads, a purchas
 - **WHEN** a session opens piece A, then piece B, then leaves, and another session opens piece A alone
 - **THEN** A's recirculation is 50%, B's 0%, the page's 33% (one of three views went on), and A's page lists B under *what they read next*
 
-Verified by: `analytics.test.mjs` with those rows written and read back through `admin_content` and `admin_piece`
+Verified by: `analytics.test.mts` with those rows written and read back through `admin_content` and `admin_piece`
 
 #### Scenario: a piece's page
 
@@ -151,7 +151,7 @@ Verified by: the page screenshotted on the demo, both themes, 1280 and 390
 - **WHEN** a reader who is not an administrator calls `admin_content`
 - **THEN** it is refused (`42501`)
 
-Verified by: `build/doors-db.test.mjs` — a guest and a member each call `admin_kpis`, `admin_events` and `admin_retention` and get nothing, and an administrator does get an answer, so a function that refused everybody would not pass
+Verified by: `build/doors-db.test.mts` — a guest and a member each call `admin_kpis`, `admin_events` and `admin_retention` and get nothing, and an administrator does get an answer, so a function that refused everybody would not pass
 
 ### Requirement: The best seller is computed, never a field
 
@@ -162,7 +162,7 @@ Verified by: `build/doors-db.test.mjs` — a guest and a member each call `admin
 - **WHEN** the purchases table has no paid rows
 - **THEN** no card wears the badge and the hero stands the longest featured book in the middle
 
-Verified by: `build/sales.test.mjs` — the compile run from a directory with no `.env` (clearing the environment is not enough: it loads its own) names no best seller and says why, which is the path a fresh clone takes; a badge on a book nobody bought is a lie told in the shop window to the one person with no sales to check it against. Against the stack it also holds that the count is per BOOK across its offers, and that neither a sale older than ninety days nor a refund counts.
+Verified by: `build/sales.test.mts` — the compile run from a directory with no `.env` (clearing the environment is not enough: it loads its own) names no best seller and says why, which is the path a fresh clone takes; a badge on a book nobody bought is a lie told in the shop window to the one person with no sales to check it against. Against the stack it also holds that the count is per BOOK across its offers, and that neither a sale older than ninety days nor a refund counts.
 
 ### Requirement: Experiments convert on their goal
 
@@ -234,7 +234,7 @@ Verified by: a kit test calling `email-unsubscribe` against the served functions
 - **WHEN** a reader who is not an administrator calls the funnel reads
 - **THEN** they are refused (`42501`)
 
-Verified by: `policies.test.mjs`'s read-through of the admin functions
+Verified by: `policies.test.mts`'s read-through of the admin functions
 
 #### Scenario: nothing sent
 

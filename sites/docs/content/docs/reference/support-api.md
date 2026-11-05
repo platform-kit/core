@@ -10,7 +10,7 @@ sources:
     packages/kit/supabase/functions/_shared/api/keys.ts,
     packages/kit/supabase/schemas/70-support.sql,
     packages/kit/src/lib/support/chat-widget.ts,
-    packages/kit/build/support-api.test.mjs,
+    packages/kit/build/support-api.test.mts,
   ]
 reviewed: 2026-11-04
 ---

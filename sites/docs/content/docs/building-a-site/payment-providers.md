@@ -7,8 +7,8 @@ sources:
     packages/kit/src/payment-provider.d.ts,
     packages/kit/src/payment-provider.mts,
     packages/kit/build/payment-provider-registry.mts,
-    packages/kit/build/payment-provider-registry.test.mjs,
-    packages/kit/build/site-payment-provider.test.mjs,
+    packages/kit/build/payment-provider-registry.test.mts,
+    packages/kit/build/site-payment-provider.test.mts,
     packages/kit/build/modules/manifest.mts,
     packages/kit/build/assemble.mts,
     packages/kit/build/deploy.mts,
@@ -41,34 +41,34 @@ sources:
     packages/kit/theme/src/pages/BillingPortalPage.vue,
     packages/kit/theme/src/pages/HyperswitchCheckoutPage.vue,
     packages/kit/theme/src/components/UsagePanel.vue,
-    packages/kit/build/hyperswitch-sdk.test.mjs,
+    packages/kit/build/hyperswitch-sdk.test.mts,
     sites/demo/supabase/config.toml,
     packages/kit/theme/src/content/ui/usage.md,
     packages/kit/theme/src/pages/AdminPage.vue,
     packages/kit/theme/src/components/admin/PaymentsAdmin.vue,
     packages/kit/theme/src/content/ui/payments.md,
-    packages/kit/build/hyperswitch-billing.test.mjs,
-    packages/kit/build/hyperswitch-payment-provider.test.mjs,
+    packages/kit/build/hyperswitch-billing.test.mts,
+    packages/kit/build/hyperswitch-payment-provider.test.mts,
     packages/kit/build/hyperswitch-payment-provider-adapter.test.ts,
-    packages/kit/build/hyperswitch-sdk.test.mjs,
-    packages/kit/build/hyperswitch-local.integration.mjs,
+    packages/kit/build/hyperswitch-sdk.test.mts,
+    packages/kit/build/hyperswitch-local.integration.mts,
     packages/kit/build/hyperswitch-local.integration.test.ts,
     packages/kit/build/hyperswitch-test-stack.mts,
     packages/kit/build/hyperswitch-v2-test.compose.yml,
     packages/kit/build/hyperswitch-fake-processor.mts,
-    packages/kit/build/hyperswitch-browser.integration.mjs,
+    packages/kit/build/hyperswitch-browser.integration.mts,
     packages/kit/build/hyperswitch-browser.steps.ts,
     packages/kit/build/test.mts,
     package.json,
-    packages/kit/build/payment-provider-adapters.test.mjs,
-    packages/kit/build/payment-provider-db.test.mjs,
+    packages/kit/build/payment-provider-adapters.test.mts,
+    packages/kit/build/payment-provider-db.test.mts,
     packages/kit/build/stripe-payment-provider.test.ts,
-    packages/kit/build/stripe-testmode.integration.mjs,
+    packages/kit/build/stripe-testmode.integration.mts,
     packages/kit/build/stripe-testmode.integration.test.ts,
-    packages/kit/build/stripe-usage-recovery.integration.mjs,
+    packages/kit/build/stripe-usage-recovery.integration.mts,
     packages/kit/build/stripe-usage-recovery.integration.test.ts,
     packages/kit/build/stripe-3ds-complete.mts,
-    packages/kit/build/usage.test.mjs,
+    packages/kit/build/usage.test.mts,
     packages/kit/supabase/functions/payment-provider-webhook,
     packages/kit/supabase/functions/push-catalog,
     packages/kit/supabase/functions/stripe-webhook,
@@ -136,7 +136,7 @@ the Router, SDK, Card Vault, adapter, retrieval, one-time card cleanup, and refu
 says nothing about Stripe, and a result from it must never be reported as a Stripe result. Run against
 it in a real browser, a card entered in the SDK fields was vaulted and paid, retrieved as paid through
 V2, its saved card deleted, and then refunded; the declined card showed the checkout's error message
-and stayed on the checkout page. That run is `node packages/kit/build/hyperswitch-browser.integration.mjs
+and stayed on the checkout page. That run is `node packages/kit/build/hyperswitch-browser.integration.mts
 <private.json>`, where the private file names the running Router, its profile keys, and the SDK URL and
 never leaves the machine; it also asserts that no request to the site carried the card number.
 
@@ -247,14 +247,14 @@ Run the deterministic adapter contract suite from the kit package:
 
 ```sh
 cd packages/kit
-node build/payment-provider-adapters.test.mjs
+node build/payment-provider-adapters.test.mts
 ```
 
 For real Stripe API coverage, pass a private environment file containing a test-mode
 `STRIPE_SECRET_KEY`:
 
 ```sh
-node packages/kit/build/stripe-testmode.integration.mjs /path/to/private-stripe-test.env
+node packages/kit/build/stripe-testmode.integration.mts /path/to/private-stripe-test.env
 ```
 
 The runner refuses keys other than `sk_test_` before making a request. It exercises customer and
@@ -271,7 +271,7 @@ An incremental usage charge's recovery has its own run against Stripe test mode,
 private file:
 
 ```sh
-node packages/kit/build/stripe-usage-recovery.integration.mjs /path/to/private-stripe-test.env
+node packages/kit/build/stripe-usage-recovery.integration.mts /path/to/private-stripe-test.env
 ```
 
 Both runners, and the adapter contracts `platformkit test` runs in Deno, start Deno with `--node-modules-dir=false`, so the `npm:` imports come from Deno's own cache under Deno 1 and Deno 2 alike (Deno 2 otherwise looks for them in the package's `node_modules`), and the runners with `--no-lock`, so nothing is written into the checkout. The browser step that completes a 3-D Secure challenge is handed the browser's location (`PLAYWRIGHT_BROWSERS_PATH`, `PLAYWRIGHT_CHROMIUM_PATH`).

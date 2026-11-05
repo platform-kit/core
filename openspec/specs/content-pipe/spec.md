@@ -15,7 +15,7 @@ The admin SHALL hold one registry of models: the kit's core models (articles, bo
 - **WHEN** `/__admin/collections` is read on a site
 - **THEN** it lists the platform's core models, the registered site's models, and every published custom model with their fields; on the demo, only core and demo-registered models appear
 
-Verified by: `build/pipe.test.mjs` (the registry fixture); the admin rail screenshotted
+Verified by: `build/pipe.test.mts` (the registry fixture); the admin rail screenshotted
 
 ### Requirement: One pipe, every model
 
@@ -26,14 +26,14 @@ Every model SHALL be served by the same six endpoints — `list`, `file` (read, 
 - **WHEN** the admin server's routes are listed
 - **THEN** they are the six, `asset`, `upload-image`, `run` and nothing else
 
-Verified by: `build/pipe.test.mjs` (the route table); `grep` for the retired paths across the theme, none
+Verified by: `build/pipe.test.mts` (the route table); `grep` for the retired paths across the theme, none
 
 #### Scenario: a save runs the pipe
 
 - **WHEN** a funnel with an `after` that is not a span is saved
 - **THEN** the write is refused naming the step and the field, the file is untouched, and the hook (the funnels' compile) did not run
 
-Verified by: `build/pipe.test.mjs` over a fixture site
+Verified by: `build/pipe.test.mts` over a fixture site
 
 ### Requirement: The files are unchanged by the change
 
@@ -44,7 +44,7 @@ Every grammar SHALL be the module that writes the file today, unmoved. A file th
 - **WHEN** every file under `content/` that a model owns is read through its model and written back unchanged
 - **THEN** no file loses a key, a value or its body; a file already in canonical form does not differ at all
 
-Verified by: `build/pipe.test.mjs --roundtrip` against the demo and a representative site fixture (in `npm test` for the fixtures; manual site verification is not pinned)
+Verified by: `build/pipe.test.mts --roundtrip` against the demo and a representative site fixture (in `npm test` for the fixtures; manual site verification is not pinned)
 
 ### Requirement: Nothing a person sees changes
 

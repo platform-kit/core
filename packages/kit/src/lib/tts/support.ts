@@ -51,7 +51,6 @@ let warmed = false
 export function warmSpeech(path: any) {
   if (warmed || !prewarmAllowed(path) || !ttsSupported()) return
   warmed = true
-  // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
   const go = () => import('./weights.js').then((m) => m.prefetchWeights()).catch(() => {})
   if (typeof requestIdleCallback === 'function') requestIdleCallback(go, { timeout: 4000 })
   else setTimeout(go, 3000)

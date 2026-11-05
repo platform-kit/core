@@ -9,11 +9,11 @@ A test SHALL reach a database, a function or a stack's API only inside the end-t
 - **WHEN** a stack test is started outside the end-to-end run with a dev run's addresses and keys in its environment
 - **THEN** it is given no stack, the storage helpers give it no address or key, and it skips without touching the dev database
 
-Verified by: `build/test-stack.test.mjs`
+Verified by: `build/test-stack.test.mts`
 
 #### Scenario: a dev stack named as the run's
 
 - **WHEN** a test inside the end-to-end run is given an address whose port Docker shows belongs to a dev stack, or to nothing
 - **THEN** the test ends, naming what answered on that port, before it reaches it
 
-Verified by: `build/test-stack.test.mjs`
+Verified by: `build/test-stack.test.mts`

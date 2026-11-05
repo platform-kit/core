@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { isMain } from './is-main.mjs'
+import { siteFile } from './site-file.mjs'
 
 const DNS_LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/
 const COMMIT = /^[a-f0-9]{40}$/i
@@ -128,7 +129,7 @@ function assertManagedPath(root: any, destination: any) {
 function ensureNoTrackedCollision(root: any, name: any) {
   const local = path.join(path.resolve(root), 'sites', name)
   if (fs.existsSync(local)) throw new Error(`site "${name}" already exists in the workspace at ${local}; choose a different managed name`)
-  if (process.env.PLATFORMKIT_ROOT_SITE === name && fs.existsSync(path.join(path.resolve(root), 'platformkit.config.js'))) {
+  if (process.env.PLATFORMKIT_ROOT_SITE === name && fs.existsSync(siteFile(path.resolve(root)))) {
     throw new Error(`site "${name}" is already registered as the workspace root site`)
   }
 }
@@ -217,7 +218,7 @@ export function fetchSite(root: any, { name, remote, ref, env = process.env }: a
     git(['checkout', '--detach', ref], { cwd: destination, operation: `check out ${ref} for site "${name}"` })
     const actual = git(['rev-parse', 'HEAD'], { cwd: destination, operation: `read fetched revision for site "${name}"` })
     if (actual !== ref) throw new Error(`site "${name}" resolved to ${actual}, not the requested commit ${ref}`)
-    if (!fs.existsSync(path.join(destination, 'package.json')) || !fs.existsSync(path.join(destination, 'platformkit.config.js'))) {
+    if (!fs.existsSync(path.join(destination, 'package.json')) || !fs.existsSync(siteFile(destination))) {
       throw new Error(`site "${name}" at ${ref} must contain package.json and platformkit.config.js`)
     }
     if (!registered) {
@@ -257,7 +258,8 @@ export function updateSite(root: any, { name, ref, env = process.env }: any) {
   const resolvesToCommit = spawnSync('git', ['cat-file', '-e', `${ref}^{commit}`], { cwd: destination, encoding: 'utf8', stdio: 'ignore' })
   if (resolvesToCommit.error) throw new Error(`could not verify revision ${ref} for site "${name}": ${resolvesToCommit.error.message}`)
   if (resolvesToCommit.status !== 0) throw new Error(`revision ${ref} is not available as a commit in site "${name}"`)
-  for (const entry of ['package.json', 'platformkit.config.js']) {
+  const hasAt = (entry: string) => spawnSync('git', ['cat-file', '-e', `${ref}:${entry}`], { cwd: destination, encoding: 'utf8', stdio: 'ignore' }).status === 0
+  for (const entry of ['package.json', hasAt('platformkit.config.ts') ? 'platformkit.config.ts' : 'platformkit.config.js']) {
     const result = spawnSync('git', ['cat-file', '-e', `${ref}:${entry}`], { cwd: destination, encoding: 'utf8', stdio: 'ignore' })
     if (result.error) throw new Error(`could not verify ${entry} in revision ${ref} for site "${name}": ${result.error.message}`)
     if (result.status !== 0) throw new Error(`revision ${ref} for site "${name}" does not contain ${entry}`)
@@ -275,7 +277,7 @@ export function sites(root = process.cwd(), env = process.env) {
   root = path.resolve(root)
   const found = []
 
-  if (env.PLATFORMKIT_ROOT_SITE && fs.existsSync(path.join(root, 'platformkit.config.js'))) {
+  if (env.PLATFORMKIT_ROOT_SITE && fs.existsSync(siteFile(root))) {
     validateName(env.PLATFORMKIT_ROOT_SITE, 'PLATFORMKIT_ROOT_SITE')
     found.push({
       name: env.PLATFORMKIT_ROOT_SITE,
@@ -305,7 +307,7 @@ export function sites(root = process.cwd(), env = process.env) {
       if (fs.lstatSync(directory).isSymbolicLink() || !fs.statSync(directory).isDirectory()) {
         throw new Error(`managed site checkout is not a directory: ${directory}`)
       }
-      const config = path.join(directory, 'platformkit.config.js')
+      const config = siteFile(directory)
       const packageJson = path.join(directory, 'package.json')
       if (!fs.existsSync(config) || !fs.existsSync(packageJson)) {
         throw new Error(`registered checkout "${registered.name}" is incomplete at ${directory}; expected package.json and platformkit.config.js`)
@@ -368,7 +370,7 @@ export function defaultSite(root = process.cwd(), env = process.env) {
   if (selected.fetched === false) {
     throw new Error(`default site "${value}" is registered but not fetched; run "platformkit sites fetch ${value}"`)
   }
-  if (!fs.existsSync(path.join(selected.directory, 'package.json')) || !fs.existsSync(path.join(selected.directory, 'platformkit.config.js'))) {
+  if (!fs.existsSync(path.join(selected.directory, 'package.json')) || !fs.existsSync(siteFile(selected.directory))) {
     if (!env.PLATFORMKIT_DEFAULT_SITE && pathSelection) {
       throw new Error('default site "docs" was not found; expected a site at sites/docs')
     }
@@ -381,7 +383,7 @@ export function siteNameFor(root: any, directory = process.cwd(), env = process.
   root = path.resolve(root)
   directory = path.resolve(directory)
   const relative = path.relative(root, directory)
-  if (!relative) return fs.existsSync(path.join(root, 'platformkit.config.js')) ? env.PLATFORMKIT_ROOT_SITE || null : null
+  if (!relative) return fs.existsSync(siteFile(root)) ? env.PLATFORMKIT_ROOT_SITE || null : null
   const parts = relative.split(path.sep)
   if (parts[0] === 'sites' && parts[1]) return parts[1] === 'external' ? parts[2] || null : parts[1]
   const managed = path.relative(managedSitesRoot(root), directory).split(path.sep)

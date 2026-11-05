@@ -15,7 +15,7 @@ A site with the `store` and `api` modules on SHALL serve its store as Shopify's 
 - **WHEN** `createStorefrontApiClient({ storeDomain: <the site>, apiVersion: '2024-10', publicAccessToken: <a storefront key> })` asks `shop`, `products(first: 10)` with variants and prices, `product(handle:)` for a book in print and for a good with sizes, `collection(handle:)` with its products, and the introspection query
 - **THEN** every product's variants and prices are the catalog's offers (a print variant per allowed contents × cloth × foil, its `sku` the format's), the good's sizes are its variants under the option *Size*, the collection lists the products its record names, the ids are `gid://shopify/…`, and the schema introspects
 
-Verified by: `build/storefront-api.test.mjs` on the root (books in print) and the demo (goods with sizes, books online)
+Verified by: `build/storefront-api.test.mts` on the root (books in print) and the demo (goods with sizes, books online)
 
 #### Scenario: no key, a wrong key
 
@@ -29,7 +29,7 @@ Verified by: the test
 - **WHEN** a client asks the Storefront API for a product with options
 - **THEN** the options and variants come back in Shopify's shape, each with its price and whether it can be bought
 
-Verified by: `storefront-api.test.mjs`
+Verified by: `storefront-api.test.mts`
 
 ### Requirement: A cart is Shopify's, and checks out on the site
 

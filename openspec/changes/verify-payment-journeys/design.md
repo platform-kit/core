@@ -2,8 +2,8 @@
 
 ## Context
 
-- Unit and database suites already pin the payment rules: `ledger.test.mjs` (what a payment grants), `money-db.test.mjs` (a payment arriving twice is one purchase), `orders-db.test.mjs`, `promotions-db.test.mjs`, `usage-db.test.mjs`, `payouts-db.test.mjs`, `webhooks.test.mjs`, and `webhook-doors.test.mjs` (unsigned bodies refused).
-- `stripe-testmode.integration.mjs` exercises each Stripe adapter operation against test mode (customers, catalog, checkout sessions, plan changes, cancellation, the portal, metering, top-up, refunds), and `stripe-usage-recovery.integration.mjs` the incremental usage charge's recovery. Neither carries a payment through the webhook, the ledger and the grants to what the site then shows.
+- Unit and database suites already pin the payment rules: `ledger.test.mts` (what a payment grants), `money-db.test.mts` (a payment arriving twice is one purchase), `orders-db.test.mts`, `promotions-db.test.mts`, `usage-db.test.mts`, `payouts-db.test.mts`, `webhooks.test.mts`, and `webhook-doors.test.mts` (unsigned bodies refused).
+- `stripe-testmode.integration.mts` exercises each Stripe adapter operation against test mode (customers, catalog, checkout sessions, plan changes, cancellation, the portal, metering, top-up, refunds), and `stripe-usage-recovery.integration.mts` the incremental usage charge's recovery. Neither carries a payment through the webhook, the ledger and the grants to what the site then shows.
 - `stripe-webhook/index.ts` applies the provider's verified events (`checkout.completed`, `subscription.*`, `invoice.paid`, `invoice.payment-failed`, `payment.refunded`, …). It calls itself the reconciliation engine, but only applies what arrives; nothing compares the ledger with the provider's records.
 - Modules schedule work as pg_cron jobs in their manifest (`build/modules/kit.mjs`, for example `payouts-sweep` and `hyperswitch-subscription-renewal`), each a SQL command that runs a `run_*()` function.
 

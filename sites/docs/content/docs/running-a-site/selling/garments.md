@@ -6,7 +6,7 @@ sources:
   [
     packages/kit/build/kinds/apparel.ts,
     packages/kit/supabase/functions/_shared/suppliers/printify.ts,
-    packages/kit/build/store-kinds.test.mjs,
+    packages/kit/build/store-kinds.test.mts,
   ]
 reviewed: 2026-11-01
 ---

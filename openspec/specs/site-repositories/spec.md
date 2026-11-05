@@ -14,14 +14,14 @@ The PlatformKit workspace SHALL let an operator register a site's Git remote and
 - **WHEN** an operator fetches a registered site
 - **THEN** the checkout is made available at the revision recorded for that site and its name and source are reported
 
-Verified by: `packages/kit/build/site-repositories.test.mjs`
+Verified by: `packages/kit/build/site-repositories.test.mts`
 
 #### Scenario: The registered revision changes
 
 - **WHEN** an operator changes a site's pinned revision and fetches it again
 - **THEN** the checkout moves only to the newly pinned commit and the prior pin remains unchanged until the registration is edited
 
-Verified by: `packages/kit/build/site-repositories.test.mjs`
+Verified by: `packages/kit/build/site-repositories.test.mts`
 
 ### Requirement: Fetch and update preserve local work
 
@@ -32,21 +32,21 @@ Fetching a site that is not present SHALL create its checkout without changing t
 - **WHEN** an existing managed checkout has no local changes and its registered pin changes
 - **THEN** the update checks out the new pinned revision and reports the resulting commit
 
-Verified by: `packages/kit/build/site-repositories.test.mjs`
+Verified by: `packages/kit/build/site-repositories.test.mts`
 
 #### Scenario: A checkout has local edits
 
 - **WHEN** an update would replace a checkout with uncommitted or untracked changes
 - **THEN** the update refuses before changing any file and tells the operator how to preserve or resolve the local work
 
-Verified by: `packages/kit/build/site-repositories.test.mjs`
+Verified by: `packages/kit/build/site-repositories.test.mts`
 
 #### Scenario: A site is worked on before its commits are pushed
 
 - **WHEN** a managed checkout has local commits on top of its pin
 - **THEN** the site runs in the workspace, the listing says how many commits it is past its pin, an update to a pin that would strand those commits is refused, and once they are pushed the pin moves forward to them with the checkout untouched
 
-Verified by: `packages/kit/build/site-repositories.test.mjs`
+Verified by: `packages/kit/build/site-repositories.test.mts`
 
 ### Requirement: Environment configuration can supply site remotes and GitHub authentication
 
@@ -57,14 +57,14 @@ When `--url` is omitted, `platformkit sites fetch` SHALL read the remote from `P
 - **WHEN** `platformkit sites fetch <name> --ref <commit>` runs without `--url` and the matching remote environment variable is set
 - **THEN** it fetches the pinned commit and records the credential-free remote and pin
 
-Verified by: `packages/kit/build/site-repositories.test.mjs`
+Verified by: `packages/kit/build/site-repositories.test.mts`
 
 #### Scenario: A private GitHub remote uses an environment token
 
 - **WHEN** a managed site fetch or update uses a private GitHub HTTPS remote and a token is available in the environment
 - **THEN** Git receives temporary authentication configuration, while the registry and remote URL contain no token
 
-Verified by: `packages/kit/build/site-repositories.test.mjs`
+Verified by: `packages/kit/build/site-repositories.test.mts`
 
 ### Requirement: A site remains buildable and deployable from its own repository
 
@@ -75,14 +75,14 @@ A site repository SHALL contain the site's content, configuration, code, tests, 
 - **WHEN** the site repository is installed and its documented build and test commands run
 - **THEN** they complete using the site's dependencies and the PlatformKit CLI and packages obtained from Core source, without a Core workspace checkout or sibling site files
 
-Verified by: `packages/kit/build/source-cli.test.mjs` and the standalone site's targeted test/build commands
+Verified by: `packages/kit/build/source-cli.test.mts` and the standalone site's targeted test/build commands
 
 #### Scenario: The existing deploy flow runs from the site repository
 
 - **WHEN** `npx --yes --package=github:platform-kit/core platformkit deploy` runs from the checked-out site repository
 - **THEN** it uses that site's content, configuration, and code, installs PlatformKit from Core source without changing the site's manifest or lockfile, and does not read site files from the Core repository
 
-Verified by: `packages/kit/build/source-cli.test.mjs` and `packages/kit/build/deploy-pins.test.mjs`
+Verified by: `packages/kit/build/source-cli.test.mts` and `packages/kit/build/deploy-pins.test.mts`
 
 ### Requirement: PlatformKit-owned material stays site-neutral
 
@@ -93,11 +93,11 @@ Living PlatformKit documentation, configuration, and specifications SHALL descri
 - **WHEN** a reader opens a living PlatformKit guide or specification
 - **THEN** it describes PlatformKit and its generic examples without naming a downstream site or requiring that site's repository
 
-Verified by: `packages/kit/build/site-boundary.test.mjs`
+Verified by: `packages/kit/build/site-boundary.test.mts`
 
 #### Scenario: A historical record names a site
 
 - **WHEN** a changelog or archived OpenSpec change contains a site's name
 - **THEN** the record remains intact and is treated as history, not as current PlatformKit documentation
 
-Verified by: `packages/kit/build/site-boundary.test.mjs`
+Verified by: `packages/kit/build/site-boundary.test.mts`

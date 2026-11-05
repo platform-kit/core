@@ -183,7 +183,6 @@ export async function buildCollections({ root = process.cwd(), log = () => {} } 
        too or four files come out as arrays the app cannot read. */
     data[key] = c && (c as any).single ? (rows[0] ?? null) : rows
   }
-  // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 2.
   if (typeof cfg.prepare === 'function') await cfg.prepare(data, { config: cfg })
   fs.mkdirSync(cfg.out, { recursive: true })
   for (const [key, rows] of Object.entries(data)) fs.writeFileSync(resolve(cfg.out, key + '.json'), JSON.stringify(rows, null, 2))

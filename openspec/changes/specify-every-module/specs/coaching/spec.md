@@ -9,7 +9,7 @@ The `coaching` module SHALL give each member one conversation per coach, with a 
 - **WHEN** messages arrive across days, are reacted to and are read
 - **THEN** the runs, the day breaks, the ticks and the unread count are what the shared chat model computes
 
-Verified by: `build/chat.test.mjs`
+Verified by: `build/chat.test.mts`
 
 ### Requirement: Who may chat, and when
 

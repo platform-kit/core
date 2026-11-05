@@ -12,7 +12,7 @@ Every chapter and every summary spoken — made on a local CPU, named by the exa
 
 #### Scenario: the manifests
 
-- **WHEN** `node build/speech.test.mjs` runs
+- **WHEN** `node build/speech.test.mts` runs
 - **THEN** every file name in every committed manifest is reproduced from the books and companions as they are, and the browser's weights list and revision equal the script's
 
 Verified by: `npm test`
@@ -48,7 +48,7 @@ A desktop browser (fine pointer, wide window, enough memory, no data saver, neve
 - **WHEN** a reader opens a chapter whose name is already in the bucket
 - **THEN** it plays at once and is not generated
 
-Verified by: `build/speech.test.mjs` — the name is stable across PEOPLE, not just across runs: the same words give the same recording whoever asks, an edited or retitled chapter is a different one, and a chapter’s summary never collides with its text
+Verified by: `build/speech.test.mts` — the name is stable across PEOPLE, not just across runs: the same words give the same recording whoever asks, an edited or retitled chapter is a different one, and a chapter’s summary never collides with its text
 
 ### Requirement: No manifest, no recording, no player
 
@@ -59,7 +59,7 @@ The reader SHALL mount the player only for a chapter and mode that has a recordi
 - **WHEN** a book has no `audio/books/<slug>/index.json`
 - **THEN** its reader shows no player and, on a desktop, offers to generate
 
-Verified by: `build/speech.test.mjs` — an absent manifest, an empty one and one without this chapter are the same answer (no recording), and the introduction is keyed by a constant rather than by its editable label
+Verified by: `build/speech.test.mts` — an absent manifest, an empty one and one without this chapter are the same answer (no recording), and the introduction is keyed by a constant rather than by its editable label
 
 ### Requirement: Placement in PlatformKit
 

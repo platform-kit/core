@@ -9,7 +9,7 @@ The `instrument` module SHALL run a site's own assessments in the reader's app, 
 - **WHEN** a reader takes the site's assessment in a browser
 - **THEN** each screen accepts its answer and the result screen is reached
 
-Verified by: `build/interaction.test.mjs` under `platformkit test --e2e`
+Verified by: `build/interaction.test.mts` under `platformkit test --e2e`
 
 ### Requirement: Answers belong to the reader
 
@@ -20,7 +20,7 @@ Answers, results and signals SHALL be saved to the reader's account, optionally 
 - **WHEN** a reader asks for another reader's results
 - **THEN** none are returned
 
-Verified by: `build/ownership.test.mjs` under `platformkit test --e2e`
+Verified by: `build/ownership.test.mts` under `platformkit test --e2e`
 
 ### Requirement: The app area has the tabs its modules give
 

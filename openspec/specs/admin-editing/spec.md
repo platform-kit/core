@@ -18,7 +18,7 @@ The admin SHALL ask for each part of a structured value with a control that fits
 #### Scenario: a round trip through the editor
 
 - **WHEN** a value is saved from its controls
-- **THEN** the file holds exactly what the build's parser would produce from the same value, and re-opening the editor shows the same controls filled the same way (`build/support.test.mjs`, `build/funnels.mjs --check`)
+- **THEN** the file holds exactly what the build's parser would produce from the same value, and re-opening the editor shows the same controls filled the same way (`build/support.test.mts`, `build/funnels.mjs --check`)
 
 ### Requirement: The admin reads the files, never the compiled output
 
@@ -29,14 +29,14 @@ The admin SHALL read and write the markdown files themselves, never `.velite`, s
 - **WHEN** a record has `published: false`
 - **THEN** the admin lists it with its switch off and the bundle, the search index, the sitemap and the share images never see it
 
-Verified by: `build/unpublished.test.mjs` — the record stays on disk and leaves the bundle, the index and the routes; the checkout is restored whatever happens
+Verified by: `build/unpublished.test.mts` — the record stays on disk and leaves the bundle, the index and the routes; the checkout is restored whatever happens
 
 #### Scenario: one path
 
 - **WHEN** a new kind of file is given to the admin
 - **THEN** it is a model in the registry with a grammar and, if needed, an editor — never a new endpoint
 
-Verified by: `build/pipe.test.mjs` (the route table)
+Verified by: `build/pipe.test.mts` (the route table)
 
 ### Requirement: A concept with its own lifecycle gets its own record
 

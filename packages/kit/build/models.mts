@@ -47,7 +47,7 @@ function leaf(f: any, s: any, admin: any) {
   else t = s.string()
   return t
 }
-function fieldSchema(f: any, s: any, admin: any, models: any) {
+function fieldSchema(f: any, s: any, admin: any, models?: any) {
   let t
   if (f.kind === 'group') t = s.object(Object.fromEntries(f.fields.map((g: any) => [g.key, fieldSchema(g, s, admin, models)])))
   else if (f.kind === 'list') t = s.array(f.of === 'group' ? s.object(Object.fromEntries(f.fields.map((g: any) => [g.key, fieldSchema(g, s, admin, models)]))) : leaf({ ...f, kind: f.of }, s, admin))
@@ -70,7 +70,6 @@ function fieldSchema(f: any, s: any, admin: any, models: any) {
 }
 export function schemaFor(model: any, s: any, { admin = false } = {}) {
   const shape: any = {}
-  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   for (const f of model.fields) shape[f.key] = fieldSchema(f, s, admin)
   return shape
 }

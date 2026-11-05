@@ -26,6 +26,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { stripTypeScriptTypes } from 'node:module'
 import { isMain } from './is-main.mjs'
+import { siteFile } from './site-file.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 export const KIT_ROOT = path.resolve(HERE, '..')
@@ -217,13 +218,13 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
   if (level === 'core' && !ws) return { refused: '`--level core` writes into PlatformKit itself, and this isn\'t a PlatformKit checkout. Leave it off to add to your site.' }
   const root = level === 'core' ? kitRoot : siteRoot
   const dir = templateDir(level, kind, siteRoot)
-  const site = level === 'site' && fs.existsSync(path.join(siteRoot, 'platformkit.config.js')) ? await (await import(path.join(kitRoot, 'build', 'site.mts'))).loadSite(siteRoot).catch(() => null) : null
+  const site = level === 'site' && fs.existsSync(siteFile(siteRoot)) ? await (await import(path.join(kitRoot, 'build', 'site.mts'))).loadSite(siteRoot).catch(() => null) : null
   if (level === 'site' && !site) return { refused: 'No platformkit.config.js here to register the piece in — run it from a site, or pass --site <path>.' }
   const functionsDir = (site && site.data && site.data.functions) || 'db/functions'
   const v: any = namesOf(name, { dir: owner || name, module: owner || '', functions: functionsDir })
   const writes = filesOf(dir, v).map((f: any) => ({ path: path.join(root, f.rel), text: f.text }))
   const edits = []
-  const cfg = path.join(siteRoot, 'platformkit.config.js')
+  const cfg = siteFile(siteRoot)
   const kitMods = path.join(kitRoot, 'build', 'modules', 'kit.mts')
 
   /* a module name, or an owner, is checked against every module there is */
@@ -275,7 +276,7 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
     if (kind === 'page') edits.push({ path: D('running-a-site/settings/site-settings-and-strings.md'), what: `the ${name} scope in the strings table`, apply: (t: any) => addTableRow(t, /^\| `auth`/, `| \`${name}\` | The ${v.title} page (\`theme/src/content/ui/${name}.md\`) |`) })
     if (kind === 'step') edits.push({ path: B('steps/index.mjs'), what: `STEPS += ${v.camel}`, apply: async (t: any) => { const u = await addImport(t, `import ${v.camel} from './${name}.mjs'`); const a = await namedArray(u, 'STEPS'); return a ? appendItem(u, a, a.elements, v.camel) : null } })
     if (kind === 'content-type') edits.push({ path: B('models/core/index.mjs'), what: `CORE += ${v.camel}`, apply: async (t: any) => { const u = await addImport(t, `import ${v.camel} from './${name}.mjs'`); const a = await namedArray(u, 'CORE'); return a ? appendItem(u, a, a.elements, v.camel) : null } })
-    if (kind === 'function' || kind === 'test') edits.push({ path: B('test.mjs'), what: `the test list += ${name}.test.mjs`, apply: async (t: any) => { const a = await namedArray(t, 'KIT_TESTS'); return a ? appendItem(t, a, a.elements, `['${name}.test.mjs']`) : null } })
+    if (kind === 'function' || kind === 'test') edits.push({ path: B('test.mjs'), what: `the test list += ${name}.test.mts`, apply: async (t: any) => { const a = await namedArray(t, 'KIT_TESTS'); return a ? appendItem(t, a, a.elements, `['${name}.test.mjs']`) : null } })
     if (kind === 'function') {
       if (!owner) return { refused: 'A core function belongs to a module: pass --module <key>.' }
       edits.push({ path: kitMods, what: `${owner}.owns.functions += ${name}`, apply: async (t: any) => {

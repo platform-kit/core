@@ -9,7 +9,7 @@ The `social-publishing` module SHALL connect accounts on X, Reddit, Threads, Blu
 - **WHEN** an operation is asked of a provider that does not support it
 - **THEN** it is refused by the capability matrix before any call is made
 
-Verified by: `build/social-capabilities.test.mjs`, `build/social-provider-matrix.test.mjs`, `build/social-security.test.mjs`
+Verified by: `build/social-capabilities.test.mts`, `build/social-provider-matrix.test.mts`, `build/social-security.test.mts`
 
 ### Requirement: Publishers act only within their permissions
 
@@ -20,7 +20,7 @@ Staff SHALL invite publishers with permissions per account. An account MAY requi
 - **WHEN** a publisher posts to an account they have no permission on
 - **THEN** it is refused
 
-Verified by: `build/social-permissions.test.mjs`, `build/social-admin.test.mjs`
+Verified by: `build/social-permissions.test.mts`, `build/social-admin.test.mts`
 
 ### Requirement: Scheduled posts are delivered and their outcome kept
 
@@ -31,7 +31,7 @@ A post SHALL be drafted with media and scheduled in a chosen time zone. Each del
 - **WHEN** a provider rejects a scheduled post
 - **THEN** the attempt and its reason are recorded and the post can be retried
 
-Verified by: `build/social-delivery.test.mjs`, `build/social-outcome.test.mjs`, `build/social-publishing.test.mjs`
+Verified by: `build/social-delivery.test.mts`, `build/social-outcome.test.mts`, `build/social-publishing.test.mts`
 
 ### Requirement: An inbox and keyword automations
 
@@ -42,7 +42,7 @@ Verified provider activity SHALL arrive in an inbox. Keyword automations SHALL r
 - **WHEN** a comment matches an automation's keyword
 - **THEN** a reply is generated for it, held for review or sent as the automation says, and recorded once
 
-Verified by: `build/social-automation.test.mjs`, `build/social-automation-db.test.mjs` under `platformkit test --e2e`, `build/social-webhooks.test.mjs`
+Verified by: `build/social-automation.test.mts`, `build/social-automation-db.test.mts` under `platformkit test --e2e`, `build/social-webhooks.test.mts`
 
 ### Requirement: Analytics per post and per account
 
@@ -53,4 +53,4 @@ The module SHALL collect each delivery's impressions, reach, engagement, clicks,
 - **WHEN** a provider's measurements are collected for a delivery
 - **THEN** a snapshot is kept with only the measurements that provider supports
 
-Verified by: `build/social-metrics.test.mjs`, `build/social-metrics-db.test.mjs` under `platformkit test --e2e`
+Verified by: `build/social-metrics.test.mts`, `build/social-metrics-db.test.mts` under `platformkit test --e2e`

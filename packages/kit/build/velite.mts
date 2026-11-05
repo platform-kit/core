@@ -76,7 +76,7 @@ const stripCollection = (dir: any) => (data: any) => ({ ...data, id: data.path.r
 
 /* the kit's velite config for a site: the kit's collections, the site's own beside them (platformkit.config.js `collections`: a
    module exporting `collections` and optionally `prepare`), the theme's default strings merged under the site's */
-export async function kitConfig() {
+export async function kitConfig(): Promise<any> {
   const c = await loadSite()
   /* a body as an article's is rendered, and a record with none is simply without one (velite's own s.markdown
      calls an empty body a fault): a landing page's, and a model entry's */

@@ -14,7 +14,6 @@ import SiteMark from '../components/SiteMark.vue'
 const W = (us('support').widget || {}).page || {}
 // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: W.title || '', description: W.lead || '', path: ROUTES.support, noindex: true })
-// @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
 onMounted(async () => { resolveDefault(); await boot(); open() })
 onBeforeUnmount(close)
 </script>

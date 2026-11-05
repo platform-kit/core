@@ -9,11 +9,11 @@ A book marked `fullText: false` SHALL offer only the summary edition, and withou
 - **WHEN** a book marked `fullText: false` lists `contents: [full, summary, parts]`
 - **THEN** its offers carry the summary edition alone
 
-Verified by: `node build/print-offers.test.mjs`
+Verified by: `node build/print-offers.test.mts`
 
 #### Scenario: a block with no summary edition
 
 - **WHEN** a book marked `fullText: false` lists only `full`, or no contents (whose default holds the text)
 - **THEN** it is not in print
 
-Verified by: `node build/print-offers.test.mjs`
+Verified by: `node build/print-offers.test.mts`

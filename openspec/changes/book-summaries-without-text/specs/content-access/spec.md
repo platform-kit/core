@@ -9,14 +9,14 @@ A book marked `fullText: false` SHALL publish its title, description, cover, int
 - **WHEN** the demo is built with a book marked `fullText: false` whose chapters hold a marker sentence and whose companion holds a summary, and every published file and the server's content index are read
 - **THEN** the marker appears in none of them, the summary and the chapter titles do, and the build's output warns that the book's text is held and withheld
 
-Verified by: `node build/gated-content.test.mjs`
+Verified by: `node build/gated-content.test.mts`
 
 #### Scenario: a member asks for the text
 
 - **WHEN** the gate is asked for such a book's text for a guest, a member, or as a cloud row
 - **THEN** it returns the chapter titles alone, with no chapter text and no teaser
 
-Verified by: `node build/gate.test.mjs`
+Verified by: `node build/gate.test.mts`
 
 #### Scenario: the reader
 

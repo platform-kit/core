@@ -5,7 +5,7 @@
 See proposal.md — Why. What exists to build on:
 
 - **The dev workspace already runs several sites side by side** (`build/dev-workspace.mjs`): each site gets a runtime project (`prepareRuntimeProject`), a stable project id (`stableProjectId`, `pk_<site>_local`), its own block of free ports (`findFreePort` from 20000), its own Supabase stack in Docker and its own functions server.
-- **`schema.test.mjs` already makes a scratch database** from the kit's schema files in a container of its own (`pk-schema-test`), and throws it away.
+- **`schema.test.mts` already makes a scratch database** from the kit's schema files in a container of its own (`pk-schema-test`), and throws it away.
 - **`platformkit migrate reset`** resets a stack and runs fourteen seed steps (spaces, teams, events, comments, providers, achievements, bots, search, print templates, the dev account) — written out inline in `bin/platformkit.mjs`.
 - **The Hyperswitch router** has a Docker test stack of its own (`build/hyperswitch-test-stack.mjs`).
 - **The stack-backed tests** each find a stack their own way: `npx supabase status` in the current folder, `VITE_SUPABASE_URL` from the environment, or a hard-coded Mailpit port (54324).

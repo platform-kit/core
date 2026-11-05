@@ -11,21 +11,21 @@ sources:
     packages/kit/src/lib/copilot,
     packages/kit/supabase/functions/copilot-llm,
     packages/kit/supabase/schemas/95-copilot.sql,
-    packages/kit/build/copilot-db.test.mjs,
+    packages/kit/build/copilot-db.test.mts,
     packages/kit/supabase/functions/_shared/copilot,
-    packages/kit/build/copilot.test.mjs,
+    packages/kit/build/copilot.test.mts,
     packages/kit/theme/src/content/skills,
     packages/kit/src/lib/agents/loop.ts,
     packages/kit/supabase/functions/_shared/usage-gate.mts,
     packages/kit/supabase/functions/_shared/usage.ts,
-    packages/kit/build/usage.test.mjs,
+    packages/kit/build/usage.test.mts,
     packages/kit/src/lib/agents/api.ts,
-    packages/kit/build/agents.test.mjs,
-    packages/kit/build/agents-db.test.mjs,
+    packages/kit/build/agents.test.mts,
+    packages/kit/build/agents-db.test.mts,
     packages/kit/build/bots.mts,
     packages/kit/build/bots-push.mts,
     packages/kit/build/bots-db.mts,
-    packages/kit/build/bots-db.test.mjs,
+    packages/kit/build/bots-db.test.mts,
     packages/kit/build/models/core/agents.mts,
     packages/kit/agent,
     packages/kit/supabase/functions/_shared/video/livekit.ts,
@@ -35,7 +35,7 @@ sources:
     packages/kit/supabase/functions/agent-run/index.ts,
     packages/kit/supabase/functions/_shared/agents/provider.ts,
     packages/kit/supabase/functions/_shared/agents/anthropic.ts,
-    packages/kit/build/anthropic.test.mjs,
+    packages/kit/build/anthropic.test.mts,
     packages/kit/supabase/functions/_shared/agents/tools.ts,
     packages/kit/supabase/functions/_shared/choices.ts,
     packages/kit/theme/src/components/chat/ChatChoices.vue,
@@ -48,9 +48,9 @@ sources:
     packages/kit/supabase/functions/social-automation,
     packages/kit/supabase/functions/social-webhook,
     packages/kit/supabase/schemas/99-social.sql,
-    packages/kit/build/social-automation.test.mjs,
-    packages/kit/build/social-automation-db.test.mjs,
-    packages/kit/build/social-automation-admin.test.mjs,
+    packages/kit/build/social-automation.test.mts,
+    packages/kit/build/social-automation-db.test.mts,
+    packages/kit/build/social-automation-admin.test.mts,
     packages/kit/theme/src/components/admin/social,
   ]
 reviewed: 2026-11-04
@@ -97,9 +97,9 @@ The decision at the middle of it — cancelled? out of money? out of steps? is t
 tool? has it finished? — is a **pure function** (`lib/agents/loop.js`). A loop whose decisions live
 inside the async function that also does the calling can only be tested by running it, which means
 it is only ever tested on the happy path. Here the awkward cases are ordinary inputs, and
-`agents.test.mjs` puts them in.
+`agents.test.mts` puts them in.
 
-`agents-db.test.mjs` then runs the real worker against the stack: a run that answers, one that calls
+`agents-db.test.mts` then runs the real worker against the stack: a run that answers, one that calls
 a tool, **one whose worker is killed mid-run and is picked up and finished by another**, one
 **cancelled after the model has asked for a tool and before it runs** (and the ticket it would have
 raised does not exist afterwards), one that stops when its budget is spent, and two workers racing
@@ -248,7 +248,7 @@ again, so the index it shipped with is the last one it has: an article published
 to every bot that searches, and nothing says so. `build/search-db.mjs` rebuilds the collections from
 the content rows through the **same adapter the browser uses** in cloud mode (`src/lib/entry.js`,
 which turns a row into the entry velite would have made) and hands them to the same pure
-`searchRows` the build uses — one grammar, two sources, and `build/entry.test.mjs` already pins that
+`searchRows` the build uses — one grammar, two sources, and `build/entry.test.mts` already pins that
 adapter against velite field for field. The hook hangs on all four collections the index draws from,
 because publishing any one of them changes what a search should find.
 
@@ -442,7 +442,7 @@ and each fact is its own function — `agent_orders(run)`, `agent_membership(run
 `agent_raise_ticket(run, …)`, `agent_recall(run)`. The Edge Function holds no user id, so there is
 none to pass wrongly; `ctxOf` carries where a run is and no identity at all. The obvious fix was to
 pass the subject instead of the asker, and the next personal tool anybody wrote would have reached
-for whatever was in scope. There is now nothing in scope, and `agents.test.mjs` fails if a personal
+for whatever was in scope. There is now nothing in scope, and `agents.test.mts` fails if a personal
 tool so much as mentions an asker.
 
 `null` from one of those functions means **there is nobody to ask about** — a guest with no account —
@@ -458,7 +458,7 @@ included the bot: under the service key `auth.uid()` is null, so `is_staff()` is
 ticket a bot raised came back `not-staff`. "Hand it to a person" did nothing at all, and nothing
 said so. The bot's own path (`agent_raise_ticket`, the service role's alone, taking its contact
 from the run) now declares itself for its own transaction — `app.bot_ticket`, the way
-`space_poll_close` declares itself — and the opener admits that one caller by name. `agents-db.test.mjs`
+`space_poll_close` declares itself — and the opener admits that one caller by name. `agents-db.test.mts`
 raises one on a guest's thread and asserts it exists, belongs to the contact, and carries no account.
 
 ### A bot sees only what that person's own screen could show them
@@ -873,7 +873,7 @@ question rather than a list, because `all` is a real answer and means every publ
 _including the one written next month_ — a multiselect handed `all` drew the word "null".
 
 The file is unchanged either way: the grammar takes the block apart on the way in and puts it back
-on the way out, writing only what differs from nothing, and `agents.test.mjs` holds the round trip.
+on the way out, writing only what differs from nothing, and `agents.test.mts` holds the round trip.
 
 ## Waking without being asked
 
@@ -987,7 +987,7 @@ What is deliberately still separate is the one **action**. Reads of the same sub
 acting on the world does not, because per-tool audiences buy least privilege — a bot can have
 `about_me` without `raise_ticket`.
 
-`agents.test.mjs` asserts the exact set rather than a count, so a sixth tool is a decision somebody
+`agents.test.mts` asserts the exact set rather than a count, so a sixth tool is a decision somebody
 makes on purpose.
 
 **What a phrase is searched by.** `catalog` matches an asker's phrase against a thing's sku, title,

@@ -7,15 +7,15 @@ sources:
     packages/kit/build/modes.mts,
     packages/kit/build/modules/kit.mts,
     packages/kit/build/modules/manifest.mts,
-    packages/kit/build/modes.test.mjs,
-    packages/kit/build/static-site.test.mjs,
-    packages/kit/build/cloud-lane.test.mjs,
+    packages/kit/build/modes.test.mts,
+    packages/kit/build/static-site.test.mts,
+    packages/kit/build/cloud-lane.test.mts,
     packages/kit/build/test.mts,
     packages/kit/build/site.mts,
     packages/kit/build/deploy.mts,
     packages/kit/build/deploy-checks.mts,
     packages/kit/bin/platformkit.mjs,
-    packages/kit/build/admin-cms-mode.test.mjs,
+    packages/kit/build/admin-cms-mode.test.mts,
     packages/kit/build/declarations.mts,
     packages/kit/build/content-kinds.mts,
     packages/kit/build/artefacts.mts,
@@ -64,7 +64,7 @@ A module's answer is written in **its own manifest**, beside the module, and `bu
 
 This file exists because of a specific failure. Five registries each asked one shape's question sideways and none of them named a shape: [declarations.mjs](/content/docs/building-a-site/declarations-and-state) (file or row), [content-kinds.mjs](/content/docs/building-a-site/content-pipeline) (editable with no checkout), artefacts.mjs (reaches the functions with no build), deploy-checks.mjs (what the environment needs), and the admin function's `MACHINE` list (what cloud cannot do). Every one was kept true by somebody remembering. Print's cloud path was finished, its debt entry stayed on the list for days, was removed — and the same wrong belief was then read back and repeated as fact from recollection alone.
 
-So the rule is one rule: **a module declares its claim, and `modes.test.mjs` derives whether the code backs it.** Where the claim is written down changed; what is checked did not — a manifest saying `cloud` does not make it so. Nothing in the matrix is a list of what is broken.
+So the rule is one rule: **a module declares its claim, and `modes.test.mts` derives whether the code backs it.** Where the claim is written down changed; what is checked did not — a manifest saying `cloud` does not make it so. Nothing in the matrix is a list of what is broken.
 
 - A module claiming **static** may own no projected table — a static site has no database to project into.
 - A module claiming **cloud** must have `projected()` on every projected table it owns, no artefact of its own frozen in `FIXED`, no action of its own in `MACHINE`, and an admin model for every content directory it owns.
@@ -95,7 +95,7 @@ Every gap carried on purpose is printed on every run, so the debt is loud rather
 
 `npm test` exercised one shape — a checkout with a backend — and passed green the whole time the static shape could not be deployed. A suite that only ever runs the arrangement the developer is sitting in reports on a third of the product, so the shapes are separate **lanes** and a skipped one says so at the end of the run.
 
-The **static lane** (`build/static-site.test.mjs`) is deliberately slow, because every cheap version of it would have passed while the shape was broken: a real build with no Supabase in the environment, a real preview server, and every public route visited in a real browser with the console and the network watched. A console error fails. **A request to a backend fails** — that is the check that catches a component which quietly stopped guarding `configured`, and nothing else in the suite would.
+The **static lane** (`build/static-site.test.mts`) is deliberately slow, because every cheap version of it would have passed while the shape was broken: a real build with no Supabase in the environment, a real preview server, and every public route visited in a real browser with the console and the network watched. A console error fails. **A request to a backend fails** — that is the check that catches a component which quietly stopped guarding `configured`, and nothing else in the suite would.
 
 It walks two fixtures, and the second is the one that matters:
 
@@ -104,7 +104,7 @@ It walks two fixtures, and the second is the one that matters:
 
 Set `PLATFORMKIT_SKIP_STATIC_LANE=1` to skip it; the run then names the shape it did not cover.
 
-The **cloud lane** (`build/cloud-lane.test.mjs`) holds the other half: a save over rows is a draft and must move no projection, and a publish must move every one — **with no machine anywhere**, no build, no deploy, no script. It runs against a local stack and skips with a note when there is none.
+The **cloud lane** (`build/cloud-lane.test.mts`) holds the other half: a save over rows is a draft and must move no projection, and a publish must move every one — **with no machine anywhere**, no build, no deploy, no script. It runs against a local stack and skips with a note when there is none.
 
 It carries one safety rule that is worth understanding before extending it. **A projection over an unseeded store is a deletion.** A projection is a whole-table sync: it writes what the declaration holds and removes every file-owned row the declaration does not. Over a rows store whose `public.content` was never seeded, the declaration reads as empty — and "empty declaration" and "delete everything the files own" are the same instruction. The first draft of this lane emptied the local `teams` table, which was the second time a test had done that. So the lane compares the rows against the checkout before projecting anything and skips the model loudly rather than running a sync it cannot make safe.
 

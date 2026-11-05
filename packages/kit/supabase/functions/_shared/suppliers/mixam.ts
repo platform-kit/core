@@ -25,7 +25,7 @@ export function mixam(env: any) {
     token = { value: t, until: Date.now() + 50 * 60 * 1000 }
     return t
   }
-  async function call(path: any, body: any, method = body ? 'POST' : 'GET') {
+  async function call(path: any, body?: any, method = body ? 'POST' : 'GET') {
     const r = await fetch(base() + path, { method, headers: { 'content-type': 'application/json', accept: 'application/json', authorization: 'Bearer ' + (await auth()) }, body: body ? JSON.stringify(body) : undefined })
     const text = await r.text()
     if (!r.ok) throw new Error(`mixam ${method} ${path}: ${r.status} ${text.slice(0, 300)}`)
@@ -98,7 +98,6 @@ export function mixam(env: any) {
     },
     async status(id: any) {
       if (mock() || id.startsWith('mixam_mock_')) { const age = Date.now() - Number(id.split('_')[2] || 0); const s = age < 20_000 ? 'CREATED' : age < 60_000 ? 'IN_PRODUCTION' : 'DISPATCHED'; return { id, status: s, tracking: s === 'DISPATCHED' ? { carrier: 'MOCK', id: 'MOCK' + id.slice(-6), url: null } : null, cost: null } }
-      // @ts-expect-error TS2554, from the conversion: Expected 2-3 arguments, but got 1.
       const o = await call('/api/public/orders/' + id)
       const t = o.tracking || o.shipments?.[0]
       return { id, status: String(o.status || ''), tracking: t ? { carrier: t.carrier || null, id: t.trackingNumber || t.id || null, url: t.url || null } : null, cost: o.total != null ? { print: Number(o.total), shipping: 0, currency: o.currency?.currencyCode || 'USD' } : null }

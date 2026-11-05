@@ -9,27 +9,27 @@ sources:
     packages/kit/supabase/functions/_shared/prices.ts,
     packages/kit/supabase/functions/_shared/promotions.ts,
     packages/kit/src/lib/promotions.ts,
-    packages/kit/build/promotions.test.mjs,
+    packages/kit/build/promotions.test.mts,
     packages/kit/supabase/schemas/42-promotions.sql,
-    packages/kit/build/promotions-db.test.mjs,
+    packages/kit/build/promotions-db.test.mts,
     packages/kit/src/lib/prices.ts,
-    packages/kit/build/prices.test.mjs,
+    packages/kit/build/prices.test.mts,
     packages/kit/supabase/functions/_shared/stock.ts,
     packages/kit/src/lib/stock.ts,
-    packages/kit/build/stock.test.mjs,
+    packages/kit/build/stock.test.mts,
     packages/kit/supabase/schemas/41-inventory.sql,
-    packages/kit/build/inventory-db.test.mjs,
+    packages/kit/build/inventory-db.test.mts,
     packages/kit/supabase/functions/_shared/variants.ts,
     packages/kit/src/lib/variants.ts,
     packages/kit/theme/src/components/store/VariantPicker.vue,
     packages/kit/build/variants.mts,
-    packages/kit/build/variants.test.mjs,
-    packages/kit/build/store-kinds.test.mjs,
-    packages/kit/build/store-separation.test.mjs,
+    packages/kit/build/variants.test.mts,
+    packages/kit/build/store-kinds.test.mts,
+    packages/kit/build/store-separation.test.mts,
     packages/kit/supabase/functions/_shared/offers.ts,
     packages/kit/supabase/functions/_shared/ledger.ts,
     packages/kit/supabase/functions/_shared/ledger-rules.ts,
-    packages/kit/build/ledger.test.mjs,
+    packages/kit/build/ledger.test.mts,
     packages/kit/supabase/functions/_shared/print.ts,
     packages/kit/supabase/functions/create-checkout-session,
     packages/kit/supabase/functions/confirm-checkout,
@@ -40,12 +40,12 @@ sources:
     packages/kit/supabase/functions/_shared/usage-gate.mts,
     packages/kit/supabase/functions/_shared/usage.ts,
     packages/kit/supabase/functions/usage-meter-report,
-    packages/kit/build/usage.test.mjs,
+    packages/kit/build/usage.test.mts,
     packages/kit/src/lib/commerce.ts,
     packages/kit/src/payment-provider.mts,
     packages/kit/src/payment-provider.d.ts,
     packages/kit/supabase/schemas/40-commerce.sql,
-    packages/kit/build/policies.test.mjs,
+    packages/kit/build/policies.test.mts,
     packages/kit/theme/src/components/Orders.vue,
     packages/kit/build/product-keys.mts,
     packages/kit/build/sales.mts,
@@ -54,8 +54,8 @@ sources:
     packages/kit/supabase/functions/push-catalog,
     packages/kit/supabase/functions/_shared/shipping.ts,
     packages/kit/supabase/functions/_shared/checkout-params.ts,
-    packages/kit/build/checkout-params.test.mjs,
-    packages/kit/build/payment-providers.test.mjs,
+    packages/kit/build/checkout-params.test.mts,
+    packages/kit/build/payment-providers.test.mts,
   ]
 reviewed: 2026-11-04
 ---
@@ -81,7 +81,7 @@ The ledger writes what somebody owns once Stripe says they have paid. **What it 
 
 Every grant's source id is a function of the payment and nothing else, which is what makes the writes idempotent: Stripe retries its events, and the client's `confirm-checkout` writes the same rows as the webhook does.
 
-`build/ledger.test.mjs` pins all of it. Before the split, the most consequential file in the kit had no test of its own — for a structural reason rather than a careless one: every decision sat between two database writes.
+`build/ledger.test.mts` pins all of it. Before the split, the most consequential file in the kit had no test of its own — for a structural reason rather than a careless one: every decision sat between two database writes.
 
 ## The offers are markdown; Stripe is made to match
 
@@ -193,7 +193,7 @@ an image source — and it reaches the store through exactly **two slots**:
 **The store never opens the parcel.** It stores the artefact record, hands it to a supplier, and
 may ask exactly one question about it: whether the variant is _ready_, because a thing that
 cannot be made yet cannot be sold yet. Anything else it wanted to know would be a book's word in
-a table that mugs also use, and `store-separation.test.mjs` refuses that — in both directions,
+a table that mugs also use, and `store-separation.test.mts` refuses that — in both directions,
 so deleting print's vocabulary fails the test too.
 
 A kind also declares what it **produces**, and a supplier declares what it **needs**. The two are
@@ -277,7 +277,7 @@ needs to.
 
 That phrasing is the whole point. The interface used to take `pages` and `files` by name, so a
 supplier that makes anything but a book could not implement it, and "plug-in" was true only of
-printers. `suppliers.test.mjs` checks the vocabulary against the source rather than by reading
+printers. `suppliers.test.mts` checks the vocabulary against the source rather than by reading
 it, because reading is how it was verified last time.
 
 |         |                                                                                                                                      |
@@ -304,14 +304,14 @@ write `committed`, which is what owning a derived number costs.)
 
 **A file never says how many.** `tracked` and `backorder` are frontmatter; the count is a row.
 If the database were deleted and the repository redeployed, a count in a file would come back as
-whatever the file said. `declarations.test.mjs` walks every content schema and refuses a field
+whatever the file said. `declarations.test.mts` walks every content schema and refuses a field
 called `stock`, `quantity`, `available` or their like, so this cannot be broken by a field
 nobody thought to add to a list.
 
 **The decrement is one statement.** `inventory_take` puts its condition inside the `UPDATE`, so
 two sessions racing for the last unit cannot both match — the second takes nothing and returns
 false. It returns false rather than raising because the caller refuses politely, and because a
-backorder means it may not care. `inventory-db.test.mjs` races two connections for one unit and
+backorder means it may not care. `inventory-db.test.mts` races two connections for one unit and
 ten for four; a read-then-write implementation passes every other test and fails those.
 
 **`backorder` lets the count go negative**, and there is deliberately no `stocked >= 0` check: a
@@ -389,7 +389,7 @@ On a `print` line the ledger writes a `print_orders` row (the address as Stripe 
 
 ## The desk's reads
 
-`purchases_select_own` and `bookings_select_party` admit `is_admin()`, as `print_orders_select_own` does, so the admin's Orders, Print orders and Bookings pages read the tables under RLS with the administrator's own session and follow them live (all three are in the realtime publication). Who a row's account is comes from `admin_people(ids)` — a security-definer that answers an administrator with id, name and email for the ids asked, and anyone else with nothing — since profiles are self-select. `packages/kit/build/policies.test.mjs` pins it against the local stack's seed (the read-through where the seed holds purchases and bookings; on a site whose seed holds none, those checks are skipped with a note). It also verifies that a provider can reply in their coaching threads without a membership, while a reader needs a live membership or a paid session with that coach to open one.
+`purchases_select_own` and `bookings_select_party` admit `is_admin()`, as `print_orders_select_own` does, so the admin's Orders, Print orders and Bookings pages read the tables under RLS with the administrator's own session and follow them live (all three are in the realtime publication). Who a row's account is comes from `admin_people(ids)` — a security-definer that answers an administrator with id, name and email for the ids asked, and anyone else with nothing — since profiles are self-select. `packages/kit/build/policies.test.mts` pins it against the local stack's seed (the read-through where the seed holds purchases and bookings; on a site whose seed holds none, those checks are skipped with a note). It also verifies that a provider can reply in their coaching threads without a membership, while a reader needs a live membership or a paid session with that coach to open one.
 
 ## Sessions and credits
 

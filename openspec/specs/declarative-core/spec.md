@@ -24,7 +24,7 @@ person; associating a person with anything is an act, and acts are rows.
 - **THEN** every room, channel, role, grant, offer, page, funnel, session type and string the site
   declares is there, and the only things missing are the things people had not yet done
 
-Verified by: `build/declarations.test.mjs` for the classification; a deploy against an empty database
+Verified by: `build/declarations.test.mts` for the classification; a deploy against an empty database
 
 #### Scenario: a projection cannot be authored
 
@@ -32,7 +32,7 @@ Verified by: `build/declarations.test.mjs` for the classification; a deploy agai
   projected table
 - **THEN** the database refuses it, because no such policy exists for a signed-in role
 
-Verified by: `build/declarations.test.mjs`
+Verified by: `build/declarations.test.mts`
 
 ### Requirement: Every table is classified, and a new one cannot avoid the question
 
@@ -53,7 +53,7 @@ and never on a save, since a save is a draft nobody has agreed to show.
 - **WHEN** a table is added to a schema and named in none of the three lists
 - **THEN** `npm test` fails and says which table and which decision is missing
 
-Verified by: `build/declarations.test.mjs`
+Verified by: `build/declarations.test.mts`
 
 #### Scenario: a projection with no source
 
@@ -61,14 +61,14 @@ Verified by: `build/declarations.test.mjs`
 - **THEN** `npm test` fails, because a projection with no source is a table pretending to be a
   declaration
 
-Verified by: `build/declarations.test.mjs`
+Verified by: `build/declarations.test.mts`
 
 #### Scenario: a derived table nothing may depend on
 
 - **WHEN** a derived table grants a read or a write to a signed-in role
 - **THEN** `npm test` fails, because a cache the site may empty is not something a session may rely on
 
-Verified by: `build/declarations.test.mjs`
+Verified by: `build/declarations.test.mts`
 
 #### Scenario: a projection that could not run without a machine
 
@@ -76,7 +76,7 @@ Verified by: `build/declarations.test.mjs`
   the gap
 - **THEN** `npm test` fails and says which kind and what it needs
 
-Verified by: `build/content-kinds.test.mjs`
+Verified by: `build/content-kinds.test.mts`
 
 ### Requirement: One loop, and no module builds a second
 
@@ -92,7 +92,7 @@ table directly.
 - **THEN** in both the file is what changed; in cloud mode it is a draft until published, and the
   publish moves the repository
 
-Verified by: the content pipe's own tests, and `build/declarations.test.mjs` for the absence of a
+Verified by: the content pipe's own tests, and `build/declarations.test.mts` for the absence of a
 second path
 
 ### Requirement: What is on the wrong side today
@@ -110,7 +110,7 @@ credential stay where they are.
 - **THEN** all four are in place with nobody having opened the admin, and no secret is in the
   repository
 
-Verified by: `build/declarations.test.mjs`, and the demo site declaring one of each
+Verified by: `build/declarations.test.mts`, and the demo site declaring one of each
 
 ### Requirement: Wherever there is a database, a publish is enough to reach it
 
@@ -142,8 +142,8 @@ cloud path came to be read back off a stale list and repeated as fact.
   community, the calendar, a bot's runner, the awards, the booker — show it without anything else
   happening
 
-Verified by: `build/spaces-db.test.mjs`, `build/events-db.test.mjs`, `build/agents-db.test.mjs`,
-`build/awards-db.test.mjs` and `build/teams-db.test.mjs`, each against a publish through the admin
+Verified by: `build/spaces-db.test.mts`, `build/events-db.test.mts`, `build/agents-db.test.mts`,
+`build/awards-db.test.mts` and `build/teams-db.test.mts`, each against a publish through the admin
 function in cloud mode on the demo
 
 #### Scenario: a draft moves nothing
@@ -159,9 +159,9 @@ Verified by: the same runs, reading the rows between the save and the publish
 - **THEN** every gap the kit carries on purpose is printed by name with the change that closes it,
   and no projection is among them
 
-Verified by: `build/modes.test.mjs`, which prints every declared exception on every run and fails a
+Verified by: `build/modes.test.mts`, which prints every declared exception on every run and fails a
 module claiming `cloud` whose projected table carries no `projected()` hook; and
-`build/content-kinds.test.mjs`, which requires the hook of every projected table a model owns.
+`build/content-kinds.test.mts`, which requires the hook of every projected table a model owns.
 
 There is no hand-written list behind this any more. `PROJECTION_DEBT` named the five that could not
 project without a machine — spaces, the calendar, the bots, the achievements, the search index — and
@@ -175,7 +175,7 @@ that goes stale.
 - **THEN** `npm test` fails, naming the change, what the gap says, and the two ways out — raise the
   claim and delete the exception, or say which change closes it now
 
-Verified by: `build/modes.test.mjs`, asserted by archiving a live change's folder for one run and
+Verified by: `build/modes.test.mts`, asserted by archiving a live change's folder for one run and
 watching the check name it
 
 ### Requirement: What the server can search is what has been published
@@ -190,5 +190,5 @@ already answered from the rows the browser holds.
 - **WHEN** an article is published on a deployment that does not rebuild, and a bot is asked about it
 - **THEN** the bot finds it
 
-Verified by: `build/search.test.mjs` over a publish in cloud mode, and `build/agents-db.test.mjs`
+Verified by: `build/search.test.mts` over a publish in cloud mode, and `build/agents-db.test.mts`
 for the tool that asks

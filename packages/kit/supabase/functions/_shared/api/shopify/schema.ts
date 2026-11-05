@@ -123,7 +123,7 @@ let schema = null
 export const schemaOf = () => (schema ||= buildSchema(SDL))
 
 /* the objects the default resolver reads: a connection field is a method taking the arguments */
-const conn = (list: any, args: any, opts: any) => { const p = pageOf(list, args, opts); return { edges: p.edges, nodes: p.nodes, pageInfo: p.pageInfo, totalCount: p.totalCount, filters: [] } }
+const conn = (list: any, args: any, opts?: any) => { const p = pageOf(list, args, opts); return { edges: p.edges, nodes: p.nodes, pageInfo: p.pageInfo, totalCount: p.totalCount, filters: [] } }
 const withMethods = (store: any, o: any = {}) => {
   const site = o.site || ''
   const image = (i: any) => (i ? { ...i, url: () => i.url, transformedSrc: () => i.url, __typename: 'Image' } : null)
@@ -133,17 +133,13 @@ const withMethods = (store: any, o: any = {}) => {
   function wrapProduct(p: any) {
     if (cacheP.has(p.id)) return cacheP.get(p.id)
     const w = { ...p, __typename: 'Product', featuredImage: image(p.featuredImage), description: ({ truncateAt }: any) => (truncateAt ? p.description.slice(0, truncateAt) : p.description), media: () => null, sellingPlanGroups: () => null, metafield: () => null, metafields: () => [] }
-    // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
     w.images = (args: any) => conn(p.images.map(image), args)
     w.options = () => p.options
-    // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
     w.variants = (args: any) => conn(p.variants.map((v: any) => wrapVariant(v, w)), args)
     w.variantBySelectedOptions = ({ selectedOptions, caseInsensitiveMatch }: any) => { const want = (selectedOptions || []).map((s: any) => [String(s.name), String(s.value)]); const eq = (a: any, b: any) => (caseInsensitiveMatch ? a.toLowerCase() === b.toLowerCase() : a === b); const v = p.variants.find((x: any) => want.every(([n, val]: any) => x.selectedOptions.some((so: any) => eq(so.name, n) && eq(so.value, val)))); return v ? wrapVariant(v, w) : null }
-    // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
     w.collections = (args: any) => conn((p._collectionRefs || []).map(wrapCollection), args)
     cacheP.set(p.id, w); return w
   }
-  // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
   const wrapCart = (row: any) => { if (!row) return null; const c = cartOf(store, row, { site }); return { ...c, __typename: 'Cart', lines: (args: any) => conn(c._lines.map((l) => ({ ...l, __typename: 'CartLine', merchandise: wrapVariant(l.merchandise, wrapProduct(l.merchandise.product)), attribute: ({ key }: any) => (l.attributes || []).find((a: any) => a.key === key) || null })), args), attribute: ({ key }: any) => (c.attributes || []).find((a: any) => a.key === key) || null, deliveryGroups: () => null, metafield: () => null } }
   return { wrapProduct, wrapCollection, wrapCart }
 }

@@ -4,14 +4,14 @@ description: A page per person, follows, a timeline and posts that each say who 
 order: 56.995
 sources:
   [
-    packages/kit/build/network-media.test.mjs,
+    packages/kit/build/network-media.test.mts,
     packages/kit/supabase/schemas/98-community.sql,
-    packages/kit/build/community-notes-db.test.mjs,
+    packages/kit/build/community-notes-db.test.mts,
     packages/kit/build/network-access.mts,
     packages/kit/supabase/schemas/93-network.sql,
-    packages/kit/build/network-db.test.mjs,
+    packages/kit/build/network-db.test.mts,
     packages/kit/src/lib/network,
-    packages/kit/build/network.test.mjs,
+    packages/kit/build/network.test.mts,
     packages/kit/theme/src/pages/FeedPage.vue,
     packages/kit/theme/src/components/network,
     packages/kit/theme/src/content/ui/network.md,
@@ -20,7 +20,7 @@ sources:
     packages/kit/src/lib/network/apps.ts,
     packages/kit/supabase/functions/atproto,
     packages/kit/supabase/functions/_shared/atproto,
-    packages/kit/build/atproto-interop.test.mjs,
+    packages/kit/build/atproto-interop.test.mts,
     packages/kit/build/network-keys.mts,
     packages/kit/theme/src/components/network/NetJoin.vue,
   ]
@@ -45,7 +45,7 @@ The `network` module is the site's own social network: every member may have a p
 
 **A post's card** draws a network post and a space's message alike: the face, the name (linked to the page where it is open), the handle, who can see it, when, the words with links cut out of them (never markup — `segmentsOf`), the pictures, what it quotes, and Reply · Repost · Like · More in a row beneath. A like or repost moves the count at once and moves back if the database refuses it. More holds Delete on the reader's own post and Report on anybody else's; a report is a reason from a list and a line of the reader's own.
 
-The client is `lib/network/`: `model.js` (pure, pinned by `build/network.test.mjs`: what an answer may be read by, joining pages, threads, links, time in the browser's own words), `api.js` (the store over the tables, as the reader) and `nav.js` (the header's count). Names and faces come from `network_people(ids)` — a name, a face and the page's address only where the page is open, never an email — and a person's counts and where the reader stands with them from `network_person(id)`. The words are the theme's `network` scope (`nav`, `shell`, `timeline`, `composer`, `audience`, `post`, `person`, `report`, `notes`, `thread`).
+The client is `lib/network/`: `model.js` (pure, pinned by `build/network.test.mts`: what an answer may be read by, joining pages, threads, links, time in the browser's own words), `api.js` (the store over the tables, as the reader) and `nav.js` (the header's count). Names and faces come from `network_people(ids)` — a name, a face and the page's address only where the page is open, never an email — and a person's counts and where the reader stands with them from `network_person(id)`. The words are the theme's `network` scope (`nav`, `shell`, `timeline`, `composer`, `audience`, `post`, `person`, `report`, `notes`, `thread`).
 
 The site's config may say `network: { federate, apps, access, appview, relay }`; `federate`, `apps` and which grants exist reach the browser, so the composer can say what Everyone means and the pages know what is offered.
 
@@ -87,7 +87,7 @@ A joined member reads **the world outside** through the app view: a profile, a p
 
 A host that serves a federating site must pass WebSocket upgrades on `/xrpc` (the generated nginx does) and answer every name under `NETWORK_HANDLE_DOMAIN` — a wildcard DNS record and certificate — with the same rewrites, since each member's handle is a host whose `/.well-known/atproto-did` the function answers.
 
-`build/atproto-interop.test.mjs` checks it with the network's own tools, in `npm test`: a PLC directory of its own that accepts an identity only where Bluesky's PLC library says its genesis operation is valid; the repository verified against the key the DID document names, holding the everyone post and not the one for the people here; the event stream read by Bluesky's own firehose consumer — every commit's signature checked — dropped and resumed from its cursor, every event once; an app view of its own that answers only a service token Bluesky's server library verifies; a removal on the stream as a deletion; leaving as a deactivation. It needs the function served with `NETWORK_FEDERATE=1` (a local stack only — the deploy refuses it), `NETWORK_PLC_URL` and `NETWORK_APPVIEW_URL` pointing at its stand-ins, `NETWORK_RELAY_URL=none` and a rotation key, and skips itself, saying so, otherwise. The one thing it cannot prove is Bluesky's own relay crawling a public host — that is checked by hand.
+`build/atproto-interop.test.mts` checks it with the network's own tools, in `npm test`: a PLC directory of its own that accepts an identity only where Bluesky's PLC library says its genesis operation is valid; the repository verified against the key the DID document names, holding the everyone post and not the one for the people here; the event stream read by Bluesky's own firehose consumer — every commit's signature checked — dropped and resumed from its cursor, every event once; an app view of its own that answers only a service token Bluesky's server library verifies; a removal on the stream as a deletion; leaving as a deactivation. It needs the function served with `NETWORK_FEDERATE=1` (a local stack only — the deploy refuses it), `NETWORK_PLC_URL` and `NETWORK_APPVIEW_URL` pointing at its stand-ins, `NETWORK_RELAY_URL=none` and a rotation key, and skips itself, saying so, otherwise. The one thing it cannot prove is Bluesky's own relay crawling a public host — that is checked by hand.
 
 ## Every post says who may read it
 
@@ -167,4 +167,4 @@ The `at://` URI and the CID of a record are never stored: both are computed from
 
 ## Testing
 
-`build/network-db.test.mjs` runs against the local stack, in `npm test` while the module is on: three posts and three readers by every path, a reply or quote wider than its post refused, the counts, the timeline (follows, reposts, pinned spaces, paging, mutes), notifications and their unread count, a block both ways, a closed page answering as a name nobody holds, every act of moderation, and Who to follow (`network_suggestions`: it answers, it suggests somebody with a page the reader does not follow, and never somebody they muted). It removes everything it made. `build/community-notes-db.test.mjs`, while the spaces are on too, holds the one list: a mention and a like in it with a count of two that opening clears, thread replies, a reply naming one listed once, a stranger to the room seeing none of it, and an event coming in the day before.
+`build/network-db.test.mts` runs against the local stack, in `npm test` while the module is on: three posts and three readers by every path, a reply or quote wider than its post refused, the counts, the timeline (follows, reposts, pinned spaces, paging, mutes), notifications and their unread count, a block both ways, a closed page answering as a name nobody holds, every act of moderation, and Who to follow (`network_suggestions`: it answers, it suggests somebody with a page the reader does not follow, and never somebody they muted). It removes everything it made. `build/community-notes-db.test.mts`, while the spaces are on too, holds the one list: a mention and a like in it with a count of two that opening clears, thread replies, a reply naming one listed once, a stranger to the room seeing none of it, and an event coming in the day before.

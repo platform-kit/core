@@ -29,7 +29,7 @@ sources:
     packages/kit/build/steps/push-catalog.mts,
     packages/kit/supabase/functions/_shared/sessions/guest-booking.ts,
     packages/kit/supabase/schemas/40-commerce.sql,
-    packages/kit/build/usage.test.mjs,
+    packages/kit/build/usage.test.mts,
     packages/kit/build/velite.mts,
     packages/kit/supabase/schemas/55-sessions.sql,
   ]

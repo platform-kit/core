@@ -27,7 +27,6 @@ async function engine(wasm: any) {
     wasmReady = (async () => {
       /* Deno wants an npm: specifier and node wants the bare name; the same package either way,
          which is the pattern the github module already uses for fflate */
-      // @ts-expect-error TS2307, from the conversion: Cannot find module 'npm:@myriaddreamin/typst-ts-web-compiler@0.7.0' or its corresponding type declarations.
       const mod = await import('npm:@myriaddreamin/typst-ts-web-compiler@0.7.0')
         .catch(() => import('@myriaddreamin/typst-ts-web-compiler'))
       /* wasm-bindgen's default export takes the module's bytes; in a worker it resolves the .wasm

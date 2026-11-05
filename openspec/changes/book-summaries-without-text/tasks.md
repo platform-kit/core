@@ -7,7 +7,7 @@
 - [x] `printSpec(block, book)` keeps the summary edition alone for a withheld book; the catalog and `print.mjs` refuse other contents by name; the store's offers, art and deploy checks pass the book
 - [x] `tts.mjs` plans no recording of a withheld book's chapter text
 - [x] `BookReader.vue`: summary mode only, no switch, the summaries' reading time on the cover, a chapter without a summary says so
-- [x] `gate.test.mjs`, `gated-content.test.mjs` (a withheld book's marker in no published file or the content index, its summary published, the warning given), `print-offers.test.mjs`
+- [x] `gate.test.mts`, `gated-content.test.mts` (a withheld book's marker in no published file or the content index, its summary published, the warning given), `print-offers.test.mts`
 - [x] The demo's *The Long View*: a book of titles and a companion, read at 1280 px light and 390 px dark, and its spoken book planned (`tts.mjs --dry`: the introduction and three summaries)
 - [x] Publishing basics, reading, books, print editions, spoken books, frontmatter, the content pipeline, the content API, FEATURES.md
-- [ ] `reader-content.test.mjs` against a local stack (skipped here: no stack for it), and the admin's print table shown with the book (`PrintAdmin.vue` is mid-change in another session)
+- [ ] `reader-content.test.mts` against a local stack (skipped here: no stack for it), and the admin's print table shown with the book (`PrintAdmin.vue` is mid-change in another session)

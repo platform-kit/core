@@ -10,9 +10,9 @@
 
 ## 2. Reconciliation
 
-- [ ] 2.1 Add an optional `listRecords` capability to the provider contract and implement it for Stripe (recent payments, refunds and subscriptions). Verified by `node build/payment-provider-adapters.test.mjs` and the Stripe test-mode runner.
+- [ ] 2.1 Add an optional `listRecords` capability to the provider contract and implement it for Stripe (recent payments, refunds and subscriptions). Verified by `node build/payment-provider-adapters.test.mts` and the Stripe test-mode runner.
 - [ ] 2.2 Add the `payment_differences` record, the `payments-reconcile` function and its nightly job in the `store` module, writing only differences. Verified by `node build/reconcile-db.test.mjs` with a stub provider: the five kinds, a second run, and agreement.
-- [ ] 2.3 List open differences on the Payments screen, or "agree as of", or "not checked" for a provider without `listRecords`, with copy in the theme's payments strings. Verified by the rendered screen at 1280×900 and 390×844 in light and dark, and `node build/strings.test.mjs`.
+- [ ] 2.3 List open differences on the Payments screen, or "agree as of", or "not checked" for a provider without `listRecords`, with copy in the theme's payments strings. Verified by the rendered screen at 1280×900 and 390×844 in light and dark, and `node build/strings.test.mts`.
 - [ ] 2.4 End the journeys runner with a reconciliation over its own records, expecting no difference. Verified by the runner.
 
 ## 3. Documentation
