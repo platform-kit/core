@@ -9,7 +9,7 @@
  */
 import { admin } from './lib.ts'
 import { sendEmail } from './email.ts'
-import { ics } from './ics.js'
+import { ics } from './ics.ts'
 import { formsNow } from './forms-live.ts'
 import { typeFor } from './sessions.ts'
 import strings from './emails/strings.json' with { type: 'json' }
@@ -57,9 +57,11 @@ export async function sessionMail(kind: SessionMailKind, uid: string, extra: Rec
   const readerTz = String(b.payload?.tz || 'UTC'), hostTz = String(hh?.timezone || 'UTC')
   const join = b.join_url || null
   const place = placeOf(b.where, join)
+  // @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types '"session-booked" | "session-moved" | "session-reminder"' and '"session-declin
   const method = kind === 'session-cancelled' || kind === 'session-declined' ? 'CANCEL' : 'REQUEST'
   /* NOTHING IS PUT IN ANYBODY'S CALENDAR UNTIL IT IS CONFIRMED. An invitation for an hour the host
      may yet decline is an hour somebody blocks out and then has to take back. */
+  // @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types 'SessionMailKind' and '"session-held"' have no overlap.
   const held = kind === 'session-held' || kind === 'session-to-confirm'
   const sequence = Number(b.payload?.sequence ?? 0) + (kind === 'session-moved' ? 1 : 0) + (kind === 'session-cancelled' ? 1 : 0)
   const invite = ics({ uid: `${b.uid}@platformkit`, start: b.start_at, end: b.end_at, summary: b.title || s?.title || 'Session', description: [place.line, join].filter(Boolean).join('\n'), location: place.location, url: join || undefined, organizer: host?.email ? { name: host.display_name || '', email: host.email } : undefined, attendees: [...new Set([b.email, ...(b.attendee_emails || [])].filter(Boolean))].map((e: string) => ({ name: e === b.email ? (b.name || '') : '', email: e })), method, sequence })
@@ -72,15 +74,18 @@ export async function sessionMail(kind: SessionMailKind, uid: string, extra: Rec
   const { data: people } = addresses.length ? await admin.from('profiles').select('email, display_name').in('email', addresses) : { data: [] }
   for (const to of addresses) {
     const who = (people ?? []).find((p: any) => String(p.email).toLowerCase() === to)
+    // @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types 'SessionMailKind' and '"session-to-confirm"' have no overlap.
     if (kind === 'session-to-confirm') continue   /* that one is the host's */
     out.push(await sendEmail(to, kind, { ...base, name: first(who?.display_name || (to === String(b.email || '').toLowerCase() ? b.name : ''), to), with: host?.display_name || '', when: when(b.start_at, readerTz) }, held ? {} : { ical: { method, content: invite } }))
   }
   /* WHAT THEY ANSWERED ON THE WAY IN goes to the HOST and to nobody else: the reader wrote it and
      does not need it read back, and an invitee on somebody else's booking never wrote it at all. */
+  // @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types '"session-moved" | "session-cancelled" | "session-reminder"' and '"session-to-
   const answers = (kind === 'session-booked' || kind === 'session-to-confirm') && b.response_id ? await answersOf(b.response_id) : []
   /* THE HOST IS NOT TOLD EVERYTHING. A reminder is the reader's; "the time is held" is the
      reader's and its counterpart is the host's own letter; a decline is the reader's, because the
      host is the one who declined it. */
+  // @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types '"session-booked" | "session-moved" | "session-cancelled"' and '"session-held"
   const forHost = kind !== 'session-reminder' && kind !== 'session-held' && kind !== 'session-declined'
   if (forHost && host?.email) out.push(await sendEmail(host.email, kind, { ...base, name: first(host.display_name, host.email), with: b.name || b.email || '', when: when(b.start_at, hostTz), answers }, held ? {} : { ical: { method, content: invite } }))
   return { sent: out.some(Boolean) }

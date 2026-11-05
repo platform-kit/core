@@ -31,8 +31,8 @@ import { admin, appUrl, isServiceBearer } from '../_shared/lib.ts'
 import { project, join, leave, repoStatus, repoCar, recordCar, frameOf, errorFrame } from '../_shared/atproto/federation.ts'
 import { joinedIdentity, ask, mergeFeeds } from '../_shared/atproto/appview.ts'
 import * as SITE from '../_shared/pipe/site.js'
-import { REFUSALS } from '../_shared/atproto/errors.js'
-import { POST, LIKE, REPOST, FOLLOW, BLOCK, PROFILE, WRITABLE, uriOf, parseUri, handleOf, cleanDomain, usernameOfHandle, isDid, messageOfKey, cursorOf, clientAllowed } from '../_shared/atproto/ids.js'
+import { REFUSALS } from '../_shared/atproto/errors.ts'
+import { POST, LIKE, REPOST, FOLLOW, BLOCK, PROFILE, WRITABLE, uriOf, parseUri, handleOf, cleanDomain, usernameOfHandle, isDid, messageOfKey, cursorOf, clientAllowed } from '../_shared/atproto/ids.ts'
 import { createSession, sessionOf, refreshSession, deleteSession, loginAllowed, noteAttempt, makeAppPassword, type Session } from '../_shared/atproto/session.ts'
 import { newCtx, loadPeople, profileBasic, profileDetailed, postViews, messageViews, feedItems, loadPosts, generatorView, generatorUri, didFor, cidOf, recordOf, type Ctx } from '../_shared/atproto/views.ts'
 import { createRecord, deleteRecord, getRecord, listRecords, uploadBlob, putProfile, userOfActor, userOfDid, resolvePost } from '../_shared/atproto/writes.ts'
@@ -102,7 +102,7 @@ async function userOfIdentifier(id: string) {
   return userOfActor(s, domain())
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (!NETWORK_ON) return no(REFUSALS.off())
 
@@ -126,6 +126,7 @@ Deno.serve(async (req) => {
   /* ---------------------------------------------------------------- the database asking */
   /* a joined member's public records changed: every queued member's repository is made to agree */
   if (path === '/internal/project' && req.method === 'POST') {
+    // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
     if (!(await isServiceBearer(req))) return no(REFUSALS.forbidden())
     const { data: dirty } = await admin.from('network_dirty').select('user_id').order('at').limit(50)
     const done: any[] = []
@@ -138,6 +139,7 @@ Deno.serve(async (req) => {
 
   /* the relay asked to crawl the site again (the daily job), where the site federates */
   if (path === '/internal/crawl' && req.method === 'POST') {
+    // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
     if (!(await isServiceBearer(req))) return no(REFUSALS.forbidden())
     if (FEDERATES) await requestCrawl()
     return json({ asked: FEDERATES })
@@ -532,6 +534,7 @@ Deno.serve(async (req) => {
 /* THE SYNC METHODS: what a relay and an app view read of a joined member's public repository */
 async function sync(req: Request, nsid: string, q: URLSearchParams): Promise<Response> {
   const did = String(q.get('did') || '')
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Uint8Array<ArrayBufferLike>' is not assignable to parameter of type 'BodyInit | null | undefined'. Type 'Uint8Array<ArrayB
   const car = (bytes: Uint8Array) => new Response(bytes, { headers: { ...CORS, 'Content-Type': 'application/vnd.ipld.car' } })
   const gone = (st: any) => no(st.status === 'takendown' ? { status: 400, body: { error: 'RepoTakendown', message: 'This repository has been taken down' } } : { status: 400, body: { error: 'RepoDeactivated', message: 'This account has left the wider network' } })
   if (nsid === 'com.atproto.sync.subscribeRepos') return subscribe(req, q.get('cursor'))

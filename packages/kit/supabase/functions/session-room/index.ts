@@ -11,7 +11,7 @@ import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { deliverSchedulingEvent } from '../_shared/scheduling-events.ts'
 import { typeFor, videoOf, videoIdOf } from '../_shared/cal.ts'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   const user = await getUser(req)
@@ -25,6 +25,7 @@ Deno.serve(async (req) => {
   if (!b) return json({ error: 'not your booking', code: 'not-yours' }, 403)
   const s = await typeFor(b.event, { any: true })
   const v = s ? (videoOf(s) as any) : null
+  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   if (!v || videoIdOf(s) !== 'livekit') return json({ error: 'this session has no room on the site', code: 'no-room' }, 404)
   if (!['accepted', 'pending', 'ended'].includes(b.status)) return json({ error: 'this session is cancelled', code: 'over' }, 410)
   const { data: prof } = await admin.from('profiles').select('role, display_name, email').eq('id', user.id).maybeSingle()

@@ -30,6 +30,11 @@ function planted(extendsFrom: string, file: string, text: string): string {
   return dir
 }
 
+test('the Edge Functions pass strict TypeScript', () => {
+  const r = run('tsc', path.join(KIT, 'tsconfig.functions.json'))
+  assert.equal(r.status, 0, said(r))
+})
+
 test('the engine typechecks', () => {
   const r = run('tsc', path.join(KIT, 'tsconfig.json'))
   assert.equal(r.status, 0, said(r))
@@ -71,6 +76,6 @@ test('Node can strip every converted module', () => {
       }
     }
   }
-  for (const dir of ['build', 'src', 'vite', 'theme/src']) walk(path.join(KIT, dir))
+  for (const dir of ['build', 'src', 'vite', 'theme/src', 'supabase/functions']) walk(path.join(KIT, dir))
   assert.deepEqual(refused, [])
 })

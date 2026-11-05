@@ -198,7 +198,7 @@ export function paymentProviderRegistrySource(providers: any, selectedProvider =
     [
       'import { assertPaymentProvider, PaymentProviderError }',
       ' from ',
-      "'./payment-provider.mjs'",
+      "'./payment-provider.mts'",
     ].join(''),
     `export const SITE_PAYMENT_PROVIDER_ID = ${JSON.stringify(selectedProvider)}`,
     'export const SITE_PAYMENT_PROVIDER_FACTORIES = Object.freeze([',

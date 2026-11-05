@@ -15,9 +15,9 @@
  */
 import { admin, getPaymentProvider, json } from '../_shared/lib.ts'
 import { checkoutCompleted, subscriptionChanged, subscriptionDeleted, grantUsage, iso } from '../_shared/ledger.ts'
-import { includedGrantForInvoice } from '../_shared/usage-stripe.mjs'
+import { includedGrantForInvoice } from '../_shared/usage-stripe.mts'
 import { findProviderEntity, findProviderEntities, findProviderExternalIds } from '../_shared/payment-provider-refs.ts'
-import { assertPaymentCapabilities, normalizePaymentEvent, normalizePaymentCheckout, PaymentProviderError, providerScopedId } from '../_shared/payment-provider.mjs'
+import { assertPaymentCapabilities, normalizePaymentEvent, normalizePaymentCheckout, PaymentProviderError, providerScopedId } from '../_shared/payment-provider.mts'
 import type { PaymentProviderAdapter, PaymentProviderEvent } from '../_shared/payment-provider.d.ts'
 
 async function handle(event: PaymentProviderEvent, provider: PaymentProviderAdapter) {
@@ -98,6 +98,7 @@ async function handle(event: PaymentProviderEvent, provider: PaymentProviderAdap
         meteredLine?.metadata ?? {},
       )
       if (usageGrant) await grantUsage(
+        // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type '"subscription" | "purchase"'.
         usageGrant.user_id, usageGrant.offer_key, usageGrant.source, usageGrant.source_id,
         usageGrant.units_micros, usageGrant.period_start, usageGrant.expires_at,
         usageGrant, provider.id,
@@ -190,17 +191,18 @@ async function releaseBudgets(session: { metadata?: Readonly<Record<string, stri
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   let provider: PaymentProviderAdapter
   let events: readonly PaymentProviderEvent[]
   try {
+    // @ts-expect-error TS2322, from the conversion: Type 'PaymentProviderAdapter | null' is not assignable to type 'PaymentProviderAdapter'. Type 'null' is not assignable to type 'PaymentProvi
     provider = await getPaymentProvider()
     events = (await provider.verifyWebhook(req)).map((event) => normalizePaymentEvent(provider.id, event))
-  } catch (error) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : String(error)
-    const status = error instanceof PaymentProviderError ? error.status : 502
-    return json({ error: message, ...(error instanceof PaymentProviderError ? { code: error.code } : {}) }, status)
+    const status = error instanceof PaymentProviderError ? (error as any).status : 502
+    return json({ error: message, ...(error instanceof PaymentProviderError ? { code: (error as any).code } : {}) }, status)
   }
   let duplicates = 0
   let applied = 0

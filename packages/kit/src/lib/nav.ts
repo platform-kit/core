@@ -21,7 +21,7 @@
  * joined it. A rule about who sees a link belongs where the link is written.
  */
 
-/* the rungs a `see` may name, over the class ladder in supabase/functions/_shared/access.js */
+/* the rungs a `see` may name, over the class ladder in supabase/functions/_shared/access.ts */
 export const SEE = ['guest', 'authenticated', 'paid', 'subscribed', 'staff']
 const LADDER = ['guest', 'authenticated', 'paid', 'subscribed']
 

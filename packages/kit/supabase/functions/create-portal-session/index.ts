@@ -6,11 +6,11 @@
  */
 import { stripeConfigured, stripeMock, isMockId, stripeUnconfigured, admin, json, preflight, getUser, appUrl, getPaymentProvider } from '../_shared/lib.ts'
 import { subscriptionDeleted } from '../_shared/ledger.ts'
-import { assertPaymentCapabilities, PaymentProviderError } from '../_shared/payment-provider.mjs'
+import { assertPaymentCapabilities, PaymentProviderError } from '../_shared/payment-provider.mts'
 import type { PaymentProviderAdapter } from '../_shared/payment-provider.d.ts'
 import { findProviderExternalIds, linkProviderEntity } from '../_shared/payment-provider-refs.ts'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
 
@@ -37,8 +37,8 @@ Deno.serve(async (req) => {
       .in('object_type', ['subscription', 'payment_method'])
     if (refsError) return json({ error: `billing provider details could not be loaded: ${refsError.message}` }, 500)
     const providers = [...new Set((refs ?? [])
-      .filter((ref) => ref.object_type === 'subscription')
-      .map((ref) => ref.provider))]
+      .filter((ref: any) => ref.object_type === 'subscription')
+      .map((ref: any) => ref.provider))]
     if (providers.length > 1) {
       return json({ error: 'multiple payment providers are linked to this membership' }, 409)
     }
@@ -56,16 +56,17 @@ Deno.serve(async (req) => {
         provider: providerId,
       },
       has_payment_method: providerId != null
-        && (refs ?? []).some((ref) => ref.provider === providerId && ref.object_type === 'payment_method'),
+        && (refs ?? []).some((ref: any) => ref.provider === providerId && ref.object_type === 'payment_method'),
       provider: providerId,
     })
   }
 
   let provider: PaymentProviderAdapter
   try {
+    // @ts-expect-error TS2322, from the conversion: Type 'PaymentProviderAdapter | null' is not assignable to type 'PaymentProviderAdapter'. Type 'null' is not assignable to type 'PaymentProvi
     provider = await getPaymentProvider()
-  } catch (error) {
-    if (error instanceof PaymentProviderError) return json({ error: error.message, code: error.code }, error.status)
+  } catch (error: any) {
+    if (error instanceof PaymentProviderError) return json({ error: error.message, code: (error as any).code }, (error as any).status)
     throw error
   }
   if (provider.id === 'hyperswitch' && ['cancel', 'resume'].includes(action)) {
@@ -75,7 +76,7 @@ Deno.serve(async (req) => {
       .eq('object_type', 'subscription')
       .eq('entity_type', 'subscriptions')
     if (refsError) return json({ error: `billing subscriptions could not be loaded: ${refsError.message}` }, 500)
-    const ids = [...new Set((refs ?? []).map((ref) => ref.entity_id))]
+    const ids = [...new Set((refs ?? []).map((ref: any) => ref.entity_id))]
     if (!ids.length) return json({ subscription: null, has_payment_method: false })
     let query = admin.from('subscriptions')
       .select('id, sku, key, status, current_period_end, cancel_at_period_end, next_sku, next_key, next_at')
@@ -126,8 +127,8 @@ Deno.serve(async (req) => {
   if (action !== 'manage') return json({ error: 'unsupported billing action' }, 400)
   try {
     assertPaymentCapabilities(provider, ['customer.portal'])
-  } catch (error) {
-    if (error instanceof PaymentProviderError) return json({ error: error.message, code: error.code }, error.status)
+  } catch (error: any) {
+    if (error instanceof PaymentProviderError) return json({ error: error.message, code: (error as any).code }, (error as any).status)
     throw error
   }
   if (provider.id === 'stripe' && !stripeConfigured) return stripeUnconfigured()
@@ -157,9 +158,9 @@ Deno.serve(async (req) => {
       returnUrl: `${appUrl()}${provider.id === 'hyperswitch' ? '/billing' : '/store'}`,
     })
     return json({ url: session.url })
-  } catch (e) {
+  } catch (e: any) {
     const message = e instanceof Error ? e.message : String(e)
-    const status = e instanceof PaymentProviderError ? e.status : 502
+    const status = e instanceof PaymentProviderError ? (e as any).status : 502
     return json({ error: `${provider.id}: ${message}` }, status)
   }
 })

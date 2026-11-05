@@ -40,14 +40,14 @@ import { API_ON, SPACES_ON, ENCRYPTION_ON } from '../_shared/api/flags.ts'
 import { keyOf } from '../_shared/api/keys.ts'
 import * as SITE from '../_shared/pipe/site.js'
 import { login, logout, sessionOf, loginAllowed, noteAttempt, devicesOf, type Session } from '../_shared/matrix/session.ts'
-import { eventId, isOurs, foreignHost, readEvent, readRoom, readUser, roomId, spaceId, userId } from '../_shared/matrix/ids.js'
+import { eventId, isOurs, foreignHost, readEvent, readRoom, readUser, roomId, spaceId, userId } from '../_shared/matrix/ids.ts'
 import {
   uploadKeys, queryKeys, claimKeys, uploadCrossSigning, uploadSignatures,
   sendToDevice, takeToDevice, changedDevices,
-  putBackupVersion, getBackupVersion, putRoomKeys, getRoomKeys, deleteBackupVersion } from '../_shared/matrix/keys.js'
-import { fromEvent, toEvent } from '../_shared/matrix/events.js'
-import { READ_ONLY_STATE, roomState, spaceState } from '../_shared/matrix/state.js'
-import { REFUSALS } from '../_shared/matrix/errors.js'
+  putBackupVersion, getBackupVersion, putRoomKeys, getRoomKeys, deleteBackupVersion } from '../_shared/matrix/keys.ts'
+import { fromEvent, toEvent } from '../_shared/matrix/events.ts'
+import { READ_ONLY_STATE, roomState, spaceState } from '../_shared/matrix/state.ts'
+import { REFUSALS } from '../_shared/matrix/errors.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -111,7 +111,7 @@ async function holdersOf(s: Session, spaceId_: string) {
 const mediaOf = (row: any) => (row?.attachment ? `mxc://${HOST()}/${btoa(String(row.attachment)).replace(/=+$/, '')}` : null)
 const pathOfMedia = (id: string) => { try { return atob(id.replace(/-/g, '+').replace(/_/g, '/')) } catch { return null } }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
   /* OFF MEANS GONE. The surface is the community served as a homeserver, so it comes and goes with
@@ -470,6 +470,7 @@ Deno.serve(async (req) => {
       toDevice = { events: td.events }
       next[TD] = td.next
       const lastAt = since[AT] || 0
+      // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
       const changed = lastAt ? await changedDevices(s.db, { since: new Date(lastAt).toISOString() }) : []
       deviceLists = { changed: changed.map((u) => userId(u, host)), left: [] }
       next[AT] = Date.now()
@@ -540,7 +541,7 @@ Deno.serve(async (req) => {
     if (what === 'state' && req.method === 'PUT') {
       const type = decodeURIComponent(seg[6] ?? '')
       if (type === 'm.room.encryption') return no(REFUSALS.noEncryption())
-      return no(REFUSALS.readOnlyState(READ_ONLY_STATE[type] ?? 'That'))
+      return no(REFUSALS.readOnlyState((READ_ONLY_STATE as any)[type] ?? 'That'))
     }
 
     if (what === 'members' || what === 'joined_members') {

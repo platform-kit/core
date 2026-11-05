@@ -11,7 +11,7 @@ sources:
     packages/kit/src/lib/analytics.ts,
     packages/kit/src/lib/arrival.ts,
     packages/kit/build/analytics-sdk.test.mjs,
-    packages/kit/supabase/functions/_shared/posthog-wire.js,
+    packages/kit/supabase/functions/_shared/posthog-wire.ts,
   ]
 reviewed: 2026-11-04
 ---

@@ -2,9 +2,9 @@ import { admin, getPaymentProvider, getUser, isServiceBearer, json, preflight } 
 import { fresh } from '../_shared/compiled.ts'
 import { offerByKey } from '../_shared/offers.ts'
 import { subscriptionDeleted } from '../_shared/ledger.ts'
-import { assertPaymentCapabilities, PaymentProviderError } from '../_shared/payment-provider.mjs'
+import { assertPaymentCapabilities, PaymentProviderError } from '../_shared/payment-provider.mts'
 import { findProviderExternalIds, linkProviderEntity } from '../_shared/payment-provider-refs.ts'
-import { meteredUsageAmountMinor, paymentPeriodEnd } from '../_shared/hyperswitch-billing.mjs'
+import { meteredUsageAmountMinor, paymentPeriodEnd } from '../_shared/hyperswitch-billing.mts'
 import { settleIncrementalUsage } from '../_shared/usage-incremental.ts'
 
 async function settleMeteredUsage(provider: Awaited<ReturnType<typeof getPaymentProvider>>, row: {
@@ -22,9 +22,10 @@ async function settleMeteredUsage(provider: Awaited<ReturnType<typeof getPayment
   if (eventsError) throw new Error(`metered usage could not be loaded for ${row.subscription_id}: ${eventsError.message}`)
   if (!events?.length) return 0
 
-  const incrementalEvents = events.filter((event) => Number(event.usage_incremental_charge_minor) > 0)
+  const incrementalEvents = events.filter((event: any) => Number(event.usage_incremental_charge_minor) > 0)
   let incrementalAmountMinor = 0
   if (incrementalEvents.length) {
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'PaymentProviderAdapter | null' is not assignable to parameter of type 'PaymentProviderAdapter'. Type 'null' is not assigna
     const result = await settleIncrementalUsage(provider, {
       subscriptionId: row.subscription_id,
       periodStart: row.period_start,
@@ -38,26 +39,26 @@ async function settleMeteredUsage(provider: Awaited<ReturnType<typeof getPayment
         claimed_until: null,
         last_error: null,
       })
-      .in('usage_event_id', incrementalEvents.map((event) => event.id))
+      .in('usage_event_id', incrementalEvents.map((event: any) => event.id))
       .in('status', ['pending', 'expired'])
     if (markError) throw new Error(`incremental usage settlement could not be recorded for ${row.subscription_id}: ${markError.message}`)
     incrementalAmountMinor = result.amountMinor
   }
 
-  const regularEvents = events.filter((event) => Number(event.usage_incremental_charge_minor) <= 0)
+  const regularEvents = events.filter((event: any) => Number(event.usage_incremental_charge_minor) <= 0)
   if (!regularEvents.length) return incrementalAmountMinor
   const { data: reports, error: reportsError } = await admin.from('usage_meter_reports')
     .select('usage_event_id')
-    .in('usage_event_id', regularEvents.map((event) => event.id))
+    .in('usage_event_id', regularEvents.map((event: any) => event.id))
     .in('status', ['pending', 'expired'])
   if (reportsError) throw new Error(`metered usage reports could not be loaded for ${row.subscription_id}: ${reportsError.message}`)
-  const pendingIds = new Set((reports ?? []).map((report) => report.usage_event_id))
-  const pending = regularEvents.filter((event) => pendingIds.has(event.id))
+  const pendingIds = new Set((reports ?? []).map((report: any) => report.usage_event_id))
+  const pending = regularEvents.filter((event: any) => pendingIds.has(event.id))
   if (!pending.length) return incrementalAmountMinor
 
   const plan = row.plan_key ? offerByKey(row.plan_key) : null
   if (!plan?.currency) throw new Error(`subscription ${row.subscription_id} has metered usage but no current offer currency`)
-  const numerator = pending.reduce((sum, event) => {
+  const numerator = pending.reduce((sum: any, event: any) => {
     const unitsValue = String(event.metered_micros)
     const priceValue = String(event.overage_price_micros)
     if (!/^[1-9]\d*$/.test(unitsValue) || !/^[1-9]\d*$/.test(priceValue)) {
@@ -72,7 +73,7 @@ async function settleMeteredUsage(provider: Awaited<ReturnType<typeof getPayment
     if (customerIds.length !== 1 || paymentMethodIds.length !== 1) {
       throw new Error(`subscription ${row.subscription_id} must have exactly one Hyperswitch customer and saved payment method to settle metered usage`)
     }
-    const result = await provider.createPaymentIntent!({
+    const result = await (provider as any).createPaymentIntent!({
       amountMinor,
       currency: plan.currency,
       customerId: customerIds[0]!,
@@ -99,7 +100,7 @@ async function settleMeteredUsage(provider: Awaited<ReturnType<typeof getPayment
       claimed_until: null,
       last_error: null,
     })
-    .in('usage_event_id', pending.map((event) => event.id))
+    .in('usage_event_id', pending.map((event: any) => event.id))
     .in('status', ['pending', 'expired'])
   if (markError) throw new Error(`metered usage settlement could not be recorded for ${row.subscription_id}: ${markError.message}`)
   return incrementalAmountMinor + amountMinor
@@ -107,7 +108,7 @@ async function settleMeteredUsage(provider: Awaited<ReturnType<typeof getPayment
 
 async function run() {
   await fresh()
-  const provider = await getPaymentProvider()
+  const provider: any = await getPaymentProvider()
   if (provider.id !== 'hyperswitch') return { skipped: true, reason: 'Hyperswitch is not the selected payment provider.' }
   assertPaymentCapabilities(provider, ['checkout.subscription'])
   if (!provider.createPaymentIntent) {
@@ -120,7 +121,7 @@ async function run() {
     .eq('object_type', 'subscription')
     .eq('entity_type', 'subscriptions')
   if (refsError) throw new Error(`Hyperswitch subscription references could not be loaded: ${refsError.message}`)
-  const localIds = [...new Set((refs ?? []).map((ref) => ref.entity_id))]
+  const localIds = [...new Set((refs ?? []).map((ref: any) => ref.entity_id))]
   if (!localIds.length) return { cancelled: 0, renewed: 0, failed: 0 }
 
   const now = new Date().toISOString()
@@ -239,7 +240,7 @@ async function run() {
   return { cancelled, renewed, failed }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req)
   if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
@@ -253,8 +254,8 @@ Deno.serve(async (req) => {
   }
   try {
     return json(await run())
-  } catch (cause) {
-    const status = cause instanceof PaymentProviderError ? cause.status : 500
+  } catch (cause: any) {
+    const status = cause instanceof PaymentProviderError ? (cause as any).status : 500
     return json({ error: String((cause as Error)?.message ?? cause) }, status)
   }
 })

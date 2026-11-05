@@ -3,13 +3,15 @@
   // Node runs the source in the workspace through tsx; `tsc -p tsconfig.build.json` emits the JavaScript a site gets.
   // JavaScript not yet converted is allowed and not checked; a converted directory is checked strictly. A test still in
   // JavaScript is left out, since it is not checked and its imports reach packages that ship raw TypeScript.
-  // The Edge Functions, and the Deno tests beside them in build/, are Deno's and are checked by `deno check`, not here.
+  // The Edge Functions are checked by tsconfig.functions.json. A module of theirs the engine imports is checked here too.
+  // The Deno tests beside the engine in build/ are Deno's.
   "compilerOptions": {
     "target": "ES2023",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "allowJs": true,
+    "allowImportingTsExtensions": true,
     "checkJs": false,
     "strict": true,
     "noEmit": true,

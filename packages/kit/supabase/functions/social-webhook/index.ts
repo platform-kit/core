@@ -1,8 +1,8 @@
 import { admin } from '../_shared/lib.ts'
-import { createDirectWebhookClient, DIRECT_SOCIAL_ADAPTERS } from '../_shared/social/direct-sdk.mjs'
-import { createManagedSocial, managedOperationContext } from '../_shared/social/managed-sdk.mjs'
-import { availableSocialAutomationRoutes } from '../_shared/social/operations.mjs'
-import { normalizeSocialAutomationEvents } from '../_shared/social/automation-events.mjs'
+import { createDirectWebhookClient, DIRECT_SOCIAL_ADAPTERS } from '../_shared/social/direct-sdk.mts'
+import { createManagedSocial, managedOperationContext } from '../_shared/social/managed-sdk.mts'
+import { availableSocialAutomationRoutes } from '../_shared/social/operations.mts'
+import { normalizeSocialAutomationEvents } from '../_shared/social/automation-events.mts'
 import {
   answerLinkedInWebhookChallenge,
   answerMetaWebhookChallenge,
@@ -280,7 +280,7 @@ async function accept(req: Request, backendId: string, providerId: string) {
   return json({ received: true, accepted })
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   if (req.method === 'OPTIONS')
     return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' } })
   const url = new URL(req.url)

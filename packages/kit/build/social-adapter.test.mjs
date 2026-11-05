@@ -41,7 +41,7 @@ for (const file of productionPaths) {
 const providerSource = fs.readFileSync(path.join(root, 'packages/kit/supabase/functions/_shared/social/registry.ts'), 'utf8')
 assert.match(providerSource, /xAdapter/)
 assert.match(providerSource, /DIRECT_SOCIAL_ADAPTERS/)
-const directSource = fs.readFileSync(path.join(root, 'packages/kit/supabase/functions/_shared/social/direct-sdk.mjs'), 'utf8')
+const directSource = fs.readFileSync(path.join(root, 'packages/kit/supabase/functions/_shared/social/direct-sdk.mts'), 'utf8')
 for (const provider of ['threads', 'bluesky', 'youtube', 'tiktok', 'instagram', 'linkedin']) {
   assert.match(directSource, new RegExp(`createAdapter\\('${provider}'`), `${provider} must be registered`)
 }

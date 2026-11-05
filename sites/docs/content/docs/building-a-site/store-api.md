@@ -11,7 +11,7 @@ sources:
     packages/kit/src/lib/cart.ts,
     packages/kit/src/lib/shipto.ts,
   ]
-reviewed: 2026-10-20
+reviewed: 2026-11-04
 ---
 
 ## What it is

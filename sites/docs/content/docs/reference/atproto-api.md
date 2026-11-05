@@ -34,7 +34,7 @@ The dev server proxies the same three paths to the function (the kit's Vite plug
 
 ## Other apps are the site owner's choice
 
-Other apps signing in is off unless the site's config says `network: { apps: true }`. Off, every method an app would use — `com.atproto.server.createSession`, `refreshSession`, `createAppPassword`, every `app.bsky.*` read and write, a space's feed generator — answers 403 `Forbidden`, "This site does not let other apps sign in. Use the site itself." (`clientAllowed` in `_shared/atproto/ids.js`, pinned by `build/network.test.mjs`). What still answers: `com.atproto.server.describeServer`, which the site's own account page reads, and, where the site federates, `com.atproto.sync.*`, `com.atproto.identity.resolveHandle` and the public repository reads (`describeRepo`, `getRecord`, `listRecords`), which relays and other servers need.
+Other apps signing in is off unless the site's config says `network: { apps: true }`. Off, every method an app would use — `com.atproto.server.createSession`, `refreshSession`, `createAppPassword`, every `app.bsky.*` read and write, a space's feed generator — answers 403 `Forbidden`, "This site does not let other apps sign in. Use the site itself." (`clientAllowed` in `_shared/atproto/ids.ts`, pinned by `build/network.test.mjs`). What still answers: `com.atproto.server.describeServer`, which the site's own account page reads, and, where the site federates, `com.atproto.sync.*`, `com.atproto.identity.resolveHandle` and the public repository reads (`describeRepo`, `getRecord`, `listRecords`), which relays and other servers need.
 
 ## Identity
 

@@ -15,12 +15,12 @@
  */
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { json, preflight, getUser, admin, isServiceBearer } from '../_shared/lib.ts'
-import { videos } from '../_shared/video/index.js'
+import { videos } from '../_shared/video/index.ts'
 import { sendEmail } from '../_shared/email.ts'
 
 const env = (k: string) => Deno.env.get(k) ?? ''
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   let body: any

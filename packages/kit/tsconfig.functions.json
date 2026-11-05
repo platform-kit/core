@@ -1,0 +1,8 @@
+{
+  // The Edge Functions, checked by `npm run typecheck` (openspec: typescript-throughout). They run in Deno and are read by
+  // tsc here: Deno's globals and URL imports are declared in supabase/functions/deno-shim.d.ts.
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": ["node"], "lib": ["ES2023", "DOM", "DOM.Iterable", "DOM.AsyncIterable"] },
+  "include": ["supabase/functions"],
+  "exclude": ["node_modules"]
+}

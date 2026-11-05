@@ -4,7 +4,7 @@ import {
   assertPaymentCapabilities,
   normalizePaymentCheckout,
   PaymentProviderError,
-} from '../supabase/functions/_shared/payment-provider.mjs'
+} from '../supabase/functions/_shared/payment-provider.mts'
 
 type RequestBody = Record<string, unknown> & { metadata?: Record<string, unknown> }
 const requests: Array<{ url: string; init: RequestInit; body?: RequestBody }> = []

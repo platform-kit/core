@@ -14,8 +14,8 @@
  * and the purchase stands.
  */
 import nodemailer from 'npm:nodemailer@6'
-import { fill, plain, unescapeText } from './emails/fill.js'
-import { SAMPLES } from './emails/tags.js'
+import { fill, plain, unescapeText } from './emails/fill.ts'
+import { SAMPLES } from './emails/tags.ts'
 import { of, onRefresh } from './compiled.ts'
 import strings from './emails/strings.json' with { type: 'json' }
 import { appUrl } from './lib.ts'

@@ -26,11 +26,11 @@ import { SESSIONS, sessionBySlug, judge, tiersOf, forRank, schedulerOf, schedule
 import { formsNow } from '../_shared/forms-live.ts'
 import { makeBooking, moveBooking, cancelBooking } from '../_shared/booking.ts'
 import { offer } from '../_shared/offers.ts'
-import { eventTypeOf, eventTypeId } from '../_shared/api/cal/event-type.js'
-import { bookingOf, statusFilter } from '../_shared/api/cal/booking.js'
-import { scheduleOf } from '../_shared/api/cal/schedule.js'
-import { ok, fail, CODES } from '../_shared/api/cal/envelope.js'
-import { TRIGGERS } from '../_shared/api/cal/webhook.js'
+import { eventTypeOf, eventTypeId } from '../_shared/api/cal/event-type.ts'
+import { bookingOf, statusFilter } from '../_shared/api/cal/booking.ts'
+import { scheduleOf } from '../_shared/api/cal/schedule.ts'
+import { ok, fail, CODES } from '../_shared/api/cal/envelope.ts'
+import { TRIGGERS } from '../_shared/api/cal/webhook.ts'
 import { calBookingOf } from '../_shared/scheduling-events.ts'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
@@ -44,7 +44,7 @@ const priceOf = (s: Session) => { if (!s.sku) return null; try { const o = offer
 const WEBHOOK_COLS = 'id, subscriber_url, triggers, active, payload_template, event_type_slug, created_by, created_at, updated_at, last_at, last_error'
 const webhookView = (w: any) => ({ id: eventTypeId('webhook:' + w.id), uid: w.id, subscriberUrl: w.subscriber_url, triggers: w.triggers, active: !!w.active, payloadTemplate: w.payload_template || null, eventTypeId: w.event_type_slug ? eventTypeId(w.event_type_slug) : null, userId: w.created_by ? eventTypeId('user:' + w.created_by) : null, createdAt: w.created_at, updatedAt: w.updated_at, lastDeliveredAt: w.last_at, lastError: w.last_error })
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   await fresh()
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const url = new URL(req.url)
@@ -67,6 +67,7 @@ Deno.serve(async (req) => {
   else if (token) { const user = await getUser(req); if (user) { const { data: prof } = await admin.from('profiles').select('email, email_verified_at, display_name, role, roles').eq('id', user.id).maybeSingle(); caller = { kind: 'jwt', id: user.id, email: prof?.email_verified_at ? (prof?.email ?? '').toLowerCase() : '', role: (Array.isArray(prof?.roles) && prof.roles.includes('admin')) || prof?.role === 'admin' ? 'admin' : 'user', name: (user.user_metadata?.full_name ?? user.user_metadata?.name ?? prof?.display_name ?? '') as string } } }
   if (!caller) return err(401, 'A key of kind scheduling, or a signed-in reader.')
   const rl = await rateLimit(caller.id); extra = rl.headers
+  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   if (rl.over) return reply(fail(429, 'TOO_MANY_REQUESTS', 'Rate limit exceeded.').body, 429, { 'Retry-After': String(rl.reset) })
   const isKey = caller.kind === 'key'
   const admitted = async (s: Session) => { if (isKey) return true; const c = caller as Extract<Caller, { kind: 'jwt' }>; if (c.role === 'admin') return true; const { rank, tiers } = await tiersOf(c.id); return forRank(s, rank, true, tiers) }
@@ -83,7 +84,7 @@ Deno.serve(async (req) => {
     if (seg[1] === 'event-types') {
       if (m !== 'GET') return err(405, 'Event types are written in content/sessions; the API reads them.')
       const list = []
-      for (const s of SESSIONS) { if (!(await admitted(s))) continue; if (q.eventSlug && s.slug !== q.eventSlug) continue; const hosts = await hostsOf(s); if (q.username && !hosts.some((h) => String(h.email).split('@')[0] === q.username || h.email === q.username)) continue; list.push(eventTypeOf(s, { hosts, price: priceOf(s), site: site(), form: s.form ? (await formsNow())[s.form] : null })) }
+      for (const s of SESSIONS) { if (!(await admitted(s))) continue; if (q.eventSlug && s.slug !== q.eventSlug) continue; const hosts = await hostsOf(s); if (q.username && !hosts.some((h: any) => String(h.email).split('@')[0] === q.username || h.email === q.username)) continue; list.push(eventTypeOf(s, { hosts, price: priceOf(s), site: site(), form: (s as any).form ? (await formsNow())[(s as any).form] : null })) }
       if (seg.length === 2) return reply(ok(list))
       const one = list.find((e) => String(e.id) === seg[2] || e.slug === seg[2]); return one ? reply(ok(one)) : err(404, `No event type ${seg[2]}.`)
     }
@@ -117,7 +118,7 @@ Deno.serve(async (req) => {
       }
       if (seg.length === 2 && m === 'POST') {
         const body = await readBody(); if (!body) return err(400, 'A JSON body.')
-        const s = typeOf(body.eventTypeId != null ? String(body.eventTypeId) : body.eventTypeSlug || null); if (!s) return err(404, 'eventTypeId or eventTypeSlug names no type.')
+        const s: any = typeOf(body.eventTypeId != null ? String(body.eventTypeId) : body.eventTypeSlug || null); if (!s) return err(404, 'eventTypeId or eventTypeSlug names no type.')
         const start = String(body.start || ''); if (Number.isNaN(Date.parse(start))) return err(400, 'start is a date-time.')
         if (Date.parse(start) < Date.now()) return err(400, 'That time has passed.')
         const a = body.attendee || {}

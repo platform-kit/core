@@ -14,7 +14,7 @@ import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { pull, pullPending, retain } from '../_shared/recordings.ts'
 import { POLICY } from '../_shared/marketing.ts'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
   let body: any = {}

@@ -18,7 +18,7 @@ const cleanRanges = (v: unknown): [string, string][] | null => {
   return out
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   const user = await getUser(req)

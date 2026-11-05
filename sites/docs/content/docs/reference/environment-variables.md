@@ -21,7 +21,7 @@ sources:
     packages/kit/build/hyperswitch-test-stack.mts,
     packages/kit/build/hyperswitch-v2-test.compose.yml,
     packages/kit/build/hyperswitch-local.integration.mjs,
-    packages/kit/supabase/functions/_shared/hyperswitch-api.mjs,
+    packages/kit/supabase/functions/_shared/hyperswitch-api.mts,
     packages/kit/supabase/config.toml.template,
     packages/kit/build/test.mts,
     packages/kit/build/modules/manifest.mts,

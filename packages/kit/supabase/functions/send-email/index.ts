@@ -12,7 +12,7 @@ import { renderEmail, sendEmail, smtpConfigured, SAMPLES, type EmailKind } from 
 
 const KINDS: EmailKind[] = ['order', 'shipped', 'files', 'chat', 'support', 'support-digest', 'magic-link', 'recovery', 'campaign', 'provider-terms', 'session-booked', 'session-held', 'session-to-confirm', 'session-declined', 'session-moved', 'session-cancelled', 'session-reminder', 'event-reminder']
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pf = preflight(req); if (pf) return pf
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   const user = await getUser(req)

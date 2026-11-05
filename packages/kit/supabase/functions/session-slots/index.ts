@@ -16,7 +16,7 @@ import { rolesOf, isProvider } from '../_shared/roles.ts'
 import { typeFor, sessionOf, tiersOf, forRank, schedulerOf, schedulerIdOf } from '../_shared/cal.ts'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   await fresh()
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)

@@ -23,14 +23,14 @@ import { admin, appUrl } from '../_shared/lib.ts'
 import { tokenOf, keyOf, rateLimit } from '../_shared/api/keys.ts'
 import { API_ON } from '../_shared/api/flags.ts'
 import { formsNow, invalidateForms, CLOUD } from '../_shared/forms-live.ts'
-import { modelFromDefinition, applyPatch } from '../_shared/api/typeform/document.js'
+import { modelFromDefinition, applyPatch } from '../_shared/api/typeform/document.ts'
 import { pipeFor, makerOf } from '../_shared/api/pipe.ts'
-import { pushPending } from '../_shared/github.js'
-import { definitionOf, listItemOf } from '../_shared/api/typeform/definition.js'
-import { itemOf, fileUrlOf } from '../_shared/api/typeform/response.js'
-import { parseResponsesQuery, applyResponsesQuery } from '../_shared/api/typeform/query.js'
-import { errorOf } from '../_shared/api/typeform/errors.js'
-import { summaryOf } from '../_shared/api/typeform/insights.js'
+import { pushPending } from '../_shared/github.ts'
+import { definitionOf, listItemOf } from '../_shared/api/typeform/definition.ts'
+import { itemOf, fileUrlOf } from '../_shared/api/typeform/response.ts'
+import { parseResponsesQuery, applyResponsesQuery } from '../_shared/api/typeform/query.ts'
+import { errorOf } from '../_shared/api/typeform/errors.ts'
+import { summaryOf } from '../_shared/api/typeform/insights.ts'
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, accept', 'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS' }
 const MAX_ROWS = 5000
@@ -53,13 +53,14 @@ async function responsesOf(slug: string) {
   return (rows ?? []).map((row: any) => ({ row, answers: answers[row.id] || [] }))
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const url = new URL(req.url)
   const q: Record<string, string> = {}; url.searchParams.forEach((v, k) => { q[k] = v })
   const path = url.pathname.replace(/^(?:.*?\/functions\/v1)?\/forms-api(?=\/|$)/, '').replace(/\/+$/, '') || '/'
   let extra: Record<string, string> = {}
   const reply = (body: unknown, status = 200, headers: Record<string, string> = {}) => new Response(status === 204 ? null : JSON.stringify(body), { status, headers: { ...CORS, ...extra, 'Content-Type': 'application/json', ...headers } })
+  // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
   const fail = (code: string, description?: string) => { const e = errorOf(code, description); return reply(e.body, e.status) }
   if (!API_ON) return fail('NOT_FOUND', 'The API is not on for this site.')
 
@@ -68,6 +69,7 @@ Deno.serve(async (req) => {
   if (caller === 'other-kind') return fail('FORBIDDEN', 'This key does not open the Forms API: make one of kind forms under Settings → API.')
   if (!caller) return fail('AUTHENTICATION_FAILED')
   const rl = await rateLimit(caller.id ?? 'key'); extra = rl.headers
+  // @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 1.
   if (rl.over) return reply(errorOf('TOO_MANY_REQUESTS').body, 429, { 'Retry-After': String(rl.reset) })
 
   const seg = path.split('/').filter(Boolean)

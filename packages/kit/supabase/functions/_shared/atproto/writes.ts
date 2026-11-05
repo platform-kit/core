@@ -22,9 +22,9 @@ import { Lexicons, jsonToLex } from 'npm:@atproto/lexicon@0.7.16'
    record into what it is — so a blob is recognised as a blob */
 const lexicons = new Lexicons(schemas as any)
 import { cidForRawBytes } from 'npm:@atproto/lex-data@0.1.8'
-import { POST, LIKE, REPOST, FOLLOW, BLOCK, PROFILE, WRITABLE, parseUri, uriOf, isTid, messageOfKey, spaceKey, handleOfDidWeb, usernameOfHandle, cleanDomain } from './ids.js'
-import { MEDIA, kindOfType } from './media.js'
-import { REFUSALS } from './errors.js'
+import { POST, LIKE, REPOST, FOLLOW, BLOCK, PROFILE, WRITABLE, parseUri, uriOf, isTid, messageOfKey, spaceKey, handleOfDidWeb, usernameOfHandle, cleanDomain } from './ids.ts'
+import { MEDIA, kindOfType } from './media.ts'
+import { REFUSALS } from './errors.ts'
 import { type Ctx, loadPosts, recordOf, cidOf, didFor, loadPeople } from './views.ts'
 
 type Fail = { status: number; body: unknown }

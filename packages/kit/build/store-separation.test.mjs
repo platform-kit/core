@@ -75,7 +75,7 @@ const READERS = [
 const PRINTS = ['build/print', 'src/lib/print-offers.ts', 'supabase/functions/_shared/print.ts']
 /* and the garment's, for the same reason in the other direction: a refactor that emptied the
    apparel kind would otherwise pass check (1) with flying colours */
-const CLOTHES = ['build/kinds/apparel.ts', 'supabase/functions/_shared/suppliers/printify.js']
+const CLOTHES = ['build/kinds/apparel.ts', 'supabase/functions/_shared/suppliers/printify.ts']
 
 const read = (rel) => { try { return fs.readFileSync(path.join(KIT, rel), 'utf8') } catch { return null } }
 /* A WORD IN A COMMENT IS DOCUMENTATION; A WORD IN CODE IS THE LEAK. `build/kinds` explains

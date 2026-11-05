@@ -10,7 +10,7 @@ sources:
     packages/kit/supabase/functions/event-reminders,
     packages/kit/theme/src/pages/SpacesPage.vue,
   ]
-reviewed: 2026-10-31
+reviewed: 2026-11-04
 ---
 
 An event gives a community one place to say what is happening, when it happens, who it is for, and how to take part. Events appear in the community calendar and can belong to a space and a room, so readers can find the event and the conversation about it together. Events are part of the community, so the events module needs the spaces module on.

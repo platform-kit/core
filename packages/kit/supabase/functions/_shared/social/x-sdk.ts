@@ -1,7 +1,7 @@
 import { connectedAccountRef, createSocial } from 'npm:@opencoredev/social-sdk@0.5.0'
 import { x } from 'npm:@opencoredev/social-sdk@0.5.0/x'
 import { refreshOAuthToken } from 'npm:@opencoredev/social-sdk@0.5.0/server'
-import { createSocialAdapterRegistry, defineSocialAdapter } from './adapter.mjs'
+import { createSocialAdapterRegistry, defineSocialAdapter } from './adapter.mts'
 
 const DEFAULT_SCOPES = ['tweet.read', 'users.read', 'tweet.write', 'media.write', 'offline.access']
 
@@ -51,6 +51,7 @@ const mediaContent = async (items: SocialMedia[]) => Promise.all(items.map(async
   kind: item.kind,
   source: {
     kind: 'blob' as const,
+    // @ts-expect-error TS2322, from the conversion: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'. Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Array
     blob: new Blob([item.bytes], { type: item.mimeType }),
     fingerprint: await digest(item.bytes),
   },
@@ -98,7 +99,7 @@ export const xAdapter = defineSocialAdapter({
   nativeOperations: [],
   defaultScopes: DEFAULT_SCOPES,
   allowedScopes: DEFAULT_SCOPES,
-  async authorizationUrl({ state, redirectUri, scopes, codeChallenge, credentials }) {
+  async authorizationUrl({ state, redirectUri, scopes, codeChallenge, credentials }: any) {
     const url = new URL('https://x.com/i/oauth2/authorize')
     url.search = new URLSearchParams({
       response_type: 'code',
@@ -111,7 +112,7 @@ export const xAdapter = defineSocialAdapter({
     }).toString()
     return url.toString()
   },
-  async exchangeCode({ code, redirectUri, verifier, credentials }) {
+  async exchangeCode({ code, redirectUri, verifier, credentials }: any) {
     return tokenRequest('https://api.x.com/2/oauth2/token', new URLSearchParams({
       grant_type: 'authorization_code',
       code,
@@ -119,7 +120,7 @@ export const xAdapter = defineSocialAdapter({
       code_verifier: verifier,
     }), xCredentials(credentials))
   },
-  async refreshToken({ tokens, credentials }) {
+  async refreshToken({ tokens, credentials }: any) {
     const next = await refreshOAuthToken('x', {
       clientId: credentials.clientId,
       clientSecret: credentials.clientSecret,
@@ -137,7 +138,7 @@ export const xAdapter = defineSocialAdapter({
       scopes: [...(next.scopes ?? tokens.scopes)],
     }
   },
-  async listAccounts({ tokens }) {
+  async listAccounts({ tokens }: any) {
     const response = await fetch('https://api.x.com/2/users/me?user.fields=profile_image_url', {
       headers: { Authorization: `Bearer ${tokens.accessToken}` },
     })
@@ -153,33 +154,33 @@ export const xAdapter = defineSocialAdapter({
       avatarUrl: typeof user.profile_image_url === 'string' ? user.profile_image_url : null,
     }]
   },
-  async capabilities({ account, tokens }) {
+  async capabilities({ account, tokens }: any) {
     return clientFor(account, tokens).capabilities().default
   },
-  createClient({ account, tokens }) {
+  createClient({ account, tokens }: any) {
     return clientFor(account, tokens)
   },
-  async validatePost({ account, tokens, text, attachments }) {
+  async validatePost({ account, tokens, text, attachments }: any) {
     const social = clientFor(account, tokens)
     const prepared = social.posts.prepare({
       targets: [{ account: refFor(account) }] as const,
       content: { text, media: await mediaContent(attachments) },
     })
-    return { valid: prepared.ok, issues: prepared.issues.map((issue) => ({ code: issue.code, message: issue.message })) }
+    return { valid: prepared.ok, issues: prepared.issues.map((issue: any) => ({ code: issue.code, message: issue.message })) }
   },
-  async uploadMedia({ account, media, tokens }) {
+  async uploadMedia({ account, media, tokens }: any) {
     const social = clientFor(account, tokens)
     const [content] = await mediaContent([media])
     const ref = await social.media.upload(content, refFor(account))
     return { providerMediaId: JSON.stringify(ref) }
   },
-  async publish({ account, text, media, tokens, idempotencyKey }) {
+  async publish({ account, text, media, tokens, idempotencyKey }: any) {
     const social = clientFor(account, tokens)
     const result = await social.posts.publish({
       targets: [{ account: refFor(account) }] as const,
       content: {
         text,
-        media: media.map((item) => ({
+        media: media.map((item: any) => ({
           kind: item.kind,
           source: { kind: 'media-ref' as const, ref: JSON.parse(item.providerMediaId) },
           mimeType: item.mimeType,
@@ -201,15 +202,15 @@ export const xAdapter = defineSocialAdapter({
       return { outcome: 'failed' as const, code: outcome.code, message: outcome.message, retryDisposition: outcome.retryDisposition }
     return { outcome: 'failed' as const, code: outcome.reason, message: 'The Social SDK did not submit this target.' }
   },
-  async reconcile({ account, tokens, providerPostId, text, submittedAt }) {
+  async reconcile({ account, tokens, providerPostId, text, submittedAt }: any) {
     const social = clientFor(account, tokens)
     const page = await social.posts.list(refFor(account), { limit: 100 })
     if (providerPostId) {
-      const found = page.items.find((post) => post.id === providerPostId)
+      const found = page.items.find((post: any) => post.id === providerPostId)
       if (found) return { outcome: 'published' as const, providerPostId, publishedAt: String(found.created_at || '') }
     }
     const lowerBound = Date.parse(submittedAt) - 60_000
-    const matches = page.items.filter((post) => {
+    const matches = page.items.filter((post: any) => {
       if (post.text !== text || typeof post.id !== 'string') return false
       const createdAt = typeof post.created_at === 'string' ? Date.parse(post.created_at) : NaN
       return Number.isFinite(createdAt) && createdAt >= lowerBound
@@ -223,6 +224,7 @@ export const xAdapter = defineSocialAdapter({
 export const SOCIAL_ADAPTERS = createSocialAdapterRegistry([xAdapter])
 
 async function digest(bytes: Uint8Array) {
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Uint8Array<ArrayBufferLike>' is not assignable to parameter of type 'BufferSource'. Type 'Uint8Array<ArrayBufferLike>' is 
   const hash = await crypto.subtle.digest('SHA-256', bytes)
   return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }

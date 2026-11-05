@@ -15,10 +15,10 @@
 import { admin, appUrl, getPaymentProvider, json, preflight, getUser } from '../_shared/lib.ts'
 import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { connectAccount, refreshAccount, whatIsDue, sendDue, payoutPolicy, payoutsLive } from '../_shared/payouts.ts'
-import { assertPaymentCapabilities } from '../_shared/payment-provider.mjs'
-import { hyperswitchClientUrl } from '../_shared/hyperswitch-api.mjs'
+import { assertPaymentCapabilities } from '../_shared/payment-provider.mts'
+import { hyperswitchClientUrl } from '../_shared/hyperswitch-api.mts'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pf = preflight(req); if (pf) return pf
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   const user = await getUser(req)
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
   if (action === 'payout_method_session') {
     try {
-      const provider = await getPaymentProvider()
+      const provider: any = await getPaymentProvider()
       assertPaymentCapabilities(provider, ['payouts.connected-accounts'])
       if (provider.id !== 'hyperswitch' || !provider.createPaymentMethodSession) {
         return json({ error: 'this payment provider does not support saved payout-method setup' }, 422)

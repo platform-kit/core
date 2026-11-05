@@ -24,7 +24,7 @@ import { Repo, MemoryBlockstore, BlockMap, WriteOpAction, blocksToCarFile } from
 import { jsonToLex, lexToJson } from 'npm:@atproto/lex-json@0.1.7'
 import { encode as cborEncode } from 'npm:@atproto/lex-cbor@0.1.7'
 import { parseCid } from 'npm:@atproto/lex-data@0.1.8'
-import { POST, LIKE, REPOST, FOLLOW, BLOCK, PROFILE, uriOf, handleOf } from './ids.js'
+import { POST, LIKE, REPOST, FOLLOW, BLOCK, PROFILE, uriOf, handleOf } from './ids.ts'
 import { newCtx, loadPeople, loadPosts, recordOf, cidOf, didFor } from './views.ts'
 
 const PLC = () => (Deno.env.get('NETWORK_PLC_URL') || 'https://plc.directory').replace(/\/+$/, '')
@@ -84,6 +84,7 @@ const fromHex = (h: string) => { const s = String(h).replace(/^\\x/, ''); const 
 async function loadRepo(did: string) {
   const { data: head } = await admin.from('network_commits').select('cid, rev').eq('did', did).maybeSingle()
   const storage = new MemoryBlockstore()
+  // @ts-ignore only Deno has this package's types: Cannot use namespace 'Repo' as a type.
   if (!head) return { storage, repo: null as Repo | null }
   const { data: rows } = await admin.from('network_repo_blocks').select('cid, bytes').eq('did', did)
   for (const r of (rows || []) as any[]) await storage.putBlock(parseCid(r.cid), fromHex(r.bytes))

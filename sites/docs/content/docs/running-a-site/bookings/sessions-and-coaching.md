@@ -36,7 +36,7 @@ sources:
     packages/kit/theme/src/instrument/ui/results/CoachingPage.vue,
     packages/kit/supabase/functions/_shared/sessions,
     packages/kit/build/tiers.test.mjs,
-    packages/kit/supabase/functions/_shared/sessions/guest-booking.js,
+    packages/kit/supabase/functions/_shared/sessions/guest-booking.ts,
     packages/kit/supabase/functions/create-checkout-session,
     packages/kit/supabase/functions/_shared/ledger.ts,
     packages/kit/supabase/schemas/40-commerce.sql,
@@ -112,7 +112,7 @@ requires: tier-2 # tier-2 and every higher rank
 
 A space's `fill` has always read a list this way, so it is one grammar and not two. Every tier named must be one a membership declares, and a class (`anyone`, `guest`, `authenticated`) inside a list is refused at the compile — a list is tiers alone.
 
-The rule itself is one function, `_shared/sessions/admits.js`, asked by both the app's picker and the judge the functions run before anything is booked: two sides of a gate that disagree are not a gate. `build/tiers.test.mjs` pins it.
+The rule itself is one function, `_shared/sessions/admits.ts`, asked by both the app's picker and the judge the functions run before anything is booked: two sides of a gate that disagree are not a gate. `build/tiers.test.mjs` pins it.
 
 A membership product may carry **Sessions included**: rows of a booking type with how many a week and a month (0 is no limit), edited on the product's drawer as rows — a type from the list and two numbers. Somebody whose live tier lists a type may book it under those counts whatever the type's own `requires` and counts say — a paid type included, no credit asked — so one type serves every tier at its own quota; a tier that lists nothing leaves the types' own rules to decide, as before. The judge and the Coaching tab's options read the tier first, the type second.
 

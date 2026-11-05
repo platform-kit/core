@@ -15,7 +15,7 @@ sources:
     packages/kit/theme/src/components/landing/LandingEntries.vue,
     packages/kit/theme/src/content/ui/models.md,
   ]
-reviewed: 2026-10-01
+reviewed: 2026-11-04
 ---
 
 The kit ships five kinds of content — articles, books, wiki, docs, pages. A **content model** is a kind of your own: a site that needs teachers, events, venues or testimonials defines each as a model in the admin — its fields, what each may hold, how it is delivered — and gets a full CMS over it: a grid and a drawer, a Published switch, and every entry a markdown file with frontmatter like the rest of the content. Module: `models` (on unless a site says otherwise).

@@ -252,7 +252,7 @@ Verified by: `packages/kit/build/site-nav.test.mjs`; the demo's header screensho
 - **WHEN** an item names an audience
 - **THEN** a visitor on a lower rung never sees it, a visitor on that rung or higher does, an item naming `guest` disappears once somebody signs in, and a `tier:` item is shown only to a member of that tier or higher
 
-Verified by: `packages/kit/build/site-nav.test.mjs` over the class ladder in `_shared/access.js`; the demo's header screenshotted signed out and as `member@example.com`
+Verified by: `packages/kit/build/site-nav.test.mjs` over the class ladder in `_shared/access.ts`; the demo's header screenshotted signed out and as `member@example.com`
 
 #### Scenario: a module goes off
 

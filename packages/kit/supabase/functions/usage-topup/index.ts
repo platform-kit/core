@@ -1,16 +1,16 @@
 import { admin, appUrl, getPaymentProvider, getUser, json, preflight, stripeConfigured, stripeMock, stripeUnconfigured } from '../_shared/lib.ts'
 import { of, fresh } from '../_shared/compiled.ts'
-import { assertPaymentCapabilities } from '../_shared/payment-provider.mjs'
-import { hyperswitchClientUrl } from '../_shared/hyperswitch-api.mjs'
+import { assertPaymentCapabilities } from '../_shared/payment-provider.mts'
+import { hyperswitchClientUrl } from '../_shared/hyperswitch-api.mts'
 import { findProviderExternalIds, linkProviderEntity } from '../_shared/payment-provider-refs.ts'
 import { settleIncrementalUsage } from '../_shared/usage-incremental.ts'
-import { loadOwnedIncrementalSettlement } from '../_shared/usage-incremental-recovery.mjs'
+import { loadOwnedIncrementalSettlement } from '../_shared/usage-incremental-recovery.mts'
 
 type AutoTopUpConfig = { enabled: boolean; currency: string | null; packs: Array<Record<string, any>> }
 
 const fail = (message: string, status = 400) => json({ error: message }, status)
 const isStripeMock = (provider: Awaited<ReturnType<typeof getPaymentProvider>>) =>
-  provider.id === 'stripe' && stripeMock
+  (provider as any).id === 'stripe' && stripeMock
 const query = async (builder: any, label: string) => {
   const { data, error } = await builder
   if (error) throw new Error(`${label}: ${error.message}`)
@@ -22,18 +22,18 @@ async function customerFor(provider: Awaited<ReturnType<typeof getPaymentProvide
     admin.from('profiles').select('stripe_customer_id').eq('id', user.id).maybeSingle(),
     'billing profile could not be loaded',
   )
-  const linkedCustomers = await findProviderExternalIds(provider.id, 'customer', 'profiles', user.id)
-  const customerId = linkedCustomers[0] ?? (provider.id === 'stripe' ? profile?.stripe_customer_id : null)
+  const linkedCustomers = await findProviderExternalIds((provider as any).id, 'customer', 'profiles', user.id)
+  const customerId = linkedCustomers[0] ?? ((provider as any).id === 'stripe' ? profile?.stripe_customer_id : null)
   if (customerId && !isStripeMock(provider)) {
-    if (!linkedCustomers.length) await linkProviderEntity(provider.id, 'customer', customerId, 'profiles', user.id)
+    if (!linkedCustomers.length) await linkProviderEntity((provider as any).id, 'customer', customerId, 'profiles', user.id)
     return { id: customerId, email: user.email || undefined }
   }
   if (isStripeMock(provider)) return { id: profile?.stripe_customer_id || `cus_mock_${user.id}`, email: user.email || undefined }
   assertPaymentCapabilities(provider, ['customer.create'])
-  if (!provider.createCustomer) throw new Error(`payment provider "${provider.id}" cannot create a billing customer`)
-  const customer = await provider.createCustomer({ userId: user.id, email: user.email || undefined })
-  await linkProviderEntity(provider.id, 'customer', customer.customerId, 'profiles', user.id)
-  if (provider.id === 'stripe') {
+  if (!(provider as any).createCustomer) throw new Error(`payment provider "${(provider as any).id}" cannot create a billing customer`)
+  const customer = await (provider as any).createCustomer({ userId: user.id, email: user.email || undefined })
+  await linkProviderEntity((provider as any).id, 'customer', customer.customerId, 'profiles', user.id)
+  if ((provider as any).id === 'stripe') {
     const { error } = await admin.from('profiles').update({ stripe_customer_id: customer.customerId }).eq('id', user.id)
     if (error) throw new Error(`billing customer could not be saved: ${error.message}`)
   }
@@ -43,14 +43,14 @@ async function customerFor(provider: Awaited<ReturnType<typeof getPaymentProvide
 async function savedPaymentMethod(provider: Awaited<ReturnType<typeof getPaymentProvider>>, customerId: string) {
   if (isStripeMock(provider)) return { customer: customerId, paymentMethod: 'pm_mock_usage' }
   assertPaymentCapabilities(provider, ['usage.prepaid-top-up'])
-  if (!provider.getDefaultPaymentMethod) {
-    throw new Error(`payment provider "${provider.id}" cannot load a saved payment method`)
+  if (!(provider as any).getDefaultPaymentMethod) {
+    throw new Error(`payment provider "${(provider as any).id}" cannot load a saved payment method`)
   }
-  const method = await provider.getDefaultPaymentMethod(customerId)
+  const method = await (provider as any).getDefaultPaymentMethod(customerId)
   return method.paymentMethodId ? { customer: customerId, paymentMethod: method.paymentMethodId } : null
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return fail('method not allowed', 405)
   const user = await getUser(req)
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
   try {
     await fresh()
-    const provider = await getPaymentProvider()
+    const provider: any = await getPaymentProvider()
     const body = await req.json().catch(() => ({}))
     /* the site-wide banner's question (UsagePaymentAlert.vue): does a usage payment need this customer?
        Answered from their own subscriptions alone, before any catalog or payment-method work, with one
@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       return json({ attention: statuses.has('requires_action') ? 'requires_action' : statuses.has('failed') ? 'failed' : null })
     }
     if (provider.id === 'stripe' && !stripeConfigured) return stripeUnconfigured()
-    const config = of<AutoTopUpConfig>('catalog').usage_auto_topup || { enabled: false, currency: null, packs: [] }
+    const config = (of<AutoTopUpConfig>('catalog') as any).usage_auto_topup || { enabled: false, currency: null, packs: [] }
 
     if (body.action === 'read') {
       const prefs = await query(
@@ -266,7 +266,7 @@ Deno.serve(async (req) => {
         return json({ error: 'automatic top-up is not enabled by this site', code: 'topup_site_disabled' }, 409)
       }
       if (body.enabled === true) assertPaymentCapabilities(provider, ['usage.prepaid-top-up'])
-      const pack = config.packs?.find((item) => item.key === body.offer_key)
+      const pack = config.packs?.find((item: any) => item.key === body.offer_key)
       if (!pack || pack.currency !== config.currency) return fail('choose an eligible usage pack')
       const enabled = body.enabled === true
       let consentAt = null

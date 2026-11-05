@@ -9,7 +9,7 @@ import { admin, json, preflight, getUser } from '../_shared/lib.ts'
 import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { BLASTS, POLICY, audience, recentSends, cooled, sendMarketing, alreadyHad } from '../_shared/marketing.ts'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pf = preflight(req); if (pf) return pf
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   const user = await getUser(req)

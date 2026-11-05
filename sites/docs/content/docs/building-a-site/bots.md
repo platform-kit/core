@@ -16,7 +16,7 @@ sources:
     packages/kit/build/copilot.test.mjs,
     packages/kit/theme/src/content/skills,
     packages/kit/src/lib/agents/loop.ts,
-    packages/kit/supabase/functions/_shared/usage-gate.mjs,
+    packages/kit/supabase/functions/_shared/usage-gate.mts,
     packages/kit/supabase/functions/_shared/usage.ts,
     packages/kit/build/usage.test.mjs,
     packages/kit/src/lib/agents/api.ts,
@@ -28,22 +28,22 @@ sources:
     packages/kit/build/bots-db.test.mjs,
     packages/kit/build/models/core/agents.mts,
     packages/kit/agent,
-    packages/kit/supabase/functions/_shared/video/livekit.js,
+    packages/kit/supabase/functions/_shared/video/livekit.ts,
     packages/kit/build/velite.mts,
     packages/kit/build/steps/bots.mts,
     packages/kit/supabase/schemas/96-agents.sql,
     packages/kit/supabase/functions/agent-run/index.ts,
-    packages/kit/supabase/functions/_shared/agents/provider.js,
-    packages/kit/supabase/functions/_shared/agents/anthropic.js,
+    packages/kit/supabase/functions/_shared/agents/provider.ts,
+    packages/kit/supabase/functions/_shared/agents/anthropic.ts,
     packages/kit/build/anthropic.test.mjs,
-    packages/kit/supabase/functions/_shared/agents/tools.js,
-    packages/kit/supabase/functions/_shared/choices.js,
+    packages/kit/supabase/functions/_shared/agents/tools.ts,
+    packages/kit/supabase/functions/_shared/choices.ts,
     packages/kit/theme/src/components/chat/ChatChoices.vue,
     packages/kit/supabase/schemas/13-search.sql,
     packages/kit/build/search-push.mts,
     packages/kit/build/search-db.mts,
     packages/kit/build/steps/search.mts,
-    packages/kit/supabase/functions/_shared/agents/desk-bot.js,
+    packages/kit/supabase/functions/_shared/agents/desk-bot.ts,
     packages/kit/theme/src/components/spaces/SpaceCommand.vue,
     packages/kit/supabase/functions/social-automation,
     packages/kit/supabase/functions/social-webhook,
@@ -299,7 +299,7 @@ Which copy is it?
 - Read the delivery policy -> /content/docs/refunds
 ```
 
-It is the grammar a chat prompt already uses (`_shared/choices.js`, shared by the functions, the browser and the build) rather than a shape only a model may write. That matters more than it sounds: a JSON envelope for quick replies is a thing to validate, a thing to draw, a thing for a model to get subtly wrong, and a thing that leaves a bot which has never heard of it unable to offer anything. Here a bot that knows nothing about buttons writes a list, and it renders as a list.
+It is the grammar a chat prompt already uses (`_shared/choices.ts`, shared by the functions, the browser and the build) rather than a shape only a model may write. That matters more than it sounds: a JSON envelope for quick replies is a thing to validate, a thing to draw, a thing for a model to get subtly wrong, and a thing that leaves a bot which has never heard of it unable to offer anything. Here a bot that knows nothing about buttons writes a list, and it renders as a list.
 
 **The cut happens once, on the way into the row.** The worker takes the list off the words and stores the choices apart — `meta.choices` on a room's message, its own column on a desk's — so nothing downstream reparses markdown and no reader is ever shown the grammar. The first cut of this was at render, and the arrow that points a choice at a form read as an arrow and a path the moment the buttons went.
 
@@ -779,7 +779,7 @@ nothing about any site, and to let anything else that speaks OpenAI reach the sa
 
 The thing that listens to a voice conversation runs **outside** the deployment — a worker in a room
 with somebody's microphone. It is not given a session. It is given a **grant**
-(`_shared/copilot/grant.js`): a signed token naming one bot, one person, one room, the ceilings it
+(`_shared/copilot/grant.ts`): a signed token naming one bot, one person, one room, the ceilings it
 may not exceed and when it dies.
 
 Not the person's JWT, which is the thing not to hand a third-party process — a JWT is every door

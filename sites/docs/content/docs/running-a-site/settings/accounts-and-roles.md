@@ -7,7 +7,7 @@ sources:
     packages/kit/build/who-can.test.mjs,
     packages/kit/build/signed-in-as.test.mjs,
     packages/kit/src/lib/auth.ts,
-    packages/kit/supabase/functions/_shared/permissions.js,
+    packages/kit/supabase/functions/_shared/permissions.ts,
     packages/kit/build/permissions.test.mjs,
     packages/kit/build/permissions-db.test.mjs,
     packages/kit/build/site-permissions-node.mts,

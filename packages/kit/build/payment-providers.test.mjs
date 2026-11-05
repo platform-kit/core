@@ -484,8 +484,8 @@ try {
   const adapterDirectory = path.join(generatedRoot, 'payment-providers')
   await mkdir(adapterDirectory)
   await copyFile(
-    path.join(BUILD_ROOT, '../supabase/functions/_shared/payment-provider.mjs'),
-    path.join(generatedRoot, 'payment-provider.mjs'),
+    path.join(BUILD_ROOT, '../supabase/functions/_shared/payment-provider.mts'),
+    path.join(generatedRoot, 'payment-provider.mts'),
   )
   await copyFile(
     path.join(SITE_FIXTURE_ROOT, 'db/functions/_shared', siteModule.paymentProviders[0].adapter),

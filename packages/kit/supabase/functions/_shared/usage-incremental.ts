@@ -2,8 +2,8 @@ import { admin } from './lib.ts'
 import { fresh } from './compiled.ts'
 import { offerByKey } from './offers.ts'
 import { findProviderExternalIds, linkProviderEntity } from './payment-provider-refs.ts'
-import { meteredUsageAmountMinor } from './hyperswitch-billing.mjs'
-import { createIncrementalUsageSettler } from './usage-incremental.mjs'
+import { meteredUsageAmountMinor } from './hyperswitch-billing.mts'
+import { createIncrementalUsageSettler } from './usage-incremental.mts'
 import type { PaymentProviderAdapter } from './payment-provider.d.ts'
 
 const settle = createIncrementalUsageSettler({

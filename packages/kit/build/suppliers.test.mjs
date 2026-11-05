@@ -289,7 +289,7 @@ t('a site supplier with its key missing is a mock, and with it present is not', 
 const BOOK_WORDS = ['pages', 'interior', 'trim', 'paper', 'cloth', 'foil', 'spine', 'jacket', 'cover', 'binding', 'book', 'isbn']
 for (const id of SUPPLIER_IDS) {
   t(`${id}: no method takes a word belonging to one kind of thing`, () => {
-    const src = fs.readFileSync(path.join(KIT, 'supabase/functions/_shared/suppliers', id + '.js'), 'utf8')
+    const src = fs.readFileSync(path.join(KIT, 'supabase/functions/_shared/suppliers', id + '.ts'), 'utf8')
     /* every method signature in the returned object, which is the interface anybody calls —
        written either way, as shorthand or as an arrow property, since both are used */
     const sigs = [...src.matchAll(/^    (?:async )?([a-zA-Z]+)\(([^)]*)\)/gm), ...src.matchAll(/^    ([a-zA-Z]+): (?:async )?\(([^)]*)\) =>/gm)]
@@ -303,7 +303,7 @@ for (const id of SUPPLIER_IDS) {
 }
 
 t('and the interface the header declares is the general one', () => {
-  const idx = fs.readFileSync(path.join(KIT, 'supabase/functions/_shared/suppliers/index.js'), 'utf8')
+  const idx = fs.readFileSync(path.join(KIT, 'supabase/functions/_shared/suppliers/index.ts'), 'utf8')
   const header = idx.slice(0, idx.indexOf('*/'))
   /* the METHOD lines, not the prose: the header explains what the interface used to take, and
      that explanation is worth keeping — it is why the seam is shaped as it is */

@@ -9,7 +9,7 @@ sources:
     packages/kit/theme/src/components/support,
     packages/kit/theme/src/components/SupportAdmin.vue,
   ]
-reviewed: 2026-11-01
+reviewed: 2026-11-04
 ---
 
 The support desk is a chat on every public page — for a guest and a signed-in person alike — and an inbox for the staff. It is kept entirely apart from the coaching chat: its own conversations, its own words, its own people. A support agent never sees a coaching thread, and a coach's inbox never fills with returns. Module: `support`.

@@ -40,7 +40,7 @@ function placeWord(place: any) {
   return 'Online'
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')

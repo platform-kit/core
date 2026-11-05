@@ -11,10 +11,10 @@
 import { stripeConfigured, stripeMock, stripeUnconfigured, admin, json, preflight, getUser, isServiceBearer, getPaymentProvider } from '../_shared/lib.ts'
 import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { ensureAll, OFFERS } from '../_shared/offers.ts'
-import { assertPaymentCapabilities, PaymentProviderError } from '../_shared/payment-provider.mjs'
+import { assertPaymentCapabilities, PaymentProviderError } from '../_shared/payment-provider.mts'
 import type { PaymentProviderAdapter } from '../_shared/payment-provider.d.ts'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   /* the deploy sends the service key (in whichever form it holds it — lib.ts checks it against the admin API, never by string) */
@@ -28,10 +28,11 @@ Deno.serve(async (req) => {
   if (!allowed) return json({ error: 'admin only' }, 403)
   let provider: PaymentProviderAdapter
   try {
+    // @ts-expect-error TS2322, from the conversion: Type 'PaymentProviderAdapter | null' is not assignable to type 'PaymentProviderAdapter'. Type 'null' is not assignable to type 'PaymentProvi
     provider = await getPaymentProvider()
     assertPaymentCapabilities(provider, ['catalog.sync'])
-  } catch (error) {
-    if (error instanceof PaymentProviderError) return json({ error: error.message, code: error.code }, error.status)
+  } catch (error: any) {
+    if (error instanceof PaymentProviderError) return json({ error: error.message, code: (error as any).code }, (error as any).status)
     throw error
   }
   if (provider.id === 'stripe' && !stripeConfigured) return stripeUnconfigured()
@@ -40,9 +41,9 @@ Deno.serve(async (req) => {
     const result = await ensureAll()
     const made = Object.values(result).filter((r) => r.made).length
     return json({ offers: Object.keys(OFFERS).length, made, result })
-  } catch (e) {
+  } catch (e: any) {
     const message = e instanceof Error ? e.message : String(e)
-    const status = e instanceof PaymentProviderError ? e.status : 502
+    const status = e instanceof PaymentProviderError ? (e as any).status : 502
     return json({ error: `${provider.id}: ${message}` }, status)
   }
 })

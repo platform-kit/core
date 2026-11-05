@@ -320,6 +320,7 @@ const effClass = computed(() => (hasProduct(props.slug) && rank(userClass.value)
 /* THE BAR IS THE ABILITY'S, and it already knows that a book bought outright lifts its buyer to
    paid for that book — the same lift effClass makes below for the chapter allowance, which is a
    count rather than a bar and stays where it is. */
+// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 const bookAllowed = computed(() => can('read', entrySubject({ kind: 'books', slug: props.slug, canAccess: fm.value.canAccess })))
 /* the allowance counts chapters; the introduction page in front of them is free with the first */
 const firstLocked = computed(() => { if (!bookAllowed.value) return 0; const n = chapterAllowance(fm.value, effClass.value); return n > 0 ? n + introOffset.value : 0 })

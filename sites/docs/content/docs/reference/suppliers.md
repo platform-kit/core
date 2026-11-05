@@ -138,7 +138,7 @@ a garment printer that publishes a catalogue.
 
 `packages/kit/build/suppliers.mts` is the one build-side door — `suppliersFor(ctx)` and
 `kindsFor(ctx)`, both bound to the process's environment and cached per site root. Everything
-that needs a supplier asks there. Reaching past it to `_shared/suppliers/index.js` gets the
+that needs a supplier asks there. Reaching past it to `_shared/suppliers/index.ts` gets the
 kit's five and silently loses the site's, which is the shape a plug-in seam rots into: true of
 the interface, false of the product.
 

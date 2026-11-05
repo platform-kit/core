@@ -21,7 +21,7 @@ import wasm from '../_shared/vendor/photon_rs_bg.wasm.inline.js'
 const ready = initPhoton(wasm)   /* photon (Rust's image crate on wasm, Apache-2.0), the wasm inlined so the runtime needs no file */
 import { admin } from '../_shared/lib.ts'
 import { contentIndexes } from '../_shared/content-index.ts'
-import { assetId } from '../_shared/api/ids.js'
+import { assetId } from '../_shared/api/ids.ts'
 
 const BUCKET = 'content-assets'
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Access-Control-Expose-Headers': 'ETag' }
@@ -46,7 +46,7 @@ async function original(address: string): Promise<{ bytes: Uint8Array; type: str
 const hex = (buf: ArrayBuffer) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
 const sha = async (s: string) => hex(await crypto.subtle.digest('SHA-1', new TextEncoder().encode(s)))
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'GET' && req.method !== 'HEAD') return err('BadRequest', 'This method is not allowed.', 405)
   const url = new URL(req.url)
@@ -83,9 +83,11 @@ Deno.serve(async (req) => {
 
   const src = await original(asset.address)
   if (!src) return err('NotFound', 'The original could not be read.', 404)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Uint8Array<ArrayBufferLike> | null' is not assignable to parameter of type 'BodyInit | null | undefined'. Type 'Uint8Array
   if (!wantsWork) return new Response(req.method === 'HEAD' ? null : src.bytes, { status: 200, headers: headers(etag, src.type || asset.mime || 'application/octet-stream', src.bytes.byteLength) })
 
   await ready
+  // @ts-ignore only Deno has this package's types: Cannot use namespace 'PhotonImage' as a type.
   let img: PhotonImage
   try { img = PhotonImage.new_from_byteslice(src.bytes) } catch { return err('BadQuery', 'The picture could not be decoded.', 415) }
   const focus = f && f !== 'face' && f !== 'faces' ? f : 'center'
@@ -104,11 +106,13 @@ Deno.serve(async (req) => {
   if (outFormat === 'jpg' && bg) img = flatten(img, rgba(bg.slice(4)))
   const out: Uint8Array = outFormat === 'jpg' ? img.get_bytes_jpeg(qual ?? 80) : outFormat === 'webp' ? img.get_bytes_webp() : img.get_bytes()
   admin.storage.from(BUCKET).upload(cacheKey, out, { contentType: mime, upsert: true }).then(() => {}, () => {})
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'Uint8Array<ArrayBufferLike> | null' is not assignable to parameter of type 'BodyInit | null | undefined'. Type 'Uint8Array
   return new Response(req.method === 'HEAD' ? null : out, { status: 200, headers: headers(etag, mime, out.byteLength) })
 })
 
 /* on the raw pixels: a canvas of the size asked with the picture centred on a colour; corners rounded by alpha; a
    transparent picture flattened onto a colour for jpg */
+// @ts-ignore only Deno has this package's types: Cannot use namespace 'PhotonImage' as a type.
 function pad(img: PhotonImage, tw: number, th: number, bgc: Rgba) {
   const sw = img.get_width(), sh = img.get_height(), src = img.get_raw_pixels()
   const out = new Uint8Array(tw * th * 4)
@@ -117,6 +121,7 @@ function pad(img: PhotonImage, tw: number, th: number, bgc: Rgba) {
   for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) { const tx = ox + x, ty = oy + y; if (tx < 0 || ty < 0 || tx >= tw || ty >= th) continue; const si = (y * sw + x) * 4, di = (ty * tw + tx) * 4; const a = src[si + 3] / 255; out[di] = Math.round(src[si] * a + out[di] * (1 - a)); out[di + 1] = Math.round(src[si + 1] * a + out[di + 1] * (1 - a)); out[di + 2] = Math.round(src[si + 2] * a + out[di + 2] * (1 - a)); out[di + 3] = Math.max(out[di + 3], src[si + 3]) }
   return new PhotonImage(out, tw, th)
 }
+// @ts-ignore only Deno has this package's types: Cannot use namespace 'PhotonImage' as a type.
 function rounded(img: PhotonImage, radius: number) {
   const w = img.get_width(), h = img.get_height(), px = img.get_raw_pixels(), r = Math.min(radius, w / 2, h / 2)
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
@@ -125,6 +130,7 @@ function rounded(img: PhotonImage, radius: number) {
   }
   return new PhotonImage(px, w, h)
 }
+// @ts-ignore only Deno has this package's types: Cannot use namespace 'PhotonImage' as a type.
 function flatten(img: PhotonImage, bgc: Rgba) {
   const w = img.get_width(), h = img.get_height(), px = img.get_raw_pixels()
   for (let i = 0; i < w * h; i++) { const a = px[i * 4 + 3] / 255; if (a < 1) { px[i * 4] = Math.round(px[i * 4] * a + bgc.r * (1 - a)); px[i * 4 + 1] = Math.round(px[i * 4 + 1] * a + bgc.g * (1 - a)); px[i * 4 + 2] = Math.round(px[i * 4 + 2] * a + bgc.b * (1 - a)); px[i * 4 + 3] = 255 } }

@@ -6,23 +6,23 @@ sources:
   [
     packages/kit/supabase/functions/content/index.ts,
     packages/kit/supabase/functions/images/index.ts,
-    packages/kit/supabase/functions/_shared/api/context.js,
-    packages/kit/supabase/functions/_shared/api/entry.js,
-    packages/kit/supabase/functions/_shared/api/errors.js,
+    packages/kit/supabase/functions/_shared/api/context.ts,
+    packages/kit/supabase/functions/_shared/api/entry.ts,
+    packages/kit/supabase/functions/_shared/api/errors.ts,
     packages/kit/supabase/functions/_shared/api/flags.ts,
-    packages/kit/supabase/functions/_shared/api/graphql.js,
-    packages/kit/supabase/functions/_shared/api/ids.js,
-    packages/kit/supabase/functions/_shared/api/image-size.js,
+    packages/kit/supabase/functions/_shared/api/graphql.ts,
+    packages/kit/supabase/functions/_shared/api/ids.ts,
+    packages/kit/supabase/functions/_shared/api/image-size.ts,
     packages/kit/supabase/functions/_shared/api/keys.ts,
     packages/kit/supabase/functions/_shared/api/manage.ts,
-    packages/kit/supabase/functions/_shared/api/management.js,
-    packages/kit/supabase/functions/_shared/api/openapi.js,
+    packages/kit/supabase/functions/_shared/api/management.ts,
+    packages/kit/supabase/functions/_shared/api/openapi.ts,
     packages/kit/supabase/functions/_shared/api/pipe.ts,
-    packages/kit/supabase/functions/_shared/api/query.js,
-    packages/kit/supabase/functions/_shared/api/records.js,
-    packages/kit/supabase/functions/_shared/api/richtext-to-markdown.js,
-    packages/kit/supabase/functions/_shared/api/richtext.js,
-    packages/kit/supabase/functions/_shared/api/types.js,
+    packages/kit/supabase/functions/_shared/api/query.ts,
+    packages/kit/supabase/functions/_shared/api/records.ts,
+    packages/kit/supabase/functions/_shared/api/richtext-to-markdown.ts,
+    packages/kit/supabase/functions/_shared/api/richtext.ts,
+    packages/kit/supabase/functions/_shared/api/types.ts,
     packages/kit/supabase/functions/_shared/content-index.ts,
     packages/kit/build/content-api.test.mjs,
     packages/kit/build/management.test.mjs,
@@ -151,7 +151,7 @@ Generated from the content types. Query fields: `<type>(id!, preview, locale)`, 
 
 ## The OpenAPI document
 
-`openapi: 3.1.0`; `info.title` `<site name> API`, `version` `1`; `servers` the site's public address first (the host rewrites `/spaces`, `/content/v1`, `/images` and `/v1` to the functions), then the content function's own; `tags` `Content Delivery`, `Content Management`, `Content Sync`, `Content GraphQL`, `Content Images`, `Analytics Events`, `Analytics Capture`, and, with the forms module on, `Forms`, `Responses`, `Webhooks`, `Insights`, with the sessions module on `Event Types`, `Slots`, `Bookings`, `Schedules`, `Scheduling Webhooks`, with the store module on `Storefront`, with the support module on `Client`, `Conversations`, `Contacts`, `Support Webhooks`, gathered by `x-tagGroups` into _Content API_, _Forms API_, _Scheduling API_, _Store API_, _Support API_ and _Analytics API_ (each tag's description says what it is a drop-in for — the sidebar carries names only); `paths` every route above under its tag — the space, entries and one entry, assets and one asset, content types and one, locales, sync; GraphQL POST and GET; the image route; `/api/events` (the site's own batch), `/api/events/e/`, `/api/events/batch/`, `/api/events/flags/`, `/api/events/array/{token}/config.js` — each with its parameters (`content_type` an enum of the type ids), its responses and Contentful's errors; `components.securitySchemes.key` the bearer key; `components.schemas` `Link`, `Sys`, `RichTextDocument`, `Asset`, `ContentType`, `ContentTypeField`, `Locale`, `Error`, `Entry` (one of every type), `EntryCollection`, `AssetCollection`, `SyncCollection`, `AnalyticsEvent`, `AnalyticsBatch`, `PostHogEvent`, `PostHogBatch`, `FlagsResponse`, and one schema per content type under its id in PascalCase (`Article`, `Book`, a site model's namespaced singular such as `ModelEvent`) with `fields` typed from the content type. `_shared/api/openapi.js` is the generator; the page is `ApiReferencePage.vue` at `/api` (`ROUTES.api`, behind the `api` module).
+`openapi: 3.1.0`; `info.title` `<site name> API`, `version` `1`; `servers` the site's public address first (the host rewrites `/spaces`, `/content/v1`, `/images` and `/v1` to the functions), then the content function's own; `tags` `Content Delivery`, `Content Management`, `Content Sync`, `Content GraphQL`, `Content Images`, `Analytics Events`, `Analytics Capture`, and, with the forms module on, `Forms`, `Responses`, `Webhooks`, `Insights`, with the sessions module on `Event Types`, `Slots`, `Bookings`, `Schedules`, `Scheduling Webhooks`, with the store module on `Storefront`, with the support module on `Client`, `Conversations`, `Contacts`, `Support Webhooks`, gathered by `x-tagGroups` into _Content API_, _Forms API_, _Scheduling API_, _Store API_, _Support API_ and _Analytics API_ (each tag's description says what it is a drop-in for — the sidebar carries names only); `paths` every route above under its tag — the space, entries and one entry, assets and one asset, content types and one, locales, sync; GraphQL POST and GET; the image route; `/api/events` (the site's own batch), `/api/events/e/`, `/api/events/batch/`, `/api/events/flags/`, `/api/events/array/{token}/config.js` — each with its parameters (`content_type` an enum of the type ids), its responses and Contentful's errors; `components.securitySchemes.key` the bearer key; `components.schemas` `Link`, `Sys`, `RichTextDocument`, `Asset`, `ContentType`, `ContentTypeField`, `Locale`, `Error`, `Entry` (one of every type), `EntryCollection`, `AssetCollection`, `SyncCollection`, `AnalyticsEvent`, `AnalyticsBatch`, `PostHogEvent`, `PostHogBatch`, `FlagsResponse`, and one schema per content type under its id in PascalCase (`Article`, `Book`, a site model's namespaced singular such as `ModelEvent`) with `fields` typed from the content type. `_shared/api/openapi.ts` is the generator; the page is `ApiReferencePage.vue` at `/api` (`ROUTES.api`, behind the `api` module).
 
 ## Keys
 

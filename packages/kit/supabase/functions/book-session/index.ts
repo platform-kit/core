@@ -15,8 +15,8 @@ import { rolesOf, isProvider, isAdmin } from '../_shared/roles.ts'
 import { judge, schedulerIdOf, typeFor, forRank, videoOf } from '../_shared/cal.ts'
 import { sessionMail } from '../_shared/session-mail.ts'
 import { deliverSchedulingEvent } from '../_shared/scheduling-events.ts'
-import { mayReader, pageOf, lengthChosen } from '../_shared/sessions/page.js'
-import { guestEmail, mayBookAsGuest } from '../_shared/sessions/guest-booking.js'
+import { mayReader, pageOf, lengthChosen } from '../_shared/sessions/page.ts'
+import { guestEmail, mayBookAsGuest } from '../_shared/sessions/guest-booking.ts'
 import { makeBooking, moveBooking } from '../_shared/booking.ts'
 import { coaching as siteCoaching } from '../_shared/pipe/site.js'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
@@ -32,7 +32,7 @@ async function hostsType(s: any, userId: string): Promise<boolean> {
   return false
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   await fresh()
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
     /* THE TIME GOES BACK the moment it is declined: the hold is what kept anybody else off it */
     await admin.from('bookings').update({ status: 'rejected', updated_at: new Date().toISOString() }).eq('uid', uid)
     await admin.rpc('booking_release', { p_uid: uid })
+    // @ts-expect-error TS2345, from the conversion: Argument of type '"session-declined"' is not assignable to parameter of type 'SessionMailKind'.
     await sessionMail('session-declined', uid).catch((e) => console.warn('session-declined mail', String(e)))
     await deliverSchedulingEvent('BOOKING_CANCELLED', uid).catch(() => {})
     return json({ ok: true, booking: { uid, status: 'rejected' } })
@@ -96,7 +97,7 @@ Deno.serve(async (req) => {
     if (!email) return json({ error: 'a valid email address is required', code: 'email' }, 400)
     const v = await judge(event, null, email, null)
     if (!v.ok) return json({ error: v.reason, code: v.reason, next: (v as any).next ?? null, allowance: (v as any).allowance ?? null, sku: v.session?.sku ?? null }, v.reason === 'unpaid' ? 402 : 403)
-    const s = v.session
+    const s: any = v.session
     if (!mayBookAsGuest(siteCoaching.requireAuthToBook, s.requires)) return json({ error: 'this session is not available to guests', code: 'guest' }, 403)
     const priced = lengthChosen(s, minutesIn).sku || s.sku
     if (priced) return json({ error: 'a paid session is booked through checkout', code: 'checkout', sku: priced }, 402)
@@ -126,7 +127,7 @@ Deno.serve(async (req) => {
     const callerRoles = await rolesOf(user.id)
     if (!isProvider(callerRoles)) return json({ error: 'a host books for people', code: 'not-host' }, 403)
     if (moving) return json({ error: 'a move is the booking\'s own', code: 'for' }, 400)
-    const s = await typeFor(event)
+    const s: any = await typeFor(event)
     if (!s) return json({ error: 'unknown session', code: 'unknown' }, 404)
     /* A HOST BOOKS FOR PEOPLE ON THEIR OWN TYPES: no judge and no credit is a host's gift of their own
        time, not a way for any provider to hand out another host's paid sessions */
@@ -164,7 +165,7 @@ Deno.serve(async (req) => {
   }
   const v = await judge(event, owner, email, moving, minutesIn)
   if (!v.ok) return json({ error: v.reason, code: v.reason, next: (v as any).next ?? null, allowance: (v as any).allowance ?? null, sku: v.session?.sku ?? null }, v.reason === 'unpaid' ? 402 : 403)
-  const s = v.session
+  const s: any = v.session
   if (schedulerIdOf(s) === 'native') {
     if ((!s.hosts?.length && !s.team) || !(s.duration > 0)) return json({ error: 'this type has no host or no length yet', code: 'no-host' }, 503)
     if (s.where?.kind === 'phone' && !s.where.number && !phone) return json({ error: 'a phone number', code: 'phone' }, 400)

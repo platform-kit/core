@@ -96,14 +96,14 @@ Content → **Publishing** (a row of the rail in cloud mode alone — never show
 - **WHEN** an administrator publishes one record from its drawer with a repository connected
 - **THEN** within a few seconds the branch has one commit `Publish: 1 page (<their name>)` holding the file's exact bytes, and the page's status says the last push was now with nothing waiting
 
-Verified by: the kit test of `_shared/github.js` with the git data API mocked (the request recorded)
+Verified by: the kit test of `_shared/github.ts` with the git data API mocked (the request recorded)
 
 #### Scenario: three drafts published as one commit
 
 - **WHEN** three records are drafted and Publish everything is pressed with the message "Autumn list"
 - **THEN** the branch gains exactly one commit "Autumn list (Ada Finch)" whose tree holds the three files' exact bytes, the three rows are cleared of pending together, and the page says the last push was now with nothing waiting
 
-Verified by: a kit test of `_shared/github.js` with the git data API mocked (the blobs, the tree, the commit, the ref — the requests recorded); a live run against a scratch repository NOT VERIFIED until one is lent
+Verified by: a kit test of `_shared/github.ts` with the git data API mocked (the blobs, the tree, the commit, the ref — the requests recorded); a live run against a scratch repository NOT VERIFIED until one is lent
 
 #### Scenario: a push that fails
 

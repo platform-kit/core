@@ -5,7 +5,7 @@ order: 56.45
 sources:
   [
     packages/kit/supabase/schemas/92-encryption.sql,
-    packages/kit/supabase/functions/_shared/matrix/keys.js,
+    packages/kit/supabase/functions/_shared/matrix/keys.ts,
     packages/kit/build/encryption.test.mjs,
     packages/kit/build/encryption-db.test.mjs,
     packages/kit/build/modules/kit.mts,
@@ -13,7 +13,7 @@ sources:
     packages/kit/build/spaces.mts,
     packages/kit/build/spaces-push.mts,
     packages/kit/supabase/functions/matrix-api/index.ts,
-    packages/kit/supabase/functions/_shared/matrix/state.js,
+    packages/kit/supabase/functions/_shared/matrix/state.ts,
     packages/kit/src/lib/spaces/crypto.ts,
     packages/kit/src/lib/spaces/api.ts,
     packages/kit/src/lib/spaces/audio.ts,

@@ -13,12 +13,12 @@
 import { admin, appUrl, isServiceBearer } from '../lib.ts'
 import { assetUsage } from '../pipe/build/assets.mjs'
 import { pipeFor as pipeOf, makerOf, type Caller } from './pipe.ts'
-import { pushPending } from '../github.js'
+import { pushPending } from '../github.ts'
 import { contentIndexes, invalidateIndex, CLOUD, SPACE, type Index, type Rec } from '../content-index.ts'
-import { makeContext } from './context.js'
-import { entryOf, assetOf, strip } from './entry.js'
-import { managementEntryOf, managementAssetOf, recordOf, idFor, splitId, versionOf, uploadOf, apiAssetFolder, apiAssetAddress, webhookDefinitionOf, webhookDefinitionInput, topicMatches, validationFailed, versionMismatch, unwrap } from './management.js'
-import { assetId } from './ids.js'
+import { makeContext } from './context.ts'
+import { entryOf, assetOf, strip } from './entry.ts'
+import { managementEntryOf, managementAssetOf, recordOf, idFor, splitId, versionOf, uploadOf, apiAssetFolder, apiAssetAddress, webhookDefinitionOf, webhookDefinitionInput, topicMatches, validationFailed, versionMismatch, unwrap } from './management.ts'
+import { assetId } from './ids.ts'
 
 const UPLOADS = '.uploads'
 const BUCKET = 'content-assets'
@@ -160,7 +160,7 @@ export async function manage(req: Request, o: { sub: string; method: string; q: 
     const both = await contentIndexes()
     const items = []; for (const r of both.preview.records) { if (!r.typeId) continue; const e = await entryView(`${r.typeId}.${r.path.replace(/\//g, '.')}`, rid); if (e) items.push(e) }
     const skip = Math.max(0, Number(q.skip) || 0), limit = Math.min(1000, Math.max(1, Number(q.limit) || 100))
-    const filtered = q.content_type ? items.filter((e) => e.sys.contentType.sys.id === q.content_type) : items
+    const filtered = q.content_type ? items.filter((e) => (e.sys as any).contentType.sys.id === q.content_type) : items
     return { status: 200, body: { sys: { type: 'Array' }, total: filtered.length, skip, limit, items: filtered.slice(skip, skip + limit) } }
   }
   const { call } = await pipeFor(maker.by)
@@ -210,6 +210,7 @@ export async function manage(req: Request, o: { sub: string; method: string; q: 
       return err(422, 'ValidationFailed', String(e.message), rid, { errors: [{ name: 'invalid', path: ['fields', e.field || ''], details: String(e.message) }] })
     }
     let entryId = id
+    // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string'. Type 'null' is not assignable to type 'string'.
     if (method === 'POST') { entryId = idFor(type, parsed.data); if (!entryId) return err(400, 'BadRequest', 'A new entry needs a slug field or a title to make its id from (or PUT it at an id).', rid) }
     const split = splitId(entryId!)!
     const name = nameOf(model, split.path)

@@ -13,8 +13,8 @@ import {
   refreshRedditOAuth,
 } from '../supabase/functions/_shared/social/reddit-adapter.mjs'
 
-const direct = fs.readFileSync(new URL('../supabase/functions/_shared/social/direct-sdk.mjs', import.meta.url), 'utf8')
-const redditAdapter = fs.readFileSync(new URL('../supabase/functions/_shared/social/reddit-adapter.mjs', import.meta.url), 'utf8')
+const direct = fs.readFileSync(new URL('../supabase/functions/_shared/social/direct-sdk.mts', import.meta.url), 'utf8')
+const redditAdapter = fs.readFileSync(new URL('../supabase/functions/_shared/social/reddit-adapter.mts', import.meta.url), 'utf8')
 const registry = fs.readFileSync(new URL('../supabase/functions/_shared/social/registry.ts', import.meta.url), 'utf8')
 const socialFunction = fs.readFileSync(new URL('../supabase/functions/social/index.ts', import.meta.url), 'utf8')
 const publisher = fs.readFileSync(new URL('../supabase/functions/social-publish/index.ts', import.meta.url), 'utf8')

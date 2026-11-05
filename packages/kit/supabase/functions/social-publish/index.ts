@@ -1,16 +1,16 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { SOCIAL_ADAPTERS } from '../_shared/social/registry.ts'
-import { resolveSocialOutcome } from '../_shared/social/outcome.mjs'
+import { resolveSocialOutcome } from '../_shared/social/outcome.mts'
 import {
   hasSocialCapability,
   normalizePostMetrics,
-} from '../_shared/social/metrics.mjs'
+} from '../_shared/social/metrics.mts'
 import {
   connectedAccountRef,
   createManagedSocial,
   hasManagedBackend,
   managedOperationContext,
-} from '../_shared/social/managed-sdk.mjs'
+} from '../_shared/social/managed-sdk.mts'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -785,4 +785,4 @@ async function handle(req: Request) {
   return json({ claimed: deliveries.length, processed, errors }, errors ? 207 : 200)
 }
 
-Deno.serve((req) => preflight(req) ?? handle(req))
+Deno.serve((req: any) => preflight(req) ?? handle(req))

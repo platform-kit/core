@@ -15,10 +15,11 @@
  * which of the two it is doing; nothing is silently skipped.
  */
 import { admin, getPaymentProvider, stripeLive, appUrl } from './lib.ts'
-import { assertPaymentCapabilities, PaymentProviderError, payoutStatusIsSettled } from './payment-provider.mjs'
+import { assertPaymentCapabilities, PaymentProviderError, payoutStatusIsSettled } from './payment-provider.mts'
 
 export const payoutsMock = /^(1|true|yes|on)$/i.test(Deno.env.get('PAYOUTS_MOCK') ?? '')
 const providerIsLive = (providerId: string) => !payoutsMock && (providerId !== 'stripe' || stripeLive)
+// @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
 export const payoutsLive = async () => providerIsLive((await getPaymentProvider()).id)
 
 /* the site's two answers about paying people, read where the projection put them */
@@ -36,7 +37,7 @@ export async function payoutPolicy(): Promise<{ connect: 'own' | 'managed'; dela
  * operator a payment facilitator; build/deploy-checks.mjs refuses it by name.
  */
 export async function connectAccount(userId: string, email: string | null) {
-  const provider = await getPaymentProvider()
+  const provider: any = await getPaymentProvider()
   assertPaymentCapabilities(provider, ['payouts.connected-accounts'])
   if (!provider.createPayoutAccount) {
     throw new Error(`payment provider "${provider.id}" cannot onboard connected accounts`)
@@ -79,7 +80,7 @@ export async function connectAccount(userId: string, email: string | null) {
 /* WHETHER THE PROCESSOR SAYS THEY MAY BE PAID. Connecting is not the same as having finished, and
    somebody half way through should be told which of the two they are. */
 export async function refreshAccount(userId: string) {
-  const provider = await getPaymentProvider()
+  const provider: any = await getPaymentProvider()
   const { data: row } = await admin.from('payout_accounts').select('*').eq('user_id', userId).maybeSingle()
   if (!row) return { connected: false, ready: false }
   if ((row.provider ?? 'stripe') !== provider.id) {
@@ -142,15 +143,15 @@ export async function sendDue(userId: string) {
     .eq('user_id', userId).is('paid_at', null).lte('payable_at', now)
   const rows = lines ?? []
   if (!rows.length) return { sent: 0, amount: 0, reason: 'nothing is payable' }
-  const existingRef = rows.find((line) => typeof line.payout_ref === 'string' && line.payout_ref)?.payout_ref ?? null
+  const existingRef = rows.find((line: any) => typeof line.payout_ref === 'string' && line.payout_ref)?.payout_ref ?? null
   const payoutRows = existingRef
-    ? rows.filter((line) => line.payout_ref === existingRef)
-    : rows.filter((line) => !line.payout_ref)
-  const amount = payoutRows.reduce((n, line) => n + (Number(line.amount) || 0), 0)
+    ? rows.filter((line: any) => line.payout_ref === existingRef)
+    : rows.filter((line: any) => !line.payout_ref)
+  const amount = payoutRows.reduce((n: any, line: any) => n + (Number(line.amount) || 0), 0)
   if (!payoutRows.length || amount <= 0) {
     return { sent: 0, amount, reason: payoutRows.length ? 'a reversal stands against what is earned next' : 'payout lines are already being reconciled' }
   }
-  const provider = await getPaymentProvider()
+  const provider: any = await getPaymentProvider()
   assertPaymentCapabilities(provider, ['payouts.connected-accounts'])
   if (!provider.createPayout) throw new Error(`payment provider "${provider.id}" cannot create payouts`)
   const { data: acct } = await admin.from('payout_accounts').select('*').eq('user_id', userId).maybeSingle()
@@ -161,7 +162,7 @@ export async function sendDue(userId: string) {
   const live = providerIsLive(provider.id)
   const currency = payoutRows[0].currency ?? 'usd'
   const ref = existingRef ?? (live ? 'po_' : 'po_mock_') + crypto.randomUUID().replace(/-/g, '').slice(0, 16)
-  const ids = payoutRows.map((line) => line.id)
+  const ids = payoutRows.map((line: any) => line.id)
 
   if (!existingRef) {
     const { data: claimed, error: claimErr } = await admin.from('payout_lines')
@@ -175,7 +176,7 @@ export async function sendDue(userId: string) {
       if (claimed?.length) {
         const { error } = await admin.from('payout_lines')
           .update({ payout_ref: null })
-          .in('id', claimed.map((line) => line.id))
+          .in('id', claimed.map((line: any) => line.id))
           .is('paid_at', null)
         if (error) throw new Error(`partial payout claim could not be released: ${error.message}`)
       }
@@ -211,9 +212,9 @@ export async function sendDue(userId: string) {
       return { sent: 0, amount, reason: 'the payout was sent but the ledger could not record it: ' + paidError.message }
     }
     return { sent: ids.length, amount, currency, ref, mock: !live }
-  } catch (e) {
+  } catch (e: any) {
     const uncertain = provider.id === 'hyperswitch' &&
-      e instanceof PaymentProviderError && e.status >= 500
+      e instanceof PaymentProviderError && (e as any).status >= 500
     if (!uncertain) {
       const { error } = await admin.from('payout_lines')
         .update({ payout_ref: null })

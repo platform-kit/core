@@ -33,6 +33,6 @@ A site may want to offer a book's chapter summaries, key points and quizzes with
 
 ## Impact
 
-- `packages/kit/supabase/functions/_shared/gate.js`, `reader-content`, `build/content-json.mjs`, `build/velite.mjs`, `src/lib/print-offers.js`, `build/print.mjs`, `build/tts.mjs`, `theme/src/components/content/BookReader.vue`.
+- `packages/kit/supabase/functions/_shared/gate.ts`, `reader-content`, `build/content-json.mjs`, `build/velite.mjs`, `src/lib/print-offers.js`, `build/print.mjs`, `build/tts.mjs`, `theme/src/components/content/BookReader.vue`.
 - The books page of the documentation site.
 - No site changes. A book without the flag behaves exactly as today.

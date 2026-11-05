@@ -47,6 +47,7 @@ const summaryOf = (m: any, e: any) => { const f = summaryField(m); return f && e
 const dateField = (m: any) => m.fields.find((f: any) => f.kind === 'date' || f.kind === 'datetime')
 const imageField = (m: any) => m.fields.find((f: any) => f.kind === 'image')
 /* a model's own bar, asked of the ability */
+// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 const allowed = computed(() => !model.value || can('read', entrySubject({ kind: 'entries', slug: model.value.key, canAccess: model.value.access })))
 /* a reference: the other model's entry, and its page when that model has pages */
 const refOf = (f: any, slug: any) => { const m = MODELS.find((x: any) => x.key === f.model); const e = m && listOf(m.key).find((x) => x.slug === slug); return { title: e ? titleOf(m, e) : slug, href: m && e && m.deliver && m.deliver.pages ? `${ROUTES.entries}/${m.key}/${e.slug}` : null } }

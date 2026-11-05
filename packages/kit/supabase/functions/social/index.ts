@@ -9,13 +9,13 @@ import {
   hasManagedBackend,
   connectedAccountRef,
   managedOperationContext,
-} from '../_shared/social/managed-sdk.mjs'
+} from '../_shared/social/managed-sdk.mts'
 import {
   availableSocialOperations,
   invokeNativeOperation,
   invokeSocialOperation,
   operationAvailable,
-} from '../_shared/social/operations.mjs'
+} from '../_shared/social/operations.mts'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const GRANT_DAYS = 7
@@ -473,10 +473,10 @@ async function listProviders() {
     return json({ error: 'Could not list social providers.', code: 'provider_list_failed' }, 500)
   if (managedError)
     return json({ error: 'Could not list managed social backends.', code: 'backend_list_failed' }, 500)
-  const configured = new Map((data || []).map((row) => [row.provider_id, row]))
+  const configured = new Map((data || []).map((row: any) => [row.provider_id, row]))
   const backends = []
   for (const id of MANAGED_BACKEND_IDS) {
-    const enabled = Boolean(managed?.find((row) => row.backend_id === id && row.enabled))
+    const enabled = Boolean(managed?.find((row: any) => row.backend_id === id && row.enabled))
     if (!enabled) {
       backends.push({ id, configured: false, platforms: [] })
       continue
@@ -502,8 +502,8 @@ async function listProviders() {
       return {
         id,
         name: adapter.displayName || id,
-        configured: Boolean(configured.get(id)?.enabled),
-        scopes: configured.get(id)?.scopes || adapter.defaultScopes || [],
+        configured: Boolean((configured.get(id) as any)?.enabled),
+        scopes: (configured.get(id) as any)?.scopes || adapter.defaultScopes || [],
         clientSecretRequired: adapter.clientSecretRequired !== false,
       }
     }),
@@ -622,7 +622,7 @@ async function listAccounts(userId: string) {
     permissions.map(({ account_id: accountId, ...perms }) => [accountId, perms]),
   )
   const accounts = management.allowed
-    ? (data || []).map((account) => ({
+    ? (data || []).map((account: any) => ({
         ...account,
         permissions: {
           read_posts: true,
@@ -635,8 +635,8 @@ async function listAccounts(userId: string) {
         },
       }))
     : (data || [])
-        .filter((account) => permissionByAccount.has(account.id))
-        .map((account) => ({ ...account, permissions: permissionByAccount.get(account.id) }))
+        .filter((account: any) => permissionByAccount.has(account.id))
+        .map((account: any) => ({ ...account, permissions: permissionByAccount.get(account.id) }))
   return json({ accounts, canManageAccounts: management.allowed })
 }
 
@@ -670,7 +670,7 @@ async function listDeskAccounts(userId: string) {
   if (!response.ok) return json(payload, response.status)
   const accounts = Array.isArray(payload.accounts) ? payload.accounts : []
   return json({
-    accounts: accounts.filter((account) =>
+    accounts: accounts.filter((account: any) =>
       account?.permissions?.view_results === true && account?.permissions?.publish_now === true),
   })
 }
@@ -696,8 +696,8 @@ async function listDeskPosts(userId: string) {
   const payload = await accountsResponse.json()
   if (!accountsResponse.ok) return json(payload, accountsResponse.status)
   const ids = (Array.isArray(payload.accounts) ? payload.accounts : [])
-    .filter((account) => account.status === 'connected')
-    .map((account) => account.id)
+    .filter((account: any) => account.status === 'connected')
+    .map((account: any) => account.id)
     .filter((id: unknown): id is string => typeof id === 'string' && UUID.test(id))
   if (!ids.length) return json({ posts: [], truncated: false })
   const limit = 200
@@ -710,7 +710,7 @@ async function listDeskPosts(userId: string) {
     .order('published_at', { ascending: false })
     .limit(limit)
   if (error) return databaseFailure(error, 'desk_posts_lookup_failed', 'Could not list published social posts.')
-  const postIds = [...new Set((data || []).map((row) => row.post_id).filter((id) => typeof id === 'string'))]
+  const postIds = [...new Set((data || []).map((row: any) => row.post_id).filter((id: any) => typeof id === 'string'))]
   let postDetails = new Map<string, { body: string; title: string }>()
   if (postIds.length) {
     const { data: postRows, error: postError } = await admin
@@ -718,12 +718,12 @@ async function listDeskPosts(userId: string) {
       .select('id, body')
       .in('id', postIds)
     if (postError) return databaseFailure(postError, 'desk_posts_lookup_failed', 'Could not load published social post details.')
-    postDetails = new Map((postRows || []).flatMap((row) =>
+    postDetails = new Map((postRows || []).flatMap((row: any) =>
       typeof row.id === 'string' && typeof row.body === 'string'
         ? [[row.id, { body: row.body, title: row.body.replace(/\s+/g, ' ').trim().slice(0, 100) }]]
         : []))
   }
-  const posts = (data || []).map((row) => ({
+  const posts = (data || []).map((row: any) => ({
     ...row,
     title: postDetails.get(row.post_id)?.title || null,
     body: postDetails.get(row.post_id)?.body || null,
@@ -886,7 +886,7 @@ async function accountOperation(
       client = (await managedBackend(backendId)).client
       manifest = Object.values(client.capabilities())[0]
       if (!manifest) throw new Error('The managed backend did not declare capabilities.')
-      nativeOperations = [...(MANAGED_NATIVE_OPERATIONS[backendId] || [])]
+      nativeOperations = [...((MANAGED_NATIVE_OPERATIONS as any)[backendId] || [])]
       socialAccount = {
         id: account.external_id,
         providerId: account.provider_id,
@@ -1117,7 +1117,7 @@ async function listPublishers() {
     permissionsByGrant.set(permission.grant_id, list)
   }
   return json({
-    publishers: (publishers.data || []).map((publisher) => ({
+    publishers: (publishers.data || []).map((publisher: any) => ({
       ...publisher,
       accountPermissions: permissionsByGrant.get(publisher.id) || [],
     })),
@@ -1199,7 +1199,7 @@ async function listDrafts(userId: string) {
     .limit(200)
   if (postError)
     return databaseFailure(postError, 'social_post_list_failed', 'Could not load social drafts.')
-  const ids = (posts || []).map((post) => post.id)
+  const ids = (posts || []).map((post: any) => post.id)
   if (!ids.length) return json({ posts: [] })
   const [attachments, deliveries] = await Promise.all([
     admin
@@ -1228,7 +1228,7 @@ async function listDrafts(userId: string) {
       'Could not load social delivery states.',
     )
   const resultPermissions = await Promise.all(
-    (deliveries.data || []).map((delivery) =>
+    (deliveries.data || []).map((delivery: any) =>
       userCanAccount(userId, delivery.account_id, 'view_results'),
     ),
   )
@@ -1236,18 +1236,18 @@ async function listDrafts(userId: string) {
   const resultPermissionFailure = permissionCheckFailure(resultPermissionError, 'view results')
   if (resultPermissionFailure) return resultPermissionFailure
   const resultAccess = new Map(
-    (deliveries.data || []).map((delivery, index) => [
+    (deliveries.data || []).map((delivery: any, index: any) => [
       delivery.id,
       resultPermissions[index].allowed,
     ]),
   )
   return json({
-    posts: (posts || []).map((post) => ({
+    posts: (posts || []).map((post: any) => ({
       ...post,
-      attachments: (attachments.data || []).filter((item) => item.post_id === post.id),
+      attachments: (attachments.data || []).filter((item: any) => item.post_id === post.id),
       deliveries: (deliveries.data || [])
-        .filter((item) => item.post_id === post.id)
-        .map((delivery) => {
+        .filter((item: any) => item.post_id === post.id)
+        .map((delivery: any) => {
           if (resultAccess.get(delivery.id)) return delivery
           const {
             provider_post_id: _providerPostId,
@@ -1706,7 +1706,7 @@ async function schedulePost(body: Record<string, unknown>, userId: string) {
   }> = []
   if (accounts.length !== targetIds.length) {
     for (const accountId of targetIds.filter(
-      (id) => !accounts.some((account) => account.id === id),
+      (id) => !accounts.some((account: any) => account.id === id),
     ))
       targetErrors.push({
         accountId,
@@ -2223,8 +2223,8 @@ async function listApprovalQueue(userId: string) {
   if (accounts.error)
     return databaseFailure(accounts.error, 'social_approval_account_failed', 'Could not load approvals.')
 
-  const postsById = new Map((posts.data || []).map((post) => [post.id, post]))
-  const accountsById = new Map((accounts.data || []).map((account) => [account.id, account]))
+  const postsById = new Map((posts.data || []).map((post: any) => [post.id, post]))
+  const accountsById = new Map((accounts.data || []).map((account: any) => [account.id, account]))
   return json({
     deliveries: pending.map((delivery) => ({
       ...delivery,
@@ -2337,8 +2337,8 @@ async function listAutomations(body: Record<string, unknown>, userId: string) {
     automations: automationResult.data || [],
     events: eventResult.data || [],
     responses: responseResult.data || [],
-    bots: (botResult.data || []).filter((bot) => Array.isArray(bot.serves) && bot.serves.length === 0)
-      .map(({ slug, name }) => ({ slug, name })),
+    bots: (botResult.data || []).filter((bot: any) => Array.isArray(bot.serves) && bot.serves.length === 0)
+      .map(({ slug, name }: any) => ({ slug, name })),
   })
 }
 
@@ -2483,7 +2483,7 @@ async function reviewAutomationResponse(body: Record<string, unknown>, userId: s
   return json({ response: data })
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const options = preflight(req)
   if (options) return options
   if (req.method !== 'POST')
@@ -2767,7 +2767,7 @@ Deno.serve(async (req) => {
           500,
         )
       if (
-        active?.some((delivery) =>
+        active?.some((delivery: any) =>
           ['claimed', 'publishing', 'published', 'review_required'].includes(delivery.status),
         )
       )

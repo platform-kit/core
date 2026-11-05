@@ -8,8 +8,8 @@
  */
 import { admin } from './lib.ts'
 import { typeFor } from './sessions.ts'
-import { bookingOf } from './api/cal/booking.js'
-import { payloadOf } from './api/cal/webhook.js'
+import { bookingOf } from './api/cal/booking.ts'
+import { payloadOf } from './api/cal/webhook.ts'
 
 async function hmacHex(secret: string, body: string) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])

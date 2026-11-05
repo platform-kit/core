@@ -7,7 +7,7 @@
 - [x] The engine and CLI modules, converted (four bootstraps stay JavaScript: `bin/platformkit.mjs`, `build/compile.mjs`, `build/workspace-ts.mjs`, `build/is-main.mjs`; `build/ts-migrate.mjs` and `build/vue-migrate.mjs` go when the conversion ends)
 - [x] The theme: its modules converted, every component `<script setup lang="ts">`, published compiled for Node and as source for Vite
 - [x] Docs: the build page, configuration, the CLI; source paths across the docs
-- [ ] The Edge Functions' JavaScript modules (`supabase/functions`), checked with `deno check`
+- [x] The Edge Functions' JavaScript modules (`supabase/functions`), checked by `tsc` through `tsconfig.functions.json`; `deno check` over every function is still to do
 - [ ] The integration scripts (`build/*.integration.mjs`)
 - [ ] The tests themselves to TypeScript and `node:test`
 - [ ] The fixture and demo sites' files, and the generator templates that can be

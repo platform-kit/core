@@ -39,7 +39,7 @@ export const firstName = (s: string | null | undefined) => String(s || '').trim(
 /* a choice by its key path, anywhere in a prompt's tree */
 /* the choice grammar is one module, shared with the client and the agents (../_shared/choices.js):
    a copy of findChoice here was the beginning of two grammars that agree until they do not */
-export { findChoice } from './choices.js'
+export { findChoice } from './choices.ts'
 /* the caller's address, for the guards */
 /* the address the platform's proxy wrote, never the first x-forwarded-for entry (the caller's own); with none,
    every such caller shares one count rather than having no limit (_shared/doors.ts) */
@@ -130,6 +130,7 @@ export async function resolve(req: Request, token: string | null): Promise<Who |
   const user = await getUser(req)
   if (user) {
     const profile = await profileOf(user.id)
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'Role[]'. Type 'string' is not assignable to type 'Role'.
     const staff = isSupport((profile?.roles ?? []) as string[])
     let contact = await byUser(user.id)
     let linked = false

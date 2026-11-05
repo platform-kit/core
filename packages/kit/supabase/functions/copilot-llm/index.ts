@@ -25,9 +25,9 @@
  */
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { cors, json } from '../_shared/lib.ts'
-import { open as openGrant, sign as signGrant, grantExpiry } from '../_shared/copilot/grant.js'
-import { speechTelemetryRecord } from '../_shared/copilot/speech-proxy.js'
-import { livekit } from '../_shared/video/livekit.js'
+import { open as openGrant, sign as signGrant, grantExpiry } from '../_shared/copilot/grant.ts'
+import { speechTelemetryRecord } from '../_shared/copilot/speech-proxy.ts'
+import { livekit } from '../_shared/video/livekit.ts'
 import { recalls } from '../_shared/agents/loop.js'
 import { fresh, of } from '../_shared/compiled.ts'
 import bots from '../_shared/bots.json' with { type: 'json' }
@@ -36,7 +36,7 @@ import themeStrings from '../_shared/pipe/theme-strings.json' with { type: 'json
 const URL_ = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const admin = createClient(URL_, SERVICE, { auth: { persistSession: false } })
-const media = livekit({ db: admin, env: (key) => Deno.env.get(key) ?? '' })
+const media = livekit({ db: admin, env: (key: any) => Deno.env.get(key) ?? '' })
 
 /* how long to wait for the loop before giving up on a turn — a conversation cannot hang */
 const TURN_MS = Number(Deno.env.get('COPILOT_TURN_MS') || 60_000)
@@ -76,7 +76,7 @@ function ceilingResponse(id: string, model: string, content: string, reason: str
   })
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return json({ error: 'POST' }, 405)
 

@@ -51,11 +51,11 @@
 import { admin, json, preflight, appUrl, isServiceBearer } from '../_shared/lib.ts'
 import { sendEmail } from '../_shared/email.ts'
 import { PRESENT_MS, MIN_GAP_MS, MAX_BODY, MAX_FILE, MIME, MSG, hush, LIMITS, UUID, sha256, newToken, clean, firstName, findChoice, ipOf, madeLately, W_ATTACH, publicContact, profileOf, CONV, withAgents, withUrls, resolve, seen, threads, ownConversation, acknowledge, isLeaf, withdraw, escalate, PROMPTS, POLICY, type Contact } from '../_shared/support.ts'
-import { providersFrom } from '../_shared/agents/provider.js'
+import { providersFrom } from '../_shared/agents/provider.ts'
 /* the site's own name, for the one place the desk has to call itself something */
 import * as SITE from '../_shared/pipe/site.js'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   let body: any
@@ -171,6 +171,7 @@ Deno.serve(async (req) => {
    * asked for a person, nothing starts a run on that thread again until a human has it.
    */
   if (action === 'bot') {
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'Contact | null' is not assignable to parameter of type 'Contact'. Type 'null' is not assignable to type 'Contact'.
     const conv = await ownConversation(contact, body?.conversation_id)
     if (!conv) return json({ error: 'no such conversation' }, 404)
     if (conv.bot_off_at) return json({ error: 'asked-for-a-person' }, 409)
@@ -190,6 +191,7 @@ Deno.serve(async (req) => {
   /* somebody saying their own question is answered. Theirs to say, and theirs to undo: writing
      again reopens it, which the bump trigger has always done. */
   if (action === 'sorted') {
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'Contact | null' is not assignable to parameter of type 'Contact'. Type 'null' is not assignable to type 'Contact'.
     const conv = await ownConversation(contact, body?.conversation_id)
     if (!conv) return json({ error: 'no such conversation' }, 404)
     await admin.from('support_conversations').update({ status: 'resolved' }).eq('id', conv.id)
@@ -198,6 +200,7 @@ Deno.serve(async (req) => {
   }
 
   if (action === 'human') {
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'Contact | null' is not assignable to parameter of type 'Contact'. Type 'null' is not assignable to type 'Contact'.
     const conv = await ownConversation(contact, body?.conversation_id)
     if (!conv) return json({ error: 'no such conversation' }, 404)
     await admin.rpc('support_want_human', { p_conversation: conv.id })
@@ -249,6 +252,7 @@ Deno.serve(async (req) => {
     if (text || isLeaf(pick)) await acknowledge(conv)
     const { data: messages } = await admin.from('support_messages').select(MSG).eq('conversation_id', conv.id).order('created_at', { ascending: true })
     const { data: fresh } = await admin.from('support_conversations').select(CONV).eq('id', conv.id).single()
+    // @ts-expect-error TS2345, from the conversion: Argument of type '({ attachment_path?: string | null | undefined; } & { url?: string | undefined; })[]' is not assignable to parameter of ty
     return json({ conversation: fresh ?? conv, messages: await withAgents(await withUrls(messages ?? [])), contact: publicContact(contact, who.profile), ...(newToken_ ? { token: newToken_ } : {}) })
   }
 
@@ -325,6 +329,7 @@ Deno.serve(async (req) => {
     if (since && !isNaN(since.getTime())) q = q.gt('created_at', since.toISOString())
     const { data: messages } = await q
     const { contact_id: _c, ...pub } = conv as any
+    // @ts-expect-error TS2345, from the conversion: Argument of type '({ attachment_path?: string | null | undefined; } & { url?: string | undefined; })[]' is not assignable to parameter of ty
     return json({ conversation: pub, messages: await withAgents(await withUrls(hush(messages ?? []))) })
   }
 

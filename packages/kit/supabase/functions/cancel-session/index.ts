@@ -10,10 +10,10 @@
 import { admin, json, preflight, getUser } from '../_shared/lib.ts'
 import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { typeFor, schedulerIdOf } from '../_shared/cal.ts'
-import { mayReader } from '../_shared/sessions/page.js'
+import { mayReader } from '../_shared/sessions/page.ts'
 import { cancelBooking } from '../_shared/booking.ts'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   const user = await getUser(req)

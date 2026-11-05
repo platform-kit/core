@@ -187,7 +187,7 @@ export const canAccess = (required: any) => hasClass(userClass.value, required |
  * WHAT THIS PERSON MAY DO, as one ability rather than four vocabularies.
  *
  * The identity is what this module has already settled — the session, the role, the grants the
- * database returned — and the rules are the kit's (supabase/functions/_shared/permissions.js, the
+ * database returned — and the rules are the kit's (supabase/functions/_shared/permissions.ts, the
  * same file the Edge Functions ask) followed by whatever the site registered as `permissions`. The
  * direction is one way and has to stay that way: the database says what is true, this module settles
  * it into an identity, the identity builds the ability, and everything else asks the ability. A ref

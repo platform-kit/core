@@ -6,7 +6,7 @@ sources:
   [
     packages/kit/build/funnels.mts,
     packages/kit/build/funnel-io.mts,
-    packages/kit/supabase/functions/_shared/emails/rules.js,
+    packages/kit/supabase/functions/_shared/emails/rules.ts,
     packages/kit/supabase/functions/funnels-run,
     packages/kit/supabase/functions/email-blast,
     packages/kit/theme/src/components/admin/FunnelsAdmin.vue,

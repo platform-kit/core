@@ -26,9 +26,9 @@
 import { admin, json, preflight, getUser, appUrl } from '../_shared/lib.ts'
 import { offer } from '../_shared/offers.ts'
 import { formsNow } from '../_shared/forms-live.ts'   /* forms.json in git mode; the rows parsed in cloud mode, so a form written through the API or the admin takes answers at once */
-import { grade } from '../_shared/forms/score.js'
-import { definitionOf } from '../_shared/api/typeform/definition.js'
-import { itemOf, webhookPayloadOf, fileUrlOf } from '../_shared/api/typeform/response.js'
+import { grade } from '../_shared/forms/score.ts'
+import { definitionOf } from '../_shared/api/typeform/definition.ts'
+import { itemOf, webhookPayloadOf, fileUrlOf } from '../_shared/api/typeform/response.ts'
 import { throughDoor } from '../_shared/doors.ts'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
@@ -153,7 +153,7 @@ function metaOf(req: Request, body: any) {
   return { user_agent: ua.slice(0, 300), referer: (req.headers.get('referer') || req.headers.get('x-form-origin') || '').slice(0, 300), platform: /mobile|android|iphone|ipad/i.test(ua) ? 'mobile' : 'other', browser: 'default', hidden }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   await fresh()
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
   let fd: FormData | null = null
   let body: any = {}
   try {
-    if (multipart) { fd = await req.formData(); body = Object.fromEntries([...fd.entries()].filter(([, v]) => typeof v === 'string')) }
+    if (multipart) { fd = await req.formData(); body = Object.fromEntries([...(fd as any).entries()].filter(([, v]) => typeof v === 'string')) }
     else body = await req.json()
   } catch { return json({ error: 'bad request' }, 400) }
   const slug = String(body._form ?? body.form ?? '')

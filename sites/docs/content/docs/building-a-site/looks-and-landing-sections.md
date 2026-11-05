@@ -2,7 +2,7 @@
 title: Looks and landing sections
 description: One design, a palette per look, skins, and how a section type is three things that must agree.
 order: 46
-reviewed: 2026-10-10
+reviewed: 2026-11-04
 sources:
   [
     packages/kit/theme/src/components/landing/LandingAnnouncement.vue,

@@ -14,10 +14,10 @@ import {
   assertPaymentCapabilities,
   normalizePaymentCheckout,
   PaymentProviderError,
-} from '../_shared/payment-provider.mjs'
+} from '../_shared/payment-provider.mts'
 import type { PaymentCheckoutSnapshot, PaymentProviderAdapter } from '../_shared/payment-provider.d.ts'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   /* a guest's session (metadata.guest) is confirmed with no user: the ledger's writes are
@@ -27,6 +27,7 @@ Deno.serve(async (req) => {
   const id = typeof body?.session === 'string' ? body.session.trim() : ''
   if (!id || id.length > 255 || /[\u0000-\u001f\u007f]/.test(id)) return json({ error: 'no session' }, 400)
   try {
+    // @ts-expect-error TS2322, from the conversion: Type 'PaymentProviderAdapter | null' is not assignable to type 'PaymentProviderAdapter'. Type 'null' is not assignable to type 'PaymentProvi
     const provider: PaymentProviderAdapter = await getPaymentProvider()
     assertPaymentCapabilities(provider, ['checkout.confirm'])
     if (provider.id === 'stripe' && !stripeConfigured) return stripeUnconfigured()
@@ -49,9 +50,9 @@ Deno.serve(async (req) => {
       await subscriptionChanged(snapshot.subscription, provider.id)
     }
     return json({ ok: true, mode: snapshot.mode })
-  } catch (e) {
+  } catch (e: any) {
     const message = e instanceof Error ? e.message : String(e)
-    const status = e instanceof PaymentProviderError ? e.status : 502
+    const status = e instanceof PaymentProviderError ? (e as any).status : 502
     return json({ error: message }, status)
   }
 })

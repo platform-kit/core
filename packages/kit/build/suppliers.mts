@@ -45,6 +45,7 @@ export async function storeRegistry(root = process.cwd()) {
       const mod = await import(/* @vite-ignore */ pathToFileURL(path.join(root, 'platformkit.config.js')).href)
       s = storeOf(mod.default || mod)
     } catch { /* no config (a kit test, a bare checkout): the kit's own, which is every shop until one needs a bindery */ }
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'. Type 'unknown' is not assignable to type 'never'.
     const P = printers(ENV, await own(root, s.suppliers))
     // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'. Type 'unknown' is not assignable to type 'never'.
     return { ...P, kinds: registerKinds(await own(root, s.kinds)) }

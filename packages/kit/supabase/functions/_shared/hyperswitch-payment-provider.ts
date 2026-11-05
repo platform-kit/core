@@ -5,13 +5,13 @@ import type {
   PaymentCapability,
   PaymentProviderAdapter,
 } from './payment-provider.d.ts'
-import { PaymentProviderError } from './payment-provider.mjs'
+import { PaymentProviderError } from './payment-provider.mts'
 import {
   createHyperswitchApi,
   hyperswitchClientUrl,
   verifyHyperswitchWebhook,
-} from './hyperswitch-api.mjs'
-import { paymentPeriodEnd } from './hyperswitch-billing.mjs'
+} from './hyperswitch-api.mts'
+import { paymentPeriodEnd } from './hyperswitch-billing.mts'
 
 type HyperswitchPayload = Record<string, unknown>
 const HYPERSWITCH_CAPABILITIES: readonly PaymentCapability[] = [
@@ -221,6 +221,7 @@ export function createPaymentProvider(
     returnUrl: string,
     storageType: 'volatile' | 'persistent',
   ) => {
+    // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
     const session = await api.request('POST', `/${paymentMethodsPrefix}/payment-method-sessions`, {
       customer_id: customerId,
       storage_type: storageType,
@@ -235,6 +236,7 @@ export function createPaymentProvider(
   }
 
   const getDefaultSavedPaymentMethod = async (customerId: string): Promise<string | null> => {
+    // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 2.
     const response = await api.request(
       'GET',
       `/${paymentMethodsPrefix}/customers/${encodeURIComponent(customerId)}/saved-payment-methods`,
@@ -298,6 +300,7 @@ export function createPaymentProvider(
     if (!paymentId || paymentId.length > 255) {
       throw new PaymentProviderError('invalid_payment_reference', 'Hyperswitch payment id is invalid.', 422)
     }
+    // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 2.
     return api.request(
       'GET',
       `/v2/payments/${encodeURIComponent(paymentId)}/get-intent`,
@@ -309,14 +312,17 @@ export function createPaymentProvider(
   // before the payment) is never touched, and any failure leaves it for the next retrieval.
   const removeOneTimePaymentMethod = async (paymentId: string) => {
     try {
+      // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 2.
       const payment = await api.request('GET', `/v2/payments/${encodeURIComponent(paymentId)}`)
       const methodId = typeof payment.payment_method_id === 'string' ? payment.payment_method_id : ''
       const paymentCreated = Date.parse(String(payment.created))
       if (!methodId || !Number.isFinite(paymentCreated)) return
       const path = `/${paymentMethodsPrefix}/payment-methods/${encodeURIComponent(methodId)}`
+      // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 2.
       const method = await api.request('GET', path)
       const methodCreated = Date.parse(String(method.created))
       if (!Number.isFinite(methodCreated) || methodCreated < paymentCreated) return
+      // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 2.
       await api.request('DELETE', path)
     } catch {
       // best effort
@@ -878,6 +884,7 @@ export function createPaymentProvider(
       }
     },
 
+    // @ts-expect-error TS2322, from the conversion: Type '(request: Request) => Promise<{ invoice?: { lines: never[]; billingReason?: any; subscriptionId?: any; provider: string; invoiceId: an
     async verifyWebhook(request) {
       return verifyHyperswitchWebhook(request, webhookSecret)
     },

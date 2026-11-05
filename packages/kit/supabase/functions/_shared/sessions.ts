@@ -13,8 +13,8 @@
 import { admin } from './lib.ts'
 import { offer } from './offers.ts'
 import { of, onRefresh } from './compiled.ts'
-import { admits } from './sessions/admits.js'
-import { lengthChosen } from './sessions/page.js'
+import { admits } from './sessions/admits.ts'
+import { lengthChosen } from './sessions/page.ts'
 
 export type Where = { kind: 'video' | 'link' | 'place' | 'phone' | 'none'; url?: string; name?: string; address?: string; number?: string }
 export type Session = { title: string; slug: string; event: string; scheduler: 'native' | 'cal'; username: string | null; requires: string | string[]; below: string | null; weekly: number; monthly: number; sku: string | null; duration: number; hosts: string[]; seats: number; buffer: number; notice: number; where: Where; record: boolean; hours?: any; repeats?: any }
@@ -42,8 +42,8 @@ export const sessionOf = (event: string | null) => (event ? SESSIONS.find((s) =>
  * shared with the browser (./sessions/offering.js), because the two sides disagreeing about what an
  * offering IS would mean a surface offering a session the judge will refuse.
  */
-import { OFFERING, isOffering, offeringId, offeringType as offeringAsType } from './sessions/offering.js'
-import { parseManaged, managedCopy } from './sessions/managed.js'
+import { OFFERING, isOffering, offeringId, offeringType as offeringAsType } from './sessions/offering.ts'
+import { parseManaged, managedCopy } from './sessions/managed.ts'
 /* re-exported as well as imported: a bare re-export does not bring the binding into THIS module's
    scope, and the reader below calls offeringId — which threw at runtime and nowhere earlier. */
 export { OFFERING, isOffering, offeringId, offeringAsType }
@@ -131,7 +131,7 @@ export async function tiersOf(user_id: string | null): Promise<{ rank: number; t
   const { data } = await admin.from('entitlements').select('tier, expires_at').eq('user_id', user_id).eq('kind', 'class').eq('key', 'subscribed').eq('active', true)
   const now = Date.now()
   const tiers = (data ?? []).filter((e: any) => e.tier && (!e.expires_at || new Date(e.expires_at).getTime() > now)).map((e: any) => e.tier as string)
-  return { rank: Math.max(0, ...tiers.map((t) => TIERS[t] ?? 0)), tiers }
+  return { rank: Math.max(0, ...tiers.map((t: any) => TIERS[t] ?? 0)), tiers }
 }
 export async function rankOf(user_id: string | null): Promise<number> { return (await tiersOf(user_id)).rank }
 /* what the reader's tiers say of a type: the listing with the highest rank wins; null when none lists it */

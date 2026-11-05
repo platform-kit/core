@@ -4,7 +4,7 @@ description: The Published switch, titles and descriptions for search, share ima
 order: 11
 sources:
   [
-    packages/kit/supabase/functions/_shared/gate.js,
+    packages/kit/supabase/functions/_shared/gate.ts,
     packages/kit/build/velite.mts,
     packages/kit/src/lib/seo.ts,
     packages/kit/src/lib/seo-head.ts,

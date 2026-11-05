@@ -2,7 +2,7 @@
 title: The Store API reference
 description: Every type, field, mutation and error of the Shopify-compatible Store API a site serves, the products' mapping and the cart's rules — the reference; the guide is under Building a site.
 order: 85.7
-reviewed: 2026-10-20
+reviewed: 2026-11-04
 sources:
   [
     packages/kit/supabase/functions/storefront-api/index.ts,

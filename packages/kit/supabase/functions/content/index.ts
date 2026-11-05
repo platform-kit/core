@@ -19,14 +19,14 @@
  */
 import { contentIndexes, SPACE, API_ON, FORMS_ON, SESSIONS_ON, type Index } from '../_shared/content-index.ts'
 import { STORE_ON, SUPPORT_ON } from '../_shared/api/flags.ts'
-import { makeContext } from '../_shared/api/context.js'
-import { entryOf, assetOf, includesFor, strip } from '../_shared/api/entry.js'
-import { parse, apply, applyAssets, selectOn } from '../_shared/api/query.js'
-import { ERR } from '../_shared/api/errors.js'
-import { entryId, assetId, hashOf } from '../_shared/api/ids.js'
+import { makeContext } from '../_shared/api/context.ts'
+import { entryOf, assetOf, includesFor, strip } from '../_shared/api/entry.ts'
+import { parse, apply, applyAssets, selectOn } from '../_shared/api/query.ts'
+import { ERR } from '../_shared/api/errors.ts'
+import { entryId, assetId, hashOf } from '../_shared/api/ids.ts'
 import { tokenOf, callerOf, rateLimit, type Caller } from '../_shared/api/keys.ts'
-import { runGraphQL } from '../_shared/api/graphql.js'
-import { openapiFor } from '../_shared/api/openapi.js'
+import { runGraphQL } from '../_shared/api/graphql.ts'
+import { openapiFor } from '../_shared/api/openapi.ts'
 import { manage, sweepUploads } from '../_shared/api/manage.ts'
 import analyticsConfig from '../_shared/analytics.json' with { type: 'json' }
 
@@ -41,7 +41,7 @@ const site = () => (Deno.env.get('APP_URL') ?? Deno.env.get('VITE_APP_URL') ?? '
 async function sessionsFor() { if (!SESSIONS_ON) return null; try { const { of } = await import('../_shared/compiled.ts'); return (of('catalog') as any).sessions ?? [] } catch { return null } }
 async function formsFor() { if (!FORMS_ON) return null; try { const mod = await import('../_shared/forms.json', { with: { type: 'json' } }); return (mod as any).default ?? mod } catch { return null } }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const url = new URL(req.url)
   const q: Q = {}; url.searchParams.forEach((v, k) => { q[k] = v })
@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
     return new Response(text, { status, headers: h })
   }
   const fail = (e: { status: number; body: unknown }) => reply(e.body, e.status)
+  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   if (!API_ON) return fail(ERR.notFound('The content API is not on for this site.'))
   if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'].includes(req.method)) return fail(ERR.method())
 
@@ -74,6 +75,7 @@ Deno.serve(async (req) => {
   if (rl.over) return fail(ERR.rate(rl.reset))
 
   /* the API described: OpenAPI 3.1 from the index, for Scalar at /api and any client that reads it */
+  // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never[]'. Type 'string' is not assignable to type 'never'.
   if (path === '/openapi.json' || path === '/content/v1/openapi.json') { const idx = (await contentIndexes()).live; return reply(openapiFor(idx, { base: idx.site.url || site(), functions: (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/+$/, ''), sources: ((analyticsConfig as { sources?: { name: string }[] }).sources ?? []).map((x) => x.name), forms: await formsFor(), sessions: await sessionsFor(), store: STORE_ON, support: SUPPORT_ON }), 200, { 'Content-Type': 'application/json' }) }
 
   /* the space and the environment in the path */
@@ -103,6 +105,7 @@ Deno.serve(async (req) => {
   const managed = await manage(req, { sub, method: req.method, q, caller, rid, spaceLevel: !m[2] && /^\/webhook_definitions/.test(sub) ? true : false })
   if (managed) return managed.status === 204 ? new Response(null, { status: 204, headers: { ...CORS, ...extra, 'X-Contentful-Request-Id': rid } }) : reply(managed.body, managed.status, { 'Content-Type': 'application/vnd.contentful.management.v1+json', 'Cache-Control': 'no-store' })
   if (req.method !== 'GET' && req.method !== 'HEAD') return fail({ status: 405, body: { sys: { type: 'Error', id: 'BadRequest' }, message: 'The Delivery API is read-only; a write is the Management API\'s, under a management key.', requestId: rid } })
+  // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'null | undefined'. Type 'string' is not assignable to type 'null | undefined'.
   const ctxOf = (locale: string | null) => makeContext(index, { preview, gated: caller.gated, locale, imagesBase })
   if (m[2] && (sub === '' || sub === '/')) return reply({ sys: { type: 'Environment', id: 'master', version: 1, space: { sys: { type: 'Link', linkType: 'Space', id: SPACE } }, status: { sys: { type: 'Link', linkType: 'Status', id: 'ready' } } }, name: 'master' })   /* the environment first: its sub is the space's too */
   if (sub === '' || sub === '/') return reply({ sys: { type: 'Space', id: SPACE, version: 1 }, name: index.site.name, locales: index.locales.map((l) => ({ code: l.code, default: l.default, name: l.name, fallbackCode: l.fallbackCode })) })
@@ -115,7 +118,8 @@ Deno.serve(async (req) => {
   if (one) { const t = ctx.types.find((x: any) => x.sys.id === one![1]); return t ? reply(t) : fail(ERR.notFound('The resource could not be found.', { type: 'ContentType', id: one[1] })) }
 
   /* ---- entries ---- */
-  const a = parse(q, { kind: sub.startsWith('/assets') ? 'assets' : 'entries', types: ctx.types, locales: index.locales })
+  // @ts-expect-error TS2322, from the conversion: Type '{ code: string; name: string; default: boolean; fallbackCode: string | null; }[]' is not assignable to type 'never[]'. Type '{ code: s
+  const a: any = parse(q, { kind: sub.startsWith('/assets') ? 'assets' : 'entries', types: ctx.types, locales: index.locales })
   if ('error' in a) { const e = a.error as { id: string; message: string; details?: unknown }; return fail({ status: e.id === 'UnknownContentType' ? 400 : 400, body: { sys: { type: 'Error', id: e.id }, message: e.message, ...(e.details ? { details: e.details } : {}), requestId: rid } }) }
   one = /^\/entries\/([^/]+)$/.exec(sub)
   if (one) {
@@ -139,7 +143,7 @@ Deno.serve(async (req) => {
   if (one) { const x = ctx.assetsById.get(one[1]); return x ? reply(selectOn(assetOf(x, ctx), a.select)) : fail(ERR.notFound('The resource could not be found.', { type: 'Asset', id: one[1] })) }
   if (sub === '/assets') {
     const rows = applyAssets(ctx.assets, a)
-    return reply({ sys: { type: 'Array' }, total: rows.length, skip: a.skip, limit: a.limit, items: rows.slice(a.skip, a.skip + a.limit).map((x) => selectOn(assetOf(x, ctx), a.select)) })
+    return reply({ sys: { type: 'Array' }, total: rows.length, skip: a.skip, limit: a.limit, items: rows.slice(a.skip, a.skip + a.limit).map((x: any) => selectOn(assetOf(x, ctx), a.select)) })
   }
   /* ---- sync ---- */
   if (sub === '/sync') return reply(await sync(q, index, ctxOf('*'), url))

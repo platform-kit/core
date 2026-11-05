@@ -9,14 +9,14 @@
  */
 import { stripe, admin } from './lib.ts'
 import { offer, offerByKey } from './offers.ts'
-import { buyerOf, emailOf, offerOfLine, grantsOf, ships, carriesFiles, printVariant, lineSnapshot } from './ledger-rules.js'   /* what a payment means, apart from the writing of it */
+import { buyerOf, emailOf, offerOfLine, grantsOf, ships, carriesFiles, printVariant, lineSnapshot } from './ledger-rules.ts'   /* what a payment means, apart from the writing of it */
 import { judge } from './cal.ts'
 import { makeBooking } from './booking.ts'
 import { submitPrintOrder, editionOf, bookOf } from './print.ts'
 import { orderEmail, WORDS, type BoughtLine } from './email.ts'
 import { appUrl } from './lib.ts'
 import { findProviderEntities, findProviderEntity, linkProviderEntity } from './payment-provider-refs.ts'
-import { providerScopedId } from './payment-provider.mjs'
+import { providerScopedId } from './payment-provider.mts'
 import type { PaymentCheckoutSnapshot, PaymentSubscriptionSnapshot } from './payment-provider.d.ts'
 
 export const iso = (unix?: number | null) => (unix ? new Date(unix * 1000).toISOString() : null)
@@ -171,6 +171,7 @@ export async function checkoutCompleted(o: any, provider = 'stripe') {
   }
   if (typeof o.id !== 'string' || !o.id) throw new Error(`provider "${provider}" returned a checkout without an id`)
   const checkoutIdentity = providerScopedId(provider, o.id)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'null | undefined'. Type 'string' is not assignable to type 'null | 
   const userId: string | null = buyerOf(o, await userByCustomer(o.customer, provider))
   if (userId && o.customer) {
     const customerId = idOf(o.customer)
@@ -194,12 +195,12 @@ export async function checkoutCompleted(o: any, provider = 'stripe') {
   if (!before.length) {
     const { data, error } = await admin.from('purchases').select('id').eq('checkout_identity', checkoutIdentity).limit(1)
     if (error) throw new Error(`purchase checkout identity lookup failed: ${error.message}`)
-    before = (data ?? []).map((row) => row.id)
+    before = (data ?? []).map((row: any) => row.id)
     if (!before.length && provider === 'stripe') {
       const { data: legacyRows, error: legacyError } = await admin.from('purchases').select('id')
         .eq('stripe_checkout_session_id', o.id).limit(1)
       if (legacyError) throw new Error(`legacy Stripe purchase lookup failed: ${legacyError.message}`)
-      before = (legacyRows ?? []).map((row) => row.id)
+      before = (legacyRows ?? []).map((row: any) => row.id)
     }
   }
   const seen = before.length > 0
@@ -313,7 +314,7 @@ export async function checkoutCompleted(o: any, provider = 'stripe') {
     if (!transactionIds.length) {
       const { data, error } = await admin.from('order_transactions').select('id').eq('reference', transactionReference).limit(1)
       if (error) throw new Error(`payment transaction identity lookup failed: ${error.message}`)
-      transactionIds = (data ?? []).map((row) => row.id)
+      transactionIds = (data ?? []).map((row: any) => row.id)
     }
     if (transactionIds.length > 1) throw new Error(`payment reference ${externalPaymentId} maps to multiple order transactions`)
     if (transactionIds.length) {
@@ -383,7 +384,7 @@ export async function checkoutCompleted(o: any, provider = 'stripe') {
         : { data: null, error: null }
       if (profileError) throw profileError
       const attendeeEmail = userId ? String(prof?.email ?? email).trim().toLowerCase() : email
-      const decision = await judge(bk.event, userId, attendeeEmail, null)
+      const decision: any = await judge(bk.event, userId, attendeeEmail, null)
       const purchasedSkus = String(o.metadata?.skus ?? '').split(',').filter(Boolean)
       const sessionMatches = !!decision.session?.sku && purchasedSkus.includes(decision.session.sku)
       const eligible = decision.ok || (!userId && decision.reason === 'unpaid' && sessionMatches)

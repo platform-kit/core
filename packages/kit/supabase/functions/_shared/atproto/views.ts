@@ -15,8 +15,8 @@ import { admin } from '../lib.ts'
 import { jsonToLex } from 'npm:@atproto/lex-json@0.1.7'
 import { cidForLex } from 'npm:@atproto/lex-cbor@0.1.7'
 import { cidForRawBytes } from 'npm:@atproto/lex-data@0.1.8'
-import { POST, LIKE, REPOST, FOLLOW, BLOCK, GENERATOR, didOf, handleOf, nameOf, uriOf, spaceKey } from './ids.js'
-import { planEmbed, kindOf } from './media.js'
+import { POST, LIKE, REPOST, FOLLOW, BLOCK, GENERATOR, didOf, handleOf, nameOf, uriOf, spaceKey } from './ids.ts'
+import { planEmbed, kindOf } from './media.ts'
 
 /* the whole post on the site, for a record that cannot carry all its media */
 const postLink = (_ctx: Ctx, row: any) => (Deno.env.get('APP_URL') || '').replace(/\/$/, '') + '/feed/post/' + row.id

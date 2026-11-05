@@ -22,7 +22,7 @@ import { registry, describe } from '../_shared/pipe/build/models/index.mjs'
 import { rowsStore } from '../_shared/pipe/build/store/rows.mjs'
 import { models as SITE_MODELS } from '../_shared/pipe/site/index.js'
 import * as SITE from '../_shared/pipe/site.js'
-import { pushPending, githubSettings, saveGithubSettings, saveHook, askRebuild, contentArchive } from '../_shared/github.js'
+import { pushPending, githubSettings, saveGithubSettings, saveHook, askRebuild, contentArchive } from '../_shared/github.ts'
 import THEME from '../_shared/pipe/theme-strings.json' with { type: 'json' }
 import THEME_SKILLS from '../_shared/pipe/theme-skills.json' with { type: 'json' }
 import THEME_BRAND from '../_shared/pipe/theme-brand.json' with { type: 'json' }
@@ -76,7 +76,7 @@ async function contentsOf(slug: string): Promise<string[]> {
   return spec && spec.contents.length ? spec.contents : ['parts']
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'POST' }, 405)
   let call: Record<string, unknown> = {}

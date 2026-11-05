@@ -1,7 +1,7 @@
 ## Tasks
 
 - [x] `fullText` on a book (velite schema, the admin's field, the cloud entry's fields), default true
-- [x] `_shared/gate.js`: `textWithheld`, `titlesOnly`, `sentText`; `publicBook` and `publicRow` publish a withheld book's chapter titles alone
+- [x] `_shared/gate.ts`: `textWithheld`, `titlesOnly`, `sentText`; `publicBook` and `publicRow` publish a withheld book's chapter titles alone
 - [x] `reader-content` sends a withheld book's titles alone, to any class; `build/content-json.mjs` writes its titles alone into the server's index
 - [x] The build warns while a withheld book's file still holds its text
 - [x] `printSpec(block, book)` keeps the summary edition alone for a withheld book; the catalog and `print.mjs` refuse other contents by name; the store's offers, art and deploy checks pass the book

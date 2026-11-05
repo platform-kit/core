@@ -6,8 +6,8 @@ sources:
   [
     packages/kit/supabase/functions/create-checkout-session,
     packages/kit/supabase/functions/_shared/ledger.ts,
-    packages/kit/supabase/functions/_shared/ledger-rules.js,
-    packages/kit/supabase/functions/_shared/payment-provider.mjs,
+    packages/kit/supabase/functions/_shared/ledger-rules.ts,
+    packages/kit/supabase/functions/_shared/payment-provider.mts,
     packages/kit/src/payment-provider.d.ts,
     packages/kit/build/ledger.test.mjs,
     packages/kit/theme/src/components/landing/LandingPricing.vue,
@@ -22,7 +22,7 @@ A **membership** is a tier — a level — and any number of offers may belong t
 
 ## What a payment means
 
-The ledger writes what somebody owns after they have paid, and **what it decides** is apart from the writing of it, in `_shared/ledger-rules.js` — plain JavaScript over plain objects, so it can be read and checked without a database. The rules, each of which somebody can lose money or access by:
+The ledger writes what somebody owns after they have paid, and **what it decides** is apart from the writing of it, in `_shared/ledger-rules.ts` — plain JavaScript over plain objects, so it can be read and checked without a database. The rules, each of which somebody can lose money or access by:
 
 - **the buyer** is what the checkout carried, then Stripe's own reference, then the customer the payment was made under. A guest has none of them: the purchase is written against the address Stripe collected and claimed once an account proves it owns that address.
 - **which offer a line is** — the price's lookup key, which is the offer's identity and survives a rename, before the sku, which may have been reused.

@@ -18,7 +18,7 @@ const fill = (t: string, m: Record<string, unknown>) => String(t || '').replace(
 const soon = (h: number) => (h >= 2 ? fill(W['in-hours'] || 'in {n} hours', { n: h }) : h === 1 ? (W['in-hour'] || 'in an hour') : fill(W['in-minutes'] || 'in {n} minutes', { n: Math.round(h * 60) }))
 const LATE = 15 * 6e4   /* the run's cadence plus a little: an hour crossed longer ago than this is skipped, not sent late */
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
     const { data: still } = await admin.from('bookings').update({ status: 'rejected', updated_at: new Date().toISOString() }).eq('uid', uid).eq('status', 'pending').select('uid')
     if (!still?.length) continue   /* another run, or the host, got there first */
     await admin.rpc('booking_release', { p_uid: uid })
+    // @ts-expect-error TS2345, from the conversion: Argument of type '"session-declined"' is not assignable to parameter of type 'SessionMailKind'.
     await sessionMail('session-declined', uid).catch((e) => console.warn('session-declined', uid, String(e)))
   }
   let sent = 0

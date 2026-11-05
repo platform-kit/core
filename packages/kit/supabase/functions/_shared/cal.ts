@@ -6,10 +6,10 @@
  * cal.com from here.
  */
 import { admin } from './lib.ts'
-import { schedulers, schedulerIdOf } from './schedulers/index.js'
-import { videos, videoIdOf } from './video/index.js'
-export { schedulerIdOf, SCHEDULER_IDS } from './schedulers/index.js'
-export { videoIdOf, VIDEO_IDS } from './video/index.js'
+import { schedulers, schedulerIdOf } from './schedulers/index.ts'
+import { videos, videoIdOf } from './video/index.ts'
+export { schedulerIdOf, SCHEDULER_IDS } from './schedulers/index.ts'
+export { videoIdOf, VIDEO_IDS } from './video/index.ts'
 export * from './sessions.ts'
 
 const env = (k: string) => Deno.env.get(k) ?? ''

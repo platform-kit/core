@@ -16,8 +16,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { admin, getUser, json, preflight } from '../_shared/lib.ts'
 import { contentIndexes } from '../_shared/content-index.ts'
-import { classOf, allowedBy } from '../_shared/access.js'
-import { readableChapters, sentText, splitChapters, publicRow, companionTextFor } from '../_shared/gate.js'
+import { classOf, allowedBy } from '../_shared/access.ts'
+import { readableChapters, sentText, splitChapters, publicRow, companionTextFor } from '../_shared/gate.ts'
 import { parseCompanionBody, serialiseCompanionBody } from '../_shared/pipe/src/lib/companion-body.js'
 
 const COMPANION = { parseCompanionBody, serialiseCompanionBody }
@@ -40,7 +40,7 @@ async function entitlementsOf(req: Request) {
 
 async function rows(req: Request) {
   const user = await getUser(req)
-  const isAdmin = user ? (await asReader(req).rpc('is_admin').then((r) => r.data === true, () => false)) : false
+  const isAdmin = user ? (await asReader(req).rpc('is_admin').then((r: any) => r.data === true, () => false)) : false
   let q = admin.from('content').select('collection, slug, path, published, data, body, text').is('deleted_at', null).order('path')
   if (!isAdmin) q = q.eq('published', true).not('text', 'is', null)
   const { data, error } = await q
@@ -50,7 +50,7 @@ async function rows(req: Request) {
   return json({ rows: (data ?? []).map((r: any) => publicRow(r, books, COMPANION)) }, 200)
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return fail('method not allowed', 405)
   const body = await req.json().catch(() => ({}))

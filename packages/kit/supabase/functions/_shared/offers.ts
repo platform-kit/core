@@ -23,7 +23,7 @@ import { of, onRefresh } from './compiled.ts'
 import {
   assertPaymentCapabilities,
   PaymentProviderError,
-} from './payment-provider.mjs'
+} from './payment-provider.mts'
 import type { PaymentCatalogOffer } from './payment-provider.d.ts'
 
 export type Offer = {
@@ -38,7 +38,7 @@ export type Offer = {
    ledger-rules.js where they can be checked without a stack — and are re-exported here because this
    is where callers expect to find them. Defined once: the same two rules written in two places is
    how the checkout and the confirmation come to disagree about what somebody bought. */
-export { ships, printVariant } from './ledger-rules.js'
+export { ships, printVariant } from './ledger-rules.ts'
 /* live bindings over the catalog: the file the build shipped, or the row a publish wrote where
    nothing rebuilds (./compiled.ts) */
 export let LISTS: any[] = []
@@ -95,7 +95,7 @@ function currencyOptionsOf(o: Offer): Record<string, number> {
 }
 
 function catalogOffer(o: Offer): PaymentCatalogOffer {
-  const usage = o.usage
+  const usage: any = o.usage
   if (usage && (!usage.meter || !Number.isSafeInteger(usage.overage_price_micros) || usage.overage_price_micros <= 0)) {
     throw new Error(`metered offer "${o.sku}" requires a meter and positive overage price`)
   }
@@ -130,7 +130,7 @@ function catalogOffer(o: Offer): PaymentCatalogOffer {
 }
 
 async function syncCatalog(offers: readonly PaymentCatalogOffer[]) {
-  const provider = await getPaymentProvider()
+  const provider: any = await getPaymentProvider()
   assertPaymentCapabilities(provider, ['catalog.sync'])
   if (!provider.syncCatalog) {
     throw new PaymentProviderError('catalog_sync_unavailable', `Payment provider "${provider.id}" declares no catalog synchronizer.`, 500)

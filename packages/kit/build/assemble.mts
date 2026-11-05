@@ -42,7 +42,7 @@ import { moduleSet } from './steps.mjs'
 import { backendFor } from './modules/backend.mjs'
 import { assertNoManualCron, cronSql } from './cron.mjs'
 import { accessOf, accessSql, communityAccessOf } from './network-access.mjs'
-import { closure, PIPE_ROOTS, PIPE_SKIP, sourceOf } from './pipe-closure.mjs'
+import { closure, PIPE_ROOTS, PIPE_SKIP, sourceOf , jsImports } from './pipe-closure.mjs'
 import {
   HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION,
   paymentProviderConfigurationOf,
@@ -153,7 +153,9 @@ plan.set('data.sql', {
 /* functions: the kit's shared tree and the functions that are this site's, then the site's own (a site function of the
    kit's name is refused) */
 const kitFunctions = new Set(['_shared', ...backend.functions])
-for (const f of walk(path.join(KIT, 'functions'))) { const r = rel(path.join(KIT, 'functions'), f); if (kitFunctions.has(r.split('/')[0])) put('functions/' + r, f) }
+/* a packed kit also holds the JavaScript compile.mjs emits beside a module Node reads: Deno reads the source, so the emitted copy stays behind */
+const emitted = (f: string) => /(\.d\.m?ts|\.m?js)$/.test(f) && fs.existsSync(f.replace(/(\.d)?\.(m?)[jt]s$/, '.$2ts')) && f !== f.replace(/(\.d)?\.(m?)[jt]s$/, '.$2ts')
+for (const f of walk(path.join(KIT, 'functions'))) { const r = rel(path.join(KIT, 'functions'), f); if (kitFunctions.has(r.split('/')[0]) && !emitted(f)) put('functions/' + r, f) }
 const siteFn = path.resolve(ROOT, D.functions)
 for (const f of walk(siteFn)) { const r = rel(siteFn, f); if (path.basename(r) === '.gitkeep') continue; put('functions/' + r, f) }
 plan.set('functions/_shared/payment-provider.d.ts', {
@@ -226,7 +228,7 @@ const sharedDynamicImportPattern = /(\bimport\s*\(\s*)(['"])([^'"]+)\2/g
 for (const [r, abs] of closure(KIT_PKG, PIPE_ROOTS, PIPE_SKIP)) {
   const target = 'functions/_shared/pipe/' + r
   /* a module the kit keeps as TypeScript is copied as the JavaScript its importers name */
-  plan.set(target, { from: abs, content: /\.m?ts$/.test(abs) ? Buffer.from(stripTypeScriptTypes(fs.readFileSync(abs, 'utf8'), { mode: 'strip' })) : fs.readFileSync(abs) })
+  plan.set(target, { from: abs, content: /\.m?ts$/.test(abs) ? Buffer.from(jsImports(stripTypeScriptTypes(fs.readFileSync(abs, 'utf8'), { mode: 'strip' }))) : fs.readFileSync(abs) })
 }
 
 /* THE PRINT FUNCTION'S OWN. print-render sets a book where there is no machine, and the three

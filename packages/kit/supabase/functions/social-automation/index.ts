@@ -2,17 +2,17 @@ import { admin, isServiceBearer, json, preflight } from '../_shared/lib.ts'
 import {
   automationDeliveryOutcome,
   sendInstagramPrivateReply,
-} from '../_shared/social/automation-delivery.mjs'
+} from '../_shared/social/automation-delivery.mts'
 import {
   matchSocialAutomations,
   socialBotAllowsAnonymousSubject,
-} from '../_shared/social/automation-rules.mjs'
+} from '../_shared/social/automation-rules.mts'
 import {
   availableSocialAutomationRoutes,
   invokeSocialOperation,
-} from '../_shared/social/operations.mjs'
-import { DIRECT_SOCIAL_ADAPTERS } from '../_shared/social/direct-sdk.mjs'
-import { createManagedSocial } from '../_shared/social/managed-sdk.mjs'
+} from '../_shared/social/operations.mts'
+import { DIRECT_SOCIAL_ADAPTERS } from '../_shared/social/direct-sdk.mts'
+import { createManagedSocial } from '../_shared/social/managed-sdk.mts'
 
 type Row = Record<string, any>
 type SocialRuntime = {
@@ -500,7 +500,7 @@ async function automationOptions(body: Row) {
   })
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const options = preflight(req)
   if (options) return options
   if (req.method !== 'POST') return json({ error: 'POST is required.' }, 405)

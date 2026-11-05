@@ -11,7 +11,7 @@ import { rolesOf, isProvider } from '../_shared/roles.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { BUCKET } from '../_shared/recordings.ts'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
   const user = await getUser(req); if (!user) return json({ error: 'sign in' }, 401)

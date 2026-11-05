@@ -42,6 +42,11 @@ const rel = (base: any, f: any) => path.relative(base, f).split(path.sep).join('
    which the copy is stripped from (openspec: typescript-throughout). Null where neither is there. */
 export const sourceOf = (abs: any) => fs.existsSync(abs) ? abs : /\.m?js$/.test(abs) && fs.existsSync(abs.replace(/\.(m?)js$/, '.$1ts')) ? abs.replace(/\.(m?)js$/, '.$1ts') : null
 
+/* a function's module names the .ts Deno reads, and the engine names the same file .js: one copy, under the .js */
+export const jsName = (p: string): string => p.replace(/\.(m?)ts$/, '.$1js')
+/* and the copy's own imports say so */
+export const jsImports = (code: string): string => code.replace(/((?:from\s+|import\s*\(\s*|import\s+)['"])(\.{1,2}\/[^'"]+)\.(m?)ts(['"])/g, (_, a, p, m, q) => `${a}${p}.${m}js${q}`)
+
 /* every file reachable from the roots by a relative import, as { relative path → absolute } */
 export function closure(base: any, roots = PIPE_ROOTS, skip = PIPE_SKIP) {
   const seen = new Map()
@@ -57,7 +62,7 @@ export function closure(base: any, roots = PIPE_ROOTS, skip = PIPE_SKIP) {
     seen.set(r, abs)
     for (const m of src.matchAll(IMPORT_RE)) {
       const spec = m[1] || m[2]
-      if (spec && spec.startsWith('.')) queue.push(rel(base, path.resolve(path.dirname(abs), spec)))
+      if (spec && spec.startsWith('.')) queue.push(jsName(rel(base, path.resolve(path.dirname(abs), spec))))
     }
   }
   return seen
@@ -74,7 +79,7 @@ export function closureResolves(base: any, roots = PIPE_ROOTS, skip = PIPE_SKIP)
     for (const m of fs.readFileSync(abs, 'utf8').matchAll(IMPORT_RE)) {
       const spec = m[1] || m[2]
       if (!spec || !spec.startsWith('.')) continue
-      const target = rel(base, path.resolve(path.dirname(abs), spec))
+      const target = jsName(rel(base, path.resolve(path.dirname(abs), spec)))
       if (!inside.has(target) && sourceOf(path.join(base, target))) bad.push(`${r} → ${target}`)
     }
   }

@@ -107,6 +107,7 @@ const moveOption = (i: any, by: any) => {
   const after = normaliseOptions([...next, ...((props.form.sizes || []).length && !next.some((o) => slug((o as any).name) === 'size') ? [{ name: 'Size', values: props.form.sizes }] : [])])
   const moved = remapKeys([...Object.keys(variants.value), ...unsold.value], before, after)
   const vs: any = {}
+  // @ts-expect-error TS2538, from the conversion: Type '{}' cannot be used as an index type.
   for (const [was, now] of Object.entries(moved)) if (now && variants.value[was]) vs[now] = variants.value[was]
   const un = [...new Set(unsold.value.map((k: any) => (moved as any)[k]).filter(Boolean))]
   emit('patch', { variants: vs, unsold: un })

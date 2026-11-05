@@ -6,20 +6,20 @@ sources:
   [
     packages/kit/build/kinds,
     packages/kit/supabase/functions/_shared/suppliers,
-    packages/kit/supabase/functions/_shared/prices.js,
-    packages/kit/supabase/functions/_shared/promotions.js,
+    packages/kit/supabase/functions/_shared/prices.ts,
+    packages/kit/supabase/functions/_shared/promotions.ts,
     packages/kit/src/lib/promotions.ts,
     packages/kit/build/promotions.test.mjs,
     packages/kit/supabase/schemas/42-promotions.sql,
     packages/kit/build/promotions-db.test.mjs,
     packages/kit/src/lib/prices.ts,
     packages/kit/build/prices.test.mjs,
-    packages/kit/supabase/functions/_shared/stock.js,
+    packages/kit/supabase/functions/_shared/stock.ts,
     packages/kit/src/lib/stock.ts,
     packages/kit/build/stock.test.mjs,
     packages/kit/supabase/schemas/41-inventory.sql,
     packages/kit/build/inventory-db.test.mjs,
-    packages/kit/supabase/functions/_shared/variants.js,
+    packages/kit/supabase/functions/_shared/variants.ts,
     packages/kit/src/lib/variants.ts,
     packages/kit/theme/src/components/store/VariantPicker.vue,
     packages/kit/build/variants.mts,
@@ -28,7 +28,7 @@ sources:
     packages/kit/build/store-separation.test.mjs,
     packages/kit/supabase/functions/_shared/offers.ts,
     packages/kit/supabase/functions/_shared/ledger.ts,
-    packages/kit/supabase/functions/_shared/ledger-rules.js,
+    packages/kit/supabase/functions/_shared/ledger-rules.ts,
     packages/kit/build/ledger.test.mjs,
     packages/kit/supabase/functions/_shared/print.ts,
     packages/kit/supabase/functions/create-checkout-session,
@@ -36,8 +36,8 @@ sources:
     packages/kit/supabase/functions/stripe-webhook,
     packages/kit/supabase/functions/book-files,
     packages/kit/build/catalog.mts,
-    packages/kit/supabase/functions/_shared/usage-stripe.mjs,
-    packages/kit/supabase/functions/_shared/usage-gate.mjs,
+    packages/kit/supabase/functions/_shared/usage-stripe.mts,
+    packages/kit/supabase/functions/_shared/usage-gate.mts,
     packages/kit/supabase/functions/_shared/usage.ts,
     packages/kit/supabase/functions/usage-meter-report,
     packages/kit/build/usage.test.mjs,
@@ -53,7 +53,7 @@ sources:
     packages/kit/supabase/functions/create-portal-session,
     packages/kit/supabase/functions/push-catalog,
     packages/kit/supabase/functions/_shared/shipping.ts,
-    packages/kit/supabase/functions/_shared/checkout-params.js,
+    packages/kit/supabase/functions/_shared/checkout-params.ts,
     packages/kit/build/checkout-params.test.mjs,
     packages/kit/build/payment-providers.test.mjs,
   ]
@@ -72,7 +72,7 @@ The catalog carries a session type whole, including the hours it is bookable at 
 
 ## What a payment decides
 
-The ledger writes what somebody owns once Stripe says they have paid. **What it decides** is apart from the writing of it, in `_shared/ledger-rules.js` — plain functions over plain objects, no client and no network, so the decisions can be read and checked on their own:
+The ledger writes what somebody owns once Stripe says they have paid. **What it decides** is apart from the writing of it, in `_shared/ledger-rules.ts` — plain functions over plain objects, no client and no network, so the decisions can be read and checked on their own:
 
 - `buyerOf(session)` — the checkout's own `user_id`, then Stripe's `client_reference_id`, then the customer the payment was made under. A guest has none of the three: the purchase is written against the address Stripe collected, and claimed once an account proves it owns that address.
 - `offerOfLine(line)` — a line is matched by the price's **lookup key**, which is the offer's identity and survives a rename, before its sku, which may have been reused.
@@ -103,7 +103,7 @@ Four parameters Stripe has always offered and the store sent none of: a trial, t
 methods accepted, and a quantity the buyer may change. They are **parameters, not mechanisms** —
 which is why they went missing for so long and why they are cheap now.
 
-They are declared per offer and resolved by one pure module, `_shared/checkout-params.js`, which the
+They are declared per offer and resolved by one pure module, `_shared/checkout-params.ts`, which the
 function (Deno) and the kit's test (node) both read, so the cart arithmetic is written once. The only
 real decisions are how a cart of several offers resolves something that belongs to the _session_
 rather than to a line:
@@ -164,7 +164,7 @@ Three things about it are worth knowing because they are not obvious:
 - **A variant's sku and lookup key are derived once** from the offer's `sku` and `key`, which is
   why a sku may be renamed after it has sold without losing anything.
 
-The grammar lives in `supabase/functions/_shared/variants.js` — plain JavaScript on nothing at all — so the **checkout function applies exactly the rule the build applied** when it wrote the catalog. Two implementations of "which combinations does this offer sell" is two answers the first time one of them is edited; the same arrangement as `ledger-rules.js` and the printers. `printVariant`, which print has used since before the store had options, is now a reading of that one rule in a book's words rather than a second copy of it. The print compatibility comparison runs when a site has published books set up for print; a generic site with printing switched off reports that comparison as skipped.
+The grammar lives in `supabase/functions/_shared/variants.ts` — plain JavaScript on nothing at all — so the **checkout function applies exactly the rule the build applied** when it wrote the catalog. Two implementations of "which combinations does this offer sell" is two answers the first time one of them is edited; the same arrangement as `ledger-rules.js` and the printers. `printVariant`, which print has used since before the store had options, is now a reading of that one rule in a book's words rather than a second copy of it. The print compatibility comparison runs when a site has published books set up for print; a generic site with printing switched off reports that comparison as skipped.
 
 A combination a shop does not sell is listed in `unsold` — the few, rather than the many it does
 — and stays visible as unavailable rather than vanishing.
@@ -339,7 +339,7 @@ completed payment for ever.
 
 ### Sold out is not the same as not sold
 
-`_shared/stock.js` is the rule, pure, shared by the page and the checkout. It keeps two answers
+`_shared/stock.ts` is the rule, pure, shared by the page and the checkout. It keeps two answers
 apart that a shop routinely conflates:
 
 |            |                                                                                                                         |

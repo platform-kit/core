@@ -10,7 +10,7 @@ sources:
     packages/kit/supabase/functions/providers,
     packages/kit/supabase/functions/payouts,
     packages/kit/supabase/functions/_shared/payouts.ts,
-    packages/kit/supabase/functions/_shared/payment-provider.mjs,
+    packages/kit/supabase/functions/_shared/payment-provider.mts,
     packages/kit/src/payment-provider.d.ts,
     packages/kit/supabase/schemas/57-providers.sql,
   ]

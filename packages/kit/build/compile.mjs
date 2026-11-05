@@ -30,6 +30,9 @@ const ROOTS = ['bin', 'build', 'src', 'vite']
 /* the theme's TypeScript, which tsc cannot build beside its components: stripped file by file, since a site's Node
    reads theme.js and its schemas at build time and Node strips nothing inside node_modules (Vite reads the .ts) */
 const THEME = 'theme/src'
+/* the functions' shared modules, which Deno reads as TypeScript and Node, for the ones the engine imports, reads inside
+   node_modules: their JavaScript goes beside them, and assemble leaves it behind */
+const FUNCTIONS = 'supabase/functions/_shared'
 /* Deno's own TypeScript, run by deno test and copied into the functions as it is */
 const DENO = (rel) => /\.test\.ts$/.test(rel) || rel === 'build/hyperswitch-browser.steps.ts'
 
@@ -71,8 +74,8 @@ function strip(ts) {
   return copied
 }
 
-/* every TypeScript file of the theme, as paths under the kit */
-function themeSources() {
+/* every TypeScript file under a folder, as paths under the kit */
+function typescriptIn(root) {
   const out = []
   const walk = (rel) => {
     for (const e of fs.readdirSync(path.join(KIT, rel), { withFileTypes: true })) {
@@ -81,25 +84,30 @@ function themeSources() {
       if (/\.ts$/.test(e.name) && !/\.d\.ts$/.test(e.name)) out.push(r)
     }
   }
-  if (fs.existsSync(path.join(KIT, THEME))) walk(THEME)
+  if (fs.existsSync(path.join(KIT, root))) walk(root)
   return out
 }
+const themeSources = () => typescriptIn(THEME)
+const functionSources = () => typescriptIn(FUNCTIONS)
 
 export function compile() {
   clean()
   const theme = strip(themeSources())
   const ts = sources()
+  const shared = functionSources()
   if (!ts.length) { fs.writeFileSync(LIST, JSON.stringify(theme, null, 2) + '\n'); return theme }
   let tsc
   try { tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc') } catch {
-    const copied = [...theme, ...strip(ts)]
+    const copied = [...theme, ...strip(ts), ...strip(shared)]
     fs.writeFileSync(LIST, JSON.stringify(copied, null, 2) + '\n')
     return copied
   }
   const r = spawnSync(process.execPath, [tsc, '--project', path.join(KIT, 'tsconfig.build.json')], { cwd: KIT, encoding: 'utf8' })
   if (r.status !== 0) throw new Error('compile: tsc refused the kit\n' + (r.stdout + r.stderr).trim().split('\n').slice(0, 20).join('\n'))
   const copied = [...theme]
-  for (const rel of ts) {
+  /* tsc emits only the shared modules the engine reaches, and only those are read by Node */
+  const reached = shared.filter((rel) => fs.existsSync(path.join(OUT, rel.replace(/\.(m?)ts$/, '.$1js'))))
+  for (const rel of [...ts, ...reached]) {
     const base = rel.replace(/\.(m?)ts$/, '')
     const m = rel.endsWith('.mts') ? 'm' : ''
     for (const ext of [`.${m}js`, `.d.${m}ts`]) {

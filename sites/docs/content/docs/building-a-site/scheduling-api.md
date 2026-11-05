@@ -8,7 +8,7 @@ sources:
     packages/kit/supabase/functions/_shared/api/cal,
     packages/kit/supabase/functions/_shared/scheduling-events.ts,
     packages/kit/supabase/functions/_shared/booking.ts,
-    packages/kit/supabase/functions/_shared/schedulers/cal.js,
+    packages/kit/supabase/functions/_shared/schedulers/cal.ts,
     packages/kit/src/lib/cal-embed.ts,
     packages/kit/theme/src/pages/BookPage.vue,
     packages/kit/build/scheduling-api.test.mjs,
@@ -18,7 +18,7 @@ reviewed: 2026-10-21
 
 ## What it is
 
-A site with the sessions module on serves its booking types, open times and bookings the way **cal.com** serves theirs — cal.com's API v2 at `https://<domain>/api/scheduling/v2/…` (one host rewrite, `/api/scheduling/v2/*` → the `scheduling-api` function, so `api.cal.com` → the site is the whole swap), with cal.com's envelope, versions, error codes and webhook payloads. Anything written against cal.com's API works with the host changed — including the kit's own cal.com client, which is how the loop is closed: `_shared/schedulers/cal.js`, the very code that books on cal.com when a type says so, points at the site with `CAL_API_BASE` and books on the native calendar through this API. cal.com's embed takes an alternate origin, so a booking page at `/book/<slug>` speaks its protocol. The reference — every route, argument, field and error — is [The Scheduling API reference](/content/docs/reference/scheduling-api).
+A site with the sessions module on serves its booking types, open times and bookings the way **cal.com** serves theirs — cal.com's API v2 at `https://<domain>/api/scheduling/v2/…` (one host rewrite, `/api/scheduling/v2/*` → the `scheduling-api` function, so `api.cal.com` → the site is the whole swap), with cal.com's envelope, versions, error codes and webhook payloads. Anything written against cal.com's API works with the host changed — including the kit's own cal.com client, which is how the loop is closed: `_shared/schedulers/cal.ts`, the very code that books on cal.com when a type says so, points at the site with `CAL_API_BASE` and books on the native calendar through this API. cal.com's embed takes an alternate origin, so a booking page at `/book/<slug>` speaks its protocol. The reference — every route, argument, field and error — is [The Scheduling API reference](/content/docs/reference/scheduling-api).
 
 ```sh
 curl 'https://northlight.example.com/v2/slots?eventTypeSlug=intro-call&start=2026-10-01&end=2026-10-07&timeZone=Europe/Amsterdam' -H 'Authorization: Bearer <a scheduling key>' -H 'cal-api-version: 2024-09-04'

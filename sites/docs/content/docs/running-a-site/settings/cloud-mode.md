@@ -11,7 +11,7 @@ sources:
     packages/kit/src/lib/entry.ts,
     packages/kit/build/content-export.mts,
     packages/kit/supabase/functions/admin/index.ts,
-    packages/kit/supabase/functions/_shared/github.js,
+    packages/kit/supabase/functions/_shared/github.ts,
     packages/kit/theme/src/components/PublishingPage.vue,
     packages/kit/theme/src/content/ui/publishing.md,
     packages/kit/build/models/index.mts,

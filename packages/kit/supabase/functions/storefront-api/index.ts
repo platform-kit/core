@@ -20,11 +20,11 @@ import { of } from '../_shared/compiled.ts'
 /* the catalog as this deployment has it: the shipped file, or the row a publish wrote */
 const catalog = of<Record<string, any>>('catalog')
 import { contentIndexes } from '../_shared/content-index.ts'
-import { makeContext } from '../_shared/api/context.js'
-import { assetUrl } from '../_shared/api/entry.js'
-import { storefrontOf, GID } from '../_shared/api/shopify/products.js'
-import { execute } from '../_shared/api/shopify/schema.js'
-import { cartOf } from '../_shared/api/shopify/cart.js'
+import { makeContext } from '../_shared/api/context.ts'
+import { assetUrl } from '../_shared/api/entry.ts'
+import { storefrontOf, GID } from '../_shared/api/shopify/products.ts'
+import { execute } from '../_shared/api/shopify/schema.ts'
+import { cartOf } from '../_shared/api/shopify/cart.ts'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, accept, x-shopify-storefront-access-token, shopify-storefront-private-token, x-sdk-variant, x-sdk-version', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' }
@@ -57,7 +57,7 @@ const carts = (keyId: string | null) => ({
   save: async (row: any) => { const { id, ...rest } = row; const { data, error } = await admin.from(TABLE).update(rest).eq('id', id).select('*').single(); if (error) throw new Error(error.message); return data },
 })
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   await fresh()
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const url = new URL(req.url)

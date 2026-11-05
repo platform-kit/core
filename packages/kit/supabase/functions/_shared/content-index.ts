@@ -16,10 +16,10 @@ import { describeSchema } from './pipe/build/admin-schemas.mjs'
 import { rowsStore } from './pipe/build/store/rows.mjs'
 import { models as SITE_MODELS } from './pipe/site/index.js'
 import * as SITE from './pipe/site.js'
-import { contentTypes } from './api/types.js'
-import { modelOfPath, pathWithin, isPublished, isRecordModel } from './api/records.js'
-import { mimeOf } from './api/entry.js'
-import { imageSize } from './api/image-size.js'
+import { contentTypes } from './api/types.ts'
+import { modelOfPath, pathWithin, isPublished, isRecordModel } from './api/records.ts'
+import { mimeOf } from './api/entry.ts'
+import { imageSize } from './api/image-size.ts'
 
 export type Rec = { model: string; typeId: string | null; path: string; data: Record<string, unknown>; body: string | null; published: boolean; created: string; updated: string; revision: number; draft?: boolean; publishedAt?: string | null; updatedBy?: string | null; createdBy?: string | null }
 export type Asset = { address: string; name: string; size: number | null; mime: string; width: number | null; height: number | null; modified: string | null }

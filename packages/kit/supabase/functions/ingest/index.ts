@@ -24,7 +24,7 @@
 import { admin, getUser } from '../_shared/lib.ts'
 import { throughDoor } from '../_shared/doors.ts'
 import config from '../_shared/analytics.json' with { type: 'json' }
-import { kindOf, decodeBody, decode, toRow, FLAGS, remoteConfigJs } from '../_shared/posthog-wire.js'
+import { kindOf, decodeBody, decode, toRow, FLAGS, remoteConfigJs } from '../_shared/posthog-wire.ts'
 
 type Source = { key: string; name: string; hosts: string[] }
 const SOURCES = ((config as { sources?: Source[] }).sources ?? []) as Source[]
@@ -67,7 +67,7 @@ function country(req: Request) {
   return null
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const origin = req.headers.get('origin') ?? ''
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsFor(origin) })
   const url = new URL(req.url), q: Record<string, string> = {}; url.searchParams.forEach((v, k) => { q[k] = v })

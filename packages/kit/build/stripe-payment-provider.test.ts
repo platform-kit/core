@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import StripeSdk from 'npm:stripe@17'
 import type Stripe from 'npm:stripe@17'
 import { createPaymentProvider } from '../supabase/functions/_shared/stripe-payment-provider.ts'
-import { PaymentProviderError } from '../supabase/functions/_shared/payment-provider.mjs'
+import { PaymentProviderError } from '../supabase/functions/_shared/payment-provider.mts'
 import type { CreatePaymentCheckout, PaymentCatalogOffer } from '../src/payment-provider.d.ts'
 
 const testProvider = (stripe: Record<string, unknown>, secrets: Record<string, string> = {}) =>

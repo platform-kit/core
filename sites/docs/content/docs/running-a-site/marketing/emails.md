@@ -6,7 +6,7 @@ sources:
   [
     packages/kit/build/emails.mts,
     packages/kit/supabase/functions/_shared/email.ts,
-    packages/kit/supabase/functions/_shared/emails/tags.js,
+    packages/kit/supabase/functions/_shared/emails/tags.ts,
     packages/kit/theme/src/components/admin/EmailsAdmin.vue,
     packages/kit/build/auth-config.mts,
   ]

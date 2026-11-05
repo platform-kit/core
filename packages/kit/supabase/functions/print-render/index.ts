@@ -36,7 +36,7 @@ import { editionFor, pictureId, partsOf } from '../_shared/print/edition.js'
 import { mergeIndex, mergeRegistry, readIndex, writeIndex, registryOf, withTitles, titleKey } from '../_shared/print/index-io.js'
 import { sizePicture, MAX_HEIGHT } from '../_shared/print/picture.js'
 import { makeEpub } from '../_shared/print/epub.js'
-import { printers, FORMATS_PRINTED } from '../_shared/suppliers/index.js'
+import { printers, FORMATS_PRINTED } from '../_shared/suppliers/index.ts'
 import { create as wasmCompiler } from '../_shared/print/wasm-compiler.js'
 import TEMPLATES from '../_shared/print/templates.json' with { type: 'json' }
 import { toEntry } from '../_shared/pipe/src/lib/entry.js'
@@ -93,7 +93,7 @@ function theType(): Promise<Uint8Array[]> {
     typeHeld = (async () => {
       const { data, error } = await admin.storage.from(BUCKET).list(FONT_PREFIX)
       if (error) throw new Error(`print: the type could not be listed — ${error.message}`)
-      const files = (data ?? []).filter((f) => /\.(ttf|otf)$/i.test(f.name))
+      const files = (data ?? []).filter((f: any) => /\.(ttf|otf)$/i.test(f.name))
       if (!files.length) throw new Error('print: there is no type in the bucket — the deploy uploads it (build/print/templates.mjs --fonts)')
       const out: Uint8Array[] = []
       for (const f of files) {
@@ -146,7 +146,7 @@ const pageCount = (pdf: Uint8Array) => {
  * in the bucket for this edition and carries on. Between steps it looks for a cancel, and stops.
  */
 class Cancelled extends Error {}
-class Refused extends Error { constructor(message: string, public status = 400) { super(message) } }
+class Refused extends Error { status: number; constructor(message: string, status = 400) { super(message); this.status = status } }
 const LEASE_SECONDS = 150
 function jobOf(row: Record<string, any>) {
   const job = {
@@ -165,7 +165,7 @@ function jobOf(row: Record<string, any>) {
   return job
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'POST' }, 405)
 
@@ -347,7 +347,7 @@ Deno.serve(async (req) => {
     let picture = '', pictureHash = '', pictureBytes: Uint8Array | null = null
     /* the adapter gives a cover as the sized object the components render, or as the plain address
        where the build never sized one; the printer wants the address either way */
-    const held = (book as Record<string, unknown>).cover
+    const held: any = (book as Record<string, unknown>).cover
     const cover = String((typeof held === 'object' && held ? (held as Record<string, unknown>).src : held) ?? '')
     if (printedFormats.includes('softcover') && cover) {
       try {
@@ -368,6 +368,7 @@ Deno.serve(async (req) => {
         pictureBytes = await sizePicture(at, { driver: 'storage', height: MAX_HEIGHT })
         /* named by what the bytes ARE: Storage's transform keeps the original's format (a machine's sharp makes PNG),
            and a WebP saved as .png was read by the typesetter as a PNG and refused */
+        // @ts-expect-error TS2345, from the conversion: Argument of type 'Uint8Array<ArrayBufferLike> | null' is not assignable to parameter of type 'Uint8Array<ArrayBufferLike>'. Type 'null' is n
         picture = '/picture.' + kindOf(pictureBytes).ext
       } catch (e) { notes.push(`the paperback's picture could not be read — ${(e as Error).message}`) }
     }

@@ -29,7 +29,7 @@ export function tagged(url: string, kind: string | null, name: string | null, st
 }
 const go = (to: string) => new Response(null, { status: 302, headers: { Location: to, 'Cache-Control': 'no-store' } })
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const url = new URL(req.url)
   const last = url.pathname.split('/').filter(Boolean).pop() ?? ''
   const raw = url.searchParams.get('k') ?? (last === 'email-track' ? '' : last)

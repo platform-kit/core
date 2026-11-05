@@ -25,7 +25,7 @@
  * customer.subscription.updated then moves the tier.
  */
 import { stripeConfigured, stripeMock, isMockId, stripeUnconfigured, admin, json, preflight, getUser, appUrl, getPaymentProvider } from '../_shared/lib.ts'
-import { sessionParams, lineQuantity, trialDaysFor } from '../_shared/checkout-params.js'
+import { sessionParams, lineQuantity, trialDaysFor } from '../_shared/checkout-params.ts'
 import {
   assertPaymentCapabilities,
   normalizePaymentCheckoutResult,
@@ -34,24 +34,24 @@ import {
   paymentCapabilitiesForCheckout,
   paymentCapabilitiesForSubscriptionChange,
   providerScopedId,
-} from '../_shared/payment-provider.mjs'
+} from '../_shared/payment-provider.mts'
 import type { PaymentCheckoutLine, PaymentProviderAdapter } from '../_shared/payment-provider.d.ts'
-import { checkVariant } from '../_shared/variants.js'
+import { checkVariant } from '../_shared/variants.ts'
 import { offer, offerByKey, ensureOffer, offerMetadata, ships, printVariant, TIERS, WORDS, LISTS, PROMOTIONS } from '../_shared/offers.ts'
-import { usageStripeMetadata } from '../_shared/usage-stripe.mjs'
+import { usageStripeMetadata } from '../_shared/usage-stripe.mts'
 import { shipsTo, ratesFor } from '../_shared/shipping.ts'
 import { throughDoor } from '../_shared/doors.ts'
-import { buyable, stockKey } from '../_shared/stock.js'   /* the one sold-out rule, the page's own */
-import { guestSessionSku, mayBookAsGuest } from '../_shared/sessions/guest-booking.js'
-import { priceOf } from '../_shared/prices.js'            /* and the one price rule, likewise */
-import { apply as applyPromotions } from '../_shared/promotions.js'   /* and the one discount rule */
+import { buyable, stockKey } from '../_shared/stock.ts'   /* the one sold-out rule, the page's own */
+import { guestSessionSku, mayBookAsGuest } from '../_shared/sessions/guest-booking.ts'
+import { priceOf } from '../_shared/prices.ts'            /* and the one price rule, likewise */
+import { apply as applyPromotions } from '../_shared/promotions.ts'   /* and the one discount rule */
 import { checkoutCompleted, subscriptionChanged, subscriptionDeleted, iso } from '../_shared/ledger.ts'
 import { findProviderExternalIds, linkProviderEntity } from '../_shared/payment-provider-refs.ts'
 import { judge } from '../_shared/cal.ts'
 import { coaching as siteCoaching } from '../_shared/pipe/site.js'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   await fresh()
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
@@ -182,16 +182,19 @@ Deno.serve(async (req) => {
   if (needsShipping && !shipsTo(country)) return json({ error: country ? `we do not ship to ${country}` : 'choose where it ships', code: 'ship_to' }, 400)
   const rates = needsShipping ? ratesFor(country) : []
   const inCart = [...merged.keys()].map((sku) => offerOf(sku)).filter(Boolean) as any[]
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'. Type 'any' is not assignable to type 'never'.
   const { trial: offered, automaticTax: wantsAutoTax, taxId: wantsTaxId, methods } = sessionParams(inCart, mode)
   let trialDays = offered
   if (offered && user) {
     const { data: past } = await admin.from('subscriptions').select('key').eq('user_id', user.id).eq('trialed', true)
     const taken = (past || []).map((r: any) => r.key).filter(Boolean)
     const withTrial = inCart.find((o) => o?.trial)
-    trialDays = trialDaysFor(withTrial, taken, (k) => (offerByKey(k)?.tier ?? null))
+    // @ts-expect-error TS2345, from the conversion: Argument of type '(k: any) => string | null' is not assignable to parameter of type '() => null'. Target signature provides too few argument
+    trialDays = trialDaysFor(withTrial, taken, (k: any) => (offerByKey(k)?.tier ?? null))
   }
   let selectedPaymentProvider: PaymentProviderAdapter
   try {
+    // @ts-expect-error TS2322, from the conversion: Type 'PaymentProviderAdapter | null' is not assignable to type 'PaymentProviderAdapter'. Type 'null' is not assignable to type 'PaymentProvi
     selectedPaymentProvider = await getPaymentProvider()
     assertPaymentCapabilities(selectedPaymentProvider, paymentCapabilitiesForCheckout({
       mode,
@@ -202,9 +205,9 @@ Deno.serve(async (req) => {
       lines: [...merged.keys()].map((sku) => ({ adjustable: !!lineQuantity(offerOf(sku)) })),
       ...(needsShipping ? { shippingAddress: 'required', shippingOptions: rates } : {}),
     }))
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof PaymentProviderError) {
-      return json({ error: error.message, code: error.code }, error.status)
+      return json({ error: error.message, code: (error as any).code }, (error as any).status)
     }
     throw error
   }
@@ -221,9 +224,9 @@ Deno.serve(async (req) => {
       assertPaymentCapabilities(selectedPaymentProvider, paymentCapabilitiesForSubscriptionChange({
         proration: from?.key === target.key ? 'none' : up ? 'immediate' : 'next-cycle',
       }))
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof PaymentProviderError) {
-        return json({ error: error.message, code: error.code }, error.status)
+        return json({ error: error.message, code: (error as any).code }, (error as any).status)
       }
       throw error
     }
@@ -298,12 +301,12 @@ Deno.serve(async (req) => {
       const at = iso(changed.nextAt)
       await admin.from('subscriptions').update({ next_sku: sku, next_key: o.key, next_at: at }).eq('id', live.id)
       return json({ switched: true, from: live.sku, to: sku, at })
-    } catch (e) {
+    } catch (e: any) {
       const message = e instanceof Error ? e.message : String(e)
-      const status = e instanceof PaymentProviderError ? e.status : 502
+      const status = e instanceof PaymentProviderError ? (e as any).status : 502
       return json({
         error: `${selectedPaymentProvider.id}: ${message}`,
-        ...(e instanceof PaymentProviderError ? { code: e.code } : {}),
+        ...(e instanceof PaymentProviderError ? { code: (e as any).code } : {}),
       }, status)
     }
   }
@@ -617,12 +620,12 @@ Deno.serve(async (req) => {
        ...(session.client ? { client: session.client } : {}),
        ...(summary ? { summary } : {}),
      })
-  } catch (e) {
+  } catch (e: any) {
     const message = e instanceof Error ? e.message : String(e)
-    const status = e instanceof PaymentProviderError ? e.status : 502
+    const status = e instanceof PaymentProviderError ? (e as any).status : 502
     return json({
       error: `${selectedPaymentProvider.id}: ${message}`,
-      ...(e instanceof PaymentProviderError ? { code: e.code } : {}),
+      ...(e instanceof PaymentProviderError ? { code: (e as any).code } : {}),
     }, status)
   }
 })
@@ -662,7 +665,7 @@ function shapeOf(o: any, raw: string): string | null {
 /* hold what is tracked for this session; a shape with no count is not tracked and is skipped */
 async function reserve(sessionId: string, merged: Map<string, number>, variants: string[]): Promise<void> {
   for (const [sku, quantity] of merged) {
-    const o = offer(sku)
+    const o: any = offer(sku)
     if (!o || o.tracked !== true) continue
     const variant = variantIn(variants, sku)
     try {

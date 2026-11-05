@@ -26,28 +26,28 @@ import { cors, json } from '../_shared/lib.ts'
 import { next, messagesFor, costOf, limitsOf, endingOf, openedSkills, memoryOf } from '../_shared/agents/loop.js'
 import { roomAsProse } from '../_shared/agents/model.js'
 import { occurrences } from '../_shared/recurrence.js'
-import { ask, providersFrom, priceOf } from '../_shared/agents/provider.js'
+import { ask, providersFrom, priceOf } from '../_shared/agents/provider.ts'
 import { pipeline, Paused } from '../_shared/pipe/build/enrich/pipeline.mjs'
 import { runCache } from '../_shared/pipe/build/enrich-cache.mjs'
 import { rowsStore } from '../_shared/pipe/build/store/rows.mjs'
-import { runLlm } from '../_shared/enrich/llm.js'
+import { runLlm } from '../_shared/enrich/llm.ts'
 import BRIEFS from '../_shared/pipe/enrichment-briefs.json' with { type: 'json' }
-import { BUILTINS, toolsFor, callHttp } from '../_shared/agents/tools.js'
+import { BUILTINS, toolsFor, callHttp } from '../_shared/agents/tools.ts'
 import {
   matchSocialAutomations,
   socialAutomationPrompt,
   socialBotAllowsAnonymousSubject,
-} from '../_shared/social/automation-rules.mjs'
-import { cutAnswer } from '../_shared/choices.js'
+} from '../_shared/social/automation-rules.mts'
+import { cutAnswer } from '../_shared/choices.ts'
 import { offerByKey } from '../_shared/offers.ts'
 import { authorizeUsage, recordInferenceAttempt, reportPendingUsage } from '../_shared/usage.ts'
-import { resolveUsageOperation } from '../_shared/usage-gate.mjs'
-import { boundedModelUsage, unitsForCost } from '../_shared/usage-stripe.mjs'
+import { resolveUsageOperation } from '../_shared/usage-gate.mts'
+import { boundedModelUsage, unitsForCost } from '../_shared/usage-stripe.mts'
 import {
   billableInferenceAttempts,
   boundedInferenceUsage,
   markupFor,
-} from '../_shared/inference-meter.mjs'
+} from '../_shared/inference-meter.mts'
 import { inference as SITE_INFERENCE, usage as SITE_USAGE } from '../_shared/pipe/site.js'
 import bots from '../_shared/bots.json' with { type: 'json' }
 import commands from '../_shared/commands.json' with { type: 'json' }
@@ -77,7 +77,7 @@ const BUDGET_MS = 55_000
 const PER_CALL = 24
 const WORKER = crypto.randomUUID().slice(0, 8)
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   const body = await req.json().catch(() => ({}))
 
@@ -533,6 +533,7 @@ async function accountInferenceAttempts({
       model: attempt.model,
       protocol: attempt.protocol,
       outcome: attempt.outcome,
+      // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type '"not_sent" | "estimated" | "measured"'.
       measurementStatus: attempt.measurementStatus,
       usageDimensions: attempt.usageDimensions,
       providerCostMicros: attempt.providerCostMicros,
@@ -626,6 +627,7 @@ async function think(run: any, bot: any, taken: any[], messages: any[]) {
       if (SITE_INFERENCE) {
         markupMicros = markupFor(SITE_INFERENCE, SITE_USAGE, operation.operationId)
         const maxUnitsMicros = bound.attempts.reduce((sum: number, attempt: any) => {
+          // @ts-expect-error TS2552, from the conversion: Cannot find name 'customerCostMicros'. Did you mean 'siteCostMicros'?
           const customerMaximum = customerCostMicros(attempt.maxCostMicros, markupMicros!)
           const attemptUnits = unitsForCost(customerMaximum, usageOffer.usage.rate_micros)
           const total = sum + attemptUnits
@@ -639,6 +641,7 @@ async function think(run: any, bot: any, taken: any[], messages: any[]) {
           maxUnitsMicros,
           botId: bot.slug,
           operationId: operation.operationId,
+          // @ts-expect-error TS2322, from the conversion: Type 'number | null' is not assignable to type 'number | undefined'. Type 'null' is not assignable to type 'number | undefined'.
           markupMicros,
         })
       } else {

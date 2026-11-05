@@ -77,6 +77,7 @@ const landingSections: any = computed(() => {
 const fm = computed(() => (doc.value && doc.value.data) || {})
 /* a canAccess bar in the frontmatter closes the page body until the reader clears it */
 /* asked of the ability, as the article's is */
+// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 const allowed = computed(() => can('read', entrySubject({ kind: (props as any).kind, slug: fm.value && (fm.value as any).slug, canAccess: (fm.value as any).canAccess })))
 
 /* the admin's live preview provides a draft entry in place of the compiled one */

@@ -21,7 +21,7 @@
  * nothing, and the fallback is the designed path rather than a rescue.
  */
 import { cors, json } from '../_shared/lib.ts'
-import { createSpeechHandler } from '../_shared/copilot/speech-proxy.js'
+import { createSpeechHandler } from '../_shared/copilot/speech-proxy.ts'
 import { authorizeUsage } from '../_shared/usage.ts'
 
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''

@@ -13,11 +13,11 @@
 import { admin, json, preflight, getUser, isServiceBearer, appUrl } from '../_shared/lib.ts'
 import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { sendEmail } from '../_shared/email.ts'
-import { mdToEmailHtml } from '../_shared/emails/markdown.js'
+import { mdToEmailHtml } from '../_shared/emails/markdown.ts'
 
 const firstName = (n: string | null) => String(n ?? '').trim().split(/\s+/)[0] || 'there'
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   const pf = preflight(req); if (pf) return pf
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   let body: any
