@@ -31,6 +31,7 @@ try {
     'packages/kit/bin/platformkit.mjs',
     'packages/kit/build/source-install.mts',
     'packages/kit/build/sites.mts',
+    'packages/kit/build/site-file.mts',
     'packages/kit/build/verbose.mts',
     /* and what makes a source checkout's TypeScript run: the compile a source install runs, and what it needs */
     'packages/kit/build/compile.mjs',
