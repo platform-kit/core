@@ -11,6 +11,7 @@ import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { stripTypeScriptTypes } from 'node:module'
+import { transformSync } from 'esbuild'
 import { fileURLToPath } from 'node:url'
 
 const KIT = fileURLToPath(new URL('..', import.meta.url))
@@ -63,8 +64,9 @@ test('the theme\'s config refuses a type error in a component', () => {
   } finally { fs.rmSync(dir, { recursive: true, force: true }) }
 })
 
-/* A passing check does not prove a file runs: an expect-error comment can hold a syntax TypeScript reports and Node refuses */
-test('Node can strip every converted module', () => {
+/* A passing check does not prove a file runs: an expect-error comment can hold a syntax TypeScript reports and Node refuses,
+   or a name declared twice, which is only an error when the module loads. So each is stripped, then parsed as JavaScript. */
+test('every converted module strips and parses', () => {
   const refused: string[] = []
   const walk = (dir: string): void => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -72,7 +74,7 @@ test('Node can strip every converted module', () => {
       const p = path.join(dir, e.name)
       if (e.isDirectory()) walk(p)
       else if (/\.m?ts$/.test(e.name) && !/\.d\.m?ts$/.test(e.name)) {
-        try { stripTypeScriptTypes(fs.readFileSync(p, 'utf8')) } catch (err) { refused.push(`${path.relative(KIT, p)}: ${(err as Error).message.split('\n')[0]}`) }
+        try { transformSync(stripTypeScriptTypes(fs.readFileSync(p, 'utf8')), { format: 'esm', logLevel: 'silent' }) } catch (err) { refused.push(`${path.relative(KIT, p)}: ${(err as Error).message.split('\n')[0]}`) }
       }
     }
   }

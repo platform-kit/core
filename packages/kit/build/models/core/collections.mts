@@ -1046,9 +1046,8 @@ COLLECTIONS.products.prepare = async (rec: any, ctx: any) => { if (!HEX8.test(St
     return { ok: true, changed: changed || !samePics, gone, added, options, mockups, supplier: { id, name: x.name } }
   },
 }
-;(COLLECTIONS.books as any).prepare = async (rec: any) => {
+;(COLLECTIONS.books as any).prepare = async (rec: any, ctx: any) => {
   const d = rec.data
-  // @ts-expect-error TS2304, from the conversion: Cannot find name 'ctx'.
   if (d.print && typeof d.print === 'object' && !HEX8.test(String(d.print.key || ''))) d.print = { key: await giveKey(ctx.store), ...d.print }
   /* a book's print switched off: the block goes, and its key with it (a sale already made keeps its key on the ledger) */
   if (d.print && typeof d.print === 'object' && d.print.on === false) delete d.print

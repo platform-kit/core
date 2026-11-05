@@ -24,7 +24,7 @@ Deno.test('Stripe test mode: an incremental usage charge needing action, a decli
   const provider = createPaymentProvider({}, { stripe })
   const run = crypto.randomUUID().replaceAll('-', '').slice(0, 12)
   const returnUrl = `https://platformkit.test/usage/return/${run}`
-  const helper = new URL('./stripe-3ds-complete.mjs', import.meta.url).pathname
+  const helper = new URL('./stripe-3ds-complete.mts', import.meta.url).pathname
   const paid: string[] = []
   const customer = await stripe.customers.create({ description: `PlatformKit usage recovery ${run}` })
 

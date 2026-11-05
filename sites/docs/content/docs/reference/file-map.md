@@ -18,7 +18,7 @@ sources:
     packages/kit/build/hyperswitch-test-stack.mts,
     packages/kit/build/hyperswitch-v2-test.compose.yml,
   ]
-reviewed: 2026-11-01
+reviewed: 2026-11-04
 ---
 
 ## A site

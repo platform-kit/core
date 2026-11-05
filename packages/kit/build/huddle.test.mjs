@@ -152,7 +152,7 @@ console.log('\nHUDDLE\n')
 /* --- nothing of anyone else's is named --- */
 {
   const here = path.dirname(fileURLToPath(import.meta.url))
-  const files = ['ice.js', 'mesh.js', 'choose.js'].map((n) => fs.readFileSync(path.join(here, '../supabase/functions/_shared/video', n), 'utf8'))
+  const files = ['ice.ts', 'mesh.ts', 'choose.ts'].map((n) => fs.readFileSync(path.join(here, '../supabase/functions/_shared/video', n), 'utf8'))
   const code = files.join('\n').replace(/\/\*[\s\S]*?\*\//g, '')   /* the comments may name one as an example */
   const vendors = /cloudflare|twilio|xirsys|metered|expressturn|turnix/i
   ok('no relay provider is named in the kit’s code', !vendors.test(code.replace(/stun\.cloudflare\.com/g, '')), (code.match(vendors) || [])[0])

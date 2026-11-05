@@ -736,13 +736,11 @@ const takesVotes = computed(() => !!(channel.value && channel.value.votes))
    mention, and inventing one would be a number that could disagree with the first */
 async function readOne(row: any) {
   await markRead(row.channel_id, Number(row.seq) || 0)
-  // @ts-expect-error TS2304, from the conversion: Cannot find name 'loadActivity'.
-  await loadActivity()
+  await loadMentions()
 }
 async function readAll() {
   for (const r of mentions.value.filter((x: any) => x.unread)) await markRead(r.channel_id, Number(r.seq) || 0)
-  // @ts-expect-error TS2304, from the conversion: Cannot find name 'loadActivity'.
-  await loadActivity()
+  await loadMentions()
 }
 
 async function openFromFeed(at: any) {

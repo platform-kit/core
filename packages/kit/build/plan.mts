@@ -49,7 +49,6 @@ import { statements, guard, describe as describeHits, destructive as destructive
 import { VERBOSE, some } from './verbose.mjs'
 import { platformkitRuntimePath } from './runtime-paths.mjs'
 import { kitDeclaredTables, tablesIn } from './modules/backend.mjs'
-// @ts-expect-error TS2440, from the conversion: Import declaration conflicts with local declaration of 'isMain'.
 import { isMain } from './is-main.mjs'
 
 const SCHEMAS = 'public,storage,auth'
@@ -583,9 +582,7 @@ export function summarise(sql: any) {
 }
 
 /* ---- the command ---- */
-// @ts-expect-error TS7022, from the conversion: 'isMain' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initialize
-const isMain = isMain(import.meta.url)
-if (isMain) {
+if (isMain(import.meta.url)) {
   process.on('uncaughtException', (e) => { console.error('✖ ' + (e.message || e)); process.exit(1) })
   process.on('unhandledRejection', (e: any) => { console.error('✖ ' + (e.message || e)); process.exit(1) })
   const args = process.argv.slice(2)

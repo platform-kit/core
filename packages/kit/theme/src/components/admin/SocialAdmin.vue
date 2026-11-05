@@ -330,7 +330,6 @@ async function load() {
     if (!(connectBackend as any)?.platforms?.includes(managedConnectForm.platform))
       managedConnectForm.platform = (connectBackend as any)?.platforms?.[0] || ''
     if (managedConnectForm.backendId === 'zernio' && (connectBackend as any)?.configured)
-      // @ts-expect-error TS2304, from the conversion: Cannot find name 'loadManagedProfiles'.
       await loadManagedProfiles()
     posts.value = await Promise.all(
       (postResult.posts || []).map(async (post: any) => ({
@@ -1312,50 +1311,50 @@ async function recoverDelivery(delivery: any, resolution: any) {
     busy.value = false
   }
 }
+const connectBackend = computed(() =>
+  backends.value.find((backend: any) => (backend as any).id === managedConnectForm.backendId),
+)
+const managedPlatformChoices = computed<any>(() => (connectBackend.value as any)?.platforms || [])
+async function loadManagedProfiles() {
+  managedProfiles.value = []
+  managedConnectForm.profileId = ''
+  if (managedConnectForm.backendId !== 'zernio') return
+  try {
+    const result = await social('managed_profiles', { backendId: 'zernio' })
+    managedProfiles.value = result.profiles || []
+    managedConnectForm.profileId = (managedProfiles.value[0] as any)?.id || ''
+  } catch (error) {
+    errorText.value = error instanceof Error ? error.message : PAGE['request-failed']
+  }
+}
+async function selectManagedBackend() {
+  const platforms = managedPlatformChoices.value
+  if (!platforms.includes(managedConnectForm.platform))
+    managedConnectForm.platform = platforms[0] || ''
+  await loadManagedProfiles()
+}
+async function connectManaged() {
+  busy.value = true
+  errorText.value = ''
+  try {
+    const result = await social('managed_connect', {
+      backendId: managedConnectForm.backendId,
+      platform: managedConnectForm.platform,
+      ...(managedConnectForm.backendId === 'zernio'
+        ? { profileId: managedConnectForm.profileId }
+        : {}),
+    })
+    window.location.assign(result.authorizationUrl)
+  } catch (error) {
+    errorText.value = error instanceof Error ? error.message : PAGE['request-failed']
+    busy.value = false
+  }
+}
 async function connect(provider: any) {
   let loginHint
   if (provider.id === 'bluesky') {
     loginHint = window.prompt(ACCOUNT_WORDS['bluesky-login-hint'])?.trim()
     if (!loginHint) return
-  }
-  const connectBackend = computed(() =>
-    backends.value.find((backend: any) => (backend as any).id === managedConnectForm.backendId),
-  )
-  const managedPlatformChoices = computed<any>(() => (connectBackend.value as any)?.platforms || [])
-  async function loadManagedProfiles() {
-    managedProfiles.value = []
-    managedConnectForm.profileId = ''
-    if (managedConnectForm.backendId !== 'zernio') return
-    try {
-      const result = await social('managed_profiles', { backendId: 'zernio' })
-      managedProfiles.value = result.profiles || []
-      managedConnectForm.profileId = (managedProfiles.value[0] as any)?.id || ''
-    } catch (error) {
-      errorText.value = error instanceof Error ? error.message : PAGE['request-failed']
-    }
-  }
-  async function selectManagedBackend() {
-    const platforms = managedPlatformChoices.value
-    if (!platforms.includes(managedConnectForm.platform))
-      managedConnectForm.platform = platforms[0] || ''
-    await loadManagedProfiles()
-  }
-  async function connectManaged() {
-    busy.value = true
-    errorText.value = ''
-    try {
-      const result = await social('managed_connect', {
-        backendId: managedConnectForm.backendId,
-        platform: managedConnectForm.platform,
-        ...(managedConnectForm.backendId === 'zernio'
-          ? { profileId: managedConnectForm.profileId }
-          : {}),
-      })
-      window.location.assign(result.authorizationUrl)
-    } catch (error) {
-      errorText.value = error instanceof Error ? error.message : PAGE['request-failed']
-      busy.value = false
-    }
   }
   busy.value = true
   errorText.value = ''
@@ -1402,26 +1401,25 @@ async function saveProvider() {
   } finally {
     busy.value = false
   }
-  async function saveBackend() {
-    busy.value = true
-    errorText.value = ''
-    try {
-      await social('save_backend', {
-        backendId: backendForm.backendId,
-        apiKey: backendForm.apiKey,
-        webhookSecret: backendForm.webhookSecret,
-      })
-      backendForm.apiKey = ''
-      backendForm.webhookSecret = ''
-      await load()
-      // @ts-expect-error TS2304, from the conversion: Cannot find name 'selectManagedBackend'.
-      await selectManagedBackend()
-      notice.value = ACCOUNT_WORDS['backend-saved']
-    } catch (error) {
-      errorText.value = error instanceof Error ? error.message : PAGE['request-failed']
-    } finally {
-      busy.value = false
-    }
+}
+async function saveBackend() {
+  busy.value = true
+  errorText.value = ''
+  try {
+    await social('save_backend', {
+      backendId: backendForm.backendId,
+      apiKey: backendForm.apiKey,
+      webhookSecret: backendForm.webhookSecret,
+    })
+    backendForm.apiKey = ''
+    backendForm.webhookSecret = ''
+    await load()
+    await selectManagedBackend()
+    notice.value = ACCOUNT_WORDS['backend-saved']
+  } catch (error) {
+    errorText.value = error instanceof Error ? error.message : PAGE['request-failed']
+  } finally {
+    busy.value = false
   }
 }
 async function invitePublisher() {
@@ -2344,7 +2342,7 @@ onMounted(async () => {
             </button>
             <label v-if="backends.some((backend: any) => backend.configured)" class="sp-connector">
               <span>{{ ACCOUNT_WORDS['managed-backend'] }}</span>
-              <!-- @vue-expect-error TS2339, from the conversion: Property 'selectManagedBackend' does not exist on type 'ComponentPublicInstance<{}, {}, {}, {}, {}, {}, {}, {}, false, ComponentOptionsBase< --><select
+              <select
                 v-model="managedConnectForm.backendId"
                 @change="selectManagedBackend"
               >
@@ -2357,7 +2355,7 @@ onMounted(async () => {
                 </option>
               </select>
               <select v-model="managedConnectForm.platform" required>
-                <!-- @vue-expect-error TS2339, from the conversion: Property 'managedPlatformChoices' does not exist on type 'ComponentPublicInstance<{}, {}, {}, {}, {}, {}, {}, {}, false, ComponentOptionsBas --><option
+                <option
                   v-for="platform in managedPlatformChoices"
                   :key="platform"
                   :value="platform"
@@ -2378,7 +2376,7 @@ onMounted(async () => {
                   {{ profile.name }}
                 </option>
               </select>
-              <!-- @vue-expect-error TS2339, from the conversion: Property 'connectManaged' does not exist on type 'ComponentPublicInstance<{}, {}, {}, {}, {}, {}, {}, {}, false, ComponentOptionsBase<any, a --><button
+              <button
                 class="sp-secondary"
                 type="button"
                 :disabled="
@@ -2511,7 +2509,7 @@ onMounted(async () => {
               <p>{{ ACCOUNT_WORDS['managed-backend-settings-description'] }}</p>
             </div>
           </header>
-          <!-- @vue-expect-error TS2339, from the conversion: Property 'saveBackend' does not exist on type 'ComponentPublicInstance<{}, {}, {}, {}, {}, {}, {}, {}, false, ComponentOptionsBase<any, any, --><form class="sp-form" @submit.prevent="saveBackend">
+          <form class="sp-form" @submit.prevent="saveBackend">
             <label>
               {{ ACCOUNT_WORDS['managed-backend'] }}
               <select v-model="backendForm.backendId" required>

@@ -384,8 +384,6 @@ async function begin() {
   chat.value = conversation({ speaker: voiced, ask, onSaid: (line: any) => {
     if (line.who === 'them') {
       ear.speaking(line.text)
-      // @ts-expect-error TS2304, from the conversion: Cannot find name 'refreshUsage'.
-      if (bot.value?.usage) setTimeout(() => { void refreshUsage() }, 1_000)
     }
     keep(line)
   } })
@@ -451,8 +449,6 @@ function buildSpeaker() {
           try {
             const { done, value } = await reader.read()
             if (done) {
-              // @ts-expect-error TS2304, from the conversion: Cannot find name 'refreshUsage'.
-              await refreshUsage()
               controller.close()
             } else controller.enqueue(value)
           } catch (error) {
@@ -460,8 +456,7 @@ function buildSpeaker() {
           }
         },
         async cancel(reason) {
-          // @ts-expect-error TS2304, from the conversion: Cannot find name 'refreshUsage'.
-          try { await reader.cancel(reason) } finally { void refreshUsage() }
+          await reader.cancel(reason)
         },
       })
     },
@@ -707,8 +702,6 @@ function listen() {
  */
 function leaving() {
   out && out.stop()
-  // @ts-expect-error TS2304, from the conversion: Cannot find name 'usageTimer'.
-  clearInterval(usageTimer); usageTimer = 0
   clearTimeout(settle); settle = 0; breath = ''
   heard.value = ''
   ended.value = true

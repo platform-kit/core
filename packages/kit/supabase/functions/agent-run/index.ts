@@ -46,6 +46,7 @@ import { boundedModelUsage, unitsForCost } from '../_shared/usage-stripe.mts'
 import {
   billableInferenceAttempts,
   boundedInferenceUsage,
+  customerCostMicros,
   markupFor,
 } from '../_shared/inference-meter.mts'
 import { inference as SITE_INFERENCE, usage as SITE_USAGE } from '../_shared/pipe/site.js'
@@ -627,7 +628,6 @@ async function think(run: any, bot: any, taken: any[], messages: any[]) {
       if (SITE_INFERENCE) {
         markupMicros = markupFor(SITE_INFERENCE, SITE_USAGE, operation.operationId)
         const maxUnitsMicros = bound.attempts.reduce((sum: number, attempt: any) => {
-          // @ts-expect-error TS2552, from the conversion: Cannot find name 'customerCostMicros'. Did you mean 'siteCostMicros'?
           const customerMaximum = customerCostMicros(attempt.maxCostMicros, markupMicros!)
           const attemptUnits = unitsForCost(customerMaximum, usageOffer.usage.rate_micros)
           const total = sum + attemptUnits

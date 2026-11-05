@@ -31,8 +31,7 @@ const groups = computed(() => {
   return [{ key: 'support', items: desk }, { key: 'site', items: site }].filter((g) => g.items.length)
 })
 /* what stands in the way, if anything: the deployment, the browser, its permission */
-// @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types 'Ref<NotificationPermission, NotificationPermission>' and 'string' have no ove
-const notice = computed(() => (!KEY ? H.unconfigured : !supported() ? H.unsupported : permission === 'denied' ? H.blocked : ''))
+const notice = computed(() => (!KEY ? H.unconfigured : !supported() ? H.unsupported : permission.value === 'denied' ? H.blocked : ''))
 const canTurnOn = computed(() => !busy.value && !notice.value)
 
 async function load() {

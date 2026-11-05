@@ -2,7 +2,7 @@ import { admin, getPaymentProvider, stripeMock } from './lib.ts'
 import { of, fresh } from './compiled.ts'
 import { createUsageTopUp } from './usage-topup.mts'
 import { createUsageGate } from './usage-gate.mts'
-import { findProviderExternalIds } from './payment-provider-refs.ts'
+import { findProviderExternalIds, linkProviderEntity } from './payment-provider-refs.ts'
 import { assertPaymentCapabilities } from './payment-provider.mts'
 import { settleIncrementalUsage } from './usage-incremental.ts'
 
@@ -50,7 +50,6 @@ async function autoTopUp({ userId, invocationRef }: { userId: string; invocation
         const { data, error } = await admin.from('profiles').select('stripe_customer_id').eq('id', id).maybeSingle()
         const profile = checked(data, error, 'billing profile could not be loaded')
         customerId = profile?.stripe_customer_id ?? null
-        // @ts-expect-error TS2304, from the conversion: Cannot find name 'linkProviderEntity'.
         if (customerId) await linkProviderEntity(provider.id, 'customer', customerId, 'profiles', id)
       }
       if (!customerId) return null
