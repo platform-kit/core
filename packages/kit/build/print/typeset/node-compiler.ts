@@ -16,7 +16,7 @@ export async function create({ workspace, fonts }: any = {}) {
   })
   /* a compile that failed prints its errors where somebody setting a book will see them, then
      throws: a half-document is worse than no document, because it is a book nobody checks */
-  const must = (file: any) => {
+  const must = (file: string) => {
     const r = c.compile({ mainFilePath: file })
     if (r.hasError()) { r.printErrors(); throw new Error('typst: ' + path.basename(file)) }
     return r

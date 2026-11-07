@@ -63,7 +63,7 @@ export async function resizeFromStorage(url: any, { height = MAX_HEIGHT, fetchFn
  * path on a disk and Storage where it is a url, which is exactly the difference between the two
  * places this runs.
  */
-export async function sizePicture(src: any, { height = MAX_HEIGHT, driver, fetchFn }: any = {}) {
+export async function sizePicture(src: string, { height = MAX_HEIGHT, driver, fetchFn }: any = {}) {
   const isUrl = /^https?:\/\//i.test(String(src || ''))
   const pick = driver || (isUrl ? 'storage' : 'sharp')
   return pick === 'storage'

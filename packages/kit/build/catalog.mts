@@ -136,7 +136,7 @@ const text = async (st: any, at: any) => { try { return await st.read(at) } catc
 export async function compileCatalog({ store: from, root = process.cwd(), theme = null, brand = null, site = null }: any = {}) {
 const ROOT = root
 const st = asStore(from || root)
-const CACHE: any = await load(st)
+const CACHE = await load(st)
 const STOREFRONT = await text(st, 'content/store/storefront.md')
 const PRINT_JSON = await text(st, 'content/store/print.json')
 const EVENTS_JSON = await text(st, '.velite/events.json')
@@ -144,7 +144,7 @@ const EVENTS_JSON = await text(st, '.velite/events.json')
    artefact and a store holding rows has none, so the records are read as they are written — the same
    four fields this uses, off the files themselves. A place at an event is an offer like anything
    else, and a deployment that never builds would otherwise stop selling them. */
-const EVENTS_MD: any = await (async () => {
+const EVENTS_MD = await (async () => {
   const out: any = []
   let names = []
   try { names = (await st.list('content/events', { ext: 'md' })).filter((n: any) => !n.includes('/')) } catch { return out }
@@ -514,12 +514,12 @@ for (const { file, data: d } of files('content/sessions')) {
      must not be looked for on a disk the Edge Function does not have. The caller hands them over:
      on a machine build/fonts.mjs reads them, and in the function the assembler's
      pipe/theme-brand.json does, exactly as the theme's strings arrive. */
-  const fonts = (brand && (brand as any).fonts) || { body: null, display: null, mono: null }
-  const mark = (brand && (brand as any).mark) || null
+  const fonts = (brand && brand.fonts) || { body: null, display: null, mono: null }
+  const mark = (brand && brand.mark) || null
   /* the colour the MARK is drawn in, which is not the colour of the words beside it: SiteMark's
      stroke is the accent, and tinting both to the row's grey makes the card look like another
      site's. The light one, since the card is drawn in the light theme. */
-  const accent = (brand && (brand as any).accent) || null
+  const accent = (brand && brand.accent) || null
   const bySku = Object.fromEntries(list.map((o: any) => [o.sku, o]))
   /*
    * THE PRICE LISTS, INCLUDING THE SHOP’S OWN, so the function and the page both read lists and
@@ -558,7 +558,7 @@ for (const { file, data: d } of files('content/sessions')) {
     }
   }
   let usageAutoTopUp
-  const autoTopUp = (site as any)?.usage?.autoTopUp
+  const autoTopUp = site?.usage?.autoTopUp
   if (autoTopUp != null) {
     if (!autoTopUp || typeof autoTopUp !== 'object' || Array.isArray(autoTopUp)) {
       err('usage.autoTopUp must be a group of fields')

@@ -43,7 +43,7 @@ import { isMain } from './is-main.mjs'
    under content/emails overrides it whole. Without it, adding a kind to the kit would break every
    site that had not yet drawn it — including the demo and the docs, which have no designer. */
 const KIT_DESIGNS = fileURLToPath(new URL('../content/emails/', import.meta.url))
-export function readDesign(kind: any) {
+export function readDesign(kind: string) {
   const own = join(ROOT, DESIGNS, kind + '.json')
   if (existsSync(own)) return JSON.parse(readFileSync(own, 'utf8'))
   const kit = KIT_DESIGNS + kind + '.json'
@@ -71,7 +71,7 @@ export async function compileEmails({ check = false } = {}) {
 /* the local auth server's copies: the html files config.toml points at, and the subject lines
    in config.toml itself (the one place the local stack reads a subject from) — rewritten in
    place between the markers, the rest of the file byte for byte */
-export async function writeGotrueTemplates(out: any) {
+export async function writeGotrueTemplates(out: { [x: string]: any }) {
   const words = await emailWords()
   const dir = join(ROOT, TEMPLATES)
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })

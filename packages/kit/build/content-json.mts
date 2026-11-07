@@ -36,16 +36,18 @@ import { modelOfPath, pathWithin, isPublished, isRecordModel } from '../supabase
 import { mimeOf } from '../supabase/functions/_shared/api/entry.js'
 import { textWithheld, titlesOnly } from '../supabase/functions/_shared/gate.js'
 import { isMain } from './is-main.mjs'
+import type { ZodObject } from 'zod'
+import type { $strip } from 'zod/v4/core'
 
 const ROOT = process.cwd()
 export const OUT = 'supabase/functions/_shared/content/index.json'
 const SKIP_ASSETS = /^public\/(static|print)\//
-const iso = (s: any) => { const t = new Date(s); return Number.isNaN(t.getTime()) ? String(s) : t.toISOString() }
+const iso = (s: string|number|Date) => { const t = new Date(s); return Number.isNaN(t.getTime()) ? String(s) : t.toISOString() }
 
 /* git's view of content/: per file its first and last commit and how many; the files removed and when */
-function gitHistory(root: any) {
+function gitHistory(root: string) {
   const times = new Map(), deleted = []
-  const run = (args: any) => { try { return execSync(`git log ${args} --relative -- content`, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 }) } catch { return '' } }
+  const run = (args: string) => { try { return execSync(`git log ${args} --relative -- content`, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 }) } catch { return '' } }
   let at = null
   for (const line of run('--format=%x00%cI --name-only').split('\n')) {
     if (line.startsWith('\0')) { at = iso(line.slice(1).trim()); continue }
@@ -64,7 +66,7 @@ function gitHistory(root: any) {
 /* the models with fields as plain records the function can hold */
 export async function describedModels(root = ROOT) {
   const reg = await registry(root)
-  return reg.filter((m: any) => m.fields && m.dir).map((m: any) => ({
+  return reg.filter((m: { fields: any; dir: any }) => m.fields && m.dir).map((m: { key: any; name: any; dir: any; single: any; nested: any; body: any; bodyLabel: any; fields: ZodObject<{ [x: string]: any },$strip>; model: { key: any; name: any; singular: any } }) => ({
     key: m.key, name: m.name, dir: String(m.dir).replace(/^\.?\//, ''), single: !!m.single, nested: !!m.nested, body: !!m.body, bodyLabel: m.bodyLabel || null,
     fields: describeSchema(m.fields), model: m.model ? { key: m.model.key, name: m.model.name, singular: m.model.singular } : null,
   })).filter(isRecordModel)
@@ -82,7 +84,7 @@ export async function contentIndex({ root = ROOT } = {}) {
   const now = new Date().toISOString()
   const records = []
   for (const m of models) {
-    const files = m.single ? [m.dir + '/' + m.key.replace(/^.*\//, '') + '.md'] : (await store.list(m.dir, { ext: 'md', deep: m.nested })).map((p: any) => m.dir + '/' + p + '.md')
+    const files = m.single ? [m.dir + '/' + m.key.replace(/^.*\//, '') + '.md'] : (await store.list(m.dir, { ext: 'md', deep: m.nested })).map((p: string) => m.dir + '/' + p + '.md')
     for (const file of files) {
       if (modelOfPath(models, file) !== m) continue
       const text = await store.read(file); if (text == null) continue
@@ -97,15 +99,15 @@ export async function contentIndex({ root = ROOT } = {}) {
   /* the library's files, both roots */
   const assets: any = []
   let sharp = null; try { sharp = (await import('sharp')).default } catch { /* no dimensions */ }
-  const walk = async (dir: any) => { for (const e of await store.assets.list(dir)) { if (e.type === 'dir') { await walk(e.path); continue } if (SKIP_ASSETS.test(e.path) || e.name.startsWith('.')) continue; const address = e.path.startsWith('content/uploads/') ? '/uploads/' + e.path.slice('content/uploads/'.length) : '/' + e.path.slice('public/'.length); const mime = e.mime || mimeOf(e.name); let width = null, height = null; if (sharp && /^image\/(png|jpeg|webp|gif|avif)$/.test(mime)) { try { const md = await sharp(path.join(root, e.path)).metadata(); width = md.width || null; height = md.height || null } catch { /* not a picture after all */ } } assets.push({ address, name: e.name, size: e.size, mime, width, height, modified: e.modified ? new Date(e.modified).toISOString() : now }) } }
+  const walk = async (dir: string) => { for (const e of await store.assets.list(dir)) { if (e.type === 'dir') { await walk(e.path); continue } if (SKIP_ASSETS.test(e.path) || e.name.startsWith('.')) continue; const address = e.path.startsWith('content/uploads/') ? '/uploads/' + e.path.slice('content/uploads/'.length) : '/' + e.path.slice('public/'.length); const mime = e.mime || mimeOf(e.name); let width = null, height = null; if (sharp && /^image\/(png|jpeg|webp|gif|avif)$/.test(mime)) { try { const md = await sharp(path.join(root, e.path)).metadata(); width = md.width || null; height = md.height || null } catch { /* not a picture after all */ } } assets.push({ address, name: e.name, size: e.size, mime, width, height, modified: e.modified ? new Date(e.modified).toISOString() : now }) } }
   for (const r of ['content/uploads', 'public']) { try { await walk(r) } catch (e: any) { if (e.code !== 'ENOENT') throw e } }
   const siteRec = records.find((r) => r.model === 'site')
   const S = siteRec ? siteRec.data : {}
   const space = String((c.api && c.api.space) || slug(c.name || 'site'))
   const langs = Array.isArray(c.languages) && c.languages.length ? c.languages : ['en']
-  const locales = langs.map((code: any, i: any) => ({ code, name: code, default: i === 0, fallbackCode: i === 0 ? null : langs[0] }))
+  const locales = langs.map((code: any, i: number) => ({ code, name: code, default: i === 0, fallbackCode: i === 0 ? null : langs[0] }))
   const types = contentTypes(models, { space, now })
-  for (const r of records) { const t = types.find((x: any) => x._model === r.model); ;(r as any).typeId = t ? t.sys.id : null }
+  for (const r of records) { const t = types.find((x: { _model: any }) => x._model === r.model); ;(r as any).typeId = t ? t.sys.id : null }
   const gone = deleted.map((d) => { const m = modelOfPath(models, d.file); return m ? { model: m.key, path: pathWithin(m, d.file), at: d.at } : null }).filter(Boolean)
   return { built: now, space, site: { name: S.name || c.name || '', tagline: S.tagline || '', description: S.description || '', url: String(S.url || '').replace(/\/+$/, '') }, docsOnly, locales, models, types, records, assets, deleted: gone }
 }

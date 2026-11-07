@@ -22,7 +22,7 @@ export const POLICY_AT = 'content/providers.md'
    account. Every one of those is the cautious answer on purpose. */
 export const POLICY = { offerings: 'off', approve: 'on', terms: '', 'payout-delay': '30d', connect: 'managed' }
 export const CONNECT = ['managed', 'own']
-const onoff = (v: any, dflt: any) => (v === true || v === 'on' ? 'on' : v === false || v === 'off' ? 'off' : dflt)
+const onoff = (v: string|boolean, dflt: string) => (v === true || v === 'on' ? 'on' : v === false || v === 'off' ? 'off' : dflt)
 
 /* the file's frontmatter → the four answers, resolved. A delay is whole minutes by the ledger's own
    arithmetic, because the policy and the ledger disagreeing about what 30d means is a whole class of

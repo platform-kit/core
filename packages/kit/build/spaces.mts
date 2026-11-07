@@ -159,7 +159,7 @@ export async function compileSpaces({ check = false, store, write = true, catalo
    * the Edge Function that publishes there is no disk, and their absence means those checks find
    * nothing to contradict, exactly as before, when the read threw and was caught.
    */
-  let cat: any = catalog, names = formNames, mods: any = modules
+  let cat = catalog, names = formNames, mods = modules
   if ((cat == null || names == null || mods == null) && st.kind !== 'rows') {
     const fsSide = await import('./spaces-disk.mjs')
     if (cat == null) cat = fsSide.catalogFrom(root)
@@ -296,7 +296,7 @@ export async function compileSpaces({ check = false, store, write = true, catalo
     }
 
     /* a door that asks a form must name one this site actually has, or nobody gets through it */
-    const jform = s.data.join && (s.data.join as any).form
+    const jform = s.data.join && s.data.join.form
     if (jform && !forms.has(jform)) bad(`join: form "${jform}" is not a form of this site`)
 
     /* the welcome is a room, and a heading with nothing under it is a heading nobody meant */

@@ -50,8 +50,8 @@ export function parseFunnel(raw: any) {
   const steps = parts.map((p) => {
     const m = /^# (.*)\n?([\s\S]*)$/.exec(p)
     const { fields, body } = splitStep(m ? m[2] : p)
-    const channel = String((fields as any).channel || 'email').toLowerCase() === 'chat' ? 'chat' : 'email'
-    return { id: UUID.test((fields as any).id || '') ? (fields as any).id : '', title: (m ? m[1] : '').trim(), channel, after: (fields as any).after || '0d', subject: (fields as any).subject || '', when: (fields as any).when || '', teaser: (fields as any).teaser || '', image: (fields as any).image || '', body }
+    const channel = String(fields.channel || 'email').toLowerCase() === 'chat' ? 'chat' : 'email'
+    return { id: UUID.test(fields.id || '') ? fields.id : '', title: (m ? m[1] : '').trim(), channel, after: fields.after || '0d', subject: fields.subject || '', when: fields.when || '', teaser: fields.teaser || '', image: fields.image || '', body }
   })
   return { data, steps }
 }
@@ -93,4 +93,4 @@ export async function keyAll(store = process.cwd()) {
   return n
 }
 // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
-export const writePolicy = (store: any, data: any) => asStore(store).write(POLICY, matter.stringify('\n', data, DUMP), { collection: 'emails', slug: 'policy', data })
+export const writePolicy = (store, data) => asStore(store).write(POLICY, matter.stringify('\n', data, DUMP), { collection: 'emails', slug: 'policy', data })

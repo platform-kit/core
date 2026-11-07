@@ -53,7 +53,7 @@ export async function functionsData({ site, env = process.env, log = () => {}, c
   for (const phase of phases) {
     const pick = DATA_STEPS[phase]
     if (!pick && pick !== null) throw new Error(`functionsData: unknown phase "${phase}"`)
-    const only = all.filter((s: any) => s.phase === phase && (pick ? pick.includes(s.key) : !NOT_DATA.includes(s.key))).map((s: any) => s.key)
+    const only = all.filter((s: { phase: string; key: string }) => s.phase === phase && (pick ? pick.includes(s.key) : !NOT_DATA.includes(s.key))).map((s: { key: any }) => s.key)
     if (only.length) ran.push(...await runPhase(phase, { site: c, env, changed, only, log }))
   }
   /* A MODULE THAT IS OFF WRITES NO FILE, but the functions import every one statically (_shared/compiled.ts takes the
@@ -71,6 +71,6 @@ export async function functionsData({ site, env = process.env, log = () => {}, c
 }
 
 if (isMain(import.meta.url)) {
-  const ran = await functionsData({ log: (m: any) => console.log('  ' + m) })
+  const ran = await functionsData({ log: (m: string) => console.log('  ' + m) })
   console.log(`✔ the functions' data: ${ran.length} step(s)`)
 }

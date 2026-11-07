@@ -13,27 +13,27 @@ async function failing(ctx: any, model: any) {
   const refs: any = {}
   for (const m of await publishedModels(ctx.store)) refs[(m as any).key] = new Set(await entryNames(ctx.store, (m as any).key))
   const out = []
-  for (const e of entries) { const r = validateEntry(model, e.data, { siblings: entries.filter((o) => o !== e).map((o) => o.data), refs, words }, z); if (!r.ok) out.push({ slug: e.slug, messages: r.errors.map((x: any) => x.message) }) }
+  for (const e of entries) { const r = validateEntry(model, e.data, { siblings: entries.filter((o) => o !== e).map((o) => o.data), refs, words }, z); if (!r.ok) out.push({ slug: e.slug, messages: r.errors.map((x: { message: any }) => x.message) }) }
   return out
 }
-const clean = (m: any) => { const { model, errors } = readModel(writeModel(m), m.key); if (errors.length) throw new Refusal(422, errors.join('\n'), { errors }); return model }
+const clean = (m: { key: string|undefined }) => { const { model, errors } = readModel(writeModel(m), m.key); if (errors.length) throw new Refusal(422, errors.join('\n'), { errors }); return model }
 
 export default {
   key: 'models', name: 'Models', dir: DIR, title: 'name', module: 'models', editor: 'ModelBuilder', creates: true,
-  names: (ctx: any) => modelNames(ctx.store),
-  read: async (name: any, ctx: any) => { const x = (await readModels(ctx.store)).find((m) => m.name === name); if (!x) throw new Refusal(404, 'no such model'); return { data: x.model, content: '', errors: x.errors, entries: (await entryNames(ctx.store, name)).length } },
-  list: async (ctx: any) => { const out = []; for (const x of await readModels(ctx.store)) out.push({ name: x.name, key: x.name, data: x.model || {}, title: x.model ? x.model.name : x.name, published: x.model ? x.model.published : false, fields: x.model ? x.model.fields.length : 0, entries: (await entryNames(ctx.store, x.name)).length, deliver: x.model ? Object.keys(x.model.deliver).filter((k) => (x as any).model.deliver[k]) : [], errors: x.errors }); return out },
+  names: (ctx: { store: any }) => modelNames(ctx.store),
+  read: async (name: string, ctx: { store: string }) => { const x = (await readModels(ctx.store)).find((m) => m.name === name); if (!x) throw new Refusal(404, 'no such model'); return { data: x.model, content: '', errors: x.errors, entries: (await entryNames(ctx.store, name)).length } },
+  list: async (ctx: { store: string }) => { const out = []; for (const x of await readModels(ctx.store)) out.push({ name: x.name, key: x.name, data: x.model || {}, title: x.model ? x.model.name : x.name, published: x.model ? x.model.published : false, fields: x.model ? x.model.fields.length : 0, entries: (await entryNames(ctx.store, x.name)).length, deliver: x.model ? Object.keys(x.model.deliver).filter((k) => (x as any).model.deliver[k]) : [], errors: x.errors }); return out },
   grammar: {
-    parse: (text: any, ctx: any) => { const { model, errors } = readModel(text, ctx.name); return { data: model, content: '', errors } },
-    serialise: (rec: any, ctx: any) => { if (!rec.data || !keyOk(rec.data.key) || rec.data.key !== ctx.name) throw new Refusal(400, 'a key is lower-case letters, digits and hyphens, and the file\'s name'); return writeModel(clean(rec.data)) },
+    parse: (text: string, ctx: { name: string|undefined }) => { const { model, errors } = readModel(text, ctx.name); return { data: model, content: '', errors } },
+    serialise: (rec: { data: { key: string } }, ctx: { name: any }) => { if (!rec.data || !keyOk(rec.data.key) || rec.data.key !== ctx.name) throw new Refusal(400, 'a key is lower-case letters, digits and hyphens, and the file\'s name'); return writeModel(clean(rec.data)) },
   },
   /* a save that changes a kind or a rule under entries asks first: { check: true } answers the failing entries instead of writing */
-  preflight: async (rec: any, ctx: any) => { const f = await failing(ctx, clean(rec.data)); return f.length ? { failing: f } : null },
-  beforeRemove: async (name: any, ctx: any) => { const n = (await entryNames(ctx.store, name)).length; if (n) throw new Refusal(409, 'entries', { entries: n }) },
+  preflight: async (rec: { data: any }, ctx: any) => { const f = await failing(ctx, clean(rec.data)); return f.length ? { failing: f } : null },
+  beforeRemove: async (name: string, ctx: { store: string }) => { const n = (await entryNames(ctx.store, name)).length; if (n) throw new Refusal(409, 'entries', { entries: n }) },
   actions: {
     check: async ({ model }: any, ctx: any) => ({ failing: await failing(ctx, clean(model)) }),
-    'rename-field': async ({ key, from, to }: any, ctx: any) => { if (!keyOk(String(key || '')) || !fieldKeyOk(String(from || '')) || !fieldKeyOk(String(to || ''))) throw new Refusal(400, 'bad key'); return { ok: true, carried: await renameField(ctx.store, key, from, to) } },
-    'rename-model': async ({ from, to }: any, ctx: any) => { from = String(from || ''); if (!keyOk(from) || !(await modelNames(ctx.store)).includes(from)) throw new Refusal(404, 'no such model'); return { ok: true, carried: await renameModel(ctx.store, from, String(to || '')) } },
+    'rename-field': async ({ key, from, to }: any, ctx: { store: string }) => { if (!keyOk(String(key || '')) || !fieldKeyOk(String(from || '')) || !fieldKeyOk(String(to || ''))) throw new Refusal(400, 'bad key'); return { ok: true, carried: await renameField(ctx.store, key, from, to) } },
+    'rename-model': async ({ from, to }: any, ctx: { store: string }) => { from = String(from || ''); if (!keyOk(from) || !(await modelNames(ctx.store)).includes(from)) throw new Refusal(404, 'no such model'); return { ok: true, carried: await renameModel(ctx.store, from, String(to || '')) } },
   },
   options: {
     /* a model's entries by slug and title, for the reference selects — options?key=model:<key> is answered by the pipe's prefix rule */

@@ -50,7 +50,7 @@ const cleanName = (filename: any) => (String(filename || '') as any).split(/[\\/
  * It is a fence and not a filter: the list is filtered, and every read, write, rename, delete and
  * publish is refused outright for a record that is not theirs. A surface that showed them only
  * their own rows would still leave every other row one hand-written request away. */
-const fenced = (env: any, col: any) => {
+const fenced = (env: { only: any }, col: any) => {
   const o = env.only
   if (!o) return null
   if (String(col || '') !== o.col) throw new Refusal(403, 'not yours to edit')
@@ -64,7 +64,7 @@ export async function adminRequest(env: any, { method, seg, q, body }: any) {
   const extra = { store, by: env.by, site: env.site, theme: env.theme, themeSkills: env.themeSkills, brand: env.brand, validateSections: env.validateSections, editions: env.editions, catalog: env.catalog }
   const models = () => env.models()
   const modelOf = async (col: any) => { const m = byKey(await models(), String(col || '')); if (!m) throw new Refusal(400, 'unknown collection'); return m }
-  const get = (k: any) => (q && typeof q.get === 'function' ? q.get(k) : (q || {})[k])
+  const get = (k: string) => (q && typeof q.get === 'function' ? q.get(k) : (q || {})[k])
   try {
     if (method === 'GET' && seg === 'collections') {
       const cols: any = {}
@@ -171,9 +171,9 @@ export async function adminRequest(env: any, { method, seg, q, body }: any) {
         if (!d) throw refuse('not a path the library reaches')
         /* the library entry as the picker's own list reads it, so the field is handed exactly what
            Choose from the library would have handed it */
-        const found = async (rel: any) => (await store.assets.list(rel.split('/').slice(0, -1).join('/'))).find((e: any) => e.path === rel) || null
+        const found = async (rel: string) => (await store.assets.list(rel.split('/').slice(0, -1).join('/'))).find((e: { path: any }) => e.path === rel) || null
         const name = assetName(src.key, result, type)
-        const taken = new Set((await store.assets.list(d)).map((e: any) => e.name))
+        const taken = new Set((await store.assets.list(d)).map((e: { name: any }) => e.name))
         /* the same picture chosen twice is the same file: hand back what is already there */
         if (!taken.has(name)) await store.putAsset(d + '/' + name, bytes, type)
         return { status: 200, body: { path: d + '/' + name, entry: await found(d + '/' + name), credit, reused: taken.has(name) } }
@@ -186,10 +186,10 @@ export async function adminRequest(env: any, { method, seg, q, body }: any) {
       const { op, ...a } = body || {}
       const A = store.assets
       const dir = (d: any) => { const p = insideRoots(d); if (!p) throw refuse('not a path the library reaches'); return p }
-      const entry = async (rel: any) => (await A.list(rel.split('/').slice(0, -1).join('/'))).find((e: any) => e.path === rel) || null
+      const entry = async (rel: string) => (await A.list(rel.split('/').slice(0, -1).join('/'))).find((e: { path: any }) => e.path === rel) || null
       /* a file in use is kept: before a removal, a rename or a move, the records that name it (a folder: any file
          under it) — one found refuses the whole request with them, and nothing is written */
-      const kept = async (paths: any) => { const used = await assetUsage(store, paths.map(dir)); if (Object.keys(used).length) throw Object.assign(new Error('in use'), { code: 409, extra: { used } }) }
+      const kept = async (paths: any[]) => { const used = await assetUsage(store, paths.map(dir)); if (Object.keys(used).length) throw Object.assign(new Error('in use'), { code: 409, extra: { used } }) }
       switch (String(op || '')) {
         case 'usage': return { status: 200, body: { usage: await assetUsage(store, [].concat(a.paths || a.path || []).map(dir)) } }
         case 'list': return { status: 200, body: { dir: dir(a.dir), files: await A.list(dir(a.dir)) } }
@@ -202,7 +202,7 @@ export async function adminRequest(env: any, { method, seg, q, body }: any) {
         case 'upload': {
           const d = dir(a.dir), clean = cleanName(a.filename)
           if (!clean || !/\.[a-z0-9]+$/i.test(clean)) return { status: 400, body: { error: 'bad filename' } }
-          const taken = new Set((await A.list(d)).map((e: any) => e.name))
+          const taken = new Set((await A.list(d)).map((e: { name: any }) => e.name))
           const dot = clean.lastIndexOf('.'); const ext = clean.slice(dot), stem = clean.slice(0, dot)
           let name = clean, n = 1
           while (taken.has(name)) name = `${stem}-${n++}${ext}`
@@ -251,11 +251,11 @@ export async function adminRequest(env: any, { method, seg, q, body }: any) {
         for (const name of await store.list('content/sessions')) { const fm = matter(await store.read('content/sessions/' + name + '.md')); if (fm.data.published !== false) out.push({ value: name.replace(/\.md$/, ''), label: fm.data.title || name }) }
         return { status: 200, body: { options: out.sort((a, b) => a.label.localeCompare(b.label)) } }
       }
-      if (key === 'areas') { const { areaListOf } = await import('./quiz-io.mjs'); return { status: 200, body: { options: (await areaListOf(store)).map((a: any) => ({ value: a.key, label: a.title })) } } }
+      if (key === 'areas') { const { areaListOf } = await import('./quiz-io.mjs'); return { status: 200, body: { options: (await areaListOf(store)).map((a: { key: any; title: any }) => ({ value: a.key, label: a.title })) } } }
       if (key === 'concepts') {
         const { parseStrings } = await import('./strings-admin.mjs')
         const raw = (await store.read('content/app/ui/concepts.md')) || ''
-        const listOf = (parseStrings(raw).groups as any).list || {}
+        const listOf = parseStrings(raw).groups.list || {}
         return { status: 200, body: { options: Object.entries(listOf).map(([slug, f]) => ({ value: slug, label: (f as any).name || slug })) } }
       }
       return { status: 200, body: { options: await optionList(await models(), key, root, extra) } }

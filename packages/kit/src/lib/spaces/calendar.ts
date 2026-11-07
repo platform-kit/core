@@ -59,7 +59,7 @@ export async function rsvp(occurrenceId: any, state = 'going', reason = null, gu
   const { data, error } = await supabase.rpc('event_rsvp', { p_occurrence: occurrenceId, p_state: state, p_guests: guests, p_reason: reason })
   if (error) return { error: error.message }
   if (data && data.ok) {
-    const row: any = calendar.upcoming.find((o: any) => o.id === occurrenceId)
+    const row = calendar.upcoming.find((o: { id: any }) => o.id === occurrenceId)
     if (row) { row.mine = state === 'out' ? null : state; row.going = data.going }
   }
   return data || {}

@@ -32,8 +32,8 @@ export async function compileDesign(content: any) {
   const mjml2html = mod.default || mod
   const mj = await renderToMjml(content, { allowHtmlBlocks: true })
   const r = await mjml2html(mj, { validationLevel: 'soft', minify: false })
-  const bad = (r.errors || []).filter((e: any) => e && e.level !== 'warning')
-  if (bad.length) throw new Error(bad.map((e: any) => e.formattedMessage || e.message).join('; '))
+  const bad = (r.errors || []).filter((e: { level: string }) => e && e.level !== 'warning')
+  if (bad.length) throw new Error(bad.map((e: { formattedMessage: any; message: any }) => e.formattedMessage || e.message).join('; '))
   return r.html
 }
 

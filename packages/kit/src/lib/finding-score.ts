@@ -77,8 +77,8 @@ export function normalise(scores: any) {
 
 /* one sentence: meaning and words, each normalised, halved and summed → { slug: 0..1 } */
 export function sentenceScores(slugs: any, pieces: any, index: any, qvec: any, text: any) {
-  const sem: any = normalise(Object.fromEntries(slugs.map((s: any) => [s, (semantic(pieces, qvec) as any)[s] || 0])))
-  const lex: any = normalise(Object.fromEntries(slugs.map((s: any) => [s, (bm25(index, text) as any)[s] || 0])))
+  const sem: any = normalise(Object.fromEntries(slugs.map((s: any) => [s, semantic(pieces, qvec)[s] || 0])))
+  const lex: any = normalise(Object.fromEntries(slugs.map((s: any) => [s, bm25(index, text)[s] || 0])))
   return Object.fromEntries(slugs.map((s: any) => [s, 0.5 * sem[s] + 0.5 * lex[s]]))
 }
 

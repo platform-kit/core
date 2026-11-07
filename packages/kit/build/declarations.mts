@@ -257,6 +257,6 @@ export const STATE = {
   network_dirty: 'whose public records changed since their repository was last made',
 }
 
-export const pendingOf = (name: any) => (DECLARED[name] && DECLARED[name].pending) || null
+export const pendingOf = (name: string) => (DECLARED[name] && DECLARED[name].pending) || null
 export const isDeclared = (name: any) => Object.prototype.hasOwnProperty.call(DECLARED, name)
 export const isState = (name: any) => Object.prototype.hasOwnProperty.call(STATE, name)

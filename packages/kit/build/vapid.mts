@@ -6,7 +6,7 @@
  */
 import { generateKeyPairSync } from 'node:crypto'
 const { publicKey, privateKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' })
-const b64 = (b: any) => Buffer.from(b).toString('base64url')
+const b64 = (b: Buffer<ArrayBuffer>) => Buffer.from(b).toString('base64url')
 const pub = publicKey.export({ format: 'jwk' }), prv = privateKey.export({ format: 'jwk' })
 // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 4, '(arrayBuffer: WithImplicitCoercion<ArrayBufferLike>, byteOffset?: number | undefined, lengt
 const raw = Buffer.concat([Buffer.from([4]), Buffer.from(pub.x, 'base64url'), Buffer.from(pub.y, 'base64url')])

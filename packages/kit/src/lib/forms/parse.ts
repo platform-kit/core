@@ -171,13 +171,13 @@ function parseSlideHead(lines: any, startLine: any, isForm: any, warnings: any) 
 
 /* the content of a slide (or of a div) into blocks */
 // @ts-expect-error TS7023, from the conversion: 'parseBlocks' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in
-function parseBlocks(lines: any, startLine: any, delimiter: any, out: any) {
+function parseBlocks(lines, startLine, delimiter, out) {
   const blocks = []
   const n = lines.length
   let i = 0
   let md: any = null   /* the open markdown block, extended by the next prose paragraph */
   const closeMd = () => { md = null }
-  const pushMd: any = (chunk: any, line: any) => {
+  const pushMd = (chunk: any, line: any) => {
     if (md) { md.md += '\n\n' + chunk; md.raw += '\n\n' + chunk; md.deps = depsOf(md.md) }
     else { md = { type: 'markdown', md: chunk, raw: chunk, line, deps: depsOf(chunk), condition: '' }; blocks.push(md) }
   }
@@ -239,7 +239,7 @@ function parseBlocks(lines: any, startLine: any, delimiter: any, out: any) {
       const seen: any = []
       const group: any = []
       branches.forEach((br) => {
-        const not: any = seen.map((c: any) => `not (${c})`)
+        const not = seen.map((c: any) => `not (${c})`)
         const cond = br.cond === null ? not.join(' and ') : [...not, `(${br.cond})`].join(' and ')
         if (br.cond !== null) seen.push(br.cond)
         for (const b of parseBlocks(br.lines, br.line + 1, delimiter, out)) { b.condition = b.condition ? `(${cond}) and (${b.condition})` : cond; group.push(b) }
@@ -330,9 +330,9 @@ export function parseForm(text: any) {
   /* the fields, flat, with their slide; a name given twice is an error */
   const fields: any = []
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ line: any; message: string; }' is not assignable to parameter of type 'never'.
-  ordered.forEach((s: any, si) => walk(s.blocks, (b: any) => { if (b.type === 'field') { const dup: any = fields.find((f: any) => f.name === b.name); if (dup) out.errors.push({ line: b.line, message: `"${b.name}" is already a field (line ${dup.line})` }); fields.push({ ...b, slide: si }) } }))
+  ordered.forEach((s, si) => walk(s.blocks, (b) => { if (b.type === 'field') { const dup = fields.find((f) => f.name === b.name); if (dup) out.errors.push({ line: b.line, message: `"${b.name}" is already a field (line ${dup.line})` }); fields.push({ ...b, slide: si }) } }))
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ line: number; message: string; }' is not assignable to parameter of type 'never'.
-  for (const f of Object.keys(kit.score)) if (!fields.some((x: any) => x.name === f)) out.errors.push({ line: 0, message: `"score" names "${f}", which is not a field` })
+  for (const f of Object.keys(kit.score)) if (!fields.some((x) => x.name === f)) out.errors.push({ line: 0, message: `"score" names "${f}", which is not a field` })
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ line: number; message: string; }' is not assignable to parameter of type 'never'.
   if (kit.pass != null && !Object.keys(kit.score).length) out.warnings.push({ line: 0, message: '"pass" is set but "score" names no right answers' })
   const title = settings.title || ''

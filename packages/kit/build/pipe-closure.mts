@@ -37,7 +37,7 @@ export const PIPE_ROOTS = [
 export const PIPE_SKIP = /^build\/(print\.mjs|print\/(epub|pages|pdf\.min|raster|typeset)\.mjs|git-push\.mjs)$/
 
 const IMPORT_RE = /(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g
-const rel = (base: any, f: any) => path.relative(base, f).split(path.sep).join('/')
+const rel = (base: string, f: string) => path.relative(base, f).split(path.sep).join('/')
 /* the file a specifier names: itself, or — for a .mjs (.js) the source keeps as TypeScript — the .mts (.ts) beside it,
    which the copy is stripped from (openspec: typescript-throughout). Null where neither is there. */
 export const sourceOf = (abs: any) => fs.existsSync(abs) ? abs : /\.m?js$/.test(abs) && fs.existsSync(abs.replace(/\.(m?)js$/, '.$1ts')) ? abs.replace(/\.(m?)js$/, '.$1ts') : null
@@ -48,7 +48,7 @@ export const jsName = (p: string): string => p.replace(/\.(m?)ts$/, '.$1js')
 export const jsImports = (code: string): string => code.replace(/((?:from\s+|import\s*\(\s*|import\s+)['"])(\.{1,2}\/[^'"]+)\.(m?)ts(['"])/g, (_, a, p, m, q) => `${a}${p}.${m}js${q}`)
 
 /* every file reachable from the roots by a relative import, as { relative path → absolute } */
-export function closure(base: any, roots = PIPE_ROOTS, skip = PIPE_SKIP) {
+export function closure(base: string, roots = PIPE_ROOTS, skip = PIPE_SKIP) {
   const seen = new Map()
   const queue = [...roots]
   while (queue.length) {
@@ -72,7 +72,7 @@ export function closure(base: any, roots = PIPE_ROOTS, skip = PIPE_SKIP) {
    `import x from './y.js'` and `import('./y.js')` alike, a guarded branch included — so a file the
    closure leaves out while something in it still names one by a literal is a runtime that does not
    boot. Returns the offenders as `from → missing`. */
-export function closureResolves(base: any, roots = PIPE_ROOTS, skip = PIPE_SKIP) {
+export function closureResolves(base: string, roots = PIPE_ROOTS, skip = PIPE_SKIP) {
   const inside = closure(base, roots, skip)
   const bad = []
   for (const [r, abs] of inside) {

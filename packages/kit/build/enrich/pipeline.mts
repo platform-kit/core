@@ -320,7 +320,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
         try { r = await askJson({ system: WRITE, schema: Drafts, maxTokens: 60000, label: 'write', model: writeModel || undefined,
           user: bookCtx + '\n' + pending.map((c) => block(c, state.get(c.title).feedback, state.get(c.title).draft)).join('\n\n') + '\n\nReturn the JSON.' }) }
         catch (e) {
-          if (e instanceof Budget) { log('  ' + e.message); for (const c of pending) (state.get(c.title) as any).stopped = e.message; break }
+          if (e instanceof Budget) { log('  ' + e.message); for (const c of pending) state.get(c.title).stopped = e.message; break }
           /*
            * OUT OF TIME. Unlike the budget, this is not a stopping point — the drafts in hand are
            * half-audited and writing them down as final would make the next invocation skip them.
@@ -335,7 +335,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
         /* the mechanical checks first; a draft that fails one goes straight back with the reason and is not audited */
         const toAudit = []
         for (const c of pending) {
-          const st: any = state.get(c.title); st.rounds++
+          const st = state.get(c.title); st.rounds++
           const d = r.data.chapters.find((x: any) => x.title.trim() === c.title)
           if (!d) { st.feedback = 'The previous reply did not include this chapter; return it.'; continue }
           st.draft = d
@@ -349,7 +349,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
             user: bookCtx + '\n' + toAudit.map((c) => `<chapter title=${JSON.stringify(c.title)}>\n<contract>\n${contractText(cache.chapters[c.title].extract.ideas)}\n</contract>\n<text>\n${c.md}\n</text>\n<draft>\n${JSON.stringify(state.get(c.title).draft, null, 1)}\n</draft>\n</chapter>`).join('\n\n') + '\n\nReturn the JSON.' })
           log(`  audit ${round}     ${Math.round((Date.now() - t1) / 1000)}s  ${tok(a.usage)}`)
           for (const c of toAudit) {
-            const st: any = state.get(c.title)
+            const st = state.get(c.title)
             const v = a.data.chapters.find((x: any) => x.title.trim() === c.title) || { missing: [], wrong: [] }
             const score = v.missing.length + v.wrong.length
             st.history.push(score)
@@ -362,8 +362,8 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
         pending = pending.filter((c) => state.get(c.title).feedback)
       }
       for (const c of group) {
-        const st: any = state.get(c.title)
-        const d: any = st.best || st.draft
+        const st = state.get(c.title)
+        const d = st.best || st.draft
         if (!d) { log(`    write    ${c.title}: no draft`); continue }
         const res = st.residual || { missing: [], wrong: [] }
         const note = st.clean ? '' : st.stopped ? `${st.stopped}; best draft kept with ${res.missing.length} missing, ${res.wrong.length} wrong` : `stopped after ${MAX_ROUNDS} rounds with ${res.missing.length} missing, ${res.wrong.length} wrong`

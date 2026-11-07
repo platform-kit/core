@@ -14,7 +14,7 @@ import { KINDS, checkRules, fill } from './rules.js'
 
 const empty = (v: any) => v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)
 // @ts-expect-error TS7023, from the conversion: 'shownHolds' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in 
-export function shownHolds(shown: any, data: any) {
+export function shownHolds(shown, data) {
   if (!shown) return true
   if (Array.isArray(shown)) return shown.every((c) => shownHolds(c, data))   /* several conditions: every one must hold */
   const v = data ? data[shown.field] : undefined
@@ -70,7 +70,7 @@ export function sortEntries(list: any, model: any) {
   const by = model.order && model.order.by, dir = model.order && model.order.dir === 'desc' ? -1 : 1
   if (!by) return list
   const f = model.fields.find((x: any) => x.key === by)
-  const num = f && (KINDS as any)[f.kind] && (KINDS as any)[f.kind].base === 'number'
+  const num = f && KINDS[f.kind] && KINDS[f.kind].base === 'number'
   return [...list].sort((a, b) => { const x = a[by], y = b[by]; if (x === y) return 0; if (x === undefined || x === null) return 1; if (y === undefined || y === null) return -1; return (num ? x - y : String(x).localeCompare(String(y))) * dir })
 }
 

@@ -338,7 +338,7 @@ export async function takeOver(root: any, report: any) {
   }
   const livePids = new Set(live.map((record) => record.pid))
   // @ts-expect-error TS2322, from the conversion: Type '(pid: any) => boolean' is not assignable to type '() => boolean'. Target signature provides too few arguments. Expected 1 or more, but
-  stopped.push(...await stopPortRecords(root, quiet, { keep: (pid: any) => livePids.has(pid) }))
+  stopped.push(...await stopPortRecords(root, quiet, { keep: (pid) => livePids.has(pid) }))
   /* the front door is named from the checkout, so it is this checkout's; up with no living
      workspace run to own it, it is a leftover */
   if (!live.some((record) => record.kind === 'workspace')) {

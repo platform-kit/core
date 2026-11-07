@@ -41,14 +41,14 @@ import * as unsplash from './unsplash.js'
 /* every source the kit knows. A new one is a file and a line here, and nothing else. */
 export const SOURCES = [unsplash]
 
-export const sourceOf = (key: any) => SOURCES.find((s) => s.key === key) || null
+export const sourceOf = (key: string) => SOURCES.find((s) => s.key === key) || null
 
 /* the ones this deployment can actually use — asked on the server, never guessed in the browser */
 export const configuredSources = (env = (typeof process !== 'undefined' ? process.env : {})) =>
   SOURCES.filter((s) => s.configured(env)).map((s) => ({ key: s.key, needs: s.needs }))
 
 /* what a source needs that is missing, for the deploy's report and for a clear refusal */
-export const missingFor = (key: any, env = (typeof process !== 'undefined' ? process.env : {})) => {
+export const missingFor = (key: string, env = (typeof process !== 'undefined' ? process.env : {})) => {
   const s = sourceOf(key)
   if (!s) return ['no such source']
   return s.needs.filter((n) => !String(env[n] || '').trim())
@@ -59,7 +59,7 @@ export const missingFor = (key: any, env = (typeof process !== 'undefined' ? pro
  * chosen twice is the same file rather than two, and so anybody looking at the library later can
  * see where a picture came from without a database.
  */
-export function assetName(sourceKey: any, result: any, type: any) {
+export function assetName(sourceKey: string, result: { id: string; alt: string }|{ id: string; alt?: undefined }, type: string) {
   const ext = /png/.test(type) ? 'png' : /webp/.test(type) ? 'webp' : /gif/.test(type) ? 'gif' : 'jpg'
   const slug = String(result.alt || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48)
   return `${sourceKey}-${slug ? slug + '-' : ''}${String(result.id).replace(/[^\w-]+/g, '')}.${ext}`

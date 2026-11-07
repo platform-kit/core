@@ -11,8 +11,8 @@
  * runtime resolves every literal specifier it can see whether the branch runs or not: importing
  * `readback` from there took the whole runtime down at boot. Keep this module free of imports.
  */
-export function readback(c: any, file: any) {
-  const where = c.query(file, '<where>').map((q: any) => q.value)
-  const marks = c.query(file, 'metadata').filter((q: any) => /^<mark-/.test(q.label || '')).map((q: any) => q.value)
+export function readback(c: { query(file: string, selector: string): Array<{ value?: unknown; label?: string }> }, file: string) {
+  const where = c.query(file, '<where>').map((q) => q.value)
+  const marks = c.query(file, 'metadata').filter((q) => /^<mark-/.test(q.label || '')).map((q) => q.value)
   return { where, marks }
 }

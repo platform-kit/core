@@ -38,7 +38,7 @@ export const checkoutResult = ref<any>(null)
 export const checkoutMode = ref<any>(null)
 
 export const session = ref<any>(null)
-export const user = computed(() => (session.value ? (session.value as any).user : null))
+export const user = computed(() => (session.value ? session.value.user : null))
 export const isSignedIn = computed(() => !!user.value)
 
 /* the signed-in reader's role, read from their own profile row (which only
@@ -130,7 +130,7 @@ async function refreshRole() {
   if (!configured || !session.value) { clearRoles(); emailVerified.value = false; roleKnown.value = false; myFace.value = null; return }
   roleKnown.value = false
   try {
-    const { data } = await (supabase as any).from('profiles').select('roles, role, email_verified_at, email, avatar, avatar_style, avatar_seed, avatar_options').eq('id', (session.value as any).user.id).maybeSingle()
+    const { data } = await (supabase as any).from('profiles').select('roles, role, email_verified_at, email, avatar, avatar_style, avatar_seed, avatar_options').eq('id', session.value.user.id).maybeSingle()
     /*
      * THE FACE, THROUGH THE FUNCTION. A select cannot answer the seed a person has when they have
      * chosen none — the database makes it from their address, and every other surface is given it
@@ -140,10 +140,10 @@ async function refreshRole() {
     try {
       const { data: mine } = await (supabase as any).rpc('my_profile')
       myFace.value = mine || null
-    } catch { myFace.value = data ? { id: (session.value as any).user.id, email: data.email, avatar: data.avatar, avatar_style: data.avatar_style, avatar_seed: data.avatar_seed, avatar_options: data.avatar_options } : null }
+    } catch { myFace.value = data ? { id: session.value.user.id, email: data.email, avatar: data.avatar, avatar_style: data.avatar_style, avatar_seed: data.avatar_seed, avatar_options: data.avatar_options } : null }
     /* `role` is what this replaced: read as a fallback so the app works against a database the
        backfill has not reached yet. It is dropped by a change of its own. */
-    const held = Array.isArray(data && data.roles) && (data as any).roles.length ? (data as any).roles
+    const held = Array.isArray(data && data.roles) && data.roles.length ? data.roles
       : data && data.role && data.role !== 'user' ? [data.role] : []
     setRoles(held)
     emailVerified.value = !!(data && data.email_verified_at)

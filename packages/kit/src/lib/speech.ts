@@ -22,7 +22,7 @@ export const INTRO_KEY = '__intro__'
 const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen']
 const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
 // @ts-expect-error TS7023, from the conversion: 'numberWords' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in
-export function numberWords(n: any) {
+export function numberWords(n) {
   n = Math.floor(Math.abs(n))
   if (n < 20) return ONES[n]
   if (n < 100) return TENS[Math.floor(n / 10)] + (n % 10 ? '-' + ONES[n % 10] : '')
@@ -31,7 +31,7 @@ export function numberWords(n: any) {
   return String(n)
 }
 /* a four-digit year reads in pairs: 1926 is nineteen twenty-six, 2003 two thousand and three */
-export function yearWords(n: any) {
+export function yearWords(n: number) {
   const hi = Math.floor(n / 100), lo = n % 100
   if (hi % 10 === 0) return numberWords(n)
   return numberWords(hi) + ' ' + (lo === 0 ? 'hundred' : lo < 10 ? 'oh-' + ONES[lo] : numberWords(lo))
@@ -47,7 +47,7 @@ export function romanValue(s: any) {
 export function spokenTitle(title: any) {
   const t = String(title || '').trim()
   const n = romanValue(t)
-  return n ? numberWords(n).replace(/^./, (c: any) => c.toUpperCase()) : t
+  return n ? numberWords(n).replace(/^./, (c: string) => c.toUpperCase()) : t
 }
 
 /* ---- markdown, the way it is read ----
@@ -58,7 +58,7 @@ export function spokenTitle(title: any) {
    "nineteen twenty-six" and any other whole number its words. The engine then
    does its own light normalising (quotes, dashes, brackets) and cuts at sentence
    ends. */
-export function speakable(md: any) {
+export function speakable(md: string) {
   let s = String(md || '')
     .replace(/==(?=\S)([\s\S]*?\S)==(?:\{[a-z]+\})?/g, '$1')
     /* a heading is its own sentence, with a pause after it */
@@ -99,7 +99,7 @@ export function speakable(md: any) {
 /* the chapters of a book body: split at its `# ` headings, the same split the
    reader makes and the script makes, so the two never disagree on what a
    chapter is */
-export function bookChapters(body: any) {
+export function bookChapters(body: string) {
   return String(body || '').split(/^(?=# )/m).filter((s) => s.trim()).map((part) => {
     const m = /^# (.*)$/m.exec(part)
     return { title: m ? m[1].trim() : 'Untitled', md: part.replace(/^# .*$/m, '').trim() }
@@ -108,7 +108,7 @@ export function bookChapters(body: any) {
 /* what a page is read with: the introduction as itself; a chapter as its
    spoken title, a pause, then its text — or its summary when one is given.
    Empty when there is nothing to say. */
-export function chapterSpeech(chapter: any, summaryMd?: any) {
+export function chapterSpeech(chapter: { intro?: any; md: any; title?: any }, summaryMd?: string|null|undefined) {
   if (!chapter) return ''
   if (chapter.intro) return speakable(chapter.md)
   const body = summaryMd != null ? summaryMd : chapter.md

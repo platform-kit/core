@@ -57,7 +57,7 @@ load();
 export let recorder=null;
 export function setRecorder(fn: any){ recorder=fn; }
 // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
-export function record(corpus: any,entry: any){ if(recorder){ try{ recorder(corpus,entry); }catch(e){} } }
+export function record(corpus,entry){ if(recorder){ try{ recorder(corpus,entry); }catch(e){} } }
 /* A sitting is a run of answering. Rather than tracking a session id, which a reload
    would break, group by when the answers were given: a gap of more than 90 minutes
    starts a new one. Answers saved before stamping existed have no ts and fall into a
@@ -85,7 +85,7 @@ export function draw(corpus: any,pool: any,keyFn: any,n: any){
   var counts=pool.map(function(x: any){return seen(corpus,keyFn(x));});
   var lvl=Math.min.apply(null,counts), out: any=[], guard=0;
   while(out.length<n && guard<12){
-    var tier: any=shuffle(pool.filter(function(x: any){ return seen(corpus,keyFn(x))===lvl && out.indexOf(x)<0; }));
+    var tier=shuffle(pool.filter(function(x: any){ return seen(corpus,keyFn(x))===lvl && out.indexOf(x)<0; }));
     out=out.concat(tier.slice(0,n-out.length));
     lvl++; guard++;
   }

@@ -295,7 +295,7 @@ class TextToSpeech {
                 const silenceLen = Math.floor(silenceDuration * (this as any).sampleRate);
                 const silence = new Array(silenceLen).fill(0);
                 wavCat = [...wavCat, ...silence, ...wav];
-                durCat += (duration as any)[0] + silenceDuration;
+                durCat += duration[0] + silenceDuration;
             }
         }
         

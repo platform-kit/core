@@ -41,14 +41,14 @@ export async function loadMe() {
    undoing each other. */
 export async function saveMe(patch: any) {
   if (!configured || !session.value) return null
-  const { error } = await (supabase as any).from('profiles').update(patch).eq('id', (session.value as any).user.id).select(FIELDS).maybeSingle()
+  const { error } = await (supabase as any).from('profiles').update(patch).eq('id', session.value.user.id).select(FIELDS).maybeSingle()
   if (error) throw error
   /* …and then READ IT BACK THROUGH THE FUNCTION, which is the rule at the top of this file. A
      select cannot answer `seed` — the face somebody has when they have chosen none — so a page
      that took the select's row as the new truth lost it the moment anything was saved, and with
      it the designer's "put it back". Writing through the row and reading through the function
      means what the page holds after a save is the same shape it held before one. */
-  const row: any = await loadMe()
+  const row = await loadMe()
   /*
    * …AND THE FACE THE REST OF THE SITE IS WEARING. The header, the rail, every avatar outside this
    * page reads `myFace`, which is filled when the person's role is read — at sign-in, and not
@@ -83,10 +83,10 @@ export async function personOf(username: any) {
 
 /* their own picture, into the avatars bucket under their own id. A picture always beats a drawn
    face, so this is the one write that changes what everybody sees without touching a style. */
-export async function uploadAvatar(file: any) {
+export async function uploadAvatar(file: { name: any; type: any }) {
   if (!configured || !session.value) return null
   const ext = (String(file.name || '').match(/\.([a-z0-9]+)$/i) || [, 'png'])[1].toLowerCase()
-  const path = `${(session.value as any).user.id}/face.${ext}`
+  const path = `${session.value.user.id}/face.${ext}`
   const { error } = await (supabase as any).storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type || undefined })
   if (error) throw error
   const { data } = (supabase as any).storage.from('avatars').getPublicUrl(path)

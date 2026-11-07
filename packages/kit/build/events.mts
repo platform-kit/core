@@ -30,9 +30,9 @@ export const WINDOW_DAYS = 365
 /* ------------------------------------------------------------------ the record */
 
 /* `for:` in every shape people write it, as the list of ways in that space_fill_matches takes */
-export function audienceOf(v: any) {
+export function audienceOf(v: string|null) {
   if (v == null || v === '' || v === 'anyone') return []
-  const one = (x: any) => {
+  const one = (x: string|null) => {
     if (x == null) return null
     if (typeof x === 'string') {
       const s = x.trim()
@@ -103,8 +103,8 @@ export function rsvpOf(v: any) {
   const o = v && typeof v === 'object' ? v : {}
   const said = (Array.isArray(o.answers) ? o.answers : []).map((s: any) => String(s).trim().toLowerCase())
     /* the words people write, in the words the rows use */
-    .map((s: any) => (s === 'yes' ? 'going' : s === 'maybe' ? 'interested' : s === 'no' ? 'out' : s))
-    .filter((s: any) => ANSWERS.includes(s))
+    .map((s: string) => (s === 'yes' ? 'going' : s === 'maybe' ? 'interested' : s === 'no' ? 'out' : s))
+    .filter((s: string) => ANSWERS.includes(s))
   return {
     on: true,
     answers: said,                                   /* empty: all of them */
@@ -132,16 +132,16 @@ export function costOf(v: any) {
 }
 
 /* who may say something on it: off · everyone · members (whoever may see it) · hosts */
-export const commentsOf = (v: any) => (['off', 'everyone', 'members', 'hosts'].includes(String(v || '').toLowerCase())
+export const commentsOf = (v: boolean) => (['off', 'everyone', 'members', 'hosts'].includes(String(v || '').toLowerCase())
   ? String(v).toLowerCase() : v === false ? 'off' : 'members')
 
 /*
  * `hosts:` — one or more people running it. A role (every holder of it hosts), or a person by the
  * address they sign in with. `host: coach` is the older single-role form and still works.
  */
-export function hostsOf(e: any) {
+export function hostsOf(e: { hosts: any; host: any }) {
   const out: any = []
-  const one = (h: any) => {
+  const one = (h: string) => {
     if (!h) return
     if (typeof h === 'string') {
       const s = h.trim()
@@ -193,12 +193,12 @@ export function rowOf(e: any, { spaces = [], channels = [] } = {}) {
 }
 
 /* every occurrence of one event in the window, as rows */
-export function occurrencesOf(e: any, { from = Date.now(), days = WINDOW_DAYS } = {}) {
+export function occurrencesOf(e: { slug?: any; body?: string; repeats?: any; zone?: any; starts?: any; ends?: any }, { from = Date.now(), days = WINDOW_DAYS } = {}) {
   const to = from + days * 86400000
   if (e.repeats) {
     const zone = e.zone || e.repeats.zone
     return occurrences({ ...e.repeats, zone: zone || e.repeats.zone }, { from, to, limit: 1000 })
-      .map((o: any) => ({ starts_at: new Date(o.start).toISOString(), ends_at: o.end > o.start ? new Date(o.end).toISOString() : null }))
+      .map((o: { start: string|number|Date; end: string|number|Date }) => ({ starts_at: new Date(o.start).toISOString(), ends_at: o.end > o.start ? new Date(o.end).toISOString() : null }))
   }
   if (!e.starts) return []
   const start = new Date(e.starts.length <= 10 ? e.starts + 'T00:00:00Z' : e.starts).getTime()
@@ -208,7 +208,7 @@ export function occurrencesOf(e: any, { from = Date.now(), days = WINDOW_DAYS } 
 
 /* ------------------------------------------------------------------ what is wrong with one */
 
-export function faults(e: any, { spaces = [], channels = [], sessions = [] } = {}) {
+export function faults(e: { slug: any; body?: string; title?: any; repeats?: any; starts?: any; space?: any; channel?: any; where?: any; capacity?: any }, { spaces = [], channels = [], sessions = [] } = {}) {
   const out = []
   const where = `events/${e.slug}.md`
   if (!e.title) out.push(`${where}: an event has a title.`)
@@ -253,7 +253,7 @@ export async function compileEvents({ root = process.cwd(), store, check = false
     if (check) { for (const s of said) console.log('  ' + s); throw new Error(`events: ${said.length} fault(s)`) }
     for (const s of said) console.log('  ! ' + s)
   }
-  const out: any = events.filter((e: any) => e.published !== false).map((e: any) => ({
+  const out = events.filter((e: any) => e.published !== false).map((e: any) => ({
     ...rowOf(e, { spaces, channels }),
     said: e.repeats ? describe(e.repeats) : null,
     occurrences: occurrencesOf(e).slice(0, 12),
@@ -268,6 +268,6 @@ if (isMain(import.meta.url)) {
   const check = process.argv.includes('--check')
   const { rows, faults: f } = await compileEvents({ check })
   console.log(`events: ${rows.length} on${f.length ? `, ${f.length} fault(s)` : ''}`)
-  const soon = rows.flatMap((r: any) => r.occurrences.slice(0, 1).map((o: any) => `  ${r.title} — ${o.starts_at}${r.said ? ` (${r.said})` : ''}`))
+  const soon = rows.flatMap((r) => r.occurrences.slice(0, 1).map((o: { starts_at: any }) => `  ${r.title} — ${o.starts_at}${r.said ? ` (${r.said})` : ''}`))
   for (const s of soon.slice(0, 8)) console.log(s)
 }

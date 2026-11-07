@@ -20,7 +20,7 @@
 import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 /* the kit's own scripts, wherever the kit is installed; the site is cwd */
-const KIT = (f: any) => JSON.stringify(fileURLToPath(new URL('./' + f, import.meta.url)))
+const KIT = (f: string) => JSON.stringify(fileURLToPath(new URL('./' + f, import.meta.url)))
 import { readFileSync, existsSync, writeFileSync, rmSync } from 'node:fs'
 
 function loadEnvFile(path: any) {
@@ -35,9 +35,9 @@ function loadEnvFile(path: any) {
 
 /* prod values come from .env.production (deploy env only) with real process.env
    winning; we never read the dev .env here */
-const env: any = { ...loadEnvFile('.env.production'), ...process.env }
+const env = { ...loadEnvFile('.env.production'), ...process.env }
 
-function die(msg: any) {
+function die(msg: string) {
   console.error(`\n✖ deploy refused: ${msg}\n`)
   process.exit(1)
 }
@@ -54,7 +54,9 @@ function die(msg: any) {
  * so that build/modes.test.mjs can assert what each shape would run WITHOUT running a deploy — the
  * script reads this same object, so the two cannot drift.
  */
-export const deployPlan = (shape: any) => {
+/* what deploymentShape answers: where the content lives, whether there is a backend, the repository a cloud site pushes to */
+export type DeployShape = { backend: any; content: any; repo?: any; mode?: string }
+export const deployPlan = (shape: DeployShape) => {
   const backend = !shape || shape.backend !== false
   return {
     targetGuards: backend,   /* the project url, its ref, the access token — all about a project */
@@ -79,7 +81,7 @@ if (env.DEPLOY !== '1' && env.CI !== 'true') {
    Refuse before loading site state or running any production-facing command. */
 try {
   const { assertPlatformKitForDeploy } = await import('./deploy-pins.mjs')
-  const install: any = assertPlatformKitForDeploy(process.cwd())
+  const install = assertPlatformKitForDeploy(process.cwd())
   console.log(install.kind === 'release'
     ? `PlatformKit releases: ${install.packages.map(({ name, version }: any) => `${name}@${version}`).join(', ')}`
     : `PlatformKit source: ${install.source.ref}`)
@@ -144,7 +146,7 @@ if (PLAN.targetGuards && !env.SUPABASE_ACCESS_TOKEN) {
   if (!r.ok) die('the production environment is incomplete (above); nothing was run')
 }
 
-const run = (cmd: any) => { console.log(`› ${cmd}`); execSync(cmd, { stdio: 'inherit', env: { ...process.env, ...env } }) }
+const run = (cmd: string) => { console.log(`› ${cmd}`); execSync(cmd, { stdio: 'inherit', env: { ...process.env, ...env } }) }
 
 console.log(`\nDeploying to Supabase project ${prodRef} …\n`)
 
@@ -171,7 +173,7 @@ if (PLAN.migrate) {
   /* the line to set is the plan's own digest, printed above with the refusal: it names these
      statements and nothing a later deploy brings, so the allowance cannot be left behind */
   if (!ok) die(`the plan would lose data (above) — set PLATFORMKIT_ALLOW_DESTRUCTIVE=${plan.verdict.digest} for this deploy, having read what it costs`)
-  const risky = plan.verdict.hits.filter((h: any) => h.loses !== 'nothing')
+  const risky = plan.verdict.hits.filter((h: { loses: string }) => h.loses !== 'nothing')
   if (risky.length) console.log(`! allowed by PLATFORMKIT_ALLOW_DESTRUCTIVE (${plan.verdict.allowance.kind}): the ${risky.length} statement(s) above that would lose data are applied on purpose`)
   console.log(plan.empty ? '› production matches the declaration; the data script runs' : '› applying the plan')
   try { await applyPlan(plan, env.SUPABASE_DB_URL) } catch (e: any) { die(e.message) }

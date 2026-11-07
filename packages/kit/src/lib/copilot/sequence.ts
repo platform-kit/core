@@ -15,19 +15,19 @@
  */
 
 /* a pair closing in from both ends — what "joining up" looks like on a row */
-export function connectingRow(n: any) {
+export function connectingRow(n: number) {
   const out = []
   for (let x = 0; x < n; x++) out.push([x, n - 1 - x])
   return out
 }
 
 /* the middle, then nothing: a slow blink rather than a shimmer */
-export function listeningRow(n: any) {
+export function listeningRow(n: number) {
   return [[Math.floor(n / 2)], []]
 }
 
 /* across and back, which is the only one of these that reads as effort */
-export function thinkingRow(n: any) {
+export function thinkingRow(n: number) {
   const out = []
   for (let x = 0; x < n; x++) out.push([x])
   for (let x = n - 1; x >= 0; x--) out.push([x])
@@ -35,7 +35,7 @@ export function thinkingRow(n: any) {
 }
 
 /* two opposite spokes turning: the same step on a ring rather than a row */
-export function connectingRing(n: any) {
+export function connectingRing(n: number) {
   const half = Math.floor(n / 2)
   const out = []
   for (let x = 0; x < n; x++) out.push([x, (x + half) % n])
@@ -47,10 +47,10 @@ export function connectingRing(n: any) {
  * largest divisor that leaves a group worth seeing — their trick, and it is a good one: it keeps
  * the figure symmetrical for any number of spokes instead of only for the convenient ones.
  */
-export function listeningRing(n: any) {
-  const gcdUnder = (max: any) => {
+export function listeningRing(n: number) {
+  const gcdUnder = (max: number) => {
     // @ts-expect-error TS7023, from the conversion: 'gcd' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of 
-    const gcd = (a: any, b: any) => (b ? gcd(b, a % b) : a)
+    const gcd = (a, b) => (b ? gcd(b, a % b) : a)
     for (let i = max; i >= 1; i--) if (gcd(n, i) === i) return i
     return 1
   }
@@ -60,7 +60,7 @@ export function listeningRing(n: any) {
 }
 
 /* the ring of a square, traced: the grid's way of saying "joining up" */
-export function connectingSquare(rows: any, cols: any, radius: any) {
+export function connectingSquare(rows: number, cols: number, radius: number) {
   const mid = Math.floor(rows / 2)
   const x0 = Math.max(0, mid - radius), y0 = Math.max(0, mid - radius)
   const x1 = cols - 1 - x0, y1 = Math.min(rows - 1, mid + radius)
@@ -76,7 +76,7 @@ export function connectingSquare(rows: any, cols: any, radius: any) {
  * THE WHOLE CHOREOGRAPHY, by shape and state. `speaking` is null and that is the point: there is
  * nothing to choreograph when there is a voice, because the voice is the choreography.
  */
-export function stepsOf(shape: any, state: any, n: any, rows = 6) {
+export function stepsOf(shape: string, state: string, n: any, rows = 6) {
   if (state === 'speaking') return null
   const ring = shape === 'radial'
   const grid = shape === 'grid'
@@ -88,7 +88,7 @@ export function stepsOf(shape: any, state: any, n: any, rows = 6) {
 }
 
 /* which step the clock is on; the sequence repeats for ever */
-export function stepAt(seq: any, at: any, every = 100) {
+export function stepAt(seq: string|any[], at: number, every = 100) {
   if (!seq || !seq.length) return null
   return seq[Math.floor(at / every) % seq.length]
 }
@@ -99,7 +99,7 @@ export function stepAt(seq: any, at: any, every = 100) {
  * as theirs do, so the shape is always a whole shape and the lighting is what moves.
  */
 export const DIM = 0.1
-export function litness(i: any, { step = null, bands = null, floor = DIM } = {}) {
+export function litness(i: number, { step = null, bands = null, floor = DIM } = {}) {
   if (step) return (step as any).includes(i) ? 1 : floor
   if (bands && (bands as any).length) return Math.max(floor, bands[i % (bands as any).length])
   return floor

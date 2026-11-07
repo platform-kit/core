@@ -26,7 +26,7 @@ export const PROMPTS = [
 export const FIND_BOOKS = [...new Set((TEACHINGS as any).map((t: any) => t.book))].filter((slug) => (BOOKS || []).some((b: any) => b.slug === slug))
 
 let index: any = null
-const lexical: any = async () => index || (index = lexicalIndex((await corpus()).filter((r: any) => r.kind === 'book' && FIND_BOOKS.includes(r.id)).map((r: any) => ({ slug: r.id, text: r.text }))))
+const lexical = async () => index || (index = lexicalIndex((await corpus()).filter((r: any) => r.kind === 'book' && FIND_BOOKS.includes(r.id)).map((r: any) => ({ slug: r.id, text: r.text }))))
 
 /* answers: { problem: 'text', frustration: 'text' } (either may be empty) → [{ slug, score }], best first */
 /* the looking-for choice as words to match: the choice's own line (quiz.md

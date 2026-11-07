@@ -2,7 +2,7 @@
     sources and the site's are the content globs (a site keeps no tailwind.config.js or postcss.config.js of its own) */
 import animate from 'tailwindcss-animate'
 
-export const tailwindConfig = (site: any, theme: any) => ({
+export const tailwindConfig = (site: { root: string }, theme: { src: string }) => ({
   content: [site.root + '/index.html', site.root + '/src/**/*.{vue,js,ts,jsx,tsx}', theme.src + '/**/*.{vue,js,ts,jsx,tsx}'],
   /* the site flips theme with data-theme="dark" on <html>; shadcn's dark: variants follow it */
   darkMode: ['selector', '[data-theme="dark"]'],

@@ -38,22 +38,22 @@ const OUT = path.join(path.dirname(new URL(import.meta.url).pathname), 'google-f
  */
 const CAT: any = { 'Sans Serif': 's', Serif: 'f', Monospace: 'm', Display: 'd', Handwriting: 'h' }
 
-export function compile(meta: any) {
+export function compile(meta: { familyMetadataList: never[] }) {
   const list = meta.familyMetadataList || []
-  const out = list.map((f: any) => {
+  const out = list.map((f: { fonts: any; axes: any; family: any; category: string|number; popularity: any }) => {
     const weights = Object.keys(f.fonts || {}).filter((k) => /^\d+$/.test(k)).map(Number).sort((a, b) => a - b)
     const italic = Object.keys(f.fonts || {}).some((k) => /i$/.test(k))
-    const axes = (f.axes || []).map((a: any) => (typeof a === 'string' ? a : a.tag)).filter(Boolean)
+    const axes = (f.axes || []).map((a: { tag: any }) => (typeof a === 'string' ? a : a.tag)).filter(Boolean)
     return {
       n: f.family,
       c: CAT[f.category] || 'd',
       w: weights,
       i: italic ? 1 : 0,
-      v: axes.filter((t: any) => t !== 'wght'),           /* wght is implied by the weights */
+      v: axes.filter((t: string) => t !== 'wght'),           /* wght is implied by the weights */
       p: f.popularity || 9999,
     }
-  }).filter((f: any) => f.n && f.w.length)
-  out.sort((a: any, b: any) => a.p - b.p)
+  }).filter((f: { n: any; w: string|any[] }) => f.n && f.w.length)
+  out.sort((a: { p: number }, b: { p: number }) => a.p - b.p)
   return out
 }
 

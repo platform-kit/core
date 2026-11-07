@@ -50,7 +50,7 @@ export async function devAccount({ quiet = false } = {}) {
     .split(',').map((r) => r.trim()).filter((r) => KNOWN.includes(r))
   const roles = asked.length ? [...new Set(asked)] : ['admin']
   const db = createClient(url, key, { auth: { persistSession: false } })
-  const say = (m: any) => { if (!quiet) console.log('  ' + m) }
+  const say = (m: string) => { if (!quiet) console.log('  ' + m) }
 
   /* the account: made through Supabase's own admin API, so the password is hashed as a sign-up's is */
   let id = (await db.from('profiles').select('id').eq('email', email).maybeSingle()).data?.id

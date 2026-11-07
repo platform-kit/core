@@ -12,15 +12,15 @@ export function embedContext(search = typeof location !== 'undefined' ? location
   return { type, id: q.get('typeform-embed-id') || '', source: q.get('typeform-source') || '', medium: q.get('typeform-medium') || '', hideFooter: q.get('embed-hide-footers') === 'true' || q.get('embed-hide-footer') === 'true', hideHeaders: q.get('embed-hide-headers') === 'true', autoResize: q.get('typeform-embed-auto-resize') === 'true' }
 }
 
-export function embedMessenger(ctx: any) {
+export function embedMessenger(ctx: { id: string } | null) {
   if (!ctx || typeof window === 'undefined' || window.parent === window) return null
-  const post = (type: any, data = {}) => { try { window.parent.postMessage({ type, embedId: ctx.id, ...data }, '*') } catch (e) { /* no parent */ } }
+  const post = (type: string, data = {}) => { try { window.parent.postMessage({ type, embedId: ctx.id, ...data }, '*') } catch (e) { /* no parent */ } }
   return {
     ready: () => post('form-ready'),
     theme: (backgroundColor: any, color: any) => post('form-theme', { theme: { backgroundColor, color } }),
     started: () => post('form-started'),
     screen: (ref: any) => post('form-screen-changed', { ref }),
-    height: (height: any) => post('form-height-changed', { height: Math.ceil(height) }),
+    height: (height: number) => post('form-height-changed', { height: Math.ceil(height) }),
     submit: (formId: any, responseId: any) => post('form-submit', { formId, responseId }),
     close: () => post('form-close'),
   }

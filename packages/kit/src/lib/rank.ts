@@ -22,7 +22,7 @@ export const WEIGHT_LIFT = 0.04
 /* a row's weight is its heaviest tag, not the sum: a piece tagged with five things the reader
    likes a little is not more relevant than the one piece about the thing they like most. */
 export function weightOf(tags: any, weights: any) {
-  return (tags || []).reduce((m: any, t: any) => Math.max(m, Number((weights || {})[String(t).toLowerCase()]) || 0), 0)
+  return (tags || []).reduce((m: number, t: any) => Math.max(m, Number((weights || {})[String(t).toLowerCase()]) || 0), 0)
 }
 
 export function scoreRow({ sem = 0, tags = [], href = '' }, { themeTags = [], prescribed = null, weights = null } = {}) {

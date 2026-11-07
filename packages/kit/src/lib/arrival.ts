@@ -9,7 +9,7 @@
 const UTM = ['source', 'medium', 'campaign', 'term', 'content']
 
 /* the five tags off an address (a search string or a whole url); absent → no `utm` at all */
-export function utmOf(address: any) {
+export function utmOf(address: string) {
   let q = ''
   try { q = new URL(String(address || ''), 'http://x').search } catch (e) { q = String(address || '') }
   const p = new URLSearchParams(q.startsWith('?') ? q : '?' + q)
@@ -19,7 +19,7 @@ export function utmOf(address: any) {
 }
 
 /* the browser family, from the user agent — the six most people use, then `other` */
-export function browserOf(ua: any) {
+export function browserOf(ua: string) {
   const s = String(ua || '')
   if (/Edg(e|A|iOS)?\//.test(s)) return 'edge'
   if (/SamsungBrowser\//.test(s)) return 'samsung'
@@ -32,7 +32,7 @@ export function browserOf(ua: any) {
 }
 
 /* the system family */
-export function osOf(ua: any) {
+export function osOf(ua: string) {
   const s = String(ua || '')
   if (/iPhone|iPad|iPod/.test(s)) return 'ios'
   if (/Android/.test(s)) return 'android'
@@ -44,7 +44,7 @@ export function osOf(ua: any) {
 }
 
 /* the device class: a coarse pointer (a touch screen) is a phone, or a tablet when it is wide or says so */
-export function deviceOf(ua: any, { coarse = null, width = null } = {}) {
+export function deviceOf(ua: string, { coarse = null, width = null } = {}) {
   const s = String(ua || '')
   const tablet = /iPad|Tablet|PlayBook|Silk/.test(s) || (/Android/.test(s) && !/Mobile/.test(s)) || (/Macintosh/.test(s) && coarse === true)
   if (tablet) return 'tablet'

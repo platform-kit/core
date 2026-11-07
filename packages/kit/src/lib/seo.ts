@@ -19,8 +19,8 @@ import { resolveHead } from './seo-head.js'
 
 const SITE = Array.isArray(SITE_RAW) ? SITE_RAW[0] : SITE_RAW
 const site = () => SITE || { name: 'Site' }
-const one = (x: any) => (Array.isArray(x) ? x[0] : x)
-const imageOf = (c: any) => (typeof c === 'string' ? c : c && c.src) || ''
+const one = (x: any[]) => (Array.isArray(x) ? x[0] : x)
+const imageOf = (c: { src: any }) => (typeof c === 'string' ? c : c && c.src) || ''
 const strip = (html: any) => String(html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 /*
  * THE SHARE PICTURE OF ANY RECORD, at one address shape: /share/<kind>/<id>.png.
@@ -34,22 +34,22 @@ const strip = (html: any) => String(html || '').replace(/<[^>]+>/g, ' ').replace
  */
 export const SHARE = {
   default: '/share/default.png',
-  of: (kind: any, id: any) => (id ? '/share/' + kind + '/' + id + '.png' : '/share/default.png'),
+  of: (kind: string, id: string) => (id ? '/share/' + kind + '/' + id + '.png' : '/share/default.png'),
   article: (id: any) => SHARE.of('articles', id),
   book: (slug: any) => SHARE.of('books', slug),
-  page: (route: any) => (route && route !== '/' ? SHARE.of('pages', String(route).replace(/^\/+|\/+$/g, '').replace(/\//g, '-')) : '/share/default.png'),
+  page: (route: string) => (route && route !== '/' ? SHARE.of('pages', String(route).replace(/^\/+|\/+$/g, '').replace(/\//g, '-')) : '/share/default.png'),
 }
 
 /* upsert one head element, or remove it when it has nothing to say */
-function tag(selector: any, make: any, content: any) {
+function tag(selector: any, make: any, content: string) {
   let el = document.head.querySelector(selector)
   if (!content) { if (el) el.remove(); return }
   if (!el) { el = make(); document.head.appendChild(el) }
   if (el.tagName === 'LINK') el.setAttribute('href', content); else el.setAttribute('content', content)
 }
-const metaN = (name: any) => () => { const m = document.createElement('meta'); m.setAttribute('name', name); return m }
-const metaP = (prop: any) => () => { const m = document.createElement('meta'); m.setAttribute('property', prop); return m }
-const link = (rel: any) => () => { const l = document.createElement('link'); l.setAttribute('rel', rel); return l }
+const metaN = (name: string) => () => { const m = document.createElement('meta'); m.setAttribute('name', name); return m }
+const metaP = (prop: string) => () => { const m = document.createElement('meta'); m.setAttribute('property', prop); return m }
+const link = (rel: string) => () => { const l = document.createElement('link'); l.setAttribute('rel', rel); return l }
 
 export function setHead({ title = '', description = '', image = '', path = null, type = 'website', noindex = false } = {}) {
   const s = site()
@@ -81,36 +81,36 @@ export function headForPage(p: any) {
 }
 
 /* the library: the hub and indexes from the strings, an entry from itself */
-export function headForContent(kind: any, id: any) {
+export function headForContent(kind: string, id: string) {
   const S = us('pages').seo || {}
   const idx: any = { hub: '/content', articles: '/content/articles', wiki: '/content/wiki', docs: DOCS_BASE, books: '/content/books' }
   if (!id || !idx[kind]) { const k = idx[kind] ? kind : (DOCS_ONLY ? 'docs' : 'hub'); return setHead({ title: (S[k] || {}).title, description: (S[k] || {}).description, path: idx[k] }) }
   const path = idx[kind] + '/' + id
-  const find = (col: any) => (col || []).find((e: any) => e.id === id)
+  const find = (col: any) => (col || []).find((e: { id: any }) => e.id === id)
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   if (kind === 'articles') { const a = find(articles); return setHead({ title: a && a.title, description: a && (a.description || strip(a.excerpt)), image: a && (a.share || SHARE.article(a.id)), path, type: 'article' }) }
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  if (kind === 'books') { const b = (books || []).find((e: any) => (e.slug || e.id) === id); return setHead({ title: b && (b.author ? `${b.title} by ${b.author}` : b.title), description: b && b.description, image: b && (b.share || SHARE.book(b.slug || b.id)), path, type: 'book' }) }
+  if (kind === 'books') { const b = (books || []).find((e) => (e.slug || e.id) === id); return setHead({ title: b && (b.author ? `${b.title} by ${b.author}` : b.title), description: b && b.description, image: b && (b.share || SHARE.book(b.slug || b.id)), path, type: 'book' }) }
   const e = find(kind === 'wiki' ? wiki : docs)
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   setHead({ title: e && e.title, description: e && (e.description || strip(e.excerpt)), image: e && (e.share || imageOf(e.cover) || SHARE.of(kind, id)), path, type: 'article' })
 }
 
 /* the store: the storefront file for the front, a product or collection from itself */
-export function headForStore(kind: any, id: any) {
+export function headForStore(kind: string, id: string) {
   const S = us('pages').seo || {}
   const sf = one(storefront) || {}
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  if (kind === 'products' && id) { const p = (products || []).find((x: any) => x.id === id); return setHead({ title: p && p.title, description: p && (p.subtitle || strip(p.excerpt)), image: p && (p.share || p.image || SHARE.of('products', id)), path: '/store/products/' + id, type: 'product' }) }
+  if (kind === 'products' && id) { const p = (products || []).find((x) => x.id === id); return setHead({ title: p && p.title, description: p && (p.subtitle || strip(p.excerpt)), image: p && (p.share || p.image || SHARE.of('products', id)), path: '/store/products/' + id, type: 'product' }) }
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  if (kind === 'collections' && id) { const c = (collections || []).find((x: any) => x.id === id); return setHead({ title: c && c.title, description: c && (c.subtitle || c.description), image: c && (c.share || c.image || SHARE.of('collections', id)), path: '/store/collections/' + id }) }
+  if (kind === 'collections' && id) { const c = (collections || []).find((x) => x.id === id); return setHead({ title: c && c.title, description: c && (c.subtitle || c.description), image: c && (c.share || c.image || SHARE.of('collections', id)), path: '/store/collections/' + id }) }
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   if (kind === 'collections') return setHead({ title: (S.collections || {}).title, description: (S.collections || {}).description, path: '/store/collections' })
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   setHead({ title: sf.heroTitle || (S.store || {}).title, description: sf.heroSubtitle || (S.store || {}).description, image: sf.heroImage, path: '/store' })
 }
 
-export function headForKey(key: any, path: any, noindex = false) {
+export function headForKey(key: string|number, path: any, noindex = false) {
   const S = (us('pages').seo || {})[key] || {}
   setHead({ title: S.title, description: S.description, path, noindex })
 }

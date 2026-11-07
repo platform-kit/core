@@ -22,14 +22,14 @@
 export const EMPTY = () => ({ chapters: {} })
 
 /* a checkout's: a file beside the build scripts */
-export function fileCache(slug: any, { root = process.cwd(), fs, path }: any = {}) {
+export function fileCache(slug: string, { root = process.cwd(), fs, path }: any = {}) {
   if (!fs || !path) throw new Error('enrich-cache: a file cache needs fs and path handed in — this module is imported where there is neither')
   const dir = path.join(root, 'build/.cache')
   const at = path.join(dir, slug + '.json')
   return {
     where: at,
     async load() { try { return JSON.parse(fs.readFileSync(at, 'utf8')) } catch { return EMPTY() } },
-    async save(c: any) { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(at, JSON.stringify(c, null, 1)) },
+    async save(c: { understand?: { key: string; data: { thesis: string } }|{ key: string; data: { thesis: string } }; chapters: {}|{ One: { extract: { key: string; ideas: { idea: string; keep: boolean }[] } } }; lines?: { key: string; data: number } }) { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(at, JSON.stringify(c, null, 1)) },
   }
 }
 
@@ -41,7 +41,7 @@ export function fileCache(slug: any, { root = process.cwd(), fs, path }: any = {
  * Merging into what the row holds is how a second worker does not discard a stage the first paid
  * for — which is money, not just work.
  */
-export function runCache(db: any, runId: any, { field = 'enrich' } = {}) {
+export function runCache(db: { rows?: Map<string,unknown>; from: any }, runId: string, { field = 'enrich' } = {}) {
   const read = async () => {
     const { data, error } = await db.from('agent_runs').select('state').eq('id', runId).single()
     if (error) throw new Error('enrich-cache: the run could not be read — ' + error.message)
@@ -50,7 +50,7 @@ export function runCache(db: any, runId: any, { field = 'enrich' } = {}) {
   return {
     where: `agent_runs.${runId}.state.${field}`,
     load: read,
-    async save(c: any) {
+    async save(c: { introduce?: { key: string; text: string }; chapters: {}; lines?: { key: string; data: {} }; understand?: { key: string; data: string } }) {
       const { data } = await db.from('agent_runs').select('state').eq('id', runId).single()
       const state = { ...((data && data.state) || {}), [field]: c }
       const { error } = await db.from('agent_runs').update({ state, updated_at: new Date().toISOString() }).eq('id', runId)

@@ -70,16 +70,16 @@ function failover({ first, own }: any) {
   const live = new Map()     /* our utterance id → whichever speaker is carrying it */
   return {
     get id() { return fallen ? 'browser' : 'endpoint' },
-    say(text: any, onChunk = () => {}) {
+    say(text: string, onChunk = () => {}) {
       const utterance = 'say-' + (++n)
-      const p: any = (async () => {
+      const p = (async () => {
         if (!fallen) {
           live.set(utterance, first)
           let got = null, failed = false
           /* the endpoint hands over raw bytes; those are the endpoint's own shape, and the page
              is told which speaker made them by what it is handed */
           // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
-          try { got = await first.say(text, (c: any) => onChunk(c)).catch?.(() => { failed = true; return null }) }
+          try { got = await first.say(text, (c) => onChunk(c)).catch?.(() => { failed = true; return null }) }
           catch { failed = true }
           if (!live.has(utterance)) return null          /* cancelled while it was trying */
           if (got) { live.delete(utterance); return got }
@@ -93,7 +93,7 @@ function failover({ first, own }: any) {
       })()
       return Object.assign(p, { utterance })
     },
-    cancel(utterance: any) {
+    cancel(utterance: string|null) {
       const who = live.get(utterance)
       live.delete(utterance)
       /* the child made its own id; it has exactly one in flight, so cancelling its latest is
@@ -136,14 +136,14 @@ function browserSpeaker({ worker, voice, onState = () => {} }: any) {
   }
   return {
     id: 'browser',
-    say(text: any, onChunk = () => {}) {
+    say(text: string, onChunk = () => {}) {
       if (!worker) return Object.assign(Promise.reject(new Error('no voice worker')), { utterance: null })
       const utterance = 'say-' + (++n)
       const p = new Promise((resolve, reject) => live.set(utterance, { resolve, reject, onChunk }))
       worker.postMessage({ type: 'speak', id: utterance, text, live: true, engine: engineOf(voice) })
       return Object.assign(p, { utterance })
     },
-    cancel(utterance: any) { if (worker && utterance) { live.delete(utterance); worker.postMessage({ type: 'cancel', id: utterance }) } },
+    cancel(utterance: string|null) { if (worker && utterance) { live.delete(utterance); worker.postMessage({ type: 'cancel', id: utterance }) } },
     get latest() { return 'say-' + n },
     cancelLatest() { this.cancel('say-' + n) },
   }
@@ -194,7 +194,7 @@ function endpointSpeaker({ post, voice }: any) {
       })()
       return Object.assign(p, { utterance })
     },
-    cancel(utterance: any) { if (utterance) gone.add(utterance) },
+    cancel(utterance: unknown) { if (utterance) gone.add(utterance) },
     get latest() { return 'say-' + n },
     cancelLatest() { this.cancel('say-' + n) },
   }

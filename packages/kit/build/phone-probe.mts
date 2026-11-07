@@ -16,7 +16,7 @@
 import { chromium } from 'playwright'
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
 
-const arg = (k: any, d: any) => { const i = process.argv.indexOf(k); return i >= 0 ? process.argv[i + 1] : d }
+const arg = (k: string, d: string) => { const i = process.argv.indexOf(k); return i >= 0 ? process.argv[i + 1] : d }
 const URL = (arg('--url', 'http://localhost:5173')).replace(/\/+$/, '')
 const AS = arg('--as', '')
 const ONLY = arg('--routes', '')

@@ -374,7 +374,7 @@ export async function runWorkspace({
         ...childFlags,
       ]
       if (site.supabaseWorkdir) childArgs.push('--supabase-workdir', site.supabaseWorkdir)
-      const childEnv: any = appEnv
+      const childEnv = appEnv
       childEnv.PLATFORMKIT_DEV_PARENT_RUN_ID = runRecord.runId
       childEnv.PLATFORMKIT_DEV_PARENT_PID = String(process.pid)
       const child = spawn(process.execPath, childArgs, {
@@ -407,7 +407,7 @@ export async function runWorkspace({
       for (;;) {
         const record = children.find((candidate: any) => candidate.child === child)
         if (record?.error || child.exitCode !== null || child.signalCode !== null) {
-          throw new Error(`${site.name} dev server exited during startup${record?.error ? `: ${(record.error as any).message}` : ''}`)
+          throw new Error(`${site.name} dev server exited during startup${record?.error ? `: ${record.error.message}` : ''}`)
         }
         if (viteDeadline === null) {
           if (ownsFile(stackReadyFile)) viteDeadline = Date.now() + startupLimits.viteMs
@@ -447,9 +447,9 @@ export async function runWorkspace({
       process.once('SIGHUP', onSignal)
     })
     /* a parent that goes without a signal (a kill no handler can catch) ends the run too */
-    const unwatch: any = watchParent(() => onSignal())
+    const unwatch = watchParent(() => onSignal())
     let onUnexpectedExit: any
-    const unexpectedExit: any = new Promise((resolve, reject) => {
+    const unexpectedExit = new Promise((resolve, reject) => {
       onUnexpectedExit = ({ site, child }: any) => {
         if (!shuttingDown) reject(new Error(`${site.name} dev server exited (code ${child.exitCode ?? 'signal'})`))
       }

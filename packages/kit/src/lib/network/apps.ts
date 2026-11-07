@@ -46,7 +46,7 @@ export async function networkStatus() {
   const { data } = await (supabase as any).from('network_identities').select('did, joined_at, left_at').maybeSingle()
   return data && data.joined_at && !data.left_at ? { joined: true, did: data.did } : { joined: false }
 }
-async function door(path: any) {
+async function door(path: string) {
   const { data, error } = await (supabase as any).functions.invoke('atproto/network/' + path, { body: {} })
   if (error) {
     let message = error.message

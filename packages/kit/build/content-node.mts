@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url'
 
 const dir = process.cwd() + '/.velite/'   /* the site's compiled content: the kit's scripts run in the site's root */
 /* a collection the site has not (a site's own is absent from another site) reads as empty */
-const load = (f: any, empty = []) => { try { return JSON.parse(readFileSync(dir + f, 'utf8')) } catch (e: any) { if (e.code === 'ENOENT') return empty; throw e } }
+const load = (f: string, empty = []) => { try { return JSON.parse(readFileSync(dir + f, 'utf8')) } catch (e: any) { if (e.code === 'ENOENT') return empty; throw e } }
 
 export const articles = load('articles.json')
 export const wiki = load('wiki.json')

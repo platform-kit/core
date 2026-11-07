@@ -33,14 +33,14 @@ export const OUT = 'supabase/functions/_shared/forms.json'
    deployment that never builds again has to make this itself when a form is published. */
 export async function formNames(store = ROOT) {
   const st = asStore(store)
-  try { return (await st.list(DIR, { ext: 'md' })).filter((n: any) => !n.includes('/')).sort() } catch { return [] }
+  try { return (await st.list(DIR, { ext: 'md' })).filter((n: string|string[]) => !n.includes('/')).sort() } catch { return [] }
 }
-export async function readForm(store: any, name: any) {
+export async function readForm(store: string, name: string) {
   const raw = await asStore(store).read(DIR + '/' + name + '.md')
   return { raw, model: parseForm(raw) }
 }
 /* the Forms API's shape of a document is src/lib/forms/api-shape.js (pure, shared with the functions in cloud mode); here with the file's time */
-export function apiShape(model: any, name: any, mtime: any = null) {
+export function apiShape(model: { settings: any; kit: any; data: any; title: any; slides: any[]; fields: any; head: { settingsLines: string[]; dataBlocks: string[] }; warnings: never[]; errors: never[] }, name: string, mtime: any = null) {
   const at = mtime && typeof mtime === 'object' && mtime.toISOString ? mtime.toISOString() : (typeof mtime === 'string' && mtime.includes('T') ? mtime : null)
   return shapeOf(model, name, { updated: at, created: at })
 }
@@ -71,7 +71,7 @@ if (isMain(import.meta.url)) {
   mkdirSync(dirname(join(ROOT, OUT)), { recursive: true })
   writeFileSync(join(ROOT, OUT), JSON.stringify(forms, null, 2) + '\n')
   if (check) {
-    for (const [name, f] of Object.entries(forms)) console.log(`  ${name}${(f as any).kit.published === false ? ' (unpublished)' : ''}: ${(f as any).fields.length} field(s) — ${(f as any).fields.map((x: any) => x.name + ':' + x.kind + (x.required ? '*' : '')).join(', ')}${(f as any).kit.once ? '; once' : ''}${(f as any).kit.webhook ? '; webhook' : ''}${Object.keys((f as any).kit.score).length ? '; a quiz of ' + Object.keys((f as any).kit.score).length : ''}`)
+    for (const [name, f] of Object.entries(forms)) console.log(`  ${name}${(f as any).kit.published === false ? ' (unpublished)' : ''}: ${(f as any).fields.length} field(s) — ${(f as any).fields.map((x: { name: string; kind: string; required: any }) => x.name + ':' + x.kind + (x.required ? '*' : '')).join(', ')}${(f as any).kit.once ? '; once' : ''}${(f as any).kit.webhook ? '; webhook' : ''}${Object.keys((f as any).kit.score).length ? '; a quiz of ' + Object.keys((f as any).kit.score).length : ''}`)
     if (notes.length) console.log('  notes:\n    ' + notes.join('\n    '))
   }
   console.log(`✔ forms: ${Object.keys(forms).length} form(s) → ${OUT}`)

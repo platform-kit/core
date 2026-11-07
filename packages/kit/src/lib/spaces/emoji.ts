@@ -67,21 +67,21 @@ export const ALL = GROUPS.flatMap(([group, list]) => (list as any).map(([emoji, 
  * when every word of it is the start of one of an emoji's words — so "fi" finds fire and "well
  * done" finds both 🎉 and 👏, and a stray letter narrows rather than widening.
  */
-export function search(q: any, { limit = 60 } = {}) {
+export function search(q: string, { limit = 60 } = {}) {
   const terms = String(q || '').toLowerCase().trim().split(/\s+/).filter(Boolean)
   if (!terms.length) return ALL.slice(0, limit)
   const out = []
   for (const e of ALL) {
     const words = e.words.split(' ')
-    if (terms.every((t) => words.some((w: any) => w.startsWith(t)))) out.push(e)
+    if (terms.every((t) => words.some((w: string) => w.startsWith(t)))) out.push(e)
     if (out.length >= limit) break
   }
   return out
 }
 
 /* what somebody reached for last, newest first and never twice — the list a picker opens on */
-export function remember(recent: any, emoji: any, { keep = 16 } = {}) {
+export function remember(recent: string[], emoji: string, { keep = 16 } = {}) {
   const e = String(emoji || '')
   if (!e) return recent || []
-  return [e, ...(recent || []).filter((x: any) => x !== e)].slice(0, keep)
+  return [e, ...(recent || []).filter((x: string) => x !== e)].slice(0, keep)
 }

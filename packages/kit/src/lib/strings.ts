@@ -11,7 +11,7 @@ import { ui as UI } from '#content'
 import { groups as THEME } from '#site/strings-default'
 
 const BY: any = {}
-;(UI || []).forEach((f: any) => { BY[f.scope] = f.groups })
+;(UI || []).forEach((f: { scope: string|number; groups: any; }) => { BY[f.scope] = f.groups })
 
 /*
  * THE THEME'S OWN WORDS ARE THE FLOOR, and this is what makes a missing string impossible rather
@@ -30,7 +30,7 @@ const BY: any = {}
  * field. The site still wins wherever it has said anything, and no component carries an English
  * word to fall back on.
  */
-const under = (over: any, base: any) => {
+const under = (over: object, base: { [x: string]: any; }) => {
   if (!base) return over || {}
   if (!over) return base
   const out = { ...base }
@@ -40,14 +40,14 @@ const under = (over: any, base: any) => {
   return out
 }
 const merged: any = {}
-const scopeOf = (scope: any) => {
+const scopeOf = (scope: string|number) => {
   if (merged[scope]) return merged[scope]
   merged[scope] = under(BY[scope], (THEME || {})[scope])
   return merged[scope]
 }
 
 /* one group as a plain { key: {fields} } object — the common case */
-export function ug(scope: any, group: any) { return scopeOf(scope)[group] || {} }
+export function ug(scope: string, group: string) { return scopeOf(scope)[group] || {} }
 
 /* the whole scope, for a component that reads several groups */
-export function us(scope: any) { return scopeOf(scope) }
+export function us(scope: string) { return scopeOf(scope) }

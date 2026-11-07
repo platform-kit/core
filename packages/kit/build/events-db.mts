@@ -21,8 +21,8 @@ import { occurrencesOf, WINDOW_DAYS } from './events.mjs'
  * thing and who may SAY something on it. Projecting it is how a policy can answer for an article
  * and an event without knowing what either is.
  */
-export async function projectEventComments(db: any, rows: any) {
-  const want = rows.map((r: any) => ({
+export async function projectEventComments(db: { from: any }, rows: any[]) {
+  const want = rows.map((r: { slug: any; audience: any; comments: any }) => ({
     kind: 'event', subject: r.slug,
     /* an event's audience is a fill rule rather than a class ladder, so a gated event is at least
        members-only here; the event's own policy is still the fence on the event itself */
@@ -37,7 +37,7 @@ export async function projectEventComments(db: any, rows: any) {
   const { data: had, error: hadError } = await db.from('comment_subjects').select('subject').eq('kind', 'event')
   if (hadError) throw new Error(`events: could not read comment subjects: ${hadError.message}`)
   if (!Array.isArray(had)) throw new Error('events: could not read comment subjects: expected a row list')
-  const keep = new Set(want.map((r: any) => r.subject))
+  const keep = new Set(want.map((r: { subject: any }) => r.subject))
   const gone = had.map((r) => r.subject).filter((s) => !keep.has(s))
   if (gone.length) {
     const { error } = await db.from('comment_subjects').delete().eq('kind', 'event').in('subject', gone)
@@ -48,7 +48,7 @@ export async function projectEventComments(db: any, rows: any) {
 
 /* the declaration, already compiled, written to the database it is given */
 export async function projectEvents({ events, rows, db, log = () => {}, days = WINDOW_DAYS }: any = {}) {
-  const wanted = (rows || []).filter((r: any) => r.published)
+  const wanted = (rows || []).filter((r: { published: any }) => r.published)
 
   /* what the site has, by slug, so an event keeps its id — an RSVP points at an occurrence, which
      points at an event, and a rewrite that made new ids would throw every answer away */
@@ -58,7 +58,7 @@ export async function projectEvents({ events, rows, db, log = () => {}, days = W
   const { data: channelRows, error: channelError } = await db.from('channels').select('id, slug, space_id')
   if (channelError) throw new Error(`events: could not read channels: ${channelError.message}`)
   if (!Array.isArray(channelRows)) throw new Error('events: could not read channels: expected a row list')
-  const spaceId = (slug: any) => spaceRows.find((s) => s.slug === slug)?.id || null
+  const spaceId = (slug: string) => spaceRows.find((s) => s.slug === slug)?.id || null
   const channelId = (full: any) => {
     if (!full) return null
     const [space, room] = String(full).split('/')
@@ -102,7 +102,7 @@ export async function projectEvents({ events, rows, db, log = () => {}, days = W
 
   /* an event no file declares any more */
   for (const e of had) {
-    if (wanted.some((r: any) => r.slug === e.slug)) continue
+    if (wanted.some((r: { slug: any }) => r.slug === e.slug)) continue
     const { error } = await db.from('calendar_events').delete().eq('id', e.id)
     if (error) throw new Error(`events: could not remove ${e.slug}: ${error.message}`)
     gone++
@@ -110,16 +110,16 @@ export async function projectEvents({ events, rows, db, log = () => {}, days = W
 
   /* the occurrences: what the rule makes now, against what is there */
   const from = Date.now()
-  for (const e of (events || []).filter((x: any) => x.published !== false)) {
+  for (const e of (events || []).filter((x: { published: boolean }) => x.published !== false)) {
     const id = idOf.get(e.slug)
     if (!id) continue
     const want = occurrencesOf(e, { from, days })
-    const wantAt = new Set(want.map((o: any) => o.starts_at))
+    const wantAt = new Set(want.map((o: { starts_at: any }) => o.starts_at))
     const { data: has, error: hasError } = await db.from('calendar_occurrences').select('id, starts_at, cancelled_at, note').eq('event_id', id)
     if (hasError) throw new Error(`events: ${e.slug}: could not read occurrences: ${hasError.message}`)
     if (!Array.isArray(has)) throw new Error(`events: ${e.slug}: could not read occurrences: expected a row list`)
     const hasAt = new Map(has.map((o) => [new Date(o.starts_at).toISOString(), o]))
-    const fresh = want.filter((o: any) => !hasAt.has(o.starts_at)).map((o: any) => ({ event_id: id, starts_at: o.starts_at, ends_at: o.ends_at }))
+    const fresh = want.filter((o: { starts_at: string }) => !hasAt.has(o.starts_at)).map((o: { starts_at: any; ends_at: any }) => ({ event_id: id, starts_at: o.starts_at, ends_at: o.ends_at }))
     for (let i = 0; i < fresh.length; i += 500) {
       const { error } = await db.from('calendar_occurrences').insert(fresh.slice(i, i + 500))
       if (error) throw new Error(`events: ${e.slug}: could not add occurrences: ${error.message}`)

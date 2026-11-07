@@ -13,13 +13,13 @@
 /* the spans a reader picks from, in the order they are offered. `custom` is two dates from a picker. */
 export const RANGES = ['any', 'today', 'yesterday', 'last-7-days', 'last-30-days', 'this-year', 'custom']
 
-const startOfDay = (ms: any) => { const d = new Date(ms); d.setUTCHours(0, 0, 0, 0); return d }
-const iso = (d: any) => d.toISOString()
+const startOfDay = (ms: string|number|Date) => { const d = new Date(ms); d.setUTCHours(0, 0, 0, 0); return d }
+const iso = (d: Date) => d.toISOString()
 
 /* a picked span → { after, before }, the instants the search is bounded by. `before` is exclusive. */
-export function rangeDates(range: any, now = Date.now(), custom: any = {}) {
+export function rangeDates(range: string, now = Date.now(), custom: any = {}) {
   const day = startOfDay(now)
-  const back = (n: any) => { const d = startOfDay(now); d.setUTCDate(d.getUTCDate() - n); return d }
+  const back = (n: number) => { const d = startOfDay(now); d.setUTCDate(d.getUTCDate() - n); return d }
   switch (range) {
     case 'today': return { after: iso(day), before: null }
     case 'yesterday': return { after: iso(back(1)), before: iso(day) }
@@ -32,12 +32,12 @@ export function rangeDates(range: any, now = Date.now(), custom: any = {}) {
 }
 
 /* a date as a picker gives it (YYYY-MM-DD) → the instant that day begins, or ends */
-export function dayStart(v: any) {
+export function dayStart(v: string|null) {
   if (!v) return null
   const d = new Date(String(v).slice(0, 10) + 'T00:00:00.000Z')
   return isNaN(d.getTime()) ? null : d.toISOString()
 }
-export function dayEnd(v: any) {
+export function dayEnd(v: string) {
   const s = dayStart(v)
   if (!s) return null
   const d = new Date(s)

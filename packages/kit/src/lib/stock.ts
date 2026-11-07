@@ -40,7 +40,7 @@ export async function loadStock(skus: any) {
   try {
     const { data, error } = await (supabase as any).from('inventory').select('sku, variant, stocked, reserved').in('sku', want)
     if (error) return counts.value          /* no table, no rights, no matter: unknown is buyable */
-    const next: any = { ...(counts.value || {}) }
+    const next = { ...(counts.value || {}) }
     for (const r of data || []) next[stockKey(r.sku, r.variant)] = { stocked: r.stocked, reserved: r.reserved }
     /* a sku the table has no row for is KNOWN to be untracked-or-unstocked rather than unasked;
        recording nothing would make every re-render ask again */
@@ -50,4 +50,4 @@ export async function loadStock(skus: any) {
 }
 
 /* a shop that has just sold the last one: the page asks again rather than holding a stale number */
-export function forgetStock(sku: any) { if (sku) asked.delete(sku); else asked.clear() }
+export function forgetStock(sku: unknown) { if (sku) asked.delete(sku); else asked.clear() }

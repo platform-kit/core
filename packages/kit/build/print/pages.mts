@@ -8,10 +8,10 @@
 
 /* `where`: [{ kind, title, page }] the openers; `marks`: [{ page }]; `all`: [{ items }] by page.
    → { chapter: { title, page, full }, marks: { page, count } } */
-export function choose(where: any, marks: any, all: any) {
-  const fullest = Math.max(1, ...all.map((s: any) => s.items))
-  const chapters = where.filter((w: any) => w.kind === 'chapter' && w.page >= 1 && w.page <= all.length)
-  const scored = chapters.map((c: any) => ({ ...c, items: all[c.page - 1].items })).sort((a: any, b: any) => b.items - a.items)
+export function choose(where: any[], marks: any, all: any[]) {
+  const fullest = Math.max(1, ...all.map((s: { items: any }) => s.items))
+  const chapters = where.filter((w: { kind: string; page: number }) => w.kind === 'chapter' && w.page >= 1 && w.page <= all.length)
+  const scored = chapters.map((c: any) => ({ ...c, items: all[c.page - 1].items })).sort((a: { items: number }, b: { items: number }) => b.items - a.items)
   const chapter = scored[0] ? { title: scored[0].title, page: scored[0].page, full: scored[0].items >= fullest * 0.6 } : null
   const byPage = new Map()
   for (const m of marks) if (m.page) byPage.set(m.page, (byPage.get(m.page) || 0) + 1)
@@ -20,4 +20,4 @@ export function choose(where: any, marks: any, all: any) {
 }
 
 /* the sheet a chapter opens on in another edition, by its title */
-export const pageOf = (where: any, title: any) => (where.find((w: any) => w.kind === 'chapter' && w.title === title) || {}).page || null
+export const pageOf = (where: any[], title: any) => (where.find((w: { kind: string; title: any }) => w.kind === 'chapter' && w.title === title) || {}).page || null

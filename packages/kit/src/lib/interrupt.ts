@@ -25,7 +25,7 @@
    site turning up uninvited. */
 export const QUIET = ['/admin', '/app', '/spaces', '/feed', '/p', '/__preview', '/__share', '/api', '/form/', '/to/', '/book/', '/cart/c/', '/checkout/', '/support', '/embed/']
 
-export function mayInterrupt(path: any, communityRoutes = []) {
+export function mayInterrupt(path: string|null, communityRoutes = []) {
   const p = String(path || '')
   if (!p.startsWith('/')) return false
   const prefixes = QUIET.concat(Array.isArray(communityRoutes) ? communityRoutes.filter((q: any) => typeof q === 'string' && q.startsWith('/')) : [])
@@ -42,21 +42,21 @@ let holder: any = null
 let at = ''
 
 /* a new page: the corner is free again */
-export function newPageView(path: any) {
+export function newPageView(path: string) {
   if (String(path || '') === at) return
   at = String(path || '')
   holder = null
 }
 
 /* take the corner for this page view. The first to ask gets it; asking twice is fine. */
-export function claimCorner(who: any) {
+export function claimCorner(who: string) {
   if (holder && holder !== who) return false
   holder = who
   return true
 }
 
-export const cornerHolder: any = () => holder
-export const cornerFree: any = () => holder === null
+export const cornerHolder = () => holder
+export const cornerFree = () => holder === null
 
 /* give it back — what a dismissed ad does, so the chat may still say something later on the page */
-export function releaseCorner(who: any) { if (holder === who) holder = null }
+export function releaseCorner(who: string) { if (holder === who) holder = null }

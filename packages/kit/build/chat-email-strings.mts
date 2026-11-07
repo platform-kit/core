@@ -42,7 +42,7 @@ export async function writeEmailStrings() {
 }
 
 if (!isMain(import.meta.url)) { /* imported for its parsers */ } else {
-const groups: any = await uiScope('chat')
+const groups = await uiScope('chat')
 if (!groups.followup || !groups.followup.lines || !Object.keys(groups.followup.lines).length) { console.error(`${SRC}: no "## followup / ### lines"`); process.exit(1) }
 if (!groups.refusal || !groups.refusal.lines || !groups.refusal.lines.over) { console.error(`${SRC}: no "## refusal / ### lines" with over, not-included and guest`); process.exit(1) }
 for (const [group, out] of Object.entries(OUT)) {

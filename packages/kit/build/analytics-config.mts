@@ -21,14 +21,14 @@ const check = process.argv.includes('--check')
 const NAME = /^[A-Za-z$][A-Za-z0-9_$:. -]{0,63}$/
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
-export function analyticsConfig(c: any) {
+export function analyticsConfig(c: { analytics: any }) {
   const a = (c && c.analytics) || {}
   const errors = []
   const events: any = []
   for (const [i, e] of ((a.events || [])).entries()) {
     const key = String((e && e.key) || '').trim()
     if (!NAME.test(key)) { errors.push(`analytics.events[${i}]: the key "${key}" is not an event name (letters, digits, _ $ : . and spaces; 64 characters)`); continue }
-    if (events.some((x: any) => x.key === key)) { errors.push(`analytics.events[${i}]: the key "${key}" is registered twice`); continue }
+    if (events.some((x: { key: string }) => x.key === key)) { errors.push(`analytics.events[${i}]: the key "${key}" is registered twice`); continue }
     const value = e.value == null ? null : String(e.value).trim()
     events.push({ key, label: String(e.label || key).trim(), goal: !!e.goal, value: value || null })
   }
@@ -37,7 +37,7 @@ export function analyticsConfig(c: any) {
     const key = String((s && s.key) || '').trim(), name = String((s && s.name) || '').trim()
     if (key.length < 12) { errors.push(`analytics.sources[${i}]: the key is the secret a page sends — twelve characters at least`); continue }
     if (!SLUG.test(name)) { errors.push(`analytics.sources[${i}]: the name "${name}" is lower-case words joined by hyphens`); continue }
-    if (sources.some((x: any) => x.key === key || x.name === name)) { errors.push(`analytics.sources[${i}]: the key or the name is used twice`); continue }
+    if (sources.some((x: { key: string; name: string }) => x.key === key || x.name === name)) { errors.push(`analytics.sources[${i}]: the key or the name is used twice`); continue }
     const hosts = (Array.isArray(s.hosts) ? s.hosts : [s.hosts]).filter(Boolean).map((h: any) => String(h).trim().toLowerCase())
     if (!hosts.length) { errors.push(`analytics.sources[${i}]: no hosts — the origins allowed to send under this key (or "*")`); continue }
     sources.push({ key, name, hosts })

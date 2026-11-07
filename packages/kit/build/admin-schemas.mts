@@ -5,6 +5,8 @@
  * The core collections' records live in build/models/core/collections.mjs; collectionsFor() is the built-in
  * ones plus every published custom model, for the scripts and tests that want the set without the server.
  */
+import type { $strip } from 'zod/v4/core';
+import type { ZodObject } from 'zod';
 import { COLLECTIONS } from './models/core/collections.mjs'
 import { customModels } from './models/custom.mjs'
 
@@ -20,7 +22,7 @@ function unwrap(field: any) {
   }
   return { base: f, required, meta: Object.assign({}, ...metas) }
 }
-function baseType(base: any) {
+function baseType(base: { def: { type: any; element: { def: { type: any; }; }; }; }) {
   const t = base && base.def && base.def.type
   if (t === 'number') return 'number'
   if (t === 'boolean') return 'boolean'
@@ -34,14 +36,14 @@ function baseType(base: any) {
   return 'string'
 }
 /* the string values of a z.enum, across zod builds */
-function enumValues(base: any) {
+function enumValues(base: { options: any; def: any[]; }) {
   if (Array.isArray(base.options)) return base.options
   const e = base.def && base.def.entries
   return e ? Object.values(e) : []
 }
-const titleCase = (s: any) => s.replace(/(^|_)(\w)/g, (_: any, a: any, c: any) => (a ? ' ' : '') + c.toUpperCase())
+const titleCase = (s: string) => s.replace(/(^|_)(\w)/g, (_: any, a: any, c: string) => (a ? ' ' : '') + c.toUpperCase())
 
-export function describeSchema(schema: any) {
+export function describeSchema(schema: ZodObject<{ [x: string]: any; },$strip>) {
   const shape = schema.shape
   return Object.keys(shape).map((name) => {
     const { base, required, meta } = unwrap(shape[name])
@@ -72,9 +74,9 @@ export function describeSchema(schema: any) {
 export async function collectionsFor(store = process.cwd()) {
   const out: any = {}
   // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-  for (const [k, m] of Object.entries(COLLECTIONS)) out[k] = { ...m, schema: (m as any).fields, label: (m as any).name }
+  for (const [k, m] of Object.entries(COLLECTIONS)) out[k] = { ...m, schema: m.fields, label: m.name }
   for (const m of await customModels(store)) out[m.key] = { ...m, schema: m.fields, label: m.name }
   return out
 }
-export const assetsFor = async (colKey: any, store = process.cwd()) => ((await collectionsFor(store))[colKey] || {}).assets || null
+export const assetsFor = async (colKey: string|number, store = process.cwd()) => ((await collectionsFor(store))[colKey] || {}).assets || null
 export { COLLECTIONS }

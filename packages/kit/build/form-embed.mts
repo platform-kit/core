@@ -46,10 +46,10 @@ await build({
         if (id !== '\0embed-content') return
         const dir = path.join(c.root, '.velite')
         const names = [...fs.readFileSync(path.join(dir, 'index.js'), 'utf8').matchAll(/export \{ default as (\w+) \} from '\.\/(\w+)\.json'/g)].map((m) => [m[1], m[2]])
-        const read = (f: any) => JSON.parse(fs.readFileSync(path.join(dir, f + '.json'), 'utf8'))
+        const read = (f: string) => JSON.parse(fs.readFileSync(path.join(dir, f + '.json'), 'utf8'))
         return names.map(([name, file]) => {
           if (name === 'forms' || name === 'site') return `export const ${name} = ${JSON.stringify(read(file))}`
-          if (name === 'ui') return `export const ui = ${JSON.stringify(read(file).filter((x: any) => x.scope === 'forms'))}`
+          if (name === 'ui') return `export const ui = ${JSON.stringify(read(file).filter((x: { scope: string }) => x.scope === 'forms'))}`
           const v = read(file)
           return `export const ${name} = ${Array.isArray(v) ? '[]' : '{}'}`
         }).join('\n')

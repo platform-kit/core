@@ -19,7 +19,7 @@ const POST_COLS = 'id, author_id, rkey, text, audience, media, reply_root_id, re
 const MSG_COLS = 'id, channel_id, author_id, body, title, attachment, attachment_type, media, reply_count, created_at, channels!space_messages_channel_fkey(slug, space_id, spaces(id, slug, name))'
 const PAGE = 30
 
-export const net: any = reactive<any>({
+export const net = reactive<any>({
   people: {},        /* id → { name, username, page, avatar… } */
   posts: {},         /* id → post (the network's) */
   messages: {},      /* id → a space's message, shaped as a post */
@@ -47,7 +47,7 @@ export async function admission() {
     : Promise.resolve([])
   if (!grants || !ok()) { net.access = { read: true, write: true, known: true } }
   else {
-    const ask = async (g: any) => (await (supabase as any).rpc('network_admitted', { p_user: me(), p_grant: g })).data === true
+    const ask = async (g: string) => (await (supabase as any).rpc('network_admitted', { p_user: me(), p_grant: g })).data === true
     const [read, write] = await Promise.all([ask('read'), ask('write')])
     net.access = { read, write, known: true }
   }
@@ -57,7 +57,7 @@ export async function admission() {
 
 /* ---------------------------------------------------------------- who */
 
-export async function loadPeople(ids: any) {
+export async function loadPeople(ids: any[]|Iterable<unknown>|null|undefined) {
   // @ts-expect-error TS2538, from the conversion: Type '{}' cannot be used as an index type.
   const want = [...new Set(ids)].filter((id) => id && !net.people[id])
   if (!want.length || !ok()) return
@@ -74,19 +74,19 @@ export async function personOf(userId: any) {
 /* ---------------------------------------------------------------- what */
 
 /* the reader's likes and reposts among these posts, so each card knows whether it is pressed */
-async function markMine(ids: any) {
+async function markMine(ids: string|any[]) {
   if (!me() || !ids.length) return
   const [likes, reposts] = await Promise.all([
     (supabase as any).from('network_likes').select('post_id').eq('author_id', me()).in('post_id', ids),
     (supabase as any).from('network_reposts').select('post_id').eq('author_id', me()).in('post_id', ids),
   ])
-  const liked = new Set(((likes as any).data || []).map((r: any) => r.post_id))
-  const reposted = new Set(((reposts as any).data || []).map((r: any) => r.post_id))
+  const liked = new Set((likes.data || []).map((r: { post_id: any }) => r.post_id))
+  const reposted = new Set((reposts.data || []).map((r: { post_id: any }) => r.post_id))
   for (const id of ids) if (net.posts[id]) net.posts[id] = { ...net.posts[id], liked: liked.has(id), reposted: reposted.has(id) }
 }
 
 /* posts by id, with what they quote and answer, their people, and the reader's own marks */
-export async function loadPosts(ids: any) {
+export async function loadPosts(ids: any[]|Iterable<unknown>|null|undefined) {
   const want = [...new Set(ids)].filter(Boolean)
   if (!want.length || !ok()) return []
   const { data } = await (supabase as any).from('network_posts').select(POST_COLS).in('id', want)
@@ -105,13 +105,13 @@ export async function loadPosts(ids: any) {
   return rows
 }
 
-async function loadMessages(ids: any) {
+async function loadMessages(ids: any[]|Iterable<unknown>|null|undefined) {
   const want = [...new Set(ids)].filter(Boolean)
   if (!want.length || !ok()) return
   const { data, error } = await (supabase as any).from('space_messages').select(MSG_COLS).in('id', want)
   if (error) throw error
   for (const m of data || []) {
-    const ch: any = m.channels || {}
+    const ch = m.channels || {}
     net.messages[m.id] = postOfMessage({ ...m, channel_slug: ch.slug }, ch.spaces || null)
   }
   // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
@@ -122,17 +122,17 @@ async function loadMessages(ids: any) {
 /* ONE WAY TO REACT: a space's post is liked as the spaces like anything — a ❤️ reaction, the same row the
    spaces page writes — so its card can wear the network's bar and count it where the spaces count it */
 export const LIKE = '❤️'
-async function markMessages(ids: any) {
+async function markMessages(ids: string|any[]) {
   if (!ids.length) return
   const { data } = await (supabase as any).from('reactions').select('target_id, user_id').eq('surface', 'message').eq('emoji', LIKE).in('target_id', ids)
   const rows = data || []
   for (const id of ids) {
     if (!net.messages[id]) continue
-    const mine = rows.filter((r: any) => r.target_id === id)
-    net.messages[id] = { ...net.messages[id], like_count: mine.length, liked: !!me() && mine.some((r: any) => r.user_id === me()) }
+    const mine = rows.filter((r: { target_id: any }) => r.target_id === id)
+    net.messages[id] = { ...net.messages[id], like_count: mine.length, liked: !!me() && mine.some((r: { user_id: any }) => r.user_id === me()) }
   }
 }
-export async function likeMessage(post: any, on: any) {
+export async function likeMessage(post: { id: string|number }, on: any) {
   const m = net.messages[post.id]
   if (!m || !me()) return
   net.messages[post.id] = { ...m, liked: on, like_count: Math.max(0, (m.like_count || 0) + (on ? 1 : -1)) }
@@ -144,7 +144,7 @@ export async function likeMessage(post: any, on: any) {
 }
 
 /* a picture's or a video's address (and a video's poster), signed for an hour, read only by whoever may read its post */
-async function signImages(posts: any) {
+async function signImages(posts: any[]) {
   const paths = []
   for (const p of posts) for (const im of p.media || []) for (const at of [im && im.path, im && im.poster]) if (at && !net.images[at]) paths.push(at)
   if (!paths.length) return
@@ -165,9 +165,9 @@ export function timeline() {
       if (error) throw error
       const rows = data || []
       await Promise.all([
-        loadPosts(rows.filter((r: any) => r.post_id).map((r: any) => r.post_id)),
-        loadMessages(rows.filter((r: any) => r.message_id).map((r: any) => r.message_id)),
-        loadPeople(rows.map((r: any) => r.reposted_by).filter(Boolean)),
+        loadPosts(rows.filter((r: { post_id: any }) => r.post_id).map((r: { post_id: any }) => r.post_id)),
+        loadMessages(rows.filter((r: { message_id: any }) => r.message_id).map((r: { message_id: any }) => r.message_id)),
+        loadPeople(rows.map((r: { reposted_by: any }) => r.reposted_by).filter(Boolean)),
       ])
       st.items = reset ? joinPages([], rows) : joinPages(st.items, rows)
       st.done = rows.length < PAGE
@@ -189,10 +189,10 @@ export async function forYou(offset = 0, limit = 30) {
   if (error) throw error
   const rows = data || []
   await Promise.all([
-    loadPosts(rows.filter((r: any) => r.kind === 'post').map((r: any) => r.id)),
-    loadMessages(rows.filter((r: any) => r.kind === 'space').map((r: any) => r.id)),
+    loadPosts(rows.filter((r: { kind: string }) => r.kind === 'post').map((r: { id: any }) => r.id)),
+    loadMessages(rows.filter((r: { kind: string }) => r.kind === 'space').map((r: { id: any }) => r.id)),
   ])
-  const items = rows.map((r: any) => ({ ...r, post: r.kind === 'post' ? net.posts[r.id] : net.messages[r.id] })).filter((r: any) => r.post && (r.post.media || []).length)
+  const items = rows.map((r: { kind: string; id: string|number }) => ({ ...r, post: r.kind === 'post' ? net.posts[r.id] : net.messages[r.id] })).filter((r: { post: { media: any } }) => r.post && (r.post.media || []).length)
   return { items: spread(items), done: rows.length < limit }
 }
 
@@ -202,7 +202,7 @@ export function discover() {
     if (st.loading || !ok()) return
     st.loading = true; st.error = ''
     try {
-      const before = reset || !st.items.length ? null : (st.items[st.items.length - 1] as any).created_at
+      const before = reset || !st.items.length ? null : st.items[st.items.length - 1].created_at
       let q = (supabase as any).from('network_posts').select(POST_COLS).is('reply_parent_id', null).is('removed_at', null).order('created_at', { ascending: false }).limit(PAGE)
       if (before) q = q.lt('created_at', before)
       /* AND THE READER'S SPACES (spaces-reach-home): with following off this is Home, so the feeds of
@@ -214,11 +214,11 @@ export function discover() {
       ])
       if (error) throw error
       const rows = data || []
-      const spaceRows = ((spaced && spaced.data) || []).filter((r: any) => r.kind === 'space')
-      await Promise.all([loadPosts(rows.map((r: any) => r.id)), loadMessages(spaceRows.map((r: any) => r.message_id))])
+      const spaceRows = ((spaced && spaced.data) || []).filter((r: { kind: string }) => r.kind === 'space')
+      await Promise.all([loadPosts(rows.map((r: { id: any }) => r.id)), loadMessages(spaceRows.map((r: { message_id: any }) => r.message_id))])
       const items = [
-        ...rows.map((r: any) => ({ kind: 'post', post_id: r.id, at: r.created_at, created_at: r.created_at })),
-        ...spaceRows.map((r: any) => ({ kind: 'space', message_id: r.message_id, at: r.at, created_at: r.at })),
+        ...rows.map((r: { id: any; created_at: any }) => ({ kind: 'post', post_id: r.id, at: r.created_at, created_at: r.created_at })),
+        ...spaceRows.map((r: { message_id: any; at: any }) => ({ kind: 'space', message_id: r.message_id, at: r.at, created_at: r.at })),
       // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
       ].sort((x, y) => new Date(y.at) - new Date(x.at)).slice(0, PAGE)
       st.items = reset ? items : st.items.concat(items)
@@ -232,14 +232,14 @@ export function discover() {
 export async function findPeople(q: any, limit = 12) {
   if (!ok() || !me() || !String(q || '').trim()) return []
   const { data } = await (supabase as any).rpc('network_find', { p_q: String(q).trim(), p_limit: limit })
-  const ids = (data || []).map((r: any) => (typeof r === 'string' ? r : r.network_find || r.id)).filter(Boolean)
+  const ids = (data || []).map((r: { network_find: any; id: any }) => (typeof r === 'string' ? r : r.network_find || r.id)).filter(Boolean)
   await loadPeople(ids)
   return ids
 }
 export async function suggestions(limit = 5) {
   if (!ok() || !me()) return []
   const { data } = await (supabase as any).rpc('network_suggestions', { p_limit: limit })
-  const ids = (data || []).map((r: any) => (typeof r === 'string' ? r : r.network_suggestions || r.id)).filter(Boolean)
+  const ids = (data || []).map((r: { network_suggestions: any; id: any }) => (typeof r === 'string' ? r : r.network_suggestions || r.id)).filter(Boolean)
   await loadPeople(ids)
   return ids
 }
@@ -251,14 +251,14 @@ export function authorFeed(userId: any) {
     if (st.loading || !ok() || !userId) return
     st.loading = true; st.error = ''
     try {
-      const before = reset || !st.items.length ? null : (st.items[st.items.length - 1] as any).created_at
+      const before = reset || !st.items.length ? null : st.items[st.items.length - 1].created_at
       let q = (supabase as any).from('network_posts').select(POST_COLS).eq('author_id', userId).order('created_at', { ascending: false }).limit(PAGE)
       if (before) q = q.lt('created_at', before)
       const { data, error } = await q
       if (error) throw error
       const rows = data || []
-      await loadPosts(rows.map((r: any) => r.id))
-      st.items = (reset ? [] : st.items).concat(rows.map((r: any) => net.posts[r.id] || { ...r, kind: 'post' }))
+      await loadPosts(rows.map((r: { id: any }) => r.id))
+      st.items = (reset ? [] : st.items).concat(rows.map((r: { id: string|number }) => net.posts[r.id] || { ...r, kind: 'post' }))
       st.done = rows.length < PAGE
     } catch (e: any) { st.error = e.message || String(e) } finally { st.loading = false }
   }
@@ -266,7 +266,7 @@ export function authorFeed(userId: any) {
 }
 
 /* a thread: the post, its root when it answers something, and every answer the reader may read */
-export async function loadThread(postId: any) {
+export async function loadThread(postId: string|number) {
   if (!ok() || !postId) return null
   await loadPosts([postId])
   const p = net.posts[postId]
@@ -274,8 +274,8 @@ export async function loadThread(postId: any) {
   const rootId = p.reply_root_id || p.id
   if (!net.posts[rootId]) await loadPosts([rootId])
   const { data } = await (supabase as any).from('network_posts').select('id').eq('reply_root_id', rootId).order('created_at').limit(500)
-  await loadPosts((data || []).map((r: any) => r.id))
-  return { root: net.posts[rootId] || p, focus: postId, replies: (data || []).map((r: any) => net.posts[r.id]).filter(Boolean) }
+  await loadPosts((data || []).map((r: { id: any }) => r.id))
+  return { root: net.posts[rootId] || p, focus: postId, replies: (data || []).map((r: { id: string|number }) => net.posts[r.id]).filter(Boolean) }
 }
 
 /* ---------------------------------------------------------------- what happened to me */
@@ -286,8 +286,8 @@ export async function notifications(before = null) {
   if (error) throw error
   const rows = data || []
   await Promise.all([
-    loadPosts(rows.flatMap((r: any) => [r.post_id, r.subject_post_id]).filter(Boolean)),
-    loadPeople(rows.map((r: any) => r.actor_id)),
+    loadPosts(rows.flatMap((r: { post_id: any; subject_post_id: any }) => [r.post_id, r.subject_post_id]).filter(Boolean)),
+    loadPeople(rows.map((r: { actor_id: any }) => r.actor_id)),
   ])
   return rows
 }
@@ -301,8 +301,8 @@ export async function communityNotes(before = null) {
   if (error) throw error
   const rows = data || []
   await Promise.all([
-    loadPosts(rows.flatMap((r: any) => [r.post_id, r.subject_post_id]).filter(Boolean)),
-    loadPeople(rows.map((r: any) => r.actor_id).filter(Boolean)),
+    loadPosts(rows.flatMap((r: { post_id: any; subject_post_id: any }) => [r.post_id, r.subject_post_id]).filter(Boolean)),
+    loadPeople(rows.map((r: { actor_id: any }) => r.actor_id).filter(Boolean)),
   ])
   return rows
 }
@@ -322,7 +322,7 @@ export async function markSeen() {
 export async function loadSpaces() {
   if (!ok() || !session.value) { net.spaces = []; return [] }
   const { data } = await (supabase as any).rpc('network_spaces')
-  net.spaces = (data || []).filter((s: any) => s.channel_id)
+  net.spaces = (data || []).filter((s: { channel_id: any }) => s.channel_id)
   return net.spaces
 }
 export async function pin(spaceId: any, on: any) {
@@ -344,7 +344,7 @@ export async function publish({ text, audience, files = [], alts = [], replyTo =
   if (!ok() || !me()) throw new Error('signed out')
   const words = String(text || '').trim()
   if (String(audience).startsWith('space:')) {
-    const sp: any = net.spaces.find((s: any) => s.space_id === audience.slice(6))
+    const sp = net.spaces.find((s: { space_id: any }) => s.space_id === audience.slice(6))
     if (!sp) throw new Error('space')
     let data
     if (files.length) {
@@ -363,12 +363,12 @@ export async function publish({ text, audience, files = [], alts = [], replyTo =
   /* the pictures and videos, each put under the author's own folder; a video's first frame beside it */
   const media = []
   for (const [i, f] of files.slice(0, MEDIA.max).entries()) {
-    const ext = EXT[(f as any).type]
+    const ext = EXT[f.type]
     if (!ext) continue
     const id = crypto.randomUUID()
     const path = `${me()}/${id}.${ext}`
     const info = await probe(f)
-    const up = await (supabase as any).storage.from('network').upload(path, f, { contentType: (f as any).type, cacheControl: '31536000', upsert: false })
+    const up = await (supabase as any).storage.from('network').upload(path, f, { contentType: f.type, cacheControl: '31536000', upsert: false })
     if (up.error) throw up.error
     let poster
     if (info.poster) {
@@ -376,7 +376,7 @@ export async function publish({ text, audience, files = [], alts = [], replyTo =
       const pu = await (supabase as any).storage.from('network').upload(poster, info.poster, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false })
       if (pu.error) poster = undefined
     }
-    media.push({ kind: info.kind || 'image', path, alt: String(alts[i] || '').slice(0, 1000), mime: (f as any).type, size: (f as any).size,
+    media.push({ kind: info.kind || 'image', path, alt: String(alts[i] || '').slice(0, 1000), mime: f.type, size: f.size,
       ...(info.width && info.height ? { width: info.width, height: info.height } : {}),
       ...(info.duration ? { duration: info.duration } : {}), ...(poster ? { poster } : {}) })
   }
@@ -386,21 +386,21 @@ export async function publish({ text, audience, files = [], alts = [], replyTo =
   const { data, error } = await (supabase as any).from('network_posts').insert(row).select(POST_COLS).single()
   if (error) throw error
   net.posts[data.id] = { ...data, kind: 'post' }
-  if (replyTo && net.posts[replyTo]) net.posts[replyTo] = { ...net.posts[replyTo], reply_count: ((net.posts[replyTo] as any).reply_count || 0) + 1 }
+  if (replyTo && net.posts[replyTo]) net.posts[replyTo] = { ...net.posts[replyTo], reply_count: (net.posts[replyTo].reply_count || 0) + 1 }
   await Promise.all([loadPeople([me()]), signImages([data])])
   return { kind: 'post', id: data.id }
 }
 
-export async function remove(postId: any) {
+export async function remove(postId: string|number) {
   const p = net.posts[postId]
   const { error } = await (supabase as any).from('network_posts').delete().eq('id', postId).eq('author_id', me())
   if (error) throw error
-  if (p && p.media && p.media.length) await (supabase as any).storage.from('network').remove(p.media.flatMap((im: any) => [im.path, im.poster]).filter(Boolean)).catch(() => {})
+  if (p && p.media && p.media.length) await (supabase as any).storage.from('network').remove(p.media.flatMap((im: { path: any; poster: any }) => [im.path, im.poster]).filter(Boolean)).catch(() => {})
   delete net.posts[postId]
 }
 
 /* a like or a repost: the card moves at once and moves back if the database says no */
-async function mark(table: any, postId: any, on: any) {
+async function mark(table: string, postId: string|number, on: boolean) {
   const which = table === 'network_likes' ? 'like' : 'repost'
   const before = net.posts[postId]
   if (before) net.posts[postId] = toggled(before, which, on)

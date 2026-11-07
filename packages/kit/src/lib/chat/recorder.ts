@@ -44,7 +44,7 @@ export function createRecorder() {
     samples = 0
     src = ctx.createMediaStreamSource(stream)
     proc = ctx.createScriptProcessor(BUFFER, 1, 1)
-    proc.onaudioprocess = (e: any) => {
+    proc.onaudioprocess = (e: { inputBuffer: { getChannelData: (arg0: number) => any; }; }) => {
       const buf = e.inputBuffer.getChannelData(0)
       writer.write(buf)
       samples += buf.length
@@ -69,7 +69,7 @@ export function createRecorder() {
     try { if (proc) { proc.onaudioprocess = null; proc.disconnect() } } catch (e) { /* gone */ }
     try { if (src) src.disconnect() } catch (e) { /* gone */ }
     try { if (silent) silent.disconnect() } catch (e) { /* gone */ }
-    try { if (stream) stream.getTracks().forEach((t: any) => t.stop()) } catch (e) { /* gone */ }
+    try { if (stream) stream.getTracks().forEach((t: { stop: () => any; }) => t.stop()) } catch (e) { /* gone */ }
     try { if (ctx && ctx.close) ctx.close() } catch (e) { /* gone */ }
     clearInterval(tick)
     stream = ctx = src = proc = silent = null
@@ -79,9 +79,9 @@ export function createRecorder() {
   /* the file, and its length as the samples it holds */
   function stop() {
     if (!state.recording) return null
-    const rate: any = ctx.sampleRate
+    const rate = ctx.sampleRate
     teardown()
-    const blob: any = writer.finish()
+    const blob = writer.finish()
     writer = null
     const seconds = Math.round((samples / rate) * 10) / 10
     return { blob, seconds }

@@ -39,7 +39,7 @@ export const LOCAL_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 export function supabaseUrl() { if (isTestProcess()) return testApi() || ''; loadDotEnv(); return (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '') }
 /* a stack on this machine — or on the end-to-end run's own Docker daemon, by the name the Supabase CLI is given for it
    (SUPABASE_SERVICES_HOSTNAME, build/e2e-container.mjs) */
-export function isLocalSupabaseUrl(url: any) {
+export function isLocalSupabaseUrl(url: string) {
   let x
   try { x = new URL(String(url || '').replace(/\/+$/, '')) } catch { return false }
   const daemon = (process.env.SUPABASE_SERVICES_HOSTNAME || '').trim()
@@ -50,7 +50,7 @@ export function serviceKey() { if (isTestProcess()) return testApi() ? (process.
 
 let client: any = null
 /* a storage client for one bucket, or a clear reason there is none */
-export async function bucket(name: any) {
+export async function bucket(name: string) {
   const url = supabaseUrl(), key = serviceKey()
   if (!url) throw new Error('no Supabase url: set VITE_SUPABASE_URL')
   if (!key) throw new Error('SUPABASE_SERVICE_ROLE_KEY is unset and ' + url + ' is not the local stack: set the project\'s service role key')
@@ -58,7 +58,7 @@ export async function bucket(name: any) {
   return client.storage.from(name)
 }
 /* every object name under a prefix (the API pages at a thousand) */
-export async function listAll(st: any, prefix: any) {
+export async function listAll(st: { list: (arg0: any,arg1: { limit: number; offset: number }) => PromiseLike<{ data: any; error: any }>|{ data: any; error: any } }, prefix: string) {
   const names = new Set()
   for (let offset = 0; ; offset += 1000) {
     const { data, error } = await st.list(prefix, { limit: 1000, offset })

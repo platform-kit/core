@@ -26,14 +26,14 @@ const CODE = '`'
 const URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>()[\]]+[^\s<>()[\].,;:!?'"]/gi
 const LINK_RE = /\[([^\]\n]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g
 
-const href = (raw: any) => (/^www\./i.test(raw) ? 'https://' + raw : raw)
+const href = (raw: string) => (/^www\./i.test(raw) ? 'https://' + raw : raw)
 
 /* ------------------------------------------------------------------ inline */
 
 /* the text between the marks, as parts carrying the marks they are under. Code is taken first and
    whole: what is inside it is text, never a mark, which is the whole point of writing it in code. */
 // @ts-expect-error TS7023, from the conversion: 'inlineParts' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in
-export function inlineParts(text: any, marks = []) {
+export function inlineParts(text, marks = []) {
   const s = String(text == null ? '' : text)
   if (!s) return []
   const out = []
@@ -70,7 +70,7 @@ export function inlineParts(text: any, marks = []) {
 }
 
 /* an address is a part of its own, so the surface can make it a link without ever writing html */
-function linkParts(s: any, marks: any) {
+function linkParts(s: string, marks: any) {
   const out = []
   let last = 0
   const spans = []
@@ -95,13 +95,13 @@ function linkParts(s: any, marks: any) {
 /* A MESSAGE IS PARAGRAPHS, and two of its lines mean something on their own: one beginning `- ` is
    an item of a list, one beginning `> ` is quoted. A run of either is one block, so a list of three
    is a list and not three lists. Everything else is prose, and its own newlines are kept. */
-export function messageBlocks(body: any, inline = inlineParts) {
+export function messageBlocks(body: string|null, inline = inlineParts) {
   const whole = String(body == null ? '' : body)
   if (!whole.trim()) return []   /* an empty message draws nothing, not an empty paragraph */
   const lines = whole.split('\n')
   const out = []
   let prose: any = []
-  const flush: any = () => { if (prose.length) { out.push({ kind: 'p', lines: prose.map((l: any) => inline(l)) }); prose = [] } }
+  const flush = () => { if (prose.length) { out.push({ kind: 'p', lines: prose.map((l: any) => inline(l)) }); prose = [] } }
   for (const line of lines) {
     const bullet = /^\s*[-*]\s+(.*)$/.exec(line)
     const quote = /^\s*>\s?(.*)$/.exec(line)
@@ -128,5 +128,5 @@ export function messageBlocks(body: any, inline = inlineParts) {
 /* the words with every mark taken off — what a preview, a search row, a notification and a
    transcript say, where a bold asterisk would be noise */
 export function plainMarkup(body: any) {
-  return messageBlocks(body).map((b) => b.lines.map((parts) => parts.map((p: any) => p.text).join('')).join('\n')).join('\n')
+  return messageBlocks(body).map((b) => b.lines.map((parts) => parts.map((p: { text: any }) => p.text).join('')).join('\n')).join('\n')
 }

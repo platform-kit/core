@@ -15,8 +15,8 @@ export const STAFF_TOPICS = ['support-new', 'support-message']
 export const supported = () => typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && !!KEY && configured
 export const permission = ref(typeof Notification !== 'undefined' ? Notification.permission : 'default')
 
-const uid = () => (session.value && (session.value as any).user && (session.value as any).user.id) || null
-const b64ToBytes = (s: any) => { const b = atob(s.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(s.length / 4) * 4, '=')); return Uint8Array.from(b, (c) => c.charCodeAt(0)) }
+const uid = () => (session.value && session.value.user && session.value.user.id) || null
+const b64ToBytes = (s: string) => { const b = atob(s.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(s.length / 4) * 4, '=')); return Uint8Array.from(b, (c) => c.charCodeAt(0)) }
 const b64 = (buf: any) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 
 async function registration() { return navigator.serviceWorker.register('/sw.js', { scope: '/' }) }

@@ -52,7 +52,7 @@ export function socialPlaces(ctx: any = {}) {
   /* the queues the reader answers, in the order James set, then their own Direct Messages last (word:
      messages, so community.access's Messages rule still locks it) */
   const dm = shutOf({ key: 'dms', icon: 'dm', word: 'messages', count: n(c.dms) })
-  const queues = QUEUES.map((k) => (ctx.work || []).find((w: any) => w.key === k)).filter(Boolean).map((w) => ({ key: w.key, count: n(w.count) }))
+  const queues = QUEUES.map((k) => (ctx.work || []).find((w: { key: string }) => w.key === k)).filter(Boolean).map((w) => ({ key: w.key, count: n(w.count) }))
   const INBOX = queues.length
     ? { key: 'inbox', icon: 'inbox', word: 'inbox', group: true, count: [dm, ...queues].reduce((s, r) => s + r.count, 0), rows: [...queues, dm] }
     : { ...dm, icon: 'inbox', word: 'inbox' }
@@ -68,7 +68,7 @@ export function socialPlaces(ctx: any = {}) {
     ...(signed ? [INBOX] : []),
     /* THE PLACES A SITE REGISTERED (community.places), after the Inbox and before Notifications, in the order given:
        each with its word and icon, shown to whom its registration says, with the count it carries */
-    ...(ctx.places || []).filter((x: any) => x.shows === 'everyone' || signed).map((x: any) => ({ key: x.key, icon: x.icon, word: x.word, count: n((c.places || {})[x.key]), place: true })),
+    ...(ctx.places || []).filter((x: { shows: string }) => x.shows === 'everyone' || signed).map((x: { key: string|number; icon: any; word: any }) => ({ key: x.key, icon: x.icon, word: x.word, count: n((c.places || {})[x.key]), place: true })),
     ...(signed ? [{ key: ctx.network ? 'net-notes' : 'mentions', icon: 'bell', word: 'notifications', count: ctx.network ? n(c.notes) : n(c.mentions) }] : []),
     ...(signed && n(c.saved) > 0 && !hide.has('saved') ? [{ key: 'saved', icon: 'star', word: 'saved' }] : []),
     ...(signed && n(c.drafts) > 0 && !hide.has('drafts') ? [{ key: 'drafts', icon: 'pencil', word: 'drafts', count: n(c.drafts) }] : []),
@@ -104,7 +104,7 @@ export const REACH: any = {
   discover: 'browse-spaces',  /* Find a space: Browse spaces at the foot of the spaces */
 }
 /* the place a chat-layout key is reached from in the social list, for a context */
-export const reachOf = (key: any, ctx: any = {}) => (REACH[key] === 'notifications' ? (ctx.network ? 'net-notes' : 'mentions') : REACH[key])
+export const reachOf = (key: string|number, ctx: any = {}) => (REACH[key] === 'notifications' ? (ctx.network ? 'net-notes' : 'mentions') : REACH[key])
 
 /* without the network, Notifications is the spaces' own lists, as tabs: what named you, and the threads you are in */
 export const NOTE_TABS = ['mentions', 'threads']
@@ -119,7 +119,7 @@ export function chatPlaces(ctx: any = {}) {
   const c = ctx.counts || {}
   const navigation = chatNavigation(ctx)
   return [
-    ...navigation.first.flatMap((place) => (place.group ? place.rows.map((row: any) => row.key) : [place.key])),
+    ...navigation.first.flatMap((place) => (place.group ? place.rows.map((row: { key: any }) => row.key) : [place.key])),
     ...(n(c.unreads) > 0 ? ['unreads'] : []),
     ...(ctx.signedIn ? ['mentions', 'threads', 'saved', 'drafts'] : []),
     'discover',
@@ -131,7 +131,7 @@ export function chatPlaces(ctx: any = {}) {
  * they unfolded by hand (kept per browser by the navigation).
  */
 // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-export const spaceOpen = (spaceId: any, currentSpaceId: any, open = []) => spaceId === currentSpaceId || (open || []).includes(spaceId)
+export const spaceOpen = (spaceId, currentSpaceId, open = []) => spaceId === currentSpaceId || (open || []).includes(spaceId)
 
 /*
  * WHAT A SPACE OPENS ON (openspec: remove-space-about-tab). A space has no home of its own: it opens
@@ -140,12 +140,12 @@ export const spaceOpen = (spaceId: any, currentSpaceId: any, open = []) => space
  * one room has nothing to unfold, so its row is the way into that room.
  */
 const isFeed = (c: any) => c.mode === 'feed'
-export function roomsOf(spaceId: any, channels = []) {
+export function roomsOf(spaceId: string, channels = []) {
   const live = (channels || []).filter((c: any) => c.space_id === spaceId && c.kind !== 'dm' && !c.archived_at)
   return [...live.filter(isFeed), ...live.filter((c) => !isFeed(c))]
 }
-export const frontOf = (spaceId: any, channels = []) => roomsOf(spaceId, channels)[0] || null
-export function foldOf(spaceId: any, channels = []) {
+export const frontOf = (spaceId: string, channels = []) => roomsOf(spaceId, channels)[0] || null
+export function foldOf(spaceId: string, channels = []) {
   const rooms = roomsOf(spaceId, channels)
   return rooms.length > 1 ? rooms : []
 }
@@ -167,7 +167,7 @@ export function spaceItems(spaceId: any, channels = [], { events = false, keeps 
   ]
 }
 /* whether the space's header carries tabs: only where its places are not in the navigation */
-export const spaceTabbed = (spaceId: any, channels = []) => !foldOf(spaceId, channels).length
+export const spaceTabbed = (spaceId: string, channels = []) => !foldOf(spaceId, channels).length
 
 /*
  * A READER'S COACHING PLACE in the community (openspec: coaching-in-one-place). Where coaching lives
@@ -194,9 +194,9 @@ export function coachingPlace(ctx: any = {}) {
  * it where it is, and an address nothing claims gives null. Kit claims (Coaching's) are passed in the
  * same list as { key, claims }.
  */
-export function forwardOf(path: any, places = [], base = '/feed') {
+export function forwardOf(path: string, places = [], base = '/feed') {
   const p = (path || '').replace(/\/+$/, '') || '/'
-  const under = (c: any) => p === c || p.startsWith(c + '/')
+  const under = (c: string) => p === c || p.startsWith(c + '/')
   let best = null
   for (const x of places || []) for (const c of (x as any).claims || []) {
     const bare = c.replace(/^!/, '')
@@ -209,5 +209,5 @@ export function forwardOf(path: any, places = [], base = '/feed') {
 
 /* The social layout's community home is the configured community path. Keep individual spaces at
    /spaces/<slug>, but let the old bare /spaces address resolve to that home. */
-export const socialSpacesHome = (path: any, layout: any, spacesPath: any, communityPath: any) =>
+export const socialSpacesHome = (path: string, layout: string, spacesPath: string, communityPath: string) =>
   layout === 'social' && path === spacesPath ? communityPath : path

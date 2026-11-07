@@ -22,7 +22,7 @@
 
 /* a design on the garment: an address, where it goes, and how big. The address is the library's
    (`/uploads/...`) like every other file field — there is no second uploader. */
-const placementOf = (offer: any) => {
+const placementOf = (offer: { design: any }) => {
   const d = (offer && offer.design) || {}
   return {
     artwork: String(d.artwork || d.image || ''),
@@ -47,7 +47,7 @@ export const blueprintOf = (offer: any) => {
  * `types` is what the supplier's catalogue answered. A supplier that publishes none cannot say,
  * and then an offer naming a blueprint is a fault in itself: the shop has invented a product type.
  */
-export function checkBlueprint(offer: any, types: any) {
+export function checkBlueprint(offer: any, types: any[]|null) {
   const id = blueprintOf(offer)
   if (id == null) return 'this names no product type — choose one from the supplier’s catalogue'
   if (!Array.isArray(types)) return null                     /* nothing to check against, this run */
@@ -63,13 +63,13 @@ export function checkBlueprint(offer: any, types: any) {
  * in black and white cannot be sold in red, however the file came to say so. The message names
  * the value, because "invalid variant" sends somebody to read the whole file.
  */
-export function checkValues(options: any, axes: any) {
+export function checkValues(options: any, axes: any[]) {
   if (!Array.isArray(axes) || !axes.length) return null
   const bad = []
   for (const o of options || []) {
     const axis = axes.find((a) => String(a.name).toLowerCase() === String(o.name).toLowerCase())
     if (!axis) continue                                      /* the shop's own axis, not the supplier's */
-    const has = new Set(axis.values.map((v: any) => String(v.value)))
+    const has = new Set(axis.values.map((v: { value: any }) => String(v.value)))
     for (const v of o.values || []) {
       const value = String(v && typeof v === 'object' ? v.value : v)
       if (value && !has.has(value)) bad.push(`${o.name} ${value}`)
@@ -103,10 +103,10 @@ export const apparel = {
    * The mockup is an ADDRESS like a book's cover art — resolved through the build's own asset
    * path, never read off the disk beside the record.
    */
-  artefacts: async (variant: any, ctx: any = {}) => {
+  artefacts: async (variant: { chosen: any; variant: string|number }, ctx: any = {}) => {
     const place = placementOf(ctx.offer || {})
     if (!place.artwork) return null
-    const colour = (variant.chosen || []).find((c: any) => String(c.slug) === 'colour' || String(c.slug) === 'color')
+    const colour = (variant.chosen || []).find((c: { slug: any }) => String(c.slug) === 'colour' || String(c.slug) === 'color')
     const mockups = (ctx.mockups || {})
     return {
       artwork: place.artwork,

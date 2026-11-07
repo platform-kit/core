@@ -21,15 +21,15 @@ export const uuid = () => (globalThis.crypto && crypto.randomUUID ? crypto.rando
   : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16) }))
 
 /* a fingerprint's 32 hex characters as the uuid the events table holds */
-const asUuid = (hex: any) => { const h = String(hex || '').replace(/[^0-9a-f]/gi, '').toLowerCase().padEnd(32, '0').slice(0, 32); return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}` }
+const asUuid = (hex: string) => { const h = String(hex || '').replace(/[^0-9a-f]/gi, '').toLowerCase().padEnd(32, '0').slice(0, 32); return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}` }
 
 /* a store adapter over localStorage under a prefix (the drop-in's); the site passes its own */
 export function localStore(prefix = 'pk.') {
   const ok = () => { try { return typeof localStorage !== 'undefined' } catch (e) { return false } }
   return {
-    get: (k: any) => { try { const v = localStorage.getItem(prefix + k); return v == null ? null : JSON.parse(v) } catch (e) { return null } },
-    set: (k: any, v: any) => { try { if (ok()) localStorage.setItem(prefix + k, JSON.stringify(v)) } catch (e) { /* private mode */ } },
-    remove: (k: any) => { try { if (ok()) localStorage.removeItem(prefix + k) } catch (e) { /* none */ } },
+    get: (k: string) => { try { const v = localStorage.getItem(prefix + k); return v == null ? null : JSON.parse(v) } catch (e) { return null } },
+    set: (k: string, v: any) => { try { if (ok()) localStorage.setItem(prefix + k, JSON.stringify(v)) } catch (e) { /* private mode */ } },
+    remove: (k: string) => { try { if (ok()) localStorage.removeItem(prefix + k) } catch (e) { /* none */ } },
   }
 }
 const memoryStore = () => { const m = new Map(); return { get: (k: any) => (m.has(k) ? m.get(k) : null), set: (k: any, v: any) => m.set(k, v), remove: (k: any) => m.delete(k) } }
@@ -77,23 +77,23 @@ export function createCore(o: any = {}) {
     fpReady = Promise.race([fingerprint(), new Promise((r) => setTimeout(() => r(null), FP_WAIT_MS))]).then((id) => { anon = id || randomId(); return anon })
     return fpReady
   }
-  const anonId: any = () => anon || (optedOut || o.fingerprint === false ? randomId() : (store.get('fp') || randomId()))
+  const anonId = () => anon || (optedOut || o.fingerprint === false ? randomId() : (store.get('fp') || randomId()))
 
   /* ---- the session ---- */
   const SID = 'sid'
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  const ss = { get: () => { try { return JSON.parse(sessionStorage.getItem((o.prefix || 'pk.') + SID)) } catch (e) { return null } }, set: (v: any) => { try { sessionStorage.setItem((o.prefix || 'pk.') + SID, JSON.stringify(v)) } catch (e) { /* none */ } } }
+  const ss = { get: () => { try { return JSON.parse(sessionStorage.getItem((o.prefix || 'pk.') + SID)) } catch (e) { return null } }, set: (v) => { try { sessionStorage.setItem((o.prefix || 'pk.') + SID, JSON.stringify(v)) } catch (e) { /* none */ } } }
   let memSession: any = null
   function session() {
     const now = Date.now()
-    const s: any = ss.get() || memSession
+    const s = ss.get() || memSession
     if (s && now - s.t < IDLE_MS) { s.t = now; ss.set(s); memSession = s; return { id: s.id, fresh: false } }
     const n = { id: uuid(), t: now }; ss.set(n); memSession = n
     return { id: n.id, fresh: true }
   }
 
   /* ---- the queue ---- */
-  async function send(rows: any) {
+  async function send(rows: string|any[]) {
     if (!rows.length || !o.endpoint) return
     const headers: any = { 'Content-Type': 'application/json' }
     if (o.apikey) { headers.apikey = o.apikey; const t = o.token && o.token(); headers.Authorization = 'Bearer ' + (t || o.apikey) }
@@ -102,15 +102,15 @@ export function createCore(o: any = {}) {
   function flush() {
     if (timer) { clearTimeout(timer); timer = null }
     if (!queue.length) return
-    const rows: any = queue; queue = []
+    const rows = queue; queue = []
     /* the first events wait for the id; a page that leaves before then goes with the random one, which the door takes */
-    if (!anon) { const fallback = anonId(); const fixed = rows.map((r: any) => ({ ...r, anon_id: r.anon_id || fallback })); return send(fixed) }
-    send(rows.map((r: any) => ({ ...r, anon_id: r.anon_id || anon })))
+    if (!anon) { const fallback = anonId(); const fixed = rows.map((r: { anon_id: any }) => ({ ...r, anon_id: r.anon_id || fallback })); return send(fixed) }
+    send(rows.map((r: { anon_id: any }) => ({ ...r, anon_id: r.anon_id || anon })))
   }
-  const schedule: any = () => { if (!timer) timer = setTimeout(flush, FLUSH_MS) }
+  const schedule = () => { if (!timer) timer = setTimeout(flush, FLUSH_MS) }
 
   /* ---- capture ---- */
-  function capture(type: any, props = {}, cols: any = {}) {
+  function capture(type: string, props = {}, cols: any = {}) {
     if (typeof window === 'undefined') return
     const sid = session()
     if (sid.fresh && type !== 'session_start' && type !== '$pageview' && !cols.noStart) {
@@ -133,12 +133,12 @@ export function createCore(o: any = {}) {
     if (queue.length >= MAX_BATCH) flush(); else schedule()
     if (!anon) ready().then(() => { if (queue.length) schedule() })
   }
-  const arrival: any = () => (arrivalCache = arrivalCache || arrivalHere())
+  const arrival = () => (arrivalCache = arrivalCache || arrivalHere())
 
   /* ---- identity, super properties, the opt-out ---- */
   const identify = (id: any) => { distinctId = id ? String(id).slice(0, 200) : null; if (distinctId) store.set('distinct', distinctId); else store.remove('distinct') }
   const register = (props: any, once = false) => { const next = { ...superProps }; for (const [k, v] of Object.entries(props || {})) if (!once || !(k in next)) next[k] = v; superProps = next; store.set('super', superProps) }
-  const unregister = (k: any) => { const next = { ...superProps }; delete next[k]; superProps = next; store.set('super', superProps) }
+  const unregister = (k: string|number) => { const next = { ...superProps }; delete next[k]; superProps = next; store.set('super', superProps) }
   const reset = () => { distinctId = null; superProps = {}; store.remove('distinct'); store.remove('super'); memSession = null; try { sessionStorage.removeItem((o.prefix || 'pk.') + SID) } catch (e) { /* none */ } }
   const optOut = () => { optedOut = true; store.set('optout', true); store.remove('fp'); anon = randomId(); fpReady = Promise.resolve(anon) }
   const optIn = () => { optedOut = false; store.remove('optout'); anon = null; fpReady = null; ready() }

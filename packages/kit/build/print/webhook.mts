@@ -9,7 +9,7 @@
 import { printer } from './suppliers.mjs'
 import { isMain } from '../is-main.mjs'
 
-export async function ensureWebhook(url: any, id = 'lulu') {
+export async function ensureWebhook(url: string, id = 'lulu') {
   const p = printer(id)
   if (p.mock()) { console.log(`${p.name} webhook: mocked, nothing registered`); return null }
   const r = await p.ensureWebhook(url)

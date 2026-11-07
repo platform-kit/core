@@ -11,7 +11,7 @@ import { anonId } from '../analytics.js'
 
 let client = site
 let origin = ''
-export function setFormClient(c: any, from: any) { client = c; origin = from || '' }
+export function setFormClient(c: any, from: string) { client = c; origin = from || '' }
 
 function headers() {
   const h: any = { 'x-form-anon': anonId() }
@@ -30,7 +30,7 @@ async function call(body: any, h?: any) {
 }
 
 /* a slide's values — a File as itself, a list as JSON — and `_end` when the form is done */
-export function postSlide(slug: any, values: any, { end = false, slide = 0 } = {}) {
+export function postSlide(slug: string|Blob, values: any, { end = false, slide = 0 } = {}) {
   const fd = new FormData()
   fd.append('_form', slug)
   fd.append('_slide', String(slide))

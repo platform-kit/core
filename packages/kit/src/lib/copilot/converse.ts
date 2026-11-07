@@ -28,7 +28,7 @@ export function conversation({ ask, speaker, listen, onSaid = () => {} }: any = 
   let utterance: any = null
   let abandoned = 0          /* every interruption invalidates the answer being waited for */
 
-  const go = (phase: any, turn = null) => { state.phase = phase; state.turn = turn }
+  const go = (phase: string, turn = null) => { state.phase = phase; state.turn = turn }
 
   /* THE PERSON TOOK THE TURN BACK. Called the moment speech is detected, not when it ends. */
   function interrupt() {
@@ -38,7 +38,7 @@ export function conversation({ ask, speaker, listen, onSaid = () => {} }: any = 
     go('listening', 'me')
   }
 
-  async function say(text: any) {
+  async function say(text: string) {
     if (!text || !text.trim()) return
     const mine = ++abandoned
     state.said.push({ who: 'me', text })
@@ -88,7 +88,7 @@ export function conversation({ ask, speaker, listen, onSaid = () => {} }: any = 
     load(lines: any) {
       abandoned++
       if (utterance) { speaker.cancel(utterance); utterance = null }
-      state.said.splice(0, state.said.length, ...(lines || []).map((l: any) => ({ who: l.who, text: l.text })))
+      state.said.splice(0, state.said.length, ...(lines || []).map((l: { who: any; text: any }) => ({ who: l.who, text: l.text })))
       state.error = null
       // @ts-expect-error TS2345, from the conversion: Argument of type '"me"' is not assignable to parameter of type 'null | undefined'.
       go('listening', 'me')

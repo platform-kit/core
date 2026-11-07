@@ -52,7 +52,7 @@ import {
 
 const has = (env: any, k: any) => !!String(env[k] ?? '').trim()
 // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 4, '(command: string, options: ExecSyncOptionsWithStringEncoding): string', gave the following 
-const toolOnPath = (t: any) => { try { execSync('command -v ' + t, { stdio: 'ignore', shell: true }); return true } catch { return false } }
+const toolOnPath = (t) => { try { execSync('command -v ' + t, { stdio: 'ignore', shell: true }); return true } catch { return false } }
 const packageHere = (p: any, root: any) => { const from = path.resolve(root || process.cwd(), 'package.json'); try { createRequire(from).resolve(p + '/package.json'); return true } catch { try { createRequire(from).resolve(p); return true } catch { return false } } }
 const on = (v: any) => /^(1|true|yes|on)$/i.test(String(v || ''))
 const off = (v: any) => /^(0|false|no|off)$/i.test(String(v || '').trim())
@@ -144,7 +144,7 @@ const asksFor = (manifests: any, key: any) => {
 }
 /* a live module that can ask for this variable, or none */
 // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
-const anyAsking = (manifests: any, modules: any, key: any) => asksFor(manifests, key).some((k) => modules[k] !== false)
+const anyAsking = (manifests, modules, key) => asksFor(manifests, key).some((k) => modules[k] !== false)
 /* every variable any module can ask for, live or not — what the coverage check below is asked about */
 export const declaredEnv = (manifests = KIT_MANIFESTS) => [...new Set([...manifests.values()].flatMap((m) => m.owns.env || []))]
 
@@ -924,9 +924,9 @@ if (isMain(import.meta.url)) {
     /* the coupling comes from the manifests now, so the case hands in what they say */
     const COUPLE = [{ module: 'instrument', needs: 'forms', why: 'the instrument runs on the forms runner' }]
     // @ts-expect-error TS2345, from the conversion: Argument of type '{ module: string; needs: string; why: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ module: strin
-    t('a live module whose requirement is off is refused, naming both', wrongs(checkDeploy(base, none, { instrument: true, forms: false }, [], null, COUPLE)).some((w: any) => /modules\.instrument.*modules\.forms/.test(w)))
+    t('a live module whose requirement is off is refused, naming both', wrongs(checkDeploy(base, none, { instrument: true, forms: false }, [], null, COUPLE)).some((w) => /modules\.instrument.*modules\.forms/.test(w)))
     // @ts-expect-error TS2345, from the conversion: Argument of type '{ module: string; needs: string; why: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ module: strin
-    t('and the refusal says why, from the manifest', wrongs(checkDeploy(base, none, { instrument: true, forms: false }, [], null, COUPLE)).some((w: any) => /runs on the forms runner/.test(w)))
+    t('and the refusal says why, from the manifest', wrongs(checkDeploy(base, none, { instrument: true, forms: false }, [], null, COUPLE)).some((w) => /runs on the forms runner/.test(w)))
     /* and the coupling is REALLY declared — a placeholder here would leave the rule read from
        manifests while nothing checked that any manifest carries one */
     {
@@ -943,11 +943,11 @@ if (isMain(import.meta.url)) {
     t('a step on asks for its variable, naming itself', (() => { const r = checkDeploy({ ...base, SUPABASE_SERVICE_ROLE_KEY: '' }, none, {}, [spoken]); return keys(r).includes('SUPABASE_SERVICE_ROLE_KEY') && r.missing.some((m) => m.key === 'SUPABASE_URL' && /spoken books/.test(m.why)) })())
     t('a step off asks for nothing', !keys(checkDeploy({ ...base, SUPABASE_URL: '' }, none, {}, [])).includes('SUPABASE_URL'))
     // @ts-expect-error TS2322, from the conversion: Type '{ tools: string[]; packages: never[]; step: { key: string; title: string; }; env: string[]; }' is not assignable to type 'never'.
-    t('a tool off the path is wrong, naming the step', wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, none, {}, [{ ...spoken, tools: ['no-such-tool-zz'], packages: [] }])).some((w: any) => /no-such-tool-zz.*spoken books/.test(w)))
+    t('a tool off the path is wrong, naming the step', wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, none, {}, [{ ...spoken, tools: ['no-such-tool-zz'], packages: [] }])).some((w) => /no-such-tool-zz.*spoken books/.test(w)))
     // @ts-expect-error TS2322, from the conversion: Type '{ tools: never[]; packages: string[]; step: { key: string; title: string; }; env: string[]; }' is not assignable to type 'never'.
-    t('a package not installed is wrong, naming the step and the install', wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, { ...none, root: '.' }, {}, [{ ...spoken, tools: [], packages: ['no-such-package-zz'] }])).some((w: any) => /no-such-package-zz.*spoken books.*npm install/.test(w)))
+    t('a package not installed is wrong, naming the step and the install', wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, { ...none, root: '.' }, {}, [{ ...spoken, tools: [], packages: ['no-such-package-zz'] }])).some((w) => /no-such-package-zz.*spoken books.*npm install/.test(w)))
     // @ts-expect-error TS2322, from the conversion: Type '{ tools: never[]; packages: string[]; step: { key: string; title: string; }; env: string[]; }' is not assignable to type 'never'.
-    t('a package installed passes', !wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, { ...none, root: '.' }, {}, [{ ...spoken, tools: [], packages: ['gray-matter'] }])).some((w: any) => /gray-matter/.test(w)))
+    t('a package installed passes', !wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, { ...none, root: '.' }, {}, [{ ...spoken, tools: [], packages: ['gray-matter'] }])).some((w) => /gray-matter/.test(w)))
     /* the site's own steps, as they are: their tools and packages resolve here */
     const { loadSteps, needsOf, missingNeeds } = await import('./steps.mjs')
     const { loadSite } = await import('./site.mjs')

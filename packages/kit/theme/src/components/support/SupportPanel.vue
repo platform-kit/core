@@ -223,7 +223,9 @@ const offer = computed(() => offerOf(thread.messages))
 /* and it is the bot's, so it goes when the bot does: somebody who has asked for a person is
    waiting for one, not being offered another lap of the assistant */
 const liveOffer = computed(() => (offer.value && offer.value.live && botIsInPlay.value && status.value !== 'resolved' ? offer.value.id : null))
-const lines = computed<any>(() => sections.value.flatMap((s) => [{ key: 'day:' + s.key, day: s.label }]
+/* a day's label, then its lines, in one keyed list */
+type Line = { key: string; day?: string; m?: any }
+const lines = computed<Line[]>(() => sections.value.flatMap((s): Line[] => [{ key: 'day:' + s.key, day: s.label } as Line]
   .concat(s.messages.map((m: any) => ({ key: m.id, m })))))
 /* a choice is the reader saying those words: the offer's row says what they are, not the client */
 async function choose(m: any, c: any) {

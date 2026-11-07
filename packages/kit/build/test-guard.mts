@@ -18,12 +18,12 @@ import { execFileSync } from 'node:child_process'
 export const isTestProcess = () => process.env.PLATFORMKIT_TEST_PROCESS === '1' || /\.(test|integration)\.m?[jt]s$/.test(process.argv[1] || '')
 if (isTestProcess()) process.env.PLATFORMKIT_TEST_PROCESS = '1'
 
-const trim = (u: any) => String(u || '').trim().replace(/\/+$/, '')
-const portOf = (u: any) => { try { const x = new URL(u); return x.port || (x.protocol === 'https:' ? '443' : x.protocol.startsWith('postgres') ? '5432' : '80') } catch { return '' } }
+const trim = (u: string|undefined) => String(u || '').trim().replace(/\/+$/, '')
+const portOf = (u: string|URL) => { try { const x = new URL(u); return x.port || (x.protocol === 'https:' ? '443' : x.protocol.startsWith('postgres') ? '5432' : '80') } catch { return '' } }
 
 /* who answers on a port, as Docker says: container names, or null where Docker cannot say */
 const owners = new Map()
-function ownersOf(port: any) {
+function ownersOf(port: string) {
   if (!owners.has(port)) {
     try {
       owners.set(port, execFileSync('docker', ['ps', '--filter', `publish=${port}`, '--format', '{{.Names}}'], { encoding: 'utf8', timeout: 20000, stdio: ['ignore', 'pipe', 'ignore'] }).split('\n').map((s) => s.trim()).filter(Boolean))
@@ -33,20 +33,20 @@ function ownersOf(port: any) {
 }
 
 /* why an address is not the run's own test stack, or '' when it is */
-export function notTheTestStack(url: any, { what = 'stack' } = {}) {
+export function notTheTestStack(url: string, { what = 'stack' } = {}) {
   if (process.env.PLATFORMKIT_E2E !== '1') return `a test reaches a ${what} only inside the end-to-end run: \`platformkit test --e2e\`, or \`--run <script>\` for one test`
   const port = portOf(url)
   if (!port) return `${url || 'no address'} is not an address`
   const names = ownersOf(port)
   if (names === null) return `Docker could not say what answers on port ${port}`
   if (!names.length) return `nothing in Docker answers on port ${port}`
-  const strays = names.filter((n: any) => !/_e2e$/.test(n))
+  const strays = names.filter((n: string) => !/_e2e$/.test(n))
   if (strays.length) return `port ${port} is ${strays.join(', ')}, not an end-to-end test stack (pk_<site>_e2e)`
   return ''
 }
 
 /* the end of a test that was about to reach the wrong stack */
-export function refuse(why: any) {
+export function refuse(why: string) {
   console.log(`  ✖ refused: ${why}`)
   process.exit(1)
 }

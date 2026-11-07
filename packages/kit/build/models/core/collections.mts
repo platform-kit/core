@@ -18,7 +18,7 @@ const HEX8 = /^[0-9a-f]{8}$/
 async function giveKey(store: any) { const { newKey, usedKeysOf } = await import('../../product-keys.mjs'); return newKey(await usedKeysOf(store)) }
 /* a field the form left empty arrives as null; write nothing rather than `key: null` */
 // @ts-expect-error TS7023, from the conversion: 'dropNulls' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in o
-const dropNulls = (v: any) => (Array.isArray(v) ? v.map(dropNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null).map(([k, x]) => [k, dropNulls(x)])) : v)
+const dropNulls = (v) => (Array.isArray(v) ? v.map(dropNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null).map(([k, x]) => [k, dropNulls(x)])) : v)
 
 /* an experiment against the things it names: every variant a unique key and an existing page or ad; page
    variants on one route; the winner one of the keys. [{ path, message }], empty when fine. */
@@ -980,7 +980,7 @@ export const COLLECTIONS: any = {
  * all three refuse the same file for the same reason and in the same words; a check written three
  * times is three checks that drift.
  */
-;(COLLECTIONS.products as any).checks = [async (rec: any, ctx: any) => {
+COLLECTIONS.products.checks = [async (rec: any, ctx: any) => {
   const kind = String(rec.data.kind || '')
   if (kind !== 'apparel' && !rec.data.blueprint) return []
   const { checkBlueprint, checkValues } = await import('../../kinds/apparel.js')
@@ -1009,7 +1009,7 @@ COLLECTIONS.products.prepare = async (rec: any, ctx: any) => { if (!HEX8.test(St
  * marked rather than deleted so a cart line or an unfulfilled order naming that variant still
  * reads as the words the buyer chose (`reconcileOptions` in _shared/variants.js has the why).
  */
-;(COLLECTIONS.products as any).actions = {
+COLLECTIONS.products.actions = {
   refresh: async (payload: any, ctx: any) => {
     const name = String(payload.name || '')
     if (!name) throw new Refusal(400, 'which product')
@@ -1046,7 +1046,7 @@ COLLECTIONS.products.prepare = async (rec: any, ctx: any) => { if (!HEX8.test(St
     return { ok: true, changed: changed || !samePics, gone, added, options, mockups, supplier: { id, name: x.name } }
   },
 }
-;(COLLECTIONS.books as any).prepare = async (rec: any, ctx: any) => {
+COLLECTIONS.books.prepare = async (rec: any, ctx: any) => {
   const d = rec.data
   if (d.print && typeof d.print === 'object' && !HEX8.test(String(d.print.key || ''))) d.print = { key: await giveKey(ctx.store), ...d.print }
   /* a book's print switched off: the block goes, and its key with it (a sale already made keeps its key on the ledger) */
@@ -1054,7 +1054,7 @@ COLLECTIONS.products.prepare = async (rec: any, ctx: any) => { if (!HEX8.test(St
   if (d.print && typeof d.print === 'object') { delete d.print.on; for (const k of Object.keys(d.print)) if (d.print[k] === '' || d.print[k] == null) delete d.print[k] }
   return rec
 }
-;(COLLECTIONS.books as any).checks = [async (rec: any, ctx: any) => {
+COLLECTIONS.books.checks = [async (rec: any, ctx: any) => {
   const d = rec.data
   if (!(d.print && typeof d.print === 'object')) return []
   /* the spine's foil holds so many characters of title and edition line together */
@@ -1064,7 +1064,7 @@ COLLECTIONS.products.prepare = async (rec: any, ctx: any) => { if (!HEX8.test(St
 }]
 /* a companion: its chapters against the book's, its quizzes for shape; then the body is rewritten in the canonical
    grammar (an editor's \[x\] escapes, a why: line, spacing) so the file reads the same way every time */
-;(COLLECTIONS.companions as any).checks = [async (rec: any, ctx: any) => {
+COLLECTIONS.companions.checks = [async (rec: any, ctx: any) => {
   // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
   const parsed = parseCompanion(matter.stringify('\n' + rec.content, rec.data, DUMP))
   let titles = null
@@ -1100,14 +1100,14 @@ async (rec: any, ctx: any) => {
   return [{ path: 'statementArea', message: '"' + area + '" is not an area any topic declares — ' + areas.map((a2: any) => a2.key).join(', ') }]
 }]
 /* a page's sections, against the schemas that drew the builder's forms (the theme's, the site's merged) */
-;(COLLECTIONS.pages as any).prepare = (rec: any) => { rec.data.sections = dropNulls(rec.data.sections); return rec }
+COLLECTIONS.pages.prepare = (rec: any) => { rec.data.sections = dropNulls(rec.data.sections); return rec }
 /* a booking type's scheduler as the build infers it when the file leaves it out (cal.com with a cal.com url, else this site),
    shown so the editor folds the right fields; written back only when it says something the file would not */
-;(COLLECTIONS.sessions as any).opened = (rec: any) => { if (!rec.data.scheduler) rec.data.scheduler = rec.data.url ? 'cal' : 'native'; return rec }
-;(COLLECTIONS.sessions as any).prepare = (rec: any) => { if (rec.data.scheduler === (rec.data.url ? 'cal' : 'native')) delete rec.data.scheduler; return rec }
-;(COLLECTIONS.pages as any).checks = [(rec: any, ctx: any) => (ctx.validateSections ? ctx.validateSections(rec.data.sections) : [])]
-;(COLLECTIONS.experiments as any).checks = [(rec: any, ctx: any) => validateExperiment(rec.data, 'variants', ctx.store)]
-;(COLLECTIONS.books as any).actions = {}   /* the enrichment runs are the server's own (a child process at a time, its log kept) */
+COLLECTIONS.sessions.opened = (rec: any) => { if (!rec.data.scheduler) rec.data.scheduler = rec.data.url ? 'cal' : 'native'; return rec }
+COLLECTIONS.sessions.prepare = (rec: any) => { if (rec.data.scheduler === (rec.data.url ? 'cal' : 'native')) delete rec.data.scheduler; return rec }
+COLLECTIONS.pages.checks = [(rec: any, ctx: any) => (ctx.validateSections ? ctx.validateSections(rec.data.sections) : [])]
+COLLECTIONS.experiments.checks = [(rec: any, ctx: any) => validateExperiment(rec.data, 'variants', ctx.store)]
+COLLECTIONS.books.actions = {}   /* the enrichment runs are the server's own (a child process at a time, its log kept) */
 
 // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
 export const COLLECTION_MODELS = Object.entries(COLLECTIONS).map(([key, m]) => ({ key, ...m }))

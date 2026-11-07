@@ -30,7 +30,7 @@ import YAML from 'yaml'
    entirely alone when the save did not change it — which is what keeps the rest of the file's
    formatting exactly as its author wrote it. */
 // @ts-expect-error TS7023, from the conversion: 'same' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-export function same(a: any, b: any) {
+export function same(a, b) {
   if (a === b) return true
   if (a instanceof Date) a = a.toISOString().slice(0, 10)
   if (b instanceof Date) b = b.toISOString().slice(0, 10)

@@ -14,7 +14,7 @@ import { zipSync, strToU8 } from 'fflate'
 import { Marked } from 'marked'
 import { plan, flow } from './typeset.mjs'
 
-const esc = (s: any) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+const esc = (s: string) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 /* markdown → XHTML, with the book's marks as <mark> and its escapes read as themselves */
 const md = new Marked({ gfm: true, breaks: false })
 md.use({
@@ -27,9 +27,9 @@ md.use({
   }],
 })
 /* what marked writes is HTML; an EPUB wants XHTML — the few differences closed here */
-const xhtml = (html: any) => html.replace(/<(br|hr|img[^>]*)>/g, '<$1 />').replace(/&nbsp;/g, '&#160;').replace(/&([a-z]+);/g, (m: any, e: any) => (['amp', 'lt', 'gt', 'quot', 'apos'].includes(e) ? m : m))
-const render = (src: any) => xhtml(md.parse(flow(src).replace(/\\\n/g, '  \n')))
-const plain = (s: any) => String(s || '').replace(/==([^=]+)==(?:\{[a-z]+\})?/g, '$1').replace(/\\\n|  \n/g, ' ').replace(/\\([\\`*_{}\[\]()#+\-.!>~|])/g, '$1').replace(/(\*\*|__)(.+?)\1/g, '$2').replace(/(\*|_)(.+?)\1/g, '$2')
+const xhtml = (html: any) => html.replace(/<(br|hr|img[^>]*)>/g, '<$1 />').replace(/&nbsp;/g, '&#160;').replace(/&([a-z]+);/g, (m: any, e: string) => (['amp', 'lt', 'gt', 'quot', 'apos'].includes(e) ? m : m))
+const render = (src: string) => xhtml(md.parse(flow(src).replace(/\\\n/g, '  \n')))
+const plain = (s: string) => String(s || '').replace(/==([^=]+)==(?:\{[a-z]+\})?/g, '$1').replace(/\\\n|  \n/g, ' ').replace(/\\([\\`*_{}\[\]()#+\-.!>~|])/g, '$1').replace(/(\*\*|__)(.+?)\1/g, '$2').replace(/(\*|_)(.+?)\1/g, '$2')
 
 const CSS = `
 @page { margin: 1em; }
@@ -58,7 +58,7 @@ mark.hl { background: #fbeeb6; color: inherit; border-radius: 3px; padding: 0 0.
 .rule { text-align: center; color: #8a847c; margin: 1.6em 0; }
 `
 
-const doc = (title: any, body: any, lang = 'en') => `<?xml version="1.0" encoding="utf-8"?>
+const doc = (title: any, body: string, lang = 'en') => `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${lang}" lang="${lang}">
 <head><meta charset="utf-8" /><title>${esc(title)}</title><link rel="stylesheet" type="text/css" href="style.css" /></head>
@@ -81,20 +81,20 @@ ${body}
 export async function makeEpub({ book, companion, contents = 'parts', note = '', words = {}, root = process.cwd(), art = null }: any) {
   /* who published it: the site's own word, never a constant — this was hardcoded to one
      customer's name, so every book every site made said that in its metadata */
-  const publisher = String((words as any).publisher || (words as any).site || '').trim()
-  const W = (k: any, d: any) => (words as any)[k] || d
+  const publisher = String(words.publisher || words.site || '').trim()
+  const W = (k: string, d: string) => words[k] || d
   const { twoParts, chapters } = plan({ book, companion, contents })
   const files: any = []            /* { id, href, title, body, nav } */
-  const add = (id: any, title: any, body: any, nav = true) => { files.push({ id, href: id + '.xhtml', title, body, nav }); return files.length - 1 }
+  const add = (id: string, title: any, body: string, nav = true) => { files.push({ id, href: id + '.xhtml', title, body, nav }); return files.length - 1 }
   const marks: any = []            /* { text, href, part } */
-  const collect = (src: any, href: any, part: any) => { for (const m of flow(src).matchAll(/==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/g)) marks.push({ text: plain(m[1]).replace(/\s+/g, ' ').trim(), href, part }) }
+  const collect = (src: any, href: string, part: any) => { for (const m of flow(src).matchAll(/==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/g)) marks.push({ text: plain(m[1]).replace(/\s+/g, ' ').trim(), href, part }) }
 
   /* the title page, the note, the introduction */
   add('title', book.title, `<section class="title" epub:type="titlepage"><h1>${esc(book.title)}</h1><p class="author">${esc(book.author || '')}</p><p class="edition eyebrow">${esc(W('edition', 'The modern edition'))}</p></section>`, false)
   if (String(note || '').trim()) add('note', W('note-title', 'A Note on This Edition'), `<section class="opener"><h1>${esc(W('note-title', 'A Note on This Edition'))}</h1>${render(note)}</section>`)
-  if (book.introduction) { add('intro', W('intro', 'Before you begin'), `<section class="opener"><p class="eyebrow">${esc(W('intro-eyebrow', 'Before you begin'))}</p><h1>${esc(W('intro-title', (words as any).intro || 'Before you begin'))}</h1>${render(book.introduction)}</section>`); collect(book.introduction, 'intro.xhtml', null) }
+  if (book.introduction) { add('intro', W('intro', 'Before you begin'), `<section class="opener"><p class="eyebrow">${esc(W('intro-eyebrow', 'Before you begin'))}</p><h1>${esc(W('intro-title', words.intro || 'Before you begin'))}</h1>${render(book.introduction)}</section>`); collect(book.introduction, 'intro.xhtml', null) }
 
-  const chapterFile = (c: any, id: any, text: any, essence: any, part: any) => {
+  const chapterFile = (c: { i?: number; n: any; title: any; md?: string; summaryMd?: any; essence?: any }, id: string, text: string, essence: any[], part: any) => {
     const head = `<section class="opener"><p class="eyebrow">${c.n == null ? '' : esc(W('chapter', 'Chapter') + ' ' + c.n)}</p><h1>${esc(c.title)}</h1>`
     const box = essence.length ? `<aside class="companion"><p class="eyebrow">${esc(W('insights', 'Key insights'))}</p><ol>${essence.map((e: any) => `<li>${render(e).replace(/^<p>|<\/p>\s*$/g, '')}</li>`).join('')}</ol></aside>` : ''
     add(id, c.n == null ? c.title : c.n + '. ' + c.title, head + render(text) + box + '</section>')
@@ -111,16 +111,16 @@ export async function makeEpub({ book, companion, contents = 'parts', note = '',
   }
   /* the highlights, gathered: by part when there are two */
   if (marks.length) {
-    const groups: any = twoParts
-      ? [[W('marks-from-edition', 'From the Modern Edition'), marks.filter((m: any) => m.part === W('part-one-title', 'The Modern Edition'))], [W('marks-from-text', 'From the original full text'), marks.filter((m: any) => m.part === W('part-two-title', 'The Original Full Text'))]]
+    const groups = twoParts
+      ? [[W('marks-from-edition', 'From the Modern Edition'), marks.filter((m: { part: any }) => m.part === W('part-one-title', 'The Modern Edition'))], [W('marks-from-text', 'From the original full text'), marks.filter((m: { part: any }) => m.part === W('part-two-title', 'The Original Full Text'))]]
       : [[W('marks-from-book', 'From the book'), marks]]
-    const body: any = `<section class="opener marks"><p class="eyebrow">${esc(W('marks-eyebrow', 'The Highlights'))}</p><h1>${esc(W('marks', 'The lines worth noticing'))}</h1>` +
-      groups.filter(([, l]: any) => l.length).map(([t, l]: any) => `<h2 class="eyebrow">${esc(t)}</h2><ol>${l.map((m: any) => `<li>${esc(m.text)}<a class="where" href="${m.href}">${esc(files.find((f: any) => f.href === m.href)?.title || '')}</a></li>`).join('')}</ol>`).join('') + '</section>'
+    const body = `<section class="opener marks"><p class="eyebrow">${esc(W('marks-eyebrow', 'The Highlights'))}</p><h1>${esc(W('marks', 'The lines worth noticing'))}</h1>` +
+      groups.filter(([, l]) => l.length).map(([t, l]) => `<h2 class="eyebrow">${esc(t)}</h2><ol>${l.map((m: { text: any; href: any }) => `<li>${esc(m.text)}<a class="where" href="${m.href}">${esc(files.find((f: { href: any }) => f.href === m.href)?.title || '')}</a></li>`).join('')}</ol>`).join('') + '</section>'
     add('marks', W('marks', 'The lines worth noticing'), body)
   }
 
   /* the cover: the site's art, when the book has it — handed in, or read from beside the book */
-  let cover: any = art
+  let cover = art
   const coverSrc = book.cover && (book.cover.src || book.cover)
   if (!cover && typeof coverSrc === 'string' && /^\.?\//.test(coverSrc) && fs) {
     const p = path.join(root, 'content/books', coverSrc.replace(/^\.\//, ''))
@@ -128,8 +128,8 @@ export async function makeEpub({ book, companion, contents = 'parts', note = '',
   }
 
   const uid = 'urn:uuid:' + createHash('sha1').update(book.slug + ':' + contents).digest('hex').replace(/^(.{8})(.{4})(.{4})(.{4})(.{12}).*$/, '$1-$2-$3-$4-$5')
-  const manifest: any = files.map((f: any) => `<item id="${f.id}" href="${f.href}" media-type="application/xhtml+xml" />`).join('\n    ')
-  const spine: any = files.map((f: any) => `<itemref idref="${f.id}" />`).join('\n    ')
+  const manifest = files.map((f: { id: any; href: any }) => `<item id="${f.id}" href="${f.href}" media-type="application/xhtml+xml" />`).join('\n    ')
+  const spine = files.map((f: { id: any }) => `<itemref idref="${f.id}" />`).join('\n    ')
   const opf = `<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid" xml:lang="en">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -153,7 +153,7 @@ export async function makeEpub({ book, companion, contents = 'parts', note = '',
   </spine>
 </package>
 `
-  const nav: any = doc(book.title, `<nav epub:type="toc" id="toc"><h1>${esc(W('contents', 'Contents'))}</h1><ol>${files.filter((f: any) => f.nav).map((f: any) => `<li><a href="${f.href}">${esc(f.title)}</a></li>`).join('')}</ol></nav>`)
+  const nav = doc(book.title, `<nav epub:type="toc" id="toc"><h1>${esc(W('contents', 'Contents'))}</h1><ol>${files.filter((f: { nav: any }) => f.nav).map((f: { href: any; title: any }) => `<li><a href="${f.href}">${esc(f.title)}</a></li>`).join('')}</ol></nav>`)
   const zip: any = { mimetype: [strToU8('application/epub+zip'), { level: 0 }] }
   zip['META-INF/container.xml'] = strToU8(`<?xml version="1.0" encoding="utf-8"?>\n<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml" /></rootfiles></container>\n`)
   zip['OEBPS/content.opf'] = strToU8(opf)

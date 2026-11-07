@@ -14,12 +14,12 @@ const PREVIEW_CACHE_MS = 2000
 const PREVIEW_PATH = '/__platformkit/preview/'
 
 // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Type 'string | undefined' is not assignable to type 'string'. Typ
-const escapeHtml = (value: any) => String(value || '').replace(/[&<>"']/g, (char) => ({
+const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 })[char])
 
 function words() {
-  const groups: any = parseFile(UI_FILE).groups
+  const groups = parseFile(UI_FILE).groups
   const directory = groups.directory
   if (!directory) throw new Error('theme site-directory strings have no directory group')
   return Object.fromEntries(Object.entries(directory).map(([key, fields]) => [key, (fields as any).text || '']))

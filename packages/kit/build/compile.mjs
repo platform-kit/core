@@ -92,21 +92,20 @@ const functionSources = () => typescriptIn(FUNCTIONS)
 
 export function compile() {
   clean()
-  const theme = strip(themeSources())
-  /* before anything else can fail: --clean must find what is already beside the sources */
-  fs.writeFileSync(LIST, JSON.stringify(theme, null, 2) + '\n')
+  /* the theme is stripped after tsc has read it: its .js beside the .ts would be read in place of the source */
+  const stripTheme = () => { const theme = strip(themeSources()); fs.writeFileSync(LIST, JSON.stringify(theme, null, 2) + '\n'); return theme }
   const ts = sources()
   const shared = functionSources()
-  if (!ts.length) { fs.writeFileSync(LIST, JSON.stringify(theme, null, 2) + '\n'); return theme }
+  if (!ts.length) return stripTheme()
   let tsc
   try { tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc') } catch {
-    const copied = [...theme, ...strip(ts), ...strip(shared)]
+    const copied = [...stripTheme(), ...strip(ts), ...strip(shared)]
     fs.writeFileSync(LIST, JSON.stringify(copied, null, 2) + '\n')
     return copied
   }
   const r = spawnSync(process.execPath, [tsc, '--project', path.join(KIT, 'tsconfig.build.json')], { cwd: KIT, encoding: 'utf8' })
   if (r.status !== 0) throw new Error('compile: tsc refused the kit\n' + (r.stdout + r.stderr).trim().split('\n').slice(0, 20).join('\n'))
-  const copied = [...theme]
+  const copied = [...stripTheme()]
   /* tsc emits only the shared modules the engine reaches, and only those are read by Node */
   const reached = shared.filter((rel) => fs.existsSync(path.join(OUT, rel.replace(/\.(m?)ts$/, '.$1js'))))
   for (const rel of [...ts, ...reached]) {

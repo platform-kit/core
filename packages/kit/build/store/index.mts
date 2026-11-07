@@ -34,7 +34,7 @@ export async function storeFor(root = process.cwd(), opts = {}) {
 /* the collection a content path belongs to (velite's name for it) and its slug — the row's keys, and what the
    site loads by; the deeper folders first, then the first segment for a kind the kit does not name */
 const DIRS = [['content/store/products', 'products'], ['content/store/prices', 'prices'], ['content/store/promotions', 'promotions'], ['content/store/collections', 'collections'], ['content/app/tests', 'tests'], ['content/app/ui', 'ui'], ['content/strings', 'strings'], ['content/models', 'models'], ['content/uploads', 'uploads']]
-export function collectionOf(rel: any) {
+export function collectionOf(rel: string) {
   const p = String(rel).replace(/\\/g, '/').replace(/^\.?\//, '')
   if (p === 'content/store/storefront.md') return { collection: 'storefront', slug: 'storefront', ext: 'md' }   /* the store's one file */
   for (const [dir, name] of DIRS) if (p.startsWith(dir + '/')) return { collection: name, slug: p.slice(dir.length + 1).replace(/\.[a-z0-9]+$/, ''), ext: (p.match(/\.([a-z0-9]+)$/) || [])[1] || '' }
@@ -51,8 +51,8 @@ export function insideRoots(rel: any) {
   if (!p || p.split('/').some((seg) => seg === '..' || seg === '')) return null
   return ROOTS.some((r) => p === r || p.startsWith(r + '/')) ? p : null
 }
-export const refuse = (msg: any, code = 400) => Object.assign(new Error(msg), { code })
+export const refuse = (msg: string|undefined, code = 400) => Object.assign(new Error(msg), { code })
 export const MIME: any = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', avif: 'image/avif', pdf: 'application/pdf', mp3: 'audio/mpeg', mp4: 'video/mp4', webm: 'video/webm', txt: 'text/plain', md: 'text/markdown', json: 'application/json', css: 'text/css', js: 'text/javascript', woff2: 'font/woff2', woff: 'font/woff', zip: 'application/zip' }
-export const mimeOf = (name: any) => MIME[(String(name) as any).split('.').pop().toLowerCase()] || 'application/octet-stream'
+export const mimeOf = (name: string) => MIME[(String(name) as any).split('.').pop().toLowerCase()] || 'application/octet-stream'
 /* a good name for a file or folder: no slash, no dot-segment, nothing that would be hidden */
-export const cleanName = (name: any) => { const n = String(name || '').trim(); if (!n || n === '.' || n === '..' || /[\\/]/.test(n) || n.startsWith('.')) throw refuse('a name is one word with no slash, and does not start with a dot'); return n }
+export const cleanName = (name: string|undefined) => { const n = String(name || '').trim(); if (!n || n === '.' || n === '..' || /[\\/]/.test(n) || n.startsWith('.')) throw refuse('a name is one word with no slash, and does not start with a dot'); return n }

@@ -34,7 +34,7 @@ export const moduleOn = (key: any) => {
 }
 
 /* the same question of several at once: is ANY of them on */
-export const anyModuleOn = (keys: any) => keys.some((k: any) => moduleOn(k))
+export const anyModuleOn = (keys: any[]) => keys.some((k: any) => moduleOn(k))
 
 /* what a site actually declares, for a surface that lists the modules rather than asking about one */
 export const declaredModules = () => [...DECLARED]

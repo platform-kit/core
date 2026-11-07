@@ -19,10 +19,10 @@ let installed: any = null
 const pending = { contact: {}, conversation: {} }
 let hidden = false
 /* every event under both names — ours first, Chatwoot's beside it — one detail, so a page listening for either hears it */
-const fire = (name: any, detail: any) => { for (const n of [`chatwidget:${name}`, `chatwoot:${name}`]) { try { window.dispatchEvent(new CustomEvent(n, { detail })) } catch (e) { /* no window */ } } }
+const fire = (name: string, detail: { error?: string; message?: any }) => { for (const n of [`chatwidget:${name}`, `chatwoot:${name}`]) { try { window.dispatchEvent(new CustomEvent(n, { detail })) } catch (e) { /* no window */ } } }
 
 /* the custom attributes onto the contact through the Client API (the widget's own door), once there is a contact */
-async function flush(inbox: any) {
+async function flush(inbox: string|number|boolean) {
   const t = token()
   if (!t || !inbox) return
   const attrs = { ...pending.contact }
@@ -39,8 +39,8 @@ export function installChatWidget(o: any = {}) {
   const api = {
     hasLoaded: true,
     get isOpen() { return panelOpen.value },
-    toggle(state: any) { const want = state === 'open' ? true : state === 'close' ? false : !panelOpen.value; if (want) open(); else close() },
-    toggleBubbleVisibility(state: any) { hidden = state === 'hide' ? true : state === 'show' ? false : !hidden; if (o.bubble) o.bubble(!hidden) },
+    toggle(state: string) { const want = state === 'open' ? true : state === 'close' ? false : !panelOpen.value; if (want) open(); else close() },
+    toggleBubbleVisibility(state: string) { hidden = state === 'hide' ? true : state === 'show' ? false : !hidden; if (o.bubble) o.bubble(!hidden) },
     popoutChatWindow() { if (o.popout) window.open(o.popout, '_blank', 'noopener') },
     setUser(identifier: any, attrs = {}) { pending.contact = { ...pending.contact, identifier: identifier == null ? undefined : String(identifier), ...(attrs && typeof attrs === 'object' ? attrs : {}) }; flush(o.inbox) },
     setCustomAttributes(attrs = {}) { pending.contact = { ...pending.contact, ...(attrs && typeof attrs === 'object' ? attrs : {}) }; flush(o.inbox) },

@@ -175,7 +175,7 @@ export function rowsStore({ url, key, client, by = '', onEvent = null }: any = {
   const guard = (rel: any) => { const p = insideRoots(rel); if (!p) throw refuse('not a path the library reaches'); return p }
   const exists = async (rel: any) => { const d = rel.split('/').slice(0, -1).join('/'), n = rel.split('/').pop(); const { data } = await sb.storage.from(BUCKET).list(d, { search: n, limit: 100 }); return !!(data || []).some((o: any) => o.name === n) }
   /* every object under a path: the object itself, or everything under a folder (the .keep objects too) */
-  const under: any = async (rel: any) => {
+  const under = async (rel: any) => {
     const { data } = await sb.storage.from(BUCKET).list(rel.split('/').slice(0, -1).join('/'), { search: rel.split('/').pop(), limit: 100 })
     const me = (data || []).find((o: any) => o.name === rel.split('/').pop())
     if (!me) return []

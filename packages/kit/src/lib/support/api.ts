@@ -28,9 +28,9 @@ export const ME = 'contact'
 
 const on = () => !!(supabase && configured)
 const getToken = () => { try { return localStorage.getItem(TOKEN_KEY) || '' } catch (e) { return '' } }
-const setToken = (t: any) => { try { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY) } catch (e) { /* private mode */ } }
-const flag = (k: any, v: any) => { try { if (v) localStorage.setItem(k, '1'); else localStorage.removeItem(k) } catch (e) { /* private mode */ } }
-const has = (k: any) => { try { return !!localStorage.getItem(k) } catch (e) { return false } }
+const setToken = (t: string) => { try { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY) } catch (e) { /* private mode */ } }
+const flag = (k: string, v: boolean) => { try { if (v) localStorage.setItem(k, '1'); else localStorage.removeItem(k) } catch (e) { /* private mode */ } }
+const has = (k: string) => { try { return !!localStorage.getItem(k) } catch (e) { return false } }
 
 export const panelOpen = ref(false)
 export const contact = ref<any>(null)             /* { id, signed_in, name, email, verified } — the last three from the account, else null */
@@ -49,12 +49,12 @@ export const thread = reactive<any>({ id: null, messages: [], conversation: null
 let base = ''
 export const setSiteBase = (u: any) => { base = String(u || '').replace(/\/+$/, '') }
 /* a path of the site's own — a prompt's picture, an upload — against the site */
-export const siteUrl = (u: any) => (u && u.startsWith('/') && !u.startsWith('//') ? base + u : u)
+export const siteUrl = (u: string) => (u && u.startsWith('/') && !u.startsWith('//') ? base + u : u)
 /* the function signs a bucket url as a path under the project's host; the site's own paths go to the site */
-const fullUrl = (u: any) => (u && u.startsWith('/storage/') ? supabaseUrl.replace(/\/+$/, '') + u : siteUrl(u))
-const asRow = (m: any) => ({ ...m, sender_id: m.author, kind: m.kind || 'text', url: fullUrl(m.url) })
+const fullUrl = (u: string) => (u && u.startsWith('/storage/') ? supabaseUrl.replace(/\/+$/, '') + u : siteUrl(u))
+const asRow = (m: { author: any; kind: any; url: any }) => ({ ...m, sender_id: m.author, kind: m.kind || 'text', url: fullUrl(m.url) })
 
-async function call(action: any, body = {}, file: any = null) {
+async function call(action: string, body = {}, file: any = null) {
   if (!on()) throw new Error('offline')
   const headers: any = {}
   const t = getToken()
@@ -77,8 +77,8 @@ async function call(action: any, body = {}, file: any = null) {
   return data
 }
 
-function countUnread() { unread.value = conversations.value.reduce((n: any, c: any) => n + (Number(c.unread) || 0), 0) }
-function take(hello: any) {
+function countUnread() { unread.value = conversations.value.reduce((n: number, c: { unread: any }) => n + (Number(c.unread) || 0), 0) }
+function take(hello: { contact: null; conversations: never[]; staff: any; bot: null|undefined; linked: any }) {
   contact.value = hello.contact || null
   conversations.value = hello.conversations || []
   staff.value = !!hello.staff
@@ -105,7 +105,7 @@ export async function refreshList() {
 
 /* ---- the open thread's channel: a wake-up, then a fetch ---- */
 let channel: any = null, live = false, wakeTimer: any = null
-function listen(conv: any) {
+function listen(conv: { listen_key: string; id: any }) {
   if (!conv || !conv.listen_key || !supabase) return
   const topic = 'support:' + conv.listen_key
   if (channel && channel.topic === 'realtime:' + topic) return
@@ -135,7 +135,7 @@ export async function openThread(id: any) {
        widget that has stopped working. Let it go and put them back where they can simply type. */
     if (/404|no such conversation/i.test(String(e && e.message))) {
       thread.id = null; thread.messages = []; thread.conversation = null; thread.error = null
-      conversations.value = conversations.value.filter((c: any) => c.id !== id)
+      conversations.value = conversations.value.filter((c: { id: any }) => c.id !== id)
     } else thread.error = e.message
   }
   thread.loading = false
@@ -152,15 +152,15 @@ async function poll() {
 }
 async function pollOnce() {
   const id = thread.id
-  const last: any = thread.messages[thread.messages.length - 1]
+  const last = thread.messages[thread.messages.length - 1]
   try {
     const r = await call('messages', { conversation_id: id, since: last ? last.created_at : undefined })
     if (thread.id !== id) return
     thread.conversation = r.conversation
     if (r.messages && r.messages.length) {
       thread.messages = mergeMessages(thread.messages, r.messages.map(asRow))
-      const agent = r.messages.filter((m: any) => m.author === 'agent').pop()
-      if (agent) { markRead(); const c: any = conversations.value.find((x: any) => x.id === id); if (c) { c.last = agent; c.last_message_at = agent.created_at; if (agent.agent_name) c.agent_name = agent.agent_name } }
+      const agent = r.messages.filter((m: { author: string }) => m.author === 'agent').pop()
+      if (agent) { markRead(); const c = conversations.value.find((x: { id: any }) => x.id === id); if (c) { c.last = agent; c.last_message_at = agent.created_at; if (agent.agent_name) c.agent_name = agent.agent_name } }
     }
   } catch (e) { /* next time */ }
 }
@@ -182,7 +182,7 @@ let readTimer: any = null
 export function markRead() {
   const id = thread.id
   if (!id) return
-  const row: any = conversations.value.find((c: any) => c.id === id)
+  const row = conversations.value.find((c: { id: any }) => c.id === id)
   if (row && row.unread) { row.unread = 0; countUnread() }
   clearTimeout(readTimer)
   readTimer = setTimeout(() => { call('read', { conversation_id: id }).catch(() => {}) }, 300)
@@ -200,7 +200,7 @@ export async function start({ body, prompt_id, choice, attach }: any) {
   if (r.token) setToken(r.token)
   contact.value = r.contact || contact.value
   const conv = { ...r.conversation, last: r.messages[r.messages.length - 1], unread: 0 }
-  conversations.value = [conv].concat(conversations.value.filter((c: any) => c.id !== conv.id))
+  conversations.value = [conv].concat(conversations.value.filter((c: { id: any }) => c.id !== conv.id))
   flag(ACTIVE_KEY, true)
   thread.id = conv.id; thread.conversation = r.conversation; thread.messages = mergeMessages([], r.messages.map(asRow)); thread.error = null
   listen(r.conversation)
@@ -216,31 +216,31 @@ export async function send(body: any, { prompt_id, choice, offer, text: shown }:
   thread.messages = mergeMessages(thread.messages, [row])
   /* and the offer is taken here and now, so the buttons go with the press rather than a beat later
      when the server answers — the row the server sends back says the same thing */
-  if (offer) thread.messages = thread.messages.map((m: any) => (m.id === offer ? { ...m, choice_at: row.created_at, choice_key: choice } : m))
+  if (offer) thread.messages = thread.messages.map((m: { id: any }) => (m.id === offer ? { ...m, choice_at: row.created_at, choice_key: choice } : m))
   /* A PRESS IS AN ACT, like a prompt's choice: who, what, and on which answer. Without it the one
      thing a bot's choices are for — knowing which of the ways forward people actually take — is a
      click that vanished. */
-  if (offer) { const m: any = thread.messages.find((x: any) => x.id === offer); capture('bot_choice', { surface: 'support', bot: (m && m.bot) || null, choice, text: String(shown || ''), conversation: thread.id }) }
+  if (offer) { const m = thread.messages.find((x: { id: any }) => x.id === offer); capture('bot_choice', { surface: 'support', bot: (m && m.bot) || null, choice, text: String(shown || ''), conversation: thread.id }) }
   try {
     /* an offer a BOT made is taken by naming its message: the row says what the words are, so a
        client cannot put a sentence in somebody's mouth and start a run with it */
     const r = await call('send', offer ? { conversation_id: thread.id, offer, choice }
       : choice ? { conversation_id: thread.id, prompt_id, choice }
       : { conversation_id: thread.id, body: text })
-    thread.messages = mergeMessages(thread.messages.filter((m: any) => m.id !== row.id), [asRow(r.message)].concat((r.extra || []).map(asRow)))
+    thread.messages = mergeMessages(thread.messages.filter((m: { id: string }) => m.id !== row.id), [asRow(r.message)].concat((r.extra || []).map(asRow)))
     thread.conversation = r.conversation
-    const c: any = conversations.value.find((x: any) => x.id === thread.id)
+    const c = conversations.value.find((x: { id: any }) => x.id === thread.id)
     if (c) { const last = (r.extra || [])[0] || r.message; c.last = last; c.last_message_at = last.created_at; c.status = r.conversation.status }
     // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-    conversations.value = conversations.value.slice().sort((a: any, b: any) => new Date(b.last_message_at || b.created_at) - new Date(a.last_message_at || a.created_at))
+    conversations.value = conversations.value.slice().sort((a, b) => new Date(b.last_message_at || b.created_at) - new Date(a.last_message_at || a.created_at))
     return r.message.id
   } catch (e: any) {
-    thread.messages = thread.messages.filter((m: any) => m.id !== row.id)
+    thread.messages = thread.messages.filter((m: { id: string }) => m.id !== row.id)
     /* the same: a thread that has gone takes its id with it rather than failing for ever */
     if (/404|no such conversation/i.test(String(e && e.message))) {
       const gone = thread.id
       thread.id = null; thread.messages = []; thread.conversation = null
-      conversations.value = conversations.value.filter((c: any) => c.id !== gone)
+      conversations.value = conversations.value.filter((c: { id: any }) => c.id !== gone)
     }
     throw e
   }
@@ -269,7 +269,7 @@ export async function wantHuman() {
   const r = await call('human', { conversation_id: thread.id })
   if (r && r.conversation) {
     thread.conversation = r.conversation
-    const c: any = conversations.value.find((x: any) => x.id === thread.id)
+    const c = conversations.value.find((x: { id: any }) => x.id === thread.id)
     if (c) c.bot_off_at = r.conversation.bot_off_at
   }
 }
@@ -280,7 +280,7 @@ export async function markSorted() {
   const r = await call('sorted', { conversation_id: thread.id })
   if (r && r.conversation) {
     thread.conversation = r.conversation
-    const c: any = conversations.value.find((x: any) => x.id === thread.id)
+    const c = conversations.value.find((x: { id: any }) => x.id === thread.id)
     if (c) c.status = r.conversation.status
   }
 }
@@ -300,7 +300,7 @@ export function typing() {
   call('typing', { conversation_id: thread.id }).catch(() => {})
 }
 /* the desk is writing: within the last few seconds */
-export const agentTyping = () => { const t = thread.conversation && (thread.conversation as any).agent_typing_at; return !!t && Date.now() - new Date(t).getTime() < 5000 }
+export const agentTyping = () => { const t = thread.conversation && thread.conversation.agent_typing_at; return !!t && Date.now() - new Date(t).getTime() < 5000 }
 
 /* a voice note or a file in the open thread: a placeholder row while it goes up (a voice note
    plays from its blob meanwhile), the server's row in its place */
@@ -310,19 +310,19 @@ export async function upload(file: any, { kind = 'file', seconds = 0, transcript
   thread.messages = mergeMessages(thread.messages, [row])
   try {
     const r = await call('upload', { conversation_id: thread.id, kind, seconds: kind === 'voice' ? seconds : undefined, transcript: transcript || undefined }, file)
-    thread.messages = mergeMessages(thread.messages.filter((m: any) => m.id !== row.id), [asRow({ ...r.message, blob: row.blob })].concat((r.extra || []).map(asRow)))
+    thread.messages = mergeMessages(thread.messages.filter((m: { id: string }) => m.id !== row.id), [asRow({ ...r.message, blob: row.blob })].concat((r.extra || []).map(asRow)))
     thread.conversation = r.conversation
-    const c: any = conversations.value.find((x: any) => x.id === thread.id)
+    const c = conversations.value.find((x: { id: any }) => x.id === thread.id)
     if (c) { c.last = r.message; c.last_message_at = r.message.created_at; c.status = r.conversation.status }
     return r.message.id
   } catch (e) {
-    thread.messages = thread.messages.filter((m: any) => m.id !== row.id)
+    thread.messages = thread.messages.filter((m: { id: string }) => m.id !== row.id)
     throw e
   }
 }
 
 /* the panel: opened on a thread from the away email's link (?support=<id>) */
-export function open(id?: any) {
+export function open(id?: string) {
   panelOpen.value = true
   if (id) openThread(id)
 }
@@ -375,7 +375,7 @@ export async function loadTickets() {
   return tickets.value
 }
 /* how many are still going — the number on the widget's own tab */
-export const openTickets = () => tickets.value.filter((t: any) => !['resolved', 'closed'].includes(t.status)).length
+export const openTickets = () => tickets.value.filter((t: { status: string }) => !['resolved', 'closed'].includes(t.status)).length
 
 export async function openTicket(id: any) {
   ticket.id = id

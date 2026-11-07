@@ -25,10 +25,10 @@ import { loadDotEnv } from './tts/storage.mjs'
 import { siteFile } from './site-file.mjs'
 
 loadDotEnv()   /* the keys from .env, for a process that has not read it (the admin server) */
-const ENV = (k: any) => process.env[k] || ''
+const ENV = (k: string|number) => process.env[k] || ''
 
 /* a module path a site registered, resolved against the site's root and imported for its exports */
-async function own(root: any, rel: any) {
+async function own(root: string, rel: string|null) {
   if (!rel) return []
   const url = pathToFileURL(path.resolve(root, rel)).href
   const mod = await import(/* @vite-ignore */ url)

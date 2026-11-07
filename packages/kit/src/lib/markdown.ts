@@ -14,9 +14,9 @@ import { Marked, Renderer } from 'marked'
 import GithubSlugger from 'github-slugger'
 
 // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Type 'string | undefined' is not assignable to type 'string'. Typ
-const escape = (s: any) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const escape = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 const unescape = (s: any) => String(s).replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => (({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" } as any)[e]))
-const textOf = (tokens: any) => (tokens || []).map((t: any) => (t.tokens ? textOf(t.tokens) : t.type === 'text' || t.type === 'codespan' || t.type === 'escape' ? unescape(t.text) : t.raw || '')).join('')
+const textOf = (tokens: any) => (tokens || []).map((t: { tokens: any; type: string; text: any; raw: any }) => (t.tokens ? textOf(t.tokens) : t.type === 'text' || t.type === 'codespan' || t.type === 'escape' ? unescape(t.text) : t.raw || '')).join('')
 
 /* a renderer: `highlight(code, lang) → html | null` (async allowed) decorates a fenced block; without one the
    block is escaped with its language on the code element, as marked writes it */
@@ -55,15 +55,15 @@ export function renderer({ highlight }: any = {}) {
   return {
     /* the html; each document gets its own marked, so its own slugger, so its own numbering */
     parse(md: any) { const out: any = make().parse(String(md == null ? '' : md)); return typeof out.then === 'function' ? out.then(quotes) : quotes(out) },
-    toc(md: any) { return tocOf(String(md == null ? '' : md), make()) },
+    toc(md: {}|null) { return tocOf(String(md == null ? '' : md), make()) },
   }
 }
 
 /* a quote or an apostrophe in prose stays itself (marked writes the entity; rehype did not, and the text reads the same) — inside a tag it is left alone */
-const quotes = (html: any) => html.replace(/(<[^>]*>)|&#39;|&quot;/g, (m: any, tag: any) => (tag ? tag : m === '&#39;' ? "'" : '"'))
+const quotes = (html: string) => html.replace(/(<[^>]*>)|&#39;|&quot;/g, (m: string, tag: any) => (tag ? tag : m === '&#39;' ? "'" : '"'))
 
 /* the headings of a document as a tree, urls to their ids, the shape velite's toc gave */
-function tocOf(md: any, m: any) {
+function tocOf(md: string, m: Marked<string,string>) {
   const slugger = new GithubSlugger()
   const root = { items: [] }, stack = [{ depth: 0, node: root }]
   for (const t of m.lexer(md)) {
@@ -78,12 +78,12 @@ function tocOf(md: any, m: any) {
 }
 
 /* the text of the html, the tags gone and the entities read, as an excerpt or a word count sees it */
-export function plain(html: any) {
+export function plain(html: string) {
   if (typeof DOMParser !== 'undefined') { try { return new DOMParser().parseFromString(String(html || ''), 'text/html').body.textContent || '' } catch { /* below */ } }
   return String(html || '').replace(/<[^>]+>/g, '').replace(/&(amp|lt|gt|quot|#39|#x27);/g, (_, e) => (({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", '#x27': "'" } as any)[e]))
 }
 /* velite's reading time and word count over the plain text, kept to the letter (265 words a minute, never zero) */
-export function metadata(text: any) {
+export function metadata(text: string) {
   const words = (String(text || '').match(/['’]?([a-zA-Z]+(?:['’]?[a-zA-Z]+)*)/g) || []).length
   const time = Math.round(words / 265)
   return { readingTime: time === 0 ? 1 : time, wordCount: words }

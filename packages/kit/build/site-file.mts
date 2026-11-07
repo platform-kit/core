@@ -6,7 +6,7 @@
 import path from 'node:path'
 
 /* the content pipe copies site.mjs into the functions, and the pipe holds no filesystem (content-kinds.test.mjs) */
-const exists = (file: string): boolean => (globalThis as any).process.getBuiltinModule('node:fs').existsSync(file)
+const exists = (file: string): boolean => globalThis.process.getBuiltinModule('node:fs').existsSync(file)
 
 export const siteFile = (root: string, stem = 'platformkit.config'): string => {
   const ts = path.join(root, stem + '.ts')

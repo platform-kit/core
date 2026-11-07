@@ -119,10 +119,10 @@ export const slotsFor = (name: any) => {
  * reason behind them; then the catalogue in Google's own popularity order, which is a better
  * default order than alphabetical for a list nobody wants to read to the end of.
  */
-export function searchFamilies(slot: any, q = '', limit = 60) {
+export function searchFamilies(slot: string, q = '', limit = 60) {
   const want = String(q || '').trim().toLowerCase()
-  const fits = (name: any) => slotsFor(name).includes(slot)
-  const hit = (name: any) => !want || name.toLowerCase().includes(want)
+  const fits = (name: string) => slotsFor(name).includes(slot)
+  const hit = (name: string) => !want || name.toLowerCase().includes(want)
   const rec = Object.keys(FAMILIES).filter((n) => fits(n) && hit(n)).map((n) => ({ ...familyOf(n) }))
   const rest = []
   for (const f of catalogue()) {
@@ -151,7 +151,7 @@ export const SLOTS: any = {
  */
 export const DEFAULTS: any = { heading: 'Plus Jakarta Sans', body: 'Inter', mono: 'JetBrains Mono' }
 
-export const familiesFor = (slot: any) => Object.entries(FAMILIES)
+export const familiesFor = (slot: string) => Object.entries(FAMILIES)
   .filter(([, f]) => SLOTS[slot].kinds.includes((f as any).kind))
   .map(([name, f]) => ({ name, note: (f as any).note, stack: (f as any).stack }))
 
@@ -191,7 +191,7 @@ export function faultsIn(fonts = {}) {
 
 /* the one stylesheet link, families in a stable order so the url is the same between builds */
 export function linkFor(fonts = {}) {
-  const r: any = resolveFonts(fonts)
+  const r = resolveFonts(fonts)
   const seen = new Map()
   for (const slot of ['heading', 'body', 'mono']) if (!seen.has(r[slot].name)) seen.set(r[slot].name, r[slot].spec)
   const q = [...seen.entries()].map(([name, spec]) => `family=${name.replace(/ /g, '+')}:${spec}`).join('&')
@@ -200,6 +200,6 @@ export function linkFor(fonts = {}) {
 
 /* the three tokens, as a :root block to go in the head before anything paints */
 export function tokensFor(fonts = {}) {
-  const r: any = resolveFonts(fonts)
+  const r = resolveFonts(fonts)
   return `:root{${['heading', 'body', 'mono'].map((s) => `${r[s].token}:${r[s].stack}`).join(';')}}`
 }

@@ -67,7 +67,7 @@ export async function siteChecks(root: any, { kitVersion = JSON.parse(fs.readFil
   try {
     const { moduleSet } = await import('./steps.mjs')
     modules = await moduleSet(site)
-    const unknown: any = Object.keys(site.modules || {}).filter((k) => !modules.has(k))
+    const unknown = Object.keys(site.modules || {}).filter((k) => !modules.has(k))
     out.push(unknown.length ? fail('modules', `not a module PlatformKit or this site declares: ${unknown.join(', ')}`, 'correct the name in modules, or remove it') : pass('modules', `${Object.values(site.modules || {}).filter(Boolean).length} switched on`))
   } catch (e: any) {
     out.push(fail('modules', `the module list could not be read: ${String(e.message || e).split('\n')[0]}`))

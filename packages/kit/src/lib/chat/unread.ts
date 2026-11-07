@@ -28,13 +28,13 @@ export async function refresh() {
     if (!error) unread.value = Number(data) || 0
   } catch (e) { /* offline: keep the last count */ }
 }
-export function bump(n: any) { unread.value = Math.max(0, unread.value + (n || 0)) }
+export function bump(n: number) { unread.value = Math.max(0, unread.value + (n || 0)) }
 
 function listen() {
   if (channel || !supabase || !session.value) return
   channel = supabase.channel('chat:unread')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, ({ new: row }) => {
-      if (row.sender_id === (session as any).value.user.id) return
+      if (row.sender_id === session.value.user.id) return
       /* a beat later, so the open thread's own read mark (if any) has landed first */
       clearTimeout(timer); timer = setTimeout(refresh, 400)
     })

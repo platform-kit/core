@@ -13,16 +13,16 @@ import http from 'node:http'
 import { randomBytes } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { isMain } from './is-main.mjs'
-const id = (prefix: any) => `${prefix}_${randomBytes(12).toString('hex')}`
+const id = (prefix: string) => `${prefix}_${randomBytes(12).toString('hex')}`
 const now = () => Math.floor(Date.now() / 1000)
 
-function parseForm(text: any) {
+function parseForm(text: string|string[][]|Record<string,string>|URLSearchParams|undefined) {
   const out: any = {}
   for (const [key, value] of new URLSearchParams(text)) out[key] = value
   return out
 }
 
-function charge(intent: any) {
+function charge(intent: { latest_charge: any; amount: number; currency: any; id: any; refunded: number; last4: any }) {
   return {
     id: intent.latest_charge,
     object: 'charge',
@@ -55,12 +55,12 @@ function intentBody(intent: any) {
   }
 }
 
-function error(res: any, status: any, code: any, message: any, extra = {}) {
+function error(res: http.ServerResponse<http.IncomingMessage>&{ req: http.IncomingMessage }, status: number, code: string, message: string, extra = {}) {
   res.writeHead(status, { 'content-type': 'application/json' })
   res.end(JSON.stringify({ error: { type: 'card_error', code, message, ...extra } }))
 }
 
-function send(res: any, body: any, status = 200) {
+function send(res: http.ServerResponse<http.IncomingMessage>&{ req: http.IncomingMessage }, body: { id?: any; object?: string; email?: any; amount?: any; amount_capturable?: number; amount_received?: any; currency?: any; status?: any; client_secret?: string; created?: any; customer?: any; payment_method?: any; metadata?: any; latest_charge?: { id: any; object: string; amount: any; currency: any; status: string; paid: boolean; payment_intent: any; amount_refunded: any; refunded: boolean; payment_method_details: { type: string; card: { brand: string; last4: any } } }|null; payment_intent?: any; ok?: boolean }, status = 200) {
   res.writeHead(status, { 'content-type': 'application/json' })
   res.end(JSON.stringify(body))
 }
@@ -68,13 +68,13 @@ function send(res: any, body: any, status = 200) {
 export function startFakeProcessor(port = 12111) {
   const intents = new Map()
   const refunds = new Map()
-  const server: any = http.createServer((req, res) => {
+  const server = http.createServer((req, res) => {
     const chunks: any = []
     req.on('data', (chunk) => chunks.push(chunk))
     req.on('end', () => {
       // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string | URL'. Type 'undefined' is not assignable to type 'str
       const url = new URL(req.url, 'http://fake')
-      const form: any = parseForm(Buffer.concat(chunks).toString('utf8'))
+      const form = parseForm(Buffer.concat(chunks).toString('utf8'))
       const path = url.pathname
 
       if (req.method === 'POST' && path === '/v1/customers') {

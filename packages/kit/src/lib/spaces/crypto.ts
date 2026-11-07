@@ -40,15 +40,15 @@ import { spaceOut, tighten } from './model.js'
 export { spaceOut, tighten }
 
 const pack = (id: any) => String(id || '').replace(/-/g, '').toLowerCase()
-const env = (k: any) => {
+const env = (k: string) => {
   try { return (import.meta.env && import.meta.env[k]) || '' } catch { return '' }
 }
 export const hostOf = () => String(env('VITE_APP_URL') || (typeof location !== 'undefined' ? location.origin : ''))
   .replace(/^https?:\/\//, '').replace(/\/+$/, '')
 export const roomIdOf = (channel: any, host = hostOf()) => `!c${pack(channel)}:${host}`
-export const userIdOf = (person: any, host = hostOf()) => `@${pack(person)}:${host}`
+export const userIdOf = (person: string, host = hostOf()) => `@${pack(person)}:${host}`
 /* …and back, for an id the library hands us */
-export const personOf = (mxid: any) => {
+export const personOf = (mxid: string) => {
   const m = /^@([0-9a-f]{32}):/i.exec(String(mxid || ''))
   if (!m) return null
   const h = m[1]
@@ -130,10 +130,10 @@ const B64 = {
   to: (bytes: any) => btoa(String.fromCharCode(...new Uint8Array(bytes))),
   from: (text: any) => Uint8Array.from(atob(String(text || '').replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)),
 }
-const utf8 = (s: any) => new TextEncoder().encode(s)
-const randomBytes = (n: any) => crypto.getRandomValues(new Uint8Array(n))
+const utf8 = (s: string|undefined) => new TextEncoder().encode(s)
+const randomBytes = (n: number) => crypto.getRandomValues(new Uint8Array(n))
 
-async function aesFor(recoveryKey: any, salt: any) {
+async function aesFor(recoveryKey: any, salt: Uint8Array<any>) {
   const material = await crypto.subtle.importKey('raw', B64.from(recoveryKey), 'HKDF', false, ['deriveKey'])
   return crypto.subtle.deriveKey(
     { name: 'HKDF', hash: 'SHA-256', salt, info: utf8('platformkit.spaces.secrets.v1') },
@@ -141,7 +141,7 @@ async function aesFor(recoveryKey: any, salt: any) {
   )
 }
 
-export async function sealSecrets(recoveryKey: any, value: any) {
+export async function sealSecrets(recoveryKey: any, value: { master: any; self_signing: any; user_signing: any }) {
   const salt = randomBytes(16), iv = randomBytes(12)
   const key = await aesFor(recoveryKey, salt)
   const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, utf8(JSON.stringify(value)))
@@ -149,7 +149,7 @@ export async function sealSecrets(recoveryKey: any, value: any) {
 }
 
 /* null for a key that does not open it — a wrong recovery key is a thing to SAY, not to throw */
-export async function openSecrets(recoveryKey: any, sealed: any) {
+export async function openSecrets(recoveryKey: string, sealed: { ct: any; salt: any; iv: any }) {
   if (!sealed || !sealed.ct) return null
   try {
     const key = await aesFor(recoveryKey, B64.from(sealed.salt))
@@ -214,7 +214,7 @@ export function context({ me, device, db, host, store }: any) {
   const mx = host || hostOf()
   let mach: any = null
 
-  const keyAlgorithm = (id: any) => String(id || '').split(':')[0] || ''
+  const keyAlgorithm = (id: string) => String(id || '').split(':')[0] || ''
   /* when each person's device list was last looked at, so a device that appears later is noticed */
   const looked = new Map()
 
@@ -240,7 +240,7 @@ export function context({ me, device, db, host, store }: any) {
       }, { onConflict: 'user_id,device_id' })
     }
     const rows: any = []
-    const take = (bag: any, fallback: any) => {
+    const take = (bag: any, fallback: boolean) => {
       for (const [keyId, key] of Object.entries(bag || {})) {
         rows.push({ user_id: me, device_id: device, key_id: keyId, algorithm: keyAlgorithm(keyId), key, fallback })
       }
@@ -248,7 +248,7 @@ export function context({ me, device, db, host, store }: any) {
     take(b.one_time_keys, false)
     take(b.fallback_keys || b['org.matrix.msc2732.fallback_keys'], true)
     if (rows.length) {
-      if (rows.some((r: any) => r.fallback)) {
+      if (rows.some((r: { fallback: any }) => r.fallback)) {
         await db.from('space_one_time_keys').delete().eq('user_id', me).eq('device_id', device).eq('fallback', true)
       }
       await db.from('space_one_time_keys').upsert(rows, { onConflict: 'user_id,device_id,key_id' })
@@ -424,9 +424,9 @@ export function context({ me, device, db, host, store }: any) {
       .eq('user_id', me).in('device_id', [device, '*']).order('id', { ascending: true }).limit(200)
     const rows = data || []
     if (rows.length) {
-      const events = rows.map((r: any) => ({ sender: userIdOf(r.sender_id, mx), type: r.type, content: r.content }))
+      const events = rows.map((r: { sender_id: any; type: any; content: any }) => ({ sender: userIdOf(r.sender_id, mx), type: r.type, content: r.content }))
       await o.receiveSyncChanges(JSON.stringify(events), new m.DeviceLists(), new Map(), undefined)
-      await db.from('space_to_device').delete().in('id', rows.map((r: any) => r.id))
+      await db.from('space_to_device').delete().in('id', rows.map((r: { id: any }) => r.id))
     }
     await pump()
     if (rows.length) { try { await backUpKeys() } catch { /* as above */ } }
@@ -495,7 +495,7 @@ export function context({ me, device, db, host, store }: any) {
    * does not know exists, and the room key is never sent to it: the other person sits in a room
    * reading nothing, on a device that is working perfectly. This is the one place that is noticed.
    */
-  async function freshen(ids: any) {
+  async function freshen(ids: any[]) {
     const m = await load()
     const o = await machine()
     const { data } = await db.from('space_devices').select('user_id, updated_at').in('user_id', ids)
@@ -566,7 +566,7 @@ export function context({ me, device, db, host, store }: any) {
    * sent before this browser existed, or to a device since signed out of, and the room says so in
    * its own words rather than throwing. `null` means exactly that — not "something went wrong".
    */
-  async function open(channelId: any, cipher: any, sender: any) {
+  async function open(channelId: any, cipher: { session_id: any }, sender: any) {
     if (!cipher) return null
     const m = await load()
     const o = await machine()
@@ -599,7 +599,7 @@ export function context({ me, device, db, host, store }: any) {
       .select('version, algorithm, auth_data, sessions, count').eq('user_id', me).is('deleted_at', null)
     const rows = data || []
     if (!rows.length) return null
-    return rows.sort((a: any, b: any) => Number(b.version) - Number(a.version))[0]
+    return rows.sort((a: { version: any }, b: { version: any }) => Number(b.version) - Number(a.version))[0]
   }
 
   /*
@@ -660,7 +660,7 @@ export function context({ me, device, db, host, store }: any) {
       sessions[roomId] = { sessions: held }
     }
     // @ts-expect-error TS18046, from the conversion: 'n' is of type 'unknown'.
-    const count = Object.values(sessions).reduce((n, r: any) => n + Object.keys(r.sessions || {}).length, 0)
+    const count = Object.values(sessions).reduce((n, r) => n + Object.keys(r.sessions || {}).length, 0)
     await db.from('space_key_backups')
       .update({ sessions, count, etag: String(Date.now()), updated_at: new Date().toISOString() })
       .eq('user_id', me).eq('version', row.version)

@@ -10,17 +10,17 @@ import { randomUUID } from 'node:crypto'
 const { SynthesizeStream, TTS } = tts
 const FRAME_SAMPLES = 2400
 
-function endpoint(base: any, path: any) {
+function endpoint(base: string|URL, path: string) {
   const url = new URL(base)
   url.pathname = `${url.pathname.replace(/\/+$/, '')}/${path}`
   return url.toString()
 }
 
-function requestSignal(signal: any, timeoutMs: any) {
+function requestSignal(signal: AbortSignal, timeoutMs: number) {
   return AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
 }
 
-async function* sseEvents(body: any) {
+async function* sseEvents(body: { getReader: () => any }) {
   const reader = body.getReader()
   const decoder = new TextDecoder()
   let buffer: any = ''
@@ -43,11 +43,11 @@ async function* sseEvents(body: any) {
   }
 }
 
-function eventData(event: any) {
+function eventData(event: string) {
   return event
     .split(/\r?\n/)
-    .filter((line: any) => line.startsWith('data:'))
-    .map((line: any) => line.slice(5).trimStart())
+    .filter((line: string) => line.startsWith('data:'))
+    .map((line: string) => line.slice(5).trimStart())
     .join('\n')
 }
 
@@ -156,7 +156,7 @@ class EndpointSynthesizeStream extends SynthesizeStream {
     this.queue.put(SynthesizeStream.END_OF_STREAM)
   }
 
-  async speak(text: any, segmentId: any) {
+  async speak(text: string, segmentId: string) {
     this.markStarted()
     const response = await (this as any).fetchImpl((this as any).url, {
       method: 'POST',
@@ -207,7 +207,7 @@ class EndpointSynthesizeStream extends SynthesizeStream {
     this.putFrame(last, segmentId, true)
   }
 
-  putFrame(frame: any, segmentId: any, final: any) {
+  putFrame(frame: AudioFrame, segmentId: any, final: boolean) {
     this.queue.put({
       requestId: randomUUID(),
       segmentId,
@@ -217,7 +217,7 @@ class EndpointSynthesizeStream extends SynthesizeStream {
   }
 }
 
-function pcmSamples(bytes: any) {
+function pcmSamples(bytes: Buffer<ArrayBuffer>) {
   const samples = new Int16Array(bytes.length / 2)
   for (let index = 0; index < samples.length; index++) {
     samples[index] = bytes.readInt16LE(index * 2)

@@ -28,7 +28,7 @@ for (const name of readdirSync(dir).filter((n) => n.endsWith('.md') && n !== 're
   const used = new Set(); if (!ALL) for (const m of body.matchAll(/\{#([A-Za-z0-9._-]+)\}/g)) used.add(m[1])
   const fresh = () => { let k; do { k = randomUUID().replace(/-/g, '').slice(0, 8) } while (used.has(k)); used.add(k); return k }
   let movement: any = null, tier = 0, stamped = 0
-  const out: any = body.split('\n').map((line) => {
+  const out = body.split('\n').map((line) => {
     if (/^##\s+(?!#)/.test(line)) { movement = line; tier = 0; return line }
     const t = /^###\s+tier\s+([123])\b/i.exec(line); if (t) { tier = Number(t[1]); return line }
     if (!movement || !tier) return line

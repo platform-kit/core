@@ -33,12 +33,12 @@ const ROOT = process.cwd()
 export const FILE = 'supabase/functions/_shared/spaces.json'
 
 const same = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
-const result = async (query: any, label: any) => {
+const result = async (query: any, label: string) => {
   const value = await query
   if (value.error) throw new Error(`${label}: ${value.error.message}`)
   return value
 }
-const rows = (value: any, label: any) => {
+const rows = (value: { data: any }, label: string) => {
   if (!Array.isArray(value.data)) throw new Error(`${label}: expected a row list`)
   return value.data
 }
@@ -68,13 +68,13 @@ export async function pushSpaces({ check = false, seed = false, root = ROOT, dec
     db = createClient(url, key, { auth: { persistSession: false } })
   }
   const said: any = []
-  const say = (m: any) => { said.push(m); if (!quiet) console.log('  ' + m) }
+  const say = (m: string) => { said.push(m); if (!quiet) console.log('  ' + m) }
 
   /* the spaces, by slug */
   const had = rows(await result(db.from('spaces').select('id, slug, name, kind, fill, dms, discoverable, welcome, groups, "group", position, history, joining, cover, thumb, archived_at'), 'spaces: could not read existing rows'), 'spaces: could not read existing rows')
-  const byslug = new Map(had.map((s: any) => [s.slug, s]))
+  const byslug = new Map(had.map((s: { slug: any }) => [s.slug, s]))
   const ids = new Map()
-  for (const s of declared.filter((x: any) => x.published)) {
+  for (const s of declared.filter((x: { published: any }) => x.published)) {
     const want = {
       slug: s.slug, name: s.name, kind: s.kind, fill: s.fill, dms: s.dms !== false, archived_at: null,
       discoverable: !!s.discoverable, welcome: s.welcome || null, groups: s.groups || [],
@@ -102,7 +102,7 @@ export async function pushSpaces({ check = false, seed = false, root = ROOT, dec
     }
   }
   /* a space the declaration no longer publishes is archived, with everything in it */
-  const wanted = new Set(declared.filter((x: any) => x.published).map((x: any) => x.slug))
+  const wanted = new Set(declared.filter((x: { published: any }) => x.published).map((x: { slug: any }) => x.slug))
   for (const s of had) if (!wanted.has(s.slug) && !s.archived_at) {
     say(`- space ${s.slug} archived (its file is gone)`)
     if (!check) await result(db.from('spaces').update({ archived_at: new Date().toISOString() }).eq('id', s.id), `spaces: could not archive ${s.slug}`)
@@ -112,20 +112,20 @@ export async function pushSpaces({ check = false, seed = false, root = ROOT, dec
     return { spaces: declared.length, said }
   }
 
-  for (const s of declared.filter((x: any) => x.published)) {
+  for (const s of declared.filter((x: { published: any }) => x.published)) {
     const sid = ids.get(s.slug)
     if (!sid) continue
 
     /* the roles */
     const hadRoles = rows(await result(db.from('space_roles').select('id, slug, name, colour, rank').eq('space_id', sid), `spaces: ${s.slug}: could not read roles`), `spaces: ${s.slug}: could not read roles`)
-    const roleId = new Map(hadRoles.map((r: any) => [r.slug, r.id]))
+    const roleId = new Map(hadRoles.map((r: { slug: any; id: any }) => [r.slug, r.id]))
     for (const r of s.roles) {
       const want = { space_id: sid, slug: r.slug, name: r.name, colour: r.colour, rank: r.rank }
-      const was = hadRoles.find((x: any) => x.slug === r.slug)
+      const was = hadRoles.find((x: { slug: any }) => x.slug === r.slug)
       if (!was) { const { data, error } = await db.from('space_roles').insert(want).select('id').single(); if (error) throw new Error(`spaces: ${s.slug}/${r.slug}: ${error.message}`); roleId.set(r.slug, data.id); say(`+ role ${s.slug}/${r.slug}`) }
       else if (was.name !== r.name || was.colour !== r.colour || was.rank !== r.rank) { await result(db.from('space_roles').update(want).eq('id', was.id), `spaces: ${s.slug}/${r.slug}: could not update role`); say(`~ role ${s.slug}/${r.slug}`) }
     }
-    const keepRoles = new Set(s.roles.map((r: any) => r.slug))
+    const keepRoles = new Set(s.roles.map((r: { slug: any }) => r.slug))
     for (const r of hadRoles) if (!keepRoles.has(r.slug)) { await result(db.from('space_roles').delete().eq('id', r.id), `spaces: ${s.slug}/${r.slug}: could not remove role`); roleId.delete(r.slug); say(`- role ${s.slug}/${r.slug} (and off everybody who held it)`) }
 
     /* THE BADGES. What they are is the file's; who wears one is an act, and the act is never
@@ -136,22 +136,22 @@ export async function pushSpaces({ check = false, seed = false, root = ROOT, dec
     for (const x of s.flair || []) {
       const want = { space_id: sid, slug: x.slug, name: x.name, colour: x.colour || null, icon: x.icon || null,
         note: x.note || null, inline: x.inline !== false, position: Number(x.position) }
-      const was = hadFlair.find((y: any) => y.slug === x.slug)
+      const was = hadFlair.find((y: { slug: any }) => y.slug === x.slug)
       if (!was) { const { error } = await db.from('space_flair').insert(want); if (error) throw new Error(`spaces: ${s.slug}/flair/${x.slug}: ${error.message}`); say(`+ flair ${s.slug}/${x.slug}`) }
       else if (was.name !== want.name || (was.colour || null) !== want.colour || (was.icon || null) !== want.icon
         || (was.note || null) !== want.note || was.inline !== want.inline || Number(was.position) !== want.position) {
         await result(db.from('space_flair').update(want).eq('id', was.id), `spaces: ${s.slug}/flair/${x.slug}: could not update`); say(`~ flair ${s.slug}/${x.slug}`) }
     }
-    const keepFlair = new Set((s.flair || []).map((x: any) => x.slug))
+    const keepFlair = new Set((s.flair || []).map((x: { slug: any }) => x.slug))
     for (const x of hadFlair) if (!keepFlair.has(x.slug)) { await result(db.from('space_flair').delete().eq('id', x.id), `spaces: ${s.slug}/flair/${x.slug}: could not remove`); say(`- flair ${s.slug}/${x.slug} (and off everybody wearing it)`) }
 
     /* the channels — declared ones only; a direct message is nobody's declaration */
     const hadCh = rows(await result(db.from('channels').select('id, slug, name, topic, mode, visibility, position, "group", cover, thumb, archived_at, reactions, votes, fill, encrypted').eq('space_id', sid).eq('kind', 'channel'), `spaces: ${s.slug}: could not read channels`), `spaces: ${s.slug}: could not read channels`)
     /* the room's own answer, else the space's, else the platform's — reactions on, votes off. The
        resolution happens here so the row holds the answer and nothing reading it knows the ladder. */
-    const takes = (c: any, key: any, dflt: any) => (c[key] == null ? (s[key] == null ? dflt : s[key]) : c[key])
-    const chId = new Map(hadCh.map((c: any) => [c.slug, c.id]))
-    for (const c of s.channels.filter((x: any) => x.published)) {
+    const takes = (c: { [x: string]: any }, key: string, dflt: boolean) => (c[key] == null ? (s[key] == null ? dflt : s[key]) : c[key])
+    const chId = new Map(hadCh.map((c: { slug: any; id: any }) => [c.slug, c.id]))
+    for (const c of s.channels.filter((x: { published: any }) => x.published)) {
       const want = {
         space_id: sid, slug: c.slug, name: c.name, topic: c.topic, mode: c.mode,
         visibility: c.visibility, position: c.order, group: c.group || null,
@@ -166,7 +166,7 @@ export async function pushSpaces({ check = false, seed = false, root = ROOT, dec
            otherwise be a failed push every time. */
         encrypted: c.encrypted === true,
       }
-      const was = hadCh.find((x: any) => x.slug === c.slug)
+      const was = hadCh.find((x: { slug: any }) => x.slug === c.slug)
       if (!was) { const { data, error } = await db.from('channels').insert(want).select('id').single(); if (error) throw new Error(`spaces: ${s.slug}/${c.slug}: ${error.message}`); chId.set(c.slug, data.id); say(`+ channel ${s.slug}/${c.slug}`) }
       else if (was.name !== c.name || was.topic !== c.topic || was.mode !== c.mode || was.visibility !== c.visibility
         || was.position !== c.order || (was.group || null) !== (c.group || null)
@@ -174,7 +174,7 @@ export async function pushSpaces({ check = false, seed = false, root = ROOT, dec
         || was.reactions !== want.reactions || was.votes !== want.votes || !same(was.fill || {}, want.fill)
         || (was.encrypted === true) !== want.encrypted) { await result(db.from('channels').update(want).eq('id', was.id), `spaces: ${s.slug}/${c.slug}: could not update channel`); say(`~ channel ${s.slug}/${c.slug}${was.archived_at ? ' (back from the archive)' : ''}`) }
     }
-    const keepCh = new Set(s.channels.filter((x: any) => x.published).map((c: any) => c.slug))
+    const keepCh = new Set(s.channels.filter((x: { published: any }) => x.published).map((c: { slug: any }) => c.slug))
     for (const c of hadCh) if (!keepCh.has(c.slug) && !c.archived_at) { await result(db.from('channels').update({ archived_at: new Date().toISOString() }).eq('id', c.id), `spaces: ${s.slug}/${c.slug}: could not archive channel`); say(`- channel ${s.slug}/${c.slug} archived (its file is gone; what was said in it is not)`) }
 
     /* every member of the space is in its open channels — the fill makes the membership, this makes the rooms */
@@ -197,7 +197,7 @@ export async function pushSpaces({ check = false, seed = false, root = ROOT, dec
     /* which room hears which of the platform's own events */
     await result(db.from('space_hooks').delete().eq('space_id', sid), `spaces: ${s.slug}: could not replace event hooks`)
     const hooks = []
-    for (const c of s.channels.filter((x: any) => x.published)) for (const e of c.hears) { const id = chId.get(c.slug); if (id) hooks.push({ space_id: sid, event: e, channel_id: id }) }
+    for (const c of s.channels.filter((x: { published: any }) => x.published)) for (const e of c.hears) { const id = chId.get(c.slug); if (id) hooks.push({ space_id: sid, event: e, channel_id: id }) }
     if (hooks.length) await result(db.from('space_hooks').upsert(hooks, { onConflict: 'space_id,event' }), `spaces: ${s.slug} hooks`)
   }
 

@@ -4,8 +4,8 @@ import {
   STRIPE_PAYMENT_CAPABILITIES,
 } from '../src/payment-provider.mjs'
 
-const identifier = (index: any) => `createPaymentProvider${index}`
-const validAdapter = (value: any) => typeof value === 'string' &&
+const identifier = (index: number) => `createPaymentProvider${index}`
+const validAdapter = (value: string) => typeof value === 'string' &&
   !value.includes('\\') &&
   /^[A-Za-z0-9._/-]+\.(?:mjs|js|ts)$/.test(value) &&
   value.split('/').every((part) => part !== '.' && part !== '..')
@@ -39,7 +39,7 @@ export const HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION = Object.freeze({
   webhookPath: PAYMENT_PROVIDER_WEBHOOK_PATH,
 })
 
-function paymentSettingsOf(site: any) {
+function paymentSettingsOf(site: { payments: any }) {
   const settings = site?.payments
   if (settings == null) return { provider: 'stripe' }
   if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
@@ -72,7 +72,7 @@ function paymentSettingsOf(site: any) {
   }
 }
 
-function publicControlCenterUrl(value: any) {
+function publicControlCenterUrl(value: string|URL) {
   if (typeof value !== 'string' || !value.trim()) {
     throw new TypeError('payments.controlCenterUrl must be an absolute HTTPS URL (or HTTP loopback URL)')
   }
@@ -95,14 +95,14 @@ export function paymentProviderIdOf(site: any) {
   return paymentSettingsOf(site).provider
 }
 
-export function paymentProviderConfigurationOf(site: any) {
+export function paymentProviderConfigurationOf(site: { name?: string; payments: { provider: string; profileCapabilities: string[]; controlCenterUrl: string }|{ provider: string; profileCapabilities: string[] }|{ provider: string; profileCapabilities: string[]; controlCenterUrl: string } }) {
   const settings: any = paymentSettingsOf(site)
   return settings.provider === 'hyperswitch'
     ? Object.freeze({ profileCapabilities: settings.profileCapabilities })
     : Object.freeze({})
 }
 
-export function paymentProviderPublicSettingsOf(site: any) {
+export function paymentProviderPublicSettingsOf(site: { name?: string; payments: { provider: string; profileCapabilities: string[]; controlCenterUrl: string }|{ provider: string; profileCapabilities: string[]; controlCenterUrl: string }|{ controlCenterUrl: string; provider: string; profileCapabilities: string[] }|{ controlCenterUrl: string; provider: string; profileCapabilities: string[] }|{ controlCenterUrl: string; provider: string; profileCapabilities: string[] } }) {
   const settings: any = paymentSettingsOf(site)
   return Object.freeze({
     provider: settings.provider,
@@ -115,7 +115,7 @@ export function paymentProviderPublicSettingsOf(site: any) {
   })
 }
 
-export function paymentProviderRegistrySource(providers: any, selectedProvider = 'stripe', configuration: any = {}, options: any = {}) {
+export function paymentProviderRegistrySource(providers: any[], selectedProvider = 'stripe', configuration: any = {}, options: any = {}) {
   if (!Array.isArray(providers)) throw new TypeError('payment provider registry must be a list')
   if (!options || typeof options !== 'object' || Array.isArray(options) ||
       (options.typescript !== undefined && typeof options.typescript !== 'boolean')) {
@@ -132,7 +132,7 @@ export function paymentProviderRegistrySource(providers: any, selectedProvider =
     const unknown = Object.keys(configuration).filter((field) => field !== 'profileCapabilities')
     if (unknown.length) throw new TypeError(`Hyperswitch provider configuration does not support "${unknown[0]}"`)
     if (!Array.isArray(configuration.profileCapabilities) ||
-        configuration.profileCapabilities.some((capability: any) => !PAYMENT_CAPABILITIES.includes(capability)) ||
+        configuration.profileCapabilities.some((capability: string) => !PAYMENT_CAPABILITIES.includes(capability)) ||
         new Set(configuration.profileCapabilities).size !== configuration.profileCapabilities.length) {
       throw new TypeError('Hyperswitch requires a list of unique known profile capabilities')
     }
@@ -144,9 +144,9 @@ export function paymentProviderRegistrySource(providers: any, selectedProvider =
     const optionalSecrets = provider?.optionalSecrets ?? []
     if (!provider || typeof provider.id !== 'string' || !/^[a-z][a-z0-9-]*$/.test(provider.id) ||
         !validAdapter(provider.adapter) || !Array.isArray(provider.capabilities) ||
-        provider.capabilities.some((capability: any) => !PAYMENT_CAPABILITIES.includes(capability)) ||
+        provider.capabilities.some((capability: string) => !PAYMENT_CAPABILITIES.includes(capability)) ||
         new Set(provider.capabilities).size !== provider.capabilities.length ||
-        !Array.isArray(provider.secrets) || provider.secrets.some((secret: any) => typeof secret !== 'string' || !/^[A-Z][A-Z0-9_]*$/.test(secret)) ||
+        !Array.isArray(provider.secrets) || provider.secrets.some((secret: string) => typeof secret !== 'string' || !/^[A-Z][A-Z0-9_]*$/.test(secret)) ||
         new Set(provider.secrets).size !== provider.secrets.length ||
         !Array.isArray(optionalSecrets) ||
         optionalSecrets.some((secret) => typeof secret !== 'string' || !/^[A-Z][A-Z0-9_]*$/.test(secret)) ||

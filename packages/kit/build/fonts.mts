@@ -19,7 +19,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const FIRST = (v: any) => String(v || '').split(',')[0].trim().replace(/^['"]|['"]$/g, '')
-const grab = (css: any, name: any) => {
+const grab = (css: string, name: string) => {
   /* the last declaration wins, as the cascade would have it for a token set at the root */
   let out = null
   for (const m of css.matchAll(new RegExp('--' + name + '\\s*:\\s*([^;]+);', 'gi'))) out = m[1]
@@ -28,7 +28,7 @@ const grab = (css: any, name: any) => {
 
 /* { display, body, mono } — the theme's, with the active look's overriding where it states any */
 export function readFonts({ themeDir, lookFile }: any = {}) {
-  const read = (f: any) => { try { return fs.readFileSync(f, 'utf8') } catch { return '' } }
+  const read = (f: fs.PathOrFileDescriptor) => { try { return fs.readFileSync(f, 'utf8') } catch { return '' } }
   let css = ''
   if (themeDir) for (const f of ['tokens.css', 'atlas.css']) css += read(path.join(themeDir, f))
   const out: any = { body: grab(css, 'f'), display: grab(css, 'fd'), mono: grab(css, 'm') }
@@ -66,7 +66,7 @@ export async function fontsOf(root = process.cwd()) {
   try {
     const { readSiteFonts } = await import('./site-fonts.mjs')
     const { resolveFonts } = await import('./typefaces.mjs')
-    const chosen: any = resolveFonts(readSiteFonts(root))
+    const chosen = resolveFonts(readSiteFonts(root))
     return {
       body: chosen.body.name || fromCss.body,
       display: chosen.heading.name || fromCss.display,
@@ -93,7 +93,7 @@ export async function fontsOf(root = process.cwd()) {
  * drawn with the name alone — which is the right failure, because a mark drawn wrongly is worse
  * than a mark left out.
  */
-export function markFrom(vue: any, { size = 26, stroke = '#ffffff' } = {}) {
+export function markFrom(vue: string, { size = 26, stroke = '#ffffff' } = {}) {
   const m = /<svg[\s\S]*?<\/svg>/.exec(String(vue || ''))
   if (!m) return null
   let svg = m[0]
@@ -113,7 +113,7 @@ export function markFrom(vue: any, { size = 26, stroke = '#ffffff' } = {}) {
  * the name beside it is the row's grey. Tinting both to the row's colour — which the first version
  * did — makes the card look like a different site's.
  */
-export function accentFrom(css: any) {
+export function accentFrom(css: string) {
   /* THE LIGHT ONE. The card is photographed with data-theme="light" forced, and a look states its
      dark palette after its light one — taking the last match gave the dark accent, a cyan where the
      mark is actually crimson. So: the first declaration that is not inside a dark block. */
@@ -130,7 +130,7 @@ export function accentFrom(css: any) {
 export async function accentOf(root = process.cwd()) {
   const { loadSite } = await import('./site.mjs')
   const { loadTheme } = await import('./theme.mjs')
-  const read = (p: any) => { try { return fs.readFileSync(p, 'utf8') } catch { return '' } }
+  const read = (p: fs.PathOrFileDescriptor) => { try { return fs.readFileSync(p, 'utf8') } catch { return '' } }
   try {
     const site = await loadSite(root)
     const theme = await loadTheme(site)

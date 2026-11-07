@@ -16,8 +16,8 @@
  * answers with nothing and the browser then slants by hand.
  */
 const WANTED = [300, 400, 500, 600, 700, 800]
-export function specOf(f: any) {
-  const weights = (f.w || []).filter((w: any) => WANTED.includes(w))
+export function specOf(f: { w: any; i: any }) {
+  const weights = (f.w || []).filter((w: number) => WANTED.includes(w))
   const use = weights.length ? weights : [(f.w || [400])[0]]
   if (!f.i) return `wght@${use.join(';')}`
   return `ital,wght@${use.map((w: any) => `0,${w}`).join(';')};${use.map((w: any) => `1,${w}`).join(';')}`
@@ -32,11 +32,11 @@ const FALLBACK: any = {
   d: 'Georgia, serif',
   h: 'cursive',
 }
-export const stackOf = (f: any) => `'${f.n}', ${FALLBACK[f.c] || 'sans-serif'}`
+export const stackOf = (f: { n: any; c: string|number }) => `'${f.n}', ${FALLBACK[f.c] || 'sans-serif'}`
 
 /* which slots a family may fill: a display or handwriting face is a heading, never body text */
-export const slotsOf = (f: any) => (f.c === 'm' ? ['mono'] : f.c === 'd' || f.c === 'h' ? ['heading'] : ['heading', 'body'])
+export const slotsOf = (f: { n?: string; c: any; w?: number[]; i?: number; v?: string[]; p?: number }) => (f.c === 'm' ? ['mono'] : f.c === 'd' || f.c === 'h' ? ['heading'] : ['heading', 'body'])
 
 /* the kind word the picker and the refusals use */
 // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ m: string; f: string; s: string; d: str
-export const kindOf = (f: any) => ({ m: 'mono', f: 'serif', s: 'sans', d: 'display', h: 'handwriting' })[f.c] || 'sans'
+export const kindOf = (f) => ({ m: 'mono', f: 'serif', s: 'sans', d: 'display', h: 'handwriting' })[f.c] || 'sans'

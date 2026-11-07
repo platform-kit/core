@@ -58,7 +58,7 @@ export default {
     const { bookSlugs, CHOICES } = await import('../../print/block.mjs')
     const { PRINTERS, PRINTER_IDS } = await import('../../print/suppliers.mjs')
     const books = []; for (const s of await bookSlugs(ctx.store)) books.push(await view(ctx.root, s, ctx.store))
-    const printers = Object.fromEntries(PRINTER_IDS.map((id) => { const p = (PRINTERS as any)[id]; return [id, { id, name: p.name, formats: p.formats, stateful: !!p.stateful, configured: p.configured(), mock: p.mock(), options: Object.fromEntries(p.formats.map((f: any) => [f, p.options(f)])) }] }))
+    const printers = Object.fromEntries(PRINTER_IDS.map((id) => { const p = PRINTERS[id]; return [id, { id, name: p.name, formats: p.formats, stateful: !!p.stateful, configured: p.configured(), mock: p.mock(), options: Object.fromEntries(p.formats.map((f: any) => [f, p.options(f)])) }] }))
     return { books, choices: CHOICES, printers }
   },
   grammar: { parse: () => ({ data: {}, content: '' }), serialise: () => { throw new Refusal(400, 'a print block is written by its actions') } },
@@ -78,7 +78,7 @@ export default {
       const slug = await bookOf(payload, ctx)
       const { readBlock } = await import('../../print/block.mjs')
       const { PRINTERS, FORMATS_PRINTED } = await import('../../print/suppliers.mjs')
-      const p = (PRINTERS as any)[payload.provider]
+      const p = PRINTERS[payload.provider]
       if (!p || !FORMATS_PRINTED.includes(payload.format)) throw new Refusal(400, 'unknown printer or format')
       const { printSpec } = await import('../../../src/lib/print-offers.js')
       const spec = printSpec(payload.print || (await readBlock(ctx.store, slug)).print || {})

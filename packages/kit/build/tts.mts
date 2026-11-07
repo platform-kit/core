@@ -289,7 +289,7 @@ async function syncBook(slug: any, manifest: any) {
   if (!st) return { uploaded: 0 }
   const named = new Set()
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): unknown[]', gave the following error. 
-  for (const e of Object.values(manifest.chapters || {})) for (const r of Object.values(e)) if (r && (r as any).file) named.add((r as any).file)
+  for (const e of Object.values(manifest.chapters || {})) for (const r of Object.values(e)) if (r && r.file) named.add(r.file)
   const inBucket = await listBucket(slug)
   const missing = [...named].filter((n) => !inBucket.has(n))
   const held = storeHas(slug)
@@ -330,7 +330,7 @@ class Pool {
           if (!line.trim()) continue
           let msg; try { msg = JSON.parse(line) } catch { continue }
           // @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
-          if (msg.ready) { resolve(); ;(this as any).idle.push(w); this.pump(); continue }
+          if (msg.ready) { resolve(); ;this.idle.push(w); this.pump(); continue }
           const job: any = w.busy; w.busy = null
           if (job) (msg.ok ? job.resolve(msg) : job.reject(new Error(msg.error || 'engine failed')))
           ;(this as any).idle.push(w); this.pump()
@@ -367,7 +367,7 @@ function encode(wav: any, out: any) {
 
 /* ---- the work ---- */
 // @ts-expect-error TS2345, from the conversion: Argument of type '{ name: "supertonic-3"; voice: string; steps: number; speed: number; gap: number; }' is not assignable to parameter of typ
-const hashOf = (text: any) => createHash('sha1').update(hashInput(text, ENGINE)).digest('hex').slice(0, 16)
+const hashOf = (text) => createHash('sha1').update(hashInput(text, ENGINE)).digest('hex').slice(0, 16)
 const stats = { spoken: 0, kept: 0, uploaded: 0, pulled: 0, chars: 0, seconds: 0, t0: Date.now() }
 
 function chaptersOf(bookRaw: any) {

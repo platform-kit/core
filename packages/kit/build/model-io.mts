@@ -23,34 +23,34 @@ import { KINDS, KIND_KEYS, LEAF_KINDS, RULES, RULE_KEYS, rulesFor } from '../src
 export const DIR = 'content/models'
 export const ACCESS = ['guest', 'authenticated', 'paid', 'subscribed']
 export const DELIVERY = ['data', 'pages', 'json', 'section']
-export const keyOk = (s: any) => /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(String(s || ''))
-export const fieldKeyOk = (s: any) => /^[a-z][a-zA-Z0-9]*(?:[_-][a-zA-Z0-9]+)*$/.test(String(s || ''))
+export const keyOk = (s: string) => /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(String(s || ''))
+export const fieldKeyOk = (s: string) => /^[a-z][a-zA-Z0-9]*(?:[_-][a-zA-Z0-9]+)*$/.test(String(s || ''))
 /* the keys an entry carries of its own — the file's name, its flag, its body — which no field may take */
 export const RESERVED = ['slug', 'path', 'published', 'body', 'raw', 'id', 'metadata', 'toc', 'excerpt']
 
 export const modelNames = async (store: any) => asStore(store).list(DIR)
-export const entryNames = async (store: any, key: any) => asStore(store).list(DIR + '/' + key)
+export const entryNames = async (store: string, key: string) => asStore(store).list(DIR + '/' + key)
 
 /* ---- reading ---- */
 const str = (v: any, d = '') => (v === undefined || v === null ? d : String(v))
-const bool = (v: any, d = false) => (v === undefined || v === null ? d : v === true || v === 'true')
+const bool = (v: string|boolean|null|undefined, d = false) => (v === undefined || v === null ? d : v === true || v === 'true')
 const options = (raw: any) => (Array.isArray(raw) ? raw : []).map((o) => (o && typeof o === 'object' ? { value: str(o.value), label: str(o.label, str(o.value)) } : { value: str(o), label: str(o) }))
 
 /* one field from the file, normalised: only what its kind needs is kept; faults go to `errors` */
-function readField(raw: any, path: any, errors: any, { nested = false } = {}) {
+function readField(raw: any, path: string, errors: string[], { nested = false } = {}) {
   const f = raw && typeof raw === 'object' ? raw : {}
-  const fault = (m: any) => errors.push(`${path}: ${m}`)
+  const fault = (m: string) => errors.push(`${path}: ${m}`)
   const key = str(f.key)
   if (!fieldKeyOk(key)) fault(`a field needs a key of letters, digits, - or _, starting with a letter (got "${key}")`)
   else if (!nested && RESERVED.includes(key)) fault(`"${key}" is an entry's own key and cannot be a field`)
   const kind = str(f.kind, 'text')
-  if (!(KINDS as any)[kind]) fault(`unknown kind "${kind}" — one of ${KIND_KEYS.join(', ')}`)
+  if (!KINDS[kind]) fault(`unknown kind "${kind}" — one of ${KIND_KEYS.join(', ')}`)
   else if (nested && !LEAF_KINDS.includes(kind)) fault(`a group or a list cannot hold a ${kind}: one level of structure only`)
   const out: any = { key, kind, label: str(f.label, key) }
   if (f.help) out.help = str(f.help)
   if (f.default !== undefined && f.default !== null && f.default !== '') out.default = f.default
   if (bool(f.required)) out.required = true
-  if (bool(f.unique)) { if ((KINDS as any)[kind] && (KINDS as any)[kind].base === 'string' && kind !== 'markdown') out.unique = true; else fault('unique is for the text kinds only') }
+  if (bool(f.unique)) { if (KINDS[kind] && KINDS[kind].base === 'string' && kind !== 'markdown') out.unique = true; else fault('unique is for the text kinds only') }
   if (bool(f.grid)) out.grid = true
   if (f.shown && typeof f.shown === 'object') {
     const is = str(f.shown.is, 'is')
@@ -62,9 +62,9 @@ function readField(raw: any, path: any, errors: any, { nested = false } = {}) {
     out.rules = []
     for (const r of f.rules) {
       const rule = r && typeof r === 'object' ? str(r.rule) : str(r)
-      if (!(RULES as any)[rule]) { fault(`unknown rule "${rule}" — one of ${RULE_KEYS.join(', ')}`); continue }
-      if ((KINDS as any)[kind] && !rulesFor(kind).includes(rule)) { fault(`the rule ${rule} does not apply to a ${kind}`); continue }
-      const shape = (RULES as any)[rule].params
+      if (!RULES[rule]) { fault(`unknown rule "${rule}" — one of ${RULE_KEYS.join(', ')}`); continue }
+      if (KINDS[kind] && !rulesFor(kind).includes(rule)) { fault(`the rule ${rule} does not apply to a ${kind}`); continue }
+      const shape = RULES[rule].params
       const p = r && typeof r === 'object' ? r.params : undefined
       const row: any = { rule }
       if (shape === 'n') { const n = Number(p); if (p === undefined || !Number.isFinite(n)) fault(`${rule} needs a number`); else row.params = n }
@@ -94,12 +94,12 @@ function readField(raw: any, path: any, errors: any, { nested = false } = {}) {
   }
   return out
 }
-function dupKeys(fields: any, path: any, errors: any) {
+function dupKeys(fields: any[], path: string, errors: string[]) {
   const seen = new Set()
   for (const f of fields) { if (seen.has(f.key)) errors.push(`${path}: two fields share the key "${f.key}"`); seen.add(f.key) }
 }
 
-export function readModel(text: any, name: any) {
+export function readModel(text: string, name: string|undefined) {
   const errors: any = []
   let data
   try { data = matter(text).data || {} } catch (e: any) { return { model: null, errors: [`${DIR}/${name}.md: ${e.message}`] } }
@@ -107,9 +107,9 @@ export function readModel(text: any, name: any) {
   const key = str(data.key, name)
   if (key !== name) errors.push(`${at}: the key "${key}" must be the file's name`)
   if (!keyOk(key)) errors.push(`${at}: a key is lower-case letters, digits and hyphens`)
-  const fields: any = (Array.isArray(data.fields) ? data.fields : []).map((f, i) => readField(f, `${at} fields[${i}]`, errors))
+  const fields = (Array.isArray(data.fields) ? data.fields : []).map((f, i) => readField(f, `${at} fields[${i}]`, errors))
   dupKeys(fields, at, errors)
-  const keys = fields.map((f: any) => f.key)
+  const keys = fields.map((f) => f.key)
   const title = str(data.title, keys[0] || '')
   if (!fields.length) errors.push(`${at}: a model needs at least one field`)
   else if (!keys.includes(title)) errors.push(`${at}: the title field "${title}" is not one of the model's fields`)
@@ -129,7 +129,7 @@ export function readModel(text: any, name: any) {
 }
 
 /* ---- writing ---- */
-function fieldOut(f: any) {
+function fieldOut(f: { key: any; kind: any; label: any; help: any; default: undefined; required: any; unique: any; grid: any; shown: { field: any; is: any; value: any }; rules: any[]; options: any[]; model: any; many: any; of: any; fields: any[] }) {
   const o: any = { key: f.key, kind: f.kind, label: f.label }
   if (f.help) o.help = f.help
   if (f.default !== undefined) o.default = f.default
@@ -137,8 +137,8 @@ function fieldOut(f: any) {
   if (f.unique) o.unique = true
   if (f.grid) o.grid = true
   if (f.shown) { o.shown = { field: f.shown.field, is: f.shown.is }; if ('value' in f.shown) o.shown.value = f.shown.value }
-  if (f.rules && f.rules.length) o.rules = f.rules.map((r: any) => ((RULES as any)[r.rule] && (RULES as any)[r.rule].params === 'none' ? { rule: r.rule } : { rule: r.rule, params: r.params }))
-  if (f.options) o.options = f.options.map((x: any) => ({ value: x.value, label: x.label }))
+  if (f.rules && f.rules.length) o.rules = f.rules.map((r: { rule: string|number; params: any }) => (RULES[r.rule] && RULES[r.rule].params === 'none' ? { rule: r.rule } : { rule: r.rule, params: r.params }))
+  if (f.options) o.options = f.options.map((x: { value: any; label: any }) => ({ value: x.value, label: x.label }))
   if (f.model) o.model = f.model
   if (f.many) o.many = true
   if (f.of) o.of = f.of
@@ -163,7 +163,7 @@ export function writeModel(m: any) {
 }
 
 /* ---- the set ---- */
-export async function readModels(store: any) {
+export async function readModels(store: string) {
   const st = asStore(store)
   const out = []
   for (const name of await modelNames(st)) {
@@ -173,14 +173,14 @@ export async function readModels(store: any) {
   const keys = new Set(out.filter((x) => x.model).map((x: any) => x.model.key))
   for (const x of out) {
     if (!x.model) continue
-    const walk = (fields: any, at: any) => { for (const f of fields || []) { if ((f.kind === 'reference' || f.of === 'reference') && f.model && !keys.has(f.model)) x.errors.push(`${DIR}/${x.name}.md field ${at}${f.key}: a reference to a model that is not there ("${f.model}")`); if (f.fields) walk(f.fields, at + f.key + '.') } }
+    const walk = (fields: any[], at: string) => { for (const f of fields || []) { if ((f.kind === 'reference' || f.of === 'reference') && f.model && !keys.has(f.model)) x.errors.push(`${DIR}/${x.name}.md field ${at}${f.key}: a reference to a model that is not there ("${f.model}")`); if (f.fields) walk(f.fields, at + f.key + '.') } }
     walk(x.model.fields, '')
   }
   return out.sort((a, b) => ((a.model && a.model.name) || a.name).localeCompare((b.model && b.model.name) || b.name))
 }
-export const publishedModels = async (store: any) => (await readModels(store)).filter((x) => x.model && x.model.published && !x.errors.length).map((x) => x.model)
+export const publishedModels = async (store: string) => (await readModels(store)).filter((x) => x.model && x.model.published && !x.errors.length).map((x) => x.model)
 
-export async function saveModel(store: any, m: any) {
+export async function saveModel(store: any, m: { key: string }) {
   const text = writeModel(m)
   const { errors } = readModel(text, m.key)
   if (errors.length) return { ok: false, errors }
@@ -190,7 +190,7 @@ export async function saveModel(store: any, m: any) {
 
 /* ---- carrying the entries along ---- */
 /* the line `from:` at the top level of an entry's frontmatter becomes `to:`; nothing else in the file moves */
-export async function renameField(store: any, key: any, from: any, to: any) {
+export async function renameField(store: string, key: string, from: string, to: string) {
   const st = asStore(store)
   let n = 0
   for (const slug of await entryNames(st, key)) {
@@ -207,7 +207,7 @@ export async function renameField(store: any, key: any, from: any, to: any) {
   return n
 }
 /* the model's file and folder renamed; every other model's reference fields that name it, renamed in their files */
-export async function renameModel(store: any, from: any, to: any) {
+export async function renameModel(store: string, from: string, to: string) {
   const st = asStore(store)
   if (!keyOk(to)) throw new Error('a key is lower-case letters, digits and hyphens')
   if (await st.exists(DIR + '/' + to + '.md') || (await st.list(DIR + '/' + to)).length) throw new Error(`a model "${to}" is already there`)
@@ -222,7 +222,7 @@ export async function renameModel(store: any, from: any, to: any) {
   for (const x of await readModels(st)) {
     if (!x.model || x.name === to) continue
     let touched = false
-    const walk = (fields: any) => { for (const f of fields || []) { if (f.model === from) { f.model = to; touched = true } if (f.fields) walk(f.fields) } }
+    const walk = (fields: any[]) => { for (const f of fields || []) { if (f.model === from) { f.model = to; touched = true } if (f.fields) walk(f.fields) } }
     walk(x.model.fields)
     if (touched) { await st.write(DIR + '/' + x.name + '.md', writeModel(x.model), { collection: 'models', slug: x.name, data: x.model }); carried++ }
   }

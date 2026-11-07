@@ -27,13 +27,13 @@ const SENTENCE = /(?<!Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.|Sr\.|Jr\.|Ph\.D\.|etc\.|e\.g\.
 export const FIRST_WORDS = 12     /* how short the opening piece tries to be */
 export const PACK = 300           /* and how long the rest may run, as the audiobook packs them */
 
-const words = (s: any) => s.trim().split(/\s+/).filter(Boolean)
+const words = (s: string) => s.trim().split(/\s+/).filter(Boolean)
 
 /*
  * The opening piece: the first sentence, or its first clause when the sentence runs longer than
  * `n` words and there is a boundary to stop at. Answers [head, rest].
  */
-export function openingCut(sentence: any, n = FIRST_WORDS) {
+export function openingCut(sentence: string, n = FIRST_WORDS) {
   const s = String(sentence || '').trim()
   if (!s) return ['', '']
   if (words(s).length <= n) return [s, '']
@@ -51,7 +51,7 @@ export function openingCut(sentence: any, n = FIRST_WORDS) {
 }
 
 /* the rest, packed as the audiobook packs them */
-function pack(sentences: any, max: any) {
+function pack(sentences: string[], max: number) {
   const out = []
   let cur = ''
   for (const s of sentences) {
@@ -67,7 +67,7 @@ function pack(sentences: any, max: any) {
  * THE WHOLE ANSWER, CUT FOR SPEAKING. The first piece is short; everything after it is packed.
  * `first: false` gives the audiobook's own behaviour, so one function serves both.
  */
-export function talkPieces(text: any, { first = FIRST_WORDS, max = PACK } = {}) {
+export function talkPieces(text: string|null, { first = FIRST_WORDS, max = PACK } = {}) {
   const paragraphs = String(text || '').trim().split(/\n\s*\n+/).map((p) => p.trim()).filter(Boolean)
   const sentences = []
   for (const p of paragraphs) for (const s of p.split(SENTENCE)) if (s.trim()) sentences.push(s.trim())
@@ -86,7 +86,7 @@ export function talkPieces(text: any, { first = FIRST_WORDS, max = PACK } = {}) 
  * ever waited for. A site that wants one quality throughout sets them equal.
  */
 // @ts-expect-error TS7022, from the conversion: 'steps' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer
-export function stepsFor(i: any, { steps = 8, opening = steps } = {}) {
+export function stepsFor(i, { steps = 8, opening = steps } = {}) {
   return i === 0 ? opening : steps
 }
 

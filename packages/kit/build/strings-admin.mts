@@ -6,7 +6,7 @@
 import matter from 'gray-matter'
 
 /* ---- ui strings: `## group / ### key / field: value`, the same shape velite reads ---- */
-export function parseStrings(raw: any) {
+export function parseStrings(raw: string) {
   const fm = matter(raw)
   const groups: any = {}
   let group = null, key = null
@@ -24,7 +24,7 @@ export function parseStrings(raw: any) {
   const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw)
   return { scope: fm.data.scope || '', title: fm.data.title || '', fmRaw: m ? m[1] : `scope: ${fm.data.scope || ''}`, spaced: /^###[^\n]*\n\n/m.test(fm.content), groups }
 }
-export function serialiseStrings(fmRaw: any, groups: any, spaced = false) {
+export function serialiseStrings(fmRaw: string, groups: { [s: string]: unknown }|ArrayLike<unknown>, spaced = false) {
   const lines = ['---', fmRaw.replace(/\n+$/, ''), '---', '']
   for (const [gname, keys] of Object.entries(groups)) {
     lines.push('## ' + gname, '')

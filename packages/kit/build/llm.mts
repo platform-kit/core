@@ -24,7 +24,7 @@ try {
 } catch { /* no .env */ }
 
 const argv = process.argv.slice(2)
-const opt = (k: any, d: any) => { const i = argv.indexOf(k); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
+const opt = (k: string, d: string) => { const i = argv.indexOf(k); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
 /* --thinking turns reasoning on at its low level; --thinking high asks for the full level where a provider has one */
 const thinkArg = (() => { const i = argv.indexOf('--thinking'); if (i < 0) return process.env.COMPANION_THINKING || ''; const v = argv[i + 1]; return v === 'high' || v === 'low' ? v : 'low' })()
 export const THINKING = !!thinkArg && thinkArg !== 'off'
@@ -32,7 +32,7 @@ export const THINKING_LEVEL = THINKING ? thinkArg : 'none'
 
 const DEFAULTS: any = { replicate: 'google/gemini-3.5-flash', openai: 'gpt-5-mini', anthropic: 'claude-sonnet-5' }
 const KEYS: any = { replicate: 'REPLICATE_API_TOKEN', openai: 'OPENAI_API_KEY', anthropic: 'ANTHROPIC_API_KEY' }
-const providerOf = (model: any) => (/^claude/i.test(model) ? 'anthropic' : /^(gpt|o\d|text-)/i.test(model) ? 'openai' : 'replicate')
+const providerOf = (model: string) => (/^claude/i.test(model) ? 'anthropic' : /^(gpt|o\d|text-)/i.test(model) ? 'openai' : 'replicate')
 const asked = opt('--model', process.env.COMPANION_MODEL || '')
 /* the chain: the asked-for model's provider first, then the rest in preference order, keys permitting */
 const ORDER = ['replicate', 'openai', 'anthropic']
@@ -44,7 +44,7 @@ export const ready = () => CHAIN.length > 0
 export const missingKey = () => KEYS[first]
 
 /* rough list prices per million tokens for the running estimate — check the real sheets */
-const PRICES: any = {
+const PRICES = {
   'google/gemini-3.5-flash': [0.3, 2.5], 'google/gemini-3-pro': [2, 12], 'gpt-5': [1.25, 10], 'gpt-5-mini': [0.25, 2], 'gpt-5-nano': [0.05, 0.4],
   'claude-opus-5': [15, 75], 'claude-sonnet-5': [3, 15], 'claude-haiku-4-5-20251001': [1, 5],
 }
@@ -52,7 +52,7 @@ export const spent: any = {}   /* model → { calls, input, output, cached } */
 /* the running estimate in dollars, at the list prices above; a model with no price on file counts as zero, so the guard is only as good as the table */
 export function spentUsd() {
   // @ts-expect-error TS2538, from the conversion: Type 'undefined' cannot be used as an index type.
-  return Object.entries(spent).reduce((sum, [m, s]) => { const p = PRICES[m] || PRICES[Object.keys(PRICES).find((k) => m.startsWith(k))]; return sum + (p ? (((s as any).input - (s as any).cached) * p[0] + (s as any).cached * p[0] / 10 + (s as any).output * p[1]) / 1e6 : 0) }, 0)
+  return Object.entries(spent).reduce((sum, [m, s]) => { const p = PRICES[m] || PRICES[Object.keys(PRICES).find((k) => m.startsWith(k))]; return sum + (p ? ((s.input - s.cached) * p[0] + s.cached * p[0] / 10 + s.output * p[1]) / 1e6 : 0) }, 0)
 }
 export function costLine() {
   return Object.entries(spent).map(([m, s]) => {
@@ -62,7 +62,7 @@ export function costLine() {
     return `${m}: ${(s as any).calls} calls · ${(s as any).input} in (${(s as any).cached} cached) · ${(s as any).output} out · ${usd == null ? 'no price on file' : '≈ $' + usd.toFixed(3) + ' at list price'}`
   }).join('\n') || 'no calls'
 }
-const tally = (model: any, u: any) => { const s = spent[model] || (spent[model] = { calls: 0, input: 0, output: 0, cached: 0 }); s.calls++; s.input += u.input_tokens; s.output += u.output_tokens; s.cached += u.cached }
+const tally = (model: string|number, u: { input_tokens: any; output_tokens: any; cached: any }) => { const s = spent[model] || (spent[model] = { calls: 0, input: 0, output: 0, cached: 0 }); s.calls++; s.input += u.input_tokens; s.output += u.output_tokens; s.cached += u.cached }
 const approxTokens = (t: any) => Math.round(String(t || '').length / 4)
 
 /* ---- providers ---- */
@@ -103,7 +103,7 @@ async function anthropicCall({ model, system, user, maxTokens, temperature, thin
   else if (temperature != null) req.temperature = temperature
   const msg = await anthropic.messages.stream(req).finalMessage()
   const u = msg.usage || {}
-  return { text: msg.content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join('\n'),
+  return { text: msg.content.filter((c: { type: string }) => c.type === 'text').map((c: { text: any }) => c.text).join('\n'),
     usage: { input_tokens: (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0), output_tokens: u.output_tokens || 0, cached: u.cache_read_input_tokens || 0 } }
 }
 const CALL: any = { replicate: replicateCall, openai: openaiCall, anthropic: anthropicCall }

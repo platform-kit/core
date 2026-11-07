@@ -156,13 +156,13 @@ export const SURFACES = {
 export const ALL = () => ({ ...FEATURES, ...SURFACES })
 
 /* the answer for one thing in one shape, and what it is worth reading back */
-export const cellOf = (name: any, mode: any) => {
+export const cellOf = (name: string|number, mode: string|number) => {
   const f = (ALL() as any)[name]
   if (!f) return null
   return Object.prototype.hasOwnProperty.call(f, mode) ? f[mode] : null
 }
-export const worksIn = (name: any, mode: any) => cellOf(name, mode) !== false && cellOf(name, mode) !== null
-export const exceptionOf = (name: any, mode: any) => {
+export const worksIn = (name: string|number, mode: string|number) => cellOf(name, mode) !== false && cellOf(name, mode) !== null
+export const exceptionOf = (name: string|number, mode: string|number) => {
   const c = cellOf(name, mode)
   return c && typeof c === 'object' ? c : null
 }

@@ -41,7 +41,7 @@ export function amountOf(rule: any, collected = 0) {
 /* WHEN IT MAY BE SENT. The site holds it for a while after the money was collected — not to hold
    the money, but so a refund inside the window reverses a line instead of chasing money already
    sent. A business that pays out same-day is a business that asks providers for money back. */
-export function payableAt(collectedAt: any, delayMinutes = 0) {
+export function payableAt(collectedAt: string, delayMinutes = 0) {
   const at = new Date(collectedAt || Date.now()).getTime()
   const wait = Math.max(0, Number(delayMinutes) || 0)
   return new Date((isFinite(at) ? at : Date.now()) + wait * 60000).toISOString()
@@ -50,7 +50,7 @@ export function payableAt(collectedAt: any, delayMinutes = 0) {
 /* WHAT A REFUND REVERSES. In proportion, so half the payment back is half the amount earned back,
    and never more than was earned — a rounding that reversed a penny more than it gave is a ledger
    that drifts. A line that never became payable is not reversed at all: it simply never was. */
-export function reversalOf(line: any, refunded: any, collected: any) {
+export function reversalOf(line: { amount: any }, refunded: number, collected: number) {
   const earned = Math.max(0, Number((line && line.amount) || 0))
   const back = Math.max(0, Number(refunded) || 0)
   const paid = Math.max(0, Number(collected) || 0)
@@ -103,7 +103,7 @@ export function linesFor({ rules = [], booking = {}, collected = 0, delay = 0 } 
 }
 
 /* a span as the policy writes it → whole minutes, the same grammar a space's window takes */
-export function spanMinutes(v: any) {
+export function spanMinutes(v: string|null) {
   const m = /^(\d+(?:\.\d+)?)\s*(m|h|d|w)?$/.exec(String(v == null ? '' : v).trim().toLowerCase())
   if (!m) return null
   const n = Number(m[1])

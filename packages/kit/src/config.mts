@@ -83,7 +83,15 @@ export interface SiteConfig {
   recommendations?: Record<string, unknown>
   spaces?: Record<string, unknown>
   store?: Record<string, unknown>
+  webhooks?: SiteWebhook[]
 }
+
+/* a subscription the deployment ships already wired (build/webhooks-config.mjs); a secret is named, never written */
+export type SiteWebhook =
+  | { kind: 'content'; name: string; url: string; topics?: string[] }
+  | { kind: 'form'; form: string; tag: string; url: string; secret?: `env:${string}` }
+  | { kind: 'scheduling'; url: string; triggers?: string[]; secret?: `env:${string}` }
+  | { kind: 'support'; url: string; subscriptions?: string[] }
 
 export function defineSite<C extends SiteConfig>(config: C): C {
   return config

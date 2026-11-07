@@ -24,4 +24,4 @@ export async function corpus() {
 
 /* what the preview has in hand, without fetching: null until somebody has asked for the index at
    all, in which case there is nothing of its to rewrite either. */
-export const loadedCorpus: any = () => rows
+export const loadedCorpus = () => rows

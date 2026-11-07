@@ -21,7 +21,7 @@ export const DIR = 'content/achievements'
 export const TRAITS = 'content/traits.md'
 
 /* the rule as the file writes it, as the table takes it */
-const ruleOf = (slug: any, d: any) => {
+const ruleOf = (slug: any, d: { [x: string]: any; when?: any; title?: any; sub?: any; icon?: any; colour?: any; cover?: any; canAccess?: any; shown?: any; order?: any }) => {
   const w = d.when || {}
   return {
     slug,
@@ -40,7 +40,7 @@ const ruleOf = (slug: any, d: any) => {
   }
 }
 
-const same = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
+const same = (a: { id: string; event: string; match: any; key: string; value: string; position: number }, b: { [x: string]: any }) => JSON.stringify(a) === JSON.stringify(b)
 
 /*
  * Given a store and a database this needs nothing else — no environment, no disk — so the admin's
@@ -50,7 +50,7 @@ const same = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
 export async function pushAchievements({ check = false, root = process.cwd(), store = null, quiet = false, db: client = null } = {}) {
   const st = asStore(store || root)
   const said: any = []
-  const say = (m: any) => { said.push(m); if (!quiet) console.log('  ' + m) }
+  const say = (m: string) => { said.push(m); if (!quiet) console.log('  ' + m) }
 
   /* the files */
   const want = []
@@ -75,7 +75,7 @@ export async function pushAchievements({ check = false, root = process.cwd(), st
   const scored: any = {}
   for (const c of courses) for (const l of c.lessons) if (l.kind === 'form' && l.ref && !(l.ref in scored)) scored[l.ref] = /^#!\s*score\s*=\s*\S/m.test((await st.read(`content/forms/${l.ref}.md`)) || '')
   // @ts-expect-error TS2322, from the conversion: Type '(ref: any) => any' is not assignable to type '() => boolean'. Target signature provides too few arguments. Expected 1 or more, but got
-  for (const r of quizAchievements(courses, { scored: (ref: any) => scored[ref] })) if (!fromFiles.has(r.slug)) want.push(r)
+  for (const r of quizAchievements(courses, { scored: (ref) => scored[ref] })) if (!fromFiles.has(r.slug)) want.push(r)
 
   /* the traits file */
   let traits = [], visible = ['admin']

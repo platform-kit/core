@@ -15,7 +15,7 @@ export function commitAndPush({ paths, message, mode, prefix = 'PRINT', cwd = pr
   if (!mode || mode === '0' || mode === 'false') return false
   const TOKEN = (process.env[prefix + '_GITHUB_TOKEN'] || process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim()
   const blank = (s: any) => (TOKEN ? String(s).split(TOKEN).join('***') : String(s))
-  const git = (args: any, quiet = false) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', quiet ? 'ignore' : 'pipe'] }).trim()
+  const git = (args: any[]|readonly string[], quiet = false) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', quiet ? 'ignore' : 'pipe'] }).trim()
   let changed
   try { changed = git(['status', '--porcelain', '--', ...paths]) } catch (e: any) { log('not a git checkout, nothing committed: ' + blank(e.message)); return false }
   if (!changed) return false

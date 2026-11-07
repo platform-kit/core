@@ -30,7 +30,7 @@ export function hoursTable(products = []) {
 export function hoursFor(table: any, peer: any, rank = () => 0) {
   if (!peer) return 0
   // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
-  const tiers = (peer.tiers || []).filter((x: any) => table.tier[x]).sort((a: any, b: any) => rank(b) - rank(a))
+  const tiers = (peer.tiers || []).filter((x) => table.tier[x]).sort((a, b) => rank(b) - rank(a))
   if (tiers.length) return table.tier[tiers[0]]
   return peer.session_chat ? table.session : 0
 }
@@ -163,4 +163,4 @@ export async function read(supabase: any, id: any, me: any) {
 
 const newId = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID()
   // @ts-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'number[]' and 'number'.
-  : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c: any) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)))
+  : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)))

@@ -203,12 +203,12 @@ export function toEntry(collection: any, row: any, ctx: any) {
       if (model.errors.length) return null
       const slug = id(path, 'forms')
       const lean = (b: any) => { const { raw, ...rest } = b; if (rest.blocks) rest.blocks = rest.blocks.map(lean); return rest }
-      const slides = model.slides.map((sl: any) => { const { raw, head, ...rest }: any = sl; return { ...rest, blocks: sl.blocks.map(lean) } })
+      const slides = model.slides.map((sl) => { const { raw, head, ...rest } = sl; return { ...rest, blocks: sl.blocks.map(lean) } })
       return { slug, id: slug, title: model.title || slug, published: model.kit.published !== false, warnings: model.warnings, model: { settings: model.settings, kit: model.kit, data: model.data, title: model.title, slides, fields: model.fields.map((f: any) => ({ name: f.name, kind: f.kind, required: f.required, slide: f.slide, question: f.params.question })) } }
     }
     case 'ui': {
       /* the site's words over the bundle's scope (the theme's defaults with the site's as built): a field the row leaves out stays the default */
-      const h: any = stringsHead(row.text || '')
+      const h = stringsHead(row.text || '')
       const scope = h.scope || d.scope
       if (!scope) return null
       const was = bundle('ui').find((u: any) => u && u.scope === scope)

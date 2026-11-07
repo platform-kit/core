@@ -60,7 +60,7 @@ export const is = {
    default later fails the suite instead of quietly turning the rule into a liar. */
 export const NATIVE_ONLY = ['seats', 'hosts', 'repeats', 'team', 'buffer', 'page']
 
-export const RULES: any = {
+export const RULES = {
   sessions: [
     {
       key: 'session-one-scheduler',
@@ -150,7 +150,7 @@ export const RULES: any = {
 export function rulesFor(collection: any, { rules = {}, rulesOff = [] } = {}) {
   const off = new Set(rulesOff)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-  return [...(RULES[collection] || []), ...((rules as any)[collection] || [])].filter((r) => !off.has(r.key))
+  return [...(RULES[collection] || []), ...(rules[collection] || [])].filter((r) => !off.has(r.key))
 }
 
 /* THE WHOLE CHECK. `collections` is velite's compiled set; the answer is every fault, so one run

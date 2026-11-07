@@ -13,7 +13,7 @@ export async function filesFor(slug: any, fresh = false) {
   const { data, error } = await supabase.functions.invoke('book-files', { body: { book: slug } })
   if (error) throw error
   /* the function signs a path; the public address goes in front of it */
-  const files = ((data && data.files) || []).map((f: any) => ({ ...f, url: /^\//.test(f.url) ? SUPABASE_URL.replace(/\/$/, '') + f.url : f.url }))
+  const files = ((data && data.files) || []).map((f: { url: string }) => ({ ...f, url: /^\//.test(f.url) ? SUPABASE_URL.replace(/\/$/, '') + f.url : f.url }))
   cache.set(slug, files)
   return files
 }

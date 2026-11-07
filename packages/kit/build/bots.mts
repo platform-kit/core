@@ -145,7 +145,7 @@ export async function readTools(st: any) {
     const parsed = matter(String((await st.read(`content/tools/${name}.md`)) || ''))
     const d = parsed.data || {}
     const where = `tools/${name}.md`
-    if ((BUILTINS as any)[name]) { faults.push(`${where}: "${name}" is one of the kit's own tools — give this one another name.`); continue }
+    if (BUILTINS[name]) { faults.push(`${where}: "${name}" is one of the kit's own tools — give this one another name.`); continue }
     const rec: any = {
       name, kind: d.openapi ? 'openapi' : d.module ? 'code' : null,
       description: d.description || String(parsed.content || '').trim().split('\n')[0] || name,
@@ -332,7 +332,7 @@ export async function readBots(st: any, { tools = {}, skills = {}, sealed = null
     if (bot.voice && !bot.surfaces.includes('voice')) {
       faults.push(`${where}: this declares how it sounds but not the voice surface — add \`surfaces: [voice]\`, or take the \`voice:\` block out.`)
     }
-    for (const t of bot.tools) if (!(BUILTINS as any)[t] && !(tools as any)[t]) faults.push(`${where}: no tool called "${t}".`)
+    for (const t of bot.tools) if (!BUILTINS[t] && !(tools as any)[t]) faults.push(`${where}: no tool called "${t}".`)
     for (const s of bot.skills) if (!(skills as any)[s]) faults.push(`${where}: no skill called "${s}".`)
     for (const h of bot.hears) {
       if (h.kind === 'schedule') {
@@ -413,7 +413,7 @@ export async function readCommands(st: any, { bots = [], tools = {} } = {}) {
     if (its) for (const s of cmd.surfaces) {
       if (!its.surfaces.includes(s)) faults.push(`${where}: this runs on "${s}" but "${cmd.bot}" only works on ${its.surfaces.join(", ")}.`)
     }
-    if (cmd.tool && !(BUILTINS as any)[cmd.tool] && !(tools as any)[cmd.tool]) faults.push(`${where}: no tool called "${cmd.tool}".`)
+    if (cmd.tool && !BUILTINS[cmd.tool] && !(tools as any)[cmd.tool]) faults.push(`${where}: no tool called "${cmd.tool}".`)
     if (!cmd.bot && !cmd.tool) faults.push(`${where}: a command either asks a bot or runs a tool.`)
     if (cmd.bot && !cmd.prompt) faults.push(`${where}: a command that asks a bot says what to ask it.`)
     out.push(cmd)
@@ -453,7 +453,7 @@ export async function compileBots({ root = process.cwd(), store, check = false, 
   const { commands, faults: cf } = await readCommands(st, { bots, tools })
   /* a skill's own tools must exist too, or opening it offers a tool nothing can run */
   for (const [name, s] of Object.entries(skills)) {
-    for (const t of (s as any).tools || []) if (!(BUILTINS as any)[t] && !(tools as any)[t]) sf.push(`skills/${name}.md: no tool called "${t}".`)
+    for (const t of (s as any).tools || []) if (!BUILTINS[t] && !tools[t]) sf.push(`skills/${name}.md: no tool called "${t}".`)
   }
   const faults = [...tf, ...sf, ...bf, ...cf]
   if (faults.length) {

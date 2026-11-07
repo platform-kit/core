@@ -82,7 +82,7 @@ export async function namesOf(model: any, root: any, store?: any) {
 }
 /* what a model is handed: the store it reads and writes with, the root and a script runner for what needs a machine */
 // @ts-expect-error TS1117, from the conversion: An object literal cannot have multiple properties with the same name.
-const ctxOf = (model: any, root: any, extra: any) => { const store = extra.store || gitStore(root); return { root, model, store, path, matter, script: (n: any, a: any, env: any) => (store.kind === 'git' ? script(n, a, root, env) : Promise.resolve({ skipped: 'the deploy runs it' })), ...extra, store } }   /* a script needs a machine: over the rows it waits for the deploy */
+const ctxOf = (model, root, extra) => { const store = extra.store || gitStore(root); return { root, model, store, path, matter, script: (n, a, env) => (store.kind === 'git' ? script(n, a, root, env) : Promise.resolve({ skipped: 'the deploy runs it' })), ...extra, store } }   /* a script needs a machine: over the rows it waits for the deploy */
 
 export async function read(model: any, name: any, root: any, extra = {}) {
   const ctx = ctxOf(model, root, { name, ...extra })

@@ -41,9 +41,9 @@ const door = () => (publicFunctionsUrl ? publicFunctionsUrl.replace(/\/v1\/?$/, 
 const core = createCore({
   endpoint: typeof window !== 'undefined' && configured ? door() : '',
   apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-  token: () => (session.value && (session.value as any).access_token) || null,
+  token: () => (session.value && session.value.access_token) || null,
   prefix: 'dl.',
-  store: { get: (k: any) => storeGet('dl.' + k), set: (k: any, v: any) => storeSet('dl.' + k, v), remove: (k: any) => storeSet('dl.' + k, null) },
+  store: { get: (k: string) => storeGet('dl.' + k), set: (k: string, v: string|null) => storeSet('dl.' + k, v), remove: (k: string) => storeSet('dl.' + k, null) },
 })
 export const anonId = () => core.anonId()
 
@@ -55,7 +55,7 @@ let started = false
 export const IN_PREVIEW = (typeof location !== 'undefined' && location.pathname === '/__preview')
   || (typeof navigator !== 'undefined' && /PlatformKitPrerender/.test(navigator.userAgent))   /* build/prerender.mjs */
 
-export function capture(type: any, props = {}, cols = {}) {
+export function capture(type: string, props = {}, cols = {}) {
   if (typeof window === 'undefined' || IN_PREVIEW) return
   core.capture(type, props || {}, cols)
 }
@@ -86,7 +86,7 @@ const AWAY_MS = 60000
 const SIGNALS = ['pointermove', 'pointerdown', 'keydown', 'scroll', 'touchstart', 'wheel']
 let lastSignal = 0, idleTimer: any = null
 const depthNow = () => { const h = Math.max(1, document.documentElement.scrollHeight - window.innerHeight); return h <= 1 ? 100 : Math.min(100, Math.round(((window.scrollY || 0) / h) * 100)) }
-function startReading(meta: any) {
+function startReading(meta: { kind: any; id: any; title: any; tags: any[]; topics: any[]|null }) {
   reading = { ...meta, path: location.pathname, since: null, seconds: 0, depth: depthNow(), idle: false }
   lastSignal = Date.now()
   if (document.visibilityState !== 'hidden') reading.since = lastSignal
@@ -100,7 +100,7 @@ function goIdle() {
   if (reading.since) { reading.seconds += Math.max(0, lastSignal + AWAY_MS - reading.since) / 1000; reading.since = null }
   reading.idle = true
 }
-function onReadSignal(e: any) {
+function onReadSignal(e: { type: string }) {
   if (!reading) return
   lastSignal = Date.now()
   if (e.type === 'scroll') reading.depth = Math.max(reading.depth, depthNow())

@@ -13,7 +13,7 @@ export function resolveHead({ title = '', description = '', image = '', path = n
 }
 
 export function resolveSiteHomeHead({ site, pages = [], ui = [], modules = {} }: any = {}, defaultImage = '/share/default.png') {
-  const page: any = pages.find((entry: any) => entry.route === '/')
+  const page = pages.find((entry: any) => entry.route === '/')
   if (page) {
     return resolveHead({
       title: page.seoTitle || (page.route === '/' ? '' : page.title),
@@ -23,12 +23,12 @@ export function resolveSiteHomeHead({ site, pages = [], ui = [], modules = {} }:
     }, site, defaultImage)
   }
 
-  const on = (name: any) => (modules as any)[name] !== false
+  const on = (name: string) => modules[name] !== false
   const accounts = ['store', 'memberships', 'sessions', 'coaching', 'support', 'instrument', 'recommendations'].some(on)
   const docsOnly = on('docs') && !['articles', 'books', 'wiki'].some(on) && !accounts
   const index = docsOnly ? 'docs' : 'hub'
-  const pagesWords: any = ui.find((entry: any) => entry.scope === 'pages')
-  const indexWords: any = pagesWords && pagesWords.groups && pagesWords.groups.seo && pagesWords.groups.seo[index]
+  const pagesWords = ui.find((entry: any) => entry.scope === 'pages')
+  const indexWords = pagesWords && pagesWords.groups && pagesWords.groups.seo && pagesWords.groups.seo[index]
   return resolveHead({
     title: (indexWords && indexWords.title) || '',
     description: (indexWords && indexWords.description) || '',

@@ -7,7 +7,7 @@
 import { supabase, configured, url as SUPABASE_URL } from './supabase.js'
 
 const cache = new Map()
-const here = (p: any) => (p && /^\//.test(p) ? SUPABASE_URL.replace(/\/$/, '') + p : p || null)
+const here = (p: string) => (p && /^\//.test(p) ? SUPABASE_URL.replace(/\/$/, '') + p : p || null)
 export async function recordingFor(uid: any, fresh = false) {
   if (!supabase || !configured) return null
   if (!fresh && cache.has(uid)) return cache.get(uid)

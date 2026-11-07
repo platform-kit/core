@@ -42,7 +42,7 @@ export default defineAgent({
       },
     })
 
-    const send = (message: any) => ctx.room.localParticipant.publishData(
+    const send = (message: { id: any; text?: string; error?: boolean }) => ctx.room.localParticipant.publishData(
       new TextEncoder().encode(JSON.stringify(message)),
       { reliable: true, topic: OUTPUT_TOPIC, destination_identities: [participant.identity] },
     )
@@ -55,7 +55,7 @@ export default defineAgent({
     }
     session.on(AgentSessionEventTypes.ConversationItemAdded, reply)
 
-    const receiveText = (payload: any, sender: any, _kind: any, topic: any) => {
+    const receiveText = (payload: AllowSharedBufferSource|undefined, sender: { identity: string }, _kind: any, topic: string) => {
       if (topic !== INPUT_TOPIC || sender?.identity !== participant.identity) return
       const turn = inputOf(payload)
       if (!turn) return

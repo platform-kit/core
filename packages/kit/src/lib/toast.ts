@@ -11,7 +11,7 @@ import { ref } from 'vue'
 export const current = ref<any>(null)
 let timer: any = null
 
-export function toast(t: any) {
+export function toast(t: { kind: any; title: any; body: any; dismiss: any; ms?: any; action?: any }) {
   clearTimeout(timer)
   current.value = { title: t.title || '', body: t.body || '', dismiss: t.dismiss || '', action: t.action || null, kind: t.kind || 'note', at: Date.now() }
   const ms = t.ms == null ? 8000 : t.ms
@@ -19,4 +19,4 @@ export function toast(t: any) {
 }
 export function hide() { clearTimeout(timer); current.value = null }
 /* the action, then the toast goes */
-export async function act() { const a: any = current.value && (current.value as any).action; hide(); if (a && a.run) await a.run() }
+export async function act() { const a = current.value && current.value.action; hide(); if (a && a.run) await a.run() }

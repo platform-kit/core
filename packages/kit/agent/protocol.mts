@@ -1,7 +1,7 @@
 export const INPUT_TOPIC = 'copilot.input'
 export const OUTPUT_TOPIC = 'copilot.output'
 
-export function inputOf(payload: any) {
+export function inputOf(payload: AllowSharedBufferSource|undefined) {
   let value
   try {
     value = JSON.parse(new TextDecoder().decode(payload))
@@ -13,7 +13,7 @@ export function inputOf(payload: any) {
   return { id: value.id, text: value.text.trim().slice(0, 4000) }
 }
 
-export function assistantText(item: any) {
+export function assistantText(item: { type: any; role: any; content: any }) {
   if (item?.type !== 'message' || item.role !== 'assistant' || !Array.isArray(item.content)) return ''
   return item.content.filter((part: any) => typeof part === 'string').join('').trim()
 }

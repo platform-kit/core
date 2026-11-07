@@ -21,8 +21,8 @@ export const CHOICES: any = { contents: CONTENTS, cloth: CLOTHS, foil: FOILS, tr
 const ORDER = ['key', 'currency', 'ebook', 'main', 'contents', 'formats', 'printers', 'providers', 'includes', 'files', 'cloth', 'foil', 'trim', 'paper', 'spine', 'blurb', 'flap', 'note', 'rights', 'proofed']
 
 /* the block's lines in a book's front matter: [start, end) or null */
-function span(lines: any) {
-  const start = lines.findIndex((l: any) => /^print:/.test(l))
+function span(lines: any[]) {
+  const start = lines.findIndex((l: string) => /^print:/.test(l))
   if (start < 0) return null
   let end = start + 1
   while (end < lines.length && !/^\S/.test(lines[end])) end++
@@ -30,7 +30,7 @@ function span(lines: any) {
 }
 
 /* { title, print } for a book, the block as the file has it (null when none) */
-export async function readBlock(store: any, slug: any) {
+export async function readBlock(store: any, slug: string) {
   const raw = await asStore(store).read('content/books/' + slug + '.md')
   if (raw == null) throw Object.assign(new Error('no such book: ' + slug), { code: 404 })
   const d = matter(raw).data
@@ -38,9 +38,9 @@ export async function readBlock(store: any, slug: any) {
 }
 
 /* the checks: [{ path, message }] */
-export function validateBlock(root: any, title: any, pr: any) {
+export function validateBlock(root: string|undefined, title: any, pr: { [x: string]: any; formats: any; printers: any; providers: any; main: string; contents: any; includes: any; spine: any; key: any; proofed: { [s: string]: unknown }|ArrayLike<unknown>|null }) {
   const out = []
-  const has = (v: any) => v != null && v !== ''
+  const has = (v: string|null) => v != null && v !== ''
   const formats = pr.formats && typeof pr.formats === 'object' ? pr.formats : {}
   for (const [f, v] of Object.entries(formats)) {
     if (!FORMATS.includes(f)) { out.push({ path: 'formats.' + f, message: `a format is one of ${FORMATS.join(' · ')}` }); continue }
@@ -71,7 +71,7 @@ export function validateBlock(root: any, title: any, pr: any) {
     for (const [k, v] of Object.entries(opts)) {
       const o = known.get(k)
       if (!o) { out.push({ path: `providers.${id}.${k}`, message: `${printer(id).name} has no option ${k}` }); continue }
-      if (o.type === 'select' && !o.choices.some((c: any) => String(c.value) === String(v))) out.push({ path: `providers.${id}.${k}`, message: `${o.label} is one of ${o.choices.map((c: any) => c.label).join(' · ')}` })
+      if (o.type === 'select' && !o.choices.some((c: { value: any }) => String(c.value) === String(v))) out.push({ path: `providers.${id}.${k}`, message: `${o.label} is one of ${o.choices.map((c: { label: any }) => c.label).join(' · ')}` })
     }
   }
   if (has(pr.main) && !MAINS.includes(pr.main)) out.push({ path: 'main', message: `the main offer is one of ${MAINS.join(' · ')}` })
@@ -89,7 +89,7 @@ export function validateBlock(root: any, title: any, pr: any) {
 }
 
 /* the block, cleaned to what is written: numbers as numbers, lists as lists, nothing empty */
-function clean(pr: any) {
+function clean(pr: { [x: string]: any; main: string }) {
   const spec = printSpec(pr)
   const out: any = {}
   for (const k of ORDER) {
@@ -124,7 +124,7 @@ function clean(pr: any) {
 
 /* write the block back (or remove it, pr null), the rest of the file byte for byte; a
    block with no key is given one. Returns the block as written. */
-export async function writeBlock(store: any, slug: any, pr: any) {
+export async function writeBlock(store: any, slug: string, pr: any) {
   const st = asStore(store)
   const file = 'content/books/' + slug + '.md'
   const raw = await st.read(file)

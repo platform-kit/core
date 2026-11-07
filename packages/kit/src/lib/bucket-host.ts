@@ -14,7 +14,7 @@
 const HERE = String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '')
 const BUCKET_PATH = /\/storage\/v1\/object\/(?:public\/)?content-assets\//
 
-export function here(u: any) {
+export function here(u: string|URL) {
   if (!HERE || typeof u !== 'string' || !/^https?:\/\//.test(u)) return u
   try { const x = new URL(u); return BUCKET_PATH.test(x.pathname) && x.origin !== HERE ? HERE + x.pathname + x.search : u }
   catch { return u }

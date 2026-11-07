@@ -10,10 +10,10 @@
  */
 
 /* of two people, which one opens the connection */
-export const shouldOffer = (me: any, them: any) => String(me) < String(them)
+export const shouldOffer = (me: string, them: string) => String(me) < String(them)
 
 /* the same rule said the other way, for the side that is expected to answer */
-export const shouldAnswer = (me: any, them: any) => String(me) > String(them)
+export const shouldAnswer = (me: string, them: string) => String(me) > String(them)
 
 /* a person in the room twice — two tabs, a reconnection — is one person; the newest wins */
 export function livePeers(seen = [], me = null, now = Date.now(), staleMs = 30000) {
@@ -28,7 +28,7 @@ export function livePeers(seen = [], me = null, now = Date.now(), staleMs = 3000
 }
 
 /* whether another person may join, and why not when they may not */
-export function roomFull(count: any, max: any) {
+export function roomFull(count: number, max: number) {
   const n = Number(count) || 0
   const cap = Number(max) || 0
   return cap > 0 && n >= cap
@@ -45,7 +45,7 @@ export function tiles(peers = [], me: any = {}, words: any = {}) {
 }
 
 /* how a call is laid out: one, two, or a grid. Pure so the page never computes it twice. */
-export function layoutOf(n: any, sharing = false) {
+export function layoutOf(n: number, sharing = false) {
   if (sharing) return 'stage'
   if (n <= 1) return 'alone'
   if (n === 2) return 'pair'
@@ -53,7 +53,7 @@ export function layoutOf(n: any, sharing = false) {
 }
 
 /* a connection's state said in one word the surface can show */
-export function stateOf(pc: any) {
+export function stateOf(pc: string) {
   const s = String(pc || '')
   if (s === 'connected' || s === 'completed') return 'connected'
   if (s === 'failed') return 'failed'

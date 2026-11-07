@@ -11,7 +11,7 @@
  */
 
 /* the reader's own chapter split, so a companion matches what the reader shows */
-export function bookChapterTitles(bookRaw: any) {
+export function bookChapterTitles(bookRaw: string) {
   return String(bookRaw || '').split(/^(?=# )/m).filter((s) => s.trim()).map((part) => {
     const m = /^# (.*)$/m.exec(part)
     return m ? m[1].trim() : 'Untitled'
@@ -22,12 +22,12 @@ const OPT_RE = /^\s*[-*]\s+\\?\[(x|X| )\\?\]\s*(.*)$/
 const Q_RE = /^\s*(\d+)[.)]\s+(.*)$/
 const WHY_RE = /^\s*(?:>\s*|why:\s*)(.*)$/i
 
-export function parseCompanionBody(md: any) {
+export function parseCompanionBody(md: string) {
   const chapters: any = [], issues = []
   const lines = String(md || '').split(/\r?\n/)
   let fence = false, cur: any = null, section = null, q: any = null
-  const closeQ: any = () => { if (q && cur) { cur.quiz.push(q); q = null } }
-  const finishChapter: any = () => {
+  const closeQ = () => { if (q && cur) { cur.quiz.push(q); q = null } }
+  const finishChapter = () => {
     closeQ()
     if (!cur) return
     cur.summaryMd = cur.summaryLines.join('\n').trim()
@@ -57,7 +57,7 @@ export function parseCompanionBody(md: any) {
   }
   finishChapter()
   for (const c of chapters) {
-    c.quiz.forEach((x: any, i: any) => {
+    c.quiz.forEach((x: { options: string|any[]; answer: number }, i: number) => {
       if (x.options.length !== 4) issues.push({ chapter: c.title, message: `question ${i + 1}: ${x.options.length} options (needs 4)` })
       if (x.answer < 0) issues.push({ chapter: c.title, message: `question ${i + 1}: no correct option marked [x]` })
     })
@@ -67,13 +67,13 @@ export function parseCompanionBody(md: any) {
 
 /* one canonical body (no frontmatter) */
 export function serialiseCompanionBody(chapters: any) {
-  return (chapters || []).map((c: any) => {
+  return (chapters || []).map((c: { title: any; summaryMd: string; essence: any[]; quiz: any[] }) => {
     const parts = [`# ${c.title}`]
     if (c.summaryMd && c.summaryMd.trim()) parts.push('## Summary\n\n' + c.summaryMd.trim())
-    if (c.essence && c.essence.length) parts.push('## Essence\n\n' + c.essence.map((e: any) => '- ' + e.trim()).join('\n'))
+    if (c.essence && c.essence.length) parts.push('## Essence\n\n' + c.essence.map((e: string) => '- ' + e.trim()).join('\n'))
     if (c.quiz && c.quiz.length) {
-      parts.push('## Quiz\n\n' + c.quiz.map((x: any, i: any) => {
-        const opts = x.options.map((o: any, j: any) => `   - [${j === x.answer ? 'x' : ' '}] ${o.trim()}`).join('\n')
+      parts.push('## Quiz\n\n' + c.quiz.map((x: { options: any[]; answer: any; q: string; why: string }, i: number) => {
+        const opts = x.options.map((o: string, j: any) => `   - [${j === x.answer ? 'x' : ' '}] ${o.trim()}`).join('\n')
         return `${i + 1}. ${x.q.trim()}\n${opts}` + (x.why ? `\n   > ${x.why.trim()}` : '')
       }).join('\n\n'))
     }

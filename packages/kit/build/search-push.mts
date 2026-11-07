@@ -35,7 +35,7 @@ import { isMain } from './is-main.mjs'
  */
 export function rowsFrom(root = process.cwd(), { models = [] } = {}) {
   const dir = path.join(root, '.velite')
-  const read = (f: any) => { try { return JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) } catch { return [] } }
+  const read = (f: string) => { try { return JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) } catch { return [] } }
   const rows = searchRows({
     articles: read('articles.json'), wiki: read('wiki.json'), docs: read('docs.json'),
     books: read('books.json'),

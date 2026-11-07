@@ -27,7 +27,7 @@ export function treeOf(rows = []) {
     if (p && !loops) p.kids.push(r)
     else roots.push(r)
   }
-  const at = (n: any, d: any) => { n.depth = d; n.kids.forEach((k: any) => at(k, d + 1)) }
+  const at = (n: { depth: any; kids: any[] }, d: number) => { n.depth = d; n.kids.forEach((k: any) => at(k, d + 1)) }
   roots.forEach((n) => at(n, 0))
   return roots
 }
@@ -44,7 +44,7 @@ export function shape(rows = [], { depth = 3, collapse = 5, open = [] } = {}) {
   const most = Math.max(1, Number(collapse) || 1)
   const opened = new Set(open || [])
   const out: any = []
-  const line = (n: any, parent: any) => ({
+  const line = (n: { depth: number }, parent: { id: any; name: any }) => ({
     ...n,
     /* the indent stops; the conversation does not */
     indent: Math.min(n.depth, stop),
@@ -53,7 +53,7 @@ export function shape(rows = [], { depth = 3, collapse = 5, open = [] } = {}) {
        does. Null while the indent still says it. */
     answers: n.depth > stop && parent ? { id: parent.id, name: parent.name || '' } : null,
   })
-  const walk = (node: any, parent: any) => {
+  const walk = (node: { depth: number; kids: any; id: any }, parent: any) => {
     out.push(line(node, parent))
     /* a line at or past the stop takes its WHOLE subtree as one run: there is no indent left to
        tell a reply from a reply to a reply, so they are one list in the order they were written */
@@ -75,9 +75,9 @@ export function shape(rows = [], { depth = 3, collapse = 5, open = [] } = {}) {
    under a comment once the indent has stopped */
 function deep(node: any) {
   const out: any = []
-  const go = (n: any) => { for (const k of n.kids) { out.push({ ...k, of: n }); go(k) } }
+  const go = (n: { kids: any }) => { for (const k of n.kids) { out.push({ ...k, of: n }); go(k) } }
   go(node)
-  return out.sort((a: any, b: any) => String(a.created_at || '').localeCompare(String(b.created_at || '')))
+  return out.sort((a: { created_at: any }, b: { created_at: any }) => String(a.created_at || '').localeCompare(String(b.created_at || '')))
 }
 
 /* ---------------------------------------------------------------------------------------------
@@ -86,16 +86,16 @@ function deep(node: any) {
 
 export const ORDERS = ['oldest', 'newest', 'top', 'best', 'controversial']
 /* an order nothing can compute is not a choice */
-export const ordersFor = (votes: any) => (votes ? ORDERS : ['oldest', 'newest'])
+export const ordersFor = (votes: boolean) => (votes ? ORDERS : ['oldest', 'newest'])
 
-export const scoreOf = (c: any) => (Number(c && c.up) || 0) - (Number(c && c.down) || 0)
+export const scoreOf = (c: { id?: string; up: any; down: any; created_at?: string }) => (Number(c && c.up) || 0) - (Number(c && c.down) || 0)
 
 /* THE WILSON LOWER BOUND on the proportion of ups, at 95% — what Reddit's `best` is. A raw score
  * rewards whatever was seen most: 40 up and 30 down outranks 9 up and 1 down although the first is
  * disputed and the second is liked. This asks instead "how good is this, at worst, given how many
  * people have said anything", so a small strong majority beats a large argued one. That difference
  * is the whole reason both orders exist. */
-export function bestOf(c: any) {
+export function bestOf(c: { id?: string; up: any; down: any; created_at?: string }) {
   const up = Number(c && c.up) || 0
   const down = Number(c && c.down) || 0
   const n = up + down
@@ -107,7 +107,7 @@ export function bestOf(c: any) {
 
 /* THE MOST ARGUED OVER: many votes, close to even. Both halves matter — two people disagreeing is
  * not a controversy, and forty people agreeing is not one either. */
-export function heatOf(c: any) {
+export function heatOf(c: { up: any; down: any }) {
   const up = Number(c && c.up) || 0
   const down = Number(c && c.down) || 0
   const n = up + down
@@ -116,7 +116,7 @@ export function heatOf(c: any) {
   return n * balance
 }
 
-const stamp = (c: any) => new Date((c && c.created_at) || 0).getTime() || 0
+const stamp = (c: { created_at: any }) => new Date((c && c.created_at) || 0).getTime() || 0
 
 /* the reader's own order, over the roots alone: a reply belongs to what it answers, and sorting the
    whole flat list would scatter every conversation. `shape` nests what comes back. */
@@ -144,7 +144,7 @@ export function sortComments(rows = [], order = 'oldest') {
 
 /* one row per emoji, most first, saying whether this reader is among them. `re` is the object the
    read returns (emoji → count) and `mine` the emoji this reader left. */
-export function reactionsOf(c: any) {
+export function reactionsOf(c: { re?: any; mine_re?: any }) {
   const re = (c && c.re) || {}
   const mine = new Set((c && c.mine_re) || [])
   return Object.keys(re)
@@ -155,7 +155,7 @@ export function reactionsOf(c: any) {
 
 /* WHAT A PRESS DOES TO A VOTE, before anything is sent: casting the opposite replaces it, casting
    the same again withdraws it. One row per person, and never a count that drifts. */
-export function voteAfter(had: any, pressed: any) {
+export function voteAfter(had: number, pressed: number) {
   const was = Number(had) || 0
   const now = Number(pressed) || 0
   if (!now) return 0
@@ -163,7 +163,7 @@ export function voteAfter(had: any, pressed: any) {
 }
 
 /* the tally a surface should show the moment somebody presses, before the write comes back */
-export function voteTally(c: any, next: any) {
+export function voteTally(c: { up: any; down: any; my_vote: any }, next: number) {
   const was = Number((c && c.my_vote) || 0)
   const up = Number((c && c.up) || 0) - (was === 1 ? 1 : 0) + (next === 1 ? 1 : 0)
   const down = Number((c && c.down) || 0) - (was === -1 ? 1 : 0) + (next === -1 ? 1 : 0)
@@ -221,7 +221,7 @@ export function holdsFor({ approval = 'none', body = '', words = [], trusted = f
  * This is not a secret and cannot be: somebody determined can comment by visiting the site itself.
  * What it prevents is a site's comments appearing under pages it did not agree to.
  */
-export function embedAllowed(origin: any, domains = [], self = '') {
+export function embedAllowed(origin: string|URL, domains = [], self = '') {
   const list = (domains || []).map((d) => String(d || '').trim().toLowerCase()
     .replace(/^[a-z]+:\/\//, '').replace(/\/.*$/, '').replace(/:\d+$/, '')).filter(Boolean)
   if (!list.length) return true

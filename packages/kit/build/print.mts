@@ -104,7 +104,7 @@ const compiler = () => typesetter({ driver: PRINT_DRIVER, workspace: ROOT, fonts
 const compile = (c: any, file: any) => c.pdf(file)
 /* one browser for a run's pictures, opened when the first is needed */
 let rasterizer: any = null
-const pictures: any = async () => rasterizer || (rasterizer = await raster())
+const pictures = async () => rasterizer || (rasterizer = await raster())
 export async function closePictures() { if (rasterizer) { await rasterizer.close(); rasterizer = null } }
 const pageCount = (pdf: any) => { const m = pdf.toString('latin1').match(/\/Count\s+(\d+)/g); return m ? Math.max(...m.map((x: any) => Number(x.replace(/\D/g, '')))) : 0 }
 export { coverKey }   /* the naming is the shared one; print.json and the order function read it */

@@ -43,7 +43,7 @@ export function createListener(opts: any = {}) {
     rec.continuous = true
     rec.interimResults = true
     rec.maxAlternatives = 1
-    rec.onresult = (e: any) => {
+    rec.onresult = (e: { results: never[]|undefined }) => {
       const { done, saying } = readResults(e.results, 0)
       state.kept = done
       state.saying = saying
@@ -52,7 +52,7 @@ export function createListener(opts: any = {}) {
     /* it stops itself on a pause, on a long silence, and on some browsers for no reason at all;
        while we still want it, start it again and keep what it had */
     rec.onend = () => { state.listening = false; if (want) { try { rec.start(); state.listening = true } catch (e) { /* it will not restart twice */ } } }
-    rec.onerror = (e: any) => {
+    rec.onerror = (e: { error: any }) => {
       const err = (e && e.error) || 'failed'
       /* no-speech and aborted are not faults, they are what a quiet room sounds like */
       if (err !== 'no-speech' && err !== 'aborted') state.error = err

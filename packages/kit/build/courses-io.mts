@@ -119,7 +119,7 @@ export function parseCourse(slug: any, raw: any, { kinds = {} } = {}) {
     return {
       key, position: i + 1, section: l && l.section ? String(l.section) : null,
       title: String((l && l.title) || key).trim(), kind, ref,
-      body: kind === 'text' ? ((texts as any)[key] ?? '') : null,
+      body: kind === 'text' ? (texts[key] ?? '') : null,
       /* what plays beside it (video or audio, the shape a page's featured media has) and what it offers to download */
       media: [...(Array.isArray(l && l.media) ? l.media : l && l.media ? [l.media] : []), ...(Array.isArray(l && l.downloads) ? l.downloads : []).map((x: any) => ({ type: 'file', src: String(x.src || ''), title: String(x.title || '') }))].filter((m) => m && m.src),
       required: !(l && l.required === false),
@@ -158,7 +158,7 @@ export function quizAchievements(courses: any, { scored = () => true } = {}) {
   for (const c of courses) {
     if (c.problems.length || !c.published) continue
     // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
-    c.lessons.filter((l: any) => l.kind === 'form' && l.ref && scored(l.ref)).forEach((l: any, i: any) => {
+    c.lessons.filter((l) => l.kind === 'form' && l.ref && scored(l.ref)).forEach((l, i) => {
       const own = (c.awards || {})[l.key]
       if (own === false) return
       const named = own || {}
@@ -191,7 +191,7 @@ export async function readCourses(store: any, { kinds }: any = {}) {
 export async function projectCourses({ courses, db }: any) {
   const out = { courses: 0, lessons: 0, unpublished: 0, refused: [] }
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
-  const ok = courses.filter((c: any) => { if (c.problems.length) out.refused.push(`${c.slug}: ${c.problems.join('; ')}`); return !c.problems.length })
+  const ok = courses.filter((c) => { if (c.problems.length) out.refused.push(`${c.slug}: ${c.problems.join('; ')}`); return !c.problems.length })
   const must = (r: any, what: any) => { if (r.error) throw new Error(`courses: ${what} — ${r.error.message}`); return r }
   for (const c of ok) {
     must(await db.from('courses').upsert({

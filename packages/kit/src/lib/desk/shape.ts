@@ -40,10 +40,10 @@ const QUEUE_SOURCES: any = {
   'social-comments': 'social',
   'social-dms': 'social',
 }
-export const sourceForQueue = (queue: any) => QUEUE_SOURCES[queue] || 'support'
+export const sourceForQueue = (queue: string) => QUEUE_SOURCES[queue] || 'support'
 const SOCIAL_QUEUE_KINDS: any = { 'social-comments': 'comment', 'social-dms': 'dm' }
 
-export function filterQueue(rows = [], queue: any, done = false) {
+export function filterQueue(rows = [], queue: string, done = false) {
   const source = sourceForQueue(queue)
   const kind = SOCIAL_QUEUE_KINDS[queue]
   return filterDesk(rows, source, done).filter((row: any) => !kind || row.conversationKind === kind)
@@ -51,7 +51,7 @@ export function filterQueue(rows = [], queue: any, done = false) {
 
 /* which adapters a site runs: a module that is off is not a source, and nothing about it is said
    anywhere. The desk itself is part of spaces, so with spaces off there is no desk at all. */
-export function sourcesOn(modules: any = {}, registered = []) {
+export function sourcesOn(modules: any = {}, registered: any[] = []) {
   if (modules.spaces === false) return []
   const builtIn = SOURCES.filter((s) => {
     if (s === 'support') return modules.support !== false
@@ -65,8 +65,8 @@ export function sourcesOn(modules: any = {}, registered = []) {
   const custom = [...new Map(registered
     .filter((adapter: any) => adapter && typeof adapter.id === 'string' && adapter.id && !SOURCES.includes(adapter.id))
     .map((adapter: any) => [adapter.id, adapter])).values()]
-    .filter((adapter: any) => modules[adapter.module || adapter.id] !== false)
-    .map((adapter: any) => adapter.id)
+    .filter((adapter) => modules[adapter.module || adapter.id] !== false)
+    .map((adapter) => adapter.id)
   return [...builtIn, ...custom]
 }
 
@@ -82,7 +82,7 @@ export function dueOf(row: any, now = Date.now()) {
 
 /* the one badge, in one set of words: overdue, due, or simply waiting. A row waiting on nobody
    says nothing rather than showing an empty clock. */
-export function owedOf(row: any, words: any = {}, now = Date.now()) {
+export function owedOf(row: { waiting_since: any; due?: any; source?: string }|undefined, words: any = {}, now = Date.now()) {
   const d = dueOf(row, now)
   if (d) return { text: (d.over ? words['due-over'] : words['due-in'] || '').replace('{span}', spanOf(d.left)), over: d.over, soft: false }
   /* a wait is at least a minute: "waiting 0m" is not a thing anyone says */
@@ -142,7 +142,7 @@ export function doneSet(rows = []) {
    holds until the other party says something else: if the run they are waiting on began after the
    mark, they are waiting again. That is the same rule the support desk's own trigger keeps when a
    contact writes on a resolved thread, said once here for the sources that have no trigger. */
-export function isDone(row: any, marks: any = {}) {
+export function isDone(row: { source: any; id?: any; waiting_since?: any; status?: any }, marks: any = {}) {
   if (!row) return false
   if (row.source === 'support') return row.status === 'resolved'
   const at = marks[row.source + ':' + row.id]
@@ -199,7 +199,7 @@ export function sortTickets(list = [], mode = 'busy') {
   const at = (t: any) => new Date(t.last_at || t.created_at || 0).getTime()
   const rows = [...(list || [])]
   // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  if (mode === 'new') return rows.sort((a: any, b: any) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+  if (mode === 'new') return rows.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
   if (mode === 'waiting') {
     return rows.sort((a: any, b: any) => {
       const wa = a.waiting_since ? new Date(a.waiting_since).getTime() : Infinity
@@ -219,7 +219,7 @@ export function sortTickets(list = [], mode = 'busy') {
 
 /* what is owed on one, in the words the desk already uses for a chat: overdue by, due in, waiting.
    One vocabulary across the desk, so a queue and a ticket never disagree about what "late" is. */
-export function owedOn(t: any, words = {}, now = Date.now()) {
+export function owedOn(t: { status?: string; due_at?: any; waiting_since?: any }, words = {}, now = Date.now()) {
   if (!t || !isLive(t)) return null
   const w = { 'due-in': 'Due in {span}', 'due-over': 'Overdue by {span}', waiting: 'Waiting {span}', ...words }
   if (t.due_at) {
@@ -235,7 +235,7 @@ export function owedOn(t: any, words = {}, now = Date.now()) {
 }
 
 /* how long a piece of work has been open, for the line under its title */
-export const ageOf = (t: any, now = Date.now()) => (t && t.created_at ? spanOf(now - new Date(t.created_at).getTime()) : '')
+export const ageOf = (t: { created_at?: any }|null, now = Date.now()) => (t && t.created_at ? spanOf(now - new Date(t.created_at).getTime()) : '')
 
 /* the counts a desk wants at a glance: what is live, what is owed, what is mine */
 export function tally(list = [], me = null) {
@@ -243,7 +243,7 @@ export function tally(list = [], me = null) {
   return {
     live: rows.filter(isLive).length,
     owed: rows.filter(isOwed).length,
-    mine: rows.filter((t: any) => isLive(t) && (t.assignees || []).some((a: any) => a.id === me)).length,
+    mine: rows.filter((t: any) => isLive(t) && (t.assignees || []).some((a: { id: null }) => a.id === me)).length,
     unassigned: rows.filter((t: any) => isLive(t) && !(t.assignees || []).length).length,
   }
 }
@@ -262,9 +262,9 @@ export function narrow(list = [], { status = 'open', assignee = null, priority =
        "the billing ones", "the urgent ones", "the ones about the reader". It is the whole of what
        makes a form worth asking before a ticket is raised. */
     if (answer && (answer as any).field) { const v = (t.answers || {})[(answer as any).field]; if (String(v == null ? '' : v) !== String((answer as any).value)) return false }
-    if (assignee === 'mine' && !(t.assignees || []).some((a: any) => a.id === me)) return false
+    if (assignee === 'mine' && !(t.assignees || []).some((a: { id: null }) => a.id === me)) return false
     if (assignee === 'nobody' && (t.assignees || []).length) return false
-    if (assignee && assignee !== 'mine' && assignee !== 'nobody' && !(t.assignees || []).some((a: any) => a.id === assignee)) return false
+    if (assignee && assignee !== 'mine' && assignee !== 'nobody' && !(t.assignees || []).some((a: { id: any }) => a.id === assignee)) return false
     if (!want) return true
     return String(t.ref) === want
       || String(t.title || '').toLowerCase().includes(want)

@@ -5,7 +5,7 @@
  */
 import { supabase } from './supabase.js'
 
-async function call(body: any) {
+async function call(body: { uid: any; action: string; }) {
   const { data, error } = await (supabase as any).functions.invoke('session-room', { body })
   if (error) { let msg = error.message || 'request failed', code = '', extra = {}; try { const j = await error.context.json(); if (j && j.error) { msg = j.error; code = j.code || ''; extra = j } } catch (e) { /* no body */ } const e: any = new Error(msg); e.code = code; e.status = error.context ? error.context.status : 0; Object.assign(e, extra); throw e }
   if (data && data.error) { const e: any = new Error(data.error); e.code = data.code || ''; throw e }

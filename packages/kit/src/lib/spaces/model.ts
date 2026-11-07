@@ -117,7 +117,7 @@ export function mergeMessages(list = [], incoming = []) {
     if (!m || !(m as any).id) continue
     const had = by.get((m as any).id)
     // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-    by.set((m as any).id, had ? { ...had, ...m } : m)
+    by.set(m.id, had ? { ...had, ...m } : m)
   }
   return [...by.values()].sort((a, b) => Number(a.seq || 0) - Number(b.seq || 0))
 }
@@ -135,7 +135,7 @@ export function dividerSeq(messages = [], lastReadSeq = 0, me = null) {
 
 /* a thread's own state: how many replies, when the last one came, and whether the reader is in it
    (they wrote the root or a reply), which is one of the things that notifies them. */
-export function threadOf(root: any, replies = [], me = null) {
+export function threadOf(root: { id?: string; author_id: any; reply_count: any; last_reply_at: any }, replies = [], me = null) {
   const count = Number(root?.reply_count ?? replies.length ?? 0)
   const last = root?.last_reply_at || (replies.length ? (replies[replies.length - 1] as any).created_at : null)
   const mine = !!me && (root?.author_id === me || replies.some((r: any) => r?.author_id === me))
@@ -156,7 +156,7 @@ export const fromEvent = (m: any) => !!m && m.kind === 'system' && !!(m.meta && 
 /* A BOT'S LINE IS NOT AN EVENT. It arrives as a system message because nobody's account wrote it,
    but it is something that was SAID: it carries its own words, it is answered, and it is shown
    with the bot's name over it rather than as a notice from the platform. */
-export const fromBot = (m: any) => !!m && m.kind === 'system' && !!(m.meta && m.meta.bot)
+export const fromBot = (m: { kind: any; meta: any; body?: string }) => !!m && m.kind === 'system' && !!(m.meta && m.meta.bot)
 export const canReply = (m: any) => !!m && !m.deleted_at && (m.kind !== 'system' || fromEvent(m) || fromBot(m))
 
 /*
@@ -199,7 +199,7 @@ export function saidIn(m: any, { names = {}, words = {}, money = (v: any) => Str
  * so a bot's answer became "**Breakthrough co" and "you'll need to contact th". A heading is a
  * sentence, or the start of one, and it never ends mid-word.
  */
-export function titleOf(m?: any, names = {}, { max = 80 } = {}) {
+export function titleOf(m?: { body: any }|undefined, names = {}, { max = 80 } = {}) {
   const said = plainMarkup(plainBody((m && m.body) || '', names)).replace(/\s+/g, ' ').trim()
   if (!said) return ''
   /* a first sentence, where there is one short enough to be a heading */
@@ -213,7 +213,7 @@ export function titleOf(m?: any, names = {}, { max = 80 } = {}) {
 }
 
 /* who said it, by name — a space message's author is `author_id`; `sender_id` is the chat's */
-export const saidBy = (m: any, names: any = {}, someone = 'someone') =>
+export const saidBy = (m: { author_id?: any; meta?: any; kind?: string; body?: string }, names: any = {}, someone = 'someone') =>
   (m && m.meta && m.meta.name) || names[m && m.author_id] || someone
 
 /*
@@ -266,7 +266,7 @@ export const canReact = canReply
  * Direct messages are the second kind; so are the desk's two queues, which draw their own lines.
  * Channels — a stream or a forum, open or private, a staff room or a community's — are the first,
  * however few people are in one: what decides it is that anybody MAY speak, not who did today. */
-export const sidedRoom = (channel: any) => !!channel && channel.kind === 'dm'
+export const sidedRoom = (channel: { kind: any; mode?: string }|null) => !!channel && channel.kind === 'dm'
 
 /* A direct message has no name of its own: it is who is in it. One other person is their name; two
    or more are their names in order; and a room with nobody else in it is the reader talking to
@@ -295,10 +295,10 @@ export function railSections(channels = [], rows = [], spaceId = null, groups = 
      (`order`, `group`), so the rail draws what the site wrote rather than an alphabet: the
      declared groups in their declared order, each with its rooms, and whatever sits under no
      heading last under none. A space that declares no group has one run, as it always did. */
-  const place = (a: any, b: any) => ((a.position ?? 99) - (b.position ?? 99)) || String(a.name || '').localeCompare(String(b.name || ''))
-  const named: any = (groups || []).filter((g) => open.some((c: any) => c.group === g))
-  const grouped: any = named.map((g: any) => ({ name: g, channels: open.filter((c: any) => c.group === g).sort(place) }))
-  const loose: any = open.filter((c: any) => !c.group || !named.includes(c.group)).sort(place)
+  const place = (a: { position: any; name: any }, b: { position: any; name: any }) => ((a.position ?? 99) - (b.position ?? 99)) || String(a.name || '').localeCompare(String(b.name || ''))
+  const named: any = (groups || []).filter((g) => open.some((c: { group: any }) => c.group === g))
+  const grouped = named.map((g: any) => ({ name: g, channels: open.filter((c: { group: any }) => c.group === g).sort(place) }))
+  const loose = open.filter((c: { group: any }) => !c.group || !named.includes(c.group)).sort(place)
   return { starred: starred.sort(place), channels: loose, groups: grouped, dms }
 }
 
@@ -319,7 +319,7 @@ export const isStatus = (s: any) => STATUSES.includes(s)
 
 /* what to show for somebody, from what their sessions are saying: any session that is here wins,
    because a person with two tabs open is here. Nobody on the topic at all is away. */
-export function statusOf(sessions: any, now = Date.now()) {
+export function statusOf(sessions: { status: string }[]|null, now = Date.now()) {
   const list = (Array.isArray(sessions) ? sessions : []).filter(Boolean)
   if (!list.length) return 'away'
   if (list.some((s) => s.status === 'active')) return 'active'
@@ -328,7 +328,7 @@ export function statusOf(sessions: any, now = Date.now()) {
 }
 
 /* what this session should be saying, given what was chosen and how long ago anything was touched */
-export function myStatus(chosen: any, lastSeen: any, now = Date.now()) {
+export function myStatus(chosen: string|null, lastSeen: number, now = Date.now()) {
   const want = isStatus(chosen) ? chosen : 'active'
   if (want !== 'active') return want
   return now - Number(lastSeen || now) > AWAY_AFTER ? 'away' : 'active'
@@ -337,7 +337,7 @@ export function myStatus(chosen: any, lastSeen: any, now = Date.now()) {
 /* ------------------------------------------------------------------ mentions */
 
 /* the composer writes a token and never a name, so a mention resolves exactly and survives a rename */
-export const writeMention = (id: any) => '<@' + id + '>'
+export const writeMention = (id: string) => '<@' + id + '>'
 export const CHANNEL_MENTION = '<!channel>'
 
 /*
@@ -347,21 +347,21 @@ export const CHANNEL_MENTION = '<!channel>'
  * is `bot:<slug>`). One grammar, not two, so a bot's name can no more be pasted into a body than
  * a person's can — what is stored is the slug, and what is shown is looked up when it is drawn.
  */
-export const BOT_PICK = (slug: any) => 'bot:' + slug
-export const isBotPick = (id: any) => typeof id === 'string' && id.startsWith('bot:')
+export const BOT_PICK = (slug: string) => 'bot:' + slug
+export const isBotPick = (id: string) => typeof id === 'string' && id.startsWith('bot:')
 /*
  * AND A ROLE IS A GROUP YOU CAN NAME. `@coaches` reaches whoever holds the role in this space and
  * is in this room. Same token shape again, same parser, same names map — the third thing that can
  * be named, and not a third grammar. The slug is what is stored, so renaming the role does not
  * silently stop the mention working.
  */
-export const ROLE_PICK = (slug: any) => 'role:' + slug
-export const isRolePick = (id: any) => typeof id === 'string' && id.startsWith('role:')
+export const ROLE_PICK = (slug: string) => 'role:' + slug
+export const isRolePick = (id: string) => typeof id === 'string' && id.startsWith('role:')
 const TOKEN = /<@([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|bot:[a-z0-9-]{1,60}|role:[a-z0-9-]{1,48})>/g
 
 /* every role a body names, once each — for a surface that wants to say so, never for notifying:
    who holds a role is the database's answer and is resolved there */
-export function rolesMentioned(body: any) {
+export function rolesMentioned(body: string) {
   const out: any = []
   for (const m of String(body || '').matchAll(TOKEN)) {
     const slug = m[1].startsWith('role:') ? m[1].slice(5) : null
@@ -371,7 +371,7 @@ export function rolesMentioned(body: any) {
 }
 
 /* every bot a body names, once each, in the order they appear */
-export function botsMentioned(body: any) {
+export function botsMentioned(body: string) {
   const out: any = []
   for (const m of String(body || '').matchAll(TOKEN)) {
     const slug = m[1].startsWith('bot:') ? m[1].slice(4) : null
@@ -381,7 +381,7 @@ export function botsMentioned(body: any) {
 }
 
 /* every id a body names, once each, in the order they appear */
-export function mentionIds(body: any) {
+export function mentionIds(body: string) {
   const out = []
   const seen = new Set()
   for (const m of String(body || '').matchAll(TOKEN)) {
@@ -394,14 +394,14 @@ export function mentionIds(body: any) {
   return out
 }
 
-export const mentionsChannel = (body: any) => String(body || '').includes(CHANNEL_MENTION)
+export const mentionsChannel = (body: string) => String(body || '').includes(CHANNEL_MENTION)
 
 /* the body cut into pieces for drawing: text and mentions, so a name is never pasted into a string */
-export function mentionParts(body: any, names: any = {}, words: any = {}) {
+export function mentionParts(body: string, names: any = {}, words: any = {}) {
   const s = String(body || '')
   const out = []
   let last = 0
-  const push = (t: any) => { if (t) out.push({ kind: 'text', text: t }) }
+  const push = (t: string) => { if (t) out.push({ kind: 'text', text: t }) }
   const re = new RegExp(TOKEN.source + '|' + CHANNEL_MENTION.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
   for (const m of s.matchAll(re)) {
     push(s.slice(last, m.index))
@@ -427,7 +427,7 @@ export function mentionParts(body: any, names: any = {}, words: any = {}) {
 /* A LINE IS CUT ONCE, by one grammar: the people it names (which are tokens only this surface
    writes) and then the marks everybody may type (lib/chat/markup.js, shared with the desk and the
    widget). The component draws the parts; nothing here makes html. */
-export const lineBlocks = (body: any, names = {}, words = {}) => messageBlocks(body, (line) =>
+export const lineBlocks = (body: string|null, names = {}, words = {}) => messageBlocks(body, (line) =>
   mentionParts(line, names, words).flatMap((p: any) => (p.kind === 'mention' ? [p] : inlineParts(p.text))))
 
 export const CHANNEL_PICK = '#channel'   /* what picked holds for the whole-channel mention */
@@ -436,7 +436,7 @@ export const CHANNEL_PICK = '#channel'   /* what picked holds for the whole-chan
 const pickedNames = (picked: any) => Object.keys(picked || {}).filter(Boolean).sort((a, b) => b.length - a.length)
 
 /* what is typed → what is stored */
-export function toTokens(text: any, picked: any = {}) {
+export function toTokens(text: string, picked: any = {}) {
   let out = String(text || '')
   for (const name of pickedNames(picked)) {
     const id = picked[name]
@@ -447,7 +447,7 @@ export function toTokens(text: any, picked: any = {}) {
 }
 
 /* what is stored → what is typed, for a draft written before this composer was opened */
-export function fromTokens(body: any, names = {}, words = {}) {
+export function fromTokens(body: string, names = {}, words = {}) {
   const picked: any = {}
   const text = mentionParts(body, names, words).map((p: any) => {
     if (p.kind !== 'mention') return p.text
@@ -458,7 +458,7 @@ export function fromTokens(body: any, names = {}, words = {}) {
 }
 
 /* what is typed → the pieces to draw, so a mention reads as a mention while it is being written */
-export function mentionSpans(text: any, picked: any = {}) {
+export function mentionSpans(text: string, picked: any = {}) {
   const s = String(text || '')
   const names = pickedNames(picked)
   const out = []
@@ -482,7 +482,7 @@ export function mentionSpans(text: any, picked: any = {}) {
 }
 
 /* the plain reading of a body, for a preview or a notification */
-export const plainBody = (body: any, names = {}, words = {}) =>
+export const plainBody = (body: string, names = {}, words = {}) =>
   mentionParts(body, names, words).map((p: any) => (p.kind === 'text' ? p.text : '@' + p.name)).join('')
 
 /* ------------------------------------------------------------------ notification */
@@ -491,7 +491,7 @@ export const plainBody = (body: any, names = {}, words = {}) =>
    badge. The reader's own message never notifies them, a muted channel never does, and a channel set
    to nothing never does whatever the message says.
    ctx: { me, notify, muted_until, now, mentioned, inThread, mentionsChannel, mayMentionChannel } */
-export function notifies(message: any, ctx: any = {}) {
+export function notifies(message: { id?: string; author_id: any; created_at?: string; deleted_at?: any; thread_root_id?: any }, ctx: any = {}) {
   const now = ctx.now ?? Date.now()
   if (!message || message.deleted_at) return false
   if (ctx.me && message.author_id === ctx.me) return false
@@ -514,18 +514,18 @@ export function notifies(message: any, ctx: any = {}) {
    (space_may), asked of the database, carried on the counters, and read below. */
 
 /* the slugs somebody holds, whatever shape they arrive in, tidied and without repeats */
-export function rolesOf(v: any) {
+export function rolesOf(v: string|string[]|null) {
   const list = (Array.isArray(v) ? v : v ? [v] : []).map((r) => String(r || '').trim()).filter(Boolean)
   return [...new Set(list)]
 }
 
-export const holdsRole = (v: any, role: any) => rolesOf(v).includes(role)
+export const holdsRole = (v: string[], role: string) => rolesOf(v).includes(role)
 
 /* Naming the whole channel is a capability, granted to a role by a row somebody can read and change
    — never a pair of names hidden in here. The answer rides on the channel's own counters, so the
    composer is told before somebody sends, and the message goes all the same: it simply notifies
    nobody by being that. */
-export const mayMentionChannel = (row: any) => !!(row && row.mention)
+export const mayMentionChannel = (row: { mention?: any }|null) => !!(row && row.mention)
 
 /* ---- a poll: what was asked, what came back ----------------------------------------------- */
 /* The question is the message's body and the options ride on its meta, which nothing may rewrite;
@@ -533,7 +533,7 @@ export const mayMentionChannel = (row: any) => !!(row && row.mention)
    it returns and asks the database for nothing else.
 
    A poll with no votes has shares of zero and not NaN, which is the one trap in here. */
-export function pollOf(message: any) {
+export function pollOf(message: { id?: string; kind?: string; body?: string; meta: any; poll_closed_at: any }) {
   const p = message && message.meta && message.meta.poll
   if (!p || !Array.isArray(p.options) || !p.options.length) return null
   return { options: p.options, multi: !!p.multi, closed: !!(message.poll_closed_at) }
@@ -557,13 +557,13 @@ export function tallyPoll(message: any, votes = [], me = '') {
   const cast = [...counts.values()].reduce((n, x) => n + x, 0)
   const people = new Set(votes.filter((v: any) => v && v.message_id === message.id).map((v: any) => v.user_id)).size
   const whole = poll.multi ? cast : people
-  const options = poll.options.map((o: any) => {
+  const options = poll.options.map((o: { key: unknown; text: any }) => {
     const n = counts.get(o.key) || 0
     return { key: o.key, text: o.text, votes: n, share: whole ? n / whole : 0, mine: mine.has(o.key), who: by.get(o.key) || [] }
   })
-  const top = options.reduce((m: any, o: any) => (o.votes > m ? o.votes : m), 0)
+  const top = options.reduce((m: number, o: { votes: number }) => (o.votes > m ? o.votes : m), 0)
   return {
-    options: options.map((o: any) => ({ ...o, leads: !!top && o.votes === top })),
+    options: options.map((o: { votes: any }) => ({ ...o, leads: !!top && o.votes === top })),
     multi: poll.multi, closed: poll.closed, cast, people, voted: mine.size > 0,
   }
 }
@@ -579,12 +579,12 @@ const DAY = 86400000
 
 /* the day something falls on, as the reader's own clock reads it — which is what decides whether
    they are told "today" */
-export const dayOf = (when: any, zone: any) => new Intl.DateTimeFormat('en-CA', {
+export const dayOf = (when: string|number|Date, zone: string) => new Intl.DateTimeFormat('en-CA', {
   timeZone: zone || undefined, year: 'numeric', month: '2-digit', day: '2-digit',
 }).format(new Date(when))
 
 /* today · tomorrow · the weekday · the date, in the reader's own terms */
-export function whenWord(when: any, now = Date.now(), words = {}, zone: any) {
+export function whenWord(when: any, now = Date.now(), words = {}, zone: string) {
   const w = { today: 'Today', tomorrow: 'Tomorrow', ...words }
   const d = dayOf(when, zone)
   if (d === dayOf(now, zone)) return w.today
@@ -595,14 +595,14 @@ export function whenWord(when: any, now = Date.now(), words = {}, zone: any) {
     : { timeZone: zone || undefined, day: 'numeric', month: 'short' }).format(new Date(when))
 }
 
-export const clockOf = (when: any, zone: any) => new Intl.DateTimeFormat(undefined, {
+export const clockOf = (when: string|number|Date, zone: string) => new Intl.DateTimeFormat(undefined, {
   timeZone: zone || undefined, hour: 'numeric', minute: '2-digit',
 }).format(new Date(when))
 
 /* WHEN SOMETHING HAPPENED, on a thing that may be months old: the time alone while it is today,
    and the day in front of it once it is not. A ticket's timeline runs for weeks — a column of bare
    times on it says nothing at all — while a chat's is nearly always one afternoon. */
-export function stampOf(when: any, now = Date.now(), zone?: any) {
+export function stampOf(when: string|number|Date|null, now = Date.now(), zone?: any) {
   if (!when) return ''
   const d = new Date(when)
   if (Number.isNaN(d.getTime())) return ''
@@ -617,7 +617,7 @@ export function stampOf(when: any, now = Date.now(), zone?: any) {
 }
 
 /* how long until it starts, said the way a person would say it; null once it has */
-export function untilWord(when: any, now = Date.now(), words = {}) {
+export function untilWord(when: number, now = Date.now(), words = {}) {
   const w = { now: 'On now', mins: 'in {n}m', hours: 'in {n}h', days: 'in {n}d', ...words }
   const ms = when - now
   if (ms <= 0) return w.now
@@ -632,7 +632,7 @@ export function untilWord(when: any, now = Date.now(), words = {}) {
 
 /* on now: between its start and its end, with a few minutes' grace either side so somebody who is
    early is not told it has not begun */
-export function isOn(o: any, now = Date.now(), grace = 10 * 60000) {
+export function isOn(o: { starts_at?: any; ends_at?: any }|null, now = Date.now(), grace = 10 * 60000) {
   if (!o || !o.starts_at) return false
   const start = new Date(o.starts_at).getTime()
   const end = o.ends_at ? new Date(o.ends_at).getTime() : start + 3600000
@@ -640,7 +640,7 @@ export function isOn(o: any, now = Date.now(), grace = 10 * 60000) {
 }
 
 /* the occurrences gathered under the day they fall on, which is how a calendar reads */
-export function byDay(list = [], zone: any) {
+export function byDay(list = [], zone: string) {
   const days = new Map()
   for (const o of list) {
     const key = dayOf((o as any).starts_at, zone)

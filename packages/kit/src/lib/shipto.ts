@@ -15,9 +15,9 @@ export const shipTo = ref(stored || guess())
 watch(shipTo, (v) => { try { localStorage.setItem(KEY, v) } catch (e) { /* private */ } })
 export const rates = computed(() => ratesFor(rules, shipTo.value))
 /* whether a line needs a destination */
-export const lineShips = (l: any) => l && (l.kind === 'store_good' || l.kind === 'good' || l.kind === 'print')
+export const lineShips = (l: { kind?: string } | null) => l && (l.kind === 'store_good' || l.kind === 'good' || l.kind === 'print')
 /* what a guest may buy with no account: a printed copy or a file — the purchase is claimed by
    an account made later with the address Checkout collects. An unlock, a membership and a
    session are a person's own. */
-export const guestLine = (l: any) => l && (l.kind === 'print' || l.kind === 'download')
-export const guestCart = (lines: any) => !!(lines && lines.length) && lines.every(guestLine)
+export const guestLine = (l: { kind: string }) => l && (l.kind === 'print' || l.kind === 'download')
+export const guestCart = (lines: any[]) => !!(lines && lines.length) && lines.every(guestLine)

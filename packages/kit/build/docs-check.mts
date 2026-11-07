@@ -53,14 +53,14 @@ const ENV_EXAMPLE = [
   path.join(ROOT, 'sites/demo/.env.example'),
 ].find((file) => fs.existsSync(file))
 const args = process.argv.slice(2)
-const flag = (f: any) => args.includes(f)
-const after = (f: any) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null }
+const flag = (f: string) => args.includes(f)
+const after = (f: string) => { const i = args.indexOf(f); return i >= 0 ? args[i + 1] : null }
 const json = flag('--json')
 
 /* ---- the pages and their sources ---- */
 // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-const walk = (d: any) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : e.name.endsWith('.md') ? [path.join(d, e.name)] : []) : []
-const pages: any = [...walk(path.join(ROOT, DOCS)), ...REPO_DOCS.map((f) => path.join(ROOT, f))].filter((f) => fs.existsSync(f)).map((f) => {
+const walk = (d) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : e.name.endsWith('.md') ? [path.join(d, e.name)] : []) : []
+const pages = [...walk(path.join(ROOT, DOCS)), ...REPO_DOCS.map((f) => path.join(ROOT, f))].filter((f) => fs.existsSync(f)).map((f) => {
   const rel = path.relative(ROOT, f)
   const text = fs.readFileSync(f, 'utf8')
   const fm = /^---\n([\s\S]*?)\n---/.exec(text)
@@ -70,29 +70,29 @@ const pages: any = [...walk(path.join(ROOT, DOCS)), ...REPO_DOCS.map((f) => path
   const rv = fm ? /^reviewed:\s*(\d{4}-\d{2}-\d{2})/m.exec(fm[1]) : /^\*\*Reviewed:\*\*\s*`?(\d{4}-\d{2}-\d{2})`?\s*$/m.exec(text)
   return { file: rel, text, sources, reviewed: rv ? rv[1] : '' }
 })
-const covers = (page: any, file: any) => page.sources.some((s: any) => file === s || file.startsWith(s.replace(/\/$/, '') + '/'))
+const covers = (page: { file?: string; text?: string; sources: any; reviewed?: string }, file: string) => page.sources.some((s: string) => file === s || file.startsWith(s.replace(/\/$/, '') + '/'))
 
 /* the documented surfaces (coverage, check 3): every entry must be named by a docs-site page — itself or a directory above it */
 const SURFACES = [
-  ['packages/kit/supabase/functions', (e: any) => e.isDirectory() && e.name !== '_shared'],
-  ['packages/kit/supabase/functions/_shared', (e: any) => e.name !== 'vendor' && e.name !== 'pipe' && !e.name.endsWith('.json')],
-  ['packages/kit/supabase/schemas', (e: any) => e.isFile() && e.name.endsWith('.sql')],
-  ['packages/kit/build', (e: any) => e.isFile() && /\.m[jt]s$/.test(e.name) && !/\.d\.mts$/.test(e.name) && !/\.test\.m[jt]s$/.test(e.name) && !/^site(-[a-z-]+)?-node\.m[jt]s$/.test(e.name)],
-  ['packages/kit/build/steps', (e: any) => e.isFile() && /\.m[jt]s$/.test(e.name) && !/^index\.m[jt]s$/.test(e.name)],
+  ['packages/kit/supabase/functions', (e: { isDirectory: () => any; name: string }) => e.isDirectory() && e.name !== '_shared'],
+  ['packages/kit/supabase/functions/_shared', (e: { name: string }) => e.name !== 'vendor' && e.name !== 'pipe' && !e.name.endsWith('.json')],
+  ['packages/kit/supabase/schemas', (e: { isFile: () => any; name: string }) => e.isFile() && e.name.endsWith('.sql')],
+  ['packages/kit/build', (e: { isFile: () => any; name: string }) => e.isFile() && /\.m[jt]s$/.test(e.name) && !/\.d\.mts$/.test(e.name) && !/\.test\.m[jt]s$/.test(e.name) && !/^site(-[a-z-]+)?-node\.m[jt]s$/.test(e.name)],
+  ['packages/kit/build/steps', (e: { isFile: () => any; name: string }) => e.isFile() && /\.m[jt]s$/.test(e.name) && !/^index\.m[jt]s$/.test(e.name)],
   ['packages/kit/src/lib', (e: any) => true],
   ['packages/kit/src/sdk', (e: any) => true],
-  ['packages/kit/theme/src/pages', (e: any) => e.isFile()],
+  ['packages/kit/theme/src/pages', (e: { isFile: () => any }) => e.isFile()],
   ['deploy', (e: any) => true],
 ]
 /* a source covers an entry when it names it, something inside it, or a directory below the surface's root — the surface root
    itself (`packages/kit/supabase/functions`) is the page that lists every function, and listing is not documenting one */
 // @ts-expect-error TS2345, from the conversion: Argument of type 'string | ((e: any) => any)' is not assignable to parameter of type 'string'. Type '(e: any) => any' is not assignable to t
 const ROOTS = new Set(SURFACES.map(([d]) => d).filter((d) => !['packages/kit/build/steps', 'packages/kit/src/sdk'].includes(d)))   /* the steps and the sdk are documented as a whole, on purpose */
-const covered = (rel: any) => pages.some((p: any) => p.file.startsWith(DOCS + '/') && p.sources.some((s: any) => { const src = s.replace(/\/$/, ''); if (ROOTS.has(src) || [...ROOTS].some((r: any) => r.startsWith(src + '/'))) return false; return rel === src || rel.startsWith(src + '/') || src.startsWith(rel + '/') }))
+const covered = (rel: string) => pages.some((p) => p.file.startsWith(DOCS + '/') && p.sources.some((s: string) => { const src = s.replace(/\/$/, ''); if (ROOTS.has(src) || [...ROOTS].some((r: any) => r.startsWith(src + '/'))) return false; return rel === src || rel.startsWith(src + '/') || src.startsWith(rel + '/') }))
 function uncovered(only: any = null) {
   const out = []
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | ((e: any) => any)' is not assignable to parameter of type 'string'. Type '(e: any) => any' is not assignable to t
-  for (const [dir, pick] of SURFACES) { if (!fs.existsSync(path.join(ROOT, dir))) continue; for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) { if (!pick(e)) continue; const rel = dir + '/' + e.name; if (only && !only.some((f: any) => f === rel || f.startsWith(rel + '/'))) continue; if (!covered(rel)) out.push(rel) } }
+  for (const [dir, pick] of SURFACES) { if (!fs.existsSync(path.join(ROOT, dir))) continue; for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) { if (!pick(e)) continue; const rel = dir + '/' + e.name; if (only && !only.some((f) => f === rel || f.startsWith(rel + '/'))) continue; if (!covered(rel)) out.push(rel) } }
   return out
 }
 
@@ -112,11 +112,11 @@ const MESSAGE = (() => {
 })()
 
 const faults: any = []
-const fault = (page: any, why: any) => faults.push({ page, why })
+const fault = (page: string, why: string) => faults.push({ page, why })
 
 /* ---- 1. staleness ---- */
-const git = (cmd: any) => { try { return execSync('git ' + cmd, { cwd: ROOT, encoding: 'utf8' }).split('\n').map((l) => l.trim()).filter(Boolean) } catch { return [] } }
-const tracked = (file: any) => git(`ls-files -- "${file}"`).includes(file)
+const git = (cmd: string) => { try { return execSync('git ' + cmd, { cwd: ROOT, encoding: 'utf8' }).split('\n').map((l) => l.trim()).filter(Boolean) } catch { return [] } }
+const tracked = (file: string) => git(`ls-files -- "${file}"`).includes(file)
 let changed = null
 if (flag('--staged')) changed = git('diff --cached --name-only')
 else if (flag('--tree')) changed = [...git('diff --name-only HEAD'), ...git('ls-files --others --exclude-standard')]
@@ -124,7 +124,7 @@ else if (after('--range')) changed = git(`diff --name-only ${after('--range')}`)
 const touched = after('--touched')
 if (touched) {
   const rel = path.relative(ROOT, path.resolve(touched)).split(path.sep).join('/')
-  const hits = pages.filter((p: any) => covers(p, rel)).map((p: any) => p.file)
+  const hits = pages.filter((p) => covers(p, rel)).map((p) => p.file)
   const orphan = uncovered([rel]).length > 0
   if (json) console.log(JSON.stringify({ file: rel, pages: hits, orphan }))
   else if (orphan) console.log(`${rel} is in a documented surface and no docs-site page names it — the docs site is the canonical documentation: write its page under ${DOCS}/ (or add it to the page that describes it); the commit is refused until one does.`)
@@ -169,15 +169,15 @@ const KIT = ['packages/kit/', 'packages/kit/theme/']
 /* what this commit will hold, as text, so a page edited only on its date can be told from a page
    whose words changed. --staged reads the index; --tree reads the working tree; a range reads the
    range. Anything else (npm test with no mode) knows no commit and does not ask. */
-const diffOf = (file: any) => {
+const diffOf = (file: string) => {
   if (!tracked(file)) return fs.existsSync(path.join(ROOT, file)) ? fs.readFileSync(path.join(ROOT, file), 'utf8').split('\n').map((line) => `+${line}`) : []
   const where = flag('--staged') ? '--cached' : after('--range') ? after('--range') : 'HEAD'
   const out = git(`diff ${where} -U0 -- "${file}"`)
   return out.filter((l) => (l.startsWith('+') || l.startsWith('-')) && !/^(\+\+\+|---)/.test(l))
 }
-const isDoc = (f: any) => f.startsWith(DOCS + '/') || /^docs\/[^/]+\.md$/.test(f)
+const isDoc = (f: string) => f.startsWith(DOCS + '/') || /^docs\/[^/]+\.md$/.test(f)
 /* a page whose only changed lines are its reviewed: date has been re-read, not rewritten */
-const rewritten = (f: any) => diffOf(f).some((l) => !/^[+-]\s*(reviewed:|<!--\s*reviewed:)/.test(l))
+const rewritten = (f: string) => diffOf(f).some((l) => !/^[+-]\s*(reviewed:|<!--\s*reviewed:)/.test(l))
 
 /* --no-message-rule: the caller cannot see the message yet (the pre-commit hook runs before the
    message is prepared), so it runs every other rule and leaves this one to the commit-msg hook,
@@ -211,28 +211,28 @@ for (const rel of uncovered(changed)) fault(rel, `no docs-site page names it in 
   }
   const pkg = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).name || '' } catch { return '' } })()
   const names = fs.existsSync(rootConfig) ? [readName(), (pkg.match(/^@([^/]+)\//) || [])[1]].filter(Boolean) : []
-  const PUBLIC = [...pages.filter((p: any) => p.file.startsWith(DOCS + '/')), ...pages.filter((p: any) => p.file === 'docs/COMPETITORS.md')]
+  const PUBLIC = [...pages.filter((p) => p.file.startsWith(DOCS + '/')), ...pages.filter((p) => p.file === 'docs/COMPETITORS.md')]
   for (const n of new Set(names.map((x) => x.toLowerCase()))) {
     if (n.length < 4) continue
     const re = new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, '\\/* ---- 2. exactness ---- */'), 'i')
     for (const p of PUBLIC) {
       if (!re.test(p.text)) continue
-      const line = p.text.split('\n').findIndex((l: any) => re.test(l)) + 1
+      const line = p.text.split('\n').findIndex((l) => re.test(l)) + 1
       fault(p.file, `names the root site (line ${line}) — the docs site is PlatformKit's own documentation and a reader of it has no such site: use the demo, or say what a site does rather than which one`)
     }
   }
 }
 
 /* ---- 2. exactness ---- */
-const page = (name: any) => pages.find((p: any) => p.file === `${DOCS}/${name}.md`)
+const page = (name: string) => pages.find((p) => p.file === `${DOCS}/${name}.md`)
 /* THE NAMES A PAGE SAYS IN CODE. A tick holding a name and then its shape — `display { truth,
    mode }`, `sections[] { component, props }`, `bot:` — says that name as surely as a bare one,
    so the first identifier in a tick counts. Without that the check asked for a bare repetition
    of a word the page had already used better, which is a worse page for no gain. */
-const ticks = (text: any) => new Set([...text.matchAll(/`([A-Za-z_][A-Za-z0-9_.-]*)[^`]*`/g)].map((m) => m[1]))
-const readAll = (dirs: any, exts: any) => dirs.flatMap((d: any) => walk2(path.join(ROOT, d), exts)).map((f: any) => fs.readFileSync(f, 'utf8')).join('\n')
+const ticks = (text: string) => new Set([...text.matchAll(/`([A-Za-z_][A-Za-z0-9_.-]*)[^`]*`/g)].map((m) => m[1]))
+const readAll = (dirs: any[], exts: any) => dirs.flatMap((d: string) => walk2(path.join(ROOT, d), exts)).map((f: fs.PathOrFileDescriptor) => fs.readFileSync(f, 'utf8')).join('\n')
 // @ts-expect-error TS7023, from the conversion: 'walk2' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one o
-const walk2 = (d: any, exts: any) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? (e.name === 'node_modules' || e.name === 'supertonic' ? [] : walk2(path.join(d, e.name), exts)) : exts.some((x: any) => e.name.endsWith(x)) ? [path.join(d, e.name)] : []) : []
+const walk2 = (d, exts) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? (e.name === 'node_modules' || e.name === 'supertonic' ? [] : walk2(path.join(d, e.name), exts)) : exts.some((x) => e.name.endsWith(x)) ? [path.join(d, e.name)] : []) : []
 
 /* environment variables: read by the kit or the theme, or demanded by the deploy check — each on the page, and each on the page read somewhere */
 {
@@ -355,7 +355,7 @@ const walk2 = (d: any, exts: any) => fs.existsSync(d) ? fs.readdirSync(d, { with
        * that quietly covers nothing is worse than no check, because it is believed. It now
        * unwraps, and a schema it still cannot read is a fault by name.
        */
-      const shapeOf = (z: any) => {
+      const shapeOf = (z: { shape: any; _def: { shape: () => any; schema: any; innerType: any; in: any; type: any } }) => {
         for (let i = 0; z && i < 8; i++) {
           if (z.shape) return z.shape
           if (z._def && typeof z._def.shape === 'function') return z._def.shape()
@@ -381,8 +381,8 @@ const walk2 = (d: any, exts: any) => fs.existsSync(d) ? fs.readdirSync(d, { with
 {
   /* the main spec once the platformkit change is archived; its delta before */
   const SPEC = fs.existsSync(path.join(ROOT, 'openspec/specs/kit-principles/spec.md')) ? 'openspec/specs/kit-principles/spec.md' : 'openspec/changes/platformkit/specs/kit-principles/spec.md'
-  const table = (text: any) => { const rows = []; for (const line of text.split('\n')) { if (!/^\|/.test(line) || /^\|\s*-{3,}/.test(line)) continue; const cells = line.split('|').slice(1, -1).map((c: any) => c.replace(/\*\*/g, '').replace(/\s+/g, ' ').trim()); rows.push(cells) } return rows.filter((r) => r.length >= 3 && !/^instead of$/i.test(r[0])) }
-  const norm = (c: any) => c.toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim()
+  const table = (text: any) => { const rows = []; for (const line of text.split('\n')) { if (!/^\|/.test(line) || /^\|\s*-{3,}/.test(line)) continue; const cells = line.split('|').slice(1, -1).map((c: string) => c.replace(/\*\*/g, '').replace(/\s+/g, ' ').trim()); rows.push(cells) } return rows.filter((r) => r.length >= 3 && !/^instead of$/i.test(r[0])) }
+  const norm = (c: string) => c.toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim()
   if (fs.existsSync(path.join(ROOT, SPEC))) {
     const spec = table(fs.readFileSync(path.join(ROOT, SPEC), 'utf8'))
     const specBy = new Map(spec.map((r) => [norm(r[0]), r]))
@@ -391,7 +391,7 @@ const walk2 = (d: any, exts: any) => fs.existsSync(d) ? fs.readdirSync(d, { with
     const changes = path.join(ROOT, 'openspec', 'changes')
     const proposed = fs.existsSync(changes) ? fs.readdirSync(changes).filter((c) => c !== 'archive' && fs.existsSync(path.join(changes, c, 'specs', 'kit-principles', 'spec.md'))).map((c) => ({ change: c, text: norm(fs.readFileSync(path.join(changes, c, 'specs', 'kit-principles', 'spec.md'), 'utf8')) })) : []
     const proposedIn = (name: any) => { const p = proposed.find((x) => x.change !== 'platformkit' && x.text.includes(norm(name))); return p && p.change }
-    for (const p of pages.filter((x: any) => /COMPETITORS\.md$|what-platformkit-is\.md$/.test(x.file))) {
+    for (const p of pages.filter((x) => /COMPETITORS\.md$|what-platformkit-is\.md$/.test(x.file))) {
       const rows = table(p.text)
       const seen = new Set()
       for (const r of rows) {
@@ -409,7 +409,7 @@ const walk2 = (d: any, exts: any) => fs.existsSync(d) ? fs.readdirSync(d, { with
 
 /* links: every internal docs link resolves */
 {
-  const ids = new Set(pages.filter((p: any) => p.file.startsWith(DOCS + '/')).map((p: any) => p.file.slice(DOCS.length + 1).replace(/\.md$/, '')))
+  const ids = new Set(pages.filter((p) => p.file.startsWith(DOCS + '/')).map((p) => p.file.slice(DOCS.length + 1).replace(/\.md$/, '')))
   for (const p of pages) for (const m of p.text.matchAll(/\]\(\/(?:content\/)?docs\/([^)#]+)\)/g)) if (!ids.has(m[1])) fault(p.file, `links to /docs/${m[1]}, which is not a page`)
 }
 

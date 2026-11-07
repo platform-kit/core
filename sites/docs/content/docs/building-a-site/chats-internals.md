@@ -21,7 +21,7 @@ sources:
     packages/kit/src/lib/chat,
     packages/kit/src/lib/support,
   ]
-reviewed: 2026-11-04
+reviewed: 2026-11-07
 ---
 
 The desk's own webhook subscriptions carry a **source**: one made through the Support API is `hand`, and one a deployment ships declared in `platformkit.config.js` is `file` and is replaced on every deploy.

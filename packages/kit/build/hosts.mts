@@ -22,12 +22,12 @@ const connectionMap = `map $http_upgrade $connection_upgrade {
 }
 `
 
-const validPort = (value: any) => {
+const validPort = (value: string|undefined) => {
   const port = Number(value)
   return Number.isInteger(port) && port > 0 && port < 65536 ? port : null
 }
 
-function missingSitePage(site: any, domain: any) {
+function missingSitePage(site: { root: any; name: any }, domain: any) {
   const location = site.root ? '.' : `sites/${site.name}`
   return `location / {
   default_type text/html;
@@ -36,7 +36,7 @@ function missingSitePage(site: any, domain: any) {
 }`
 }
 
-function fileLocations(site: any) {
+function fileLocations(site: { backend: boolean; name: any }) {
   const includes = []
   if (site.backend !== false) includes.push(`  include /etc/nginx/conf.d/rewrites.${site.name}.inc;`)
   includes.push(`  include /etc/nginx/conf.d/prerender.inc;`)
@@ -56,7 +56,7 @@ ${includes.join('\n')}
   location / { try_files $uri $uri/index.html @page; }`
 }
 
-function proxyLocations(site: any, domain: any, port: any) {
+function proxyLocations(site: any, domain: any, port: number|null) {
   if (!port) return missingSitePage(site, domain)
   const upstream = `http://host.docker.internal:${port}`
   return `  location / {
@@ -73,7 +73,7 @@ function proxyLocations(site: any, domain: any, port: any) {
   }`
 }
 
-function directoryProxyLocations(port: any) {
+function directoryProxyLocations(port: number|null) {
   return `  location / {
     proxy_pass http://host.docker.internal:${port};
     proxy_http_version 1.1;
@@ -86,7 +86,7 @@ function directoryProxyLocations(port: any) {
   }`
 }
 
-function rewriteTemplateFor(templateDir: any, site: any) {
+function rewriteTemplateFor(templateDir: string, site: { name: string; root: boolean }|{ name: any; directory: string; dist: string; root: boolean; managed: boolean; fetched: boolean; remote: any; ref: any }) {
   const named = path.join(templateDir, `rewrites.${site.name}.inc.template`)
   return fs.existsSync(named) || !site.root ? named : path.join(templateDir, 'rewrites.inc.template')
 }
@@ -121,8 +121,8 @@ export function renderHostConfig({
   if (directoryEnabled && !directoryPort) throw new Error('PLATFORMKIT_DEV_DIRECTORY_PORT must be a valid port')
 
   for (const site of siteList) {
-    const port = mode === 'proxy' ? validPort((ports as any)[site.name]) : null
-    if (mode === 'proxy' && (ports as any)[site.name] && !port) throw new Error(`the port for ${site.name} is not valid`)
+    const port = mode === 'proxy' ? validPort(ports[site.name]) : null
+    if (mode === 'proxy' && ports[site.name] && !port) throw new Error(`the port for ${site.name} is not valid`)
     if (mode === 'files' && site.backend !== false) {
       const variable = `SUPABASE_URL_${siteEnvSuffix(site.name)}`
       if (!env[variable]) throw new Error(`site ${site.name} requires ${variable}`)

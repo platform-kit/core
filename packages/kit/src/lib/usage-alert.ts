@@ -18,14 +18,14 @@ export const NEEDS_CUSTOMER = ['requires_action', 'failed']
 
 /* the one status the banner announces, from the statuses of a customer's open usage payments: null when
    none needs them */
-export function alertFor(statuses: any) {
+export function alertFor(statuses: string|Iterable<any>|null|undefined) {
   const open = new Set(Array.isArray(statuses) ? statuses : [statuses])
   return NEEDS_CUSTOMER.find((status) => open.has(status)) || null
 }
 
 export const ALERT_QUIET = ['/checkout/', '/embed/', '/__preview', '/__share']
 
-export function mayShowUsageAlert(path: any) {
+export function mayShowUsageAlert(path: string) {
   const p = String(path || '')
   if (!p.startsWith('/')) return false
   for (const q of ALERT_QUIET) {

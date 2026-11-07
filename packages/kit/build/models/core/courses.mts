@@ -55,7 +55,7 @@ export default {
         const [media, ...restMedia] = Array.isArray(l.media) ? l.media : l.media ? [l.media] : []
         const [dl, ...restDl] = Array.isArray(l.downloads) ? l.downloads : []
         const more = clean({ media: restMedia, downloads: restDl })
-        return clean({ key: l.key, title: l.title, section: l.section, kind: l.kind || 'text', ref: l.ref, required: l.required !== false, text: (texts as any)[l.key], video: media && media.src, videoTitle: media && media.title, download: dl && dl.src, downloadTitle: dl && dl.title, more: Object.keys(more).length ? more : undefined })
+        return clean({ key: l.key, title: l.title, section: l.section, kind: l.kind || 'text', ref: l.ref, required: l.required !== false, text: texts[l.key], video: media && media.src, videoTitle: media && media.title, download: dl && dl.src, downloadTitle: dl && dl.title, more: Object.keys(more).length ? more : undefined })
       })
       const cohorts = (Array.isArray(d.cohorts) ? d.cohorts : []).map((c) => clean({ key: c.key, starts: c.starts instanceof Date ? c.starts.toISOString().slice(0, 10) : c.starts, space: c.space }))
       return { data: clean({ title: d.title, image: d.image, position: d.position, published: d.published !== false, free: a.free === true, skus: a.skus, tiers: a.tiers, release: d.release || 'all', drip: d.drip || 'lesson', every: d.every, inOrder: d.inOrder === true, certificate: d.certificate === true, cohorts, lessons }), content: about }

@@ -48,7 +48,7 @@ const version = (...parts: any[]) => createHash('sha1').update(parts.join('\n'))
 /* THE TWO ARTEFACTS IT LEANS ON — the catalog (a book's slug widened to its skus) and the compiled
    designs (a step's design must exist) — are handed in where the caller has them, and read off the
    disk where it does not. In an Edge Function there is no disk: the publish passes both. */
-function skusOfFn(offers: any) {
+function skusOfFn(offers: {}|null) {
   const o = offers || {}
   return (slug: any) => Object.values(o).filter((x: any) => x.book === slug || x.sku === slug).map((x: any) => x.sku)
 }
@@ -58,7 +58,7 @@ const designsOf = (designs: any) => designs || {}
    dynamic import — is assembled into the pipe, and the pipe may not reach a disk */
 async function writer() {
   const { readFileSync, writeFileSync, mkdirSync } = await import('node:fs')
-  return (at: any, text: any) => {
+  return (at: any, text: string|NodeJS.ArrayBufferView<ArrayBufferLike>) => {
     try { if (readFileSync(at, 'utf8') === text) return false } catch { /* not there yet */ }
     mkdirSync(dirname(at), { recursive: true })
     writeFileSync(at, text)
@@ -74,10 +74,10 @@ export async function compileFunnels({ check = false, store, offers = null, desi
      skipped rather than failed: a step naming a design that exists would otherwise refuse the whole
      compile for a reason the compiler could not actually see. */
   const knowsDesigns = Object.keys(compiledDesigns).length > 0
-  const designOk = (dn: any) => !knowsDesigns || !!compiledDesigns[dn]
+  const designOk = (dn: string) => !knowsDesigns || !!compiledDesigns[dn]
   const errors: any = []
-  const err = (m: any) => errors.push(m)
-  const rulesOf = (audience: any, where: any) => {
+  const err = (m: string) => errors.push(m)
+  const rulesOf = (audience: any, where: string) => {
     for (const k of Object.keys(audience || {})) if (!RULE_KEYS.includes(k)) err(`${where}: audience rule "${k}" is not one of ${RULE_KEYS.join(', ')}`)
     // @ts-expect-error TS2322, from the conversion: Type '(slug: any) => any[]' is not assignable to type 'null | undefined'.
     return normalizeRules(audience, { skusOf })
@@ -109,8 +109,8 @@ export async function compileFunnels({ check = false, store, offers = null, desi
       const text = mdToText(md)
       const image = String(s.image || '').trim()
       if (image && !/^(https?:\/\/|\/)/.test(image)) err(`${where}: step ${i + 1} "${s.title}" — image must be a url or a /uploads path`)
-      prompts[s.id] = { id: s.id, funnel: name, title: s.title, text, image, choices, default: !!(when as any).default, version: version(s.body, s.when, image) }
-      if (published) browserPrompts.push({ id: s.id, funnel: name, title: s.title, text, teaser: String(s.teaser || '').trim(), image, choices, default: !!(when as any).default, when, rules })
+      prompts[s.id] = { id: s.id, funnel: name, title: s.title, text, image, choices, default: !!when.default, version: version(s.body, s.when, image) }
+      if (published) browserPrompts.push({ id: s.id, funnel: name, title: s.title, text, teaser: String(s.teaser || '').trim(), image, choices, default: !!when.default, when, rules })
     }
     const steps = f.steps.filter((s) => s.channel !== 'chat').map((s, i) => {
       if (!s.id) err(`${where}: step ${i + 1} "${s.title}" has no id — node build/funnels.mjs --key gives it one`)
@@ -159,7 +159,7 @@ export async function compileFunnels({ check = false, store, offers = null, desi
 /* what only a machine has: the two artefacts on disk, read here and handed to the compile */
 async function fromDisk() {
   const { readFileSync } = await import('node:fs')
-  const read = (at: any) => { try { return JSON.parse(readFileSync(join(ROOT, at), 'utf8')) } catch (e) { return null } }
+  const read = (at: string) => { try { return JSON.parse(readFileSync(join(ROOT, at), 'utf8')) } catch (e) { return null } }
   return { offers: (read('supabase/functions/_shared/catalog.json') || {}).offers || null, designs: read('supabase/functions/_shared/emails/compiled.json') }
 }
 

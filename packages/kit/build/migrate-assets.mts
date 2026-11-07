@@ -16,9 +16,9 @@ import { isMain } from './is-main.mjs'
 const IMAGE_FIELDS = ['cover', 'image', 'share', 'heroImage', 'portrait', 'photo', 'picture']
 /* the models whose records kept pictures beside them, and where those go */
 const RELATIVE = [['content/books', 'books'], ['content/wiki', 'wiki'], ['content/docs', 'docs']]
-const isRelative = (v: any) => typeof v === 'string' && v.trim() && !/^(https?:)?\//i.test(v.trim()) && !v.includes('..')
+const isRelative = (v: string) => typeof v === 'string' && v.trim() && !/^(https?:)?\//i.test(v.trim()) && !v.includes('..')
 
-export async function migrateAssets(root: any, { dry = false, log = () => {} } = {}) {
+export async function migrateAssets(root: string, { dry = false, log = () => {} } = {}) {
   const store = asStore(root)
   const moved = []
   /* the content models' entries kept theirs beside them too: content/models/<key>/ → content/uploads/models/<key>/ */
@@ -65,9 +65,9 @@ export async function migrateAssets(root: any, { dry = false, log = () => {} } =
   }
   return { moved }
 }
-const escapeRe = (s: any) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ png: string; jpg: string; jpeg: string;
-const mimeOf = (p: any) => ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', avif: 'image/avif' })[(String(p) as any).split('.').pop().toLowerCase()] || 'application/octet-stream'
+const mimeOf = (p) => ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', avif: 'image/avif' })[String(p).split('.').pop().toLowerCase()] || 'application/octet-stream'
 
 if (isMain(import.meta.url)) {
   const dry = process.argv.includes('--dry')

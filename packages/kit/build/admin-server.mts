@@ -187,7 +187,7 @@ export function adminServer() {
           if (seg === 'run' && req.method === 'POST') { try { return send(res, 200, { job: jobView(await startJob(await body(req))) }) } catch (e: any) { return send(res, e.code || 500, { error: e.message }) } }
           if (seg === 'run/stop' && req.method === 'POST') {
             const { id }: any = await body(req)
-            const job: any = jobs.find((j: any) => j.id === id)
+            const job = jobs.find((j: any) => j.id === id)
             if (!job) return send(res, 404, { error: 'no such run' })
             if (job.running && job.child) { job.stopped = true; job.child.kill('SIGTERM'); job.log += '\n— stopped —\n' }
             return send(res, 200, { job: jobView(job) })

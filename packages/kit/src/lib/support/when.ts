@@ -23,13 +23,13 @@ export const TRIGGER_KEYS = ['on-site', 'on-page', 'page-time', 'signed-in', 're
 const UNIT: any = { s: 1, m: 60, h: 3600 }
 
 /* "30s" → 30, "2m" → 120, "1h" → 3600, "45" → 45; null when it is not a span */
-export function seconds(s: any) {
+export function seconds(s: string|number) {
   if (typeof s === 'number') return s >= 0 ? s : null
   const m = /^\s*(\d+(?:\.\d+)?)\s*([smh])?\s*$/i.exec(String(s ?? ''))
   return m ? Number(m[1]) * UNIT[(m[2] || 's').toLowerCase()] : null
 }
 /* 90 → "1m30s"? no — the shortest whole unit: 30 → "30s", 120 → "2m", 3600 → "1h", 90 → "90s" */
-export function spanWord(n: any) {
+export function spanWord(n: string|number) {
   n = Number(n) || 0
   if (n && n % 3600 === 0) return n / 3600 + 'h'
   if (n && n % 60 === 0) return n / 60 + 'm'
@@ -38,7 +38,7 @@ export function spanWord(n: any) {
 
 /* the line → { 'on-site': 30, 'on-page': '/store/**', 'page-time': 10, 'signed-in': true, returning: true, cart: true };
    an unknown key or a bad value lands in `errors` */
-export function parseWhen(line: any) {
+export function parseWhen(line: string) {
   const out: any = {}
   const errors = []
   const parts = String(line ?? '').split(',').map((p) => p.trim()).filter(Boolean)
@@ -73,17 +73,17 @@ export function serialiseWhen(when: any) {
 }
 
 /* "/store/**" → a RegExp over a pathname: * is one segment, ** any depth (or nothing) */
-export function globToRegExp(glob: any) {
+export function globToRegExp(glob: string) {
   const g = String(glob || '/').replace(/[?#].*$/, '').replace(/\/+$/, '')
   if (!g) return /^\/$/
   const re = g.split('/').filter(Boolean).map((seg) => (seg === '**' ? '(?:/.*)?' : '/' + seg.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*'))).join('')
   return new RegExp('^' + re + '/?$')
 }
-export const pageMatches = (glob: any, path: any) => globToRegExp(glob).test(String(path || '/').replace(/[?#].*$/, '').replace(/\/+$/, '') || '/')
+export const pageMatches = (glob: string, path: string) => globToRegExp(glob).test(String(path || '/').replace(/[?#].*$/, '').replace(/\/+$/, '') || '/')
 
 /* every trigger on the line holds for this moment: ctx = { onSite (s), pageTime (s), path,
    signedIn, returning, cart } */
-export function holds(when: any, ctx: any) {
+export function holds(when: any, ctx: { onSite?: number; path?: any; signedIn?: boolean; cart?: boolean; returning?: boolean; pageTime?: number }) {
   const w = when || {}
   const keys = Object.keys(w).filter((k) => TRIGGER_KEYS.includes(k))
   if (!keys.length || w.default) return false

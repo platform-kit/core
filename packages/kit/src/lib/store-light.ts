@@ -7,9 +7,9 @@
 const KEY = 'pk.embed'
 const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}') } catch { return {} } }
 const write = (o: any) => { try { localStorage.setItem(KEY, JSON.stringify(o)) } catch { /* private mode */ } }
-export function get(key: any) { const v = read()[key]; return v === undefined ? null : v }
-export function set(key: any, value: any) { const o = read(); o[key] = value; write(o) }
-export function del(key: any) { const o = read(); delete o[key]; write(o) }
+export function get(key: string|number) { const v = read()[key]; return v === undefined ? null : v }
+export function set(key: string|number, value: any) { const o = read(); o[key] = value; write(o) }
+export function del(key: string|number) { const o = read(); delete o[key]; write(o) }
 export async function reset() { try { localStorage.removeItem(KEY) } catch { /* private */ } }
 export const ready = Promise.resolve()
 export function loroDoc() { return null }

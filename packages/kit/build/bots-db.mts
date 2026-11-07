@@ -40,7 +40,7 @@ export async function projectBots({ bots, db, log = () => {} }: any = {}) {
     n++
   }
   let gone = 0
-  for (const b of had) if (!list.some((x: any) => x.slug === b.slug)) {
+  for (const b of had) if (!list.some((x: { slug: any }) => x.slug === b.slug)) {
     const { error } = await db.from('bots').delete().eq('id', b.id)
     if (error) throw new Error(`bots: could not remove ${b.slug}: ${error.message}`)
     gone++

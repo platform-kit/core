@@ -26,7 +26,7 @@ export async function runSeedSteps({ cwd, env = process.env, stdio = 'inherit', 
   const { loadSteps } = await import('./steps.mjs')
   const { isOn } = await import('./modules/manifest.mjs')
   const site = await loadSite(cwd)
-  const owner = new Map((await loadSteps(site)).map((s: any) => [s.key, s.module]))
+  const owner = new Map((await loadSteps(site)).map((s: { key: any; module: any }) => [s.key, s.module]))
   for (const [script, ...args] of SEED_STEPS) {
     if (skip.includes(script)) continue
     const module = owner.get(path.basename(script, '.mjs'))

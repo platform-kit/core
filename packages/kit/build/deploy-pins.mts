@@ -11,7 +11,7 @@ const COMMIT = /^[a-f0-9]{40}$/i
 const HASH = /^[a-f0-9]{64}$/i
 const SOURCE_RECEIPT = 'node_modules/.cache/platformkit/source-install.json'
 
-function normalizedSourceUrl(value: any) {
+function normalizedSourceUrl(value: string) {
   if (typeof value !== 'string') return null
   if (value.toLowerCase() === 'github:platform-kit/core') return 'https://github.com/platform-kit/core'
   const scp = /^git@github\.com:([^?#]+)$/.exec(value)
@@ -25,7 +25,7 @@ function normalizedSourceUrl(value: any) {
   }
 }
 
-function readJson(file: any, label: any, errors: any) {
+function readJson(file: fs.PathOrFileDescriptor, label: string, errors: string[]) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'))
   } catch (error: any) {
@@ -36,8 +36,8 @@ function readJson(file: any, label: any, errors: any) {
 
 export function platformKitPins(root = process.cwd()) {
   const errors: any = []
-  const manifest: any = readJson(path.join(root, 'package.json'), 'package.json', errors)
-  const lock: any = readJson(path.join(root, 'package-lock.json'), 'package-lock.json', errors)
+  const manifest = readJson(path.join(root, 'package.json'), 'package.json', errors)
+  const lock = readJson(path.join(root, 'package-lock.json'), 'package-lock.json', errors)
   const pins: any = []
 
   if (!manifest || !lock) return { errors, pins }
@@ -91,8 +91,8 @@ export function assertPlatformKitPins(root = process.cwd()) {
 
 export function platformKitSourceInstall(root = process.cwd()) {
   const errors: any = []
-  const manifest: any = readJson(path.join(root, 'package.json'), 'package.json', errors)
-  const receipt: any = readJson(path.join(root, SOURCE_RECEIPT), SOURCE_RECEIPT, errors)
+  const manifest = readJson(path.join(root, 'package.json'), 'package.json', errors)
+  const receipt = readJson(path.join(root, SOURCE_RECEIPT), SOURCE_RECEIPT, errors)
   if (!manifest || !receipt) return { errors, source: null }
   if (receipt.schema !== 1) errors.push(`${SOURCE_RECEIPT}: unsupported receipt schema`)
   if (receipt.source?.ref !== null && receipt.source?.ref !== undefined && !COMMIT.test(receipt.source.ref)) {

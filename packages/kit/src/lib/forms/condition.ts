@@ -18,7 +18,7 @@ const ROW = [
   [new RegExp(`^not\\s+(${NAME})$`), 'unset'],
   [new RegExp(`^(${NAME})$`), 'set'],
 ]
-const unq = (m: any, from: any) => { for (let i = from; i < from + 3; i++) if (m[i] !== undefined) return m[i].replace(/\\(['"])/g, '$1') ; return '' }
+const unq = (m: { [x: string]: string }, from: number) => { for (let i = from; i < from + 3; i++) if (m[i] !== undefined) return m[i].replace(/\\(['"])/g, '$1') ; return '' }
 
 /* the rows a condition says, or null when it is not one these rows can say */
 export function rowsOf(cond: any) {
@@ -44,7 +44,7 @@ export function rowsOf(cond: any) {
 const lit = (v: any) => (/^-?\d+(\.\d+)?$/.test(String(v).trim()) ? String(v).trim() : `'${String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`)
 /* the expression the rows say */
 export function exprOf(rows: any) {
-  return (rows || []).filter((r: any) => r && r.field).map((r: any) => {
+  return (rows || []).filter((r: { field: any }) => r && r.field).map((r: { op: any; field: any; value: any }) => {
     switch (r.op) {
       case 'isnot': return `${r.field} != ${lit(r.value)}`
       case 'contains': return `${lit(r.value)} in ${r.field}`
@@ -65,7 +65,7 @@ export function describe(cond: any, fields: any, words: any) {
   const rows = rowsOf(cond)
   if (rows === null) return String(cond || '')
   const w = words || {}
-  const q = (n: any) => { const f = (fields || []).find((x: any) => x.name === n); const t = f && (f.question || (f.params && f.params.question)); return t && t !== '...' ? t : n }
+  const q = (n: any) => { const f = (fields || []).find((x: { name: any }) => x.name === n); const t = f && (f.question || (f.params && f.params.question)); return t && t !== '...' ? t : n }
   // @ts-expect-error TS2538, from the conversion: Type 'RegExp' cannot be used as an index type.
   return rows.map((r) => [q(r.field), w[r.op] || r.op, r.op === 'set' || r.op === 'unset' ? '' : r.value].filter(Boolean).join(' ')).join(' ' + (w.and || 'and') + ' ')
 }

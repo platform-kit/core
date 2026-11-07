@@ -12,7 +12,7 @@ import path from 'node:path'
 import { searchRows } from '../src/lib/search-rows.js'
 
 const DIR = '.velite'
-const read = (f: any) => JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8'))
+const read = (f: string) => JSON.parse(fs.readFileSync(path.join(DIR, f), 'utf8'))
 const stripHtml = (h: any) => (h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 
 export async function embedContent() {
@@ -39,10 +39,10 @@ export async function embedContent() {
   const C = fs.existsSync(path.join(DIR, 'companions.json')) ? read('companions.json') : []
   const teachings = []
   for (const c of C) {
-    const b = B.find((x: any) => x.slug === c.book); if (!b) continue
+    const b = B.find((x: { slug: any }) => x.slug === c.book); if (!b) continue
     const head = [b.title, c.insight, c.statement, b.description].filter(Boolean).join('. ')
     teachings.push({ book: b.slug, key: 'insight', text: head })
-    ;(c.chapters || []).forEach((ch: any, i: any) => {
+    ;(c.chapters || []).forEach((ch: { essence: any; summary: any; title: any }, i: string) => {
       const ess = (ch.essence || []).join(' ')
       const sum = stripHtml(ch.summary || '').slice(0, 600)
       if (ess || sum) teachings.push({ book: b.slug, key: 'ch:' + i, text: [ch.title, ess, sum].filter(Boolean).join('. ') })

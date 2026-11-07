@@ -32,7 +32,7 @@ import { ENGINE_VERSION } from '../instrument/engine/session.js'
 export const TESTS: any = { type: 'personality', domain: 'diagnostics', words: 'blockages', books: 'books' }
 const CORPUS: any = { personality: 'type', diagnostics: 'domain', blockages: 'words', books: 'books' }
 const CORPORA = ['domain', 'type', 'words', 'books']
-export const testOf = (corpus: any) => TESTS[corpus]
+export const testOf = (corpus: string|number) => TESTS[corpus]
 
 const OUTBOX_KEY = 'dl.outbox.v1'
 const FLUSH_MS = 1500
@@ -43,13 +43,13 @@ const PAGE = 1000
 /* bumps whenever the session was rebuilt from rows, so the sheet can remount */
 export const sessionRev = ref(0)
 
-const uid = () => (session.value && (session.value as any).user && (session.value as any).user.id) || null
+const uid = () => (session.value && session.value.user && session.value.user.id) || null
 /* the item an entry is about: statement id, pair id, or the word itself */
-const itemOf = (corpus: any, e: any) => (corpus === 'words' ? e.w : e.id)
+const itemOf = (corpus: string, e: { w: any; id: any }) => (corpus === 'words' ? e.w : e.id)
 /* the natural key, with time as epoch ms so a server row and a local entry agree */
-const keyOf = (test: any, item: any, ms: any) => test + '|' + item + '|' + ms
+const keyOf = (test: string, item: string, ms: string|number) => test + '|' + item + '|' + ms
 
-function rowFor(corpus: any, e: any, userId: any) {
+function rowFor(corpus: string, e: any, userId: any) {
   /* answers saved before timestamps existed cannot be keyed; they stay local */
   if (!e || typeof e.ts !== 'number') return null
   const item = itemOf(corpus, e)
@@ -97,7 +97,7 @@ export async function flush() {
    rows stay queued and the next flush's upsert makes the repeat harmless */
 function flushKeepalive() {
   const rows = Object.values(box())
-  const token = session.value && (session.value as any).access_token
+  const token = session.value && session.value.access_token
   if (!rows.length || !token || !configured) return
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY
   try {
@@ -112,7 +112,7 @@ function flushKeepalive() {
 
 /* a finished round: the scorer's own object, stamped with the engine that made it.
    Derivable from the answers, so no outbox — a miss is recomputed next time. */
-export async function recordResult(corpus: any, payload: any, answered: any) {
+export async function recordResult(corpus: string|number, payload: any, answered: number) {
   const id = uid()
   if (!id || !configured || !payload) return
   try {
@@ -186,7 +186,7 @@ export async function hydrate() {
       if (seen[rowKey(row)]) continue
       resp[c].push(e); b[rowKey(row)] = row; uploads++  /* local only: goes up */
     }
-    resp[c].sort((a: any, b2: any) => (a.ts || 0) - (b2.ts || 0))
+    resp[c].sort((a: { ts: any }, b2: { ts: any }) => (a.ts || 0) - (b2.ts || 0))
   }
   if (uploads) saveBox()
   /* the seen-counts follow from the answers */
@@ -212,7 +212,7 @@ export function initRecords() {
   /* a merge that changed the saved session (sign-in, or a focus pull bringing
      another device's answers) replaces the in-memory copy, so the sheet shows
      it and the next save carries it forward instead of overwriting it */
-  onReconcile((keys: any) => { if (keys.indexOf(SESSION_KEY) >= 0) { load(); rebuilt() } })
+  onReconcile((keys) => { if (keys.indexOf(SESSION_KEY) >= 0) { load(); rebuilt() } })
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushKeepalive() })
   window.addEventListener('pagehide', flushKeepalive)
   window.addEventListener('focus', () => { flush() })

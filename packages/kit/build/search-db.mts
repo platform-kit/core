@@ -21,7 +21,7 @@ import { renderer } from '../src/lib/markdown.js'
 export const INDEXED = ['articles', 'wiki', 'docs', 'books']
 
 /* every published entry of those collections, rebuilt from the rows */
-export async function collectionsFrom(store: any, { renderer }: any = {}) {
+export async function collectionsFrom(store: { client: any }, { renderer }: any = {}) {
   const db = store && store.client
   if (!db) return {}
   const { toEntry, targetOf } = await import('../src/lib/entry.js')
@@ -51,9 +51,9 @@ export async function collectionsFrom(store: any, { renderer }: any = {}) {
 export const BODY_MAX = 200_000
 
 /* the rows as the table takes them — the one shape, whichever side built the collections */
-export function indexRows(rows: any) {
+export function indexRows(rows: any[]) {
   const now = new Date().toISOString()
-  return rows.map((r: any) => ({
+  return rows.map((r: { kind: any; id: any; title: any; sub: any; href: any; image: any; date: any; tags: any; canAccess: any; text: any; quote: null }) => ({
     kind: r.kind, ref: String(r.id),
     title: r.title || String(r.id), sub: r.sub || '', href: r.href,
     image: r.image || null, date: r.date || null,
@@ -78,7 +78,7 @@ export async function projectSearch({ rows, db, log = () => {} }: any = {}) {
   const { data: had, error: hadError } = await db.from('content_search').select('id, kind, ref')
   if (hadError) throw new Error(`search: could not read existing documents: ${hadError.message}`)
   if (!Array.isArray(had)) throw new Error('search: could not read existing documents: expected a row list')
-  const keep = new Set(want.map((r: any) => r.kind + '\u0000' + r.ref))
+  const keep = new Set(want.map((r: { kind: string; ref: string }) => r.kind + '\u0000' + r.ref))
   const gone = had.filter((r) => !keep.has(r.kind + '\u0000' + r.ref))
   if (gone.length) {
     const { error: deleteError } = await db.from('content_search').delete().in('id', gone.map((r) => r.id))
@@ -89,7 +89,7 @@ export async function projectSearch({ rows, db, log = () => {} }: any = {}) {
 }
 
 /* the whole of it, from a rows store: rebuild the collections, make the rows, write the index */
-export async function projectSearchFromStore(store: any, { log = () => {} } = {}) {
+export async function projectSearchFromStore(store: { client: any }, { log = () => {} } = {}) {
   const db = store && store.client
   if (!db) return { pushed: 0 }
   const by = await collectionsFrom(store, { renderer })

@@ -43,7 +43,7 @@ let engine: any = null, provider: any = null, loading: any = null
  */
 const styles: any = {}
 let loadingStyle: any = null
-async function styleFor(name: any) {
+async function styleFor(name: string) {
   const want = OWN_VOICES.includes(name) ? name : OWN_DEFAULT
   if (styles[want]) return styles[want]
   const E = await import('./engine.js')
@@ -57,7 +57,7 @@ async function styleFor(name: any) {
   return styles[want] || styles[OWN_DEFAULT]
 }
 let cancelId: any = null
-const post = (m: any, transfer?: any) => self.postMessage(m, transfer || [])
+const post = (m: { type: string; file?: any; done?: number; total?: unknown; provider?: any; id?: any; piece?: any; pieces?: any; i?: any; pcm?: Float32Array<any>; rate?: any; message?: string; blob?: Blob; seconds?: number; format?: { codec: string; bitrate: number; sampleRate: any; channels: number } }, transfer?: any) => self.postMessage(m, transfer || [])
 
 async function build() {
   const E = await import('./engine.js')
@@ -72,7 +72,7 @@ async function build() {
   const totals: any = {}
   for (const f of BROWSER_FILES) {
     let last = 0
-    got[f] = await fetchWeight(f, (file: any, done: any, total: any) => {
+    got[f] = await fetchWeight(f, (file: string|number, done: number, total: any) => {
       totals[file] = total; doneBytes += done - last; last = done
       // @ts-expect-error TS18046, from the conversion: 'a' is of type 'unknown'.
       post({ type: 'download', file, done: doneBytes, total: Object.values(totals).reduce((a, b) => a + b, 0) })
@@ -113,7 +113,7 @@ async function speak({ id, text, live, engine: settings }: any) {
   /* a chapter's defaults, or a conversation's — they differ in pace and in what the opening
      piece is worth spending, and TALK says why */
   const D: any = live ? { ...ENGINE, ...TALK } : ENGINE
-  const settingsOr = (k: any) => (settings && settings[k] !== undefined ? settings[k] : D[k])
+  const settingsOr = (k: string) => (settings && settings[k] !== undefined ? settings[k] : D[k])
   const steps = settingsOr('steps'), speed = settingsOr('speed'), gap = settingsOr('gap')
   /* only the opening piece is ever waited for, so only the opening piece is worth making cheaply */
   const opening = live ? settingsOr('opening') : steps
@@ -122,10 +122,10 @@ async function speak({ id, text, live, engine: settings }: any) {
      reading — neither is the site's business and both are checked before they reach the engine */
   const style = await styleFor(settings && settings.voice)
   const lang = (settings && settings.lang) || 'en'
-  const writer: any = new Mp3Writer(engine.sampleRate)
+  const writer = new Mp3Writer(engine.sampleRate)
   let n = 0, samples = 0
-  const cancelled: any = () => cancelId === id
-  const r: any = await engine.call(text, lang, style, steps, speed, gap, async (i: any, pieces: any, wav: any, seconds: any) => {
+  const cancelled = () => cancelId === id
+  const r = await engine.call(text, lang, style, steps, speed, gap, async (i: number, pieces: number, wav: any, seconds: any) => {
     /* whole pieces, a pause between: nothing trimmed, as in build/tts/worker.mjs */
     if (i) { writer.writeSilence(gap); samples += Math.floor(gap * engine.sampleRate) }
     writer.write(wav)
@@ -133,11 +133,11 @@ async function speak({ id, text, live, engine: settings }: any) {
     post({ type: 'progress', id, piece: i + 1, pieces })
     if (live) {
       /* a copy, because the writer keeps the original and the buffer is transferred away */
-      const pcm: any = new Float32Array(wav.length + (i ? Math.floor(gap * engine.sampleRate) : 0))
+      const pcm = new Float32Array(wav.length + (i ? Math.floor(gap * engine.sampleRate) : 0))
       pcm.set(wav, pcm.length - wav.length)
       post({ type: 'piece', id, i, pcm, rate: engine.sampleRate }, [pcm.buffer])
     }
-  }, cancelled, live ? { cut: (t: any) => talkPieces(t, { first }), stepsAt: (i: any) => stepsFor(i, { steps, opening }) } : {})
+  }, cancelled, live ? { cut: (t: string|null) => talkPieces(t, { first }), stepsAt: (i: any) => stepsFor(i, { steps, opening }) } : {})
   if (r.cancelled) { post({ type: 'error', id, message: 'cancelled' }); return }
   const blob = writer.finish()
   post({ type: 'done', id, blob, seconds: Math.round(samples / engine.sampleRate), pieces: n, format: { codec: 'mp3', bitrate: KBPS * 1000, sampleRate: engine.sampleRate, channels: 1 } })
@@ -146,7 +146,7 @@ async function speak({ id, text, live, engine: settings }: any) {
 let chain = Promise.resolve()
 self.onmessage = (e) => {
   const m = e.data || {}
-  if (m.type === 'load') { load().catch((err: any) => post({ type: 'error', message: String(err && err.message || err) })); return }
+  if (m.type === 'load') { load().catch((err: { message: any }) => post({ type: 'error', message: String(err && err.message || err) })); return }
   if (m.type === 'cancel') { cancelId = m.id; return }
   if (m.type === 'speak') chain = chain.then(() => speak(m)).catch((err) => post({ type: 'error', id: m.id, message: String(err && err.message || err) }))
 }

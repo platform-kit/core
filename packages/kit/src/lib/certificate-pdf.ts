@@ -9,14 +9,14 @@ const W = 842, H = 595
 /* Helvetica's widths, in thousandths of the size, for the characters that matter; anything else is the average */
 const NARROW: any = { i: 222, l: 222, j: 222, I: 278, ' ': 278, '.': 278, ',': 278, f: 278, t: 278, r: 333, '-': 333 }
 const WIDE: any = { m: 833, w: 722, M: 833, W: 944 }
-const width = (s: any, size: any, bold: any) => [...s].reduce((n, c) => n + (NARROW[c] || WIDE[c] || (c === c.toUpperCase() && c !== c.toLowerCase() ? 667 : 556)) * (bold ? 1.05 : 1), 0) * size / 1000
+const width = (s: string, size: number, bold: boolean) => [...s].reduce((n, c) => n + (NARROW[c] || WIDE[c] || (c === c.toUpperCase() && c !== c.toLowerCase() ? 667 : 556)) * (bold ? 1.05 : 1), 0) * size / 1000
 
 const latin1 = (s: any) => [...String(s ?? '')].map((c) => (c.charCodeAt(0) < 256 ? c : '?')).join('')
-const esc = (s: any) => latin1(s).replace(/[\\()]/g, (c) => '\\' + c)
+const esc = (s: string) => latin1(s).replace(/[\\()]/g, (c) => '\\' + c)
 
 export function certificatePdf({ heading = 'Certificate of completion', line = 'This certifies that', name = '', completed = 'completed', course = '', on = 'on', date = '', by = '', check = '', url = '' } = {}) {
   const ops = []
-  const center = (text: any, y: any, size: any, bold = false, grey = 0) => {
+  const center = (text: string, y: number, size: number, bold = false, grey = 0) => {
     const t = latin1(text)
     ops.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf ${grey} g ${((W - width(t, size, bold)) / 2).toFixed(1)} ${y} Td (${esc(t)}) Tj ET`)
   }

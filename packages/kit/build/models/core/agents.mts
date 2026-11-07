@@ -258,7 +258,7 @@ export const bots = {
   }),
   options: {
     surfaces: async ({ root, theme }: any) => {
-      const words: any = await uiScope('spaces', root || process.cwd(), { theme })
+      const words = await uiScope('spaces', root || process.cwd(), { theme })
       const labels = words.bots?.surfaces || {}
       return ['spaces', 'support', 'coaching', 'social'].map((value) => ({ value, label: labels[value] || value }))
     },

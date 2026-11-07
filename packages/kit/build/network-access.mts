@@ -17,7 +17,7 @@ import { catalogFrom } from './spaces-disk.mjs'
 export const GRANTS = ['read', 'write']
 
 /* the config's access, compiled; faults are said, never swallowed */
-export function accessOf(config: any, root: any, { catalog = null } = {}) {
+export function accessOf(config: { network: any }, root: string, { catalog = null } = {}) {
   const raw = (config && config.network && config.network.access) || null
   if (!raw) return { rules: null, join: null, faults: [] }
   const faults = []
@@ -32,7 +32,7 @@ export function accessOf(config: any, root: any, { catalog = null } = {}) {
     if (raw[g] == null) continue
     const bad = (m: any) => faults.push(`network.access.${m}`)
     const built = buildFill(raw[g], {
-      bad, where: (i: any) => (Array.isArray(raw[g]) && raw[g].length > 1 ? `${g}[${i + 1}]` : g),
+      bad, where: (i: number) => (Array.isArray(raw[g]) && raw[g].length > 1 ? `${g}[${i + 1}]` : g),
       keyOf: cat.keyOf, tierOk: (t: any) => !cat.sells || cat.tiers.has(t), sessionOk: () => true, sells: cat.sells, books: false,
     })
     rules[g] = Array.isArray(built) ? built : [built]
@@ -42,7 +42,7 @@ export function accessOf(config: any, root: any, { catalog = null } = {}) {
   return { rules: Object.keys(rules).length ? rules : null, join, faults }
 }
 
-const literal = (s: any) => "'" + String(s).replace(/'/g, "''") + "'"
+const literal = (s: string) => "'" + String(s).replace(/'/g, "''") + "'"
 
 /*
  * WHO ENTERS EACH PLACE OF THE COMMUNITY (openspec: community-access-by-entitlement) — the config's
@@ -52,7 +52,7 @@ const literal = (s: any) => "'" + String(s).replace(/'/g, "''") + "'"
  * community_admitted(place) in 93-network.sql. Home is not here: it is network.access, above.
  */
 export const GATED = ['events', 'messages', 'notifications']
-export function communityAccessOf(config: any, root: any, { catalog = null } = {}) {
+export function communityAccessOf(config: { community: any }, root: string, { catalog = null } = {}) {
   const m = (config && config.community) || {}
   const wanted: any = {}
   const faults = []
@@ -72,7 +72,7 @@ export function communityAccessOf(config: any, root: any, { catalog = null } = {
   for (const [k, raw] of Object.entries(wanted)) {
     const bad = (msg: any) => faults.push(`community.access.${msg}`)
     const built = buildFill(raw, {
-      bad, where: (i: any) => (Array.isArray(raw) && raw.length > 1 ? `${k}[${i + 1}]` : k),
+      bad, where: (i: number) => (Array.isArray(raw) && raw.length > 1 ? `${k}[${i + 1}]` : k),
       keyOf: cat.keyOf, tierOk: (t: any) => !cat.sells || cat.tiers.has(t), sessionOk: () => true, sells: cat.sells, books: false,
     })
     rules[k] = Array.isArray(built) ? built : [built]

@@ -14,7 +14,7 @@ export function readResults(results = [], from = 0) {
   let done = '', saying = ''
   for (let i = from; i < results.length; i++) {
     const r: any = results[i]
-    const said = (r && r[0] && (r[0] as any).transcript) || ''
+    const said = (r && r[0] && r[0].transcript) || ''
     if (r && r.isFinal) done += said
     else saying += said
   }
@@ -22,10 +22,10 @@ export function readResults(results = [], from = 0) {
 }
 
 /* what is on screen while somebody is speaking: what has been settled, then what is still a guess */
-export const showing = (kept: any, saying: any) => tidy([String(kept || ''), String(saying || '')].join(' '))
+export const showing = (kept: string, saying: string) => tidy([String(kept || ''), String(saying || '')].join(' '))
 
 /* one space between words, none at the ends, and never a space before a full stop */
-export function tidy(s: any) {
+export function tidy(s: string) {
   return String(s || '')
     .replace(/\s+/g, ' ')
     .replace(/\s+([,.!?;:])/g, '$1')
@@ -35,7 +35,7 @@ export function tidy(s: any) {
 /* a transcript as a person would write it: tidied, opened with a capital, closed with a full stop.
    It is never punctuated beyond that — inventing punctuation somebody did not say is putting words
    in their mouth, and this text is shown as theirs. */
-export function asSentence(s: any) {
+export function asSentence(s: string) {
   const t = tidy(s)
   if (!t) return ''
   const opened = t.charAt(0).toUpperCase() + t.slice(1)
@@ -43,7 +43,7 @@ export function asSentence(s: any) {
 }
 
 /* a caption is the last of what was said, short enough to read in one glance */
-export function caption(s: any, words = 14) {
+export function caption(s: string, words = 14) {
   const parts = tidy(s).split(' ').filter(Boolean)
   return parts.slice(Math.max(0, parts.length - words)).join(' ')
 }

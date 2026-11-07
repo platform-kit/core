@@ -31,7 +31,7 @@ export function identityBus() {
     /* register; the returned function unregisters */
     on(fn: any) {
       hooks.push(fn)
-      return () => { const i: any = hooks.indexOf(fn); if (i >= 0) hooks.splice(i, 1) }
+      return () => { const i = hooks.indexOf(fn); if (i >= 0) hooks.splice(i, 1) }
     },
     /* Is this somebody new? Marks them as the person the reads are now for, and answers whether
        anything needs doing. The same id twice in a row is a refresh, not an arrival. */

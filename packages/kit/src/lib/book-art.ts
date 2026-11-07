@@ -12,13 +12,13 @@ import { printSpec, coverFor } from './print-offers.js'
 import { editionsOf } from './print-index.js'
 
 export function bookCoverOf(slug: any) {
-  const book = BOOKS.find((entry: any) => entry.slug === slug)
+  const book = BOOKS.find((entry: { slug: any }) => entry.slug === slug)
   const cover = book && book.cover
   return typeof cover === 'string' ? cover : cover && cover.src ? cover.src : ''
 }
 
-export function printedArtOf(slug: any, format = 'softcover') {
-  const b = BOOKS.find((x: any) => x.slug === slug); const spec = b && printSpec(b.print, b)
+export function printedArtOf(slug: string|number, format = 'softcover') {
+  const b = BOOKS.find((x: { slug: any }) => x.slug === slug); const spec = b && printSpec(b.print, b)
   const ed = spec && editionsOf(slug); const e = ed && ed.editions && ed.editions[spec.contents[0]]
   if (!e || !e.art || !e.dims) return null
   const cv = coverFor(e, format, spec.cloth, spec.foil)

@@ -105,12 +105,12 @@ export function skillsLine(bot: any = {}, allowed: any = null) {
   /* a skill the asker may not have is not NAMED, never refused on opening. A model told "you may
      not" spends steps arguing, apologising, or describing what it would have done — which leaks
      the thing the gate exists to hide. A model never offered simply answers with what it has. */
-  const list = (bot.skills || []).filter((s: any) => s && s.name && s.description)
-    .filter((s: any) => !allowed || allowed.has(s.name))
+  const list = (bot.skills || []).filter((s: { name: any; description: any }) => s && s.name && s.description)
+    .filter((s: { name: any }) => !allowed || allowed.has(s.name))
   if (!list.length) return ''
   return ['You can open these for instructions when they are relevant. Open one before answering '
     + 'anything it covers, and do not guess at what it says:',
-    ...list.map((s: any) => `- ${s.name}: ${s.description}`)].join('\n')
+    ...list.map((s: { name: any; description: any }) => `- ${s.name}: ${s.description}`)].join('\n')
 }
 
 /* which skills this run has already opened, read off its own steps — so a resumed run on another
@@ -228,7 +228,7 @@ export function beforeNow(rows = []) {
 /* what a person is told when a run stops without an answer. A run that was cancelled says so
    where it was asked; one that ran out says what it ran out of, because "something went wrong"
    is the least useful sentence in software. */
-export function endingOf(why: any, words: any = {}) {
+export function endingOf(why: string, words: any = {}) {
   /* NO ENGLISH LIVES HERE. What a bot says when it stops is a reader-facing string like any other
      and is authored in markdown (`## bots / ### endings` in the spaces scope); the compile resolves
      it per bot — the theme's words, the site's over them, the bot's own `endings:` last — and

@@ -27,7 +27,7 @@ export function normWords(t: any){
   return String(t||'').toLowerCase().replace(/[’']/g,"'")
     .replace(/[^a-z0-9\s']/g,' ').replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
 }
-export function lcsLen(a: any,b: any){
+export function lcsLen(a: string|any[],b: string|any[]){
   var n=b.length, prev=[], cur=[], i, j;
   for(j=0;j<=n;j++) prev[j]=0;
   for(i=1;i<=a.length;i++){ cur=[0];
@@ -109,9 +109,9 @@ export function micArm(){
 }
 export function micDisarm(){
   if(MIC.raf) cancelAnimationFrame(MIC.raf);
-  if(MIC.take) (MIC.take as any).abort('left');
-  try{ if(MIC.stream) (MIC.stream as any).getTracks().forEach(function(t: any){t.stop();}); }catch(e){}
-  try{ if(MIC.ctx&&(MIC.ctx as any).close) (MIC.ctx as any).close(); }catch(e){}
+  if(MIC.take) MIC.take.abort('left');
+  try{ if(MIC.stream) MIC.stream.getTracks().forEach(function(t: { stop: () => void; }){t.stop();}); }catch(e){}
+  try{ if(MIC.ctx&&MIC.ctx.close) MIC.ctx.close(); }catch(e){}
   MIC.stream=MIC.ctx=MIC.an=MIC.buf=MIC.raf=MIC.take=null; MIC.floor=null; MIC.level=0;
 }
 /* one loop for the whole round: keeps the noise floor current between items and
@@ -119,9 +119,9 @@ export function micDisarm(){
 export function micLoop(){
   MIC.raf=requestAnimationFrame(micLoop);
   if(!MIC.an) return;
-  ;(MIC.an as any).getByteTimeDomainData(MIC.buf);
+  MIC.an.getByteTimeDomainData(MIC.buf);
   var sum=0,i,v; for(i=0;i<MIC.buf.length;i++){ v=(MIC.buf[i]-128)/128; sum+=v*v; }
-  var rms=Math.sqrt(sum/MIC.buf.length), now=performance.now(), t: any=MIC.take;
+  var rms=Math.sqrt(sum/MIC.buf.length), now=performance.now(), t=MIC.take;
   var thr=Math.max((MIC.floor||0.005)*3.2,0.012);
   MIC.level=Math.min(1,rms/Math.max(thr*2.2,0.03));
   if(!t){                                    /* between items: track the room */
@@ -141,9 +141,9 @@ export function micLoop(){
 
 /* Listen for one statement. t0 is when the sentence became visible, passed in by
    the screen — never when a button was pressed. */
-export function micListen(opt: any){
+export function micListen(opt: { t0: number; onLevel?: (level: number) => void; target?: string; onDone: (result: any) => void; onPartial: (text: string) => void }){
   var rec: any=null, text='', closed=false;
-  var t: any={t0:opt.t0,onset:null,last:null,segs:0,inSeg:false,onLevel:opt.onLevel,
+  var t={t0:opt.t0,onset:null,last:null,segs:0,inSeg:false,onLevel:opt.onLevel,
     close:function(why: any){
       if(closed) return; closed=true; MIC.take=null;
       try{ if(rec) rec.stop(); }catch(e){}
@@ -160,7 +160,7 @@ export function micListen(opt: any){
     if(SR){ try{
       rec=new SR(); rec.continuous=false; rec.interimResults=true;
       rec.lang=(navigator.language||'en-US');
-      rec.onresult=function(e: any){ var x='';
+      rec.onresult=function(e: { results: string|any[]; }){ var x='';
         for(var k=0;k<e.results.length;k++) x+=e.results[k][0].transcript+' ';
         text=x; if(opt.onPartial) opt.onPartial(x.trim()); };
       rec.onerror=function(){};              /* timing stands on its own */

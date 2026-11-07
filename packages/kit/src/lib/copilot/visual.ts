@@ -23,7 +23,7 @@
 export const SHAPES = ['aura', 'wave', 'radial', 'grid', 'bar']
 
 /* `paint` is { accent, ink, soft } read off the element, so no colour is decided here */
-export function paintShape(ctx: any, { shape = 'aura', state = 'listening', w, h, level = 0, live = null, at = 0, paint = {}, still = false }: any) {
+export function paintShape(ctx: { strokeStyle: {}; fillStyle: {}; lineCap: string; lineWidth: number; beginPath: () => void; lineTo: (arg0: number,arg1: number) => void; moveTo: (arg0: number,arg1: number) => void; closePath: () => void; globalAlpha: number; fill: () => void; stroke: () => void; fillRect: (arg0: number,arg1: number,arg2: number,arg3: number) => void; strokeRect: (arg0: number,arg1: number,arg2: number,arg3: number) => any; arc: (arg0: number,arg1: number,arg2: number,arg3: number,arg4: number) => void }, { shape = 'aura', state = 'listening', w, h, level = 0, live = null, at = 0, paint = {}, still = false }: any) {
   const them = live === 'them'
   const me = live === 'me'
   const out = them ? 1 : me ? -1 : 0

@@ -40,7 +40,7 @@ import { isMain } from './is-main.mjs'
 const require = createRequire(import.meta.url)
 
 // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-const walk = (d: any) => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)])) : [])
+const walk = (d) => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)])) : [])
 const TEXT = /\.(md|json|yml|yaml|txt|csv)$/i
 
 /* what the deployment declared: 'git' (a repository is in the cycle) · 'off' (it is not) ·
@@ -102,7 +102,7 @@ export async function exportRows(root: any, rows: any, { dry = false, log = () =
   }
   /* the assets the checkout lacks */
   // @ts-expect-error TS7023, from the conversion: 'list' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-  const list = async (prefix: any) => { const { data: objs } = await sb.storage.from('content-assets').list(prefix, { limit: 1000 }); const files = []; for (const o of objs || []) { if (o.id) files.push(prefix + '/' + o.name); else files.push(...(await list(prefix + '/' + o.name))) } return files }
+  const list = async (prefix) => { const { data: objs } = await sb.storage.from('content-assets').list(prefix, { limit: 1000 }); const files = []; for (const o of objs || []) { if (o.id) files.push(prefix + '/' + o.name); else files.push(...(await list(prefix + '/' + o.name))) } return files }
   const inBucket = new Set()
   for (const rel of await list(under)) {
     inBucket.add(rel)

@@ -11,7 +11,7 @@ const BUCKET = 'chat'
 const urls = new Map()      /* audio_path → object url */
 const pending = new Map()   /* audio_path → promise */
 
-export function voiceUrl(m: any) {
+export function voiceUrl(m: { blob: Blob|MediaSource; id: any; url: any; audio_path: any }) {
   if (!m) return Promise.resolve(null)
   if (m.blob) {
     if (!urls.has(m.id)) urls.set(m.id, URL.createObjectURL(m.blob))
@@ -37,7 +37,7 @@ export function voiceUrl(m: any) {
 /* AND THE SAME FOR ANYTHING ELSE ATTACHED. The support chat's rows arrive carrying a signed url
    because its own function signs one; the coaching chat's do not, so the file is fetched through
    the signed-in client exactly as a voice note is — the bucket is private and RLS is the rule. */
-export function attachmentUrl(m: any) {
+export function attachmentUrl(m: { url: any; attachment_path: any }) {
   if (!m) return Promise.resolve(null)
   if (m.url) return Promise.resolve(m.url)
   const path = m.attachment_path

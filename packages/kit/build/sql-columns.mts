@@ -24,7 +24,7 @@
 
 /* `--` comments and single-quoted literals go before anything is matched: a column name inside a
    comment or an error message is not a reference, and 'it''s' must not swallow the rest of a file. */
-export function stripNoise(sql: any) {
+export function stripNoise(sql: string|string[]) {
   let out = '', i = 0
   while (i < sql.length) {
     if (sql[i] === '-' && sql[i + 1] === '-') { const n = sql.indexOf('\n', i); i = n < 0 ? sql.length : n; continue }
@@ -41,9 +41,9 @@ export function stripNoise(sql: any) {
 const ident = '"?([a-z0-9_]+)"?'
 
 /* table -> Set(column). CREATE TABLE's own list, plus every ALTER ... ADD COLUMN. */
-export function declaredColumns(files: any) {
+export function declaredColumns(files: { file: string; sql: string; }[]) {
   const cols = new Map()
-  const add = (t: any, c: any) => { if (!cols.has(t)) cols.set(t, new Set()); cols.get(t).add(c) }
+  const add = (t: string, c: string) => { if (!cols.has(t)) cols.set(t, new Set()); cols.get(t).add(c) }
   for (const { sql } of files) {
     const clean = stripNoise(sql)
     for (const m of clean.matchAll(new RegExp(`CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?"?public"?\\.${ident}\\s*\\(`, 'gi'))) {
@@ -115,7 +115,7 @@ export function functionsOf(files: any) {
 }
 
 /* function name -> Set(table it is attached to) */
-export function triggersOf(files: any) {
+export function triggersOf(files: { file: string; sql: string; }[]) {
   const t = new Map()
   for (const { sql } of files) {
     const clean = stripNoise(sql)
@@ -151,7 +151,7 @@ export function shadowedNames(body: any) {
 }
 
 /* alias -> table, for the bindings that are unambiguous in the text */
-export function aliasBindings(body: any) {
+export function aliasBindings(body: string) {
   const b = new Map()
   const clean = stripNoise(body)
   const re = new RegExp(`\\b(?:FROM|JOIN|UPDATE|INTO)\\s+"?public"?\\.${ident}(?:\\s+AS)?\\s+${ident}`, 'gi')
@@ -182,11 +182,11 @@ export function aliasBindings(body: any) {
 }
 
 /* every reference this parser is willing to stand behind, plus a count of the ones it is not */
-export function referencesOf(fn: any, attachedTo: any) {
+export function referencesOf(fn: { name?: any; file?: any; line: any; body: any; }, attachedTo: any) {
   const refs = []
   let unchecked = 0
   const clean = stripNoise(fn.body)
-  const at = (idx: any) => fn.line + clean.slice(0, idx).split('\n').length - 1
+  const at = (idx: number|undefined) => fn.line + clean.slice(0, idx).split('\n').length - 1
 
   /* NEW / OLD, against the tables a trigger attaches this function to */
   const dispatches = /\btg_(?:table_name|relname)\b/i.test(clean)
@@ -237,7 +237,7 @@ export function referencesOf(fn: any, attachedTo: any) {
 
 /* ---- the check ------------------------------------------------------------------------------ */
 
-export function checkColumns(files: any) {
+export function checkColumns(files: { file: string; sql: string; }[]) {
   const cols = declaredColumns(files)
   const skip = otherRelations(files)
   const trig = triggersOf(files)

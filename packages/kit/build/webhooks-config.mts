@@ -68,7 +68,7 @@ export async function webhooksConfig({ check: only = false } = {}) {
   }
   if (faults.length) { console.error('✖ webhooks:\n  ' + faults.join('\n  ')); process.exitCode = 1; return null }
 
-  const text: any = JSON.stringify(out, null, 2) + '\n'
+  const text = JSON.stringify(out, null, 2) + '\n'
   const path = join(ROOT, OUT)
   if (only) {
     const had = existsSync(path) ? readFileSync(path, 'utf8') : ''

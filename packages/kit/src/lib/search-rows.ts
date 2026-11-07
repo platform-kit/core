@@ -29,9 +29,9 @@ export const OFF_PALETTE = ['product', 'page']
  * new kind of content has to say which it is.
  */
 export const FREE_TO_QUOTE: any = { article: true, wiki: true, doc: true, page: true, product: true, book: false }
-export const quotable = (kind: any) => FREE_TO_QUOTE[kind] !== false
-export const offPalette = (rows: any, kind: any) =>
-  (OFF_PALETTE.includes(kind) ? rows : rows.filter((r: any) => !OFF_PALETTE.includes(r.kind)))
+export const quotable = (kind: string) => FREE_TO_QUOTE[kind] !== false
+export const offPalette = (rows: any[], kind: string) =>
+  (OFF_PALETTE.includes(kind) ? rows : rows.filter((r: { kind: string }) => !OFF_PALETTE.includes(r.kind)))
 
 const stripHtml = (h: any) => (h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 const day = (d: any) => (d ? String(d).slice(0, 10) : null)

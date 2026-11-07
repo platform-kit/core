@@ -16,7 +16,7 @@ sources:
     packages/kit/theme/src/components/forms/FormRun.vue,
     packages/kit/theme/src/components/admin/FormBuilder.vue,
   ]
-reviewed: 2026-10-27
+reviewed: 2026-11-04
 ---
 
 ## What it is

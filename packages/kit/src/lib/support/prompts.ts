@@ -35,7 +35,7 @@ export const teaser = ref<any>(null)         /* the prompt on show, or null */
    this reader; asked for when the panel opens, since a signed-in reader's audience is the server's */
 export const fallback = ref<any>(null)
 export async function resolveDefault() {
-  for (const p of PROMPTS.filter((x: any) => x.default)) { if (await audienceOk(p) === true) { fallback.value = p; return p } }
+  for (const p of PROMPTS.filter((x: { default: any }) => x.default)) { if (await audienceOk(p) === true) { fallback.value = p; return p } }
   fallback.value = null
   return null
 }
@@ -63,9 +63,9 @@ async function offerNudge() {
 }
 /* the prompts as data: shown (how: default | teaser | nudge), a choice picked, a thread begun */
 export const track = {
-  shown: (p: any, how: any) => capture('support_prompt', { prompt: p.id, funnel: p.funnel, how, text: p.text }),
-  chose: (p: any, c: any) => capture('support_choice', { prompt: p.id, funnel: p.funnel, choice: c.key, text: c.text }),
-  started: (p: any, c: any) => capture('support_start', { prompt: p ? p.id : null, funnel: p ? p.funnel : null, choice: c ? c.key : null }),
+  shown: (p: { id: any; funnel: any; text: any }, how: any) => capture('support_prompt', { prompt: p.id, funnel: p.funnel, how, text: p.text }),
+  chose: (p: { id: any; funnel: any }, c: { key: any; text: any }) => capture('support_choice', { prompt: p.id, funnel: p.funnel, choice: c.key, text: c.text }),
+  started: (p: { id: string; funnel?: string } | null, c: { key: string } | null) => capture('support_start', { prompt: p ? p.id : null, funnel: p ? p.funnel : null, choice: c ? c.key : null }),
 }
 
 const shown = () => { try { return JSON.parse(storeGet(SHOWN_KEY) || '[]') } catch (e) { return [] } }
@@ -86,10 +86,10 @@ function begin() {
 
 /* the audience, asked of the server once per prompt per session for a signed-in reader */
 const asked = new Map()
-async function audienceOk(p: any) {
+async function audienceOk(p: { rules: {}; id: string }) {
   if (!p.rules || !Object.keys(p.rules).length) return true
   if (!session.value || !supabase || !configured) return false
-  const k = p.id + ':' + (session.value as any).user.id
+  const k = p.id + ':' + session.value.user.id
   if (asked.has(k)) return asked.get(k)
   asked.set(k, null)   /* in flight */
   try {
@@ -101,7 +101,7 @@ async function audienceOk(p: any) {
 
 /* where nothing may appear is one rule, asked by the chat and by the ad alike (lib/interrupt.js) */
 // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'. Type 'string' is not assignable to type 'never'.
-const quiet = (path: any) => IN_PREVIEW || !mayInterrupt(path, INTERRUPT_ROUTES)
+const quiet = (path) => IN_PREVIEW || !mayInterrupt(path, INTERRUPT_ROUTES)
 
 let ticker: any = null
 async function tick() {
@@ -136,4 +136,4 @@ export function dismiss() { teaser.value = null; releaseCorner('chat') }
 /* the reader answers: the panel opens on a thread that begins with the prompt's line */
 export function reply() { const p = teaser.value; teaser.value = null; return p }
 /* a thread open on the prompt already (the server said so): nothing to show again */
-watch(() => thread.conversation && (thread.conversation as any).prompt_id, (id) => { if (id) markShown(id) })
+watch(() => thread.conversation && thread.conversation.prompt_id, (id) => { if (id) markShown(id) })

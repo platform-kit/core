@@ -29,7 +29,7 @@ sources:
     packages/kit/build/courses.test.mts,
     packages/kit/build/courses-db.test.mts,
   ]
-reviewed: 2026-11-04
+reviewed: 2026-11-07
 ---
 
 A course is sections and lessons in order, which a reader works through and finishes. The `courses` module adds them: the course builder in the admin, the reader's pages, enrollments, release over time, completion, certificates and the emails that go with them.

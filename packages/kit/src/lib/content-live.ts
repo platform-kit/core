@@ -40,7 +40,7 @@ export async function load({ timeout = 8000 } = {}) {
     if (r.error) throw r.error
     rows = (r.data && r.data.rows) || []
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null'.
-  } catch (e: any) { loaded.error = String(e.message || e); return null }
+  } catch (e) { loaded.error = String(e.message || e); return null }
   /*
    * AND THE DERIVED JSONS THAT ARE ALSO ROWS. `content/store/print.json` carries every book's set
    * editions — their pages, their quotes, their cover art, the pictures of their pages — and it is
@@ -51,13 +51,13 @@ export async function load({ timeout = 8000 } = {}) {
    * knew — which in cloud mode is forever. The editions existed, were quoted, were orderable, and
    * were invisible. Nothing failed anywhere.
    */
-  const idx = rows.find((r: any) => r.path === 'content/store/print.json')
+  const idx = rows.find((r: { path: string }) => r.path === 'content/store/print.json')
   if (idx) { const { setEditions } = await import('./print-index.js'); if (setEditions(idx.text)) loaded.editions = true }
   return apply(rows, { renderer, toEntry, targetOf, searchRows })
 }
 
 /* the rows into the bundle: only the collections the bundle carries move; a collection with no row at all is left as built */
-export function apply(rows: any, { renderer, toEntry, targetOf, searchRows }: any) {
+export function apply(rows: string|any[], { renderer, toEntry, targetOf, searchRows }: { renderer: ({ highlight }?: any) => { parse(md: any): any; toc(md: {}|null): never[] }; toEntry: (collection: any,row: any,ctx: any) => any; targetOf: (row: any) => any; searchRows: ({ articles,wiki,docs,books,products,pages }: { articles?: never[]|undefined; wiki?: never[]|undefined; docs?: never[]|undefined; books?: never[]|undefined; products?: never[]|undefined; pages?: never[]|undefined }) => any }) {
   const R = renderer()
   const ctx = { render: (md: any) => R.parse(md), toc: (md: any) => R.toc(md), bundle: CONTENT, models: CONTENT.models }
   const by: any = {}
@@ -70,7 +70,7 @@ export function apply(rows: any, { renderer, toEntry, targetOf, searchRows }: an
     ;(by[target] = by[target] || []).push(entry)
   }
   /* a companion goes with its book, as velite's prepare says */
-  if (by.companions && by.books) { const live = new Set(by.books.map((b: any) => b.slug)); by.companions = by.companions.filter((c: any) => live.has(c.book)) }
+  if (by.companions && by.books) { const live = new Set(by.books.map((b: { slug: any }) => b.slug)); by.companions = by.companions.filter((c: { book: unknown }) => live.has(c.book)) }
   for (const [target, list] of Object.entries(by)) {
     const cur = (CONTENT as any)[target]
     if (SINGLE.has(target) || (cur && !Array.isArray(cur))) { for (const k of Object.keys(cur)) delete cur[k]; Object.assign(cur, (list as any)[0]); continue }
@@ -99,7 +99,7 @@ export async function previewEntry(col: any, name: any, { data, content }: any) 
   const { renderer } = await import('./markdown.js')
   const { toEntry, pathOf } = await import('./entry.js')
   const R = renderer()
-  const ctx = { render: (md: any) => R.parse(md), toc: (md: any) => R.toc(md), bundle: CONTENT, models: CONTENT.models }
+  const ctx = { render: (md: any) => R.parse(md), toc: (md: {}|null) => R.toc(md), bundle: CONTENT, models: CONTENT.models }
   const path = pathOf(col, name || 'preview')
   const entry = toEntry(col, { path, collection: col, slug: name || 'preview', data: data || {}, body: content || '', text: content || '' }, ctx)
   return entry ? { entry } : { issues: [{ path: '', message: 'nothing to preview' }] }

@@ -4,7 +4,7 @@
  * velite's ui collection), the admin's strings editor writes against it, and in cloud mode the browser reads a
  * saved strings row through it (lib/entry.js), so the words are parsed one way everywhere.
  */
-export function parseGroups(raw: any) {
+export function parseGroups(raw: string) {
   const groups: any = {}
   let group = null, key = null
   for (const line of String(raw || '').split(/\r?\n/)) {
@@ -20,7 +20,7 @@ export function parseGroups(raw: any) {
   return groups
 }
 /* the frontmatter's scope and title, without a YAML parser: two plain lines */
-export function stringsHead(raw: any) {
+export function stringsHead(raw: string) {
   const fm = /^---\r?\n([\s\S]*?)\r?\n---/.exec(String(raw || ''))
   const out: any = {}
   for (const l of (fm ? fm[1] : '').split(/\r?\n/)) { const m = /^(scope|title):\s*(.*)$/.exec(l); if (m) out[m[1]] = m[2].trim().replace(/^["']|["']$/g, '') }

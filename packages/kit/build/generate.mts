@@ -185,7 +185,7 @@ function templateDir(level: any, kind: any, siteRoot: any) {
   return path.join(HERE, 'generators', level, kind)
 }
 // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-function walk(dir: any, base = dir) {
+function walk(dir, base = dir) {
   if (!fs.existsSync(dir)) return []
   // @ts-expect-error TS7024, from the conversion: Function implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one 
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -266,7 +266,7 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
     /* a file of the kit's build by the name a site has, or — kept as TypeScript in the source — its .mts */
     const B = (f: any) => { const p = path.join(kitRoot, 'build', f); const t = p.replace(/\.(m?)js$/, '.$1ts'); return !fs.existsSync(p) && fs.existsSync(t) ? t : p }
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-    const D = (f: any) => path.join(ws, 'sites', 'docs', 'content', 'docs', f)
+    const D = (f) => path.join(ws, 'sites', 'docs', 'content', 'docs', f)
     if (kind === 'module') {
       edits.push({ path: kitMods, what: `MODULES += ${name}`, apply: async (t: any) => { const a = await namedArray(t, 'MODULES'); return a ? appendRaw(t, a, fragment(dir, '_entry.js.tmpl', v)) : null } })
       /* the module pages list every module: the modules table and the config's modules row */
@@ -301,7 +301,7 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
     }
     /* the docs page that names every new file, or the docs check refuses them */
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-    const sources = writes.map((w: any) => path.relative(ws, w.path).split(path.sep).join('/'))
+    const sources = writes.map((w) => path.relative(ws, w.path).split(path.sep).join('/'))
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
     const page = path.join(ws, 'sites', 'docs', 'content', 'docs', 'building-a-site', `${owner || name}.md`)
     if (fs.existsSync(page)) edits.push({ path: page, what: `its sources += ${sources.join(', ')}`, apply: (t: any) => { const m = /^sources:\s*\[([\s\S]*?)\]/m.exec(t); if (!m) return null; const inner = m[1].replace(/[\s,]+$/, ''); return t.slice(0, m.index) + `sources: [${inner}${inner.trim() ? ', ' : ''}${sources.join(', ')}]` + t.slice(m.index + m[0].length) } })

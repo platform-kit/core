@@ -1,8 +1,8 @@
-function dateKey(date: any) {
+function dateKey(date: Date) {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`
 }
 
-export function isReviewedForCurrentDate(reviewed: any, now = new Date(), timezoneOffset = now.getTimezoneOffset()) {
+export function isReviewedForCurrentDate(reviewed: string, now = new Date(), timezoneOffset = now.getTimezoneOffset()) {
   const localNow = new Date(now.getTime() - timezoneOffset * 60_000)
   const today = dateKey(localNow)
   if (reviewed === today) return true

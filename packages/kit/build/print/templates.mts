@@ -51,7 +51,7 @@ export async function uploadFonts(store: any) {
   for (const f of list) {
     const at = `${FONT_PREFIX}/${f.name}`
     const { data } = await store.list(FONT_PREFIX, { search: f.name })
-    if (data && data.some((x: any) => x.name === f.name)) { had++; continue }
+    if (data && data.some((x: { name: string }) => x.name === f.name)) { had++; continue }
     const { error } = await store.upload(at, f.bytes, { contentType: 'font/ttf', upsert: true })
     if (error) throw new Error(`print: the type could not be uploaded (${f.name}) — ${error.message}`)
     sent++

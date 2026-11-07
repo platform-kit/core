@@ -60,7 +60,7 @@ export async function pushNow() {
 function onFocus() { if (document.visibilityState === 'visible') pull() }
 
 /* idempotent per user: INITIAL_SESSION and SIGNED_IN both fire for one login */
-export async function attachSync(session: any) {
+export async function attachSync(session: { user: { id: any } }) {
   const id = session && session.user && session.user.id
   if (!id || id === userId) return
   userId = id

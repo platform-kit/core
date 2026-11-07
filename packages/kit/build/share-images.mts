@@ -26,7 +26,7 @@ import { isMain } from './is-main.mjs'
 export const WIDTH = 1200, HEIGHT = 675
 /* the favicon sizes: the two the tab uses, Android's, Apple's touch icon, and a large one */
 export const ICON_SIZES = [16, 32, 48, 180, 192, 512]
-const log = (m: any) => console.log('[share] ' + m)
+const log = (m: string) => console.log('[share] ' + m)
 
 /* every card the build photographs: the route to open and the file to write */
 export function shareTargets() {

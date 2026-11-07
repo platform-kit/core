@@ -65,7 +65,7 @@ export const ROUTES = {
 }
 export const INTERRUPT_ROUTES = [ROUTES.feed, ROUTES.spaces, ROUTES.people]
 const LEGACY_USAGE_PATH = ROUTES.diagnostics + '/usage'
-const isLegacyUsagePath = (pathname: any) =>
+const isLegacyUsagePath = (pathname: string) =>
   (pathname || '').replace(/\/+$/, '') === LEGACY_USAGE_PATH
 
 /* The working document is local-dev only — never part of a production build, its
@@ -95,8 +95,8 @@ export const SESSIONS_ON = moduleOn('sessions')
 /* the content models (on unless a site says models: false): /c/<key> exists only for a model with pages on */
 import { models as MODELS } from '#content'
 export const MODELS_ON = moduleOn('models')
-export const ENTRY_KEYS = new Set(MODELS_ON ? (MODELS || []).filter((m: any) => m.deliver && m.deliver.pages).map((m: any) => m.key) : [])
-const entryRoute = (p: any) => { if (!MODELS_ON || !p.startsWith(ROUTES.entries + '/')) return false; const key = p.slice(ROUTES.entries.length + 1).split('/')[0]; return ENTRY_KEYS.has(key) }
+export const ENTRY_KEYS = new Set(MODELS_ON ? (MODELS || []).filter((m: { deliver: { pages: any } }) => m.deliver && m.deliver.pages).map((m: { key: any }) => m.key) : [])
+const entryRoute = (p: string) => { if (!MODELS_ON || !p.startsWith(ROUTES.entries + '/')) return false; const key = p.slice(ROUTES.entries.length + 1).split('/')[0]; return ENTRY_KEYS.has(key) }
 export const KINDS_ON: any = { articles: moduleOn('articles'), books: moduleOn('books'), wiki: moduleOn('wiki'), docs: moduleOn('docs') }
 /* Accounts matter only where a module reads them — buying, membership, sessions, the chats, the desk, a
    reading. With none of those on, the header offers no sign-in and no call to action of its own. */
@@ -110,10 +110,10 @@ export const DOCS_ONLY = KINDS_ON.docs && !KINDS_ON.articles && !KINDS_ON.books 
 /* where the docs are addressed: /docs on a docs-only site, /content/docs in a library */
 export const DOCS_BASE = DOCS_ONLY ? ROUTES.docs : ROUTES.content + '/docs'
 /* the routes the landing pages in content/pages claim (the root is one of them) */
-export const PAGE_ROUTES = new Set(PAGES.map((p: any) => p.route || '/'))
-export const isPageRoute = (p: any) => PAGE_ROUTES.has(p)
+export const PAGE_ROUTES = new Set(PAGES.map((p: { route: any }) => p.route || '/'))
+export const isPageRoute = (p: unknown) => PAGE_ROUTES.has(p)
 /* the site's route a path belongs to: exact, or the path and everything under it when the route says prefix */
-export const siteRouteOf = (p: any) => SITE_ROUTES.find((r: any) => p === r.path || (r.prefix && p.startsWith(r.path + '/'))) || null
+export const siteRouteOf = (p: string) => SITE_ROUTES.find((r: any) => p === r.path || (r.prefix && p.startsWith(r.path + '/'))) || null
 /* THE ADDRESSES COMMUNITY PLACES HAVE CLAIMED: the kit's Coaching (where coaching lives in the
    community, /app/coaching) and every place a site registered (community.places claims) */
 const CLAIMS = [
@@ -123,9 +123,9 @@ const CLAIMS = [
 /* THE COURSES: their own pages at /courses always (the library, a course, a lesson, a certificate), and the same in the
    community's Courses place at <community>/courses where the site has one (openspec: courses) */
 export const COURSES_PLACE_BASE = COMMUNITY_PATH + '/courses'
-export const coursesRoute = (p: any) => moduleOn('courses') && (p === ROUTES.courses || p.startsWith(ROUTES.courses + '/') || p.startsWith(ROUTES.certificates + '/'))
+export const coursesRoute = (p: string) => moduleOn('courses') && (p === ROUTES.courses || p.startsWith(ROUTES.courses + '/') || p.startsWith(ROUTES.certificates + '/'))
 /* the app area once carried the reader's courses; that address is the library now, ahead of any place claiming /app */
-const appCourses = (p: any) => (moduleOn('courses') ? libraryOf(p, ROUTES.diagnostics, ROUTES.courses) : null)
+const appCourses = (p: string) => (moduleOn('courses') ? libraryOf(p, ROUTES.diagnostics, ROUTES.courses) : null)
 const KNOWN = [ROUTES.home, ROUTES.diagnostics, ROUTES.admin]
   .concat(DOCS_ONLY ? [ROUTES.docs] : [ROUTES.content])
   .concat([ROUTES.hyperswitchCheckout, ROUTES.billing])
@@ -134,7 +134,7 @@ const KNOWN = [ROUTES.home, ROUTES.diagnostics, ROUTES.admin]
 
 /* /content carries nested paths — /content/articles/some-piece — so it matches
    by prefix and keeps the whole path; everything else matches exactly. */
-function normalise(pathname: any) {
+function normalise(pathname: string) {
   let p = (pathname || '/').replace(/\/+$/, '') || '/'
   /* the community's old base forwards to the one the site names */
   if (ROUTES.feed !== '/feed' && (p === '/feed' || p.startsWith('/feed/'))) p = ROUTES.feed + p.slice(5)
@@ -203,7 +203,7 @@ if (typeof window !== 'undefined' && isLegacyUsagePath(initialPath)) {
 
 export const route = readonly(current)
 
-export function navigate(path: any) {
+export function navigate(path: string|URL) {
   const url = new URL(path, location.origin)
   const legacyUsage = isLegacyUsagePath(url.pathname)
   const next = normalise(url.pathname)
@@ -241,7 +241,7 @@ export const APP_PAGES: any = { sum: 'overview', pairs: 'personality', areas: 'r
 export const APP_BASE = (NETWORK_ON && forwardOf(ROUTES.diagnostics, CLAIMS, ROUTES.feed)) || ROUTES.diagnostics
 /* a page's former slug, still read so a link made before the rename lands on it */
 const APP_PAGES_FORMER: any = { diagnostics: 'areas' }
-export const appPath = (key: any) => APP_BASE + '/' + (APP_PAGES[key] || '')
+export const appPath = (key: string|number) => APP_BASE + '/' + (APP_PAGES[key] || '')
 /* the address that means "start a round": the instrument begins one on arrival
    (the header's Take the quiz), and the sheet makes the address its first page's */
 export const QUIZ_PATH = APP_BASE + '/quiz'
@@ -269,7 +269,7 @@ if (typeof window !== 'undefined') {
   /* Internal links stay plain <a href="/...">, so they still work without JS and
      read correctly to a crawler. This turns them into route changes instead of
      reloads. Modified clicks, new tabs and external links are left alone. */
-  document.addEventListener('click', (e: any) => {
+  document.addEventListener('click', (e) => {
     if (e.defaultPrevented || e.button !== 0) return
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
     const a = (e.target as any).closest && (e.target as any).closest('a')

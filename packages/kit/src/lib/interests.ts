@@ -44,7 +44,7 @@ export async function interests() {
       const weights: any = {}
       for (const r of got.data || []) weights[r.tag] = Number(r.weight) || 0
       const tags = tagsOf(weights)
-      const read = new Set((was.data || []).map((r: any) => seenKey(r.kind, r.ref)))
+      const read = new Set((was.data || []).map((r: { kind: any; ref: any }) => seenKey(r.kind, r.ref)))
       held = { has: tags.length > 0, weights, tags, text: profileText(weights), read }
     } catch (e) {
       /* the lane is a courtesy: a reader whose interests cannot be read gets Everything, never an

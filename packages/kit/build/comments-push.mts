@@ -171,7 +171,7 @@ export async function pushComments({ root = process.cwd(), store, log = console.
   const { loadSite } = await import('./site.mjs')
   const { isOn } = await import('./modules/manifest.mjs')
   const rooms = isOn('spaces', (await loadSite(root)).modules || {})
-  let spaceRows: any = [], chanRows: any = []
+  let spaceRows: { id: string; slug: string }[] = [], chanRows: { id: string; slug: string; space_id: string }[] = []
   if (rooms) {
     const { data: s, error: spaceError } = await db.from('spaces').select('id, slug')
     if (spaceError) throw new Error(`comments: could not read spaces: ${spaceError.message}`)
@@ -181,10 +181,10 @@ export async function pushComments({ root = process.cwd(), store, log = console.
     if (!Array.isArray(c)) throw new Error('comments: could not read channels: expected a row list')
     spaceRows = s; chanRows = c
   }
-  const channelId: any = (space: any, channel: any) => {
+  const channelId = (space: any, channel: any) => {
     if (!channel) return null
-    const sid: any = (spaceRows || []).find((s: any) => s.slug === space)?.id
-    return (chanRows || []).find((c: any) => c.slug === channel && (!sid || c.space_id === sid))?.id || null
+    const sid = (spaceRows || []).find((s) => s.slug === space)?.id
+    return (chanRows || []).find((c) => c.slug === channel && (!sid || c.space_id === sid))?.id || null
   }
 
   /* THE SITE'S POLICY FIRST: every row below is the record's own answer resolved against it, so

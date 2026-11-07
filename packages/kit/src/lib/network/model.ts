@@ -9,11 +9,11 @@
    these: it is a message in the space's feed channel, under the space's own guards. */
 export const AUDIENCES = ['everyone', 'here']
 const RANK: any = { everyone: 2, here: 1 }
-export const rankOf = (a: any) => RANK[a] || 0
+export const rankOf = (a: string) => RANK[a] || 0
 
 /* what an answer to this post may be read by: never more people than the post it answers.
    Nothing to answer means the whole choice; a space's message is answered in the space. */
-export function answerAudiences(parent: any) {
+export function answerAudiences(parent: { audience: any; kind?: any }|null) {
   if (!parent) return AUDIENCES.slice()
   if (parent.kind === 'space') return []
   const r = rankOf(parent.audience)
@@ -21,7 +21,7 @@ export function answerAudiences(parent: any) {
 }
 
 /* the audience an answer starts on: the parent's own, which is the widest it may have */
-export function defaultAudience(parent: any, fallback = 'here') {
+export function defaultAudience(parent: { audience: any }|null, fallback = 'here') {
   const allowed = answerAudiences(parent)
   if (!parent) return allowed.includes(fallback) ? fallback : allowed[0]
   return allowed.includes(parent.audience) ? parent.audience : allowed[0]
@@ -35,19 +35,19 @@ export { MEDIA, shapeOf, refuseMedia, kindOf, kindOfType, planEmbed } from '../.
 
 /* the key an item of the timeline is told apart by: a post may appear once as itself and again as
    somebody's repost, and both belong in the list */
-export const itemKey = (it: any) => `${it.kind}:${it.post_id || it.message_id}:${it.reposted_by || ''}`
+export const itemKey = (it: { [x: string]: any; kind: any; at?: any; reposted_by: any; post_id?: any; message_id?: any }) => `${it.kind}:${it.post_id || it.message_id}:${it.reposted_by || ''}`
 
 /* a further page joined to what is already shown: nothing twice, newest first */
-export function joinPages(have: any, more: any) {
+export function joinPages(have: any[], more: { [x: string]: any; kind: any; at: any; reposted_by: any }[]) {
   const seen = new Set(have.map(itemKey))
   const out = have.slice()
   for (const it of more) if (!seen.has(itemKey(it))) { seen.add(itemKey(it)); out.push(it) }
   // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  return out.sort((a: any, b: any) => new Date(b.at) - new Date(a.at))
+  return out.sort((a, b) => new Date(b.at) - new Date(a.at))
 }
 
 /* the cursor for the page after this one: the oldest moment shown */
-export const cursorOf = (items: any) => (items.length ? items[items.length - 1].at : null)
+export const cursorOf = (items: string|any[]) => (items.length ? items[items.length - 1].at : null)
 
 /*
  * A THREAD, drawn: the root, then every answer under what it answers, oldest first within each
@@ -55,19 +55,19 @@ export const cursorOf = (items: any) => (items.length ? items[items.length - 1].
  * column eight words wide is not a conversation. Answers whose parent is not in hand (removed,
  * blocked, or out of reach) hang off the root, so nothing anybody said is lost.
  */
-export function threadOf(root: any, replies: any, maxDepth = 4) {
+export function threadOf(root: { id: any; reply_parent_id?: any; created_at?: any }|null, replies: any[], maxDepth = 4) {
   if (!root) return []
   const byParent = new Map()
-  const ids = new Set([root.id, ...replies.map((r: any) => r.id)])
+  const ids = new Set([root.id, ...replies.map((r: { id: any }) => r.id)])
   for (const r of replies) {
     const parent = r.reply_parent_id && ids.has(r.reply_parent_id) ? r.reply_parent_id : root.id
     if (!byParent.has(parent)) byParent.set(parent, [])
     byParent.get(parent).push(r)
   }
   // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  for (const list of byParent.values()) list.sort((a: any, b: any) => new Date(a.created_at) - new Date(b.created_at))
+  for (const list of byParent.values()) list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
   const out = [{ post: root, depth: 0 }]
-  const walk = (id: any, depth: any) => {
+  const walk = (id: any, depth: number) => {
     for (const r of byParent.get(id) || []) {
       out.push({ post: r, depth: Math.min(depth, maxDepth) })
       walk(r.id, depth + 1)
@@ -83,7 +83,7 @@ export function threadOf(root: any, replies: any, maxDepth = 4) {
  * sentence after it is not part of it.
  */
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+/gi
-export function segmentsOf(text: any) {
+export function segmentsOf(text: string) {
   const s = String(text || '')
   const out = []
   let at = 0
@@ -99,7 +99,7 @@ export function segmentsOf(text: any) {
 }
 
 /* how long ago, in the reader's own language: the browser's words, not ours */
-export function agoOf(iso: any, now = Date.now(), locale?: any) {
+export function agoOf(iso: string|number|Date, now = Date.now(), locale?: Intl.LocalesArgument) {
   const then = new Date(iso).getTime()
   if (!Number.isFinite(then)) return ''
   const s = Math.round((then - now) / 1000)
@@ -114,7 +114,7 @@ export function agoOf(iso: any, now = Date.now(), locale?: any) {
 
 /* a like or a repost pressed before the database has answered: the count moves at once, and moves
    back if the answer is no */
-export function toggled(post: any, which: any, on: any) {
+export function toggled(post: { [x: string]: any; id?: string; like_count?: number; repost_count?: number; liked?: boolean; reposted?: boolean }, which: string, on: boolean) {
   const field = which === 'like' ? 'like_count' : 'repost_count'
   const mine = which === 'like' ? 'liked' : 'reposted'
   if (!!post[mine] === !!on) return post
@@ -122,7 +122,7 @@ export function toggled(post: any, which: any, on: any) {
 }
 
 /* a space's message, shaped as a post so one card draws both */
-export function postOfMessage(m: any, space: any) {
+export function postOfMessage(m: { id: any; author_id: any; body: any; created_at: any; reply_count: any; channel_slug: any; title?: any; channel_id?: any; attachment?: any; attachment_type?: any; media?: any }, space: { id: any; slug: any; name: any }) {
   return {
     id: m.id, kind: 'space', author_id: m.author_id, text: m.body || '', title: m.title || null, channel_id: m.channel_id || null,
     created_at: m.created_at, reply_count: m.reply_count || 0, audience: 'space',
@@ -132,7 +132,7 @@ export function postOfMessage(m: any, space: any) {
 }
 
 /* the people a set of posts names, for one read of their names and faces */
-export function peopleIn(posts: any, extra = []) {
+export function peopleIn(posts: any[], extra = []) {
   const ids = new Set(extra.filter(Boolean))
   // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
   for (const p of posts) { if (p && p.author_id) ids.add(p.author_id) }
@@ -144,7 +144,7 @@ export function peopleIn(posts: any, extra = []) {
 /* which filter a row answers to: what was said to them, what answered them, what was pressed on
    their posts, who followed them, and what is coming up */
 export const NOTE_FILTERS = ['all', 'mentions', 'replies', 'reactions', 'follows', 'events']
-export function noteKind(n: any) {
+export function noteKind(n: { source: string; reason: string }) {
   if (n.source === 'mention') return 'mentions'
   if (n.source === 'reply' || n.reason === 'reply' || n.reason === 'quote') return 'replies'
   if (n.source === 'event') return 'events'

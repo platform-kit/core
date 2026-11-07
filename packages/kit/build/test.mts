@@ -13,7 +13,7 @@ const ROOT = process.cwd()
 const WORKSPACE_ROOT = workspaceRoot(ROOT)
 /* a converted script is .mts here and, once installed, the .mjs tsc emitted beside it: Node strips types, but never inside
    node_modules (openspec: typescript-throughout) */
-const KIT = (f: any) => {
+const KIT = (f: string) => {
   const at = fileURLToPath(new URL('./' + f, import.meta.url))
   const js = at.replace(/\.mts$/, '.mjs')
   return at.endsWith('.mts') && at.includes(`${path.sep}node_modules${path.sep}`) && fs.existsSync(js) ? js : at
@@ -24,7 +24,7 @@ const c = await loadSite(ROOT)
    never lists articles, books, wiki, docs, models or api because they are on by default, so their
    checks were being skipped on the one site that uses them. A test runner that disagrees with the
    rest of the kit about what is switched on will always skip the checks nobody thought to list. */
-const on = (m: any) => c.modules[m] !== false
+const on = (m: string) => c.modules[m] !== false
 
 /* the kit's checks, each behind the module it belongs to */
 /* the site's supabase/ tree is generated, never committed: assembled fresh, then checked for what an
@@ -280,7 +280,7 @@ const KIT_TESTS = [
 /* a stack test is one that takes its stack from build/test-stack.mjs — the import is the mark, and test-coverage.test.mjs
    fails any test that reaches a stack without it (a pattern guessed from the source let fifteen tests drop out of the run) */
 const STACK_SOURCE = /from '\.\/test-stack\.mjs'|supabaseUrl\(\)|localStack\(\)/
-const needsStack = (file: any) => { try { return STACK_SOURCE.test(fs.readFileSync(file, 'utf8')) } catch { return false } }
+const needsStack = (file: fs.PathOrFileDescriptor) => { try { return STACK_SOURCE.test(fs.readFileSync(file, 'utf8')) } catch { return false } }
 const E2E = process.argv.includes('--e2e')
 /* the checks that make databases of their own, which only the end-to-end run's Docker should be asked for */
 const E2E_ALSO = ['schema.test.mts', 'modules-off-db.test.mts', 'cloud-lane.test.mts', 'stripe-testmode.integration.mts', 'stripe-usage-recovery.integration.mts']
@@ -289,7 +289,7 @@ if (E2E) {
   /* every stack check this site's modules switch on, the site's own among them; each runs whatever came before */
   // @ts-expect-error TS2488, from the conversion: Type 'false | "" | string[] | undefined' must have a '[Symbol.iterator]()' method that returns an iterator.
   const kit = KIT_TESTS.filter(([f]) => needsStack(KIT(f)) || E2E_ALSO.includes(f)).map(([f, ...a]) => [`kit: ${f}`, KIT(f), a])
-  const own = ((c.build && c.build.tests) || []).filter((t: any) => needsStack(path.resolve(ROOT, t))).map((t: any) => [`site: ${t}`, path.resolve(ROOT, t), []])
+  const own = ((c.build && c.build.tests) || []).filter((t: string) => needsStack(path.resolve(ROOT, t))).map((t: string) => [`site: ${t}`, path.resolve(ROOT, t), []])
   const cloud = [['lane: cloud', KIT('cloud-lane.test.mts'), []]]
   const failed = []
   /* THE FUNCTIONS ANSWERING before each test: a test that writes into the functions tree (webhooks.json, a step's
@@ -325,7 +325,7 @@ if (E2E) {
  */
 const BAIL = process.argv.includes('--bail')
 const lost: any = []
-const run = (label: any, cmd: any, args: any) => {
+const run = (label: string, cmd: string, args: any[]|readonly string[]) => {
   console.log(`\n▸ ${label}`)
   const r = spawnSync(cmd, args, { cwd: ROOT, stdio: 'inherit', env: process.env })
   if (r.status !== 0) {

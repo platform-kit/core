@@ -14,7 +14,7 @@ const BUCKET = 'spaces'
 const urls = new Map()      /* path → object url */
 const pending = new Map()   /* path → promise */
 
-export const voicePath = (channelId: any, messageId: any) => channelId + '/' + messageId + '.mp3'
+export const voicePath = (channelId: string, messageId: string) => channelId + '/' + messageId + '.mp3'
 /* WHAT MAY BE ATTACHED, and the name it takes in the bucket — the same list the bucket itself
    holds and the storage policy's own pattern, said here so a browser refuses a file by name
    rather than sending it to be refused. */
@@ -23,7 +23,7 @@ export const FILE_TYPES = {
   'application/pdf': 'pdf', 'text/plain': 'txt',
 }
 export const FILE_MAX = 20 * 1024 * 1024
-export const filePath = (channelId: any, messageId: any, ext: any) => channelId + '/' + messageId + '.' + ext
+export const filePath = (channelId: string, messageId: string, ext: string) => channelId + '/' + messageId + '.' + ext
 
 /*
  * A SEALED ATTACHMENT IS FETCHED AND OPENED BEFORE IT IS AN ADDRESS. The bucket holds ciphertext,
@@ -34,7 +34,7 @@ export const filePath = (channelId: any, messageId: any, ext: any) => channelId 
  * `media` is on the row only for a message this device could open; a row without it is either not
  * sealed, or sealed to a device this one is not, and the surface has already said so.
  */
-async function opened(m: any) {
+async function opened(m: { attachment: any; media: any; attachment_type: any }) {
   const { data, error } = await (supabase as any).storage.from(BUCKET).download(m.attachment)
   if (error || !data) return null
   const crypt = await import('./crypto.js')

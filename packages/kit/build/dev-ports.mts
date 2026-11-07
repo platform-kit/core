@@ -1,4 +1,4 @@
-export function portRequest(args: any, name: any, defaultValue: any) {
+export function portRequest(args: string|string[], name: string, defaultValue: string|number) {
   const inlineAuto = `${name}:auto`
   if (args.includes(inlineAuto)) return { auto: true, port: null }
   const index = args.indexOf(name)
@@ -11,7 +11,7 @@ export function portRequest(args: any, name: any, defaultValue: any) {
   return { auto: false, port }
 }
 
-export async function resolvePort(args: any, name: any, defaultValue: any, { available, findFree, autoStart = defaultValue }: any = {}) {
+export async function resolvePort(args: string[], name: string, defaultValue: number, { available, findFree, autoStart = defaultValue }: any = {}) {
   const request = portRequest(args, name, defaultValue)
   if (request.auto) return findFree(autoStart)
   if (!await available(request.port)) {

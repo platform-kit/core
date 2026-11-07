@@ -37,9 +37,9 @@ function loadEnvFile(path: any) {
   }
   return out
 }
-const env: any = { ...loadEnvFile('.env.production'), ...process.env }
+const env = { ...loadEnvFile('.env.production'), ...process.env }
 const DRY = process.argv.includes('--dry')
-const die = (msg: any) => { console.error(`\n✖ auth config: ${msg}\n`); process.exit(1) }
+const die = (msg: string) => { console.error(`\n✖ auth config: ${msg}\n`); process.exit(1) }
 
 const token = env.SUPABASE_ACCESS_TOKEN || ''
 const ref = env.SUPABASE_PROD_REF || ''

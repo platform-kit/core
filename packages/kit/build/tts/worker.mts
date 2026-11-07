@@ -34,7 +34,7 @@ const STEPS = Number(process.env.TTS_STEPS || 8)       /* denoising steps: 8 is 
 const SPEED = Number(process.env.TTS_SPEED || 1.0)     /* the engine's own default is 1.05; a book reads a shade slower */
 const GAP = Number(process.env.TTS_GAP || 0.45)        /* seconds between pieces */
 
-const say = (o: any) => process.stdout.write(JSON.stringify(o) + '\n')
+const say = (o: { ready?: boolean; voice?: string; steps?: number; speed?: number; sampleRate?: any; id?: any; ok?: boolean; seconds?: number; took?: number; error?: string }) => process.stdout.write(JSON.stringify(o) + '\n')
 const tts: any = await loadTextToSpeech(path.join(MODELS, 'onnx'), false)
 const style = loadVoiceStyle([path.join(MODELS, 'voice_styles', VOICE + '.json')], false)
 say({ ready: true, voice: VOICE, steps: STEPS, speed: SPEED, sampleRate: tts.sampleRate })

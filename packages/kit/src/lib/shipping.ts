@@ -29,17 +29,17 @@ export const levelOf = (v: any) => { const c = String(v || '').trim(); return LE
    `issues` names what is wrong */
 export function shippingRules(s: any = {}) {
   const issues = []
-  const code = (c: any) => String(c || '').trim().toUpperCase()
-  const list = (v: any) => (Array.isArray(v) ? v.map(code).filter(Boolean) : [])
+  const code = (c: string) => String(c || '').trim().toUpperCase()
+  const list = (v: any[]) => (Array.isArray(v) ? v.map(code).filter(Boolean) : [])
   let countries
   if (list(s.countries).length) countries = list(s.countries).filter((c) => STRIPE_COUNTRIES.includes(c))
   else { const ex = new Set(list(s.exclude)); countries = STRIPE_COUNTRIES.filter((c) => c !== 'ZZ' && !ex.has(c)) }
   for (const c of list(s.countries)) if (!STRIPE_COUNTRIES.includes(c)) issues.push(`"${c}" is not a country code Checkout ships to`)
-  const cents = (v: any) => Math.round(Number(v) * 100)
+  const cents = (v: unknown) => Math.round(Number(v) * 100)
   if (!(Number(s.default) >= 0)) issues.push('shipping needs a default price')
   const overrides: any = {}
   for (const [c, v] of Object.entries(s.overrides || {})) { if (!(Number(v) >= 0)) issues.push(`the override for ${c} is not a price`); else overrides[code(c)] = cents(v) }
-  const methods = (Array.isArray(s.methods) && s.methods.length ? s.methods : [{ level: 'standard', label: 'Standard' }]).map((m: any, i: any) => {
+  const methods = (Array.isArray(s.methods) && s.methods.length ? s.methods : [{ level: 'standard', label: 'Standard' }]).map((m: { level: any; days: any; label: any; plus: null; }, i: number) => {
     const level = levelOf(m.level || 'standard')
     if (!LEVELS.includes(level)) issues.push(`method ${i + 1}: level "${m.level}" is not one of ours (${LEVELS.join(' · ')})`)
     const d = /^(\d+)\s*-\s*(\d+)$/.exec(String(m.days || ''))
@@ -49,10 +49,10 @@ export function shippingRules(s: any = {}) {
 }
 
 /* what shipping to a country costs, by method — [{ level, label, amount, min_days, max_days }] */
-export function ratesFor(rules: any, country: any) {
+export function ratesFor(rules: { countries: any; default: any; overrides: any; methods: any; issues?: string[]; }, country: string) {
   const c = String(country || '').toUpperCase()
   if (!rules || !rules.countries.includes(c)) return []
   const base = rules.overrides[c] != null ? rules.overrides[c] : rules.default
-  return rules.methods.map((m: any) => ({ ...m, amount: base + (m.plus || 0) }))
+  return rules.methods.map((m: { plus: any; }) => ({ ...m, amount: base + (m.plus || 0) }))
 }
-export const shipsTo = (rules: any, country: any) => !!rules && rules.countries.includes(String(country || '').toUpperCase())
+export const shipsTo = (rules: { countries: any; default?: number; overrides?: any; methods?: any; issues?: string[]; }, country: string) => !!rules && rules.countries.includes(String(country || '').toUpperCase())

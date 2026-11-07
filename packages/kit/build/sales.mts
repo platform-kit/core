@@ -16,12 +16,12 @@ import { isMain } from './is-main.mjs'
 
 const DIR = '.velite'
 export const SALES_DAYS = 90
-const empty = (why: any) => ({ at: new Date().toISOString(), days: SALES_DAYS, books: {}, bestseller: null, note: why || '' })
+const empty = (why: string) => ({ at: new Date().toISOString(), days: SALES_DAYS, books: {}, bestseller: null, note: why || '' })
 
 /* `dir`: where the report goes — .velite, which the storefront reads; a test gives its own, so a running app's is never rewritten */
 export async function salesReport({ dir = DIR } = {}) {
   const out = path.join(dir, 'sales.json')
-  const write = (r: any) => { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(out, JSON.stringify(r, null, 2) + '\n'); return r }
+  const write = (r: { at: string; days: number; books: any; bestseller: string|null; note: any }) => { fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(out, JSON.stringify(r, null, 2) + '\n'); return r }
   const url = supabaseUrl(), key = serviceKey()
   if (!url || !key) return write(empty('no database in reach'))
   /* the offers' keys → the book each is of (the catalog the functions read; the unlocks name their book too) */

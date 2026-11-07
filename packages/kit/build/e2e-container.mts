@@ -37,21 +37,21 @@ const PASS = /^(STRIPE_SECRET_KEY|STRIPE_PUBLISHABLE_KEY|VITE_STRIPE_PUBLISHABLE
 
 export const inContainer = () => process.env.PLATFORMKIT_E2E_IN_CONTAINER === '1'
 
-const die = (m: any) => { console.error(`\n\x1b[31m✖\x1b[0m ${m}\n`); process.exit(1) }
-const say = (m: any) => console.log(`\x1b[2m[e2e]\x1b[0m ${m}`)
-const docker = (a: any, opts = {}) => spawnSync('docker', a, { encoding: 'utf8', ...opts })
+const die = (m: string) => { console.error(`\n\x1b[31m✖\x1b[0m ${m}\n`); process.exit(1) }
+const say = (m: string) => console.log(`\x1b[2m[e2e]\x1b[0m ${m}`)
+const docker = (a: readonly string[], opts = {}) => spawnSync('docker', a, { encoding: 'utf8', ...opts })
 
 /* the sites outside the workspace's own git: fetched checkouts under sites/external, each its own repository */
 const fetchedSites = (root: any) => registeredSites(root).filter((s) => s.fetched !== false && s.directory.startsWith(path.join(root, 'sites', 'external') + path.sep) && fs.existsSync(s.directory))
 
-function gitFiles(dir: any) {
+function gitFiles(dir: string) {
   const r = spawnSync('git', ['ls-files', '-z', '-co', '--exclude-standard'], { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 28 })
   if (r.status !== 0) die(`could not list the files of ${dir} — the run's image is built from the files git lists:\n${r.stderr}`)
   return r.stdout.split('\0').filter(Boolean)
 }
 
 /* every file the image is built from, relative to the project root */
-function contextFiles(root: any) {
+function contextFiles(root: string) {
   const files = gitFiles(root)
   for (const s of fetchedSites(root)) { const rel = path.relative(root, s.directory); files.push(...gitFiles(s.directory).map((f) => path.join(rel, f))) }
   if (fs.existsSync(path.join(root, REGISTRY))) files.push(REGISTRY)
@@ -72,7 +72,7 @@ function settingsMounts(root: any) {
   return out.flat()
 }
 
-function buildImage(root: any, image: any) {
+function buildImage(root: string, image: string) {
   const list = path.join(os.tmpdir(), `platformkit-e2e-${process.pid}.files`)
   const files = contextFiles(root)
   fs.writeFileSync(list, files.join('\0') + '\0')
@@ -90,12 +90,12 @@ function buildImage(root: any, image: any) {
  * Runs `script` (a file in the project) with `args` inside the run's container, and exits with its code. Inside the
  * container it returns at once, and the caller runs.
  */
-export async function runInContainer(script: any, args: any) {
+export async function runInContainer(script: string, args: string[]) {
   if (inContainer()) return
   const root = workspaceRoot(process.cwd())
   const keep = args.includes('--keep')
   if (spawnSync('docker', ['info'], { stdio: 'ignore', timeout: 20000 }).status !== 0) die('Docker is not answering — the end-to-end run builds its image and runs in Docker (start Docker, or restart OrbStack)')
-  const inside = (p: any) => {
+  const inside = (p: string) => {
     const rel = path.relative(root, p)
     if (rel.startsWith('..') || path.isAbsolute(rel)) die(`${p} is not in the project, and the run sees only the project's files`)
     return path.posix.join(WORK, rel.split(path.sep).join('/'))
@@ -123,7 +123,7 @@ export async function runInContainer(script: any, args: any) {
   /* every build replaces the last, which is left nameless: those go now, or each run leaves gigabytes behind */
   docker(['image', 'prune', '-f', '--filter', 'label=dev.platformkit.e2e=1'])
 
-  const started = (what: any, r: any) => { if (r.status !== 0) { removeAll(); die(`the ${what} would not start:\n${r.stderr}`) } return r.stdout.trim() }
+  const started = (what: string, r: any) => { if (r.status !== 0) { removeAll(); die(`the ${what} would not start:\n${r.stderr}`) } return r.stdout.trim() }
   started('test network', docker(['network', 'create', parts.net]))
   /* the tests' container first: the code volume is empty, so Docker fills it from the image's /work as it mounts it.
      --init and --ipc=host as Playwright's Docker guide asks for Chrome: without the host's shared memory its pages

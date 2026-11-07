@@ -47,19 +47,18 @@ const ADAPTERS = {
 const LAST_ROWS = new Map()
 
 const on = () => !!(supabase && configured && session.value && isStaff.value)
-const uid = () => (session.value && (session.value as any).user && (session.value as any).user.id) || null
+const uid = () => (session.value && session.value.user && session.value.user.id) || null
 
 export const rows = ref<any>([])
 export const loading = ref(false)
 export const booted = ref(false)
-export const sourceStatus: any = reactive<any>({})
+export const sourceStatus = reactive<any>({})
 export const source = ref<any>(null)        /* the one narrowing: a source, or all of them */
 export const showDone = ref(false)     /* what is waiting, or what has been finished with */
 export const agents = ref<any>([])          /* who a support thread may be handed to */
-export const thread: any = reactive<any>({ row: null, messages: [], loading: false, error: null })
+export const thread = reactive<any>({ row: null, messages: [], loading: false, error: null })
 
 /* what the site runs; `spaces` is the desk's own module, so with it off there is no desk */
-// @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'. Type 'any' is not assignable to type 'never'.
 export const sources = computed(() => sourcesOn(modules, EXTRA_ADAPTERS))
 export const has = computed(() => sourcesIn(rows.value))
 export const shown = computed(() => sortDesk(filterDesk(rows.value, source.value, showDone.value)))
@@ -103,14 +102,14 @@ export async function load() {
     rows.value = sortDesk(got.flat())
     /* the list is rebuilt whole, so the open conversation must be pointed at its new row or it would
        keep saying what was owed before it was answered */
-    if (thread.row) thread.row = rows.value.find((r: any) => r.key === thread.row.key) || { ...thread.row, waiting_since: null, unread: 0 }
+    if (thread.row) thread.row = rows.value.find((r: { key: any }) => r.key === thread.row.key) || { ...thread.row, waiting_since: null, unread: 0 }
   } finally {
     loading.value = false
     booted.value = true
   }
 }
 
-async function gather(name: any) {
+async function gather(name: string) {
   let result
   if (name === 'support') result = support.rowsOf(await support.list(supabase), { wait: Number(POLICY.wait) || 0 })
   /* no promise: the desk's wait is how long somebody has been left without a REPLY, and a comment
@@ -138,7 +137,7 @@ async function gather(name: any) {
   return result
 }
 
-const adapterRef = (row: any) => row && row.source === 'social' ? row : row && row.id
+const adapterRef = (row: { source: string; id: any }) => row && row.source === 'social' ? row : row && row.id
 
 /* ------------------------------------------------------------------ one conversation */
 
@@ -161,7 +160,7 @@ export async function openRow(row: any) {
 export function closeRow() { thread.row = null; thread.messages = []; thread.error = null }
 
 export async function reply(body: any) {
-  const row: any = thread.row
+  const row = thread.row
   const text = String(body || '').trim()
   if (!on() || !row || !text) return null
   if (row.canReply === false) {
@@ -172,13 +171,13 @@ export async function reply(body: any) {
   thread.messages = thread.messages.concat([temp])
   try {
     const id = await ADAPTERS[row.source].send(supabase, adapterRef(row), text, uid())
-    thread.messages = thread.messages.map((m: any) => (m.id === temp.id ? { ...m, id: id || m.id, pending: false } : m))
+    thread.messages = thread.messages.map((m: { id: string }) => (m.id === temp.id ? { ...m, id: id || m.id, pending: false } : m))
     /* answered: the row stops waiting, here and on the next rebuild alike */
-    const held: any = rows.value.find((r: any) => r.key === row.key)
+    const held = rows.value.find((r: { key: any }) => r.key === row.key)
     if (held) { held.waiting_since = null; held.unread = 0; held.last = { body: text, at: temp.created_at, mine: true } }
     return id
   } catch (e) {
-    thread.messages = thread.messages.filter((m: any) => m.id !== temp.id)
+    thread.messages = thread.messages.filter((m: { id: string }) => m.id !== temp.id)
     thread.error = e
     return null
   }
@@ -189,7 +188,7 @@ export async function reply(body: any) {
    puts it where that source keeps such things: the desk's own private bucket, the coaching thread's
    own. The row appears at once and is exchanged for the real one, exactly as a line of words is. */
 export async function replyWith(file: any, { kind = 'file', seconds = 0, said = '' } = {}) {
-  const row: any = thread.row
+  const row = thread.row
   if (!on() || !row || !file) return null
   const adapter = ADAPTERS[row.source]
   if (!adapter || !adapter.sendFile) return null
@@ -204,12 +203,12 @@ export async function replyWith(file: any, { kind = 'file', seconds = 0, said = 
   thread.messages = thread.messages.concat([temp])
   try {
     const made = await adapter.sendFile(supabase, row.id, file, uid(), { kind, seconds, said })
-    thread.messages = thread.messages.map((m: any) => (m.id === temp.id ? { ...m, ...made, id: (made && made.id) || m.id, url: temp.url, blob: temp.blob, pending: false } : m))
-    const held: any = rows.value.find((r: any) => r.key === row.key)
+    thread.messages = thread.messages.map((m: { id: string }) => (m.id === temp.id ? { ...m, ...made, id: (made && made.id) || m.id, url: temp.url, blob: temp.blob, pending: false } : m))
+    const held = rows.value.find((r: { key: any }) => r.key === row.key)
     if (held) { held.waiting_since = null; held.unread = 0; held.last = { body: temp.body, at: temp.created_at, mine: true, kind } }
     return made
   } catch (e) {
-    thread.messages = thread.messages.filter((m: any) => m.id !== temp.id)
+    thread.messages = thread.messages.filter((m: { id: string }) => m.id !== temp.id)
     thread.error = e
     return null
   }
@@ -225,18 +224,18 @@ export async function resolve(row: any, done = true) {
     thread.error = e
     return
   }
-  const held: any = rows.value.find((r: any) => r.key === row.key)
+  const held = rows.value.find((r: { key: any }) => r.key === row.key)
   if (held) { held.resolved = !!done; if (done) held.waiting_since = null }
-  if (thread.row && (thread.row as any).key === row.key) thread.row = held || { ...row, resolved: !!done }
+  if (thread.row && thread.row.key === row.key) thread.row = held || { ...row, resolved: !!done }
   soon()
 }
 
 /* one source keeps an assignee of its own; the others are not asked to pretend they do */
-export const mayAssign = (row: any) => !!row && row.source === 'support'
+export const mayAssign = (row: { source: string }) => !!row && row.source === 'support'
 export async function assign(row: any, userId: any) {
   if (!on() || !mayAssign(row)) return
   try { await support.assign(supabase, row.id, userId) } catch (e) { thread.error = e; return }
-  const held: any = rows.value.find((r: any) => r.key === row.key)
+  const held = rows.value.find((r: { key: any }) => r.key === row.key)
   if (held) held.assignee = userId || null
   soon()
 }
@@ -246,10 +245,10 @@ export async function loadAgents() {
   try { const { data } = await (supabase as any).rpc('support_agents'); agents.value = data || [] } catch (e) { agents.value = [] }
 }
 
-export async function markRead(row: any) {
+export async function markRead(row: { source: string|number; id: any; seq: any; key: any }) {
   if (!on() || !row) return
   try { await ADAPTERS[row.source].read(supabase, row.id, uid(), row.seq) } catch (e) { /* a courtesy */ }
-  const held: any = rows.value.find((r: any) => r.key === row.key)
+  const held = rows.value.find((r: { key: any }) => r.key === row.key)
   if (held) held.unread = 0
 }
 
@@ -257,7 +256,7 @@ export async function markRead(row: any) {
 
 let live: any = null
 let again: any = null
-const soon: any = () => { clearTimeout(again); again = setTimeout(() => load(), 400) }
+const soon = () => { clearTimeout(again); again = setTimeout(() => load(), 400) }
 
 export function start() {
   if (!on() || live) return

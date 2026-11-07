@@ -28,23 +28,23 @@ const STATE_KEY = 'dl.expstate.v1'    /* { [experiment]: { at, started_at, varia
 export const TWO_WEEKS = 14 * 86400000
 const STATE_TTL = 60 * 60 * 1000
 
-const read = (k: any) => { try { return JSON.parse(storeGet(k) || 'null') || {} } catch (e) { return {} } }
-const write = (k: any, v: any) => { try { storeSet(k, JSON.stringify(v)) } catch (e) { /* full */ } }
+const read = (k: string) => { try { return JSON.parse(storeGet(k) || 'null') || {} } catch (e) { return {} } }
+const write = (k: string, v: any) => { try { storeSet(k, JSON.stringify(v)) } catch (e) { /* full */ } }
 
 export const experiments = () => ALL || []
 
 /* the experiment (and the variant entry) that shows this page or ad, if any */
-export function experimentFor(kind: any, itemId: any) {
+export function experimentFor(kind: string, itemId: any) {
   for (const exp of experiments()) {
     if (exp.kind !== kind) continue
-    const variant = (exp.variants || []).find((v: any) => v.item === itemId)
+    const variant = (exp.variants || []).find((v: { item: any }) => v.item === itemId)
     if (variant) return { exp, variant }
   }
   return null
 }
 
-function pickWeighted(variants: any) {
-  const total = variants.reduce((n: any, v: any) => n + (v.weight > 0 ? v.weight : 0), 0)
+function pickWeighted(variants: any[]) {
+  const total = variants.reduce((n: any, v: { weight: number }) => n + (v.weight > 0 ? v.weight : 0), 0)
   if (!total) return variants[0]
   let r = Math.random() * total
   for (const v of variants) { r -= v.weight > 0 ? v.weight : 0; if (r <= 0) return v }
@@ -53,7 +53,7 @@ function pickWeighted(variants: any) {
 
 /* ---- what the network knows: first exposure and counts per variant ---- */
 const refreshing: any = {}
-async function refresh(name: any) {
+async function refresh(name: string|number) {
   if (!configured || refreshing[name]) return
   refreshing[name] = true
   try {
@@ -61,26 +61,26 @@ async function refresh(name: any) {
     if (!error && data) { const all = read(STATE_KEY); all[name] = { ...data, at: Date.now() }; write(STATE_KEY, all) }
   } catch (e) { /* offline */ } finally { refreshing[name] = false }
 }
-function stateOf(exp: any) {
+function stateOf(exp: { id: string|number }) {
   const state = read(STATE_KEY)[exp.id] || null
   if (!state || Date.now() - (state.at || 0) > STATE_TTL) refresh(exp.id)
   return state
 }
 
 /* when the experiment ends: its own date, or two weeks after it began */
-export function endsAt(exp: any, state: any) {
+export function endsAt(exp: { ends: string }, state: { started_at: string }) {
   if (exp.ends) { const n = Date.parse(exp.ends); if (!isNaN(n)) return n }
   if (state && state.started_at) return Date.parse(state.started_at) + TWO_WEEKS
   return null
 }
 /* the winning variant: declared, else the best conversion rate so far */
-export function winnerOf(exp: any, state: any) {
+export function winnerOf(exp: any, state: { variants: any }) {
   const vs = exp.variants || []
-  if (exp.winner) return vs.find((v: any) => v.key === exp.winner) || null
+  if (exp.winner) return vs.find((v: { key: any }) => v.key === exp.winner) || null
   const rows = (state && state.variants) || []
   let best = null, bestRate = -1
   for (const v of vs) {
-    const r = rows.find((x: any) => x.variant === v.key)
+    const r = rows.find((x: { variant: any }) => x.variant === v.key)
     const rate = r && r.exposures ? r.conversions / r.exposures : 0
     if (rate > bestRate) { best = v; bestRate = rate }
   }
@@ -95,7 +95,7 @@ export function statusOf(exp: any, state: any) {
 }
 
 /* which variant this visitor gets, and why */
-export function decide(exp: any) {
+export function decide(exp: { variants: never[]; id: string|number }) {
   const vs = exp.variants || []
   if (!vs.length) return null
   const state = stateOf(exp)
@@ -103,7 +103,7 @@ export function decide(exp: any) {
   if (status === 'ended') { const w = winnerOf(exp, state); if (w) return { variant: w, decided: 'winner' } }
   if (status === 'paused') return { variant: vs[0], decided: 'control' }
   const assigned = read(ASSIGN_KEY)
-  let v = assigned[exp.id] && vs.find((x: any) => x.key === assigned[exp.id].variant)
+  let v = assigned[exp.id] && vs.find((x: { key: any }) => x.key === assigned[exp.id].variant)
   if (!v) {
     v = pickWeighted(vs)
     assigned[exp.id] = { variant: v.key, at: Date.now() }
@@ -114,24 +114,24 @@ export function decide(exp: any) {
 
 /* what an exposure will say: the experiment, the variant, what was shown and
    how the goal is met */
-function tag(item: any, exp: any, d: any) {
+function tag(item: { id: any }, exp: { kind: string; goal: any; id: any }, d: { variant: any; decided: any }) {
   const adClick = exp.kind === 'ad' && !exp.goal
   return { ...item, experiment: exp.id, variant: d.variant.key, decided: d.decided,
     goal: adClick ? item.id : (exp.goal || '/app'), goalType: adClick ? 'cta_click' : 'pageview' }
 }
 
 /* the page to show for a route, out of the pages that share it */
-export function choosePage(cands: any) {
+export function choosePage(cands: any[]) {
   if (!cands.length) return null
   for (const exp of experiments()) {
     if (exp.kind !== 'page') continue
-    const mine = (exp.variants || []).filter((v: any) => cands.some((p: any) => p.id === v.item))
+    const mine = (exp.variants || []).filter((v: { item: any }) => cands.some((p: { id: any }) => p.id === v.item))
     if (!mine.length) continue
     const d = decide({ ...exp, variants: mine })
-    const page = d && cands.find((p: any) => p.id === d.variant.item)
+    const page = d && cands.find((p: { id: any }) => p.id === d.variant.item)
     if (page) return tag(page, exp, d)
   }
-  if (cands.length > 1 && import.meta.env.DEV) console.warn('[pages] several pages share a route with no experiment between them:', cands.map((p: any) => p.id).join(', '))
+  if (cands.length > 1 && import.meta.env.DEV) console.warn('[pages] several pages share a route with no experiment between them:', cands.map((p: { id: any }) => p.id).join(', '))
   return cands[0]
 }
 
@@ -152,7 +152,7 @@ export function filterAds(ads: any) {
 
 /* the exposure: once per session per experiment. A page or ad that carries no
    experiment tag, or is shown as the settled winner, records nothing. */
-export function expose(item: any) {
+export function expose(item: { experiment: string; decided: string; variant: string; id: any; goal: any; goalType: any }) {
   if (!item || !item.experiment || item.decided !== 'assigned') return
   const k = 'dl.exp.seen.' + item.experiment
   try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, item.variant) } catch (e) { /* private */ }

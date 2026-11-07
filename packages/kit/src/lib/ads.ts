@@ -83,7 +83,7 @@ function onCooldown(b: any, f: any) {
 export async function pickAd({ placement, pageTopics = [] }: any = {}) {
   const cls = userClass.value
   const f = freq()
-  const sig: any = await signalSlugs()
+  const sig = await signalSlugs()
   const hist = viewTally()
   const page = new Set(pageTopics || [])
   const scored = []

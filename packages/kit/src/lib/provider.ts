@@ -41,14 +41,14 @@ export const providerPlural = () => roleWord().plural || ''
  * have refused.
  */
 export const TITLE_MAX = 40
-export function titleOf(person: any) {
+export function titleOf(person: { title: any; provider_title: any }) {
   const own = String((person && (person.title || person.provider_title)) || '').trim()
   return own ? own.slice(0, TITLE_MAX) : providerName()
 }
 
 /* did THIS person choose their own word, or are they wearing the site's? — for a surface that
    wants to show a title only where somebody actually set one */
-export const hasOwnTitle = (person: any) => !!String((person && (person.title || person.provider_title)) || '').trim()
+export const hasOwnTitle = (person: { title: any; provider_title: any }) => !!String((person && (person.title || person.provider_title)) || '').trim()
 
 /*
  * A STRING WITH THE ROLE'S WORD IN IT. The theme's defaults say {provider}, {providers},

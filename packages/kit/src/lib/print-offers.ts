@@ -54,14 +54,14 @@ import { modules as MODULES } from '#site'
 /* the print module's switch: off, no book is in print however its block reads. Given the book, a book whose
    text is withheld (`fullText: false`) keeps the summary edition alone, and is not in print without one */
 // @ts-expect-error TS7023, from the conversion: 'printSpec' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in o
-export function printSpec(pr: any, book: any = null) {
+export function printSpec(pr, book: any = null) {
   if (MODULES.print === false) return null
   if (!pr || typeof pr !== 'object') return null
   if (book && book.fullText === false) {
     // @ts-expect-error TS7022, from the conversion: 'spec' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
     const spec = printSpec(pr)
     // @ts-expect-error TS7022, from the conversion: 'contents' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initiali
-    const contents = spec ? spec.contents.filter((c: any) => c === 'summary') : []
+    const contents = spec ? spec.contents.filter((c) => c === 'summary') : []
     return contents.length ? { ...spec, contents } : null
   }
   const cloth = CLOTHS.includes(pr.cloth) ? pr.cloth : 'black', foil = FOILS.includes(pr.foil) ? pr.foil : 'gold'
@@ -203,4 +203,4 @@ export function printOffer(book: any, words: any = {}, editions = null) {
   }
 }
 // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
-export const printOffers = (books: any, words: any, editionOf = () => null) => (books || []).map((b: any) => printOffer(b, words, editionOf(b.slug))).filter(Boolean)
+export const printOffers = (books, words, editionOf = () => null) => (books || []).map((b) => printOffer(b, words, editionOf(b.slug))).filter(Boolean)

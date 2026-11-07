@@ -3,7 +3,7 @@
 import { spawnSync } from 'node:child_process'
 export default {
   key: 'print', title: 'The printed books', phase: 'functions', module: 'print',
-  when: (env: any) => env.PRINT_BUILD === '1', whenText: 'PRINT_BUILD is not 1',
+  when: (env: { PRINT_BUILD: string }) => env.PRINT_BUILD === '1', whenText: 'PRINT_BUILD is not 1',
   inputs: ['content/books/**', 'content/companions/**'],
   needs: { packages: ['@myriaddreamin/typst-ts-node-compiler'] },
   run: ({ script, env, site }: any) => {

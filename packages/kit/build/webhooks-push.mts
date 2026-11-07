@@ -29,7 +29,7 @@ export async function pushWebhooks({ file = FILE } = {}) {
 
   let pushed = 0, dropped = 0
   for (const [kind, K] of Object.entries(KINDS)) {
-    const mine = rows.filter((r: any) => r.kind === kind)
+    const mine = rows.filter((r: { kind: string }) => r.kind === kind)
     const { data: had } = await db.from((K as any).table).select('id, ' + (K as any).url).eq('source', 'file')
     const seen = new Set()
     for (const r of mine) {

@@ -18,7 +18,7 @@ export const parseText = (raw: any) => ({ ...head(raw), groups: parseGroups(raw)
 export async function readSiteScopes(store: any, dir = 'content/app/ui') {
   const { asStore } = await import('./store/index.mjs'); const st = asStore(store)
   const out: any = {}
-  for (const name of await st.list(dir)) { const raw = await st.read(dir + '/' + name + '.md'); const p: any = parseText(raw || ''); if (p.scope) out[p.scope] = { ...p, file: dir + '/' + name + '.md' } }
+  for (const name of await st.list(dir)) { const raw = await st.read(dir + '/' + name + '.md'); const p = parseText(raw || ''); if (p.scope) out[p.scope] = { ...p, file: dir + '/' + name + '.md' } }
   return out
 }
 /* every strings file in a directory on disk, by scope — the theme's defaults; a directory that is not there is no strings */
@@ -26,7 +26,7 @@ export function readScopes(dir: any) {
   const out: any = {}
   let files = []
   try { files = fs.readdirSync(dir).filter((f) => f.endsWith('.md')).sort() } catch { return out }
-  for (const f of files) { const p: any = parseFile(path.join(dir, f)); if (p.scope) out[p.scope] = { ...p, file: path.join(dir, f) } }
+  for (const f of files) { const p = parseFile(path.join(dir, f)); if (p.scope) out[p.scope] = { ...p, file: path.join(dir, f) } }
   return out
 }
 /* the `ui` collection as the app reads it: every scope of the theme and the site, merged */
@@ -58,7 +58,7 @@ function fillRole(groups: any, role: any) {
     return v
   }
   // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-  const walk = (node: any) => {
+  const walk = (node) => {
     if (typeof node === 'string') return one(node)
     if (Array.isArray(node)) return node.map(walk)
     if (node && typeof node === 'object') { const o: any = {}; for (const [k, v] of Object.entries(node)) o[k] = walk(v); return o }
@@ -68,7 +68,7 @@ function fillRole(groups: any, role: any) {
 }
 
 export function mergeUi(siteEntries: any, themeDir: any) {
-  const theme: any = readScopes(themeDir)
+  const theme = readScopes(themeDir)
   const site = Object.fromEntries((siteEntries || []).map((e: any) => [e.scope, e]))
   const merged: any = {}
   for (const scope of new Set([...Object.keys(theme), ...Object.keys(site)])) {
@@ -90,7 +90,7 @@ export async function uiScope(scope: any, root = process.cwd(), { theme }: any =
   const { asStore } = await import('./store/index.mjs'); const st = asStore(root)
   let t
   if (theme) t = theme[scope]
-  else { const { loadSite } = await import('./site.mjs'); const { loadTheme } = await import('./theme.mjs'); t = (readScopes((await loadTheme(await loadSite(st.root || process.cwd()))).strings) as any)[scope] }
+  else { const { loadSite } = await import('./site.mjs'); const { loadTheme } = await import('./theme.mjs'); t = readScopes((await loadTheme(await loadSite(st.root || process.cwd()))).strings)[scope] }
   const s = (await readSiteScopes(st))[scope]
   return mergeGroups(t && t.groups, s && s.groups)
 }

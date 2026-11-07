@@ -32,8 +32,8 @@ const TYPING_FOR = 6000       /* and the dots fade this long after the last word
 
 /* and only where the site has the spaces: with the module off there is no backend to ask (module-switch-removes-backend) */
 const on = () => !!(supabase && configured && session.value) && moduleOn('spaces')
-const uid = () => (session.value && (session.value as any).user && (session.value as any).user.id) || null
-const topicOf = (channelId: any) => 'sp:' + channelId
+const uid = () => (session.value && session.value.user && session.value.user.id) || null
+const topicOf = (channelId: string) => 'sp:' + channelId
 
 export const spaces = ref<any>([])        /* the rooms this person is in */
 export const channels = ref<any>([])      /* every channel of those rooms they may read */
@@ -54,14 +54,14 @@ export const open = reactive<any>({
 export const thread = reactive<any>({ root: null, replies: [], loading: false, error: null })
 
 /* who is typing where: { [channelId]: { [userId]: until } } */
-export const typing: any = reactive<any>({})
+export const typing = reactive<any>({})
 /* who is here: the space's own topic, never written down, gone when the socket goes */
-export const here: any = reactive<any>({})            /* user id → 'active' | 'away' | 'dnd' */
+export const here = reactive<any>({})            /* user id → 'active' | 'away' | 'dnd' */
 /* what this person has chosen to say about themselves; kept in this browser, not on the account,
    because it is about the session they are in and not about who they are */
 export const status = ref((() => { try { const v = localStorage.getItem('dl.spaces.status'); return isStatus(v) ? v : 'active' } catch (e) { return 'active' } })())
 let touched = Date.now()
-export const drafts: any = reactive<any>({})          /* channel id → what was typed and not sent */
+export const drafts = reactive<any>({})          /* channel id → what was typed and not sent */
 export const threads = ref<any>([])              /* every thread the reader is in */
 export const mentions = ref<any>([])             /* what has been said to them: every mention */
 export const saved = ref<any>([])                /* what they saved to come back to */
@@ -73,7 +73,7 @@ let presence: any = null                  /* the space's own topic */
 const lastTyped = new Map()          /* channelId → when we last said we were typing */
 let typingTimer: any = null
 
-const rpc = async (name: any, args?: any) => {
+const rpc = async (name: string, args?: { p_channel?: any; p_before?: any; p_roots?: any; p_n?: number; p_root?: any; p_space?: any; p_on?: boolean; p_seq?: any; p_with?: any; p_q?: string; p_from?: any; p_after?: string|null; p_cursors?: any; p_lim?: number; p_note?: null; p_response?: null; p_agreed?: boolean; p_flair?: any; p_user?: any; p_request?: any; p_yes?: any; p_hash?: string; p_role?: null; p_uses?: number; p_days?: null; p_id?: any; p_message?: any; p_reason?: any; p_open?: boolean; p_kind?: string; p_minutes?: any; p_capability?: string }|undefined) => {
   const { data, error } = await (supabase as any).rpc(name, args || {})
   if (error) throw error
   return data
@@ -91,7 +91,7 @@ export async function boot() {
   loading.value = true
   /* a private topic is authorised by the reader's own token, and the client only hands realtime that
      token on a sign-in event — a session restored from storage never fired one. Hand it over here. */
-  try { (supabase as any).realtime.setAuth((session as any).value.access_token) } catch (e) { /* older client */ }
+  try { (supabase as any).realtime.setAuth(session.value.access_token) } catch (e) { /* older client */ }
   try {
     const [s, c, u, m] = await Promise.all([
       /* the file's own arrangement, not the alphabet: a space says where it sits (position) and under
@@ -104,27 +104,27 @@ export async function boot() {
          they are not a member of gives them a row that does nothing when pressed — no rooms, no
          way in, no reason given. The nav is somebody's own places; an administrator looks at every
          space in the admin, which is where that belongs. */
-      (supabase as any).from('space_members').select('space_id, dms').eq('user_id', (session as any).value.user.id),
+      (supabase as any).from('space_members').select('space_id, dms').eq('user_id', session.value.user.id),
     ])
-    if ((s as any).error) throw (s as any).error
-    if ((c as any).error) throw (c as any).error
-    const mine = new Set(((m as any).data || []).map((r: any) => r.space_id))
+    if (s.error) throw s.error
+    if (c.error) throw c.error
+    const mine = new Set((m.data || []).map((r: { space_id: any }) => r.space_id))
     /* and whether they are willing to be written to in each — their own row, carried on the space
        so the surface has it without a second read */
-    const mineDms = new Map(((m as any).data || []).map((r: any) => [r.space_id, r.dms !== false]))
+    const mineDms = new Map((m.data || []).map((r: { space_id: any; dms: boolean }) => [r.space_id, r.dms !== false]))
     /* HIDDEN IS A LISTING RULE. A hidden space or room is one that exists and is used — the place
        an embedded comment thread lands — but that nobody browses to: it is left out of the rail,
        the front page and Find a space. Staff see everything, because somebody has to be able to
        moderate a room there is otherwise no way into. Nothing about what may be READ changes: its
        members read and write in it exactly as before, which is the whole point. */
-    const shown = (x: any) => !x.hidden || isStaff.value
-    spaces.value = ((s as any).data || []).filter((x: any) => mine.has(x.id)).filter(shown)
-      .map((x: any) => ({ ...x, dms_mine: mineDms.get(x.id) !== false }))
-    channels.value = ((c as any).data || []).filter(shown)
+    const shown = (x: { hidden: any }) => !x.hidden || isStaff.value
+    spaces.value = (s.data || []).filter((x: { id: unknown }) => mine.has(x.id)).filter(shown)
+      .map((x: { id: unknown }) => ({ ...x, dms_mine: mineDms.get(x.id) !== false }))
+    channels.value = (c.data || []).filter(shown)
     unread.value = u || []
     watchAll()
     loadDrafts()
-    const first = ((s as any).data || [])[0]
+    const first = (s.data || [])[0]
     if (first) watchHere(first.id)
   } finally {
     loading.value = false
@@ -135,27 +135,27 @@ export async function boot() {
 /* what the rail shows */
 export const badge = () => badgeOf(unread.value)
 export const unreadFor = (channelId: any) => {
-  const row = unread.value.find((r: any) => r.channel === channelId)
+  const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   return row ? { unread: unreadOf(row), mentions: mentionsOf(row) } : { unread: 0, mentions: 0 }
 }
-export const joined = (channelId: any) => unread.value.some((r: any) => r.channel === channelId)
+export const joined = (channelId: any) => unread.value.some((r: { channel: any }) => r.channel === channelId)
 /* whether this room takes a voice from this person: the counters carry the answer, because the
    database worked it out (space_may) when it answered them. The client never decides this — it
    only asks, so the mic is not offered where the insert would be refused. */
 export const mayVoice = (channelId: any) => {
-  const row: any = unread.value.find((r: any) => r.channel === channelId)
+  const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   return !!(row && row.voice)
 }
 /* and whether it takes a file — the same question, asked the same way, so the clip is not offered
    where the upload and the insert would both be refused */
 export const mayFile = (channelId: any) => {
-  const row: any = unread.value.find((r: any) => r.channel === channelId)
+  const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   return !!(row && row.file)
 }
 /* and whether they may name the whole channel — the same question, asked the same way, so neither
    is ever decided in the browser */
 export const mayMention = (channelId: any) => {
-  const row: any = unread.value.find((r: any) => r.channel === channelId)
+  const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   return !!(row && row.mention)
 }
 
@@ -179,7 +179,7 @@ async function crypto_() {
 
 /* whether a room is sealed is the channel's own field, projected from its markdown */
 export const isSealed = (channelId: any) => {
-  const c: any = channels.value.find((x: any) => x.id === channelId)
+  const c = channels.value.find((x: { id: any }) => x.id === channelId)
   return !!(c && c.encrypted)
 }
 
@@ -190,10 +190,10 @@ export const isSealed = (channelId: any) => {
  * opened the room a minute later with a timeline of ciphertext nobody could ever fix.
  */
 async function recipients(channelId: any) {
-  const c: any = channels.value.find((x: any) => x.id === channelId)
+  const c = channels.value.find((x: { id: any }) => x.id === channelId)
   if (!c) return []
   const { data } = await (supabase as any).from('space_members').select('user_id').eq('space_id', c.space_id)
-  return (data || []).map((r: any) => r.user_id)
+  return (data || []).map((r: { user_id: any }) => r.user_id)
 }
 
 /*
@@ -203,11 +203,11 @@ async function recipients(channelId: any) {
  * surface already looks for it, so no component knows the difference.
  */
 const WRAP = 'dl.attachment.v1'
-const wrapFile = (file: any, info: any, said: any) => JSON.stringify({
+const wrapFile = (file: { name: any; type: any; size: any; seconds: any }, info: any, said: string|null) => JSON.stringify({
   _: WRAP, name: file.name || null, type: file.type || null, size: file.size || null,
   seconds: file.seconds == null ? null : file.seconds, media: info, body: said || null,
 })
-function unwrapFile(row: any, text: any) {
+function unwrapFile(row: { seconds: any }, text: string) {
   let w = null
   try { w = JSON.parse(text) } catch { return null }
   if (!w || w._ !== WRAP) return null
@@ -311,7 +311,7 @@ export function unskip() { sealing.skipped = false; sealing.wrong = false }
 
 export async function openChannel(id: any) {
   if (!on() || !id) return
-  const meta: any = channels.value.find((c: any) => c.id === id)
+  const meta = channels.value.find((c: { id: any }) => c.id === id)
   open.id = id
   open.mode = (meta && meta.mode) || 'stream'
   open.messages = []
@@ -322,7 +322,7 @@ export async function openChannel(id: any) {
   open.error = null
   open.loading = true
   try {
-    const row: any = unread.value.find((r: any) => r.channel === id)
+    const row = unread.value.find((r: { channel: any }) => r.channel === id)
     /* a sealed room needs this browser's own keys before a single line of it can be read */
     const sealed = isSealed(id)
     if (sealed) await readyToSeal()
@@ -348,7 +348,7 @@ export async function openChannel(id: any) {
 
 export async function older() {
   if (!on() || !open.id || open.loading || open.done || (open.mode !== 'stream' && open.mode !== 'feed')) return
-  const first: any = open.messages[0]
+  const first = open.messages[0]
   if (!first) return
   open.loading = true
   try {
@@ -363,7 +363,7 @@ export async function older() {
 
 /* A FEED'S FIRST ANSWERS: the first few replies under each post a channel read as a feed shows —
    the same rows the thread would show, under the same guards, unsealed here as the thread's are */
-export async function firstReplies(roots: any, n = 2) {
+export async function firstReplies(roots: string|any[], n = 2) {
   if (!on() || !roots.length) return {}
   const map = (await rpc('space_first_replies', { p_roots: roots, p_n: n })) || {}
   const out: any = {}
@@ -402,7 +402,7 @@ export function closeThread() { thread.root = null; thread.replies = []; thread.
 
 /* optimistic: the row goes in with a client-made id, the insert follows, and the echo the database
    broadcasts lands on the same row — so a message never shows twice and never waits for the trip. */
-export async function send(channelId: any, body: any, opts: any = {}) {
+export async function send(channelId: any, body: string, opts: any = {}) {
   if (!on() || !channelId) return null
   const me = uid()
   const temp = {
@@ -484,7 +484,7 @@ export async function vote(messageId: any, optionKey: any, { multi = false } = {
   const me = uid()
   if (!multi) {
     await (supabase as any).from('space_poll_votes').delete().eq('message_id', messageId).eq('user_id', me)
-    votes.value = votes.value.filter((v: any) => !(v.message_id === messageId && v.user_id === me))
+    votes.value = votes.value.filter((v: { message_id: any; user_id: any }) => !(v.message_id === messageId && v.user_id === me))
   }
   const { error } = await (supabase as any).from('space_poll_votes').insert({ message_id: messageId, option_key: optionKey, user_id: me })
   if (error) return false
@@ -498,7 +498,7 @@ export async function unvote(messageId: any, optionKey: any) {
   const { error } = await (supabase as any).from('space_poll_votes').delete()
     .eq('message_id', messageId).eq('user_id', me).eq('option_key', optionKey)
   if (error) return false
-  votes.value = votes.value.filter((v: any) => !(v.message_id === messageId && v.user_id === me && v.option_key === optionKey))
+  votes.value = votes.value.filter((v: { message_id: any; user_id: any; option_key: any }) => !(v.message_id === messageId && v.user_id === me && v.option_key === optionKey))
   return true
 }
 
@@ -508,9 +508,9 @@ export async function closePoll(messageId: any) {
   const { data } = await (supabase as any).rpc('space_poll_close', { p_message: messageId })
   if (!data) return false
   const at = new Date().toISOString()
-  open.messages = open.messages.map((m: any) => (m.id === messageId ? { ...m, poll_closed_at: at } : m))
-  thread.replies = thread.replies.map((m: any) => (m.id === messageId ? { ...m, poll_closed_at: at } : m))
-  if (thread.root && (thread.root as any).id === messageId) thread.root = { ...thread.root, poll_closed_at: at }
+  open.messages = open.messages.map((m: { id: any }) => (m.id === messageId ? { ...m, poll_closed_at: at } : m))
+  thread.replies = thread.replies.map((m: { id: any }) => (m.id === messageId ? { ...m, poll_closed_at: at } : m))
+  if (thread.root && thread.root.id === messageId) thread.root = { ...thread.root, poll_closed_at: at }
   return true
 }
 
@@ -529,11 +529,11 @@ export async function chooseOffer(messageId: any, key: any) {
   if (!on() || !messageId || !key) return null
   const { data } = await (supabase as any).rpc('space_choose', { p_message: messageId, p_key: key })
   if (!data) return null
-  const was: any = [...open.messages, thread.root, ...thread.replies].find((m: any) => m && m.id === messageId)
+  const was = [...open.messages, thread.root, ...thread.replies].find((m) => m && m.id === messageId)
   /* the same act, said the same way, wherever it happened */
   capture('bot_choice', { surface: 'spaces', bot: (was && was.meta && was.meta.bot) || null, choice: key, channel: open.id })
   const at = new Date().toISOString()
-  const mark = (m: any) => (m.id === messageId ? { ...m, choice_at: at, choice_key: key } : m)
+  const mark = (m: { id: any }) => (m.id === messageId ? { ...m, choice_at: at, choice_key: key } : m)
   open.messages = open.messages.map(mark)
   thread.replies = thread.replies.map(mark)
   if (thread.root) thread.root = mark(thread.root)
@@ -546,7 +546,7 @@ export async function chooseOffer(messageId: any, key: any) {
 /* the transcript is the message's body: it makes a voice note readable at a glance, searchable by
    the same index every other message uses (the stored tsvector), and there for anybody who cannot
    play sound where they are — and it costs no column */
-export async function sendVoice(channelId: any, blob: any, seconds: any, opts: any = {}) {
+export async function sendVoice(channelId: string, blob: { arrayBuffer: () => any; size: any }, seconds: any, opts: any = {}) {
   if (!on() || !channelId || !blob) return null
   const me = uid()
   const id = newId()
@@ -604,7 +604,7 @@ export async function sendVoice(channelId: any, blob: any, seconds: any, opts: a
    own id, and the row follows, so a row never points at nothing; a refused insert takes the object
    with it rather than leaving litter. The words a person typed beside it ride on the body, which
    is what makes an attachment searchable and what a caption is. */
-export async function sendFile(channelId: any, file: any, opts: any = {}) {
+export async function sendFile(channelId: string, file: any, opts: any = {}) {
   if (!on() || !channelId || !file) return null
   const type = String(file.type || '').toLowerCase()
   const ext = (FILE_TYPES as any)[type]
@@ -665,7 +665,7 @@ export async function sendFile(channelId: any, file: any, opts: any = {}) {
  * one message carrying them as `media` — the shape a network post carries. A sealed room takes no
  * media (it would have to seal each file); the composer offers none there.
  */
-export async function sendMedia(channelId: any, files: any, opts: any = {}) {
+export async function sendMedia(channelId: string, files: string|any[], opts: any = {}) {
   if (!on() || !channelId || !files || !files.length || isSealed(channelId)) return null
   const { probe } = await import('../network/probe.js')
   const { MEDIA, kindOfType } = await import('../../../supabase/functions/_shared/atproto/media.js')
@@ -706,7 +706,7 @@ export async function sendMedia(channelId: any, files: any, opts: any = {}) {
 }
 
 /* a message's pictures and videos, signed for an hour from the spaces bucket: path → address */
-export const mediaUrls: any = reactive<any>({})
+export const mediaUrls = reactive<any>({})
 export async function signMedia(messages: any) {
   const paths = []
   for (const m of messages || []) for (const im of (m && m.media) || []) for (const at of [im.path, im.poster]) if (at && !mediaUrls[at]) paths.push(at)
@@ -756,7 +756,7 @@ export async function pin(messageId: any, onOff = true, note = null) {
 export async function react(messageId: any, emoji: any) {
   if (!on() || !messageId) return
   const me = uid()
-  const had = open.reactions.find((r: any) => r.message_id === messageId && r.user_id === me && r.emoji === emoji)
+  const had = open.reactions.find((r: { message_id: any; user_id: any; emoji: any }) => r.message_id === messageId && r.user_id === me && r.emoji === emoji)
   const channelId = open.id
   if (had) {
     open.reactions = open.reactions.filter((r: any) => r !== had)
@@ -775,17 +775,17 @@ export async function setDms(spaceId: any, want: any) {
   if (!on() || !spaceId) return null
   try {
     const said = await rpc('space_set_dms', { p_space: spaceId, p_on: !!want })
-    const row: any = (spaces.value || []).find((s: any) => s.id === spaceId)
+    const row = (spaces.value || []).find((s: { id: any }) => s.id === spaceId)
     if (row) row.dms_mine = !!said
     return !!said
   } catch (e) { return null }
 }
 
-export async function markRead(channelId: any, seq?: any) {
+export async function markRead(channelId: string, seq?: number | null) {
   if (!on() || !channelId) return
   const last = seq != null ? seq : lastSeqOf(channelId)
   await rpc('space_read', { p_channel: channelId, p_seq: last })
-  const row: any = unread.value.find((r: any) => r.channel === channelId)
+  const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   if (row) { row.read = Math.max(row.read || 0, last || 0); row.mentions = 0 }
   say(channelId, 'read', { user: uid(), seq: last })
 }
@@ -793,7 +793,7 @@ export async function markRead(channelId: any, seq?: any) {
 export async function setNotify(channelId: any, notify: any) {
   if (!on() || !channelId) return
   await (supabase as any).from('channel_members').update({ notify }).eq('channel_id', channelId).eq('user_id', uid())
-  const row: any = unread.value.find((r: any) => r.channel === channelId)
+  const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   if (row) row.notify = notify
 }
 
@@ -807,24 +807,24 @@ export async function setNotify(channelId: any, notify: any) {
    reader, because to a reader they are never in the same menu. */
 export const hushes = ref<any>([])
 export async function loadHushes() { if (on()) hushes.value = (await rpc('space_my_mutes')) || [] }
-export const hushOf = (kind: any, ref: any) => (hushes.value || []).find((m: any) => m.kind === kind && m.ref === ref) || null
+export const hushOf = (kind: any, ref: any) => (hushes.value || []).find((m: { kind: any; ref: any }) => m.kind === kind && m.ref === ref) || null
 export const isHushed = (kind: any, ref: any) => !!hushOf(kind, ref)
 
-export async function hush(kind: any, ref: any, until = null) {
+export async function hush(kind: string, ref: any, until = null) {
   if (!on() || !kind || !ref) return
   const { error } = await (supabase as any).rpc('space_mute', { p_kind: kind, p_ref: ref, p_until: until })
   if (error) return
-  const had: any = hushOf(kind, ref)
+  const had = hushOf(kind, ref)
   if (had) had.until = until
   else hushes.value = [...hushes.value, { kind, ref, until }]
   /* the rooms this touches go quiet at once rather than at the next read */
   if (kind !== 'person') unread.value = (await rpc('space_unread')) || []
 }
-export async function unhush(kind: any, ref: any) {
+export async function unhush(kind: string, ref: any) {
   if (!on() || !kind || !ref) return
   const { error } = await (supabase as any).rpc('space_unmute', { p_kind: kind, p_ref: ref })
   if (error) return
-  hushes.value = hushes.value.filter((m: any) => !(m.kind === kind && m.ref === ref))
+  hushes.value = hushes.value.filter((m: { kind: any; ref: any }) => !(m.kind === kind && m.ref === ref))
   if (kind !== 'person') unread.value = (await rpc('space_unread')) || []
 }
 
@@ -838,7 +838,7 @@ export async function leave(channelId: any) {
   if (!on() || !channelId) return
   await (supabase as any).from('channel_members').delete().eq('channel_id', channelId).eq('user_id', uid())
   unwatch(channelId)
-  unread.value = unread.value.filter((r: any) => r.channel !== channelId)
+  unread.value = unread.value.filter((r: { channel: any }) => r.channel !== channelId)
 }
 
 /* the credentials for this channel's huddle: who the caller is on it, the topic to signal on, where
@@ -889,7 +889,7 @@ export async function loadSaved() { if (on()) saved.value = (await rpc('space_la
    people's names with it, because a name a page holds belongs to the space it has open. */
 export async function loadDms() { if (on()) dms.value = (await rpc('space_dms')) || [] }
 
-export async function save(message: any) {
+export async function save(message: { id: any; channel_id: any }) {
   if (!on() || !message) return
   await (supabase as any).from('space_saved').insert({ user_id: uid(), message_id: message.id, channel_id: message.channel_id })
   await loadSaved()
@@ -899,17 +899,17 @@ export async function unsave(messageId: any) {
   await (supabase as any).from('space_saved').delete().eq('user_id', uid()).eq('message_id', messageId)
   await loadSaved()
 }
-export const isSaved = (id: any) => saved.value.some((x: any) => x.id === id)
+export const isSaved = (id: any) => saved.value.some((x: { id: any }) => x.id === id)
 
 export async function star(channelId: any, on_: any) {
   if (!on() || !channelId) return
   await (supabase as any).from('channel_members').update({ starred: !!on_ }).eq('channel_id', channelId).eq('user_id', uid())
-  const row: any = unread.value.find((r: any) => r.channel === channelId)
+  const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   if (row) row.starred = !!on_
 }
 
 /* a draft is the reader's own and nobody's business: it stays in this browser until it is sent */
-export function draft(channelId: any, text: any) {
+export function draft(channelId: string|number, text: any) {
   if (!channelId) return
   if (text) drafts[channelId] = text
   else delete drafts[channelId]
@@ -923,15 +923,15 @@ function loadDrafts() {
 }
 
 /* who else is here, on the space's own topic */
-function watchHere(spaceId: any) {
+function watchHere(spaceId: string) {
   if (!on() || !spaceId || presence) return
   presence = (supabase as any).channel('here:' + spaceId, { config: { private: true, presence: { key: uid() } } })
     .on('presence', { event: 'sync' }, () => {
-      const state: any = presence.presenceState()
+      const state = presence.presenceState()
       for (const k of Object.keys(here)) delete here[k]
       for (const k of Object.keys(state)) here[k] = statusOf(state[k])
     })
-    .subscribe((s: any) => { if (s === 'SUBSCRIBED') say_() })
+    .subscribe((s: string) => { if (s === 'SUBSCRIBED') say_() })
   watchIdle()
 }
 
@@ -996,29 +996,29 @@ export async function search(query: any) {
 
 const lastSeqOf = (channelId: any) => {
   let n = 0
-  for (const m of open.id === channelId ? open.messages : []) if (Number((m as any).seq) < Number.MAX_SAFE_INTEGER) n = Math.max(n, Number((m as any).seq) || 0)
-  const row: any = unread.value.find((r: any) => r.channel === channelId)
+  for (const m of open.id === channelId ? open.messages : []) if (Number(m.seq) < Number.MAX_SAFE_INTEGER) n = Math.max(n, Number(m.seq) || 0)
+  const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   return Math.max(n, row ? Number(row.seq) || 0 : 0)
 }
 
 const newId = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID()
   // @ts-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'number[]' and 'number'.
-  : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c: any) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)))
+  : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)))
 
-const drop = (id: any) => {
-  open.messages = open.messages.filter((m: any) => m.id !== id)
-  thread.replies = thread.replies.filter((m: any) => m.id !== id)
+const drop = (id: string) => {
+  open.messages = open.messages.filter((m: { id: any }) => m.id !== id)
+  thread.replies = thread.replies.filter((m: { id: any }) => m.id !== id)
 }
 
 /* a row from anywhere — our own insert, the database's broadcast, a page — put where it belongs */
-function land(row: any) {
+function land(row: { id: any; channel_id: any; thread_root_id: any; echoed: any; seq: any; created_at: any; at: any; author_id: any }) {
   if (!row || !row.id) return
   // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
   if (row.channel_id === open.id && (!row.thread_root_id || row.echoed)) open.messages = mergeMessages(open.messages, [row])
   // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
-  if (thread.root && row.thread_root_id === (thread.root as any).id) thread.replies = mergeMessages(thread.replies, [row])
-  if (thread.root && row.id === (thread.root as any).id) thread.root = { ...thread.root, ...row }
-  const u: any = unread.value.find((r: any) => r.channel === row.channel_id)
+  if (thread.root && row.thread_root_id === thread.root.id) thread.replies = mergeMessages(thread.replies, [row])
+  if (thread.root && row.id === thread.root.id) thread.root = { ...thread.root, ...row }
+  const u = unread.value.find((r: { channel: any }) => r.channel === row.channel_id)
   if (u && Number(row.seq) > Number(u.seq || 0)) {
     u.seq = Number(row.seq)
     u.last_message_at = row.created_at || row.at
@@ -1027,7 +1027,7 @@ function land(row: any) {
 }
 
 function watchAll() {
-  for (const row of unread.value) watch((row as any).channel)
+  for (const row of unread.value) watch(row.channel)
 }
 
 function watch(channelId: any) {
@@ -1045,7 +1045,7 @@ function watch(channelId: any) {
        a message written in that window is never broadcast to us. Nothing is lost: on being told we
        are subscribed we ask for anything newer than what we hold, which is the cursor doing what it
        is for. Never a sleep — the window is not a fixed length. */
-    .subscribe((status: any) => { if (status === 'SUBSCRIBED') catchUpChannel(channelId) })
+    .subscribe((status: string) => { if (status === 'SUBSCRIBED') catchUpChannel(channelId) })
   live.set(channelId, ch)
 }
 
@@ -1055,7 +1055,7 @@ function unwatch(channelId: any) {
 }
 
 /* the database's own send. A payload without its body is a message too large to carry: fetch it. */
-async function arrived(channelId: any, payload: any) {
+async function arrived(channelId: any, payload: { id: any; cipher: null; body: null; kind: string; deleted_at: null; title: null; channel: any; seq: any; root: any; author: any; attachment: any; attachment_type: any; seconds: any; meta: any; at: any; edited_at: any }) {
   if (!payload || !payload.id) return
   /* a sealed message's words ARE its cipher, which the wake carries, so it is not a payload that
      lost its body and must not be fetched again */
@@ -1075,14 +1075,14 @@ async function arrived(channelId: any, payload: any) {
   }))
 }
 
-function reacted(channelId: any, p: any) {
+function reacted(channelId: any, p: { message: any; on: any; user: any; emoji: any }) {
   if (!p || !p.message || channelId !== open.id) return
-  if (p.on) open.reactions = [...open.reactions.filter((r: any) => !(r.message_id === p.message && r.user_id === p.user && r.emoji === p.emoji)), { message_id: p.message, channel_id: channelId, user_id: p.user, emoji: p.emoji }]
-  else open.reactions = open.reactions.filter((r: any) => !(r.message_id === p.message && r.user_id === p.user && r.emoji === p.emoji))
+  if (p.on) open.reactions = [...open.reactions.filter((r: { message_id: any; user_id: any; emoji: any }) => !(r.message_id === p.message && r.user_id === p.user && r.emoji === p.emoji)), { message_id: p.message, channel_id: channelId, user_id: p.user, emoji: p.emoji }]
+  else open.reactions = open.reactions.filter((r: { message_id: any; user_id: any; emoji: any }) => !(r.message_id === p.message && r.user_id === p.user && r.emoji === p.emoji))
 }
 
 /* typing and read receipts: the client's own, never written down */
-function saw(channelId: any, p: any, isRead?: any) {
+function saw(channelId: string|number, p: { user: string|number }, isRead?: boolean|undefined) {
   if (!p || !p.user || p.user === uid()) return
   if (isRead) return
   if (!typing[channelId]) typing[channelId] = {}
@@ -1100,7 +1100,7 @@ function sweepTyping() {
   if (!any && typingTimer) { clearInterval(typingTimer); typingTimer = null }
 }
 
-const say = (channelId: any, event: any, payload: any) => {
+const say = (channelId: any, event: string, payload: { user: any; seq?: any }) => {
   const ch = live.get(channelId)
   if (ch) ch.send({ type: 'broadcast', event, payload }).catch(() => {})
 }
@@ -1113,16 +1113,16 @@ export function saidSomething(channelId: any) {
   say(channelId, 'typing', { user: uid() })
 }
 
-export const whoIsTyping = (channelId: any) => Object.keys(typing[channelId] || {})
+export const whoIsTyping = (channelId: string|number) => Object.keys(typing[channelId] || {})
 
 /* ------------------------------------------------------------------ catching up */
 
 /* one channel, from what we hold to what there is */
 async function catchUpChannel(channelId: any) {
   if (!on() || !channelId) return
-  const row: any = unread.value.find((r: any) => r.channel === channelId)
+  const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   const from = channelId === open.id
-    ? open.messages.reduce((n: any, m: any) => (Number(m.seq) < Number.MAX_SAFE_INTEGER ? Math.max(n, Number(m.seq) || 0) : n), 0)
+    ? open.messages.reduce((n: number, m: { seq: any }) => (Number(m.seq) < Number.MAX_SAFE_INTEGER ? Math.max(n, Number(m.seq) || 0) : n), 0)
     : Number((row && row.seq) || 0)
   const answer = (await rpc('space_catchup', { p_cursors: { [channelId]: from }, p_lim: PAGE })) || []
   for (const a of answer) for (const m of a.messages || []) land(m)
@@ -1133,7 +1133,7 @@ async function catchUpChannel(channelId: any) {
 export async function catchUp() {
   if (!on()) return
   const cursors: any = {}
-  for (const r of unread.value) cursors[(r as any).channel] = Number((r as any).seq) || 0
+  for (const r of unread.value) cursors[r.channel] = Number(r.seq) || 0
   const answer = (await rpc('space_catchup', { p_cursors: cursors, p_lim: PAGE })) || []
   for (const a of answer) {
     for (const m of a.messages || []) land(m)
@@ -1193,7 +1193,7 @@ export const memberCard = (space: any, user: any) => rpc('space_member_card', { 
 /* the line a person writes about themselves: their own profile row and nobody else's, which the
    table's own policy enforces — this is only the way to write it */
 export async function setAbout(text: any) {
-  const id = session.value && (session.value as any).user && (session.value as any).user.id
+  const id = session.value && session.value.user && session.value.user.id
   if (!id) return false
   const about = String(text || '').trim().slice(0, 280)
   const { error } = await (supabase as any).from('profiles').update({ about: about || null }).eq('id', id)
@@ -1206,7 +1206,7 @@ export const inviteToken = () => {
   crypto.getRandomValues(b)
   return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
-export const tokenHash = async (token: any) => {
+export const tokenHash = async (token: string|undefined) => {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))
   return [...new Uint8Array(bytes)].map((x) => x.toString(16).padStart(2, '0')).join('')
 }
@@ -1277,7 +1277,7 @@ export async function loadScheduled() {
   return scheduled.value
 }
 
-export async function sendLater(channelId: any, body: any, when: any, { thread = null } = {}) {
+export async function sendLater(channelId: any, body: any, when: { toISOString: () => any }, { thread = null } = {}) {
   if (!on() || !channelId) return { error: 'no room' }
   const at = when instanceof Date ? when.toISOString() : String(when)
   const { data, error } = await (supabase as any).rpc('space_schedule', {
@@ -1292,5 +1292,5 @@ export async function sendLater(channelId: any, body: any, when: any, { thread =
 export async function unschedule(id: any) {
   if (!on() || !id) return
   await (supabase as any).from('space_scheduled').delete().eq('id', id)
-  scheduled.value = scheduled.value.filter((s: any) => s.id !== id)
+  scheduled.value = scheduled.value.filter((s: { id: any }) => s.id !== id)
 }

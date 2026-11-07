@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { writeIfChanged } from './write-if-changed.mjs'
 
-const readJson = (root: any, rel: any) => { try { return JSON.parse(readFileSync(join(root, rel), 'utf8')) } catch { return null } }
+const readJson = (root: string, rel: string) => { try { return JSON.parse(readFileSync(join(root, rel), 'utf8')) } catch { return null } }
 
 /* the catalog as the compile wants it: the offers by sku and the booking types */
 export const catalogFrom = (root: any) => {
@@ -36,7 +36,7 @@ export const formsFrom = (root: any) => {
  * be a FAULT and not a silent nothing. A channel a site believes is sealed and is not is worse
  * than either a sealed one or an open one, because nobody is told.
  */
-export const modulesFrom = async (root: any) => {
+export const modulesFrom = async (root: string|undefined) => {
   try {
     const { loadSite } = await import('./site.mjs')
     const site = await loadSite(root)
@@ -44,4 +44,4 @@ export const modulesFrom = async (root: any) => {
   } catch { return null }
 }
 /* the compile's output, written only where the bytes differ */
-export const writeSpaces = (root: any, paths: any, text: any) => { for (const p of paths) writeIfChanged(join(root, p), text) }
+export const writeSpaces = (root: string, paths: string[], text: string) => { for (const p of paths) writeIfChanged(join(root, p), text) }

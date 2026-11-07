@@ -38,7 +38,7 @@ import { runInContainer } from './e2e-container.mjs'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = workspaceRoot(process.cwd())
 const args = process.argv.slice(2)
-const opt = (name: any, dflt: any) => { const i = args.indexOf(name); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : dflt }
+const opt = (name: string, dflt: any) => { const i = args.indexOf(name); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : dflt }
 const KEEP = args.includes('--keep')
 const RUN = opt('--run', '') ? path.resolve(opt('--run', '')) : ''
 if (RUN && !fs.existsSync(RUN)) { console.error(`--run names ${RUN}, which is not there`); process.exit(1) }
@@ -53,8 +53,8 @@ const { moduleSet } = await import('./steps.mjs')
 const { paymentProviderIdOf } = await import('./payment-provider-registry.mjs')
 const JOBS = Math.max(1, Number(opt('--jobs', process.env.PLATFORMKIT_E2E_JOBS || 2)) || 2)
 const PORT_START = 40000
-const say = (site: any, m: any) => console.log(`\x1b[2m[e2e:${site}]\x1b[0m ${m}`)
-const die = (m: any) => { console.error(`\n\x1b[31m✖\x1b[0m ${m}\n`); process.exit(1) }
+const say = (site: any, m: string) => console.log(`\x1b[2m[e2e:${site}]\x1b[0m ${m}`)
+const die = (m: string) => { console.error(`\n\x1b[31m✖\x1b[0m ${m}\n`); process.exit(1) }
 
 /* ---- Docker answers, or nothing below can ---- */
 const dockerUp = () => spawnSync('docker', ['info'], { stdio: 'ignore', timeout: 20000 }).status === 0
@@ -86,17 +86,17 @@ for (const s of all) { const c = (chosen.find((x) => x.name === s.name) || {}).c
 /* ---- the run's own values, and what may never reach a test stack ---- */
 const LIVE = /\b(sk|rk|pk)_live_[A-Za-z0-9]+/
 const STRIP = /^\s*(APP_URL|VITE_APP_URL|VITE_SUPABASE_URL|VITE_SUPABASE_ANON_KEY|SUPABASE_URL|SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_DB_URL|SUPABASE_ACCESS_TOKEN|PLATFORMKIT_SHADOW_DB_URL|SMTP_[A-Z]+|CAL_WEBHOOK_SECRET|STRIPE_WEBHOOK_SECRET|HYPERSWITCH_WEBHOOK_SECRET|FORMS_WEBHOOK_SECRET|WH_TEST_SECRET|VAPID_[A-Z_]+|VITE_VAPID_PUBLIC_KEY|STRIPE_SECRET_KEY|STRIPE_PUBLISHABLE_KEY|VITE_STRIPE_PUBLISHABLE_KEY|STRIPE_MOCK)=.*$/gm
-const secret = (prefix: any) => prefix + crypto.randomBytes(18).toString('hex')
+const secret = (prefix: string) => prefix + crypto.randomBytes(18).toString('hex')
 const vapidPair = () => {
   const ecdh = crypto.createECDH('prime256v1'); ecdh.generateKeys()
   return { VAPID_PUBLIC_KEY: ecdh.getPublicKey().toString('base64url'), VAPID_PRIVATE_KEY: Buffer.concat([Buffer.alloc(32), ecdh.getPrivateKey()]).subarray(-32).toString('base64url'), VAPID_SUBJECT: 'mailto:test@example.com' }
 }
 const readEnv = (file: any) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '')
-const parseEnv = (text: any) => Object.fromEntries(text.split('\n').map((l: any) => /^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/.exec(l)).filter(Boolean).map((m: any) => [m[1], m[2].replace(/^["']|["']$/g, '')]))
+const parseEnv = (text: string) => Object.fromEntries(text.split('\n').map((l: string) => /^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/.exec(l)).filter(Boolean).map((m: any) => [m[1], m[2].replace(/^["']|["']$/g, '')]))
 
 const children = new Set()
 const stacks = new Set()
-const sb = (workdir: any, a: any, opts = {}) => spawnSync('npx', ['supabase', ...a, '--workdir', workdir], { cwd: workdir, encoding: 'utf8', timeout: 600000, ...opts })
+const sb = (workdir: string, a: string[], opts = {}) => spawnSync('npx', ['supabase', ...a, '--workdir', workdir], { cwd: workdir, encoding: 'utf8', timeout: 600000, ...opts })
 /*
  * EVERY RUN'S DATA IS NEW; ITS DEPENDENCIES ARE NOT. A stack is stopped with its volumes, and then every one of them is
  * removed but the edge runtime's, which is the functions' Deno cache (/root/.cache/deno): the database, the storage and
@@ -104,7 +104,7 @@ const sb = (workdir: any, a: any, opts = {}) => spawnSync('npx', ['supabase', ..
  * CI keeps a dependency cache. Without it every run downloaded every function's imports again, and on a slow connection
  * the workers timed out booting ("worker did not respond in time") before a single test ran.
  */
-const dropData = (id: any) => {
+const dropData = (id: string) => {
   spawnSync('npx', ['supabase', 'stop', '--project-id', id], { cwd: ROOT, stdio: 'ignore', timeout: 300000 })
   const vols = spawnSync('docker', ['volume', 'ls', '-q', '--filter', `label=com.supabase.cli.project=${id}`], { encoding: 'utf8' }).stdout.split('\n').map((v) => v.trim()).filter(Boolean)
   const data = vols.filter((v) => v !== `supabase_edge_runtime_${id}`)
@@ -121,7 +121,7 @@ const stopStack = (workdir: any) => {
   for (const n of [`supabase_network_${id}`, `supabase_network_${id}-shadow`]) spawnSync('docker', ['network', 'rm', n], { stdio: 'ignore' })
 }
 /* a server the run starts, writing straight to its own log file: complete, and still writing after the run exits (--keep) */
-function background(name: any, cmd: any, cmdArgs: any, { log, ...opts }: any) {
+function background(name: string, cmd: string, cmdArgs: readonly string[], { log, ...opts }: any) {
   const fd = fs.openSync(log.replace(/\.log$/, `.${name}.log`), 'w')
   const p = spawn(cmd, cmdArgs, { ...opts, detached: true, stdio: ['ignore', fd, fd] })
   fs.closeSync(fd)
@@ -141,7 +141,7 @@ if (fs.existsSync(KEPT)) {
 /* the tests, run so the run still hears a signal while they go (a spawnSync would hold it until the last test ended,
    and an interrupted run would leave its stacks up); they are stopped on every teardown, --keep or not */
 const running = new Set()
-function runTests(cmd: any, cmdArgs: any, { log, ...opts }: any) {
+function runTests(cmd: string, cmdArgs: readonly string[], { log, ...opts }: { cwd: any; env: any; log: string }) {
   return new Promise((resolve) => {
     const p = spawn(cmd, cmdArgs, { ...opts, detached: true, stdio: ['ignore', 'pipe', 'pipe'] })
     running.add(p)
@@ -170,14 +170,14 @@ function teardown() {
 for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(sig, () => { console.log(`\n${sig}: stopping the run's stacks`); teardown(); process.exit(130) })
 
 /* a function's own answer, a redirect included (email-track answers 302): following it would ask the site, not the function */
-const answers = async (url: any, init = {}) => { try { const r = await fetch(url, { redirect: 'manual', ...init, signal: AbortSignal.timeout(5000) }); return r.status } catch { return 0 } }
-async function waitFor(what: any, test: any, seconds: any) {
+const answers = async (url: string|URL|Request, init = {}) => { try { const r = await fetch(url, { redirect: 'manual', ...init, signal: AbortSignal.timeout(5000) }); return r.status } catch { return 0 } }
+async function waitFor(what: string, test: { (): Promise<boolean>; (): Promise<boolean>; (): any }, seconds: number) {
   for (let i = 0; i < seconds; i++) { if (await test()) return true; await new Promise((r) => setTimeout(r, 1000)) }
   throw new Error(`${what} did not come up within ${seconds}s`)
 }
 
 /* the mail catcher's address on its stack's network */
-function catcherAddress(projectId: any) {
+function catcherAddress(projectId: string) {
   const r = spawnSync('docker', ['inspect', `supabase_inbucket_${projectId}`, '-f', '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'], { encoding: 'utf8' })
   const ip = (r.stdout || '').trim()
   if (r.status !== 0 || !/^\d+\.\d+\.\d+\.\d+$/.test(ip)) throw new Error(`the stack's mail catcher has no address (${(r.stderr || '').trim().slice(0, 120)})`)
@@ -215,7 +215,7 @@ async function runSite(site: any, reserved: any) {
        timed out waiting for a page that had answered 500 */
     {
       const pkg = JSON.parse(readEnv(path.join(site.directory, 'package.json')) || '{}')
-      const there = (dep: any) => { for (let d = site.directory; ; d = path.dirname(d)) { if (fs.existsSync(path.join(d, 'node_modules', dep))) return true; if (path.dirname(d) === d) return false } }
+      const there = (dep: string) => { for (let d = site.directory; ; d = path.dirname(d)) { if (fs.existsSync(path.join(d, 'node_modules', dep))) return true; if (path.dirname(d) === d) return false } }
       const missing = Object.keys(pkg.dependencies || {}).filter((d) => !there(d))
       if (missing.length) throw new Error(`its dependencies are not installed (${missing.slice(0, 4).join(', ')}${missing.length > 4 ? ' and ' + (missing.length - 4) + ' more' : ''}) — run npm ci in ${path.relative(ROOT, site.directory) || '.'}`)
     }
@@ -362,9 +362,9 @@ teardown()
 
 /* THE COVERAGE GATE, over the whole run: every function any site served was called by some site's tests. A function
    nothing called is one nothing has shown answers — five sat behind a green suite that way. */
-const served: any = new Set(results.flatMap((r: any) => r.served || [])), calledAny: any = new Set(results.flatMap((r: any) => r.called || []))
+const served = new Set(results.flatMap((r: { served: any }) => r.served || [])), calledAny = new Set(results.flatMap((r: { called: any }) => r.called || []))
 const uncalled = [...served].filter((f) => !calledAny.has(f)).sort()
-const ran: any = results.some((r: any) => r.served)
+const ran = results.some((r: { served: any }) => r.served)
 
 console.log('\n══ end-to-end ══')
 for (const r of results) {
@@ -378,4 +378,4 @@ const partial = chosen.length < backendSites
 if (ran && !RUN) console.log(uncalled.length
   ? `${partial ? '⚠' : '✖'} the coverage gate — no test in this run called: ${uncalled.join(', ')}${partial ? ' (a run over some sites; the whole run must call them)' : ''}`
   : `✔ the coverage gate — every one of the ${served.size} functions served was called`)
-process.exit(results.every((r: any) => r.ok) && (RUN || partial || !uncalled.length) ? 0 : 1)
+process.exit(results.every((r: { ok: any }) => r.ok) && (RUN || partial || !uncalled.length) ? 0 : 1)

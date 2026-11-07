@@ -34,7 +34,7 @@ export const KEYS = [
 ]
 
 /* is the thing being typed into a place where a letter is a letter */
-export const isTyping = (el: any) => {
+export const isTyping = (el: { tagName?: any; isContentEditable?: any }) => {
   if (!el) return false
   const tag = String(el.tagName || '').toLowerCase()
   return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable === true
@@ -45,7 +45,7 @@ export const isTyping = (el: any) => {
  * bare key means nothing — with Escape the one exception, because "close this" is what a person
  * expects of it wherever they are.
  */
-export function commandOf(e: any, { typing = false } = {}) {
+export function commandOf(e: { key: any; metaKey: any; ctrlKey: any; shiftKey: any; altKey: any }, { typing = false } = {}) {
   if (!e) return null
   const key = String(e.key || '').toLowerCase()
   const mod = !!(e.metaKey || e.ctrlKey)
@@ -62,7 +62,7 @@ export function commandOf(e: any, { typing = false } = {}) {
 }
 
 /* how to write a shortcut for a person to read, in the symbols their machine uses */
-export function sayKey(k: any, { mac = true } = {}) {
+export function sayKey(k: { command: string; mod: boolean; shift: boolean; key: string; alt?: undefined }|{ command: string; mod: boolean; key: string; shift?: undefined; alt?: undefined }|{ command: string; alt: boolean; key: string; mod?: undefined; shift?: undefined }|{ command: string; alt: boolean; shift: boolean; key: string; mod?: undefined }|{ command: string; key: string; mod?: undefined; shift?: undefined; alt?: undefined }, { mac = true } = {}) {
   const out = []
   if (k.mod) out.push(mac ? '⌘' : 'Ctrl')
   if (k.alt) out.push(mac ? '⌥' : 'Alt')
@@ -74,10 +74,10 @@ export function sayKey(k: any, { mac = true } = {}) {
 
 /* the next room to move to, in the order the rail shows them, wrapping at either end. `only` is
    the rule for which rooms count — every one, or only those with something waiting. */
-export function stepRoom(rooms: any, currentId: any, step: any, { only = null } = {}) {
+export function stepRoom(rooms: any[], currentId: string, step: number, { only = null } = {}) {
   const list = (only ? rooms.filter(only) : rooms).filter(Boolean)
   if (!list.length) return null
-  const at = list.findIndex((r: any) => r.id === currentId)
+  const at = list.findIndex((r: { id: any }) => r.id === currentId)
   if (at < 0) return list[step > 0 ? 0 : list.length - 1].id
   return list[(at + step + list.length) % list.length].id
 }

@@ -24,7 +24,7 @@ const DIR = path.dirname(require.resolve('lucide-vue-next/package.json')) + '/di
 /* the file a site has as .js, which the workspace holds as its .ts */
 const resolved = (spec: string): string => { try { return require.resolve(spec) } catch { return require.resolve(spec.replace(/\.js$/, '.ts')) } }
 
-function themeGlyphs(theme: any) {
+function themeGlyphs(theme: string|null) {
   const own = new Set()
   /* the theme's own few, drawn by glyph() — its package exports its source as ./*, so this is the
      same path the app imports */
@@ -74,21 +74,21 @@ function themeGlyphs(theme: any) {
 const ALL = process.argv.includes('--all') || process.env.PLATFORMKIT_ICONS_ALL === '1'
 
 /* the node array in an icon module — `createLucideIcon("name", [ ... ])` — read as data, never run */
-function nodes(file: any) {
+function nodes(file: fs.PathOrFileDescriptor) {
   const src = fs.readFileSync(file, 'utf8')
   const a = src.indexOf('createLucideIcon('); if (a < 0) return null
   const b = src.indexOf(', [', a), e = src.lastIndexOf(']);')
   if (b < 0 || e < 0) return null
   return new Function('return ' + src.slice(b + 2, e + 1))()
 }
-const attrs = (o: any) => Object.entries(o).filter(([k]) => k !== 'key').map(([k, v]) => `${k}="${v}"`).join(' ')
-const inner = (list: any) => list.map(([tag, a]: any) => `<${tag} ${attrs(a)}/>`).join('')
+const attrs = (o: { [s: string]: unknown }|ArrayLike<unknown>) => Object.entries(o).filter(([k]) => k !== 'key').map(([k, v]) => `${k}="${v}"`).join(' ')
+const inner = (list: [any,any][]) => list.map(([tag, a]) => `<${tag} ${attrs(a)}/>`).join('')
 
 /* every `icon` a page names, wherever it sits in its props */
 function named() {
   const out = new Set()
   const dir = path.join(ROOT, 'content/pages'); if (!fs.existsSync(dir)) return out
-  const walk = (v: any) => { if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) { if (k === 'icon' && typeof x === 'string') out.add(x); else walk(x) } }
+  const walk = (v: unknown) => { if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) { if (k === 'icon' && typeof x === 'string') out.add(x); else walk(x) } }
   for (const f of fs.readdirSync(dir)) if (f.endsWith('.md')) walk(matter(fs.readFileSync(path.join(dir, f), 'utf8')).data.sections || [])
   return out
 }

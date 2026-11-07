@@ -14,7 +14,7 @@ function gitOutput(sourceRoot: any, ...args: any[]) {
   return result.status === 0 ? result.stdout.trim() : null
 }
 
-function canonicalRepository(value: any) {
+function canonicalRepository(value: string|null) {
   if (typeof value !== 'string') return null
   if (value.toLowerCase() === 'github:platform-kit/core') return CORE_REPOSITORY
   const scp = /^git@github\.com:([^?#]+)$/i.exec(value)
@@ -28,12 +28,12 @@ function canonicalRepository(value: any) {
   }
 }
 
-export function platformKitPackageHash(root: any) {
+export function platformKitPackageHash(root: string) {
   const hash = crypto.createHash('sha256')
   return hashPackageTree(root, hash)
 }
 
-function hashPackageTree(root: any, hash: any, includedFiles = null) {
+function hashPackageTree(root: string, hash: crypto.Hash, includedFiles = null) {
   const included = includedFiles === null ? null : new Set(includedFiles)
   const visit = (dir: any) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
@@ -58,7 +58,7 @@ function hashPackageTree(root: any, hash: any, includedFiles = null) {
   return hash.digest('hex')
 }
 
-function sourcePackageHash(root: any) {
+function sourcePackageHash(root: string) {
   const result = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts', '--silent'], {
     cwd: root,
     encoding: 'utf8',
@@ -77,13 +77,13 @@ function sourcePackageHash(root: any) {
   const files = packages.length === 1 && Array.isArray(packages[0]?.files)
     ? packages[0].files.map(({ path: file }: any) => file)
     : null
-  if (!files || files.some((file: any) => typeof file !== 'string' || path.isAbsolute(file) || file.split('/').includes('..'))) {
+  if (!files || files.some((file: string) => typeof file !== 'string' || path.isAbsolute(file) || file.split('/').includes('..'))) {
     throw new Error(`npm returned an invalid package file list for ${root}`)
   }
   return hashPackageTree(root, crypto.createHash('sha256'), files)
 }
 
-function writeReceipt(site: any, sourceRoot: any, { sourceClean: cleanBefore }: any = {}) {
+function writeReceipt(site: string, sourceRoot: string, { sourceClean: cleanBefore }: any = {}) {
   const packages: any = {}
   for (const name of PACKAGES) {
     const sourceDirectory = path.join(sourceRoot, 'packages', SOURCE_DIR[name])
@@ -127,7 +127,7 @@ function writeReceipt(site: any, sourceRoot: any, { sourceClean: cleanBefore }: 
   return receipt
 }
 
-export function installPlatformKitSource(site: any, sourceRoot: any, { env = process.env } = {}) {
+export function installPlatformKitSource(site: string, sourceRoot: string, { env = process.env } = {}) {
   for (const name of PACKAGES) {
     if (!fs.existsSync(path.join(sourceRoot, 'packages', SOURCE_DIR[name], 'package.json'))) {
       throw new Error(`PlatformKit source checkout is missing packages/${SOURCE_DIR[name]}`)

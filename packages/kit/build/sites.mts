@@ -416,7 +416,7 @@ if (isMain(import.meta.url)) {
       if (!name) {
         throw new Error('usage: platformkit sites fetch <name> [--url <git-url>] [--ref <40-character-commit>]')
       }
-      const parsed: any = parseOptions(['--url', '--ref'])
+      const parsed = parseOptions(['--url', '--ref'])
       const registry = readSiteRegistry(root)
       const registered = registry.sites.find((site: any) => site.name === name)
       const ref = parsed['--ref'] || registered?.ref
@@ -427,7 +427,7 @@ if (isMain(import.meta.url)) {
       if (!name) {
         throw new Error('usage: platformkit sites update <name> --ref <40-character-commit>')
       }
-      const parsed: any = parseOptions(['--ref'])
+      const parsed = parseOptions(['--ref'])
       const ref = parsed['--ref']
       if (!ref) throw new Error('updating a site requires --ref <40-character-commit>')
       const updated = updateSite(root, { name, ref })

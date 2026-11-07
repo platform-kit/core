@@ -44,15 +44,15 @@ export const opening = (md: any) => String(md || '').trim().split(/\n\s*\n/)[0]
  */
 export function coverSource({ d, trim = '6x9', cloth, foil, foilOnly = false, paperback = false, picture = '',
   book = {}, companion = null, spec = {}, words = {}, spine = {} }: any) {
-  const W: any = words || {}
+  const W = words || {}
   const t = TRIM_PT[trim] || TRIM_PT['6x9']
   /* the source imports the template by NAME, which travels with the kit rather than the site — a
      site-rooted path broke the first deploy after the extraction */
   return `#import "cover.typ": *
 #cover(width: ${d.width}pt, height: ${d.height}pt, bleed: ${d.bleed}pt, spine: ${d.spine}pt, flap: ${d.flap || 0}pt, trim-width: ${t.w}pt,
   cloth: ${str(cloth)}, foil: ${str(foil)}, foil-only: ${foilOnly ? 'true' : 'false'}, picture: ${str(paperback && picture ? picture : '')},
-  title: ${str((book as any).title || '')}, author: ${str((book as any).author || '')}, insight: ${str((companion && (companion as any).insight) || '')}, description: ${str((book as any).description || '')}, opening: ${str((spec as any).blurb || opening((book as any).introduction))}, about-text: ${str((spec as any).flap || '')},
-  edition: ${str(W.edition || '')}, spine-title: ${str((spine as any).title || '')}, spine-edition: ${str((spine as any).edition || '')}, edition-line: ${str(W['edition-line'] || '')}, about: ${str(W['jacket-about'] || '')}, this-edition: ${str(W['jacket-edition'] || '')}, site: ${str(W.site || '')})
+  title: ${str(book.title || '')}, author: ${str(book.author || '')}, insight: ${str((companion && companion.insight) || '')}, description: ${str(book.description || '')}, opening: ${str(spec.blurb || opening(book.introduction))}, about-text: ${str(spec.flap || '')},
+  edition: ${str(W.edition || '')}, spine-title: ${str(spine.title || '')}, spine-edition: ${str(spine.edition || '')}, edition-line: ${str(W['edition-line'] || '')}, about: ${str(W['jacket-about'] || '')}, this-edition: ${str(W['jacket-edition'] || '')}, site: ${str(W.site || '')})
 `
 }
 
@@ -73,5 +73,5 @@ export function coversOf({ format, provider, product, combos, spec, trim, paper,
   const variants = linen
     ? combos.map(([cloth, foil]: any) => ({ cloth, foil, product: printerOf({ chosen: { format, trim, paper, cloth, foil }, options }) }))
     : [{ cloth: spec.cloth, foil: spec.foil, product }]
-  return variants.map((v: any) => ({ ...v, key: coverKey(format, provider, many || linen ? v.cloth : null, v.foil) }))
+  return variants.map((v: { cloth: any; foil: any }) => ({ ...v, key: coverKey(format, provider, many || linen ? v.cloth : null, v.foil) }))
 }

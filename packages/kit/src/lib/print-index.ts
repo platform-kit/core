@@ -21,14 +21,14 @@ let live: any = null
 
 /* every book's editions by slug. Read it at CALL time, never bound at module scope: the live copy
    arrives after this module is evaluated and before the app is. */
-export const editions: any = () => live || BUILT
+export const editions = () => live || BUILT
 
 /* one book's, or null */
-export const editionsOf = (slug: any) => editions()[slug] || null
+export const editionsOf = (slug: string|number) => editions()[slug] || null
 
 /* content-live.js, with the row's own text. Anything unparseable leaves the bundle's copy standing:
    a store that prices last week's editions is a great deal better than one that prices none. */
-export function setEditions(text: any) {
+export function setEditions(text: string) {
   try {
     const j = typeof text === 'string' ? JSON.parse(text) : text
     if (j && typeof j === 'object' && !Array.isArray(j)) { live = hosted(j); return true }
@@ -42,7 +42,7 @@ export function setEditions(text: any) {
  * production, and the stack's inner `kong:8000` locally, which resolves inside Docker and nowhere
  * else. This is the ONE door the live index comes through, so it is the one place to do it.
  */
-function hosted(j: any) {
+function hosted(j: { [s: string]: unknown }|ArrayLike<unknown>) {
   for (const book of Object.values(j)) {
     for (const e of Object.values((book && (book as any).editions) || {})) {
       if ((e as any).art) for (const k of Object.keys((e as any).art)) (e as any).art[k] = here((e as any).art[k])

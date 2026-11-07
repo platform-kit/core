@@ -72,15 +72,15 @@ export const RULES: any = {
   ends_with: { params: 'text', kinds: STR },
 }
 export const RULE_KEYS = Object.keys(RULES)
-export const rulesFor = (kind: any) => RULE_KEYS.filter((r) => RULES[r].kinds.includes(kind))
+export const rulesFor = (kind: string) => RULE_KEYS.filter((r) => RULES[r].kinds.includes(kind))
 
-Validator.register('starts_with', (value: any, req: any) => typeof value === 'string' && value.startsWith(String(req)), '')
-Validator.register('ends_with', (value: any, req: any) => typeof value === 'string' && value.endsWith(String(req)), '')
+Validator.register('starts_with', (value: string, req: any) => typeof value === 'string' && value.startsWith(String(req)), '')
+Validator.register('ends_with', (value: string, req: any) => typeof value === 'string' && value.endsWith(String(req)), '')
 
 /* validatorjs's form of one row. The pattern is the row's `params` as written, wrapped in slashes; a list
    joins its values with commas (validatorjs's own separator, so a value may not hold one); a date rule names a
    second input (validatorjs compares fields, not literals), which checkRules supplies as `_p`. */
-export function ruleString(row: any) {
+export function ruleString(row: { rule: any; params?: any }) {
   const r = RULES[row.rule]
   if (!r) return null
   const p = row.params
@@ -92,7 +92,7 @@ export function ruleString(row: any) {
   return `${row.rule}:${p}`
 }
 /* a row's parameters as the message says them */
-export function paramsOf(row: any) {
+export function paramsOf(row: { rule: string|number; params: any }) {
   const r = RULES[row.rule]
   if (!r) return {}
   const p = row.params
@@ -106,7 +106,7 @@ export const fill = (text: any, ctx: any) => String(text || '').replace(/\{(\w+)
 /* every row run against the value, one validatorjs run each so the failing rule is known; an empty value
    passes every rule (required is its own check). `words` is the `rules` group of the models scope:
    words[rule].message with {field} and the parameters. */
-export function checkRules(value: any, rows: any, words: any = {}, ctx = {}) {
+export function checkRules(value: string|number|any[]|null|undefined, rows: any, words: any = {}, ctx = {}) {
   const out: any = []
   if (value === undefined || value === null || value === '' || (Array.isArray(value) && !value.length)) return out
   for (const row of rows || []) {

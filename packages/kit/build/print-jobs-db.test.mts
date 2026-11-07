@@ -72,7 +72,7 @@ try {
     const fonts = []
     for (const p of h?.fonts || []) fonts.push(new Uint8Array(await (await fetch(S.api + p)).arrayBuffer()))
     const wrong = await setInterior({ files: h.files, fonts, min: h.min, step: h.step })
-    const put = await fetch(S.api + h.upload, { method: 'PUT', headers: { 'content-type': 'application/pdf', 'x-upsert': 'true' }, body: wrong.pdf })
+    const put = await fetch(S.api + h.upload, { method: 'PUT', headers: { 'content-type': 'application/pdf', 'x-upsert': 'true' }, body: wrong.pdf as Uint8Array<ArrayBuffer> })   /* a Node Buffer's backing store is an ArrayBufferLike; fetch's lib type asks for an ArrayBuffer */
     // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
     ok('…and the interior goes up to the address it gave', put.ok, put.status)
     const refused = await call({ job: first.body.job, interior: { edition: h.edition, pages: wrong.pages + 2, pad: wrong.pad + 2, where: [], marks: [] } })

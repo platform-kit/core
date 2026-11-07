@@ -33,7 +33,7 @@ const accessKey = (env: any) => String((env || (typeof process !== 'undefined' ?
 const headers = (env: any) => ({ Authorization: `Client-ID ${accessKey(env)}`, 'Accept-Version': 'v1' })
 
 /* one of theirs → one of ours. `meta` is theirs and comes back untouched at take() time. */
-const shape = (it: any) => ({
+const shape = (it: { id: any; urls: { small: any; thumb: any; regular: any; full: any }; width: any; height: any; alt_description: any; description: any; user: { name: any; links: { html: string } }; links: { download_location: any } }) => ({
   id: it.id,
   thumb: it.urls && (it.urls.small || it.urls.thumb),
   full: it.urls && (it.urls.regular || it.urls.full),
@@ -74,7 +74,7 @@ export async function search(q: any, { page = 1, perPage = 24, env, orientation 
  * the photographer, and it is asked of us by the terms — and then the bytes are fetched, so that
  * a failure to count never leaves us with a picture we did not report.
  */
-export async function take(result: any, { env }: any = {}) {
+export async function take(result: { meta: any; full: any; credit: any }, { env }: any = {}) {
   const meta = (result && result.meta) || {}
   if (meta.download) {
     try {

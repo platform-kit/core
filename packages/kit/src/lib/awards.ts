@@ -16,7 +16,7 @@ import { session } from './auth.js'
    row that says who has earned what calls it `slug`, because that is what the table's key is. One
    of the two had to give, and it is this one — so nothing downstream ever has to remember which
    side of the wire it is looking at. */
-export const catalogue = (COMPILED || []).map((a: any) => ({ ...a, slug: a.slug || a.id }))
+export const catalogue = (COMPILED || []).map((a: { slug: any; id: any }) => ({ ...a, slug: a.slug || a.id }))
 /* AND THE RULES NO FILE DECLARES: every quiz in a course earns an achievement the achievements push declares from
    the course itself (openspec: courses), so it is in the database and not among the compiled files. They are read
    once, from the table anybody may read, and join the catalogue the pages and profiles show. */
@@ -27,18 +27,18 @@ export async function loadCatalogue() {
   looked = true
   const { data, error } = await (supabase as any).from('achievements').select('slug, title, sub, icon, colour, cover, shown, position')
   if (error) { looked = false; return extra.value }
-  const known = new Set(catalogue.map((a: any) => a.slug))
-  extra.value = (data || []).filter((a: any) => !known.has(a.slug)).map((a: any) => ({ ...a, order: a.position }))
+  const known = new Set(catalogue.map((a: { slug: any }) => a.slug))
+  extra.value = (data || []).filter((a: { slug: unknown }) => !known.has(a.slug)).map((a: { position: any }) => ({ ...a, order: a.position }))
   return extra.value
 }
 export const allAwards = () => [...catalogue, ...extra.value]
-export const awardOf = (slug: any) => catalogue.find((a: any) => a.slug === slug) || extra.value.find((a: any) => a.slug === slug) || null
+export const awardOf = (slug: any) => catalogue.find((a: { slug: any }) => a.slug === slug) || extra.value.find((a: { slug: any }) => a.slug === slug) || null
 
 export const mine = ref<any>([])
 let asked = ''
 
 export async function loadMine(force = false) {
-  const id = session.value ? (session.value as any).user.id : ''
+  const id = session.value ? session.value.user.id : ''
   if (!configured || !id) { mine.value = []; asked = ''; return mine.value }
   if (!force && asked === id) return mine.value
   asked = id

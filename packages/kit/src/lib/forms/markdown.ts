@@ -40,7 +40,7 @@ md.use({
 })
 
 /* the copy of a block, as HTML, over the context (data + answers) */
-export function renderMarkdown(text: any, ctx: any) {
+export function renderMarkdown(text: string, ctx: { name: string }) {
   const src = renderCopy(text, ctx)
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Type 'string | undefined' is not assignable to type 'string'. Typ
   try { return md.parse(src) } catch (e: any) { if (typeof console !== 'undefined') console.warn('[forms] copy not rendered: ' + (e.message || e)); return `<p>${String(src).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c])}</p>` }

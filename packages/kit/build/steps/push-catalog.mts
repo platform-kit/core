@@ -3,11 +3,11 @@ import { paymentProviderIdOf } from '../payment-provider-registry.mjs'
 
 export default {
   key: 'push-catalog', title: 'The offers synchronized with the selected payment provider', phase: 'after', after: ['auth-config'],
-  when: (env: any, site: any) => {
+  when: (env: { STRIPE_SECRET_KEY: any }, site: { _paymentProviderRegistrations: any[] }) => {
     const providerId = paymentProviderIdOf(site)
     if (providerId === 'stripe') return !!env.STRIPE_SECRET_KEY
     return site._paymentProviderRegistrations
-      ?.find((provider: any) => provider.id === providerId)
+      ?.find((provider: { id: string }) => provider.id === providerId)
       ?.capabilities.includes('catalog.sync') === true
   },
   whenText: 'the selected payment provider does not require catalog synchronization, or its payment configuration is incomplete',

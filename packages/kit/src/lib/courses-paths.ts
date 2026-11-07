@@ -4,7 +4,7 @@
  * /courses now. The router asks this before any community place's claim on /app, so a site whose own place claims the
  * app area still sends /app/courses to the library.
  */
-export function libraryOf(p: any, app = '/app', courses = '/courses') {
+export function libraryOf(p: string, app = '/app', courses = '/courses') {
   const at = app + '/courses'
   return p === at || p.startsWith(at + '/') ? courses + p.slice(at.length) : null
 }

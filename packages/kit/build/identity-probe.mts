@@ -32,8 +32,8 @@ const PASS = process.env.IDENTITY_PROBE_PASS || 'password123'
 const WAIT = Number(process.env.IDENTITY_PROBE_WAIT || 6000)
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? '\n        ' + detail : '')) } }
-const off = (why: any) => { console.log(`  ${why} — skipped\n`); process.exit(0) }
+const ok = (name: string, cond: boolean, detail: string) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? '\n        ' + detail : '')) } }
+const off = (why: string) => { console.log(`  ${why} — skipped\n`); process.exit(0) }
 
 console.log('\nWHO IS HERE, TOLD ONCE\n')
 if (process.env.IDENTITY_PROBE === '0') off('IDENTITY_PROBE=0')
@@ -84,7 +84,7 @@ const fresh = async () => (await browserContext(browser, { viewport: { width: 12
  * `/app` had become `/app/diagnostics`, the modal opened, and the navigation closed it under the
  * probe's hands. It read as a sign-in that silently failed.
  */
-async function settled(page: any) {
+async function settled(page: { url: () => any; waitForTimeout: (arg0: number) => any }) {
   let was = page.url(), still = 0
   for (let i = 0; i < 20; i++) {
     await page.waitForTimeout(300)
@@ -93,7 +93,7 @@ async function settled(page: any) {
   }
   return page.url()
 }
-async function signIn(page: any) {
+async function signIn(page: { waitForFunction: (arg0: () => boolean,arg1: any,arg2: { timeout: number }) => any; locator: (arg0: string) => any; evaluate: (arg0: { (): boolean; (): any; (): any }) => any; waitForSelector: (arg0: string,arg1: { timeout: number }) => Promise<any>; waitForTimeout: (arg0: number) => any; url: () => any }) {
   await page.waitForFunction(() => !!(window as any).DLauth, null, { timeout: 30000 })
   await settled(page)
   /*
@@ -121,7 +121,7 @@ async function signIn(page: any) {
   const said = await page.evaluate(() => { const c: any = document.querySelector('.au-card'); return c ? c.innerText.replace(/\s+/g, ' ').slice(0, 200) : '(the modal is not open)' })
   throw new Error(`could not sign in as ${WHO} on ${page.url()} — the modal says: ${said}`)
 }
-const read = (page: any) => page.evaluate(READ)
+const read = (page: { evaluate: (arg0: string) => any }) => page.evaluate(READ)
 const same = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
 const say = (a: any, b: any) => `in place ${JSON.stringify(a)}\n        reloaded ${JSON.stringify(b)}`
 

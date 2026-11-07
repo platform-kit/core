@@ -386,7 +386,7 @@ export async function kitConfig(): Promise<any> {
         body: markdown(),
         raw: s.raw(),
         excerpt: s.excerpt({ length: 160 }),
-      }).transform((data: any) => ({ ...stripCollection('store/products')(data), unit_amount: Math.round(data.price * 100) })),
+      }).transform((data) => ({ ...stripCollection('store/products')(data), unit_amount: Math.round(data.price * 100) })),
     },
     /* Landing pages: a route, and a list of sections (a component by name, with
        its props) assembled in that order. A page knows nothing about testing;
@@ -621,7 +621,7 @@ export async function kitConfig(): Promise<any> {
           days: s.number().optional(), note: s.string().optional(),
         })).default([]),
         body: markdown(),
-      }).transform((d: any) => ({ ...d, slug: d.slug.replace(/^spaces\//, '') })),
+      }).transform((d) => ({ ...d, slug: d.slug.replace(/^spaces\//, '') })),
     },
     /* A BOT IS A FILE. Who it is, what it may do, who may summon it and what it may spend — and
        its body is its prompt. The site reads these to know which bots exist and where they may be
@@ -732,7 +732,7 @@ export async function kitConfig(): Promise<any> {
         /* the bot whose conduct and tools this one starts from — the kit's own desk bot */
         extends: s.string().optional(),
         body: markdown(),
-      }).transform((d: any) => ({ ...d, slug: d.slug.replace(/^bots\//, '') })),
+      }).transform((d) => ({ ...d, slug: d.slug.replace(/^bots\//, '') })),
     },
     /* WHAT IS ON. An event happens and is attended; a booking type is booked. A community shows
        both, so both are records, and neither is the other's special case. */
@@ -775,7 +775,7 @@ export async function kitConfig(): Promise<any> {
         zone: s.string().optional(),
         repeats: s.record(s.string(), s.any()).optional(),
         body: markdown(),
-      }).transform((d: any) => ({ ...d, slug: d.slug.replace(/^events\//, '') })),
+      }).transform((d) => ({ ...d, slug: d.slug.replace(/^events\//, '') })),
     },
     channels: {
       name: 'Channel',
@@ -804,7 +804,7 @@ export async function kitConfig(): Promise<any> {
           days: s.number().optional(), note: s.string().optional(),
         })).default([]),
         body: markdown(),
-      }).transform((d: any) => { const p = d.slug.replace(/^spaces\//, ''); const i = p.indexOf('/'); return { ...d, slug: p, space: i > 0 ? p.slice(0, i) : '', channel: i > 0 ? p.slice(i + 1) : p } }),
+      }).transform((d) => { const p = d.slug.replace(/^spaces\//, ''); const i = p.indexOf('/'); return { ...d, slug: p, space: i > 0 ? p.slice(0, i) : '', channel: i > 0 ? p.slice(i + 1) : p } }),
     },
     sessions: {
       name: 'Session',
@@ -1444,7 +1444,7 @@ export async function kitConfig(): Promise<any> {
         const slug = data.path.replace('forms/', '')
         /* the source lines a block keeps for the builder are not the site's to carry */
         const lean = (b: any) => { const { raw, ...rest } = b; if (rest.blocks) rest.blocks = rest.blocks.map(lean); return rest }
-        const slides = model.slides.map((sl: any) => { const { raw, head, ...rest }: any = sl; return { ...rest, blocks: sl.blocks.map(lean) } })
+        const slides = model.slides.map((sl) => { const { raw, head, ...rest } = sl; return { ...rest, blocks: sl.blocks.map(lean) } })
         return { slug, id: slug, title: model.title || slug, published: model.kit.published !== false, warnings: model.warnings, model: { settings: model.settings, kit: model.kit, data: model.data, title: model.title, slides, fields: model.fields.map((f: any) => ({ name: f.name, kind: f.kind, required: f.required, slide: f.slide, question: f.params.question })) } }
       }),
     },

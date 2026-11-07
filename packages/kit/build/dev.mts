@@ -34,10 +34,10 @@ import { takeOver, takeOverLine, watchParent } from './dev-owner.mjs'
 import { portRequest } from './dev-ports.mjs'
 
 const args = process.argv.slice(2)
-const flag = (n: any) => args.includes(n)
-const opt = (n: any, d: any) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
-const say = (m: any) => console.log(`\x1b[36m›\x1b[0m ${m}`)
-const die = (m: any) => { console.error(`\n\x1b[31m✖\x1b[0m ${m}\n`); process.exit(1) }
+const flag = (n: string) => args.includes(n)
+const opt = (n: string, d: any) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
+const say = (m: string) => console.log(`\x1b[36m›\x1b[0m ${m}`)
+const die = (m: string) => { console.error(`\n\x1b[31m✖\x1b[0m ${m}\n`); process.exit(1) }
 const siteEnv = { ...loadEnv('development', process.cwd(), 'PLATFORMKIT_'), ...process.env }
 const workspace = workspaceRoot(process.cwd())
 const siteName = siteNameFor(workspace, process.cwd(), siteEnv)
@@ -82,7 +82,7 @@ if (runRecord) {
 /* free = nothing answers a connection. (Binding to test is wrong on macOS: a
    listen on 127.0.0.1:P succeeds while another process holds *:P — an editor's
    port forward, say — and the browser then reaches that process, not us.) */
-const free = (port: any) => new Promise((res) => { const s = connect({ port, host: '127.0.0.1' }); s.setTimeout(400); s.once('connect', () => { s.destroy(); res(false) }); s.once('timeout', () => { s.destroy(); res(false) }); s.once('error', () => res(true)) })
+const free = (port: number) => new Promise((res) => { const s = connect({ port, host: '127.0.0.1' }); s.setTimeout(400); s.once('connect', () => { s.destroy(); res(false) }); s.once('timeout', () => { s.destroy(); res(false) }); s.once('error', () => res(true)) })
 let requestedPort: any
 try { requestedPort = portRequest(args, '--port', '3000') }
 catch (error: any) { die(error.message) }
@@ -214,11 +214,11 @@ const viteArgs = ['vite', '--port', String(port), '--strictPort']
 if (domain) viteArgs.push('--host', '0.0.0.0')
 procs.push(run('vite', 'npx', viteArgs))
 
-function run(name: any, cmd: any, cmdArgs: any) {
+function run(name: string, cmd: string, cmdArgs: any[]|readonly string[]|undefined) {
   const p = spawnGroup(cmd, cmdArgs, { env, stdio: ['ignore', 'pipe', 'pipe'] })
   const tag = `\x1b[2m[${name}]\x1b[0m `
   // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string'. Type 'undefined' is not assignable to type 'string'.
-  const pipe = (stream: any, out: any) => { let buf = ''; stream.on('data', (d: any) => { buf += d; const lines = buf.split('\n'); buf = lines.pop(); for (const l of lines) out.write(tag + l + '\n') }) }
+  const pipe = (stream, out) => { let buf = ''; stream.on('data', (d) => { buf += d; const lines = buf.split('\n'); buf = lines.pop(); for (const l of lines) out.write(tag + l + '\n') }) }
   pipe(p.stdout, process.stdout); pipe(p.stderr, process.stderr)
   p.on('exit', (code) => { if (code && code !== 0 && !closing) { console.error(`${tag}exited ${code}`); shutdown(code) } })
   return p

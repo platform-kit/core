@@ -29,7 +29,7 @@ export const look = ref(fromQuery() || siteLook)
 
 /* stamp the root: every look is an attribute, so the design (src/looks/design.css,
    under [data-look]) and the look's palette (src/looks/<name>.css) both apply */
-export function applyLook(name: any) {
+export function applyLook(name: string) {
   const l = LOOKS.includes(name) ? name : DEFAULT_LOOK
   look.value = l
   if (typeof document === 'undefined') return
@@ -77,7 +77,7 @@ export function applyTokens(over?: any) {
     if (dark) night.push({ sel, token, value: String(dark).trim() })
   }
   if (!day.length && !night.length) { if (sheet) sheet.textContent = ''; return }
-  const rule = (base: any, rows: any) => {
+  const rule = (base: string, rows: { sel: string; token: string; value: string }[]) => {
     const by: any = {}
     for (const r of rows) (by[r.sel] || (by[r.sel] = [])).push(`  ${r.token}: ${r.value};`)
     return Object.entries(by).map(([sel, lines]) => `${base}${sel ? ' ' + sel : ''} {\n${(lines as any).join('\n')}\n}`).join('\n')

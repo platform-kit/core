@@ -31,7 +31,7 @@ export default {
   },
   after: async (rec: any, ctx: any) => {
     if (typeof rec.data.subject === 'string') {
-      const sub: any = await subjects(ctx.store)
+      const sub = await subjects(ctx.store)
       sub.groups[ctx.name] = sub.groups[ctx.name] || {}; sub.groups[ctx.name].mail = { ...(sub.groups[ctx.name].mail || {}), subject: rec.data.subject.trim() }
       await ctx.store.write(SUBJECTS, serialiseStrings(sub.fmRaw || 'scope: emails', sub.groups, true), { collection: 'ui', slug: 'emails' })
     }

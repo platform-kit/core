@@ -46,9 +46,9 @@ const BOOKS = 'content/books'   /* for --all; the pipeline has its own paths */
 const CACHE = path.join(ROOT, 'build/.cache'), REVIEW = path.join(ROOT, 'build/enrich-review.html')   /* the site's, gitignored beside its own build scripts */
 
 const argv = process.argv.slice(2)
-const flag = (k: any) => argv.includes(k)
-const opt = (k: any, d: any) => { const i = argv.indexOf(k); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
-const many = (k: any) => argv.flatMap((a, i) => (a === k && argv[i + 1] ? [argv[i + 1]] : []))
+const flag = (k: string) => argv.includes(k)
+const opt = (k: string, d: string) => { const i = argv.indexOf(k); return i >= 0 && argv[i + 1] ? argv[i + 1] : d }
+const many = (k: string) => argv.flatMap((a, i) => (a === k && argv[i + 1] ? [argv[i + 1]] : []))
 const ALL = flag('--all'), WRITE_OUT = flag('--write'), FORCE = flag('--force'), REVIEW_ON = flag('--review')
 const STAGE = opt('--stage', 'all'), WRITE_MODEL = opt('--write-model', '')
 const MAX_SPEND = Number(opt('--max-spend', '1'))   /* dollars per book per run, at list price */
@@ -67,19 +67,19 @@ const { enrich } = pipeline({ briefs, llm, log: (...a: any[]) => console.log(...
 /* the cache is a FILE here and the agent run's own state in the cloud (build/enrich-cache.mjs).
    The stages read the loaded blob either way and never know which; only SAVING differs, which is
    why every stage that saves mid-way is handed a `save` rather than reaching for the disk. */
-const cacheFor = (slug: any) => fileCache(slug, { root: ROOT, fs, path })
+const cacheFor = (slug: string) => fileCache(slug, { root: ROOT, fs, path })
 
 /* ---- the review page ---- */
 // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Type 'string | undefined' is not assignable to type 'string'. Typ
-const esc = (s: any) => String(s || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
-function reviewPage(reports: any) {
+const esc = (s) => String(s || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+function reviewPage(reports: any[]) {
   return `<!doctype html><meta charset="utf-8"><title>Enrichment review</title>
 <style>body{font:16px/1.5 Georgia,serif;max-width:860px;margin:40px auto;padding:0 20px;color:#1a1408;background:#fbfaf3}h1{font-size:28px;margin:48px 0 8px}h1 small{font:13px monospace;color:#777;margin-left:10px}h2{font-size:20px;margin:36px 0 8px;border-top:1px solid #e6e2d6;padding-top:18px}.meta{background:#f1eee2;padding:12px 16px;border-radius:8px}.ess{padding-left:18px}.quiz li{margin:10px 0}.quiz ul{list-style:none;padding-left:14px}.right{color:#0a7d4b;font-weight:600}.why{color:#666;font-size:14px}.bad{color:#b00}mark{background:#ffe9a8}</style>
-<p>Generated ${new Date().toISOString()} with ${esc(llm.MODEL)} · read before trusting it; edit in the admin under Companions.</p>` + reports.map((r: any) => `
+<p>Generated ${new Date().toISOString()} with ${esc(llm.MODEL)} · read before trusting it; edit in the admin under Companions.</p>` + reports.map((r: { title: any; author: any; slug: any; data: { insight: any; statement: any; statementArea: any; statementLevel: any }; failed: any[]; ordered: any; notes: { [x: string]: any } }) => `
 <section><h1>${esc(r.title)} <small>${esc(r.author)} · ${esc(r.slug)}</small></h1>
 ${r.data ? `<div class="meta"><p><b>Insight</b> ${esc(r.data.insight)}</p><p><b>Statement</b> ${esc(r.data.statement)} <code>${esc(r.data.statementArea)} ${esc(r.data.statementLevel)}</code></p></div>` : ''}
 ${r.failed.length ? `<p class="bad">Failed: ${esc(r.failed.join(', '))}</p>` : ''}
-${(r.ordered || []).map((c: any) => `<article><h2>${esc(c.title)}</h2>${r.notes && r.notes[c.title] ? `<p class="bad">${esc(r.notes[c.title])}</p>` : ''}<div>${esc(c.summaryMd).replace(/==([^=]+)==\{[a-z]+\}/g, '<mark>$1</mark>').replace(/\n\n/g, '</p><p>')}</div><ul class="ess">${c.essence.map((e: any) => `<li>${esc(e)}</li>`).join('')}</ul><ol class="quiz">${c.quiz.map((q: any) => `<li><p>${esc(q.q)}</p><ul>${q.options.map((o: any, j: any) => `<li class="${j === q.answer ? 'right' : ''}">${esc(o)}</li>`).join('')}</ul>${q.why ? `<p class="why">${esc(q.why)}</p>` : ''}</li>`).join('')}</ol></article>`).join('')}
+${(r.ordered || []).map((c: { title: string|number; summaryMd: any; essence: any[]; quiz: any[] }) => `<article><h2>${esc(c.title)}</h2>${r.notes && r.notes[c.title] ? `<p class="bad">${esc(r.notes[c.title])}</p>` : ''}<div>${esc(c.summaryMd).replace(/==([^=]+)==\{[a-z]+\}/g, '<mark>$1</mark>').replace(/\n\n/g, '</p><p>')}</div><ul class="ess">${c.essence.map((e: any) => `<li>${esc(e)}</li>`).join('')}</ul><ol class="quiz">${c.quiz.map((q: { q: any; options: any[]; answer: any; why: any }) => `<li><p>${esc(q.q)}</p><ul>${q.options.map((o: any, j: any) => `<li class="${j === q.answer ? 'right' : ''}">${esc(o)}</li>`).join('')}</ul>${q.why ? `<p class="why">${esc(q.why)}</p>` : ''}</li>`).join('')}</ol></article>`).join('')}
 </section>`).join('')
 }
 
@@ -96,6 +96,6 @@ for (const slug of slugs) {
 }
 if (REVIEW_ON) { fs.writeFileSync(REVIEW, reviewPage(reports)); console.log(`\nreview page: build/enrich-review.html`) }
 console.log(`\n${costLine()}`)
-const failed = reports.flatMap((r) => r.failed.map((f: any) => r.slug + ': ' + f))
+const failed = reports.flatMap((r) => r.failed.map((f: string) => r.slug + ': ' + f))
 if (failed.length) { console.log('\nfailed:\n  ' + failed.join('\n  ')); process.exitCode = 1 }
 if (!WRITE_OUT) console.log('\n(nothing written — add --write)')

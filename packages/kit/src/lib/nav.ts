@@ -45,7 +45,7 @@ export const seeOf = (v: any) => {
  * also shown to a subscriber. `guest` is the one EXACT state — it is what a "Sign in" item wants, and
  * a minimum would keep it on the page for everybody.
  */
-export function seen(item: any, { cls = 'guest', tiers = [], rank = () => 0, staff = false } = {}) {
+export function seen(item: { label?: string; href?: string; see: any }, { cls = 'guest', tiers = [], rank = () => 0, staff = false } = {}) {
   const see = seeOf(item && item.see)
   if (!see) return true
   if (see === 'guest') return cls === 'guest'
@@ -59,7 +59,7 @@ export function seen(item: any, { cls = 'guest', tiers = [], rank = () => 0, sta
 }
 
 /* one item, in the shape the header draws, from whatever a layer wrote */
-const item = (raw: any) => {
+const item = (raw: { href: any; label: null|undefined; key: null|undefined; icon: any; prefix: any; see: any; cta: any }) => {
   if (!raw || typeof raw !== 'object') return null
   const href = String(raw.href || '').trim()
   const label = raw.label === undefined || raw.label === null ? undefined : String(raw.label)

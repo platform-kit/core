@@ -20,7 +20,7 @@
  */
 import { createHash } from 'node:crypto'
 
-export const editionId = (parts: any) => createHash('sha1').update(parts.join('\n')).digest('hex').slice(0, 16)
+export const editionId = (parts: any[]) => createHash('sha1').update(parts.join('\n')).digest('hex').slice(0, 16)
 
 /* the picture's own identity: its bytes, not its name or its date */
 export const pictureId = (bytes: any) => (bytes && bytes.length ? createHash('sha1').update(new Uint8Array(bytes)).digest('hex').slice(0, 16) : '')
@@ -28,14 +28,14 @@ export const pictureId = (bytes: any) => (bytes && bytes.length ? createHash('sh
 /* the parts, in the one order both paths take them in */
 export function editionParts({ templates = [], source, trim, paper, spec = {}, printed = [], combos = [], epub = false, insight = '', description = '', picture = '' }: any) {
   return [
-    ...templates, source, trim, paper, (spec as any).cloth, (spec as any).foil,
+    ...templates, source, trim, paper, spec.cloth, spec.foil,
     printed.join(','), combos.map((x: any) => x.join('-')).join(','),
-    JSON.stringify((spec as any).printers), JSON.stringify((spec as any).providers),
+    JSON.stringify(spec.printers), JSON.stringify(spec.providers),
     epub ? 'epub' : '', String(insight || ''), String(description || ''), picture,
   ]
 }
 
-export const editionFor = (parts: any) => editionId(editionParts(parts))
+export const editionFor = (parts: { templates: any; source: any; trim: any; paper: any; spec: any; printed: any; combos: any; epub: any; insight: any; description: any; picture: any; shots?: string[]; setAt?: string; anythingElse?: boolean }) => editionId(editionParts(parts))
 
 /*
  * WHY TWO EDITIONS DIFFER. The parts are a flat list by design — the hash is their join — but when
@@ -45,7 +45,7 @@ export const editionFor = (parts: any) => editionId(editionParts(parts))
  * source by eye. It is a diagnostic, never an input: `editionId` reads the flat list.
  */
 export const PART_NAMES = ['book.typ', 'cover.typ', 'source', 'trim', 'paper', 'cloth', 'foil', 'formats', 'colours', 'printers', 'options', 'epub', 'insight', 'description', 'picture']
-export function partsOf(parts: any) {
+export function partsOf(parts: { templates: any; source?: any; trim?: any; paper?: any; spec?: any; printed?: any; combos?: any; epub?: any; insight?: any; description?: any; picture?: any }) {
   const list = editionParts(parts)
   /* the templates are however many were given; everything after them is named in order */
   const n = (parts.templates || []).length

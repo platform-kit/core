@@ -17,11 +17,11 @@
 
 /* [{ page, items }] — the pieces of text on each page, which is how a full page is told from an
    opener. Not a character count: one long paragraph and one short one both read as text. */
-export async function statsOf(doc: any) {
+export async function statsOf(doc: { numPages: number; getPage: (arg0: number) => any }) {
   const out = []
   for (let i = 1; i <= doc.numPages; i++) {
     const t = await (await doc.getPage(i)).getTextContent()
-    out.push({ page: i, items: t.items.filter((x: any) => x.str && x.str.trim()).length })
+    out.push({ page: i, items: t.items.filter((x: { str: string }) => x.str && x.str.trim()).length })
   }
   return out
 }
@@ -31,7 +31,7 @@ export async function statsOf(doc: any) {
  * the sheet's top left. ONE BOX FOR EVERY PAGE is the point of it — measuring each page on its own
  * gave every picture its own size and a gallery of mismatched sheets.
  */
-export async function boundsOf(doc: any) {
+export async function boundsOf(doc: { numPages: number; getPage: (arg0: number) => any }) {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i), vp = page.getViewport({ scale: 1 })
@@ -50,7 +50,7 @@ export async function boundsOf(doc: any) {
 
 /* one page as a JPEG data url, at `scale` (1 is the sheet's own size), cropped to `box` plus `pad`
    inches of the margin — or the whole sheet where there is no box */
-export async function renderPage(doc: any, n: any, scale: any, box: any, pad: any) {
+export async function renderPage(doc: { getPage: (arg0: any) => any }, n: any, scale: number, box: { x0: number; y0: number; x1: number; y1: number } | null, pad: number) {
   const page = await doc.getPage(n)
   const vp = page.getViewport({ scale })
   const c = document.createElement('canvas')

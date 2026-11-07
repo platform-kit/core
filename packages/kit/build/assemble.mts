@@ -55,7 +55,7 @@ import {
 process.on('uncaughtException', (e) => { console.error('✖ ' + (e.message || e)); process.exit(1) })
 const KIT = fileURLToPath(new URL('../supabase/', import.meta.url))
 const ROOT = process.cwd()
-const arg = (name: any) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null }
+const arg = (name: string) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null }
 const site = await loadSite(ROOT)
 /* --off: the same site, with those modules switched off */
 const c = arg('--off') ? { ...site, modules: { ...(site.modules || {}), ...Object.fromEntries((arg('--off') as any).split(',').filter(Boolean).map((k: any) => [k, false])) } } : site
@@ -94,23 +94,23 @@ export const BUILT = /^functions\/(_shared\/catalog\.json|_shared\/content\/inde
 export const SEED_PATHS = ['./schemas/*.sql', './schemas/glue/*.sql', './schemas/site/*.sql', './data.sql', './seed.sql']
 
 // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-const walk = (d: any) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]) : []
-const sha = (buf: any) => createHash('sha1').update(buf).digest('hex').slice(0, 12)
-const rel = (base: any, f: any) => path.relative(base, f).split(path.sep).join('/')
+const walk = (d) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]) : []
+const sha = (buf: string|NodeJS.ArrayBufferView<ArrayBufferLike>|NonSharedBuffer) => createHash('sha1').update(buf).digest('hex').slice(0, 12)
+const rel = (base: string, f: string) => path.relative(base, f).split(path.sep).join('/')
 
 /* what the tree should hold: published path → { from, content } */
 const plan = new Map()
 /* a file of the kit as the functions get it: the file, or — where the kit keeps it as TypeScript — its source with the
    types stripped, under the name its importers use (openspec: typescript-throughout) */
-const readKit = (abs: any) => { const src = sourceOf(abs) || abs; return /\.m?ts$/.test(src) && !/\.m?ts$/.test(abs) ? Buffer.from(stripTypeScriptTypes(fs.readFileSync(src, 'utf8'), { mode: 'strip' })) : fs.readFileSync(src) }
-const put = (to: any, from: any) => { if (plan.has(to)) throw new Error(`assemble: ${to} comes from both ${plan.get(to).from} and ${from}`); plan.set(to, { from, content: readKit(from) }) }
+const readKit = (abs: string) => { const src = sourceOf(abs) || abs; return /\.m?ts$/.test(src) && !/\.m?ts$/.test(abs) ? Buffer.from(stripTypeScriptTypes(fs.readFileSync(src, 'utf8'), { mode: 'strip' })) : fs.readFileSync(src) }
+const put = (to: string, from: string) => { if (plan.has(to)) throw new Error(`assemble: ${to} comes from both ${plan.get(to).from} and ${from}`); plan.set(to, { from, content: readKit(from) }) }
 /* what of the kit's data layer is this site's: core, the modules it has on, the glue between them */
 const modules = await moduleSet(c)
 const backend = backendFor(modules, c.modules || {}, KIT)
 /* the declaration: the kit's schema files by name, the glue under glue/, the site's under site/ */
 const kitSchemas = backend.schema.map((f) => path.join(KIT, 'schemas', f))
 const kitGlue = backend.glue.map((f) => path.join(KIT, 'schemas', 'glue', f))
-const siteSchemas = walk(path.resolve(ROOT, D.schemas)).filter((f: any) => f.endsWith('.sql')).sort()
+const siteSchemas = walk(path.resolve(ROOT, D.schemas)).filter((f: string) => f.endsWith('.sql')).sort()
 for (const f of kitSchemas) put('schemas/' + path.basename(f), f)
 for (const f of kitGlue) put('schemas/glue/' + path.basename(f), f)
 for (const f of siteSchemas) put('schemas/site/' + path.basename(f), f)
@@ -124,7 +124,7 @@ for (const f of siteSchemas) put('schemas/site/' + path.basename(f), f)
   const FN = /create\s+(?:or\s+replace\s+)?function\s+(?:"?public"?\.)?"?([a-z_][a-z0-9_]*)"?\s*\(/gi
   const namesIn = (files: any) => { const m = new Map(); for (const f of files) for (const x of fs.readFileSync(f, 'utf8').matchAll(FN)) m.set(x[1].toLowerCase(), f); return m }
   /* every function the kit declares, a module's that is off among them: switched on, it would be replaced */
-  const kitFns = namesIn(walk(path.join(KIT, 'schemas')).filter((f: any) => f.endsWith('.sql')))
+  const kitFns = namesIn(walk(path.join(KIT, 'schemas')).filter((f: string) => f.endsWith('.sql')))
   const clash = [...namesIn(siteSchemas)].filter(([n]) => kitFns.has(n))
   if (clash.length) {
     console.error('✖ the site\'s schema redefines functions the kit already has — the site\'s file would replace the kit\'s without a word:\n  ' + clash.map(([n, f]) => `public.${n} in ${rel(ROOT, f)} (the kit's is in ${path.basename(kitFns.get(n))})`).join('\n  ') + '\n  Remove the site\'s copy, or give the site\'s function a name of its own.')
@@ -194,7 +194,7 @@ plan.set('functions/_shared/payment-provider.d.ts', {
    there went on being copied into the function from here. Never re-declare either list. */
 const KIT_PKG = path.resolve(KIT, '..')
 /* every function's map, a module's that is off among them: the shared tree is the same whichever functions are served */
-const pipeImportMaps = [...plan, ...walk(path.join(KIT, 'functions')).filter((f: any) => path.basename(f) === 'deno.json')
+const pipeImportMaps = [...plan, ...walk(path.join(KIT, 'functions')).filter((f: string) => path.basename(f) === 'deno.json')
     .map((f: any) => ['functions/' + rel(path.join(KIT, 'functions'), f), { content: fs.readFileSync(f) }])
     .filter(([name]: any) => !plan.has(name))]
   .filter(([name]) => /^functions\/[^/]+\/deno\.json$/.test(name))
@@ -202,7 +202,7 @@ const pipeImportMaps = [...plan, ...walk(path.join(KIT, 'functions')).filter((f:
     const imports = JSON.parse(content.toString()).imports || {}
     return Object.entries(imports).map(([key, target]) => ({ file, key, target }))
   })
-const sharedSpecifier = (specifier: any, importer: any, { lenient = false, only = null } = {}) => {
+const sharedSpecifier = (specifier: string, importer: string, { lenient = false, only = null } = {}) => {
   if (/^(?:\.{1,2}\/|\/|npm:|jsr:|node:|https?:|data:)/.test(specifier)) return specifier
   const matches = pipeImportMaps.filter(({ file }) => !only || file === only).filter(({ key }) => specifier === key || specifier.startsWith(key.endsWith('/') ? key : key + '/'))
   if (!matches.length && lenient) return specifier
@@ -321,7 +321,7 @@ for (const [target, entry] of plan) {
   const fn = /^functions\/([^/_][^/]*)\/.+\.(?:[cm]?js|m?ts)$/.exec(target)?.[1]
   if (!fn || !plan.has(`functions/${fn}/deno.json`)) continue
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  const rewrite = (_: any, prefix: any, quote: any, specifier: any) => `${prefix}${quote}${sharedSpecifier(specifier, target, { lenient: true, only: `functions/${fn}/deno.json` })}${quote}`
+  const rewrite = (_, prefix, quote, specifier) => `${prefix}${quote}${sharedSpecifier(specifier, target, { lenient: true, only: `functions/${fn}/deno.json` })}${quote}`
   const content = entry.content.toString('utf8')
     .replace(sharedStaticImportPattern, rewrite)
     .replace(sharedDynamicImportPattern, rewrite)
@@ -416,7 +416,7 @@ if (!fs.existsSync(cfg) && !check) {
 }
 /* [db.seed] sql_paths names what a reset applies: the one line of the site's config the assembler owns */
 const seedLine = `sql_paths = [${SEED_PATHS.map((p) => JSON.stringify(p)).join(', ')}]`
-const withSeed = (toml: any) => {
+const withSeed = (toml: string) => {
   const m = /\[db\.seed\]([\s\S]*?)(?=\n\[|$)/.exec(toml)
   if (!m) throw new Error('assemble: supabase/config.toml has no [db.seed] section — add one (enabled = true, sql_paths) so db reset applies the declaration')
   const block = m[1].replace(/^\s*enabled\s*=.*$/m, 'enabled = true').replace(/^\s*sql_paths\s*=.*$/m, seedLine)
@@ -440,7 +440,7 @@ const current = fs.existsSync(MANIFEST) ? JSON.parse(fs.readFileSync(MANIFEST, '
  * The assembler is where this belongs: it is what decides which files the tree holds.
  */
 const SPEC_RE = /(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g
-function unresolved(plan: any) {
+function unresolved(plan: Map<any,any>) {
   const bad = []
   for (const [k, v] of plan) {
     if (!/^functions\/.*\.(m?js|m?ts)$/.test(k)) continue
@@ -469,7 +469,7 @@ const PUBLIC_FUNCTIONS = [...fs.readFileSync(path.join(KIT, 'config.toml.templat
    section the kit added for one of its own functions goes when the site stops serving it — a module switched off. Only
    the kit's own form is taken back; a section the site wrote with anything else in it is the site's. */
 const KIT_FUNCTIONS = new Set(fs.readdirSync(path.join(KIT, 'functions')).filter((d) => !d.startsWith('_')))
-function withPublicFunctions(toml: any) {
+function withPublicFunctions(toml: string) {
   const missing = PUBLIC_FUNCTIONS.filter((fn) => plan.has(`functions/${fn}/index.ts`) && !new RegExp(`^\\[functions\\.${fn}\\]`, 'm').test(toml))
   const unserved = [...toml.matchAll(/^\[functions\.([a-z0-9-]+)\]\nverify_jwt = false[^\n]*\n/gm)].map((m) => m[1]).filter((fn) => KIT_FUNCTIONS.has(fn) && !plan.has(`functions/${fn}/index.ts`))
   let out = toml
@@ -479,7 +479,7 @@ function withPublicFunctions(toml: any) {
 }
 
 const manifest = { assembled: [...plan.keys()].sort(), sha: Object.fromEntries([...plan].map(([k, v]) => [k, sha(v.content)])) }
-const migrations = walk(path.join(OUT, 'migrations')).filter((f: any) => f.endsWith('.sql'))
+const migrations = walk(path.join(OUT, 'migrations')).filter((f: string) => f.endsWith('.sql'))
 
 if (check) {
   const bad = []

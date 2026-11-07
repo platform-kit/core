@@ -25,19 +25,19 @@ import { supabase } from '../supabase.js'
 import { session } from '../auth.js'
 
 const BUCKET = 'audio'
-const bucketUrl = (slug: any, hash: any) => (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '') + '/storage/v1/object/public/' + BUCKET + '/books/' + slug + '/' + hash + '.mp3'
+const bucketUrl = (slug: string, hash: string) => (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '') + '/storage/v1/object/public/' + BUCKET + '/books/' + slug + '/' + hash + '.mp3'
 /* the script and the browser both write 128 kbps constant-rate mono, so a
    recording's length follows from its size closely enough for the player's
    label (the player measures the real one once it has the file) */
 const KBPS = 128
-const secondsOf = (bytes: any) => Math.round((bytes * 8) / (KBPS * 1000))
+const secondsOf = (bytes: number) => Math.round((bytes * 8) / (KBPS * 1000))
 
 const AUDIO_CACHE = 'dl-audio'
-const key = (hash: any) => '/__audio/' + hash + '.mp3'
+const key = (hash: string) => '/__audio/' + hash + '.mp3'
 
 export const status = reactive<any>({ phase: 'idle', provider: null, download: { done: 0, total: 0 }, error: null, slug: null })
 /* hash → { status: 'queued' | 'generating' | 'done' | 'failed', url, seconds, piece, pieces, title, error } */
-export const tracks: any = reactive<any>({})
+export const tracks = reactive<any>({})
 
 /* the recording's name for a text: sha1 of the shared hash input, 16 hex */
 export async function hashText(text: any) {
@@ -51,7 +51,7 @@ const cacheOpen = () => (typeof caches !== 'undefined' ? caches.open(AUDIO_CACHE
 /* Is this recording in the bucket already? Asked once per name; a hit becomes
    a done track served from the bucket's public url. */
 const probed: any = {}
-export function probe(slug: any, hash: any) {
+export function probe(slug: string, hash: string) {
   if (!hash || !slug) return Promise.resolve(false)
   if (tracks[hash] && tracks[hash].status === 'done') return Promise.resolve(true)
   if (!import.meta.env.VITE_SUPABASE_URL) return Promise.resolve(false)
@@ -66,7 +66,7 @@ export function probe(slug: any, hash: any) {
 
 /* a finished chapter goes up to the bucket under its name, when the reader
    may write there: signed in, and the name not taken (never replaced) */
-async function share(slug: any, hash: any, blob: any, seconds: any, format: any) {
+async function share(slug: string, hash: string, blob: string|ArrayBuffer|ArrayBufferView<ArrayBufferLike>|Blob|Buffer<ArrayBufferLike>|File|FormData|NodeJS.ReadableStream|ReadableStream<Uint8Array<ArrayBufferLike>>|URLSearchParams, seconds: any, format: any) {
   if (!supabase || !session.value || !slug) return false
   const { error } = await supabase.storage.from(BUCKET).upload('books/' + slug + '/' + hash + '.mp3', blob, {
     contentType: 'audio/mpeg', cacheControl: '31536000', upsert: false,
@@ -116,17 +116,17 @@ function boot() {
     }
     else if (m.type === 'error') {
       if (m.id) { const t = tracks[m.id]; if (t && t.status !== 'done') { t.status = m.message === 'cancelled' ? 'queued' : 'failed'; t.error = m.message } if (current === m.id) { current = null; pump() } }
-      else { status.phase = 'failed'; status.error = m.message; for (const j of queue) if (tracks[(j as any).hash]) tracks[(j as any).hash].status = 'failed'; queue.splice(0) }
+      else { status.phase = 'failed'; status.error = m.message; for (const j of queue) if (tracks[j.hash]) tracks[j.hash].status = 'failed'; queue.splice(0) }
     }
   }
-  worker.onerror = (e: any) => { status.phase = 'failed'; status.error = String(e.message || e) }
+  worker.onerror = (e: { message: any }) => { status.phase = 'failed'; status.error = String(e.message || e) }
   worker.postMessage({ type: 'load' })
   return worker
 }
 
 async function pump() {
   if (current || !queue.length || !worker) return
-  const job: any = queue.shift()
+  const job = queue.shift()
   current = job.hash
   /* the bucket first: a chapter another reader has spoken is not made again */
   if (await probe(job.slug, job.hash)) { current = null; return pump() }
@@ -140,7 +140,7 @@ export function start(slug: any, list: any) {
   status.slug = slug
   for (const j of list) {
     if (tracks[j.hash] && (tracks[j.hash].status === 'done' || tracks[j.hash].status === 'generating')) continue
-    if (queue.some((q: any) => q.hash === j.hash)) continue
+    if (queue.some((q: { hash: any }) => q.hash === j.hash)) continue
     const job = { ...j, slug }
     jobs[j.hash] = job
     tracks[j.hash] = { ...(tracks[j.hash] || {}), status: 'queued', title: j.title }
@@ -152,12 +152,12 @@ export function start(slug: any, list: any) {
 
 /* the chapter the reader is looking at goes next */
 export function prioritise(hash: any) {
-  const i = queue.findIndex((q: any) => q.hash === hash)
+  const i = queue.findIndex((q: { hash: any }) => q.hash === hash)
   if (i > 0) queue.unshift(...queue.splice(i, 1))
 }
 
 /* how many wait ahead of a chapter */
-export function ahead(hash: any) { const i = queue.findIndex((q: any) => q.hash === hash); return i < 0 ? 0 : i + (current ? 1 : 0) }
+export function ahead(hash: any) { const i = queue.findIndex((q: { hash: any }) => q.hash === hash); return i < 0 ? 0 : i + (current ? 1 : 0) }
 
 /* leaving the book: stop everything and free the engine's memory */
 export function stop() {

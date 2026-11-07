@@ -10,7 +10,7 @@
  */
 
 const H = 3600e3
-const at = (d: any, hour: any, minute = 0) => { const x = new Date(d); x.setHours(hour, minute, 0, 0); return x }
+const at = (d: string|number|Date, hour: number, minute = 0) => { const x = new Date(d); x.setHours(hour, minute, 0, 0); return x }
 
 /*
  * The offers, at this moment. `morning` is nine o'clock — tomorrow's, unless it is the small hours
@@ -44,16 +44,16 @@ export function offers(now = Date.now(), { morningHour = 9, eveningHour = 18 } =
 }
 
 /* is this a moment somebody may schedule for: in the future, and not beyond a year */
-export const usable = (when: any, now = Date.now()) => {
+export const usable = (when: string|Date, now = Date.now()) => {
   const t = when instanceof Date ? when.getTime() : Date.parse(when)
   return Number.isFinite(t) && t > now && t <= now + 366 * 24 * H
 }
 
 /* what a datetime-local field needs, in the reader's own zone rather than UTC */
-export function fieldValue(when: any) {
+export function fieldValue(when: string|number|Date) {
   const d = when instanceof Date ? when : new Date(when)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   if (isNaN(d)) return ''
-  const p = (n: any) => String(n).padStart(2, '0')
+  const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
 }

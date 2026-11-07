@@ -27,13 +27,13 @@ const DIST = path.resolve('dist')
 const S = Array.isArray(SITE) ? SITE[0] : SITE
 const BASE = String((S && S.url) || process.env.SITE_URL || '').replace(/\/+$/, '')
 const strict = process.env.PRERENDER === 'strict'
-const log = (m: any) => console.log('[prerender] ' + m)
+const log = (m: string) => console.log('[prerender] ' + m)
 
-async function writeSitemap(routes: any) {
+async function writeSitemap(routes: string[]) {
   if (!BASE) { log('no public address in content/site.md — sitemap skipped'); return }
   const today = new Date().toISOString().slice(0, 10)
   const xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    ...routes.map((r: any) => `  <url><loc>${BASE}${r === '/' ? '/' : r}</loc><lastmod>${today}</lastmod></url>`), '</urlset>', ''].join('\n')
+    ...routes.map((r: string) => `  <url><loc>${BASE}${r === '/' ? '/' : r}</loc><lastmod>${today}</lastmod></url>`), '</urlset>', ''].join('\n')
   await fs.writeFile(path.join(DIST, 'sitemap.xml'), xml)
   const robots = path.join(DIST, 'robots.txt')
   let txt = ''
@@ -86,7 +86,7 @@ async function main() {
       await page.goto(origin + r, { waitUntil: 'networkidle', timeout: 30000 })
       await page.waitForFunction(() => { const a = document.querySelector('#app'); return a && a.children.length > 0 }, null, { timeout: 15000 })
       await page.waitForTimeout(150)   /* a tick for fonts and the head to settle */
-      await page.evaluate((route: any) => {
+      await page.evaluate((route: string) => {
         document.documentElement.setAttribute('data-prerendered', route)
         /* the landing's reveal-on-scroll blocks are baked revealed: the static page
            must never hide its own content behind a script that may not run */

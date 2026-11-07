@@ -50,7 +50,7 @@ export async function runsHere(rootId: any) {
   try {
     const { data } = await supabase.rpc('agent_runs_here', { p_root: rootId })
     const all = data || []
-    runs.here = all.filter((r: any) => ['queued', 'running'].includes(r.status))
+    runs.here = all.filter((r: { status: string }) => ['queued', 'running'].includes(r.status))
     return all
   } catch { runs.here = []; return [] }
 }
@@ -119,7 +119,7 @@ export async function stop(runId: any) {
   if (!supabase || !runId) return { error: 'no run' }
   const { data, error } = await supabase.rpc('agent_cancel', { p_run: runId })
   if (error) return { error: error.message }
-  runs.here = runs.here.filter((r: any) => r.id !== runId)
+  runs.here = runs.here.filter((r: { id: any }) => r.id !== runId)
   return data || {}
 }
 
@@ -141,7 +141,7 @@ export function mayRun(audience: any) {
     if (a.entitlement) return canAccess(a.entitlement)
     if (a.tier) return hasTier(a.tier)
     if (a.product) return hasProduct(a.product)
-    if (a.role) return (a.role || []).some((r: any) => roles.value.includes(r) || (r === 'admin' && isAdmin.value))
+    if (a.role) return (a.role || []).some((r: string) => roles.value.includes(r) || (r === 'admin' && isAdmin.value))
     return false
   })
 }

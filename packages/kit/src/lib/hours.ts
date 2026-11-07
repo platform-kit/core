@@ -8,7 +8,7 @@
  */
 import { supabase } from './supabase.js'
 
-async function call(body: any) {
+async function call(body: { action: string; hours?: any; schedule?: any; day?: any; ranges?: any; note?: any; }) {
   const { data, error } = await (supabase as any).functions.invoke('coach-hours', { body })
   if (error) { let msg = error.message || 'request failed', code = ''; try { const j = await error.context.json(); if (j && j.error) { msg = j.error; code = j.code || '' } } catch (e) { /* no body */ } const e: any = new Error(msg); e.code = code; throw e }
   if (data && data.error) { const e: any = new Error(data.error); e.code = data.code || ''; throw e }

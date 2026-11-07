@@ -17,7 +17,7 @@ import { slugOk } from './spaces-io.mjs'
 export const TEAMS_DIR = 'content/teams'
 
 /* a team's file, parsed. Its body is the line a surface shows beside the name. */
-export function parseTeam(slug: any, raw: any) {
+export function parseTeam(slug: string, raw: string) {
   const f = matter(String(raw || ''))
   const d = f.data || {}
   return {
@@ -35,7 +35,7 @@ export function parseTeam(slug: any, raw: any) {
 }
 
 /* written back in the shape it was read, so a save through the admin cannot bend the file */
-export function serialiseTeam(t: any) {
+export function serialiseTeam(t: { name: any; published: any; thumb: any; position: any; fill: any; about: any; slug?: any }) {
   const fm: any = { name: t.name }
   if (t.published === false) fm.published = false
   if (t.thumb) fm.thumb = t.thumb
@@ -47,7 +47,7 @@ export function serialiseTeam(t: any) {
 export async function readTeams(store: any) {
   const st = asStore(store)
   /* the store's own listing, as the spaces read theirs: a name, not a path */
-  const names = (await st.list(TEAMS_DIR, { ext: 'md' })).filter((n: any) => !n.includes('/'))
+  const names = (await st.list(TEAMS_DIR, { ext: 'md' })).filter((n: string|string[]) => !n.includes('/'))
   const out = []
   for (const n of names.sort()) {
     const slug = n.replace(/\.md$/, '')
@@ -77,7 +77,7 @@ export const TEAM_WAYS = WAY
 /* a role may be written as one word or a list, and both mean the same set — so they are compared
    as the same thing rather than as the text somebody happened to type */
 const flat = (s: any) => { const o: any = {}; for (const [k, v] of Object.entries(s || {})) o[k] = k === 'role' ? (Array.isArray(v) ? [...v] : [v]).map(String).sort() : v; return JSON.stringify(Object.keys(o).sort().map((k) => [k, o[k]])) }
-const same = (a: any, b: any) => flat(a) === flat(b)
+const same = (a: unknown, b: any) => flat(a) === flat(b)
 /* the file's fill → the keys to tick */
 export function fillWays(fill: any) {
   const sets = Array.isArray(fill) ? fill : fill && Object.keys(fill).length ? [fill] : []
@@ -90,7 +90,7 @@ export function fillWays(fill: any) {
 }
 /* the keys ticked → the file's fill, in the shape it is read in */
 export function waysFill(keys: any) {
-  const sets = (keys || []).map((k: any) => {
+  const sets = (keys || []).map((k: string) => {
     if (WAY[k]) return WAY[k]
     if (k.startsWith('tier:')) return { tier: k.slice(5) }
     if (k.startsWith('bought:')) return { bought: k.slice(7) }
@@ -125,7 +125,7 @@ export async function projectTeams({ teams, db }: any) {
     }, { onConflict: 'slug' })
     if (error) throw new Error(`teams: ${t.slug}: ${error.message}`)
   }
-  const keep = declared.map((t: any) => t.slug)
+  const keep = declared.map((t: { slug: any }) => t.slug)
   const gone = await db.from('teams').delete().not('slug', 'in', `(${keep.map((s: any) => `"${s}"`).join(',') || '""'})`).select('slug')
   if (gone.error) throw new Error(`teams: the declaration sweep: ${gone.error.message}`)
   if (!Array.isArray(gone.data)) throw new Error('teams: the declaration sweep returned no row list')

@@ -43,11 +43,15 @@ async function engine(wasm: any) {
  * "%PDF" — and a diagnostics object when the document did not set. Both are truthy, so the test is
  * whether there are bytes and not whether there is a value.
  */
-function must(out: any, file: any) {
-  if (out && (out.byteLength || out.length)) return out
-  const said = out && out.diagnostics
-    ? out.diagnostics.map((d: any) => (d && (d.message || d)) || '').join('; ')
-    : (out && out.message) || 'no diagnostics'
+/* the bytes on success; the compiler's own report when the document did not set */
+type Compiled = Uint8Array | { diagnostics?: Array<{ message?: string } | string>; message?: string } | null
+
+function must(out: Compiled, file: string): Uint8Array {
+  if (out && ((out as Uint8Array).byteLength || (out as Uint8Array).length)) return out as Uint8Array
+  const report = out as Exclude<Compiled, Uint8Array>
+  const said = report && report.diagnostics
+    ? report.diagnostics.map((d) => (d && ((d as { message?: string }).message || d)) || '').join('; ')
+    : (report && report.message) || 'no diagnostics'
   throw new Error('typst: ' + file + ' — ' + said)
 }
 
@@ -55,7 +59,7 @@ export async function create({ files = {}, fonts = [], wasm }: any = {}) {
   const mod = await engine(wasm)
   const builder = new mod.TypstCompilerBuilder()
   builder.set_dummy_access_model()          /* no filesystem: every source is added below */
-  for (const font of (fonts as any)) {
+  for (const font of fonts) {
     if (!font || !font.byteLength) throw new Error('typeset: a font was empty — a book set in a fallback face is wrong in a way nobody sees until it is printed')
     await builder.add_raw_font(new Uint8Array(font))
   }
@@ -64,14 +68,14 @@ export async function create({ files = {}, fonts = [], wasm }: any = {}) {
 
   const main = (file: any) => (String(file).startsWith('/') ? String(file) : '/' + String(file))
   return {
-    pdf(file: any) { return must(c.compile(main(file), null, 'pdf', 0), file) },
+    pdf(file: string) { return must(c.compile(main(file), null, 'pdf', 0), file) },
     svg(file: any) { return must(c.compile(main(file), null, 'svg', 0), file) },
-    query(file: any, selector: any) {
+    query(file: string, selector: any) {
       const said = c.query(main(file), null, selector, null)
       try { return JSON.parse(said || '[]') } catch (e) { throw new Error('typst: ' + file + ' — the query did not answer with json') }
     },
     /* a source added after the compiler was built: a re-render with a page offset, a second edition */
-    put(p: any, text: any) { c.add_source(main(p), String(text)) },
+    put(p: string, text: string) { c.add_source(main(p), String(text)) },
     /* and BYTES, for what is not text: a paperback's front is the e-book's own picture, and on a
        machine Typst reads it off the disk. Here there is no disk, so it is mapped in as a shadow
        file under the path the source names. */

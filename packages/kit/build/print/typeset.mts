@@ -202,13 +202,13 @@ export function typeset({ book, companion, trim = '6x9', contents = 'both', note
   const twoParts = contents === 'parts'
   const parts = []
   parts.push(`#import "book.typ": *`)
-  const intro: any = book.introduction ? blocks(book.introduction, marks) : null
+  const intro = book.introduction ? blocks(book.introduction, marks) : null
   /* in two parts the brief comes first, so its marks are numbered first */
   const briefFirst: any = twoParts ? chapters.map((ch) => {
     const before = marks.length
     const c = comp[ch.title]
-    const body: any = blocks((c && c.summaryMd) || '', marks)
-    const own: any = marks.slice(before).map((m: any, k: any) => ({ ...m, n: before + k + 1 }))
+    const body = blocks((c && c.summaryMd) || '', marks)
+    const own = marks.slice(before).map((m: any, k: any) => ({ ...m, n: before + k + 1 }))
     const essence = c && c.essence ? c.essence.map((e: any) => inline(e, [])) : []
     return { body, own, essence }
   }) : null
@@ -216,8 +216,8 @@ export function typeset({ book, companion, trim = '6x9', contents = 'both', note
     const before = marks.length
     const c = comp[ch.title]
     /* the summary alone: the chapter's text is its summary, and the summary's marks are the chapter's */
-    const body: any = contents === 'summary' ? blocks((c && c.summaryMd) || '', marks) : blocks(ch.md, marks)
-    const own: any = marks.slice(before).map((m: any, k: any) => ({ ...m, n: before + k + 1 }))
+    const body = contents === 'summary' ? blocks((c && c.summaryMd) || '', marks) : blocks(ch.md, marks)
+    const own = marks.slice(before).map((m: any, k: any) => ({ ...m, n: before + k + 1 }))
     const summary = contents === 'both' && c && c.summaryMd ? blocks(c.summaryMd, []) : null
     const long = ((contents === 'both' && c && c.summaryMd ? c.summaryMd : '') + ' ' + ((c && c.essence) || []).join(' ')).split(/\s+/).length > 170 || ((c && c.essence) || []).length > 3
     const essence = (contents === 'both' || contents === 'summary') && c && c.essence ? c.essence.map((e: any) => inline(e, [])) : []
@@ -225,7 +225,7 @@ export function typeset({ book, companion, trim = '6x9', contents = 'both', note
   })
   /* the second part: the same chapters in brief — the summary as the text, the key insights after */
   const briefSrc = twoParts ? chapterSrc.map((ch, i) => ({ ...ch, ...briefFirst[i], summary: null, long: briefFirst[i].essence.length > 3 })).filter((c) => c.body.trim() || c.essence.length) : []
-  const w = (k: any, d: any) => str((words as any)[k] || d)
+  const w = (k: any, d: any) => str(words[k] || d)
   const entry = (c: any) => `(title: ${str(c.n == null ? c.title : c.n + '. ' + c.title)})`
   /* a book whose chapters are bare numerals lists its parts alone: a page of "1. I … 7" tells a
      reader nothing */
@@ -241,7 +241,7 @@ export function typeset({ book, companion, trim = '6x9', contents = 'both', note
   let first = true
   const firstArg = () => { const f = first ? ', first: true' : ''; first = false; return f }
   if (note.trim()) parts.push(`#note-page(${w('note-title', 'A Note on This Edition')}${firstArg()})[\n${blocks(note, [])}\n]`)
-  if (intro) parts.push(`#intro-opener([${inline((words as any)['intro-title'] || (words as any).intro || 'Before you begin', [])}], ${w('intro', 'Before you begin')}, eye: ${w('intro-eyebrow', 'Before you begin')}${firstArg()})\n\n${intro}`)
+  if (intro) parts.push(`#intro-opener([${inline(words['intro-title'] || words.intro || 'Before you begin', [])}], ${w('intro', 'Before you begin')}, eye: ${w('intro-eyebrow', 'Before you begin')}${firstArg()})\n\n${intro}`)
   /* every chapter opens on a page of its own: a right-hand page in a book of long chapters, the
      next page either side in a book of short ones (verses, a page or less each) */
   const avgWords = chapters.reduce((n, ch) => n + String(ch.md || '').split(/\s+/).length, 0) / Math.max(chapters.length, 1)
@@ -262,8 +262,8 @@ export function typeset({ book, companion, trim = '6x9', contents = 'both', note
        its capital, since it stands alone on a page */
     const marksOf = (list: any) => list.flatMap((c: any) => c.own)
     const lists = twoParts
-      ? [{ title: (words as any)['marks-from-edition'] || 'From the Modern Edition', marks: marksOf(briefSrc) }, { title: (words as any)['marks-from-text'] || 'From the original full text', marks: marksOf(chapterSrc) }]
-      : [{ title: (words as any)['marks-from-book'] || 'From the book', marks: marksOf(chapterSrc) }]
+      ? [{ title: words['marks-from-edition'] || 'From the Modern Edition', marks: marksOf(briefSrc) }, { title: words['marks-from-text'] || 'From the original full text', marks: marksOf(chapterSrc) }]
+      : [{ title: words['marks-from-book'] || 'From the book', marks: marksOf(chapterSrc) }]
     const data = lists.map((l) => `(title: ${str(l.title)}, marks: (${l.marks.map((m: any) => `(n: ${m.n}, colour: ${str(m.colour || 'sun')}, text: [${inline(m.text.replace(/^[a-z]/, (ch: any) => ch.toUpperCase()), [])}])`).join(', ')}${l.marks.length === 1 ? ',' : ''}))`).join(', ')
     parts.push(`#marks-page(lists: (${data}${lists.length === 1 ? ',' : ''}), eye: ${w('marks-eyebrow', 'The Highlights')}, title: ${w('marks', 'The lines worth noticing')}, page-word: ${w('page', 'p.')})`)
   }

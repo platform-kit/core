@@ -4,7 +4,7 @@ import path from 'node:path'
 import { randomBytes } from 'node:crypto'
 import { platformkitRuntimePath } from './runtime-paths.mjs'
 
-export function stableProjectId(siteConfig: any, siteSlug: any) {
+export function stableProjectId(siteConfig: { dev?: any }, siteSlug: string) {
   const projectId = siteConfig?.dev?.projectId || `pk_${siteSlug.replaceAll('-', '_')}_local`
   if (!/^[a-z0-9][a-z0-9_-]{0,62}$/.test(projectId)) {
     throw new Error(`dev.projectId must be 1–63 lowercase letters, digits, underscores, or hyphens: ${projectId}`)
@@ -12,7 +12,7 @@ export function stableProjectId(siteConfig: any, siteSlug: any) {
   return projectId
 }
 
-export function createRunRecord(root: any, details: any) {
+export function createRunRecord(root: string, details: { kind: string; composeProjectName?: string; runtimeBase?: string; supabaseWorkdirs: never[]; site?: string; projectId?: any }) {
   const runId = randomBytes(16).toString('hex')
   const directory = platformkitRuntimePath(root, 'dev', 'runs')
   fs.mkdirSync(directory, { recursive: true })
@@ -22,7 +22,7 @@ export function createRunRecord(root: any, details: any) {
   fs.writeFileSync(file, JSON.stringify(record, null, 2) + '\n', { flag: 'wx' })
   return {
     runId,
-    update(next: any) {
+    update(next: { supabaseWorkdirs: any[] }) {
       const current = JSON.parse(fs.readFileSync(file, 'utf8'))
       if (current.runId === runId) fs.writeFileSync(file, JSON.stringify({ ...current, ...next }, null, 2) + '\n')
     },
@@ -73,7 +73,7 @@ export function copyRuntimeSupabaseProject({ source, runtimeRoot, projectId }: a
  * `npx`, which starts the real process as its own child; a signal to npx alone left the real one
  * listening. So each is started in a process group of its own and the group is signalled.
  */
-export function spawnGroup(command: any, args: any, options = {}) {
+export function spawnGroup(command: string, args: readonly string[]|undefined, options = {}) {
   return spawn(command, args, { ...options, detached: process.platform !== 'win32' })
 }
 
@@ -86,7 +86,7 @@ export function signalGroup(child: any, signal = 'SIGTERM') {
 }
 
 /* when a process started, as ps says it — with the pid, what identifies it */
-export function processStart(pid: any) {
+export function processStart(pid: number) {
   const result = spawnSync('ps', ['-o', 'lstart=', '-p', String(pid)], { encoding: 'utf8' })
   return result.status === 0 ? result.stdout.trim() : ''
 }

@@ -17,7 +17,7 @@ const now = () => new Date().toISOString()
 function makePosthog() {
   let core: any = null, config: any = {}, key = '', pending: any = []
   const ph: any = {}
-  const ready: any = () => !!core
+  const ready = () => !!core
   const run = (fn: any) => { if (ready()) fn(); else pending.push(fn) }
 
   ph.init = function (token: any, options: any, name: any) {
@@ -57,7 +57,7 @@ function makePosthog() {
   }
   ph.identify = function (distinct_id: any, set: any, set_once: any) {
     run(() => {
-      const was: any = core.distinctId()
+      const was = core.distinctId()
       if (distinct_id != null) core.identify(distinct_id)
       const props: any = {}
       if (set && typeof set === 'object') props.$set = set
@@ -83,7 +83,7 @@ function makePosthog() {
   ph.clearIdentity = function () { ph.reset() }
   ph.createPersonProfile = function () { run(() => core.capture('$set', { ...pageProps(), $set: {} }, { noStart: true })) }
   ph.people = { set: (props: any, to: any, cb: any) => { ph.setPersonProperties(typeof props === 'string' ? { [props]: to } : props); if (typeof cb === 'function') cb() }, set_once: (props: any, to: any, cb: any) => { ph.setPersonProperties(undefined, typeof props === 'string' ? { [props]: to } : props); if (typeof cb === 'function') cb() } }
-  ph.group = function (group_type: any, group_key: any, group_properties: any) { run(() => { const groups: any = { ...(core.superProps().$groups || {}), [group_type]: group_key }; core.register({ $groups: groups }); if (group_properties) core.capture('$groupidentify', { ...pageProps(), $group_type: group_type, $group_key: group_key, $group_set: group_properties }, { noStart: true }) }) }
+  ph.group = function (group_type: any, group_key: any, group_properties: any) { run(() => { const groups = { ...(core.superProps().$groups || {}), [group_type]: group_key }; core.register({ $groups: groups }); if (group_properties) core.capture('$groupidentify', { ...pageProps(), $group_type: group_type, $group_key: group_key, $group_set: group_properties }, { noStart: true }) }) }
   ph.resetGroups = function () { run(() => core.unregister('$groups')) }
   ph.getGroups = function () { return ready() ? (core.superProps().$groups || {}) : {} }
   ph.opt_out_capturing = function () { run(() => core.optOut()) }
@@ -151,7 +151,7 @@ function makePosthog() {
 
 /* the object, and — where PostHog's own snippet was there first, an array of queued calls with its init calls in _i — the replay */
 export function install(win: any) {
-  const ph: any = makePosthog()
+  const ph = makePosthog()
   const stub = win && win.posthog
   if (win) win.posthog = ph
   if (stub && stub !== ph) {

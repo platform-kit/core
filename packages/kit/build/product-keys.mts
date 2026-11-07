@@ -9,9 +9,9 @@
  *   node build/product-keys.mjs          key every file that has none
  *   node build/product-keys.mjs --check  say which lack one or share one; exit 1 if any
  */
-import { readdirSync as readAll, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { readdirSync as readAll, existsSync, readFileSync, writeFileSync, type PathLike } from 'node:fs'
 /* a site with no books (or no products) has an empty folder's worth of files, not a crash */
-const readdirSync = (d: any) => (existsSync(d) ? readAll(d) : [])
+const readdirSync = (d: PathLike) => (existsSync(d) ? readAll(d) : [])
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { isMain } from './is-main.mjs'
@@ -22,13 +22,13 @@ export const KEY = /^[0-9a-f]{8}$/
 export const newKey = (used = new Set()) => { let k; do { k = randomUUID().replace(/-/g, '').slice(0, 8) } while (used.has(k)); return k }
 
 /* the frontmatter's `key:` line, read or written after `sku:` without disturbing the rest */
-const keyOf = (raw: any) => { const m = /^key:\s*['"]?([0-9a-f]{8})['"]?\s*$/m.exec(raw); return m ? m[1] : null }
-const withKey = (raw: any, key: any) => /^sku:.*$/m.test(raw) ? raw.replace(/^(sku:.*)$/m, `$1\nkey: ${key}`) : raw.replace(/^---\n/, `---\nkey: ${key}\n`)
+const keyOf = (raw: string) => { const m = /^key:\s*['"]?([0-9a-f]{8})['"]?\s*$/m.exec(raw); return m ? m[1] : null }
+const withKey = (raw: string, key: string) => /^sku:.*$/m.test(raw) ? raw.replace(/^(sku:.*)$/m, `$1\nkey: ${key}`) : raw.replace(/^---\n/, `---\nkey: ${key}\n`)
 
 /* a book's print block: its `key:` line, read or written under `print:` */
-const hcBlock = (raw: any) => /^print:\n((?:[ \t]+.*\n?)+)/m.exec(raw)
-const hcKeyOf = (raw: any) => { const b = hcBlock(raw); if (!b) return undefined; const m = /^[ \t]+key:\s*['"]?([0-9a-f]{8})['"]?\s*$/m.exec(b[1]); return m ? m[1] : null }
-const withHcKey = (raw: any, key: any) => raw.replace(/^(print:\n)/m, `$1  key: ${key}\n`)
+const hcBlock = (raw: string) => /^print:\n((?:[ \t]+.*\n?)+)/m.exec(raw)
+const hcKeyOf = (raw: string) => { const b = hcBlock(raw); if (!b) return undefined; const m = /^[ \t]+key:\s*['"]?([0-9a-f]{8})['"]?\s*$/m.exec(b[1]); return m ? m[1] : null }
+const withHcKey = (raw: string, key: string) => raw.replace(/^(print:\n)/m, `$1  key: ${key}\n`)
 
 /* every key in use — the products' and the hardcovers' — for a writer giving a new one */
 /* the same through the store (or a root), for the pipe */
@@ -50,7 +50,7 @@ export function productKeys({ write = true } = {}) {
   const files = readdirSync(DIR).filter((n) => n.endsWith('.md')).sort()
   const books = readdirSync(BOOKS).filter((n) => n.endsWith('.md')).sort()
   const used = new Map(), missing = [], dup: any = []
-  const note = (k: any, n: any) => { if (used.has(k)) dup.push(`${n} and ${used.get(k)} share ${k}`); else used.set(k, n) }
+  const note = (k: string, n: string) => { if (used.has(k)) dup.push(`${n} and ${used.get(k)} share ${k}`); else used.set(k, n) }
   for (const n of files) { const k = keyOf(readFileSync(join(DIR, n), 'utf8')); if (!k) missing.push({ dir: DIR, n, hc: false }); else note(k, n) }
   for (const n of books) { const k = hcKeyOf(readFileSync(join(BOOKS, n), 'utf8')); if (k === undefined) continue; if (!k) missing.push({ dir: BOOKS, n, hc: true }); else note(k, 'books/' + n) }
   if (write) for (const m of missing) {

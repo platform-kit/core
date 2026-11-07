@@ -19,7 +19,7 @@ const cache = new Map()
 export const forgetGated = () => { cache.clear(); forgetCompanions() }
 watch(() => user.value && user.value.id, () => forgetGated())
 
-function ask(key: any, body: any) {
+function ask(key: string, body: { collection: any; slug: any }) {
   if (cache.has(key)) return cache.get(key)
   const p = (async () => {
     if (!supabase) throw new Error('no backend')
@@ -33,8 +33,8 @@ function ask(key: any, body: any) {
   return p
 }
 
-export const readerBook = (slug: any) => ask('books/' + slug, { collection: 'books', slug })
-export const readerPage = (collection: any, slug: any) => ask(collection + '/' + slug, { collection, slug })
+export const readerBook = (slug: string) => ask('books/' + slug, { collection: 'books', slug })
+export const readerPage = (collection: string, slug: string) => ask(collection + '/' + slug, { collection, slug })
 
 /*
  * A gated page in a view: its html once fetched, and the state to draw while it is not.
@@ -42,7 +42,7 @@ export const readerPage = (collection: any, slug: any) => ask(collection + '/' +
  *   g.html (the page's html — the bundle's, or the fetched one), g.state ('' | 'loading' | 'error' | 'done'), g.retry()
  * `record` is { id, html, gated }; nothing is asked for a page the bundle carries whole or the reader may not read.
  */
-export function useGatedPage(collection: any, record: any, allowed: any) {
+export function useGatedPage(collection: any, record: () => any, allowed: () => any) {
   const fetched = ref<any>(null), state = ref(''), turn = ref(0)
   const want = () => { const r = record(); return r && r.gated && allowed() ? r : null }
   watch([() => (want() || {}).id, allowed, turn], async () => {

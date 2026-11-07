@@ -191,7 +191,7 @@ function validCronCommand(value: unknown): boolean {
   return !structural.includes(';')
 }
 
-function paymentProvidersOf(value: unknown, owns: any, where: string, faults: string[]): PaymentProviderRegistration[] {
+function paymentProvidersOf(value: unknown, owns: { env: string|string[] }, where: string, faults: string[]): PaymentProviderRegistration[] {
   if (value == null) return []
   if (!Array.isArray(value)) {
     faults.push(`${where}: \`paymentProviders\` must be a list`)

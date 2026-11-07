@@ -44,7 +44,7 @@ export function publicRoutes() {
        the store's page for it when the book online is off (the same rule as src/lib/storefront.js) */
     const online = !(storefront && storefront.showOnline === false)
     for (const p of products || []) if (online || p.kind !== 'book') r.add('/store/products/' + p.id)
-    for (const b of books || []) if (b.published !== false && printOffer(b) && (!online || !(products || []).some((p: any) => p.kind === 'book' && p.book === b.slug))) r.add('/store/products/' + PAGE_ID(b.slug))
+    for (const b of books || []) if (b.published !== false && printOffer(b) && (!online || !(products || []).some((p: { kind: string; book: any }) => p.kind === 'book' && p.book === b.slug))) r.add('/store/products/' + PAGE_ID(b.slug))
     for (const c of collections || []) r.add('/store/collections/' + c.id)
   }
   return [...r]

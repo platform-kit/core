@@ -14,7 +14,7 @@ const runsDir = path.join(stateDir, 'runs')
 let failures = 0
 const report = {
   log: (message: any) => console.log(message),
-  out: (text: any) => process.stdout.write(text),
+  out: (text: string|Uint8Array<ArrayBufferLike>) => process.stdout.write(text),
   warn: (message: any) => console.error(message),
   error: (message: any) => { console.error(message); failures++ },
 }

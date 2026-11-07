@@ -78,12 +78,12 @@ export default {
   grammar: {
     parse: (text: any) => ({ data: matter(text).data, content: matter(text).content }),
     /* a file that documents itself keeps its documentation: this is the one that started it */
-    serialise: (rec: any, ctx: any) => writeKeeping(ctx && ctx.current, rec.data, rec.content == null ? '\n' : rec.content,
+    serialise: (rec: { data: object; content: string|{ content: string }|null }, ctx: { current: any }) => writeKeeping(ctx && ctx.current, rec.data, rec.content == null ? '\n' : rec.content,
       // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
       () => matter.stringify(rec.content == null ? '\n' : rec.content, rec.data, DUMP)),
   },
   /* a field the file leaves out is the shipped default, so the form shows what the site actually
      does rather than a blank that means something */
-  prepare: (rec: any) => { rec.data = { ...POLICY, ...(rec.data || {}), flagged: wordsOf((rec.data || {}).flagged), domains: wordsOf((rec.data || {}).domains) }; return rec },
-  after: (rec: any, ctx: any) => ctx.script('comments-push.mjs').catch((e: any) => console.warn('comments: not projected — ' + e.message)),
+  prepare: (rec: { data: any }) => { rec.data = { ...POLICY, ...(rec.data || {}), flagged: wordsOf((rec.data || {}).flagged), domains: wordsOf((rec.data || {}).domains) }; return rec },
+  after: (rec: any, ctx: { script: (arg0: string) => Promise<any> }) => ctx.script('comments-push.mjs').catch((e: { message: string }) => console.warn('comments: not projected — ' + e.message)),
 }

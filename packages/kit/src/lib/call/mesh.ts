@@ -28,7 +28,7 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
   let channel: any = null, timer: any = null, watch: any = null
 
   const peerRow = (id: any, name: any) => {
-    let row: any = peers.find((p: any) => p.id === id)
+    let row = peers.find((p: { id: any }) => p.id === id)
     /* the clock runs from when THIS person appeared, not from when we joined: somebody sitting in
        a huddle for a minute must not be told the call cannot be made the moment another arrives */
     if (!row) { row = reactive<any>({ id, name: name || '', stream: null, speaking: false, muted: false, cameraOff: false, state: 'connecting', since: Date.now() }); peers.push(row) }
@@ -38,18 +38,18 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
   const drop = (id: any) => {
     const pc = pcs.get(id)
     if (pc) { try { pc.close() } catch (e) { /* already gone */ } pcs.delete(id) }
-    const i = peers.findIndex((p: any) => p.id === id)
+    const i = peers.findIndex((p: { id: any }) => p.id === id)
     if (i >= 0) peers.splice(i, 1)
   }
 
-  const say: any = (event: any, payload: any) => { if (channel) channel.send({ type: 'broadcast', event, payload: { from: me.id, ...payload } }).catch(() => {}) }
+  const say = (event: string, payload: { to?: any; candidate?: RTCIceCandidateInit; sdp?: any; name?: any; muted?: any; cameraOff?: any }) => { if (channel) channel.send({ type: 'broadcast', event, payload: { from: me.id, ...payload } }).catch(() => {}) }
 
   function connect(id: any, name: any) {
     if (pcs.has(id)) return pcs.get(id)
     const pc = new RTCPeerConnection({ iceServers })
     pcs.set(id, pc)
-    const row: any = peerRow(id, name)
-    if (local.stream) for (const t of (local.stream as any).getTracks()) pc.addTrack(t, local.stream)
+    const row = peerRow(id, name)
+    if (local.stream) for (const t of local.stream.getTracks()) pc.addTrack(t, local.stream)
     pc.onicecandidate = (e) => { if (e.candidate) say('ice', { to: id, candidate: e.candidate.toJSON() }) }
     pc.ontrack = (e) => { row.stream = e.streams[0] || new MediaStream([e.track]) }
     pc.onconnectionstatechange = () => {
@@ -69,11 +69,11 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
     say('offer', { to: id, sdp: pc.localDescription, name: me.name })
   }
 
-  async function heard(event: any, p: any) {
+  async function heard(event: string, p: { from: string; to: any; name: any; sdp: any; candidate: any }) {
     if (!p || p.from === me.id || (p.to && p.to !== me.id)) return
     if (event === 'hello') {
       seen.push({ id: p.from, name: p.name, at: new Date().toISOString() })
-      const live: any = livePeers(seen, me.id)
+      const live = livePeers(seen, me.id)
       if (roomFull(live.length + 1, max)) { state.value = 'full'; return }
       if (shouldOffer(me.id, p.from)) await offerTo(p.from, p.name)
       else peerRow(p.from, p.name)
@@ -110,16 +110,16 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
     }
     channel = (supabase as any).channel(topic, { config: { private: true, broadcast: { self: false } } })
     for (const e of ['hello', 'offer', 'answer', 'ice', 'bye']) channel.on('broadcast', { event: e }, ({ payload }: any) => heard(e, payload))
-    await new Promise((res) => channel.subscribe((s: any) => { if (s === 'SUBSCRIBED' || s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') res(s) }))
+    await new Promise((res) => channel.subscribe((s: unknown) => { if (s === 'SUBSCRIBED' || s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') res(s) }))
     state.value = 'live'
     say('hello', { name: me.name })
     timer = setInterval(() => say('hello', { name: me.name }), HELLO_MS)
     /* a peer we cannot reach is said so, rather than left waiting on a spinner — each judged from
        when they appeared, and never while any connection is up */
     watch = setInterval(() => {
-      if (!peers.length || peers.some((p: any) => p.state === 'connected')) { if (trouble.value === 'no-relay') trouble.value = null; return }
+      if (!peers.length || peers.some((p: { state: string }) => p.state === 'connected')) { if (trouble.value === 'no-relay') trouble.value = null; return }
       for (const p of peers) {
-        const r = reachable({ relay, state: (p as any).state, seconds: (Date.now() - ((p as any).since || Date.now())) / 1000 })
+        const r = reachable({ relay, state: p.state, seconds: (Date.now() - (p.since || Date.now())) / 1000 })
         if (!r.ok) { trouble.value = r.reason; return }
       }
     }, 2000)
@@ -127,12 +127,12 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
 
   function setMic(on: any) {
     local.muted = !on
-    if (local.stream) for (const t of (local.stream as any).getAudioTracks()) t.enabled = !!on
+    if (local.stream) for (const t of local.stream.getAudioTracks()) t.enabled = !!on
     say('state', { muted: local.muted, cameraOff: local.cameraOff })
   }
   function setCam(on: any) {
     local.cameraOff = !on
-    if (local.stream) for (const t of (local.stream as any).getVideoTracks()) t.enabled = !!on
+    if (local.stream) for (const t of local.stream.getVideoTracks()) t.enabled = !!on
     say('state', { muted: local.muted, cameraOff: local.cameraOff })
   }
 
@@ -142,7 +142,7 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
     if (timer) clearInterval(timer)
     if (watch) clearInterval(watch)
     for (const [id] of pcs) drop(id)
-    if (local.stream) for (const t of (local.stream as any).getTracks()) t.stop()
+    if (local.stream) for (const t of local.stream.getTracks()) t.stop()
     local.stream = null
     if (channel) { await (supabase as any).removeChannel(channel); channel = null }
   }

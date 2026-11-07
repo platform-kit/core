@@ -63,13 +63,13 @@ let doc: any = null
 let map: any = null
 const pending: any = []            /* writes made before the document was ready */
 
-export function b64ToBytes(b64: any) {
+export function b64ToBytes(b64: string) {
   const bin = atob(b64)
   const u8 = new Uint8Array(bin.length)
   for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i)
   return u8
 }
-export function bytesToB64(u8: any) {
+export function bytesToB64(u8: string|any[]) {
   let s = ''
   for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i])
   return btoa(s)
@@ -87,9 +87,9 @@ function scheduleSnapshot() {
 /* subscribers told after every local commit — the cloud sync (src/lib/sync.js)
    registers a debounced push here, so nothing else in the app has to know it exists */
 const commitFns: any = []
-export function onCommit(fn: any) {
+export function onCommit(fn: () => void) {
   commitFns.push(fn)
-  return () => { const i: any = commitFns.indexOf(fn); if (i >= 0) commitFns.splice(i, 1) }
+  return () => { const i = commitFns.indexOf(fn); if (i >= 0) commitFns.splice(i, 1) }
 }
 function notifyCommit() { for (const f of commitFns) { try { f() } catch (e) { /* a listener must never break a write */ } } }
 
@@ -118,13 +118,13 @@ export function reconcileFromDoc() {
    in-memory copy of a key (the diagnostic engine's session) re-reads it here,
    so the merged state is what it shows and what its next write carries forward */
 const reconcileFns: any = []
-export function onReconcile(fn: any) {
+export function onReconcile(fn: (keys: any) => void) {
   reconcileFns.push(fn)
-  return () => { const i: any = reconcileFns.indexOf(fn); if (i >= 0) reconcileFns.splice(i, 1) }
+  return () => { const i = reconcileFns.indexOf(fn); if (i >= 0) reconcileFns.splice(i, 1) }
 }
 
 /* the document, once it exists, for the backend sync this layer is built for */
-export let ready: any = (async function init() {
+export let ready = (async function init() {
   try {
     const { LoroDoc } = await import('loro-crdt')
     const d = new LoroDoc()
@@ -170,16 +170,16 @@ try {
   }
 } catch (e) { /* no DOM (SSR, tests) — nothing to flush on */ }
 
-export function get(key: any) {
+export function get(key: string) {
   const v = view[key]
   return v === undefined || v === null ? null : v
 }
-export function set(key: any, value: any) {
+export function set(key: string, value: string|null) {
   view[key] = value
   scheduleMirror()
   toLoro(key, value)
 }
-export function del(key: any) {
+export function del(key: string) {
   delete view[key]
   scheduleMirror()
   delLoro(key)

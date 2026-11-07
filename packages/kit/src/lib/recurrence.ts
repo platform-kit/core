@@ -30,14 +30,14 @@ export const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'fr
 export const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june',
   'july', 'august', 'september', 'october', 'november', 'december']
 /* the two words that stand for a set of days, because people say them */
-export const DAY_SETS: any = { weekdays: [1, 2, 3, 4, 5], weekends: [0, 6] }
+export const DAY_SETS = { weekdays: [1, 2, 3, 4, 5], weekends: [0, 6] }
 
 /* ------------------------------------------------------------------ spans */
 
 const SPAN = /^(\d+(?:\.\d+)?)\s*(m|min|mins|minutes|h|hr|hrs|hours|d|days|w|weeks)$/i
 const SPAN_MS: any = { m: 60000, h: 3600000, d: 86400000, w: 604800000 }
 /* a span as milliseconds: `90m`, `2h`, `1d`. A number alone is minutes, which is what people mean. */
-export function spanMs(v: any) {
+export function spanMs(v: string|number|null) {
   if (v == null || v === '') return null
   if (typeof v === 'number') return Math.round(v * 60000)
   const m = SPAN.exec(String(v).trim())
@@ -50,7 +50,7 @@ export function spanMs(v: any) {
 
 /* what a zone's clock read at an instant, as numbers. Intl is the only thing that knows the rules,
    and it is in every runtime this code meets. */
-function partsIn(ms: any, zone: any) {
+function partsIn(ms: number|Date|undefined, zone: any) {
   const f = new Intl.DateTimeFormat('en-US', {
     timeZone: zone || 'UTC', hour12: false,
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -64,7 +64,7 @@ function partsIn(ms: any, zone: any) {
 /* the instant at which a zone's clock reads this wall time, or null where the clock skips it.
    Found by guessing, reading the clock back and correcting — twice is enough for every real zone,
    and the third read is what catches an hour that does not exist. */
-export function instantOf({ y, mo, d, h = 0, mi = 0 }: any, zone: any) {
+export function instantOf({ y, mo, d, h = 0, mi = 0 }: { y: any; mo: any; d: any; h: number; mi: number }, zone: string) {
   const wall = Date.UTC(y, mo - 1, d, h, mi)
   let guess = wall
   for (let i = 0; i < 3; i++) {
@@ -80,8 +80,8 @@ export function instantOf({ y, mo, d, h = 0, mi = 0 }: any, zone: any) {
 }
 
 /* which day of the week a date falls on, in its own zone */
-const dowOf = (y: any, mo: any, d: any) => new Date(Date.UTC(y, mo - 1, d)).getUTCDay()
-const daysInMonth = (y: any, mo: any) => new Date(Date.UTC(y, mo, 0)).getUTCDate()
+const dowOf = (y: number, mo: number, d: number|undefined) => new Date(Date.UTC(y, mo - 1, d)).getUTCDay()
+const daysInMonth = (y: number, mo: number|undefined) => new Date(Date.UTC(y, mo, 0)).getUTCDate()
 
 /* ------------------------------------------------------------------ what a rule says */
 
@@ -93,7 +93,7 @@ const dayNumber = (v: any) => {
   const short = DAYS.findIndex((d) => d.slice(0, 3) === s.slice(0, 3) && s.length >= 3)
   return short >= 0 ? short : null
 }
-const monthNumber = (v: any) => {
+const monthNumber = (v: number) => {
   if (typeof v === 'number') return v >= 1 && v <= 12 ? v : null
   const s = lower(v)
   const i = MONTHS.indexOf(s)
@@ -192,10 +192,10 @@ export function occurrences(repeats: any, { from, to, limit = 500 }: any = {}) {
 
   /* which numbered weeks/months the interval lets through, reckoned from the rule's own start */
   const anchor = partsIn(startedAt != null ? startedAt : begin, zone)
-  const weekIndex = (yy: any, mm: any, dd: any) => Math.floor((Date.UTC(yy, mm - 1, dd) - Date.UTC(anchor.y, anchor.mo - 1, anchor.d - dowOf(anchor.y, anchor.mo, anchor.d))) / 604800000)
-  const monthIndex = (yy: any, mm: any) => (yy - anchor.y) * 12 + (mm - anchor.mo)
+  const weekIndex = (yy: number, mm: number, dd: number|undefined) => Math.floor((Date.UTC(yy, mm - 1, dd) - Date.UTC(anchor.y, anchor.mo - 1, anchor.d - dowOf(anchor.y, anchor.mo, anchor.d))) / 604800000)
+  const monthIndex = (yy: number, mm: number) => (yy - anchor.y) * 12 + (mm - anchor.mo)
 
-  const take = (yy: any, mm: any, dd: any) => {
+  const take = (yy: number, mm: number, dd: number) => {
     if (skip.has(dayKey(yy, mm, dd))) return true
     const start = instantOf({ y: yy, mo: mm, d: dd, h: h || 0, mi: mi || 0 }, zone)
     if (start == null) return true            /* an hour the clock skipped: it does not happen */
@@ -248,7 +248,7 @@ export function occurrences(repeats: any, { from, to, limit = 500 }: any = {}) {
 }
 
 /* the next occurrence at or after an instant, or null where the rule is spent */
-export function nextAfter(repeats: any, when: any, { zone }: any = {}) {
+export function nextAfter(repeats: { every: string; on: string[]; at?: string; zone?: string; until?: string }, when: number, { zone }: any = {}) {
   const year = 86400000 * 400
   const found = occurrences(repeats, { from: when, to: when + year * 3, limit: 1 })
   return found.length ? found[0] : null
@@ -264,9 +264,9 @@ const clock = (at: any) => {
   const hh = h % 12 === 0 ? 12 : h % 12
   return m ? `${hh}:${String(m).padStart(2, '0')}${ampm}` : `${hh}${ampm}`
 }
-const listOf = (xs: any, and = 'and') => (xs.length <= 1 ? (xs[0] || '')
+const listOf = (xs: any[], and = 'and') => (xs.length <= 1 ? (xs[0] || '')
   : xs.slice(0, -1).join(', ') + ' ' + and + ' ' + xs[xs.length - 1])
-const title = (s: any) => s.charAt(0).toUpperCase() + s.slice(1)
+const title = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /* A REPEAT SAID IN PLAIN WORDS — what the editor shows beneath the fields, and what a page says of
    an event, so nobody reads a rule back off the controls that made it. */
@@ -283,7 +283,7 @@ export function describe(repeats: any, words = {}) {
   if (every === 'day') what = interval === 1 ? 'day' : 'day'
   else if (every === 'week') {
     // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-    const five = DAY_SETS.weekdays.length === on.days.length && DAY_SETS.weekdays.every((d: any) => on.days.includes(d))
+    const five = DAY_SETS.weekdays.length === on.days.length && DAY_SETS.weekdays.every((d) => on.days.includes(d))
     what = on.days.length ? (five ? 'weekday' : listOf(on.days.map((d) => title(DAYS[d])))) : 'week'
   } else if (every === 'month') {
     if (on.nth.length) what = listOf(on.nth.map((n: any) => (n.nth < 0 ? 'last ' : (ORDINALS[n.nth] || n.nth + 'th') + ' ') + title(DAYS[n.day]))) + ' of the month'
@@ -302,12 +302,12 @@ export function describe(repeats: any, words = {}) {
   return said
 }
 
-function nth(n: any) {
+function nth(n: string|number) {
   // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
   const s = ['th', 'st', 'nd', 'rd'][(n % 100 - n % 10 !== 10) * 1 && n % 10 < 4 ? n % 10 : 0]
   return n + (s || 'th')
 }
-function sayLength(ms: any) {
+function sayLength(ms: number|null) {
   if (!ms) return ''
   const mins = Math.round(ms / 60000)
   /* whole hours are said as hours; anything under two hours is said in the minutes people book it

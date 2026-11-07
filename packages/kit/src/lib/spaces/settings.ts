@@ -41,7 +41,7 @@ export const settings = () => {
    a feature off takes its button, its place and its keyboard shortcut with it rather than leaving a
    control that does nothing. A feature the file does not name is on: a site says what it does not
    want, never what it does. */
-export const has = (feature: any) => settings().features[feature] !== false
+export const has = (feature: string|number) => settings().features[feature] !== false
 
 /* THE SIX COLOURS, as custom properties to stamp on the surface's root. Only the ones the file
    names are returned, so the stylesheet's own defaults answer for the rest — which is why a site

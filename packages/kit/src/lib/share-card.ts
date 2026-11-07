@@ -25,9 +25,9 @@ export const FRAME = { w: 1200, h: 675 }
 /* the air kept above the block: the title never runs to the edge of the sheet */
 const TOP_AIR = 44
 /* the brand row and the gap under it */
-const brandBlock = (brand: any) => Math.max(26, brand * 1.4) + 26
+const brandBlock = (brand: number) => Math.max(26, brand * 1.4) + 26
 
-const lines = (text: any, size: any, ch: any, maxWidth: any) => {
+const lines = (text: string, size: number, ch: number, maxWidth: number) => {
   const per = Math.max(1, Math.floor(maxWidth / (size * ch)))
   /* words, so a line break lands between them as it would in either renderer */
   let n = 1, room = per

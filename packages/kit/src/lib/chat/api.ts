@@ -20,7 +20,7 @@ const PAGE = 50
 const SEEN_MS = 60 * 1000
 
 const on = () => !!(supabase && configured && session.value)
-const uid = () => (session.value && (session.value as any).user && (session.value as any).user.id) || null
+const uid = () => (session.value && session.value.user && session.value.user.id) || null
 
 export const inbox = ref<any>([])          /* chat_inbox() rows */
 export const people = ref<any>([])         /* chat_people() rows */
@@ -34,7 +34,7 @@ export const thread = reactive<any>({
   loading: false, done: false, error: null,
 })
 
-const rpc = async (name: any, args?: any) => {
+const rpc = async (name: string, args?: { q?: string; lim?: number; peer?: any }|undefined) => {
   const { data, error } = await (supabase as any).rpc(name, args || {})
   if (error) throw error
   return data
@@ -76,7 +76,7 @@ let channel: any = null
 let seenTimer: any = null
 
 function peerOf(id: any) {
-  const row: any = inbox.value.find((c: any) => c.id === id)
+  const row = inbox.value.find((c: { id: any }) => c.id === id)
   return row ? row.peer : null
 }
 
@@ -90,7 +90,7 @@ export async function openThread(id: any) {
   thread.peer = peerOf(id)
   thread.loading = true
   try {
-    const [{ data: msgs, error: e1 }, { data: mem, error: e2 }]: any = await Promise.all([
+    const [{ data: msgs, error: e1 }, { data: mem, error: e2 }] = await Promise.all([
       (supabase as any).from('messages').select('*').eq('conversation_id', id).order('created_at', { ascending: false }).limit(PAGE),
       (supabase as any).from('conversation_members').select('*').eq('conversation_id', id),
     ])
@@ -100,7 +100,7 @@ export async function openThread(id: any) {
     thread.messages = mergeMessages(thread.messages, rows)
     thread.done = rows.length < PAGE
     thread.members = mem || []
-    const ids = thread.messages.map((m: any) => m.id)
+    const ids = thread.messages.map((m: { id: any }) => m.id)
     if (ids.length) {
       const { data: rx } = await (supabase as any).from('message_reactions').select('*').eq('conversation_id', id)
       thread.reactions = rx || []
@@ -117,7 +117,7 @@ export async function openThread(id: any) {
 export async function loadEarlier() {
   if (!on() || !thread.id || thread.done || thread.loading || !thread.messages.length) return
   thread.loading = true
-  const before = (thread.messages[0] as any).created_at
+  const before = thread.messages[0].created_at
   const { data } = await (supabase as any).from('messages').select('*').eq('conversation_id', thread.id)
     .lt('created_at', before).order('created_at', { ascending: false }).limit(PAGE)
   const rows = (data || []).reverse()
@@ -136,15 +136,15 @@ export function closeThread() {
 /* the peer's cursor, for the ticks */
 export function peerReadAt() {
   const me = uid()
-  const row: any = thread.members.find((m: any) => m.user_id !== me)
+  const row = thread.members.find((m: { user_id: any }) => m.user_id !== me)
   return row ? row.last_read_at : null
 }
 export function myMember() {
   const me = uid()
-  return thread.members.find((m: any) => m.user_id === me) || null
+  return thread.members.find((m: { user_id: any }) => m.user_id === me) || null
 }
 
-function subscribe(id: any) {
+function subscribe(id: string) {
   if (channel) return
   const filter = 'conversation_id=eq.' + id
   channel = (supabase as any).channel('chat:' + id)
@@ -158,27 +158,27 @@ function subscribe(id: any) {
       lastInInbox(row)
     })
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'message_reactions', filter }, ({ new: row }: any) => {
-      if (!thread.reactions.some((r: any) => r.message_id === row.message_id && r.user_id === row.user_id && r.emoji === row.emoji)) thread.reactions = thread.reactions.concat([row])
+      if (!thread.reactions.some((r: { message_id: any; user_id: any; emoji: any }) => r.message_id === row.message_id && r.user_id === row.user_id && r.emoji === row.emoji)) thread.reactions = thread.reactions.concat([row])
     })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'message_reactions' }, ({ old: row }: any) => {
-      thread.reactions = thread.reactions.filter((r: any) => !(r.message_id === row.message_id && r.user_id === row.user_id && r.emoji === row.emoji))
+      thread.reactions = thread.reactions.filter((r: { message_id: any; user_id: any; emoji: any }) => !(r.message_id === row.message_id && r.user_id === row.user_id && r.emoji === row.emoji))
     })
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversation_members', filter }, ({ new: row }: any) => {
-      thread.members = thread.members.filter((m: any) => m.user_id !== row.user_id).concat([row])
+      thread.members = thread.members.filter((m: { user_id: any }) => m.user_id !== row.user_id).concat([row])
     })
     /* anything that landed between the first read and the join */
-    .subscribe((status: any) => { if (status === 'SUBSCRIBED') catchUp(id) })
+    .subscribe((status: string) => { if (status === 'SUBSCRIBED') catchUp(id) })
 }
 
 async function catchUp(id: any) {
   if (thread.id !== id) return
-  const last: any = thread.messages[thread.messages.length - 1]
+  const last = thread.messages[thread.messages.length - 1]
   const q = (supabase as any).from('messages').select('*').eq('conversation_id', id).order('created_at', { ascending: true }).limit(PAGE)
   const { data } = await (last ? q.gt('created_at', last.created_at) : q)
   if (data && data.length && thread.id === id) {
     thread.messages = mergeMessages(thread.messages, data)
     for (const row of data) touchInbox(row)
-    if (data.some((r: any) => r.sender_id !== uid())) { if (wantsRead && document.visibilityState === 'visible') markRead(); else refreshUnread() }
+    if (data.some((r: { sender_id: any }) => r.sender_id !== uid())) { if (wantsRead && document.visibilityState === 'visible') markRead(); else refreshUnread() }
   }
 }
 
@@ -190,8 +190,8 @@ export function setWantsRead(v: any) { wantsRead = !!v; if (v) markRead() }
 let readTimer: any = null
 export function markRead() {
   if (!on() || !thread.id) return
-  const me: any = myMember()
-  const last: any = thread.messages[thread.messages.length - 1]
+  const me = myMember()
+  const last = thread.messages[thread.messages.length - 1]
   if (!last || !me) return
   if (new Date(me.last_read_at) >= new Date(last.created_at)) return
   const at = new Date().toISOString()
@@ -199,7 +199,7 @@ export function markRead() {
   clearTimeout(readTimer)
   readTimer = setTimeout(async () => {
     await (supabase as any).from('conversation_members').update({ last_read_at: at }).eq('conversation_id', thread.id).eq('user_id', uid())
-    const row: any = inbox.value.find((c: any) => c.id === thread.id)
+    const row = inbox.value.find((c: { id: any }) => c.id === thread.id)
     if (row) row.unread = 0
     refreshUnread()
   }, 300)
@@ -218,7 +218,7 @@ async function notify(message_id: any) {
 }
 
 // @ts-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'number[]' and 'number'.
-const newId = () => (crypto.randomUUID ? crypto.randomUUID() : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c: any) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)))
+const newId = () => (crypto.randomUUID ? crypto.randomUUID() : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)))
 
 export async function sendText(body: any, replyTo: any) {
   const text = String(body || '').trim()
@@ -226,7 +226,7 @@ export async function sendText(body: any, replyTo: any) {
   const row = { id: newId(), conversation_id: thread.id, sender_id: uid(), kind: 'text', body: text, reply_to: replyTo || null, created_at: new Date().toISOString(), deleted_at: null, pending: true }
   thread.messages = mergeMessages(thread.messages, [{ ...row }])
   const { error } = await (supabase as any).from('messages').insert({ id: row.id, conversation_id: row.conversation_id, sender_id: row.sender_id, kind: 'text', body: text, reply_to: row.reply_to })
-  if (error) { thread.messages = thread.messages.filter((m: any) => m.id !== row.id); throw error }
+  if (error) { thread.messages = thread.messages.filter((m: { id: any }) => m.id !== row.id); throw error }
   thread.messages = mergeMessages(thread.messages, [{ ...row, pending: false }])
   touchInbox(row)
   notify(row.id)
@@ -243,9 +243,9 @@ export async function sendVoice(blob: any, seconds: any, replyTo: any, transcrip
   const row = { id, conversation_id: thread.id, sender_id: uid(), kind: 'voice', body: transcript || null, audio_path: path, seconds, reply_to: replyTo || null, created_at: new Date().toISOString(), deleted_at: null, pending: true, blob }
   thread.messages = mergeMessages(thread.messages, [{ ...row }])
   const up = await (supabase as any).storage.from('chat').upload(path, blob, { contentType: 'audio/mpeg', cacheControl: '31536000', upsert: false })
-  if (up.error) { thread.messages = thread.messages.filter((m: any) => m.id !== id); throw up.error }
+  if (up.error) { thread.messages = thread.messages.filter((m: { id: any }) => m.id !== id); throw up.error }
   const { error } = await (supabase as any).from('messages').insert({ id, conversation_id: thread.id, sender_id: uid(), kind: 'voice', body: transcript || null, audio_path: path, seconds, reply_to: row.reply_to })
-  if (error) { thread.messages = thread.messages.filter((m: any) => m.id !== id); throw error }
+  if (error) { thread.messages = thread.messages.filter((m: { id: any }) => m.id !== id); throw error }
   thread.messages = mergeMessages(thread.messages, [{ ...row, pending: false }])
   touchInbox(row)
   notify(id)
@@ -255,7 +255,7 @@ export async function sendVoice(blob: any, seconds: any, replyTo: any, transcrip
 /* A FILE, the same way: the bytes first under the message's own id, then the row. The coaching
    chat's messages table has taken a file since the support desk's did — what it lacked was a way
    to send one, which meant a coach could be sent a screenshot and could not send one back. */
-export async function sendFile(file: any, replyTo: any) {
+export async function sendFile(file: { name: any; type: any; size: any }, replyTo: any) {
   if (!on() || !thread.id || !file) return null
   const id = newId()
   const clean = String(file.name || 'file').replace(/[^\w.\-]+/g, '_').slice(0, 120) || 'file'
@@ -268,29 +268,29 @@ export async function sendFile(file: any, replyTo: any) {
     reply_to: replyTo || null, created_at: new Date().toISOString(), deleted_at: null, pending: true }
   thread.messages = mergeMessages(thread.messages, [{ ...row }])
   const up = await (supabase as any).storage.from('chat').upload(path, file, { contentType: file.type || undefined, upsert: false })
-  if (up.error) { thread.messages = thread.messages.filter((m: any) => m.id !== id); throw up.error }
+  if (up.error) { thread.messages = thread.messages.filter((m: { id: any }) => m.id !== id); throw up.error }
   const { error } = await (supabase as any).from('messages').insert({
     id, conversation_id: thread.id, sender_id: uid(), kind: 'file', attachment_path: path,
     attachment_name: clean, attachment_type: row.attachment_type, attachment_size: row.attachment_size, reply_to: row.reply_to })
-  if (error) { thread.messages = thread.messages.filter((m: any) => m.id !== id); throw error }
+  if (error) { thread.messages = thread.messages.filter((m: { id: any }) => m.id !== id); throw error }
   thread.messages = mergeMessages(thread.messages, [{ ...row, pending: false }])
   touchInbox(row)
   notify(id)
   return id
 }
 
-function touchInbox(row: any) {
-  const c: any = inbox.value.find((x: any) => x.id === row.conversation_id)
+function touchInbox(row: { id: any; conversation_id: any; sender_id: any; kind: any; body: any; reply_to?: any; created_at: any; deleted_at?: null; pending?: boolean; audio_path?: string; seconds?: any; blob?: any; attachment_path?: string; attachment_name?: string; attachment_type?: any; attachment_size?: any }) {
+  const c = inbox.value.find((x: { id: any }) => x.id === row.conversation_id)
   if (c) { c.last = { id: row.id, kind: row.kind, body: row.body, sender_id: row.sender_id, created_at: row.created_at, deleted_at: null }; c.last_message_at = row.created_at }
   // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  inbox.value = inbox.value.slice().sort((a: any, b: any) => new Date(b.last_message_at || b.created_at) - new Date(a.last_message_at || a.created_at))
+  inbox.value = inbox.value.slice().sort((a, b) => new Date(b.last_message_at || b.created_at) - new Date(a.last_message_at || a.created_at))
 }
 
-export async function react(message_id: any, emoji: any) {
+export async function react(message_id: string, emoji: string) {
   if (!on() || !thread.id) return
   const me = uid()
-  const had = thread.reactions.some((r: any) => r.message_id === message_id && r.user_id === me && r.emoji === emoji)
-  thread.reactions = toggleReaction(thread.reactions, message_id, me, emoji).map((r: any) => (r.conversation_id ? r : { ...r, conversation_id: thread.id }))
+  const had = thread.reactions.some((r: { message_id: any; user_id: any; emoji: any }) => r.message_id === message_id && r.user_id === me && r.emoji === emoji)
+  thread.reactions = toggleReaction(thread.reactions, message_id, me, emoji).map((r) => (r.conversation_id ? r : { ...r, conversation_id: thread.id }))
   if (had) await (supabase as any).from('message_reactions').delete().match({ message_id, user_id: me, emoji })
   else await (supabase as any).from('message_reactions').insert({ message_id, user_id: me, emoji })
 }
@@ -305,8 +305,8 @@ export async function remove(message_id: any) {
 }
 
 /* a change to the message an inbox row shows */
-function lastInInbox(row: any) {
-  const c: any = inbox.value.find((x: any) => x.id === row.conversation_id)
+function lastInInbox(row: { id: any; conversation_id: any; deleted_at?: string }) {
+  const c = inbox.value.find((x: { id: any }) => x.id === row.conversation_id)
   if (c && c.last && c.last.id === row.id) c.last = { ...c.last, ...row }
 }
 

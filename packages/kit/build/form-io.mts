@@ -43,7 +43,7 @@ function composerParams(block: any) {
       if (Array.isArray(block.set) ? !block.set.includes(k) : (DEFAULTS[kind] && k in DEFAULTS[kind] && JSON.stringify(DEFAULTS[kind][k]) === JSON.stringify(v)) || v === undefined || v === '') continue
     }
     // @ts-expect-error TS2339, from the conversion: Property 'map' does not exist on type '{}'.
-    if (k === 'choices' || k === 'options') { out[k] = (v || []).map((c: any) => { const o: any = { label: c.label }; if (c.value !== c.label) o.value = c.value; if (kind === 'picture') o.image = c.image || ''; return o }); continue }
+    if (k === 'choices' || k === 'options') { out[k] = (v || []).map((c) => { const o = { label: c.label }; if (c.value !== c.label) o.value = c.value; if (kind === 'picture') o.image = c.image || ''; return o }); continue }
     if (k === 'availablecountries') { out.availableCountries = Array.isArray(v) ? v : String(v).split(',').map((x) => x.trim()).filter(Boolean); continue }
     out[CAMEL[k] || k] = v
   }
@@ -62,7 +62,7 @@ const depsIn = (cond: any) => [...new Set([...String(cond).matchAll(/\b([a-zA-Z_
 /* one field's lines, through the Composer (a fresh instance: it appends to its own template) */
 export function composeField(block: any, formDelimiter = '|') {
   const c: any = new Composer({})
-  ;(c.settings as any).formDelimiter = formDelimiter
+  c.settings.formDelimiter = formDelimiter
   const type = FORMSMD_TYPE[block.kind]
   if (!type || typeof c[type] !== 'function') throw new Error(`no such kind: ${block.kind}`)
   return c[type](block.name, composerParams(block)).replace(/^\n+|\n+$/g, '')

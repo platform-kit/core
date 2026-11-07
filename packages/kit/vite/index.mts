@@ -128,7 +128,7 @@ function site(c: any, theme: any, keys = []) {
        * make the route unconditional, which is the opposite of what was written.
        */
       // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-      const strange = (c.routes || []).filter((r: any) => r.module && !keys.includes(r.module))
+      const strange = (c.routes || []).filter((r) => r.module && !keys.includes(r.module))
       if (strange.length) throw new Error('a route is gated on a module no manifest declares: ' + strange.map((r: any) => `${r.path} → ${r.module}`).join(', '))
       const routes = (c.routes || []).filter((r: any) => !r.module || (c.modules || {})[r.module] !== false)
       return routes.map((r: any, i: any) => `import R${i} from ${J(from(r.component))}`).join('\n') + `\nexport const routes = [${routes.map((r: any, i: any) => `{ ...${J({ path: r.path, prefix: !!r.prefix })}, component: R${i} }`).join(', ')}]\n`
@@ -304,7 +304,7 @@ function velite(c: any) {
       const eng = await engineFor(c.root)
       if (eng.name !== 'velite') {
         // @ts-expect-error TS2322, from the conversion: Type '(m: any) => void' is not assignable to type '() => void'. Target signature provides too few arguments. Expected 1 or more, but got 0.
-        await eng.build({ root: c.root, log: (m: any) => console.log('  ' + m) })
+        await eng.build({ root: c.root, log: (m) => console.log('  ' + m) })
         await prepare(c, null, command === 'serve')
         // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
         globalThis.__prepareReady = true
@@ -397,7 +397,7 @@ function velite(c: any) {
          again (it rewrites .velite/index.js at the end of a rebuild of a collection's file), or, for a file no
          collection reads (a funnel, a form), a moment after the last change */
       let pending = new Set(), timer: any = null
-      const flush: any = async () => {
+      const flush = async () => {
         clearTimeout(timer); timer = null
         // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
         if (!globalThis.__prepareReady || !pending.size) return
@@ -405,8 +405,8 @@ function velite(c: any) {
         // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'null | undefined'.
         try { await refresh(c, list) } catch (e: any) { server.config.logger.error(String(e && e.message || e), { timestamp: true }) }
       }
-      const changed: any = (f: any) => { if (!f.startsWith(content)) return; pending.add(path.relative(c.root, f)); clearTimeout(timer); timer = setTimeout(flush, 2500) }
-      const settled: any = async (f: any) => {
+      const changed = (f: any) => { if (!f.startsWith(content)) return; pending.add(path.relative(c.root, f)); clearTimeout(timer); timer = setTimeout(flush, 2500) }
+      const settled = async (f: any) => {
         // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
         if (f !== index || !globalThis.__prepareReady) return
         if (!fs.existsSync(search)) {

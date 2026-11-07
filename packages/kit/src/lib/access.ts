@@ -23,7 +23,7 @@ import { chapterAllowance } from '../../supabase/functions/_shared/gate.js'
 export { chapterAllowance }
 
 /* the lowest class whose allowance reaches chapter index i */
-export function requiredForChapter(fm: any, i: any) {
+export function requiredForChapter(fm: any, i: number) {
   for (const c of CLASSES) if (chapterAllowance(fm, c) > i) return c
   return 'subscribed'
 }

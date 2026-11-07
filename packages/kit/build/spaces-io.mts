@@ -72,7 +72,7 @@ export function sealedRooms(declared = []) {
   const out = new Set()
   for (const s of declared || []) {
     // @ts-expect-error TS2488, from the conversion: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
-    for (const c of (s && (s as any).channels) || []) {
+    for (const c of (s && s.channels) || []) {
       if (encryptedOf((c && c.data) || c || {}, (s && (s as any).data) || {})) out.add(`${(s as any).slug}/${c.slug}`)
     }
   }

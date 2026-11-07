@@ -17,9 +17,9 @@ import { ug } from './strings.js'
 /* where a checkout comes back to: this page, or a path the caller names (a paid form sends them
    back to the form itself, so the answer is the next thing they see). A path on this site only. */
 const here = (path?: any) => (path && String(path).startsWith('/') ? String(path) : window.location.pathname + window.location.search)
-async function call(name: any, body: any) {
+async function call(name: string, body: { country?: any; items?: any; return?: string; booking?: any; success?: string }) {
   const { data, error } = await (supabase as any).functions.invoke(name, { body })
-  const fail = (msg: any, code: any) => {
+  const fail = (msg: string|undefined, code: string) => {
     if (String(code || '').startsWith('hyperswitch_')) {
       console.error('Hyperswitch operation failed', { operation: name, code, message: msg })
       const copy = ug('store', 'page').head || {}
@@ -39,7 +39,12 @@ async function call(name: any, body: any) {
   return data
 }
 
-function followCheckout(data: any) {
+/* what create-checkout-session answers: a page to go to, a client to pay in place (Hyperswitch), or a plan switched in place */
+export type CheckoutAnswer = { url?: string; provider?: string; client?: Record<string, unknown>; checkoutId?: string; summary?: unknown; switched?: boolean; kept?: boolean; at?: string; error?: string }
+/* a line of a one-time purchase */
+export type CheckoutItem = { sku: string; quantity?: number; variant?: string; kind?: string }
+
+function followCheckout(data: CheckoutAnswer | null): CheckoutAnswer | null {
   if (data?.provider === 'hyperswitch' && data.client && data.checkoutId) {
     sessionStorage.setItem(`platformkit:hyperswitch-checkout:${data.checkoutId}`, JSON.stringify({
       ...data.client,
@@ -52,9 +57,9 @@ function followCheckout(data: any) {
 }
 
 /* one-time purchases: goods and book unlocks, any mix, one Checkout */
-export async function checkout(items: any, opts: any = {}) {
+export async function checkout(items: CheckoutItem[], opts: { return?: string } = {}) {
   const d = await call('create-checkout-session', {
-    items: items.map((i: any) => ({ sku: i.sku, quantity: i.quantity, variant: i.variant || undefined })),
+    items: items.map((i) => ({ sku: i.sku, quantity: i.quantity, variant: i.variant || undefined })),
     /* where a cancel comes back to: where they started unless the caller says otherwise — a paid
        form sends them back to the form, so the answer is the next thing they see */
     return: opts.return ? here(opts.return) : here(),

@@ -53,9 +53,9 @@ function tokensIn(css: any) {
  * never sees. Missing it is not a missing value but a WRONG one: the dark block is the last in the
  * file, so its value lands on the light slot and the form offers a night colour as the day's.
  */
-const isDark = (sel: any) => /data-theme=['"]?dark/.test(sel) || /:not\(\[data-theme=['"]?light/.test(sel)
+const isDark = (sel: string) => /data-theme=['"]?dark/.test(sel) || /:not\(\[data-theme=['"]?light/.test(sel)
 /* which look does this selector belong to, if any */
-const lookOf = (sel: any) => (sel.match(/data-look=['"]([a-z0-9-]+)['"]/i) || [])[1] || null
+const lookOf = (sel: string) => (sel.match(/data-look=['"]([a-z0-9-]+)['"]/i) || [])[1] || null
 
 export function readTokens({ design, looks }: any) {
   /* the design's own, which every look inherits unless it says otherwise */

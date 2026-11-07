@@ -23,7 +23,7 @@ const browser = await chromium.launch({ executablePath })
 try {
   const page = await browser.newPage()
   /* the return URL is the caller's, and need not exist: arriving at it is the outcome, so it is answered here */
-  await page.route((url: any) => url.href.startsWith(returnPrefix), (route: any) => route.fulfill({ status: 200, contentType: 'text/plain', body: 'returned' }))
+  await page.route((url: { href: string }) => url.href.startsWith(returnPrefix), (route: { fulfill: (arg0: { status: number; contentType: string; body: string }) => any }) => route.fulfill({ status: 200, contentType: 'text/plain', body: 'returned' }))
   await page.goto(redirectUrl, { waitUntil: 'networkidle' })
   const button = flag === '--fail' ? '#test-source-fail-3ds' : '#test-source-authorize-3ds'
   let pressed = false
@@ -36,7 +36,7 @@ try {
     if (!pressed) await page.waitForTimeout(250)
   }
   if (!pressed) throw new Error('The 3-D Secure test page showed no Complete/Fail button.')
-  await page.waitForURL((url: any) => url.href.startsWith(returnPrefix), { timeout: 30_000 })
+  await page.waitForURL((url: { href: string }) => url.href.startsWith(returnPrefix), { timeout: 30_000 })
   console.log(flag === '--fail' ? 'failed' : 'completed')
 } finally {
   await browser.close()

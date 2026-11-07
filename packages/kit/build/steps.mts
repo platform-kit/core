@@ -84,7 +84,7 @@ export async function loadSteps(site: any) {
   /* a step gated on a module no manifest declares would run always — refused here, where the
      person who wrote it is looking, rather than discovered by its feature never switching off */
   const known = await moduleSet(c)
-  const strange: any = out.filter((s: any) => s.module && !known.has(s.module))
+  const strange = out.filter((s: any) => s.module && !known.has(s.module))
   if (strange.length) throw new Error('a build step is gated on a module no manifest declares:\n  ' + strange.map((s: any) => `${s.key} → ${s.module} (${s.from})`).join('\n  '))
   Object.defineProperty(c, '_paymentProviderRegistrations', {
     configurable: true,
@@ -144,7 +144,7 @@ export function needsOf(steps: any, site: any, env = process.env, shape = null) 
   return steps.filter((s: any) => isOn(s, site, env, shape)).map((s: any) => ({ step: s, env: s.needs.env, tools: s.needs.tools, packages: s.needs.packages }))
 }
 // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 4, '(command: string, options: ExecSyncOptionsWithStringEncoding): string', gave the following 
-const onPath = (tool: any) => { try { execSync((process.platform === 'win32' ? 'where ' : 'command -v ') + tool, { stdio: 'ignore', shell: true }); return true } catch { return false } }
+const onPath = (tool) => { try { execSync((process.platform === 'win32' ? 'where ' : 'command -v ') + tool, { stdio: 'ignore', shell: true }); return true } catch { return false } }
 export const resolvable = (pkg: any, root: any) => { const from = path.resolve(root, 'package.json'); try { createRequire(from).resolve(pkg + '/package.json'); return true } catch { try { createRequire(from).resolve(pkg); return true } catch { return false } } }
 /* what is not there: [{ step, kind: env | tool | package, name }] — a variable unset, a tool off the path, a package no import from the site's root would find */
 export function missingNeeds(needs: any, env = process.env, root = process.cwd(), kinds = ['env', 'tool', 'package']) {
@@ -169,10 +169,10 @@ export async function runPhase(phase: any, { site, env = process.env, changed = 
   const ran = []
   for (const s of order(steps, phase)) {
     if (!isOn(s, c, env, shape)) continue
-    if (only && !(only as any).includes(s.key)) continue
+    if (only && !only.includes(s.key)) continue
     if (localProjectionOnly && s.localProjection !== true) continue
     /* a change list (the dev watcher): only a step whose inputs matched a changed file runs; one with no inputs waits for a full run */
-    if (changed && !(s.inputs.length && (changed as any).some((f: any) => picomatch(s.inputs, { dot: true })(f)))) continue
+    if (changed && !(s.inputs.length && changed.some((f: any) => picomatch(s.inputs, { dot: true })(f)))) continue
     log(`› ${s.title}`)
     try { await s.run({ site: c, env, changed, dev, log, script: (n: any, a: any) => script(n, a, env, c.root) }) }
     catch (e: any) { throw new Error(`step ${s.key} (${s.title}) failed: ${e && e.message ? e.message : e}`, { cause: e }) }

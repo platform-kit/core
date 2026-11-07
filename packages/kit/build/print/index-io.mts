@@ -42,10 +42,10 @@ export function mergeIndex(idx: any, manifests: any) {
 export const INDEX_PATH = 'content/store/print.json'
 
 /* through the STORE: a checkout on a machine, a row of public.content in cloud mode */
-export async function readIndex(store: any) {
+export async function readIndex(store: { read: (arg0: string) => string|PromiseLike<string> }) {
   try { return JSON.parse((await store.read(INDEX_PATH)) || '{}') } catch (e) { return {} }
 }
-export async function writeIndex(store: any, idx: any, meta = {}) {
+export async function writeIndex(store: { write: (arg0: string,arg1: string,arg2: any) => any }, idx: any, meta = {}) {
   const text = JSON.stringify(idx, null, 2) + '\n'
   await store.write(INDEX_PATH, text, meta)
   return idx
@@ -57,10 +57,10 @@ export async function writeIndex(store: any, idx: any, meta = {}) {
    `<slug>/registry.json` (the truth on a box whose checkout may lag) and print.json's `titles`
    — and read from both before any is made, with the printer asked by our SKU besides. */
 
-export const registryOf = (idx: any, slug: any) => ({ titles: (idx && idx[slug] && idx[slug].titles) || {} })
+export const registryOf = (idx: { [x: string]: { titles: any } }, slug: string|number) => ({ titles: (idx && idx[slug] && idx[slug].titles) || {} })
 
 /* the bucket's record over the index's, printer by printer: neither alone is the whole truth */
-export function mergeRegistry(reg: any, fromBucket: any) {
+export function mergeRegistry(reg: { titles: any }, fromBucket: { titles: any }) {
   const titles = { ...(reg.titles || {}) }
   // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
   for (const [p, m] of Object.entries((fromBucket && fromBucket.titles) || {})) titles[p] = { ...(titles[p] || {}), ...m }
@@ -68,7 +68,7 @@ export function mergeRegistry(reg: any, fromBucket: any) {
 }
 
 /* a book's titles into the index, leaving its editions alone */
-export const withTitles = (idx: any, slug: any, titles: any) => ({ ...(idx || {}), [slug]: { ...((idx || {})[slug] || { editions: {} }), titles } })
+export const withTitles = (idx: any, slug: string|number, titles: any) => ({ ...(idx || {}), [slug]: { ...((idx || {})[slug] || { editions: {} }), titles } })
 
 /* what a title is filed under: one per contents and format, per printer */
-export const titleKey = (contents: any, format: any) => `${contents}-${format}`
+export const titleKey = (contents: any, format: string) => `${contents}-${format}`

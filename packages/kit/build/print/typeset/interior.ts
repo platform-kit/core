@@ -42,7 +42,7 @@ export async function setInterior({ files, fonts, min, step, wasm }: any) {
     c.put('interior.typ', String(files['interior.typ']) + `\n#blank-pages(${pad})\n`)
     pdf = c.pdf('interior.typ')
   }
-  let where = [], marks = []
+  let where: unknown[] = [], marks: unknown[] = []
   try { ({ where, marks } = readback(c, 'interior.typ')) } catch { /* the pictures only */ }
   return { pdf, pages: pageCount(pdf), pad, where, marks }
 }
@@ -54,7 +54,7 @@ export async function setInterior({ files, fonts, min, step, wasm }: any) {
  * resolves.
  */
 export async function finishWaiting({ job, ask, base, wasm, fetch: get = globalThis.fetch, onStep = () => {} }: any) {
-  const at = (p: any) => String(base).replace(/\/+$/, '') + p
+  const at = (p: string) => String(base).replace(/\/+$/, '') + p
   onStep('handover')
   const h = await ask({ job, interior: 'handover' })
   if (!h || !h.files || !h.upload) throw new Error('print: the job handed over no interior — ' + JSON.stringify(h).slice(0, 200))

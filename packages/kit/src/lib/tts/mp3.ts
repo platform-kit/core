@@ -18,7 +18,7 @@ export class Mp3Writer {
     ;(this as any).pending = new Int16Array(0)
   }
   /* float samples in [-1, 1] → 16-bit, in whole frames; the remainder waits */
-  write(float32: any) {
+  write(float32: string|any[]|Float32Array<ArrayBuffer>) {
     const n = float32.length
     const merged = new Int16Array((this as any).pending.length + n)
     merged.set((this as any).pending, 0)
@@ -27,8 +27,8 @@ export class Mp3Writer {
     if (whole) this._push((this as any).encoder.encodeBuffer(merged.subarray(0, whole)))
     ;(this as any).pending = merged.subarray(whole)
   }
-  writeSilence(seconds: any) { this.write(new Float32Array(Math.floor(seconds * (this as any).sampleRate))) }
-  _push(buf: any) { if (buf && buf.length) { (this as any).parts.push(buf); (this as any).bytes += buf.length } }
+  writeSilence(seconds: number) { this.write(new Float32Array(Math.floor(seconds * (this as any).sampleRate))) }
+  _push(buf: string|any[]) { if (buf && buf.length) { (this as any).parts.push(buf); (this as any).bytes += buf.length } }
   /* the rest, and the file */
   finish() {
     if ((this as any).pending.length) this._push((this as any).encoder.encodeBuffer((this as any).pending))

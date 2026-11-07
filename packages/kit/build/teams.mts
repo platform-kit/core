@@ -33,7 +33,7 @@ export const SITE_OUT = '.velite/teams.json'
 
 /* the booking types that point at a team, so a type naming one that is gone or unpublished is a
    fault here rather than an empty calendar later */
-function typesByTeam(root: any) {
+function typesByTeam(root: string) {
   let sessions = []
   try { sessions = JSON.parse(readFileSync(join(root, 'supabase/functions/_shared/catalog.json'), 'utf8')).sessions || [] } catch { /* no catalog yet */ }
   const by = new Map()
@@ -60,7 +60,7 @@ export async function compileTeams({ check = false, store, write = true }: any =
 
   for (const t of declared) {
     const at = `content/teams/${t.slug}.md`
-    const bad = (m: any) => errors.push(`${at}: ${m}`)
+    const bad = (m: string) => errors.push(`${at}: ${m}`)
     if (!slugOk(t.slug)) bad('the name is lower-case words joined by hyphens')
     if (!t.name) bad('a team needs a name')
     if (seen.has(t.slug)) bad('two teams are called this'); else seen.add(t.slug)
@@ -68,7 +68,7 @@ export async function compileTeams({ check = false, store, write = true }: any =
     const sets = fillSets(t.fill)
     const fill = buildFill(t.fill, {
       bad, keyOf, tierOk, sessionOk, sells: cat.sells, books: cat.books,
-      where: (i: any) => (sets.length > 1 ? `fill[${i + 1}]` : 'fill'),
+      where: (i: number) => (sets.length > 1 ? `fill[${i + 1}]` : 'fill'),
     })
     out.push({ slug: t.slug, name: t.name, about: t.about, thumb: t.thumb, position: t.position, published: t.published, fill })
   }

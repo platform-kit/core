@@ -53,22 +53,22 @@ i18next.init({
    components read their labels from the same place the instrument does */
 export { us, ug } from './strings.js'
 
-export const t: (key: string, options?: any) => any = (key: any, options: any) => i18next.t(key, options)
-export const setLanguage = (lng: any) => i18next.changeLanguage(lng)
-export function useT(ns: any): (key: string, options?: any) => any {
-  return ns ? (key: any, options: any) => i18next.t(ns + ':' + key, options) : t
+export const t: (key: string, options?: any) => any = (key, options) => i18next.t(key, options)
+export const setLanguage = (lng: string|undefined) => i18next.changeLanguage(lng)
+export function useT(ns: string): (key: string, options?: any) => any {
+  return ns ? (key, options) => i18next.t(ns + ':' + key, options) : t
 }
 
 /* ------------------------------------------------------------ documents ---- */
 const COLLECTION: any = { wiki: WIKI, docs: DOCS }
-const prettify = (slug: any) => slug.replace(/[-_]/g, ' ').replace(/^\w/, (c: any) => c.toUpperCase())
+const prettify = (slug: string) => slug.replace(/[-_]/g, ' ').replace(/^\w/, (c: string) => c.toUpperCase())
 const stripHtml = (h: any) => (h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 const day = (d: any) => (d ? String(d).slice(0, 10) : null)
 
 /* The tree under a hierarchical collection (wiki, docs). Ids look like
    "getting-oriented/start-here"; folders come from the path, their titles from
    the prettified directory name, their order from the earliest child. */
-export function docTree(collection: any) {
+export function docTree(collection: string|number) {
   const entries = COLLECTION[collection] || []
   const root = { dirs: {}, docs: [] }
   for (const e of entries) {
@@ -82,17 +82,17 @@ export function docTree(collection: any) {
       description: e.description || '', readingTime: (e.metadata && e.metadata.readingTime) || 0 })
   }
   // @ts-expect-error TS7023, from the conversion: 'finish' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one 
-  const finish = (node: any) => {
+  const finish = (node) => {
     // @ts-expect-error TS7022, from the conversion: 'dirs' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
     const dirs = Object.values(node.dirs).map(finish)
-    dirs.forEach((d: any) => {
-      const orders = d.docs.map((x: any) => x.order).concat(d.dirs.map((x: any) => x.order))
+    dirs.forEach((d: { docs: any[]; dirs: any[]; order: number }) => {
+      const orders = d.docs.map((x: { order: any }) => x.order).concat(d.dirs.map((x: { order: any }) => x.order))
       d.order = orders.length ? Math.min(...orders) : 99
     })
     return {
       ...node,
-      docs: node.docs.slice().sort((a: any, b: any) => a.order - b.order || a.title.localeCompare(b.title)),
-      dirs: dirs.sort((a: any, b: any) => a.order - b.order || a.title.localeCompare(b.title)),
+      docs: node.docs.slice().sort((a: { order: number; title: string }, b: { order: number; title: any }) => a.order - b.order || a.title.localeCompare(b.title)),
+      dirs: dirs.sort((a: { order: number; title: string }, b: { order: number; title: any }) => a.order - b.order || a.title.localeCompare(b.title)),
     }
   }
   return finish(root)
@@ -100,7 +100,7 @@ export function docTree(collection: any) {
 
 /* ---- articles ---- */
 /* one compiled article, in the shape the article page and the index read */
-export const articleView = (a: any) => ({
+export const articleView = (a: { id: any; title: any; description: any; date: any; body: any; excerpt: any; tags: any; metadata: { readingTime: any }; media: any; image: any; author: any; canAccess: any; gated: any }) => ({
   id: a.id, title: a.title, description: a.description || '', date: day(a.date),
   html: a.body, excerpt: a.excerpt, tags: a.tags || [],
   readingTime: a.metadata && a.metadata.readingTime,
@@ -109,10 +109,10 @@ export const articleView = (a: any) => ({
 })
 export function articleIndex() {
   return ARTICLES.slice()
-    .sort((a: any, b: any) => String(b.date || '').localeCompare(String(a.date || '')))
+    .sort((a: { date: any }, b: { date: any }) => String(b.date || '').localeCompare(String(a.date || '')))
     .map(articleView)
 }
-export const article = (id: any) => articleIndex().find((a: any) => a.id === id) || null
+export const article = (id: any) => articleIndex().find((a: { id: any }) => a.id === id) || null
 
 /* ---- books ---- */
 /* Generated covers: a small set of on-brand gradients (the five elements plus a
@@ -128,16 +128,16 @@ const GEN_COVERS = [
   'linear-gradient(165deg, #0E8C8C, #0B4B4B)',  /* teal   */
   'linear-gradient(165deg, #7B5EA7, #3B2A57)',  /* plum   */
 ]
-export function coverTint(slug: any) {
+export function coverTint(slug: string) {
   let h = 0
   for (let i = 0; i < (slug || '').length; i++) h = (h * 31 + slug.charCodeAt(i)) >>> 0
   return GEN_COVERS[h % GEN_COVERS.length]
 }
 
-export const bookCard = (b: any) => ({ slug: b.slug, title: b.title, author: b.author || '', cover: b.cover || null,
+export const bookCard = (b: { slug: any; title: any; author: any; cover: any; metadata: { wordCount: any }; chapters: any }) => ({ slug: b.slug, title: b.title, author: b.author || '', cover: b.cover || null,
   words: (b.metadata && b.metadata.wordCount) || 0, chapters: b.chapters || 0 })
 export function bookShelf() {
-  return BOOKS.slice().sort((a: any, b: any) => a.title.localeCompare(b.title)).map(bookCard)
+  return BOOKS.slice().sort((a: { title: string }, b: { title: any }) => a.title.localeCompare(b.title)).map(bookCard)
 }
 
 /* How far a reader has got in a book, read from the same per-book state the
@@ -147,7 +147,7 @@ export function bookShelf() {
    bar is drawn. */
 const CHAPTERS: any = {}
 for (const b of BOOKS) CHAPTERS[b.slug] = b.chapters || 0
-export function bookProgress(slug: any) {
+export function bookProgress(slug: string) {
   let ch = 0, opened = false
   try {
     const s = JSON.parse(stored('dl.book.' + slug) || 'null')
@@ -162,41 +162,41 @@ export function bookProgress(slug: any) {
    finished — but only while at least `min` unfinished ones remain, so a shelf is
    never left too sparse, and a reader who has finished everything still sees it.
    Order is preserved, so any priority or shortest-first sort survives. */
-export function dropFinished(list: any, min = 3) {
-  const unfinished = list.filter((b: any) => bookProgress(b.slug).pct < 100)
+export function dropFinished(list: any[], min = 3) {
+  const unfinished = list.filter((b: { slug: any }) => bookProgress(b.slug).pct < 100)
   return unfinished.length >= min ? unfinished : list
 }
 
 /* ---- concepts: the coarse browse themes (app/ui/concepts.md) ---- */
 export function concepts() {
-  const scope = (UI || []).find((x: any) => x.scope === 'concepts')
+  const scope = (UI || []).find((x: { scope: string }) => x.scope === 'concepts')
   const list = scope ? scope.groups.list || {} : {}
   return Object.keys(list).map((slug) => ({ slug, name: list[slug].name || slug }))
 }
 export function booksForConcept(slug: any) {
-  return BOOKS.filter((b: any) => (b.concepts || []).indexOf(slug) >= 0)
-    .sort((a: any, b: any) => a.title.localeCompare(b.title)).map(bookCard)
+  return BOOKS.filter((b: { concepts: any }) => (b.concepts || []).indexOf(slug) >= 0)
+    .sort((a: { title: string }, b: { title: any }) => a.title.localeCompare(b.title)).map(bookCard)
 }
 
 /* ---- one document ---- */
-export async function loadDoc(collection: any, id: any) {
+export async function loadDoc(collection: string, id: any) {
   if (collection === 'books') {
-    const b = BOOKS.find((x: any) => x.slug === id)
+    const b = BOOKS.find((x: { slug: any }) => x.slug === id)
     return b ? { data: b, body: b.raw, readingTime: b.metadata && b.metadata.readingTime } : null
   }
-  const e = (COLLECTION[collection] || []).find((x: any) => x.id === id)
+  const e = (COLLECTION[collection] || []).find((x: { id: any }) => x.id === id)
   return e ? { data: e, html: e.body, toc: e.toc } : null
 }
 
 /* ---- per-collection search corpus, for the docs page's own search box ---- */
-export async function docsCorpus(collection: any) {
-  return (COLLECTION[collection] || []).map((e: any) => ({ id: e.id, title: e.title, text: stripHtml(e.body) }))
+export async function docsCorpus(collection: string|number) {
+  return (COLLECTION[collection] || []).map((e: { id: any; title: any; body: any }) => ({ id: e.id, title: e.title, text: stripHtml(e.body) }))
 }
 
-export function searchDocs(corpusRows: any, query: any) {
+export function searchDocs(corpusRows: any[], query: string) {
   const toks = query.toLowerCase().split(/\s+/).filter(Boolean)
   if (!toks.length) return []
-  return corpusRows.map((row: any) => {
+  return corpusRows.map((row: { title: string; text: string }) => {
     const title = row.title.toLowerCase(), text = row.text.toLowerCase()
     let score = 0, first = -1
     for (const tk of toks) {
@@ -217,15 +217,15 @@ export function searchDocs(corpusRows: any, query: any) {
    This function was already async, so no caller changed. */
 export async function contentCorpus() {
   const rows = await corpus()
-  return STORE_ON ? rows : rows.filter((r: any) => r.kind !== 'product')
+  return STORE_ON ? rows : rows.filter((r: { kind: string }) => r.kind !== 'product')
 }
 
-const escapeHtml = (s: any) => s.replace(/[&<>"]/g, (ch: any) => (({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as any)[ch]))
+const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (ch: string|number) => (({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as any)[ch]))
 
 /* The query understands operators alongside plain words:
      type:article|wiki|doc|book  ·  after:2026-01  ·  before:2026-09  ·  tag:practice
    The palette's dropdowns pass the same filters as options. */
-export function parseQuery(query: any) {
+export function parseQuery(query: string) {
   const out = { toks: [], kind: null, after: null, before: null, tags: [] }
   for (const raw of query.toLowerCase().split(/\s+/).filter(Boolean)) {
     const op = /^(type|kind|after|before|tag):(.+)$/.exec(raw)
@@ -243,18 +243,18 @@ export function parseQuery(query: any) {
   return out
 }
 
-export function allTags(rows: any) {
+export function allTags(rows: any[]) {
   const freq: any = {}
-  rows.forEach((r: any) => (r.tags || []).forEach((tag: any) => { freq[tag] = (freq[tag] || 0) + 1 }))
+  rows.forEach((r: { tags: any }) => (r.tags || []).forEach((tag: string|number) => { freq[tag] = (freq[tag] || 0) + 1 }))
   return Object.entries(freq).sort((a: any, b: any) => b[1] - a[1]).map(([tag, n]) => ({ tag, n }))
 }
 
-function facetFilter(rows: any, { kind, after, before, tags }: any) {
-  return rows.filter((r: any) =>
+function facetFilter(rows: any[], { kind, after, before, tags }: { kind: any; after: any; before: any; tags: any }) {
+  return rows.filter((r: { kind: any; date: any; tags: any }) =>
     (!kind || r.kind === kind) &&
     (!after || (r.date && String(r.date) >= after)) &&
     (!before || (r.date && String(r.date) <= before)) &&
-    (!tags || !tags.length || (r.tags || []).some((t: any) => tags.includes(t.toLowerCase()))))
+    (!tags || !tags.length || (r.tags || []).some((t: string) => tags.includes(t.toLowerCase()))))
 }
 
 /* which kinds a reader's palette leaves out, and why, is a fact about the index: lib/search-rows.js.
@@ -262,7 +262,7 @@ function facetFilter(rows: any, { kind, after, before, tags }: any) {
    binding it here, so `searchContent` below threw `offPalette is not defined` on every search. */
 export { OFF_PALETTE, offPalette }
 
-export function searchContent(rows: any, query: any, opts: any) {
+export function searchContent(rows: any[], query: any, opts: { kind: any; after: any; before: any; tags: any }) {
   const parsed = parseQuery(query)
   const kind = (opts && opts.kind) || parsed.kind
   rows = offPalette(rows, kind)
@@ -273,10 +273,10 @@ export function searchContent(rows: any, query: any, opts: any) {
   rows = facetFilter(rows, { kind, after, before, tags: tagSel })
   if (!toks.length) {
     if (!kind && !after && !before && !tagSel.length) return []
-    return rows.slice().sort((a: any, b: any) => String(b.date || '').localeCompare(String(a.date || '')))
-      .slice(0, 20).map((r: any) => ({ ...r, excerpt: r.sub || r.text.slice(0, 120) + '…', titleHtml: r.title }))
+    return rows.slice().sort((a: { date: any }, b: { date: any }) => String(b.date || '').localeCompare(String(a.date || '')))
+      .slice(0, 20).map((r: { sub: any; text: string; title: any }) => ({ ...r, excerpt: r.sub || r.text.slice(0, 120) + '…', titleHtml: r.title }))
   }
-  const out = rows.map((row: any) => {
+  const out = rows.map((row: { title: string; text: string }) => {
     const title = row.title.toLowerCase(), text = row.text.toLowerCase()
     let score = 0, first = -1
     for (const tk of toks) {
@@ -298,7 +298,7 @@ export function searchContent(rows: any, query: any, opts: any) {
   return out.slice(0, 20)
 }
 
-export function cosineSim(a: any, b: any) {
+export function cosineSim(a: string|any[], b: number[]) {
   if (!a || !b) return 0
   let s = 0
   for (let i = 0; i < a.length; i++) s += a[i] * b[i]  /* both unit-normalized */
@@ -307,7 +307,7 @@ export function cosineSim(a: any, b: any) {
 
 /* Given a query embedding (from ternlight, in the browser), rank the corpus by
    meaning. Same facet options as the keyword search; min cuts weak matches. */
-export function semanticSearch(rows: any, qvec: any, opts: any = {}) {
+export function semanticSearch(rows: any[], qvec: any, opts: any = {}) {
   const min = opts.min ?? 0.3
   const parsed = parseQuery(opts.query || '')
   rows = offPalette(rows, opts.kind || parsed.kind)
@@ -317,10 +317,10 @@ export function semanticSearch(rows: any, qvec: any, opts: any = {}) {
     before: opts.before || parsed.before,
     tags: (opts.tags || []).concat(parsed.tags),
   })
-  const esc = (s: any) => s.replace(/[&<>"]/g, (ch: any) => (({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as any)[ch]))
-  return rows.map((r: any) => ({ ...r, sim: cosineSim(r.vec, qvec) }))
-    .filter((r: any) => r.sim >= min)
-    .sort((a: any, b: any) => b.sim - a.sim)
+  const esc = (s: string) => s.replace(/[&<>"]/g, (ch: string|number) => (({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as any)[ch]))
+  return rows.map((r: { vec: any }) => ({ ...r, sim: cosineSim(r.vec, qvec) }))
+    .filter((r: { sim: number }) => r.sim >= min)
+    .sort((a: { sim: number }, b: { sim: number }) => b.sim - a.sim)
     .slice(0, opts.topK || 12)
     .map((r: any) => ({ ...r, titleHtml: esc(r.title), excerpt: esc(r.sub || (r.text || '').slice(0, 130) + '…') }))
 }
@@ -335,7 +335,7 @@ let _embed: any = null, _embedLoading: any = null
 export function warmEmbedder() {
   if (!_embed && !_embedLoading) _embedLoading = import('@ternlight/base').then((m) => { _embed = m.embed })
 }
-export async function embedText(text: any) {
+export async function embedText(text: string) {
   warmEmbedder()
   await _embedLoading
   return _embed(text)
@@ -354,11 +354,11 @@ export async function embedText(text: any) {
    prescription: what a site puts in front of somebody deliberately is the strongest signal there
    is, and the rest reorders underneath it. `weights` may be any object of subject → number,
    including none, in which case this ranks exactly as it did before there were any. */
-export function forYou(rows: any, profileVec: any, opts: any = {}) {
+export function forYou(rows: any[], profileVec: any, opts: any = {}) {
   const at = { themeTags: opts.themeTags || [], prescribed: new Set(opts.prescribed || []), weights: opts.weights || {} }
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ themeTags: any; prescribed: Set<unknown>; weights: any; }' is not assignable to parameter of type '{ themeTags?: never[]
-  return rows.map((r: any) => ({ ...r, ...scoreRow({ sem: cosineSim(r.vec, profileVec), tags: r.tags, href: r.href }, at) }))
-    .sort((a: any, b: any) => b.score - a.score)
+  return rows.map((r) => ({ ...r, ...scoreRow({ sem: cosineSim(r.vec, profileVec), tags: r.tags, href: r.href }, at) }))
+    .sort((a: { score: number }, b: { score: number }) => b.score - a.score)
 }
 
 export const KIND_LABEL = { article: 'Article', wiki: 'Wiki', doc: 'Docs', book: 'Book', product: 'Store' }

@@ -37,11 +37,8 @@ ok('each desk queue narrows to its own source', ['support', 'clients', 'comments
   sourceForQueue(queue) === ({ support: 'support', clients: 'coaching', comments: 'comments', social: 'social' })[queue]))
 const socialRegistration = [{ id: 'social', module: 'social-publishing' }]
 ok('registered sources are opt-in and obey their module switch',
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; module: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: string; module: string; }
   eq(sourcesOn({ 'social-publishing': true }, socialRegistration), ['support', 'coaching', 'comments', 'social'])
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; module: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: string; module: string; }
     && eq(sourcesOn({ 'social-publishing': false }, socialRegistration), SOURCES)
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; module: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: string; module: string; }
     && eq(sourcesOn({ spaces: false, 'social-publishing': true }, socialRegistration), []))
 const demoSite = await loadSite(join(WORKSPACE, 'sites/demo'))
 ok('a site can register its Social Desk adapter explicitly',

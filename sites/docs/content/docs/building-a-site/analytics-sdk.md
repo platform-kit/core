@@ -13,7 +13,7 @@ sources:
     packages/kit/build/analytics-sdk.test.mts,
     packages/kit/supabase/functions/_shared/posthog-wire.ts,
   ]
-reviewed: 2026-11-04
+reviewed: 2026-11-07
 ---
 
 ## One door for events

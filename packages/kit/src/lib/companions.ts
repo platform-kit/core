@@ -13,25 +13,25 @@ import { parseCompanionBody } from './companion-body.js'
 
 /* what a reader with access was sent, by book: it stands over the compiled companion */
 const sent = new Map()
-export function useCompanion(slug: any, md: any) {
+export function useCompanion(slug: any, md: string|null) {
   if (md == null) { sent.delete(slug); return }
-  const base = (ALL || []).find((c: any) => c.book === slug) || { book: slug }
+  const base = (ALL || []).find((c: { book: any; }) => c.book === slug) || { book: slug }
   const { chapters } = parseCompanionBody(md)
-  sent.set(slug, { ...base, chapters: chapters.map((c: any) => ({ ...c, summaryMd: c.summaryMd || '' })) })
+  sent.set(slug, { ...base, chapters: chapters.map((c: { summaryMd: any; }) => ({ ...c, summaryMd: c.summaryMd || '' })) })
 }
 export const forgetCompanions = () => sent.clear()
 
-export const companions = () => (ALL || []).map((c: any) => sent.get(c.book) || c)
-export const companionFor = (slug: any) => sent.get(slug) || companions().find((c: any) => c.book === slug) || null
+export const companions = () => (ALL || []).map((c: { book: any; }) => sent.get(c.book) || c)
+export const companionFor = (slug: any) => sent.get(slug) || companions().find((c: { book: any; }) => c.book === slug) || null
 export const chapterCompanion = (slug: any, title: any) => {
   const c = companionFor(slug)
-  return c ? c.chapters.find((ch: any) => ch.title === title) || null : null
+  return c ? c.chapters.find((ch: { title: any; }) => ch.title === title) || null : null
 }
 export const insightFor = (slug: any) => (companionFor(slug) || {}).insight || ''
 /* the book's core ideas in plain words: every chapter's essence lines, in order — the
    bottom line of the whole book, for wherever one book is put forward */
-export const coreIdeas = (slug: any) => ((companionFor(slug) || {}).chapters || []).flatMap((ch: any) => ch.essence || [])
+export const coreIdeas = (slug: any) => ((companionFor(slug) || {}).chapters || []).flatMap((ch: { essence: any; }) => ch.essence || [])
 /* the chapters that carry a quiz — what mastery is measured over; a locked chapter says
    whether it has one without carrying the questions */
-export const quizChapters = (slug: any) => ((companionFor(slug) || {}).chapters || []).filter((ch: any) => (ch.quiz && ch.quiz.length) || ch.hasQuiz).map((ch: any) => ch.title)
+export const quizChapters = (slug: any) => ((companionFor(slug) || {}).chapters || []).filter((ch: { quiz: string|any[]; hasQuiz: any; }) => (ch.quiz && ch.quiz.length) || ch.hasQuiz).map((ch: { title: any; }) => ch.title)
 export const summaryTime = (slug: any) => (companionFor(slug) || {}).summaryReadingTime || 0

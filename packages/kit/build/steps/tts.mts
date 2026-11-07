@@ -4,7 +4,7 @@
    (build/tts/setup.mjs --mirror). Off unless TTS=1: speaking a library takes hours, longer than a deploy is allowed. */
 export default {
   key: 'tts', title: 'The spoken books', phase: 'after', module: 'tts', after: ['funnels-run'],
-  when: (env: any) => env.TTS === '1', whenText: 'TTS is not 1',
+  when: (env: { TTS: string; }) => env.TTS === '1', whenText: 'TTS is not 1',
   inputs: ['content/books/**', 'content/companions/**', 'audio/books/**'],
   needs: { env: ['SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_URL'], tools: ['git-lfs'], packages: ['onnxruntime-node', 'ffmpeg-static'] },
   run: ({ script }: any) => script('tts.mjs', ['--all']) && script('tts/setup.mjs', ['--mirror']),

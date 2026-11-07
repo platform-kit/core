@@ -9,10 +9,10 @@
 const MIN = 60 * 1000
 const RUN_GAP = 5 * MIN     /* messages closer than this, from one sender, read as one run */
 
-const dayKey = (d: any) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+const dayKey = (d: Date) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 
 /* the label a day divider carries: today, yesterday, else a date */
-export function dayLabel(date: any, now: any, words: any = {}, locale = undefined) {
+export function dayLabel(date: string|number|Date, now: string|number|Date, words: any = {}, locale = undefined) {
   const d = new Date(date), n = new Date(now)
   const k = dayKey(d), today = dayKey(n)
   if (k === today) return words.today || 'Today'
@@ -23,7 +23,7 @@ export function dayLabel(date: any, now: any, words: any = {}, locale = undefine
 }
 
 /* messages (oldest first) → [{ key, label, messages }] one per calendar day */
-export function daySections(messages: any, now = Date.now(), words = {}, locale = undefined) {
+export function daySections(messages: { id: any; sender_id: any; kind: string; body: string; created_at: any }[], now = Date.now(), words = {}, locale = undefined) {
   const out = []
   let cur = null
   for (const m of messages) {
@@ -37,18 +37,18 @@ export function daySections(messages: any, now = Date.now(), words = {}, locale 
 
 /* first/last flags for a run of messages from one sender close in time: the
    first carries the avatar, the last the tail and the time */
-export function groupRuns(messages: any) {
-  return messages.map((m: any, i: any) => {
+export function groupRuns(messages: any[]) {
+  return messages.map((m: any, i: number) => {
     const prev = messages[i - 1], next = messages[i + 1]
     // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-    const joins = (a: any, b: any) => a && b && a.sender_id === b.sender_id && Math.abs(new Date(b.created_at) - new Date(a.created_at)) < RUN_GAP
+    const joins = (a, b) => a && b && a.sender_id === b.sender_id && Math.abs(new Date(b.created_at) - new Date(a.created_at)) < RUN_GAP
     return { ...m, first: !joins(prev, m), last: !joins(m, next) }
   })
 }
 
 /* pending: not yet on the server · sent: on the server · read: the peer's
    cursor has passed it. Only one's own messages carry a tick. */
-export function tickOf(m: any, me: any, peerReadAt: any) {
+export function tickOf(m: { id?: any; sender_id: any; kind?: string; body?: string; created_at: any; pending?: any }, me: string, peerReadAt: string|number|Date|null) {
   if (!m || m.sender_id !== me) return null
   if (m.pending) return 'pending'
   if (peerReadAt && new Date(peerReadAt) >= new Date(m.created_at)) return 'read'
@@ -56,7 +56,7 @@ export function tickOf(m: any, me: any, peerReadAt: any) {
 }
 
 /* reactions on one message → chips: [{ emoji, count, mine }] in first-seen order */
-export function reactionChips(reactions: any, me: any) {
+export function reactionChips(reactions: any, me: string) {
   const by = new Map()
   for (const r of reactions) {
     const c = by.get(r.emoji) || { emoji: r.emoji, count: 0, mine: false }
@@ -68,15 +68,15 @@ export function reactionChips(reactions: any, me: any) {
 }
 
 /* the list after I toggle an emoji: mine goes if it was there, comes if not */
-export function toggleReaction(reactions: any, message_id: any, me: any, emoji: any) {
-  const has = reactions.some((r: any) => r.message_id === message_id && r.user_id === me && r.emoji === emoji)
+export function toggleReaction(reactions: any[], message_id: string, me: string, emoji: string) {
+  const has = reactions.some((r: { message_id: any; user_id: any; emoji: any }) => r.message_id === message_id && r.user_id === me && r.emoji === emoji)
   return has
-    ? reactions.filter((r: any) => !(r.message_id === message_id && r.user_id === me && r.emoji === emoji))
+    ? reactions.filter((r: { message_id: any; user_id: any; emoji: any }) => !(r.message_id === message_id && r.user_id === me && r.emoji === emoji))
     : reactions.concat([{ message_id, user_id: me, emoji }])
 }
 
 /* "Ada Lovelace" → "AL"; "ada" → "A"; "" → "?" */
-export function initials(name: any) {
+export function initials(name: string) {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean)
   if (!parts.length) return '?'
   const take = (parts.length === 1 ? [parts[0]] : [parts[0], parts[parts.length - 1]]).map((p) => p[0].toUpperCase())
@@ -84,13 +84,13 @@ export function initials(name: any) {
 }
 
 /* 65 → "1:05"; 3600 → "60:00"; anything odd → "0:00" */
-export function clock(seconds: any) {
+export function clock(seconds: string|number) {
   const s = Math.max(0, Math.round(Number(seconds) || 0))
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')
 }
 
 /* the one line an inbox row shows for a message */
-export function previewOf(m: any, words: any = {}) {
+export function previewOf(m: { kind: any; body?: any; seconds?: any; deleted_at?: any; attachment_name?: any }, words: any = {}) {
   if (!m) return ''
   if (m.deleted_at) return words.deleted || ''
   if (m.kind === 'voice') return (words['voice-label'] || 'Voice note') + (m.seconds ? ' · ' + clock(m.seconds) : '')
@@ -99,12 +99,12 @@ export function previewOf(m: any, words: any = {}) {
 }
 
 /* the time of day a bubble shows */
-export function timeOf(date: any, locale = undefined) {
+export function timeOf(date: string|number|Date, locale = undefined) {
   return new Date(date).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })
 }
 
 /* the moment an inbox row shows: a time today, a weekday this week, else a date */
-export function whenOf(date: any, now = Date.now(), words: any = {}, locale = undefined) {
+export function whenOf(date: string|number|Date, now = Date.now(), words: any = {}, locale = undefined) {
   if (!date) return ''
   const d = new Date(date), n = new Date(now)
   if (dayKey(d) === dayKey(n)) return timeOf(date, locale)
@@ -120,14 +120,14 @@ export function whenOf(date: any, now = Date.now(), words: any = {}, locale = un
    hoursFor(peer) is the promise for that person (from the product files, via the
    page); a thread whose last word is the member's is "awaiting" since their run
    began. dueOf gives the deadline and how far past or before it we are. */
-export function dueOf(conv: any, hours: any, now = Date.now()) {
+export function dueOf(conv: { id?: string; awaiting_since: any; last_message_at?: string; created_at?: string }, hours: number, now = Date.now()) {
   if (!conv || !conv.awaiting_since || !(hours > 0)) return null
   const since = new Date(conv.awaiting_since).getTime()
   const due = since + hours * 60 * MIN
   return { since, due, left: due - now, over: now > due, hours }
 }
 /* a span as words: "4h", "2d", "35m" — for a badge */
-export function spanOf(ms: any) {
+export function spanOf(ms: number) {
   const m = Math.round(Math.abs(ms) / MIN)
   if (m < 60) return m + 'm'
   const h = Math.round(m / 60)
@@ -137,10 +137,10 @@ export function spanOf(ms: any) {
 /* the inbox in one of three orders: by activity (the default), by when the thread
    was made, or by who is waiting — the longest wait first, then the rest by activity */
 export function sortInbox(list: any, mode = 'activity') {
-  const at = (c: any) => new Date(c.last_message_at || c.created_at || 0).getTime()
+  const at = (c: { last_message_at: any; created_at: any }) => new Date(c.last_message_at || c.created_at || 0).getTime()
   const rows = list.slice()
   // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  if (mode === 'created') return rows.sort((a: any, b: any) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+  if (mode === 'created') return rows.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
   if (mode === 'awaiting') return rows.sort((a: any, b: any) => {
     const wa = a.awaiting_since ? new Date(a.awaiting_since).getTime() : null, wb = b.awaiting_since ? new Date(b.awaiting_since).getTime() : null
     if (wa != null && wb != null) return wa - wb
@@ -151,15 +151,15 @@ export function sortInbox(list: any, mode = 'activity') {
   return rows.sort((a: any, b: any) => at(b) - at(a))
 }
 
-export function reactionSet(line: any) {
+export function reactionSet(line: string) {
   return String(line || '').split(/\s+/).filter(Boolean)
 }
 
 /* rows merged by id, kept in time order: the echo of an optimistic send lands
    on the row it was, older pages slot in before */
-export function mergeMessages(have: any, more: any) {
-  const by = new Map(have.map((m: any) => [m.id, m]))
+export function mergeMessages(have: { id: any; sender_id: any; kind: string; body: string; created_at: any }[], more: any[]) {
+  const by = new Map(have.map((m: { id: any }) => [m.id, m]))
   for (const m of more) by.set(m.id, { ...(by.get(m.id) || {}), ...m, pending: !!m.pending })
   // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  return [...by.values()].sort((a: any, b: any) => new Date(a.created_at) - new Date(b.created_at) || (a.id < b.id ? -1 : 1))
+  return [...by.values()].sort((a, b) => new Date(a.created_at) - new Date(b.created_at) || (a.id < b.id ? -1 : 1))
 }

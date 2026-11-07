@@ -17,8 +17,8 @@ import { LOCAL_SERVICE_KEY } from './tts/storage.mjs'
 import { notTheTestStack, refuse } from './test-guard.mjs'
 
 export const isE2E = () => process.env.PLATFORMKIT_E2E === '1'
-const env = (k: any) => (process.env[k] || '').trim()
-const trim = (u: any) => u.replace(/\/+$/, '')
+const env = (k: string) => (process.env[k] || '').trim()
+const trim = (u: string) => u.replace(/\/+$/, '')
 /* WHERE DOCKER'S PUBLISHED PORTS ARE: this machine, or — in the end-to-end run's container (build/e2e-container.mjs) — the
    run's own Docker daemon beside it, by the name the Supabase CLI is given for it (SUPABASE_SERVICES_HOSTNAME, its
    documented setting for a daemon elsewhere). A test that starts a container of its own reaches it here. */
@@ -33,7 +33,7 @@ const isLocal = (u: any) => {
 /* the run's stack as the runner wrote it, unverified: for this helper's own test of its shape, and nothing else
    (test-coverage.test.mjs holds every other test to stackOf) */
 export function runStackFrom(e = process.env) {
-  const get = (k: any) => (e[k] || '').trim()
+  const get = (k: string) => (e[k] || '').trim()
   const api = trim(get('PLATFORMKIT_TEST_API_URL'))
   const anon = get('PLATFORMKIT_TEST_ANON_KEY')
   if (!api || !isLocal(api) || !anon) return null
@@ -67,14 +67,14 @@ export function statusOf(s = stackOf()) {
 }
 
 /* a test that cannot run: a note outside the run, a failure inside it */
-export function skip(name: any, why: any) {
+export function skip(name: string, why: string) {
   if (isE2E()) { console.log(`  ✖ ${name}: could not run in the end-to-end run — ${why}`); process.exit(1) }
   console.log(`  ⚠ SKIPPED — ${name}: ${why}`)
   process.exit(0)
 }
 
 /* the stack, or a skip that names it */
-export function requireStack(name: any) {
+export function requireStack(name: string) {
   const s = stackOf()
   if (!s) skip(name, 'no stack: stack tests run only on the end-to-end run\'s own stack (`platformkit test --e2e`, or `--run <script>` for one)')
   return s
@@ -88,7 +88,7 @@ export function requireStack(name: any) {
  * machine.
  */
 export const NOT_HERE = 'not on this site'
-export function notHere(name: any, why: any) {
+export function notHere(name: string, why: string) {
   console.log(`  — ${name}: ${NOT_HERE} (${why})`)
 }
 
@@ -111,7 +111,7 @@ export async function siteUnderTest() {
   if (!siteConfig) { const { loadSite } = await import('./site.mjs'); siteConfig = await loadSite(process.cwd()) }
   return siteConfig
 }
-export async function moduleOn(key: any) {
+export async function moduleOn(key: string) {
   return ((await siteUnderTest()).modules || {})[key] !== false
 }
 
@@ -121,11 +121,11 @@ export async function moduleOn(key: any) {
  * backend), so a door of a module that is off is not this site's to check, and stands down by notHere(). Read from the
  * site's assembled supabase/ tree, which is what its stack is made of.
  */
-export function served(fn: any) {
+export function served(fn: string) {
   return fs.existsSync(path.join(process.cwd(), 'supabase', 'functions', fn, 'index.ts'))
 }
 let declaredText: any = null
-export async function declared(name: any) {
+export async function declared(name: string) {
   if (declaredText == null) { const { readDeclaration } = await import('./plan.mjs'); declaredText = readDeclaration(process.cwd()).schema }
   return new RegExp(`FUNCTION\\s+"?public"?\\."?${name}"?\\s*\\(`, 'i').test(declaredText)
 }

@@ -31,7 +31,7 @@ const PACE: any = { domain: 12, pairs: 5, words: 9, books: 25 };   /* a sentence
 /* Seconds still to go for one reading, or 0 when it already has enough. Seconds
    rather than minutes because rounding to minutes first and then phrasing said
    "under a minute" for seventy-two seconds. */
-export function secondsFor(kind: any, answered: any) {
+export function secondsFor(kind: string|number, answered: any) {
   const left = Math.max(0, NEEDS[kind] - (answered || 0));
   return left * PACE[kind];
 }
@@ -39,7 +39,7 @@ export function secondsFor(kind: any, answered: any) {
 /* Just the duration, lower case, so a template can put it after "Takes". The
    card says how long and nothing else — how many questions that is, and what kind
    of questions, is our business. */
-export function timeText(sec: any) {
+export function timeText(sec: number) {
   if (!sec) return '';
   if (sec < 60) return PHRASE.under;
   const m = Math.round(sec / 60);
@@ -54,4 +54,4 @@ export const ROUND: any = { domain: 24, pairs: 24, words: 14, books: 2 };
 
 /* `count` is the round's size when it is not the fixed one — an area's round is
    as long as its markdown says (data/tests.js roundSize) */
-export function roundSeconds(kind: any, count: any) { return (count || ROUND[kind]) * PACE[kind]; }
+export function roundSeconds(kind: string|number, count: any) { return (count || ROUND[kind]) * PACE[kind]; }
