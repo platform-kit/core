@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -18,8 +19,8 @@ if (!health.ok) {
   process.exit(0)
 }
 
-const service = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
-const browser = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+const browser = createClient<Database>(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
 const { data: users, error: usersError } = await service.auth.admin.listUsers({ page: 1, perPage: 100 })
 if (usersError) throw new Error(`social delivery test could not list local users: ${usersError.message}`)
 const adminUser = users.users.find((user) => user.email?.toLowerCase() === 'admin@example.com')

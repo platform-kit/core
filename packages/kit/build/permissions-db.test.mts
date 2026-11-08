@@ -23,6 +23,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { statusOf, leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
 const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -37,7 +38,7 @@ catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.ANON_KEY) skip('the stack did not report an API url and an anon key')
 
 const { abilityFor, identityOf } = await import('../supabase/functions/_shared/permissions.js')
-const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 
 /*
  * The accounts the seed makes, and what the app would settle each of them into. The identity is
@@ -93,7 +94,7 @@ const CASES = [
 ]
 
 const signedIn = async (email: any) => {
-  const c = createClient(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
+  const c = createClient<Database>(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
   const { error } = await c.auth.signInWithPassword({ email, password: 'password123' })
   return error ? null : c
 }
@@ -108,10 +109,12 @@ for (const email of WHO) {
   const ability = abilityFor(me.identity)
   for (const c of CASES) {
     /* what the database admits: rows this person can actually see */
+    // @ts-expect-error TS2589, from the conversion: Type instantiation is excessively deep and possibly infinite.
     const { data, error } = await client.from(c.table).select('*').limit(1)
     const admits = !error && Array.isArray(data) && data.length > 0
     const says = ability.can(c.action, c.subject)
     /* an empty table cannot testify either way */
+    // @ts-expect-error TS2589, from the conversion: Type instantiation is excessively deep and possibly infinite.
     const { count } = await admin.from(c.table).select('*', { count: 'exact', head: true })
     if (!count) { note(`${c.table} is empty in the seed — ${email} not asked about it`); continue }
     asked++

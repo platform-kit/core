@@ -118,7 +118,7 @@ function noShowOf(p: any): boolean | null {
 
 async function handle(evt: any) {
   const p = evt.payload ?? {}
-  const uid: string | undefined = p.uid ?? p.bookingUid ?? p.booking?.uid
+  const uid = String(p.uid ?? p.bookingUid ?? p.booking?.uid ?? '')
   if (!uid) return
   const who = attendee(p)
   const host = organizer(p)
@@ -164,10 +164,8 @@ async function handle(evt: any) {
       /* made by the app, judged before it was made — known by its mark, never by a word anybody can write */
       if (p.metadata?.pk && p.metadata.pk === (await appMark(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', p.metadata?.user_id, p.startTime))) break
       const tz = (p.attendees ?? [])[0]?.timeZone ?? p.organizer?.timeZone ?? null
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
       const refusal = await refusalFor(uid, base.event, user_id, who.email, base.start_at, tz)
       if (refusal) {
-        // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
         await cancelOnCal(uid, refusal.body || refusal.reason)
         await admin.rpc('refuse_booking', { p_uid: uid, p_reason: refusal.reason, p_body: refusal.body })
       }
@@ -217,7 +215,6 @@ async function handle(evt: any) {
       await patch(fields)
       /* the pull runs after cal.com has its 200 — the edge runtime keeps the promise alive past the response
          (EdgeRuntime.waitUntil); the ten-minute cron picks up anything a cut-off run left pending */
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
       const work = pull(uid).catch((e) => console.warn('recording pull', String(e)))
       const rt = (globalThis as any).EdgeRuntime
       if (rt && typeof rt.waitUntil === 'function') rt.waitUntil(work); else await work

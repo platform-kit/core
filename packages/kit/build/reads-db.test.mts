@@ -25,6 +25,7 @@ import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { randomUUID as uuid } from 'node:crypto'
 import { statusOf, leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
 const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -37,10 +38,10 @@ let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service-role key')
-const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 /* the reads are ASKED as an administrator, because admin_content refuses anybody else — the
    service-role key has no auth.uid() and is told "admin only", which is the function working */
-const asAdmin = createClient(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
+const asAdmin = createClient<Database>(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
 {
   const { error } = await asAdmin.auth.signInWithPassword({ email: 'admin@example.com', password: 'password123' })
   if (error) skip('the seed\u2019s administrator does not sign in (npx supabase db reset)')
@@ -62,7 +63,7 @@ await clean()
 const report = async () => {
   const { data, error } = await asAdmin.rpc('admin_content', { days: 1 })
   if (error) { note('⚠ admin_content refused (' + error.message + ')'); return null }
-  return (data && data.items) || []
+  return (data && (data as any).items) || []
 }
 const find: any = (items: any) => (items || []).find((r: any) => r.id === PIECE) || null
 

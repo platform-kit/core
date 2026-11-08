@@ -68,7 +68,7 @@ export function conversationOf(c: any, { contact = null, assignee = null, messag
   }
 }
 /** the Application API's contact */
-export function contactOf(c: any, { sourceId = null, conversationsCount = null } = {}) {
+export function contactOf(c: any, { sourceId = null, conversationsCount = null }: { sourceId?: string | null; conversationsCount?: number | null } = {}) {
   return {
     id: c.id, name: c.name || (c.user_id ? null : 'Guest'), email: c.email || null, phone_number: null, identifier: c.user_id || null, thumbnail: null, availability_status: 'offline', blocked: false,
     custom_attributes: c.custom_attributes || {}, additional_attributes: { kind: c.kind || (c.user_id ? 'user' : 'guest'), verified: !!c.verified, last_path: c.last_path || null, notes: c.notes || null, orders: c.orders ?? null },

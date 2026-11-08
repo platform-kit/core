@@ -23,6 +23,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { statusOf, leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
 const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -35,7 +36,7 @@ let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service-role key')
-const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 
 const { data: who } = await admin.from('profiles').select('id').eq('email', 'member@example.com').maybeSingle()
 if (!who) skip('the seed\'s member is not there (npx supabase db reset)')

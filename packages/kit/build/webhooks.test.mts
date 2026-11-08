@@ -10,6 +10,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('webhooks: ' + m)
 if (process.env.WEBHOOKS_TEST === '0') { note('skipped (WEBHOOKS_TEST=0)'); process.exit(0) }
@@ -21,7 +22,7 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
-const svc = createClient(url, serviceKey(), { auth: { persistSession: false } })
+const svc = createClient<Database>(url, serviceKey(), { auth: { persistSession: false } })
 const rows = async (t: any) => ((await svc.from(t).select('*')).data) || []
 
 /* the declaration goes to a file of the test's own: the site's webhooks.json is in the functions folder the stack
@@ -45,27 +46,29 @@ try {
   await pushWebhooks({ file: F })
 
   let c = await rows('content_webhooks')
-  ok('a shipped subscription is there after a deploy', c.some((r) => r.url === 'https://ours.example/hook' && r.source === 'file'))
-  ok('one somebody made through the API is untouched', c.some((r) => r.id === mine.id && r.source === 'hand'))
+  ok('a shipped subscription is there after a deploy', c.some((r: any) => r.url === 'https://ours.example/hook' && r.source === 'file'))
+  ok('one somebody made through the API is untouched', c.some((r: any) => r.id === mine.id && r.source === 'hand'))
   ok('a table that calls the address something else still gets one',
-    (await rows('scheduling_webhooks')).some((r) => r.subscriber_url === 'https://ours.example/cal' && r.source === 'file'))
-  ok('the secret is read from the environment', ((await rows('scheduling_webhooks')).find((r) => r.source === 'file') || {}).secret === process.env.WH_TEST_SECRET)
+    (await rows('scheduling_webhooks')).some((r: any) => r.subscriber_url === 'https://ours.example/cal' && r.source === 'file'))
+  // @ts-expect-error TS2339, from the conversion: Property 'secret' does not exist on type 'SelectQueryError<"Invalid Relationships cannot infer result type"> | SelectQueryError<"Invalid Rel
+  ok('the secret is read from the environment', ((await rows('scheduling_webhooks')).find((r: any) => r.source === 'file') || {}).secret === process.env.WH_TEST_SECRET)
   ok('and is nowhere in the file', !readFileSync(F, 'utf8').includes(process.env.WH_TEST_SECRET))
-  ok('every kind is pushed', (await rows('support_webhooks')).some((r) => r.source === 'file'))
+  ok('every kind is pushed', (await rows('support_webhooks')).some((r: any) => r.source === 'file'))
 
-  const before = (await rows('content_webhooks')).find((r) => r.source === 'file')
-  await svc.from('content_webhooks').update({ last_at: new Date().toISOString() }).eq('id', before.id)
+  const before: any = (await rows('content_webhooks')).find((r: any) => r.source === 'file')
+  await svc.from('content_webhooks').update({ last_at: new Date().toISOString() }).eq('id', before!.id)
   writeFileSync(F, JSON.stringify([{ kind: 'content', name: 'Our indexer, renamed', url: 'https://ours.example/hook', topics: [] }], null, 2) + '\n')
   await pushWebhooks({ file: F })
 
   c = await rows('content_webhooks')
-  const after = c.find((r) => r.source === 'file')
-  ok('one that stays is updated rather than remade, so what it has done survives a deploy', !!after && after.id === before.id && !!after.last_at)
+  const after: any = c.find((r: any) => r.source === 'file')
+  ok('one that stays is updated rather than remade, so what it has done survives a deploy', !!after && after.id === before!.id && !!after.last_at)
   ok('and says what the file now says', !!after && after.name === 'Our indexer, renamed')
-  ok('a kind the file dropped entirely is cleared', !(await rows('support_webhooks')).some((r) => r.source === 'file'))
-  ok('and theirs has still never been touched', c.some((r) => r.id === mine.id))
+  ok('a kind the file dropped entirely is cleared', !(await rows('support_webhooks')).some((r: any) => r.source === 'file'))
+  ok('and theirs has still never been touched', c.some((r: any) => r.id === mine.id))
 } finally {
   if (mine) await svc.from('content_webhooks').delete().eq('id', mine.id)
+  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
   for (const t of ['content_webhooks', 'support_webhooks', 'scheduling_webhooks', 'form_webhooks']) await svc.from(t).delete().eq('source', 'file')
   rmSync(SCRATCH, { recursive: true, force: true })
 }

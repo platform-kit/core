@@ -16,7 +16,7 @@ import type { PropType } from 'vue'
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { us } from 'platformkit/lib/content.js'
-import { eventPage, saySomething, unsay, rsvp, whenWord, clockOf } from 'platformkit/lib/spaces/calendar.js'
+import { eventPage, rsvp, whenWord, clockOf } from 'platformkit/lib/spaces/calendar.js'
 import SpaceAvatar from './SpaceAvatar.vue'
 import SpaceIcon from './SpaceIcon.vue'
 import MediaBlock from '../content/MediaBlock.vue'
@@ -33,7 +33,6 @@ const now = Date.now()
 /* the card's own words for a day, so a date reads the same wherever it is shown */
 const dayWords = computed(() => ({ today: C.value.today, tomorrow: C.value.tomorrow }))
 const loading = ref(true)
-const saying = ref('')
 const busy = ref(false)
 
 async function load() { loading.value = true; row.value = await eventPage(props.slug); loading.value = false }
@@ -83,16 +82,6 @@ async function going(state: any) {
   await load()
   busy.value = false
 }
-async function say() {
-  const body = saying.value.trim()
-  if (!body || busy.value) return
-  busy.value = true
-  await saySomething(row.value.id, body)
-  saying.value = ''
-  await load()
-  busy.value = false
-}
-async function remove(id: any) { busy.value = true; await unsay(id); await load(); busy.value = false }
 </script>
 
 <template>

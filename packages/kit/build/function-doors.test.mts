@@ -9,6 +9,7 @@
 import { createClient } from '@supabase/supabase-js'
 import fs from 'node:fs'
 import { requireStack, served, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const S: any = requireStack('function-doors')
 let pass = 0, fail = 0
@@ -16,7 +17,7 @@ let pass = 0, fail = 0
 const KIT_FUNCTIONS = new Set(fs.readdirSync(new URL('../supabase/functions/', import.meta.url)).filter((d) => !d.startsWith('_')))
 const ok = (msg: any, cond: any, detail = '') => { const fn = msg.split(' ')[0]; if (KIT_FUNCTIONS.has(fn) && !served(fn)) { notHere(msg, 'its module is off'); return } if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 240) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
-const tokenOf = async (email: any) => { const c = createClient(S.api, S.anon, O); const { data } = await c.auth.signInWithPassword({ email, password: 'password123' }); return data?.session?.access_token || null }
+const tokenOf = async (email: any) => { const c = createClient<Database>(S.api, S.anon, O); const { data } = await c.auth.signInWithPassword({ email, password: 'password123' }); return data?.session?.access_token || null }
 const call = async (fn: any, body = {}, bearer = null, init: any = {}) => {
   const r = await fetch(`${S.functions}/${fn}`, { method: 'POST', redirect: 'manual', ...init, headers: { apikey: S.anon, 'content-type': 'application/json', ...(bearer ? { authorization: 'Bearer ' + bearer } : {}), ...(init.headers || {}) }, body: init.method === 'GET' ? undefined : JSON.stringify(body) })
   const text = await r.text(); let data = null; try { data = JSON.parse(text) } catch { /* not json */ }

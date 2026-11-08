@@ -56,6 +56,7 @@ Deno.serve(async (req: any) => {
     if (!uid) return json({ error: 'which booking', code: 'unknown' }, 400)
     const { data: row } = await admin.from('bookings').select('uid, host_id, status, event, credit_id').eq('uid', uid).maybeSingle()
     if (!row) return json({ error: 'no such booking', code: 'unknown' }, 404)
+    if (!user) return json({ error: 'sign in first' }, 401)   /* said above; said again where the host is read */
     const staff = row.host_id === user.id || (await rolesOf(user.id)).includes('admin')
     if (!staff) return json({ error: 'the host says', code: 'not-host' }, 403)
     /* a booking already settled is not settled again: two taps on Accept must not send two letters */

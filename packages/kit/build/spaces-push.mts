@@ -28,6 +28,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { isMain } from './is-main.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const ROOT = process.cwd()
 export const FILE = 'supabase/functions/_shared/spaces.json'
@@ -65,7 +66,7 @@ export async function pushSpaces({ check = false, seed = false, root = ROOT, dec
     const { supabaseUrl, serviceKey } = await import('./tts/storage.mjs')
     const url = supabaseUrl(), key = serviceKey()
     if (!url || !key) { if (!quiet) console.log('spaces: no service key — the declaration is not projected'); return { spaces: 0 } }
-    db = createClient(url, key, { auth: { persistSession: false } })
+    db = createClient<Database>(url, key, { auth: { persistSession: false } })
   }
   const said: any = []
   const say = (m: string) => { said.push(m); if (!quiet) console.log('  ' + m) }

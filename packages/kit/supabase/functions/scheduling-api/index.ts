@@ -33,6 +33,7 @@ import { ok, fail, CODES } from '../_shared/api/cal/envelope.ts'
 import { TRIGGERS } from '../_shared/api/cal/webhook.ts'
 import { calBookingOf } from '../_shared/scheduling-events.ts'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
+import type { Json } from '../_shared/database.types.ts'
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, cal-api-version, apikey', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS' }
 type Caller = { kind: 'key'; id: string } | { kind: 'jwt'; id: string; email: string; role: string; name: string }
@@ -136,7 +137,7 @@ Deno.serve(async (req: any) => {
         if (schedulerIdOf(s) === 'native') { if ((!s.hosts?.length && !s.team) || !(s.duration > 0)) return err(503, 'This type has no host or no length yet.'); if (s.where?.kind === 'phone' && !s.where.number && !phone) return err(400, 'attendee.phoneNumber is required for this type.') }
         try {
           const made = await makeBooking(s, { start, attendee: { email, name, timeZone, user_id }, user_id, notes, phone, credit: v.credit })
-          if (body.metadata && typeof body.metadata === 'object') { const { data: row } = await admin.from('bookings').select('payload').eq('uid', made.uid).maybeSingle(); await admin.from('bookings').update({ payload: { ...(row?.payload || {}), metadata: { ...((row?.payload || {}).metadata || {}), ...body.metadata } } }).eq('uid', made.uid) }
+          if (body.metadata && typeof body.metadata === 'object') { const { data: row } = await admin.from('bookings').select('payload').eq('uid', made.uid).maybeSingle(); const had = (row?.payload || {}) as { metadata?: { [key: string]: Json | undefined }; [key: string]: Json | undefined }; await admin.from('bookings').update({ payload: { ...had, metadata: { ...(had.metadata || {}), ...body.metadata } } }).eq('uid', made.uid) }
           return reply(ok(await view(made.uid)), 201)
         } catch (e) {
           const msg = String((e as any)?.message ?? e), code = String((e as any)?.code ?? '')
@@ -184,7 +185,7 @@ Deno.serve(async (req: any) => {
       let q2: any = admin.from('provider_ooo').select('id, user_id, from, to, reason, cover_id').order('from')
       if (!isKey && (caller as any).role !== 'admin') q2 = q2.eq('user_id', caller.id)
       const { data: rows } = await q2
-      const ids = [...new Set((rows ?? []).flatMap((r: any) => [r.user_id, r.cover_id]).filter(Boolean))]
+      const ids = [...new Set((rows ?? []).flatMap((r: any) => [r.user_id, r.cover_id]).filter(Boolean))] as string[]
       const { data: ps } = ids.length ? await admin.from('profiles').select('id, email, display_name').in('id', ids) : { data: [] }
       const who = (id: string) => (ps ?? []).find((p: any) => p.id === id)
       return reply(ok((rows ?? []).map((r: any) => ({

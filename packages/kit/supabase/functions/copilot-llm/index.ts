@@ -32,10 +32,11 @@ import { recalls } from '../_shared/agents/loop.js'
 import { fresh, of } from '../_shared/compiled.ts'
 import bots from '../_shared/bots.json' with { type: 'json' }
 import themeStrings from '../_shared/pipe/theme-strings.json' with { type: 'json' }
+import type { Database } from '../_shared/database.types.ts'
 
 const URL_ = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-const admin = createClient(URL_, SERVICE, { auth: { persistSession: false } })
+const admin = createClient<Database>(URL_, SERVICE, { auth: { persistSession: false } })
 const media = livekit({ db: admin, env: (key: any) => Deno.env.get(key) ?? '' })
 
 /* how long to wait for the loop before giving up on a turn — a conversation cannot hang */
@@ -75,6 +76,11 @@ function ceilingResponse(id: string, model: string, content: string, reason: str
     headers: { ...cors, 'content-type': 'text/event-stream', 'cache-control': 'no-cache', 'x-copilot-ended': reason },
   })
 }
+
+/* what usage_record answers: whether the use was taken, and how much of it the plan covered */
+type UsageRecorded = { admitted: boolean; duplicate?: boolean; usage_event_id?: string; reason?: string; included_micros?: number; metered_micros?: number; remaining_micros?: number }
+/* what copilot_turn answers: the run this turn made, or why it made none */
+type CopilotTurn = { ok: true; id: string; bot: string; name: string; messages?: unknown[] } | { ok?: undefined; error: string; window?: string }
 
 Deno.serve(async (req: any) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -151,7 +157,7 @@ Deno.serve(async (req: any) => {
           const { data: balance, error: balanceError } = await admin.from('usage_balances')
             .select('remaining_micros')
             .eq('user_id', me.id).eq('offer_key', usage.offer_key)
-            .eq('period_start', periodStart)
+            .eq('period_start', periodStart as string)   /* an active subscription is always in a period */
             .maybeSingle()
           if (balanceError) return json({ error: { message: balanceError.message, type: 'server_error' } }, 500)
           remainingMicros = Number(balance?.remaining_micros || 0)
@@ -234,7 +240,7 @@ Deno.serve(async (req: any) => {
     }
     const usageRecord = speechTelemetryRecord(g, id, secondsMicros)
     if (!usageRecord) return json({ ok: true, recorded: false })
-    const { data, error } = await admin.rpc('usage_record', {
+    const { data: answered, error } = await admin.rpc('usage_record', {
       p_source_ref: usageRecord.source_ref,
       p_user_id: usageRecord.user_id,
       p_bot_id: usageRecord.bot_id,
@@ -251,6 +257,7 @@ Deno.serve(async (req: any) => {
       p_speech_cost_per_second_micros: usageRecord.speech_cost_per_second_micros,
     })
     if (error) return json({ error: { message: `speech telemetry could not be recorded: ${error.message}`, type: 'server_error' } }, 500)
+    const data = answered as UsageRecorded | null
     if (!data?.admitted) return json({ error: { message: data?.reason || 'speech telemetry was refused', type: 'server_error' } }, 503)
     return json({ ok: true, duplicate: Boolean(data.duplicate) })
   }
@@ -271,10 +278,11 @@ Deno.serve(async (req: any) => {
   if (!ask.trim()) return json({ error: { message: 'nothing was said', type: 'invalid_request_error' } }, 400)
 
   /* ------------------------------------------------- the run, through the one door */
-  const { data: made, error } = await admin.rpc('copilot_turn', {
+  const { data: turn, error } = await admin.rpc('copilot_turn', {
     p_bot: g.bot, p_subject: g.subject, p_room: g.room || '', p_ask: ask,
   })
   if (error) return json({ error: { message: error.message, type: 'server_error' } }, 500)
+  const made = turn as CopilotTurn | null
   if (!made?.ok) {
     const limit = made?.error === 'conversation-minutes' ? 'minutes'
       : made?.error === 'conversation-spend' ? 'spend'

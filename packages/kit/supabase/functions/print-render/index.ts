@@ -46,10 +46,13 @@ import { pathOfAddress } from '../_shared/pipe/build/assets.mjs'
 import { printWords, SPINE_EDITION } from '../_shared/pipe/build/print/words.mjs'
 import { spineWords, costUsd, printSpec } from '../_shared/pipe/src/lib/print-offers.js'
 import THEME from '../_shared/pipe/theme-strings.json' with { type: 'json' }
+import type { Database, Json } from '../_shared/database.types.ts'
+/* a jsonb object as the print job holds it: done, result, request */
+type JsonObject = { [key: string]: Json | undefined }
 
 const url = Deno.env.get('SUPABASE_URL') ?? ''
 const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-const admin = createClient(url, key)
+const admin = createClient<Database>(url, key)
 const BUCKET = 'print'
 /*
  * AND THE ONE THE STORE CAN SEE. The print bucket is private on purpose — it holds the files a
@@ -151,9 +154,9 @@ const LEASE_SECONDS = 150
 function jobOf(row: Record<string, any>) {
   const job = {
     id: row.id as string,
-    done: { ...(row.done ?? {}) } as Record<string, unknown>,
+    done: { ...((row.done ?? {}) as JsonObject) } as JsonObject,
     /* what is finished, written as soon as it is, with the lease renewed: a worker still working keeps the job */
-    async keep(patch: Record<string, unknown>) {
+    async keep(patch: JsonObject) {
       job.done = { ...job.done, ...patch }
       await admin.from('print_jobs').update({ done: job.done, updated_at: new Date().toISOString(), lease_until: new Date(Date.now() + LEASE_SECONDS * 1000).toISOString() }).eq('id', job.id)
     },
@@ -198,11 +201,11 @@ Deno.serve(async (req: any) => {
       await admin.from('print_jobs').update({ cancel_at: now, updated_at: now }).eq('id', data.id).in('state', ['queued', 'running'])
       return json({ job: data.id, cancelling: true })
     }
-    if (data.state === 'done') return json({ ...(data.result ?? {}), job: data.id, state: data.state })
+    if (data.state === 'done') return json({ ...((data.result ?? {}) as JsonObject), job: data.id, state: data.state })
     if (data.state === 'failed' || data.state === 'cancelled') return json({ error: data.error ?? data.state, job: data.id, state: data.state, book: data.book, contents: data.contents }, data.state === 'failed' ? 500 : 200)
     /* a job waiting for its interior moves only when a browser asks what to compile, or hands one over */
-    if (data.state === 'waiting' && !call.interior) return json({ job: data.id, state: 'waiting', waiting: 'interior', book: data.book, contents: data.contents, edition: (data.done ?? {}).edition ?? null }, 202)
-    call = { ...(data.request ?? {}), book: data.book, contents: data.contents, interior: call.interior }
+    if (data.state === 'waiting' && !call.interior) return json({ job: data.id, state: 'waiting', waiting: 'interior', book: data.book, contents: data.contents, edition: ((data.done ?? {}) as { edition?: string }).edition ?? null }, 202)
+    call = { ...((data.request ?? {}) as JsonObject), book: data.book, contents: data.contents, interior: call.interior }
   }
   /* the interior's two calls from a browser (build/print/typeset/interior.js): what to compile, and what it compiled */
   const handover = call.interior === 'handover'
@@ -412,7 +415,7 @@ Deno.serve(async (req: any) => {
 
     /* WHERE IT GOES. The same place and the same name the native path uses, so a book set here and
        a book set on a machine are interchangeable to everything downstream. */
-    const dims: Record<string, unknown> = {}
+    const dims: JsonObject = {}
     /*
      * THE LISTING'S ART IS NOT DRAWN HERE, and it took a real attempt to find out why. A cover is a
      * PDF for the printer and a picture for the store, and on a machine both come out of the same
@@ -488,7 +491,8 @@ Deno.serve(async (req: any) => {
       return json({ job: job.id, state: 'waiting', waiting: 'interior', book: slug, contents, edition }, 202)
     }
     const pages: number = interior.pages, pad: number = interior.pad
-    const where: unknown[] = interior.where ?? [], marks: unknown[] = interior.marks ?? []
+    /* what the typesetter read back from the document: openers and highlights, plain JSON (print/typeset/readback.js) */
+    const where: Json[] = interior.where ?? [], marks: Json[] = interior.marks ?? []
     const compiled = interior.compiled ?? source
 
     /*
@@ -521,14 +525,14 @@ Deno.serve(async (req: any) => {
      * same name, or `print.json` would point a printer at a file that is not the book's.
      */
     const covers: Record<string, string> = {}, foils: Record<string, string> = {}
-    const printersOut: Record<string, unknown> = {}
+    const printersOut: JsonObject = {}
     for (const format of printedFormats) {
       const { provider, quotes } = await chooseProvider(spec, format, pages, trim, paper, bound)
       const p = printer(provider)
-      const options = ((spec.providers ?? {}) as Record<string, Record<string, unknown>>)[provider] ?? {}
+      const options = ((spec.providers ?? {}) as Record<string, JsonObject>)[provider] ?? {}
       const product = p.product({ chosen: { format, trim, paper, cloth: spec.cloth, foil: spec.foil }, options })
       const variants = coversOf({ format, provider, product, combos, spec, trim, paper, options, printerOf: (a: unknown) => p.product(a) })
-      const keys: Record<string, unknown> = {}
+      const keys: JsonObject = {}
       /*
        * A PAPERBACK WITH NO PICTURE IS NOT DRAWN. Its front IS the e-book's picture, so a cover
        * set without one would be a different sheet under the same edition id as the build's —

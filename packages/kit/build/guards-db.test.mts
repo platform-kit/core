@@ -23,6 +23,7 @@ import { loadSite } from './site.mjs'
 import { moduleSet } from './steps.mjs'
 import { activeCronJobs } from './cron.mjs'
 import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
 const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -36,9 +37,9 @@ try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service-role key')
 
-const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 const asPerson = async (email: any, password = 'password123') => {
-  const c = createClient(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
+  const c = createClient<Database>(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
   const { error } = await c.auth.signInWithPassword({ email, password })
   return error ? null : c
 }
@@ -58,7 +59,7 @@ let made = null
   if (ce) skip('a support contact could not be made: ' + ce.message)
   made = contact
 }
-const { data: conv, error: convErr } = await admin.from('support_conversations').insert({ contact_id: made.id, path: '/guards-db' }).select().single()
+const { data: conv, error: convErr } = await admin.from('support_conversations').insert({ contact_id: made!.id, path: '/guards-db' }).select().single()
 if (!conv) skip('a support conversation could not be made: ' + (convErr && convErr.message))
 else {
   /* what an agent IS allowed to change, so a guard that refused everything would not pass */

@@ -56,8 +56,10 @@ export async function loadMine({ days = 90 } = {}) {
    wipes one already given */
 export async function rsvp(occurrenceId: any, state = 'going', reason = null, guests = 0) {
   if (!supabase) return { error: 'offline' }
-  const { data, error } = await supabase.rpc('event_rsvp', { p_occurrence: occurrenceId, p_state: state, p_guests: guests, p_reason: reason })
+  const { data: answered, error } = await supabase.rpc('event_rsvp', { p_occurrence: occurrenceId, p_state: state, p_guests: guests, p_reason: reason })
   if (error) return { error: error.message }
+  /* event_rsvp answers the new count, or why not (schemas/95-events.sql) */
+  const data = answered as { ok?: true; going?: number; state?: string; error?: string } | null
   if (data && data.ok) {
     const row = calendar.upcoming.find((o: { id: any }) => o.id === occurrenceId)
     if (row) { row.mine = state === 'out' ? null : state; row.going = data.going }
@@ -73,18 +75,6 @@ export async function eventPage(slug: any) {
   return error ? null : data
 }
 
-/* saying something about an event, and taking it back. Comments are on the EVENT rather than on one
-   occurrence: a question about a weekly sit is a question about the sit. */
-export async function saySomething(eventId: any, body: any) {
-  if (!supabase || !eventId) return { error: 'offline' }
-  const { data, error } = await supabase.rpc('event_say', { p_event: eventId, p_body: String(body || '') })
-  return error ? { error: error.message } : data || {}
-}
-export async function unsay(commentId: any) {
-  if (!supabase || !commentId) return { error: 'offline' }
-  const { data, error } = await supabase.rpc('event_unsay', { p_comment: commentId })
-  return error ? { error: error.message } : data || {}
-}
 
 /* an occurrence called off, or a word about it — the people who keep the space */
 export async function setOccurrence(occurrenceId: any, { cancelled = null, note = null } = {}) {

@@ -12,6 +12,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('teams-db: ' + m)
 if (process.env.TEAMS_TEST === '0') { note('skipped (TEAMS_TEST=0)'); process.exit(0) }
@@ -24,9 +25,9 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
-const db = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const db = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const signIn = async (email: any) => {
-  const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return sb
@@ -95,8 +96,9 @@ try {
   ok('somebody outside a team cannot read who is in it', nosy.data === null)
   const seen = await asMember.rpc('team_people', { p_team: t })
   ok('a member can', Array.isArray(seen.data) && seen.data.length > 0)
-  ok('and what they see is a name and a face, never an address', seen.data.every((p: any) => !('email' in p)))
+  ok('and what they see is a name and a face, never an address', (seen.data as any)!.every((p: any) => !('email' in p)))
   const theirs = await asMember.rpc('my_teams')
+  // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
   ok('a person sees their own teams and how they got there', (theirs.data || []).some((x: any) => x.slug === t && x.source === 'fill'))
 
   /* --- AND AN ADMINISTRATOR READS EVERY TEAM, published or not. It is what lets the editor tell a

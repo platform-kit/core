@@ -37,9 +37,11 @@ Deno.serve(async (req: any) => {
     const want = version ?? terms?.version ?? null
     if (!want) return json({ error: 'this site keeps no terms' }, 400)
     const { data: row } = await admin.from('provider_terms').select('body').eq('version', want).maybeSingle()
-    const { data: owed, error } = await admin.rpc('provider_terms_owed', { p_version: want })
+    const { data: answered, error } = await admin.rpc('provider_terms_owed', { p_version: want })
     if (error) return json({ error: error.message }, 500)
-    const people = (owed ?? []).filter((p: any) => p.email)
+    /* provider_terms_owed answers the providers who have not signed this version */
+    const owed = answered as Array<{ user_id: string; email: string | null; name: string; signed?: string | null }> | null
+    const people = (owed ?? []).filter((p): p is typeof p & { email: string } => Boolean(p.email))
     if (body?.dry) return json({ version: want, would: people.length, people: (owed ?? []).map((p: any) => ({ email: p.email, signed: p.signed })) })
     /* the terms themselves ride in the letter: somebody asked to agree to something reads it there
        rather than being sent to go and find it */

@@ -17,6 +17,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { json, preflight, getUser, admin, isServiceBearer } from '../_shared/lib.ts'
 import { videos } from '../_shared/video/index.ts'
 import { sendEmail } from '../_shared/email.ts'
+import type { Database } from '../_shared/database.types.ts'
 
 const env = (k: string) => Deno.env.get(k) ?? ''
 
@@ -66,7 +67,7 @@ Deno.serve(async (req: any) => {
     if (!channel) return json({ error: 'which channel' }, 400)
     /* the caller's own client: the channel's policy is the check, and a channel they may not read is
        a channel they are not told about */
-    const mine = createClient(env('SUPABASE_URL'), env('SUPABASE_ANON_KEY'), { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
+    const mine = createClient<Database>(env('SUPABASE_URL'), env('SUPABASE_ANON_KEY'), { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
     const { data: ok } = await mine.rpc('in_channel', { p_channel: channel })
     if (!ok) return json({ error: 'not your channel', code: 'not-yours' }, 403)
     const { data: c } = await admin.from('channels').select('id, name, space_id').eq('id', channel).maybeSingle()

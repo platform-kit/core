@@ -20,7 +20,7 @@ export async function calBookingOf(uid: string) {
   const { data: row } = await admin.from('bookings').select('*').eq('uid', uid).maybeSingle()
   if (!row) return null
   const s = await typeFor(row.event, { any: true })
-  const hostIds = [row.host_id, row.provider_id].filter(Boolean)
+  const hostIds = [row.host_id, row.provider_id].filter((id): id is string => Boolean(id))
   const { data: hosts } = hostIds.length ? await admin.from('profiles').select('id, email, display_name').in('id', hostIds) : { data: [] }
   let hostList = (hosts ?? []).map((h: any) => ({ id: h.id, email: h.email, name: h.display_name || '' }))
   if (!hostList.length && s && s.hosts?.length) { const { data: hs } = await admin.from('profiles').select('id, email, display_name').in('email', s.hosts); hostList = (hs ?? []).map((h: any) => ({ id: h.id, email: h.email, name: h.display_name || '' })) }

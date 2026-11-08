@@ -13,7 +13,7 @@ sources:
     packages/kit/theme/src/components/landing/LandingPricing.vue,
     packages/kit/src/lib/auth.ts,
   ]
-reviewed: 2026-11-04
+reviewed: 2026-11-07
 ---
 
 A **membership** is a tier — a level — and any number of offers may belong to it: `group-coaching-weekly` and `group-coaching-monthly` are two product files with the same **tier** slug. A higher **rank** includes everything below it. Never assume one membership product.

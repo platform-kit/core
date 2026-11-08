@@ -7,6 +7,7 @@ import fs from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { notHere, leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('agents-db: ' + m)
 if (process.env.AGENT_TEST === '0') { note('skipped (AGENT_TEST=0)'); process.exit(0) }
@@ -30,7 +31,7 @@ if (!served) { note('skipped — the functions are not served in this run'); lea
 
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+const db = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 const wait = (ms: any) => new Promise((r) => setTimeout(r, ms))
 /* the site's own support bot — whichever it declares, not a name one site happened to use */
 const BOT = process.env.AGENT_TEST_BOT || ((await db.from('bots').select('slug, surfaces').eq('published', true)).data || []).find((b) => (b.surfaces || []).includes('support'))?.slug
@@ -116,7 +117,7 @@ try {
       made.push(orphan.data.id)
       const anonymous = await db.rpc('agent_subject', { p_run: orphan.data.id })
       ok('Social bot runs have no application-account subject', !anonymous.error &&
-        anonymous.data?.user_id == null && anonymous.data?.contact_id == null,
+        (anonymous.data as any)?.user_id == null && (anonymous.data as any)?.contact_id == null,
         anonymous.error?.message || JSON.stringify(anonymous.data))
       await turn(orphan.data.id)
       const refused = await rests(orphan.data.id, 'failed')
@@ -142,7 +143,7 @@ try {
       const created = await db.auth.admin.createUser({ email, password, email_confirm: true })
       if (created.error) throw created.error
       userId = created.data.user.id
-      const reader = createClient(url, process.env.VITE_SUPABASE_ANON_KEY, {
+      const reader = createClient<Database>(url, process.env.VITE_SUPABASE_ANON_KEY, {
         auth: { persistSession: false, autoRefreshToken: false },
       })
       const signedIn = await reader.auth.signInWithPassword({ email, password })
@@ -151,7 +152,7 @@ try {
       const summon = await reader.rpc('agent_summon', { p_bot: 'not-a-bot', p_surface: 'social' })
       const after = await db.from('agent_runs').select('id', { count: 'exact', head: true }).eq('surface', 'social')
       ok('a signed-in reader cannot summon the Social surface directly',
-        summon.data?.error === 'not-yours' && before.count === after.count,
+        (summon.data as any)?.error === 'not-yours' && before.count === after.count,
         JSON.stringify({ answer: summon.data, before: before.count, after: after.count }))
     } finally {
       if (userId) await db.auth.admin.deleteUser(userId)
@@ -165,8 +166,8 @@ try {
     const run = await start({ messages: [{ role: 'user', content: 'do you ship to Japan?' }], mock: [{ say: 'Yes — we ship worldwide.' }] })
     made.push(run.id)
     const done = await settle(run.id)
-    ok('a run answers and finishes', done.status === 'done', JSON.stringify({ s: done.status, e: done.error }))
-    ok('…and what it said is on the run', /worldwide/.test(done.said || ''), done.said)
+    ok('a run answers and finishes', done!.status === 'done', JSON.stringify({ s: done!.status, e: done!.error }))
+    ok('…and what it said is on the run', /worldwide/.test(done!.said || ''), done!.said)
     const steps = await stepsOf(run.id)
     ok('…with a step for the thinking and a step for the saying',
       steps.some((s) => s.kind === 'model') && steps.some((s) => s.kind === 'say'), steps.map((s) => s.kind).join(','))
@@ -185,8 +186,8 @@ try {
     const tool = steps.find((s) => s.kind === 'tool')
     ok('a run may call a tool', !!tool && tool.name === 'get_events', JSON.stringify(steps.map((s) => s.kind + ':' + (s.name || ''))))
     ok('…and the tool really ran, against this site\'s own data',
-      tool && tool.response && Array.isArray(tool.response.result), JSON.stringify(tool && tool.error))
-    ok('…and the model answered afterwards', done.status === 'done' && /Tuesday/.test(done.said || ''))
+      tool && tool.response && Array.isArray((tool.response as any).result), JSON.stringify(tool && tool.error))
+    ok('…and the model answered afterwards', done!.status === 'done' && /Tuesday/.test(done!.said || ''))
     ok('…and the answer was posted nowhere, since this run had no conversation', true)
   }
 
@@ -201,13 +202,13 @@ try {
     await turn(run.id, 1)                    /* ONE step, then we pretend the worker vanished */
     const half = await get(run.id)
     const before = (await stepsOf(run.id)).length
-    ok('a run in flight is held by a worker', !!half.lease_until && half.status === 'running',
-      JSON.stringify({ s: half.status, lease: half.lease_until, error: half.error }))
+    ok('a run in flight is held by a worker', !!half!.lease_until && half!.status === 'running',
+      JSON.stringify({ s: half!.status, lease: half!.lease_until, error: half!.error }))
     /* the worker is gone and its lease is stale — which is exactly what a crash looks like */
     await db.from('agent_runs').update({ lease_until: new Date(Date.now() - 1000).toISOString(), worker: 'died' }).eq('id', run.id)
     const done = await settle(run.id)
     ok('…and a stale lease is picked up by somebody else and finished',
-      done.status === 'done' && /resume/i.test(done.said || ''), JSON.stringify({ s: done.status, said: done.said, error: done.error, worker: done.worker, lease: done.lease_until, step: done.step, at: new Date().toISOString(), steps: (await stepsOf(run.id)).map((s) => s.n + s.kind) }))
+      done!.status === 'done' && /resume/i.test(done!.said || ''), JSON.stringify({ s: done!.status, said: done!.said, error: done!.error, worker: done!.worker, lease: done!.lease_until, step: done!.step, at: new Date().toISOString(), steps: (await stepsOf(run.id)).map((s) => s.n + s.kind) }))
     ok('…keeping every step the dead worker had taken', (await stepsOf(run.id)).length > before)
   }
 
@@ -225,10 +226,10 @@ try {
     const asked = await stepsOf(run.id)
     ok('the model asked for the tool', asked.some((s) => s.kind === 'model'), asked.map((s) => s.kind).join(','))
     const { data: said } = await db.rpc('agent_cancel', { p_run: run.id })
-    ok('anybody may call it off', said && (said.ok || said.error === 'not-yours'), JSON.stringify(said))
+    ok('anybody may call it off', said && ((said as any).ok || (said as any).error === 'not-yours'), JSON.stringify(said))
     await db.from('agent_runs').update({ cancel_at: new Date().toISOString(), lease_until: null }).eq('id', run.id)
     const done = await settle(run.id)
-    ok('…and the run stops', done.status === 'cancelled', JSON.stringify({ s: done.status, error: done.error }))
+    ok('…and the run stops', done!.status === 'cancelled', JSON.stringify({ s: done!.status, error: done!.error }))
     const after = await stepsOf(run.id)
     ok('…without ever running the tool it had asked for',
       !after.some((s) => s.kind === 'tool'), after.map((s) => s.kind + ':' + (s.name || '')).join(','))
@@ -244,8 +245,8 @@ try {
     }, { budget_cents: 1, spent_cents: 1 })
     made.push(run.id)
     const done = await settle(run.id)
-    ok('a run that has spent its budget stops', ['failed', 'done'].includes(done.status) && (await stepsOf(run.id)).filter((s) => s.kind === 'model').length === 0,
-      JSON.stringify({ s: done.status, steps: (await stepsOf(run.id)).length }))
+    ok('a run that has spent its budget stops', ['failed', 'done'].includes(done!.status) && (await stepsOf(run.id)).filter((s) => s.kind === 'model').length === 0,
+      JSON.stringify({ s: done!.status, steps: (await stepsOf(run.id)).length }))
   }
 
   /* ---------------------------------------------------------------- two workers, one run */
@@ -268,8 +269,8 @@ try {
     const run = await start({ messages: [{ role: 'user', content: 'break' }], mock: [{ fail: 'the model fell over' }] })
     made.push(run.id)
     const done = await settle(run.id)
-    ok('a run whose model fails says so rather than hanging', done.status === 'failed' && /fell over/.test(done.error || ''),
-      JSON.stringify({ s: done.status, e: done.error }))
+    ok('a run whose model fails says so rather than hanging', done!.status === 'failed' && /fell over/.test(done!.error || ''),
+      JSON.stringify({ s: done!.status, e: done!.error }))
   }
 
   /* ------------------------------------------- ONE INVOCATION FINISHES WHAT IT CAN
@@ -293,10 +294,10 @@ try {
     await turn(null)
     const after = await rests(run.id)
     const steps = await stepsOf(run.id)
-    ok('one sweep finishes a multi-step run', after.status === 'done',
-      JSON.stringify({ status: after.status, steps: steps.map((s) => s.kind + ':' + (s.name || '')) }))
+    ok('one sweep finishes a multi-step run', after!.status === 'done',
+      JSON.stringify({ status: after!.status, steps: steps.map((s) => s.kind + ':' + (s.name || '')) }))
     ok('…having taken every one of its steps', steps.length >= 5, String(steps.length))
-    ok('…and said what it was going to say', /Two calls/.test(after.said || ''), after.said)
+    ok('…and said what it was going to say', /Two calls/.test(after!.said || ''), after!.said)
   }
 
 
@@ -315,6 +316,7 @@ try {
     /* the staff member's own purchase and a guest's conversation, made here rather than hoped for in a seed */
     const tag = 'probe-subject-' + Date.now().toString(36)
     if (staff) await db.from('purchases').insert({ user_id: staff.id, sku: tag, key: 'probe', kind: 'download', status: 'paid', stripe_checkout_session_id: 'cs_' + tag })
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
     const mine = (await db.from('purchases').select('sku').eq('user_id', staff?.id).limit(5)).data || []
     /* a support conversation whose contact is a guest — no account behind it at all */
     const { data: guestContact } = await db.from('support_contacts').insert({}).select('id').single()
@@ -332,10 +334,10 @@ try {
       made.push(run.id)
 
       const { data: subj } = await db.rpc('agent_subject', { p_run: run.id })
-      ok('a desk run is about the conversation\u2019s contact', String(subj?.contact_id) === String(conv.contact_id),
+      ok('a desk run is about the conversation\u2019s contact', String((subj as any)?.contact_id) === String(conv.contact_id),
         JSON.stringify(subj))
-      ok('\u2026and not about the staff member who summoned it', String(subj?.user_id) !== String(staff.id),
-        JSON.stringify({ subject: subj?.user_id, asker: staff.id }))
+      ok('\u2026and not about the staff member who summoned it', String((subj as any)?.user_id) !== String(staff.id),
+        JSON.stringify({ subject: (subj as any)?.user_id, asker: staff.id }))
 
       await settle(run.id)
       const steps = await stepsOf(run.id)
@@ -345,6 +347,7 @@ try {
       /* THE ASSERTION. Whatever it answered, it is not the asker's shopping. */
       for (const p of mine) {
         ok('the asker\u2019s own purchase (' + p.sku + ') is not in an answer about somebody else',
+          // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
           !said.includes(p.sku), said.slice(0, 200))
       }
       ok('a guest with no account is refused rather than substituted',
@@ -372,7 +375,8 @@ try {
       /* and the whole answer, not just the tool result */
       const done = await get(run.id)
       for (const p of mine) {
-        ok('nor in what the bot said', !String(done.said || '').includes(p.sku), String(done.said || '').slice(0, 160))
+        // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
+        ok('nor in what the bot said', !String(done!.said || '').includes(p.sku), String(done!.said || '').slice(0, 160))
       }
     }
 
@@ -381,7 +385,7 @@ try {
       { surface: 'spaces', asked_by: staff?.id || null })
     made.push(room.id)
     const { data: rs } = await db.rpc('agent_subject', { p_run: room.id })
-    ok('in a room the subject is whoever asked', String(rs?.user_id) === String(staff?.id), JSON.stringify(rs))
+    ok('in a room the subject is whoever asked', String((rs as any)?.user_id) === String(staff?.id), JSON.stringify(rs))
     await forget()
   }
 
@@ -410,7 +414,7 @@ try {
   if (!Object.keys(briefs).length) notHere('the job branch', 'the site compiles no enrichment briefs')
   else if (!row) { note('the job branch: skipped — ' + BOOK + ' is not in public.content, and a job reads its book from the rows') }
   else {
-    const titles = (row.text.match(/^# (.*)$/gm) || []).map((l: any) => l.slice(2).trim())
+    const titles = (row.text!.match(/^# (.*)$/gm) || []).map((l: any) => l.slice(2).trim())
     const say = (o: any) => JSON.stringify(o)
     /* one reply per call, in the order the stages ask: understand, introduce, extract, write,
        audit, (extract's remainder pass sits between), lines. A reply the schema refuses is asked
@@ -445,10 +449,10 @@ try {
       ok('a job run walks its stages and finishes', r && r.status === 'done', r && (r.status + ' ' + (r.error || '')))
       const { data: steps } = await db.from('agent_steps').select('*').eq('run_id', made.id).order('n')
       ok('and every model call is a step of its own', (steps || []).length >= 2, String((steps || []).length))
-      ok('in the order the stages ask', (steps || []).map((x) => x.request && x.request.stage).slice(0, 2).join(',') === 'understand,introduce', (steps || []).map((x) => x.request && x.request.stage).join(','))
-      ok('each one naming the stage it was for', (steps || []).every((x) => x.request && typeof x.request.stage === 'string'), JSON.stringify((steps || [])[0] && (steps || [])[0].request))
+      ok('in the order the stages ask', (steps || []).map((x) => x.request && (x.request as any).stage).slice(0, 2).join(',') === 'understand,introduce', (steps || []).map((x) => x.request && (x.request as any).stage).join(','))
+      ok('each one naming the stage it was for', (steps || []).every((x) => x.request && typeof (x.request as any).stage === 'string'), JSON.stringify((steps || [])[0] && (steps || [])[0].request))
       ok('and counted against the run, not nowhere', r && Number(r.spent_cents) >= 0 && (steps || []).every((x) => Number(x.cost_cents) >= 0))
-      ok('the cache is the run\'s own state, not a file', r && r.state && r.state.enrich && !!r.state.enrich.understand, JSON.stringify(Object.keys((r && r.state && r.state.enrich) || {})))
+      ok('the cache is the run\'s own state, not a file', r && r.state && (r.state as any).enrich && !!(r.state as any).enrich.understand, JSON.stringify(Object.keys((r && r.state && (r.state as any).enrich) || {})))
       /*
        * AND THE INTRODUCTION IS A DRAFT, which is the whole point. `--stage introduce` stops after
        * it, and the write goes through the store — which over rows means the DRAFT, not the live
@@ -459,6 +463,7 @@ try {
       // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
       const live = (await db.from('content').select('text').eq('path', 'content/books/' + BOOK + '.md').maybeSingle()).data.text
       const { data: draft } = await db.from('content_drafts').select('text').eq('path', 'content/books/' + BOOK + '.md').maybeSingle()
+      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
       ok('the introduction is written as a draft', !!(draft && /outlived almost everything/.test(draft.text)), draft ? 'a draft with other words' : 'no draft at all')
       ok('and the live book is untouched until somebody publishes it', live === before)
       /* put it back: this is a test, and the row is the site's content */

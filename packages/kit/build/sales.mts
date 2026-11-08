@@ -13,6 +13,7 @@ import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, serviceKey } from './tts/storage.mjs'
 import { isMain } from './is-main.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const DIR = '.velite'
 export const SALES_DAYS = 90
@@ -32,7 +33,7 @@ export async function salesReport({ dir = DIR } = {}) {
   const since = new Date(Date.now() - SALES_DAYS * 86400e3).toISOString()
   let rows = []
   try {
-    const sb = createClient(url, key, { auth: { persistSession: false } })
+    const sb = createClient<Database>(url, key, { auth: { persistSession: false } })
     const { data, error } = await sb.from('purchases').select('key, sku, created_at').eq('status', 'paid').gte('created_at', since).order('created_at', { ascending: false }).limit(5000)
     if (error) throw error
     rows = data || []

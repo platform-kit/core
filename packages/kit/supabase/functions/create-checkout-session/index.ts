@@ -218,7 +218,7 @@ Deno.serve(async (req: any) => {
   if (live && user) {
     const targetSku = [...merged.keys()][0]
     const target = offer(targetSku)!
-    const from = (live.key ? offerByKey(live.key) : null) ?? offer(live.sku)
+    const from = (live.key ? offerByKey(live.key) : null) ?? offer(live.sku ?? '')
     const up = !from?.tier || !target.tier || (TIERS[target.tier] ?? 0) >= (TIERS[from.tier] ?? 0)
     try {
       assertPaymentCapabilities(selectedPaymentProvider, paymentCapabilitiesForSubscriptionChange({
@@ -237,7 +237,7 @@ Deno.serve(async (req: any) => {
   if (selectedPaymentProvider.id === 'stripe' && live && !stripeMock && isMockId(live.id)) { await subscriptionDeleted(live.id, 'stripe'); live = null }
   if (live && user) {
     const sku = [...merged.keys()][0]
-    const o = offer(sku)!, from = (live.key ? offerByKey(live.key) : null) ?? offer(live.sku)
+    const o = offer(sku)!, from = (live.key ? offerByKey(live.key) : null) ?? offer(live.sku ?? '')
     /* up or down: by the tiers' ranks (a switch between offers of one tier counts as up — now, prorated) */
     const up = !from?.tier || !o.tier || (TIERS[o.tier] ?? 0) >= (TIERS[from.tier] ?? 0)
     /* their own plan again while a step down is pending: the step down is called off */

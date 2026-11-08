@@ -10,6 +10,7 @@ import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, moduleOn, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('copilot-db: ' + m)
 if (process.env.COPILOT_TEST === '0') { note('skipped (COPILOT_TEST=0)'); process.exit(0) }
@@ -24,12 +25,12 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 let pass = 0, fail = 0
 const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
 const as = async (email: any) => {
-  const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id }
 }
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 
 /* a 384-vector pointing mostly one way, so "near" and "far" are arranged rather than hoped for */
 const vec = (lean: any) => { const v = new Array(384).fill(0); v[lean] = 1; return v }
@@ -80,12 +81,16 @@ try {
   /* ------------------------------------------------------ recall, and the floor */
   {
     const { data: near } = await service.rpc('copilot_recall', { p_user: one.id, p_bot: BOT, p_query: JSON.stringify(vec(0)), p_limit: 6 })
-    ok('recall finds what was close', (near || []).length === 2 && near.some((t: any) => /marathon/.test(t)), JSON.stringify(near))
+    // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
+    ok('recall finds what was close', (near || []).length === 2 && (near as any)!.some((t: any) => /marathon/.test(t)), JSON.stringify(near))
     ok('THE FLOOR: an unrelated remark is not recalled, because a nearest neighbour is always something',
+      // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
       !(near || []).some((t: any) => /chickens/.test(t)), JSON.stringify(near))
     const { data: other } = await service.rpc('copilot_recall', { p_user: two.id, p_bot: BOT, p_query: JSON.stringify(vec(0)), p_limit: 6 })
-    ok('and it never crosses between people', (other || []).length === 1 && /cello/.test(other[0]), JSON.stringify(other))
+    // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
+    ok('and it never crosses between people', (other || []).length === 1 && /cello/.test((other as any)![0]), JSON.stringify(other))
     const { data: nobot } = await service.rpc('copilot_recall', { p_user: one.id, p_bot: 'a-different-bot', p_query: JSON.stringify(vec(0)), p_limit: 6 })
+    // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
     ok('nor between assistants — what they told one is not the other\'s', (nobot || []).length === 0, JSON.stringify(nobot))
   }
 
@@ -97,6 +102,7 @@ try {
     const after = (await one.sb.from('copilot_memory').select('id').eq('bot', BOT)).data || []
     ok('and it is gone', before.length > 0 && after.length === 0, `${before.length} → ${after.length}`)
     const { data: recalled } = await service.rpc('copilot_recall', { p_user: one.id, p_bot: BOT, p_query: JSON.stringify(vec(0)), p_limit: 6 })
+    // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
     ok('the assistant recalls none of it afterwards', (recalled || []).length === 0, JSON.stringify(recalled))
   }
   {

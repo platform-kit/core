@@ -39,7 +39,7 @@ All under the site's own host. A client that reads `/.well-known/matrix/client` 
 | PUT                    | `/_matrix/client/v3/rooms/{id}/state/{type}/{key}`            | **refused** — see below                                                                        |
 | GET                    | `/_matrix/client/v3/rooms/{id}/members`                       | the space's members                                                                            |
 | GET                    | `/_matrix/client/v3/rooms/{id}/joined_members`                | the same, as a map                                                                             |
-| PUT                    | `/_matrix/client/v3/rooms/{id}/typing/{user}`                 | the typing stamp                                                                               |
+| PUT                    | `/_matrix/client/v3/rooms/{id}/typing/{user}`                 | accepted, and not carried to other clients                                                     |
 | POST                   | `/_matrix/client/v3/rooms/{id}/receipt/{type}/{event}`        | where this client has read to                                                                  |
 | POST                   | `/_matrix/client/v3/rooms/{id}/read_markers`                  | the same                                                                                       |
 | GET                    | `/_matrix/client/v3/profile/{user}`                           | the display name                                                                               |

@@ -5,6 +5,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, moduleOn, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('policies: ' + m)
 if (process.env.POLICY_TEST === '0') { note('skipped (POLICY_TEST=0)'); process.exit(0) }
@@ -18,7 +19,7 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
 const as = async (email: any) => {
-  const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id }
@@ -35,8 +36,9 @@ else if (!seeded) note('the seed holds no purchases or bookings here — the rea
 if (seeded) ok('the administrator reads every purchase (the seed holds some)', purchases.some((p) => p.user_id !== admin.id))
 if (seeded) ok('the administrator reads every booking (the seed holds some)', bookings.some((b) => b.user_id !== admin.id && b.provider_id !== admin.id))
 const ids = [...new Set(purchases.map((p) => p.user_id).concat(bookings.map((b) => b.user_id)).filter(Boolean))]
+// @ts-expect-error TS2322, from the conversion: Type '(string | null)[]' is not assignable to type 'string[]'. Type 'string | null' is not assignable to type 'string'. Type 'null' is not a
 const people = (await admin.sb.rpc('admin_people', { ids })).data
-ok('admin_people names every account asked for', Array.isArray(people) && people.length === ids.length && people.every((p) => p.id && p.email))
+ok('admin_people names every account asked for', Array.isArray(people) && people.length === ids.length && people.every((p: any) => p!.id && p!.email))
 
 const member = await as('member@example.com')
 const mine = (await member.sb.from('purchases').select('id, user_id')).data || []
@@ -45,6 +47,7 @@ if (seeded) ok('a member reads only their own purchases', mine.every((p) => p.us
 if (seeded) ok('a member reads only the bookings they are on', mineB.length >= 1 && mineB.every((b) => b.user_id === member.id || b.provider_id === member.id || (b.attendee_emails || []).includes('member@example.com')))
 const free = await as('free@example.com')
 ok('a reader on nothing reads nothing', ((await free.sb.from('purchases').select('id')).data || []).length === 0 && ((await free.sb.from('bookings').select('uid')).data || []).length === 0)
+// @ts-expect-error TS2322, from the conversion: Type '(string | null)[]' is not assignable to type 'string[]'. Type 'string | null' is not assignable to type 'string'. Type 'null' is not a
 const none = await member.sb.rpc('admin_people', { ids })
 ok('admin_people answers a member nothing', none.data === null)
 
@@ -53,7 +56,7 @@ ok('admin_people answers a member nothing', none.data === null)
 /* A person holds a set. The seed's coach holds `coach` alone — not `admin`, which is the whole
    point: answering a member must not hand somebody every order and every purchase. */
 {
-  const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+  const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
   const coach = await as('coach@example.com')
   const support = await as('support@example.com')
   const reader = await as('free@example.com')
@@ -103,12 +106,14 @@ ok('admin_people answers a member nothing', none.data === null)
     // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 3.
     coachSees.every((r) => r.user_id === coach.id) && coachSees.length < allPurchases, coachSees.length + ' of ' + allPurchases)
   if (probePurchase) await service.from('purchases').delete().eq('id', probePurchase.id)
+  // @ts-expect-error TS2322, from the conversion: Type '(string | null)[]' is not assignable to type 'string[]'. Type 'string | null' is not assignable to type 'string'. Type 'null' is not a
   ok('and is refused who a set of accounts are', (await coach.sb.rpc('admin_people', { ids })).data === null)
 
   /* nobody writes their own roles, whatever they already hold */
   const stolen = await coach.sb.from('profiles').update({ roles: ['admin'] }).eq('id', coach.id)
   ok('nobody grants themselves a role', !!stolen.error || (await rolesOf('coach@example.com')).join() === 'provider')
   ok('and set_roles answers a non-administrator nothing',
+    // @ts-expect-error TS2339, from the conversion: Property 'ok' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'ok' does not exist 
     ((await coach.sb.rpc('set_roles', { p_user: coach.id, p_roles: ['admin'] })).data || {}).ok === false)
 
   /* the last administrator cannot be removed */
@@ -116,12 +121,14 @@ ok('admin_people answers a member nothing', none.data === null)
   const spare = admins.filter((a) => a !== admin.id)
   for (const id of spare) await service.from('profiles').update({ roles: [] }).eq('id', id)
   const last = await admin.sb.rpc('set_roles', { p_user: admin.id, p_roles: [] })
+  // @ts-expect-error TS2339, from the conversion: Property 'why' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'why' does not exis
   ok('the last administrator cannot take their own role away', (last.data || {}).why === 'last-admin')
   ok('and is still an administrator afterwards', (await rolesOf('admin@example.com')).includes('admin'))
   for (const id of spare) await service.from('profiles').update({ roles: ['admin'] }).eq('id', id)
 
   /* a role this site has never heard of */
   ok('a role nobody has heard of is refused',
+    // @ts-expect-error TS2339, from the conversion: Property 'ok' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'ok' does not exist 
     ((await admin.sb.rpc('set_roles', { p_user: reader.id, p_roles: ['wizard'] })).data || {}).ok === false)
 }
 

@@ -23,6 +23,7 @@ import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { balanceOf } from '../src/lib/payouts.js'
 import { leave, moduleOn, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('payouts-db: ' + m)
 if (!(await moduleOn('sessions'))) { notHere('payouts-db', 'the sessions module is off'); process.exit(0) }
@@ -41,7 +42,7 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 
 console.log('\nPAYOUTS · THE LEDGER\n')
 
@@ -57,7 +58,7 @@ const mkUser = async (email: any) => {
   return data.user.id
 }
 const signIn = async (email: any) => {
-  const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return sb
@@ -171,10 +172,10 @@ try {
   const { data: bal } = await service.rpc('payout_balance', { p_user: providerId })
   // @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'. Type 'any' is not assignable to type 'never'.
   const mine = balanceOf(await linesOf())
-  ok('the database and the pure module agree on what is earned', Number(bal.earned) === mine.earned, bal.earned + ' vs ' + mine.earned)
-  ok('nothing is payable inside the window', Number(bal.payable) === 0 && Number(bal.waiting) === mine.earned)
-  ok('and nothing has been sent', Number(bal.sent) === 0)
-  ok('it says whether they can be paid at all', bal.connected === false)
+  ok('the database and the pure module agree on what is earned', Number((bal as any)!.earned) === mine.earned, (bal as any)!.earned + ' vs ' + mine.earned)
+  ok('nothing is payable inside the window', Number((bal as any)!.payable) === 0 && Number((bal as any)!.waiting) === mine.earned)
+  ok('and nothing has been sent', Number((bal as any)!.sent) === 0)
+  ok('it says whether they can be paid at all', (bal as any)!.connected === false)
 
   /* --- a refund inside the window --- */
   const { data: reversedIn } = await service.rpc('payouts_reverse', { p_purchase: p1, p_refunded: 4000 })
@@ -183,10 +184,10 @@ try {
   ok('no reversing line is written', lines.filter((l) => l.reverses).length === 0)
   ok('they simply never become payable', lines.filter((l) => l.purchase_id === p1).every((l) => Date.parse(l.payable_at) > now + 100 * 365 * 864e5 || l.payable_at === 'infinity'))
   const { data: bal2 } = await service.rpc('payout_balance', { p_user: providerId })
-  ok('so neither payable nor waiting counts them', Number(bal2.payable) === 0 && Number(bal2.waiting) === 5000, JSON.stringify(bal2))
+  ok('so neither payable nor waiting counts them', Number((bal2 as any)!.payable) === 0 && Number((bal2 as any)!.waiting) === 5000, JSON.stringify(bal2))
   /* AND NEITHER DOES EARNED: the money went back, so a figure counted as earned and then nowhere
      else would be a figure with no home */
-  ok('and they are not earned either — the money went back', Number(bal2.earned) === 5000, JSON.stringify(bal2))
+  ok('and they are not earned either — the money went back', Number((bal2 as any)!.earned) === 5000, JSON.stringify(bal2))
 
   /* --- a refund after the window, on money already sent --- */
   const pay2 = await purchase(8000, paidAt)
@@ -230,7 +231,7 @@ try {
   const madeRule = await asProvider.from('payout_rules').insert({ user_id: providerId, trigger: 'monthly', amount_kind: 'fixed', amount: 999999 })
   ok('nor a rule saying what they earn', !!madeRule.error)
   const theirBalance = await asProvider.rpc('payout_balance')
-  ok('their own balance is theirs to read', theirBalance.data && Number(theirBalance.data.earned) !== 0)
+  ok('their own balance is theirs to read', theirBalance.data && Number((theirBalance.data as any).earned) !== 0)
   const nosy = await asClient.rpc('payout_balance', { p_user: providerId })
   ok('and nobody else\'s', nosy.data === null, JSON.stringify(nosy.data))
   /* --- the door, where the functions are served (npm run dev serves them) ---

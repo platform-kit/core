@@ -18,6 +18,7 @@ import pg from 'pg'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('abuse-limits: ' + m)
 if (process.env.ABUSE_LIMITS_TEST === '0') { note('skipped (ABUSE_LIMITS_TEST=0)'); process.exit(0) }
@@ -54,7 +55,7 @@ try {
   ok('…and still serves another visitor', fine.status !== 429, fine.status)
   /* a signed-in reader is counted by their account, wherever they are */
   {
-    const c = createClient(url, anonKey, { auth: { persistSession: false } })
+    const c = createClient<Database>(url, anonKey, { auth: { persistSession: false } })
     const { data } = await c.auth.signInWithPassword({ email: 'free@example.com', password: 'password123' })
     if (data?.session) {
       await fill(`door:checkout:u:${data.user.id}`, LIMIT.checkout)

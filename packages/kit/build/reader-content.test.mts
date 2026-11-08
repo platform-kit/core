@@ -10,6 +10,7 @@ import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { splitChapters } from '../supabase/functions/_shared/gate.js'
 import { leave, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('reader-content: ' + m)
 if (process.env.READER_CONTENT_TEST === '0') { note('skipped (READER_CONTENT_TEST=0)'); process.exit(0) }
@@ -36,7 +37,7 @@ const lasts = splitChapters(source).map((p) => p.replace(/^# .*$/m, '').trim().s
 
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const service = createClient(url, serviceKey(), { auth: { persistSession: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false } })
 const tokenOf = async (email: any) => {
   const r = await (await fetch(url + '/auth/v1/token?grant_type=password', { method: 'POST', headers: { apikey: anon, 'content-type': 'application/json' }, body: JSON.stringify({ email, password: 'password123' }) })).json()
   return r.access_token || null
@@ -97,7 +98,7 @@ try {
     { path: A, collection: 'articles', slug: 'gate-probe', published: true, pending: false, data: { title: 'Gated', canAccess: ['paid'] }, body: 'The gated article is private.', text: fm({ title: 'Gated', canAccess: ['paid'] }) + 'The gated article is private.' },
   ])
   try {
-    const direct = await createClient(url, anon, { auth: { persistSession: false } }).from('content').select('path, body, text').like('path', '%gate-probe%')
+    const direct = await createClient<Database>(url, anon, { auth: { persistSession: false } }).from('content').select('path, body, text').like('path', '%gate-probe%')
     ok('a visitor reads no content row directly', !direct.error && direct.data.length === 0, JSON.stringify(direct.data || direct.error).slice(0, 120))
     const rows = (await ask({ action: 'rows' })).data.rows || []
     const by = Object.fromEntries(rows.filter((r: any) => /gate-probe/.test(r.path)).map((r: any) => [r.collection, r]))

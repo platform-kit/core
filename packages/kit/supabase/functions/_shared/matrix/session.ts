@@ -29,8 +29,9 @@
  * The service role is used for two things and no others: checking a password, and reading the
  * token table. Never for community data.
  */
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { admin } from '../lib.ts'
+import type { Database } from '../database.types.ts'
 
 const URL = () => Deno.env.get('SUPABASE_URL') ?? ''
 const ANON = () => Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -66,7 +67,7 @@ export const noteAttempt = (ip: string) => (ip ? admin.from('matrix_login_attemp
  * and never compare it ourselves.
  */
 export async function login(email: string, password: string, device: { id: string; name?: string }) {
-  const gate = createClient(URL(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
+  const gate = createClient<Database>(URL(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await gate.auth.signInWithPassword({ email, password })
   if (error || !data?.session || !data?.user) return null
 
@@ -93,7 +94,7 @@ export async function login(email: string, password: string, device: { id: strin
  * session is over — the password changed, the account was banned, they signed out everywhere —
  * so the row goes and the client is told to sign in again.
  */
-export type Session = { userId: string; device: string; db: ReturnType<typeof createClient> }
+export type Session = { userId: string; device: string; db: SupabaseClient<Database> }
 
 export async function sessionOf(token: string | null): Promise<Session | null> {
   if (!token) return null
@@ -102,7 +103,7 @@ export async function sessionOf(token: string | null): Promise<Session | null> {
   const row = Array.isArray(rows) ? rows[0] : rows
   if (error || !row) return null
 
-  const gate = createClient(URL(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
+  const gate = createClient<Database>(URL(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error: refused } = await gate.auth.refreshSession({ refresh_token: row.refresh_token })
   if (refused || !data?.session) {
     /* the account ended it. Ours goes too, so the next request says "sign in again" rather than
@@ -115,7 +116,7 @@ export async function sessionOf(token: string | null): Promise<Session | null> {
 
   /* THE CLIENT THAT IS THEM. Every read and write of community data goes through this one, so
      auth.uid() is the person and the guards they meet in a browser are the guards they meet here. */
-  const db = createClient(URL(), ANON(), {
+  const db = createClient<Database>(URL(), ANON(), {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { Authorization: `Bearer ${data.session.access_token}` } },
   })
@@ -130,10 +131,10 @@ export async function logout(token: string | null) {
   const { data: row } = await admin.from('matrix_sessions').select('id, refresh_token').eq('token_hash', hash).maybeSingle()
   if (!row) return
   try {
-    const gate = createClient(URL(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
+    const gate = createClient<Database>(URL(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
     const { data } = await gate.auth.refreshSession({ refresh_token: row.refresh_token })
     if (data?.session) {
-      const as = createClient(URL(), ANON(), { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${data.session.access_token}` } } })
+      const as = createClient<Database>(URL(), ANON(), { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${data.session.access_token}` } } })
       await as.auth.signOut()
     }
   } catch { /* the auth server having already forgotten it is the outcome we wanted */ }

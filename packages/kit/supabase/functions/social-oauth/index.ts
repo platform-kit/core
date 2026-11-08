@@ -74,7 +74,7 @@ async function canManageAccounts(userId: string) {
   return { allowed: data === true, error }
 }
 
-async function secret(action: 'put' | 'read' | 'delete', secretId?: string, value?: string, name?: string) {
+async function secret(action: 'put' | 'read' | 'delete', secretId: string | null = null, value: string | null = null, name: string | null = null) {
   if (action === 'put') {
     const { data, error } = await admin.rpc('social_vault_put', {
       p_secret: value,
@@ -468,7 +468,7 @@ async function refresh(userId: string, accountId: string) {
     if (!nextId) throw new Error('Could not store refreshed provider credentials.')
     const { data: updated, error: updateError } = await admin.from('social_accounts')
       .update({ credential_secret_id: nextId, status: 'connected', updated_at: new Date().toISOString() })
-      .eq('id', accountId).eq('credential_secret_id', account.credential_secret_id)
+      .eq('id', accountId).eq('credential_secret_id', account.credential_secret_id as string)   /* read above, so it is there */
       .select('id').maybeSingle()
     if (updateError || !updated) {
       await secret('delete', nextId)

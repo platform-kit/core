@@ -70,7 +70,8 @@ export async function raise({ title, body = '', contact = null, priority = 'norm
   })
   if (error) return { error: error.message }
   await loadTickets()
-  return data || {}
+  /* support_ticket_open answers the ticket made, or why not */
+  return (data || {}) as { ok?: true; id?: string; ref?: string; error?: string }
 }
 
 export async function setTicket(id: any, patch: any = {}) {
@@ -114,7 +115,7 @@ export async function linkTicket(id: any, conversationId: any, on = true) {
 export async function ticketsFor(conversationId: any) {
   if (!supabase || !conversationId) return []
   const { data } = await supabase.rpc('support_tickets_for', { p_conversation: conversationId })
-  return data || []
+  return (data || []) as Array<{ id: string; ref: string; title: string }>
 }
 
 /* ------------------------------------------------------------------ a person's own */

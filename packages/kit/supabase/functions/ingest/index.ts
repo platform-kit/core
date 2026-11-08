@@ -25,6 +25,8 @@ import { admin, getUser } from '../_shared/lib.ts'
 import { throughDoor } from '../_shared/doors.ts'
 import config from '../_shared/analytics.json' with { type: 'json' }
 import { kindOf, decodeBody, decode, toRow, FLAGS, remoteConfigJs } from '../_shared/posthog-wire.ts'
+import type { TablesInsert } from '../_shared/database.types.ts'
+import type { Json } from '../_shared/database.types.ts'
 
 type Source = { key: string; name: string; hosts: string[] }
 const SOURCES = ((config as { sources?: Source[] }).sources ?? []) as Source[]
@@ -112,7 +114,7 @@ Deno.serve(async (req: any) => {
 
   const geo = country(req)
   const now = Date.now()
-  const rows: Record<string, unknown>[] = []
+  const rows: TablesInsert<'events'>[] = []
   let anonForRate = ''
   for (const raw of batch) {
     const e = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
@@ -131,7 +133,7 @@ Deno.serve(async (req: any) => {
     rows.push({
       session_id: session, anon_id: anon, user_id: source ? null : userId, type,
       path: e.path == null ? null : String(e.path).slice(0, 2048), ref: e.ref == null ? null : String(e.ref).slice(0, 2048),
-      topic_slugs: topics, props: p, occurred_at: new Date(at).toISOString(),
+      topic_slugs: topics, props: p as Json /* parsed from the request's own JSON */, occurred_at: new Date(at).toISOString(),
       source: source ? source.name : null, distinct_id: source && e.distinct_id != null ? String(e.distinct_id).slice(0, 200) : null,
     })
     anonForRate = anon

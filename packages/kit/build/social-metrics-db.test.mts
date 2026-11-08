@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const url = supabaseUrl()
 if (!url || !localStack()) {
@@ -18,7 +19,7 @@ try {
   leave(0)
 }
 
-const service = createClient(url, serviceKey(), {
+const service = createClient<Database>(url, serviceKey(), {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 const { data: users, error: userError } = await service.auth.admin.listUsers({ page: 1, perPage: 1 })

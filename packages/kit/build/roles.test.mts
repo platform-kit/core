@@ -11,6 +11,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('roles: ' + m)
 if (process.env.ROLES_TEST === '0') { note('skipped (ROLES_TEST=0)'); process.exit(0) }
@@ -22,8 +23,8 @@ try { await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(4000) }
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
-const service = createClient(url, serviceKey(), O)
-const as = async (email: any) => { const c = createClient(url, anonKey, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
+const service = createClient<Database>(url, serviceKey(), O)
+const as = async (email: any) => { const c = createClient<Database>(url, anonKey, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
 const idOf = async (c: any) => (await c.auth.getUser()).data.user?.id
 /* refused, or let through and changed nothing: PostgREST answers an update its policy filters out with no rows */
 const refused = (r: any) => !!r.error || (Array.isArray(r.data) && !r.data.length) || r.data === null

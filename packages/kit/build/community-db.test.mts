@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createHash, randomBytes } from 'node:crypto'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('community-db: ' + m)
 if (process.env.COMMUNITY_TEST === '0') { note('skipped (COMMUNITY_TEST=0)'); process.exit(0) }
@@ -21,12 +22,12 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const as = async (email: any) => {
-  const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id, email }
 }
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 /* the browser's own hashing: a token is made and hashed where it is made, and only the digest is sent */
 const token = () => randomBytes(24).toString('base64url')
 const hash = (tk: any) => createHash('sha256').update(tk).digest('hex')
@@ -59,7 +60,7 @@ try {
       { space_id: data.id, slug: 'keeper', name: 'Keeper', rank: 50 },   /* a name the kit has never heard of */
     ])
     const { data: ch } = await service.from('channels').insert({ space_id: data.id, slug: 'lounge', name: 'Lounge', mode: 'stream', visibility: 'open' }).select().single()
-    return { id: data.id, channel: ch.id }
+    return { id: data.id, channel: ch!.id }
   }
   const comm = await makeSpace(COMM, 'A community', 'community', { entitlement: 'subscribed' })
   const serv = await makeSpace(SERV, 'A server', 'server', { tier: TIER })
@@ -73,7 +74,7 @@ try {
     }).select().single()
     // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     made.ents.push(data.id)
-    return data.id
+    return data!.id
   }
   const servEnt = await grant(two.email, TIER)
   await service.rpc('space_sync_members')
@@ -117,18 +118,19 @@ try {
     const after = await roomsOf(fresh.id)
     ok('joining a space puts you in its open rooms', after.includes(comm.channel) && after.length > before.length)
     ok('and the rail has something in it at once',
+      // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
       ((await fresh.sb.rpc('space_unread')).data || []).some((r: any) => r.channel === comm.channel))
 
     /* a private room is still joined by being put in it */
     const { data: shut } = await service.from('channels')
       .insert({ space_id: comm.id, slug: 'shut', name: 'Shut', mode: 'stream', visibility: 'private' }).select().single()
-    ok('a private room is not', !(await roomsOf(fresh.id)).includes(shut.id))
+    ok('a private room is not', !(await roomsOf(fresh.id)).includes(shut!.id))
 
     /* and a room declared after people are already there takes them with it */
     const { data: later } = await service.from('channels')
       .insert({ space_id: comm.id, slug: 'later', name: 'Later', mode: 'stream', visibility: 'open' }).select().single()
-    ok('a room declared later takes the space\'s people with it', (await roomsOf(fresh.id)).includes(later.id))
-    await service.from('channels').delete().in('id', [shut.id, later.id])
+    ok('a room declared later takes the space\'s people with it', (await roomsOf(fresh.id)).includes(later!.id))
+    await service.from('channels').delete().in('id', [shut!.id, later!.id])
     await service.from('space_members').delete().eq('space_id', comm.id).eq('user_id', fresh.id)
   }
 
@@ -151,7 +153,7 @@ try {
   const { data: inv1, error: invErr } = await one.sb.rpc('space_invite', { p_space: comm.id, p_hash: hash(t1), p_role: 'member', p_uses: 2 })
   ok('somebody holding a role the space granted `invite` may make one', !invErr && !!inv1, invErr && invErr.message)
   ok('and the kit named no role to do it', true)
-  const look = (await out.sb.rpc('space_invite_look', { p_hash: hash(t1) })).data
+  const look: any = (await out.sb.rpc('space_invite_look', { p_hash: hash(t1) })).data
   ok('a link says what it is for before anybody presses anything', look && look.state === 'good' && look.space === COMM, JSON.stringify(look))
   const accept = async (who: any, tk: any) => (await who.sb.rpc('space_invite_accept', { p_hash: hash(tk) })).data
   const a1 = await accept(out, t1)
@@ -173,9 +175,10 @@ try {
   /* an invitation is not a rule, and a rule must not take back what a person was invited to */
   await service.rpc('space_sync_members')
   ok('somebody who joined by invitation outlives a sweep', ((await out.sb.from('spaces').select('slug').eq('slug', COMM)).data || []).length === 1)
-  const rows = (await one.sb.rpc('space_invites_of', { p_space: comm.id })).data || []
+  const rows: any = (await one.sb.rpc('space_invites_of', { p_space: comm.id })).data || []
   ok('the invitations a space has out are listed for whoever may make one', rows.length === 2)
   ok('and the token is never among them', !JSON.stringify(rows).includes(t1) && !JSON.stringify(rows).includes('token'))
+  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
   ok('somebody who may not invite is shown none', !((await two.sb.rpc('space_invites_of', { p_space: comm.id })).data || []).length)
 
   /* ---- a space filled more than one way ---- */
@@ -213,29 +216,32 @@ try {
 
   /* ---- a report, and a second one ---- */
   const { data: said } = await service.from('space_messages').insert({ channel_id: comm.channel, author_id: two.id, body: 'Something worth reporting.' }).select().single()
-  const r1 = (await out.sb.rpc('space_report', { p_message: said.id, p_reason: 'spam', p_note: 'a probe' })).data
+  const r1 = (await out.sb.rpc('space_report', { p_message: said!.id, p_reason: 'spam', p_note: 'a probe' })).data
   ok('a member may report a message they can read', !!r1)
-  const r2 = (await out.sb.rpc('space_report', { p_message: said.id, p_reason: 'spam' })).data
+  const r2 = (await out.sb.rpc('space_report', { p_message: said!.id, p_reason: 'spam' })).data
   ok('reporting it twice is one report, not two', r1 === r2)
-  const queue = (await one.sb.rpc('space_reports', { p_space: comm.id })).data || []
-  ok('the queue shows it once to whoever may moderate', queue.filter((q: any) => q.message === said.id).length === 1, JSON.stringify(queue.map((q: any) => q.reason)))
+  const queue: any = (await one.sb.rpc('space_reports', { p_space: comm.id })).data || []
+  ok('the queue shows it once to whoever may moderate', queue.filter((q: any) => q.message === said!.id).length === 1, JSON.stringify(queue.map((q: any) => q.reason)))
   ok('and carries what was said and who said it', queue.some((q: any) => q.body === 'Something worth reporting.' && !!q.about))
+  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
   ok('somebody who may not moderate is shown no queue', !((await two.sb.rpc('space_reports', { p_space: comm.id })).data || []).length)
 
   /* ---- a message removed and a member muted ---- */
-  const rem = (await one.sb.rpc('space_moderate', { p_kind: 'remove-message', p_space: comm.id, p_message: said.id, p_reason: 'spam' })).data
+  const rem = (await one.sb.rpc('space_moderate', { p_kind: 'remove-message', p_space: comm.id, p_message: said!.id, p_reason: 'spam' })).data
   ok('a moderator may remove a message', !!rem)
-  const after: any = (await service.from('space_messages').select('deleted_at, body').eq('id', said.id).single()).data
+  const after: any = (await service.from('space_messages').select('deleted_at, body').eq('id', said!.id).single()).data
   ok('and it reads as withdrawn rather than vanishing', !!after.deleted_at && !!after.body)
-  const closed = (await one.sb.rpc('space_reports', { p_space: comm.id })).data || []
-  ok('the report about it is answered by the act', !closed.some((q: any) => q.message === said.id))
+  const closed: any = (await one.sb.rpc('space_reports', { p_space: comm.id })).data || []
+  ok('the report about it is answered by the act', !closed.some((q: any) => q.message === said!.id))
 
   const mute = (await one.sb.rpc('space_moderate', { p_kind: 'mute', p_space: comm.id, p_user: two.id, p_reason: 'spam', p_minutes: 1440 })).data
   ok('a moderator may mute a member for a span', !!mute)
-  const mine = (await two.sb.rpc('space_my_record')).data || []
+  const mine: any = (await two.sb.rpc('space_my_record')).data || []
   ok('the member is told it was done and when it ends', mine.some((m: any) => m.kind === 'mute' && !!m.until))
   ok('and is told nothing done to anybody else', mine.every((m: any) => m.kind !== 'report'))
+  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
   ok('somebody it was not done to reads none of it', !((await nobody.sb.rpc('space_my_record')).data || []).length)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
   ok('a record cannot be changed by the person it is about', !!(await two.sb.from('space_moderation').update({ until: null }).eq('id', mute)).error
     // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
     || !!(await service.from('space_moderation').select('until').eq('id', mute).single()).data.until)
@@ -245,12 +251,13 @@ try {
   const write = async (who: any, channel: any, extra = {}) => (await who.sb.from('space_messages').insert({ channel_id: channel, author_id: who.id, body: 'muted?', ...extra })).error
   ok('a muted member cannot write in a channel', !!(await write(two, comm.channel)))
   const { data: root } = await service.from('space_messages').insert({ channel_id: comm.channel, author_id: one.id, body: 'A thread.' }).select().single()
-  ok('nor in a thread', !!(await write(two, comm.channel, { thread_root_id: root.id })))
+  ok('nor in a thread', !!(await write(two, comm.channel, { thread_root_id: root!.id })))
   const dm = (await two.sb.rpc('space_dm_open', { p_space: comm.id, p_with: [one.id] })).data
   ok('a direct message opened before the mute is still theirs to read', !!dm)
   ok('and they cannot write in it either', !!(await write(two, dm)))
   ok('somebody who is not muted still can', !(await write(out, comm.channel)))
   /* it ends by itself */
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
   await service.from('space_moderation').update({ until: new Date(Date.now() - 6e4).toISOString() }).eq('id', mute)
   ok('a mute ends by itself when its span does', !(await write(two, comm.channel)), 'still refused after the span')
 
@@ -262,16 +269,18 @@ try {
   ok('and every word they wrote is still there', kept === before && before > 0, `${kept} of ${before}`)
 
   /* ---- the acts a space has had done in it ---- */
-  const record = (await one.sb.rpc('space_record', { p_space: comm.id })).data || []
+  const record: any = (await one.sb.rpc('space_record', { p_space: comm.id })).data || []
   ok('the acts are listed for whoever may moderate, with who did each and why', record.length >= 3 && record.every((m: any) => m.kind !== 'report'), JSON.stringify(record.map((m: any) => m.kind)))
+  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
   ok('and are not listed for anybody else', !((await nobody.sb.rpc('space_record', { p_space: comm.id })).data || []).length)
 
   /* ---- the directory says only what is already public ---- */
-  const people = (await one.sb.rpc('space_people', { p_space: comm.id })).data || []
+  const people: any = (await one.sb.rpc('space_people', { p_space: comm.id })).data || []
   ok('a member sees who else is in their space', people.length >= 1, JSON.stringify(people.map((p: any) => p.name)))
   const keys = new Set(people.flatMap((p: any) => Object.keys(p)))
   ok('and no address is disclosed', !keys.has('email'), [...keys].join(', '))
   ok('nor anything bought', !keys.has('purchases') && !keys.has('tier'))
+  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
   ok('somebody outside the space is shown nobody', !((await nobody.sb.rpc('space_people', { p_space: comm.id })).data || []).length)
 
 
@@ -283,13 +292,13 @@ try {
     meta: { poll: { options: [{ key: 'th', text: 'Thursday' }, { key: 'fr', text: 'Friday' }] } },
   }).select().single()).data
   ok('an ordinary member may not close somebody else\'s poll',
-    (await two.sb.rpc('space_poll_close', { p_message: asked.id })).data === false)
-  ok('whoever keeps the room may', (await one.sb.rpc('space_poll_close', { p_message: asked.id })).data === true)
+    (await two.sb.rpc('space_poll_close', { p_message: asked!.id })).data === false)
+  ok('whoever keeps the room may', (await one.sb.rpc('space_poll_close', { p_message: asked!.id })).data === true)
   const asked2 = (await service.from('space_messages').insert({
     channel_id: comm.channel, author_id: out.id, kind: 'poll', body: 'And the week after?',
     meta: { poll: { options: [{ key: 'th', text: 'Thursday' }, { key: 'fr', text: 'Friday' }] } },
   }).select().single()).data
-  ok('and so may whoever wrote it', (await out.sb.rpc('space_poll_close', { p_message: asked2.id })).data === true)
+  ok('and so may whoever wrote it', (await out.sb.rpc('space_poll_close', { p_message: asked2!.id })).data === true)
 
   /* ---- a person's card, and the half of it that is not for everybody ---- */
   /* `one` and `out` are both still in the community and both ordinary readers, which is the pair
@@ -297,7 +306,7 @@ try {
      a card of somebody who is no longer in it is answered nothing — which is checked below.) Staff
      are asked separately, because staff always may: that is the rule, not an exception to it. */
   const staff = await as('admin@example.com')
-  const card = (await one.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data
+  const card: any = (await one.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data
   ok('a member is given the card of somebody in their space', card && card.id === out.id, JSON.stringify(card && Object.keys(card)))
   ok('which says what this space calls them, when they came and how much they have said',
     card && Array.isArray(card.roles) && card.since && typeof card.said === 'number', JSON.stringify(card))
@@ -309,6 +318,7 @@ try {
     (await staff.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data === null)
   await service.from('space_members').insert({ space_id: comm.id, user_id: staff.id, source: 'manual' })
   ok('and once they are in it, they are told they may see the second half',
+    // @ts-expect-error TS2339, from the conversion: Property 'more' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'more' does not ex
     ((await staff.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data || {}).more === true)
   ok('somebody outside the space is answered nothing at all',
     (await nobody.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data === null)
@@ -326,21 +336,25 @@ try {
   const line = 'A line about me, ' + mark
   ok('a person may write a line about themselves', !(await out.sb.from('profiles').update({ about: line }).eq('id', out.id)).error)
   ok('and it is shown to somebody in the space with them',
+    // @ts-expect-error TS2339, from the conversion: Property 'about' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'about' does not 
     ((await one.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data || {}).about === line)
   ok('and in the directory beside their name',
+    // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
     (((await one.sb.rpc('space_people', { p_space: comm.id })).data || []).find((p: any) => p.id === out.id) || {}).about === line)
   const stolen = await one.sb.from('profiles').update({ about: 'written by somebody else' }).eq('id', out.id)
   ok('and nobody else may write it for them',
+    // @ts-expect-error TS2339, from the conversion: Property 'about' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'about' does not 
     !!stolen.error || ((await one.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data || {}).about === line)
   const long = await out.sb.from('profiles').update({ about: 'x'.repeat(281) }).eq('id', out.id)
   ok('a line past the limit is refused by the database, not only by the browser', !!long.error, long.error && long.error.message)
 
   /* ---- what a reader could be in ---- */
-  const could = (await nobody.sb.rpc('space_discover')).data || []
+  const could: any = (await nobody.sb.rpc('space_discover')).data || []
   ok('a reader is shown the spaces they could be in', could.some((s: any) => s.slug === COMM) && could.some((s: any) => s.slug === SERV), JSON.stringify(could.map((s: any) => s.slug)))
   ok('and the staff space is never among them', !could.some((s: any) => s.slug === 'the-team'))
   ok('each says what it would take', could.every((s: any) => s.fill && Object.keys(s.fill).length))
   ok('and whether it is already theirs', could.find((s: any) => s.slug === COMM).mine === false
+    // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
     && ((await one.sb.rpc('space_discover')).data || []).find((s: any) => s.slug === COMM).mine === true)
 
   /* ------------------------------------------------------------------ a room with a rule of its own */
@@ -366,7 +380,7 @@ try {
   await entitle(one, 'subscribed', { tier: TIER })
   await entitle(two, 'subscribed', { tier: TIER })
   await service.rpc('space_sync_members')
-  const inRoom = async () => ((await service.from('channel_members').select('user_id, source').eq('channel_id', inner.id)).data || [])
+  const inRoom = async () => ((await service.from('channel_members').select('user_id, source').eq('channel_id', inner!.id)).data || [])
   ok('a room with a rule starts empty of anybody who does not match it', (await inRoom()).length === 0)
 
   const entId = await entitle(one, 'test-ent-' + mark)
@@ -386,15 +400,15 @@ try {
 
   /* what they said stays when the rule stops matching — the same line removal already holds */
   const { data: saidIt } = await service.from('space_messages')
-    .insert({ channel_id: inner.id, author_id: one.id, body: 'Said while the rule matched.', kind: 'text' }).select().single()
+    .insert({ channel_id: inner!.id, author_id: one.id, body: 'Said while the rule matched.', kind: 'text' }).select().single()
   await service.from('entitlements').update({ active: false }).eq('id', entId)
   await service.rpc('space_sync_members')
   ok('the rule stops matching and the room lets them go', !(await inRoom()).some((r) => r.user_id === one.id))
   ok('and every word they wrote is still there',
-    !!((await service.from('space_messages').select('id').eq('id', saidIt.id)).data || []).length)
+    !!((await service.from('space_messages').select('id').eq('id', saidIt!.id)).data || []).length)
 
   /* a row somebody joined by hand is not a rule's to sweep away */
-  await service.from('channel_members').insert({ channel_id: inner.id, user_id: two.id, source: 'hand' })
+  await service.from('channel_members').insert({ channel_id: inner!.id, user_id: two.id, source: 'hand' })
   await service.rpc('space_sync_members')
   ok('a membership somebody made by hand survives a sweep that matches nobody',
     (await inRoom()).some((r) => r.user_id === two.id && r.source === 'hand'))
@@ -407,26 +421,26 @@ try {
     uid: 'probe-' + mark, user_id: one.id, type: BTYPE, event: BTYPE, status: 'accepted',
     start_at: soon, end_at: new Date(Date.parse(soon) + 36e5).toISOString(),
   }).select().single()
-  await service.from('channels').update({ fill: { booking: BTYPE, within_next: 10080 } }).eq('id', inner.id)
-  await service.from('channel_members').delete().eq('channel_id', inner.id)
+  await service.from('channels').update({ fill: { booking: BTYPE, within_next: 10080 } }).eq('id', inner!.id)
+  await service.from('channel_members').delete().eq('channel_id', inner!.id)
   await service.rpc('space_sync_members')
   ok('a call two days away opens the room', (await inRoom()).some((r) => r.user_id === one.id))
 
-  await service.from('bookings').update({ start_at: over, end_at: new Date(Date.parse(over) + 36e5).toISOString() }).eq('uid', bk.uid)
+  await service.from('bookings').update({ start_at: over, end_at: new Date(Date.parse(over) + 36e5).toISOString() }).eq('uid', bk!.uid)
   await service.rpc('space_sync_members')
   ok('and once it is a month past, withinNext lets them go', !(await inRoom()).some((r) => r.user_id === one.id))
 
-  await service.from('channels').update({ fill: [{ booking: BTYPE, within_next: 10080 }, { booking: BTYPE, within_last: 10080 }] }).eq('id', inner.id)
+  await service.from('channels').update({ fill: [{ booking: BTYPE, within_next: 10080 }, { booking: BTYPE, within_last: 10080 }] }).eq('id', inner!.id)
   const justGone = new Date(Date.now() - 2 * 864e5).toISOString()
-  await service.from('bookings').update({ start_at: justGone, end_at: new Date(Date.parse(justGone) + 36e5).toISOString() }).eq('uid', bk.uid)
+  await service.from('bookings').update({ start_at: justGone, end_at: new Date(Date.parse(justGone) + 36e5).toISOString() }).eq('uid', bk!.uid)
   await service.rpc('space_sync_members')
   ok('written together the two spans are one window, and it is still open two days after the call',
     (await inRoom()).some((r) => r.user_id === one.id))
 
-  await service.from('bookings').update({ status: 'cancelled' }).eq('uid', bk.uid)
+  await service.from('bookings').update({ status: 'cancelled' }).eq('uid', bk!.uid)
   await service.rpc('space_sync_members')
   ok('a cancelled booking is not a booking', !(await inRoom()).some((r) => r.user_id === one.id))
-  await service.from('bookings').delete().eq('uid', bk.uid)
+  await service.from('bookings').delete().eq('uid', bk!.uid)
 
   /* ------------------------------------------------------------------ direct messages */
   const dmSpace = roomSpace.id

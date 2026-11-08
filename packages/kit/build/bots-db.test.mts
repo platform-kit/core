@@ -21,6 +21,7 @@ import assert from 'node:assert/strict'
 import { projectBots } from './bots-db.mjs'
 import { compileBots } from './bots.mjs'
 import { statusOf, leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const SITE = process.cwd()
 let pass = 0, fail = 0
@@ -96,7 +97,7 @@ console.log('  ✔ invalid bot declarations fail before generated files are writ
 let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') } catch { skip('no local stack') }
 if (!cfg || !cfg.SERVICE_ROLE_KEY) skip('the stack reported no service key')
-const db = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+const db = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 { const { error } = await db.from('bots').select('id', { head: true, count: 'exact' }); if (error) skip('the bots table is not there — npm run db:reset (' + error.message + ')') }
 
 const { readSkills } = await import('./bots.mjs')

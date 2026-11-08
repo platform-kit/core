@@ -24,6 +24,7 @@ import pg from 'pg'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, declared, notHere, moduleOn } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('ownership: ' + m)
 if (process.env.OWNERSHIP_TEST === '0') { note('skipped (OWNERSHIP_TEST=0)'); process.exit(0) }
@@ -35,9 +36,9 @@ try { await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(4000) }
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
-const service = createClient(url, serviceKey(), O)
-const guest = createClient(url, anonKey, O)
-const as = async (email: any) => { const c = createClient(url, anonKey, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
+const service = createClient<Database>(url, serviceKey(), O)
+const guest = createClient<Database>(url, anonKey, O)
+const as = async (email: any) => { const c = createClient<Database>(url, anonKey, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
 const idOf = async (c: any) => (await c.auth.getUser()).data.user?.id
 const fn = async (name: any, body: any, c: any) => {
   const token = c ? (await c.auth.getSession()).data.session?.access_token : null
@@ -134,14 +135,14 @@ const insert = async (table: any, row: any) => { const { data, error } = await s
 const byLink = async (email: any) => {
   const { data, error } = await service.auth.admin.generateLink({ type: 'magiclink', email })
   if (error) throw new Error('link: ' + error.message)
-  const c = createClient(url, anonKey, O)
+  const c = createClient<Database>(url, anonKey, O)
   const { error: e2 } = await c.auth.verifyOtp({ token_hash: data.properties.hashed_token, type: 'magiclink' })
   if (e2) throw new Error('verify: ' + e2.message)
   return c
 }
 try {
-  const bought = await insert('purchases', { email: victim, sku: 'plain-words', key: 'probe', kind: 'download', status: 'paid', amount_total: 800, currency: 'usd', stripe_checkout_session_id: 'cs_probe_' + stamp })
-  const theirs = await insert('bookings', { uid: 'probe-guest-' + stamp, email: victim, name: 'Victim', status: 'accepted', event: 'probe', start_at: new Date(Date.now() + 864e5).toISOString(), end_at: new Date(Date.now() + 90e6).toISOString() })
+  const bought: any = await insert('purchases', { email: victim, sku: 'plain-words', key: 'probe', kind: 'download', status: 'paid', amount_total: 800, currency: 'usd', stripe_checkout_session_id: 'cs_probe_' + stamp })
+  const theirs: any = await insert('bookings', { uid: 'probe-guest-' + stamp, email: victim, name: 'Victim', status: 'accepted', event: 'probe', start_at: new Date(Date.now() + 864e5).toISOString(), end_at: new Date(Date.now() + 90e6).toISOString() })
 
   const wrote = await member2.from('profiles').update({ email: victim }).eq('id', member2Id).select('email')
   ok('a reader cannot write their profile\'s address', !!wrote.error, JSON.stringify(wrote.data))
@@ -153,7 +154,7 @@ try {
   ok('a proven address claims nothing of another address', (still as any).user_id === null, (still as any).user_id)
 
   /* signing up as somebody's address (confirmed at once) claims and shows nothing… */
-  const signer = createClient(url, anonKey, O)
+  const signer = createClient<Database>(url, anonKey, O)
   const { data: up, error: upErr } = await signer.auth.signUp({ email: victim, password: 'password123' + stamp })
   if (upErr || !up.user) throw new Error('sign up: ' + (upErr?.message || 'no user'))
   made.users.push(up.user.id)
@@ -167,6 +168,7 @@ try {
   /* …until the address is proven by its own link, which is the honest buyer coming back */
   const proven = await byLink(victim)
   const { data: marked } = await proven.rpc('mark_email_verified')
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'boolean | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 'string
   ok('the address proven by its link is marked', marked === true, marked)
   const { data: claimed } = await service.from('purchases').select('user_id').eq('id', bought.id).single()
   ok('…and then claims the guest\'s purchases', (claimed as any).user_id === up.user.id, (claimed as any).user_id)
@@ -174,17 +176,17 @@ try {
   ok('…and shows the guest\'s bookings', (shown.data || []).length === 1, JSON.stringify(shown))
 
   /* ─── 3. another account's records by id ─── */
-  const order = await insert('orders', { number: 9e9 + Math.floor(Math.random() * 1e6), user_id: memberId, email: 'member@example.com', currency: 'usd', checkout_session: 'cs_probe_o_' + stamp })
-  const booking = await insert('bookings', { uid: 'probe-own-' + stamp, user_id: memberId, email: 'member@example.com', status: 'accepted', event: 'probe', recording_path: `probe-own-${stamp}/recording.mp4`, start_at: new Date(Date.now() + 864e5).toISOString(), end_at: new Date(Date.now() + 90e6).toISOString() })
-  const sub = await insert('subscriptions', { id: 'sub_probe_' + stamp, user_id: memberId, status: 'active' })
-  const ent = await insert('entitlements', { user_id: memberId, kind: 'class', key: 'probe-' + stamp, source: 'grant', source_id: 'probe-' + stamp })
-  const payAcct = await insert('payout_accounts', { user_id: memberId, account_id: 'acct_probe_' + stamp })
-  const payLine = await insert('payout_lines', { user_id: memberId, amount: 1234, about: 'probe', payable_at: new Date().toISOString() })
+  const order: any = await insert('orders', { number: 9e9 + Math.floor(Math.random() * 1e6), user_id: memberId, email: 'member@example.com', currency: 'usd', checkout_session: 'cs_probe_o_' + stamp })
+  const booking: any = await insert('bookings', { uid: 'probe-own-' + stamp, user_id: memberId, email: 'member@example.com', status: 'accepted', event: 'probe', recording_path: `probe-own-${stamp}/recording.mp4`, start_at: new Date(Date.now() + 864e5).toISOString(), end_at: new Date(Date.now() + 90e6).toISOString() })
+  const sub: any = await insert('subscriptions', { id: 'sub_probe_' + stamp, user_id: memberId, status: 'active' })
+  const ent: any = await insert('entitlements', { user_id: memberId, kind: 'class', key: 'probe-' + stamp, source: 'grant', source_id: 'probe-' + stamp })
+  const payAcct: any = await insert('payout_accounts', { user_id: memberId, account_id: 'acct_probe_' + stamp })
+  const payLine: any = await insert('payout_lines', { user_id: memberId, amount: 1234, about: 'probe', payable_at: new Date().toISOString() })
   const used = (await asOwner('insert into public.usage_events (user_id, source_ref, offer_key, kind) values ($1, $2, $3, $4) returning source_ref', [memberId, 'probe-' + stamp, 'probe', 'model']))[0]
-  const answered = await insert('form_responses', { form: 'probe', user_id: memberId })
-  const run = await insert('agent_runs', { asked_by: memberId, status: 'done', job: 'probe' })
+  const answered: any = await insert('form_responses', { form: 'probe', user_id: memberId })
+  const run: any = await insert('agent_runs', { asked_by: memberId, status: 'done', job: 'probe' })
   await service.from('agent_steps').insert({ run_id: run.id, n: 1, kind: 'tool', name: 'orders', request: { probe: true } })
-  const contact = await insert('support_contacts', { user_id: memberId })
+  const contact: any = await insert('support_contacts', { user_id: memberId })
   const ticket = (await service.from('support_tickets').insert({ ref: 9e9 + Math.floor(Math.random() * 1e6), title: 'probe', contact_id: contact.id }).select().single()).data
 
   const RECORDS = [['orders', 'id', order.id], ['purchases', 'id', bought.id], ['bookings', 'uid', booking.uid], ['subscriptions', 'id', sub.id], ['entitlements', 'id', ent.id],
@@ -262,6 +264,7 @@ try {
     if (table === 'support_contacts') { await service.from('support_tickets').delete().eq('contact_id', (r as any).id); }
     if (table === 'agent_runs') await service.from('agent_steps').delete().eq('run_id', (r as any).id)
     if (table === 'purchases') await service.from('entitlements').delete().eq('source_id', (r as any).stripe_checkout_session_id)
+    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
     await service.from(table).delete().eq(key, r[key])
   }
   await service.from('bookings').delete().like('uid', `probe-%-${stamp}`)

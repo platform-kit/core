@@ -30,7 +30,8 @@ import { grade } from '../_shared/forms/score.ts'
 import { definitionOf } from '../_shared/api/typeform/definition.ts'
 import { itemOf, webhookPayloadOf, fileUrlOf } from '../_shared/api/typeform/response.ts'
 import { throughDoor } from '../_shared/doors.ts'
-import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
+import { fresh } from '../_shared/compiled.ts'
+import type { Json } from '../_shared/database.types.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
 type Field = { name: string; kind: string; required: boolean; multiple: boolean; values?: string[]; slide: number }
 type Form = { title: string; fields: Field[]; kit: { published: boolean; once: boolean; respond: string; embedOrigins: string[]; webhook: string; pass: number | null; score: Record<string, string>; paid?: string; ticket?: string; ticketTitle?: string; ticketPriority?: string }; settings: { page: string }; api?: any }
@@ -122,7 +123,8 @@ async function deliver(slug: string, form: Form, id: string) {
   if (!subs.length) return
   const body = await payloadOf(slug, form, id)
   const { data: row } = await admin.from('form_responses').select('meta').eq('id', id).single()
-  const failed: Record<string, string> = { ...((row?.meta || {}).webhook_failed || {}) }
+  const had = (row?.meta || {}) as { webhook_failed?: Record<string, string>; [key: string]: Json | undefined }
+    const failed: Record<string, string> = { ...(had.webhook_failed || {}) }
   for (const s of subs) {
     try {
       const headers: Record<string, string> = { 'content-type': 'application/json', 'typeform-signature': await typeformSig(s.secret, body), 'x-form': slug }
@@ -136,7 +138,7 @@ async function deliver(slug: string, form: Form, id: string) {
       if (s.id) await admin.from('form_webhooks').update({ last_error: failed[s.key] }).eq('id', s.id)
     }
   }
-  const meta = { ...(row?.meta || {}), webhook_failed: failed }
+  const meta = { ...had, webhook_failed: failed }
   const any = Object.keys(failed).length
   await admin.from('form_responses').update({ meta, webhook_at: any ? null : new Date().toISOString(), webhook_error: any ? Object.entries(failed).map(([k, v]) => k + ': ' + v).join('; ').slice(0, 500) : null }).eq('id', id)
 }

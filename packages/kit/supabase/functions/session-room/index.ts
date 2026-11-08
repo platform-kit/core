@@ -10,6 +10,7 @@ import { json, preflight, getUser, admin } from '../_shared/lib.ts'
 import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { deliverSchedulingEvent } from '../_shared/scheduling-events.ts'
 import { typeFor, videoOf, videoIdOf } from '../_shared/cal.ts'
+import type { Database } from '../_shared/database.types.ts'
 
 Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
@@ -20,7 +21,7 @@ Deno.serve(async (req: any) => {
   try { body = await req.json() } catch { return json({ error: 'bad request' }, 400) }
   const uid = String(body?.uid ?? ''), action = String(body?.action ?? 'admit')
   /* the booking through the caller's own client: its policy (the people on it, an administrator) is the check */
-  const mine = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
+  const mine = createClient<Database>(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
   const { data: b } = await mine.from('bookings').select('uid, user_id, host_id, provider_id, event, type, status, start_at, end_at, room, seat_of, where, title, name').eq('uid', uid).maybeSingle()
   if (!b) return json({ error: 'not your booking', code: 'not-yours' }, 403)
   const s = await typeFor(b.event, { any: true })

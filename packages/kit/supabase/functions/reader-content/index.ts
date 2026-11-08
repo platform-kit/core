@@ -19,6 +19,7 @@ import { contentIndexes } from '../_shared/content-index.ts'
 import { classOf, allowedBy } from '../_shared/access.ts'
 import { readableChapters, sentText, splitChapters, publicRow, companionTextFor } from '../_shared/gate.ts'
 import { parseCompanionBody, serialiseCompanionBody } from '../_shared/pipe/src/lib/companion-body.js'
+import type { Database } from '../_shared/database.types.ts'
 
 const COMPANION = { parseCompanionBody, serialiseCompanionBody }
 
@@ -26,7 +27,7 @@ const PAGES = new Set(['articles', 'wiki', 'docs'])
 const fail = (error: string, status: number) => json({ error }, status)
 
 /* the database, asked as the reader: their own session decides what get_my_entitlements and is_admin answer */
-const asReader = (req: Request) => createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
+const asReader = (req: Request) => createClient<Database>(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
   global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
   auth: { persistSession: false, autoRefreshToken: false },
 })

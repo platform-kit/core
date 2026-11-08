@@ -25,6 +25,7 @@ export { POLICY, policyOf, readPolicy } from './providers-io.mjs'
 export { spanMinutes as delayMinutes } from '../src/lib/payouts.js'
 import { readPolicy, projectProviders, policyOf } from './providers-io.mjs'
 import { isMain } from './is-main.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 export async function pushProviders({ root = process.cwd(), store, log = console.log, db: client = null }: any = {}) {
   const url = client ? '' : supabaseUrl()
@@ -36,7 +37,7 @@ export async function pushProviders({ root = process.cwd(), store, log = console
     const { isOn } = await import('./modules/manifest.mjs')
     if (!isOn('sessions', (await loadSite(root)).modules || {})) { log('providers: the sessions module is off — no policy to push'); return { policy: null } }
   }
-  const db = client || createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+  const db = client || createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 
   const { data, body } = await readPolicy(store || root)
   if (!data) { log('providers: no content/providers.md — nothing to project'); return { policy: null } }

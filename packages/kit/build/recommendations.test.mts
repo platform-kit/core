@@ -17,6 +17,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('recommendations: ' + m)
 if (process.env.RECOMMENDATIONS_TEST === '0') { note('skipped (RECOMMENDATIONS_TEST=0)'); process.exit(0) }
@@ -30,12 +31,12 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const as = async (email: any) => {
-  const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id }
 }
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 
 console.log('\nWHAT A READER IS INTERESTED IN, AGAINST THE STACK\n')
 
@@ -248,9 +249,10 @@ try {
 
   /* ---- IT IS THEIR OWN AND NOBODY ELSE'S ---- */
   ok('another account sees none of it', Object.keys(ours(await mine(other.sb))).length === 0)
+  // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'p_user' does not exist in type '{ p_days?: number | null | undefined; }'.
   const { error: argErr } = await other.sb.rpc('my_interests', { p_user: member.id })
   ok('there is no argument to ask for somebody else with', !!argErr, 'the call was accepted')
-  const guest = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const guest = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data: none } = await guest.rpc('my_interests')
   ok('a guest gets nothing', (none || []).length === 0, JSON.stringify(none))
   const { error: setErr } = await member.sb.from('content_search')

@@ -8,6 +8,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('network-db: ' + m)
 if (process.env.NETWORK_TEST === '0') { note('skipped (NETWORK_TEST=0)'); process.exit(0) }
@@ -20,14 +21,14 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const client = () => createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+const client = () => createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
 const as = async (email: any) => {
   const sb = client()
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id }
 }
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const guest = client()
 
 /* the ids a reader gets back for a set of posts, by the path the pages use */
@@ -190,7 +191,7 @@ try {
   const unread = (await A.sb.rpc('network_unread')).data
   await A.sb.from('network_seen').upsert({ user_id: A.id, seen_at: new Date().toISOString() })
   const after = (await A.sb.rpc('network_unread')).data
-  ok('what is unread is counted, and looking clears it', unread > 0 && after === 0, `${unread} → ${after}`)
+  ok('what is unread is counted, and looking clears it', unread! > 0 && after === 0, `${unread} → ${after}`)
 
   /* ------------------------------------------------------------ a block */
   await A.sb.from('network_follows').insert({ follower_id: A.id, subject_id: B.id })
@@ -220,9 +221,12 @@ try {
   ok('a moderator removes it', !removed.error, removed.error?.message)
   ok('…and nobody else reads it', !(await sees(B.sb, [everyone.id])).has(everyone.id) && !(await sees(C.sb, [everyone.id])).has(everyone.id))
   ok('…but its author still does', (await sees(A.sb, [everyone.id])).has(everyone.id))
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
   const answered = (await service.from('network_moderation').select('answered_at').eq('id', rep.data).single()).data
   ok('…and the report is answered', !!answered?.answered_at)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
   const rewrite = await M.sb.from('network_moderation').update({ reason: 'changed' }).eq('id', rep.data).select()
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
   const erase = await M.sb.from('network_moderation').delete().eq('id', rep.data).select()
   ok('the record cannot be edited or deleted, even by a moderator', (rewrite.error || !(rewrite.data || []).length) && (erase.error || !(erase.data || []).length))
 
@@ -264,29 +268,29 @@ try {
   await grant(null)   /* whatever the site's own config wrote, the test starts open */
   const open = (await A.sb.from('network_posts').insert({ author_id: A.id, text: 'for whoever takes part', audience: 'here' }).select().single()).data
   const admitted = async (who: any, grantName: any) => (await who.sb.rpc('network_admitted', { p_user: who.id, p_grant: grantName })).data === true
-  ok('with no grants, everyone signed in reads and writes', (await admitted(C, 'read')) && (await admitted(C, 'write')) && (await sees(C.sb, [open.id])).has(open.id))
+  ok('with no grants, everyone signed in reads and writes', (await admitted(C, 'read')) && (await admitted(C, 'write')) && (await sees(C.sb, [open!.id])).has(open!.id))
 
   await grant({ read: [{ entitlement: PASS }], write: [{ entitlement: PASS }] })
-  ok('a paid network: the pass-holder reads what is posted', (await sees(B.sb, [open.id])).has(open.id))
-  ok('…and somebody without it reads nothing', !(await sees(C.sb, [open.id])).has(open.id))
-  ok('…nor does a guest', !(await sees(guest, [open.id])).has(open.id))
+  ok('a paid network: the pass-holder reads what is posted', (await sees(B.sb, [open!.id])).has(open!.id))
+  ok('…and somebody without it reads nothing', !(await sees(C.sb, [open!.id])).has(open!.id))
+  ok('…nor does a guest', !(await sees(guest, [open!.id])).has(open!.id))
   const cPosts = await C.sb.from('network_posts').insert({ author_id: C.id, text: 'let me in', audience: 'here' })
   ok('…and cannot post', !!cPosts.error)
   ok('…nor follow', !!(await C.sb.from('network_follows').insert({ follower_id: C.id, subject_id: B.id })).error)
-  ok('…nor like', !!(await C.sb.from('network_likes').insert({ author_id: C.id, post_id: open.id })).error)
-  ok('…while the pass-holder likes', !(await B.sb.from('network_likes').insert({ author_id: B.id, post_id: open.id })).error)
+  ok('…nor like', !!(await C.sb.from('network_likes').insert({ author_id: C.id, post_id: open!.id })).error)
+  ok('…while the pass-holder likes', !(await B.sb.from('network_likes').insert({ author_id: B.id, post_id: open!.id })).error)
   ok('the staff always take part', (await admitted(M, 'read')))
-  ok('an administrator always takes part', (await admitted(M, 'read')) && (await admitted(M, 'write')) && (await sees(M.sb, [open.id])).has(open.id))
+  ok('an administrator always takes part', (await admitted(M, 'read')) && (await admitted(M, 'write')) && (await sees(M.sb, [open!.id])).has(open!.id))
   ok('…and the notifications of somebody outside are empty', ((await C.sb.rpc('network_notifications', {})).data || []).length === 0)
 
   await grant({ write: [{ entitlement: PASS }] })
-  ok('free to read, paid to post: anybody signed in reads', (await sees(C.sb, [open.id])).has(open.id) && (await admitted(C, 'read')))
+  ok('free to read, paid to post: anybody signed in reads', (await sees(C.sb, [open!.id])).has(open!.id) && (await admitted(C, 'read')))
   ok('…and only the pass-holder writes', !!(await C.sb.from('network_posts').insert({ author_id: C.id, text: 'still not', audience: 'here' })).error && !(await admitted(C, 'write')) && (await admitted(B, 'write')))
 
   await grant({ read: [{ entitlement: PASS }] })
   ok('reading alone given: whoever reads also writes', (await admitted(B, 'write')) && !(await admitted(C, 'write')))
   await grant(null)
-  ok('taking the grants away opens it again', (await sees(C.sb, [open.id])).has(open.id) && (await admitted(C, 'write')))
+  ok('taking the grants away opens it again', (await sees(C.sb, [open!.id])).has(open!.id) && (await admitted(C, 'write')))
 
   /* ---- WHO ENTERS EACH PLACE (community.access, community_access): events, messages, notifications */
   const places = async (rules: any) => {
@@ -302,7 +306,9 @@ try {
   ok('…and nobody else', !(await enters(C, 'events')) && !(await enters(C, 'messages')) && !(await enters(C, 'notifications')))
   ok('…but the staff', (await enters(M, 'events')) && (await enters(M, 'messages')))
   ok('…and a place without a rule stays open', await enters(C, 'diagnostics'))
+  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
   ok('outside Events, no event is listed', ((await C.sb.rpc('events_upcoming', {})).data || []).length === 0)
+  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
   ok('outside Messages, no direct message is listed', ((await C.sb.rpc('space_dms', {})).data || []).length === 0)
   ok('…nor opened', !!(await C.sb.rpc('space_dm_open', { p_space: spaceId, p_with: [B.id] })).error)
   ok('outside Notifications, nothing is notified', ((await C.sb.rpc('network_notifications', {})).data || []).length === 0)
@@ -348,6 +354,7 @@ try {
     await service.from('network_moderation').delete().in('subject_id', people)
     await service.from('network_moderation').delete().in('actor_id', people)
     for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_blocks', 'blocker_id'], ['network_mutes', 'muter_id'], ['network_pins', 'user_id'], ['network_seen', 'user_id'], ['network_posts', 'author_id']]) {
+      // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
       await service.from(t).delete().in(col, people)
     }
     for (const [id, p] of profilesBefore) await service.from('profiles').update({ public_profile: p.public_profile, username: p.username }).eq('id', id)

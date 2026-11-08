@@ -15,6 +15,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { statusOf, leave, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const SITE = process.cwd()
 let pass = 0, fail = 0
@@ -26,7 +27,7 @@ const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n'); lea
 let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') } catch { skip('no local stack') }
 if (!cfg || !cfg.SERVICE_ROLE_KEY) skip('the stack reported no service key')
-const db = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+const db = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 { const { error } = await db.from('calendar_events').select('id', { head: true, count: 'exact' }); if (error) skip('calendar_events is not there — npm run db:reset (' + error.message + ')') }
 
 /* the module the Edge Function can run: no filesystem at import, so the pipe may carry it */

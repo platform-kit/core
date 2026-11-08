@@ -13,6 +13,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, moduleOn, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('comments-db: ' + m)
 if (process.env.COMMENTS_TEST === '0') { note('skipped (COMMENTS_TEST=0)'); process.exit(0) }
@@ -26,12 +27,12 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const as = async (email: any) => {
-  const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id }
 }
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 
 console.log('\nCOMMENTS, AGAINST THE STACK\n')
 
@@ -86,6 +87,7 @@ try {
   ok('nobody else sees it at all', !(await readAs(member)).some((c: any) => c.id === free1.id))
   ok('a moderator does', (await readAs(admin)).some((c: any) => c.id === free1.id))
   ok('and it is not counted where it is not shown',
+    // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type '"a-thing"' can't be used to index type 'string | number | true | { [key: st
     Number(((await member.sb.rpc('comment_counts', { p_kind: KIND, p_subjects: [SUBJ] })).data || {})[SUBJ]) === 1)
 
   /* ---- the flagged list: a machine may flag, only a person decides ---- */
@@ -100,7 +102,7 @@ try {
 
   /* ---- the fifth act, and what it writes down ---- */
   const before = ((await service.from('space_moderation').select('id').eq('kind', 'approve')).data || []).length
-  const done = (await admin.sb.rpc('comment_approve', { p_comment: free1.id, p_reason: 'fine' })).data
+  const done: any = (await admin.sb.rpc('comment_approve', { p_comment: free1.id, p_reason: 'fine' })).data
   ok('a moderator releases it', done && done.ok === true, JSON.stringify(done))
   ok('and everybody sees it', (await readAs(member)).some((c: any) => c.id === free1.id))
   const after = (await service.from('space_moderation').select('id, actor_id, comment_id, reason').eq('kind', 'approve')).data || []
@@ -116,8 +118,10 @@ try {
   const free2 = await say(free, 'And so this one goes straight up.')
   ok('so their next comment appears at once', free2 && free2.state === 'live', JSON.stringify(free2))
 
+  // @ts-expect-error TS2339, from the conversion: Property 'error' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'error' does not 
   ok('a member cannot release their own', ((await member.sb.rpc('comment_approve', { p_comment: mem2.id })).data || {}).error === 'not-yours')
   ok('and refusing removes it as any message is',
+    // @ts-expect-error TS2339, from the conversion: Property 'state' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'state' does not 
     ((await admin.sb.rpc('comment_refuse', { p_comment: mem2.id })).data || {}).state === 'removed')
   ok('the placeholder stays', (await readAs(admin)).some((c: any) => c.id === mem2.id && c.deleted_at))
 
@@ -157,7 +161,7 @@ try {
     p_kind: KIND, p_subject: SLUG, p_body: 'From somebody else\'s page.',
     p_title: 'A Post', p_href: 'https://elsewhere.example' + SLUG,
   })
-  ok('an embed makes the subject from the kind\'s own declaration', !made.error && !!made.data && !made.data.error, JSON.stringify(made.error || made.data))
+  ok('an embed makes the subject from the kind\'s own declaration', !made.error && !!made.data && !(made.data as any).error, JSON.stringify(made.error || made.data))
   const { data: subj } = await service.from('comment_subjects').select('*').eq('kind', KIND).eq('subject', SLUG).maybeSingle()
   ok('the slug is the subject', !!subj)
   ok('the title is kept, for the board and the queue', subj && subj.title === 'A Post')
@@ -172,8 +176,9 @@ try {
 
   /* ---- the queue: the unattached ones, and who may read it ---- */
   const q = (await admin.sb.rpc('comment_queue', { p_state: 'waiting', p_attached: false, p_limit: 100 })).data || []
-  ok('the desk\'s queue is the conversations no room owns', Array.isArray(q) && q.every((r) => r.attached === false))
+  ok('the desk\'s queue is the conversations no room owns', Array.isArray(q) && q.every((r: any) => r!.attached === false))
   ok('and an ordinary member reads nothing from it',
+    // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
     (((await member.sb.rpc('comment_queue', { p_state: 'waiting', p_limit: 100 })).data) || []).length === 0)
 } catch (e: any) {
   fail++

@@ -10,6 +10,9 @@ sources:
     packages/kit/supabase/schemas/91-matrix.sql,
     packages/kit/supabase/schemas/92-encryption.sql,
     packages/kit/build/plan.mts,
+    packages/kit/build/db-types.mts,
+    packages/kit/build/db-types.test.mts,
+    packages/kit/supabase/functions/_shared/database.types.ts,
     packages/kit/build/runtime-paths.mts,
     packages/kit/build/destructive.mts,
     packages/kit/build/assemble.mts,
@@ -137,6 +140,16 @@ The same module shows how unread is counted, which is to say not counted at all:
 One trap the module is worth knowing for: `auth.role()` reads the request's own claim, not the effective database role, so a `SECURITY DEFINER` trigger still looks like the caller inside a guard. A guard that refuses a client's edit will therefore refuse the module's own write — a thread's reply count, say — and take the whole insert down with it. `pg_trigger_depth()` is what tells the two apart.
 
 A paid session selected in the app and purchased through the selected payment provider is fulfilled once per provider-scoped checkout identity. The service-role-only `booking_checkout_fulfilments` table records that idempotency claim and its outcome; it is separate from the booking row, so webhook and success-page confirmation cannot create the same booking twice.
+
+## The database as types
+
+`packages/kit/supabase/functions/_shared/database.types.ts` is the whole kit database as TypeScript: every table, view and function, with every module on. The Edge Functions' clients and the browser's are typed from it (`createClient<Database>`), so a query names real columns, a row says which of them can be null, and a call to a function the schema does not have is a type error rather than a 404 at run time.
+
+It is generated, never edited. `platformkit db-types` starts a throwaway Postgres in Docker, applies every kit schema file and the glue between modules, and runs Supabase's own generator (postgres-meta, which `supabase gen types` uses). No stack is touched, and the images are pinned, so the same schema always gives the same file. Run it after changing a schema file; `--check` fails when the file is out of date, and the end-to-end run checks it (`db-types.test`).
+
+Two things the generator cannot see are added. Any argument of a database function may be null, because Postgres passes null to a function that is not STRICT and the kit declares none STRICT. And a column a trigger fills before the row is written is optional to insert: a message's `seq` is its channel's next number.
+
+A function returning `jsonb` is typed `Json`, which says nothing about its keys. Where code reads one, it declares the shape that function builds, next to the call, from the SQL.
 
 ## The plan
 

@@ -21,6 +21,7 @@
  */
 
 import { eventId, readEvent, roomId, userId } from './ids.ts'
+import type { Json } from '../database.types.ts'
 
 /* our kinds, and the msgtype each becomes. A poll and an announcement have no standard msgtype;
    they go out as text with our own key beside them, so a client shows the words rather than
@@ -136,7 +137,8 @@ function bodyOf(row: any) {
   return row.body || row.title || ''
 }
 
-const clean = (o: any) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined))
+/* the fields that are there, so an absent one is left to the column's default rather than written as null */
+const clean = <T extends object>(o: T): T => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T
 
 /*
  * EVENT → THE ARGUMENTS OF A WRITE.
@@ -150,7 +152,13 @@ const clean = (o: any) => Object.fromEntries(Object.entries(o).filter(([, v]) =>
  * prompt is the file's; a client that can only type `/name a b c` is typing a grammar, which this
  * platform refuses everywhere. So nothing is parsed out of it and it is stored as the words it is.
  */
-export function fromEvent(ev: any, { channelId, media = null, sealed = false }: any = {}) {
+/* a file the media repository already holds, as an event names it */
+export type EventMedia = { path: string; type?: string; name?: string; size?: number; seconds?: number }
+/* the space_messages row an event becomes */
+export type MessageRow = { channel_id: string; kind: string; body?: string | null; cipher?: Json; thread_root_id?: string; attachment?: string; attachment_type?: string; attachment_name?: string; attachment_size?: number; seconds?: number }
+export type FromEvent = { ok: true; replaces: string | null; row: MessageRow } | { ok: false; why: string }
+
+export function fromEvent(ev: any, { channelId, media = null, sealed = false }: { channelId: string; media?: EventMedia | null; sealed?: boolean }): FromEvent {
   if (!ev || typeof ev !== 'object') return { ok: false, why: 'no event' }
   const c = ev.content || {}
   /*
@@ -161,7 +169,7 @@ export function fromEvent(ev: any, { channelId, media = null, sealed = false }: 
    */
   if (ev.type === 'm.room.encrypted') {
     if (!sealed) return { ok: false, why: 'not-sealed' }
-    return { ok: true, replaces: null, row: { channel_id: channelId, kind: 'text', cipher: c } }
+    return { ok: true, replaces: null, row: { channel_id: channelId, kind: 'text', cipher: c as Json } }
   }
   if (sealed) return { ok: false, why: 'must-seal' }
   if (ev.type && ev.type !== 'm.room.message') return { ok: false, why: 'type' }
@@ -184,16 +192,16 @@ export function fromEvent(ev: any, { channelId, media = null, sealed = false }: 
   return {
     ok: true,
     replaces: replaces ? replaces.id : null,
-    row: clean({
+    row: clean<MessageRow>({
       channel_id: channelId,
       kind,
       body: kind === 'text' ? String(words) : (String(words || '').trim() || null),
       thread_root_id: thread ? thread.id : undefined,
-      attachment: media ? (media as any).path : undefined,
-      attachment_type: media ? (media as any).type : undefined,
-      attachment_name: media ? (media as any).name : undefined,
-      attachment_size: media ? (media as any).size : undefined,
-      seconds: media && (media as any).seconds ? (media as any).seconds : undefined,
+      attachment: media ? media.path : undefined,
+      attachment_type: media ? media.type : undefined,
+      attachment_name: media ? media.name : undefined,
+      attachment_size: media ? media.size : undefined,
+      seconds: media && media.seconds ? media.seconds : undefined,
     }),
   }
 }

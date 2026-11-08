@@ -26,6 +26,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, serviceKey, loadDotEnv } from './tts/storage.mjs'
 import { isMain } from './is-main.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const LOCAL = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:|\/|$)/i
 
@@ -49,7 +50,7 @@ export async function devAccount({ quiet = false } = {}) {
   const asked = String(process.env.DEV_ACCOUNT_ROLES || process.env.DEV_ACCOUNT_ROLE || 'admin')
     .split(',').map((r) => r.trim()).filter((r) => KNOWN.includes(r))
   const roles = asked.length ? [...new Set(asked)] : ['admin']
-  const db = createClient(url, key, { auth: { persistSession: false } })
+  const db = createClient<Database>(url, key, { auth: { persistSession: false } })
   const say = (m: string) => { if (!quiet) console.log('  ' + m) }
 
   /* the account: made through Supabase's own admin API, so the password is hashed as a sign-up's is */

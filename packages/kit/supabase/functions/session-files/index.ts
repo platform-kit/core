@@ -10,6 +10,7 @@ import { admin, json, preflight, getUser } from '../_shared/lib.ts'
 import { rolesOf, isProvider } from '../_shared/roles.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { BUCKET } from '../_shared/recordings.ts'
+import type { Database } from '../_shared/database.types.ts'
 
 Deno.serve(async (req: any) => {
   const pre = preflight(req); if (pre) return pre
@@ -19,7 +20,7 @@ Deno.serve(async (req: any) => {
   try { body = await req.json() } catch { body = {} }
   const uid = String(body?.uid ?? ''); if (!uid) return json({ error: 'uid' }, 400)
   /* the row as the caller may see it */
-  const mine = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
+  const mine = createClient<Database>(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } })
   const { data: row } = await mine.from('bookings').select('uid, seat_of, room, recording_path, transcript_path, recording_state, recording_error, recording_at').eq('uid', uid).maybeSingle()
   if (!row) return json({ error: 'not yours' }, 403)
   const { data: prof } = await admin.from('profiles').select('role').eq('id', user.id).maybeSingle()

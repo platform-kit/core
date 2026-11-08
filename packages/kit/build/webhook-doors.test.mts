@@ -26,6 +26,7 @@ import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { loadDotEnv, serviceKey, supabaseUrl } from './tts/storage.mjs'
 import { statusOf, leave, served, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 /* a door of a module the site has off is not served, and not this site's to check (openspec: module-switch-removes-backend) */
 const door = (fn: any) => served(fn) || (notHere(fn, 'its module is off'), false)
 
@@ -117,7 +118,7 @@ if (served('cal-webhook')) {
 
 /* and nothing was written on the way past */
 {
-  const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+  const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
   /* a count that does not come back is a FAILURE, not a pass: a query with the wrong column name
      would otherwise report "nothing was written" about a table it never looked at */
   const p = await admin.from('purchases').select('id', { count: 'exact', head: true }).like('stripe_checkout_session_id', 'cs_forged_%')
@@ -144,7 +145,7 @@ if (served('cal-webhook')) {
  */
 {
   const { createHmac, createHash } = await import('node:crypto')
-  const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+  const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
   /* Stripe, with the run's own STRIPE_WEBHOOK_SECRET: Stripe's scheme is an HMAC of "<t>.<body>" with the time in
      the header, and its SDK refuses a time more than five minutes from now. A correctly signed event is ACCEPTED,
      so the refusals beside it are of the signature and not of everything. */
@@ -220,8 +221,8 @@ if (served('cal-webhook')) {
 
 /* ─── the audio bucket: a reader may add, and may not replace ─── */
 {
-  const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
-  const reader = createClient(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
+  const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+  const reader = createClient<Database>(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
   const { error: signin } = await reader.auth.signInWithPassword({ email: 'member@example.com', password: 'password123' })
   if (signin) note('⚠ the member does not sign in — the bucket checks are skipped')
   else {

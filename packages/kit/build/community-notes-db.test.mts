@@ -7,6 +7,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('community-notes-db: ' + m)
 if (process.env.NETWORK_TEST === '0') { note('skipped (NETWORK_TEST=0)'); process.exit(0) }
@@ -19,14 +20,14 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const client = () => createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+const client = () => createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
 const as = async (email: any) => {
   const sb = client()
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id }
 }
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const SLUG = 'community-test-' + Math.random().toString(36).slice(2, 8)
 let spaceId = null, eventId = null
 const posts = [], people = []
@@ -72,8 +73,8 @@ try {
 
   /* ------------------------------------------------------------ a thread they are in */
   const { data: root } = await A.sb.from('space_messages').insert({ channel_id: room.id, author_id: A.id, body: 'a question for the room' }).select().single()
-  await B.sb.from('space_messages').insert({ channel_id: room.id, author_id: B.id, body: 'an answer', thread_root_id: root.id })
-  await B.sb.from('space_messages').insert({ channel_id: room.id, author_id: B.id, body: `<@${A.id}> and a second, to you`, thread_root_id: root.id })
+  await B.sb.from('space_messages').insert({ channel_id: room.id, author_id: B.id, body: 'an answer', thread_root_id: root!.id })
+  await B.sb.from('space_messages').insert({ channel_id: room.id, author_id: B.id, body: `<@${A.id}> and a second, to you`, thread_root_id: root!.id })
   L = await list(A)
   ok('an answer in their thread is in the list', L.some((r: any) => r.source === 'reply' && r.item.body === 'an answer'))
   ok('…an answer naming them is a mention, and only once', L.filter((r: any) => r.item && r.item.body === `<@${A.id}> and a second, to you`).length === 1

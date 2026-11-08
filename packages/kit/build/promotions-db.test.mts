@@ -13,6 +13,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('promotions-db: ' + m)
 if (process.env.PROMO_TEST === '0') { note('skipped (PROMO_TEST=0) — nothing about budgets or overspending was covered'); process.exit(0) }
@@ -22,7 +23,7 @@ let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
 if (!up) { note('skipped — the local stack is not up; nothing about budgets or overspending was covered'); leave(0) }
 
-const db = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const db = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 let pass = 0, fail = 0
 const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
 const eq = (a: any, b: any, m?: any) => { if (a !== b) throw new Error(`${m || ''} — expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`) }
@@ -93,7 +94,7 @@ await ok('giving back more than was taken floors at nothing rather than going ne
 })
 
 await ok('a shopper may read what is left and may never write it', async () => {
-  const anon = createClient(url, process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '', { auth: { persistSession: false } })
+  const anon = createClient<Database>(url, process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '', { auth: { persistSession: false } })
   await clear(); await take('usage', 5, 0)
   const { data } = await anon.from('promotion_usage').select('used').eq('promotion', NAME)
   if (!Array.isArray(data)) throw new Error('a page could not ask whether a discount is still going')

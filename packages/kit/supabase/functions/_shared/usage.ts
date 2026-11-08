@@ -45,7 +45,7 @@ async function autoTopUp({ userId, invocationRef }: { userId: string; invocation
           : null
       }
       const customers = await findProviderExternalIds(provider.id, 'customer', 'profiles', id)
-      let customerId = customers[0]
+      let customerId: string | null = customers[0] ?? null
       if (!customerId && provider.id === 'stripe') {
         const { data, error } = await admin.from('profiles').select('stripe_customer_id').eq('id', id).maybeSingle()
         const profile = checked(data, error, 'billing profile could not be loaded')
@@ -178,6 +178,9 @@ export async function authorizeUsage(input: {
   return usageGate(input)
 }
 
+/* what usage_inference_attempt_record answers: the attempt is on the ledger, once */
+export type AttemptRecorded = { recorded: true; duplicate: boolean; id: string }
+
 export async function recordInferenceAttempt(input: {
   invocationRef: string
   attemptNo: number
@@ -199,7 +202,7 @@ export async function recordInferenceAttempt(input: {
   retailValueMicros?: number | null
   retailCurrency?: string | null
   httpStatus?: number | null
-}) {
+}): Promise<AttemptRecorded | null> {
   await fresh()
   const { data, error } = await admin.rpc('usage_inference_attempt_record', {
     p_invocation_ref: input.invocationRef,
@@ -223,7 +226,7 @@ export async function recordInferenceAttempt(input: {
     p_retail_currency: input.retailCurrency ?? null,
     p_http_status: input.httpStatus ?? null,
   })
-  return checked(data, error, 'inference attempt could not be recorded')
+  return checked(data, error, 'inference attempt could not be recorded') as AttemptRecorded | null
 }
 
 async function settleClosedIncrementalUsage(provider: Awaited<ReturnType<typeof getPaymentProvider>>) {

@@ -283,7 +283,7 @@ const STACK_SOURCE = /from '\.\/test-stack\.mjs'|supabaseUrl\(\)|localStack\(\)/
 const needsStack = (file: fs.PathOrFileDescriptor) => { try { return STACK_SOURCE.test(fs.readFileSync(file, 'utf8')) } catch { return false } }
 const E2E = process.argv.includes('--e2e')
 /* the checks that make databases of their own, which only the end-to-end run's Docker should be asked for */
-const E2E_ALSO = ['schema.test.mts', 'modules-off-db.test.mts', 'cloud-lane.test.mts', 'stripe-testmode.integration.mts', 'stripe-usage-recovery.integration.mts']
+const E2E_ALSO = ['db-types.test.mts', 'schema.test.mts', 'modules-off-db.test.mts', 'cloud-lane.test.mts', 'stripe-testmode.integration.mts', 'stripe-usage-recovery.integration.mts']
 
 if (E2E) {
   /* every stack check this site's modules switch on, the site's own among them; each runs whatever came before */

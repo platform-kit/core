@@ -23,6 +23,7 @@ import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { policyOf, POLICY, delayMinutes } from './providers-push.mjs'
 import { leave, stackOf, moduleOn, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 if (!(await moduleOn('sessions'))) { notHere('providers-db', 'the sessions module is off'); process.exit(0) }
 
 const note = (m: any) => console.log('providers-db: ' + m)
@@ -59,7 +60,7 @@ let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
 if (!up) { note('the stack half skipped — the local stack is not up'); console.log('\n  ' + pass + ' passed'); leave(fail ? 1 : 0) }
 
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const tag = 'p' + Math.random().toString(36).slice(2, 8)
 const made = { users: [], terms: [], offerings: [], bookings: [] }
 const now = Date.now()
@@ -80,7 +81,7 @@ try {
     return data.user.id
   }
   const signIn = async (email: any) => {
-    const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+    const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
     const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
     if (error) throw new Error(email + ': ' + error.message)
     return sb
@@ -96,7 +97,7 @@ try {
   ok('a version is written', !t1.error, t1.error && t1.error.message)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
   made.terms.push(v1)
-  const anonSees = await createClient(url, anon, { auth: { persistSession: false } }).from('provider_terms').select('version').eq('version', v1)
+  const anonSees = await createClient<Database>(url, anon, { auth: { persistSession: false } }).from('provider_terms').select('version').eq('version', v1)
   ok('anybody may read the terms — somebody deciding whether to become a provider reads them first', (anonSees.data || []).length === 1)
 
   const edited = await service.from('provider_terms').update({ body: 'A second wording.' }).eq('version', v1)
@@ -147,7 +148,7 @@ try {
   const nowLive = await service.from('provider_offerings').select('state, released_at, released_by').eq('id', made1.data.id).maybeSingle()
   ok('which is live, with whose act it was on the row', nowLive.data && nowLive.data.state === 'live' && !!nowLive.data.released_at && !!nowLive.data.released_by)
   const byProvider = await asProv.rpc('provider_release', { p_offering: made1.data.id })
-  ok('and a provider releasing anything is refused, their own included', byProvider.data && byProvider.data.error === 'not-yours')
+  ok('and a provider releasing anything is refused, their own included', byProvider.data && (byProvider.data as any).error === 'not-yours')
   const readerSeesLive = await asReader.from('provider_offerings').select('id').eq('id', made1.data.id)
   ok('a live one everybody sees', (readerSeesLive.data || []).length === 1)
 
@@ -321,9 +322,11 @@ try {
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
   made.terms.push(v2)
   const { data: owed } = await service.rpc('provider_terms_owed', { p_version: v2 })
+  // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
   const mine = (owed || []).find((x: any) => x.user_id === provId)
   ok('a provider who signed the old one is owed the new one', !!mine)
   ok('and the letter can say which they signed', mine && mine.signed === v1)
+  // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
   ok('a reader is not a provider and is not asked', !(owed || []).some((x: any) => x.user_id === readerId))
   const nosy = await asReader.rpc('provider_terms_owed', { p_version: v2 })
   ok('and the list is not a reader\'s to see', nosy.data === null)

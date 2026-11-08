@@ -127,6 +127,12 @@ function pass(round) {
         const owner = pat && up(pat, (x) => ts.isParameter(x) || ts.isVariableDeclaration(x))
         if (owner && !owner.type && owner.name === up(pat, (x) => x.parent === owner)) { add(file, owner.name.getEnd(), ': any'); continue }
       }
+      /* in a test, a row the database did not answer with is a failure, and a null there should throw: the value is
+         asserted present (`x!`) rather than read as any. Product code says what happens when it is missing instead. */
+      if (/\.(test|integration)\.m?ts$/.test(file) && (d.code === 18047 || d.code === 18048 || d.code === 18049 || d.code === 2531 || d.code === 2532 || d.code === 2533)) {
+        const end = d.start + (d.length || 0)
+        if (end > d.start && sf.text[end] !== '!') { add(file, end, '!'); continue }
+      }
       /* a property the type does not have, or an index it does not take: the object, read as any */
       if (d.code === 2339 || d.code === 7053 || d.code === 2551 || d.code === 2571 || d.code === 18046 || d.code === 18047 || d.code === 18048 || d.code === 2531 || d.code === 2532 || d.code === 2533) {
         const access = up(n, (x) => ts.isPropertyAccessExpression(x) || ts.isElementAccessExpression(x))

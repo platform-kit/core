@@ -43,13 +43,16 @@ export const mutedNow = (row: any, now = Date.now()) => !!row?.hushed
 
 /* the badge a rail shows: what is unread, and what is owed. A muted channel counts its mentions and
    never its messages — that is what muting means. */
-export function badgeOf(rows = [], now = Date.now()) {
+/* a channel as space_unread answers it, with what the rail adds: how it is muted and what it notifies */
+export type UnreadRow = { channel: string; space?: string; kind?: string; channel_kind?: string; seq?: number; read?: number; unread?: number; mentions?: number; hushed?: boolean; muted_until?: string | null; notify?: string }
+
+export function badgeOf(rows: UnreadRow[] = [], now = Date.now()) {
   let unread = 0, mentions = 0, channels = 0
   for (const r of rows) {
     const m = mentionsOf(r)
     const u = unreadOf(r)
     mentions += m
-    if (!mutedNow(r, now) && (r as any)?.notify !== 'none') { unread += u; if (u > 0) channels += 1 }
+    if (!mutedNow(r, now) && r?.notify !== 'none') { unread += u; if (u > 0) channels += 1 }
     else if (m > 0) channels += 1
   }
   return { unread, mentions, channels }
@@ -61,11 +64,11 @@ export function badgeOf(rows = [], now = Date.now()) {
    room (somebody called them) — never the traffic of a busy channel nobody addressed them in, which
    would sit at 400 by Tuesday and be worth nothing. Discord draws the same line. Muting is honoured
    exactly as badgeOf honours it: a muted room still counts what names you. */
-export function waitingOf(rows = [], now = Date.now()) {
+export function waitingOf(rows: UnreadRow[] = [], now = Date.now()) {
   let n = 0
   for (const r of rows) {
-    const dm = ((r as any)?.kind || (r as any)?.channel_kind) === 'dm'
-    const quiet = mutedNow(r, now) || (r as any)?.notify === 'none'
+    const dm = (r?.kind || r?.channel_kind) === 'dm'
+    const quiet = mutedNow(r, now) || r?.notify === 'none'
     n += mentionsOf(r)
     if (dm && !quiet) n += unreadOf(r)
   }

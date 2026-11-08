@@ -11,15 +11,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireStack, moduleOn, notHere } from './test-stack.mjs'
 import { projectCourses, parseCourse } from './courses-io.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const S: any = requireStack('courses-db')
 if (!(await moduleOn('courses'))) { notHere('courses-db', 'the courses module is off'); process.exit(0) }
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(typeof detail === 'string' ? detail : JSON.stringify(detail)).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
-const service = createClient(S.api, S.service, O)
-const anon = createClient(S.api, S.anon, O)
-const as = async (email: any) => { const c = createClient(S.api, S.anon, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
+const service = createClient<Database>(S.api, S.service, O)
+const anon = createClient<Database>(S.api, S.anon, O)
+const as = async (email: any) => { const c = createClient<Database>(S.api, S.anon, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
 const idOf = async (email: any) => (await service.from('profiles').select('id').eq('email', email).maybeSingle()).data?.id
 const call = async (who: any, fn: any, args?: any) => { const { data, error } = await who.rpc(fn, args); if (error) throw new Error(`${fn}: ${error.message}`); return data }
 
@@ -92,6 +93,7 @@ try {
   const awards = await moduleOn('achievements')
   const AWARD = `quiz-${FREE}-c`
   if (awards) await service.from('achievements').insert({ slug: AWARD, title: 'Passed C', event: 'quiz_passed', match: { course: FREE, lesson: 'c' } })
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
   const passes = async () => (await service.from('events').select('*', { count: 'exact', head: true }).eq('type', 'quiz_passed').eq('user_id', memberId).contains('props', { course: FREE, lesson: 'c' })).count
   const tries = [await attempt(2, false)]
   const failed = await call(member, 'course_state', { p_course: FREE })
@@ -102,6 +104,7 @@ try {
   const done = await call(member, 'course_state', { p_course: FREE })
   // @ts-expect-error TS2345, from the conversion: Argument of type 'number | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 'string 
   ok('the first pass records a quiz_passed event', (await passes()) === 1, await passes())
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
   if (awards) ok('…and earns that quiz’s achievement', !!(await service.from('user_achievements').select('slug').eq('user_id', memberId).eq('slug', AWARD).maybeSingle()).data)
   ok('passing the form finishes its lesson as the response completes', done.lessons[2].done === true)
   ok('…keeping the best attempt and counting them', done.lessons[2].quiz && done.lessons[2].quiz.score === 4 && done.lessons[2].quiz.passed === true && done.lessons[2].quiz.attempts === 2, done.lessons[2].quiz)
@@ -118,15 +121,18 @@ try {
   const cert = await call(anon, 'certificate_public', { p_id: done.certificate_id })
   ok('anybody holding the certificate\'s address can check it', cert && cert.course === 'Free one' && cert.slug === FREE && !!cert.name)
   ok('a made-up address is no certificate', (await call(anon, 'certificate_public', { p_id: 'nothing-here' })) === null)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
   const { count: events } = await service.from('events').select('*', { count: 'exact', head: true }).eq('type', 'course_completed').eq('user_id', memberId).contains('props', { course: FREE })
   // @ts-expect-error TS2345, from the conversion: Argument of type 'number | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 'string 
   ok('finishing is an event, for a site\'s achievement rule', events === 1, events)
   const { data: rule } = await service.from('achievements').select('slug').eq('event', 'course_completed').limit(1).maybeSingle()
   if (rule) {
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
     const { data: won } = await service.from('user_achievements').select('slug').eq('user_id', memberId).eq('slug', rule.slug).maybeSingle()
     ok('…and a site\'s rule on it awards its achievement', !!won)
   }
   await service.from('form_responses').delete().in('id', tries)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
   await service.from('events').delete().eq('type', 'quiz_passed').eq('user_id', memberId).contains('props', { course: FREE })
   if (awards) await service.from('achievements').delete().eq('slug', AWARD)
 
@@ -155,22 +161,28 @@ try {
 
   /* the emails owed: a drip lesson that opened after somebody started, once, and a course finished, once */
   const due = (await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
   ok('a finished course is owed its email', due.some((r: any) => r.course === FREE && r.lesson === '*complete' && r.user_id === memberId), due)
   const lessonDue = due.filter((r: any) => r.user_id === memberId && r.course === FREE && r.lesson !== '*complete')
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
   ok('a finished course owes no lesson emails', lessonDue.length === 0, lessonDue)
   await call(other, 'course_enroll', { p_course: FREE })
   await call(other, 'course_complete', { p_course: FREE, p_lesson: 'a' })
   await backdate(FREE, await idOf('member2@example.com'), 3)
   const owed = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r: any) => r.course === FREE && r.lesson !== '*complete' && r.email === 'member2@example.com')
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
   ok('a lesson released after somebody started is owed, the earliest first, one at a time', owed.length === 1 && owed[0].lesson === 'b', owed)
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
   const { data: e2 } = await service.from('enrollments').select('id').eq('course', FREE).eq('user_id', await idOf('member2@example.com')).single()
   await service.from('course_notices').insert({ enrollment: (e2 as any).id, lesson: 'b' })
   await call(other, 'course_complete', { p_course: FREE, p_lesson: 'b' })
   await backdate(FREE, await idOf('member2@example.com'), 5)
   const sameDay = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r: any) => r.email === 'member2@example.com' && r.lesson !== '*complete')
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
   ok('one lesson email a day: the next waits for tomorrow', sameDay.length === 0, sameDay)
   await service.from('course_notices').update({ sent_at: new Date(Date.now() - 86400000).toISOString() }).eq('enrollment', (e2 as any).id)
   const nextDay = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r: any) => r.email === 'member2@example.com' && r.lesson !== '*complete')
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
   ok('…and never the same lesson twice', nextDay.length === 1 && nextDay[0].lesson === 'c', nextDay)
   const fn = await fetch(`${S.functions}/course-notify`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${S.anon}` }, body: JSON.stringify({ action: 'send', dry: true }) })
   // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
@@ -187,8 +199,11 @@ try {
   ok('a reader cannot read anybody else\'s enrolment rows', ((await member.from('enrollments').select('user_id').eq('course', SOLD)).data || []).length === 0)
 
   /* a space filled by a course's people */
+  // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string | null'. Type 'undefined' is not assignable to type 'string | null'.
   ok('a space\'s rule matches somebody enrolled in the course', (await service.rpc('space_fill_matches', { p_user: memberId, p_fill: { course: FREE } })).data === true)
+  // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string | null'. Type 'undefined' is not assignable to type 'string | null'.
   ok('…and not somebody who is not', (await service.rpc('space_fill_matches', { p_user: buyerId, p_fill: { course: FREE } })).data === false)
+  // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string | null'. Type 'undefined' is not assignable to type 'string | null'.
   ok('…nor somebody outside the cohort the rule names', (await service.rpc('space_fill_matches', { p_user: memberId, p_fill: { course: FREE, cohort: 'spring' } })).data === false)
 
   /* a lesson of a kind the site registers: written by the push, finished by the reader as a text lesson is */

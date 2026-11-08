@@ -25,6 +25,7 @@ import { supabaseUrl, serviceKey } from './tts/storage.mjs'
 import { OUT } from './teams.mjs'
 import { projectTeams } from './teams-io.mjs'
 import { isMain } from './is-main.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 export async function pushTeams({ root = process.cwd(), check = false, log = console.log, db: client = null } = {}) {
   const at = join(root, OUT)
@@ -33,7 +34,7 @@ export async function pushTeams({ root = process.cwd(), check = false, log = con
   const url = client ? '' : supabaseUrl(), key = client ? '' : serviceKey()
   if (!client && (!url || !key)) { log('teams: no database to push to'); return { teams: declared.length, pushed: 0 } }
   if (check) { log(`teams: would write ${declared.length} team(s): ${declared.map((t: any) => t.slug).join(', ') || '(none)'}`); return { teams: declared.length } }
-  const db = client || createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+  const db = client || createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 
   /* the writes themselves are teams-io's, because the admin's Edge Function does them too where
      there is no machine to run this script (see projectTeams) */

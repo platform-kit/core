@@ -102,7 +102,7 @@ Deno.serve(async (req: any) => {
         admin.from('subscriptions').select('id, key').eq('user_id', user.id),
         'incremental usage subscriptions could not be loaded',
       )
-      const subscriptionKeys = new Map((subscriptions ?? []).map((subscription: any) => [subscription.id, subscription.key]))
+      const subscriptionKeys = new Map<string, string>((subscriptions ?? []).map((subscription: any) => [subscription.id, subscription.key]))
       const subscriptionIds = [...subscriptionKeys.keys()]
       const settlements = subscriptionIds.length
         ? await query(

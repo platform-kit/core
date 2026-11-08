@@ -182,7 +182,7 @@ export async function judge(event: string | null, user_id: string | null, email:
   for (const [n, ms, word] of [[weekly, WEEK, 'one a week'], [monthly, MONTH, 'one a month']] as const) {
     if (!(n > 0)) continue
     const counted = (others ?? []).filter((b: any) => b.start_at && new Date(b.start_at).getTime() >= now - ms).sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
-    if (counted.length >= n) return { ok: false, reason: 'over', session: s, next: new Date(new Date(counted[0].start_at).getTime() + ms).toISOString(), allowance: n === 1 ? word : `${n} a ${word.split(' ').pop()}` }
+    if (counted.length >= n) return { ok: false, reason: 'over', session: s, next: new Date(new Date(counted[0].start_at ?? 0).getTime() + ms).toISOString(), allowance: n === 1 ? word : `${n} a ${word.split(' ').pop()}` }
   }
   /* a paid session is booked with a credit — unless the reader's tier includes it */
   /* at the length being booked: a length may carry a price of its own, and a credit for the type's

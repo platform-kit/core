@@ -61,7 +61,7 @@ async function fullConversation(c: any, { withMessages = true } = {}) {
   // @ts-expect-error TS2322, from the conversion: Type '{ content_type: string; content_attributes: { deleted: boolean; kind?: undefined; seconds?: undefined; } | { deleted?: undefined; kind
   return conversationOf(c, { contact, assignee, messages, unread: unread ?? 0, waitingSince })
 }
-const CONV_ALL = CONV + ', contact_id, assignee_id, custom_attributes'
+const CONV_ALL = `${CONV}, contact_id, assignee_id, custom_attributes` as const   /* a literal, so supabase-js reads the columns */
 
 /* the webhooks' delivery: Chatwoot's payload for the event, to every subscription holding it */
 async function deliver(event: string, id: string) {
@@ -70,7 +70,7 @@ async function deliver(event: string, id: string) {
   if (!want.length) return { delivered: 0 }
   let payload: any = null
   if (event === 'message_created' || event === 'message_updated') {
-    const { data: m } = await admin.from('support_messages').select(MSG + ', conversation_id').eq('id', id).maybeSingle(); if (!m) return { delivered: 0 }
+    const { data: m } = await admin.from('support_messages').select(`${MSG}, conversation_id` as const).eq('id', id).maybeSingle(); if (!m) return { delivered: 0 }
     const { data: c } = await admin.from('support_conversations').select(CONV_ALL).eq('id', m.conversation_id).maybeSingle(); if (!c) return { delivered: 0 }
     const conv = await fullConversation(c, { withMessages: false })
     const contact = conv.meta.sender

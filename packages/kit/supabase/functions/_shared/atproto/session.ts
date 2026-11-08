@@ -23,6 +23,7 @@
  */
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { admin } from '../lib.ts'
+import type { Database } from '../database.types.ts'
 
 const URL_ = () => Deno.env.get('SUPABASE_URL') ?? ''
 const ANON = () => Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -76,7 +77,7 @@ export async function loginAllowed(ip: string) {
 export const noteAttempt = (ip: string) => (ip ? admin.from('network_login_attempts').insert({ ip }) : Promise.resolve())
 
 /* a client that acts AS the person, with the auth server's own access token */
-const asPerson = (access: string) => createClient(URL_(), ANON(), {
+const asPerson = (access: string) => createClient<Database>(URL_(), ANON(), {
   auth: { persistSession: false, autoRefreshToken: false },
   global: { headers: { Authorization: `Bearer ${access}` } },
 })
@@ -90,7 +91,7 @@ async function gotrueSessionFor(userId: string) {
   const link = await admin.auth.admin.generateLink({ type: 'magiclink', email })
   const hashed = link.data?.properties?.hashed_token
   if (link.error || !hashed) return null
-  const gate = createClient(URL_(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
+  const gate = createClient<Database>(URL_(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await gate.auth.verifyOtp({ type: 'magiclink', token_hash: hashed })
   if (error || !data?.session) return null
   return data.session
@@ -123,7 +124,7 @@ export async function createSession(userId: string, password: string, id: Identi
   return { accessJwt: t.accessJwt, refreshJwt: t.refreshJwt }
 }
 
-export type Session = { userId: string; db: ReturnType<typeof createClient>; sessionId: string | null; kind: 'app' | 'site' }
+export type Session = { userId: string; db: ReturnType<typeof asPerson>; sessionId: string | null; kind: 'app' | 'site' }
 
 /*
  * A REQUEST'S PERSON. A token of ours is looked up by its hash; the auth server's access token
@@ -142,7 +143,7 @@ export async function sessionOf(token: string | null): Promise<Session | 'expire
     if (new Date(row.access_expires_at).getTime() < Date.now()) return 'expired'
     let access = row.gotrue_access as string | null
     if (!access || !row.gotrue_expires_at || new Date(row.gotrue_expires_at).getTime() < Date.now() + 60_000) {
-      const gate = createClient(URL_(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
+      const gate = createClient<Database>(URL_(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
       const { data, error } = await gate.auth.refreshSession({ refresh_token: row.gotrue_refresh })
       if (error || !data?.session) { await admin.from('network_sessions').delete().eq('id', row.id); return null }
       access = data.session.access_token
@@ -179,7 +180,7 @@ export async function deleteSession(token: string | null) {
   const { data: row } = await admin.from('network_sessions').select('id, gotrue_refresh').or(`refresh_hash.eq.${h},access_hash.eq.${h}`).maybeSingle()
   if (!row) return
   try {
-    const gate = createClient(URL_(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
+    const gate = createClient<Database>(URL_(), ANON(), { auth: { persistSession: false, autoRefreshToken: false } })
     const { data } = await gate.auth.refreshSession({ refresh_token: row.gotrue_refresh })
     if (data?.session) await asPerson(data.session.access_token).auth.signOut({ scope: 'local' })
   } catch { /* the auth server having forgotten it already is the outcome we wanted */ }

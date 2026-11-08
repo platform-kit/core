@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { normalizeSocialAutomationEvents } from '../supabase/functions/_shared/social/automation-events.mjs'
 import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const threadBody = (accountId: any, commentId: any, text = 'Please send the guide') => Buffer.from(JSON.stringify({
   values: {
@@ -73,7 +74,7 @@ if (functionHealth.status >= 500) {
   process.exit(0)
 }
 
-const client = (key: any) => createClient(url, key, {
+const client = (key: any) => createClient<Database>(url, key, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 const service = client(serviceKey())

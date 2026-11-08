@@ -16,6 +16,7 @@ import {
   invokeSocialOperation,
   operationAvailable,
 } from '../_shared/social/operations.mts'
+import type { Json } from '../_shared/database.types.ts'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const GRANT_DAYS = 7
@@ -32,6 +33,9 @@ function databaseFailure(error: { code?: unknown }, code: string, message: strin
   console.error(`social ${code}: database request failed`, databaseCode)
   return json({ error: message, code, databaseCode }, 500)
 }
+
+/* whether a value the request sent is one of these, narrowed to it */
+const oneOf = <T extends string>(v: unknown, among: readonly T[]): v is T => (among as readonly unknown[]).includes(v)
 
 async function isAdmin(userId: string) {
   const { data, error } = await admin
@@ -1152,7 +1156,7 @@ async function savePublisherPermissions(body: Record<string, unknown>, userId: s
     p_permissions: rawPermissions.map((item) => {
       const permission = item as Record<string, unknown>
       return {
-        account_id: permission.accountId,
+        account_id: permission.accountId as string,   /* a uuid: checked above */
         read_posts: permission.read_posts === true,
         create_posts: permission.create_posts === true,
         edit_posts: permission.edit_posts === true,
@@ -1619,7 +1623,7 @@ async function schedulePost(body: Record<string, unknown>, userId: string) {
     body.targetOptions &&
     typeof body.targetOptions === 'object' &&
     !Array.isArray(body.targetOptions)
-      ? (body.targetOptions as Record<string, unknown>)
+      ? (body.targetOptions as { [key: string]: Json | undefined })
       : {}
   const timestamp = Date.parse(scheduledAt)
   const text = typeof body.text === 'string' ? body.text : ''
@@ -2373,12 +2377,12 @@ async function saveAutomation(body: Record<string, unknown>, userId: string) {
   if (
     (id && !UUID.test(id)) ||
     !UUID.test(accountId) ||
-    !['comment', 'dm'].includes(eventKind as string) ||
+    !oneOf(eventKind, ['comment', 'dm'] as const) ||
     !keyword ||
     keyword.length > 100 ||
     !botSlug ||
     botSlug.length > 100 ||
-    !['draft', 'automatic'].includes(mode as string) ||
+    !oneOf(mode, ['draft', 'automatic'] as const) ||
     typeof enabled !== 'boolean' ||
     !destinations.length ||
     destinations.length !== suppliedDestinations.length ||

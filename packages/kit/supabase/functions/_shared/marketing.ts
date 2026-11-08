@@ -22,10 +22,11 @@
 import { admin } from './lib.ts'
 import { renderEmail, sendEmail, DESIGNS } from './email.ts'
 import { of } from './compiled.ts'
+import type { Json } from './database.types.ts'
 /* the funnels as this deployment has them: the shipped file, or the row a publish wrote */
 const funnelsJson = () => of<Record<string, any>>('funnels')
 
-export type Rules = Record<string, unknown>
+export type Rules = { [key: string]: Json | undefined }
 export type Person = { user_id: string; email: string; name: string | null; last_active: string | null }
 export type Policy = { daily: number; weekly: number; monthly: number; 'blasts-respect-cooldown': boolean; 'support-wait': number; 'support-presence': number; 'support-keep-files': number; 'recordings-keep'?: number; 'session-reminders'?: number[] }
 export type Step = { id: string; title: string; after: number; subject: string; html: string; text: string; version: string }
@@ -93,7 +94,7 @@ export async function recentSends(userIds: string[]) {
   const by = new Map<string, { at: number; kind: string; name: string }[]>()
   for (let i = 0; i < userIds.length; i += 500) {
     const { data } = await admin.from('email_log').select('user_id, kind, name, sent_at').in('user_id', userIds.slice(i, i + 500)).gte('sent_at', since)
-    for (const r of data ?? []) { const l = by.get(r.user_id) ?? []; l.push({ at: Date.parse(r.sent_at), kind: r.kind, name: r.name }); by.set(r.user_id, l) }
+    for (const r of data ?? []) { if (!r.user_id) continue; const l = by.get(r.user_id) ?? []; l.push({ at: Date.parse(r.sent_at ?? ''), kind: r.kind, name: r.name ?? '' }); by.set(r.user_id, l) }
   }
   return by
 }
@@ -102,7 +103,7 @@ export async function alreadyHad(emailId: string, userIds: string[]) {
   const had = new Set<string>()
   for (let i = 0; i < userIds.length; i += 500) {
     const { data } = await admin.from('email_log').select('user_id').eq('email_id', emailId).in('user_id', userIds.slice(i, i + 500))
-    for (const r of data ?? []) had.add(r.user_id)
+    for (const r of data ?? []) if (r.user_id) had.add(r.user_id)
   }
   return had
 }

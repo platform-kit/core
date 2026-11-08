@@ -19,6 +19,7 @@ import { compileEvents, WINDOW_DAYS } from './events.mjs'
 import { projectEvents, projectEventComments } from './events-db.mjs'
 import { supabaseUrl, serviceKey } from './tts/storage.mjs'
 import { isMain } from './is-main.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 /*
  * The script's half: find a database from the environment, compile the declaration, hand both to
@@ -30,7 +31,7 @@ export async function pushEvents({ root = process.cwd(), store, log = console.lo
   const url = supabaseUrl()
   const key = serviceKey()
   if (!url || !key) { log('events: no database to push to (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)'); return { pushed: 0 } }
-  const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+  const db = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
   const { events, rows } = await compileEvents({ root, store, write: false })
   return projectEvents({ events, rows, db, log, days })
 }

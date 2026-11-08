@@ -24,6 +24,7 @@ import { verifyJwt } from '@atproto/xrpc-server'
 import { AtpAgent } from '@atproto/api'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, siteUnderTest, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('atproto-interop: ' + m)
 if (process.env.ATPROTO_INTEROP_TEST === '0') { note('skipped (ATPROTO_INTEROP_TEST=0)'); process.exit(0) }
@@ -96,9 +97,9 @@ const appview = http.createServer(async (req, res) => {
 // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Argument of type 'string' is not assignable to parameter of type 
 await new Promise((r, j) => appview.listen(PORT + 1, '0.0.0.0', r).on('error', j))
 
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const site = async (email: any) => {
-  const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id, token: data.session.access_token }
@@ -113,6 +114,7 @@ try {
   A = await site('member@example.com'); M = await site('admin@example.com')
   before = (await service.from('profiles').select('username, public_profile').eq('id', A.id).single()).data
   await service.from('profiles').update({ username: SLUG }).eq('id', A.id)
+  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
   for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_posts', 'author_id']]) await service.from(t).delete().eq(col, A.id)
   const old = (await service.from('network_identities').select('did').eq('user_id', A.id).maybeSingle()).data
   if (old) { await service.from('network_seq').delete().eq('did', old.did); await service.from('network_identities').delete().eq('user_id', A.id) }
@@ -134,14 +136,14 @@ try {
     const car: any = new Uint8Array(await (await fetch(`${FN}/xrpc/com.atproto.sync.getRepo?did=${identity}`)).arrayBuffer())
     const v: any = await verifyRepoCar(car, identity, doc.verificationMethods.atproto).catch(() => null)
     const cs = v ? (Array.isArray(v.creates) ? v.creates : Object.values(v.creates || {})) : []
-    return cs.some((c: any) => c.rkey === pe.rkey) ? v : null
+    return cs.some((c: any) => c.rkey === pe!.rkey) ? v : null
   })
   const creates = head ? (Array.isArray(head.creates) ? head.creates : Object.values(head.creates)) : []
   const paths = creates.map((c: any) => `${c.collection}/${c.rkey}`)
   ok('the repository verifies against the signing key the DID document names', !!head, 'no verified repository')
-  ok('…and holds the everyone post', paths.includes(`app.bsky.feed.post/${pe.rkey}`), paths.join(' '))
-  ok('…and not the post to the people here', !paths.includes(`app.bsky.feed.post/${ph.rkey}`))
-  const rec = await fetch(`${FN}/xrpc/com.atproto.sync.getRecord?did=${identity}&collection=app.bsky.feed.post&rkey=${ph.rkey}`)
+  ok('…and holds the everyone post', paths.includes(`app.bsky.feed.post/${pe!.rkey}`), paths.join(' '))
+  ok('…and not the post to the people here', !paths.includes(`app.bsky.feed.post/${ph!.rkey}`))
+  const rec = await fetch(`${FN}/xrpc/com.atproto.sync.getRecord?did=${identity}&collection=app.bsky.feed.post&rkey=${ph!.rkey}`)
   ok('a record kept for the people here is not served by the sync methods', rec.status === 400)
 
   /* ------------------------------------------------------------ the stream, as a relay reads it */
@@ -179,8 +181,8 @@ try {
   const all: any = seen.map((s: any) => s.seq)
   const keys: any = seen.map((s: any) => s.seq + ' ' + s.path)
   ok('…dropped and resumed from its cursor, every event once, in order', all.length > 2 && all.every((s: any, i: any) => i === 0 || s >= all[i - 1]) && new Set(keys).size === keys.length, keys.join(','))
-  ok('…the everyone post among them as a create', seen.some((s: any) => s.event === 'create' && s.path === `app.bsky.feed.post/${pe.rkey}`))
-  ok('…and nothing of the post to the people here', !seen.some((s: any) => s.path === `app.bsky.feed.post/${ph.rkey}`))
+  ok('…the everyone post among them as a create', seen.some((s: any) => s.event === 'create' && s.path === `app.bsky.feed.post/${pe!.rkey}`))
+  ok('…and nothing of the post to the people here', !seen.some((s: any) => s.path === `app.bsky.feed.post/${ph!.rkey}`))
 
   /* ------------------------------------------------------------ the world outside */
   /* other apps sign in only where the site lets them (network.apps); the demo does */
@@ -192,7 +194,7 @@ try {
   await a.login({ identifier: joined.handle, password: made.password })
   const tl = (await a.getTimeline()).data.feed
   ok('a joined member\'s timeline holds what the people they follow elsewhere said', tl.some((f) => f.post.uri === outsidePost.uri), JSON.stringify(tl.map((f) => f.post.uri)))
-  ok('…next to their own posts on the site', tl.some((f) => f.post.uri.endsWith('/' + pe.rkey)))
+  ok('…next to their own posts on the site', tl.some((f) => f.post.uri.endsWith('/' + pe!.rkey)))
   ok('…asked of the app view with a service token signed by their own key', asked.some((x: any) => x.nsid === 'app.bsky.feed.getTimeline' && x.iss === identity))
   const prof = (await a.getProfile({ actor: OUTSIDER })).data
   ok('somebody elsewhere is read through the app view', prof.displayName === 'Somebody elsewhere')
@@ -206,16 +208,16 @@ try {
   await service.from('network_app_passwords').delete().in('user_id', [A.id, B.id])
 
   /* ------------------------------------------------------------ moderation reaches it */
-  await M.sb.rpc('network_remove_post', { p_post: pe.id, p_reason: 'test' })
+  await M.sb.rpc('network_remove_post', { p_post: pe!.id, p_reason: 'test' })
   const gone = await until(async () => {
     const car: any = new Uint8Array(await (await fetch(`${FN}/xrpc/com.atproto.sync.getRepo?did=${identity}`)).arrayBuffer())
     const v: any = await verifyRepoCar(car, identity, doc.verificationMethods.atproto).catch(() => null)
     const cs = v ? (Array.isArray(v.creates) ? v.creates : Object.values(v.creates)) : []
-    return v && !cs.some((c: any) => c.rkey === pe.rkey) ? true : null
+    return v && !cs.some((c: any) => c.rkey === pe!.rkey) ? true : null
   })
   ok('a moderator\'s removal takes the post out of the repository', !!gone)
   const del = (await service.from('network_seq').select('body').eq('did', identity).eq('kind', 'commit').order('seq', { ascending: false }).limit(1).single()).data
-  ok('…and the stream carries its deletion', del && del.body.ops.some((o: any) => o.action === 'delete' && o.path === `app.bsky.feed.post/${pe.rkey}`), JSON.stringify(del && del.body.ops))
+  ok('…and the stream carries its deletion', del && (del.body as any)!.ops.some((o: any) => o.action === 'delete' && o.path === `app.bsky.feed.post/${pe!.rkey}`), JSON.stringify(del && (del.body as any)!.ops))
 
   /* ------------------------------------------------------------ leaving */
   const left = await fetch(FN + '/network/leave', { method: 'POST', headers: { Authorization: 'Bearer ' + A.token } }).then((r) => r.json())
@@ -224,7 +226,7 @@ try {
   const repoNow = await fetch(`${FN}/xrpc/com.atproto.sync.getRepo?did=${identity}`).then((r) => r.json())
   ok('…and it answers as deactivated', repoNow.error === 'RepoDeactivated', JSON.stringify(repoNow))
   const acct = (await service.from('network_seq').select('body').eq('did', identity).eq('kind', 'account').order('seq', { ascending: false }).limit(1).single()).data
-  ok('…and the stream carries the account\'s deactivation', acct && acct.body.active === false && acct.body.status === 'deactivated')
+  ok('…and the stream carries the account\'s deactivation', acct && (acct.body as any)!.active === false && (acct.body as any)!.status === 'deactivated')
   const again = await fetch(FN + '/network/join', { method: 'POST', headers: { Authorization: 'Bearer ' + A.token } }).then((r) => r.json())
   ok('joining again is the same identity', again.did === identity, JSON.stringify(again))
   await fetch(FN + '/network/leave', { method: 'POST', headers: { Authorization: 'Bearer ' + A.token } })
@@ -234,6 +236,7 @@ try {
   console.log('  FAIL  the run — ' + (e && (e.message || e)))
 } finally {
   if (A) {
+    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
     for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_dirty', 'user_id'], ['network_posts', 'author_id']]) await service.from(t).delete().eq(col, A.id)
     await service.from('network_moderation').delete().eq('subject_id', A.id)
     if (identity) { await service.from('network_seq').delete().eq('did', identity); await service.from('network_repo_blocks').delete().eq('did', identity); await service.from('network_commits').delete().eq('did', identity) }

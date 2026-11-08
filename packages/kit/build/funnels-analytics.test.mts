@@ -10,6 +10,7 @@ import { createHmac } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('funnels-analytics: ' + m)
 if (process.env.FUNNELS_TEST === '0') { note('skipped (FUNNELS_TEST=0)'); process.exit(0) }
@@ -23,12 +24,12 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
 const as = async (email: any) => {
-  const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id }
 }
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const funnels = JSON.parse(fs.readFileSync('supabase/functions/_shared/emails/funnels.json', 'utf8'))
 
 /* the seeded funnel: the one with the most rows in the log */
@@ -42,21 +43,23 @@ const steps = f.steps.map((s: any) => ({ id: s.id, after: s.after, channel: 'ema
 const DAYS = 90, DAY = 86400e3
 const since = Date.now() - DAYS * DAY
 const rows = log.filter((r) => r.kind === 'funnel' && r.name === name)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
 const inWin = rows.filter((r) => Date.parse(r.sent_at) >= since)
 /* the journey's cohort: everyone who entered in the window, and every send they had */
 const members = (await service.from('funnel_members').select('user_id, entered_at, step, last_sent_at, done_at').eq('funnel', name)).data || []
 
 const cohort = new Set(members.filter((m) => Date.parse(m.entered_at) >= since).map((m) => m.user_id))
+// @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
 const jrows = rows.filter((r) => cohort.has(r.user_id))
 const admin = await as('admin@example.com')
 const { data: got, error } = await admin.sb.rpc('admin_funnel', { kind: 'funnel', name, days: DAYS, steps, rules: null, goal: f.goal || null, tz: 'Europe/Amsterdam' })
-ok('admin_funnel answers the administrator', !error && got && Array.isArray(got.steps))
+ok('admin_funnel answers the administrator', !error && got && Array.isArray((got as any).steps))
 if (got) {
-  ok('sent in the window', got.now.sent === inWin.length)
-  ok('opened, clicked and unsubscribed in the window', got.now.opened === inWin.filter((r) => r.opened_at).length && got.now.clicked === inWin.filter((r) => r.clicked_at).length && got.now.unsubscribed === inWin.filter((r) => r.unsubscribed_at).length)
-  ok('in it now and through it', got.now.active === members.filter((m) => !m.done_at).length && got.now.done_ever === members.filter((m) => m.done_at).length)
+  ok('sent in the window', (got as any).now.sent === inWin.length)
+  ok('opened, clicked and unsubscribed in the window', (got as any).now.opened === inWin.filter((r) => r.opened_at).length && (got as any).now.clicked === inWin.filter((r) => r.clicked_at).length && (got as any).now.unsubscribed === inWin.filter((r) => r.unsubscribed_at).length)
+  ok('in it now and through it', (got as any).now.active === members.filter((m) => !m.done_at).length && (got as any).now.done_ever === members.filter((m) => m.done_at).length)
   for (const [i, s] of steps.entries()) {
-    const mine = jrows.filter((r) => r.email_id === s.id), g = got.steps[i]
+    const mine = jrows.filter((r) => r.email_id === s.id), g = (got as any).steps[i]
     ok(`step ${i + 1}: sent · opened · clicked · unsubscribed`, g && g.sent === mine.length && g.opened === mine.filter((r) => r.opened_at).length && g.clicked === mine.filter((r) => r.clicked_at).length && g.unsubscribed === mine.filter((r) => r.unsubscribed_at).length)
   }
   /* the journey's between states: members not done, by their next email step, due or not, in the audience or not (no rules here: opted out is the one way out) */
@@ -69,13 +72,14 @@ if (got) {
     const due = Date.parse(m.step === 0 ? m.entered_at : m.last_sent_at || m.entered_at) + steps[m.step].after * DAY
     if (due < Date.now()) b.held++; else b.waiting++
   }
-  ok('waiting, held and left before each step', steps.every((s: any, i: any) => got.steps[i].waiting === between[i].waiting && got.steps[i].held === between[i].held && got.steps[i].left === between[i].left))
+  ok('waiting, held and left before each step', steps.every((s: any, i: any) => (got as any).steps[i].waiting === between[i].waiting && (got as any).steps[i].held === between[i].held && (got as any).steps[i].left === between[i].left))
   /* the conversions, credited last touch — the rule again in plain JavaScript */
   const purchases = (await service.from('purchases').select('user_id, created_at, amount_total').eq('status', 'paid')).data || []
   const subs = (await service.from('subscriptions').select('user_id, created_at')).data || []
   const goals = f.goal ? ((await service.from('events').select('user_id, occurred_at').eq('type', 'pageview').eq('path', f.goal).not('user_id', 'is', null)).data || []) : []
   const credit = (userId: any, at: any) => {
     const t = Date.parse(at)
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
     const c = rows.filter((r) => r.user_id === userId && Date.parse(r.sent_at) > t - 7 * DAY && Date.parse(r.sent_at) <= t)
       .map((r) => ({ r, clicked: r.clicked_at && Date.parse(r.clicked_at) <= t ? Date.parse(r.clicked_at) : null, opened: r.opened_at && Date.parse(r.opened_at) <= t ? Date.parse(r.opened_at) : null }))
       .filter((x) => x.clicked || x.opened)
@@ -95,13 +99,14 @@ if (got) {
       const i = steps.findIndex((s: any) => s.id === r.email_id)
       if (i < 0) continue   /* a send of a step the files no longer have */
       if (Date.parse(at) >= since) { if (kind === 'goal') goalN++; else { total++; if (kind === 'purchase') revenue += (c as any).amount_total || 0 } }
+      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
       if (cohort.has(r.user_id)) { if (kind === 'goal') exp[i].goal++; else { exp[i].conversions++; if (kind === 'purchase') exp[i].revenue += (c as any).amount_total || 0 } }
     }
   }
-  ok('the conversions credited last touch, in all', got.now.conversions === total && got.now.revenue === revenue && got.now.goal === goalN)
-  ok('the conversions credited last touch, per step', steps.every((s: any, i: any) => got.steps[i].conversions === exp[i].conversions && got.steps[i].revenue === exp[i].revenue && got.steps[i].goal === exp[i].goal))
+  ok('the conversions credited last touch, in all', (got as any).now.conversions === total && (got as any).now.revenue === revenue && (got as any).now.goal === goalN)
+  ok('the conversions credited last touch, per step', steps.every((s: any, i: any) => (got as any).steps[i].conversions === exp[i].conversions && (got as any).steps[i].revenue === exp[i].revenue && (got as any).steps[i].goal === exp[i].goal))
   ok('a purchase after a click sits on the funnel', total >= 1)
-  const idx = (await admin.sb.rpc('admin_funnels', { days: DAYS, goals: f.goal ? { ['funnel:' + name]: f.goal } : {} })).data
+  const idx: any = (await admin.sb.rpc('admin_funnels', { days: DAYS, goals: f.goal ? { ['funnel:' + name]: f.goal } : {} })).data
   ok('the index lists the funnel with the same sends', idx && (idx.items || []).some((it: any) => it.kind === 'funnel' && it.name === name && it.sent === inWin.length))
 }
 const member = await as('member@example.com')
@@ -121,15 +126,18 @@ else {
     const go = (u: any, l: any) => fetch(`${url}/functions/v1/email-unsubscribe?u=${u}&t=${hmac(u)}&l=${l}`)
     const r1 = await go(a.user_id, a.id)
     const row1 = (await service.from('email_log').select('unsubscribed_at').eq('id', a.id).single()).data
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
     const p1 = (await service.from('profiles').select('email_opt_out_at').eq('id', a.user_id).single()).data
     ok('the unsubscribe link opts the person out and marks the send it was in', r1.ok && row1 && row1.unsubscribed_at && p1 && p1.email_opt_out_at)
     /* the second person's link, with the first person's send in it: opted out, nothing marked */
     const r2 = await go(b.user_id, a.id)
     const rowB = (await service.from('email_log').select('unsubscribed_at').eq('id', b.id).single()).data
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
     const p2 = (await service.from('profiles').select('email_opt_out_at').eq('id', b.user_id).single()).data
     ok("another person's send in the link marks nothing", r2.ok && p2 && p2.email_opt_out_at && rowB && !rowB.unsubscribed_at)
     /* put back */
     await service.from('email_log').update({ unsubscribed_at: null }).in('id', [a.id, b.id])
+    // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string'. Type 'null' is not assignable to type 'string'.
     await service.from('profiles').update({ email_opt_out_at: null }).in('id', [a.user_id, b.user_id])
   }
 }
@@ -145,9 +153,10 @@ if (served) {
     const r = await fetch(url + '/functions/v1/email-track/' + link.token, { redirect: 'manual' })
     const to = r.headers.get('location') || ''
     let q = null; try { q = new URL(to).searchParams } catch { /* none */ }
-    ok('a tracked click redirects to the destination with the email\'s UTM tags', r.status === 302 && q && q.get('utm_source') === name && q.get('utm_medium') === 'email' && !!q.get('utm_campaign') && to.startsWith(link.url.split('?')[0]))
+    ok('a tracked click redirects to the destination with the email\'s UTM tags', r.status === 302 && q && q.get('utm_source') === name && q.get('utm_medium') === 'email' && !!q.get('utm_campaign') && to.startsWith(link.url!.split('?')[0]))
     /* the hit put back: the link's count, the log's, the event */
     await service.from('email_links').update({ hits: before }).eq('token', link.token)
+    // @ts-expect-error TS2345, from the conversion: Argument of type '{ clicks: number; clicked_at: string | null; opened_at: string | null; } | null' is not assignable to parameter of type '{
     await service.from('email_log').update(logBefore).eq('id', link.log_id)
     await service.from('email_events').delete().eq('log_id', link.log_id).gte('at', started)
   }

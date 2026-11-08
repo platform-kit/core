@@ -147,7 +147,7 @@ Deno.serve(async (req: any) => {
     if (!to.email_verified_at) return json({ skipped: 'unverified' })
     if (k.last_seen_at && Date.now() - new Date(k.last_seen_at).getTime() < PRESENT_MS) return json({ skipped: 'present' })
     if (conv.contact_notified_at && new Date(conv.contact_notified_at).getTime() > new Date(conv.contact_read_at ?? 0).getTime()) return json({ skipped: 'notified' })
-    const { data: agent } = await admin.from('profiles').select('display_name, email').eq('id', msg.agent_id).maybeSingle()
+    const { data: agent } = msg.agent_id ? await admin.from('profiles').select('display_name, email').eq('id', msg.agent_id).maybeSingle() : { data: null }
     /* the site's own name where an agent has none — never a constant: this said one customer's
        name to every other customer of every other site */
     const name = agent?.display_name || firstName(agent?.email) || String((SITE as any).name || 'Support')
@@ -252,7 +252,6 @@ Deno.serve(async (req: any) => {
     if (text || isLeaf(pick)) await acknowledge(conv)
     const { data: messages } = await admin.from('support_messages').select(MSG).eq('conversation_id', conv.id).order('created_at', { ascending: true })
     const { data: fresh } = await admin.from('support_conversations').select(CONV).eq('id', conv.id).single()
-    // @ts-expect-error TS2345, from the conversion: Argument of type '({ attachment_path?: string | null | undefined; } & { url?: string | undefined; })[]' is not assignable to parameter of ty
     return json({ conversation: fresh ?? conv, messages: await withAgents(await withUrls(messages ?? [])), contact: publicContact(contact, who.profile), ...(newToken_ ? { token: newToken_ } : {}) })
   }
 
@@ -329,7 +328,6 @@ Deno.serve(async (req: any) => {
     if (since && !isNaN(since.getTime())) q = q.gt('created_at', since.toISOString())
     const { data: messages } = await q
     const { contact_id: _c, ...pub } = conv as any
-    // @ts-expect-error TS2345, from the conversion: Argument of type '({ attachment_path?: string | null | undefined; } & { url?: string | undefined; })[]' is not assignable to parameter of ty
     return json({ conversation: pub, messages: await withAgents(await withUrls(hush(messages ?? []))) })
   }
 

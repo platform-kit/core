@@ -12,6 +12,7 @@
 import { reactive } from 'vue'
 import { supabase } from '../supabase.js'
 import { user, roles, isAdmin, canAccess, hasTier, hasProduct } from '../auth.js'
+import type { Json } from '../../../supabase/functions/_shared/database.types.js'
 
 export const runs = reactive<any>({ here: [], starting: false, error: null })
 
@@ -45,12 +46,17 @@ export function whyFailed(error: any) {
  * What has run where the surface is looking. `runs.here` is the live ones — what the Stop button
  * is for — and the whole list comes back, because a finished run is the one carrying the answer.
  */
-export async function runsHere(rootId: any) {
+/* what agent_runs_here answers: the runs under a message, newest first (schemas/96-agents.sql) */
+export type RunHere = { id: string; bot: string; status: string; step: number; said?: string | null; error?: string | null; mine?: boolean }
+/* what agent_summon and agent_job answer: the run made, or why none was */
+export type Summoned = { ok?: true; id?: string; bot?: string; name?: string; already?: boolean; error?: string; window?: string }
+
+export async function runsHere(rootId: any): Promise<RunHere[]> {
   if (!supabase || !rootId) { runs.here = []; return [] }
   try {
     const { data } = await supabase.rpc('agent_runs_here', { p_root: rootId })
-    const all = data || []
-    runs.here = all.filter((r: { status: string }) => ['queued', 'running'].includes(r.status))
+    const all = (data || []) as RunHere[]
+    runs.here = all.filter((r) => ['queued', 'running'].includes(r.status))
     return all
   } catch { runs.here = []; return [] }
 }
@@ -60,21 +66,22 @@ export async function runsHere(rootId: any) {
  * starts — the conversation so far — and is written onto the run rather than fetched by the bot,
  * so what it was given is a matter of record beside what it did with it.
  */
-export async function summon(bot: any, { surface = 'spaces', channel = null, conversation = null, root = null, ask = '', context = '', command = null, args = null } = {}) {
+export async function summon(bot: any, { surface = 'spaces', channel = null, conversation = null, root = null, ask = '', context = '', command = null, args = null }: { surface?: string; channel?: string | null; conversation?: string | null; root?: string | null; ask?: string; context?: string; command?: string | null; args?: Json | null } = {}): Promise<Summoned> {
   if (!supabase || !bot) return { error: 'no bot' }
   runs.starting = true
   runs.error = null
   try {
     /* asked for, never inserted: a client that could write the row could summon a bot it is not
        entitled to, in a room it cannot read. The database decides all three. */
-    const { data, error } = await supabase.rpc('agent_summon', {
+    const { data: summoned, error } = await supabase.rpc('agent_summon', {
       p_bot: bot, p_surface: surface, p_channel: channel, p_conversation: conversation,
       p_root: root, p_ask: ask, p_context: context,
       /* a command by NAME and its arguments as fields — never the prompt, which is the file's */
       p_command: command, p_args: args,
     })
     if (error) throw error
-    if (data && data.error) { runs.error = data.error; return data }
+    const data = (summoned || {}) as Summoned
+    if (data.error) { runs.error = data.error; return data }
     runs.here = [...runs.here, { id: data.id, bot, status: 'queued', step: 0, mine: true }]
     return data
   } catch (e: any) {
@@ -93,13 +100,13 @@ export async function summon(bot: any, { surface = 'spaces', channel = null, con
  * for it twice, so the one already going is handed back rather than refused: pressing the button
  * again shows the run rather than an error about pressing the button again.
  */
-export async function job(script: any, subject: any, { options = {}, budgetCents = null } = {}) {
+export async function job(script: string, subject: string, { options = {}, budgetCents = null }: { options?: Json; budgetCents?: number | null } = {}): Promise<Summoned> {
   if (!supabase || !script || !subject) return { error: 'what job' }
   const { data, error } = await supabase.rpc('agent_job', {
     p_script: script, p_subject: subject, p_options: options, p_budget_cents: budgetCents,
   })
   if (error) return { error: error.message }
-  return data || {}
+  return (data || {}) as Summoned
 }
 
 /* what a run has done so far: its status, what it spent, and a line per step — for a job, which

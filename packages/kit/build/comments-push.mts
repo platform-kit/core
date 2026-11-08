@@ -22,6 +22,7 @@ import { supabaseUrl, serviceKey } from './tts/storage.mjs'
 import matter from 'gray-matter'
 import { bookChapters } from '../src/lib/speech.js'
 import { isMain } from './is-main.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 /* the kinds a site may put comments on, and where their files live. An event is not here: its
    subjects are written by events-push, from the record the calendar is projected from. */
@@ -163,7 +164,7 @@ export async function pushComments({ root = process.cwd(), store, log = console.
   const url = client ? '' : supabaseUrl()
   const key = client ? '' : serviceKey()
   if (!client && (!url || !key)) { log('comments: no database to push to'); return { subjects: 0 } }
-  const db = client || createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+  const db = client || createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
   const st = asStore(store || root)
 
   /* the channels a subject may point at, by "<space>/<channel>" — none where the site has the spaces module off,

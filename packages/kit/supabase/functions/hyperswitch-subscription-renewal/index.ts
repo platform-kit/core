@@ -138,6 +138,7 @@ async function run() {
     if (externalIds.length !== 1) {
       throw new Error(`Hyperswitch subscription ${row.id} has ${externalIds.length} external subscription references`)
     }
+    if (!row.current_period_start || !row.current_period_end || !row.key) throw new Error(`Hyperswitch subscription ${row.id} has no period to settle`)
     await settleMeteredUsage(provider, {
       subscription_id: row.id,
       user_id: row.user_id,

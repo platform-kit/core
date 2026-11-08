@@ -129,6 +129,9 @@ export async function grant(
   if (error || !data?.id) throw new Error(`entitlement was not recorded: ${error?.message ?? 'no entitlement id returned'}`)
   return data.id
 }
+/* what a purchase fixes about the usage it grants: the unit, the rate and the meter as sold */
+export type UsageSnapshot = { usage_unit?: string | null; rate_micros?: number | null; meter?: string | null; overage_price_micros?: number | null; speech_cost_per_second_micros?: number | null }
+
 export async function grantUsage(
   user_id: string,
   offer_key: string,
@@ -137,7 +140,7 @@ export async function grantUsage(
   units_micros: number,
   period_start: string | null = null,
   expires_at: string | null = null,
-  snapshot: Record<string, unknown> = {},
+  snapshot: UsageSnapshot = {},
   provider = 'stripe',
 ) {
   if (!Number.isSafeInteger(units_micros) || units_micros <= 0) throw new Error('usage grant must be a positive safe integer')

@@ -16,6 +16,7 @@ import { asStore } from './store/index.mjs'
 import matter from 'gray-matter'
 import { readCourses, quizAchievements } from './courses-io.mjs'
 import { isMain } from './is-main.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 export const DIR = 'content/achievements'
 export const TRAITS = 'content/traits.md'
@@ -99,7 +100,7 @@ export async function pushAchievements({ check = false, root = process.cwd(), st
       if (!quiet) console.log('achievements: no service key — the declaration is not projected')
       return { achievements: want.length, traits: traits.length, slugs: want.map((r) => r.slug) }
     }
-    db = createClient(supabaseUrl(), serviceKey(), { auth: { persistSession: false } })
+    db = createClient<Database>(supabaseUrl(), serviceKey(), { auth: { persistSession: false } })
   }
 
   /* the achievements */

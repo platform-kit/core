@@ -150,7 +150,8 @@ Deno.serve(async (req: any) => {
     if (seg[0] === 'insights' && seg.length === 3 && seg[2] === 'summary' && m === 'GET') {
       const form = await formOf(seg[1]); if (!form) return fail('NOT_FOUND', `No published form "${seg[1]}".`)
       const { data } = await admin.rpc('admin_forms', { days: 3650 })
-      const stats = (Array.isArray(data) ? data : []).find((x: any) => x.form === seg[1]) || {}
+      /* admin_forms answers a row per form: how many began, finished, and reached each slide */
+      const stats: { form?: string; started?: number; finished?: number; slides?: unknown; avg_seconds?: number } = (Array.isArray(data) ? (data as Array<{ form?: string }>) : []).find((x) => x.form === seg[1]) || {}
       return reply(summaryOf(definitionOf(form, { site: site(), apiBase: apiBase() }), { started: stats.started, finished: stats.finished, slides: stats.slides, average_seconds: stats.avg_seconds }))
     }
     if (['themes', 'images'].includes(seg[0])) return fail('NOT_FOUND', 'The site has no themes or images API: a form is drawn in the site\'s design.')

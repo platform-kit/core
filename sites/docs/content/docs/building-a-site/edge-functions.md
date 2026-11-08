@@ -9,6 +9,7 @@ sources:
     packages/kit/supabase/functions/print-render,
     packages/kit/supabase/functions,
     packages/kit/supabase/functions/_shared/lib.ts,
+    packages/kit/supabase/functions/_shared/database.types.ts,
     packages/kit/supabase/functions/_shared/roles.ts,
     packages/kit/supabase/functions/_shared/doors.ts,
     packages/kit/supabase/functions/_shared/compiled.ts,
@@ -31,6 +32,8 @@ Provider adapters use a generic Reddit User-Agent by default; `REDDIT_USER_AGENT
 `_shared/compiled.ts` is how a function reads anything the build **compiled** rather than wrote — the catalog, the forms, the funnels. It puts the row of `public.compiled` over the file the deploy shipped, so a deployment that cannot rebuild (cloud mode with git out of the cycle and no deploy hook) still answers from what was last published; where there is no row, which is everywhere that builds, it is the file exactly as before. One read per isolate, and `fresh()` re-reads within a few seconds for the functions that answer the public. A module holding a value from an artefact declares it `export let` and re-derives it in `onRefresh`, so no call site had to change shape.
 
 Two things the functions read are written by the build from `platformkit.config.js` rather than from the database: `_shared/cloud.json` (where cloud mode publishes — the token stays a secret in `app_settings`) and `_shared/webhooks.json` (the subscriptions this deployment ships, naming the environment variable a secret is in and never the secret). The site's own scheduler also falls back to a session type's declared default hours where a host has set none.
+
+Every function's Supabase client is typed from the kit's database (`_shared/database.types.ts`, which `platformkit db-types` generates; see [the database](/docs/building-a-site/the-database)): `createClient<Database>(…)`. A query names real columns, and its rows say which of them may be null.
 
 ## The functions
 

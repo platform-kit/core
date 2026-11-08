@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import { localStack, loadDotEnv, serviceKey, supabaseUrl } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (message: any) => console.log('payment-provider-db: ' + message)
 const schema = readFileSync(new URL('../supabase/schemas/40-commerce.sql', import.meta.url), 'utf8')
@@ -59,7 +60,7 @@ try {
   leave(0)
 }
 
-const admin = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const admin = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const { error: refsError } = await admin.from('payment_provider_refs').select('provider').limit(0)
 const { error: eventsError } = await admin.from('payment_events').select('provider').limit(0)
 const { error: purchasesError } = await admin.from('purchases').select('checkout_identity').limit(0)

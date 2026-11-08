@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { resolveSocialOutcome } from '../supabase/functions/_shared/social/outcome.mjs'
 import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -20,7 +21,7 @@ if (!health.ok) {
 }
 
 const client = (apiKey: any) =>
-  createClient(url, apiKey, { auth: { persistSession: false, autoRefreshToken: false } })
+  createClient<Database>(url, apiKey, { auth: { persistSession: false, autoRefreshToken: false } })
 const service = client(key)
 const admin = client(anonKey)
 const { data: login, error: loginError } = await admin.auth.signInWithPassword({

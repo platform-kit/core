@@ -26,6 +26,7 @@ import { encode as cborEncode } from 'npm:@atproto/lex-cbor@0.1.7'
 import { parseCid } from 'npm:@atproto/lex-data@0.1.8'
 import { POST, LIKE, REPOST, FOLLOW, BLOCK, PROFILE, uriOf, handleOf } from './ids.ts'
 import { newCtx, loadPeople, loadPosts, recordOf, cidOf, didFor } from './views.ts'
+import type { Json } from '../database.types.ts'
 
 const PLC = () => (Deno.env.get('NETWORK_PLC_URL') || 'https://plc.directory').replace(/\/+$/, '')
 const enc = new TextEncoder()
@@ -67,7 +68,7 @@ export async function genesis(handle: string, signingDid: string, pds: string) {
 
 /* ---------------------------------------------------------------- the stream */
 
-async function emit(did: string, kind: 'commit' | 'identity' | 'account' | 'sync', body: Record<string, unknown>, blocks?: Uint8Array) {
+async function emit(did: string, kind: 'commit' | 'identity' | 'account' | 'sync', body: { [key: string]: Json | undefined }, blocks?: Uint8Array) {
   await admin.from('network_seq').insert({ did, kind, body, blocks: blocks ? '\\x' + [...blocks].map((b) => b.toString(16).padStart(2, '0')).join('') : null })
 }
 const now = () => new Date().toISOString()
@@ -147,7 +148,7 @@ export async function project(userId: string, domain: string) {
   const did = identity.did as string
   const suspended = !!(await admin.rpc('network_suspended', { p_user: userId })).data
   const { data: lastAccount } = await admin.from('network_seq').select('body').eq('did', did).eq('kind', 'account').order('seq', { ascending: false }).limit(1).maybeSingle()
-  const wasActive = !lastAccount || lastAccount.body.active !== false
+  const wasActive = !lastAccount || (lastAccount.body as { active?: boolean } | null)?.active !== false
   if (suspended) {
     if (wasActive) await emit(did, 'account', { did, time: now(), active: false, status: 'takendown' })
     return { takendown: true }
@@ -236,6 +237,7 @@ export async function join(userId: string, domain: string) {
   }
   /* a page joined to the wider network is an open page: its everyone posts are public there anyway */
   if (!p.public_profile) await admin.from('profiles').update({ public_profile: true }).eq('id', userId)
+  if (!did) return { error: 'the identity has no did' }
   await emit(did, 'identity', { did, time: now(), handle })
   await emit(did, 'account', { did, time: now(), active: true })
   await project(userId, domain)

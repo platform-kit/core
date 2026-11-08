@@ -22,6 +22,7 @@ import catalogFile from './catalog.json' with { type: 'json' }
 import formsFile from './forms.json' with { type: 'json' }
 import funnelsFile from './emails/funnels.json' with { type: 'json' }
 import designsFile from './emails/compiled.json' with { type: 'json' }
+import type { Database } from './database.types.ts'
 
 /* the artefacts a publish may write, by the name the build gives the file */
 export const ARTEFACTS = ['catalog', 'forms', 'funnels', 'emails'] as const
@@ -38,7 +39,7 @@ export async function refresh(): Promise<void> {
   const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   if (!url || !key) return
   try {
-    const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+    const db = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
     const { data, error } = await db.from('compiled').select('path, data')
     if (error) return   /* no table, no rights, no matter: the files stand */
     for (const k of Object.keys(live)) delete live[k]

@@ -33,7 +33,7 @@ Deno.serve(async (req: any) => {
   const had = new Set((done ?? []).map((d: any) => `${d.booking_uid}:${d.hours}`))
   const due: { uid: string; hours: number }[] = []
   for (const r of rows ?? []) for (const h of hours) {
-    const at = Date.parse(r.start_at) - h * 36e5
+    const at = Date.parse(r.start_at ?? '') - h * 36e5
     if (at <= now && now - at <= LATE && !had.has(`${r.uid}:${h}`)) due.push({ uid: r.uid, hours: h })
   }
   /*

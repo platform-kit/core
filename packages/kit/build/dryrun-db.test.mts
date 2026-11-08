@@ -23,6 +23,7 @@ import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
 import { statusOf, leave, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
 const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -36,7 +37,7 @@ try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.FUNCTIONS_URL) skip('the stack did not report a functions url')
 
-const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 const call = async (body: any) => {
   const r = await fetch(`${cfg.FUNCTIONS_URL}/funnels-run`, {
     method: 'POST', headers: { Authorization: 'Bearer ' + cfg.SERVICE_ROLE_KEY, 'Content-Type': 'application/json' },

@@ -29,7 +29,7 @@ export function whereOf(o: any) {
   return { kind }
 }
 
-export function offeringType(o: any, { hostEmail = null } = {}) {
+export function offeringType(o: any, { hostEmail = null }: { hostEmail?: string | null } = {}) {
   const row = o || {}
   return {
     title: row.title, slug: row.slug, event: OFFERING + row.id, scheduler: 'native', username: null,

@@ -8,6 +8,7 @@
  */
 import { admin, json, preflight, getUser } from '../_shared/lib.ts'
 import { rolesOf, isProvider } from '../_shared/roles.ts'
+import type { TablesInsert } from '../_shared/database.types.ts'
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/
 const ZONES = new Set((Intl as any).supportedValuesOf ? (Intl as any).supportedValuesOf('timeZone') : [])
@@ -61,7 +62,7 @@ Deno.serve(async (req: any) => {
     const num = (v: unknown, d: number, max: number) => { const x = Number(v); return Number.isFinite(x) && x >= 0 ? Math.min(max, Math.floor(x)) : d }
     const name = String(h.name ?? '').trim().slice(0, 60) || 'Working hours'
     const mine = await setOf(body?.schedule)
-    const row: Record<string, unknown> = {
+    const row: TablesInsert<'provider_schedules'> = {
       user_id: user.id, name, timezone, weekly,
       buffer_before: num(h.buffer_before ?? h.buffer_min, 0, 240),
       buffer_after: num(h.buffer_after ?? h.buffer_min, 0, 240),
@@ -101,7 +102,7 @@ Deno.serve(async (req: any) => {
     const day = String(body?.day ?? '')
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return json({ error: 'a day (YYYY-MM-DD)', code: 'day' }, 400)
     const mine = await setOf(body?.schedule)
-    if (action === 'unoverride') { await admin.from('provider_overrides').delete().eq('user_id', user.id).eq('day', day).eq('schedule_id', mine ? mine.id : null); return json(await read()) }
+    if (action === 'unoverride') { { const q = admin.from('provider_overrides').delete().eq('user_id', user.id).eq('day', day); await (mine ? q.eq('schedule_id', mine.id) : q.is('schedule_id', null)) } return json(await read()) }
     const ranges = body?.ranges === null || body?.ranges === undefined ? null : cleanRanges(body.ranges)
     if (body?.ranges != null && ranges === null) return json({ error: 'a range is from before to, HH:MM, at most four a day', code: 'range' }, 400)
     const note = typeof body?.note === 'string' ? body.note.slice(0, 200) : null

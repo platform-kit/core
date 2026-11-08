@@ -21,7 +21,6 @@ const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fa
 console.log('\nBOOKING · OFFERINGS AS TYPES\n')
 
 const row = { id: '0b7e1a2c-1111-4222-8333-444455556666', slug: 'a-walk', title: 'A walk and a talk', minutes: 45, price_cents: 0, currency: 'usd', where: 'place', place: 'Vondelpark, Amsterdam' }
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 const t = offeringType(row, { hostEmail: 'coach@example.com' })
 
 /* --- the address --- */

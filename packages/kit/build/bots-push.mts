@@ -12,6 +12,7 @@ import { compileBots } from './bots.mjs'
 import { projectBots } from './bots-db.mjs'
 import { supabaseUrl, serviceKey } from './tts/storage.mjs'
 import { isMain } from './is-main.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 /* the script's half: find a database from the environment, compile the declaration, hand both to
    the projection — which is bots-db.mjs, and imports no filesystem, so a publish can run it */
@@ -19,7 +20,7 @@ export async function pushBots({ root = process.cwd(), store, log = console.log 
   const url = supabaseUrl()
   const key = serviceKey()
   if (!url || !key) { log('bots: no database to push to'); return { pushed: 0 } }
-  const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+  const db = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
   const { bots } = await compileBots({ root, store, write: false })
   return projectBots({ bots, db, log })
 }

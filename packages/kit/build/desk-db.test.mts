@@ -11,6 +11,7 @@ import { sortDesk, sourcesOn, owedOf, deskBadge } from '../src/lib/desk/shape.js
 import * as support from '../src/lib/desk/support.js'
 import * as coaching from '../src/lib/desk/coaching.js'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('desk-db: ' + m)
 if (process.env.DESK_TEST === '0') { note('skipped (DESK_TEST=0)'); process.exit(0) }
@@ -24,12 +25,12 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const as = async (email: any) => {
-  const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id }
 }
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const wait = (ms: any) => new Promise((r) => setTimeout(r, ms))
 const ago = (min: any) => new Date(Date.now() - min * 60000).toISOString()
 
@@ -51,22 +52,22 @@ try {
   await service.rpc('space_sync_members')
   const { data: chan } = await service.from('channels')
     .insert({ space_id: spaceId, slug: 'desk-general', name: 'General', mode: 'stream', visibility: 'open' }).select().single()
-  await service.from('channel_members').insert([{ channel_id: chan.id, user_id: admin.id }, { channel_id: chan.id, user_id: agent.id }])
+  await service.from('channel_members').insert([{ channel_id: chan!.id, user_id: admin.id }, { channel_id: chan!.id, user_id: agent.id }])
   /* the colleague names them; the mention lands an hour ago so the order is not a coin toss */
   const { data: said } = await agent.sb.from('space_messages')
-    .insert({ channel_id: chan.id, author_id: agent.id, body: 'can you take this one <@' + admin.id + '>' }).select().single()
-  await service.from('space_messages').update({ created_at: ago(60) }).eq('id', said.id)
+    .insert({ channel_id: chan!.id, author_id: agent.id, body: 'can you take this one <@' + admin.id + '>' }).select().single()
+  await service.from('space_messages').update({ created_at: ago(60) }).eq('id', said!.id)
 
   /* ---------------------------------------------------------------- a guest at the support desk */
   const { data: contact } = await service.from('support_contacts')
     .insert({ token_hash: createHash('sha256').update(TOKEN).digest('hex'), last_path: '/store' }).select().single()
-  contactId = contact.id
+  contactId = contact!.id
   const { data: conv } = await service.from('support_conversations')
     .insert({ contact_id: contactId, status: 'open', source: 'contact', path: '/store' }).select().single()
-  supportConv = conv.id
+  supportConv = conv!.id
   const { data: firstLine } = await service.from('support_messages')
     .insert({ conversation_id: supportConv, author: 'contact', body: 'has my order shipped?' }).select().single()
-  await service.from('support_messages').update({ created_at: ago(30) }).eq('id', firstLine.id)
+  await service.from('support_messages').update({ created_at: ago(30) }).eq('id', firstLine!.id)
   await service.from('support_conversations').update({ last_message_at: ago(30), last_contact_at: ago(30) }).eq('id', supportConv)
 
   /* ---------------------------------------------------------------- a member waiting on their coach */
@@ -74,7 +75,7 @@ try {
   chatConv = cid
   const { data: cmsg } = await member.sb.from('messages')
     .insert({ conversation_id: chatConv, sender_id: member.id, kind: 'text', body: 'one more question about the reading' }).select().single()
-  await service.from('messages').update({ created_at: ago(200) }).eq('id', cmsg.id)
+  await service.from('messages').update({ created_at: ago(200) }).eq('id', cmsg!.id)
   await service.from('conversations').update({ last_message_at: ago(200) }).eq('id', chatConv)
 
   /* ---------------------------------------------------------------- the desk, as the staff see it */
@@ -152,16 +153,17 @@ try {
     .insert({ conversation_id: chatConv, sender_id: member.id, kind: 'voice', audio_path: chatConv + '/probe.mp3', seconds: 7 }).select().single()
   const heard = await coaching.messages(admin.sb, chatConv, admin.id)
   ok('a voice note is handed on with the path that plays it',
-    (heard.find((m) => m.id === vmsg.id) || {}).audio_path === chatConv + '/probe.mp3')
+    (heard.find((m) => m.id === vmsg!.id) || {}).audio_path === chatConv + '/probe.mp3')
 
   /* ---------------------------------------------------------------- not for a reader */
   ok('a reader is refused the support inbox outright', (await reader.sb.rpc('support_inbox', { p_status: 'open' })).data === null)
-  const rChat = (await reader.sb.rpc('chat_inbox')).data || []
+  const rChat: any = (await reader.sb.rpc('chat_inbox')).data || []
   ok('…and sees none of the coaching threads', !rChat.some((c: any) => c.id === chatConv))
   ok('…no message of the guest\'s', ((await reader.sb.from('support_messages').select('id').eq('conversation_id', supportConv)).data || []).length === 0)
   ok('…no conversation of the guest\'s', ((await reader.sb.from('support_conversations').select('id').eq('id', supportConv)).data || []).length === 0)
-  ok('…no room of the staff\'s', !((await reader.sb.rpc('space_unread')).data || []).some((x: any) => x.channel === chan.id))
-  ok('…and the channel\'s history is refused', (await reader.sb.rpc('space_history', { p_channel: chan.id })).data === null)
+  // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
+  ok('…no room of the staff\'s', !((await reader.sb.rpc('space_unread')).data || []).some((x: any) => x.channel === chan!.id))
+  ok('…and the channel\'s history is refused', (await reader.sb.rpc('space_history', { p_channel: chan!.id })).data === null)
 
   /* ---------------------------------------------------------------- provider conversations have only a private desk mark */
   socialMarkRef = JSON.stringify([crypto.randomUUID(), 'dm', crypto.randomUUID()])

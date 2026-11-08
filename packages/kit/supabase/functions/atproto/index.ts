@@ -557,10 +557,10 @@ async function sync(req: Request, nsid: string, q: URLSearchParams): Promise<Res
     if (dl.error || !dl.data) {
       /* a picture put from the site's own pages is kept by its path; its CID is on the post */
       const { data: p } = await admin.from('network_posts').select('media').eq('author_id', i.user_id).contains('media', [{ cid }]).limit(1).maybeSingle()
-      const im = p && (p.media || []).find((x: any) => x.cid === cid)
+      const im = p && ((p.media || []) as Array<{ cid?: string; path: string; mime?: string }>).find((x) => x.cid === cid)
       const dl2 = im ? await admin.storage.from('network').download(im.path) : null
       if (!dl2 || dl2.error || !dl2.data) return no({ status: 400, body: { error: 'BlobNotFound', message: 'Blob not found' } })
-      return new Response(dl2.data, { headers: { ...CORS, 'Content-Type': im.mime || 'application/octet-stream' } })
+      return new Response(dl2.data, { headers: { ...CORS, 'Content-Type': im!.mime || 'application/octet-stream' } })
     }
     return new Response(dl.data, { headers: { ...CORS, 'Content-Type': 'application/octet-stream' } })
   }
@@ -609,9 +609,11 @@ async function ownRepo(repo: string, s: Session) {
 
 /* a guest's reads go through the anonymous role, under the same guards as anybody's */
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import type { Database } from '../_shared/database.types.ts'
+import type { Json } from '../_shared/database.types.ts'
 let GUEST: any = null
 function guestDb() {
-  if (!GUEST) GUEST = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', { auth: { persistSession: false, autoRefreshToken: false } })
+  if (!GUEST) GUEST = createClient<Database>(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_ANON_KEY') ?? '', { auth: { persistSession: false, autoRefreshToken: false } })
   return GUEST
 }
 

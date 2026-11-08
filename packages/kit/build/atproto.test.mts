@@ -12,6 +12,7 @@ import { createClient } from '@supabase/supabase-js'
 import { AtpAgent } from '@atproto/api'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, siteUnderTest, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('atproto: ' + m)
 if (process.env.ATPROTO_TEST === '0') { note('skipped (ATPROTO_TEST=0)'); process.exit(0) }
@@ -45,9 +46,9 @@ const xrpc = async (nsid: any, { token, params, body }: any = {}) => {
   const r = await fetch(`${FN}/xrpc/${nsid}${q}`, { method: body ? 'POST' : 'GET', headers: { ...(token ? { Authorization: 'Bearer ' + token } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined })
   return { status: r.status, data: await r.json().catch(() => null) }
 }
-const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const site = async (email: any) => {
-  const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id, token: data.session.access_token }
@@ -68,6 +69,7 @@ try {
   /* this test refuses a wrong password on purpose every run; earlier runs' attempts are not this run's */
   await service.from('network_login_attempts').delete().gte('id', 0)
   /* a clean slate for these three: nothing of the network from an earlier run */
+  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
   for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_blocks', 'blocker_id'], ['network_mutes', 'muter_id'], ['network_seen', 'user_id'], ['network_posts', 'author_id']]) await service.from(t).delete().in(col, people)
 
   /* ------------------------------------------------------------ signing in */
@@ -101,15 +103,15 @@ try {
 
   /* ------------------------------------------------------------ three posts, three readers */
   const { data: space } = await service.from('spaces').insert({ slug: SLUG, name: 'An atproto test space', kind: 'community', fill: {} }).select().single()
-  spaceId = space.id
+  spaceId = space!.id
   const { data: feed } = await service.from('channels').insert({ space_id: spaceId, slug: 'feed', name: 'Feed', mode: 'feed', visibility: 'open' }).select().single()
   await service.from('space_members').insert([{ space_id: spaceId, user_id: A.id }, { space_id: spaceId, user_id: B.id }])
   const pe = (await A.sb.from('network_posts').insert({ author_id: A.id, text: 'to everyone', audience: 'everyone' }).select().single()).data
   const ph = (await A.sb.from('network_posts').insert({ author_id: A.id, text: 'to the people here', audience: 'here' }).select().single()).data
-  const ms = (await A.sb.from('space_messages').insert({ channel_id: feed.id, author_id: A.id, body: 'to the space' }).select().single()).data
+  const ms = (await A.sb.from('space_messages').insert({ channel_id: feed!.id, author_id: A.id, body: 'to the space' }).select().single()).data
   const did = a.session.did
-  const uE = `at://${did}/app.bsky.feed.post/${pe.rkey}`, uH = `at://${did}/app.bsky.feed.post/${ph.rkey}`
-  const uS = `at://${did}/app.bsky.feed.post/s~${ms.id.replace(/-/g, '')}`
+  const uE = `at://${did}/app.bsky.feed.post/${pe!.rkey}`, uH = `at://${did}/app.bsky.feed.post/${ph!.rkey}`
+  const uS = `at://${did}/app.bsky.feed.post/s~${ms!.id.replace(/-/g, '')}`
 
   await xrpc('com.atproto.server.createAppPassword', { token: B.token, body: { name: 't' } }).then(async (r) => { B.pw = r.data.password })
   await xrpc('com.atproto.server.createAppPassword', { token: C.token, body: { name: 't' } }).then(async (r) => { C.pw = r.data.password })
@@ -173,10 +175,10 @@ try {
   /* a like on a space's post is the room's own reaction */
   const sp = (await b.app.bsky.feed.getPosts({ uris: [uS] })).data.posts[0]
   const sl = await b.like(uS, sp.cid)
-  const reacted = (await service.from('reactions').select('emoji').eq('target_id', ms.id).eq('user_id', B.id)).data || []
+  const reacted = (await service.from('reactions').select('emoji').eq('target_id', ms!.id).eq('user_id', B.id)).data || []
   ok('a like on a space\'s post is the room\'s ❤️', reacted.length === 1 && reacted[0].emoji === '❤️')
   await b.deleteLike(sl.uri)
-  ok('…and unliking takes it back', ((await service.from('reactions').select('emoji').eq('target_id', ms.id).eq('user_id', B.id)).data || []).length === 0)
+  ok('…and unliking takes it back', ((await service.from('reactions').select('emoji').eq('target_id', ms!.id).eq('user_id', B.id)).data || []).length === 0)
 
   /* a picture, uploaded and posted */
   const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 156, 99, 248, 15, 4, 0, 9, 251, 3, 253, 227, 85, 242, 156, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130])
@@ -219,6 +221,7 @@ try {
 } finally {
   if (people.length) {
     await service.from('network_app_passwords').delete().in('user_id', people)
+    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
     for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_seen', 'user_id'], ['network_posts', 'author_id']]) await service.from(t).delete().in(col, people)
     const { data: objs } = await service.storage.from('network').list(people[0], { limit: 100 })
     if (objs && objs.length) await service.storage.from('network').remove(objs.map((o) => people[0] + '/' + o.name))

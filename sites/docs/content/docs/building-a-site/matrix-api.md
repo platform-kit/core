@@ -9,7 +9,7 @@ sources:
     packages/kit/supabase/schemas/91-matrix.sql,
     packages/kit/build/matrix-api.test.mts,
   ]
-reviewed: 2026-11-04
+reviewed: 2026-11-07
 ---
 
 The community — spaces, channels, threads, direct messages — is served as a **Matrix homeserver's Client-Server API**. Element, FluffyChat, Nheko, Cinny and every other Matrix client signs in and reads the site's rooms with the host swapped, on iOS, Android, macOS, Windows and Linux, without this platform shipping an application of its own. Modules: `spaces` and `api`.

@@ -35,6 +35,12 @@ function operationContext(backendId: string) {
   }
 }
 
+/* what social_start_automation_run answers (schemas/glue/bots+social-publishing.sql): the run, or why there is none */
+type AutomationRun = { id?: string; existing?: boolean; social_response_id?: string; error?: string; window?: string }
+/* what social_begin_automation_send answers (schemas/99-social.sql): the response to send, or why it may not go */
+type ResponseRow = { id: string; event_id: string; account_id: string; automation_id: string; mode: string; destination: string; body: string; actor_id: string | null }
+type ResponseSend = { error: string } | (ResponseRow & { error?: undefined })
+
 async function readSecret(secretId: string | null) {
   if (!secretId) return null
   const { data, error } = await admin.rpc('social_vault_read', { p_secret_id: secretId })
@@ -213,11 +219,12 @@ async function startResponse(event: Row, automation: Row, destination: string, b
   )
   const subjectKey = `social:${event.account_id}:${[...new Uint8Array(subjectHash)]
     .map((byte) => byte.toString(16).padStart(2, '0')).join('')}`
-  const { data: run, error: runError } = await admin.rpc('social_start_automation_run', {
+  const { data: started, error: runError } = await admin.rpc('social_start_automation_run', {
     p_response_id: response.id,
     p_subject_key: subjectKey,
   })
   if (runError) throw new Error(`Social bot run could not be started (${runError.code}).`)
+  const run = started as AutomationRun | null
   if (!run || run.error) {
     const reason = run?.error === 'budget'
       ? `Bot response limit reached${run.window ? ` (${run.window})` : ''}.`
@@ -302,13 +309,15 @@ async function processClaimedEvent(eventId: string) {
 }
 
 async function deliverResponse(responseId: string, actorId: string | null = null) {
-  const { data, error } = await admin.rpc('social_begin_automation_send', {
+  const { data: begun, error } = await admin.rpc('social_begin_automation_send', {
     p_response_id: responseId,
     p_actor_id: actorId,
   })
   if (error) throw new Error(`Social response-send authorization failed (${error.code}).`)
-  if (!data || data.error) {
-    if (actorId === null && ['account_unavailable', 'route_unavailable'].includes(data?.error)) {
+  const data = begun as ResponseSend | null
+  const row = data && !data.error ? data as ResponseRow : null
+  if (!row) {
+    if (actorId === null && ['account_unavailable', 'route_unavailable'].includes(data?.error ?? '')) {
       const { data: response, error: responseError } = await admin
         .from('social_automation_responses').select('automation_id, mode').eq('id', responseId).maybeSingle()
       if (responseError) throw new Error(`Social automation lookup failed (${responseError.code}).`)
@@ -318,9 +327,9 @@ async function deliverResponse(responseId: string, actorId: string | null = null
   }
 
   const [eventResult, accountResult, automationResult] = await Promise.all([
-    admin.from('social_inbound_events').select('*').eq('id', data.event_id).maybeSingle(),
-    admin.from('social_accounts').select(accountSelect).eq('id', data.account_id).maybeSingle(),
-    admin.from('social_automations').select('*').eq('id', data.automation_id).maybeSingle(),
+    admin.from('social_inbound_events').select('*').eq('id', row.event_id).maybeSingle(),
+    admin.from('social_accounts').select(accountSelect).eq('id', row.account_id).maybeSingle(),
+    admin.from('social_automations').select('*').eq('id', row.automation_id).maybeSingle(),
   ])
   if (eventResult.error || accountResult.error || automationResult.error)
     throw new Error('Social delivery context lookup failed.')
@@ -332,7 +341,7 @@ async function deliverResponse(responseId: string, actorId: string | null = null
 
   try {
     if (!event || !account || account.status !== 'connected' || !automation?.enabled) {
-      if (automation && data.mode === 'automatic' && (!account || account.status !== 'connected'))
+      if (automation && row.mode === 'automatic' && (!account || account.status !== 'connected'))
         await pauseAutomaticRule(automation.id)
       throw Object.assign(new Error('The account route is no longer available.'), {
         code: 'social_route_unavailable',
@@ -341,7 +350,7 @@ async function deliverResponse(responseId: string, actorId: string | null = null
     }
     const runtime = await loadRuntime(account)
     if (!runtime) {
-      if (data.mode === 'automatic') await pauseAutomaticRule(automation.id)
+      if (row.mode === 'automatic') await pauseAutomaticRule(automation.id)
       throw Object.assign(new Error('The connected account credentials are unavailable.'), {
         code: 'social_route_unavailable',
         definite: true,
@@ -353,17 +362,17 @@ async function deliverResponse(responseId: string, actorId: string | null = null
       runtime.client,
       runtime.backendId,
     ).find((item: Row) =>
-      item.eventKind === event.event_kind && item.destinations.includes(data.destination),
+      item.eventKind === event.event_kind && item.destinations.includes(row.destination),
     )
     if (!route) {
-      if (data.mode === 'automatic') await pauseAutomaticRule(automation.id)
+      if (row.mode === 'automatic') await pauseAutomaticRule(automation.id)
       throw Object.assign(new Error('The provider no longer supports this response destination.'), {
         code: 'social_route_unavailable',
         definite: true,
       })
     }
 
-    if (data.destination === 'private_dm' && event.event_kind === 'comment') {
+    if (row.destination === 'private_dm' && event.event_kind === 'comment') {
       if (runtime.backendId !== 'default' || account.provider_id !== 'instagram' || !runtime.token)
         throw Object.assign(new Error('Private replies to comments are not available on this route.'), {
           code: 'social_route_unavailable',
@@ -372,11 +381,11 @@ async function deliverResponse(responseId: string, actorId: string | null = null
       result = await sendInstagramPrivateReply({
         accountId: account.external_id,
         commentId: event.comment_id || event.item_id,
-        text: data.body,
+        text: row.body,
         accessToken: runtime.token.accessToken,
       })
     } else {
-      const operation = data.destination === 'public_reply' ? 'comments.write' : 'messages.write'
+      const operation = row.destination === 'public_reply' ? 'comments.write' : 'messages.write'
       result = await invokeSocialOperation({
         client: runtime.client,
         account: {
@@ -385,9 +394,9 @@ async function deliverResponse(responseId: string, actorId: string | null = null
           accountId: account.external_id,
         },
         operation,
-        input: data.destination === 'public_reply'
-          ? { postId: event.post_id, commentId: event.comment_id || event.item_id, text: data.body }
-          : { conversationId: event.conversation_id, text: data.body },
+        input: row.destination === 'public_reply'
+          ? { postId: event.post_id, commentId: event.comment_id || event.item_id, text: row.body }
+          : { conversationId: event.conversation_id, text: row.body },
         context: operationContext(runtime.backendId),
       })
       if (typeof result?.providerResponseId !== 'string') {

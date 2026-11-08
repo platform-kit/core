@@ -53,12 +53,13 @@ import { inference as SITE_INFERENCE, usage as SITE_USAGE } from '../_shared/pip
 import bots from '../_shared/bots.json' with { type: 'json' }
 import commands from '../_shared/commands.json' with { type: 'json' }
 import { fresh, of } from '../_shared/compiled.ts'
+import type { Database, Json } from '../_shared/database.types.ts'
 /* the catalog as this deployment has it: the shipped file, or the row a publish wrote */
 const catalog = of<Record<string, any>>('catalog')
 
 const url = Deno.env.get('SUPABASE_URL')!
 const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
+const admin = createClient<Database>(url, serviceKey, { auth: { persistSession: false } })
 
 /* how long one worker holds a run. Long enough for a slow model call, short enough that a worker
    which died is picked up again while anybody is still waiting. */
@@ -213,7 +214,14 @@ async function channelAt(path: string) {
 
 /* ------------------------------------------------------------------ one run, one step */
 
-async function claim(me: string, id?: string) {
+/* a line of agent_transcript's answer, whichever surface the run is on (schemas/96-agents.sql) */
+type TranscriptLine = { kind?: string; body?: string; title?: string; meta?: Json; attachment_name?: string; deleted_at?: string | null; author_id?: string; name?: string; mine?: boolean }
+/* a run as the table holds it; agent_claim answers the row it took as jsonb */
+type AgentRun = Omit<Database['public']['Tables']['agent_runs']['Row'], 'state'> & { state: RunState | null }
+/* what a run keeps between steps (the state column, jsonb) */
+type RunState = { context?: string; messages?: unknown[]; social_response_id?: string; as?: string; command?: string; args?: unknown; before?: unknown; mock?: unknown }
+
+async function claim(me: string, id?: string): Promise<AgentRun | null> {
   if (id) {
     /* a run named by id is taken only when nobody else holds it: the insert's wake and a direct call both name it, and
        two workers on one run take the same step twice. Its own holder renews it, which is how a worker stays with it */
@@ -221,10 +229,10 @@ async function claim(me: string, id?: string) {
     const { data } = await admin.from('agent_runs').update({
       status: 'running', worker: me, lease_until: new Date(Date.now() + LEASE * 1000).toISOString(), updated_at: now,
     }).eq('id', id).in('status', ['queued', 'running']).or(`lease_until.is.null,lease_until.lt.${now},worker.eq.${me}`).select().maybeSingle()
-    return data || null
+    return (data as AgentRun | null) || null
   }
   const { data } = await admin.rpc('agent_claim', { p_worker: me, p_lease_seconds: LEASE })
-  return data || null
+  return (data as AgentRun | null) || null
 }
 
 /*
@@ -413,7 +421,8 @@ async function step(run: any) {
    * a person reads are one thing.
    */
   if (!(run.state && run.state.context)) {
-    const { data: rows } = await admin.rpc('agent_transcript', { p_run: run.id, p_limit: 60 })
+    const { data: transcript } = await admin.rpc('agent_transcript', { p_run: run.id, p_limit: 60 })
+    const rows = transcript as TranscriptLine[] | null
     const W = bot.context || {}
     const said = roomAsProse(rows || [], {
       words: bot.events || {}, unheard: W.voice, someone: W.someone,
@@ -433,7 +442,7 @@ async function step(run: any) {
   /* WHAT THIS RUN MAY USE. Every tool and skill the bot declares, with its audience, asked of the
      database in one go — and the answer filters the tool list and the skills line together, because
      a skill named in the prompt whose tool was withheld is a model reaching for nothing. */
-  const named: Record<string, unknown> = {}
+  const named: Record<string, string[]> = {}
   for (const s of bot.skills || []) if (s && s.name) named[s.name] = s.audience || []
   for (const n of bot.tools || []) named[n] = ((bot.declared || {})[n] || {}).audience || []
   let allowed: Set<string> | null = null
@@ -884,7 +893,7 @@ const ctxOf = (run: any) => ({
  * the coach, or a front line nobody is staffing. That is a decision somebody writes down, in a
  * file, in a pull request; it is never what happens because nobody thought about it.
  */
-async function post(run: any, bot: any, text: string): Promise<boolean | void> {
+async function post(run: AgentRun & { allowed?: Set<string> | null }, bot: any, text: string): Promise<boolean | void> {
   if (!text) return
   if (run.surface === 'social') {
     const responseId = run.state?.social_response_id
@@ -944,7 +953,7 @@ async function post(run: any, bot: any, text: string): Promise<boolean | void> {
     }))
   } else if (run.surface === 'coaching' && run.conversation_id) {
     ;({ error } = await admin.from('messages').insert({
-      conversation_id: run.conversation_id, sender_id: run.state?.as || null, kind: 'text', body: text,
+      conversation_id: run.conversation_id, sender_id: (run.state?.as || null) as string, kind: 'text', body: text,   /* a coaching run speaks as somebody (state.as); with nobody the insert fails, and that is written down below */
     }))
   }
   /* A RUN THAT COULD NOT SAY ITS ANSWER IS NOT A RUN THAT WENT WELL. It keeps the answer — the row

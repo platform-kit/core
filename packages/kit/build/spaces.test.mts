@@ -40,13 +40,10 @@ const rows = [
   { channel: 'c3', space: 's2', seq: 40, read: 0, mentions: 0, notify: 'none' },
   { channel: 'c4', space: 's2', seq: 5, read: 1, mentions: 2, notify: 'mentions', muted_until: '2026-09-23T00:00:00.000Z' },
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ channel: string; space: string; seq: number; read: number; mentions: number; notify: string; muted_until?: undefined; }
 const badge = badgeOf(rows, now)
 ok('a badge counts the unread of the channels that ask to be counted', badge.unread === 6, JSON.stringify(badge))
 ok('a badge counts every mention, muted or not', badge.mentions === 3, JSON.stringify(badge))
-// @ts-expect-error TS2322, from the conversion: Type '{ channel: string; space: string; seq: number; read: number; mentions: number; notify: string; muted_until?: undefined; } | { channel:
 ok('a channel set to nothing adds no unread', badgeOf([rows[2]], now).unread === 0)
-// @ts-expect-error TS2322, from the conversion: Type '{ channel: string; space: string; seq: number; read: number; mentions: number; notify: string; muted_until?: undefined; } | { channel:
 ok('a muted channel keeps its mentions and drops its messages', badgeOf([rows[3]], now).unread === 0 && badgeOf([rows[3]], now).mentions === 2)
 ok('muting expires', mutedNow({ muted_until: '2026-09-21T00:00:00.000Z' }, now) === false)
 /* --- and the ONE number the site's header carries --- */
@@ -58,13 +55,9 @@ const dms = [
   { channel: 'd2', kind: 'dm', seq: 3, read: 3, mentions: 0, notify: 'all' },      /* nothing */
   { channel: 'c9', kind: 'channel', seq: 400, read: 0, mentions: 1, notify: 'mentions' },  /* 1 mention, 400 unread */
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ channel: string; kind: string; seq: number; read: number; mentions: number; notify: string; }[]' is not assignable to pa
 ok('the header counts DMs unread plus every mention, and no other traffic', waitingOf(dms, now) === 3, String(waitingOf(dms, now)))
-// @ts-expect-error TS2322, from the conversion: Type '{ muted_until: string; channel: string; kind: string; seq: number; read: number; mentions: number; notify: string; }' is not assignabl
 ok('a muted DM stops counting its messages', waitingOf([{ ...dms[0], muted_until: '2026-09-23T00:00:00.000Z' }], now) === 0)
-// @ts-expect-error TS2322, from the conversion: Type '{ muted_until: string; channel: string; kind: string; seq: number; read: number; mentions: number; notify: string; }' is not assignabl
 ok('a muted room still counts what names you', waitingOf([{ ...dms[2], muted_until: '2026-09-23T00:00:00.000Z' }], now) === 1)
-// @ts-expect-error TS2322, from the conversion: Type '{ notify: string; channel: string; kind: string; seq: number; read: number; mentions: number; }' is not assignable to type 'never'.
 ok('a DM set to nothing stops counting', waitingOf([{ ...dms[0], notify: 'none' }], now) === 0)
 ok('nothing waiting is zero, not a blank', waitingOf([], now) === 0)
 

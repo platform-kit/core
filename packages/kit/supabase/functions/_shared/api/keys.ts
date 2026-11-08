@@ -14,6 +14,8 @@ import { PUBLIC } from './flags.ts'
 export type Kind = 'delivery' | 'preview' | 'management' | 'forms' | 'scheduling' | 'storefront' | 'support' | 'matrix'
 export type Caller = { kind: Kind; gated: boolean; id: string | null; token: string | null }
 const CONTENT_KINDS: Kind[] = ['delivery', 'preview', 'management']
+/* whether a kind the table holds is one of these (the column is text; the check is the database's) */
+const isKind = (k: string, among: readonly Kind[]): k is Kind => (among as readonly string[]).includes(k)
 const touched = new Map<string, number>()
 
 export async function sha256(s: string) { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
@@ -29,7 +31,7 @@ export async function callerOf(token: string | null): Promise<Caller | null | 'p
   if (PUBLIC && !token.startsWith('pk_')) return { kind: 'delivery', gated: false, id: null, token: null }
   const hash = await sha256(token)
   const { data } = await admin.from('api_keys').select('id, kind, gated, revoked_at').eq('hash', hash).maybeSingle()
-  const caller: Caller | null = data && !data.revoked_at && CONTENT_KINDS.includes(data.kind) ? { kind: data.kind, gated: !!data.gated, id: data.id, token } : null
+  const caller: Caller | null = data && !data.revoked_at && isKind(data.kind, CONTENT_KINDS) ? { kind: data.kind, gated: !!data.gated, id: data.id, token } : null
   touch(caller)
   return caller
 }
@@ -40,7 +42,7 @@ export async function keyOf(token: string | null, kinds: Kind[]): Promise<Caller
   if (!token) return null
   const { data } = await admin.from('api_keys').select('id, kind, gated, revoked_at').eq('hash', await sha256(token)).maybeSingle()
   if (!data || data.revoked_at) return null
-  if (!kinds.includes(data.kind)) return 'other-kind'
+  if (!isKind(data.kind, kinds)) return 'other-kind'
   const caller: Caller = { kind: data.kind, gated: !!data.gated, id: data.id, token }
   touch(caller)
   return caller

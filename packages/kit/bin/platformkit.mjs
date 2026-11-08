@@ -19,6 +19,7 @@
  *               the developer's own account back — DEV_ACCOUNT in .env — which the reset emptied)
  *   functions   assemble supabase/ and serve the functions locally (`functions deploy` deploys them)
  *   assemble    supabase/ from the kit's data layer and the site's own (`--check`)
+ *   db-types    the kit's database types, generated from its schema in a throwaway Postgres (`--check`)
  *   module drop <key>  remove the tables of a module that is off, after showing them and their rows (`--linked`
  *               for production, `--plan` to only show; a table with rows needs PLATFORMKIT_ALLOW_DESTRUCTIVE)
  *   print       the printed editions (build/print.mjs)
@@ -234,6 +235,7 @@ switch (cmd) {
   /* --e2e: every stack-backed check, on stacks built for it from each site's files (build/e2e.mjs) */
   case 'test': if (rest.includes('--e2e')) node('e2e.mjs', rest.filter((x) => x !== '--e2e')); else node('test.mjs', rest); break
   case 'assemble': node('assemble.mjs', rest); break
+  case 'db-types': node('db-types.mjs', rest); break
   /* a reset brings the database to the declaration — the schema, the rows, the seed — and then to
      the CONTENT that is a declaration too: the spaces are files, so they are compiled and projected
      after the reset, and the seed's morning in the staff room is asked for once its rooms exist. The

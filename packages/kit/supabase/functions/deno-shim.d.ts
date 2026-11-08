@@ -4,6 +4,9 @@
  */
 declare const Deno: any
 declare const EdgeRuntime: any
+/* the packages the workspace installs read as themselves */
+declare module 'npm:@supabase/supabase-js@2' { export * from '@supabase/supabase-js' }
+declare module 'jsr:@supabase/supabase-js@2' { export * from '@supabase/supabase-js' }
 declare module 'npm:*'
 declare module 'jsr:*'
 declare module 'https://*'

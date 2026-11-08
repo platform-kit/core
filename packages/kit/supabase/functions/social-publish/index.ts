@@ -11,10 +11,11 @@ import {
   hasManagedBackend,
   managedOperationContext,
 } from '../_shared/social/managed-sdk.mts'
+import type { Database } from '../_shared/database.types.ts'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-const admin = createClient(supabaseUrl, serviceRoleKey, {
+const admin = createClient<Database>(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 const corsHeaders = {
@@ -91,7 +92,7 @@ async function isServiceBearer(req: Request) {
   if (!token) return false
   if (token === serviceRoleKey) return true
   try {
-    const probe = createClient(supabaseUrl, token, { auth: { persistSession: false, autoRefreshToken: false } })
+    const probe = createClient<Database>(supabaseUrl, token, { auth: { persistSession: false, autoRefreshToken: false } })
     const { error } = await probe.auth.admin.listUsers({ page: 1, perPage: 1 })
     return !error
   } catch {

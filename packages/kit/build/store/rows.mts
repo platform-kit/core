@@ -17,11 +17,12 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { insideRoots, refuse, mimeOf, cleanName } from './index.mjs'
+import type { Database } from '../../supabase/functions/_shared/database.types.js'
 
 const TABLE = 'content', DRAFTS = 'content_drafts', BUCKET = 'content-assets'
 const norm = (rel: any) => String(rel || '').replace(/\\/g, '/').replace(/^\.?\//, '')
 export function rowsStore({ url, key, client, by = '', onEvent = null }: any = {}) {
-  const sb = client || createClient(url || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, key || process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+  const sb = client || createClient<Database>(url || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL, key || process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
   const now = () => new Date().toISOString()
   const emit = async (e: any) => { if (!onEvent) return; try { await onEvent(e) } catch (err: any) { console.warn('content event', String(err && err.message || err)) } }
   /* a row with its draft folded in (draft_text …, draft_deleted), as the rest of the store reads it */

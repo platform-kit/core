@@ -714,7 +714,7 @@ async function startJobs(script: any) {
   const book = selected.value[0]
   const r = await A.job('enrich', book, { options: { stage: script === 'introduce' ? 'introduce' : 'all', force: runForce.value } })
   if (r.error) { runError.value = ENR()[r.error] || r.error; return }
-  cloudRuns.value = [{ id: r.id, book, status: r.status || 'queued', spent: 0, steps: [], said: '', error: null }]
+  cloudRuns.value = [{ id: r.id, book, status: 'queued', spent: 0, steps: [], said: '', error: null }]
   watchCloud()
 }
 let cloudPoll: any = null

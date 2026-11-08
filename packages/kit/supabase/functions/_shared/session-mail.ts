@@ -13,6 +13,7 @@ import { ics } from './ics.ts'
 import { formsNow } from './forms-live.ts'
 import { typeFor } from './sessions.ts'
 import strings from './emails/strings.json' with { type: 'json' }
+import type { Json } from './database.types.ts'
 
 export type SessionMailKind = 'session-booked' | 'session-moved' | 'session-cancelled' | 'session-reminder'
 const APP = () => (Deno.env.get('APP_URL') ?? '').replace(/\/$/, '')
@@ -37,7 +38,7 @@ async function answersOf(responseId: string): Promise<Array<{ label: string; val
   }))
 }
 const first = (name: string | null, email: string | null) => (name || '').trim().split(/\s+/)[0] || (email || '').split('@')[0] || ''
-const when = (iso: string, tz: string) => { try { return new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso)) + ` (${tz.replace(/_/g, ' ')})` } catch { return iso } }
+const when = (iso: string | null, tz: string) => { try { return new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(iso ?? 0)) + ` (${tz.replace(/_/g, ' ')})` } catch { return iso } }
 /* the place, as a sentence and as the invitation's location */
 export function placeOf(where: any, join: string | null) {
   const w = where || {}
@@ -54,7 +55,9 @@ export async function sessionMail(kind: SessionMailKind, uid: string, extra: Rec
   const s = await typeFor(b.event, { any: true })
   const { data: host } = b.host_id ? await admin.from('profiles').select('id, email, display_name').eq('id', b.host_id).maybeSingle() : { data: null }
   const { data: hh } = b.host_id ? await admin.from('provider_schedules').select('timezone').eq('user_id', b.host_id).eq('is_default', true).maybeSingle() : { data: null }
-  const readerTz = String(b.payload?.tz || 'UTC'), hostTz = String(hh?.timezone || 'UTC')
+  /* what a booking keeps beside its columns: the reader's zone, and how many times the invitation was re-sent */
+  const payload = (b.payload ?? {}) as { tz?: string; sequence?: number; [k: string]: Json | undefined }
+  const readerTz = String(payload.tz || 'UTC'), hostTz = String(hh?.timezone || 'UTC')
   const join = b.join_url || null
   const place = placeOf(b.where, join)
   // @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types '"session-booked" | "session-moved" | "session-reminder"' and '"session-declin
@@ -63,14 +66,14 @@ export async function sessionMail(kind: SessionMailKind, uid: string, extra: Rec
      may yet decline is an hour somebody blocks out and then has to take back. */
   // @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types 'SessionMailKind' and '"session-held"' have no overlap.
   const held = kind === 'session-held' || kind === 'session-to-confirm'
-  const sequence = Number(b.payload?.sequence ?? 0) + (kind === 'session-moved' ? 1 : 0) + (kind === 'session-cancelled' ? 1 : 0)
-  const invite = ics({ uid: `${b.uid}@platformkit`, start: b.start_at, end: b.end_at, summary: b.title || s?.title || 'Session', description: [place.line, join].filter(Boolean).join('\n'), location: place.location, url: join || undefined, organizer: host?.email ? { name: host.display_name || '', email: host.email } : undefined, attendees: [...new Set([b.email, ...(b.attendee_emails || [])].filter(Boolean))].map((e: string) => ({ name: e === b.email ? (b.name || '') : '', email: e })), method, sequence })
-  if (kind === 'session-moved' || kind === 'session-cancelled') await admin.from('bookings').update({ payload: { ...(b.payload || {}), sequence } }).eq('uid', uid)
+  const sequence = Number(payload.sequence ?? 0) + (kind === 'session-moved' ? 1 : 0) + (kind === 'session-cancelled' ? 1 : 0)
+  const invite = ics({ uid: `${b.uid}@platformkit`, start: b.start_at, end: b.end_at, summary: b.title || s?.title || 'Session', description: [place.line, join].filter(Boolean).join('\n'), location: place.location, url: join || undefined, organizer: host?.email ? { name: host.display_name || '', email: host.email } : undefined, attendees: [...new Set([b.email, ...(b.attendee_emails || [])].filter((e): e is string => Boolean(e)))].map((e) => ({ name: e === b.email ? (b.name || '') : '', email: e })), method, sequence })
+  if (kind === 'session-moved' || kind === 'session-cancelled') await admin.from('bookings').update({ payload: { ...payload, sequence } }).eq('uid', uid)
   const manage = APP() + '/app/coaching'
   const base = { title: b.title || s?.title || '', where: place.line, join: join || '', manage, ...extra }
   const out: boolean[] = []
   /* every address on the booking — the row's own and the rest of the invitees (a host's booking for several) — each by their own name */
-  const addresses = [...new Set([b.email, ...(b.attendee_emails || [])].filter(Boolean).map((e: string) => String(e).toLowerCase()))]
+  const addresses = [...new Set([b.email, ...(b.attendee_emails || [])].filter((e): e is string => Boolean(e)).map((e) => String(e).toLowerCase()))]
   const { data: people } = addresses.length ? await admin.from('profiles').select('email, display_name').in('email', addresses) : { data: [] }
   for (const to of addresses) {
     const who = (people ?? []).find((p: any) => String(p.email).toLowerCase() === to)

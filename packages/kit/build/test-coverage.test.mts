@@ -82,6 +82,7 @@ const NOT_A_STACK: any = {
   'site-payment-provider.test.mts': 'a webhook path in a registration',
   'cron-registration.test.mts': 'a throwaway Postgres container of its own',
   'schema.test.mts': 'a throwaway database of its own, run by the end-to-end run (E2E_ALSO)',
+  'db-types.test.mts': 'a throwaway database of its own, run by the end-to-end run (E2E_ALSO)',
   'modules-off-db.test.mts': 'a throwaway database of its own, run by the end-to-end run (E2E_ALSO)',
   'e2e-runner.test.mts': 'runs the runner itself, which builds the stacks (CI\'s e2e job)',
 }

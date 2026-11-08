@@ -21,14 +21,15 @@ import { createClient } from '@supabase/supabase-js'
 import { requireStack, notHere, moduleOn } from './test-stack.mjs'
 import { fileURLToPath } from 'node:url'
 import { finishWaiting, setInterior } from './print/typeset/interior.js'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const S: any = requireStack('print-jobs-db')
 if (!(await moduleOn('print'))) { notHere('print-jobs-db', 'the print module is off'); process.exit(0) }
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 400) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
-const service = createClient(S.api, S.service, O)
-const anon = createClient(S.api, S.anon, O)
+const service = createClient<Database>(S.api, S.service, O)
+const anon = createClient<Database>(S.api, S.anon, O)
 const call = async (body: any, bearer = S.service) => {
   const r = await fetch(`${S.functions}/print-render`, { method: 'POST', headers: { apikey: S.anon, authorization: 'Bearer ' + bearer, 'content-type': 'application/json' }, body: JSON.stringify(body) })
   return { status: r.status, body: await r.json().catch(() => null) }
@@ -45,6 +46,7 @@ const { data: books } = await service.from('content').select('path, text').like(
 const printed = (books ?? []).find((b) => /^print:/m.test(b.text || ''))
 if (!printed) { notHere('print-jobs-db', 'the site has no book with a print block in its rows'); process.exit(0) }
 const BOOK = printed.path.replace(/^content\/books\//, '').replace(/\.md$/, '')
+// @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
 const CONTENTS = ((/\n  contents:\s*\n\s+- (\w+)/.exec(printed.text) || [])[1]) || 'parts'
 
 try {
@@ -52,7 +54,7 @@ try {
   /* a run before this one may have set this edition already, and then nothing waits: its interior goes, so the wait is seen */
   {
     const { data: old } = await service.from('print_jobs').select('done').eq('book', BOOK).eq('contents', CONTENTS).not('done->>edition', 'is', null).limit(20)
-    for (const e of new Set((old ?? []).map((r) => r.done.edition))) await service.storage.from('print').remove([`${BOOK}/${e}/interior.json`])
+    for (const e of new Set((old ?? []).map((r) => (r.done as any)!.edition))) await service.storage.from('print').remove([`${BOOK}/${e}/interior.json`])
   }
   const began = new Date(Date.now() - 1000).toISOString()
   let first = await call({ book: BOOK, contents: CONTENTS, draft: true })
@@ -60,9 +62,9 @@ try {
   if (first.body?.job) {
     made.push(first.body.job)
     const again = await call({ job: first.body.job })
-    ok('…asked again without one, it still waits, and is not tried', again.status === 202 && again.body?.state === 'waiting' && (await rowOf(first.body.job)).attempts <= 1, JSON.stringify(again.body).slice(0, 200))
+    ok('…asked again without one, it still waits, and is not tried', again.status === 202 && again.body?.state === 'waiting' && (await rowOf(first.body.job))!.attempts <= 1, JSON.stringify(again.body).slice(0, 200))
     const swept = await service.rpc('run_print_jobs')
-    ok('…and the sweep leaves it alone', !swept.error && (await rowOf(first.body.job)).state === 'waiting', JSON.stringify(swept.error))
+    ok('…and the sweep leaves it alone', !swept.error && (await rowOf(first.body.job))!.state === 'waiting', JSON.stringify(swept.error))
     const joined = await call({ book: BOOK, contents: CONTENTS, draft: true })
     ok('…a second set of the same book joins it', joined.body?.job === first.body.job && joined.body?.state === 'waiting', JSON.stringify(joined.body).slice(0, 200))
 
@@ -76,7 +78,7 @@ try {
     // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
     ok('…and the interior goes up to the address it gave', put.ok, put.status)
     const refused = await call({ job: first.body.job, interior: { edition: h.edition, pages: wrong.pages + 2, pad: wrong.pad + 2, where: [], marks: [] } })
-    ok('an interior that is not what it says is refused, and the job with it', refused.status === 422 && (await rowOf(first.body.job)).state === 'failed', JSON.stringify(refused.body).slice(0, 200))
+    ok('an interior that is not what it says is refused, and the job with it', refused.status === 422 && (await rowOf(first.body.job))!.state === 'failed', JSON.stringify(refused.body).slice(0, 200))
     first = await call({ book: BOOK, contents: CONTENTS, draft: true })
     if (first.body?.job) made.push(first.body.job)
     if (first.body?.state === 'waiting') {
@@ -97,8 +99,8 @@ try {
   ok('…with the job it ran as', typeof first.body?.job === 'string')
   const done = first.body?.job ? await rowOf(first.body.job) : null
   if (done) made.push(done.id)
-  ok('…and the job holds the result, done', done && done.state === 'done' && done.result && done.result.edition === first.body.edition, JSON.stringify(done && { state: done.state, error: done.error }))
-  ok('…with the interior written down as finished, for its edition', !!done && done.done?.interior?.edition === first.body.edition && done.done.interior.pages > 0, JSON.stringify(done && done.done && done.done.interior && { edition: done.done.interior.edition, pages: done.done.interior.pages }))
+  ok('…and the job holds the result, done', done && done.state === 'done' && done.result && (done.result as any).edition === first.body.edition, JSON.stringify(done && { state: done.state, error: done.error }))
+  ok('…with the interior written down as finished, for its edition', !!done && (done.done as any)?.interior?.edition === first.body.edition && (done.done as any)!.interior.pages > 0, JSON.stringify(done && done.done && (done.done as any).interior && { edition: (done.done as any).interior.edition, pages: (done.done as any).interior.pages }))
 
   /* ─── the same edition again ─── */
   if (done && first.body?.edition) {
@@ -141,26 +143,27 @@ try {
     const before = await stamp()
     const { data: cut } = await service.from('print_jobs').insert({
       book: BOOK, contents: CONTENTS, request: { draft: true }, state: 'running', attempts: 1,
-      lease_until: new Date(Date.now() - 60000).toISOString(), done: { edition: first.body.edition, interior: done.done.interior },
+      lease_until: new Date(Date.now() - 60000).toISOString(), done: { edition: first.body.edition, interior: (done.done as any)!.interior },
     }).select('*').single()
-    made.push(cut.id)
-    const resumed = await call({ job: cut.id })
-    ok('a job cut off with its interior done is finished by the next call', resumed.status === 200 && resumed.body?.ok === true && resumed.body.job === cut.id, JSON.stringify(resumed.body).slice(0, 300))
+    made.push(cut!.id)
+    const resumed = await call({ job: cut!.id })
+    ok('a job cut off with its interior done is finished by the next call', resumed.status === 200 && resumed.body?.ok === true && resumed.body.job === cut!.id, JSON.stringify(resumed.body).slice(0, 300))
     /* by this call or by the minute's sweep, whichever claimed it first: either way, the second attempt */
-    ok('…on its second attempt', (await settled(cut.id)).attempts === 2, (await rowOf(cut.id)).attempts)
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
+    ok('…on its second attempt', (await settled(cut!.id))!.attempts === 2, (await rowOf(cut!.id))!.attempts)
     ok('…the same edition and pages', resumed.body?.edition === first.body.edition && resumed.body?.pages === first.body.pages)
     ok('…taking the interior back rather than compiling it again', (await stamp()) === before, `${before} → ${await stamp()}`)
-    const asked = await call({ job: cut.id })
+    const asked = await call({ job: cut!.id })
     ok('a finished job asked again answers its result', asked.status === 200 && asked.body?.state === 'done' && asked.body?.edition === first.body.edition)
   }
 
   /* ─── a lease still held ─── */
   {
     const { data: busy } = await service.from('print_jobs').insert({ book: 'job-probe-held', contents: 'parts', state: 'running', attempts: 1, lease_until: new Date(Date.now() + 120000).toISOString() }).select('*').single()
-    made.push(busy.id)
-    const r = await call({ job: busy.id })
+    made.push(busy!.id)
+    const r = await call({ job: busy!.id })
     ok('a job another worker holds is left alone, and says so', r.status === 202 && r.body?.running === true, JSON.stringify(r.body))
-    ok('…its attempts unchanged', (await rowOf(busy.id)).attempts === 1)
+    ok('…its attempts unchanged', (await rowOf(busy!.id))!.attempts === 1)
   }
 
   /* ─── an owner cancels ─── */
@@ -168,12 +171,12 @@ try {
     const edition = 'feedfacefeedface'
     await service.storage.from('print').upload(`job-probe-cancel/${edition}/interior.pdf`, new Uint8Array([37, 80, 68, 70]), { contentType: 'application/pdf', upsert: true })
     const { data: c } = await service.from('print_jobs').insert({ book: 'job-probe-cancel', contents: 'parts', state: 'running', attempts: 1, lease_until: new Date(Date.now() - 1000).toISOString(), done: { edition } }).select('*').single()
-    made.push(c.id)
-    const asked = await call({ job: c.id, cancel: true })
+    made.push(c!.id)
+    const asked = await call({ job: c!.id, cancel: true })
     ok('a cancel is taken', asked.status === 200 && asked.body?.cancelling === true, JSON.stringify(asked.body))
-    const r = await call({ job: c.id })
+    const r = await call({ job: c!.id })
     ok('…the next worker stops instead of setting', r.body?.state === 'cancelled', JSON.stringify(r.body))
-    ok('…and the job says cancelled', (await rowOf(c.id)).state === 'cancelled')
+    ok('…and the job says cancelled', (await rowOf(c!.id))!.state === 'cancelled')
     const left = ((await service.storage.from('print').list(`job-probe-cancel/${edition}`)).data || []).map((f) => f.name)
     ok('…and the files it made for an edition nobody sells are gone', !left.includes('interior.pdf'), left.join(', '))
   }
@@ -181,9 +184,9 @@ try {
   /* ─── a job that never finishes ─── */
   {
     const { data: tired } = await service.from('print_jobs').insert({ book: 'job-probe-tired', contents: 'parts', state: 'running', attempts: 5, lease_until: new Date(Date.now() - 1000).toISOString() }).select('*').single()
-    made.push(tired.id)
-    const r = await call({ job: tired.id })
-    ok('a job past its attempts is failed, not tried again', r.status === 500 && (await rowOf(tired.id)).state === 'failed', JSON.stringify(r.body))
+    made.push(tired!.id)
+    const r = await call({ job: tired!.id })
+    ok('a job past its attempts is failed, not tried again', r.status === 500 && (await rowOf(tired!.id))!.state === 'failed', JSON.stringify(r.body))
   }
 
   /* ─── nobody else's ─── */

@@ -11,6 +11,7 @@
  */
 import Stripe from 'npm:stripe@17'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import type { Database } from './database.types.ts'
 import { createSitePaymentProvider } from './payment-provider-registry.ts'
 import type { PaymentProviderAdapter } from './payment-provider.d.ts'
 
@@ -44,7 +45,7 @@ export const getPaymentProvider = () => {
 export const stripeUnconfigured = () =>
   json({ error: 'Payments are not configured in this environment (no STRIPE_SECRET_KEY).', code: 'stripe_unconfigured' }, 503)
 
-export const admin = createClient(
+export const admin = createClient<Database>(
   Deno.env.get('SUPABASE_URL') ?? '',
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   { auth: { persistSession: false, autoRefreshToken: false } },
@@ -72,7 +73,7 @@ export async function isServiceBearer(req: Request) {
   if (!token) return false
   if (token === (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')) return true
   try {
-    const probe = createClient(Deno.env.get('SUPABASE_URL') ?? '', token, { auth: { persistSession: false, autoRefreshToken: false } })
+    const probe = createClient<Database>(Deno.env.get('SUPABASE_URL') ?? '', token, { auth: { persistSession: false, autoRefreshToken: false } })
     const { error } = await probe.auth.admin.listUsers({ page: 1, perPage: 1 })
     return !error
   } catch { return false }

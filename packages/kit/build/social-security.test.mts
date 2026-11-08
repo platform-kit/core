@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (message: any) => console.log('social-security: ' + message)
 const url = supabaseUrl()
@@ -18,7 +19,7 @@ if (!up) {
   process.exit(0)
 }
 
-const client = (key: any) => createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+const client = (key: any) => createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 const service = client(serviceKey())
 const as = async (email: any) => {
   const sb = client(anon)

@@ -170,7 +170,7 @@ export async function threads(contact: Contact) {
 
 export async function ownConversation(contact: Contact, id: unknown): Promise<any | null> {
   if (!UUID.test(String(id ?? ''))) return null
-  const { data } = await admin.from('support_conversations').select(CONV + ', contact_id').eq('id', String(id)).eq('contact_id', contact.id).maybeSingle()
+  const { data } = await admin.from('support_conversations').select(`${CONV}, contact_id` as const).eq('id', String(id)).eq('contact_id', contact.id).maybeSingle()
   return (data as any) ?? null
 }
 

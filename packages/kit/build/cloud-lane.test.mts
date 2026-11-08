@@ -27,6 +27,7 @@ import { execSync } from 'node:child_process'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { statusOf, leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const WORKSPACE = resolve(HERE, '..', '..', '..')
@@ -47,7 +48,7 @@ try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service key')
 
-const db = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+const db = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 {
   const { error } = await db.from('content').select('path', { count: 'exact', head: true })
   if (error) skip('public.content is not there — run `npm run db:reset` first (' + error.message + ')')

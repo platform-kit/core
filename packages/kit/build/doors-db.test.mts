@@ -18,6 +18,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
 const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -31,13 +32,13 @@ try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service-role key')
 
-const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 const asPerson = async (email: any, password = 'password123') => {
-  const c = createClient(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
+  const c = createClient<Database>(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
   const { error } = await c.auth.signInWithPassword({ email, password })
   return error ? null : c
 }
-const guest = createClient(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
+const guest = createClient<Database>(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
 
 const member: any = await asPerson('member@example.com')
 const administrator: any = await asPerson('admin@example.com')
@@ -49,6 +50,7 @@ if (!analyst) note('⚠ no analyst account signs in — the figures-only checks 
 
 const FIGURES = ['admin_kpis', 'admin_events', 'admin_retention']
 for (const fn of FIGURES) {
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type '"public_profile" | "access_allows" | "achievements_of" | "admin_content" |
   const g = await guest.rpc(fn, {})
   ok(`a guest calling ${fn} gets nothing`, !!g.error || g.data == null || (Array.isArray(g.data) && g.data.length === 0), 'the figures came back')
   const m = await member.rpc(fn, {})

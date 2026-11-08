@@ -14,6 +14,7 @@ import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import { KINDS } from './webhooks-config.mjs'
 import { isMain } from './is-main.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const ROOT = process.cwd()
 const FILE = join(ROOT, 'supabase/functions/_shared/webhooks.json')
@@ -25,7 +26,7 @@ export async function pushWebhooks({ file = FILE } = {}) {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) { console.log('webhooks: no service key — the shipped subscriptions are not pushed'); return { pushed: 0 } }
-  const db = createClient(url, key, { auth: { persistSession: false } })
+  const db = createClient<Database>(url, key, { auth: { persistSession: false } })
 
   let pushed = 0, dropped = 0
   for (const [kind, K] of Object.entries(KINDS)) {

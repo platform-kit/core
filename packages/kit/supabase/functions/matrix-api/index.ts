@@ -652,8 +652,9 @@ Deno.serve(async (req: any) => {
     }
 
     if (what === 'typing' && req.method === 'PUT') {
-      const b = await body()
-      await s.db.from('channel_members').update({ typing_at: b?.typing ? new Date().toISOString() : null }).eq('channel_id', ch.id).eq('user_id', s.userId)
+      /* typing is not carried to a Matrix client: the spec lets a server accept it and do nothing, which is what this
+         did all along — it wrote a channel_members.typing_at no schema has, and the error went unread */
+      await body()
       return json({})
     }
 

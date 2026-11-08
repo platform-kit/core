@@ -16,6 +16,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('holds-db: ' + m)
 if (process.env.HOLDS_TEST === '0') { note('skipped (HOLDS_TEST=0)'); process.exit(0) }
@@ -27,7 +28,7 @@ if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
 const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
-const db = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+const db = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 
 console.log('\nHOLDS\n')
 
@@ -100,10 +101,10 @@ try {
   const gh = (await holdsOf(host)).filter((h) => Date.parse(h.start_at) === t4)
   ok('and the host is held once, not twice', gh.length === 1, 'holds ' + gh.length)
   ok('a different type cannot take the host that hour', !!(await book(tag + '-g3', host, t4)).error)
-  await db.rpc('booking_release', { p_uid: g1.data.uid })
+  await db.rpc('booking_release', { p_uid: g1.data!.uid })
   ok('one seat leaving keeps the hold', (await holdsOf(host)).filter((h) => Date.parse(h.start_at) === t4).length === 1)
-  await db.from('bookings').update({ status: 'cancelled' }).eq('uid', g1.data.uid)
-  await db.rpc('booking_release', { p_uid: g2.data.uid })
+  await db.from('bookings').update({ status: 'cancelled' }).eq('uid', g1.data!.uid)
+  await db.rpc('booking_release', { p_uid: g2.data!.uid })
   ok('the last seat leaving gives the hour back', (await holdsOf(host)).filter((h) => Date.parse(h.start_at) === t4).length === 0)
 
   /* --- a hold belongs to its booking and its person --- */

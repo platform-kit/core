@@ -19,6 +19,7 @@ import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack } from './tts/storage.mjs'
 import { leave, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('checkout-tamper: ' + m)
 if (process.env.CHECKOUT_TAMPER_TEST === '0') { note('skipped (CHECKOUT_TAMPER_TEST=0)'); process.exit(0) }
@@ -38,7 +39,7 @@ if (!/^sk_test_/.test(sk) || /^(1|true|yes|on)$/i.test(process.env.STRIPE_MOCK |
 let pass = 0, fail = 0
 const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
-const as = async (email: any) => { const c = createClient(url, anonKey, O); const { data, error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : data.session.access_token }
+const as = async (email: any) => { const c = createClient<Database>(url, anonKey, O); const { data, error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : data.session.access_token }
 const made: any = []
 const checkout = async (body: any, token: any) => {
   const r = await fetch(`${url}/functions/v1/create-checkout-session`, { method: 'POST', headers: { apikey: anonKey, 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) }, body: JSON.stringify(body) })

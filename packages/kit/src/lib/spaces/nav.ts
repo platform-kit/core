@@ -9,7 +9,7 @@ import { ref, watch } from 'vue'
 import { supabase, configured } from '../supabase.js'
 import { session } from '../auth.js'
 import { moduleOn } from '../modules.js'
-import { badgeOf, waitingOf } from './model.js'
+import { badgeOf, waitingOf, type UnreadRow } from './model.js'
 
 export const inSpaces = ref(false)   /* they are in at least one room */
 export const mentions = ref(0)       /* what is owed them across all of them */
@@ -23,7 +23,7 @@ export async function refresh() {
   try {
     const { data, error } = await supabase.rpc('space_unread')
     if (error) return
-    const rows = data || []
+    const rows = (data || []) as UnreadRow[]
     inSpaces.value = rows.length > 0
     mentions.value = badgeOf(rows).mentions
     waiting.value = waitingOf(rows)

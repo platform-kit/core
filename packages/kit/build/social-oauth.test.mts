@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { createHash, randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -10,7 +11,7 @@ if (!url || !anonKey || !localStack()) {
   process.exit(0)
 }
 
-const client = (key: any) => createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+const client = (key: any) => createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 const service = client(serviceKey())
 const { data: login, error: loginError } = await client(anonKey).auth.signInWithPassword({
   email: 'admin@example.com',

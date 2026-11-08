@@ -13,6 +13,7 @@ import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, serviceKey } from './tts/storage.mjs'
 import { readCourses, projectCourses } from './courses-io.mjs'
 import { isMain } from './is-main.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 export async function pushCourses({ root = process.cwd(), check = false, log = console.log, db: client = null } = {}) {
   const courses = await readCourses(root)
@@ -22,7 +23,7 @@ export async function pushCourses({ root = process.cwd(), check = false, log = c
     for (const c of bad) log(`  ✖ ${c.slug}: ${c.problems.join('; ')}`)
     return { courses: courses.length, refused: bad.length }
   }
-  const db = client || createClient(supabaseUrl(), serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
+  const db = client || createClient<Database>(supabaseUrl(), serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
   const out = await projectCourses({ courses, db })
   log(`courses: ${out.courses} written (${out.lessons} lessons)${out.unpublished ? `, ${out.unpublished} unpublished` : ''}`)
   for (const r of out.refused) log(`  ✖ not written — ${r}`)

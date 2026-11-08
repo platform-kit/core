@@ -26,6 +26,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
 const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
@@ -39,7 +40,7 @@ try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service-role key')
 
-const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 
 /* the nine, as the seed makes them — a guest is no session at all */
 const WHO: any = {
@@ -55,7 +56,7 @@ const WHO: any = {
 }
 
 const client = async (email: any) => {
-  const c = createClient(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
+  const c = createClient<Database>(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
   if (!email) return c
   const { error } = await c.auth.signInWithPassword({ email, password: 'password123' })
   return error ? null : c

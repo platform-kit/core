@@ -18,6 +18,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: any) => console.log('orders-db: ' + m)
 if (process.env.ORDERS_TEST === '0') { note('skipped (ORDERS_TEST=0) — nothing about orders, fulfilments, transactions or returns was covered'); process.exit(0) }
@@ -28,7 +29,7 @@ let up = false
 try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
 if (!up) { note('skipped — the local stack is not up; nothing about orders, fulfilments, transactions or returns was covered'); leave(0) }
 
-const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+const db = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 let pass = 0, fail = 0
 const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
 const eq = (a: any, b: any, m?: any) => { if (a !== b) throw new Error(`${m || ''} — expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`) }
@@ -115,18 +116,18 @@ await ok('TWO FULFILMENTS AGAINST ONE ORDER IS ORDINARY — half today, half nex
   eq(await rpc('order_fulfilment', { p_order: o.id }), 'unfulfilled')
 
   const { data: f1 } = await db.from('fulfilments').insert({ order_id: o.id, key: FKEY, supplier: 'post-room', address: {}, status: 'shipped' }).select().single()
-  await db.from('fulfilment_items').insert({ fulfilment_id: f1.id, line: o.items[0].line, quantity: 2 })
+  await db.from('fulfilment_items').insert({ fulfilment_id: f1!.id, line: o.items[0].line, quantity: 2 })
   eq(await rpc('order_fulfilment', { p_order: o.id }), 'part_fulfilled', 'one line out of two')
 
   const { data: f2 } = await db.from('fulfilments').insert({ order_id: o.id, key: FKEY, supplier: 'post-room', address: {}, status: 'submitted' }).select().single()
-  await db.from('fulfilment_items').insert({ fulfilment_id: f2.id, line: o.items[1].line, quantity: 1 })
+  await db.from('fulfilment_items').insert({ fulfilment_id: f2!.id, line: o.items[1].line, quantity: 1 })
   eq(await rpc('order_fulfilment', { p_order: o.id }), 'fulfilled', 'both lines out')
 })
 
 await ok('a fulfilment that was rejected does not count as sent', async () => {
   const o = await order({ lines: [{ q: 1, p: 100 }] })
   const { data: f } = await db.from('fulfilments').insert({ order_id: o.id, key: FKEY, supplier: 'lulu', address: {}, status: 'rejected' }).select().single()
-  await db.from('fulfilment_items').insert({ fulfilment_id: f.id, line: o.items[0].line, quantity: 1 })
+  await db.from('fulfilment_items').insert({ fulfilment_id: f!.id, line: o.items[0].line, quantity: 1 })
   eq(await rpc('order_fulfilment', { p_order: o.id }), 'unfulfilled', 'a refused parcel is not a sent one')
 })
 
@@ -135,10 +136,10 @@ await ok('a fulfilment that was rejected does not count as sent', async () => {
 await ok('FULFILMENT AND PAYMENT STATE ARE DERIVED: change the rows and the answer changes', async () => {
   const o = await order({ lines: [{ q: 1, p: 100 }] })
   const { data: f } = await db.from('fulfilments').insert({ order_id: o.id, key: FKEY, supplier: 'post-room', address: {}, status: 'shipped' }).select().single()
-  await db.from('fulfilment_items').insert({ fulfilment_id: f.id, line: o.items[0].line, quantity: 1 })
+  await db.from('fulfilment_items').insert({ fulfilment_id: f!.id, line: o.items[0].line, quantity: 1 })
   eq(await rpc('order_fulfilment', { p_order: o.id }), 'fulfilled')
   /* the parcel is cancelled — nothing is told to recompute, because there is nothing to recompute */
-  await must(db.from('fulfilments').update({ status: 'canceled' }).eq('id', f.id), 'cancelling the parcel')
+  await must(db.from('fulfilments').update({ status: 'canceled' }).eq('id', f!.id), 'cancelling the parcel')
   eq(await rpc('order_fulfilment', { p_order: o.id }), 'unfulfilled', 'the total followed the rows')
 })
 
@@ -187,16 +188,16 @@ await ok('STOCK COMES BACK ON RECEIVED, AND NEVER ON REQUESTED', async () => {
   await db.from('inventory').insert({ sku: SKU, variant: 'v0', stocked: 10 })
   const o = await order({ lines: [{ q: 3, p: 100 }] })
   const { data: r } = await db.from('returns').insert({ order_id: o.id, order_version: 1, reason: 'changed their mind' }).select().single()
-  await db.from('return_items').insert({ return_id: r.id, line: o.items[0].line, quantity: 3 })
+  await db.from('return_items').insert({ return_id: r!.id, line: o.items[0].line, quantity: 3 })
 
   /* requested is a conversation: the shelf has not moved */
   eq(await rpc('inventory_available', { p_sku: SKU, p_variant: 'v0' }), 10, 'at requested')
 
-  await must(db.from('returns').update({ status: 'received' }).eq('id', r.id), 'receiving the return')
+  await must(db.from('returns').update({ status: 'received' }).eq('id', r!.id), 'receiving the return')
   eq(await rpc('inventory_available', { p_sku: SKU, p_variant: 'v0' }), 13, 'at received')
 
   /* and it does not happen twice if the row is written again */
-  await must(db.from('returns').update({ status: 'received', note: 'touched' }).eq('id', r.id), 'receiving the return')
+  await must(db.from('returns').update({ status: 'received', note: 'touched' }).eq('id', r!.id), 'receiving the return')
   eq(await rpc('inventory_available', { p_sku: SKU, p_variant: 'v0' }), 13, 'a second write of the same status')
 })
 
@@ -205,8 +206,8 @@ await ok('a damaged unit comes back to the shop and not to the shelf', async () 
   await db.from('inventory').insert({ sku: SKU, variant: 'v0', stocked: 5 })
   const o = await order({ lines: [{ q: 1, p: 100 }] })
   const { data: r } = await db.from('returns').insert({ order_id: o.id, order_version: 1 }).select().single()
-  await db.from('return_items').insert({ return_id: r.id, line: o.items[0].line, quantity: 1, restock: false })
-  await must(db.from('returns').update({ status: 'received' }).eq('id', r.id), 'receiving the return')
+  await db.from('return_items').insert({ return_id: r!.id, line: o.items[0].line, quantity: 1, restock: false })
+  await must(db.from('returns').update({ status: 'received' }).eq('id', r!.id), 'receiving the return')
   eq(await rpc('inventory_available', { p_sku: SKU, p_variant: 'v0' }), 5, 'the shelf is unchanged')
 })
 
@@ -223,9 +224,9 @@ await ok('AN EXCHANGE IS A RETURN WITH AN OUTBOUND ORDER, not a fourth kind of t
 await ok('a return reads back against the version it was raised at', async () => {
   const o = await order()
   const { data: r } = await db.from('returns').insert({ order_id: o.id, order_version: 1 }).select().single()
-  await db.from('return_items').insert({ return_id: r.id, line: o.items[0].line, quantity: 2 })
+  await db.from('return_items').insert({ return_id: r!.id, line: o.items[0].line, quantity: 2 })
   await rpc('order_edit', { p_order: o.id, p_lines: [{ line: o.items[0].line, quantity: 1 }] })
-  const was = await rpc('order_lines', { p_order: o.id, p_version: r.order_version })
+  const was = await rpc('order_lines', { p_order: o.id, p_version: r!.order_version })
   eq(was.find((l: any) => l.line === o.items[0].line).quantity, 2, 'what was actually sent')
 })
 
@@ -243,7 +244,7 @@ await ok('a fulfilment made before any of this reads through chosen, with the de
   if (dead.length) throw new Error(dead.length + ' row(s) still carry print\'s own columns')
   /* a row carried over from before is only on a database that had rows before: one built from the files this run
      (the end-to-end run's) has none, and the invariant above — no row carries print's own columns — is the whole of it */
-  const carried = data.filter((r) => r.chosen && r.chosen.book)
+  const carried = data.filter((r) => r.chosen && (r.chosen as any).book)
   if (carried.length) {
     if (!carried[0].supplier) throw new Error('the renamed column is empty')
     if (!carried[0].variant) throw new Error('a carried-over row has no variant')
