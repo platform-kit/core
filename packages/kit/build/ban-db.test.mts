@@ -17,19 +17,19 @@ import { requireStack, skip } from './test-stack.mjs'
 const URL = (requireStack('ban') as any).db
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nBAN\n')
 const client = new pg.Client({ connectionString: URL })
 try { await client.connect() } catch (e: any) { skip('ban', 'the stack\'s database does not answer (' + e.message.slice(0, 60) + ')') }
 
-const q = (sql: any, args: any[] = []) => client.query(sql, args).then((r: any) => r.rows)
+const q = (sql: string, args: any[] = []) => client.query(sql, args).then((r: { rows: any }) => r.rows)
 /* Run a statement as a given person, the way the app does — inside a savepoint, because half of
    what is worth proving here is that something is REFUSED, and a refusal aborts the transaction.
    Without the savepoint the rollback in the finally throws over the top of the real error and the
    test reports "transaction is aborted" instead of the exception it was looking for. */
 let sp = 0
-const as = async (uid: any, sql: any, args = []) => {
+const as = async (uid: any, sql: string, args = []) => {
   const name = 'as_' + (++sp)
   await q('savepoint ' + name)
   await q('select set_config($1, $2, true)', ['request.jwt.claims', JSON.stringify({ sub: uid, role: 'authenticated' })])
@@ -82,13 +82,13 @@ try {
 
   // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const byNow = await as(byId, `select body from public.space_messages where channel_id = $1 order by seq`, [chanId])
-  ok('the bystander does not see what was said after it', byNow.length === 1 && byNow[0].body === 'before the act', JSON.stringify(byNow.map((r: any) => r.body)))
+  ok('the bystander does not see what was said after it', byNow.length === 1 && byNow[0].body === 'before the act', JSON.stringify(byNow.map((r: { body: any }) => r.body)))
   // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const badNow = await as(badId, `select body from public.space_messages where channel_id = $1 order by seq`, [chanId])
-  ok('and the shadow-banned person sees their own, unchanged', badNow.length === 2, JSON.stringify(badNow.map((r: any) => r.body)))
+  ok('and the shadow-banned person sees their own, unchanged', badNow.length === 2, JSON.stringify(badNow.map((r: { body: any }) => r.body)))
   // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const modNow = await as(modId, `select body from public.space_messages where channel_id = $1 order by seq`, [chanId])
-  ok('a moderator sees everything', modNow.length === 2, JSON.stringify(modNow.map((r: any) => r.body)))
+  ok('a moderator sees everything', modNow.length === 2, JSON.stringify(modNow.map((r: { body: any }) => r.body)))
 
   // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const hist = await as(byId, `select public.space_history($1) h`, [chanId])
@@ -102,8 +102,8 @@ try {
   await as(badId, `insert into public.space_messages (channel_id, author_id, kind, body) values ($1, $2, 'text', 'after the lift')`, [chanId, badId])
   // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const byLifted = await as(byId, `select body from public.space_messages where channel_id = $1 order by seq`, [chanId])
-  ok('after a lift the bystander sees the new line', byLifted.some((r: any) => r.body === 'after the lift'), JSON.stringify(byLifted.map((r: any) => r.body)))
-  ok('and what was said while shadowed stays shadowed', !byLifted.some((r: any) => r.body === 'after the act'))
+  ok('after a lift the bystander sees the new line', byLifted.some((r: { body: string }) => r.body === 'after the lift'), JSON.stringify(byLifted.map((r: { body: any }) => r.body)))
+  ok('and what was said while shadowed stays shadowed', !byLifted.some((r: { body: string }) => r.body === 'after the act'))
   const lifts = await q(`select count(*)::int n from public.space_moderation where kind = 'lift' and lifts_id = $1`, [actId])
   ok('the lift is its own row, not an edit of the act', lifts[0].n === 1)
   const still = await q(`select count(*)::int n from public.space_moderation where id = $1`, [actId])

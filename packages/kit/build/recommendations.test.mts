@@ -231,7 +231,7 @@ try {
     ]
     const { data: more } = await service.from('events').insert(rows).select('id')
     // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-    made.events.push(...(more as any).map((r: any) => r.id))
+    made.events.push(...more.map((r) => r.id))
     const seen = await behind(member.sb)
     ok('a piece read to the end is behind them', seen.has(KIND + ':' + P.done))
     ok('a piece skimmed is not — it is the one they meant to come back to', !seen.has(KIND + ':' + P.skim))
@@ -243,7 +243,7 @@ try {
     const { data: again } = await service.from('events')
       .insert([read(member.id, P.skim, KIND, 40, Math.max(0, depth - 20))]).select('id')
     // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-    made.events.push(...(again as any).map((r: any) => r.id))
+    made.events.push(...again.map((r) => r.id))
     ok('two half reads do not make a whole', !(await behind(member.sb)).has(KIND + ':' + P.skim))
   }
 

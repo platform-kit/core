@@ -14,7 +14,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('people-db: ' + m)
+const note = (m: string) => console.log('people-db: ' + m)
 if (process.env.PEOPLE_TEST === '0') { note('skipped (PEOPLE_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -24,8 +24,8 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const as = async (email: any) => {
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const as = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -53,19 +53,19 @@ try {
     !!((await admin.sb.rpc('admin_everybody', { p_q: email, p_narrow: 'all', p_limit: 5, p_offset: 0 })).data as any)!.people.length)
 
   const staff: any = (await admin.sb.rpc('admin_everybody', { p_q: null, p_narrow: 'staff', p_limit: 100, p_offset: 0 })).data
-  ok('narrowed to the staff, everybody listed holds a role', staff!.people.every((p: any) => (p.roles || []).length))
+  ok('narrowed to the staff, everybody listed holds a role', staff!.people.every((p: { roles: any }) => (p.roles || []).length))
   ok('and there are fewer of them than of everybody', Number(staff!.total) < Number(all!.total))
 
   const unconfirmed: any = (await admin.sb.rpc('admin_everybody', { p_q: null, p_narrow: 'unconfirmed', p_limit: 100, p_offset: 0 })).data
   ok('the one narrowing that is about something being wrong finds our unconfirmed account',
-    unconfirmed!.people.some((p: any) => p.id === strangerId))
-  ok('and says so on the row', unconfirmed!.people.find((p: any) => p.id === strangerId).verified === false)
+    unconfirmed!.people.some((p: { id: any }) => p.id === strangerId))
+  ok('and says so on the row', unconfirmed!.people.find((p: { id: any }) => p.id === strangerId).verified === false)
 
   /* paging, because a site with twenty thousand readers must not be one page */
   const first: any = (await admin.sb.rpc('admin_everybody', { p_q: null, p_narrow: 'all', p_limit: 2, p_offset: 0 })).data
   const second: any = (await admin.sb.rpc('admin_everybody', { p_q: null, p_narrow: 'all', p_limit: 2, p_offset: 2 })).data
   ok('it pages', first!.people.length === 2 && second!.people.length === 2
-    && !first!.people.some((p: any) => second!.people.some((q: any) => q.id === p.id)))
+    && !first!.people.some((p: { id: any }) => second!.people.some((q: { id: any }) => q.id === p.id)))
   ok('and the total is the whole answer, not the page', Number(first!.total) === Number(all!.total))
 
   /* ---- one person, everything the site already knows ---- */
@@ -92,7 +92,7 @@ try {
   ok('an administrator makes somebody a provider', gave && gave.ok === true, JSON.stringify(gave))
   ok('and the page sees it', (((await admin.sb.rpc('admin_person', { p_user: strangerId })).data as any)!.roles || []).includes('provider'))
   const providers: any = (await admin.sb.rpc('admin_everybody', { p_narrow: 'provider', p_limit: 100 })).data
-  ok('the providers narrowing finds them', providers!.people.some((p: any) => p.id === strangerId))
+  ok('the providers narrowing finds them', providers!.people.some((p: { id: any }) => p.id === strangerId))
 
   /*
    * THE LAST ADMINISTRATOR CANNOT BE REMOVED — and the test has to MAKE that situation rather
@@ -106,13 +106,13 @@ try {
    * needs it is the one that threw.
    */
   const everybody: any = (await admin.sb.rpc('admin_everybody', { p_narrow: 'staff', p_limit: 200 })).data
-  const others = (((everybody && everybody.people) || [])).filter((p: any) => p.id !== admin.id && (p.roles || []).includes('admin'))
+  const others = (((everybody && everybody.people) || [])).filter((p: { id: string; roles: any }) => p.id !== admin.id && (p.roles || []).includes('admin'))
   // @ts-expect-error TS2339, from the conversion: Property 'roles' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'roles' does not 
   const mine = ((await admin.sb.rpc('admin_person', { p_user: admin.id })).data || {}).roles || ['admin']
-  const held = others.map((p: any) => ({ id: p.id, roles: p.roles || [] }))
+  const held = others.map((p: { id: any; roles: any }) => ({ id: p.id, roles: p.roles || [] }))
   try {
     /* stand the others down, so the one under test really is the last */
-    for (const w of held) await admin.sb.rpc('set_roles', { p_user: w.id, p_roles: w.roles.filter((r: any) => r !== 'admin') })
+    for (const w of held) await admin.sb.rpc('set_roles', { p_user: w.id, p_roles: w.roles.filter((r: string) => r !== 'admin') })
     const last: any = (await admin.sb.rpc('set_roles', { p_user: admin.id, p_roles: [] })).data
     ok('somebody has to be an administrator', last && last.ok === false && last.why === 'last-admin',
       JSON.stringify(last) + (held.length ? ` (${held.length} other admin(s) stood down first)` : ''))

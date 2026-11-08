@@ -57,11 +57,8 @@ const shown = computed(() => (entry.value && model.value ? model.value.fields.fi
 const md = (s: any) => marked.parse(String(s || ''))
 const when = (s: any) => { const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(String(s || '')); if (!m) return s; const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) + (m[4] ? `, ${m[4]}:${m[5]}` : '') }
 watch([model, entry], ([m, e]) => {
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   if (!m) { setHead({ title: '', path: props.path, noindex: true }); return }
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   if (e) { setHead({ title: titleOf(m, e), description: summaryOf(m, e), image: imageField(m) ? src(e[imageField(m).key]) || '' : '', path: props.path, type: 'article' }); contentView({ kind: 'entry', id: m.key + '/' + e.slug, title: titleOf(m, e) }) }
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   else setHead({ title: m.name, description: '', path: props.path })
 }, { immediate: true })
 </script>

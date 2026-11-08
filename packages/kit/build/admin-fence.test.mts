@@ -19,12 +19,12 @@ import { registry, describe as describeModel } from './models/index.mjs'
 import { asStore } from './store/index.mjs'
 
 let n = 0, bad = 0
-const ta = async (name: any, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
+const ta = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
 
 /* a site with two pages: one the coach owns, one the site's */
 const root = mkdtempSync(path.join(tmpdir(), 'fence-'))
 mkdirSync(path.join(root, 'content/pages'), { recursive: true })
-const page = (title: any, route: any, owner?: any) => `---\ntitle: ${title}\nroute: ${route}\n${owner ? `owner: ${owner}\n` : ''}sections: []\n---\n`
+const page = (title: string, route: string, owner?: string|undefined) => `---\ntitle: ${title}\nroute: ${route}\n${owner ? `owner: ${owner}\n` : ''}sections: []\n---\n`
 writeFileSync(path.join(root, 'content/pages/mine.md'), page('Mine', '/p/ada', 'ada'))
 writeFileSync(path.join(root, 'content/pages/theirs.md'), page('The landing', '/'))
 
@@ -34,9 +34,9 @@ const base = { root, store, by: 'Ada', models: () => registry(root, { site, stor
 const open = base                                     /* an editor: no fence */
 const fenced = { ...base, only: { col: 'pages', field: 'owner', value: 'ada' } }
 
-const call = (env: any, method: any, seg: any, q = {}, body = null) => adminRequest(env, { method, seg, q, body })
+const call = (env: { root: string; store: any; by: string; models: () => Promise<any>; describe: (model: any,root: any,store?: any) => Promise<{ key: any; label: any; dir: any; body: boolean; bodyLabel: any; nested: boolean; title: any; assets: boolean; single: any; builder: any; variants: any; editor: any; model: { key: any; name: any; singular: any; slug: any; deliver: any; order: any }|null; core: any; custom: boolean; fields: { kind?: any; fields?: any; of?: any; shown: any; unique?: boolean|undefined; rules?: any; choices: any; name: string; type: string; required: boolean; widget: any; options: any; grid: boolean; half: boolean; readonly: boolean; label: any; help: any }[]; count: number }>; only?: { col: string; field: string; value: string } }, method: string, seg: string, q = {}, body = null) => adminRequest(env, { method, seg, q, body })
 /* the pipe answers a refusal rather than throwing it: the status is the answer */
-const refused = async (p: any) => { const r = await p.catch((e: any) => ({ status: e.code || 500 })); return r.status }
+const refused = async (p: Promise<any>) => { const r = await p.catch((e: { code: any }) => ({ status: e.code || 500 })); return r.status }
 
 await ta('an editor sees every collection; a fenced caller sees the one', async () => {
   const all = await call(open, 'GET', 'collections')
@@ -49,7 +49,7 @@ await ta('the list is theirs alone', async () => {
   const all = await call(open, 'GET', 'list', { col: 'pages' })
   const mine = await call(fenced, 'GET', 'list', { col: 'pages' })
   assert.equal(all.body.items.length, 2)
-  assert.deepEqual(mine.body.items.map((x: any) => x.name), ['mine'])
+  assert.deepEqual(mine.body.items.map((x: { name: any }) => x.name), ['mine'])
 })
 
 await ta('another collection is refused outright, not merely unlisted', async () => {

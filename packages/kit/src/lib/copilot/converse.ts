@@ -28,13 +28,12 @@ export function conversation({ ask, speaker, listen, onSaid = () => {} }: any = 
   let utterance: any = null
   let abandoned = 0          /* every interruption invalidates the answer being waited for */
 
-  const go = (phase: string, turn = null) => { state.phase = phase; state.turn = turn }
+  const go = (phase: string, turn: string | null = null) => { state.phase = phase; state.turn = turn }
 
   /* THE PERSON TOOK THE TURN BACK. Called the moment speech is detected, not when it ends. */
   function interrupt() {
     abandoned++
     if (utterance) { speaker.cancel(utterance); utterance = null }
-    // @ts-expect-error TS2345, from the conversion: Argument of type '"me"' is not assignable to parameter of type 'null | undefined'.
     go('listening', 'me')
   }
 
@@ -52,7 +51,6 @@ export function conversation({ ask, speaker, listen, onSaid = () => {} }: any = 
       /* a conversation that breaks says so out loud rather than going quiet, because silence is
          indistinguishable from "it is still thinking" and somebody waits forever */
       state.error = String(e && e.message || e)
-      // @ts-expect-error TS2345, from the conversion: Argument of type '"me"' is not assignable to parameter of type 'null | undefined'.
       go('listening', 'me')
       return
     }
@@ -61,13 +59,11 @@ export function conversation({ ask, speaker, listen, onSaid = () => {} }: any = 
 
     state.said.push({ who: 'them', text: answer })
     onSaid({ who: 'them', text: answer })
-    // @ts-expect-error TS2345, from the conversion: Argument of type '"them"' is not assignable to parameter of type 'null | undefined'.
     go('speaking', 'them')
     const u = speaker.say(answer, () => {})
     utterance = u.utterance
     try { await u } catch { /* cancelled or failed: either way the turn comes back */ }
     utterance = null
-    // @ts-expect-error TS2345, from the conversion: Argument of type '"me"' is not assignable to parameter of type 'null | undefined'.
     if (mine === abandoned) go('listening', 'me')
   }
 
@@ -76,7 +72,6 @@ export function conversation({ ask, speaker, listen, onSaid = () => {} }: any = 
     say,
     interrupt,
     /* the page tells it the microphone is live; until then it is connecting, not listening */
-    // @ts-expect-error TS2345, from the conversion: Argument of type '"me"' is not assignable to parameter of type 'null | undefined'.
     ready() { go('listening', 'me') },
     /*
      * A CONVERSATION FROM EARLIER, put back. The page may reopen a kept session, and what it
@@ -90,7 +85,6 @@ export function conversation({ ask, speaker, listen, onSaid = () => {} }: any = 
       if (utterance) { speaker.cancel(utterance); utterance = null }
       state.said.splice(0, state.said.length, ...(lines || []).map((l: { who: any; text: any }) => ({ who: l.who, text: l.text })))
       state.error = null
-      // @ts-expect-error TS2345, from the conversion: Argument of type '"me"' is not assignable to parameter of type 'null | undefined'.
       go('listening', 'me')
     },
     stop() { if (utterance) speaker.cancel(utterance); abandoned++; go('connecting') },

@@ -109,7 +109,6 @@ const money = (v: any, c: any) => {
   try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase() }).format(n / 100) } catch (e) { return String(n / 100) }
 }
 /* said through the shared function, so what a person reads and what a bot is given cannot drift */
-// @ts-expect-error TS2322, from the conversion: Type '(v: any, c: any) => string' is not assignable to type '(v: any) => string'.
 const systemLine = computed(() => saidIn(props.message, { names: props.names, words: EV.value, money }))
 /* the sound is fetched once the row is on screen, and the player is the one the coaching chat
    uses — a waveform is a waveform, and two of them would be two to keep */

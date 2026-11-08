@@ -18,7 +18,7 @@ const IMAGE_FIELDS = ['cover', 'image', 'share', 'heroImage', 'portrait', 'photo
 const RELATIVE = [['content/books', 'books'], ['content/wiki', 'wiki'], ['content/docs', 'docs']]
 const isRelative = (v: string) => typeof v === 'string' && v.trim() && !/^(https?:)?\//i.test(v.trim()) && !v.includes('..')
 
-export async function migrateAssets(root: string, { dry = false, log = () => {} } = {}) {
+export async function migrateAssets(root: string, { dry = false, log = () => {} }: { dry?: boolean, log?: (m: string) => void } = {}) {
   const store = asStore(root)
   const moved = []
   /* the content models' entries kept theirs beside them too: content/models/<key>/ → content/uploads/models/<key>/ */
@@ -34,7 +34,6 @@ export async function migrateAssets(root: string, { dry = false, log = () => {} 
         const v = fm.data[key]
         if (!isRelative(v)) continue
         const from = dir + '/' + name.split('/').slice(0, -1).concat(String(v).trim().replace(/^\.\//, '')).join('/')
-        // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
         if (!(await store.exists(from)) && !(await store.getAsset(from))) { log(`${file}: ${key} "${v}" — no such file beside it, left as it is`); continue }
         let base = from.split('/').pop()
         let to = `content/uploads/${folder}/${base}`
@@ -44,7 +43,6 @@ export async function migrateAssets(root: string, { dry = false, log = () => {} 
       if (!changes.length) continue
       for (const c of changes) {
         moved.push({ file, field: c.key, from: c.from, to: c.to })
-        // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
         log(`${file}: ${c.key} ${fm.data[c.key]} → ${c.address}${dry ? ' (dry)' : ''}`)
         if (dry) continue
         const bytes = await store.getAsset(c.from)
@@ -66,8 +64,7 @@ export async function migrateAssets(root: string, { dry = false, log = () => {} 
   return { moved }
 }
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-// @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ png: string; jpg: string; jpeg: string;
-const mimeOf = (p) => ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', avif: 'image/avif' })[String(p).split('.').pop().toLowerCase()] || 'application/octet-stream'
+const mimeOf = (p: string) => ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', avif: 'image/avif' })[String(p).split('.').pop()!.toLowerCase()] || 'application/octet-stream'
 
 if (isMain(import.meta.url)) {
   const dry = process.argv.includes('--dry')

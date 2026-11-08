@@ -9,7 +9,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { notHere, leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('agents-db: ' + m)
+const note = (m: string) => console.log('agents-db: ' + m)
 if (process.env.AGENT_TEST === '0') { note('skipped (AGENT_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 if (!url || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
@@ -30,22 +30,22 @@ try {
 if (!served) { note('skipped — the functions are not served in this run'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: string|number|boolean|null|undefined, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const db = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
-const wait = (ms: any) => new Promise((r) => setTimeout(r, ms))
+const wait = (ms: number|undefined) => new Promise((r) => setTimeout(r, ms))
 /* the site's own support bot — whichever it declares, not a name one site happened to use */
 const BOT = process.env.AGENT_TEST_BOT || ((await db.from('bots').select('slug, surfaces').eq('published', true)).data || []).find((b) => (b.surfaces || []).includes('support'))?.slug
 if (!BOT) { note('skipped — this site publishes no support bot to run'); leave(0) }
 
 /* one turn of the worker, as pg_cron or a surface would ask for it */
-const turn = async (run?: any, steps?: any) => {
+const turn = async (run?: string|null|undefined, steps?: number|undefined) => {
   const r = await fetch(url + '/functions/v1/agent-run', {
     method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
     body: JSON.stringify({ ...(run ? { run } : { sweep: true }), ...(steps ? { steps } : {}) }),
   })
   return r.ok ? await r.json() : { error: r.status }
 }
-const get = async (id: any) => (await db.from('agent_runs').select('*').eq('id', id).maybeSingle()).data
+const get = async (id: string) => (await db.from('agent_runs').select('*').eq('id', id).maybeSingle()).data
 /*
  * THE SWEEP ANSWERS BEFORE IT HAS FINISHED. The worker carries a run on through waitUntil, so the
  * response coming back does not mean the run is done — and reading the row the instant the fetch
@@ -59,7 +59,7 @@ const get = async (id: any) => (await db.from('agent_runs').select('*').eq('id',
  * It is not `settle` below: that one TURNS the run again until it stops moving, which is exactly
  * what this check must not do — the whole assertion is that ONE sweep carried the run through.
  */
-const rests = async (id: any, want = 'done', ms = 15000) => {
+const rests = async (id: string, want = 'done', ms = 15000) => {
   const until = Date.now() + ms
   let row = await get(id)
   while (row && row.status !== want && row.status !== 'failed' && Date.now() < until) {
@@ -68,9 +68,9 @@ const rests = async (id: any, want = 'done', ms = 15000) => {
   }
   return row
 }
-const stepsOf = async (id: any) => (await db.from('agent_steps').select('*').eq('run_id', id).order('n')).data || []
+const stepsOf = async (id: string) => (await db.from('agent_steps').select('*').eq('run_id', id).order('n')).data || []
 /* a run is started the way a surface starts one: a row, with the script the mock will follow */
-const start = async (state: any, extra = {}) => {
+const start = async (state: { messages: { role: string; content: string }[]|{ role: string; content: string }[]|{ role: string; content: string }[]|{ role: string; content: string }[]|{ role: string; content: string }[]|{ role: string; content: string }[]|{ role: string; content: string }[]|{ role: string; content: string }[]|{ role: string; content: string }[]|{ role: string; content: string }[]|{ role: string; content: string }[]; mock: { say: string }[]|({ tool: string; args: { days: number } }|{ say: string })[]|({ tool: string; args: {} }|{ say: string })[]|({ tool: string; args: { title: string } }|{ say: string })[]|{ say: string }[]|{ say: string }[]|{ fail: string }[]|({ tool: string; args: { days: number } }|{ say: string })[]|({ tool: string; args: {} }|{ say: string })[]|({ tool: string; args: { title: string } }|{ say: string })[]|{ say: string }[] }, extra = {}) => {
   const { data, error } = await db.from('agent_runs').insert({
     bot: BOT, surface: 'support', status: 'queued', state, budget_cents: 50, ...extra,
   }).select().single()
@@ -78,7 +78,7 @@ const start = async (state: any, extra = {}) => {
   return data
 }
 /* settle: turn until it stops moving, so a test never depends on how many steps a thing takes */
-const settle = async (id: any, times = 8) => {
+const settle = async (id: string, times = 8) => {
   for (let i = 0; i < times; i++) {
     const r = await get(id)
     if (!r || ['done', 'failed', 'cancelled'].includes(r.status)) return r
@@ -93,7 +93,7 @@ const settle = async (id: any, times = 8) => {
 }
 /* a run the test steps by hand: started held, so the insert's wake cannot carry it on, then let go for the test's own turn */
 const HELD = () => ({ lease_until: new Date(Date.now() + 600000).toISOString() })
-const letGo = (id: any) => db.from('agent_runs').update({ lease_until: null }).eq('id', id)
+const letGo = (id: string) => db.from('agent_runs').update({ lease_until: null }).eq('id', id)
 
 const made = []
 try {
@@ -414,24 +414,24 @@ try {
   if (!Object.keys(briefs).length) notHere('the job branch', 'the site compiles no enrichment briefs')
   else if (!row) { note('the job branch: skipped — ' + BOOK + ' is not in public.content, and a job reads its book from the rows') }
   else {
-    const titles = (row.text!.match(/^# (.*)$/gm) || []).map((l: any) => l.slice(2).trim())
-    const say = (o: any) => JSON.stringify(o)
+    const titles = (row.text!.match(/^# (.*)$/gm) || []).map((l) => l.slice(2).trim())
+    const say = (o: { thesis?: string; premises?: string[]; kind?: string; stage?: string; stageWhy?: string; chapters?: { title: string; adds: string; role: string }[]|{ title: string; ideas: { idea: string; anchor: string; keep: boolean }[] }[]|{ title: string; summary: string; essence: string[]; quiz: { q: string; options: string[]; answer: number; why: string }[] }[]|{ title: string; missing: never[]; wrong: never[] }[]; introduction?: string; insight?: string; statement?: string; statementArea?: any; statementLevel?: string }) => JSON.stringify(o)
     /* one reply per call, in the order the stages ask: understand, introduce, extract, write,
        audit, (extract's remainder pass sits between), lines. A reply the schema refuses is asked
        for once more, so a wrong guess here shows up as a stage failing rather than as a pass. */
     const mock = [
       say({ thesis: 'The one thing to do when anything goes wrong is to stop thinking about the trouble.', premises: ['Attention is the lever on circumstance.'], kind: 'a short practical teaching', stage: 'L1', stageWhy: 'it works on what is happening to a person',
-        chapters: titles.map((t: any) => ({ title: t, adds: 'what this part adds to the method', role: 'teaching' })) }),
+        chapters: titles.map((t) => ({ title: t, adds: 'what this part adds to the method', role: 'teaching' })) }),
       say({ introduction: ('This edition prints a very short book that has outlived almost everything published beside it. ' +
         'Its claim is narrow and testable, and that is why it survived: when something goes wrong, stop dwelling on what went wrong and put the attention somewhere else entirely. ' +
         'The prose is plain, the instruction is one paragraph long, and the rest of the book is the author answering the objections a reader will raise before they have finished raising them. ' +
         'What stands between the reader and the teaching is not difficulty but brevity: it is so short that it reads as a slogan, and a slogan is easy to agree with and hard to do. ' +
         'Read slowly, and treat the instruction as an instruction rather than as a sentiment, and the book does what it says it does. ').repeat(2) }),
-      say({ chapters: titles.map((t: any) => ({ title: t, ideas: [{ idea: 'The method is to move the attention rather than to argue with the trouble.', anchor: titles[0] ? 'the' : 'the', keep: true }] })) }),
-      say({ chapters: titles.map((t: any) => ({ title: t, summary: 'Whatever has gone wrong, the move is the same: stop turning the trouble over and put the attention somewhere that is not the trouble. ==That is the whole of it, and it is meant literally.=={sun}\n\nIt is not a denial that the difficulty is there. It is a claim about where attention belongs while the difficulty is being resolved, and it can be tried once and judged by what happens.',
+      say({ chapters: titles.map((t) => ({ title: t, ideas: [{ idea: 'The method is to move the attention rather than to argue with the trouble.', anchor: titles[0] ? 'the' : 'the', keep: true }] })) }),
+      say({ chapters: titles.map((t) => ({ title: t, summary: 'Whatever has gone wrong, the move is the same: stop turning the trouble over and put the attention somewhere that is not the trouble. ==That is the whole of it, and it is meant literally.=={sun}\n\nIt is not a denial that the difficulty is there. It is a claim about where attention belongs while the difficulty is being resolved, and it can be tried once and judged by what happens.',
         essence: ['Attention moved is the method, not attention argued with.', 'The instruction is meant literally and can be tested once.'],
         quiz: [{ q: 'What does the method actually ask a reader to do?', options: ['Argue the trouble down', 'Move the attention elsewhere', 'Wait for it to pass', 'Describe it precisely'], answer: 1, why: 'The instruction is about where attention goes.' }] })) }),
-      say({ chapters: titles.map((t: any) => ({ title: t, missing: [], wrong: [] })) }),
+      say({ chapters: titles.map((t) => ({ title: t, missing: [], wrong: [] })) }),
       say({ insight: 'One short instruction, meant literally: move the attention off the trouble and judge it by what happens.', statement: 'When something goes wrong I turn it over rather than putting it down.', statementArea: (await import('./companion-io.mjs')).AREAS.list[0], statementLevel: 'L1' }),
     ]
 

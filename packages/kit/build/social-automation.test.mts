@@ -91,7 +91,7 @@ const privateReply = await sendInstagramPrivateReply({
   commentId: 'comment-1',
   text: 'Here is the guide.',
   accessToken: 'secret-token',
-  fetcher: async (url: any, options: any) => {
+  fetcher: async (url: unknown, options: { headers: { Authorization: unknown }; body: string }) => {
     assert.equal(url, 'https://graph.instagram.com/v25.0/ig-account/messages')
     assert.equal(options.headers.Authorization, 'Bearer secret-token')
     assert.deepEqual(JSON.parse(options.body), {

@@ -27,11 +27,11 @@ import { fileURLToPath } from 'node:url'
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
 let pass = 0, fail = 0
-const ok = (n: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + n + (d ? ' — ' + d : '')) } }
+const ok = (n: string, c: boolean, d?: string|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + n + (d ? ' — ' + d : '')) } }
 
 console.log('\nSHARE PICTURES AND PRERENDER, IN THE CLOUD SHAPE\n')
 
-const docker = (args: any, opts = {}) => spawnSync('docker', args, { encoding: 'utf8', cwd: REPO, ...opts })
+const docker = (args: any[]|readonly string[], opts = {}) => spawnSync('docker', args, { encoding: 'utf8', cwd: REPO, ...opts })
 if (docker(['version']).status !== 0) {
   console.log('  ⚠ SKIPPED — no Docker here, so neither the nginx config nor the sidecar was checked\n')
   process.exit(0)
@@ -45,7 +45,7 @@ if (docker(['version']).status !== 0) {
     cpSync(join(REPO, 'deploy/nginx', f), join(dir, f.split('/').pop()))
   for (const f of ['15-supabase-host.envsh', '40-prerender.sh']) { cpSync(join(REPO, 'deploy/nginx', f), join(dir, f)); chmodSync(join(dir, f), 0o755) }
 
-  const check = (env: any) => {
+  const check = (env: { [s: string]: unknown }|ArrayLike<unknown>) => {
     const args = ['run', '--rm', '-v', `${dir}:/etc/nginx/templates:ro`,
       '-v', `${dir}/15-supabase-host.envsh:/docker-entrypoint.d/15-supabase-host.envsh:ro`,
       '-v', `${dir}/40-prerender.sh:/docker-entrypoint.d/40-prerender.sh:ro`,
@@ -64,7 +64,7 @@ if (docker(['version']).status !== 0) {
   ok('the config is valid with one', on.ok, on.out)
 
   /* and the switch actually switches: the stub, not the proxy */
-  const inc = (env: any) => {
+  const inc = (env: { [s: string]: unknown }|ArrayLike<unknown>) => {
     const args = ['run', '--rm', '-v', `${dir}:/etc/nginx/templates:ro`,
       '-v', `${dir}/15-supabase-host.envsh:/docker-entrypoint.d/15-supabase-host.envsh:ro`,
       '-v', `${dir}/40-prerender.sh:/docker-entrypoint.d/40-prerender.sh:ro`,
@@ -116,7 +116,7 @@ try {
   ok('the sidecar reports healthy before anything is asked of it', health === 'healthy', health || 'no health reported')
 
   const base = 'http://127.0.0.1:8080'
-  const get = async (path: any, ua: any) => {
+  const get = async (path: string, ua: string) => {
     for (let i = 0; i < 60; i++) {
       try {
         const r = await fetch(base + path, { headers: ua ? { 'user-agent': ua } : {} })

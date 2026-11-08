@@ -10,7 +10,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('awards-db: ' + m)
+const note = (m: string) => console.log('awards-db: ' + m)
 if (process.env.AWARDS_TEST === '0') { note('skipped (AWARDS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -21,9 +21,9 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean|null, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const db = createClient<Database>(url, key, { auth: { persistSession: false } })
-const as = async (email: any) => {
+const as = async (email: string) => {
   const c = createClient<Database>(url, anon, { auth: { persistSession: false } })
   const { error } = await c.auth.signInWithPassword({ email, password: 'password123' })
   return error ? null : c
@@ -53,12 +53,12 @@ await db.from('achievements').insert([
 ])
 await db.from('trait_rules').insert({ id: T, event: EV, match: {}, key: 'probe', value: 'prop:thing' })
 
-const fire = async (user_id: any, props: any) => db.from('events').insert({
+const fire = async (user_id: any, props: { kind: string; thing: string }) => db.from('events').insert({
   session_id: crypto.randomUUID(), user_id, anon_id: crypto.randomUUID(),
   type: EV, path: '/probe', props, occurred_at: new Date().toISOString(),
 })
-const got = async (user_id: any) => ((await db.from('user_achievements').select('slug').eq('user_id', user_id)).data || []).map((r) => r.slug).filter((s) => s === A || s === B)
-const traits = async (user_id: any) => (await db.from('user_traits').select('key, value, n').eq('user_id', user_id).eq('key', 'probe')).data || []
+const got = async (user_id: string) => ((await db.from('user_achievements').select('slug').eq('user_id', user_id)).data || []).map((r) => r.slug).filter((s) => s === A || s === B)
+const traits = async (user_id: string) => (await db.from('user_traits').select('key, value, n').eq('user_id', user_id).eq('key', 'probe')).data || []
 
 /* one event, one achievement — and only the one whose rule it meets */
 await fire(mine, { kind: 'probe', thing: 'a' })

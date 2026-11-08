@@ -4,7 +4,7 @@ import fs from 'node:fs'
 const adminPage = fs.readFileSync(new URL('../theme/src/pages/AdminPage.vue', import.meta.url), 'utf8')
 const adminHead = fs.readFileSync(new URL('../theme/src/components/admin/AdminHead.vue', import.meta.url), 'utf8')
 /* these read the source's text: the conversion's own `any` is not what they are about */
-const untyped = (src: any) => src.replace(/\(([^()]+?) as any\)/g, '$1').replace(/: any\b/g, '')
+const untyped = (src: string) => src.replace(/\(([^()]+?) as any\)/g, '$1').replace(/: any\b/g, '')
 const socialAdmin = untyped(fs.readFileSync(new URL('../theme/src/components/admin/SocialAdmin.vue', import.meta.url), 'utf8'))
 const socialWords = fs.readFileSync(new URL('../theme/src/content/ui/social.md', import.meta.url), 'utf8')
 

@@ -10,7 +10,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('network-db: ' + m)
+const note = (m: string) => console.log('network-db: ' + m)
 if (process.env.NETWORK_TEST === '0') { note('skipped (NETWORK_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -20,9 +20,9 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: any, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const client = () => createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
-const as = async (email: any) => {
+const as = async (email: string) => {
   const sb = client()
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -32,7 +32,7 @@ const service = createClient<Database>(url, serviceKey(), { auth: { persistSessi
 const guest = client()
 
 /* the ids a reader gets back for a set of posts, by the path the pages use */
-const sees = async (sb: any, ids: any) => new Set(((await sb.from('network_posts').select('id').in('id', ids)).data || []).map((r: any) => r.id))
+const sees = async (sb: any, ids: any[]) => new Set(((await sb.from('network_posts').select('id').in('id', ids)).data || []).map((r: { id: any }) => r.id))
 
 const SLUG = 'net-test-' + Math.random().toString(36).slice(2, 8)
 let spaceId = null
@@ -73,7 +73,7 @@ try {
   await service.from('space_members').insert([{ space_id: spaceId, user_id: A.id }, { space_id: spaceId, user_id: B.id }])
 
   /* ------------------------------------------------------------ three posts, three readers */
-  const post = async (who: any, fields: any) => {
+  const post = async (who: { sb: any; id: any }, fields: { text: string; audience: string; reply_parent_id?: any; reply_root_id?: any }) => {
     const { data, error } = await who.sb.from('network_posts').insert({ author_id: who.id, ...fields }).select().single()
     if (error) throw new Error('post: ' + error.message)
     return data
@@ -136,7 +136,7 @@ try {
   ok('a post is never edited', !!edit.error || (edit.data || []).length === 0)
 
   /* ------------------------------------------------------------ the counts */
-  const reread = async (id: any) => (await service.from('network_posts').select('like_count, repost_count, reply_count, quote_count').eq('id', id).single()).data
+  const reread = async (id: string) => (await service.from('network_posts').select('like_count, repost_count, reply_count, quote_count').eq('id', id).single()).data
   // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
   ok('a reply moves its parent\'s count', (await reread(here.id)).reply_count === 1)
   await C.sb.from('network_likes').insert({ author_id: C.id, post_id: everyone.id })
@@ -158,36 +158,36 @@ try {
   const self = await C.sb.from('network_follows').insert({ follower_id: C.id, subject_id: C.id })
   ok('nobody follows themselves', !!self.error)
   let tl = (await C.sb.rpc('network_timeline', { p_before: null, p_limit: 50 })).data || []
-  ok('the timeline holds the posts of the people one follows', tl.some((t: any) => t.post_id === everyone.id) && tl.some((t: any) => t.post_id === here.id))
-  ok('…and what they reposted', tl.some((t: any) => t.kind === 'repost' && t.post_id === here.id && t.reposted_by === B.id))
-  ok('…and a reply between two people one follows', tl.some((t: any) => t.post_id === reply.id))
-  ok('…newest first', tl.every((t: any, i: any) => i === 0 || new Date(tl[i - 1].at) >= new Date(t.at)))
-  ok('…and nothing of a space one is not in', !tl.some((t: any) => t.message_id === spaced.id))
+  ok('the timeline holds the posts of the people one follows', tl.some((t) => t.post_id === everyone.id) && tl.some((t) => t.post_id === here.id))
+  ok('…and what they reposted', tl.some((t) => t.kind === 'repost' && t.post_id === here.id && t.reposted_by === B.id))
+  ok('…and a reply between two people one follows', tl.some((t) => t.post_id === reply.id))
+  ok('…newest first', tl.every((t, i) => i === 0 || new Date(tl[i - 1].at) >= new Date(t.at)))
+  ok('…and nothing of a space one is not in', !tl.some((t) => t.message_id === spaced.id))
   const pinOut = await C.sb.from('network_pins').insert({ user_id: C.id, space_id: spaceId })
   ok('nobody pins a space they are not in', !!pinOut.error)
   /* every space one is in reaches the timeline by default (spaces-reach-home); pins count only where
      the site has turned pinning on (p_all_spaces false) */
   const tlB0 = (await B.sb.rpc('network_timeline', { p_before: null, p_limit: 50 })).data || []
-  ok('by default a space one is in reaches one’s timeline, nothing pinned', tlB0.some((t: any) => t.kind === 'space' && t.message_id === spaced.id))
+  ok('by default a space one is in reaches one’s timeline, nothing pinned', tlB0.some((t) => t.kind === 'space' && t.message_id === spaced.id))
   const tlB0p = (await B.sb.rpc('network_timeline', { p_before: null, p_limit: 50, p_all_spaces: false })).data || []
-  ok('with pinning on, a space one has not pinned does not', !tlB0p.some((t: any) => t.message_id === spaced.id))
+  ok('with pinning on, a space one has not pinned does not', !tlB0p.some((t) => t.message_id === spaced.id))
   await B.sb.from('network_pins').insert({ user_id: B.id, space_id: spaceId })
   const tlB = (await B.sb.rpc('network_timeline', { p_before: null, p_limit: 50, p_all_spaces: false })).data || []
-  ok('with pinning on, a pinned space’s feed runs through its member’s timeline', tlB.some((t: any) => t.kind === 'space' && t.message_id === spaced.id))
+  ok('with pinning on, a pinned space’s feed runs through its member’s timeline', tlB.some((t) => t.kind === 'space' && t.message_id === spaced.id))
   const older = (await C.sb.rpc('network_timeline', { p_before: tl[0]?.at, p_limit: 50 })).data || []
-  ok('the timeline pages backwards', older.every((t: any) => new Date(t.at) < new Date(tl[0].at)))
+  ok('the timeline pages backwards', older.every((t) => new Date(t.at) < new Date(tl[0].at)))
 
   /* a mute: gone from the timeline, still readable, and never told */
   await C.sb.from('network_mutes').insert({ muter_id: C.id, muted_id: A.id })
   tl = (await C.sb.rpc('network_timeline', { p_before: null, p_limit: 50 })).data || []
-  ok('a muted person is gone from the timeline', !tl.some((t: any) => t.post_id === everyone.id))
+  ok('a muted person is gone from the timeline', !tl.some((t) => t.post_id === everyone.id))
   ok('…and still readable where one goes to look', (await sees(C.sb, [everyone.id])).has(everyone.id))
   ok('…and the muted person is never told', ((await A.sb.from('network_mutes').select('muter_id').eq('muted_id', A.id)).data || []).length === 0)
   await C.sb.from('network_mutes').delete().eq('muter_id', C.id)
 
   /* notifications: a like, a follow, a reply — to the author */
   const notes = (await A.sb.rpc('network_notifications', { p_before: null, p_limit: 50 })).data || []
-  ok('the author is told of a like, a follow and a reply', ['like', 'follow', 'reply'].every((r) => notes.some((n: any) => n.reason === r)), notes.map((n: any) => n.reason).join(','))
+  ok('the author is told of a like, a follow and a reply', ['like', 'follow', 'reply'].every((r) => notes.some((n) => n.reason === r)), notes.map((n) => n.reason).join(','))
   const unread = (await A.sb.rpc('network_unread')).data
   await A.sb.from('network_seen').upsert({ user_id: A.id, seen_at: new Date().toISOString() })
   const after = (await A.sb.rpc('network_unread')).data
@@ -259,7 +259,7 @@ try {
   await service.from('spaces').update({ dms: true }).eq('id', spaceId)
 
   /* ---- WHO TAKES PART: read and write as two grants (network.access), as the data script writes them */
-  const grant = async (rules: any) => {
+  const grant = async (rules: { read?: { entitlement: string }[]|{ entitlement: string }[]; write?: { entitlement: string }[]|{ entitlement: string }[] }|null) => {
     await service.from('app_settings').delete().eq('key', 'network_access')
     if (rules) await service.from('app_settings').insert({ key: 'network_access', value: JSON.stringify(rules) })
   }
@@ -267,7 +267,7 @@ try {
   ok('a pass is given to one reader', !given.error, given.error?.message)
   await grant(null)   /* whatever the site's own config wrote, the test starts open */
   const open = (await A.sb.from('network_posts').insert({ author_id: A.id, text: 'for whoever takes part', audience: 'here' }).select().single()).data
-  const admitted = async (who: any, grantName: any) => (await who.sb.rpc('network_admitted', { p_user: who.id, p_grant: grantName })).data === true
+  const admitted = async (who: { sb: any; id: any }, grantName: string) => (await who.sb.rpc('network_admitted', { p_user: who.id, p_grant: grantName })).data === true
   ok('with no grants, everyone signed in reads and writes', (await admitted(C, 'read')) && (await admitted(C, 'write')) && (await sees(C.sb, [open!.id])).has(open!.id))
 
   await grant({ read: [{ entitlement: PASS }], write: [{ entitlement: PASS }] })
@@ -293,11 +293,11 @@ try {
   ok('taking the grants away opens it again', (await sees(C.sb, [open!.id])).has(open!.id) && (await admitted(C, 'write')))
 
   /* ---- WHO ENTERS EACH PLACE (community.access, community_access): events, messages, notifications */
-  const places = async (rules: any) => {
+  const places = async (rules: { events: { entitlement: string }[]; messages: { entitlement: string }[]; notifications: { entitlement: string }[] }|null) => {
     await service.from('app_settings').delete().eq('key', 'community_access')
     if (rules) await service.from('app_settings').insert({ key: 'community_access', value: JSON.stringify(rules) })
   }
-  const enters = async (who: any, place: any) => (await who.sb.rpc('community_admitted', { p_place: place })).data === true
+  const enters = async (who: { sb: any; id?: string }, place: string) => (await who.sb.rpc('community_admitted', { p_place: place })).data === true
   await places(null)
   ok('with no rule, every place is open to anyone signed in', (await enters(C, 'events')) && (await enters(C, 'messages')) && (await enters(C, 'notifications')))
   const R = [{ entitlement: PASS }]
@@ -332,13 +332,13 @@ try {
   const { data: mp, error: me2 } = await A.sb.from('network_posts').insert({ author_id: A.id, text: 'a video', audience: 'here',
     media: [{ kind: 'video', path: vpath, poster: ppath, mime: 'video/mp4', size: 1, width: 1080, height: 1920 }, { kind: 'image', path: A.id + '/' + SLUG + '.jpg', mime: 'image/jpeg', size: 1 }] }).select('id').single()
   ok('a post carries pictures and a video', !me2, me2 && me2.message)
-  const canSee = async (who: any, name: any) => (await who.rpc('network_can_read_image', { p_name: name })).data === true
+  const canSee = async (who: any, name: string) => (await who.rpc('network_can_read_image', { p_name: name })).data === true
   ok('…whoever may read the post may fetch the video and its poster', (await canSee(B.sb, vpath)) && (await canSee(B.sb, ppath)))
   ok('…and nobody outside may', !(await canSee(guest, vpath)) && !(await canSee(guest, ppath)))
   const tooMany = await A.sb.from('network_posts').insert({ author_id: A.id, text: 'eleven', audience: 'here', media: Array.from({ length: 11 }, (_, i) => ({ kind: 'image', path: A.id + '/' + i + '.jpg' })) })
   ok('…and never more than ten', !!tooMany.error)
   /* For You: the media posts the reader may read, and nothing else */
-  const fy = async (who: any) => ((await who.rpc('network_for_you', { p_offset: 0, p_limit: 60 })).data || []).map((r: any) => r.id)
+  const fy = async (who: any) => ((await who.rpc('network_for_you', { p_offset: 0, p_limit: 60 })).data || []).map((r: { id: any }) => r.id)
   const plain = await post(A, { text: 'words alone', audience: 'here' })
   const bSees = await fy(B.sb)
   ok('For You holds a media post the reader may read', mp && bSees.includes(mp.id))

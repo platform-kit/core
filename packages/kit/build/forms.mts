@@ -40,7 +40,7 @@ export async function readForm(store: string, name: string) {
   return { raw, model: parseForm(raw) }
 }
 /* the Forms API's shape of a document is src/lib/forms/api-shape.js (pure, shared with the functions in cloud mode); here with the file's time */
-export function apiShape(model: { settings: any; kit: any; data: any; title: any; slides: any[]; fields: any; head: { settingsLines: string[]; dataBlocks: string[] }; warnings: never[]; errors: never[] }, name: string, mtime: any = null) {
+export function apiShape(model: { settings: any; kit: any; data: any; title: any; slides: any[]; fields: any; head: { settingsLines: string[]; dataBlocks: string[] }; warnings: Array<{ line: number, message: string }>; errors: Array<{ line: number, message: string }> }, name: string, mtime: any = null) {
   const at = mtime && typeof mtime === 'object' && mtime.toISOString ? mtime.toISOString() : (typeof mtime === 'string' && mtime.includes('T') ? mtime : null)
   return shapeOf(model, name, { updated: at, created: at })
 }

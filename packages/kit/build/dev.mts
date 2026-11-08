@@ -32,6 +32,7 @@ import { siteNameFor, workspaceRoot } from './sites.mjs'
 import { copyRuntimeSupabaseProject, createRunRecord, quietOnClosedStreams, signalGroup, spawnGroup, stableProjectId, stopStack } from './dev-runtime.mjs'
 import { takeOver, takeOverLine, watchParent } from './dev-owner.mjs'
 import { portRequest } from './dev-ports.mjs'
+import type { Readable } from 'node:stream'
 
 const args = process.argv.slice(2)
 const flag = (n: string) => args.includes(n)
@@ -217,8 +218,7 @@ procs.push(run('vite', 'npx', viteArgs))
 function run(name: string, cmd: string, cmdArgs: any[]|readonly string[]|undefined) {
   const p = spawnGroup(cmd, cmdArgs, { env, stdio: ['ignore', 'pipe', 'pipe'] })
   const tag = `\x1b[2m[${name}]\x1b[0m `
-  // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string'. Type 'undefined' is not assignable to type 'string'.
-  const pipe = (stream, out) => { let buf = ''; stream.on('data', (d) => { buf += d; const lines = buf.split('\n'); buf = lines.pop(); for (const l of lines) out.write(tag + l + '\n') }) }
+  const pipe = (stream: Readable, out: (NodeJS.WriteStream&{ fd: 1 })|(NodeJS.WriteStream&{ fd: 2 })) => { let buf = ''; stream.on('data', (d: string) => { buf += d; const lines = buf.split('\n'); buf = lines.pop()!; for (const l of lines) out.write(tag + l + '\n') }) }
   pipe(p.stdout, process.stdout); pipe(p.stderr, process.stderr)
   p.on('exit', (code) => { if (code && code !== 0 && !closing) { console.error(`${tag}exited ${code}`); shutdown(code) } })
   return p

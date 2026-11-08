@@ -54,14 +54,14 @@ import { modules as MODULES } from '#site'
 /* the print module's switch: off, no book is in print however its block reads. Given the book, a book whose
    text is withheld (`fullText: false`) keeps the summary edition alone, and is not in print without one */
 // @ts-expect-error TS7023, from the conversion: 'printSpec' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in o
-export function printSpec(pr, book: any = null) {
+export function printSpec(pr: { [x: string]: any; main?: any; key?: any; rights?: any; contents?: any; formats?: any; cloth?: any; foil?: any; providers?: any; package?: any; printers?: any; currency?: any; trim?: any; paper?: any; spine?: any; blurb?: any; flap?: any; note?: any; ebook?: any; proofed?: any; includes?: any; files?: any }, book: any = null) {
   if (MODULES.print === false) return null
   if (!pr || typeof pr !== 'object') return null
   if (book && book.fullText === false) {
     // @ts-expect-error TS7022, from the conversion: 'spec' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
     const spec = printSpec(pr)
     // @ts-expect-error TS7022, from the conversion: 'contents' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initiali
-    const contents = spec ? spec.contents.filter((c) => c === 'summary') : []
+    const contents = spec ? spec.contents.filter((c: string) => c === 'summary') : []
     return contents.length ? { ...spec, contents } : null
   }
   const cloth = CLOTHS.includes(pr.cloth) ? pr.cloth : 'black', foil = FOILS.includes(pr.foil) ? pr.foil : 'gold'
@@ -166,7 +166,7 @@ export const parseVariant = (v: any) => { const [contents, cloth, foil] = String
 
 /* every format a book sells, each as the catalog's offer: sku, key, kind (print ships, download
    does not), price, the choices the buyer may make on it — null price = not for sale yet */
-export function formatOffers(book: any, editions = null) {
+export function formatOffers(book: any, editions: null|undefined = null) {
   const spec = printSpec(book && book.print, book)
   if (!spec || !spec.key || !spec.rights) return []
   return FORMATS.filter((f) => spec.formats[f]).map((f) => {
@@ -182,7 +182,7 @@ export function formatOffers(book: any, editions = null) {
 
 /* the store's page for a book in print: one product, its formats as the choice on it — the
    first priced format is what the page opens on; the page needs at least one */
-export function printOffer(book: any, words: any = {}, editions = null) {
+export function printOffer(book: any, words: any = {}, editions: null|undefined = null) {
   const spec = printSpec(book && book.print, book)
   if (!spec) return null
   const formats = formatOffers(book, editions).filter((o) => o.price > 0)
@@ -202,5 +202,4 @@ export function printOffer(book: any, words: any = {}, editions = null) {
     body: '',
   }
 }
-// @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
-export const printOffers = (books, words, editionOf = () => null) => (books || []).map((b) => printOffer(b, words, editionOf(b.slug))).filter(Boolean)
+export const printOffers = (books: any, words: any, editionOf: (a: any) => null = () => null) => (books || []).map((b: { slug: any }) => printOffer(b, words, editionOf(b.slug))).filter(Boolean)

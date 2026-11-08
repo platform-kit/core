@@ -62,7 +62,7 @@ export function checkKind(k: any) {
  * The registry. `kinds(site)` is every kind this site has — the kit's, then its own — and a kind
  * that does not keep the shape is refused by name at registration, never halfway through a build.
  */
-export function kinds(own = []) {
+export function kinds(own: any[] = []) {
   const all = [...KIT, ...own]
   for (const k of all) {
     const bad = checkKind(k)

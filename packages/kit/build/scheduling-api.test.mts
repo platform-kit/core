@@ -28,13 +28,13 @@ import { native as nativeScheduler } from '../supabase/functions/_shared/schedul
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
 import { leave, notHere, stackOf } from './test-stack.mjs'
 
-const note = (m: any) => console.log('scheduling-api: ' + m)
+const note = (m: string) => console.log('scheduling-api: ' + m)
 if (process.env.SCHEDULING_API_TEST === '0') { note('skipped (SCHEDULING_API_TEST=0)'); process.exit(0) }
 const ROOT = process.cwd()
 const c = await loadSite(ROOT)
 if (c.modules.sessions === false || c.modules.api === false) { note('the sessions or the api module is off — nothing to check'); { notHere('scheduling-api.test.mjs', 'its module is off'); process.exit(0) } }
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
+const ok = async (name: string, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 
 /* ---- (1) the shapes under Node ---- */
 const S = { title: 'A call', slug: 'a-call', event: 'a-call', scheduler: 'native', username: null, requires: 'tier-2', below: null, weekly: 1, monthly: 0, sku: null, duration: 60, hosts: ['coach@example.com'], seats: 0, buffer: 15, notice: 24, where: { kind: 'video' }, record: true, line: 'An hour with a coach.' }
@@ -81,17 +81,17 @@ let served = false
 try { served = !!(url && anon && localStack()) && (await fetch(url + '/functions/v1/scheduling-api/v2/me', { signal: AbortSignal.timeout(4000) })).status === 401 } catch { /* down */ }
 if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the shapes — the local stack is not up or the scheduling-api function is not served)`); leave(fail ? 1 : 0) }
 const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8'))
-const types = (catalog.sessions || []).filter((s: any) => s.scheduler === 'native')
-const one = types.find((s: any) => !s.sku && !(s.seats > 0) && s.duration === 60 && s.hosts.includes('coach@example.com'))
-const paidType = types.find((s: any) => s.sku && s.hosts.includes('coach@example.com'))
+const types = (catalog.sessions || []).filter((s: { scheduler: string }) => s.scheduler === 'native')
+const one = types.find((s: { sku: any; seats: number; duration: number; hosts: string|string[] }) => !s.sku && !(s.seats > 0) && s.duration === 60 && s.hosts.includes('coach@example.com'))
+const paidType = types.find((s: { sku: any; hosts: string|string[] }) => s.sku && s.hosts.includes('coach@example.com'))
 if (!one) { note(`${pass} passed`); notHere('scheduling-api: the booking door', 'the site has no native 60-minute one-to-one type hosted by coach@example.com (the demo has)'); process.exit(fail ? 1 : 0) }
 const { createClient } = await import('@supabase/supabase-js')
 const admin = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const API = url + '/functions/v1/scheduling-api'
-const sha256 = async (s: any) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
+const sha256 = async (s: string|undefined) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
 const madeKeys: any = [], madeBookings: any = []
-const makeKey = async (kind: any) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: a } = await admin.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await admin.from('api_keys').insert({ name: 'scheduling-api test', kind, gated: false, prefix: key.slice(0, 12), hash: await sha256(key), created_by: a ? a.id : null }); if (error) throw new Error(error.message); madeKeys.push(key); return key }
-const call = async (p: any, init: any = {}, token = null) => { const r = await fetch(API + p, { ...init, headers: { 'content-type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}), ...(init.headers || {}) } }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
+const makeKey = async (kind: string) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: a } = await admin.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await admin.from('api_keys').insert({ name: 'scheduling-api test', kind, gated: false, prefix: key.slice(0, 12), hash: await sha256(key), created_by: a ? a.id : null }); if (error) throw new Error(error.message); madeKeys.push(key); return key }
+const call = async (p: string, init: any = {}, token = null) => { const r = await fetch(API + p, { ...init, headers: { 'content-type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}), ...(init.headers || {}) } }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
 const ids: any = {}
 for (const e of ['member@example.com', 'member2@example.com', 'free@example.com', 'coach@example.com', 'admin@example.com']) { const { data } = await admin.from('profiles').select('id').eq('email', e).maybeSingle(); if (data) ids[e] = data.id }
 const coach = ids['coach@example.com']
@@ -101,14 +101,14 @@ const saved = { hours: (await admin.from('provider_schedules').select('*').eq('u
 const grant = async (email: any, tier: any) => { await admin.from('entitlements').insert({ user_id: ids[email], kind: 'class', key: 'subscribed', source: 'grant', source_id: 'probe-schedapi', tier, active: true, expires_at: new Date(Date.now() + 864e5).toISOString() }) }
 async function sweep() {
   const { data: mine } = await admin.from('bookings').select('uid').or("payload->>notes.eq.probe-schedapi,payload->metadata->>probe.eq.schedapi")
-  const uids: any = [...new Set([...(mine || []).map((b) => b.uid), ...madeBookings])]
-  if (uids.length) { await admin.from('entitlements').delete().in('source_id', uids.map((u: any) => 'session:' + u)); await admin.from('session_reminders').delete().in('booking_uid', uids); await admin.from('bookings').delete().in('uid', uids) }
+  const uids = [...new Set([...(mine || []).map((b) => b.uid), ...madeBookings])]
+  if (uids.length) { await admin.from('entitlements').delete().in('source_id', uids.map((u) => 'session:' + u)); await admin.from('session_reminders').delete().in('booking_uid', uids); await admin.from('bookings').delete().in('uid', uids) }
   await admin.from('entitlements').delete().eq('source_id', 'probe-schedapi')
   await admin.from('scheduling_webhooks').delete().like('subscriber_url', '%/schedapi-hook%')
 }
 await sweep()
 /* a weekday at least three days out with nothing of the coach's on it, and a second one after it */
-const pickDays = async (n: any) => { const out = []; for (let i = 3; i < 40 && out.length < n; i++) { const ms = Date.now() + i * 864e5; const { day, weekday } = dayOf(ms, AMS); if (weekday > 5) continue; const { data } = await admin.from('bookings').select('uid').eq('host_id', coach).gte('start_at', day + 'T00:00:00Z').lte('start_at', day + 'T23:59:59Z').in('status', ['accepted', 'pending']); if ((data || []).length) continue; out.push(day) } return out }
+const pickDays = async (n: number) => { const out = []; for (let i = 3; i < 40 && out.length < n; i++) { const ms = Date.now() + i * 864e5; const { day, weekday } = dayOf(ms, AMS); if (weekday > 5) continue; const { data } = await admin.from('bookings').select('uid').eq('host_id', coach).gte('start_at', day + 'T00:00:00Z').lte('start_at', day + 'T23:59:59Z').in('status', ['accepted', 'pending']); if ((data || []).length) continue; out.push(day) } return out }
 const tier = ['anyone', 'guest', 'authenticated'].includes(one.requires) ? null : one.requires
 /* the reader the run books with: of the seed's two members, one with no accepted booking of the type this month */
 let reader = null
@@ -122,7 +122,7 @@ try {
   assert.ok(d1 && d2, 'two open weekdays')
   /* the kit's own cal.com client, its base the site: the closed loop */
   // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ CAL_API_KEY: string; CAL_API_BASE: stri
-  const cal = calClient((k: any) => ({ CAL_API_KEY: key, CAL_API_BASE: API + '/v2' })[k] || '')
+  const cal = calClient((k) => ({ CAL_API_KEY: key, CAL_API_BASE: API + '/v2' })[k] || '')
   const sType = { ...one, username: 'coach', event: one.slug }   /* cal.js finds a type by its slug under a username */
   let uid = null
 
@@ -147,7 +147,7 @@ try {
       assert.ok(Array.isArray(e.bookingFields) && e.bookingFields.length >= 2, e.slug + ' says what it asks')
       for (const k of ['hidden', 'disableCancelling', 'disableRescheduling', 'lockTimeZoneToggleOnBookingPage']) assert.equal(typeof e[k], 'boolean', e.slug + ' says ' + k)
     }
-    const byslug = Object.fromEntries(list.map((e: any) => [e.slug, e]))
+    const byslug = Object.fromEntries(list.map((e: { slug: any }) => [e.slug, e]))
     for (const s of types) {
       const e = byslug[s.slug]
       if (!e) continue
@@ -159,7 +159,7 @@ try {
       if ((s.page || {}).hidden) assert.equal(e.hidden, true, s.slug + ' says it is hidden')
       if ((s.page || {}).cancel === false) assert.equal(e.disableCancelling, true, s.slug)
       if (s.team && !(s.hosts || []).length) assert.equal(e.assignAllTeamMembers, true, s.slug + ' takes its whole team')
-      if (s.form) assert.ok(e.bookingFields.some((x: any) => !x.isDefault), s.slug + " asks its form's questions")
+      if (s.form) assert.ok(e.bookingFields.some((x: { isDefault: any }) => !x.isDefault), s.slug + " asks its form's questions")
       if (Array.isArray(s.lengths) && s.lengths.length) assert.equal(e.lengthInMinutesOptions.length, s.lengths.length, s.slug + ' says every length')
     }
   })
@@ -169,7 +169,7 @@ try {
     assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 160))
     const sets = r.body.data || []
     assert.ok(sets.length, 'some schedules')
-    assert.ok(sets.every((x: any) => typeof x.name === 'string' && typeof x.isDefault === 'boolean'), 'each one is named and says whether it is the usual')
+    assert.ok(sets.every((x: { name: any; isDefault: any }) => typeof x.name === 'string' && typeof x.isDefault === 'boolean'), 'each one is named and says whether it is the usual')
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const one2 = await call('/v2/schedules/' + sets[0].id, {}, key)
     assert.equal(one2.status, 200); assert.equal(one2.body.data.id, sets[0].id)
@@ -180,7 +180,7 @@ try {
       // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const r = await call('/v2/ooo', {}, key)
       assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 160))
-      const mine = (r.body.data || []).find((x: any) => x.start === d2)
+      const mine = (r.body.data || []).find((x: { start: string }) => x.start === d2)
       assert.ok(mine, 'the stretch is there: ' + JSON.stringify(r.body.data))
       assert.equal(mine.end, d2); assert.ok(mine.reason && mine.reason.reason)
     } finally { await admin.from('provider_ooo').delete().eq('id', (row as any).id) }
@@ -227,7 +227,7 @@ try {
     const { slots: fromFile } = await sched.slots(declared, day, day, AMS)
     const mornings = fromFile[day] || []
     assert.ok(mornings.length >= 1, 'a folder with no set of hours still offers times: ' + mornings.length)
-    assert.ok(mornings.every((s: any) => { const h = Number(new Intl.DateTimeFormat('en-GB', { timeZone: AMS, hour: '2-digit', hour12: false }).format(new Date(s))); return h >= 9 && h < 11 }), 'the times are the ones the file declares')
+    assert.ok(mornings.every((s: string|number|Date) => { const h = Number(new Intl.DateTimeFormat('en-GB', { timeZone: AMS, hour: '2-digit', hour12: false }).format(new Date(s))); return h >= 9 && h < 11 }), 'the times are the ones the file declares')
     /* a type that declares none is still an empty calendar — the default is a declaration, not a guess */
     const { slots: bare } = await sched.slots({ ...declared, hours: null }, day, day, AMS)
     assert.equal((bare[day] || []).length, 0, 'no hours anywhere is no times')
@@ -236,7 +236,7 @@ try {
     const { slots: fromHost } = await sched.slots(declared, day, day, AMS)
     const theirs = fromHost[day] || []
     assert.ok(theirs.length > mornings.length, 'the host\'s own hours are wider than the file\'s: ' + theirs.length + ' vs ' + mornings.length)
-    assert.ok(theirs.some((s: any) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: AMS, hour: '2-digit', hour12: false }).format(new Date(s))) >= 11), 'a time the file would have refused')
+    assert.ok(theirs.some((s: string|number|Date) => Number(new Intl.DateTimeFormat('en-GB', { timeZone: AMS, hour: '2-digit', hour12: false }).format(new Date(s))) >= 11), 'a time the file would have refused')
   })
   await ok('the judge holds through the API: not admitted, over the allowance, a paid type with no credit, a guest on a members\' type', async () => {
     const [day] = await pickDays(1)
@@ -276,11 +276,11 @@ try {
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const me = await call('/v2/me', {}, jwt); assert.equal(me.status, 200); assert.equal(me.body.data.email, reader)
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
-    const mine = await call('/v2/bookings?status=cancelled', {}, jwt); assert.equal(mine.status, 200); assert.ok(mine.body.data.every((b: any) => b.attendees.some((a: any) => a.email === reader)), 'only their own')
+    const mine = await call('/v2/bookings?status=cancelled', {}, jwt); assert.equal(mine.status, 200); assert.ok(mine.body.data.every((b) => b.attendees.some((a) => a.email === reader)), 'only their own')
     const [day] = await pickDays(1)
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const sl = await call(`/v2/slots?eventTypeSlug=${one.slug}&start=${day}&end=${day}&timeZone=${AMS}`, {}, jwt); assert.equal(sl.status, 200)
-    if (tier) { const { data: fs2 } = await createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } }).auth.signInWithPassword({ email: 'free@example.com', password: 'password123' }); const r = await call(`/v2/slots?eventTypeSlug=${one.slug}&start=${day}&end=${day}`, {}, (fs2 as any).session.access_token); assert.equal(r.status, 403, 'not theirs: ' + r.status); const et = await call('/v2/event-types', {}, (fs2 as any).session.access_token); assert.ok(!et.body.data.some((e: any) => e.slug === one.slug), 'not listed for a reader the plan does not admit') }
+    if (tier) { const { data: fs2 } = await createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } }).auth.signInWithPassword({ email: 'free@example.com', password: 'password123' }); const r = await call(`/v2/slots?eventTypeSlug=${one.slug}&start=${day}&end=${day}`, {}, (fs2 as any).session.access_token); assert.equal(r.status, 403, 'not theirs: ' + r.status); const et = await call('/v2/event-types', {}, (fs2 as any).session.access_token); assert.ok(!et.body.data.some((e: { slug: any }) => e.slug === one.slug), 'not listed for a reader the plan does not admit') }
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const hooks = await call('/v2/webhooks', {}, jwt); assert.equal(hooks.status, 403, 'webhooks are the site\'s')
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
@@ -290,14 +290,14 @@ try {
     const got: any = []
     const server: any = http.createServer((req, res) => { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { got.push({ sig: req.headers['x-cal-signature-256'], body: b }); res.writeHead(200); res.end('ok') }) })
     await new Promise((r) => server.listen(0, '0.0.0.0', r))
-    const receiver = `http://host.docker.internal:${(server.address() as any).port}/schedapi-hook`
+    const receiver = `http://host.docker.internal:${server.address().port}/schedapi-hook`
     try {
       const secret = 'shh-' + Math.random().toString(36).slice(2)
       // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const w = await call('/v2/webhooks', { method: 'POST', body: JSON.stringify({ subscriberUrl: receiver, triggers: ['BOOKING_CREATED', 'BOOKING_CANCELLED'], active: true, secret }) }, key)
       assert.equal(w.status, 201, JSON.stringify(w.body)); assert.equal(w.body.data.subscriberUrl, receiver); assert.deepEqual(w.body.data.triggers, ['BOOKING_CREATED', 'BOOKING_CANCELLED']); assert.equal(w.body.data.secret, undefined)
       // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
-      const list = await call('/v2/webhooks', {}, key); assert.ok(list.body.data.some((x: any) => x.uid === w.body.data.uid))
+      const list = await call('/v2/webhooks', {}, key); assert.ok(list.body.data.some((x) => x.uid === w.body.data.uid))
       const [day] = await pickDays(1)
       // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const { data: slotsR } = (await call(`/v2/slots?eventTypeSlug=${one.slug}&start=${day}&end=${day}&timeZone=${AMS}`, {}, key)).body
@@ -307,7 +307,7 @@ try {
       assert.equal(b.status, 201, JSON.stringify(b.body)); madeBookings.push(b.body.data.uid)
       for (let i = 0; i < 40 && got.length < 1; i++) await new Promise((x) => setTimeout(x, 250))
       assert.equal(got.length, 1, 'the creation delivered')
-      const p1: any = JSON.parse(got[0].body); assert.equal(p1.triggerEvent, 'BOOKING_CREATED'); assert.equal(p1.payload.uid, b.body.data.uid); assert.equal(p1.payload.attendees[0].email, reader); assert.equal(p1.payload.organizer.email, 'coach@example.com')
+      const p1 = JSON.parse(got[0].body); assert.equal(p1.triggerEvent, 'BOOKING_CREATED'); assert.equal(p1.payload.uid, b.body.data.uid); assert.equal(p1.payload.attendees[0].email, reader); assert.equal(p1.payload.organizer.email, 'coach@example.com')
       assert.equal(got[0].sig, createHmac('sha256', secret).update(got[0].body).digest('hex'), 'X-Cal-Signature-256 verifies')
       // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const c = await call(`/v2/bookings/${b.body.data.uid}/cancel`, { method: 'POST', body: JSON.stringify({ cancellationReason: 'probe' }) }, key); assert.equal(c.status, 200); assert.equal(c.body.data.status, 'cancelled')
@@ -334,7 +334,7 @@ try {
     const r = await call('/v2/schedules', {}, key); assert.equal(r.status, 200)
     /* A HOST KEEPS SEVERAL SETS, so the route answers one row per set and its id is the set's; the
        host is the ownerId, and the one that stands for them is the default. */
-    const sc = r.body.data.find((x: any) => x.ownerId === eventTypeId('user:coach@example.com') && x.isDefault); assert.ok(sc, 'the coach\'s default schedule'); assert.equal(sc.timeZone, AMS); assert.ok(sc.availability.some((a: any) => a.startTime === '09:00' && a.endTime === '12:00' && a.days.includes('Monday')))
+    const sc = r.body.data.find((x: { ownerId: number; isDefault: any }) => x.ownerId === eventTypeId('user:coach@example.com') && x.isDefault); assert.ok(sc, 'the coach\'s default schedule'); assert.equal(sc.timeZone, AMS); assert.ok(sc.availability.some((a: { startTime: string; endTime: string; days: string|string[] }) => a.startTime === '09:00' && a.endTime === '12:00' && a.days.includes('Monday')))
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const one1 = await call('/v2/schedules/' + sc.id, {}, key); assert.equal(one1.status, 200)
   })
@@ -354,16 +354,16 @@ try {
     </script></body></html>`
     const host: any = http.createServer((req: any, res) => { if (req.url.startsWith('/embed.js')) { res.writeHead(200, { 'content-type': 'application/javascript' }); return res.end(embedJs) } res.writeHead(200, { 'content-type': 'text/html' }); res.end(page) })
     await new Promise((r) => host.listen(0, '127.0.0.1', r))
-    const origin = 'http://127.0.0.1:' + (host.address() as any).port
+    const origin = 'http://127.0.0.1:' + host.address().port
     try {
       const { chromium } = await import('playwright')
       const exe = process.env.PLAYWRIGHT_CHROMIUM_PATH
       const b = await chromium.launch(exe ? { executablePath: exe } : {})
       const p = await (await browserContext(b, { viewport: { width: 1280, height: 1000 } })).newPage()
-      const errs: any = []; p.on('pageerror', (e: any) => errs.push(e.message))
+      const errs: any = []; p.on('pageerror', (e: { message: any }) => errs.push(e.message))
       await p.goto(origin + '/', { waitUntil: 'load' })
-      const frame = await (async () => { for (let i = 0; i < 60; i++) { const f = p.frames().find((f: any) => f.url().includes('/book/' + one.slug)); if (f) return f; await p.waitForTimeout(500) } return null })()
-      assert.ok(frame, 'the iframe opened the booking page: ' + p.frames().map((f: any) => f.url()).join(' | '))
+      const frame = await (async () => { for (let i = 0; i < 60; i++) { const f = p.frames().find((f: { url: () => string|string[] }) => f.url().includes('/book/' + one.slug)); if (f) return f; await p.waitForTimeout(500) } return null })()
+      assert.ok(frame, 'the iframe opened the booking page: ' + p.frames().map((f: { url: () => any }) => f.url()).join(' | '))
       await frame.waitForSelector('.bookpage', { timeout: 30000 })
       /* the reader signs in inside the frame */
       await frame.waitForSelector('.bookpage-gate button', { timeout: 30000 }); await frame.click('.bookpage-gate button')
@@ -375,10 +375,10 @@ try {
       if (shots) { await p.waitForTimeout(800); await p.screenshot({ path: path.join(shots, 'cal-embed-1280.png') }) }
       await frame.click('.bk-day.open'); await frame.waitForSelector('.bk-time', { timeout: 15000 }); await frame.click('.bk-time')
       await frame.waitForSelector('.bk-confirm .bk-btn:not(.ghost)', { timeout: 15000 }); await frame.fill('.bk-notes textarea', 'probe-schedapi'); await frame.click('.bk-confirm .bk-btn:not(.ghost)')
-      await p.waitForFunction(() => (window as any).events.some((e: any) => e.startsWith('booked:')), null, { timeout: 30000 })
+      await p.waitForFunction(() => (window as any).events.some((e: string) => e.startsWith('booked:')), null, { timeout: 30000 })
       const ev = await p.evaluate(() => (window as any).events)
-      const uid2 = ev.find((e: any) => e.startsWith('booked:')).slice(7); madeBookings.push(uid2)
-      assert.ok(ev.some((e: any) => e.startsWith('size:')), 'the size reported: ' + ev.join(','))
+      const uid2 = ev.find((e: string) => e.startsWith('booked:')).slice(7); madeBookings.push(uid2)
+      assert.ok(ev.some((e: string) => e.startsWith('size:')), 'the size reported: ' + ev.join(','))
       // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const got = await call('/v2/bookings/' + uid2, {}, key); assert.equal(got.status, 200); assert.equal(got.body.data.attendees[0].email, reader)
       assert.deepEqual(errs, [])

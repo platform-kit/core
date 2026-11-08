@@ -12,7 +12,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('funnels-analytics: ' + m)
+const note = (m: string) => console.log('funnels-analytics: ' + m)
 if (process.env.FUNNELS_TEST === '0') { note('skipped (FUNNELS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -22,8 +22,8 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
-const as = async (email: any) => {
+const ok = (msg: string, cond: string|number|boolean|null) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
+const as = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -39,7 +39,7 @@ for (const r of log) if (r.kind === 'funnel') byName[r.name] = (byName[r.name] |
 const name = Object.keys(byName).sort((a, b) => byName[b] - byName[a])[0]
 if (!name || !funnels.funnels[name]) { note('the seed holds no funnel sends here — skipped'); leave(0) }
 const f = funnels.funnels[name]
-const steps = f.steps.map((s: any) => ({ id: s.id, after: s.after, channel: 'email' }))
+const steps = f.steps.map((s: { id: any; after: any }) => ({ id: s.id, after: s.after, channel: 'email' }))
 const DAYS = 90, DAY = 86400e3
 const since = Date.now() - DAYS * DAY
 const rows = log.filter((r) => r.kind === 'funnel' && r.name === name)
@@ -72,12 +72,12 @@ if (got) {
     const due = Date.parse(m.step === 0 ? m.entered_at : m.last_sent_at || m.entered_at) + steps[m.step].after * DAY
     if (due < Date.now()) b.held++; else b.waiting++
   }
-  ok('waiting, held and left before each step', steps.every((s: any, i: any) => (got as any).steps[i].waiting === between[i].waiting && (got as any).steps[i].held === between[i].held && (got as any).steps[i].left === between[i].left))
+  ok('waiting, held and left before each step', steps.every((s: any, i: string|number) => (got as any).steps[i].waiting === between[i].waiting && (got as any).steps[i].held === between[i].held && (got as any).steps[i].left === between[i].left))
   /* the conversions, credited last touch — the rule again in plain JavaScript */
   const purchases = (await service.from('purchases').select('user_id, created_at, amount_total').eq('status', 'paid')).data || []
   const subs = (await service.from('subscriptions').select('user_id, created_at')).data || []
   const goals = f.goal ? ((await service.from('events').select('user_id, occurred_at').eq('type', 'pageview').eq('path', f.goal).not('user_id', 'is', null)).data || []) : []
-  const credit = (userId: any, at: any) => {
+  const credit = (userId: string|null, at: string) => {
     const t = Date.parse(at)
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
     const c = rows.filter((r) => r.user_id === userId && Date.parse(r.sent_at) > t - 7 * DAY && Date.parse(r.sent_at) <= t)
@@ -96,18 +96,18 @@ if (got) {
       const at = (c as any).created_at || (c as any).occurred_at
       const r = credit((c as any).user_id, at)
       if (!r) continue
-      const i = steps.findIndex((s: any) => s.id === r.email_id)
+      const i = steps.findIndex((s: { id: string|null }) => s.id === r.email_id)
       if (i < 0) continue   /* a send of a step the files no longer have */
       if (Date.parse(at) >= since) { if (kind === 'goal') goalN++; else { total++; if (kind === 'purchase') revenue += (c as any).amount_total || 0 } }
       // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-      if (cohort.has(r.user_id)) { if (kind === 'goal') exp[i].goal++; else { exp[i].conversions++; if (kind === 'purchase') exp[i].revenue += (c as any).amount_total || 0 } }
+      if (cohort.has(r.user_id)) { if (kind === 'goal') exp[i].goal++; else { exp[i].conversions++; if (kind === 'purchase') exp[i].revenue += c.amount_total || 0 } }
     }
   }
   ok('the conversions credited last touch, in all', (got as any).now.conversions === total && (got as any).now.revenue === revenue && (got as any).now.goal === goalN)
-  ok('the conversions credited last touch, per step', steps.every((s: any, i: any) => (got as any).steps[i].conversions === exp[i].conversions && (got as any).steps[i].revenue === exp[i].revenue && (got as any).steps[i].goal === exp[i].goal))
+  ok('the conversions credited last touch, per step', steps.every((s: any, i: string|number) => (got as any).steps[i].conversions === exp[i].conversions && (got as any).steps[i].revenue === exp[i].revenue && (got as any).steps[i].goal === exp[i].goal))
   ok('a purchase after a click sits on the funnel', total >= 1)
   const idx: any = (await admin.sb.rpc('admin_funnels', { days: DAYS, goals: f.goal ? { ['funnel:' + name]: f.goal } : {} })).data
-  ok('the index lists the funnel with the same sends', idx && (idx.items || []).some((it: any) => it.kind === 'funnel' && it.name === name && it.sent === inWin.length))
+  ok('the index lists the funnel with the same sends', idx && (idx.items || []).some((it: { kind: string; name: string; sent: number }) => it.kind === 'funnel' && it.name === name && it.sent === inWin.length))
 }
 const member = await as('member@example.com')
 const refused = await member.sb.rpc('admin_funnel', { kind: 'funnel', name, days: DAYS, steps })
@@ -118,12 +118,12 @@ let served = false
 try { served = (await fetch(url + '/functions/v1/email-unsubscribe', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* not served */ }
 if (!served) note('the functions are not served (npm run dev serves them) — the unsubscribe link is not checked')
 else {
-  const hmac = (id: any) => createHmac('sha256', 'unsubscribe:' + serviceKey()).update(id).digest().subarray(0, 16).toString('hex')
+  const hmac = (id: string|NodeJS.ArrayBufferView<ArrayBufferLike>) => createHmac('sha256', 'unsubscribe:' + serviceKey()).update(id).digest().subarray(0, 16).toString('hex')
   const clean = (await service.from('profiles').select('id').is('email_opt_out_at', null).like('email', 'reader%@example.com').limit(2)).data || []
   const a = rows.find((r) => r.user_id === clean[0]?.id && !r.unsubscribed_at), b = rows.find((r) => r.user_id === clean[1]?.id && !r.unsubscribed_at)
   if (!a || !b) note('no clean seeded send to unsubscribe from — skipped')
   else {
-    const go = (u: any, l: any) => fetch(`${url}/functions/v1/email-unsubscribe?u=${u}&t=${hmac(u)}&l=${l}`)
+    const go = (u: any, l: number) => fetch(`${url}/functions/v1/email-unsubscribe?u=${u}&t=${hmac(u)}&l=${l}`)
     const r1 = await go(a.user_id, a.id)
     const row1 = (await service.from('email_log').select('unsubscribed_at').eq('id', a.id).single()).data
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.

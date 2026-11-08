@@ -16,7 +16,7 @@ export const shouldOffer = (me: string, them: string) => String(me) < String(the
 export const shouldAnswer = (me: string, them: string) => String(me) > String(them)
 
 /* a person in the room twice — two tabs, a reconnection — is one person; the newest wins */
-export function livePeers(seen = [], me = null, now = Date.now(), staleMs = 30000) {
+export function livePeers(seen: { id: string; at: string }[] = [], me: string | null = null, now = Date.now(), staleMs = 30000) {
   const by = new Map()
   for (const p of seen) {
     if (!p || !(p as any).id || (p as any).id === me) continue

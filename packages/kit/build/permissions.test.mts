@@ -15,7 +15,7 @@
 import assert from 'node:assert/strict'
 
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String(e && e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
+const ok = async (name: string, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String(e && e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
 
 console.log('\nWHAT MAY BE DONE, IN ONE PLACE\n')
 
@@ -143,18 +143,15 @@ await ok('a space capability is the database\'s answer, never a second opinion',
 await ok('a site adds a rule, narrows one, and revokes one', () => {
   const me = identityOf(PEOPLE.reader)
   /* adds */
-  // @ts-expect-error TS2345, from the conversion: Argument of type '(identity: any, { can }: any) => any' is not assignable to parameter of type 'null | undefined'.
-  const added = abilityFor(me, (identity: any, { can }: any) => can('enter', 'Lounge'))
+  const added = abilityFor(me, (identity, { can }) => can('enter', 'Lounge'))
   assert.ok(added.can('enter', 'Lounge'))
   assert.ok(!abilityFor(me).can('enter', 'Lounge'), 'and only where the site said so')
   /* revokes — the common case: everything the kit allows, except this */
-  // @ts-expect-error TS2345, from the conversion: Argument of type '(identity: any, { cannot }: any) => any' is not assignable to parameter of type 'null | undefined'.
-  const revoked = abilityFor(me, (identity: any, { cannot }: any) => cannot('read', 'Results'))
+  const revoked = abilityFor(me, (identity, { cannot }) => cannot('read', 'Results'))
   assert.ok(!revoked.can('read', 'Results'), "a site's cannot beats the kit's can")
   assert.ok(abilityFor(me).can('read', 'Results'), 'and the kit alone still allows it')
   /* narrows — an entry the kit would have admitted */
-  // @ts-expect-error TS2345, from the conversion: Argument of type '(identity: any, { cannot }: any) => any' is not assignable to parameter of type 'null | undefined'.
-  const narrowed = abilityFor(me, (identity: any, { cannot }: any) => cannot('read', 'Entry', { kind: 'articles' }))
+  const narrowed = abilityFor(me, (identity, { cannot }) => cannot('read', 'Entry', { kind: 'articles' }))
   assert.ok(!narrowed.can('read', entrySubject(ENTRIES[0], me)), 'narrowed by a condition')
   assert.ok(narrowed.can('read', { __caslSubjectType__: 'Entry', kind: 'wiki', bar: 'guest' }), 'and only there')
 })

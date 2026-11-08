@@ -197,7 +197,7 @@ function paymentProvidersOf(value: unknown, owns: { env: string|string[] }, wher
     faults.push(`${where}: \`paymentProviders\` must be a list`)
     return []
   }
-  const seen = new Set()
+  const seen = new Set<string>()
   return value.flatMap((provider, index) => {
     const label = `${where}: \`paymentProviders[${index}]\``
     if (!provider || typeof provider !== 'object' || Array.isArray(provider)) {
@@ -350,7 +350,7 @@ export function readManifests(entries: Array<{ manifest: unknown, where: string 
   }
   /* a module that needs one nobody declares can never be satisfied */
   for (const m of by.values()) for (const r of m.requires) if (!by.has(r.module)) faults.push(`\`${m.key}\` requires \`${r.module}\`, which no manifest declares`)
-  const providers = new Map()
+  const providers = new Map<string, string>()
   for (const m of by.values()) for (const provider of m.paymentProviders) {
     if (providers.has(provider.id)) faults.push(`payment provider \`${provider.id}\` is declared by two modules: \`${providers.get(provider.id)}\` and \`${m.key}\``)
     else providers.set(provider.id, m.key)
@@ -376,7 +376,7 @@ export function readManifests(entries: Array<{ manifest: unknown, where: string 
    * depend on it.
    */
   for (const what of EXCLUSIVE) {
-    const claimed = new Map()
+    const claimed = new Map<string | CronJob, string>()
     for (const m of by.values()) {
       for (const x of m.owns[what] || []) {
         const claim = what === 'cron' && x && typeof x === 'object' ? x.name : x

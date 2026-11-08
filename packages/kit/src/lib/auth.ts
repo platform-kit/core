@@ -202,7 +202,6 @@ export const identity = computed(() => identityOf({
   role: isAdmin.value ? 'admin' : isSupport.value ? 'support' : 'user',
   roles: roles.value,
 }))
-// @ts-expect-error TS2345, from the conversion: Argument of type '() => void' is not assignable to parameter of type 'null | undefined'.
 export const ability = computed(() => abilityFor(identity.value, siteRules))
 /* the one question the rest of the app asks: `can('read', entrySubject(entry))` */
 export const can = (action: any, subject: any) => ability.value.can(action, subject)
@@ -413,7 +412,7 @@ export async function signInWithGoogle(returnTo = '') {
    alone so nothing vanishes unexpectedly. */
 /* things that must drain before the local document is thrown away — the answers
    outbox registers here, so auth never has to import the engine */
-export const beforeSignOut = []
+export const beforeSignOut: ((() => Promise<void>) | (() => void))[] = []
 export async function signOut() {
   await Promise.all(beforeSignOut.map((fn) => Promise.resolve().then(fn).catch(() => {})))
   await pushNow().catch(() => { /* offline — the last debounced push already ran */ })

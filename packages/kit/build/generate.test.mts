@@ -18,11 +18,11 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const WORKSPACE = path.resolve(HERE, '../../..')
 const DEMO = path.join(WORKSPACE, 'sites', 'demo')
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
-const node = (args: any, cwd: any) => spawnSync(process.execPath, args, { cwd, encoding: 'utf8', env: process.env, timeout: 300000 })
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
+const node = (args: readonly string[], cwd: string) => spawnSync(process.execPath, args, { cwd, encoding: 'utf8', env: process.env, timeout: 300000 })
 const out = (r: any) => (r.stdout || '') + (r.stderr || '')
-const hashDir = (dir: any) => { const h = crypto.createHash('sha256'); const walk = (d: any) => { for (const e of fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) { const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else { h.update(path.relative(dir, f)); h.update(fs.readFileSync(f)) } } }; walk(dir); return h.digest('hex') }
-const comments = (t: any) => t.match(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g) || []
+const hashDir = (dir: string) => { const h = crypto.createHash('sha256'); const walk = (d: any) => { for (const e of fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) { const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else { h.update(path.relative(dir, f)); h.update(fs.readFileSync(f)) } } }; walk(dir); return h.digest('hex') }
+const comments = (t: string) => t.match(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g) || []
 
 /* ─── the site level, on a copy of the demo (inside the workspace, so its packages resolve) ─── */
 const SITE = path.join(WORKSPACE, '.cache', 'platformkit', 'generate-test')
@@ -49,13 +49,13 @@ const cfgBefore = fs.readFileSync(path.join(SITE, 'platformkit.config.ts'), 'utf
   ok('the config loads with the module on', site.modules['gift-cards'] === true)
   const { moduleSet } = await import('./steps.mjs')
   ok('…and the module is a module', (await moduleSet(site)).has('gift-cards'))
-  ok('the page is routed under its module', (site.routes || []).some((r: any) => r.path === '/gift-cards' && r.module === 'gift-cards'))
+  ok('the page is routed under its module', (site.routes || []).some((r: { path: string; module: string }) => r.path === '/gift-cards' && r.module === 'gift-cards'))
   const manifest = (await import(path.join(SITE, 'src', 'gift-cards', 'module.js') + '?fresh')).default   /* fresh: generating the page loaded it before its route was added */
   ok('…and the module owns its route', (manifest.owns.routes || []).includes('/gift-cards'))
   const { parse } = await import('@vue/compiler-sfc')
   ok('the page compiles', !parse(fs.readFileSync(path.join(SITE, 'src', 'gift-cards', 'GiftCardsPage.vue'), 'utf8')).errors.length)
   const { registry } = await import('./models/index.mjs')
-  ok('the content type is a model the admin edits', (await registry(SITE, { site })).some((m: any) => m.key === 'recipes'))
+  ok('the content type is a model the admin edits', (await registry(SITE, { site })).some((m: { key: string }) => m.key === 'recipes'))
   const steps = node([path.join(HERE, 'steps.mjs'), '--check'], SITE)
   ok('every step, the new one with them, passes the step check', steps.status === 0 && /tally/.test(node([path.join(HERE, 'steps.mjs')], SITE).stdout), out(steps))
   const sanity = node([path.join(SITE, 'build', 'sanity.test.mjs')], SITE)

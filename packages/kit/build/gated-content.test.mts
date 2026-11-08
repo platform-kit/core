@@ -9,7 +9,7 @@ import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-const note = (m: any) => console.log('gated-content: ' + m)
+const note = (m: string) => console.log('gated-content: ' + m)
 if (process.env.GATED_CONTENT_TEST === '0') { note('skipped (GATED_CONTENT_TEST=0)'); process.exit(0) }
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
@@ -18,7 +18,7 @@ const DEMO = path.join(WORKSPACE, 'sites', 'demo')
 const WORK = path.join(WORKSPACE, '.cache', 'platformkit', 'gated-content-test')
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
 
 /* the markers: where a guest may read, and where none may */
 const FREE = 'GATEFREE chapter one is for everyone.'
@@ -32,7 +32,7 @@ const MARK = {
 }
 /* a book whose text is withheld (fullText: false) publishes its summaries: this one must be there */
 const SUMMARY = 'SUMMARYPUBLIC the withheld book\'s summary is published.'
-const filler = (word: any) => Array.from({ length: 30 }, (_, i) => `${word} filler sentence number ${i} keeps this chapter long.`).join(' ')
+const filler = (word: string) => Array.from({ length: 30 }, (_, i) => `${word} filler sentence number ${i} keeps this chapter long.`).join(' ')
 const FIXTURES = {
   'content/books/gate-probe.md': `---\ntitle: Gate Probe\nauthor: Test\nbook_id: gate-probe\ndescription: A book for the gate test.\npublished: true\nguestChapters: 1\n---\n\n# One\n\n${FREE} ${filler('one')}\n\n# Two\n\n${filler('two')} ${MARK.bookEnd}\n\n# Three\n\n${MARK.bookShort}\n`,
   'content/companions/gate-probe.md': `---\nbook: gate-probe\ninsight: The probe's insight.\n---\n\n# One\n\n## Summary\n\nThe free summary.\n\n# Two\n\n## Summary\n\n${MARK.companion}\n\n## Quiz\n\n1. Which?\n   - [x] a\n   - [ ] b\n   - [ ] c\n   - [ ] d\n\n# Three\n\n## Summary\n\nThe third summary.\n`,
@@ -54,22 +54,22 @@ function copyDemo() {
   })
   for (const [rel, text] of Object.entries(FIXTURES)) { fs.mkdirSync(path.dirname(path.join(WORK, rel)), { recursive: true }); fs.writeFileSync(path.join(WORK, rel), text) }
 }
-const run = (args: any, env = {}) => {
+const run = (args: string[], env = {}) => {
   const r = spawnSync(args[0], args.slice(1), { cwd: WORK, encoding: 'utf8', env: { ...process.env, CONTENT_STORE: 'files', ...env }, maxBuffer: 1 << 28 })
   return { status: r.status, out: (r.stdout || '') + (r.stderr || '') }
 }
-const velite = (env?: any) => run([process.execPath, '--input-type=module', '-e',
+const velite = (env?: {}|undefined) => run([process.execPath, '--input-type=module', '-e',
   `const { engineFor } = await import(${JSON.stringify(pathToFileURL(path.join(HERE, 'collections.mjs')).href)})
    const e = await engineFor(process.cwd())
    if (e.name !== 'velite') await e.build({ root: process.cwd(), log: () => {} })
    else { const { build } = await import('velite'); await build({ clean: true }) }`], env)
-const textFiles: any = (dir: any) => {
+const textFiles = (dir: string) => {
   const out: any = []
   const walk = (d: any) => { if (!fs.existsSync(d)) return; for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory()) walk(p); else if (/\.(html|js|mjs|json|css|txt|xml|map)$/.test(e.name)) out.push(p) } }
   walk(dir)
   return out
 }
-const scan = (files: any) => {
+const scan = (files: any[]) => {
   const found: any = {}
   for (const f of files) { const t = fs.readFileSync(f, 'utf8'); for (const [k, m] of Object.entries(MARK)) if (t.includes(m)) (found[k] ||= []).push(path.relative(WORK, f)) }
   return found
@@ -97,22 +97,22 @@ ok('the prepare steps run (the search index among them)', prep.status === 0, pre
 const b = run(['npx', 'vite', 'build', '--logLevel', 'warn'], { PLATFORMKIT_CONTENT_DONE: '1', NODE_OPTIONS: ((process.env.NODE_OPTIONS || '') + ' --max-old-space-size=4096').trim() })
 ok('the bundle builds', b.status === 0, b.out)
 const siteSteps = run([process.execPath, path.join(HERE, 'steps.mjs'), '--run', 'site'], { PLATFORMKIT_CONTENT_DONE: '1' })
-const prerendered = fs.existsSync(path.join(WORK, 'dist', 'books')) || textFiles(path.join(WORK, 'dist')).some((f: any) => /\/(articles|wiki)\/.*index\.html$/.test(f))
+const prerendered = fs.existsSync(path.join(WORK, 'dist', 'books')) || textFiles(path.join(WORK, 'dist')).some((f: string) => /\/(articles|wiki)\/.*index\.html$/.test(f))
 if (siteSteps.status !== 0 || !prerendered) note('the pages were not pre-rendered here (no browser for the pre-render step) — the bundle they are rendered from is scanned')
 
 const files = [...textFiles(path.join(WORK, 'dist')), ...textFiles(path.join(WORK, '.velite'))]
 ok('there is output to scan', files.length > 20, String(files.length))
-const found: any = scan(files)
+const found = scan(files)
 for (const k of Object.keys(MARK)) ok(`no ${k} marker in any published file`, !found[k], (found[k] || []).join(', '))
 ok('the withheld book\'s summary is published', files.some((f) => fs.readFileSync(f, 'utf8').includes(SUMMARY)))
-ok('…and its chapters keep their titles', (() => { const b3 = JSON.parse(fs.readFileSync(path.join(WORK, '.velite', 'books.json'), 'utf8')).find((x: any) => x.slug === 'summary-probe'); return b3 && b3.fullText === false && /^# First Withheld$/m.test(b3.raw) && /^# Second Withheld$/m.test(b3.raw) })())
+ok('…and its chapters keep their titles', (() => { const b3 = JSON.parse(fs.readFileSync(path.join(WORK, '.velite', 'books.json'), 'utf8')).find((x: { slug: string }) => x.slug === 'summary-probe'); return b3 && b3.fullText === false && /^# First Withheld$/m.test(b3.raw) && /^# Second Withheld$/m.test(b3.raw) })())
 /* the server's content index (reader-content and the content API read it) holds the titles, never the text */
 const cj = run([process.execPath, path.join(HERE, 'content-json.mjs')])
 const indexFile = path.join(WORK, 'supabase', 'functions', '_shared', 'content', 'index.json')
 ok('the content index builds', cj.status === 0 && fs.existsSync(indexFile), cj.out)
 if (fs.existsSync(indexFile)) { const idx = fs.readFileSync(indexFile, 'utf8'); ok('the content index holds no withheld text', !idx.includes(MARK.withheld)); ok('…and the withheld book\'s titles', idx.includes('# First Withheld')) }
 ok('the free chapter is published', files.some((f) => fs.readFileSync(f, 'utf8').includes('GATEFREE chapter one')))
-ok('the locked chapters keep their titles', (() => { const b2 = JSON.parse(fs.readFileSync(path.join(WORK, '.velite', 'books.json'), 'utf8')).find((x: any) => x.slug === 'gate-probe'); return b2 && b2.gatedFrom === 1 && /^# Two$/m.test(b2.raw) && /^# Three$/m.test(b2.raw) })())
+ok('the locked chapters keep their titles', (() => { const b2 = JSON.parse(fs.readFileSync(path.join(WORK, '.velite', 'books.json'), 'utf8')).find((x: { slug: string }) => x.slug === 'gate-probe'); return b2 && b2.gatedFrom === 1 && /^# Two$/m.test(b2.raw) && /^# Three$/m.test(b2.raw) })())
 
 fs.rmSync(WORK, { recursive: true, force: true })
 console.log(fail ? `${fail} failed, ${pass} passed` : `all ${pass} checks passed (no gated text published${prerendered ? ', pre-rendered pages included' : ''})`)

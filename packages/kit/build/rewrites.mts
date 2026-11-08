@@ -153,7 +153,7 @@ const enabledFor = (rule: { source: string }, modules: { api?: any; support?: an
   return !need || need.when.every((key) => HOLDS[key](modules))
 }
 
-export function siteRules(defaultRules: any[], localRules = [], modules = {}) {
+export function siteRules(defaultRules: any[], localRules: { source: string; to: string; status: number; comment: string; }[] = [], modules = {}) {
   const merged = defaultRules.filter((rule) => enabledFor(rule, modules)).map((rule) => ({ ...rule }))
   const positions = new Map(merged.map((rule: { source: any }, index) => [rule.source, index]))
   const seen = new Set()
@@ -182,7 +182,6 @@ async function buildForSite(root: string, site: any, defaultRules: { source: str
   if (deploymentShape(config).backend === false) return { skipped: true }
   const localFile = site.root ? null : path.join(site.directory, '_redirects')
   const localText = localFile && fs.existsSync(localFile) ? fs.readFileSync(localFile, 'utf8') : ''
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ source: string; to: string; status: number; comment: string; }[]' is not assignable to parameter of type 'never[]'. Type
   const rules = siteRules(defaultRules, localText ? parseRedirects(localText) : [], config.modules || {})
   const faults = checkRules(rules, config.modules || {})
   if (faults.length) throw new Error(`${site.name}: ${faults.join('\n  ')}`)

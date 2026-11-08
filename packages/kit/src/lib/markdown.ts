@@ -13,8 +13,7 @@
 import { Marked, Renderer } from 'marked'
 import GithubSlugger from 'github-slugger'
 
-// @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Type 'string | undefined' is not assignable to type 'string'. Typ
-const escape = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const escape = (s: any) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c])
 const unescape = (s: any) => String(s).replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => (({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" } as any)[e]))
 const textOf = (tokens: any) => (tokens || []).map((t: { tokens: any; type: string; text: any; raw: any }) => (t.tokens ? textOf(t.tokens) : t.type === 'text' || t.type === 'codespan' || t.type === 'escape' ? unescape(t.text) : t.raw || '')).join('')
 
@@ -65,12 +64,11 @@ const quotes = (html: string) => html.replace(/(<[^>]*>)|&#39;|&quot;/g, (m: str
 /* the headings of a document as a tree, urls to their ids, the shape velite's toc gave */
 function tocOf(md: string, m: Marked<string,string>) {
   const slugger = new GithubSlugger()
-  const root = { items: [] }, stack = [{ depth: 0, node: root }]
+  const root = { items: [] as { title: any; url: string; items: never[]; }[] }, stack = [{ depth: 0, node: root }]
   for (const t of m.lexer(md)) {
     if (t.type !== 'heading') continue
     const node = { title: textOf(t.tokens), url: '#' + slugger.slug(textOf(t.tokens)), items: [] }
     while (stack.length > 1 && stack[stack.length - 1].depth >= t.depth) stack.pop()
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ title: any; url: string; items: never[]; }' is not assignable to parameter of type 'never'.
     stack[stack.length - 1].node.items.push(node)
     stack.push({ depth: t.depth, node })
   }

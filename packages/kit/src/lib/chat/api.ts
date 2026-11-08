@@ -217,8 +217,7 @@ async function notify(message_id: any) {
   try { await (supabase as any).functions.invoke('chat-notify', { body: { message_id } }) } catch (e) { /* the email is a courtesy */ }
 }
 
-// @ts-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'number[]' and 'number'.
-const newId = () => (crypto.randomUUID ? crypto.randomUUID() : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)))
+const newId = () => (crypto.randomUUID ? crypto.randomUUID() : (String([1e7]) + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c: string) => (Number(c) ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (Number(c) / 4)))).toString(16)))
 
 export async function sendText(body: any, replyTo: any) {
   const text = String(body || '').trim()
@@ -282,8 +281,7 @@ export async function sendFile(file: { name: any; type: any; size: any }, replyT
 function touchInbox(row: any) {
   const c = inbox.value.find((x: { id: any }) => x.id === row.conversation_id)
   if (c) { c.last = { id: row.id, kind: row.kind, body: row.body, sender_id: row.sender_id, created_at: row.created_at, deleted_at: null }; c.last_message_at = row.created_at }
-  // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  inbox.value = inbox.value.slice().sort((a, b) => new Date(b.last_message_at || b.created_at) - new Date(a.last_message_at || a.created_at))
+  inbox.value = inbox.value.slice().sort((a: { last_message_at: any; created_at: any }, b: { last_message_at: any; created_at: any }) => new Date(b.last_message_at || b.created_at).getTime() - new Date(a.last_message_at || a.created_at).getTime())
 }
 
 export async function react(message_id: string, emoji: string) {
@@ -311,7 +309,6 @@ function lastInInbox(row: { id: any; conversation_id: any; deleted_at?: string }
 }
 
 const forget = () => { closeThread(); inbox.value = []; people.value = []; members.value = [] }
-// @ts-expect-error TS2345, from the conversion: Argument of type '() => void' is not assignable to parameter of type 'never'.
 beforeSignOut.push(forget)
 /* the other half: whoever is here now has their own inbox, and it is not the last person's */
 onIdentity((id: any) => { forget(); if (id) { loadInbox(); loadPeople() } })

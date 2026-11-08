@@ -68,11 +68,9 @@ export function readTokens({ design, looks }: any) {
     }
   }
   const out: any = {}
-  for (const [name, file] of Object.entries(looks || {})) {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'PathLike'.
+  for (const [name, file] of Object.entries<string>(looks || {})) {
     if (!fs.existsSync(file)) continue
     const own: any = {}
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Argument of type 'unknown' is not assignable to parameter of type
     for (const t of tokensIn(fs.readFileSync(file, 'utf8'))) {
       /* THE SITE'S PALETTE IS WHAT THE LOOK STATES SITE-WIDE. A look also dresses the landing
          (.lproot) and a surface or two of its own; those are that surface's business and not a
@@ -145,8 +143,7 @@ export async function compileTokens({ root = process.cwd(), check = false } = {}
   const found = readTokens({ design: theme.design, looks })
   const text = JSON.stringify(found, null, 2) + '\n'
   const out = path.join(root, '.velite/tokens.json')
-  // @ts-expect-error TS18046, from the conversion: 'a' is of type 'unknown'.
-  const n = Object.values(found).reduce((a, m) => a + Object.keys(m).length, 0)
+  const n = Object.values(found as Record<string, object>).reduce((a, m) => a + Object.keys(m).length, 0)
   if (check) {
     if (!n) { console.error('✖ tokens: no look names a single token — is src/looks there?'); process.exitCode = 1; return null }
     console.log(`✔ tokens: ${Object.keys(found).length} look(s), ${n} token(s)`)

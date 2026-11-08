@@ -144,7 +144,7 @@ const cleanupErrors = []
 
 async function grantAccountAccess(accountId: any) {
   if (!grantedAccountIds.includes(accountId)) grantedAccountIds.push(accountId)
-  const permissions: any = await invoke(adminLogin.sb, {
+  const permissions = await invoke(adminLogin.sb, {
     action: 'save_permissions',
     grantId,
     canManageAccounts: false,
@@ -309,7 +309,7 @@ try {
   assert.equal(ordered.status, 200, JSON.stringify(ordered))
   const persistedDrafts: any = await invoke(invitee, { action: 'drafts' })
   assert.equal(persistedDrafts.status, 200, JSON.stringify(persistedDrafts))
-  const persistedPost: any = persistedDrafts.posts.find((post: any) => post.id === testPostId)
+  const persistedPost = persistedDrafts.posts.find((post: any) => post.id === testPostId)
   assert.equal(persistedPost.body, 'Draft text with image and video media.')
   assert.deepEqual(persistedPost.attachments.map((item: any) => item.id), [video.attachment.id, image.attachment.id])
   assert.deepEqual(persistedPost.attachments.map((item: any) => item.position), [0, 1])
@@ -452,7 +452,7 @@ try {
   assert.equal(cancelledRedditPost.status, 200, JSON.stringify(cancelledRedditPost))
   const cancelledRedditState: any = await invoke(invitee, { action: 'drafts' })
   assert.equal(cancelledRedditState.status, 200, JSON.stringify(cancelledRedditState))
-  const cancelledRedditDraft: any = cancelledRedditState.posts.find((post: any) => post.id === redditPostId)
+  const cancelledRedditDraft = cancelledRedditState.posts.find((post: any) => post.id === redditPostId)
   assert.equal(cancelledRedditDraft.body, 'Reddit post after edit.')
   assert.equal(cancelledRedditDraft.deliveries.length, 1)
   assert.equal(cancelledRedditDraft.deliveries[0].status, 'cancelled')
@@ -611,7 +611,7 @@ try {
     const { data: objects, error } = await service.storage.from('social').list(`posts/${testPostId}`)
     if (error) cleanupErrors.push(`list test media for cleanup: ${error.message}`)
     else if (objects?.length) {
-      const { error: removeError }: any = await service.storage.from('social')
+      const { error: removeError } = await service.storage.from('social')
         .remove(objects.map((object) => `posts/${testPostId}/${object.name}`))
       if (removeError) cleanupErrors.push(`remove test media: ${removeError.message}`)
     }

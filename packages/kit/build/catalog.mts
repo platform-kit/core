@@ -92,13 +92,12 @@ export function compileUsage(file: any, usage: any, billing: any, currency: any,
     let fractionDigits
     try {
       fractionDigits = new Intl.NumberFormat('en', { style: 'currency', currency: String(currency).toUpperCase() })
-        .resolvedOptions().maximumFractionDigits
+        .resolvedOptions().maximumFractionDigits!
     } catch {
       err(`${file}: usage.incrementalCharge needs a valid offer currency`)
       return out
     }
     const amount = Number(usage.incrementalCharge)
-    // @ts-expect-error TS18048, from the conversion: 'fractionDigits' is possibly 'undefined'.
     const scale = 10 ** fractionDigits
     const minor = Math.round(amount * scale)
     if (!Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(minor) ||
@@ -166,7 +165,7 @@ const teamSlugs = new Set((() => {
 })())
 
 /* the offers */
-const offers: any = {}
+const offers: Record<string, any> = {}
 const tiers: any = {}   /* tier → rank, from the memberships */
 for (const { file, data: d } of files('content/store/products')) {
   if (d.published === false) continue
@@ -503,7 +502,6 @@ for (const { file, data: d } of files('content/sessions')) {
   sessions.push({ title: String(d.title || ''), slug, event, scheduler, username, requires: r, below: d.below || null, weekly: Number(d.weekly) || 0, monthly: Number(d.monthly) || 0, sku: d.sku || null, duration, hosts, rota, team, assign, confirm, repeat, lengths, name, page, form: d.form ? String(d.form) : null, interval, offset: offsetMins, windowDays, windowFrom, windowTo, limits, seats: Number(d.seats) || 0, buffer: Number(d.buffer) || 0, schedule: d.schedule || null, notice: d.notice == null ? 24 : Number(d.notice) || 0, where, record: !!d.record, hours: d.hours || null, repeats: d.repeats || null })
 }
 
-  // @ts-expect-error TS2345, from the conversion: Argument of type '({ file, ...o }: { [x: string]: any; file: any; }) => { [x: string]: any; }' is not assignable to parameter of type '(valu
   const list = Object.values(offers).map(({ file, ...o }) => o)
   /* THE THREE FACES THE SITE SETS, beside the words and for the same reason: what a function needs
      in order to render something in the site's own voice travels with the catalog. The share-image

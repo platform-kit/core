@@ -57,8 +57,7 @@ function fillRole(groups: any, role: any) {
     if (v.includes('{provider-lower}')) v = v.split('{provider-lower}').join(lower(role.name || ''))
     return v
   }
-  // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-  const walk = (node) => {
+  const walk = (node: unknown): unknown => {
     if (typeof node === 'string') return one(node)
     if (Array.isArray(node)) return node.map(walk)
     if (node && typeof node === 'object') { const o: any = {}; for (const [k, v] of Object.entries(node)) o[k] = walk(v); return o }

@@ -84,7 +84,6 @@ function toggleSpace(id: any) {
 }
 /* a space's rooms, its feed first; a space of one room has nothing to unfold, and its row opens it
    (the page opens a space on what it holds — places.js frontOf) */
-// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const roomsOf = (id: any) => roomsIn(id, props.channels)
 // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const foldsOf = (id: any) => foldOf(id, props.channels)

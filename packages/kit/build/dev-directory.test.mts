@@ -11,7 +11,7 @@ const copy = {
   unavailable: 'Site preview unavailable.',
 }
 let pass = 0
-const test = async (name: any, run: any) => {
+const test = async (name: string, run: any) => {
   await run()
   pass++
   console.log(`dev-directory: ✓ ${name}`)
@@ -25,7 +25,7 @@ async function listen(server: any) {
   return server.address().port
 }
 
-async function close(server: any) {
+async function close(server: http.Server<typeof http.IncomingMessage,typeof http.ServerResponse>) {
   if (!server?.listening) return
   server.closeAllConnections()
   await new Promise((resolve) => server.close(resolve))
@@ -34,7 +34,6 @@ async function close(server: any) {
 try {
   await test('root SEO resolution uses the page title and description with the site image base', () => {
     const head = resolveHead(
-      // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
       { title: 'Welcome', description: 'A site intro', image: '/share/home.png', path: '/' },
       { name: 'Alpha', url: 'https://alpha.example/' },
       '/share/default.png',
@@ -49,7 +48,6 @@ try {
 
   await test('fallback SEO resolution uses the site tagline, description, and image before the generated default', () => {
     const siteHead = resolveHead(
-      // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
       { path: '/' },
       { name: 'Alpha', tagline: 'A local project', description: 'Site description', image: '/brand.png' },
       '/share/default.png',
@@ -60,7 +58,6 @@ try {
       url: '',
       image: '/brand.png',
     })
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
     const defaultHead = resolveHead({ path: '/' }, { name: 'Beta' }, '/share/default.png')
     assert.equal(defaultHead.title, 'Beta')
     assert.equal(defaultHead.image, '/share/default.png')
@@ -150,7 +147,7 @@ try {
       ports: { selected: sitePort, secondary: sitePort },
       domain: 'localhost',
       frontDoorPort: 8181,
-      capturePreview: async (url: any) => {
+      capturePreview: async (url: unknown) => {
         assert.equal(url, `http://127.0.0.1:${sitePort}/__share/default`)
         activeCaptures++
         maxActiveCaptures = Math.max(maxActiveCaptures, activeCaptures)

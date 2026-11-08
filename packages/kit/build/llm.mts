@@ -44,20 +44,18 @@ export const ready = () => CHAIN.length > 0
 export const missingKey = () => KEYS[first]
 
 /* rough list prices per million tokens for the running estimate — check the real sheets */
-const PRICES = {
+const PRICES: Record<string, [number, number]> = {
   'google/gemini-3.5-flash': [0.3, 2.5], 'google/gemini-3-pro': [2, 12], 'gpt-5': [1.25, 10], 'gpt-5-mini': [0.25, 2], 'gpt-5-nano': [0.05, 0.4],
   'claude-opus-5': [15, 75], 'claude-sonnet-5': [3, 15], 'claude-haiku-4-5-20251001': [1, 5],
 }
-export const spent: any = {}   /* model → { calls, input, output, cached } */
+export const spent: Record<string, { calls: number, input: number, output: number, cached: number }> = {}   /* model → { calls, input, output, cached } */
 /* the running estimate in dollars, at the list prices above; a model with no price on file counts as zero, so the guard is only as good as the table */
 export function spentUsd() {
-  // @ts-expect-error TS2538, from the conversion: Type 'undefined' cannot be used as an index type.
-  return Object.entries(spent).reduce((sum, [m, s]) => { const p = PRICES[m] || PRICES[Object.keys(PRICES).find((k) => m.startsWith(k))]; return sum + (p ? ((s.input - s.cached) * p[0] + s.cached * p[0] / 10 + s.output * p[1]) / 1e6 : 0) }, 0)
+  return Object.entries(spent).reduce((sum, [m, s]) => { const p = PRICES[m] || PRICES[Object.keys(PRICES).find((k) => m.startsWith(k)) ?? '']; return sum + (p ? ((s.input - s.cached) * p[0] + s.cached * p[0] / 10 + s.output * p[1]) / 1e6 : 0) }, 0)
 }
 export function costLine() {
   return Object.entries(spent).map(([m, s]) => {
-    // @ts-expect-error TS2538, from the conversion: Type 'undefined' cannot be used as an index type.
-    const p = PRICES[m] || PRICES[Object.keys(PRICES).find((k) => m.startsWith(k))]
+    const p = PRICES[m] || PRICES[Object.keys(PRICES).find((k) => m.startsWith(k)) ?? '']
     const usd = p ? (((s as any).input - (s as any).cached) * p[0] + (s as any).cached * p[0] / 10 + (s as any).output * p[1]) / 1e6 : null
     return `${m}: ${(s as any).calls} calls · ${(s as any).input} in (${(s as any).cached} cached) · ${(s as any).output} out · ${usd == null ? 'no price on file' : '≈ $' + usd.toFixed(3) + ' at list price'}`
   }).join('\n') || 'no calls'
@@ -123,8 +121,7 @@ export async function complete({ system, user, maxTokens, label, model: want, te
       } catch (e: any) {
         lastErr = e
         const m = (e && e.message) || String(e)
-        // @ts-expect-error TS2345, from the conversion: Argument of type '{ provider: string; model: any; } | undefined' is not assignable to parameter of type '{ provider: string; model: any; }'.
-        if (FATAL.test(m) || net === 3) { console.log(`  ${label}: ${model} failed (${m.slice(0, 80)})${chain.indexOf(chain.find((c) => c.provider === provider)) < chain.length - 1 ? ' — falling back' : ''}`); break }
+        if (FATAL.test(m) || net === 3) { console.log(`  ${label}: ${model} failed (${m.slice(0, 80)})${chain.findIndex((c) => c.provider === provider) < chain.length - 1 ? ' — falling back' : ''}`); break }
         console.log(`  ${label}: connection dropped (${m.slice(0, 60)}) — retrying in ${(net + 1) * 5}s`)
         await new Promise((r) => setTimeout(r, (net + 1) * 5000))
       }

@@ -4,8 +4,8 @@
 import { whenWord, clockOf, stampOf, untilWord, isOn, byDay, dayOf } from '../src/lib/spaces/model.js'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const at = (s: any) => Date.parse(s)
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const at = (s: string) => Date.parse(s)
 const W = { today: 'Today', tomorrow: 'Tomorrow' }
 const U = { now: 'On now', mins: 'in {n}m', hours: 'in {n}h', days: 'in {n}d' }
 
@@ -62,7 +62,6 @@ const U = { now: 'On now', mins: 'in {n}m', hours: 'in {n}h', days: 'in {n}d' }
     { id: 'a', starts_at: '2026-06-10T19:00:00Z' },
     { id: 'b', starts_at: '2026-06-10T21:00:00Z' },
   ]
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; starts_at: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: string; starts_at: str
   const days = byDay(list, 'UTC')
   ok('one group per day', days.length === 2, String(days.length))
   ok('in the order they happen', days[0].day === '2026-06-10' && days[1].day === '2026-06-12')

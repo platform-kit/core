@@ -27,7 +27,7 @@ import { execFileSync } from 'node:child_process'
 import { loadSite } from './site.mjs'
 
 let pass = 0, fail = 0
-const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
+const ok = (m: string, c: boolean, d?: string|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
 console.log('\nTHE COPILOT\n')
 const SITE = await loadSite(process.cwd())
 
@@ -163,7 +163,7 @@ ok('and an unknown setting still falls back to the conversation', memoryOf({ mem
   if (SITE.modules.bots !== false) {
     const f = 'content/bots/zz-voice-probe.md'
     const run = () => { try { execFileSync(process.execPath, [fileURLToPath(new URL('./bots.mjs', import.meta.url)), '--check'], { stdio: ['ignore', 'pipe', 'pipe'] }); return { ok: true, out: '' } } catch (e: any) { return { ok: false, out: String(e.stdout || '') + String(e.stderr || '') } } }
-    const bot = (front: any) => `---\nname: Voice probe\n${front}---\n\nYou answer briefly.\n`
+    const bot = (front: string) => `---\nname: Voice probe\n${front}---\n\nYou answer briefly.\n`
     try {
       fs.writeFileSync(f, bot('surfaces: [spaces]\nvoice: { say: alloy, greeting: Hello }\n'))
       const r = run()
@@ -203,7 +203,7 @@ ok('asking for an endpoint there is none of falls back rather than going silent'
   speakerIdOf({ voice: { by: 'endpoint' } }) === 'browser')
 
 /* a stream that yields slowly, so "heard before it is finished" is a thing that can be observed */
-const slow = (parts: any, each = 5) => new ReadableStream({
+const slow = (parts: string[], each = 5) => new ReadableStream({
   async start(c) {
     for (const p of parts) { await new Promise((r) => setTimeout(r, each)); c.enqueue(new TextEncoder().encode(p)) }
     c.close()
@@ -214,10 +214,9 @@ const slow = (parts: any, each = 5) => new ReadableStream({
 {
   const heard: any = []
   let finished = false
-  // @ts-expect-error TS2322, from the conversion: Type '() => Promise<ReadableStream<any>>' is not assignable to type 'null | undefined'.
   const sp = speaker({ id: 'endpoint', voice: {}, post: async () => slow(['one ', 'two ', 'three']) })
   // @ts-expect-error TS2345, from the conversion: Argument of type '(c: any) => any' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Expecte
-  const p = sp.say('a sentence', (c: any) => heard.push(new TextDecoder().decode(c)))
+  const p = sp.say('a sentence', (c) => heard.push(new TextDecoder().decode(c)))
   p.then(() => { finished = true })
   /* after the first chunk has landed, the answer is NOT complete — a buffered proxy would fail this */
   while (heard.length < 1) await new Promise((r) => setTimeout(r, 2))
@@ -230,10 +229,9 @@ const slow = (parts: any, each = 5) => new ReadableStream({
 /* ------------------------------- the last utterance wins ----------------------------------- */
 {
   const heard = []
-  // @ts-expect-error TS2322, from the conversion: Type '() => Promise<ReadableStream<any>>' is not assignable to type 'null | undefined'.
   const sp = speaker({ id: 'endpoint', voice: {}, post: async () => slow(['a', 'b', 'c'], 8) })
   // @ts-expect-error TS2345, from the conversion: Argument of type '(c: any) => number' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Expe
-  const first = sp.say('the long answer nobody waited for', (c: any) => heard.push('1:' + new TextDecoder().decode(c)))
+  const first = sp.say('the long answer nobody waited for', (c) => heard.push('1:' + new TextDecoder().decode(c)))
   await new Promise((r) => setTimeout(r, 12))
   sp.cancel(first.utterance)
   const got = await first
@@ -246,7 +244,7 @@ const slow = (parts: any, each = 5) => new ReadableStream({
 /* the browser provider needs a worker, and says so rather than failing silently */
 {
   const sp = speaker({ id: 'browser', worker: null })
-  ok('the browser voice with no worker refuses plainly', await sp.say('x').then(() => false, (e: any) => /voice worker/.test(e.message)))
+  ok('the browser voice with no worker refuses plainly', await sp.say('x').then(() => false, (e) => /voice worker/.test(e.message)))
   ok('and it is what a site gets by default', sp.id === 'browser')
 }
 
@@ -274,7 +272,7 @@ const slow = (parts: any, each = 5) => new ReadableStream({
     cors,
     json,
     open: (token: any, service: any) => open(token, service, now),
-    fetchImpl: async (url: any, init: any) => {
+    fetchImpl: async (url: any, init: { body: string }) => {
       requests++
       sent = { url, init, body: JSON.parse(init.body) }
       upstreamBody = new ReadableStream({
@@ -292,7 +290,7 @@ const slow = (parts: any, each = 5) => new ReadableStream({
       })
     },
   })
-  const request = (body: any) => new Request('https://site.example/v1/copilot-speak', {
+  const request = (body: { text: string }) => new Request('https://site.example/v1/copilot-speak', {
     method: 'POST',
     headers: { authorization: `Bearer ${good}`, 'content-type': 'application/json' },
     body: JSON.stringify(body),
@@ -300,8 +298,8 @@ const slow = (parts: any, each = 5) => new ReadableStream({
   const endpoint = speaker({
     id: 'endpoint',
     voice: { say: 'voice-from-bot', format: 'pcm' },
-    // @ts-expect-error TS2322, from the conversion: Type '(body: any) => Promise<any>' is not assignable to type 'null | undefined'.
-    post: async (body: any) => {
+    post: async (body) => {
+      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type '{ text: string; }'.
       response = await handler(request(body))
       handlerReturnedBeforeEnd = !upstreamFinished
       return response.body
@@ -309,7 +307,7 @@ const slow = (parts: any, each = 5) => new ReadableStream({
   })
   const played: any = []
   // @ts-expect-error TS2345, from the conversion: Argument of type '(bytes: any) => void' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Ex
-  await endpoint.say('Say hello', (bytes: any) => {
+  await endpoint.say('Say hello', (bytes) => {
     played.push(bytes)
     if (played.length === 1) playbackStartedBeforeEnd = !upstreamFinished
   })
@@ -328,7 +326,7 @@ const slow = (parts: any, each = 5) => new ReadableStream({
     sent.body.stream_format === 'audio' && sent.body.input === 'Say hello')
   ok('the response exposes audio format and sample rate', response.headers.get('x-audio-format') === 'pcm' &&
     response.headers.get('x-audio-rate') === '24000' && response.headers.get('content-type') === 'audio/pcm')
-  const audio: any = played.map((chunk: any) => new TextDecoder().decode(chunk)).join('')
+  const audio = played.map((chunk: AllowSharedBufferSource|undefined) => new TextDecoder().decode(chunk)).join('')
   ok('the streamed audio contains no server credential',
     !audio.includes(secret))
   ok('the stream eventually finishes normally', upstreamFinished)
@@ -420,7 +418,7 @@ ok('thinking moves even with no sound at all from either side',
  * what a time-domain buffer actually contains.
  */
 const quiet = new Uint8Array(64).fill(128)
-const tone = (amp: any) => Uint8Array.from({ length: 512 }, (_, i) => 128 + Math.round(Math.sin(i / 6) * 127 * amp))
+const tone = (amp: number) => Uint8Array.from({ length: 512 }, (_, i) => 128 + Math.round(Math.sin(i / 6) * 127 * amp))
 ok('silence is nothing', loudness(quiet) === 0)
 ok('an empty buffer is nothing either', loudness(new Uint8Array(0)) === 0 && loudness(null) === 0)
 ok('a lone spike barely moves it', loudness(Uint8Array.from({ length: 512 }, (_, i) => (i === 0 ? 255 : 128))) < 0.2)
@@ -516,7 +514,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
     let n = 0
     const cancelled = new Set()
     return {
-      cancel: (u: any) => cancelled.add(u),
+      cancel: (u: unknown) => cancelled.add(u),
       say(text: any) {
         const utterance = 'u' + (++n)
         const p = new Promise((res) => setTimeout(() => res(cancelled.has(utterance) ? null : (spoken.push(text), {})), 20))
@@ -535,7 +533,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
     ok('it thinks while it has nothing to say', c.state.phase === 'thinking')
     await done
     ok('then the turn comes back', c.state.phase === 'listening' && c.state.turn === 'me')
-    ok('and the conversation is kept as text', c.state.said.map((s: any) => s.who).join(',') === 'me,them')
+    ok('and the conversation is kept as text', c.state.said.map((s: { who: any }) => s.who).join(',') === 'me,them')
   }
 
   /* interrupted WHILE THINKING: the answer it was waiting for is no longer the answer to anything */
@@ -545,7 +543,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
     const p = c.say('a question')
     c.interrupt()
     await p
-    ok('an answer that arrives after an interruption is dropped', !c.state.said.some((s: any) => s.text === 'too late'),
+    ok('an answer that arrives after an interruption is dropped', !c.state.said.some((s: { text: string }) => s.text === 'too late'),
       JSON.stringify(c.state.said))
     ok('and the turn is the person\'s immediately, not when the answer lands', c.state.turn === 'me')
   }
@@ -644,26 +642,25 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
 {
   class FakeWorker extends EventTarget {
     constructor() { super(); (this as any).spoke = [] }
-    postMessage(m: any) {
+    postMessage(m: { type: string; text: any; id: any }) {
       if (m.type !== 'speak') return
       ;(this as any).spoke.push(m.text)
-      const fire = (d: any, ms: any) => setTimeout(() => this.dispatchEvent(Object.assign(new Event('message'), { data: d })), ms)
+      const fire = (d: { type: string; id: any; i?: number; pcm?: Float32Array<ArrayBuffer>; rate?: number; blob?: string; seconds?: number }, ms: number|undefined) => setTimeout(() => this.dispatchEvent(Object.assign(new Event('message'), { data: d })), ms)
       fire({ type: 'piece', id: m.id, i: 0, pcm: new Float32Array(4), rate: 44100 }, 2)
       fire({ type: 'done', id: m.id, blob: 'MP3', seconds: 1 }, 5)
     }
   }
   const bytes = () => new ReadableStream({ start(c) { c.enqueue(new Uint8Array([1, 2, 3, 4])); c.close() } })
-  const run: any = async (post: any) => {
+  const run = async (post: any) => {
     const w: any = new FakeWorker()
     const heard: any = []
     /* a FACTORY, so a deployment whose endpoint works never builds an engine it cannot use */
     let made = 0
-    // @ts-expect-error TS2322, from the conversion: Type '() => any' is not assignable to type 'null | undefined'.
     const sp = speaker({ id: 'endpoint', post, worker: () => { made++; return w }, voice: {} })
     // @ts-expect-error TS2345, from the conversion: Argument of type '(c: any) => any' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Expecte
-    await sp.say('first sentence', (c: any) => heard.push(c && c.pcm ? 'own' : 'endpoint'))
+    await sp.say('first sentence', (c) => heard.push(c && c.pcm ? 'own' : 'endpoint'))
     // @ts-expect-error TS2345, from the conversion: Argument of type '(c: any) => any' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Expecte
-    await sp.say('second sentence', (c: any) => heard.push(c && c.pcm ? 'own' : 'endpoint'))
+    await sp.say('second sentence', (c) => heard.push(c && c.pcm ? 'own' : 'endpoint'))
     return { heard, worker: w.spoke, made, now: sp.id }
   }
 
@@ -689,10 +686,10 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
 {
   class FakeWorker extends EventTarget {
     constructor() { super(); (this as any).sent = [] }
-    postMessage(m: any) {
+    postMessage(m: { type: string; id: any }) {
       ;(this as any).sent.push(m)
       if (m.type !== 'speak') return
-      const fire = (data: any, ms: any) => setTimeout(() => this.dispatchEvent(Object.assign(new Event('message'), { data })), ms)
+      const fire = (data: { type: string; id: any; i?: number; pcm?: Float32Array<ArrayBuffer>; rate?: number; blob?: string; seconds?: number }, ms: number|undefined) => setTimeout(() => this.dispatchEvent(Object.assign(new Event('message'), { data })), ms)
       for (let i = 0; i < 3; i++) fire({ type: 'piece', id: m.id, i, pcm: new Float32Array(10), rate: 44100 }, 10 * (i + 1))
       fire({ type: 'done', id: m.id, blob: 'MP3', seconds: 9 }, 50)
     }
@@ -702,15 +699,15 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
   const t0 = Date.now()
   const got: any = []
   // @ts-expect-error TS2345, from the conversion: Argument of type '(c: any) => any' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Expecte
-  const u = sp.say('one. two. three.', (c: any) => got.push({ at: Date.now() - t0, blob: typeof c === 'string', i: c && c.i }))
+  const u = sp.say('one. two. three.', (c) => got.push({ at: Date.now() - t0, blob: typeof c === 'string', i: c && c.i }))
   const r = await u
   const settled = Date.now() - t0
 
   ok('the worker is asked to speak LIVE', w.sent[0].live === true, JSON.stringify(w.sent[0]))
   ok('and is handed what the file asked for', JSON.stringify(w.sent[0].engine) === JSON.stringify({ steps: 8, opening: 3, gap: 0.12, first: 12 }), JSON.stringify(w.sent[0].engine))
-  ok('every piece reaches the player', got.length === 3 && got.map((g: any) => g.i).join() === '0,1,2', JSON.stringify(got))
+  ok('every piece reaches the player', got.length === 3 && got.map((g: { i: any }) => g.i).join() === '0,1,2', JSON.stringify(got))
   ok('the first one long before the answer is finished', got[0].at < settled, got[0].at + ' vs ' + settled)
-  ok('and the finished mp3 is never played over them', !got.some((g: any) => g.blob), JSON.stringify(got))
+  ok('and the finished mp3 is never played over them', !got.some((g: { blob: any }) => g.blob), JSON.stringify(got))
   ok('though it is still answered with, because the recording cache wants it', r && r.blob === 'MP3', JSON.stringify(r))
 
   /* a file that says nothing asks for nothing, and the worker's own defaults stand */
@@ -803,7 +800,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
 
   const W = { now: 'just now', minutes: '{n}m ago', hours: '{n}h ago', days: '{n}d ago' }
   const now = Date.UTC(2026, 0, 20, 12, 0, 0)
-  const ago = (ms: any) => whenOf(new Date(now - ms).toISOString(), W, now)
+  const ago = (ms: number) => whenOf(new Date(now - ms).toISOString(), W, now)
   ok('a moment ago is said, not counted', ago(20 * 1000) === 'just now')
   ok('minutes', ago(7 * 60000) === '7m ago', ago(7 * 60000))
   ok('hours', ago(5 * 3600e3) === '5h ago', ago(5 * 3600e3))
@@ -835,7 +832,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
   if (!browser) {
     console.log('  (the audio graph is skipped — no browser)')
   } else {
-    const render = async (code: any) => {
+    const render = async (code: string) => {
       const pg = await browser.newPage()
       await pg.setContent('<body></body>')
       await pg.addScriptTag({ content: code + '; window.__player = player' })

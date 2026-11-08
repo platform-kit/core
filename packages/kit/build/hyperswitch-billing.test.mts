@@ -4,8 +4,8 @@ import {
   paymentPeriodEnd,
 } from '../supabase/functions/_shared/hyperswitch-billing.mjs'
 
-const seconds = (value: any) => Math.floor(Date.parse(value) / 1000)
-const iso = (value: any) => new Date(value * 1000).toISOString()
+const seconds = (value: string) => Math.floor(Date.parse(value) / 1000)
+const iso = (value: number) => new Date(value * 1000).toISOString()
 
 assert.equal(
   iso(paymentPeriodEnd(seconds('2026-01-31T12:00:00.000Z'))),

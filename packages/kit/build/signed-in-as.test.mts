@@ -51,7 +51,7 @@ try { if (!statusOf()) throw new Error('no stack') } catch { skip('no local stac
 const SECTIONS = ['/admin/support', '/admin/analytics', '/admin/articles', '/admin/people', '/admin/notifications']
 
 const browser = await launch()
-const open: any = async () => {
+const open = async () => {
   const ctx = await browserContext(browser, { viewport: { width: 1280, height: 900 } })
   const page = await ctx.newPage()
   const errs: any = []

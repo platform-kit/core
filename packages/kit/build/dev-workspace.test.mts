@@ -9,16 +9,16 @@ import { prepareRuntimeProject, runtimeSupabaseConfig, runWorkspace, findFreePor
 import { signalGroup, spawnGroup, stableProjectId } from './dev-runtime.mjs'
 import { takeOver } from './dev-owner.mjs'
 
-const note = (message: any) => console.log(`dev-workspace: ${message}`)
+const note = (message: string) => console.log(`dev-workspace: ${message}`)
 const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'platformkit-dev-workspace-'))
 let pass = 0
-const git = (cwd: any, args: any) => {
+const git = (cwd: string, args: any[]|readonly string[]) => {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' })
   assert.equal(result.status, 0, `${args.join(' ')} failed:\n${result.stderr}`)
   return result.stdout.trim()
 }
 
-async function test(name: any, run: any) {
+async function test(name: string, run: any) {
   await run()
   pass++
   note(`✓ ${name}`)
@@ -246,7 +246,7 @@ await test('stable Supabase project IDs default to site slugs and allow exact co
 
     await test('a closed terminal (SIGHUP) stops the run, its servers, its port files and its record', async () => {
       const root = heldFixture('hup')
-      const { code, output }: any = await startHeld(root, 'hup').exited
+      const { code, output } = await startHeld(root, 'hup').exited
       assert.equal(code, 0, output)
       const ports = vitePorts(output)
       assert.equal(ports.length, 2, output)
@@ -267,7 +267,7 @@ await test('stable Supabase project IDs default to site slugs and allow exact co
       while (Date.now() < until && (await Promise.all(ports.map(acceptsConnections))).some(Boolean)) await new Promise((resolve) => setTimeout(resolve, 200))
       for (const port of ports) assert.equal(await acceptsConnections(port), false, 'a site server outlived a killed run by more than five seconds')
       assert.ok(stateFiles(root).some((name) => name.startsWith('runs/')), 'the killed run left its record (nothing could remove it)')
-      const again: any = await startHeld(root, 'hup').exited
+      const again = await startHeld(root, 'hup').exited
       assert.equal(again.code, 0, again.output)
       const takeover = again.output.match(/Stopped what an earlier dev run left behind: ([^\n]+)/)?.[1] || ''
       assert.ok(takeover.includes('alpha (') || takeover.includes('a stale workspace run record'), takeover)
@@ -283,7 +283,7 @@ await test('stable Supabase project IDs default to site slugs and allow exact co
       const ports = ['alpha', 'beta'].map((site) => Number(fs.readFileSync(path.join(stateDir, `${site}.port`), 'utf8').trim()))
       held.worker.kill('SIGKILL')
       await held.exited
-      const again: any = await startHeld(root, 'hup').exited
+      const again = await startHeld(root, 'hup').exited
       assert.equal(again.code, 0, again.output)
       assert.match(again.output, /Waiting for 2 server\(s\) of an earlier run to finish stopping/)
       const takeover = again.output.match(/Stopped what an earlier dev run left behind: ([^\n]+)/)?.[1] || ''
@@ -314,7 +314,7 @@ await test('stable Supabase project IDs default to site slugs and allow exact co
       /* something else entirely on the port beta's record names */
       const other: any = http.createServer((q, r) => r.end('not ours'))
       await new Promise((resolve) => other.listen(0, '127.0.0.1', resolve))
-      const otherPort = (other.address() as any).port
+      const otherPort = other.address().port
       fs.writeFileSync(path.join(root, 'node_modules', '.cache', 'platformkit', 'dev', 'beta.port'), `${otherPort}\n`)
       const said: any = []
       const { stopped, live } = await takeOver(root, { error: (message: any) => said.push(message) })
@@ -324,7 +324,7 @@ await test('stable Supabase project IDs default to site slugs and allow exact co
       assert.equal(await acceptsConnections(vitePort), false, 'the leftover Vite is stopped')
       assert.throws(() => process.kill(abandoned, 0), /ESRCH/, 'the abandoned run is stopped')
       assert.equal(await acceptsConnections(otherPort), true, 'a server that is not ours is never signalled')
-      assert.ok(said.some((line: any) => line.includes('not a verifiable PlatformKit Vite process')), said.join(' | '))
+      assert.ok(said.some((line: string|string[]) => line.includes('not a verifiable PlatformKit Vite process')), said.join(' | '))
       other.close()
     })
 
@@ -332,12 +332,12 @@ await test('stable Supabase project IDs default to site slugs and allow exact co
       const root = heldFixture('two')
       const first = startHeld(root, 'hold')
       await first.ready
-      const second: any = await startHeld(root, 'hup').exited
+      const second = await startHeld(root, 'hup').exited
       assert.equal(second.code, 1, second.output)
       assert.match(second.output, /already has a dev server on port \d+; stop it before starting the workspace/)
       assert.doesNotMatch(second.output, /Stopped what an earlier dev run left behind/)
       first.worker.kill('SIGTERM')
-      const { code, output }: any = await first.exited
+      const { code, output } = await first.exited
       assert.equal(code, 0, `the first run stops cleanly afterwards\n${output}`)
       assert.deepEqual(stateFiles(root), [])
     })
@@ -346,7 +346,7 @@ await test('stable Supabase project IDs default to site slugs and allow exact co
   fs.rmSync(fixture, { recursive: true, force: true })
 }
 
-function heldFixture(name: any) {
+function heldFixture(name: string) {
   const root = path.join(fixture, `held-${name}`)
   for (const site of ['alpha', 'beta']) {
     const directory = path.join(root, 'sites', site)
@@ -358,7 +358,7 @@ function heldFixture(name: any) {
 }
 
 /* what is left under the PlatformKit dev cache: port files, runtime folders and run records */
-function stateFiles(root: any) {
+function stateFiles(root: string) {
   const dir = path.join(root, 'node_modules', '.cache', 'platformkit', 'dev')
   if (!fs.existsSync(dir)) return []
   const runs = fs.existsSync(path.join(dir, 'runs')) ? fs.readdirSync(path.join(dir, 'runs')).map((name) => `runs/${name}`) : []
@@ -369,12 +369,12 @@ function vitePorts(output: any) {
   return [...output.matchAll(/Vite (\d+)/g)].map((match) => Number(match[1]))
 }
 
-function startHeld(root: any, mode: any) {
+function startHeld(root: string, mode: string) {
   const worker = spawn(process.execPath, [fileURLToPath(import.meta.url), '--held-worker', root, mode], { stdio: ['ignore', 'pipe', 'pipe'] })
   let output = ''
   let onReady: any
   const ready = new Promise((resolve) => { onReady = resolve })
-  const take: any = (chunk: any) => {
+  const take = (chunk: string) => {
     output += chunk
     if (/shared front door on port/.test(output) && vitePorts(output).length >= 2) onReady(output)
   }
@@ -384,7 +384,7 @@ function startHeld(root: any, mode: any) {
   return { worker, ready, exited }
 }
 
-async function runHeldWorker(root: any, mode: any) {
+async function runHeldWorker(root: string, mode: string) {
   const devScript = path.join(root, 'fake-held-dev.mjs')
   const owner = new URL('./dev-owner.mjs', import.meta.url).href
   fs.writeFileSync(devScript, `import fs from 'node:fs'
@@ -444,7 +444,7 @@ setInterval(() => {}, 1000)
   })
 }
 
-async function runWorkspaceWorker(root: any) {
+async function runWorkspaceWorker(root: string) {
   const devScript = path.join(fixture, 'fake-dev.mjs')
   fs.writeFileSync(devScript, `import fs from 'node:fs'
 import http from 'node:http'
@@ -498,14 +498,14 @@ process.on('SIGTERM', () => server.close(() => { fs.rmSync(portFile, { force: tr
         upstream.on('error', () => { response.writeHead(502); response.end() })
         request.pipe(upstream)
       })
-      await new Promise((resolve) => (this as any).server.listen(port, '127.0.0.1', resolve))
+      await new Promise((resolve) => this.server.listen(port, '127.0.0.1', resolve))
       const response: any = await requestText(port, `${domain}:${port}`)
-      ;(this as any).rootHtml = response.body
+      this.rootHtml = response.body
       assert.equal(response.status, 200)
       setTimeout(() => process.kill(process.pid, 'SIGTERM'), 1500)
     },
     async stop() {
-      if ((this.server as any)?.listening) await new Promise((resolve) => (this as any).server.close(resolve))
+      if (this.server?.listening) await new Promise((resolve) => this.server.close(resolve))
     },
   }
 
@@ -526,7 +526,7 @@ process.on('SIGTERM', () => server.close(() => { fs.rmSync(portFile, { force: tr
   assert.notEqual(process.exitCode, 1, 'workspace shutdown completes successfully')
 }
 
-function requestText(port: any, host: any) {
+function requestText(port: any, host: string) {
   return new Promise((resolve, reject) => {
     const request = http.get({ host: '127.0.0.1', port, path: '/', headers: { host } }, (response) => {
       let body = ''
@@ -538,7 +538,7 @@ function requestText(port: any, host: any) {
   })
 }
 
-async function runWorkspaceFailureWorker(root: any) {
+async function runWorkspaceFailureWorker(root: string) {
   const devScript = path.join(fixture, 'fake-failing-dev.mjs')
   fs.writeFileSync(devScript, `import fs from 'node:fs'
 import http from 'node:http'
@@ -570,7 +570,7 @@ if (site === 'beta') {
   })
 }
 
-async function runStackHangWorker(root: any) {
+async function runStackHangWorker(root: string) {
   /* claims its port and listens, as a real child does before `supabase start`, and never says its stack is up */
   const devScript = path.join(fixture, 'fake-stack-hang-dev.mjs')
   fs.writeFileSync(devScript, `import fs from 'node:fs'

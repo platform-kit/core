@@ -30,7 +30,7 @@ export const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'fr
 export const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june',
   'july', 'august', 'september', 'october', 'november', 'december']
 /* the two words that stand for a set of days, because people say them */
-export const DAY_SETS = { weekdays: [1, 2, 3, 4, 5], weekends: [0, 6] }
+export const DAY_SETS: Record<string, number[]> = { weekdays: [1, 2, 3, 4, 5], weekends: [0, 6] }
 
 /* ------------------------------------------------------------------ spans */
 
@@ -104,7 +104,7 @@ const monthNumber = (v: number) => {
 
 /* `on:` says which days a rule picks out, and takes every shape people write it in */
 function readOn(on: any) {
-  const out = { days: [], nth: [], dates: [] }
+  const out = { days: [] as (any | number)[], nth: [] as { day: number; nth: number; }[], dates: [] as (({ date: number; month: number | null; }) | { date: number; month: null; })[] }
   if (on == null) return out
   for (const one of Array.isArray(on) ? on : [on]) {
     if (one == null) continue
@@ -112,27 +112,22 @@ function readOn(on: any) {
       if (one.day != null && one.nth != null) {
         const d = dayNumber(one.day)
         const n = Number(one.nth)
-        // @ts-expect-error TS2345, from the conversion: Argument of type '{ day: number; nth: number; }' is not assignable to parameter of type 'never'.
         if (d != null && n !== 0 && n >= -5 && n <= 5) out.nth.push({ day: d, nth: n })
         continue
       }
       if (one.date != null) {
         const date = Number(one.date)
         const month = one.month != null ? monthNumber(one.month) : null
-        // @ts-expect-error TS2345, from the conversion: Argument of type '{ date: number; month: number | null; }' is not assignable to parameter of type 'never'.
         if (date >= 1 && date <= 31) out.dates.push({ date, month })
       }
       continue
     }
     const s = lower(one)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     if (DAY_SETS[s]) { out.days.push(...DAY_SETS[s]); continue }
     if (s === 'last') { continue }
     const d = dayNumber(s)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'never'.
     if (d != null) { out.days.push(d); continue }
     const n = Number(s)
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ date: number; month: null; }' is not assignable to parameter of type 'never'.
     if (!Number.isNaN(n) && n >= 1 && n <= 31) out.dates.push({ date: n, month: null })
   }
   out.days = [...new Set(out.days)].sort()
@@ -282,7 +277,6 @@ export function describe(repeats: any, words = {}) {
   let what = ''
   if (every === 'day') what = interval === 1 ? 'day' : 'day'
   else if (every === 'week') {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     const five = DAY_SETS.weekdays.length === on.days.length && DAY_SETS.weekdays.every((d) => on.days.includes(d))
     what = on.days.length ? (five ? 'weekday' : listOf(on.days.map((d) => title(DAYS[d])))) : 'week'
   } else if (every === 'month') {
@@ -302,9 +296,8 @@ export function describe(repeats: any, words = {}) {
   return said
 }
 
-function nth(n: string|number) {
-  // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  const s = ['th', 'st', 'nd', 'rd'][(n % 100 - n % 10 !== 10) * 1 && n % 10 < 4 ? n % 10 : 0]
+function nth(n: number) {
+  const s = ['th', 'st', 'nd', 'rd'][Number(n % 100 - n % 10 !== 10) && n % 10 < 4 ? n % 10 : 0]
   return n + (s || 'th')
 }
 function sayLength(ms: number|null) {

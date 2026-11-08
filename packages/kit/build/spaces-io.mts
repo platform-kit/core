@@ -42,7 +42,8 @@ import { asStore } from './store/index.mjs'
 import matter from 'gray-matter'
 
 export const SPACES_DIR = 'content/spaces'
-const DUMP = { lineWidth: -1 }
+/* js-yaml's dump option: gray-matter hands its options to the yaml engine, but declares only its own */
+const DUMP = { lineWidth: -1 } as { lineWidth: number } & matter.GrayMatterOption<string, never>
 
 export const KINDS = ['staff', 'community', 'server']
 /* a feed is the same messages read as a group's feed — and only where the network module is on
@@ -68,10 +69,9 @@ export { encryptedOf }
  * It takes what `readSpaces` gives — spaces each carrying their channels — so a caller with the
  * declaration in hand needs nothing else.
  */
-export function sealedRooms(declared = []) {
-  const out = new Set()
+export function sealedRooms(declared: Array<{ slug: string, data?: any, channels?: Array<{ slug: string, data?: any }> } | null> = []) {
+  const out = new Set<string>()
   for (const s of declared || []) {
-    // @ts-expect-error TS2488, from the conversion: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
     for (const c of (s && s.channels) || []) {
       if (encryptedOf((c && c.data) || c || {}, (s && (s as any).data) || {})) out.add(`${(s as any).slug}/${c.slug}`)
     }
@@ -120,8 +120,7 @@ export function spanMinutes(v: any) {
   if (!m) return null
   const n = Number(m[1])
   if (!Number.isFinite(n) || n <= 0) return null
-  const per = { m: 1, h: 60, d: 1440, w: 10080 }[m[2] || 'd']
-  // @ts-expect-error TS18048, from the conversion: 'per' is possibly 'undefined'.
+  const per = ({ m: 1, h: 60, d: 1440, w: 10080 } as Record<string, number>)[m[2] || 'd']
   const mins = Math.round(n * per)
   /* a year is the most anybody means by a window; beyond it they meant "for good" and should say so
      by leaving the span off */
@@ -136,8 +135,7 @@ export function spanMinutes(v: any) {
 export function spanText(mins: any) {
   const n = Number(mins)
   if (!Number.isFinite(n) || n <= 0) return ''
-  // @ts-expect-error TS2363, from the conversion: The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  for (const [unit, per] of [['d', 1440], ['h', 60]]) if (n % per === 0) return (n / per) + unit
+  for (const [unit, per] of [['d', 1440], ['h', 60]] as Array<[string, number]>) if (n % per === 0) return (n / per) + unit
   return n + 'm'
 }
 
@@ -318,7 +316,6 @@ export function serialiseSpace(data: any, content = '') {
     flair: (d.flair || []).map((x: any) => clean(normFlair(x))).filter((x: any) => x.slug && x.name),
     grants: (d.grants || []).map((g: any) => clean(normGrant(g))),
   })
-  // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
   return matter.stringify('\n' + String(content || '').trim() + '\n', out, DUMP)
 }
 
@@ -384,7 +381,6 @@ export function serialiseChannel(data: any, content = '') {
     ...(d.encrypted == null ? {} : { encrypted: d.encrypted === true }),
     fill: fillOut(d.fill),
   })
-  // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
   return matter.stringify('\n' + String(content || '').trim() + '\n', out, DUMP)
 }
 

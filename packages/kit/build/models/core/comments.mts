@@ -79,7 +79,6 @@ export default {
     parse: (text: any) => ({ data: matter(text).data, content: matter(text).content }),
     /* a file that documents itself keeps its documentation: this is the one that started it */
     serialise: (rec: { data: object; content: string|{ content: string }|null }, ctx: { current: any }) => writeKeeping(ctx && ctx.current, rec.data, rec.content == null ? '\n' : rec.content,
-      // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
       () => matter.stringify(rec.content == null ? '\n' : rec.content, rec.data, DUMP)),
   },
   /* a field the file leaves out is the shipped default, so the form shows what the site actually

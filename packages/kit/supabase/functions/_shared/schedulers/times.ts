@@ -309,7 +309,7 @@ export function runTimes(start: any, { count = 1, every = 'week' } = {}, tz = 'U
  */
 export function notAway(starts: any, away = [], tz = 'UTC') {
   if (!away.length) return starts
-  const shut = new Set()
+  const shut = new Set<string>()
   for (const a of away) for (const d of days((a as any).from, (a as any).to, 400)) shut.add(d)
   return starts.filter((s: any) => !shut.has(dayOf(s, tz).day))
 }

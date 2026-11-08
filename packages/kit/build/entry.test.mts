@@ -17,17 +17,17 @@ import { parseCompanionBody, serialiseCompanionBody } from '../src/lib/companion
 
 const ROOT = process.cwd(), V = path.join(ROOT, '.velite')
 if (!fs.existsSync(path.join(V, 'articles.json'))) { console.log('entry: skipped — no .velite here (build the content first)'); process.exit(0) }
-const read = (f: any) => (fs.existsSync(path.join(V, f)) ? JSON.parse(fs.readFileSync(path.join(V, f), 'utf8')) : null)
+const read = (f: string) => (fs.existsSync(path.join(V, f)) ? JSON.parse(fs.readFileSync(path.join(V, f), 'utf8')) : null)
 const bundle: any = {}
 for (const f of fs.readdirSync(V).filter((x) => x.endsWith('.json'))) bundle[f.replace(/\.json$/, '')] = read(f)
 
 const R = renderer()
-const ctx = { render: (md: any) => R.parse(md), toc: (md: any) => R.toc(md), bundle, models: bundle.models || [] }
+const ctx = { render: (md: any) => R.parse(md), toc: (md: {}|null) => R.toc(md), bundle, models: bundle.models || [] }
 const fold = (h: any) => String(h).replace(/<pre[\s\S]*?<\/pre>/g, '<pre/>').replace(/&#x3C;/g, '&lt;').replace(/&#x26;/g, '&amp;').replace(/(<[^>]*>)|>/g, (m, t) => t || '&gt;').replace(/\s+/g, ' ').replace(/> </g, '><').replace(/ ?<pre\/> ?/g, '<pre/>').trim()
-const norm = (k: any, v: any) => (k === 'body' || k === 'summary' ? fold(v) : k === 'chapters' && Array.isArray(v) ? v.map((c) => ({ ...c, summary: fold(c.summary || '') })) : k === 'excerpt' ? (/^[|#]/.test(String(v)) ? '(a table or a heading first: velite excerpts the markdown itself)' : plain(String(v)).replace(/\s+/g, ' ').trim().slice(0, 60)) : k === 'metadata' ? { readingTime: v.readingTime } : k === 'raw' ? String(v).trim() : v)
+const norm = (k: string, v: { map: (arg0: (c: any) => any) => any; readingTime: any }) => (k === 'body' || k === 'summary' ? fold(v) : k === 'chapters' && Array.isArray(v) ? v.map((c) => ({ ...c, summary: fold(c.summary || '') })) : k === 'excerpt' ? (/^[|#]/.test(String(v)) ? '(a table or a heading first: velite excerpts the markdown itself)' : plain(String(v)).replace(/\s+/g, ' ').trim().slice(0, 60)) : k === 'metadata' ? { readingTime: v.readingTime } : k === 'raw' ? String(v).trim() : v)
 
 /* the file a built entry came from */
-const fileOf = (target: any, e: any) => {
+const fileOf = (target: string, e: { slug: any; path: any }) => {
   if (target === 'site') return 'content/site.md'
   if (target === 'storefront') return 'content/store/storefront.md'
   if (target === 'ui') return null   /* found by scope below */

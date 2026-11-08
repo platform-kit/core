@@ -11,7 +11,7 @@ if (!url || !anonKey || !localStack()) {
   process.exit(0)
 }
 
-const client = (key: any) => createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+const client = (key: string) => createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 const service = client(serviceKey())
 const { data: login, error: loginError } = await client(anonKey).auth.signInWithPassword({
   email: 'admin@example.com',
@@ -28,7 +28,7 @@ if (sessionError) throw new Error(`social OAuth test session setup failed: ${ses
 const id = randomUUID()
 const callbackUrl = new URL(url + '/functions/v1/social-oauth')
 callbackUrl.searchParams.set('provider', 'fixture')
-const invoke = async (sb: any, endpoint: any, body: any) => {
+const invoke = async (sb: any, endpoint: string, body: any) => {
   const { data, error } = await sb.auth.getSession()
   if (error || !data.session) throw new Error('social OAuth function call requires a signed-in test user')
   const response = await fetch(`${url}/functions/v1/${endpoint}`, {
@@ -44,7 +44,7 @@ const invoke = async (sb: any, endpoint: any, body: any) => {
   try { result = await response.json() } catch { /* retain status for non-JSON responses */ }
   return { status: response.status, ...result }
 }
-const callback = async (state: any, params = {}) => {
+const callback = async (state: string, params = {}) => {
   const target = new URL(callbackUrl)
   target.searchParams.set('state', state)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
@@ -66,7 +66,7 @@ const start = async () => {
   assert.ok(state && state.length >= 40)
   return state
 }
-const stateHash = (state: any) => createHash('sha256').update(state).digest('hex')
+const stateHash = (state: string|NodeJS.ArrayBufferView<ArrayBufferLike>) => createHash('sha256').update(state).digest('hex')
 
 let fixtureClientSecretId
 let failed
@@ -84,7 +84,7 @@ try {
   const supported: any = await invoke(admin, 'social', { action: 'providers' })
   assert.equal(supported.status, 200, JSON.stringify(supported))
   assert.deepEqual(
-    supported.providers.map((provider: any) => provider.id).sort(),
+    supported.providers.map((provider: { id: any }) => provider.id).sort(),
     ['bluesky', 'instagram', 'linkedin', 'reddit', 'threads', 'tiktok', 'x', 'youtube'],
     'the served Supabase Edge Functions load each direct Social SDK adapter',
   )
@@ -211,7 +211,7 @@ try {
     )
     for (const operation of capabilities.capabilities.capabilities) {
       assert.ok(
-        !operation.formats || operation.formats.every((format: any) =>
+        !operation.formats || operation.formats.every((format: string) =>
           ['text', 'image', 'video', 'carousel', 'sequence', 'document'].includes(format)),
         `${provider.id} uses only known Social SDK content formats`,
       )
@@ -302,7 +302,7 @@ try {
 
   const safeAccounts: any = await invoke(admin, 'social', { action: 'accounts' })
   assert.equal(safeAccounts.status, 200, JSON.stringify(safeAccounts))
-  const publicAccounts = safeAccounts.accounts.filter((account: any) => account.provider_id === 'fixture')
+  const publicAccounts = safeAccounts.accounts.filter((account: { provider_id: string }) => account.provider_id === 'fixture')
   assert.equal(publicAccounts.length, 2)
   assert.ok(publicAccounts.every((account: any) => !('credential_secret_id' in account) && !('accessToken' in account)))
 

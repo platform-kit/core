@@ -15,7 +15,7 @@ const DEMO = path.join(WORKSPACE, 'sites', 'demo')
 const WORK = path.join(WORKSPACE, '.cache', 'platformkit', 'assembled-tree-test')
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + detail.trim().split('\n').slice(-6).join('\n        ') : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + detail.trim().split('\n').slice(-6).join('\n        ') : '')) } }
 
 /* the test step lists both commands, unconditionally */
 const runner = fs.readFileSync(path.join(HERE, 'test.mts'), 'utf8')

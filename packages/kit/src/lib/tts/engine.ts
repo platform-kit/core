@@ -122,14 +122,12 @@ export class TextToSpeech {
    * conversation can make its OPENING piece short and cheap — the only piece anybody waits for —
    * while a chapter keeps one setting throughout. Both default to what the chapter did.
    */
-  async call(text: any, lang: any, style: any, totalStep: any, speed: any, silenceDuration: any, onPiece: any, cancelled: any, { cut = null, stepsAt = null } = {}) {
+  async call(text: any, lang: any, style: any, totalStep: any, speed: any, silenceDuration: any, onPiece: any, cancelled: any, { cut = null, stepsAt = null }: { cut?: ((text: string, max: number) => string[]) | null, stepsAt?: ((i: number) => number) | null } = {}) {
     const maxLen = (lang === 'ko' || lang === 'ja') ? 120 : 300
-    // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
     const pieces = cut ? cut(text, maxLen) : chunkText(text, maxLen)
     let total = 0
     for (let i = 0; i < pieces.length; i++) {
       if (cancelled && cancelled()) return { pieces: pieces.length, duration: total, cancelled: true }
-      // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
       const { wav, duration } = await this._infer(pieces[i], lang, style, stepsAt ? stepsAt(i) : totalStep, speed)
       total += duration + (i ? silenceDuration : 0)
       await onPiece(i, pieces.length, wav, duration)
@@ -141,8 +139,8 @@ export class TextToSpeech {
 /* the four models from their bytes, on the given providers */
 export async function loadTextToSpeech({ buffers, cfgs, indexer, providers }: any) {
   const opts = { executionProviders: providers, graphOptimizationLevel: 'all' }
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Argument of type '{ executionProviders: any; graphOptimizationLev
-  const make = (b) => ort.InferenceSession.create(b, opts)
+  // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Argument of type 'string | ArrayBufferLike | Uint8Array<ArrayBuff
+  const make = (b: string|ArrayBufferLike|Uint8Array<ArrayBufferLike>) => ort.InferenceSession.create(b, opts)
   const [dpOrt, textEncOrt, vectorEstOrt, vocoderOrt] = await Promise.all([make(buffers.dp), make(buffers.textEnc), make(buffers.vectorEst), make(buffers.vocoder)])
   return new TextToSpeech(cfgs, new UnicodeProcessor(indexer), dpOrt, textEncOrt, vectorEstOrt, vocoderOrt)
 }

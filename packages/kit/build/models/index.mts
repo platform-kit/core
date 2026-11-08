@@ -81,8 +81,7 @@ export async function namesOf(model: any, root: any, store?: any) {
   return (await st.list(model.dir, { ext: model.ext, deep: true })).filter(() => model.ext === 'md')
 }
 /* what a model is handed: the store it reads and writes with, the root and a script runner for what needs a machine */
-// @ts-expect-error TS1117, from the conversion: An object literal cannot have multiple properties with the same name.
-const ctxOf = (model, root, extra) => { const store = extra.store || gitStore(root); return { root, model, store, path, matter, script: (n, a, env) => (store.kind === 'git' ? script(n, a, root, env) : Promise.resolve({ skipped: 'the deploy runs it' })), ...extra, store } }   /* a script needs a machine: over the rows it waits for the deploy */
+const ctxOf = (model: any, root: string|undefined, extra: { name?: any; create?: boolean; store?: any; by?: string }) => { const store = extra.store || gitStore(root); return { root, model, path, matter, script: (n: any, a: never[]|undefined, env: NodeJS.ProcessEnv|undefined) => (store.kind === 'git' ? script(n, a, root, env) : Promise.resolve({ skipped: 'the deploy runs it' })), ...extra, store } }   /* a script needs a machine: over the rows it waits for the deploy */
 
 export async function read(model: any, name: any, root: any, extra = {}) {
   const ctx = ctxOf(model, root, { name, ...extra })
@@ -161,7 +160,7 @@ export const FEEDS: any = {
   funnels: 'funnels', blasts: 'funnels', policy: 'funnels',
   emails: 'emails',
 }
-const COMPILE = {
+const COMPILE: Record<string, (store: any, made: any, extra?: any) => Promise<unknown>> = {
   /* the theme's scopes come from the caller: in a function there is no manifest on a disk to read,
      and without them the checkout would lose its words and a spine its edition line */
   catalog: async (store: any, made: any, extra: any = {}) => (await import('../catalog.mjs')).compileCatalog({ store, theme: extra.theme || null, brand: extra.brand || null, site: extra.site || null }),
@@ -181,7 +180,7 @@ const COMPILE = {
     const { KINDS } = await import('../../supabase/functions/_shared/emails/tags.js')
     const { compileDesigns } = await import('../emails-compile.mjs')
     let kit: any = {}
-    // @ts-expect-error TS2307, from the conversion: Cannot find module '../../kit-designs.json' or its corresponding type declarations.
+    // @ts-expect-error TS2307: the file sits beside the pipe's copy of this module (assemble bundles it there), never in a checkout
     try { kit = (await import('../../kit-designs.json', { with: { type: 'json' } })).default } catch { /* on a machine the build reads the package */ }
     const { designs, faults } = await compileDesigns({ store, kinds: KINDS, kitDesign: (k: any) => kit[k] || null, ...(extra.compileDesign ? { compile: extra.compileDesign } : {}) })
     if (faults.length) throw new Error(faults.join('; '))
@@ -191,14 +190,12 @@ const COMPILE = {
 async function recompile(keys: any, root: any, extra: any) {
   const store = extra.store
   if (!store || store.kind !== 'rows' || !store.client) return   /* a checkout builds; this is for rows */
-  const want = [...new Set(keys.map((k: any) => FEEDS[k]).filter(Boolean))]
+  const want = [...new Set<string>(keys.map((k: any) => FEEDS[k]).filter(Boolean))]
   /* the catalog first where both are wanted: the funnels read what it made */
-  const made = {}
+  const made: Record<string, unknown> = {}
   for (const name of want.sort((a, b) => (a === 'catalog' ? -1 : b === 'catalog' ? 1 : 0))) {
     try {
-      // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
       const data = await COMPILE[name](store, made, extra)
-      // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
       made[name] = data
       const { error } = await store.client.from('compiled').upsert({ path: name, data, updated_at: new Date().toISOString(), updated_by: extra.by || null }, { onConflict: 'path' })
       if (error) throw new Error(error.message)

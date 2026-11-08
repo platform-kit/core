@@ -4,10 +4,10 @@
 import { inlineParts, messageBlocks, plainMarkup } from '../src/lib/chat/markup.js'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 /* a compact reading of the parts: the text, with its marks in brackets */
-const said = (body: any) => messageBlocks(body).map((b) => b.kind + ':' + b.lines
-  .map((parts) => parts.map((p: any) => (p.kind === 'link' ? '<' + p.href + '|' + p.text + '>' : p.text) + (p.marks.length ? '[' + p.marks.join('') + ']' : '')).join('')).join(' / ')).join(' | ')
+const said = (body: string|null) => messageBlocks(body).map((b) => b.kind + ':' + b.lines
+  .map((parts) => parts.map((p: { kind: string; href: string; text: string; marks: any[]; }) => (p.kind === 'link' ? '<' + p.href + '|' + p.text + '>' : p.text) + (p.marks.length ? '[' + p.marks.join('') + ']' : '')).join('')).join(' / ')).join(' | ')
 
 /* --- the marks people already type --- */
 ok('bold', said('a **b** c') === 'p:a b[b] c')

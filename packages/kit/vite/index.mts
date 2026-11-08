@@ -33,7 +33,7 @@ import { loadSite, publicSite, communityOf, courseKindsOf, avatarsOf, INSTRUMENT
 import { loadTheme, resolveOverrides } from '../build/theme.mjs'
 export { loadSite, publicSite, loadTheme, resolveOverrides }
 import vue from '@vitejs/plugin-vue'
-import wasm from 'vite-plugin-wasm'
+import wasmPlugin from 'vite-plugin-wasm'
 import { adminServer } from '../build/admin-server.mjs'
 import tailwindcss from 'tailwindcss'
 import autoprefixer from 'autoprefixer'
@@ -41,6 +41,17 @@ import { tailwindConfig } from './tailwind.config.js'
 import { resolveSiteHomeHead } from '../src/lib/seo-head.js'
 import { loadEnv } from 'vite'
 import { siteFile } from '../build/site-file.mjs'
+import type { Plugin } from 'vite'
+
+/* the package's types have no "type": "module", so under NodeNext its default import reads as the CommonJS namespace;
+   its ESM entry (exports/import.mjs) hands back the function itself */
+const wasm = wasmPlugin as unknown as () => Plugin
+
+/* one dev server's content run, seen by every instance of the plugin in the process */
+declare global {
+  var __veliteStarted: boolean | undefined
+  var __prepareReady: boolean | undefined
+}
 
 /*
  * THE SOCIAL NETWORK'S DOORS, IN DEVELOPMENT. An atproto client asks /xrpc/<method> at the ROOT of
@@ -58,7 +69,7 @@ function networkProxy(c: any, mode: any) {
 }
 
 
-function site(c: any, theme: any, keys = []) {
+function site(c: any, theme: any, keys: string[] = []): Plugin {
   const overrides = resolveOverrides(c, theme)
   const overrideFiles = new Set(Object.values(overrides))
   /* a virtual id must not hold a '#': the browser would read it as a fragment */
@@ -127,8 +138,7 @@ function site(c: any, theme: any, keys = []) {
        * the reason `moduleOn` throws: `modules.stor !== false` is TRUE, so a typo here would
        * make the route unconditional, which is the opposite of what was written.
        */
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-      const strange = (c.routes || []).filter((r) => r.module && !keys.includes(r.module))
+      const strange = (c.routes || []).filter((r: { module: any }) => r.module && !keys.includes(r.module))
       if (strange.length) throw new Error('a route is gated on a module no manifest declares: ' + strange.map((r: any) => `${r.path} → ${r.module}`).join(', '))
       const routes = (c.routes || []).filter((r: any) => !r.module || (c.modules || {})[r.module] !== false)
       return routes.map((r: any, i: any) => `import R${i} from ${J(from(r.component))}`).join('\n') + `\nexport const routes = [${routes.map((r: any, i: any) => `{ ...${J({ path: r.path, prefix: !!r.prefix })}, component: R${i} }`).join(', ')}]\n`
@@ -220,7 +230,7 @@ function site(c: any, theme: any, keys = []) {
     for (const [k, v] of Object.entries(V)) {
       if (k === '#site/strings-default') continue
       const file = path.join(dir, v.slice('\0platformkit:'.length) + '.js'), code = await generate(v)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string | ArrayBufferView<ArrayBufferLike>'. Type 'null' is not assi
+      if (code === null) continue
       if (!fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== code) fs.writeFileSync(file, code)
       asFile[k] = file; byFile[file] = v
     }
@@ -266,34 +276,31 @@ function site(c: any, theme: any, keys = []) {
 /* velite over the site's content, then the build steps of the prepare phase (build/steps/: the search index, the
    sales report, the funnels — and a site's own); in dev, a prepare step whose inputs match a changed file runs again
    once velite has rebuilt what it reads */
-async function prepare(c: any, changed = null, dev = false) {
+async function prepare(c: any, changed: null = null, dev = false) {
   const { runPhase } = await import('../build/steps.mjs')
   await runPhase('prepare', { site: c, changed, dev, log: (m: any) => console.log('  ' + m) })
 }
-async function refresh(c: any, changed = null, projectLocal = true) {
+async function refresh(c: any, changed: unknown[] | null = null, projectLocal = true) {
   const { refreshContent } = await import('../build/content-refresh.mjs')
   await refreshContent({
     site: c, changed, projectLocal,
     log: (m: any) => console.log('  ' + m),
   })
 }
-function velite(c: any) {
+function velite(c: any): Plugin {
   let command = 'build'
   return {
     name: 'platformkit-velite',
     apply: () => true,
     configResolved(cfg: any) { command = cfg.command },
     async buildStart() {
-      // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
       if (globalThis.__veliteStarted) return
       /* ALREADY DONE, IN ANOTHER PROCESS. `platformkit build` compiles the content and runs the
          prepare steps itself before it calls vite, so this would be the second time in one build:
          velite cleaning and rewriting what it just wrote, and the prepare steps — the search
          index's two hundred and thirteen embeddings among them — paid for twice. The flag on
          globalThis cannot see across a process boundary; this is the same fact, told across one. */
-      // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
       if (process.env.PLATFORMKIT_CONTENT_DONE === '1') { globalThis.__veliteStarted = true; globalThis.__prepareReady = true; return }
-      // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
       globalThis.__veliteStarted = true
       /* CONTENT_ENGINE=collections runs Content Collections over the same collection definitions
          instead (build/collections.mjs). velite otherwise, which is the default and the tested path. */
@@ -303,10 +310,8 @@ function velite(c: any) {
       const { engineFor } = await import('../build/collections.mjs')
       const eng = await engineFor(c.root)
       if (eng.name !== 'velite') {
-        // @ts-expect-error TS2322, from the conversion: Type '(m: any) => void' is not assignable to type '() => void'. Target signature provides too few arguments. Expected 1 or more, but got 0.
-        await eng.build({ root: c.root, log: (m) => console.log('  ' + m) })
+        await eng.build({ root: c.root, log: (m: string) => console.log('  ' + m) })
         await prepare(c, null, command === 'serve')
-        // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
         globalThis.__prepareReady = true
         return
       }
@@ -320,7 +325,6 @@ function velite(c: any) {
          stale one costs a few kilobytes on a disk nobody ships. */
       await build({ watch: command === 'serve', clean: command !== 'serve' })
       await prepare(c, null, command === 'serve')
-      // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
       globalThis.__prepareReady = true   /* the watcher below waits for this first run; velite's clean and first write fire it otherwise */
     },
     /* velite's watcher rebuilds on a content change — and on a change to velite.config.js it starts
@@ -399,21 +403,17 @@ function velite(c: any) {
       let pending = new Set(), timer: any = null
       const flush = async () => {
         clearTimeout(timer); timer = null
-        // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
         if (!globalThis.__prepareReady || !pending.size) return
         const list = [...pending]; pending = new Set()
-        // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'null | undefined'.
         try { await refresh(c, list) } catch (e: any) { server.config.logger.error(String(e && e.message || e), { timestamp: true }) }
       }
       const changed = (f: any) => { if (!f.startsWith(content)) return; pending.add(path.relative(c.root, f)); clearTimeout(timer); timer = setTimeout(flush, 2500) }
       const settled = async (f: any) => {
-        // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
         if (f !== index || !globalThis.__prepareReady) return
         if (!fs.existsSync(search)) {
           const list = [...pending]
-          pending = new Set()
+          pending = new Set<string>()
           clearTimeout(timer)
-          // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[] | null' is not assignable to parameter of type 'null | undefined'. Type 'unknown[]' is not assignable to type 'n
           try { await refresh(c, list.length ? list : null, false) } catch (e: any) { server.config.logger.error(String(e && e.message || e), { timestamp: true }) }
           return
         }
@@ -442,7 +442,7 @@ function velite(c: any) {
  * A family the kit does not serve stops the build naming it. Quietly falling back would leave
  * somebody staring at a page that did not change.
  */
-function fonts(root: any) {
+function fonts(root: any): Plugin {
   let head = ''
   return {
     name: 'platformkit-fonts',
@@ -462,9 +462,9 @@ function fonts(root: any) {
   }
 }
 
-function uploads() {
+function uploads(): Plugin {
   return {
-    name: 'platformkit-uploads', apply: 'build',
+    name: 'platformkit-uploads', apply: 'build' as const,
     async closeBundle() {
       const { promises: fs } = await import('node:fs')
       try { await fs.cp(path.resolve('content/uploads'), path.resolve('dist/uploads'), { recursive: true }) } catch (e: any) { if (e.code !== 'ENOENT') throw e }
@@ -483,7 +483,7 @@ function uploads() {
  * thirteen embeddings. Three times per build, for a bundle that only ever READS what the first run
  * wrote.
  */
-export async function platformkit(opts: any = {}) {
+export async function platformkit(opts: any = {}): Promise<Plugin[]> {
   const c = opts.config || await loadSite(opts.root)   /* a config given (a test) or the site's file */
 /*
  * THE MODULES THE BROWSER IS ALLOWED TO ASK ABOUT — the kit's AND any the site registers.
@@ -565,7 +565,6 @@ export async function platformkit(opts: any = {}) {
            package itself, pinned to the same version */
         resolve: { alias: { '#content': path.resolve(c.root, '.velite'), '#site/content': path.resolve(c.root, 'content'), '@': theme.src, 'npm:@myriaddreamin/typst-ts-web-compiler@0.7.0': '@myriaddreamin/typst-ts-web-compiler' } },
         /* Tailwind over the theme's sources and the site's, utilities only (the kit's tailwind.config.js); a site needs no postcss config */
-        // @ts-expect-error TS2345, from the conversion: Argument of type '{ content: string[]; darkMode: string[]; theme: { extend: { colors: { border: string; input: string; ring: string; backgro
         css: { postcss: { plugins: [tailwindcss(tailwindConfig(c, theme)), autoprefixer()] } },
         server: { host: '0.0.0.0', proxy: networkProxy(c, env && env.mode) },   /* the port is the CLI's (dev.mjs holds one strictly) */
         preview: { host: '0.0.0.0' },
@@ -576,7 +575,6 @@ export async function platformkit(opts: any = {}) {
     ...(withContent ? [velite(c)] : []),
     adminServer(),
     uploads(),
-    // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'typeof import("/Users/jameshuntercarter/htdocs/dharmalab/node_modules/vite-plugin-wasm/dist/index")' 
     wasm(),
     /* the .schema and .expr blocks are white-space:pre; vidstack ships web components */
     vue({ template: { compilerOptions: { whitespace: 'preserve', isCustomElement: (tag) => tag.startsWith('media-') } } }),

@@ -89,8 +89,7 @@ export function lockedPlaces({ home = true, admitted = {} } = {}) {
 }
 
 /* what community.hide: ['following'] takes away, read by the column and a person's page */
-// @ts-expect-error TS2345, from the conversion: Argument of type '"following"' is not assignable to parameter of type 'never'.
-export const showsFollowing = (hide = []) => !(hide || []).includes('following')
+export const showsFollowing = (hide: string[]|undefined = []) => !(hide || []).includes('following')
 
 /*
  * WHERE EACH OF THE CHAT LAYOUT'S PLACES WENT. A place in the social list is reachable as itself; the
@@ -130,8 +129,7 @@ export function chatPlaces(ctx: any = {}) {
  * A SPACE FOLDS unless the reader is in it or opened it themselves: open is the set of space ids
  * they unfolded by hand (kept per browser by the navigation).
  */
-// @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-export const spaceOpen = (spaceId, currentSpaceId, open = []) => spaceId === currentSpaceId || (open || []).includes(spaceId)
+export const spaceOpen = (spaceId: string, currentSpaceId: string, open: string[] = []) => spaceId === currentSpaceId || (open || []).includes(spaceId)
 
 /*
  * WHAT A SPACE OPENS ON (openspec: remove-space-about-tab). A space has no home of its own: it opens
@@ -140,7 +138,7 @@ export const spaceOpen = (spaceId, currentSpaceId, open = []) => spaceId === cur
  * one room has nothing to unfold, so its row is the way into that room.
  */
 const isFeed = (c: any) => c.mode === 'feed'
-export function roomsOf(spaceId: string, channels = []) {
+export function roomsOf(spaceId: string, channels: { id: any; space_id: any; mode: string }[] = []) {
   const live = (channels || []).filter((c: any) => c.space_id === spaceId && c.kind !== 'dm' && !c.archived_at)
   return [...live.filter(isFeed), ...live.filter((c) => !isFeed(c))]
 }

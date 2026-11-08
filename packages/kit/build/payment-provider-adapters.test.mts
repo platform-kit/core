@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const buildRoot = path.dirname(fileURLToPath(import.meta.url))
 const kitRoot = path.dirname(buildRoot)
-const test = (file: any) => path.join(buildRoot, file)
+const test = (file: string) => path.join(buildRoot, file)
 const steps = [
   ['provider registry and capability declarations', 'node', [test('payment-providers.test.mjs')]],
   ['Hyperswitch API and webhook contract', 'node', [test('hyperswitch-payment-provider.test.mjs')]],

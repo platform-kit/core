@@ -17,8 +17,7 @@ import { Mp3Writer } from '../tts/mp3.js'
    makes (engine/voice.js), kept here so the chat does not pull the instrument
    in: the API, a secure origin, the frame's permission, an input device. */
 export function micUsable() {
-  // @ts-expect-error TS2774, from the conversion: This condition will always return true since this function is always defined. Did you mean to call it instead?
-  if (!(navigator.mediaDevices && navigator.mediaDevices.enumerateDevices && navigator.mediaDevices.getUserMedia)) return Promise.resolve(false)
+  if (!(navigator.mediaDevices && typeof navigator.mediaDevices.enumerateDevices === 'function' && typeof navigator.mediaDevices.getUserMedia === 'function')) return Promise.resolve(false)
   if (window.isSecureContext === false) return Promise.resolve(false)
   try { const fp = (document as any).permissionsPolicy || (document as any).featurePolicy; if (fp && fp.allowsFeature && !fp.allowsFeature('microphone')) return Promise.resolve(false) } catch (e) { /* no policy api */ }
   return navigator.mediaDevices.enumerateDevices().then((list) => list.some((d) => d.kind === 'audioinput')).catch(() => false)

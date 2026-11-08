@@ -8,15 +8,15 @@
 import { daySections, dayLabel, groupRuns, tickOf, reactionChips, toggleReaction, initials, clock, previewOf, whenOf, reactionSet, mergeMessages, dueOf, spanOf, sortInbox } from '../src/lib/chat/model.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
+const ok = (name: string, cond: boolean|null, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const eq = (a: any[], b: string[]|{ emoji: string; count: number; mine: boolean; }[]) => JSON.stringify(a) === JSON.stringify(b)
 
 console.log('\nCHAT\n')
 
 const now = new Date(2026, 8, 14, 15, 0, 0).getTime()   /* Mon 14 Sep 2026, 15:00 local */
-const at = (h: any, m = 0, dayOffset = 0) => { const d = new Date(now); d.setDate(d.getDate() + dayOffset); d.setHours(h, m, 0, 0); return d.toISOString() }
+const at = (h: number, m = 0, dayOffset = 0) => { const d = new Date(now); d.setDate(d.getDate() + dayOffset); d.setHours(h, m, 0, 0); return d.toISOString() }
 const me = 'me', you = 'you'
-const msg = (id: any, sender: any, when: any, extra = {}) => ({ id, sender_id: sender, kind: 'text', body: 'm' + id, created_at: when, ...extra })
+const msg = (id: string|number, sender: string, when: string, extra = {}) => ({ id, sender_id: sender, kind: 'text', body: 'm' + id, created_at: when, ...extra })
 
 /* --- days --- */
 const W = { today: 'Today', yesterday: 'Yesterday' }
@@ -52,11 +52,11 @@ rx = toggleReaction(rx, 'm1', me, '❤️')
 ok('a reaction added', rx.length === 1 && rx[0].emoji === '❤️')
 rx = toggleReaction(rx, 'm1', you, '❤️')
 rx = toggleReaction(rx, 'm1', me, '👍')
-const chips = reactionChips(rx.filter((r: any) => r.message_id === 'm1'), me)
+const chips = reactionChips(rx.filter((r: { message_id: string; }) => r.message_id === 'm1'), me)
 ok('chips count and mark mine', eq(chips, [{ emoji: '❤️', count: 2, mine: true }, { emoji: '👍', count: 1, mine: true }]))
 rx = toggleReaction(rx, 'm1', me, '❤️')
-ok('toggling again removes only mine', rx.length === 2 && !rx.some((r: any) => r.user_id === me && r.emoji === '❤️'))
-ok('the peer\'s stays', rx.some((r: any) => r.user_id === you && r.emoji === '❤️'))
+ok('toggling again removes only mine', rx.length === 2 && !rx.some((r: { user_id: string; emoji: string; }) => r.user_id === me && r.emoji === '❤️'))
+ok('the peer\'s stays', rx.some((r: { user_id: string; emoji: string; }) => r.user_id === you && r.emoji === '❤️'))
 ok('the quick set is the line split on spaces', eq(reactionSet('❤️ 👍  🙏'), ['❤️', '👍', '🙏']))
 
 /* --- names, clock, previews --- */
@@ -83,7 +83,7 @@ ok('when: older is a date', /\d/.test(whenOf(at(9, 0, -30), now, W, 'en-GB')))
 const optimistic = [msg('a', me, at(9), { pending: true })]
 const merged: any = mergeMessages(optimistic, [msg('a', me, at(9)), msg('b', you, at(9, 1))])
 ok('the echo lands on the optimistic row', merged.length === 2 && merged[0].id === 'a' && merged[0].pending === false)
-const older: any = mergeMessages(merged, [msg('z', you, at(8))])
+const older = mergeMessages(merged, [msg('z', you, at(8))])
 ok('an older page slots in before', older[0].id === 'z' && older.length === 3)
 
 /* ---- what a coach owes ---- */
@@ -98,9 +98,9 @@ ok('nothing owed when the last word is the coach\'s', dueOf(answered(1), 24, t0)
 ok('nothing owed with no promise', dueOf(waiting(20), 0, t0) === null)
 ok('spans read as minutes, hours, days', spanOf(35 * 60000) === '35m' && spanOf(4 * H) === '4h' && spanOf(60 * H) === '3d')
 const list = [answered(1, 10), waiting(30), answered(5, 200), waiting(2)]
-ok('by activity: latest first', sortInbox(list, 'activity').map((c: any) => c.id).join() === 'a1,w2,a5,w30')
-ok('by creation: newest thread first', sortInbox(list, 'created').map((c: any) => c.id).join() === 'a1,w30,w2,a5')
-ok('by waiting: longest wait first, then activity', sortInbox(list, 'awaiting').map((c: any) => c.id).join() === 'w30,w2,a1,a5')
+ok('by activity: latest first', sortInbox(list, 'activity').map((c: { id: any; }) => c.id).join() === 'a1,w2,a5,w30')
+ok('by creation: newest thread first', sortInbox(list, 'created').map((c: { id: any; }) => c.id).join() === 'a1,w30,w2,a5')
+ok('by waiting: longest wait first, then activity', sortInbox(list, 'awaiting').map((c: { id: any; }) => c.id).join() === 'w30,w2,a1,a5')
 ok('sorting leaves the list alone', list[0].id === 'a1')
 
 console.log(`  ${pass} passed, ${fail} failed\n`)

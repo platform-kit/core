@@ -58,8 +58,7 @@ const after = (f: string) => { const i = args.indexOf(f); return i >= 0 ? args[i
 const json = flag('--json')
 
 /* ---- the pages and their sources ---- */
-// @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-const walk = (d) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : e.name.endsWith('.md') ? [path.join(d, e.name)] : []) : []
+const walk = (d: string): string[] => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : e.name.endsWith('.md') ? [path.join(d, e.name)] : []) : []
 const pages = [...walk(path.join(ROOT, DOCS)), ...REPO_DOCS.map((f) => path.join(ROOT, f))].filter((f) => fs.existsSync(f)).map((f) => {
   const rel = path.relative(ROOT, f)
   const text = fs.readFileSync(f, 'utf8')
@@ -73,7 +72,7 @@ const pages = [...walk(path.join(ROOT, DOCS)), ...REPO_DOCS.map((f) => path.join
 const covers = (page: { file?: string; text?: string; sources: any; reviewed?: string }, file: string) => page.sources.some((s: string) => file === s || file.startsWith(s.replace(/\/$/, '') + '/'))
 
 /* the documented surfaces (coverage, check 3): every entry must be named by a docs-site page — itself or a directory above it */
-const SURFACES = [
+const SURFACES: Array<[string, (e: fs.Dirent) => boolean]> = [
   ['packages/kit/supabase/functions', (e: { isDirectory: () => any; name: string }) => e.isDirectory() && e.name !== '_shared'],
   ['packages/kit/supabase/functions/_shared', (e: { name: string }) => e.name !== 'vendor' && e.name !== 'pipe' && !e.name.endsWith('.json')],
   ['packages/kit/supabase/schemas', (e: { isFile: () => any; name: string }) => e.isFile() && e.name.endsWith('.sql')],
@@ -86,13 +85,11 @@ const SURFACES = [
 ]
 /* a source covers an entry when it names it, something inside it, or a directory below the surface's root — the surface root
    itself (`packages/kit/supabase/functions`) is the page that lists every function, and listing is not documenting one */
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string | ((e: any) => any)' is not assignable to parameter of type 'string'. Type '(e: any) => any' is not assignable to t
 const ROOTS = new Set(SURFACES.map(([d]) => d).filter((d) => !['packages/kit/build/steps', 'packages/kit/src/sdk'].includes(d)))   /* the steps and the sdk are documented as a whole, on purpose */
 const covered = (rel: string) => pages.some((p) => p.file.startsWith(DOCS + '/') && p.sources.some((s: string) => { const src = s.replace(/\/$/, ''); if (ROOTS.has(src) || [...ROOTS].some((r: any) => r.startsWith(src + '/'))) return false; return rel === src || rel.startsWith(src + '/') || src.startsWith(rel + '/') }))
 function uncovered(only: any = null) {
   const out = []
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | ((e: any) => any)' is not assignable to parameter of type 'string'. Type '(e: any) => any' is not assignable to t
-  for (const [dir, pick] of SURFACES) { if (!fs.existsSync(path.join(ROOT, dir))) continue; for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) { if (!pick(e)) continue; const rel = dir + '/' + e.name; if (only && !only.some((f) => f === rel || f.startsWith(rel + '/'))) continue; if (!covered(rel)) out.push(rel) } }
+  for (const [dir, pick] of SURFACES) { if (!fs.existsSync(path.join(ROOT, dir))) continue; for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) { if (!pick(e)) continue; const rel = dir + '/' + e.name; if (only && !only.some((f: string) => f === rel || f.startsWith(rel + '/'))) continue; if (!covered(rel)) out.push(rel) } }
   return out
 }
 
@@ -231,8 +228,7 @@ const page = (name: string) => pages.find((p) => p.file === `${DOCS}/${name}.md`
    of a word the page had already used better, which is a worse page for no gain. */
 const ticks = (text: string) => new Set([...text.matchAll(/`([A-Za-z_][A-Za-z0-9_.-]*)[^`]*`/g)].map((m) => m[1]))
 const readAll = (dirs: any[], exts: any) => dirs.flatMap((d: string) => walk2(path.join(ROOT, d), exts)).map((f: fs.PathOrFileDescriptor) => fs.readFileSync(f, 'utf8')).join('\n')
-// @ts-expect-error TS7023, from the conversion: 'walk2' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one o
-const walk2 = (d, exts) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? (e.name === 'node_modules' || e.name === 'supertonic' ? [] : walk2(path.join(d, e.name), exts)) : exts.some((x) => e.name.endsWith(x)) ? [path.join(d, e.name)] : []) : []
+const walk2 = (d: string, exts: string[]): string[] => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? (e.name === 'node_modules' || e.name === 'supertonic' ? [] : walk2(path.join(d, e.name), exts)) : exts.some((x: string) => e.name.endsWith(x)) ? [path.join(d, e.name)] : []) : []
 
 /* environment variables: read by the kit or the theme, or demanded by the deploy check — each on the page, and each on the page read somewhere */
 {
@@ -308,7 +304,7 @@ const walk2 = (d, exts) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes:
   if (doc && doc.text.includes('| Module | static | git | cloud |')) {
     const { FEATURES } = await import('./modes.mjs')
     const cell = (v: any) => (v === true ? '✓' : v === false ? '—' : '◑')
-    const rows = new Map()
+    const rows = new Map<string, string[]>()
     for (const line of doc.text.split('\n')) {
       const m = /^\|\s*`([a-z-]+)`\s*\|\s*(.)\s*\|\s*(.)\s*\|\s*(.)\s*\|/.exec(line.trim())
       if (m) rows.set(m[1], [m[2], m[3], m[4]])
@@ -393,7 +389,7 @@ const walk2 = (d, exts) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes:
     const proposedIn = (name: string) => { const p = proposed.find((x) => x.change !== 'platformkit' && x.text.includes(norm(name))); return p && p.change }
     for (const p of pages.filter((x) => /COMPETITORS\.md$|what-platformkit-is\.md$/.test(x.file))) {
       const rows = table(p.text)
-      const seen = new Set()
+      const seen = new Set<string>()
       for (const r of rows) {
         const key = norm(r[0]); seen.add(key)
         const sp = specBy.get(key)

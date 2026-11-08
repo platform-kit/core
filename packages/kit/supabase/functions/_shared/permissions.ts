@@ -141,12 +141,13 @@ export function rules(identity: any, { can, cannot }: any) {
  * The ability for an identity: the kit's rules, then the site's, then the run's. Later rules win, so
  * a site's `cannot` narrows what the kit allowed, which is what an override is for.
  */
-export function abilityFor(identity: any, extra = null) {
+/* a site's own rules, given the identity and the builder, added after the kit's */
+export type RulesFn = (me: any, builder: AbilityBuilder<any>) => void
+export function abilityFor(identity: any, extra: RulesFn | RulesFn[] | null = null) {
   const me = identity && identity.clears ? identity : identityOf(identity || {})
   const builder = new AbilityBuilder(createMongoAbility)
   rules(me, builder)
-  // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
-  for (const fn of [].concat(extra || [])) if (typeof fn === 'function') fn(me, builder)
+  for (const fn of ([] as RulesFn[]).concat(extra || [])) if (typeof fn === 'function') fn(me, builder)
   return builder.build({ detectSubjectType: (s) => (s && s.__caslSubjectType__) || s })
 }
 

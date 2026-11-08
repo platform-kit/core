@@ -24,7 +24,7 @@ import {
 
 console.log('\nTHE THREE FACES\n')
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
 
 /* ---- the list ------------------------------------------------------------------------------ */
 ok('there are families to choose from', Object.keys(FAMILIES).length > 10, Object.keys(FAMILIES).length + ' family(ies)')

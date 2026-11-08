@@ -59,7 +59,6 @@ onMounted(async () => { await loadTickets(); values.value = await answerValues(t
 
 const shown = computed<any>(() => sortTickets(narrow(tickets.list, {
   status: status.value, assignee: assignee.value, q: q.value, answer: answer.value,
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
 }, props.me), order.value))
 
 const open = computed<any>(() => tickets.open && (tickets.open as any).ticket)

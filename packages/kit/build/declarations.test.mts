@@ -23,7 +23,7 @@ const KIT = join(HERE, '..')
 const REPO = join(KIT, '..', '..')
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nDECLARATIONS\n')
 
@@ -86,7 +86,7 @@ ok('there is client code to read', files.length > 100, String(files.length))
 for (const t of Object.keys(DECLARED)) {
   if (pendingOf(t)) continue
   const re = new RegExp("from\\(\\s*['\"]" + t + "['\"]\\s*\\)\\s*\\.\\s*(insert|update|upsert|delete)\\b")
-  const guilty: any = files.filter((p: any) => re.test(readFileSync(p, 'utf8'))).map((p: any) => p.replace(REPO + '/', ''))
+  const guilty = files.filter((p: any) => re.test(readFileSync(p, 'utf8'))).map((p: string) => p.replace(REPO + '/', ''))
   ok('`' + t + '` is not written from a browser', guilty.length === 0, guilty.join(', '))
 }
 
@@ -200,7 +200,7 @@ if (waiting.length) {
 {
   const { kitConfig } = await import('./velite.mjs')
   const cfg = await kitConfig()
-  const shapeOf = (z: any) => {
+  const shapeOf = (z: { shape: any; _def: { shape: () => any; schema: any; innerType: any; in: any; type: any } }) => {
     for (let i = 0; z && i < 8; i++) {
       if (z.shape) return z.shape
       if (z._def && typeof z._def.shape === 'function') return z._def.shape()

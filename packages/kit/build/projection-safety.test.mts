@@ -3,7 +3,7 @@ import { projectEventComments, projectEvents } from './events-db.mjs'
 import { projectSearch } from './search-db.mjs'
 
 let pass = 0, fail = 0
-const test = async (name: any, fn: any) => {
+const test = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => {
   try { await fn(); pass++ } catch (error: any) {
     fail++
     console.log(`  FAIL ${name}\n   ${String(error.message || error)}`)

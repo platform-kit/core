@@ -15,7 +15,7 @@ import { libraryOf } from '../src/lib/courses-paths.js'
 import fs from 'node:fs'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: boolean|undefined, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 
 const FILE = `---
 title: Writing plainly
@@ -88,8 +88,8 @@ Cross out every word that does not change the meaning.
 /* A SITE'S OWN LESSON KIND (openspec: courses, kit-extension-model): registered in its config, checked at build time,
    refused by name when nobody registers it */
 {
-  const kinds = { stub: { check: (ref: any) => (ref.endsWith('?') ? null : 'a stub asks a question') } }
-  const file = (kind: any, ref: any) => `---\ntitle: S\naccess: { free: true }\nlessons:\n  - { key: a, title: A }\n  - { key: b, section: Two, kind: ${kind}, ref: '${ref}' }\n---\n`
+  const kinds = { stub: { check: (ref: string) => (ref.endsWith('?') ? null : 'a stub asks a question') } }
+  const file = (kind: string, ref: string) => `---\ntitle: S\naccess: { free: true }\nlessons:\n  - { key: a, title: A }\n  - { key: b, section: Two, kind: ${kind}, ref: '${ref}' }\n---\n`
   const c = parseCourse('s', file('stub', 'Are you sure?'), { kinds })
   ok('a course may name a kind the site registers', !c.problems.length && c.lessons[1].kind === 'stub' && c.lessons[1].ref === 'Are you sure?' && c.lessons[1].body === null, c.problems.join('; '))
   ok('…its check runs on the lesson\'s ref, and what it says is named against the lesson', parseCourse('s', file('stub', 'Sure'), { kinds }).problems.join() === 'lesson b: a stub asks a question')
@@ -98,7 +98,7 @@ Cross out every word that does not change the meaning.
   ok('with the registration gone, the course naming it is refused, naming the lesson and the kind', /lesson b: kind is stub, which the site does not register/.test(gone), gone)
   ok('…while a course of the kit\'s kinds alone is as it was', !parseCourse('writing-plainly', FILE).problems.length && JSON.stringify(parseCourse('writing-plainly', FILE)) === JSON.stringify(parseCourse('writing-plainly', FILE, { kinds })))
   ok('a site kind names what it plays, as any lesson that is not text', /is a stub and names none/.test(parseCourse('s', `---\ntitle: S\naccess: { free: true }\nlessons: [{ key: a, kind: stub }]\n---\n`, { kinds }).problems.join()))
-  const refusal = (k: any) => { try { courseKindsOf({ courses: { kinds: k } }); return '' } catch (e: any) { return e.message } }
+  const refusal = (k: { text?: { component: string }; stub?: {}; "Two Words"?: { component: string } }) => { try { courseKindsOf({ courses: { kinds: k } }); return '' } catch (e: any) { return e.message } }
   ok('a kind named after one of the kit\'s is refused when the config is read', /"text" is the kit's own kind/.test(refusal({ text: { component: './x.vue' } })))
   ok('…as is one with no component, and a name that is not one', /names no component/.test(refusal({ stub: {} })) && /not a kind's name/.test(refusal({ 'Two Words': { component: './x.vue' } })))
   ok('…and a site that registers nothing has none', JSON.stringify(courseKindsOf({})) === '{}')
@@ -136,7 +136,7 @@ ok('an article, a form and a session open their own pages', lessonHref({ kind: '
 ok('the Courses panel is drawn where the module is on', gatesOf({ modules: { courses: true } }).courses === true && gatesOf({ modules: { courses: false } }).courses === false)
 const mod: any = MODULES.find((m) => m.key === 'courses')
 ok('courses is a module with no static shape', !!mod && mod.static === false && mod.git === true && mod.cloud === true)
-ok('…owning its schema, its push, its function, its routes and its sweep', mod && mod.owns.schema.includes('46-courses.sql') && mod.owns.steps.includes('courses-push') && mod.owns.functions.includes('course-notify') && mod.owns.routes.includes('/courses') && mod.owns.cron.some((c: any) => /run_course_notices/.test(c.command)))
+ok('…owning its schema, its push, its function, its routes and its sweep', mod && mod.owns.schema.includes('46-courses.sql') && mod.owns.steps.includes('courses-push') && mod.owns.functions.includes('course-notify') && mod.owns.routes.includes('/courses') && mod.owns.cron.some((c: { command: string }) => /run_course_notices/.test(c.command)))
 
 /* where the courses live: their own pages always, and a place of the community wherever it has one */
 {
@@ -164,9 +164,8 @@ ok('…owning its schema, its push, its function, its routes and its sweep', mod
 /* EVERY QUIZ PASSED EARNS AN ACHIEVEMENT (openspec: courses): declared from the course, one per scored form lesson */
 {
   const quizzes = parseCourse('q', `---\ntitle: Q\naccess: { free: true }\nlessons:\n  - { key: one, section: First steps, kind: form, ref: f-one }\n  - { key: two, section: Going on, kind: form, ref: f-two, achievement: { title: Halfway there, icon: book } }\n  - { key: three, kind: form, ref: f-three, achievement: false }\n  - { key: four, kind: form, ref: f-survey }\n  - { key: five, title: A reading }\n---\n`)
-  // @ts-expect-error TS2322, from the conversion: Type '(ref: any) => boolean' is not assignable to type '() => boolean'. Target signature provides too few arguments. Expected 1 or more, but
-  const rules = quizAchievements([quizzes], { scored: (ref: any) => ref !== 'f-survey' })
-  const by = Object.fromEntries(rules.map((r: any) => [r.slug, r]))
+  const rules = quizAchievements([quizzes], { scored: (ref) => ref !== 'f-survey' })
+  const by = Object.fromEntries(rules.map((r: { slug: any }) => [r.slug, r]))
   ok('each scored form lesson has an achievement, titled after its section', by['quiz-q-one'] && by['quiz-q-one'].title === 'First steps' && by['quiz-q-one'].event === 'quiz_passed' && JSON.stringify(by['quiz-q-one'].match) === JSON.stringify({ course: 'q', lesson: 'one' }), rules)
   ok('…one the course names uses its own title and icon', by['quiz-q-two'] && by['quiz-q-two'].title === 'Halfway there' && by['quiz-q-two'].icon === 'book')
   ok('…`achievement: false` has none, nor does a form that keeps no score, nor a lesson that is not a form', rules.length === 2 && !by['quiz-q-three'] && !by['quiz-q-four'])

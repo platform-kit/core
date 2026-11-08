@@ -22,7 +22,6 @@ const slug = computed(() => props.path.slice(ROUTES.book.length + 1).split('/')[
 const type = computed(() => (SESSIONS || []).find((s: { slug: string; published: boolean }) => s.slug === slug.value && s.published !== false) || null)
 const W = (us('library').coaching || {})['book-page'] || {}
 const fill = (t: any, m: { [x: string]: string; session?: any }) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: type.value ? fill(W.title, { session: type.value.title }) : (W.none || ''), description: type.value ? (type.value.line || '') : '', path: props.path, noindex: true })
 
 /* the reader's bookings, for the allowance the options count */

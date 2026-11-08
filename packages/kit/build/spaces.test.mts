@@ -19,7 +19,7 @@ import { offers, usable, fieldValue } from '../src/lib/spaces/later.js'
 import { RANGES, rangeDates, dayStart, dayEnd, blankQuery, queryArgs, emptyQuery, narrowingCount, chipsOf, describeQuery } from '../src/lib/spaces/query.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
 
 console.log('\nSPACES\n')
@@ -74,17 +74,14 @@ const answer = [
   { channel: 'c1', from: 4, more: false, messages: [{ id: 'm5', seq: 5 }, { id: 'm6', seq: 6 }] },
   { channel: 'c9', from: 0, more: true, messages: [{ id: 'x', seq: 1 }] },
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ channel: string; from: number; more: boolean; messages: { id: string; seq: number; }[]; }[]' is not assignable to parame
 const merged = mergeCatchup(answer)
 ok('a catch-up adds what is new', merged.add.c1.length === 2)
 ok('a channel further behind than the cap is paged, never trimmed silently', eq(merged.page, ['c9']))
 
 /* --- messages arrive in any order and land once --- */
-// @ts-expect-error TS2322, from the conversion: Type '{ id: string; seq: number; }' is not assignable to type 'never'.
 const list = mergeMessages([{ id: 'a', seq: 2 }], [{ id: 'b', seq: 1 }, { id: 'a', seq: 2, body: 'later' }])
 ok('messages are ordered by seq', eq(list.map((m) => m.id), ['b', 'a']))
 ok('a message that arrives twice is one message, the newer fields winning', list[1].body === 'later')
-// @ts-expect-error TS2322, from the conversion: Type '{ seq: number; }' is not assignable to type 'never'.
 ok('a message with no id is ignored', mergeMessages([], [{ seq: 1 }]).length === 0)
 
 /* --- the divider --- */
@@ -92,29 +89,19 @@ const stream = [
   { id: '1', seq: 1, author_id: A }, { id: '2', seq: 2, author_id: B },
   { id: '3', seq: 3, author_id: A }, { id: '4', seq: 4, author_id: B },
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; seq: number; author_id: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: string; s
 ok('the divider sits at the first unread that is not mine', dividerSeq(stream, 1, A) === 2)
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; seq: number; author_id: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: string; s
 ok('my own messages do not move the divider', dividerSeq(stream, 2, A) === 4)
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; seq: number; author_id: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: string; s
 ok('nothing unread, no divider', dividerSeq(stream, 4, A) === null)
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; seq: number; author_id: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: string; s
 ok('the divider is a seq, so a page of older messages does not move it', dividerSeq(stream.slice(1), 1, A) === 2)
 
 /* --- runs: by the author of a space message, not the chat's sender --- */
-const t = (min: any) => new Date(Date.parse('2026-09-22T09:00:00.000Z') + min * 60000).toISOString()
+const t = (min: number) => new Date(Date.parse('2026-09-22T09:00:00.000Z') + min * 60000).toISOString()
 const run = runsOf([
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; author_id: string; created_at: string; }' is not assignable to type 'never'.
   { id: '1', author_id: A, created_at: t(0) },
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; author_id: string; created_at: string; }' is not assignable to type 'never'.
   { id: '2', author_id: A, created_at: t(1) },
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; author_id: string; created_at: string; }' is not assignable to type 'never'.
   { id: '3', author_id: B, created_at: t(2) },
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; author_id: string; created_at: string; }' is not assignable to type 'never'.
   { id: '4', author_id: B, created_at: t(20) },
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; kind: string; created_at: string; }' is not assignable to type 'never'.
   { id: '5', kind: 'system', created_at: t(21) },
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; author_id: string; created_at: string; }' is not assignable to type 'never'.
   { id: '6', author_id: B, created_at: t(22) },
 ])
 ok('a run begins with the first message', run[0].first === true)
@@ -124,18 +111,15 @@ ok('the same person long after begins a new one', run[3].first === true)
 ok('a system line is always its own', run[4].first === true && run[4].last === true)
 ok('and never lets two messages either side of it join', run[5].first === true)
 ok('the last of a run is marked', run[1].last === true && run[0].last === false)
-// @ts-expect-error TS2322, from the conversion: Type '{ id: string; created_at: string; }' is not assignable to type 'never'.
 ok('a message with no author never joins a run', runsOf([{ id: 'a', created_at: t(0) }, { id: 'b', created_at: t(0) }])[1].first === true)
 
 /* --- threads --- */
 const root = { id: 'r', author_id: B, reply_count: 2, last_reply_at: '2026-09-22T10:00:00.000Z' }
-// @ts-expect-error TS2345, from the conversion: Argument of type '"11111111-1111-4111-8111-111111111111"' is not assignable to parameter of type 'null | undefined'.
 ok('a thread carries its own count', threadOf(root, [], A).count === 2)
 // @ts-expect-error TS2322, from the conversion: Type '{ author_id: string; }' is not assignable to type 'never'.
 ok('a thread I wrote in is mine', threadOf(root, [{ author_id: A }], A).mine === true)
 // @ts-expect-error TS2322, from the conversion: Type '{ author_id: string; }' is not assignable to type 'never'.
 ok('a thread I only read is not', threadOf(root, [{ author_id: B }], A).mine === false)
-// @ts-expect-error TS2345, from the conversion: Argument of type '"11111111-1111-4111-8111-111111111111"' is not assignable to parameter of type 'null | undefined'.
 ok('the root being mine puts me in the thread', threadOf({ ...root, author_id: A }, [], A).mine === true)
 
 /* --- mentions: a token, never a name --- */
@@ -227,15 +211,10 @@ ok('who may name the whole channel is the database to decide, and the client no 
 {
   const N = { [A]: 'Ada', [B]: 'Grace', c: 'Kay', d: 'Lin' }
   const me = 'me'
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   ok('a direct message with one person is their name', dmTitle([me, A], N, me) === 'Ada')
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   ok('with two, both, in order', dmTitle([me, B, A], N, me) === 'Ada, Grace')
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   ok('with more than three, the rest are counted', dmTitle([me, A, B, 'c', 'd'], N, me, { more: '+{n}' }) === 'Ada, Grace +2')
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   ok('a room with nobody else has its own word, never a blank', dmTitle([me], N, me, { self: 'Just you' }) === 'Just you')
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   ok('somebody with no name is not a blank either', dmTitle([me, 'x'], N, me, { someone: 'someone' }) === 'someone')
 
   /* which rooms are read by side rather than by author — the one place that decides it, because a
@@ -268,9 +247,9 @@ ok('who may name the whole channel is the database to decide, and the client no 
   const rows = [{ channel: 'c1', starred: true }, { channel: 'c2' }, { channel: 'c3' }]
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; space_id: string; kind: string; name: string; }[]' is not assignable to parameter of type 'never[]'. Type '{
   const sec = railSections(chans, rows, 's')
-  ok('a starred channel is in its own section', eq(sec.starred.map((c: any) => c.id), ['c1']))
-  ok('the rest are channels, by name', eq(sec.channels.map((c: any) => c.name), ['alpha']))
-  ok('a direct message is neither', eq(sec.dms.map((c: any) => c.id), ['c3']))
+  ok('a starred channel is in its own section', eq(sec.starred.map((c: { id: any }) => c.id), ['c1']))
+  ok('the rest are channels, by name', eq(sec.channels.map((c: { name: any }) => c.name), ['alpha']))
+  ok('a direct message is neither', eq(sec.dms.map((c: { id: any }) => c.id), ['c3']))
   ok('another space is not in this one', !JSON.stringify(sec).includes('elsewhere'))
   // @ts-expect-error TS2322, from the conversion: Type '{ id: string; space_id: string; kind: string; name: string; }' is not assignable to type 'never'.
   ok('a channel the reader has not joined is not a room of theirs', railSections([chans[0]], [], 's').channels.length === 1)
@@ -465,7 +444,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   const os = await import('node:os')
   const pathm = await import('node:path')
   const root = tmp.mkdtempSync(pathm.join(os.tmpdir(), 'spaces-'))
-  const put = (rel: any, body: any) => { tmp.mkdirSync(pathm.dirname(pathm.join(root, rel)), { recursive: true }); tmp.writeFileSync(pathm.join(root, rel), body) }
+  const put = (rel: string, body: string|NodeJS.ArrayBufferView<ArrayBufferLike>) => { tmp.mkdirSync(pathm.dirname(pathm.join(root, rel)), { recursive: true }); tmp.writeFileSync(pathm.join(root, rel), body) }
   const { gitStore } = await import('./store/index.mjs')
   /* a catalog of its own: what the site sells and what it books, which is what a fill, a grant and
      a "what is on" line are checked against. Without one those checks stand down, on purpose — a
@@ -530,7 +509,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   ok('a fill naming a tier no membership declares is refused', out.r === null && /no-such-tier/.test(out.said), out.said)
 
   /* --- a room's own rule, and the windows on a condition --- */
-  const aRoom = (body: any) => { put('content/spaces/guild.md', '---\nname: The Guild\nfill: { tier: inner }\n---\n'); put('content/spaces/guild/lounge.md', '---\nname: Lounge\n' + body + '---\n') }
+  const aRoom = (body: string) => { put('content/spaces/guild.md', '---\nname: The Guild\nfill: { tier: inner }\n---\n'); put('content/spaces/guild/lounge.md', '---\nname: Lounge\n' + body + '---\n') }
 
   aRoom('fill: { tier: inner }\n')
   out = await compile()
@@ -597,7 +576,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   put('content/spaces/guild.md', '---\nname: The Guild\nfill:\n  - { role: [admin] }\n  - { entitlement: subscribed }\n---\n')
   out = await compile()
   ok('two real alternatives compile, and are carried as a list',
-    out.r !== null && Array.isArray((out.r.find((s: any) => s.slug === 'guild') || {}).fill), JSON.stringify((out.r || []).find((s: any) => s.slug === 'guild')))
+    out.r !== null && Array.isArray((out.r.find((s: { slug: string }) => s.slug === 'guild') || {}).fill), JSON.stringify((out.r || []).find((s: { slug: string }) => s.slug === 'guild')))
 
   put('content/spaces/guild.md', '---\nname: The Guild\ngrants:\n  - { capability: voice, to: "tier:no-such-tier" }\n---\n')
   out = await compile()
@@ -605,7 +584,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
 
   put('content/spaces/guild.md', '---\nname: The Guild\nfill: { bought: guild-pass }\ngrants:\n  - { capability: voice, to: "tier:inner" }\n---\n')
   out = await compile()
-  ok('and the ones it does sell are taken', !!out.r && out.r[0].fill.product === 'aa11bb22' && out.r[0].grants.some((g: any) => g.tier === 'inner'), out.said)
+  ok('and the ones it does sell are taken', !!out.r && out.r[0].fill.product === 'aa11bb22' && out.r[0].grants.some((g: { tier: string }) => g.tier === 'inner'), out.said)
 
   put('content/spaces/guild.md', '---\nname: The Guild\n---\n')
   put('content/spaces/guild/lounge.md', '---\nname: Lounge\nhears: [the.rapture]\n---\n')
@@ -636,9 +615,9 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   out = await compile()
   const g = out.r && out.r[0]
   ok('the space carries its body, its kind and its roles', !!g && g.kind === 'server' && g.about === 'What this place is.' && g.roles.length === 1, out.said)
-  ok('a role\'s `can` becomes a grant of scope role', !!g && g.grants.some((x: any) => x.capability === 'voice' && x.scope === 'role' && x.role === 'founder'))
+  ok('a role\'s `can` becomes a grant of scope role', !!g && g.grants.some((x: { capability: string; scope: string; role: string }) => x.capability === 'voice' && x.scope === 'role' && x.role === 'founder'))
   ok('a space\'s `everyone` is scoped to the space', !!g && g.grants.some((x: any) => x.capability === 'voice' && x.scope === 'space' && x.channel === null))
-  ok('a channel\'s grant carries its channel', !!g && g.grants.some((x: any) => x.capability === 'mention-channel' && x.channel === 'lounge'))
+  ok('a channel\'s grant carries its channel', !!g && g.grants.some((x: { capability: string; channel: string }) => x.capability === 'mention-channel' && x.channel === 'lounge'))
   ok('what a room hears is on the room', !!g && eq(g.channels[0].hears, ['purchase.paid']))
   put('content/spaces/guild.md', '---\nname: The Guild\nsessions: [a-call]\n---\n')
   put('content/spaces/guild/lounge.md', '---\nname: Lounge\n---\n')
@@ -649,7 +628,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
     !!g && g.discoverable === true && g.welcome === 'lounge' && eq(g.groups, ['The work'])
     && g.sessions === undefined && g.channels[0].group === 'The work')
   ok('moderating is a grant like any other, from a role a site invented',
-    !!g && g.grants.some((x: any) => x.capability === 'moderate' && x.scope === 'role' && x.role === 'founder'))
+    !!g && g.grants.some((x: { capability: string; scope: string; role: string }) => x.capability === 'moderate' && x.scope === 'role' && x.role === 'founder'))
   {
     const sql = tmp.readFileSync(new URL('../supabase/schemas/90-spaces.sql', import.meta.url), 'utf8')
     const said = (/space_grants_capability_check\" CHECK \(\(\"capability\" = ANY \(ARRAY\[([^\]]+)\]/.exec(sql) || [])[1] || ''
@@ -663,18 +642,18 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
 
 /* ---- a poll: the arithmetic, with no browser in it ---- */
 {
-  const poll = (opts: any, extra = {}) => ({ id: 'm1', kind: 'poll', body: 'Which book next?',
+  const poll = (opts: { key: string; text: string }[], extra = {}) => ({ id: 'm1', kind: 'poll', body: 'Which book next?',
     meta: { poll: { options: opts, ...extra } }, poll_closed_at: null })
   const O = [{ key: 'a', text: 'The Kybalion' }, { key: 'b', text: 'As a Man Thinketh' }]
-  const v = (k: any, u: any) => ({ message_id: 'm1', option_key: k, user_id: u })
+  const v = (k: string, u: string) => ({ message_id: 'm1', option_key: k, user_id: u })
 
   ok('a message that is not a poll has no tally', tallyPoll({ id: 'm1', kind: 'text', meta: {} }) === null)
   ok('nor one whose options are empty', tallyPoll(poll([])) === null)
 
   const none: any = tallyPoll(poll(O), [], 'me')
   ok('a poll nobody has voted in has no shares rather than NaN',
-    none.options.every((o: any) => o.share === 0) && none.cast === 0 && !none.voted,
-    JSON.stringify(none.options.map((o: any) => o.share)))
+    none.options.every((o: { share: number }) => o.share === 0) && none.cast === 0 && !none.voted,
+    JSON.stringify(none.options.map((o: { share: any }) => o.share)))
 
   // @ts-expect-error TS2322, from the conversion: Type '{ message_id: string; option_key: any; user_id: any; }' is not assignable to type 'never'.
   const one: any = tallyPoll(poll(O), [v('a', 'u1'), v('a', 'u2'), v('b', 'u3')], 'u3')
@@ -684,16 +663,16 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   ok('the option in front is marked, and only it', one.options[0].leads === true && one.options[1].leads === false)
   ok('a vote of another poll is not counted here',
     // @ts-expect-error TS2322, from the conversion: Type '{ message_id: string; option_key: any; user_id: any; }' is not assignable to type 'never'.
-    (tallyPoll(poll(O), [v('a', 'u1'), { message_id: 'other', option_key: 'a', user_id: 'u9' }]) as any).cast === 1)
+    tallyPoll(poll(O), [v('a', 'u1'), { message_id: 'other', option_key: 'a', user_id: 'u9' }]).cast === 1)
 
   // @ts-expect-error TS2322, from the conversion: Type '{ message_id: string; option_key: any; user_id: any; }' is not assignable to type 'never'.
   const many: any = tallyPoll(poll(O, { multi: true }), [v('a', 'u1'), v('b', 'u1')], 'u1')
   ok('a poll that takes several counts both of one person\'s answers', many.cast === 2 && many.people === 1)
   ok('and its shares are of the answers, not the people',
-    Math.abs(many.options[0].share - 0.5) < 1e-9, JSON.stringify(many.options.map((o: any) => o.share)))
+    Math.abs(many.options[0].share - 0.5) < 1e-9, JSON.stringify(many.options.map((o: { share: any }) => o.share)))
   ok('a single-answer poll shares out by people instead',
     // @ts-expect-error TS2322, from the conversion: Type '{ message_id: string; option_key: any; user_id: any; }' is not assignable to type 'never'.
-    Math.abs((tallyPoll(poll(O), [v('a', 'u1'), v('b', 'u2')]) as any).options[0].share - 0.5) < 1e-9)
+    Math.abs(tallyPoll(poll(O), [v('a', 'u1'), v('b', 'u2')]).options[0].share - 0.5) < 1e-9)
 
   ok('a closed poll says so', (tallyPoll({ ...poll(O), poll_closed_at: '2026-09-23T00:00:00Z' }, []) as any).closed === true)
   ok('and an open one does not', (tallyPoll(poll(O), []) as any).closed === false)
@@ -736,7 +715,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
 
 /* ---- the keyboard ---- */
 {
-  const ev = (key: any, o: any = {}) => ({ key, metaKey: !!o.mod, ctrlKey: false, shiftKey: !!o.shift, altKey: !!o.alt })
+  const ev = (key: string, o: any = {}) => ({ key, metaKey: !!o.mod, ctrlKey: false, shiftKey: !!o.shift, altKey: !!o.alt })
   ok('the shortcut to what is unread', commandOf(ev('a', { mod: true, shift: true })) === 'unreads')
   ok('and to the rooms above and below', commandOf(ev('ArrowDown', { alt: true })) === 'next-room')
   ok('…and to the unread ones', commandOf(ev('ArrowDown', { alt: true, shift: true })) === 'next-unread')
@@ -760,27 +739,27 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   ok('…and wraps at the end', stepRoom(rooms, 'd', 1) === 'a')
   ok('up wraps the other way', stepRoom(rooms, 'a', -1) === 'd')
   // @ts-expect-error TS2322, from the conversion: Type '(r: any) => any' is not assignable to type 'null | undefined'.
-  ok('with a rule, only those count', stepRoom(rooms, 'b', 1, { only: (r: any) => r.hot }) === 'd')
+  ok('with a rule, only those count', stepRoom(rooms, 'b', 1, { only: (r) => r.hot }) === 'd')
   // @ts-expect-error TS2322, from the conversion: Type '(r: any) => any' is not assignable to type 'null | undefined'.
-  ok('…and from a room the rule excludes, it starts at one end', stepRoom(rooms, 'a', 1, { only: (r: any) => r.hot }) === 'b')
+  ok('…and from a room the rule excludes, it starts at one end', stepRoom(rooms, 'a', 1, { only: (r) => r.hot }) === 'b')
   ok('nowhere to go is nowhere', stepRoom([], 'a', 1) === null)
 }
 
 /* ---- when "later" is ---- */
 {
   const monNoon = Date.parse('2026-06-01T12:00:00')     /* a Monday */
-  const keys = (at: any) => offers(at).map((o) => o.key)
+  const keys = (at: number|undefined) => offers(at).map((o) => o.key)
   ok('an hour is always offered', keys(monNoon)[0] === 'hour')
   ok('…and it is an hour away', offers(monNoon)[0].when.getTime() === monNoon + 3600e3)
   ok('at noon, this evening is still to come', keys(monNoon).includes('evening'))
   /* at nine at night it is not, and offering a time in the past is the bug this prevents */
   ok('at nine at night it is not', !keys(Date.parse('2026-06-01T21:00:00')).includes('evening'))
-  ok('tomorrow morning is nine', (offers(monNoon) as any).find((o: any) => o.key === 'morning').when.getHours() === 9)
+  ok('tomorrow morning is nine', (offers(monNoon) as any).find((o: { key: string }) => o.key === 'morning').when.getHours() === 9)
   /* in the small hours, "morning" is THIS morning: somebody awake at three means today */
   ok('in the small hours, morning is today',
-    (offers(Date.parse('2026-06-03T03:00:00')) as any).find((o: any) => o.key === 'morning').when.getDate() === 3)
+    (offers(Date.parse('2026-06-03T03:00:00')) as any).find((o: { key: string }) => o.key === 'morning').when.getDate() === 3)
   /* on a Monday, "Monday" is the one coming, never the one this morning */
-  const mon = (offers(monNoon) as any).find((o: any) => o.key === 'monday').when
+  const mon = (offers(monNoon) as any).find((o: { key: string }) => o.key === 'monday').when
   ok('on a Monday, Monday is next week', mon.getTime() > monNoon && mon.getDay() === 1)
   /* two offers for the same moment is noise: on a Sunday night tomorrow morning IS Monday */
   const sun = keys(Date.parse('2026-06-07T22:00:00'))
@@ -887,7 +866,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
     { kind: 'text', body: 'Let me check.', mine: true },
   ]
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ kind: string; body: string; mine: boolean; attachment_name?: undefined; } | { kind: string; body: null; attachment_name
-  const said = roomAsProse(msgs, { who: (m: any) => (m.mine ? 'Us' : 'Them'), unheard: 'sent a voice note' })
+  const said = roomAsProse(msgs, { who: (m) => (m.mine ? 'Us' : 'Them'), unheard: 'sent a voice note' })
   const lines = said.split('\n')
   ok('a side may be the speaker', lines[0] === 'Them: Do you ship to Japan?', said)
   ok('an attachment is in the transcript', said.includes('damaged-spine.jpg'))
@@ -903,7 +882,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
    A forum card showed body.slice(0, 80), which cuts mid-word and leaves the markdown in — so a
    bot's answer became "**Breakthrough co" and "you'll need to contact th". */
 {
-  const T = (b: any, o?: any) => titleOf({ body: b }, {}, o)
+  const T = (b: string, o?: { max?: number|undefined }|undefined) => titleOf({ body: b }, {}, o)
   ok('a first sentence is the heading', T('**Breakthrough coaching.** You identify where you are.') === 'Breakthrough coaching.')
   ok('\u2026with the marks gone', !T('**Bold.** rest').includes('*'))
   ok('a short line is itself', T('Do you ship to Japan?') === 'Do you ship to Japan?')

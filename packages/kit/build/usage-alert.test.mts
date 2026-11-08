@@ -3,7 +3,7 @@
 import { alertFor, mayShowUsageAlert, NEEDS_CUSTOMER } from '../src/lib/usage-alert.js'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
+const ok = (msg: string, cond: boolean) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
 
 ok('verification required raises the banner', alertFor(['requires_action']) === 'requires_action')
 ok('a failed payment raises the banner', alertFor(['failed']) === 'failed')

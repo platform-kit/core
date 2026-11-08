@@ -26,12 +26,12 @@ import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const note = (s: any) => console.log('  ' + s)
+const ok = (name: string, cond: boolean|null, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const note = (s: string) => console.log('  ' + s)
 
 console.log('\nWHAT A CLIENT MAY CHANGE\n')
 
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The guards, the pair rule and the scheduled jobs are NOT covered by this run.\n'); leave(0) }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The guards, the pair rule and the scheduled jobs are NOT covered by this run.\n'); leave(0) }
 let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
@@ -149,7 +149,7 @@ try {
   const c = new Client({ connectionString: cfg.DB_URL })
   await c.connect()
   const r = await c.query('select jobname from cron.job')
-  names = r.rows.map((x: any) => x.jobname)
+  names = r.rows.map((x: { jobname: any }) => x.jobname)
   await c.end()
 } catch (e: any) { note('⚠ could not reach Postgres for cron.job (' + String(e.message || e).slice(0, 80) + ')') }
 

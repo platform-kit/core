@@ -116,7 +116,7 @@ export function skillsLine(bot: any = {}, allowed: any = null) {
 /* which skills this run has already opened, read off its own steps — so a resumed run on another
    machine knows exactly what the one before it had open */
 export function openedSkills(steps = []) {
-  const out = new Set()
+  const out = new Set<string>()
   for (const s of steps) {
     if (s && (s as any).kind === 'tool' && (s as any).name === 'open_skill' && !(s as any).error) {
       const name = ((s as any).request && (s as any).request.args && (s as any).request.args.name) || ((s as any).response && (s as any).response.result && (s as any).response.result.skill)
@@ -216,7 +216,7 @@ export function messagesFor({ run = {}, bot = {}, steps = [] } = {}) {
 
 /* earlier questions from the same subject, as one passage. Nothing here decides WHOSE they are —
    the database did that (agent_recall) — this only words them. */
-export function beforeNow(rows = []) {
+export function beforeNow(rows: { asked: string; said: string }[]|{}[]|undefined = []) {
   const list = (Array.isArray(rows) ? rows : []).filter((r: any) => r && (r.asked || r.said))
   if (!list.length) return ''
   return list.map((r: any) => [r.asked && 'Q: ' + String(r.asked).trim(), r.said && 'A: ' + String(r.said).trim()]

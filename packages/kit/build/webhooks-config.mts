@@ -60,7 +60,7 @@ export async function webhooksConfig({ check: only = false } = {}) {
     if (w.secret) row.secret_env = String(w.secret).slice(4)
     out.push(row)
   })
-  const seen = new Set()
+  const seen = new Set<string>()
   for (const r of out) {
     const key = r.kind + '|' + (r.form || '') + '|' + (r.tag || '') + '|' + r.url
     if (seen.has(key)) faults.push(`two ${r.kind} subscriptions to the same place: ${r.url}`)

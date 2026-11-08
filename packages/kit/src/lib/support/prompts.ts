@@ -85,7 +85,7 @@ function begin() {
 }
 
 /* the audience, asked of the server once per prompt per session for a signed-in reader */
-const asked = new Map()
+const asked = new Map<string, null | boolean>()
 async function audienceOk(p: { rules: {}; id: string }) {
   if (!p.rules || !Object.keys(p.rules).length) return true
   if (!session.value || !supabase || !configured) return false
@@ -100,8 +100,7 @@ async function audienceOk(p: { rules: {}; id: string }) {
 }
 
 /* where nothing may appear is one rule, asked by the chat and by the ad alike (lib/interrupt.js) */
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'. Type 'string' is not assignable to type 'never'.
-const quiet = (path) => IN_PREVIEW || !mayInterrupt(path, INTERRUPT_ROUTES)
+const quiet = (path: string|null) => IN_PREVIEW || !mayInterrupt(path, INTERRUPT_ROUTES)
 
 let ticker: any = null
 async function tick() {

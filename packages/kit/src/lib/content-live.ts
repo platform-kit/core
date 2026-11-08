@@ -21,7 +21,7 @@ const CLOUD = import.meta.env.CONTENT_STORE === 'cloud'
 import * as CONTENT from '#content'
 import { loadedCorpus } from './search-index.js'
 
-export const loaded = { at: null, rows: 0, collections: [], error: null, editions: false }
+export const loaded = { at: null, rows: 0, collections: [], error: null as string | null, editions: false }
 const SINGLE = new Set(['site', 'storefront'])
 
 export async function load({ timeout = 8000 } = {}) {
@@ -39,8 +39,7 @@ export async function load({ timeout = 8000 } = {}) {
     const r: any = await Promise.race([q, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), timeout))])
     if (r.error) throw r.error
     rows = (r.data && r.data.rows) || []
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null'.
-  } catch (e) { loaded.error = String(e.message || e); return null }
+  } catch (e: any) { loaded.error = String(e.message || e); return null }
   /*
    * AND THE DERIVED JSONS THAT ARE ALSO ROWS. `content/store/print.json` carries every book's set
    * editions — their pages, their quotes, their cover art, the pictures of their pages — and it is
@@ -53,6 +52,7 @@ export async function load({ timeout = 8000 } = {}) {
    */
   const idx = rows.find((r: { path: string }) => r.path === 'content/store/print.json')
   if (idx) { const { setEditions } = await import('./print-index.js'); if (setEditions(idx.text)) loaded.editions = true }
+  // @ts-expect-error TS2322, from the conversion: Type '({ highlight }?: any) => { parse(md: any): any; toc(md: {} | null): { title: any; url: string; items: never[]; }[]; }' is not assignab
   return apply(rows, { renderer, toEntry, targetOf, searchRows })
 }
 

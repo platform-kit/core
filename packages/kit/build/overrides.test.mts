@@ -21,7 +21,6 @@ const overrides: any = {}
 for (const n of names) { const f = path.join(dir, n + '.vue'); fs.writeFileSync(f, `<template><div class="stub-${n}" /></template>\n`); overrides[n] = f }
 
 /* the plugin over a config with every override — velite is not run (the guard the plugin already keeps) */
-// @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
 globalThis.__veliteStarted = true
 const { createServer } = await import('vite')
 const { platformkit } = await import('../vite/index.mjs')
@@ -29,9 +28,9 @@ const plugins = await platformkit({ root: ROOT, config: { ...c, overrides } })
 const server = await createServer({ root: ROOT, configFile: false, logLevel: 'error', server: { middlewareMode: true, watch: null, hmr: false }, plugins })
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
-const resolve = async (id: any, importer: any) => { const r = await server.pluginContainer.resolveId(id, importer); return r && r.id.split('?')[0] }
-const rel = (f: any) => path.relative(theme.src, f)
+const ok = (msg: string, cond: boolean) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
+const resolve = async (id: string, importer: string|undefined) => { const r = await server.pluginContainer.resolveId(id, importer); return r && r.id.split('?')[0] }
+const rel = (f: string) => path.relative(theme.src, f)
 const anyTheme = theme.components[names[0]]   /* a theme file, as the importer */
 for (const n of names) {
   const orig = theme.components[n]

@@ -82,7 +82,7 @@ export function inferenceOf(config: any = {}) {
     fail(`providers must contain between 1 and ${MAX_PROVIDERS} ordered providers`)
   }
 
-  const ids = new Set()
+  const ids = new Set<string>()
   const providers = source.providers.map((provider: any, index: any) => {
     const where = `providers[${index}]`
     if (!provider || typeof provider !== 'object' || Array.isArray(provider)) fail(`${where} must be a group of fields`)

@@ -18,7 +18,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('holds-db: ' + m)
+const note = (m: string) => console.log('holds-db: ' + m)
 if (process.env.HOLDS_TEST === '0') { note('skipped (HOLDS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 if (!url || !localStack()) { note('skipped — no local stack in .env'); leave(0) }
@@ -27,16 +27,16 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
+const ok = (m: string, c: boolean|null, d?: string|null|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
 const db = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 
 console.log('\nHOLDS\n')
 
 const tag = 'h' + Math.random().toString(36).slice(2, 8)
 const made = { users: [], uids: [] }
-const iso = (ms: any) => new Date(ms).toISOString()
+const iso = (ms: string|number|Date) => new Date(ms).toISOString()
 const at = Date.now() + 14 * 864e5
-const book = async (uid: any, host: any, start: any, extra: any = {}) => {
+const book = async (uid: string, host: string, start: number, extra: any = {}) => {
   // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
   made.uids.push(uid)
   const rec = {
@@ -46,10 +46,10 @@ const book = async (uid: any, host: any, start: any, extra: any = {}) => {
   }
   return db.rpc('book_native', { p: rec, p_seats: extra.__seats || 0, p_hosts: extra.__hosts || [host] })
 }
-const holdsOf = async (host: any) => ((await db.from('booking_holds').select('booking_uid, start_at').eq('user_id', host)).data || [])
+const holdsOf = async (host: string) => ((await db.from('booking_holds').select('booking_uid, start_at').eq('user_id', host)).data || [])
 
 try {
-  const mk = async (email: any) => {
+  const mk = async (email: string) => {
     const { data, error } = await db.auth.admin.createUser({ email, password: 'password123', email_confirm: true })
     if (error) throw new Error(email + ': ' + error.message)
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.

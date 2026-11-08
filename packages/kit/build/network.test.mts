@@ -5,8 +5,8 @@
 import { AUDIENCES, rankOf, answerAudiences, defaultAudience, itemKey, joinPages, cursorOf, threadOf, segmentsOf, agoOf, toggled, postOfMessage, peopleIn } from '../src/lib/network/model.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const eq = (a: any, b: string[]|number[]) => JSON.stringify(a) === JSON.stringify(b)
 
 console.log('\nNETWORK\n')
 
@@ -20,35 +20,35 @@ ok('an answer starts on its parent\'s audience', defaultAudience({ audience: 'ev
 ok('a fresh post starts where the site says', defaultAudience(null, 'here') === 'here' && defaultAudience(null, 'everyone') === 'everyone')
 
 /* ---- pages of the timeline */
-const t = (kind: any, id: any, at: any, by?: any) => ({ kind, [kind === 'space' ? 'message_id' : 'post_id']: id, at, reposted_by: by || null })
+const t = (kind: string, id: string, at: string, by?: string|undefined) => ({ kind, [kind === 'space' ? 'message_id' : 'post_id']: id, at, reposted_by: by || null })
 const page1 = [t('post', 'a', '2026-10-07T10:00:00Z'), t('repost', 'b', '2026-10-07T09:00:00Z', 'u2'), t('space', 'm', '2026-10-07T08:00:00Z')]
 ok('a post and its repost are two items', itemKey(t('post', 'b', 'x')) !== itemKey(t('repost', 'b', 'x', 'u2')))
 const joined = joinPages(page1, [t('space', 'm', '2026-10-07T08:00:00Z'), t('post', 'c', '2026-10-07T07:00:00Z'), t('post', 'z', '2026-10-07T11:00:00Z')])
 ok('a further page adds nothing twice', joined.length === 5)
-ok('…and stays newest first', joined.every((x: any, i: any) => i === 0 || new Date(joined[i - 1].at) >= new Date(x.at)))
+ok('…and stays newest first', joined.every((x, i) => i === 0 || new Date(joined[i - 1].at) >= new Date(x.at)))
 ok('the next page starts at the oldest shown', cursorOf(page1) === '2026-10-07T08:00:00Z' && cursorOf([]) === null)
 
 /* ---- a thread */
-const P = (id: any, parent: any, at: any) => ({ id, reply_parent_id: parent, created_at: at })
+const P = (id: string, parent: string|null, at: string) => ({ id, reply_parent_id: parent, created_at: at })
 const root = P('r', null, '2026-10-07T00:00:00Z')
 const replies = [P('b', 'r', '2026-10-07T02:00:00Z'), P('a', 'r', '2026-10-07T01:00:00Z'), P('a1', 'a', '2026-10-07T03:00:00Z'), P('lost', 'gone', '2026-10-07T04:00:00Z')]
 const th: any = threadOf(root, replies)
 ok('a thread opens on its root', th[0].post.id === 'r' && th[0].depth === 0)
-ok('answers hang under what they answer, oldest first', eq(th.map((x: any) => x.post.id), ['r', 'a', 'a1', 'b', 'lost']), th.map((x: any) => x.post.id).join(','))
-ok('…indented by depth', eq(th.map((x: any) => x.depth), [0, 1, 2, 1, 1]))
-ok('an answer whose parent is out of reach hangs off the root', th.find((x: any) => x.post.id === 'lost').depth === 1)
+ok('answers hang under what they answer, oldest first', eq(th.map((x: { post: { id: any; }; }) => x.post.id), ['r', 'a', 'a1', 'b', 'lost']), th.map((x: { post: { id: any; }; }) => x.post.id).join(','))
+ok('…indented by depth', eq(th.map((x: { depth: any; }) => x.depth), [0, 1, 2, 1, 1]))
+ok('an answer whose parent is out of reach hangs off the root', th.find((x: { post: { id: string; }; }) => x.post.id === 'lost').depth === 1)
 const deep = [P('1', 'r', '1'), P('2', '1', '2'), P('3', '2', '3'), P('4', '3', '4'), P('5', '4', '5'), P('6', '5', '6')]
 ok('indent stops at its depth and the run goes on flat', Math.max(...threadOf(root, deep, 3).map((x) => x.depth)) === 3)
 ok('no root, no thread', eq(threadOf(null, replies), []))
 
 /* ---- words: text and links, never markup */
 const segs: any = segmentsOf('see https://example.com/a?b=1. and <b>bold</b> (http://x.org)')
-ok('a link is cut out of the words', segs.some((s: any) => s.kind === 'link' && s.href === 'https://example.com/a?b=1'))
-ok('…without the full stop that ends the sentence', !segs.some((s: any) => s.kind === 'link' && s.href.endsWith('.')))
-ok('…or the bracket that closes it', segs.some((s: any) => s.kind === 'link' && s.href === 'http://x.org'))
-ok('…and shown without its scheme', segs.find((s: any) => s.kind === 'link').text === 'example.com/a?b=1')
-ok('markup stays words', segs.some((s: any) => s.kind === 'text' && s.text.includes('<b>bold</b>')))
-ok('the words come back whole', segs.map((s: any) => s.kind === 'link' ? s.href : s.text).join('') === 'see https://example.com/a?b=1. and <b>bold</b> (http://x.org)')
+ok('a link is cut out of the words', segs.some((s: { kind: string; href: string; }) => s.kind === 'link' && s.href === 'https://example.com/a?b=1'))
+ok('…without the full stop that ends the sentence', !segs.some((s: { kind: string; href: string; }) => s.kind === 'link' && s.href.endsWith('.')))
+ok('…or the bracket that closes it', segs.some((s: { kind: string; href: string; }) => s.kind === 'link' && s.href === 'http://x.org'))
+ok('…and shown without its scheme', segs.find((s: { kind: string; }) => s.kind === 'link').text === 'example.com/a?b=1')
+ok('markup stays words', segs.some((s: { kind: string; text: string|string[]; }) => s.kind === 'text' && s.text.includes('<b>bold</b>')))
+ok('the words come back whole', segs.map((s: { kind: string; href: any; text: any; }) => s.kind === 'link' ? s.href : s.text).join('') === 'see https://example.com/a?b=1. and <b>bold</b> (http://x.org)')
 ok('no words, nothing', eq(segmentsOf(''), []))
 ok('a javascript: address is not a link', !segmentsOf('javascript:alert(1)').some((s) => s.kind === 'link'))
 
@@ -93,11 +93,11 @@ ok('the people of a set of posts, once each', eq(peopleIn([{ author_id: 'a' }, {
   ok('…and a name it does not know refuses the build, naming it', /"likes"/.test(refused))
   ok('members do not pin spaces to Home unless the site turns pinning on', communityOf({}).pinning === false && communityOf({ community: { pinning: true } }).pinning === true)
   /* the community's base address */
-  const badPath = (v: any) => { try { pathOf(v); return false } catch (e) { return true } }
+  const badPath = (v: string) => { try { pathOf(v); return false } catch (e) { return true } }
   ok('the community lives at /feed unless the site names its own', communityOf({}).path === '/feed' && communityOf({ community: { path: '/community' } }).path === '/community')
   ok('a path of more than one segment, or one the site already answers on, is refused', badPath('/a/b') && badPath('community') && badPath('/store') && badPath('/app'))
   /* a place in the community, by registration (openspec: community-places-by-registration) */
-  const refuses = (list: any) => { try { placesOf(list); return false } catch (e) { return true } }
+  const refuses = (list: { key: string; component: string; }[]|{ key: string; }[]|{ key: string; component: string; claims: string[]; }[]) => { try { placesOf(list); return false } catch (e) { return true } }
   const pl = placesOf([{ key: 'journal', word: 'journal', icon: 'pencil', component: './src/J.vue', claims: ['/app', '!/app/call'] }])
   ok('a registered place is read with its defaults', pl.length === 1 && pl[0].key === 'journal' && pl[0].shows === 'signed-in' && pl[0].wide === false && pl[0].claims.join() === '/app,!/app/call')
   ok('no places of a site\'s own unless the config registers some', communityOf({ modules: { courses: false } }).places.length === 0)

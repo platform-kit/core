@@ -48,7 +48,6 @@ export async function compileTeams({ check = false, store, write = true }: any =
      and a publish over rows has no file to read and nothing to contradict */
   let catalog = null
   if (st.kind !== 'rows') catalog = (await import('./spaces-disk.mjs')).catalogFrom(root)
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ offers: any; sessions: any; } | null' is not assignable to parameter of type 'null | undefined'. Type '{ offers: any; se
   const cat = catalogOf(root, catalog)
   const keyOf = cat.keyOf
   const tierOk = (tier: any) => !cat.sells || cat.tiers.has(tier)
@@ -56,7 +55,7 @@ export async function compileTeams({ check = false, store, write = true }: any =
   const errors = []
   const declared = await readTeams(st)
   const out = []
-  const seen = new Set()
+  const seen = new Set<string>()
 
   for (const t of declared) {
     const at = `content/teams/${t.slug}.md`

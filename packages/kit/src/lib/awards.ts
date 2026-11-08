@@ -7,7 +7,6 @@
  * This only looks.
  */
 import { ref } from 'vue'
-// @ts-expect-error TS2305, from the conversion: Module '"#content"' has no exported member 'achievements'.
 import { achievements as COMPILED } from '#content'
 import { supabase, configured } from './supabase.js'
 import { session } from './auth.js'

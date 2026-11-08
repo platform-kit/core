@@ -12,8 +12,7 @@
  */
 import { holds } from './logic.js'
 
-// @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-const walkFields = (blocks, out = []) => { for (const b of blocks || []) { if (b.type === 'field') out.push(b); if (b.blocks) walkFields(b.blocks, out) } return out }
+const walkFields = (blocks: any, out: any[] = []) => { for (const b of blocks || []) { if (b.type === 'field') out.push(b); if (b.blocks) walkFields(b.blocks, out) } return out }
 
 /* the slide's progress, as forms.md says it: its own `|>`, else 0% on the first and 100% on the end */
 function progressOf(slide: any, i: any, n: any) {

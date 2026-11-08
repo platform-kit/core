@@ -26,7 +26,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, declared, notHere, moduleOn } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('ownership: ' + m)
+const note = (m: string) => console.log('ownership: ' + m)
 if (process.env.OWNERSHIP_TEST === '0') { note('skipped (OWNERSHIP_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
@@ -34,13 +34,13 @@ if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the
 try { await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(4000) }) } catch { note('skipped — the stack is not answering'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
 const service = createClient<Database>(url, serviceKey(), O)
 const guest = createClient<Database>(url, anonKey, O)
-const as = async (email: any) => { const c = createClient<Database>(url, anonKey, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
-const idOf = async (c: any) => (await c.auth.getUser()).data.user?.id
-const fn = async (name: any, body: any, c: any) => {
+const as = async (email: string) => { const c = createClient<Database>(url, anonKey, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
+const idOf = async (c: { auth: { getUser: () => any } }) => (await c.auth.getUser()).data.user?.id
+const fn = async (name: string, body: { uid?: any; action?: string; user?: any; book?: string }, c: any) => {
   const token = c ? (await c.auth.getSession()).data.session?.access_token : null
   const r = await fetch(`${url}/functions/v1/${name}`, { method: 'POST', headers: { apikey: anonKey, 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) }, body: JSON.stringify(body) })
   return { status: r.status, data: await r.json().catch(() => ({})) }
@@ -48,7 +48,7 @@ const fn = async (name: any, body: any, c: any) => {
 const stamp = Date.now().toString(36)
 const DB_URL = process.env.PLATFORMKIT_TEST_DB_URL || `postgresql://postgres:postgres@${new URL(url).hostname}:${Number(new URL(url).port || 54321) + 1}/postgres`
 /* a row only the usage functions write (the service role reads it), made as the owner */
-const asOwner = async (sql: any, args: any) => { const db = new pg.Client({ connectionString: DB_URL }); await db.connect(); try { return (await db.query(sql, args)).rows } finally { await db.end() } }
+const asOwner = async (sql: string, args: any[]) => { const db = new pg.Client({ connectionString: DB_URL }); await db.connect(); try { return (await db.query(sql, args)).rows } finally { await db.end() } }
 
 /* ─── 1. the database's own answer ─── */
 
@@ -105,15 +105,15 @@ const CHECKS = /is_admin|is_staff|is_support|is_provider|auth\.uid|auth\.role|au
       if (!(await declared(name))) { notHere(name, 'its module is off'); continue }
       /* a module's function that core declares answering nothing where the module is off (push_notify) is no definer
          there, and guards nothing; the site with the module on checks it */
-      if (!rows.some((r: any) => r.name === name)) { notHere(name, 'its module is off, and core\'s stand-in does nothing'); continue }
-      const open = rows.filter((r: any) => r.name === name && (r.anon || r.auth))
-      ok(`${name} is not a visitor's or a reader's to call`, rows.some((r: any) => r.name === name) && !open.length, open.map((r: any) => r.sig).join(', ') || 'no such function')
+      if (!rows.some((r: { name: string }) => r.name === name)) { notHere(name, 'its module is off, and core\'s stand-in does nothing'); continue }
+      const open = rows.filter((r: { name: string; anon: any; auth: any }) => r.name === name && (r.anon || r.auth))
+      ok(`${name} is not a visitor's or a reader's to call`, rows.some((r: { name: string }) => r.name === name) && !open.length, open.map((r: { sig: any }) => r.sig).join(', ') || 'no such function')
     }
-    const guards = new Set(preds.filter((p: any) => CHECKS.test(p.body)).map((p: any) => p.name))
+    const guards = new Set(preds.filter((p: { body: string }) => CHECKS.test(p.body)).map((p: { name: any }) => p.name))
     for (let grew = true; grew;) { grew = false; for (const p of preds) if (!guards.has(p.name) && [...guards].some((g) => new RegExp('\\b' + g + '\\s*\\(').test(p.body))) { guards.add(p.name); grew = true } }
-    const asks = (body: any) => CHECKS.test(body) || [...guards].some((g) => new RegExp('\\b' + g + '\\s*\\(').test(body))
-    const unchecked = rows.filter((r: any) => (r.anon || r.auth) && !asks(r.body) && !PUBLIC[r.sig] && !r.name.startsWith('seed_'))
-    ok('every definer function open to callers checks who is asking, or is a reviewed public read', !unchecked.length, unchecked.map((r: any) => r.sig).join('; '))
+    const asks = (body: string) => CHECKS.test(body) || [...guards].some((g) => new RegExp('\\b' + g + '\\s*\\(').test(body))
+    const unchecked = rows.filter((r: { anon: any; auth: any; body: any; sig: string|number; name: string }) => (r.anon || r.auth) && !asks(r.body) && !PUBLIC[r.sig] && !r.name.startsWith('seed_'))
+    ok('every definer function open to callers checks who is asking, or is a reviewed public read', !unchecked.length, unchecked.map((r: { sig: any }) => r.sig).join('; '))
   }
 }
 
@@ -130,9 +130,9 @@ if (!member || !member2) { note('skipped the rest — the seed has no member@ or
 const memberId = await idOf(member), member2Id = await idOf(member2)
 const victim = `probe-victim-${stamp}@example.test`
 const made: any = { purchases: [], bookings: [], users: [], orders: [], subscriptions: [], entitlements: [], payout_accounts: [], payout_lines: [], usage_events: [], form_responses: [], agent_runs: [], support_contacts: [] }
-const insert = async (table: any, row: any) => { const { data, error } = await service.from(table).insert(row).select().single(); if (error) throw new Error(`${table}: ${error.message}`); made[table]?.push(data); return data }
+const insert = async (table: any, row: { email?: string; sku?: string; key?: string; kind?: string; status?: string; amount_total?: number; currency?: string; stripe_checkout_session_id?: string; uid?: string; name?: string; event?: string; start_at?: string; end_at?: string; number?: number; user_id?: any; checkout_session?: string; recording_path?: string; id?: string; source?: string; source_id?: string; account_id?: string; amount?: number; about?: string; payable_at?: string; form?: string; asked_by?: any; job?: string }) => { const { data, error } = await service.from(table).insert(row).select().single(); if (error) throw new Error(`${table}: ${error.message}`); made[table]?.push(data); return data }
 /* a session proven by its emailed link, as a reader who clicked it */
-const byLink = async (email: any) => {
+const byLink = async (email: string) => {
   const { data, error } = await service.auth.admin.generateLink({ type: 'magiclink', email })
   if (error) throw new Error('link: ' + error.message)
   const c = createClient<Database>(url, anonKey, O)
@@ -260,10 +260,10 @@ try {
   // @ts-expect-error TS18046, from the conversion: 'rows' is of type 'unknown'.
   for (const [table, rows] of Object.entries(made)) for (const r of rows) {
     if (table === 'users') { await service.auth.admin.deleteUser(r).catch(() => {}); continue }
-    const key = table === 'payout_accounts' ? 'account_id' : (r as any).id !== undefined ? 'id' : 'uid'
-    if (table === 'support_contacts') { await service.from('support_tickets').delete().eq('contact_id', (r as any).id); }
-    if (table === 'agent_runs') await service.from('agent_steps').delete().eq('run_id', (r as any).id)
-    if (table === 'purchases') await service.from('entitlements').delete().eq('source_id', (r as any).stripe_checkout_session_id)
+    const key = table === 'payout_accounts' ? 'account_id' : r.id !== undefined ? 'id' : 'uid'
+    if (table === 'support_contacts') { await service.from('support_tickets').delete().eq('contact_id', r.id); }
+    if (table === 'agent_runs') await service.from('agent_steps').delete().eq('run_id', r.id)
+    if (table === 'purchases') await service.from('entitlements').delete().eq('source_id', r.stripe_checkout_session_id)
     // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
     await service.from(table).delete().eq(key, r[key])
   }

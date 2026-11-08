@@ -29,7 +29,7 @@ export const supabase = configured
    it sets once at construction; this points that field elsewhere. The functions themselves are
    told the same address as PUBLIC_FUNCTIONS_URL, for the links they write into emails. */
 export const publicFunctionsUrl = (import.meta.env.VITE_PUBLIC_FUNCTIONS_URL || '').replace(/\/+$/, '')
-// @ts-expect-error TS2445, from the conversion: Property 'functionsUrl' is protected and only accessible within class 'SupabaseClient<Database, SchemaNameOrClientOptions, SchemaName, Schem
+// @ts-expect-error TS2445: supabase-js keeps the field protected; pointing it at the public address is the point of this line
 if (supabase && publicFunctionsUrl) supabase.functionsUrl = new URL(publicFunctionsUrl)
 
 /*

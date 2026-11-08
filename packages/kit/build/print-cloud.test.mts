@@ -16,7 +16,7 @@ import { requireStack, skip, leave, notHere } from './test-stack.mjs'
 import { finishWaiting } from './print/typeset/interior.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nPRINT IN THE CLOUD\n')
 
@@ -31,7 +31,7 @@ const BOOK = process.env.PRINT_TEST_BOOK || (() => {
 })()
 /* the book's own first edition (print.contents): parts, full or summary */
 const CONTENTS = BOOK ? ((/^print:[\s\S]*?\n  contents:\s*\n\s+- (\w+)/m.exec(fs.readFileSync(path.join(process.cwd(), 'content', 'books', BOOK + '.md'), 'utf8')) || [])[1] || 'parts') : 'parts'
-const off = (why: any) => skip('print-cloud', why)
+const off = (why: string) => skip('print-cloud', why)
 if (!BOOK) off('the site has the print module on and no book with a print block — give one a print edition')
 
 /*
@@ -115,7 +115,7 @@ const RESTART = /invalid response was received from the upstream/i
  */
 const EXHAUSTED = /WORKER_LIMIT|resource limit/i
 let exhausted = false
-const call = async (body: any, tries = 3) => {
+const call = async (body: { book?: string; contents?: string; edition?: any; pictures?: { [x: string]: string; 'page-9.jpg': string }|{ '../../escape.jpg': string }; shots?: { chapter: string; edition: { contents: string; page: number; art: string } }; art?: { [x: string]: string }; parts?: boolean; job?: any }, tries = 3) => {
   for (let i = 1; ; i++) {
     const r = await fetch(`${API}/functions/v1/print-render`, {
       method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -181,10 +181,10 @@ if (set.body && /no book called/.test(String(set.body.error || ''))) {
      fall, read back out of the compiled file by the same query the build makes. Without it the
      browser would have to guess a chapter's page from the text it can see. */
   ok('it says it drew no page pictures', set.body.shots === false)
-  ok('but hands back where the chapters open', Array.isArray(set.body.where) && set.body.where.some((w: any) => w && w.kind === 'chapter' && Number(w.page) > 0),
+  ok('but hands back where the chapters open', Array.isArray(set.body.where) && set.body.where.some((w: { kind: string; page: any }) => w && w.kind === 'chapter' && Number(w.page) > 0),
     JSON.stringify((set.body.where || []).slice(0, 3)))
   ok('every opener with a title and a page inside the book',
-    (set.body.where || []).filter((w: any) => w.kind === 'chapter').every((w: any) => typeof w.title === 'string' && w.title && Number(w.page) >= 1 && Number(w.page) <= Number(set.body.pages)))
+    (set.body.where || []).filter((w: { kind: string }) => w.kind === 'chapter').every((w: { title: any; page: any }) => typeof w.title === 'string' && w.title && Number(w.page) >= 1 && Number(w.page) <= Number(set.body.pages)))
   ok('and where the highlights fall', Array.isArray(set.body.marks) && set.body.marks.length > 0, String((set.body.marks || []).length))
   /* the same rule the build's own pictures are chosen by, given the function's own record: it must
      reach a decision, or the browser has nothing to draw */
@@ -314,7 +314,7 @@ if (set.body && set.body.ok) {
   ok('and a cover on file for each printed format', ed && Object.keys(ed.printers || {}).every((f) => (set.body.incomplete || []).includes(f) || Object.keys(ed.printers[f].covers || {}).length))
 
   const at = (n: any) => `${BOOK}/${set.body.edition}/${n}`
-  const has = async (n: any) => { const { data } = await sb.storage.from('print').download(at(n)); return !!data }
+  const has = async (n: string) => { const { data } = await sb.storage.from('print').download(at(n)); return !!data }
   ok('the interior is in the bucket', await has('interior.pdf'))
   ok('and the manifest beside it', await has('manifest.json'))
   /* the EPUB is made from the same words by the same module — the one change it needed was to be

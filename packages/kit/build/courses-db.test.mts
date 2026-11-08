@@ -16,20 +16,20 @@ import type { Database } from '../supabase/functions/_shared/database.types.js'
 const S: any = requireStack('courses-db')
 if (!(await moduleOn('courses'))) { notHere('courses-db', 'the courses module is off'); process.exit(0) }
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(typeof detail === 'string' ? detail : JSON.stringify(detail)).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: boolean|null, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(typeof detail === 'string' ? detail : JSON.stringify(detail)).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
 const service = createClient<Database>(S.api, S.service, O)
 const anon = createClient<Database>(S.api, S.anon, O)
-const as = async (email: any) => { const c = createClient<Database>(S.api, S.anon, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
-const idOf = async (email: any) => (await service.from('profiles').select('id').eq('email', email).maybeSingle()).data?.id
-const call = async (who: any, fn: any, args?: any) => { const { data, error } = await who.rpc(fn, args); if (error) throw new Error(`${fn}: ${error.message}`); return data }
+const as = async (email: string) => { const c = createClient<Database>(S.api, S.anon, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
+const idOf = async (email: string) => (await service.from('profiles').select('id').eq('email', email).maybeSingle()).data?.id
+const call = async (who: any, fn: string, args?: { p_course?: string; p_lesson?: string; p_id?: any; p_user?: string|undefined }|undefined) => { const { data, error } = await who.rpc(fn, args); if (error) throw new Error(`${fn}: ${error.message}`); return data }
 
 const member = await as('member@example.com'), buyer = await as('buyer@example.com'), admin = await as('admin@example.com'), other = await as('member2@example.com')
 if (!member || !buyer || !admin || !other) { console.log('courses-db: the seed\'s member@, buyer@, member2@ or admin@ does not sign in'); process.exit(1) }
 const memberId = await idOf('member@example.com'), buyerId = await idOf('buyer@example.com')
 const STAMP = Date.now().toString(36)
 const FREE = `courses-db-free-${STAMP}`, SOLD = `courses-db-sold-${STAMP}`, SKU = `courses-db-sku-${STAMP}`
-const file = (fm: any, body = '') => `---\n${fm}\n---\n${body}`
+const file = (fm: string, body = '') => `---\n${fm}\n---\n${body}`
 const courses = [
   parseCourse(FREE, file(`title: Free one
 access: { free: true }
@@ -50,7 +50,7 @@ lessons:
   - { key: three, title: Three }`, '## one\n\nOne.\n\n## two\n\nTwo.\n\n## three\n\nThree.\n')),
 ]
 const purchases: any = []
-const backdate = (course: any, user: any, days: any) => service.from('enrollments').update({ started_at: new Date(Date.now() - days * 86400000).toISOString() }).eq('course', course).eq('user_id', user)
+const backdate = (course: string, user: any, days: number) => service.from('enrollments').update({ started_at: new Date(Date.now() - days * 86400000).toISOString() }).eq('course', course).eq('user_id', user)
 
 try {
   const pushed = await projectCourses({ courses, db: service })
@@ -88,7 +88,7 @@ try {
   ok('a form lesson is not finished until the form is answered', (await call(member, 'course_complete', { p_course: FREE, p_lesson: 'c' })).error === 'form-not-finished')
   /* A QUIZ FINISHES ITS OWN LESSON: the response completing is what records it, never a button */
   // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-  const attempt = async (score: any, passed: any) => (await service.from('form_responses').insert({ form: `courses-db-form-${STAMP}`, user_id: memberId, completed_at: new Date().toISOString(), score, total: 5, passed }).select('id').single()).data.id
+  const attempt = async (score, passed) => (await service.from('form_responses').insert({ form: `courses-db-form-${STAMP}`, user_id: memberId, completed_at: new Date().toISOString(), score, total: 5, passed }).select('id').single()).data.id
   /* EVERY QUIZ PASSED EARNS ITS ACHIEVEMENT: the rule the achievements push declares for it, made here the same way */
   const awards = await moduleOn('achievements')
   const AWARD = `quiz-${FREE}-c`
@@ -114,7 +114,7 @@ try {
   // @ts-expect-error TS2345, from the conversion: Argument of type 'number | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 'string 
   ok('passing again records no second event', (await passes()) === 1, await passes())
   ok('every required lesson finished: the course is complete (the optional session not needed)', done.enrollment && done.enrollment.completed_at && done.done === done.total, done)
-  const scores = (await call(admin, 'admin_course_enrollments', { p_course: FREE })).people.find((p: any) => p.email === 'member@example.com')
+  const scores = (await call(admin, 'admin_course_enrollments', { p_course: FREE })).people.find((p: { email: string }) => p.email === 'member@example.com')
   ok('the staff see each person\'s best score and attempts', scores && scores.quizzes.length === 1 && scores.quizzes[0].lesson === 'c' && scores.quizzes[0].score === 5 && scores.quizzes[0].attempts === 4, scores && scores.quizzes)
   ok('…with a certificate', !!done.certificate_id)
   ok('a session lesson is not finished until one is booked', (await call(member, 'course_complete', { p_course: FREE, p_lesson: 'd' })).error === 'not-booked')
@@ -151,10 +151,10 @@ try {
   ok('bought again: the same enrolment reopens, two lessons still done', back.access === true && back.done === 2 && back.lessons[2].open === true, back)
   /* the library: where the reader is in each course, what is next, and what getting in takes */
   const shelf = await call(buyer, 'courses_list')
-  const sold = shelf.find((c: any) => c.slug === SOLD), free = shelf.find((c: any) => c.slug === FREE)
+  const sold = shelf.find((c: { slug: string }) => c.slug === SOLD), free = shelf.find((c: { slug: string }) => c.slug === FREE)
   ok('the library names the next open lesson of a course in progress', sold && sold.enrolled && sold.next && sold.next.key === 'three' && sold.done === 2 && !!sold.last_at, sold)
   ok('…and, for a course they are not in, what getting in takes and no next lesson', free && !free.enrolled && free.free === true && free.next === null && free.sections === 1, free)
-  const finished = (await call(member, 'courses_list')).find((c: any) => c.slug === FREE)
+  const finished = (await call(member, 'courses_list')).find((c: { slug: string }) => c.slug === FREE)
   ok('a finished course carries its certificate and nothing next', finished && !!finished.completed_at && !!finished.certificate_id && finished.next === null, finished)
   ok('a guest has the catalogue, in nothing', (await call(anon, 'courses_list')).every((c: any) => !c.enrolled && c.access === false && c.next === null))
   ok('a course nobody gave them is refused, not enrolled', (await call(other, 'course_enroll', { p_course: SOLD })).error === 'no-access')
@@ -162,14 +162,14 @@ try {
   /* the emails owed: a drip lesson that opened after somebody started, once, and a course finished, once */
   const due = (await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
-  ok('a finished course is owed its email', due.some((r: any) => r.course === FREE && r.lesson === '*complete' && r.user_id === memberId), due)
-  const lessonDue = due.filter((r: any) => r.user_id === memberId && r.course === FREE && r.lesson !== '*complete')
+  ok('a finished course is owed its email', due.some((r) => r.course === FREE && r.lesson === '*complete' && r.user_id === memberId), due)
+  const lessonDue = due.filter((r) => r.user_id === memberId && r.course === FREE && r.lesson !== '*complete')
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
   ok('a finished course owes no lesson emails', lessonDue.length === 0, lessonDue)
   await call(other, 'course_enroll', { p_course: FREE })
   await call(other, 'course_complete', { p_course: FREE, p_lesson: 'a' })
   await backdate(FREE, await idOf('member2@example.com'), 3)
-  const owed = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r: any) => r.course === FREE && r.lesson !== '*complete' && r.email === 'member2@example.com')
+  const owed = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r) => r.course === FREE && r.lesson !== '*complete' && r.email === 'member2@example.com')
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
   ok('a lesson released after somebody started is owed, the earliest first, one at a time', owed.length === 1 && owed[0].lesson === 'b', owed)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
@@ -177,11 +177,11 @@ try {
   await service.from('course_notices').insert({ enrollment: (e2 as any).id, lesson: 'b' })
   await call(other, 'course_complete', { p_course: FREE, p_lesson: 'b' })
   await backdate(FREE, await idOf('member2@example.com'), 5)
-  const sameDay = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r: any) => r.email === 'member2@example.com' && r.lesson !== '*complete')
+  const sameDay = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r) => r.email === 'member2@example.com' && r.lesson !== '*complete')
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
   ok('one lesson email a day: the next waits for tomorrow', sameDay.length === 0, sameDay)
   await service.from('course_notices').update({ sent_at: new Date(Date.now() - 86400000).toISOString() }).eq('enrollment', (e2 as any).id)
-  const nextDay = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r: any) => r.email === 'member2@example.com' && r.lesson !== '*complete')
+  const nextDay = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r) => r.email === 'member2@example.com' && r.lesson !== '*complete')
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
   ok('…and never the same lesson twice', nextDay.length === 1 && nextDay[0].lesson === 'c', nextDay)
   const fn = await fetch(`${S.functions}/course-notify`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${S.anon}` }, body: JSON.stringify({ action: 'send', dry: true }) })
@@ -189,8 +189,8 @@ try {
   ok('course-notify answers only the service', fn.status === 401, fn.status)
 
   /* the member card, the staff's view */
-  ok('a person sees their own courses on their card', (await call(member, 'member_courses', { p_user: memberId })).some((c: any) => c.slug === FREE && c.completed_at))
-  ok('staff see anybody\'s', (await call(admin, 'member_courses', { p_user: memberId })).some((c: any) => c.slug === FREE))
+  ok('a person sees their own courses on their card', (await call(member, 'member_courses', { p_user: memberId })).some((c: { slug: string; completed_at: any }) => c.slug === FREE && c.completed_at))
+  ok('staff see anybody\'s', (await call(admin, 'member_courses', { p_user: memberId })).some((c: { slug: string }) => c.slug === FREE))
   ok('anybody else sees nothing to show', (await call(other, 'member_courses', { p_user: memberId })).length === 0)
   const view = await call(admin, 'admin_course_enrollments', { p_course: FREE })
   ok('staff see who is where in a course', view.enrolled === 2 && view.completed === 1 && view.people.length === 2, view)

@@ -26,20 +26,20 @@ import type { Database } from '../supabase/functions/_shared/database.types.js'
 const S: any = requireStack('print-jobs-db')
 if (!(await moduleOn('print'))) { notHere('print-jobs-db', 'the print module is off'); process.exit(0) }
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 400) : '')) } }
+const ok = (msg: string, cond: string|number|boolean|null, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 400) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
 const service = createClient<Database>(S.api, S.service, O)
 const anon = createClient<Database>(S.api, S.anon, O)
-const call = async (body: any, bearer = S.service) => {
+const call = async (body: { book?: string; contents?: string; draft?: boolean; job?: any; interior?: string|{ edition: any; pages: number; pad: number; where: never[]; marks: never[] }; cancel?: boolean }, bearer = S.service) => {
   const r = await fetch(`${S.functions}/print-render`, { method: 'POST', headers: { apikey: S.anon, authorization: 'Bearer ' + bearer, 'content-type': 'application/json' }, body: JSON.stringify(body) })
   return { status: r.status, body: await r.json().catch(() => null) }
 }
-const rowOf = async (id: any) => (await service.from('print_jobs').select('*').eq('id', id).maybeSingle()).data
+const rowOf = async (id: string) => (await service.from('print_jobs').select('*').eq('id', id).maybeSingle()).data
 const made = []
 /* a job's row once it is finished, waiting for the sweep or the worker still on it: a worker cut off holds its lease
    for LEASE_SECONDS (150, print-render), the sweep asks again within the minute after, and the set then runs — so up
    to five minutes. Ninety seconds failed whenever the first worker was cut off with its lease still held. */
-const settled = async (id: any) => { for (let i = 0; i < 150; i++) { const r = await rowOf(id); if (r && !['queued', 'running'].includes(r.state)) return r; await new Promise((res) => setTimeout(res, 2000)) } return rowOf(id) }
+const settled = async (id: string) => { for (let i = 0; i < 150; i++) { const r = await rowOf(id); if (r && !['queued', 'running'].includes(r.state)) return r; await new Promise((res) => setTimeout(res, 2000)) } return rowOf(id) }
 
 /* a book the site prints, from its rows (the content export put them there) */
 const { data: books } = await service.from('content').select('path, text').like('path', 'content/books/%').is('deleted_at', null)

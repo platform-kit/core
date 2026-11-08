@@ -28,9 +28,11 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const KIT_ROOT = path.resolve(HERE, '..')
 export const NODE_MAJOR = 22
 
-const pass = (name: any, detail = '') => ({ level: 'pass', name, detail })
-const warn = (name: any, detail: any, fix = '') => ({ level: 'warn', name, detail, fix })
-const fail = (name: any, detail: any, fix = '') => ({ level: 'fail', name, detail, fix })
+/* one line of the report: what was checked, what was found, and what fixes it */
+export interface Finding { level: 'pass' | 'warn' | 'fail', name: string, detail: string, fix?: string }
+const pass = (name: string, detail = ''): Finding => ({ level: 'pass', name, detail })
+const warn = (name: string, detail: string, fix = ''): Finding => ({ level: 'warn', name, detail, fix })
+const fail = (name: string, detail: string, fix = ''): Finding => ({ level: 'fail', name, detail, fix })
 const readEnv = (file: any) => (fs.existsSync(file) ? parseEnv(fs.readFileSync(file, 'utf8')) : {})
 const sh = (cmd: any, args: any, opts = {}) => spawnSync(cmd, args, { encoding: 'utf8', timeout: 20000, ...opts })
 
@@ -88,7 +90,6 @@ export async function settingsChecks(root: any, site: any, modules: any, env: an
   const { unmetRequirements } = await import('./modules/manifest.mjs')
   const s: any = surfaces(root); s.network = site.network || {}
   const shape = deploymentShape(site, env)
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ backend: boolean; content: any; repo: any; mode: string; }' is not assignable to parameter of type 'null | undefined'.
   const r = checkDeploy(env, s, site.modules, needsOf(await loadSteps(site), site, env, shape), shape, unmetRequirements(modules, site.modules), modules, site)
   if (production) {
     const none = fs.existsSync(path.join(root, '.env.production')) ? [] : [fail('.env.production', 'not found — the deploy reads its settings from it', 'create .env.production on the machine that deploys (never commit it)')]
@@ -99,7 +100,6 @@ export async function settingsChecks(root: any, site: any, modules: any, env: an
   const local = r.missing.filter((m) => !DEPLOYMENT_ENV.includes(m.key))
   const wrong = r.wrong.filter((w) => !/live key|https origin|shadow database/i.test(w))
   const out = [...local.map((m) => warn(m.key, `not set here — ${m.why}`, 'set what you need in .env; a feature without its key runs in practice mode or not at all')), ...wrong.map((w) => fail('setting', w))]
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ level: string; name: any; detail: string; }' is not assignable to parameter of type '{ level: string; name: any; detail:
   if (!out.length) out.push(pass('settings', 'every setting the switched-on features use is set'))
   return out
 }

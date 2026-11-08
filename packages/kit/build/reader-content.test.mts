@@ -12,7 +12,7 @@ import { splitChapters } from '../supabase/functions/_shared/gate.js'
 import { leave, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('reader-content: ' + m)
+const note = (m: string) => console.log('reader-content: ' + m)
 if (process.env.READER_CONTENT_TEST === '0') { note('skipped (READER_CONTENT_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
@@ -24,34 +24,34 @@ if (!up) { note('skipped — the functions are not served'); leave(0) }
 
 /* the site's own first gated book (canAccess), and what its front matter lets a guest and a signed-in reader read */
 const BOOKS_DIR = path.join(process.cwd(), 'content/books')
-const front = (f: any) => (fs.readFileSync(f, 'utf8').match(/^---\n([\s\S]*?)\n---/) || [, ''])[1]
+const front = (f: fs.PathOrFileDescriptor) => (fs.readFileSync(f, 'utf8').match(/^---\n([\s\S]*?)\n---/) || [, ''])[1]
 const gated = fs.existsSync(BOOKS_DIR) ? fs.readdirSync(BOOKS_DIR).filter((n) => n.endsWith('.md')).sort().find((n) => /^canAccess:\s*\n\s+- /m.test(front(path.join(BOOKS_DIR, n))) && !/^published:\s*false/m.test(front(path.join(BOOKS_DIR, n)))) : null
 if (!gated) { notHere('reader-content', 'the site has no gated book (canAccess)'); process.exit(0) }
 const BOOK = gated.replace(/\.md$/, '')
 const file = path.join(BOOKS_DIR, gated)
-const num = (k: any) => { const m = new RegExp('^' + k + ':\\s*(\\d+)', 'm').exec(front(file)); return m ? Number(m[1]) : null }
+const num = (k: string) => { const m = new RegExp('^' + k + ':\\s*(\\d+)', 'm').exec(front(file)); return m ? Number(m[1]) : null }
 const GUEST = num('guestChapters') ?? 0, SIGNED = num('authenticatedChapters') ?? GUEST
 const source = fs.readFileSync(file, 'utf8').replace(/^---[\s\S]*?\n---\n?/, '')
 /* each chapter's last sentence: past any teaser, which is never more than half a chapter */
 const lasts = splitChapters(source).map((p) => p.replace(/^# .*$/m, '').trim().split(/(?<=[.!?])\s+/).filter((s) => s.length > 20).pop())
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false } })
-const tokenOf = async (email: any) => {
+const tokenOf = async (email: string) => {
   const r = await (await fetch(url + '/auth/v1/token?grant_type=password', { method: 'POST', headers: { apikey: anon, 'content-type': 'application/json' }, body: JSON.stringify({ email, password: 'password123' }) })).json()
   return r.access_token || null
 }
-const ask = async (body: any, token?: any) => {
+const ask = async (body: { collection?: string; slug?: string; class?: string; entitlements?: { class: string }; action?: string }, token?: string|undefined) => {
   const r = await fetch(fn, { method: 'POST', headers: { apikey: anon, 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) }, body: JSON.stringify(body) })
   return { status: r.status, data: await r.json().catch(() => ({})) }
 }
 // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-const fullChapters = (raw: any) => lasts.filter((s) => String(raw || '').includes(s)).length
+const fullChapters = (raw) => lasts.filter((s) => String(raw || '').includes(s)).length
 
 const member = await tokenOf('member@example.com'), free = await tokenOf('free@example.com')
 if (!member || !free) { note('skipped — the seed has no member@ or free@ account'); leave(0) }
-const userOf = async (token: any) => (await service.auth.getUser(token)).data.user
+const userOf = async (token: string|undefined) => (await service.auth.getUser(token)).data.user
 // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
 const memberId = (await userOf(member)).id, freeId = (await userOf(free)).id
 
@@ -91,7 +91,7 @@ try {
   const P = 'content/books/gate-probe.md', C = 'content/companions/gate-probe.md', A = 'content/articles/gate-probe.md'
   const probeBook = '# One\n\nFree words for everyone to read here.\n\n# Two\n\n' + 'Opening of the locked chapter. '.repeat(12) + 'The probe book ends with a private sentence.\n'
   const probeComp = '# One\n\n## Summary\n\nFree summary.\n\n# Two\n\n## Summary\n\nThe locked summary is private.\n\n## Quiz\n\n1. Q?\n   - [x] a\n   - [ ] b\n   - [ ] c\n   - [ ] d\n'
-  const fm = (o: any) => '---\n' + Object.entries(o).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join('\n') + '\n---\n'
+  const fm = (o: { [s: string]: unknown }|ArrayLike<unknown>) => '---\n' + Object.entries(o).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join('\n') + '\n---\n'
   await service.from('content').upsert([
     { path: P, collection: 'books', slug: 'gate-probe', published: true, pending: false, data: { title: 'Probe', guestChapters: 1 }, body: probeBook, text: fm({ title: 'Probe', guestChapters: 1 }) + probeBook },
     { path: C, collection: 'companions', slug: 'gate-probe', published: true, pending: false, data: { book: 'gate-probe' }, body: probeComp, text: fm({ book: 'gate-probe' }) + probeComp },
@@ -101,15 +101,15 @@ try {
     const direct = await createClient<Database>(url, anon, { auth: { persistSession: false } }).from('content').select('path, body, text').like('path', '%gate-probe%')
     ok('a visitor reads no content row directly', !direct.error && direct.data.length === 0, JSON.stringify(direct.data || direct.error).slice(0, 120))
     const rows = (await ask({ action: 'rows' })).data.rows || []
-    const by = Object.fromEntries(rows.filter((r: any) => /gate-probe/.test(r.path)).map((r: any) => [r.collection, r]))
-    const all = JSON.stringify(rows.filter((r: any) => /gate-probe/.test(r.path)))
+    const by = Object.fromEntries(rows.filter((r: { path: string }) => /gate-probe/.test(r.path)).map((r: { collection: any }) => [r.collection, r]))
+    const all = JSON.stringify(rows.filter((r: { path: string }) => /gate-probe/.test(r.path)))
     ok('the rows a visitor is sent include the probe records', !!(by.books && by.companions && by.articles))
     ok('…with no locked chapter, summary or gated article text', !/ends with a private sentence|locked summary is private|gated article is private/.test(all))
     ok('…keeping the free chapter and the locked chapter\'s title', by.books && by.books.body.includes('Free words for everyone') && /^# Two$/m.test(by.books.body))
     ok('…and saying which locked chapters have a quiz', by.companions && Array.isArray(by.companions.data.quizzed) && by.companions.data.quizzed.includes('Two'))
     const adminToken = await tokenOf('admin@example.com')
     if (adminToken) {
-      const asAdmin = JSON.stringify(((await ask({ action: 'rows' }, adminToken)).data.rows || []).filter((r: any) => /gate-probe/.test(r.path)))
+      const asAdmin = JSON.stringify(((await ask({ action: 'rows' }, adminToken)).data.rows || []).filter((r: { path: string }) => /gate-probe/.test(r.path)))
       ok('an administrator is sent the rows whole', /ends with a private sentence/.test(asAdmin) && /gated article is private/.test(asAdmin))
     }
   } finally { await service.from('content').delete().like('path', '%gate-probe%') }

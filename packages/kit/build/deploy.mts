@@ -134,10 +134,8 @@ if (PLAN.targetGuards && !env.SUPABASE_ACCESS_TOKEN) {
     env,
     s,
     site.modules,
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ backend: boolean; content: any; repo: any; mode: string; }' is not assignable to parameter of type 'null | undefined'.
     needsOf(await loadSteps(site), site, env, SHAPE),
     SHAPE,
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ module: string; needs: string; why: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ module: strin
     unmetRequirements(DEPLOY_MODULES, site.modules),
     DEPLOY_MODULES,
     site,

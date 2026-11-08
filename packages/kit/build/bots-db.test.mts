@@ -25,16 +25,16 @@ import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const SITE = process.cwd()
 let pass = 0, fail = 0
-const ok = (n: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + n + (d ? ' — ' + d : '')) } }
+const ok = (n: string, c: boolean, d?: string|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + n + (d ? ' — ' + d : '')) } }
 
 console.log('\nBOTS, PROJECTED WITH NO MACHINE\n')
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n'); leave(0) }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n'); leave(0) }
 
 /* A failed read or write must stop before the sweep. Otherwise a transient database error can look
    like an empty projection and delete rows, or leave a half-projected declaration looking done. */
 const fakeDb = ({ select, update, insert, remove }: any = {}) => {
   const calls: any = []
-  const db: any = { calls, from(table: any) {
+  const db = { calls, from(table: any) {
     return {
       select(columns: any) { calls.push(['select', table, columns]); return Promise.resolve(select || { data: [], error: null }) },
       update(row: any) { calls.push(['update', table, row]); return { eq: (column: any, value: any) => { calls.push(['eq', column, value]); return Promise.resolve(update || { error: null }) } } },
@@ -83,8 +83,8 @@ console.log('  ✔ projection read/write failures stop before unsafe cleanup')
   const writes: any = []
   const store = {
     root: SITE,
-    list: async (dir: any) => dir === 'content/bots' ? ['broken'] : [],
-    read: async (file: any) => file === 'content/bots/broken.md'
+    list: async (dir: string) => dir === 'content/bots' ? ['broken'] : [],
+    read: async (file: string) => file === 'content/bots/broken.md'
       ? '---\nname: Broken\nsurfaces: [spaces]\nvoice:\n  provider: local\n---\nA test prompt.\n'
       : null,
     write: async (...args: any[]) => writes.push(args),

@@ -127,5 +127,5 @@ watch(route, (path) => { applyRouteMeta(path); if (path !== ROUTES.preview) page
   <!-- the support chat's launcher, on every public page (it hides itself on the admin and for the staff) -->
   <!-- the launcher appears only where something may: a place of work is not a place to be sold to,
        and that rule is one rule (lib/interrupt.js), asked by the chat and by the ad alike -->
-  <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'. --><SupportWidget v-if="moduleOn('support') && mayInterrupt(route, INTERRUPT_ROUTES)" />
+  <SupportWidget v-if="moduleOn('support') && mayInterrupt(route, INTERRUPT_ROUTES)" />
 </template>

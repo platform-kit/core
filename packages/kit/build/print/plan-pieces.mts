@@ -57,10 +57,9 @@ export function planRuns(chapters: any, { budget = PAGES_PER_RUN } = {}) {
   for (const ch of list) {
     const n = pagesOf(ch)
     if (!run || (run.pages && run.pages + n > budget)) {
-      run = { chapters: [], pages: 0, from: page }
+      run = { chapters: [] as any[], pages: 0, from: page }
       runs.push(run)
     }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     run.chapters.push(ch)
     run.pages += n
     page += n

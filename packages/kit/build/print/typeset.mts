@@ -99,8 +99,7 @@ export function blocks(md: any, marks: any, { typed = null } = {}) {
     if (/ {2,}\n/.test(p)) { out.push(`#verse[${inline(p, marks)}]`); continue }
     /* a paragraph with a numbered list inside it: the prose, then the list, then the prose */
     if (/^\d+\.\s/m.test(p)) {
-      const lines = p.split('\n'), runs = []
-      // @ts-expect-error TS7022, from the conversion: 'last' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+      const lines = p.split('\n'), runs: Array<{ li: boolean, lines: string[] }> = []
       for (const l of lines) { const li = /^\d+\.\s/.test(l); const last = runs[runs.length - 1]; if (last && last.li === li) last.lines.push(l); else runs.push({ li, lines: [l] }) }
       out.push(runs.map((r) => r.li ? '#enum(' + r.lines.map((l) => `[${inline(l.replace(/^\d+\.\s*/, ''), marks)}]`).join(', ') + (r.lines.length === 1 ? ',' : '') + ')' : inline(r.lines.join('\n'), marks)).join('\n'))
       continue
@@ -127,8 +126,7 @@ export function blocks(md: any, marks: any, { typed = null } = {}) {
      with the paragraph before it, which is kept whole and moves with it rather than leaving the
      sign-off alone at the head of a page */
   for (let i = 1; i < out.length; i++) {
-    // @ts-expect-error TS7022, from the conversion: 'words' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer
-    const words = out[i].startsWith('#the-end') ? 2 : out[i].startsWith('#') ? 99 : out[i].split(/\s+/).length
+    const words: number = out[i].startsWith('#the-end') ? 2 : out[i].startsWith('#') ? 99 : out[i].split(/\s+/).length
     /* …and a chapter's last paragraph, when it is a few lines, is not left alone on a page
        either: the paragraph before it comes along (breaking if it must) */
     const short = words <= 4 || (i === out.length - 1 && words <= 45)

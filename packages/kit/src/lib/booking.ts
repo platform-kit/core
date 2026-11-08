@@ -189,8 +189,7 @@ export function sessionOptions(bookings = [], offerings = []) {
       const weekly = al ? al.weekly : s.weekly, monthly = al ? al.monthly : s.monthly
       const within = (span: any) => bookings
         .filter((b: any) => b.event === event && !b.made_by && b.status !== 'cancelled' && b.status !== 'rescheduled' && b.start_at && new Date(b.start_at).getTime() >= now - span)
-        // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-        .sort((a, b) => new Date(a.start_at) - new Date(b.start_at))
+        .sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
       let blocked = false, next = null, span = ''
       for (const [n, ms, name] of [[weekly, WEEK, 'week'], [monthly, MONTH, 'month']]) {
         if (blocked || !(n > 0)) continue

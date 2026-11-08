@@ -13,7 +13,7 @@ import { moduleSet } from './steps.mjs'
 
 let passed = 0
 let failed = 0
-const check = async (name: any, test: any) => {
+const check = async (name: string, test: any) => {
   try { await test(); passed++; console.log(`  ✓ ${name}`) }
   catch (error: any) { failed++; console.log(`  ✗ ${name}: ${error.message}`) }
 }
@@ -128,8 +128,8 @@ if (docker.status === 0) {
   const port = 54384
   const target = `postgresql://postgres:postgres@127.0.0.1:${port}/postgres?sslmode=disable`
   const kitRoot = fileURLToPath(new URL('../supabase/', import.meta.url))
-  const note = (text: any) => console.log('cron-db: ' + text)
-  const sb = (args: any, options = {}) => spawnSync('npx', ['supabase', '--workdir', scratch, ...args], {
+  const note = (text: string) => console.log('cron-db: ' + text)
+  const sb = (args: string[], options = {}) => spawnSync('npx', ['supabase', '--workdir', scratch, ...args], {
     cwd: scratch, env, encoding: 'utf8', ...options,
   })
   /* the scratch database is built from the kit's schemas, so it takes the kit's Postgres version: a site with no backend has no config.toml */
@@ -159,8 +159,8 @@ sql_paths = ["./schemas/*.sql", "./data.sql"]
     if (reset.status !== 0) throw new Error(`scratch database reset failed: ${reset.stderr || reset.stdout}`)
     db = new pg.Client({ connectionString: target })
     await db.connect()
-    const getJob: any = async (name: any) => (await db.query('select jobid, schedule, command from cron.job where jobname = $1', [name])).rows[0] || null
-    const initial = (await db.query('select jobname from cron.job order by jobname')).rows.map((row: any) => row.jobname)
+    const getJob = async (name: string) => (await db.query('select jobid, schedule, command from cron.job where jobname = $1', [name])).rows[0] || null
+    const initial = (await db.query('select jobname from cron.job order by jobname')).rows.map((row: { jobname: any }) => row.jobname)
     assert.deepEqual(initial, activeCronJobs(kitModules).map((job) => job.name))
     const originalChat = await getJob('chat-followups')
     assert.ok(originalChat)

@@ -13,7 +13,6 @@
  */
 import path from 'node:path'
 import readline from 'node:readline'
-// @ts-expect-error TS2307, from the conversion: Cannot find module 'onnxruntime-node' or its corresponding type declarations.
 import * as ort from 'onnxruntime-node'
 import { MODELS } from './setup.mjs'
 

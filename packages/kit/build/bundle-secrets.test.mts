@@ -9,7 +9,7 @@ import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-const note = (m: any) => console.log('bundle-secrets: ' + m)
+const note = (m: string) => console.log('bundle-secrets: ' + m)
 if (process.env.BUNDLE_SECRETS_TEST === '0') { note('skipped (BUNDLE_SECRETS_TEST=0)'); process.exit(0) }
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
@@ -18,14 +18,14 @@ const DEMO = path.join(WORKSPACE, 'sites', 'demo')
 const WORK = path.join(WORKSPACE, '.cache', 'platformkit', 'bundle-secrets-test')
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
 
 /* the secret-named variables the kit documents, and a value for each nobody could mistake */
 const PUBLIC = /^VITE_|^(IN_BROWSER_TTS|LOCKDOWN_MODE|CONTENT_STORE)$/
 const SECRET = /SECRET|KEY|TOKEN|PASS|PRIVATE|SERVICE_ROLE|WEBHOOK/
 const names = [...new Set((fs.readFileSync(path.join(WORKSPACE, '.env.example'), 'utf8').match(/^[A-Z][A-Z0-9_]*(?==)/gm) || []))]
   .filter((n) => SECRET.test(n) && !PUBLIC.test(n))
-const sentinel = (n: any) => `zzsecret_${n.toLowerCase()}_q7v`
+const sentinel = (n: string) => `zzsecret_${n.toLowerCase()}_q7v`
 ok('there are secrets to plant', names.length > 20, String(names.length))
 
 const generated = /(^|\/)(node_modules|dist|\.velite|\.platformkit|\.vite|\.content-collections)(\/|$)/
@@ -37,7 +37,7 @@ fs.cpSync(DEMO, WORK, { recursive: true, filter: (src) => {
 /* the secrets as a deploy would have them: in the site's .env, and in the environment of every step */
 const planted = Object.fromEntries(names.map((n) => [n, sentinel(n)]))
 fs.writeFileSync(path.join(WORK, '.env'), Object.entries(planted).map(([k, v]) => `${k}=${v}`).join('\n') + '\n')
-const run = (args: any, env = {}) => {
+const run = (args: string[], env = {}) => {
   const r = spawnSync(args[0], args.slice(1), { cwd: WORK, encoding: 'utf8', env: { ...process.env, ...planted, CONTENT_STORE: 'files', ...env }, maxBuffer: 1 << 28 })
   return { status: r.status, out: (r.stdout || '') + (r.stderr || '') }
 }

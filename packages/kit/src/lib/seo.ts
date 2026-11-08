@@ -51,7 +51,7 @@ const metaN = (name: string) => () => { const m = document.createElement('meta')
 const metaP = (prop: string) => () => { const m = document.createElement('meta'); m.setAttribute('property', prop); return m }
 const link = (rel: string) => () => { const l = document.createElement('link'); l.setAttribute('rel', rel); return l }
 
-export function setHead({ title = '', description = '', image = '', path = null, type = 'website', noindex = false } = {}) {
+export function setHead({ title = '', description = '', image = '', path = null as string | null, type = 'website', noindex = false } = {}) {
   const s = site()
   const { title: full, description: desc, url, image: img } = resolveHead({ title, description, image, path }, s, SHARE.default)
   if (typeof document === 'undefined') return { title: full, description: desc, url, image: img }
@@ -75,7 +75,6 @@ export function setHead({ title = '', description = '', image = '', path = null,
 
 /* a landing page: its own SEO fields, else the site's */
 export function headForPage(p: any) {
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   if (!p) return setHead({ path: '/' })
   return setHead({ title: p.seoTitle || (p.route === '/' ? '' : p.title), description: p.description, image: p.image || SHARE.page(p.route), path: p.route || '/' })
 }
@@ -87,12 +86,9 @@ export function headForContent(kind: string, id: string) {
   if (!id || !idx[kind]) { const k = idx[kind] ? kind : (DOCS_ONLY ? 'docs' : 'hub'); return setHead({ title: (S[k] || {}).title, description: (S[k] || {}).description, path: idx[k] }) }
   const path = idx[kind] + '/' + id
   const find = (col: any) => (col || []).find((e: { id: any }) => e.id === id)
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   if (kind === 'articles') { const a = find(articles); return setHead({ title: a && a.title, description: a && (a.description || strip(a.excerpt)), image: a && (a.share || SHARE.article(a.id)), path, type: 'article' }) }
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  if (kind === 'books') { const b = (books || []).find((e) => (e.slug || e.id) === id); return setHead({ title: b && (b.author ? `${b.title} by ${b.author}` : b.title), description: b && b.description, image: b && (b.share || SHARE.book(b.slug || b.id)), path, type: 'book' }) }
+  if (kind === 'books') { const b = (books || []).find((e: { slug: any; id: any }) => (e.slug || e.id) === id); return setHead({ title: b && (b.author ? `${b.title} by ${b.author}` : b.title), description: b && b.description, image: b && (b.share || SHARE.book(b.slug || b.id)), path, type: 'book' }) }
   const e = find(kind === 'wiki' ? wiki : docs)
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   setHead({ title: e && e.title, description: e && (e.description || strip(e.excerpt)), image: e && (e.share || imageOf(e.cover) || SHARE.of(kind, id)), path, type: 'article' })
 }
 
@@ -100,13 +96,9 @@ export function headForContent(kind: string, id: string) {
 export function headForStore(kind: string, id: string) {
   const S = us('pages').seo || {}
   const sf = one(storefront) || {}
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  if (kind === 'products' && id) { const p = (products || []).find((x) => x.id === id); return setHead({ title: p && p.title, description: p && (p.subtitle || strip(p.excerpt)), image: p && (p.share || p.image || SHARE.of('products', id)), path: '/store/products/' + id, type: 'product' }) }
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  if (kind === 'collections' && id) { const c = (collections || []).find((x) => x.id === id); return setHead({ title: c && c.title, description: c && (c.subtitle || c.description), image: c && (c.share || c.image || SHARE.of('collections', id)), path: '/store/collections/' + id }) }
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
+  if (kind === 'products' && id) { const p = (products || []).find((x: { id: string }) => x.id === id); return setHead({ title: p && p.title, description: p && (p.subtitle || strip(p.excerpt)), image: p && (p.share || p.image || SHARE.of('products', id)), path: '/store/products/' + id, type: 'product' }) }
+  if (kind === 'collections' && id) { const c = (collections || []).find((x: { id: string }) => x.id === id); return setHead({ title: c && c.title, description: c && (c.subtitle || c.description), image: c && (c.share || c.image || SHARE.of('collections', id)), path: '/store/collections/' + id }) }
   if (kind === 'collections') return setHead({ title: (S.collections || {}).title, description: (S.collections || {}).description, path: '/store/collections' })
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   setHead({ title: sf.heroTitle || (S.store || {}).title, description: sf.heroSubtitle || (S.store || {}).description, image: sf.heroImage, path: '/store' })
 }
 

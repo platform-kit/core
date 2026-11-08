@@ -25,7 +25,7 @@ const DIR = path.dirname(require.resolve('lucide-vue-next/package.json')) + '/di
 const resolved = (spec: string): string => { try { return require.resolve(spec) } catch { return require.resolve(spec.replace(/\.js$/, '.ts')) } }
 
 function themeGlyphs(theme: string|null) {
-  const own = new Set()
+  const own = new Set<string>()
   /* the theme's own few, drawn by glyph() — its package exports its source as ./*, so this is the
      same path the app imports */
   for (const spec of [theme && theme + '/components/landing/glyphs.js', 'platformkit/theme/components/landing/glyphs.js']) {
@@ -86,7 +86,7 @@ const inner = (list: [any,any][]) => list.map(([tag, a]) => `<${tag} ${attrs(a)}
 
 /* every `icon` a page names, wherever it sits in its props */
 function named() {
-  const out = new Set()
+  const out = new Set<string>()
   const dir = path.join(ROOT, 'content/pages'); if (!fs.existsSync(dir)) return out
   const walk = (v: unknown) => { if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) { if (k === 'icon' && typeof x === 'string') out.add(x); else walk(x) } }
   for (const f of fs.readdirSync(dir)) if (f.endsWith('.md')) walk(matter(fs.readFileSync(path.join(dir, f), 'utf8')).data.sections || [])
@@ -97,18 +97,17 @@ export function buildIcons({ all = ALL, theme = null } = {}) {
   const files = fs.readdirSync(DIR).filter((f) => f.endsWith('.js') && !f.endsWith('.map'))
   const names = files.map((f) => f.slice(0, -3))
   const want = all ? new Set(names) : named()
-  const icons = {}
+  const icons: Record<string, unknown> = {}
   /* A NAME NOTHING CAN DRAW IS WORTH SAYING. It used to be skipped in silence, and a page naming a
      glyph that is not Lucide's drew a hole — no warning at build, no error at runtime, and only a
      screenshot would ever have shown it. */
   const own = themeGlyphs(theme)
-  const unknown = []
+  const unknown: string[] = []
   for (const n of want) {
     const f = path.join(DIR, n + '.js')
     /* `own` only silences the report: an icon Lucide has is still drawn, because a name a section
        owns may ALSO be one a page draws through glyph() somewhere else */
     if (!fs.existsSync(f)) { if (!own.has(n)) unknown.push(n); continue }
-    // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
     const list = nodes(f); if (list) icons[n] = inner(list); else if (!own.has(n)) unknown.push(n)
   }
   const out = path.join(ROOT, '.velite'); fs.mkdirSync(out, { recursive: true })

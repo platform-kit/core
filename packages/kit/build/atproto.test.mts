@@ -14,7 +14,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, siteUnderTest, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('atproto: ' + m)
+const note = (m: string) => console.log('atproto: ' + m)
 if (process.env.ATPROTO_TEST === '0') { note('skipped (ATPROTO_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -29,25 +29,25 @@ if (!up) { note('skipped — the atproto function is not served on the local sta
 const DOMAIN = (await (await fetch(FN + '/xrpc/com.atproto.server.describeServer')).json()).availableUserDomains[0].slice(1)
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean|null, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 /* a client always asks /xrpc/<method> at the root of the host it was given: the host here is a name,
    and every request is sent to the function, exactly as the site's rewrite does */
 const SITE = 'http://site.test'
 /* …and after signing in, a client goes to the server the member's DID document names, which is the
    site's own address; whatever host it is, its /xrpc is the function */
-const viaSite = (input: any, init: any) => {
+const viaSite = (input: any, init: RequestInit|undefined) => {
   const u = new URL(String(input instanceof Request ? input.url : input))
   const to = u.pathname.startsWith('/xrpc/') ? FN + u.pathname + u.search : u.toString()
   return input instanceof Request ? fetch(new Request(to, input), init) : fetch(to, init)
 }
 const agent = () => new AtpAgent({ service: SITE, fetch: viaSite })
-const xrpc = async (nsid: any, { token, params, body }: any = {}) => {
+const xrpc = async (nsid: string, { token, params, body }: any = {}) => {
   const q = params ? '?' + new URLSearchParams(params) : ''
   const r = await fetch(`${FN}/xrpc/${nsid}${q}`, { method: body ? 'POST' : 'GET', headers: { ...(token ? { Authorization: 'Bearer ' + token } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined })
   return { status: r.status, data: await r.json().catch(() => null) }
 }
 const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
-const site = async (email: any) => {
+const site = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -64,7 +64,7 @@ try {
   people.push(A.id, B.id, C.id)
   for (const p of (await service.from('profiles').select('id, username, public_profile').in('id', people)).data || []) before.set(p.id, p)
   /* a username each, so a handle each */
-  for (const [who, name] of [[A, SLUG + '-a'], [B, SLUG + '-b'], [C, SLUG + '-c']]) await service.from('profiles').update({ username: name }).eq('id', (who as any).id)
+  for (const [who, name] of [[A, SLUG + '-a'], [B, SLUG + '-b'], [C, SLUG + '-c']]) await service.from('profiles').update({ username: name }).eq('id', who.id)
   await service.from('network_app_passwords').delete().in('user_id', people)
   /* this test refuses a wrong password on purpose every run; earlier runs' attempts are not this run's */
   await service.from('network_login_attempts').delete().gte('id', 0)
@@ -118,7 +118,7 @@ try {
   const b = agent(); await b.login({ identifier: SLUG + '-b.' + DOMAIN, password: B.pw })
   const c: any = agent(); await c.login({ identifier: SLUG + '-c.' + DOMAIN, password: C.pw })
   const guest = agent()
-  const seen = async (ag: any, uris: any) => new Set(((await ag.app.bsky.feed.getPosts({ uris })).data.posts || []).map((p: any) => p.uri))
+  const seen = async (ag: AtpAgent, uris: string[]) => new Set(((await ag.app.bsky.feed.getPosts({ uris })).data.posts || []).map((p: { uri: any }) => p.uri))
 
   await service.from('profiles').update({ public_profile: false }).eq('id', A.id)
   ok('a guest reads nothing of a member whose page is closed', (await seen(guest, [uE, uH, uS])).size === 0)
@@ -131,8 +131,8 @@ try {
   ok('a member of the space reads all three', bs.size === 3, [...bs].join(' '))
 
   /* a space's post, three ways: by record, in an author's list, in a thread */
-  const threadOf = async (ag: any) => { try { const t = await ag.app.bsky.feed.getPostThread({ uri: uS }); return t.data.thread.$type === 'app.bsky.feed.defs#threadViewPost' } catch { return false } }
-  const authorHas = async (ag: any) => ((await ag.app.bsky.feed.getAuthorFeed({ actor: did })).data.feed || []).some((f: any) => f.post.uri === uS)
+  const threadOf = async (ag: AtpAgent) => { try { const t = await ag.app.bsky.feed.getPostThread({ uri: uS }); return t.data.thread.$type === 'app.bsky.feed.defs#threadViewPost' } catch { return false } }
+  const authorHas = async (ag: AtpAgent) => ((await ag.app.bsky.feed.getAuthorFeed({ actor: did })).data.feed || []).some((f: { post: { uri: string } }) => f.post.uri === uS)
   ok('a space\'s post: a guest gets it by no method', !(await threadOf(guest)) && !(await authorHas(guest)) && !(await seen(guest, [uS])).has(uS))
   ok('…an outsider by no method', !(await threadOf(c)) && !(await authorHas(c)) && !(await seen(c, [uS])).has(uS))
   ok('…a member of the space by record and in a thread', (await threadOf(b)) && (await seen(b, [uS])).has(uS))
@@ -152,24 +152,24 @@ try {
 
   /* ------------------------------------------------------------ the timeline, acts, notifications */
   await c.follow(did)
-  const tl: any = (await c.getTimeline()).data.feed
-  ok('the timeline holds the posts of the people one follows', tl.some((f: any) => f.post.uri === uE) && tl.some((f: any) => f.post.uri === uH))
-  const liked = await c.like(uE, tl.find((f: any) => f.post.uri === uE).post.cid)
-  const rp = await c.repost(uH, tl.find((f: any) => f.post.uri === uH).post.cid)
-  const after: any = (await c.app.bsky.feed.getPosts({ uris: [uE, uH] })).data.posts
-  ok('a like and a repost are counted and marked as the reader\'s own', after.find((p: any) => p.uri === uE).likeCount === 1 && !!after.find((p: any) => p.uri === uE).viewer.like && after.find((p: any) => p.uri === uH).repostCount === 1)
-  const reply = await c.post({ text: 'answering, among us', reply: { root: { uri: uH, cid: after.find((p: any) => p.uri === uH).cid }, parent: { uri: uH, cid: after.find((p: any) => p.uri === uH).cid } } })
-  ok('a reply through the protocol hangs under its post', (((await c.getPostThread({ uri: uH })).data.thread as any).replies || []).some((r: any) => r.post.uri === reply.uri))
-  const notes = (await a.listNotifications()).data.notifications.map((n: any) => n.reason)
+  const tl = (await c.getTimeline()).data.feed
+  ok('the timeline holds the posts of the people one follows', tl.some((f: { post: { uri: string } }) => f.post.uri === uE) && tl.some((f: { post: { uri: string } }) => f.post.uri === uH))
+  const liked = await c.like(uE, tl.find((f: { post: { uri: string } }) => f.post.uri === uE).post.cid)
+  const rp = await c.repost(uH, tl.find((f: { post: { uri: string } }) => f.post.uri === uH).post.cid)
+  const after = (await c.app.bsky.feed.getPosts({ uris: [uE, uH] })).data.posts
+  ok('a like and a repost are counted and marked as the reader\'s own', after.find((p: { uri: string }) => p.uri === uE).likeCount === 1 && !!after.find((p: { uri: string }) => p.uri === uE).viewer.like && after.find((p: { uri: string }) => p.uri === uH).repostCount === 1)
+  const reply = await c.post({ text: 'answering, among us', reply: { root: { uri: uH, cid: after.find((p: { uri: string }) => p.uri === uH).cid }, parent: { uri: uH, cid: after.find((p: { uri: string }) => p.uri === uH).cid } } })
+  ok('a reply through the protocol hangs under its post', ((await c.getPostThread({ uri: uH })).data.thread.replies || []).some((r: { post: { uri: any } }) => r.post.uri === reply.uri))
+  const notes = (await a.listNotifications()).data.notifications.map((n: { reason: any }) => n.reason)
   ok('the author is told of the follow, the like, the repost and the reply', ['follow', 'like', 'repost', 'reply'].every((r) => notes.includes(r)), notes.join(','))
   const unread = (await a.countUnreadNotifications()).data.count
   await a.updateSeenNotifications()
   ok('unread is counted, and seeing clears it', unread >= 4 && (await a.countUnreadNotifications()).data.count === 0, String(unread))
   await c.deleteLike(liked.uri)
   await c.deleteRepost(rp.uri)
-  const undone: any = (await c.app.bsky.feed.getPosts({ uris: [uE, uH] })).data.posts
-  ok('a like and a repost deleted are taken off', undone.find((p: any) => p.uri === uE).likeCount === 0 && undone.find((p: any) => p.uri === uH).repostCount === 0)
-  const prof: any = (await c.getProfile({ actor: did })).data
+  const undone = (await c.app.bsky.feed.getPosts({ uris: [uE, uH] })).data.posts
+  ok('a like and a repost deleted are taken off', undone.find((p: { uri: string }) => p.uri === uE).likeCount === 0 && undone.find((p: { uri: string }) => p.uri === uH).repostCount === 0)
+  const prof = (await c.getProfile({ actor: did })).data
   ok('a profile carries its counts and where the reader stands', prof.followersCount >= 1 && !!prof.viewer.following, JSON.stringify(prof.viewer))
 
   /* a like on a space's post is the room's own reaction */
@@ -186,8 +186,8 @@ try {
   ok('a picture uploads and is named by its hash', /^bafkrei/.test(String(blob.ref)), String(blob.ref))
   const withPic = await a.post({ text: 'a picture', embed: { $type: 'app.bsky.embed.images', images: [{ image: blob, alt: 'one pixel' }] } })
   const pv = (await a.app.bsky.feed.getPosts({ uris: [withPic.uri] })).data.posts[0]
-  ok('…and a post carries it, by an address the reader may open', pv && pv.embed && pv.embed.$type === 'app.bsky.embed.images#view' && /^https?:/.test((pv.embed as any).images[0].fullsize), JSON.stringify(pv && pv.embed))
-  const rec: any = (await a.com.atproto.repo.getRecord({ repo: did, collection: 'app.bsky.feed.post', rkey: withPic.uri.split('/').pop() })).data
+  ok('…and a post carries it, by an address the reader may open', pv && pv.embed && pv.embed.$type === 'app.bsky.embed.images#view' && /^https?:/.test(pv.embed.images[0].fullsize), JSON.stringify(pv && pv.embed))
+  const rec = (await a.com.atproto.repo.getRecord({ repo: did, collection: 'app.bsky.feed.post', rkey: withPic.uri.split('/').pop() })).data
   ok('a record reads back with the CID its view had', rec.cid === pv.cid && rec.value.embed.images[0].alt === 'one pixel')
   const bad = await xrpc('com.atproto.repo.createRecord', { token: a.session.accessJwt, body: { repo: did, collection: 'app.bsky.feed.post', record: { $type: 'app.bsky.feed.post', text: 5 } } })
   ok('a record that is not its lexicon is refused', bad.status === 400 && bad.data.error === 'InvalidRecord', JSON.stringify(bad.data))

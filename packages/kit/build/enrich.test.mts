@@ -66,7 +66,7 @@ function fakeDb(initial = {}) {
     rows,
     from() {
       let id: any = null
-      const api: any = {
+      const api = {
         select() { return api },
         eq(_col: any, v: any) { id = v; return api },
         async single() { return { data: rows.get(id) || null, error: null } },
@@ -272,7 +272,7 @@ await ok('a stage whose inputs have not moved is read back rather than bought ag
 
   /* the test every stage makes before it spends anything */
   const fresh = (stage: any, prompt: any, input: any) => {
-    const e = stage === 'understand' ? cache.understand : (cache.chapters as any).One?.extract
+    const e = stage === 'understand' ? cache.understand : cache.chapters.One?.extract
     return !!e && e.key === h(prompt, input)
   }
   assert.equal(fresh('understand', P.understand, 'the whole book'), true, 'an unchanged book would be read again')
@@ -297,8 +297,8 @@ await ok('a run that died halfway keeps every stage it finished', async () => {
   const back = await fileCache('halfway', { root, fs, path }).load()
   assert.deepEqual(back, half, 'the next run would pay for these again')
   assert.equal(Object.keys(back.chapters).length, 2)
-  assert.ok((back.chapters as any).One.write, 'the chapter that was written is still written')
-  assert.ok(!(back.chapters as any).Two.write, 'and the one that was not is not invented')
+  assert.ok(back.chapters.One.write, 'the chapter that was written is still written')
+  assert.ok(!back.chapters.Two.write, 'and the one that was not is not invented')
 })
 
 fs.rmSync(root, { recursive: true, force: true })

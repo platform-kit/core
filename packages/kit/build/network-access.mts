@@ -25,7 +25,6 @@ export function accessOf(config: { network: any }, root: string, { catalog = nul
   for (const k of Object.keys(raw)) if (![...GRANTS, 'join', 'plans'].includes(k)) faults.push(`network.access: "${k}" is not one of read, write, join, plans`)
   if (raw.plans != null && !/^\/[^\s]*$/.test(String(raw.plans))) faults.push(`network.access.plans: "${raw.plans}" is an address on this site, like /pricing`)
   let cat
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ offers: any; sessions: any; } | null' is not assignable to parameter of type 'null | undefined'. Type '{ offers: any; se
   try { cat = catalogOf(root, catalog || catalogFrom(root)) } catch { cat = catalogOf(root, null) }
   const rules: any = {}
   for (const g of GRANTS) {
@@ -66,7 +65,6 @@ export function communityAccessOf(config: { community: any }, root: string, { ca
   for (const p of Array.isArray(m.places) ? m.places : []) if (p && p.access != null) wanted[p.key] = p.access
   if (!Object.keys(wanted).length) return { rules: null, faults }
   let cat
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ offers: any; sessions: any; } | null' is not assignable to parameter of type 'null | undefined'. Type '{ offers: any; se
   try { cat = catalogOf(root, catalog || catalogFrom(root)) } catch { cat = catalogOf(root, null) }
   const rules: any = {}
   for (const [k, raw] of Object.entries(wanted)) {

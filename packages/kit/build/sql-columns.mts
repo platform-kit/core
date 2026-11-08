@@ -80,7 +80,7 @@ export function declaredColumns(files: { file: string; sql: string; }[]) {
 
 /* relations whose columns this parser does not know: a reference into one is skipped, not blamed */
 export function otherRelations(files: { file: string; sql: string; }[]) {
-  const rel = new Set()
+  const rel = new Set<string>()
   for (const { sql } of files) {
     const clean = stripNoise(sql)
     for (const re of [
@@ -141,7 +141,7 @@ export function triggersOf(files: { file: string; sql: string; }[]) {
    correctness, which is not acceptable in a guard people are meant to believe. */
 export function shadowedNames(body: string|string[]) {
   const clean = stripNoise(body)
-  const out = new Set()
+  const out = new Set<string>()
   /* a CTE: WITH a AS ( ... ), b AS ( ... ) */
   for (const m of clean.matchAll(/(?:\bWITH\s+(?:RECURSIVE\s+)?|,\s*)([a-z][a-z0-9_]*)\s+AS\s*(?:(?:NOT\s+)?MATERIALIZED\s+)?\(/gi)) out.add(m[1].toLowerCase())
   /* a derived table or a function call wearing an alias: ) x / ) AS x / AS g(dd) */
@@ -152,7 +152,7 @@ export function shadowedNames(body: string|string[]) {
 
 /* alias -> table, for the bindings that are unambiguous in the text */
 export function aliasBindings(body: string) {
-  const b = new Map()
+  const b = new Map<string, null | string>()
   const clean = stripNoise(body)
   const re = new RegExp(`\\b(?:FROM|JOIN|UPDATE|INTO)\\s+"?public"?\\.${ident}(?:\\s+AS)?\\s+${ident}`, 'gi')
   const KEYWORD = new Set(['set', 'where', 'on', 'using', 'values', 'select', 'group', 'order', 'limit',

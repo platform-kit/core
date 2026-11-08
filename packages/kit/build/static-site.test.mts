@@ -31,10 +31,10 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const REPO = resolve(HERE, '..', '..', '..')
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 const args = process.argv.slice(2)
-const argOf = (n: any, d: any) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
+const argOf = (n: string, d: string) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
 /*
  * TWO FIXTURES, AND THE SECOND IS THE ONE THAT MATTERS.
  *
@@ -116,14 +116,14 @@ for (const rel of SITES) {
    * it fine.
    */
   {
-    const missing = routes.filter((r: any) => {
+    const missing = routes.filter((r: string) => {
       const p = r === '/' ? join(root, 'dist', 'index.html') : join(root, 'dist', r.replace(/^\//, ''), 'index.html')
       return !existsSync(p)
     })
     ok(rel + ' baked a page for every public route', missing.length === 0, missing.length + ' without one: ' + missing.slice(0, 4).join(' '))
 
     /* and each is prerendered rather than the empty shell copied into place */
-    const shell = routes.filter((r: any) => {
+    const shell = routes.filter((r: string) => {
       const p = r === '/' ? join(root, 'dist', 'index.html') : join(root, 'dist', r.replace(/^\//, ''), 'index.html')
       if (!existsSync(p)) return false
       return !/data-prerendered/.test(readFileSync(p, 'utf8'))
@@ -135,7 +135,7 @@ for (const rel of SITES) {
     if (!existsSync(map)) console.log('  (' + rel + ' has no public address in content/site.md, so no sitemap is written — that is the rule, not a fault)')
     else {
       const xml = readFileSync(map, 'utf8')
-      const absent = routes.filter((r: any) => !xml.includes(r === '/' ? '<loc>' : r))
+      const absent = routes.filter((r: string) => !xml.includes(r === '/' ? '<loc>' : r))
       ok(rel + ' lists its routes in the sitemap', absent.length === 0, absent.length + ' missing: ' + absent.slice(0, 4).join(' '))
     }
   }

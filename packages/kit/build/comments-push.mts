@@ -51,7 +51,9 @@ export const CHAPTERS = { 'book-chapter': 'content/books' }
  * `allow: off` is what ships, because a site that has not thought about moderation should not wake
  * up to a comment section.
  */
-export const POLICY = { allow: 'off', approval: 'none', votes: false, reactions: true, depth: 3, collapse: 5, flagged: [], domains: [] }
+/* a subject's comment settings: who may write, what is held for approval, and the shape of a thread */
+export interface CommentPolicy { allow: string, approval: string, votes: boolean, reactions: boolean, depth: number, collapse: number, flagged: string[], domains: string[] }
+export const POLICY: CommentPolicy = { allow: 'off', approval: 'none', votes: false, reactions: true, depth: 3, collapse: 5, flagged: [], domains: [] }
 
 const ALLOW = ['off', 'everyone', 'members', 'hosts']
 const APPROVAL = ['none', 'all', 'trusted']
@@ -134,7 +136,7 @@ export function commentsOf(v: any, policy = POLICY) {
    deploy would have done it silently. For an open kind the projection owns the wildcard and nothing
    else. Pinned by build/comments.test.mjs, because a destructive rule that lives inside a loop is a
    rule no test can reach. */
-export function sweepable(row: any, want = []) {
+export function sweepable(row: any, want: Array<{ kind: string, subject: string }> = []) {
   if (!row || !row.kind) return false
   const keep = new Set(want.map((r: any) => r.kind + '\u0000' + r.subject))
   if (keep.has(row.kind + '\u0000' + row.subject)) return false
@@ -202,7 +204,6 @@ export async function pushComments({ root = process.cwd(), store, log = console.
       const m = matter((await st.read(dir + '/' + slug + '.md')) || '')
       const d = m.data || {}, body = m.content || ''
       if (d.published === false) continue
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ allow: any; approval: any; votes: any; reactions: any; depth: any; collapse: any; flagged: string[]; domains: string[]; 
       const c = commentsOf(d.comments, policy)
       if (!c) continue
       const ch = channelId(c.space, c.channel)
@@ -227,7 +228,6 @@ export async function pushComments({ root = process.cwd(), store, log = console.
     for (const slug of names) {
       const d = matter((await st.read(dir + '/' + slug + '.md')) || '').data || {}
       if (d.published === false) continue
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ allow: any; approval: any; votes: any; reactions: any; depth: any; collapse: any; flagged: string[]; domains: string[]; 
       const c = commentsOf(d.comments, policy)
       if (!c) continue
       const ch = channelId(c.space, c.channel)
@@ -249,7 +249,6 @@ export async function pushComments({ root = process.cwd(), store, log = console.
     /* an open kind is the same resolution: the site's policy, and whatever this kind says of its
        own. Its allow defaults to members rather than the policy's, because declaring a kind open
        and leaving it off would be a declaration that says nothing. */
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ allow: any; approval: any; votes: any; reactions: any; depth: any; collapse: any; flagged: string[]; domains: string[]; 
     const c = commentsOf({ allow: 'members', ...k }, policy)
     if (!c) continue
     want.push({
@@ -300,7 +299,6 @@ export async function pushComments({ root = process.cwd(), store, log = console.
   if (!Array.isArray(had)) throw new Error('comments: could not read existing subjects: expected a row list')
   let gone = 0
   for (const r of had) {
-    // @ts-expect-error TS2345, from the conversion: Argument of type '({ updated_at: string; allow: any; approval: any; votes: boolean; reactions: boolean; depth: any; collapse: any; kind: str
     if (!sweepable(r, want)) continue
     const { error } = await db.from('comment_subjects').delete().eq('kind', r.kind).eq('subject', r.subject)
     if (error) throw new Error(`comments: could not remove ${r.kind}/${r.subject}: ${error.message}`)

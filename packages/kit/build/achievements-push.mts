@@ -75,8 +75,7 @@ export async function pushAchievements({ check = false, root = process.cwd(), st
   const courses = await readCourses(st).catch(() => [])
   const scored: any = {}
   for (const c of courses) for (const l of c.lessons) if (l.kind === 'form' && l.ref && !(l.ref in scored)) scored[l.ref] = /^#!\s*score\s*=\s*\S/m.test((await st.read(`content/forms/${l.ref}.md`)) || '')
-  // @ts-expect-error TS2322, from the conversion: Type '(ref: any) => any' is not assignable to type '() => boolean'. Target signature provides too few arguments. Expected 1 or more, but got
-  for (const r of quizAchievements(courses, { scored: (ref) => scored[ref] })) if (!fromFiles.has(r.slug)) want.push(r)
+  for (const r of quizAchievements(courses, { scored: (ref: string|number) => scored[ref] })) if (!fromFiles.has(r.slug)) want.push(r)
 
   /* the traits file */
   let traits = [], visible = ['admin']

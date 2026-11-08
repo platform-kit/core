@@ -108,6 +108,5 @@ export function spanMinutes(v: string|null) {
   if (!m) return null
   const n = Number(m[1])
   if (!Number.isFinite(n) || n < 0) return null
-  // @ts-expect-error TS2532, from the conversion: Object is possibly 'undefined'.
-  return Math.round(n * ({ m: 1, h: 60, d: 1440, w: 10080 }[m[2] || 'd']))
+  return Math.round(n * ({ m: 1, h: 60, d: 1440, w: 10080 } as Record<string, number>)[m[2] || 'd'])
 }

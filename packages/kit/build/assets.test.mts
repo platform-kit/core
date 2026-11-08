@@ -11,9 +11,9 @@ import { gitStore } from './store/git.mjs'
 import { migrateAssets } from './migrate-assets.mjs'
 
 let n = 0, bad = 0
-const ta = async (name: any, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
+const ta = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'assets-'))
-const put = (rel: any, text = 'x') => { const f = path.join(root, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text) }
+const put = (rel: string, text = 'x') => { const f = path.join(root, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text) }
 
 await ta('addresses and their paths', async () => {
   assert.equal(addressOf('content/uploads/a/b.png'), '/uploads/a/b.png'); assert.equal(addressOf('public/img/c.jpg'), '/img/c.jpg'); assert.equal(addressOf('content/books/x.md'), null)
@@ -39,10 +39,8 @@ await ta('the resolver: the four kinds', async () => {
   await resolveAsset(far, { root, fetchFn }); assert.equal(fetched, 1, 'fetched once, kept')
   // @ts-expect-error TS2322, from the conversion: Type '() => Promise<{ ok: false; status: number; }>' is not assignable to type '{ (input: URL | RequestInfo, init?: RequestInit | undefined)
   assert.equal(await resolveAsset('https://elsewhere.example/gone.png', { root, fetchFn: async () => ({ ok: false, status: 404 }), log }), null); assert.match(logs.pop(), /404/)
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   const beside = await resolveAsset('./three.png', { root, fromFile: path.join(root, 'content/books/three.md'), log })
   assert.equal(beside, path.join(root, 'content/books/three.png')); assert.match(logs.pop(), /the old way/)
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   await resolveAsset('./three.png', { root, fromFile: path.join(root, 'content/books/three.md'), log }); assert.equal(logs.length, 0, 'warned once per file')
 })
 await ta('the migration: beside the record → under content/uploads/<model>/, the field rewritten, then idle', async () => {
@@ -62,7 +60,7 @@ await ta('the migration: beside the record → under content/uploads/<model>/, t
    every file under it */
 await ta('a file in use: the records that name it', async () => {
   const site = fs.mkdtempSync(path.join(os.tmpdir(), 'assets-use-'))
-  const w = (rel: any, text: any) => { const f = path.join(site, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text) }
+  const w = (rel: string, text: string|NodeJS.ArrayBufferView<ArrayBufferLike>) => { const f = path.join(site, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text) }
   for (const p of ['content/uploads/books/a.png', 'content/uploads/books/free.png', 'content/uploads/hero.png', 'content/uploads/hero.png.bak', 'public/img/b.jpg', 'public/img/c.jpg', 'content/uploads/mail.png']) w(p, 'x')
   w('content/books/one.md', '---\ntitle: "Book One"\ncover: /uploads/books/a.png\n---\n# 1\n')
   w('content/pages/home.md', '---\ntitle: Home\nsections:\n  - component: Hero\n    props:\n      image: /img/b.jpg\n---\n')
@@ -73,11 +71,11 @@ await ta('a file in use: the records that name it', async () => {
   const u = await assetUsage(st, ['content/uploads/books/a.png', 'content/uploads/books/free.png', 'content/uploads/hero.png', 'public/img/b.jpg', 'public/img/c.jpg', 'content/uploads/mail.png', 'content/uploads/books'])
   assert.deepEqual(u['content/uploads/books/a.png'], [{ file: 'content/books/one.md', collection: 'books', title: 'Book One' }], 'a cover by its address, the title unquoted')
   assert.equal(u['content/uploads/books/free.png'], undefined, 'a file no record names')
-  assert.deepEqual(u['content/uploads/hero.png'].map((r: any) => r.file), ['content/articles/piece.md'], 'a bucket url counts; /uploads/hero.png.bak is not /uploads/hero.png')
-  assert.deepEqual(u['public/img/b.jpg'].map((r: any) => r.title), ['Home'], 'a section picture under public')
+  assert.deepEqual(u['content/uploads/hero.png'].map((r: { file: any }) => r.file), ['content/articles/piece.md'], 'a bucket url counts; /uploads/hero.png.bak is not /uploads/hero.png')
+  assert.deepEqual(u['public/img/b.jpg'].map((r: { title: any }) => r.title), ['Home'], 'a section picture under public')
   assert.equal(u['public/img/c.jpg'], undefined)
-  assert.deepEqual(u['content/uploads/mail.png'].map((r: any) => r.collection), ['emails'], 'an email design')
-  assert.deepEqual(u['content/uploads/books'].map((r: any) => r.file), ['content/books/one.md'], 'a folder: any file under it')
+  assert.deepEqual(u['content/uploads/mail.png'].map((r: { collection: any }) => r.collection), ['emails'], 'an email design')
+  assert.deepEqual(u['content/uploads/books'].map((r: { file: any }) => r.file), ['content/books/one.md'], 'a folder: any file under it')
   fs.rmSync(site, { recursive: true, force: true })
 })
 fs.rmSync(root, { recursive: true, force: true })

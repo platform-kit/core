@@ -20,7 +20,7 @@ if (!health.ok) {
   process.exit(0)
 }
 
-const client = (apiKey: any) =>
+const client = (apiKey: string) =>
   createClient<Database>(url, apiKey, { auth: { persistSession: false, autoRefreshToken: false } })
 const service = client(key)
 const admin = client(anonKey)
@@ -63,7 +63,7 @@ async function invoke(body: any) {
   return { status: response.status, ...result }
 }
 
-async function putSecret(secret: any, name: any, description: any) {
+async function putSecret(secret: string, name: string, description: string) {
   const { data, error } = await service.rpc('social_vault_put', {
     p_secret: secret,
     p_name: name,
@@ -120,10 +120,10 @@ try {
 
   const configured: any = await invoke({ action: 'providers' })
   assert.equal(configured.status, 200, JSON.stringify(configured))
-  assert.ok(configured.backends.every((backend: any) => backend.configured))
+  assert.ok(configured.backends.every((backend: { configured: any }) => backend.configured))
   assert.ok(
     configured.backends.every(
-      (backend: any) =>
+      (backend: { platforms: any[] }) =>
         Array.isArray(backend.platforms) &&
         backend.platforms.every((platform: any) => typeof platform === 'string'),
     ),
@@ -162,7 +162,7 @@ try {
       assert.ok(Array.isArray(capabilities.operations))
       assert.ok(
         capabilities.capabilities.capabilities.some(
-          (capability: any) =>
+          (capability: { platform: any; operation: string; availability: string }) =>
             capability.platform === platform &&
             capability.operation === 'posts.publish' &&
             capability.availability === 'available',
@@ -221,14 +221,14 @@ try {
     }
   }
 
-  const sharedRoutes = configured.backends.flatMap((backend: any) =>
+  const sharedRoutes = configured.backends.flatMap((backend: { platforms: any[] }) =>
     backend.platforms
-      .filter((platform: any) => directIds.has(platform))
+      .filter((platform: unknown) => directIds.has(platform))
       .map((platform: any) => ({ ...backend, platform })),
   )
   const preferredPlatforms = ['reddit', 'threads', 'linkedin', 'x', 'bluesky', 'instagram', 'tiktok', 'youtube']
   const route = preferredPlatforms
-    .map((platform) => sharedRoutes.find((candidate: any) => candidate.platform === platform))
+    .map((platform) => sharedRoutes.find((candidate: { platform: string }) => candidate.platform === platform))
     .find(Boolean)
   assert.ok(route, 'at least one managed route shares a platform with a direct adapter')
   const platform = route.platform
@@ -285,7 +285,7 @@ try {
   const manifest = (managedCapabilities as any).capabilities
   assert.ok(
     manifest.capabilities.some(
-      (capability: any) =>
+      (capability: { platform: any; operation: string; availability: string }) =>
         capability.platform === platform &&
         capability.operation === 'posts.publish' &&
         capability.availability === 'available',
@@ -312,7 +312,7 @@ try {
   })
   assert.equal(scheduled.status, 200, JSON.stringify(scheduled))
   assert.equal(scheduled.deliveries.length, 2)
-  assert.ok(scheduled.deliveries.every((delivery: any) => delivery.status === 'scheduled'))
+  assert.ok(scheduled.deliveries.every((delivery: { status: string }) => delivery.status === 'scheduled'))
 
   const independentResults = await Promise.all([
     resolveSocialOutcome({
@@ -325,7 +325,7 @@ try {
         code: 'managed_rate_limited',
         retryDisposition: { kind: 'after-delay', delayMs: 30_000 },
       },
-      onKnownFailure: (result: any) => ({
+      onKnownFailure: (result: { disposition: { kind: string }; code: any }) => ({
         status: result.disposition?.kind === 'after-delay' ? 'retry_wait' : 'failed',
         errorCode: result.code,
       }),
@@ -333,7 +333,7 @@ try {
   ])
   assert.deepEqual(
     Object.fromEntries(
-      scheduled.deliveries.map((delivery: any, index: any) => [delivery.account_id, independentResults[index].status]),
+      scheduled.deliveries.map((delivery: { account_id: any }, index: any) => [delivery.account_id, independentResults[index].status]),
     ),
     {
       [scheduled.deliveries[0].account_id]: 'published',

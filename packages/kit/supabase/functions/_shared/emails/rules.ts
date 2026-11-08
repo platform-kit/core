@@ -39,14 +39,13 @@ const list = (v: string|null) => (Array.isArray(v) ? v : v == null || v === '' ?
 
 /* the markdown's `audience` → the query's rules; `skusOf(slug)` widens a book's slug to its
    skus for bought / not-bought (the build knows the catalog; the admin passes it through) */
-export function normalizeRules(audience: any, { skusOf = null } = {}) {
+export function normalizeRules(audience: any, { skusOf = null as ((slug: any) => any[]) | null } = {}) {
   const a = audience && typeof audience === 'object' ? audience : {}
   const out: any = {}
   for (const [k, key] of Object.entries(SPAN_KEYS)) if (a[k] != null && a[k] !== '') { const s = span(a[k]); if (s) out[key] = s }
   for (const [k, key] of Object.entries(LIST_KEYS)) {
     if (a[k] == null || a[k] === '') continue
     let l = list(a[k])
-    // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
     if ((k === 'bought' || k === 'not-bought') && skusOf) l = [...new Set(l.flatMap((x) => { const s = skusOf(x); return s && s.length ? s : [x] }))]
     if (l.length) out[key] = l
   }

@@ -148,7 +148,7 @@ export async function runInContainer(script: string, args: string[]) {
   const cwd = (() => { const rel = path.relative(root, process.cwd()); return rel.startsWith('..') ? WORK : path.posix.join(WORK, rel.split(path.sep).join('/')) })()
   /* the daemon answers before the script starts */
   const wait = 'i=0; until docker info >/dev/null 2>&1; do i=$((i+1)); [ $i -gt 120 ] && { echo "the run\'s Docker daemon did not start" >&2; exit 1; }; sleep 1; done; exec "$@"'
-  const code = await new Promise((resolve) => {
+  const code = await new Promise<number>((resolve) => {
     const p = spawn('docker', ['exec', ...env, '-w', cwd, parts.tests, 'sh', '-c', wait, 'sh', 'node', inside(path.resolve(script)), ...mapped], { stdio: 'inherit' })
     p.on('exit', (c) => resolve(c ?? 1))
   })
@@ -163,21 +163,19 @@ export async function runInContainer(script: string, args: string[]) {
   fs.rmSync(out, { recursive: true, force: true })
   if (keep) say(`kept: the containers ${parts.tests} (the tests) and ${parts.daemon} (every stack) — docker exec -it ${parts.tests} bash; the next run removes them`)
   else removeAll()
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string | number | null | undefined'.
   process.exit(code)
 }
 
 /* the image's build step: what a fetched site needs beyond the workspace's install, at the version its package.json asks */
 if (isMain(import.meta.url) && process.argv.includes('--install-fetched')) {
   const root = workspaceRoot(process.cwd())
-  const extra = new Set()
+  const extra = new Set<string>()
   for (const s of fetchedSites(root)) {
     const deps = JSON.parse(fs.readFileSync(path.join(s.directory, 'package.json'), 'utf8')).dependencies || {}
     for (const [dep, range] of Object.entries(deps)) if (dep !== 'platformkit' && !fs.existsSync(path.join(root, 'node_modules', dep)) && !fs.existsSync(path.join(s.directory, 'node_modules', dep))) extra.add(`${dep}@${range}`)
   }
   if (extra.size) {
     console.log(`installing what the fetched sites need beyond the workspace: ${[...extra].join(', ')}`)
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 8, '(command: string, args: readonly string[], options: SpawnSyncOptionsWithStringEncoding): Sp
     const r = spawnSync('npm', ['install', '--no-save', '--no-audit', '--no-fund', ...extra], { cwd: root, stdio: 'inherit' })
     process.exit(r.status ?? 1)
   }

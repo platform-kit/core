@@ -6,7 +6,7 @@ import { providersFrom, worthAnother, ask, hasScript } from '../supabase/functio
 import { toolsFor, BUILTINS } from '../supabase/functions/_shared/agents/tools.js'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
 
 /* ---- out: our messages become theirs ---- */
@@ -38,10 +38,10 @@ const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
     // @ts-expect-error TS2322, from the conversion: Type '{ role: string; tool_call_id: string; content: string; }' is not assignable to type 'never'.
     { role: 'tool', tool_call_id: 'b', content: '{}' },
   ])
-  ok('the turns alternate', eq(mid.messages.map((m: any) => m.role), ['user', 'assistant', 'user']))
+  ok('the turns alternate', eq(mid.messages.map((m: { role: any }) => m.role), ['user', 'assistant', 'user']))
   ok('two calls are two blocks of one assistant turn', mid.messages[1].content.length === 2)
   ok('…and their answers two blocks of one user turn',
-    mid.messages[2].content.length === 2 && mid.messages[2].content.every((c: any) => c.type === 'tool_result'))
+    mid.messages[2].content.length === 2 && mid.messages[2].content.every((c: { type: string }) => c.type === 'tool_result'))
   ok('a result is tied to the call that asked for it', mid.messages[2].content[0].tool_use_id === 'a')
   ok('arguments arrive parsed, not as a string', eq(mid.messages[1].content[0].input, { x: 1 }))
   ok('unparseable arguments are an empty object, never a crash',
@@ -75,11 +75,11 @@ const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
 {
   const both = { AGENTS_LIVE: '1', OPENAI_API_KEY: 'sk-a', ANTHROPIC_API_KEY: 'sk-b' }
   ok('the default order is the default provider, then the other',
-    eq(providersFrom(both).list.map((p: any) => p.id), ['openai', 'anthropic']))
+    eq(providersFrom(both).list.map((p: { id: any }) => p.id), ['openai', 'anthropic']))
   ok('each carries its OWN model, because a model is a provider\'s own word',
     providersFrom(both).list[0].model !== providersFrom(both).list[1].model)
-  ok('a site may say the order', eq(providersFrom({ ...both, AGENT_PROVIDERS: 'anthropic,openai' }).list.map((p: any) => p.id), ['anthropic', 'openai']))
-  ok('…and leave one out', eq(providersFrom({ ...both, AGENT_PROVIDERS: 'anthropic' }).list.map((p: any) => p.id), ['anthropic']))
+  ok('a site may say the order', eq(providersFrom({ ...both, AGENT_PROVIDERS: 'anthropic,openai' }).list.map((p: { id: any }) => p.id), ['anthropic', 'openai']))
+  ok('…and leave one out', eq(providersFrom({ ...both, AGENT_PROVIDERS: 'anthropic' }).list.map((p: { id: any }) => p.id), ['anthropic']))
   ok('one key is one provider', providersFrom({ AGENTS_LIVE: '1', ANTHROPIC_API_KEY: 'sk-b' }).list.length === 1)
 
   /* THE RULE THAT MATTERS MOST still holds over the whole list */
@@ -100,7 +100,7 @@ const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
 /* ---- and the fallback itself, with the network stubbed ---- */
 {
   const real = globalThis.fetch
-  const answer = (status: any, body: any) => ({ ok: status < 400, status, json: async () => body, text: async () => JSON.stringify(body) })
+  const answer = (status: number, body: { error?: { message: string }|{ message: string }; content?: { type: string; text: string }[]; usage?: { input_tokens: number; output_tokens: number }; model?: string }) => ({ ok: status < 400, status, json: async () => body, text: async () => JSON.stringify(body) })
   const seen: any = []
   // @ts-expect-error TS2322, from the conversion: Type '(url: URL | RequestInfo) => Promise<{ ok: boolean; status: any; json: () => Promise<any>; text: () => Promise<string>; }>' is not assi
   globalThis.fetch = async (url) => {

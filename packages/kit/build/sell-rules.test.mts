@@ -17,7 +17,7 @@ import { shippingRules, ratesFor, shipsTo, STRIPE_COUNTRIES } from '../src/lib/s
 import { spineWords, proofState, SPINE_MAX } from '../src/lib/print-offers.js'
 
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
 
 /* ─── a cart line's variant: the choices the buyer made, checked against what the book sells ─── */
 
@@ -102,9 +102,9 @@ t('a country outside the list is refused, and quotes no rate', () => {
 })
 t('a country override beats the default, and a method adds to it', () => {
   const us = ratesFor(RULES, 'US')
-  assert.deepEqual(us.map((r: any) => r.amount), [500, 1700])      /* $5, then $5 + $12 */
+  assert.deepEqual(us.map((r: { amount: any }) => r.amount), [500, 1700])      /* $5, then $5 + $12 */
   const gb = ratesFor(RULES, 'GB')
-  assert.deepEqual(gb.map((r: any) => r.amount), [1500, 2700])     /* the default, then the default + $12 */
+  assert.deepEqual(gb.map((r: { amount: any }) => r.amount), [1500, 2700])     /* the default, then the default + $12 */
 })
 /* a blacklist is the other way of saying it, and must land on the same kind of answer */
 t('an exclude list ships everywhere else', () => {

@@ -912,7 +912,6 @@ billing: abcdef02
 ---
 Answer plainly.
 `)
-  // @ts-expect-error TS2322, from the conversion: Type 'Set<unknown>' is not assignable to type 'null | undefined'.
   const compiledBots = await readBots(asStore(root), { tools: {}, skills: {}, sealed: new Set() })
   assert.equal(compiledBots.bots[0].billing, 'abcdef02')
   assert.deepEqual(compiledBots.faults, [])

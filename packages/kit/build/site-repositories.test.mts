@@ -8,14 +8,14 @@ import { defaultSite, fetchSite, gitEnvironmentForRemote, readSiteRegistry, site
 
 const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'platformkit-site-repositories-'))
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..')
-const git = (cwd: any, args: any) => {
+const git = (cwd: string, args: any[]|readonly string[]) => {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' })
   assert.equal(result.status, 0, `${args.join(' ')} failed:\n${result.stderr}`)
   return result.stdout.trim()
 }
 
 let pass = 0
-const test = (name: any, run: any) => {
+const test = (name: string, run: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => {
   run()
   pass++
   console.log(`site-repositories: ✓ ${name}`)
@@ -67,7 +67,7 @@ try {
     const token = 'fixture-secret-token'
     const env = { ...process.env, [urlVariable]: fileRemote, PLATFORMKIT_GITHUB_TOKEN: token }
     const fetched = fetchSite(root, { name: 'env-site', ref: first, env })
-    const registration = readSiteRegistry(root).sites.find((site: any) => site.name === 'env-site')
+    const registration = readSiteRegistry(root).sites.find((site: { name: string }) => site.name === 'env-site')
     assert.equal(fetched.remote, fileRemote)
     assert.equal(registration.remote, fileRemote)
     assert.equal(JSON.stringify(registration).includes(token), false)
@@ -134,7 +134,7 @@ try {
     const name = 'missing-site'
     assert.throws(() => fetchSite(root, { name, remote: fileRemote, ref: 'f'.repeat(40) }))
     assert.equal(fs.existsSync(path.join(root, 'sites', 'external', name)), false)
-    assert.equal(readSiteRegistry(root).sites.some((site: any) => site.name === name), false)
+    assert.equal(readSiteRegistry(root).sites.some((site: { name: string }) => site.name === name), false)
   })
 
   test('the default site accepts a path or name and falls back to sites/docs', () => {
@@ -177,7 +177,7 @@ try {
     const repinned = updateSite(root, { name: 'ahead-site', ref: local })
     assert.equal(repinned.ref, local)
     assert.equal(git(at.directory, ['rev-parse', 'HEAD']), local)
-    assert.equal(((sites(root) as any).find(({ name }: any) => name === 'ahead-site') as any).ahead, 0)
+    assert.equal((sites(root) as any).find(({ name }: any) => name === 'ahead-site').ahead, 0)
     /* a checkout off the pin's line is refused */
     git(at.directory, ['checkout', '-q', '--orphan', 'elsewhere'])
     git(at.directory, ['commit', '-qm', 'an unrelated line'])

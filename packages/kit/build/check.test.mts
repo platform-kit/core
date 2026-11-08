@@ -11,8 +11,8 @@ import { machineChecks, browserCheck, settingsChecks, siteChecks, onlineChecks, 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const DEMO = path.resolve(HERE, '../../../sites/demo')
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 400) : '')) } }
-const ran = (status: any, stdout = '') => () => ({ status, stdout });
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 400) : '')) } }
+const ran = (status: number, stdout = '') => () => ({ status, stdout });
 
 /* two problems at once: Docker down and no browser, both reported, failures first, exit 1 */
 {
@@ -48,7 +48,6 @@ const ran = (status: any, stdout = '') => () => ({ status, stdout });
   const { deploymentShape } = await import('./site.mjs')
   const { loadSteps, needsOf } = await import('./steps.mjs')
   const shape = deploymentShape(site, env)
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ backend: boolean; content: any; repo: any; mode: string; }' is not assignable to parameter of type 'null | undefined'.
   const deploy = checkDeploy(env, Object.assign(surfaces(DEMO), { network: site.network || {} }), site.modules, needsOf(await loadSteps(site), site, env, shape), shape, [], modules, site)
   ok('…and the deploy asks for the same key, from the same declaration', deploy.missing.some((m) => m.key === KEY))
   ok('a test key is not a problem on this machine', !local.some((r) => /live key/.test(r.detail)))

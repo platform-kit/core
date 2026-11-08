@@ -13,7 +13,7 @@ const WORKSPACE = path.resolve(HERE, '../../..')
 const DEMO = path.join(WORKSPACE, 'sites', 'demo')
 const WORK = path.join(WORKSPACE, '.cache', 'platformkit', 'site-payment-provider-test')
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
 
 const generated = /(^|\/)(node_modules|dist|\.velite|\.platformkit|\.vite|\.content-collections)(\/|$)/
 fs.rmSync(WORK, { recursive: true, force: true })
@@ -37,7 +37,7 @@ export function createPaymentProvider(secrets: Record<string, string>) {
 `)
 const config = path.join(WORK, 'platformkit.config.ts')
 const original = fs.readFileSync(config, 'utf8')
-const withSite = (provider: any) => {
+const withSite = (provider: string) => {
   let s = original.replace(/export default \{/, `export default {\n  payments: { provider: '${provider}' },`)
   /* into the site's own list of modules where it has one, so nothing it registers is displaced */
   s = /\bbuild:\s*\{\s*modules:\s*\[/.test(s) ? s.replace(/(\bbuild:\s*\{\s*modules:\s*\[)/, "$1'./modules/acme-pay.mjs', ")

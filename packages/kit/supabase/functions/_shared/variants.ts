@@ -114,7 +114,7 @@ export function remapKeys(keys: any, before: any, after: any) {
   for (const key of keys || []) {
     const parts = String(key || '').split('.').filter(Boolean)
     /* read it against the order it was written in, by option name */
-    const had = new Map()
+    const had = new Map<string, string>()
     was.forEach((o, i) => { if (parts[i]) had.set(o.slug, parts[i]) })
     /* and write it in the order they are in now; an option that has gone takes its part with it */
     const next = now.map((o) => had.get(o.slug)).filter(Boolean)
@@ -153,7 +153,7 @@ export function optionsOf(offer: any, fromKind = []) {
   /* a kind's options come first: they are what the thing IS (a book's contents), where a shop's
      own are usually a further choice about it */
   const all = [...kind, ...declared, ...sized]
-  const seen = new Set()
+  const seen = new Set<string>()
   return all.filter((o) => (seen.has(o.slug) ? false : (seen.add(o.slug), true)))
 }
 

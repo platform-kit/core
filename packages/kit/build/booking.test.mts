@@ -16,7 +16,7 @@ import { OFFERING, isOffering, offeringId, offeringType, whereOf, WHERES } from 
 import { admits } from '../supabase/functions/_shared/sessions/admits.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nBOOKING · OFFERINGS AS TYPES\n')
 

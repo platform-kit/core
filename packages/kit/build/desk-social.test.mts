@@ -2,14 +2,14 @@ import { commentRowsOf, dmRowsOf, list, messages, send, socialRef } from '../src
 
 let pass = 0
 let fail = 0
-const ok = (name: any, condition: any, detail?: any) => {
+const ok = (name: string, condition: boolean, detail?: string|undefined) => {
   if (condition) pass++
   else {
     fail++
     console.log('  FAIL  ' + name + (detail ? ' — ' + detail : ''))
   }
 }
-const equal = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
+const equal = (a: any[], b: string[]) => JSON.stringify(a) === JSON.stringify(b)
 
 console.log('\nSOCIAL DESK\n')
 
@@ -199,23 +199,23 @@ const client = {
 const listed: any = await list(client)
 ok('supported account routes produce comment and DM rows through the Social operations',
   listed.rows.length === 2 && listed.failures.length === 0
-    && listed.rows.some((row: any) => row.conversationKind === 'dm')
-    && listed.rows.some((row: any) => row.conversationKind === 'comment'))
+    && listed.rows.some((row: { conversationKind: string }) => row.conversationKind === 'dm')
+    && listed.rows.some((row: { conversationKind: string }) => row.conversationKind === 'comment'))
 ok('queue authors are enriched with provider names, handles and secure avatars',
-  listed.rows.find((row: any) => row.conversationKind === 'dm').person.name === 'Alex Rivera'
-    && listed.rows.find((row: any) => row.conversationKind === 'dm').person.username === 'alexrivera'
-    && listed.rows.find((row: any) => row.conversationKind === 'dm').person.avatarUrl === 'https://avatar.test/alex.png'
-    && listed.rows.find((row: any) => row.conversationKind === 'comment').person.username === 'morganchen')
+  listed.rows.find((row: { conversationKind: string }) => row.conversationKind === 'dm').person.name === 'Alex Rivera'
+    && listed.rows.find((row: { conversationKind: string }) => row.conversationKind === 'dm').person.username === 'alexrivera'
+    && listed.rows.find((row: { conversationKind: string }) => row.conversationKind === 'dm').person.avatarUrl === 'https://avatar.test/alex.png'
+    && listed.rows.find((row: { conversationKind: string }) => row.conversationKind === 'comment').person.username === 'morganchen')
 ok('profile enrichment reads each distinct missing author through profiles.read',
   ['reader-1', 'reader-3'].every((id) => profileReads.includes(id)))
-const detail = await messages(client, listed.rows.find((row: any) => row.conversationKind === 'comment'))
+const detail = await messages(client, listed.rows.find((row: { conversationKind: string }) => row.conversationKind === 'comment'))
 ok('comment details are read from the provider operation without mirroring',
-  detail.map((item: any) => item.id).join(',') === 'comment-root,comment-answer,comment-waiting')
+  detail.map((item: { id: any }) => item.id).join(',') === 'comment-root,comment-answer,comment-waiting')
 ok('comment details identify the connected account author as ours',
-  detail.find((item: any) => item.id === 'comment-answer')?.mine === true)
+  detail.find((item: { id: string }) => item.id === 'comment-answer')?.mine === true)
 ok('comment history preserves the names of every participant in the multi-user thread',
-  detail.map((item: any) => item.author).join(',') === 'Jordan Lee,Example Publisher,Morgan Chen'
-    && listed.rows.find((row: any) => row.conversationKind === 'comment').person.name === 'Morgan Chen')
+  detail.map((item: { author: any }) => item.author).join(',') === 'Jordan Lee,Example Publisher,Morgan Chen'
+    && listed.rows.find((row: { conversationKind: string }) => row.conversationKind === 'comment').person.name === 'Morgan Chen')
 ok('comment history enriches each author and the connected account without changing message order',
   detail[0].authorUsername === 'jordanlee'
     && detail[0].authorAvatarUrl === 'https://avatar.test/jordan.png'
@@ -223,14 +223,14 @@ ok('comment history enriches each author and the connected account without chang
     && detail[1].authorAvatarUrl === 'https://avatar.test/examplepublisher.png'
     && detail[2].authorUsername === 'morganchen'
     && detail[2].authorAvatarUrl === 'https://avatar.test/morgan.png')
-const dmDetail = await messages(client, listed.rows.find((row: any) => row.conversationKind === 'dm'))
+const dmDetail = await messages(client, listed.rows.find((row: { conversationKind: string }) => row.conversationKind === 'dm'))
 ok('DM details are fetched for the namespaced provider conversation',
   dmDetail.length === 1 && dmDetail[0].id === 'dm-in' && dmDetail[0].mine === false)
 ok('DM history includes the sender name, provider username and avatar',
   dmDetail[0].author === 'Alex Rivera' && dmDetail[0].authorUsername === 'alexrivera'
     && dmDetail[0].authorAvatarUrl === 'https://avatar.test/alex.png')
-const commentSent = await send(client, listed.rows.find((row: any) => row.conversationKind === 'comment'), 'Thanks for writing.')
-const dmSent = await send(client, listed.rows.find((row: any) => row.conversationKind === 'dm'), 'Thanks for writing.')
+const commentSent = await send(client, listed.rows.find((row: { conversationKind: string }) => row.conversationKind === 'comment'), 'Thanks for writing.')
+const dmSent = await send(client, listed.rows.find((row: { conversationKind: string }) => row.conversationKind === 'dm'), 'Thanks for writing.')
 ok('comment and DM replies require a provider-confirmed identifier',
   commentSent === 'sent-comment' && dmSent === 'sent-message')
 
@@ -313,9 +313,9 @@ ok('provider failures are explicit and do not become an empty successful source'
 
 const profileFailureAccount = { ...account, id: 'account-profile-failure' }
 const profileFailureRow = {
-  ...listed.rows.find((row: any) => row.conversationKind === 'dm'),
+  ...listed.rows.find((row: { conversationKind: string }) => row.conversationKind === 'dm'),
   social: {
-    ...listed.rows.find((row: any) => row.conversationKind === 'dm').social,
+    ...listed.rows.find((row: { conversationKind: string }) => row.conversationKind === 'dm').social,
     accountId: profileFailureAccount.id,
     profileRead: true,
   },

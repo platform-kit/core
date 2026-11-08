@@ -14,8 +14,7 @@ export const REPO = 'supertone-oss-archive/supertonic-3'
 export const REV = 'aafc6e32416a594460b32413efc49d7fe4ce6d46'
 export const BROWSER_FILES = ['onnx/duration_predictor.onnx', 'onnx/text_encoder.onnx', 'onnx/vector_estimator.onnx', 'onnx/vocoder.onnx', 'onnx/tts.json', 'onnx/unicode_indexer.json', 'voice_styles/M5.json']
 /* rough sizes, for progress before a server says content-length (bytes) */
-export const SIZES: any = { 'onnx/duration_predictor.onnx': 3.9e6, 'onnx/text_encoder.onnx': 38.2e6, 'onnx/vector_estimator.onnx': 269e6, 'onnx/vocoder.onnx': 106.3e6, 'onnx/tts.json': 8e3, 'onnx/unicode_indexer.json': 278e3, 'voice_styles/M5.json': 290e3 }
-// @ts-expect-error TS18046, from the conversion: 'a' is of type 'unknown'.
+export const SIZES: Record<string, number> = { 'onnx/duration_predictor.onnx': 3.9e6, 'onnx/text_encoder.onnx': 38.2e6, 'onnx/vector_estimator.onnx': 269e6, 'onnx/vocoder.onnx': 106.3e6, 'onnx/tts.json': 8e3, 'onnx/unicode_indexer.json': 278e3, 'voice_styles/M5.json': 290e3 }
 export const TOTAL_BYTES = Object.values(SIZES).reduce((a, b) => a + b, 0)
 
 export const MODEL_CACHE = 'dl-tts-model-' + REV.slice(0, 12)

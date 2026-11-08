@@ -118,7 +118,7 @@ const candidates = (spec: any, format: any) => candidatesOf(spec, format, bound)
 const chooseFor = (spec: any, format: any, pages: any, trim: any, paper: any) => chooseProvider(spec, format, pages, trim, paper, bound)
 
 /* one book: every edition its block asks for. Returns the manifests, one per contents */
-export async function printBook(slug: any, { local = false, force = false, keepTyp = false, only = null } = {}) {
+export async function printBook(slug: any, { local = false, force = false, keepTyp = false, only = null as string | null } = {}) {
   const bookFile = path.join(ROOT, 'content/books', slug + '.md')
   const fm = matter(fs.readFileSync(bookFile, 'utf8'))
   /* the slug travels ON the book: the EPUB's unique identifier is a hash of it, and without
@@ -427,7 +427,6 @@ if (isMain(import.meta.url)) {
     : arg('--book') ? [arg('--book')] : []
   if (!slugs.length) { console.error('usage: node build/print.mjs --book <slug> | --all  [--local] [--force] [--dry] [--typ] [--trim 6x9] [--contents parts|full|summary]'); process.exit(1) }
   const out = []
-  // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'null | undefined'. Type 'string' is not assignable to type 'null | undefined'.
   for (const s of slugs) { try { out.push(...await printBook(s, { local: has('--local'), force: has('--force'), keepTyp: has('--typ'), only: arg('--contents') })) } catch (e: any) { console.error(`${s}: ${e.message}`); process.exitCode = 1 } }
   await closePictures()
   if (!has('--local') && !has('--dry')) { await writePrintIndex(out); commitRegistry(); printProofReport() }

@@ -234,7 +234,7 @@ export async function stopRun(root: any, { file, record }: any, report: any, { s
  * its dev.mjs when it has one, so the run's own cleanup runs — unless `keep(pid)` says a living run
  * owns it. Returns what was stopped, as "<site> (<port>)".
  */
-export async function stopPortRecords(root: any, report: any, { keep = () => false } = {}) {
+export async function stopPortRecords(root: any, report: any, { keep = (_pid: number) => false }: { keep?: (pid: number) => boolean } = {}) {
   const stateDir = platformkitRuntimePath(root, 'dev')
   const stopped: any = []
   if (!fs.existsSync(stateDir)) return stopped
@@ -337,8 +337,7 @@ export async function takeOver(root: any, report: any) {
     }
   }
   const livePids = new Set(live.map((record) => record.pid))
-  // @ts-expect-error TS2322, from the conversion: Type '(pid: any) => boolean' is not assignable to type '() => boolean'. Target signature provides too few arguments. Expected 1 or more, but
-  stopped.push(...await stopPortRecords(root, quiet, { keep: (pid) => livePids.has(pid) }))
+  stopped.push(...await stopPortRecords(root, quiet, { keep: (pid: any) => livePids.has(pid) }))
   /* the front door is named from the checkout, so it is this checkout's; up with no living
      workspace run to own it, it is a leftover */
   if (!live.some((record) => record.kind === 'workspace')) {

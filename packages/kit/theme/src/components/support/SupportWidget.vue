@@ -29,7 +29,6 @@ const warmPanel: any = () => { if (!panelChunk) panelChunk = import('./SupportPa
 const L = us('support').widget.launcher
 const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'.
 const quiet = computed(() => IN_PREVIEW || !mayInterrupt(route.value, INTERRUPT_ROUTES) || isStaff.value || staff.value)
 const prompt = ref<any>(null)   /* the prompt being answered, handed to the panel */
 const choice = ref<any>(null)   /* the choice picked on the teaser, if any */

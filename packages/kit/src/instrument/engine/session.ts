@@ -54,10 +54,9 @@ load();
    every answer into rows; the engine itself knows nothing about the backend.
    Called with the corpus and the entry, once when the entry is made and again
    whenever a later step amends it. */
-export let recorder=null;
+export let recorder: ((corpus: any, entry: any) => void) | null = null;
 export function setRecorder(fn: any){ recorder=fn; }
-// @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
-export function record(corpus,entry){ if(recorder){ try{ recorder(corpus,entry); }catch(e){} } }
+export function record(corpus: any,entry: any){ if(recorder){ try{ recorder(corpus,entry); }catch(e){} } }
 /* A sitting is a run of answering. Rather than tracking a session id, which a reload
    would break, group by when the answers were given: a gap of more than 90 minutes
    starts a new one. Answers saved before stamping existed have no ts and fall into a

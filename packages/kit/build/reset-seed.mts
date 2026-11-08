@@ -26,11 +26,10 @@ export async function runSeedSteps({ cwd, env = process.env, stdio = 'inherit', 
   const { loadSteps } = await import('./steps.mjs')
   const { isOn } = await import('./modules/manifest.mjs')
   const site = await loadSite(cwd)
-  const owner = new Map((await loadSteps(site)).map((s: { key: any; module: any }) => [s.key, s.module]))
+  const owner = new Map<string, string | undefined>((await loadSteps(site)).map((s: { key: string; module?: string }) => [s.key, s.module]))
   for (const [script, ...args] of SEED_STEPS) {
     if (skip.includes(script)) continue
     const module = owner.get(path.basename(script, '.mjs'))
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{}' is not assignable to parameter of type 'string'.
     if (module && !isOn(module, site.modules || {})) continue
     const r = spawnSync(process.execPath, [path.join(HERE, script), ...args], { cwd, env, stdio, encoding: 'utf8' })
     if (r.status !== 0) return { ok: false, step: script, output: ((r.stdout || '') + (r.stderr || '')).trim().split('\n').slice(-12).join('\n') }

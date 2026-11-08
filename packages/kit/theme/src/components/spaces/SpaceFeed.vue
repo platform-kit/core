@@ -40,7 +40,6 @@ const whereOf = (row: { channel_id: string|number; channel_kind: string; peers: 
      from the members the page holds, as it always was */
   const who = !dm ? ''
     : (row.peers && row.peers.length) ? row.peers.slice(0, 3).join(', ')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     : dmTitle(props.members[row.channel_id] || [], props.names, props.me, { self: R.value.self, more: R.value.more, someone: R.value.someone })
   if (space) {
     return dm

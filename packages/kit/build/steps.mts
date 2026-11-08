@@ -42,8 +42,7 @@ function check(s: any, from: any) {
   if (typeof s.run !== 'function') throw new Error(`${at}: run must be a function`)
   if (s.localProjection !== undefined && typeof s.localProjection !== 'boolean') throw new Error(`${at}: localProjection must be boolean`)
   if (s.localProjection && s.phase !== 'after') throw new Error(`${at}: localProjection steps must use the after phase`)
-  // @ts-expect-error TS1117, from the conversion: An object literal cannot have multiple properties with the same name.
-  return { title: s.key, after: [], inputs: [], needs: {}, ...s, needs: { env: [], tools: [], packages: [], ...(s.needs || {}) }, from }
+  return { title: s.key, after: [], inputs: [], ...s, needs: { env: [], tools: [], packages: [], ...(s.needs || {}) }, from }
 }
 /*
  * THE MODULES THIS DEPLOYMENT HAS, read from the manifests. A step gated on `module: 'emials'`
@@ -116,7 +115,7 @@ export function whyOff(s: any, site: any, env = process.env, shape: any = null) 
   if (typeof s.when === 'function') { const w = s.when(env, site); if (!w) return s.whenText || 'its condition does not hold'; }
   return null
 }
-export const isOn = (s: any, site: any, env: any, shape = null) => whyOff(s, site, env, shape) === null
+export const isOn = (s: any, site: any, env: any, shape: { backend: boolean; content: any; repo: any; mode: string; } | null = null) => whyOff(s, site, env, shape) === null
 
 /* ---- the order: the declaration's, then every `after` respected (a stable topological sort) ---- */
 export function order(steps: any, phase: any) {
@@ -136,15 +135,14 @@ export function order(steps: any, phase: any) {
 }
 
 /* ---- the needs ---- */
-export function needsOf(steps: any, site: any, env = process.env, shape = null) {
+export function needsOf(steps: any, site: any, env = process.env, shape: { backend: boolean; content: any; repo: any; mode: string; } | null = null) {
   /* THE SHAPE, or the deploy asks for what a step that will never run would have needed. A static
      site was told to provide SUPABASE_SERVICE_ROLE_KEY six times over, once for each projection
      step that is off in that shape — the gate was on runPhase and not here, and the two have to
      agree or the checks refuse a deploy that would have worked. */
   return steps.filter((s: any) => isOn(s, site, env, shape)).map((s: any) => ({ step: s, env: s.needs.env, tools: s.needs.tools, packages: s.needs.packages }))
 }
-// @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 4, '(command: string, options: ExecSyncOptionsWithStringEncoding): string', gave the following 
-const onPath = (tool) => { try { execSync((process.platform === 'win32' ? 'where ' : 'command -v ') + tool, { stdio: 'ignore', shell: true }); return true } catch { return false } }
+const onPath = (tool: string|number) => { try { execSync((process.platform === 'win32' ? 'where ' : 'command -v ') + tool, { stdio: 'ignore' }); return true } catch { return false } }
 export const resolvable = (pkg: any, root: any) => { const from = path.resolve(root, 'package.json'); try { createRequire(from).resolve(pkg + '/package.json'); return true } catch { try { createRequire(from).resolve(pkg); return true } catch { return false } } }
 /* what is not there: [{ step, kind: env | tool | package, name }] — a variable unset, a tool off the path, a package no import from the site's root would find */
 export function missingNeeds(needs: any, env = process.env, root = process.cwd(), kinds = ['env', 'tool', 'package']) {

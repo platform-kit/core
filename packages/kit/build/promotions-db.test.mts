@@ -15,7 +15,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('promotions-db: ' + m)
+const note = (m: string) => console.log('promotions-db: ' + m)
 if (process.env.PROMO_TEST === '0') { note('skipped (PROMO_TEST=0) — nothing about budgets or overspending was covered'); process.exit(0) }
 const url = supabaseUrl()
 if (!url || !localStack()) { note('skipped — no local stack in .env; nothing about budgets or overspending was covered'); leave(0) }
@@ -25,12 +25,12 @@ if (!up) { note('skipped — the local stack is not up; nothing about budgets or
 
 const db = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
-const eq = (a: any, b: any, m?: any) => { if (a !== b) throw new Error(`${m || ''} — expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`) }
+const ok = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
+const eq = (a: number|boolean|null, b: number|boolean|null, m?: string|undefined) => { if (a !== b) throw new Error(`${m || ''} — expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`) }
 
 const NAME = 'probe-promo'
 const clear = async () => { await db.from('promotion_uses').delete().eq('promotion', NAME); await db.from('promotion_usage').delete().eq('promotion', NAME) }
-const take = (kind: any, limit: any, amount: any) => db.rpc('promotion_take', { p_promotion: NAME, p_kind: kind, p_limit: limit, p_amount: amount, p_about: null, p_user: null })
+const take = (kind: string, limit: number, amount: number) => db.rpc('promotion_take', { p_promotion: NAME, p_kind: kind, p_limit: limit, p_amount: amount, p_about: null, p_user: null })
 const used = async () => (await db.from('promotion_usage').select('used').eq('promotion', NAME).maybeSingle()).data?.used ?? null
 
 console.log('\nWHAT A DISCOUNT HAS COST\n')

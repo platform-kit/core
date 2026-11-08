@@ -49,13 +49,11 @@ export const jsImports = (code: string): string => code.replace(/((?:from\s+|imp
 
 /* every file reachable from the roots by a relative import, as { relative path → absolute } */
 export function closure(base: string, roots = PIPE_ROOTS, skip = PIPE_SKIP) {
-  const seen = new Map()
+  const seen = new Map<string, string>()
   const queue = [...roots]
   while (queue.length) {
-    const r = queue.shift()
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
+    const r = queue.shift()!
     if (seen.has(r) || skip.test(r)) continue
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
     const abs = sourceOf(path.join(base, r))
     if (!abs) continue
     const src = fs.readFileSync(abs, 'utf8')

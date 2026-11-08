@@ -15,9 +15,10 @@ import assert from 'node:assert/strict'
 import http from 'node:http'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
+import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 
 let n = 0, bad = 0
-const ta = async (name: any, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
+const ta = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
 const url = supabaseUrl(), anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
 let up = false
 // @ts-expect-error TS2322, from the conversion: Type 'string | boolean' is not assignable to type 'boolean'. Type 'string' is not assignable to type 'boolean'.
@@ -28,9 +29,9 @@ if (!up || !served) { console.log(`recordings: skipped — ${!up ? 'the local st
 
 const { createClient } = await import('@supabase/supabase-js')
 const admin = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
-const call = async (body: any, bearer = serviceKey()) => { const r = await fetch(url + '/functions/v1/session-recordings', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + bearer, apikey: anonKey }, body: JSON.stringify(body) }); return { status: r.status, body: await r.json().catch(() => ({})) } }
-const as = async (email: any) => { const sb = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } }); const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' }); if (error) throw new Error(email + ': ' + error.message); return sb }
-const files = async (sb: any, uid: any) => { const { data, error } = await sb.functions.invoke('session-files', { body: { uid } }); return error ? (error.context ? error.context.status : 500) : data }
+const call = async (body: { action: string; uid?: string; api?: string; days?: number }, bearer = serviceKey()) => { const r = await fetch(url + '/functions/v1/session-recordings', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + bearer, apikey: anonKey }, body: JSON.stringify(body) }); return { status: r.status, body: await r.json().catch(() => ({})) } }
+const as = async (email: string) => { const sb = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } }); const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' }); if (error) throw new Error(email + ': ' + error.message); return sb }
+const files = async (sb: SupabaseClient<any,"public","public",any,any>, uid: string) => { const { data, error } = await sb.functions.invoke('session-files', { body: { uid } }); return error ? (error.context ? error.context.status : 500) : data }
 
 /* this test's own origin: cal.com's two endpoints in their documented shapes (the answer per booking uid settable
    from the test), a small "recording" and a transcript, and a link that answers nothing */
@@ -50,13 +51,13 @@ const server: any = http.createServer((req, res) => {
   else { res.writeHead(404); res.end() }
 })
 await new Promise((r) => server.listen(0, '0.0.0.0', r))
-const origin = `http://host.docker.internal:${(server.address() as any).port}`, api = origin + '/v2'
-const recording = (url: any) => ({ id: '1234567890', roomName: 'daily-video-room-123', startTs: Math.floor(Date.now() / 1000) - 3600, status: 'finished', maxParticipants: 2, duration: 3600, shareToken: 'share-token-123', downloadLink: url })
+const origin = `http://host.docker.internal:${server.address().port}`, api = origin + '/v2'
+const recording = (url: string|null) => ({ id: '1234567890', roomName: 'daily-video-room-123', startTs: Math.floor(Date.now() / 1000) - 3600, status: 'finished', maxParticipants: 2, duration: 3600, shareToken: 'share-token-123', downloadLink: url })
 const stamp = Date.now().toString(36)
 const uids = ['a', 'b', 'c', 'd'].map((k) => `probe-rec-${stamp}-${k}`)
 const ids: any = {}
 for (const e of ['member@example.com', 'coach@example.com', 'free@example.com']) { const { data } = await admin.from('profiles').select('id').eq('email', e).maybeSingle(); if (data) ids[e] = data.id }
-const row = (uid: any, extra = {}) => admin.from('bookings').insert({ uid, user_id: ids['member@example.com'] || null, email: 'member@example.com', name: 'Member', provider_id: ids['coach@example.com'] || null, provider_email: 'coach@example.com', attendee_emails: ['member@example.com'], title: 'Probe call', status: 'ended', start_at: new Date(Date.now() - 7200e3).toISOString(), end_at: new Date(Date.now() - 3600e3).toISOString(), event: 'probe', ...extra })
+const row = (uid: string, extra = {}) => admin.from('bookings').insert({ uid, user_id: ids['member@example.com'] || null, email: 'member@example.com', name: 'Member', provider_id: ids['coach@example.com'] || null, provider_email: 'coach@example.com', attendee_emails: ['member@example.com'], title: 'Probe call', status: 'ended', start_at: new Date(Date.now() - 7200e3).toISOString(), end_at: new Date(Date.now() - 3600e3).toISOString(), event: 'probe', ...extra })
 
 try {
   await ta('a recording pulled from its link into the bucket, the row written', async () => {
@@ -64,8 +65,8 @@ try {
     answers[uids[0]] = { recordings: [recording(null), recording(origin + '/rec.mp4')], transcripts: [origin + '/t.vtt'] }   /* one still processing (no link), one done */
     const r = await call({ action: 'pull', uid: uids[0], api })
     assert.equal(r.status, 200); assert.equal(r.body.state, 'pulled', JSON.stringify(r.body))
-    assert.ok(asked.some((q: any) => q.uid === uids[0] && q.what === 'recordings' && /^Bearer /.test(q.auth) && q.version === '2024-08-13'), 'cal.com asked as the API wants: the key, the version')
-    assert.ok(asked.some((q: any) => q.uid === uids[0] && q.what === 'transcripts'), 'and for the transcript')
+    assert.ok(asked.some((q: { uid: string; what: string; auth: string; version: string }) => q.uid === uids[0] && q.what === 'recordings' && /^Bearer /.test(q.auth) && q.version === '2024-08-13'), 'cal.com asked as the API wants: the key, the version')
+    assert.ok(asked.some((q: { uid: string; what: string }) => q.uid === uids[0] && q.what === 'transcripts'), 'and for the transcript')
     const { data: b } = await admin.from('bookings').select('recording_path, transcript_path, recording_at, recording_state, recording_tries').eq('uid', uids[0]).single()
     assert.equal((b as any).recording_path, uids[0] + '/recording.mp4'); assert.equal((b as any).transcript_path, uids[0] + '/transcript.vtt'); assert.ok((b as any).recording_at); assert.equal((b as any).recording_state, null); assert.equal((b as any).recording_tries, 0)
     const { data: got, error: e2 } = await admin.storage.from('recordings').download(uids[0] + '/recording.mp4'); if (e2) throw new Error(e2.message)
@@ -95,7 +96,7 @@ try {
     const secret = process.env.CAL_WEBHOOK_SECRET || ''
     if (!secret) { console.log('  (the webhook part skipped — CAL_WEBHOOK_SECRET is unset in .env)'); return }
     const { createHmac } = await import('node:crypto')
-    const post = async (body: any) => { const raw = JSON.stringify(body); const sig = createHmac('sha256', secret).update(raw).digest('hex'); const r = await fetch(url + '/functions/v1/cal-webhook', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Cal-Signature-256': sig, 'X-Cal-Webhook-Version': '2021-10-20', apikey: anonKey }, body: raw }); return r.status }
+    const post = async (body: { triggerEvent: string; createdAt: string; payload: { downloadLink: string; uid: string; type: string; title: string; startTime: string; endTime: string; organizer: { email: string; name: string; timeZone: string }; attendees: { email: string; name: string; timeZone: string }[]; bookingId: number }|{ downloadLinks: { transcription: { format: string; link: string }[]; recording: string }; uid: string; type: string; title: string; startTime: string; endTime: string; organizer: { email: string; name: string; timeZone: string }; attendees: { email: string; name: string; timeZone: string }[]; bookingId: number }|{} }) => { const raw = JSON.stringify(body); const sig = createHmac('sha256', secret).update(raw).digest('hex'); const r = await fetch(url + '/functions/v1/cal-webhook', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Cal-Signature-256': sig, 'X-Cal-Webhook-Version': '2021-10-20', apikey: anonKey }, body: raw }); return r.status }
     const evt = { uid: uids[3], type: 'probe', title: 'Probe call', startTime: new Date(Date.now() - 7200e3).toISOString(), endTime: new Date(Date.now() - 3600e3).toISOString(), organizer: { email: 'coach@example.com', name: 'Coach', timeZone: 'UTC' }, attendees: [{ email: 'member@example.com', name: 'Member', timeZone: 'UTC' }], bookingId: 1 }
     const first = await post({ triggerEvent: 'RECORDING_READY', createdAt: new Date().toISOString(), payload: { ...evt, downloadLink: 'https://app.cal.com/api/video/recording?token=probe' } })
     if (first === 401) { console.log("  (the webhook part skipped — the served functions hold another CAL_WEBHOOK_SECRET than this site's .env)"); return }

@@ -15,7 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 let pass = 0, fail = 0;
-function ok(msg: any, cond: any) { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg); } }
+function ok(msg: string, cond: boolean) { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg); } }
 
 console.log('\nTAILWIND\n');
 

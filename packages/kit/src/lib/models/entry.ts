@@ -13,10 +13,11 @@
 import { KINDS, checkRules, fill } from './rules.js'
 
 const empty = (v: any) => v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)
-// @ts-expect-error TS7023, from the conversion: 'shownHolds' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in 
-export function shownHolds(shown, data) {
+/* a field's shown-when: the field it watches, and what that field must be (is, a value among, or every one of) */
+export interface ShownWhen { field: string, is?: unknown, value?: unknown, every?: unknown }
+export function shownHolds(shown: ShownWhen, data: Record<string, unknown>): boolean {
   if (!shown) return true
-  if (Array.isArray(shown)) return shown.every((c) => shownHolds(c, data))   /* several conditions: every one must hold */
+  if (Array.isArray(shown)) return shown.every((c: { field: any; is: any; value?: any; every?: any; }) => shownHolds(c, data))   /* several conditions: every one must hold */
   const v = data ? data[shown.field] : undefined
   if (shown.is === 'empty') return empty(v)
   if (shown.is === 'not-empty') return !empty(v)

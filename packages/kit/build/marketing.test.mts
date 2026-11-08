@@ -32,7 +32,7 @@ import { keyed, serialiseFunnel, parseFunnel } from './funnel-io.mjs'
 
 const ROOT = process.cwd()
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
 
 /* ─── the audience ─── */
 

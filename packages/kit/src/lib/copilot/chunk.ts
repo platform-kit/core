@@ -85,8 +85,7 @@ export function talkPieces(text: string|null, { first = FIRST_WORDS, max = PACK 
  * piece can be made cheaply and everything after it at full quality, because only the first is
  * ever waited for. A site that wants one quality throughout sets them equal.
  */
-// @ts-expect-error TS7022, from the conversion: 'steps' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer
-export function stepsFor(i, { steps = 8, opening = steps } = {}) {
+export function stepsFor(i: number, { steps = 8, opening = steps }: { steps?: number, opening?: number } = {}) {
   return i === 0 ? opening : steps
 }
 

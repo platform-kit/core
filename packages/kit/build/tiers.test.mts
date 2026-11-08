@@ -12,10 +12,10 @@ import assert from 'node:assert/strict'
 import { admits, rankOf } from '../supabase/functions/_shared/sessions/admits.js'
 
 let n = 0, bad = 0
-const ok = (name: any, cond: any) => { n++; if (!cond) { bad++; console.log('  FAIL', name) } }
+const ok = (name: string|boolean, cond: string|boolean) => { n++; if (!cond) { bad++; console.log('  FAIL', name) } }
 
 const RANKS = { bronze: 10, silver: 20, gold: 30 }
-const who = (tiers: any, signed = true) => ({ tiers, signed, ranks: RANKS })
+const who = (tiers: string[], signed = true) => ({ tiers, signed, ranks: RANKS })
 const nobody = { tiers: [], signed: false, ranks: RANKS }
 const signedOnly = { tiers: [], signed: true, ranks: RANKS }
 
@@ -60,7 +60,7 @@ ok('a tier the site does not declare ranks nothing', rankOf(['unknown'], RANKS) 
 {
   /* ranks as a site would declare them: three it already has, and a fourth above them */
   const RANKS = { 'tier-1': 1, 'tier-2': 2, 'tier-3': 3, 'inner-circle': 4 }
-  const holder = (tiers: any) => ({ signed: true, tiers, ranks: RANKS })
+  const holder = (tiers: string[]) => ({ signed: true, tiers, ranks: RANKS })
 
   ok(admits({ requires: 'inner-circle' }, holder(['inner-circle'])) === true,
     'a new tier admits its own members with no code change')

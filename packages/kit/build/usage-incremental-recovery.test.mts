@@ -16,11 +16,11 @@ function adminFor({ subscriptions = [subscription], settlements = [settlement], 
   return {
     queries,
     admin: {
-      from(table: any) {
+      from(table: string) {
         const filters: any = {}
         const query = {
           select() { return this },
-          eq(column: any, value: any) { filters[column] = value; return this },
+          eq(column: string|number, value: any) { filters[column] = value; return this },
           async maybeSingle() {
             queries.push({ table, filters: { ...filters } })
             if (table === errorTable) return { data: null, error: { message: 'database unavailable' } }
@@ -49,7 +49,7 @@ assert.deepEqual(
   await loadOwnedIncrementalSettlement({ ...input, admin: ownerDb.admin }),
   { subscription, settlement },
 )
-assert.deepEqual(ownerDb.queries.map((query: any) => query.table), [
+assert.deepEqual(ownerDb.queries.map((query: { table: any }) => query.table), [
   'subscriptions',
   'usage_incremental_settlements',
 ])
@@ -65,7 +65,7 @@ assert.deepEqual(
   await loadOwnedIncrementalSettlement({ ...input, userId: 'user_other', admin: otherUserDb.admin }),
   { subscription: null, settlement: null },
 )
-assert.deepEqual(otherUserDb.queries.map((query: any) => query.table), ['subscriptions'],
+assert.deepEqual(otherUserDb.queries.map((query: { table: any }) => query.table), ['subscriptions'],
   'a user who does not own the subscription cannot load its settlement')
 
 const otherProviderDb = adminFor()

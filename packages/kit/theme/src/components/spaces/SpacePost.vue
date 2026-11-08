@@ -59,7 +59,6 @@ const when = computed(() => {
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
     + ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 })
-// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const runs = computed(() => runsOf(props.replies))
 /* a post a bot opened may offer choices, exactly as its line in a stream would — the board is
    where a question to the room most often belongs, so leaving them out here would leave them out

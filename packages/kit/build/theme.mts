@@ -9,8 +9,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 
-// @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
+const walk = (d: string): string[] => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
 
 export async function loadTheme(c: { theme: any; root: any }) {
   const name = (c && c.theme) || 'platformkit/theme'
@@ -36,9 +35,8 @@ export async function loadTheme(c: { theme: any; root: any }) {
 /* the site's overrides resolved against the registry: { Name: absolute path }; an unknown name is refused, so a typo never misses silently */
 export function resolveOverrides(c: { overrides: any; root: string }, theme: { components: { [x: string]: any } }) {
   const out: any = {}
-  for (const [n, p] of Object.entries((c && c.overrides) || {})) {
+  for (const [n, p] of Object.entries<string>((c && c.overrides) || {})) {
     if (!theme.components[n]) throw new Error(`platformkit.config.js overrides: the theme has no component named ${n}`)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
     const f = path.resolve(c.root, p)
     if (!fs.existsSync(f)) throw new Error(`platformkit.config.js overrides: ${n} → ${p} is not a file`)
     out[n] = f

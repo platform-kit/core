@@ -16,7 +16,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('inventory-db: ' + m)
+const note = (m: string) => console.log('inventory-db: ' + m)
 if (process.env.INVENTORY_TEST === '0') { note('skipped (INVENTORY_TEST=0) — nothing about stock, reservations or overselling was covered'); process.exit(0) }
 const url = supabaseUrl()
 if (!url || !localStack()) { note('skipped — no local stack in .env; nothing about stock, reservations or overselling was covered'); leave(0) }
@@ -27,18 +27,18 @@ if (!up) { note('skipped — the local stack is not up; nothing about stock, res
 
 const db = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
-const eq = (a: any, b: any, m?: any) => { if (a !== b) throw new Error(`${m || ''} — expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`) }
+const ok = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
+const eq = (a: string|number|boolean|null, b: string|number|boolean, m?: string|undefined) => { if (a !== b) throw new Error(`${m || ''} — expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`) }
 
 const SKU = 'probe-inventory'
-const reset = async (stocked: any, variant = '') => {
+const reset = async (stocked: number, variant = '') => {
   await db.from('inventory_movements').delete().eq('sku', SKU)
   await db.from('inventory').delete().eq('sku', SKU)
   await db.from('inventory').insert({ sku: SKU, variant, stocked, reserved: 0 })
 }
 const row = async (variant = '') => (await db.from('inventory').select('*').eq('sku', SKU).eq('variant', variant).maybeSingle()).data
-const take = (qty: any, reason: any, about: any, variant = '', backorder = false) => db.rpc('inventory_take', { p_sku: SKU, p_variant: variant, p_qty: qty, p_reason: reason, p_about: about ?? null, p_backorder: backorder })
-const give = (qty: any, reason: any, about: any, variant = '') => db.rpc('inventory_give', { p_sku: SKU, p_variant: variant, p_qty: qty, p_reason: reason, p_about: about ?? null })
+const take = (qty: number, reason: string, about: string, variant = '', backorder = false) => db.rpc('inventory_take', { p_sku: SKU, p_variant: variant, p_qty: qty, p_reason: reason, p_about: about ?? null, p_backorder: backorder })
+const give = (qty: number, reason: string, about: string, variant = '') => db.rpc('inventory_give', { p_sku: SKU, p_variant: variant, p_qty: qty, p_reason: reason, p_about: about ?? null })
 const moves = async () => (await db.from('inventory_movements').select('*').eq('sku', SKU).order('at')).data || []
 
 console.log('\nWHAT IS LEFT\n')

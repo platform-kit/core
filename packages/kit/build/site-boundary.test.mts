@@ -9,7 +9,7 @@ const textExtensions = new Set(['.md', '.yaml', '.yml', '.json', '.js', '.mjs', 
 const skipDirectories = new Set(['.git', 'node_modules', 'dist', 'coverage'])
 
 // @ts-expect-error TS7023, from the conversion: 'filesUnder' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in 
-function filesUnder(directory: any, relative = '') {
+function filesUnder(directory, relative = '') {
   const files = []
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const childRelative = path.join(relative, entry.name)

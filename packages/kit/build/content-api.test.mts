@@ -42,7 +42,7 @@ await ok('every model with fields is a content type, every record of it in the i
     assert.ok(!t.fields.some((f: any) => f.id === 'published'), 'published is the status, never a field')
     if (m.body) assert.ok(t.fields.some((f: any) => f.id === 'body' && f.type === 'RichText') && t.fields.some((f: any) => f.id === 'bodyMarkdown'), m.key + ' body')
   }
-  for (const r of index.records) { assert.ok((r as any).typeId && r.path && r.updated && r.created, r.model + '/' + r.path); assert.equal(typeof r.published, 'boolean') }
+  for (const r of index.records) { assert.ok(r.typeId && r.path && r.updated && r.created, r.model + '/' + r.path); assert.equal(typeof r.published, 'boolean') }
   /* what the files say */
   const off: any = []
   for (const m of index.models) { const d = path.join(ROOT, m.dir); if (!fs.existsSync(d) || m.single) continue; const walk = (p: any) => { for (const f of fs.readdirSync(p, { withFileTypes: true })) { if (f.isDirectory()) { if (m.nested) walk(path.join(p, f.name)) } else if (f.name.endsWith('.md') && /^published:\s*false/m.test(fs.readFileSync(path.join(p, f.name), 'utf8'))) off.push([m.key, path.relative(d, path.join(p, f.name)).replace(/\.md$/, '')]) } }; walk(d) }
@@ -73,7 +73,7 @@ if (custom.length) await ok('a site\'s own model on the API: its fields in Conte
 /* ---- (2) the shapes ---- */
 const ctx = makeContext(index, { preview: false, gated: false, locale: null, imagesBase: '//x.test/api/media' })
 await ok('an entry: sys with a stable id, its fields exactly its type\'s, a markdown body as Rich Text with the markdown beside it, a picture as an Asset link into includes', async () => {
-  const withBody: any = index.records.find((r: any) => r.published && r.body && index.models.find((m: any) => m.key === r.model).body)
+  const withBody = index.records.find((r: any) => r.published && r.body && index.models.find((m: any) => m.key === r.model).body)
   const e = await entryOf(withBody, ctx)
   assert.equal(e.sys.id, entryId(withBody.typeId, withBody.path)); assert.equal(e.sys.type, 'Entry'); assert.equal((e.sys as any).contentType.sys.id, withBody.typeId); assert.ok(e.sys.createdAt && e.sys.updatedAt && e.sys.revision >= 1)
   assert.equal(e.fields.body.nodeType, 'document'); assert.equal(typeof e.fields.bodyMarkdown, 'string')
@@ -87,7 +87,7 @@ await ok('a link that cannot be resolved is listed under errors as notResolvable
   if (!ref) { note('no record with a reference on this site — the link checks run on the demo'); return }
   const f = ref.fields.find(isRef)
   const target = index.models.find((x: any) => x.key === f.of || x.key === f.options || 'models/' + String(f.options).replace(/^model:/, '') === x.key || 'models/' + f.of === x.key)
-  const real: any = byModel(ref.key).find((r: any) => r.published && r.data[f.name])
+  const real = byModel(ref.key).find((r: any) => r.published && r.data[f.name])
   const fake = { ...real, path: 'probe-unresolvable', data: { ...real.data, [f.name]: 'nobody-here' } }
   const [e1, e2] = [await entryOf(real, ctx), await entryOf(fake, ctx)]
   const targetType = index.types.find((t: any) => t._model === (target && target.key)); const a = await includesFor([e1], 1, ctx); assert.ok(a.includes.Entry && a.includes.Entry.some((x: any) => x.sys.id === entryId(targetType.sys.id, String(real.data[f.name]))), 'the ' + (target ? target.key : '') + ' entry included')
@@ -106,7 +106,7 @@ await ok('every operator, recomputed from the records', () => {
   if (tagged && tagged.length) { const tag = tagged[0].data.tags[0]; assert.deepEqual(q({ 'fields.tags[in]': tag }).map((r: any) => r.path).sort(), rows.filter((r: any) => (r.data.tags || []).includes(tag)).map((r: any) => r.path).sort()); assert.deepEqual(q({ 'fields.tags[all]': tagged[0].data.tags.join(',') }).map((r: any) => r.path).sort(), rows.filter((r: any) => tagged[0].data.tags.every((x: any) => (r.data.tags || []).includes(x))).map((r: any) => r.path).sort()); assert.deepEqual(q({ 'fields.tags[exists]': 'false' }).length, rows.filter((r: any) => !(r.data.tags || []).length).length) }
   const dated = m.fields.find((f: any) => f.name === 'date') && rows.filter((r: any) => r.data.date)
   // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  if (dated && dated.length > 1) { const sorted = [...dated].sort((a, b) => new Date(a.data.date) - new Date(b.data.date)); assert.deepEqual(q({ 'fields.date[gte]': new Date(sorted[1].data.date).toISOString() }).length, dated.filter((r: any) => new Date(r.data.date) >= new Date(sorted[1].data.date)).length); assert.deepEqual(q({ order: 'fields.date' }).filter((r: any) => r.data.date).map((r: any) => r.path), sorted.map((r) => r.path)) }
+  if (dated && dated.length > 1) { const sorted = [...dated].sort((a, b) => new Date(a.data.date) - new Date(b.data.date)); assert.deepEqual(q({ 'fields.date[gte]': new Date(sorted[1].data.date).toISOString() }).length, dated.filter((r) => new Date(r.data.date) >= new Date(sorted[1].data.date)).length); assert.deepEqual(q({ order: 'fields.date' }).filter((r) => r.data.date).map((r) => r.path), sorted.map((r) => r.path)) }
   assert.deepEqual(q({ order: '-sys.createdAt', limit: '2' }).length, rows.length, 'order alone never cuts (the page does)')
   const bad = parse({ content_type: t.sys.id, 'fields.title[near]': '1,2' }, { types: ctx.types, locales: index.locales }); assert.equal(bad.error.id, 'InvalidQuery')
   const noType = parse({ 'fields.title': 'x' }, { types: ctx.types, locales: index.locales }); assert.equal(noType.error.id, 'BadQuery')
@@ -145,24 +145,24 @@ await ok('the OpenAPI document: valid 3.1, one schema per content type, content_
   const v = await validate(doc); assert.ok(v.valid, 'validate: ' + JSON.stringify((v.errors || []).slice(0, 3)))
   assert.equal(doc.openapi, '3.1.0'); assert.ok(doc.info.title && doc.info.description.includes(index.space))
   for (const t of index.types) { const s = doc.components.schemas[t.sys.id.replace(/^./, (c: any) => c.toUpperCase())]; assert.ok(s, 'a schema for ' + t.sys.id); assert.deepEqual(Object.keys(s.properties.fields.properties), t.fields.map((f: any) => f.id), 'the fields of ' + t.sys.id) }
-  const entries: any = doc.paths[`/api/content/spaces/${index.space}/environments/master/entries`].get
-  assert.deepEqual((entries.parameters.find((p: any) => p.name === 'content_type').schema as any).enum, index.types.map((t: any) => t.sys.id))
+  const entries = doc.paths[`/api/content/spaces/${index.space}/environments/master/entries`].get
+  assert.deepEqual(entries.parameters.find((p: any) => p.name === 'content_type').schema.enum, index.types.map((t: any) => t.sys.id))
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): unknown[]', gave the following error. 
-  const tags = (tag: any) => Object.values(doc.paths).flatMap((p) => Object.values(p)).filter((op: any) => op.tags.includes(tag)).length
+  const tags = (tag) => Object.values(doc.paths).flatMap((p) => Object.values(p)).filter((op) => op.tags.includes(tag)).length
   assert.deepEqual([tags('Content Delivery'), tags('Content Management'), tags('Content Sync'), tags('Content GraphQL'), tags('Content Images'), tags('Analytics Events'), tags('Analytics Capture')], [8, 19, 1, 2, 1, 1, 4], 'every door has its operations under its tag')
   /* the Management API's operations sit on the Delivery routes, under their own tag and key */
-  const entryRoute: any = doc.paths[`/api/content/spaces/${index.space}/environments/master/entries/{id}`]; assert.ok(entryRoute.get && entryRoute.put && entryRoute.delete, 'read, write and delete on one route'); assert.deepEqual(entryRoute.put.security, [{ managementKey: [] }]); assert.ok(doc.components.securitySchemes.managementKey)
-  assert.ok((doc.paths[`/api/content/spaces/${index.space}/environments/master/entries/{id}/published`] as any).put && doc.paths[`/api/content/spaces/${index.space}/uploads`].post && doc.paths[`/api/content/spaces/${index.space}/webhook_definitions`].post, 'publish, uploads, webhook definitions')
+  const entryRoute = doc.paths[`/api/content/spaces/${index.space}/environments/master/entries/{id}`]; assert.ok(entryRoute.get && entryRoute.put && entryRoute.delete, 'read, write and delete on one route'); assert.deepEqual(entryRoute.put.security, [{ managementKey: [] }]); assert.ok(doc.components.securitySchemes.managementKey)
+  assert.ok(doc.paths[`/api/content/spaces/${index.space}/environments/master/entries/{id}/published`].put && doc.paths[`/api/content/spaces/${index.space}/uploads`].post && doc.paths[`/api/content/spaces/${index.space}/webhook_definitions`].post, 'publish, uploads, webhook definitions')
   assert.ok(doc.components.schemas.ManagementEntry && doc.components.schemas.WebhookDefinition && doc.components.schemas.Upload)
   const names = doc.tags.map((t: any) => t.name); assert.deepEqual(names, ['Content Delivery', 'Content Management', 'Content Sync', 'Content GraphQL', 'Content Images', ...(forms ? ['Forms', 'Responses', 'Webhooks', 'Insights'] : []), ...(sessions ? ['Event Types', 'Slots', 'Bookings', 'Schedules', 'Scheduling Webhooks'] : []), ...(storeOn ? ['Storefront'] : []), ...(supportOn ? ['Client', 'Conversations', 'Contacts', 'Support Webhooks'] : []), 'Analytics Events', 'Analytics Capture'])
   const groups = doc['x-tagGroups']; assert.deepEqual(groups.map((g: any) => g.name), ['Content API', ...(forms ? ['Forms API'] : []), ...(sessions ? ['Scheduling API'] : []), ...(storeOn ? ['Store API'] : []), ...(supportOn ? ['Support API'] : []), 'Analytics API']);
   if (supportOn) { assert.deepEqual([tags('Client'), tags('Conversations'), tags('Contacts'), tags('Support Webhooks')], [11, 6, 6, 4], 'the Support API\'s operations'); assert.ok(doc.components.securitySchemes.supportKey && doc.components.schemas.SupportConversation) }
   if (storeOn) { assert.equal(tags('Storefront'), 3, 'the Store API\'s operations'); assert.ok(doc.paths['/api/store/api/{version}/graphql.json'].post && doc.components.securitySchemes.storefrontKey && doc.components.schemas.StorefrontRequest) }
   if (sessions) { assert.deepEqual([tags('Event Types'), tags('Slots'), tags('Bookings'), tags('Schedules'), tags('Scheduling Webhooks')], [2, 1, 6, 2, 5], 'the Scheduling API\'s operations'); assert.ok(doc.components.schemas.EventType && doc.components.schemas.Booking && doc.components.schemas.Schedule); assert.deepEqual(doc.components.schemas.EventType.properties.slug.enum, sessions.map((s: any) => s.slug)) } else assert.ok(!Object.keys(doc.paths).some((p) => p.startsWith('/api/scheduling/v2/')), 'no Scheduling API with sessions off')
-  if (forms) { assert.deepEqual([tags('Forms'), tags('Responses'), tags('Webhooks'), tags('Insights')], [8, 3, 4, 1], 'the Forms API\'s operations (the reads and the writes)'); assert.ok(doc.paths['/api/forms/forms'].post && (doc.paths['/api/forms/forms/{form_id}'] as any).patch, 'the form writes'); assert.ok(doc.components.schemas.Form && doc.components.schemas.Response && doc.components.schemas.Webhook); assert.deepEqual((doc.paths['/api/forms/forms/{form_id}'].get.parameters[0].schema as any).enum, Object.entries(forms).filter(([, f]) => (f as any).kit?.published !== false && (f as any).settings?.page === 'form-slides').map(([k]) => k)) } else assert.ok(!Object.keys(doc.paths).some((p) => p.startsWith('/api/forms/')), 'no Forms API with forms off')
+  if (forms) { assert.deepEqual([tags('Forms'), tags('Responses'), tags('Webhooks'), tags('Insights')], [8, 3, 4, 1], 'the Forms API\'s operations (the reads and the writes)'); assert.ok(doc.paths['/api/forms/forms'].post && doc.paths['/api/forms/forms/{form_id}'].patch, 'the form writes'); assert.ok(doc.components.schemas.Form && doc.components.schemas.Response && doc.components.schemas.Webhook); assert.deepEqual(doc.paths['/api/forms/forms/{form_id}'].get.parameters[0].schema.enum, Object.entries(forms).filter(([, f]) => (f as any).kit?.published !== false && (f as any).settings?.page === 'form-slides').map(([k]) => k)) } else assert.ok(!Object.keys(doc.paths).some((p) => p.startsWith('/api/forms/')), 'no Forms API with forms off')
   assert.deepEqual(groups.flatMap((g: any) => g.tags).sort(), names.slice().sort(), 'every tag is in a group')
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): unknown[]', gave the following error. 
-  for (const op of Object.values(doc.paths).flatMap((p) => Object.values(p))) assert.ok((op as any).tags.every((t: any) => names.includes(t)) && /^[A-Z]/.test((op as any).summary) && !/posthog|contentful|typeform|cal\.com/i.test((op as any).summary) && !/posthog|contentful|typeform|cal\.com/i.test((op as any).tags.join()), 'an operation names a declared tag and says what it does, no product name in a name: ' + (op as any).operationId)
+  for (const op of Object.values(doc.paths).flatMap((p) => Object.values(p))) assert.ok(op.tags.every((t) => names.includes(t)) && /^[A-Z]/.test(op.summary) && !/posthog|contentful|typeform|cal\.com/i.test(op.summary) && !/posthog|contentful|typeform|cal\.com/i.test(op.tags.join()), 'an operation names a declared tag and says what it does, no product name in a name: ' + op.operationId)
   assert.deepEqual(doc.servers.map((x: any) => x.url), ['https://x.test', 'http://stack.test/functions/v1/content'])
   assert.ok(doc.paths['/api/events/e/'].post.description.includes('other-site'), 'the sources are named')
 })
@@ -194,7 +194,7 @@ try {
   const T = typeWithMany.sys.id, TN = byModel(typeWithMany._model).filter((r: any) => r.published).length
   await ok('contentful.js, the host swapped: a page of entries with includes resolved by the client, a filter, a search, one entry, one asset, the types, the locales', async () => {
     // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type '(OrderFilterPaths<EntrySys, "sys"> | "sys.contentType.sys.id" | "-sys.contentType.sys.id")[]'.
-    const page: any = await client.getEntries({ content_type: T, include: 2, order: '-sys.createdAt', limit: 2, skip: 1 })
+    const page = await client.getEntries({ content_type: T, include: 2, order: '-sys.createdAt', limit: 2, skip: 1 })
     assert.equal(page.total, TN); assert.equal(page.items.length, Math.min(2, TN - 1)); assert.equal(page.skip, 1)
     const withPic = (await client.getEntries({ content_type: T, include: 1, limit: 100 })).items.find((i) => Object.values(i.fields).some((v: any) => v && v.fields && v.fields.file))
     if (withPic) { const pic: any = Object.values(withPic.fields).find((v: any) => v && v.fields && v.fields.file); assert.ok(pic.fields.file.url.includes('/api/media/' + index.space + '/'), 'the client resolved the asset link'); const asset: any = await client.getAsset(pic.sys.id); assert.equal(asset.fields.file.fileName, pic.fields.file.fileName); assert.ok(asset.fields.file.details.size >= 0) }
@@ -231,7 +231,7 @@ try {
     if (linked) { const f = linked.fields.find((x: any) => x.kind === 'reference' || (x.widget === 'select' && x.options)); const r = byModel(linked.key).find((x: any) => x.published && x.data[f.name]); const lt1 = index.types.find((x: any) => x._model === linked.key); const ltf = lt1.fields.find((x: any) => x.id === f.name); const targetT = ((ltf.validations.find((v: any) => v.linkContentType) || {}).linkContentType || [])[0]; if (r && targetT) { const lt = await client.getEntries({ links_to_entry: entryId(targetT, String(r.data[f.name])), limit: 100 }); assert.ok(lt.items.some((i) => i.sys.id === entryId(lt1.sys.id, r.path)), 'links_to_entry') } }
   })
   await ok('the paywall: a gated entry lists with its plain fields for a delivery key and the public, its body for a key allowed gated content', async () => {
-    const gated: any = index.records.find((r: any) => r.published && Array.isArray(r.data.canAccess) && r.data.canAccess.length && !r.data.canAccess.includes('guest') && r.body)
+    const gated = index.records.find((r: any) => r.published && Array.isArray(r.data.canAccess) && r.data.canAccess.length && !r.data.canAccess.includes('guest') && r.body)
     if (!gated) { note('no gated record on this site — the paywall is checked on the demo'); return }
     const p = `/spaces/${index.space}/environments/master/entries/${entryId(gated.typeId, gated.path)}`
     const pub = await get(p), del = await get(p, { Authorization: 'Bearer ' + delivery }), open = await get(p, { Authorization: 'Bearer ' + gatedKey })
@@ -239,7 +239,7 @@ try {
     assert.ok(open.body.fields.body && open.body.fields.body.nodeType === 'document' && open.body.fields.bodyMarkdown.length > 50, 'the whole body for the gated key')
   })
   await ok('preview: an unpublished entry exists to a preview key and not to a delivery key or the public; a foreign token reads as the public on a public site; a revoked key is refused', async () => {
-    const off: any = index.records.find((r: any) => !r.published)
+    const off = index.records.find((r: any) => !r.published)
     if (off) { const p = `/spaces/${index.space}/environments/master/entries/${entryId(off.typeId, off.path)}`; assert.equal((await get(p, { Authorization: 'Bearer ' + delivery })).status, 404); assert.equal((await get(p)).status, 404); const pv = await get(p, { Authorization: 'Bearer ' + previewKey }); assert.equal(pv.status, 200); assert.equal(pv.body.sys.id, entryId(off.typeId, off.path)) }
     else note('no unpublished record on this site — preview is checked on the demo')
     const foreign = await get(`/spaces/${index.space}/environments/master/entries?limit=1`, { Authorization: 'Bearer some-other-token' }); assert.equal(foreign.status, 200)
@@ -368,10 +368,10 @@ try {
   const cm = await import('contentful-management'); const CM = cm.createClient || cm.default.createClient
   const cma = CM({ accessToken: mgmt, host, hostUpload: host, basePath: '/functions/v1/content', insecure: url.startsWith('http:'), retryOnError: false })
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave t
-  const send = async (method: any, p: any, body?: any, headers = {}) => { const r = await fetch(API + p, { method, headers: { Authorization: 'Bearer ' + mgmt, 'Content-Type': 'application/vnd.contentful.management.v1+json', ...headers }, body: body == null ? undefined : (typeof body === 'string' || body instanceof Uint8Array ? body : JSON.stringify(body)) }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
+  const send = async (method, p, body?, headers = {}) => { const r = await fetch(API + p, { method, headers: { Authorization: 'Bearer ' + mgmt, 'Content-Type': 'application/vnd.contentful.management.v1+json', ...headers }, body: body == null ? undefined : (typeof body === 'string' || body instanceof Uint8Array ? body : JSON.stringify(body)) }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
   const ENV = `/spaces/${index.space}/environments/master`
   await ok('a management key reads an entry in Contentful\'s management shape (version, publishedVersion, updatedBy); a delivery key and no key are refused a write', async () => {
-    const any: any = index.records.find((r: any) => r.typeId && r.published)
+    const any = index.records.find((r: any) => r.typeId && r.published)
     const r = await send('GET', `${ENV}/entries/${entryId(any.typeId, any.path)}`); assert.equal(r.status, 200, JSON.stringify(r.body))
     assert.ok(r.body.sys.version >= 2 && r.body.sys.publishedVersion && r.body.sys.updatedBy && r.body.sys.createdBy, 'the management sys')
     assert.ok(Object.values(r.body.fields).every((v) => v && typeof v === 'object' && 'en-US' in v), 'fields by locale')
@@ -381,7 +381,7 @@ try {
     const defs = await send('GET', `/spaces/${index.space}/webhook_definitions`); assert.equal(defs.status, 200); assert.equal(defs.body.sys.type, 'Array')
   })
   if (!cloudMode) await ok('in git mode every write is 405 with the reason; a read still answers', async () => {
-    const any: any = index.records.find((r: any) => r.typeId && r.published)
+    const any = index.records.find((r: any) => r.typeId && r.published)
     const r = await send('PUT', `${ENV}/entries/${entryId(any.typeId, any.path)}`, { fields: {} }); assert.equal(r.status, 405); assert.match(r.body.message, /git mode/)
     const p = await send('PUT', `${ENV}/entries/${entryId(any.typeId, any.path)}/published`); assert.equal(p.status, 405)
     const a = await send('POST', `${ENV}/assets`, { fields: {} }); assert.equal(a.status, 405)
@@ -432,7 +432,7 @@ try {
         assert.equal((await get(`${ENV}/entries/${ID}`, { Authorization: 'Bearer ' + previewKey })).status, 404)
       })
       await ok('an entry read and put back as it came — a library picture\'s link, the Rich Text body — is a draft with the same fields, who made it the key\'s maker; the draft dropped leaves the live version', async () => {
-        const rec: any = index.records.find((r: any) => r.typeId === TYPE.sys.id && r.published && Object.values(r.data || {}).some((v) => typeof v === 'string' && v.startsWith('/uploads/'))) || index.records.find((r: any) => r.typeId === TYPE.sys.id && r.published)
+        const rec = index.records.find((r: any) => r.typeId === TYPE.sys.id && r.published && Object.values(r.data || {}).some((v) => typeof v === 'string' && v.startsWith('/uploads/'))) || index.records.find((r: any) => r.typeId === TYPE.sys.id && r.published)
         const id = entryId(rec.typeId, rec.path)
         const e = await env.getEntry(id); const fields = JSON.parse(JSON.stringify(e.fields))
         e.fields[titleField] = { 'en-US': fields[titleField]['en-US'] + ' (API)' }
@@ -499,7 +499,7 @@ try {
         const hits: any = []
         const server: any = http.createServer((rq, rs) => { let b = ''; rq.on('data', (c) => { b += c }); rq.on('end', () => { hits.push({ headers: rq.headers, body: b ? JSON.parse(b) : null }); rs.writeHead(200); rs.end('ok') }) })
         await new Promise((r) => server.listen(0, '0.0.0.0', r))
-        const receiver = `http://host.docker.internal:${(server.address() as any).port}/hook`
+        const receiver = `http://host.docker.internal:${server.address().port}/hook`
         try {
           const def = await send('POST', `/spaces/${index.space}/webhook_definitions`, { name: 'probe hook', url: receiver, topics: ['Entry.publish', 'Entry.unpublish'], headers: [{ key: 'X-Probe', value: 'yes' }] }); assert.equal(def.status, 201, JSON.stringify(def.body)); assert.equal(def.body.sys.type, 'WebhookDefinition')
           const listed = await send('GET', `/spaces/${index.space}/webhook_definitions`); assert.ok(listed.body.items.some((x: any) => x.sys.id === def.body.sys.id))
@@ -510,13 +510,13 @@ try {
           await e.publish()
           for (let i = 0; i < 30 && !hits.length; i++) await new Promise((r) => setTimeout(r, 300))
           assert.ok(hits.length >= 1, 'the publish was delivered')
-          const h: any = hits.find((x: any) => x.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish') || hits[0]
+          const h = hits.find((x: any) => x.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish') || hits[0]
           assert.equal(h.headers['x-contentful-topic'], 'ContentManagement.Entry.publish'); assert.equal(h.headers['x-contentful-webhook-name'], 'probe hook 2'); assert.equal(h.headers['x-probe'], 'yes')
           assert.equal(h.body.sys.id, EID); assert.equal(h.body.sys.type, 'Entry')
           const row = await send('GET', `/spaces/${index.space}/webhook_definitions/${def.body.sys.id}`); assert.ok(row.body.sys.lastAt || row.status === 200)
           await (await env.getEntry(EID)).delete()
           /* a person's publish and unpublish in the admin (the admin function's own row store) reach the same subscriber */
-          const rec: any = index.records.find((r: any) => r.typeId && r.published && !r.model.startsWith('models/') && index.models.find((m: any) => m.key === r.model && !m.single))
+          const rec = index.records.find((r: any) => r.typeId && r.published && !r.model.startsWith('models/') && index.models.find((m: any) => m.key === r.model && !m.single))
           if (site && rec) {
             let browser = null
             try { const { chromium } = await import('playwright'); const shell = path.join(process.env.HOME || '', 'Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell'); browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || (fs.existsSync(shell) ? shell : undefined) }) } catch { note('no browser — the admin\'s publish is not driven') }
@@ -531,7 +531,7 @@ try {
                 await pg.waitForSelector('.ad-drawer .ad-publish', { timeout: 30000 })
                 await pg.click('.ad-drawer .ad-publish')
                 for (let i = 0; i < 40 && !hits.some((h: any) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish'); i++) await new Promise((r) => setTimeout(r, 300))
-                const pub: any = hits.find((h: any) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish'); assert.ok(pub, 'the admin\'s publish was delivered'); assert.equal(pub.body.sys.id, entryId(rec.typeId, rec.path)); assert.equal(pub.headers['x-probe'], 'yes')
+                const pub = hits.find((h: any) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish'); assert.ok(pub, 'the admin\'s publish was delivered'); assert.equal(pub.body.sys.id, entryId(rec.typeId, rec.path)); assert.equal(pub.headers['x-probe'], 'yes')
                 /* off, and published again: unpublish then publish, each delivered under its topic */
                 const reopen = async () => { await pg.goto(`${site}/admin/${rec.model}/${rec.path}`, { waitUntil: 'networkidle', timeout: 30000 }); await pg.waitForSelector('.ad-drawer .ad-publish', { timeout: 30000 }) }   /* a publish closes the drawer */
                 const toggle = () => pg.locator('.ad-drawer .ad-f', { hasText: 'Published' }).locator('.p-toggleswitch').first()

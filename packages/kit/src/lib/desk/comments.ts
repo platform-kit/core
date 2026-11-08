@@ -14,7 +14,7 @@
  * `rowsOf` is pure — build/desk.test.mjs reads it against real comment_queue rows.
  */
 
-export function rowsOf(raw = [], ctx: any = {}) {
+export function rowsOf(raw: any[] = [], ctx: any = {}) {
   const out = []
   for (const r of raw || []) {
     if (!r || !(r as any).id) continue

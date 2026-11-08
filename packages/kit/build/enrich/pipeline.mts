@@ -26,7 +26,8 @@ import { parseCompanion, serialiseCompanion, bookChapterTitles, chapterHash, LEV
 import { asStore } from '../store/index.mjs'
 
 const BOOKS = 'content/books', COMPANIONS = 'content/companions'   /* the store's paths: relative to the site, never a disk's */
-const DUMP = { lineWidth: -1 }
+/* js-yaml's dump option: gray-matter hands its options to the yaml engine, but declares only its own */
+const DUMP = { lineWidth: -1 } as { lineWidth: number } & matter.GrayMatterOption<string, never>
 export const P = { understand: 'u1', introduce: 'i1', extract: 'x2', write: 'w1', audit: 'a1', lines: 'b1' }   /* prompt versions, one per stage */
 const SOURCE_CAP = 6000        /* words of source per call: the model's attention, not a rule about content */
 const UNDERSTAND_CAP = 120000  /* words of text the map is read from; a longer book is read to here */
@@ -416,7 +417,6 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
     const intro = await introduce(book, map, cache); await held.save(cache)
     if (intro.fresh && write) {
       const data = { ...book.fm.data, introduction: intro.text, introduced: { model: wrote('introduce'), prompt: P.introduce, date: new Date().toISOString().slice(0, 10), pipeline: 'enrich' } }
-      // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
       await store.write(`${BOOKS}/${slug}.md`, matter.stringify('\n' + book.fm.content.replace(/^\n+/, ''), data, DUMP))
       log(`  wrote content/books/${slug}.md (introduction)`)
     }

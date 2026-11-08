@@ -22,7 +22,7 @@ import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
+const ok = (msg: string, cond: string|number|boolean|null, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
 
 console.log('\nWHAT AN ENCRYPTED CHANNEL STORES\n')
 
@@ -38,7 +38,7 @@ const db = createClient<Database>(url, key, { auth: { persistSession: false } })
  * reached the desk" when what had happened is that nobody asked.
  */
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
-const as = async (email: any) => {
+const as = async (email: string) => {
   if (!anon) return null
   const c = createClient<Database>(url, anon, { auth: { persistSession: false } })
   const { error } = await c.auth.signInWithPassword({ email, password: 'password123' })
@@ -60,14 +60,14 @@ for (const t of ['space_devices', 'space_one_time_keys', 'space_to_device', 'spa
 const { data: space } = await db.from('spaces').select('id').limit(1).maybeSingle()
 if (!space) { console.log('  ⚠ SKIPPED — the seed has no space to put a room in\n'); leave(0) }
 const slug = 'enc-test-' + Math.random().toString(16).slice(2, 8)
-const mk = async (encrypted: any) => {
+const mk = async (encrypted: boolean) => {
   const { data, error } = await db.from('channels')
     .insert({ space_id: (space as any).id, slug, name: 'Sealed', mode: 'stream', visibility: 'open', encrypted })
     .select('id, encrypted').single()
   if (error) throw new Error(error.message)
   return data
 }
-const cleanup = async (id: any) => { await db.from('space_messages').delete().eq('channel_id', id); await db.from('channels').delete().eq('id', id) }
+const cleanup = async (id: string) => { await db.from('space_messages').delete().eq('channel_id', id); await db.from('channels').delete().eq('id', id) }
 
 let ch: any
 try { ch = await mk(true) } catch (e: any) { console.log(`  ⚠ SKIPPED — could not make a channel (${String(e.message).slice(0, 110)})\n`); leave(0) }
@@ -126,7 +126,7 @@ try {
       const moderator = await as('admin@example.com')
       const { data: rows } = await (moderator || db).rpc('space_reports', { p_space: (space as any).id, p_open: true })
       // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-      const mine = (rows || []).find((r: any) => r.message === msg.id)
+      const mine = (rows || []).find((r) => r.message === msg.id)
       ok('a report from a sealed room reaches the desk', !moderator || !!mine, JSON.stringify(rows).slice(0, 160))
       if (mine) {
         ok('…carrying no words', mine.body == null, JSON.stringify(mine.body))
@@ -443,7 +443,7 @@ try {
        this lane had just made, and the client then quite correctly could not find it */
     const wipeKeys = async () => {
       // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-      for (const id of [(a2 as any).id, (b2 as any).id]) for (const t of ['space_to_device', 'space_one_time_keys', 'space_devices', 'space_key_backups']) await db.from(t).delete().eq('user_id', id)
+      for (const id of [a2.id, b2.id]) for (const t of ['space_to_device', 'space_one_time_keys', 'space_devices', 'space_key_backups']) await db.from(t).delete().eq('user_id', id)
     }
     const clear = async () => {
       await wipeKeys()
@@ -467,7 +467,7 @@ try {
         await client.startClient({ initialSyncLimit: 5 })
         await new Promise((r) => { client.once('sync', r); setTimeout(r, 25000) })
         const joined = (await client.getJoinedRooms()).joined_rooms || []
-        const mx = joined.find((r: any) => r.includes(live.id.replace(/-/g, '')))
+        const mx = joined.find((r: string|string[]) => r.includes(live.id.replace(/-/g, '')))
         ok('a real client with crypto signs in and finds the sealed room', !!mx,
           'looking for ' + live.id.replace(/-/g, '') + ' among ' + JSON.stringify(joined).slice(0, 300))
 

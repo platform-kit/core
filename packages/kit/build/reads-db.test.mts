@@ -28,12 +28,12 @@ import { statusOf, leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const note = (s: any) => console.log('  ' + s)
+const ok = (name: string, cond: boolean, detail: string) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const note = (s: string) => console.log('  ' + s)
 
 console.log('\nONE READ IS ONE READ\n')
 
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n    How reads and sign-ups are counted is NOT covered by this run.\n'); leave(0) }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n    How reads and sign-ups are counted is NOT covered by this run.\n'); leave(0) }
 let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
@@ -55,7 +55,7 @@ const asAdmin = createClient<Database>(cfg.API_URL, cfg.ANON_KEY, { auth: { pers
 let PIECE: any = null, PIECE_PATH: any = null
 const SESSION = uuid()
 const ANON = uuid()
-const ago = (mins: any) => new Date(Date.now() - mins * 60000).toISOString()
+const ago = (mins: number) => new Date(Date.now() - mins * 60000).toISOString()
 
 const clean = async () => { await admin.from('events').delete().eq('session_id', SESSION) }
 await clean()
@@ -65,14 +65,14 @@ const report = async () => {
   if (error) { note('⚠ admin_content refused (' + error.message + ')'); return null }
   return (data && (data as any).items) || []
 }
-const find: any = (items: any) => (items || []).find((r: any) => r.id === PIECE) || null
+const find = (items: any) => (items || []).find((r: { id: any }) => r.id === PIECE) || null
 
 try {
   const first = await report()
   if (!first || !first.length) { note('⚠ admin_content reported no content at all — nothing to add a read to'); throw new Error('skip') }
   /* the piece with the most reads already: its numbers are the least likely to be disturbed by
      anything else happening on this stack while the test runs */
-  const base = first.slice().sort((a: any, b: any) => (b.reads || 0) - (a.reads || 0))[0]
+  const base = first.slice().sort((a: { reads: any }, b: { reads: any }) => (b.reads || 0) - (a.reads || 0))[0]
   PIECE = base.id; PIECE_PATH = base.path
   const was = { reads: Number(base.reads || 0), depth: Number(base.depth || 0), minutes: Number(base.minutes || 0) }
 
@@ -81,7 +81,7 @@ try {
    * comes back and leaves — which the client reports as several content_read events for the same
    * session and the same piece. The page must show ONE more read, not three.
    */
-  const seg: any = (seconds: any, depth: any, minsAgo: any) => ({
+  const seg = (seconds: number, depth: number, minsAgo: number) => ({
     type: 'content_read', session_id: SESSION, anon_id: ANON, path: PIECE_PATH,
     occurred_at: ago(minsAgo), props: { kind: base.kind, id: PIECE, seconds, depth },
   })

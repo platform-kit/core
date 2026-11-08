@@ -13,7 +13,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { notHere, leave } from './test-stack.mjs'
 
 let n = 0, bad = 0
-const ta = async (name: any, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
+const ta = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
 const url = supabaseUrl(), anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
 let up = false
 // @ts-expect-error TS2322, from the conversion: Type 'string | boolean' is not assignable to type 'boolean'. Type 'string' is not assignable to type 'boolean'.
@@ -22,7 +22,7 @@ let served = false
 if (up) { try { served = (await fetch(url + '/functions/v1/session-room', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* not served */ } }
 if (!up || !served) { console.log(`meetings: skipped — ${!up ? 'the local stack is not up' : 'the functions are not served (npm run dev serves them)'}`); leave(0) }
 const catalog = JSON.parse(fs.readFileSync('supabase/functions/_shared/catalog.json', 'utf8'))
-const type = (catalog.sessions || []).find((s: any) => s.scheduler === 'native' && s.where?.kind === 'video')
+const type = (catalog.sessions || []).find((s: { scheduler: string; where: { kind: string } }) => s.scheduler === 'native' && s.where?.kind === 'video')
 if (!type) { notHere('meetings', 'the site has no native booking type in a video room (the demo has)'); process.exit(0) }
 /* AND THE SITE MUST HAVE A LIVEKIT ACCOUNT. With none, a native video room is the mesh — browser to
    browser, no account, nothing recorded (build/huddle.test.mjs is its own probe) — and every door
@@ -31,23 +31,23 @@ if (!type) { notHere('meetings', 'the site has no native booking type in a video
      --keys "devkey: secretsecretsecretsecretsecretsecret" --node-ip 127.0.0.1
    with LIVEKIT_URL=ws://127.0.0.1:7880 and that pair in .env. */
 const { videoIdOf } = await import('../supabase/functions/_shared/video/choose.js')
-if (videoIdOf(type, (k: any) => process.env[k] || '') !== 'livekit') { notHere('meetings', 'the site has no LiveKit account, so a room here is the mesh'); process.exit(0); console.log('meetings: skipped — this site has no LiveKit account, so a room here is the mesh (set LIVEKIT_URL and the dev pair to run this)'); process.exit(0) }
+if (videoIdOf(type, (k: string|number) => process.env[k] || '') !== 'livekit') { notHere('meetings', 'the site has no LiveKit account, so a room here is the mesh'); process.exit(0); console.log('meetings: skipped — this site has no LiveKit account, so a room here is the mesh (set LIVEKIT_URL and the dev pair to run this)'); process.exit(0) }
 
 const { createClient } = await import('@supabase/supabase-js')
 const admin = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
-const as = async (email: any) => { const sb = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } }); const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' }); if (error) throw new Error(email + ': ' + error.message); return sb }
-const fn = async (sb: any, name: any, body: any) => { const { data, error } = await sb.functions.invoke(name, { body }); if (error) { let j = null; try { j = await error.context.json() } catch { /* none */ } return { status: error.context ? error.context.status : 500, ...(j || { error: error.message }) } } return { status: 200, ...data } }
+const as = async (email: string) => { const sb = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } }); const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' }); if (error) throw new Error(email + ': ' + error.message); return sb }
+const fn = async (sb: any, name: string, body: { uid?: any; action?: string; event?: any; from?: string; to?: string; timeZone?: string; start?: {} }) => { const { data, error } = await sb.functions.invoke(name, { body }); if (error) { let j = null; try { j = await error.context.json() } catch { /* none */ } return { status: error.context ? error.context.status : 500, ...(j || { error: error.message }) } } return { status: 200, ...data } }
 const ids: any = {}
 for (const e of ['member@example.com', 'coach@example.com', 'free@example.com']) { const { data } = await admin.from('profiles').select('id').eq('email', e).maybeSingle(); if (data) ids[e] = data.id }
 const coach = ids['coach@example.com']
-const b64url = (b: any) => Buffer.from(b).toString('base64url')
-const claims = (t: any) => JSON.parse(Buffer.from(t.split('.')[1], 'base64url').toString())
+const b64url = (b: string) => Buffer.from(b).toString('base64url')
+const claims = (t: string) => JSON.parse(Buffer.from(t.split('.')[1], 'base64url').toString())
 /* a notification signed as LiveKit signs it: HS256 with the API secret, the body's sha256 (base64) as a claim */
 const DEV = { key: 'devkey', secret: 'secretsecretsecretsecretsecretsecret' }
 const signed = (body: any) => { const raw = JSON.stringify(body); const head = b64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' })); const now = Math.floor(Date.now() / 1000); const pl = b64url(JSON.stringify({ iss: DEV.key, nbf: now - 10, exp: now + 300, sha256: createHash('sha256').update(raw).digest('base64') })); const sig = createHmac('sha256', DEV.secret).update(head + '.' + pl).digest('base64url'); return { raw, auth: head + '.' + pl + '.' + sig } }
-const post = async (body: any, auth?: any) => { const { raw, auth: a } = signed(body); const r = await fetch(url + '/functions/v1/livekit-webhook', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth ?? a }, body: raw }); return { status: r.status, ...(await r.json().catch(() => ({}))) } }
+const post = async (body: { event: string; room?: { name: any }|{ name: any }|{ name: any }|{ name: any }|{ name: any }|{ name: string }; createdAt?: number; egressInfo?: { roomName: any; status: string; fileResults: { filename: string; size: number }[] }|{ roomName: any; status: string; error: string } }, auth?: string|undefined) => { const { raw, auth: a } = signed(body); const r = await fetch(url + '/functions/v1/livekit-webhook', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth ?? a }, body: raw }); return { status: r.status, ...(await r.json().catch(() => ({}))) } }
 const stamp = Date.now().toString(36)
-const mk = async (uid: any, startMs: any, extra = {}) => { await admin.from('bookings').insert({ uid, provider: 'native', type: type.slug, event: type.event, title: type.title, user_id: ids['member@example.com'], email: 'member@example.com', name: 'Member Person', host_id: coach, provider_id: coach, provider_email: 'coach@example.com', attendee_emails: ['member@example.com'], start_at: new Date(startMs).toISOString(), end_at: new Date(startMs + type.duration * 6e4).toISOString(), status: 'accepted', where: { kind: 'video' }, room: uid, join_url: '/app/call/' + uid, ...extra }) }
+const mk = async (uid: string, startMs: any, extra = {}) => { await admin.from('bookings').insert({ uid, provider: 'native', type: type.slug, event: type.event, title: type.title, user_id: ids['member@example.com'], email: 'member@example.com', name: 'Member Person', host_id: coach, provider_id: coach, provider_email: 'coach@example.com', attendee_emails: ['member@example.com'], start_at: new Date(startMs).toISOString(), end_at: new Date(startMs + type.duration * 6e4).toISOString(), status: 'accepted', where: { kind: 'video' }, room: uid, join_url: '/app/call/' + uid, ...extra }) }
 const uids: any = { now: `ns_meet${stamp}a`, early: `ns_meet${stamp}b`, over: `ns_meet${stamp}c` }
 
 try {

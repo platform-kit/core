@@ -29,8 +29,7 @@ import YAML from 'yaml'
 /* deep value equality over what YAML holds: scalars, arrays, plain objects. Used to leave a key
    entirely alone when the save did not change it — which is what keeps the rest of the file's
    formatting exactly as its author wrote it. */
-// @ts-expect-error TS7023, from the conversion: 'same' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-export function same(a, b) {
+export function same(a: unknown, b: unknown): boolean {
   if (a === b) return true
   if (a instanceof Date) a = a.toISOString().slice(0, 10)
   if (b instanceof Date) b = b.toISOString().slice(0, 10)
@@ -42,7 +41,7 @@ export function same(a, b) {
   if (a && b && typeof a === 'object' && typeof b === 'object') {
     const ka = Object.keys(a), kb = Object.keys(b)
     if (ka.length !== kb.length) return false
-    return ka.every((k) => Object.prototype.hasOwnProperty.call(b, k) && same(a[k], b[k]))
+    return ka.every((k) => Object.prototype.hasOwnProperty.call(b, k) && same((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]))
   }
   return false
 }

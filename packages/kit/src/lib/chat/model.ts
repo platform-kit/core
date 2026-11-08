@@ -28,8 +28,7 @@ export function daySections(messages: { id: any; sender_id: any; kind: string; b
   let cur = null
   for (const m of messages) {
     const k = dayKey(new Date(m.created_at))
-    if (!cur || cur.key !== k) { cur = { key: k, label: dayLabel(m.created_at, now, words, locale), messages: [] }; out.push(cur) }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
+    if (!cur || cur.key !== k) { cur = { key: k, label: dayLabel(m.created_at, now, words, locale), messages: [] as { id: any; sender_id: any; kind: string; body: string; created_at: any; }[] }; out.push(cur) }
     cur.messages.push(m)
   }
   return out
@@ -40,8 +39,7 @@ export function daySections(messages: { id: any; sender_id: any; kind: string; b
 export function groupRuns(messages: any[]) {
   return messages.map((m, i: number) => {
     const prev = messages[i - 1], next = messages[i + 1]
-    // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-    const joins = (a, b) => a && b && a.sender_id === b.sender_id && Math.abs(new Date(b.created_at) - new Date(a.created_at)) < RUN_GAP
+    const joins = (a: { sender_id: any; created_at: string|number|Date }, b: { sender_id: any; created_at: string|number|Date }) => a && b && a.sender_id === b.sender_id && Math.abs(new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) < RUN_GAP
     return { ...m, first: !joins(prev, m), last: !joins(m, next) }
   })
 }
@@ -110,8 +108,7 @@ export function whenOf(date: string|number|Date, now = Date.now(), words: any = 
   if (dayKey(d) === dayKey(n)) return timeOf(date, locale)
   const y = new Date(n); y.setDate(y.getDate() - 1)
   if (dayKey(d) === dayKey(y)) return words.yesterday || 'Yesterday'
-  // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  if (n - d < 6 * 24 * 60 * MIN) return d.toLocaleDateString(locale, { weekday: 'short' })
+  if (n.getTime() - d.getTime() < 6 * 24 * 60 * MIN) return d.toLocaleDateString(locale, { weekday: 'short' })
   return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' })
 }
 
@@ -139,8 +136,7 @@ export function spanOf(ms: number) {
 export function sortInbox(list: any, mode = 'activity') {
   const at = (c: { last_message_at: any; created_at: any }) => new Date(c.last_message_at || c.created_at || 0).getTime()
   const rows = list.slice()
-  // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  if (mode === 'created') return rows.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+  if (mode === 'created') return rows.sort((a: { created_at: any }, b: { created_at: any }) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
   if (mode === 'awaiting') return rows.sort((a: any, b: any) => {
     const wa = a.awaiting_since ? new Date(a.awaiting_since).getTime() : null, wb = b.awaiting_since ? new Date(b.awaiting_since).getTime() : null
     if (wa != null && wb != null) return wa - wb
@@ -158,8 +154,7 @@ export function reactionSet(line: string) {
 /* rows merged by id, kept in time order: the echo of an optimistic send lands
    on the row it was, older pages slot in before */
 export function mergeMessages(have: { id: any; sender_id: any; kind: string; body: string; created_at: any }[], more: any[]) {
-  const by = new Map(have.map((m: { id: any }) => [m.id, m]))
+  const by = new Map<any, any>(have.map((m) => [m.id, m]))
   for (const m of more) by.set(m.id, { ...(by.get(m.id) || {}), ...m, pending: !!m.pending })
-  // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  return [...by.values()].sort((a, b) => new Date(a.created_at) - new Date(b.created_at) || (a.id < b.id ? -1 : 1))
+  return [...by.values()].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime() || (a.id < b.id ? -1 : 1))
 }

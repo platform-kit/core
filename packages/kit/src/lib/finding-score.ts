@@ -66,11 +66,9 @@ export function semantic(pieces: any, qvec: any) {
 }
 
 /* 0..1 across the books, 0 everywhere when nothing separates them */
-export function normalise(scores: any) {
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'number'.
+export function normalise(scores: Record<string, number>) {
   const vals = Object.values(scores); const lo = Math.min(...vals), hi = Math.max(...vals)
   const out: any = {}
-  // @ts-expect-error TS18046, from the conversion: 'v' is of type 'unknown'.
   for (const [k, v] of Object.entries(scores)) out[k] = hi > lo ? (v - lo) / (hi - lo) : 0
   return out
 }

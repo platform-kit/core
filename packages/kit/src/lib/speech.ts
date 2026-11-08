@@ -21,8 +21,7 @@ export const INTRO_KEY = '__intro__'
 /* ---- numbers, the way they are said ---- */
 const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen']
 const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
-// @ts-expect-error TS7023, from the conversion: 'numberWords' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in
-export function numberWords(n) {
+export function numberWords(n: number): string {
   n = Math.floor(Math.abs(n))
   if (n < 20) return ONES[n]
   if (n < 100) return TENS[Math.floor(n / 10)] + (n % 10 ? '-' + ONES[n % 10] : '')
@@ -119,6 +118,6 @@ export function chapterSpeech(chapter: { intro?: any; md: any; title?: any }, su
 /* the bytes a recording's name is the hash of: the engine, its voice and
    settings, and the exact words. Each side hashes this itself (sha1, 16 hex):
    node with createHash, the browser with crypto.subtle. */
-export function hashInput(text: any, engine = ENGINE) {
+export function hashInput(text: string, engine: { name: string, voice: string, steps: number, speed: number, gap: number } = ENGINE) {
   return [engine.name, engine.voice, engine.steps, engine.speed, engine.gap, text].join('\n')
 }

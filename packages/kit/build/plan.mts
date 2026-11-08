@@ -565,7 +565,7 @@ export function printPlan(plan: any, target: any, log = console.log, { verbose =
 export function summarise(sql: any) {
   const st = statements(sql || '')
   const kinds = new Map()
-  const objects = new Set()
+  const objects = new Set<string>()
   for (const { text } of st) {
     const t = String(text).replace(/\s+/g, ' ').trim()
     const m = /^(create(?: or replace)?|alter|drop|comment on|grant|revoke|truncate|do|set|insert|update|delete|select)\s*(table|view|materialized view|function|procedure|trigger|policy|index|type|schema|sequence|extension|publication|domain|aggregate)?\b/i.exec(t)

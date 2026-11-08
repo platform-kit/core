@@ -79,7 +79,6 @@ export async function compileFunnels({ check = false, store, offers = null, desi
   const err = (m: string) => errors.push(m)
   const rulesOf = (audience: any, where: string) => {
     for (const k of Object.keys(audience || {})) if (!RULE_KEYS.includes(k)) err(`${where}: audience rule "${k}" is not one of ${RULE_KEYS.join(', ')}`)
-    // @ts-expect-error TS2322, from the conversion: Type '(slug: any) => any[]' is not assignable to type 'null | undefined'.
     return normalizeRules(audience, { skusOf })
   }
   const funnels: any = {}

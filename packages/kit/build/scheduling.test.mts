@@ -15,7 +15,7 @@ import { openStarts, byDay, wallToUtc, dayOf } from '../supabase/functions/_shar
 import { leave, notHere } from './test-stack.mjs'
 
 let n = 0, bad = 0
-const ta = async (name: any, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
+const ta = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
 const url = supabaseUrl(), anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
 let up = false
 // @ts-expect-error TS2322, from the conversion: Type 'string | boolean' is not assignable to type 'boolean'. Type 'string' is not assignable to type 'boolean'.
@@ -24,16 +24,16 @@ let served = false
 if (up) { try { served = (await fetch(url + '/functions/v1/session-slots', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* not served */ } }
 if (!up || !served) { console.log(`scheduling: skipped — ${!up ? 'the local stack is not up' : 'the functions are not served (npm run dev serves them)'}`); leave(0) }
 const catalog = JSON.parse(fs.readFileSync('supabase/functions/_shared/catalog.json', 'utf8'))
-const types = (catalog.sessions || []).filter((s: any) => s.scheduler === 'native')
-const one = types.find((s: any) => !s.sku && !(s.seats > 0) && s.duration === 60 && s.hosts.includes('coach@example.com'))   /* an hour long: the overlaps below are counted for an hour */
-const group = types.find((s: any) => !s.sku && s.seats > 0 && s.hosts.includes('coach@example.com'))
-const paidType = (catalog.sessions || []).find((s: any) => s.scheduler === 'native' && s.sku && s.hosts.includes('coach@example.com'))
+const types = (catalog.sessions || []).filter((s: { scheduler: string }) => s.scheduler === 'native')
+const one = types.find((s: { sku: any; seats: number; duration: number; hosts: string|string[] }) => !s.sku && !(s.seats > 0) && s.duration === 60 && s.hosts.includes('coach@example.com'))   /* an hour long: the overlaps below are counted for an hour */
+const group = types.find((s: { sku: any; seats: number; hosts: string|string[] }) => !s.sku && s.seats > 0 && s.hosts.includes('coach@example.com'))
+const paidType = (catalog.sessions || []).find((s: { scheduler: string; sku: any; hosts: string|string[] }) => s.scheduler === 'native' && s.sku && s.hosts.includes('coach@example.com'))
 const allowances = catalog.allowances || {}
-const linked = types.find((s: any) => !s.sku && !(s.seats > 0) && s.where?.kind === 'link' && s.hosts.includes('coach@example.com'))
+const linked = types.find((s: { sku: any; seats: number; where: { kind: string }; hosts: string|string[] }) => !s.sku && !(s.seats > 0) && s.where?.kind === 'link' && s.hosts.includes('coach@example.com'))
 /* Mailpit takes the local stack's mail (npm run dev points SMTP_HOST at it): its API on the stack's inbucket port */
 /* the stack's own mail catcher, as the end-to-end run names it; the CLI's default port otherwise */
 const MAIL = process.env.PLATFORMKIT_TEST_MAIL_URL || url.replace(/:\d+$/, ':54324')
-const mail = { async up() { try { return (await fetch(MAIL + '/api/v1/messages?limit=1', { signal: AbortSignal.timeout(1500) })).ok } catch { return false } }, async clear() { await fetch(MAIL + '/api/v1/messages', { method: 'DELETE' }) }, async list() { const r = await fetch(MAIL + '/api/v1/messages?limit=50'); return (await r.json()).messages || [] }, async raw(id: any) { return await (await fetch(MAIL + '/api/v1/message/' + id + '/raw')).text() } }
+const mail = { async up() { try { return (await fetch(MAIL + '/api/v1/messages?limit=1', { signal: AbortSignal.timeout(1500) })).ok } catch { return false } }, async clear() { await fetch(MAIL + '/api/v1/messages', { method: 'DELETE' }) }, async list() { const r = await fetch(MAIL + '/api/v1/messages?limit=50'); return (await r.json()).messages || [] }, async raw(id: string) { return await (await fetch(MAIL + '/api/v1/message/' + id + '/raw')).text() } }
 /* IS THE SITE'S MAIL GOING TO THE LOCAL MAILPIT? Only then are the letters safe to read — Mailpit
    answers on every machine that has the stack running, and on one whose SMTP_HOST is a real relay
    the letters go there instead, so asking Mailpit whether it is awake and then reading nothing is a
@@ -48,16 +48,16 @@ const toMailpit = () => {
 const mailUp = toMailpit() && await mail.up()
 if (!mailUp) console.log('scheduling: the site\'s relay is not the local Mailpit — the letters are not looked at')
 const settle = (ms = 2500) => new Promise((r) => setTimeout(r, ms))
-const publicType = (catalog.sessions || []).find((s: any) => s.published !== false && ['anyone', 'guest'].includes(s.requires))
+const publicType = (catalog.sessions || []).find((s: { published: boolean; requires: string }) => s.published !== false && ['anyone', 'guest'].includes(s.requires))
 if (publicType) {
-  const post = async (name: any, body: any) => {
+  const post = async (name: string, body: { event?: any; from?: string; to?: string; start?: string; timeZone?: string; items?: { sku: any; quantity: number }[]; booking?: { event: any; start: string; timeZone: string } }) => {
     const r = await fetch(url + '/functions/v1/' + name, { method: 'POST', headers: { apikey: anonKey, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     return { status: r.status, ...(await r.json().catch(() => ({}))) }
   }
   await ta('anonymous availability is limited to public declared types, and booking and paid checkout still require a JWT', async () => {
     const open = await post('session-slots', { event: publicType.event, from: 'bad', to: 'bad' })
     assert.equal(open.status, 400, JSON.stringify(open))  /* passed the public gate; invalid dates stop before the scheduler */
-    const privateType = (catalog.sessions || []).find((s: any) => s.published !== false && !['anyone', 'guest'].includes(s.requires))
+    const privateType = (catalog.sessions || []).find((s: { published: boolean; requires: string }) => s.published !== false && !['anyone', 'guest'].includes(s.requires))
     if (privateType) {
       const denied = await post('session-slots', { event: privateType.event, from: 'bad', to: 'bad' })
       assert.equal(denied.status, 401, JSON.stringify(denied))
@@ -75,8 +75,8 @@ if (!one) { notHere('scheduling', 'the site has no native 60-minute one-to-one t
 
 const { createClient } = await import('@supabase/supabase-js')
 const admin = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
-const as = async (email: any) => { const sb = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } }); const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' }); if (error) throw new Error(email + ': ' + error.message); return sb }
-const fn = async (sb: any, name: any, body: any) => { const { data, error } = await sb.functions.invoke(name, { body }); if (error) { let j = null; try { j = await error.context.json() } catch { /* none */ } return { status: error.context ? error.context.status : 500, ...(j || { error: error.message }) } } return { status: 200, ...data } }
+const as = async (email: string) => { const sb = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } }); const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' }); if (error) throw new Error(email + ': ' + error.message); return sb }
+const fn = async (sb: any, name: string, body: any) => { const { data, error } = await sb.functions.invoke(name, { body }); if (error) { let j = null; try { j = await error.context.json() } catch { /* none */ } return { status: error.context ? error.context.status : 500, ...(j || { error: error.message }) } } return { status: 200, ...data } }
 const ids: any = {}
 for (const e of ['member@example.com', 'member2@example.com', 'free@example.com', 'coach@example.com', 'admin@example.com', 'writer@example.com']) { const { data } = await admin.from('profiles').select('id').eq('email', e).maybeSingle(); if (data) ids[e] = data.id }
 const coach = ids['coach@example.com']
@@ -84,7 +84,7 @@ const AMS = 'Europe/Amsterdam'
 const HOURS = { timezone: AMS, weekly: { 1: [['09:00', '12:00']], 2: [['09:00', '12:00']], 3: [['09:00', '12:00']], 4: [['09:00', '12:00']], 5: [['09:00', '12:00']] }, buffer_before: 0, buffer_after: 0, notice_hours: 24, max_per_day: 0 }
 /* a weekday at least three days out, with nothing of the coach's on it */
 const pickDay = async () => { for (let i = 3; i < 20; i++) { const ms = Date.now() + i * 864e5; const { day, weekday } = dayOf(ms, AMS); if (weekday > 5) continue; const { data } = await admin.from('bookings').select('uid').eq('host_id', coach).gte('start_at', day + 'T00:00:00Z').lte('start_at', day + 'T23:59:59Z'); if (!(data || []).length) return day } throw new Error('no free weekday') }
-const grant = async (email: any, tier: any) => { await admin.from('entitlements').insert({ user_id: ids[email], kind: 'class', key: 'subscribed', source: 'grant', source_id: 'probe-sched', tier, active: true, expires_at: new Date(Date.now() + 864e5).toISOString() }) }
+const grant = async (email: string, tier: any) => { await admin.from('entitlements').insert({ user_id: ids[email], kind: 'class', key: 'subscribed', source: 'grant', source_id: 'probe-sched', tier, active: true, expires_at: new Date(Date.now() + 864e5).toISOString() }) }
 /* a host keeps any number of sets now, so the run puts back every one of them, exactly */
 const saved = { hours: (await admin.from('provider_schedules').select('*').eq('user_id', coach)).data || [], overrides: (await admin.from('provider_overrides').select('*').eq('user_id', coach)).data || [] }
 const made: any = []   /* uids to remove */
@@ -93,9 +93,9 @@ const newUsers: any = []   /* accounts the run made */
    the entitlements a paid one granted (session:<uid>) and its reminders, its grants, the invitee's account */
 async function sweep() {
   const { data: mine } = await admin.from('bookings').select('uid').or("payload->>notes.eq.probe-sched,uid.like.ns_probe%")
-  const uids: any = [...new Set([...(mine || []).map((b) => b.uid), ...made])]
+  const uids = [...new Set([...(mine || []).map((b) => b.uid), ...made])]
   if (uids.length) {
-    await admin.from('entitlements').delete().in('source_id', uids.map((u: any) => 'session:' + u))
+    await admin.from('entitlements').delete().in('source_id', uids.map((u) => 'session:' + u))
     await admin.from('session_reminders').delete().in('booking_uid', uids)
     await admin.from('bookings').delete().in('uid', uids)
   }
@@ -111,14 +111,14 @@ async function sweep() {
 await sweep()
 /* the readers the run books with: of the seed's three, those with no accepted booking of a type in the last month
    (the seed itself books the demo's member on the members' call) */
-const fresh = async (event: any, n: any) => { const out = []; for (const e of ['member@example.com', 'member2@example.com', 'free@example.com']) { const { data } = await admin.from('bookings').select('uid').eq('user_id', ids[e]).eq('event', event).in('status', ['accepted', 'pending']).gte('start_at', new Date(Date.now() - 31 * 864e5).toISOString()); if (!(data || []).length) out.push(e); if (out.length === n) break } return out }
+const fresh = async (event: any, n: number) => { const out = []; for (const e of ['member@example.com', 'member2@example.com', 'free@example.com']) { const { data } = await admin.from('bookings').select('uid').eq('user_id', ids[e]).eq('event', event).in('status', ['accepted', 'pending']).gte('start_at', new Date(Date.now() - 31 * 864e5).toISOString()); if (!(data || []).length) out.push(e); if (out.length === n) break } return out }
 
 try {
   const tier = ['anyone', 'guest', 'authenticated'].includes(one.requires) ? null : one.requires
   for (const e of ['member@example.com', 'member2@example.com', 'free@example.com']) if (tier) await grant(e, tier)
   const member = await as('member@example.com'), member2 = await as('member2@example.com'), free = await as('free@example.com'), host = await as('coach@example.com')
   const day = await pickDay()
-  const at = (hhmm: any) => new Date(wallToUtc(day, hhmm, AMS)).toISOString()
+  const at = (hhmm: string) => new Date(wallToUtc(day, hhmm, AMS)).toISOString()
   /* the paid type's checks book on a day of their own: by then the first day's morning is full */
   const pickAnother = async (...not: any[]) => { for (let i = 3; i < 200; i++) { const ms = Date.now() + i * 864e5; const { day: d, weekday } = dayOf(ms, AMS); if (weekday > 5 || not.includes(d)) continue; const { data } = await admin.from('bookings').select('uid').eq('host_id', coach).in('status', ['accepted', 'pending']).gte('start_at', d + 'T00:00:00Z').lte('start_at', d + 'T23:59:59Z'); if (!(data || []).length) return d } throw new Error('no free weekday left — every check takes one, so the scan looks half a year out') }
   const day2 = await pickAnother(day)
@@ -186,7 +186,7 @@ try {
     assert.equal(r.status, 403, JSON.stringify(r)); assert.equal(r.code, 'over')
   })
   await ta('a move 30+ hours ahead lands, frees the old time, keeps the uid; inside the notice the reader is refused and the host is not', async () => {
-    const r: any = await fn(member, 'book-session', { event: one.event, start: at('11:00'), timeZone: 'UTC', reschedule: booked.uid, notes: 'probe-sched' })
+    const r = await fn(member, 'book-session', { event: one.event, start: at('11:00'), timeZone: 'UTC', reschedule: booked.uid, notes: 'probe-sched' })
     assert.equal(r.status, 200, JSON.stringify(r)); assert.equal(r.booking.uid, booked.uid)
     const s = await fn(member, 'session-slots', { event: one.event, from: day, to: day, timeZone: 'UTC' })
     assert.ok(Object.values(s.slots).flat().includes(at('10:00')), 'the old time is open again')
@@ -206,7 +206,7 @@ try {
     assert.equal((row as any).status, 'cancelled')
   })
   await ta('a cancellation by the reader beyond the notice frees the time', async () => {
-    const r: any = await fn(member, 'cancel-session', { uid: booked.uid })
+    const r = await fn(member, 'cancel-session', { uid: booked.uid })
     assert.equal(r.status, 200, JSON.stringify(r))
     const s = await fn(member, 'session-slots', { event: one.event, from: day, to: day, timeZone: 'UTC' })
     assert.ok(Object.values(s.slots).flat().includes(at('11:00')))
@@ -218,18 +218,18 @@ try {
     assert.equal(r.status, 200, JSON.stringify(r)); made.push(r.booking.uid)
     await settle()
     const list = await mail.list()
-    const booked = list.filter((m: any) => /is booked/.test(m.Subject))
-    assert.equal(booked.length, 2, JSON.stringify(list.map((m: any) => m.Subject)))
-    const tos = booked.map((m: any) => m.To[0].Address).sort()
+    const booked = list.filter((m: { Subject: string }) => /is booked/.test(m.Subject))
+    assert.equal(booked.length, 2, JSON.stringify(list.map((m: { Subject: any }) => m.Subject)))
+    const tos = booked.map((m: { To: { Address: any }[] }) => m.To[0].Address).sort()
     assert.deepEqual(tos, ['coach@example.com', 'member@example.com'])
-    const raw = await mail.raw(booked.find((m: any) => m.To[0].Address === 'member@example.com').ID)
+    const raw = await mail.raw(booked.find((m: { To: { Address: string }[] }) => m.To[0].Address === 'member@example.com').ID)
     assert.ok(/BEGIN:VCALENDAR/.test(raw) && /METHOD:REQUEST/.test(raw), 'an invitation attached')
     if (one.where?.kind === 'place') { const un = raw.replace(/=\r?\n/g, '').replace(/\r?\n /g, ''); assert.ok(un.includes('LOCATION:' + (one.where.name || '').replace(/,/g, '\\,')), 'the place in the invitation\'s location: ' + (un.match(/LOCATION:[^\r\n]*/) || [])[0]) }
     assert.ok(!/cal\.com/.test(raw), 'no cal.com link')
     assert.ok(/One on one|with/.test(raw), 'the words')
     await fn(member, 'cancel-session', { uid: r.booking.uid })
     await settle()
-    const cancelled = (await mail.list()).filter((m: any) => /is cancelled/.test(m.Subject))
+    const cancelled = (await mail.list()).filter((m: { Subject: string }) => /is cancelled/.test(m.Subject))
     assert.equal(cancelled.length, 2)
     const craw = await mail.raw(cancelled[0].ID)
     assert.ok(/METHOD:CANCEL/.test(craw) && /SEQUENCE:1/.test(craw), 'a cancellation with its sequence')
@@ -241,33 +241,33 @@ try {
       assert.equal(l.status, 200, JSON.stringify(l)); made.push(l.booking.uid)
       assert.equal(l.booking.join_url, linked.where.url)
       await settle()
-      const lraw = await mail.raw((await mail.list()).find((m: any) => m.To[0].Address === 'member@example.com').ID)
+      const lraw = await mail.raw((await mail.list()).find((m: { To: { Address: string }[] }) => m.To[0].Address === 'member@example.com').ID)
       assert.ok(lraw.replace(/=\r?\n/g, '').includes('URL:' + linked.where.url) || lraw.includes(linked.where.url), 'the link in the invitation')
     }
   })
   await ta('reminded at the policy\'s hours, once each, never for a cancelled session', async () => {
     if (!mailUp) return
     await mail.clear()
-    const mk = async (uid: any, startMs: any, status = 'accepted') => { await admin.from('bookings').insert({ uid, provider: 'native', type: one.slug, event: one.event, title: one.title, user_id: ids['member@example.com'], email: 'member@example.com', name: 'Member Person', host_id: coach, provider_id: coach, provider_email: 'coach@example.com', attendee_emails: ['member@example.com'], start_at: new Date(startMs).toISOString(), end_at: new Date(startMs + one.duration * 6e4).toISOString(), status, where: { kind: 'none' }, payload: { tz: 'UTC' } }); made.push(uid) }
+    const mk = async (uid: string, startMs: any, status = 'accepted') => { await admin.from('bookings').insert({ uid, provider: 'native', type: one.slug, event: one.event, title: one.title, user_id: ids['member@example.com'], email: 'member@example.com', name: 'Member Person', host_id: coach, provider_id: coach, provider_email: 'coach@example.com', attendee_emails: ['member@example.com'], start_at: new Date(startMs).toISOString(), end_at: new Date(startMs + one.duration * 6e4).toISOString(), status, where: { kind: 'none' }, payload: { tz: 'UTC' } }); made.push(uid) }
     const t = Date.now().toString(36)
     await mk('ns_probe24' + t, Date.now() + 24 * 36e5 - 5 * 6e4)
     await mk('ns_probe1' + t, Date.now() + 36e5 - 5 * 6e4)
     await mk('ns_probex' + t, Date.now() + 36e5 - 5 * 6e4, 'cancelled')
     await mk('ns_probefar' + t, Date.now() + 48 * 36e5)
-    const call = async (body: any) => { const r = await fetch(url + '/functions/v1/session-reminders', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + serviceKey() }, body: JSON.stringify(body) }); return { status: r.status, ...(await r.json()) } }
+    const call = async (body: { action: string; dry?: boolean }) => { const r = await fetch(url + '/functions/v1/session-reminders', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + serviceKey() }, body: JSON.stringify(body) }); return { status: r.status, ...(await r.json()) } }
     const dry = await call({ action: 'send', dry: true })
     assert.equal(dry.status, 200, JSON.stringify(dry))
-    assert.deepEqual(dry.reminders.map((d: any) => d.uid + ':' + d.hours).sort(), ['ns_probe1' + t + ':1', 'ns_probe24' + t + ':24'].sort(), JSON.stringify(dry))
+    assert.deepEqual(dry.reminders.map((d: { uid: string; hours: string }) => d.uid + ':' + d.hours).sort(), ['ns_probe1' + t + ':1', 'ns_probe24' + t + ':24'].sort(), JSON.stringify(dry))
     const first = await call({ action: 'send' })
     assert.equal(first.sent, 2, JSON.stringify(first))
     const again = await call({ action: 'send' })
     assert.equal(again.sent, 0); assert.equal(again.reminders.length, 0)
     await settle()
     const list = await mail.list()
-    const rem = list.filter((m: any) => /Your session is/.test(m.Subject))
-    assert.equal(rem.length, 2, JSON.stringify(list.map((m: any) => m.Subject)))
-    assert.ok(rem.some((m: any) => /in 24 hours/.test(m.Subject)) && rem.some((m: any) => /in an hour/.test(m.Subject)), JSON.stringify(rem.map((m: any) => m.Subject)))
-    assert.ok(rem.every((m: any) => m.To[0].Address === 'member@example.com'), 'the reader alone')
+    const rem = list.filter((m: { Subject: string }) => /Your session is/.test(m.Subject))
+    assert.equal(rem.length, 2, JSON.stringify(list.map((m: { Subject: any }) => m.Subject)))
+    assert.ok(rem.some((m: { Subject: string }) => /in 24 hours/.test(m.Subject)) && rem.some((m: { Subject: string }) => /in an hour/.test(m.Subject)), JSON.stringify(rem.map((m: { Subject: any }) => m.Subject)))
+    assert.ok(rem.every((m: { To: { Address: string }[] }) => m.To[0].Address === 'member@example.com'), 'the reader alone')
     const guest = await fetch(url + '/functions/v1/session-reminders', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + anonKey }, body: '{"action":"send"}' })
     assert.equal(guest.status, 401)
     await admin.from('session_reminders').delete().like('booking_uid', 'ns_probe%')
@@ -327,8 +327,8 @@ try {
     if (mailUp) {
       await settle()
       const list = await mail.list()
-      const booked = list.filter((m: any) => /is booked/.test(m.Subject))
-      const tos = booked.map((m: any) => m.To[0].Address).sort()
+      const booked = list.filter((m: { Subject: string }) => /is booked/.test(m.Subject))
+      const tos = booked.map((m: { To: { Address: any }[] }) => m.To[0].Address).sort()
       assert.deepEqual(tos, ['coach@example.com', 'free@example.com', 'guest.person@example.org'], JSON.stringify(tos))
     }
     /* an invitee with no account yet: an account with that address finds the booking by email — no linking step —
@@ -381,7 +381,7 @@ try {
    * predict: who takes the next booking, what a cancellation does to the order, whether a busy host
    * is skipped, and who the hosts even are when a team gives the type.
    */
-  const rr = types.find((s: any) => s.assign === 'round-robin' && (s.team || s.hosts.length > 1) && !s.sku && !(s.seats > 0))
+  const rr = types.find((s: { assign: string; team: any; hosts: string|any[]; sku: any; seats: number }) => s.assign === 'round-robin' && (s.team || s.hosts.length > 1) && !s.sku && !(s.seats > 0))
   if (rr) await ta('the rota puts the booking on the host whose turn it is, and a busy host is skipped', async () => {
     /* both hosts keep the same hours, so only the rota can decide between them */
     // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
@@ -390,7 +390,7 @@ try {
     for (const id of both) { await admin.from('provider_schedules').delete().eq('user_id', id); await admin.from('provider_schedules').insert({ user_id: id, name: 'Working hours', is_default: true, ...HOURS }) }
     const dayR = await nextDay()
     // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-    const who = async (start: any) => { const r = await fn(member, 'book-session', { event: rr.event, start, timeZone: 'UTC', notes: 'probe-sched' }); assert.equal(r.status, 200, JSON.stringify(r)); made.push(r.booking.uid); return (await admin.from('bookings').select('host_id').eq('uid', r.booking.uid).single()).data.host_id }
+    const who = async (start) => { const r = await fn(member, 'book-session', { event: rr.event, start, timeZone: 'UTC', notes: 'probe-sched' }); assert.equal(r.status, 200, JSON.stringify(r)); made.push(r.booking.uid); return (await admin.from('bookings').select('host_id').eq('uid', r.booking.uid).single()).data.host_id }
     const s = await fn(member, 'session-slots', { event: rr.event, from: dayR, to: dayR, timeZone: 'UTC' })
     const open = Object.values(s.slots || {}).flat()
     assert.ok(open.length >= 2, 'two open times: ' + JSON.stringify(s))
@@ -411,7 +411,7 @@ try {
   if (rr && rr.team) await ta('a team\'s type takes its members, so who gives it follows the rows', async () => {
     const { data: before } = await admin.from('team_members').select('user_id').eq('team', rr.team)
     const outsider = ids['member2@example.com']
-    assert.ok(!(before as any).some((m: any) => m.user_id === outsider), 'the reader is not in the team to begin with')
+    assert.ok(!(before as any).some((m: { user_id: any }) => m.user_id === outsider), 'the reader is not in the team to begin with')
     /* put them in by hand — an act, a row, source 'manual' — and give them the same hours */
     await admin.from('provider_schedules').delete().eq('user_id', outsider)
     await admin.from('provider_schedules').insert({ user_id: outsider, name: 'Working hours', is_default: true, ...HOURS })
@@ -433,7 +433,7 @@ try {
       await admin.from('provider_schedules').delete().eq('user_id', outsider)
     }
   })
-  const coll = types.find((s: any) => s.assign === 'collective' && s.hosts.length > 1 && !s.sku)
+  const coll = types.find((s: { assign: string; hosts: string|any[]; sku: any }) => s.assign === 'collective' && s.hosts.length > 1 && !s.sku)
   if (coll) await ta('a collective booking takes the time from every host at once', async () => {
     const all: any = (await admin.from('profiles').select('id, email').in('email', coll.hosts)).data
     assert.equal(all.length, coll.hosts.length)
@@ -449,18 +449,18 @@ try {
        and a rota, and the only thing that stops one host being double-booked at that hour. */
     const { data: holds } = await admin.from('booking_holds').select('user_id').eq('booking_uid', r.booking.uid)
     assert.equal((holds as any).length, all.length, 'a hold per host: ' + JSON.stringify(holds))
-    assert.deepEqual((holds as any).map((h: any) => h.user_id).sort(), all.map((p: any) => p.id).sort())
+    assert.deepEqual((holds as any).map((h: { user_id: any }) => h.user_id).sort(), all.map((p: { id: any }) => p.id).sort())
     const { data: row } = await admin.from('bookings').select('payload').eq('uid', r.booking.uid).single()
     assert.equal(((row as any).payload.co_hosts || []).length, all.length - 1, 'the booking says who else is coming')
     /* and that time is now gone for both of them, on every type they give */
     const after = await fn(member, 'session-slots', { event: coll.event, from: dayC, to: dayC, timeZone: 'UTC' })
     assert.ok(!Object.values(after.slots || {}).flat().includes(open[0]), 'the time is no longer offered')
   })
-  const man = types.find((s: any) => s.assign === 'managed' && s.team)
+  const man = types.find((s: { assign: string; team: any }) => s.assign === 'managed' && s.team)
   if (man) await ta('a managed type is each member\'s own: bookable at their address, dead at somebody else\'s, and a leaver\'s bookings stand', async () => {
     const { data: mem } = await admin.from('team_members').select('user_id').eq('team', man.team)
     // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-    const them = (await admin.from('profiles').select('id, email, username').in('id', (mem as any).map((m: any) => m.user_id))).data.filter((p) => p.username)
+    const them = (await admin.from('profiles').select('id, email, username').in('id', mem.map((m) => m.user_id))).data.filter((p) => p.username)
     assert.ok(them.length, 'a member with a username to be addressed by')
     const me = them[0]
     await admin.from('provider_schedules').delete().eq('user_id', me.id)
@@ -500,14 +500,14 @@ try {
       await admin.from('team_members').insert(was)
     }
   })
-  const capped = types.find((s: any) => s.limits && Number(s.limits.week) > 0 && !s.sku && !(s.seats > 0))
+  const capped = types.find((s: { limits: { week: any }; sku: any; seats: number }) => s.limits && Number(s.limits.week) > 0 && !s.sku && !(s.seats > 0))
   if (capped) await ta('the cap is reached, not approached: the week fills, the week after is untouched, and a late confirmation is told which', async () => {
     const week = Number(capped.limits.week)
     // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
     const ids2 = (await admin.from('profiles').select('id').in('email', capped.hosts)).data.map((p) => p.id)
     for (const id of ids2) { await admin.from('provider_schedules').delete().eq('user_id', id); await admin.from('provider_schedules').insert({ user_id: id, name: 'Working hours', is_default: true, ...HOURS }) }
     const dayL = await nextDay()
-    const book = async (start: any) => { const r = await fn(member, 'book-session', { event: capped.event, start, timeZone: 'UTC', notes: 'probe-sched' }); if (r.status === 200) made.push(r.booking.uid); return r }
+    const book = async (start: unknown) => { const r = await fn(member, 'book-session', { event: capped.event, start, timeZone: 'UTC', notes: 'probe-sched' }); if (r.status === 200) made.push(r.booking.uid); return r }
     const s = await fn(member, 'session-slots', { event: capped.event, from: dayL, to: dayL, timeZone: 'UTC' })
     const open = Object.values(s.slots || {}).flat()
     assert.ok(open.length >= week, `${week} open times to fill the week: ` + JSON.stringify(s.slots))
@@ -535,7 +535,7 @@ try {
     const later = await fn(member, 'session-slots', { event: capped.event, from: nextWeek, to: nextWeek, timeZone: 'UTC' })
     assert.ok(Object.values(later.slots || {}).flat().length, 'the week after is untouched: ' + JSON.stringify(later))
   })
-  const seasonal = types.find((s: any) => s.windowTo && !s.sku)
+  const seasonal = types.find((s: { windowTo: any; sku: any }) => s.windowTo && !s.sku)
   if (seasonal) await ta('a window that has closed says so, rather than showing an empty month', async () => {
     const past = seasonal.windowTo.slice(0, 8) + '01'
     const later = new Date(Date.parse(seasonal.windowTo + 'T12:00:00Z') + 40 * 864e5).toISOString().slice(0, 10)
@@ -546,7 +546,7 @@ try {
     assert.equal(shut.why.to, seasonal.windowTo)
     void past
   })
-  const noCancel = types.find((s: any) => s.page && s.page.cancel === false && !s.sku)
+  const noCancel = types.find((s: { page: { cancel: boolean }; sku: any }) => s.page && s.page.cancel === false && !s.sku)
   if (noCancel) await ta("the page's own switches are refused where they say no, and a host is not held to them", async () => {
     // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
     const ids3 = (await admin.from('profiles').select('id').in('email', noCancel.hosts)).data.map((p) => p.id)
@@ -570,7 +570,7 @@ try {
     const yes = await fn(host, 'cancel-session', { uid: r.booking.uid })
     assert.equal(yes.status, 200, 'the host cancels it anyway: ' + JSON.stringify(yes))
   })
-  const hidden = types.find((s: any) => s.page && s.page.hidden === true && !s.sku)
+  const hidden = types.find((s: { page: { hidden: boolean }; sku: any }) => s.page && s.page.hidden === true && !s.sku)
   if (hidden) await ta('a hidden type is off every list and books by its own address all the same', async () => {
     // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
     const ids4 = (await admin.from('profiles').select('id').in('email', hidden.hosts)).data.map((p) => p.id)
@@ -584,7 +584,7 @@ try {
     assert.equal(r.status, 200, 'and books: ' + JSON.stringify(r))
     made.push(r.booking.uid)
   })
-  const asks = types.find((s: any) => s.form && !(s.seats > 0))
+  const asks = types.find((s: { form: any; seats: number }) => s.form && !(s.seats > 0))
   if (asks) await ta('what they answered on the way in is kept with the booking — and only if it is theirs', async () => {
     // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
     const ids5 = (await admin.from('profiles').select('id').in('email', asks.hosts)).data.map((p) => p.id)
@@ -624,7 +624,7 @@ try {
     }
     await admin.from('form_responses').delete().in('id', [mine.id, theirs.id])
   })
-  const asked2 = types.find((s: any) => s.confirm === true && !s.sku && !(s.seats > 0))
+  const asked2 = types.find((s: { confirm: boolean; sku: any; seats: number }) => s.confirm === true && !s.sku && !(s.seats > 0))
   if (asked2) await ta('a booking that waits for the host holds the time, and yes or no is theirs to say', async () => {
     // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
     const ids6 = (await admin.from('profiles').select('id').in('email', asked2.hosts)).data.map((p) => p.id)
@@ -669,7 +669,7 @@ try {
     const back = await fn(member, 'session-slots', { event: asked2.event, from: dayC2, to: dayC2, timeZone: 'UTC' })
     assert.ok(Object.values(back.slots || {}).flat().includes(open[open.length - 1]), 'and offered again')
   })
-  const many = types.find((s: any) => Array.isArray(s.lengths) && s.lengths.length > 1 && !s.sku && !(s.seats > 0))
+  const many = types.find((s: { lengths: string|any[]; sku: any; seats: number }) => Array.isArray(s.lengths) && s.lengths.length > 1 && !s.sku && !(s.seats > 0))
   if (many) await ta('the length they chose is the length that is booked, and the booking is called what the type says', async () => {
     // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
     const ids7 = (await admin.from('profiles').select('id').in('email', many.hosts)).data.map((p) => p.id)
@@ -699,7 +699,7 @@ try {
     const { data: row2 } = await admin.from('bookings').select('start_at, end_at').eq('uid', r2.booking.uid).single()
     assert.equal((Date.parse((row2 as any).end_at) - Date.parse((row2 as any).start_at)) / 6e4, many.duration, 'a length nobody offers is the type\'s own')
   })
-  const seated = types.find((s: any) => s.seats > 1 && (s.page || {}).seatsLeft === true)
+  const seated = types.find((s: { seats: number; page: any }) => s.seats > 1 && (s.page || {}).seatsLeft === true)
   if (seated) await ta('a group says how many seats are left, and a seat gives up only its own', async () => {
     const s = await fn(member, 'session-slots', { event: seated.event, from: await nextDay(), to: await nextDay(), timeZone: 'UTC' })
     /* a fixed-time type answers for its own occurrences, so the day asked for may hold none */
@@ -728,10 +728,10 @@ try {
       assert.equal((theirs as any).status, 'accepted', "one seat leaving does not cancel anybody else's")
       const { data: holds } = await admin.from('booking_holds').select('id').eq('booking_uid', b2.booking.uid)
       // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-      assert.ok((holds as any).length || (await admin.from('booking_holds').select('id').eq('booking_uid', a.booking.uid)).data.length === 0, 'and the hour is still held while somebody is in it')
+      assert.ok(holds.length || (await admin.from('booking_holds').select('id').eq('booking_uid', a.booking.uid)).data.length === 0, 'and the hour is still held while somebody is in it')
     }
   })
-  const course = types.find((s: any) => s.repeat && s.repeat.count > 1 && !s.sku)
+  const course = types.find((s: { repeat: { count: number }; sku: any }) => s.repeat && s.repeat.count > 1 && !s.sku)
   if (course) await ta('a run is booked whole, one of it can be moved alone, and cancelling asks which', async () => {
     // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
     const ids8 = (await admin.from('profiles').select('id').in('email', course.hosts)).data.map((p) => p.id)
@@ -747,10 +747,10 @@ try {
     // @ts-expect-error TS18047, from the conversion: 'run' is possibly 'null'.
     for (const b of run) made.push(b.uid)
     assert.equal((run as any).length, course.repeat.count, 'every session of the run is its own booking')
-    assert.ok((run as any).every((b: any) => b.run_of === r.booking.uid), 'and they all carry the first one\'s uid')
+    assert.ok((run as any).every((b: { run_of: any }) => b.run_of === r.booking.uid), 'and they all carry the first one\'s uid')
     /* A WEEK APART IN WALL TIME, not by adding milliseconds — the clocks change and nine stays nine */
-    const gaps = (run as any).slice(1).map((b: any, i: any) => Math.round((Date.parse(b.start_at) - Date.parse((run as any)[i].start_at)) / 864e5))
-    assert.ok(gaps.every((g: any) => g === 7), 'a week apart, every one: ' + gaps.join(','))
+    const gaps = (run as any).slice(1).map((b: { start_at: string }, i: string|number) => Math.round((Date.parse(b.start_at) - Date.parse((run as any)[i].start_at)) / 864e5))
+    assert.ok(gaps.every((g: number) => g === 7), 'a week apart, every one: ' + gaps.join(','))
     /* MOVING ONE LEAVES THE REST WHERE THEY ARE */
     const dayR3 = await nextDay()
     const s2 = await fn(member, 'session-slots', { event: course.event, from: dayR3, to: dayR3, timeZone: 'UTC' })
@@ -760,21 +760,21 @@ try {
     const { data: after } = await admin.from('bookings').select('uid, start_at').eq('run_of', r.booking.uid).order('start_at')
     assert.equal((after as any).length, course.repeat.count, 'the run is still the same size')
     // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
-    assert.equal(Date.parse((after as any).find((b: any) => b.uid === (run as any)[1].uid).start_at), Date.parse(to), 'the one moved is where it was moved to')
-    assert.equal(Date.parse((after as any).find((b: any) => b.uid === (run as any)[2].uid).start_at), Date.parse((run as any)[2].start_at), 'and the rest are where they were')
+    assert.equal(Date.parse(after.find((b) => b.uid === run[1].uid).start_at), Date.parse(to), 'the one moved is where it was moved to')
+    assert.equal(Date.parse((after as any).find((b: { uid: any }) => b.uid === (run as any)[2].uid).start_at), Date.parse((run as any)[2].start_at), 'and the rest are where they were')
     /* CANCELLING ONE TAKES ONE; CANCELLING THE RUN TAKES WHAT IS LEFT TO COME */
     const one = await fn(member, 'cancel-session', { uid: (run as any)[3].uid })
     assert.equal(one.status, 200, JSON.stringify(one))
     const { data: left } = await admin.from('bookings').select('uid, status').eq('run_of', r.booking.uid)
-    assert.equal((left as any).filter((b: any) => b.status === 'cancelled').length, 1, 'one means one')
+    assert.equal((left as any).filter((b: { status: string }) => b.status === 'cancelled').length, 1, 'one means one')
     const all = await fn(member, 'cancel-session', { uid: (run as any)[0].uid, run: true })
     assert.equal(all.status, 200, JSON.stringify(all))
     const { data: end } = await admin.from('bookings').select('status').eq('run_of', r.booking.uid)
-    assert.equal((end as any).filter((b: any) => b.status === 'cancelled').length, course.repeat.count, 'and the run means the run')
+    assert.equal((end as any).filter((b: { status: string }) => b.status === 'cancelled').length, course.repeat.count, 'and the run means the run')
   })
   /* a type with NO allowance to run out of: this check is about which days are open, and a reader
      refused because they have had their one this month tells us nothing about being away */
-  const freeType = types.find((s: any) => !s.sku && !(s.seats > 0) && !s.weekly && !s.monthly && !s.repeat && !s.team && !s.confirm && !Object.keys(s.limits || {}).length && s.assign !== 'collective' && !s.windowTo && !s.windowFrom && !s.windowDays && s.hosts.length === 1 && s.hosts.includes('coach@example.com') && !(s.page || {}).hidden && (s.page || {}).cancel !== false)
+  const freeType = types.find((s: { sku: any; seats: number; weekly: any; monthly: any; repeat: any; team: any; confirm: any; limits: any; assign: string; windowTo: any; windowFrom: any; windowDays: any; hosts: string|string[]; page: any }) => !s.sku && !(s.seats > 0) && !s.weekly && !s.monthly && !s.repeat && !s.team && !s.confirm && !Object.keys(s.limits || {}).length && s.assign !== 'collective' && !s.windowTo && !s.windowFrom && !s.windowDays && s.hosts.length === 1 && s.hosts.includes('coach@example.com') && !(s.page || {}).hidden && (s.page || {}).cancel !== false)
   if (freeType) await ta('away takes the days off, a cover stands in, and what was already booked stands', async () => {
     await admin.from('provider_schedules').delete().eq('user_id', coach)
     await admin.from('provider_schedules').insert({ user_id: coach, name: 'Working hours', is_default: true, ...HOURS })

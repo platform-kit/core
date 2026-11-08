@@ -34,7 +34,7 @@ import type { Database } from '../supabase/functions/_shared/database.types.js'
  * filtering per bot happens at the question (search_content takes the kinds), because one index
  * serving several bots is simpler than an index per bot.
  */
-export function rowsFrom(root = process.cwd(), { models = [] } = {}) {
+export function rowsFrom(root = process.cwd(), { models = [] }: { models?: Array<{ model: any, except: any }> } = {}) {
   const dir = path.join(root, '.velite')
   const read = (f: string) => { try { return JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) } catch { return [] } }
   const rows = searchRows({
@@ -59,7 +59,7 @@ export function rowsFrom(root = process.cwd(), { models = [] } = {}) {
 }
 
 /* every model any published bot may search, and the fields none of them may see */
-export async function modelsWanted(root = process.cwd(), store: any) {
+export async function modelsWanted(root = process.cwd(), store?: any) {
   const { compileBots } = await import('./bots.mjs')
   const { bots } = await compileBots({ root, store, write: false })
   const want = new Map()
@@ -82,7 +82,6 @@ export async function pushSearch({ root = process.cwd(), log = console.log } = {
   if (!url || !key) { log('search: no database to push to'); return { pushed: 0 } }
   const db = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 
-  // @ts-expect-error TS2322, from the conversion: Type '{ model: any; except: any; }[]' is not assignable to type 'never[]'. Type '{ model: any; except: any; }' is not assignable to type 'ne
   const rows = rowsFrom(root, { models: await modelsWanted(root) })
   if (!rows.length) { log('search: no compiled content to index'); return { pushed: 0 } }
   return projectSearch({ rows, db, log })

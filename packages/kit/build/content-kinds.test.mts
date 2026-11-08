@@ -24,7 +24,7 @@ const KIT = join(here, '..')
 const ROOT = join(KIT, '..', '..')
 const SITE = process.cwd()
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail: string) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
 
 /* every content directory of every site in this repository: the site itself and the kit's own */
 const SITES = [SITE, join(ROOT, 'sites', 'demo'), join(ROOT, 'sites', 'docs')].filter((d) => existsSync(join(d, 'content')))
@@ -42,17 +42,17 @@ const SITES = [SITE, join(ROOT, 'sites', 'demo'), join(ROOT, 'sites', 'docs')].f
  * An admin SECTION is not enough and is not read here: a section is the screen, and a screen with
  * no model behind it is a page that can only save where there is a filesystem.
  */
-const siteModelDirs = async (site: any) => {
+const siteModelDirs = async (site: string) => {
   try {
     const m = await import(join(site, 'build', 'admin-models.mjs'))
     /* `models`, exactly as build/models/index.mjs reads it — accepting a default export here
        would pass a file the registry silently ignores, which is what it did once */
-    return (m.models || []).map((x: any) => x && x.dir).filter(Boolean)
+    return (m.models || []).map((x: { dir: any }) => x && x.dir).filter(Boolean)
   } catch { return [] }
 }
-const dirsUnder: any = (site: any) => {
+const dirsUnder = (site: string) => {
   const out: any = []
-  const walk = (rel: any) => {
+  const walk = (rel: string) => {
     const abs = join(site, rel)
     if (!existsSync(abs)) return
     for (const e of readdirSync(abs, { withFileTypes: true })) {
@@ -159,12 +159,12 @@ const dirsUnder: any = (site: any) => {
   const models = await registry(SITE, {})
   /* the deepest directory that is a model's own, and never a single-record model (whose dir is
      content/ itself and would otherwise claim every path there is) */
-  const byDepth = models.filter((m: any) => m.dir && !m.single).sort((x: any, y: any) => y.dir.length - x.dir.length)
-  const owns = (dir: any) => byDepth.find((m: any) => m.dir === dir || dir.startsWith(m.dir + '/'))
+  const byDepth = models.filter((m: { dir: any; single: any }) => m.dir && !m.single).sort((x: { dir: string|any[] }, y: { dir: string|any[] }) => y.dir.length - x.dir.length)
+  const owns = (dir: any) => byDepth.find((m: { dir: string }) => m.dir === dir || dir.startsWith(m.dir + '/'))
   for (const [table, d] of Object.entries(DECLARED)) {
-    const froms = (Array.isArray((d as any).from) ? (d as any).from : [(d as any).from]).filter((x: any) => typeof x === 'string' && x.startsWith('content/'))
+    const froms = (Array.isArray((d as any).from) ? (d as any).from : [(d as any).from]).filter((x: string) => typeof x === 'string' && x.startsWith('content/'))
     if (!froms.length) continue
-    const dirs = [...new Set(froms.map((f: any) => f.split('/').filter((s: any) => !s.includes('*') && !s.endsWith('.md') && !s.endsWith('.json')).join('/')))]
+    const dirs = [...new Set(froms.map((f: string) => f.split('/').filter((s: string) => !s.includes('*') && !s.endsWith('.md') && !s.endsWith('.json')).join('/')))]
     const m = dirs.map(owns).find(Boolean)
     if (!m) continue   /* a source no model owns is the other check's complaint, not this one */
     ok(table + ' can be projected with no machine (' + m.key + ')', typeof m.projected === 'function',

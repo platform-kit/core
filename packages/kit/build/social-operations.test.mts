@@ -13,7 +13,7 @@ const account = {
 }
 const calls: any = []
 const result =
-  (name: any) =>
+  (name: string) =>
   async (...args: any[]) => {
     calls.push([name, ...args])
     return name
@@ -54,7 +54,7 @@ const client = {
   notifications: { list: result('notifications.list'), markSeen: result('notifications.seen') },
   adapter: () => ({
     webhooks: {
-      verify: async (input: any, context: any) => {
+      verify: async (input: { headers: { get: (arg0: string) => any }; body: any }, context: { backendInstance: any; correlationId: any; retryBudget: any }) => {
         calls.push([
           'webhooks.verify',
           input.headers.get('x-signature'),
@@ -65,7 +65,7 @@ const client = {
         ])
         return { valid: true, method: 'hmac' }
       },
-      decode: async (input: any, context: any) => {
+      decode: async (input: { headers: { get: (arg0: string) => any }; body: any }, context: { backendInstance: any; correlationId: any; retryBudget: any }) => {
         calls.push([
           'webhooks.decode',
           input.headers.get('x-event'),
@@ -78,19 +78,19 @@ const client = {
       },
     },
   }),
-  native: (backend: any, acknowledgement: any) => {
+  native: (backend: unknown, acknowledgement: unknown) => {
     assert.equal(backend, 'default')
     assert.deepEqual(acknowledgement, { acknowledgeUnsafe: true })
     return { listProfiles: result('native.listProfiles') }
   },
 }
 
-const call: any = async (operation: any, input = {}) => {
+const call = async (operation: string, input = {}) => {
   calls.length = 0
   const value = await invokeSocialOperation({ client, account, operation, input })
   return { value, call: calls[0] }
 }
-const assertAccountRef = (ref: any) =>
+const assertAccountRef = (ref: unknown) =>
   assert.deepEqual(ref, {
     kind: 'connected-account',
     version: 1,
@@ -98,7 +98,7 @@ const assertAccountRef = (ref: any) =>
     platform: 'x',
     accountId: 'external-account',
   })
-const assertScopedRef = (ref: any, kind: any, fields: any) =>
+const assertScopedRef = (ref: unknown, kind: string, fields: { postId?: string; deliveryId?: string; profileId?: string; commentId?: string; conversationId?: string; jobId?: string; recordId?: string }) =>
   assert.deepEqual(ref, {
     kind,
     version: 1,

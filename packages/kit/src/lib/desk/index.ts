@@ -114,7 +114,6 @@ async function gather(name: string) {
   if (name === 'support') result = support.rowsOf(await support.list(supabase), { wait: Number(POLICY.wait) || 0 })
   /* no promise: the desk's wait is how long somebody has been left without a REPLY, and a comment
      waiting to be decided is not overdue in fifteen minutes. It says how long it has waited. */
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'. Type 'any' is not assignable to type 'never'.
   else if (name === 'comments') result = comments.rowsOf(await comments.list(supabase), {})
   else if (name === 'coaching') result = coaching.rowsOf(await coaching.list(supabase), { products, rank: tierRank, me: uid(), marks })
   else if (EXTRA_ADAPTERS.some((adapter) => adapter.id === name)) {
@@ -274,7 +273,6 @@ export function stop() {
 }
 
 const forget = () => { stop(); rows.value = []; booted.value = false; closeRow() }
-// @ts-expect-error TS2345, from the conversion: Argument of type '() => void' is not assignable to parameter of type 'never'.
 beforeSignOut.push(forget)
 /* the other half, and only for somebody who answers a queue: isStaff is already settled when the
    identity is broadcast, which is the whole reason the broadcast waits for the role to answer */

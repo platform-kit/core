@@ -69,12 +69,11 @@ async function build() {
 
   const got: any = {}
   let doneBytes = 0
-  const totals: any = {}
+  const totals: Record<string, number> = {}
   for (const f of BROWSER_FILES) {
     let last = 0
     got[f] = await fetchWeight(f, (file: string|number, done: number, total: any) => {
       totals[file] = total; doneBytes += done - last; last = done
-      // @ts-expect-error TS18046, from the conversion: 'a' is of type 'unknown'.
       post({ type: 'download', file, done: doneBytes, total: Object.values(totals).reduce((a, b) => a + b, 0) })
     })
   }

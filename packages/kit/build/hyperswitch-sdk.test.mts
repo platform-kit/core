@@ -95,7 +95,7 @@ globalThis.document = {
   // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'HTMLElementTagNameMap[K] | HTMLElement | HTMLElementDeprecatedTagNameMap[K]'.
   createElement: () => ({}),
   // @ts-expect-error TS2740, from the conversion: Type '{ append: (script: any) => void; }' is missing the following properties from type 'HTMLHeadElement': addEventListener, removeEventList
-  head: { append: (script: any) => { sdkScript = script; (globalThis.window as any).Hyper = loadedHyperFactory; script.onload() } },
+  head: { append: (script) => { sdkScript = script; globalThis.window.Hyper = loadedHyperFactory; script.onload() } },
 }
 assert.equal(
   await loadHyperswitchSdk('https://beta.hyperswitch.io/v2'),
@@ -112,7 +112,7 @@ else globalThis.document = previousDocument
 let confirmationRequest: any
 const checkoutResult = await confirmV2CheckoutPayment({
   hyper: {
-    confirmTokenization: async (options: any) => {
+    confirmTokenization: async (options: unknown) => {
       assert.deepEqual(options, {
         paymentMethodsManagementElements: elements,
         confirmParams: { return_url: 'https://site.example.test/checkout?session=pay_test&payment_action=return' },
@@ -193,7 +193,7 @@ assert.equal(await retrieveV2CheckoutPayment({
   publishableKey: 'pk_snd_test',
   clientSecret: 'cs_v2_test',
   profileId: 'pro_test',
-  fetchImpl: async (url: any, init: any) => {
+  fetchImpl: async (url: any, init: { method: unknown }) => {
     assert.equal(String(url), 'https://router.example.test/v2/payments/pay_test/get-intent')
     assert.equal(init.method, 'GET')
     return Response.json({ status: 'succeeded' })

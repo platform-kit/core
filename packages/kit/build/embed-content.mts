@@ -37,7 +37,7 @@ export async function embedContent() {
      most is …") can be matched against the teaching itself rather than the opening
      pages of the text. Read by the library's find-your-book round (src/lib/finding.js). */
   const C = fs.existsSync(path.join(DIR, 'companions.json')) ? read('companions.json') : []
-  const teachings = []
+  const teachings: Array<{ book: string, key: string, text?: string }> = []
   for (const c of C) {
     const b = B.find((x: { slug: any }) => x.slug === c.book); if (!b) continue
     const head = [b.title, c.insight, c.statement, b.description].filter(Boolean).join('. ')
@@ -49,9 +49,8 @@ export async function embedContent() {
     })
   }
   for (const t of teachings) {
-    const v = embed(t.text.slice(0, 2000))
+    const v = embed(t.text!.slice(0, 2000))
     ;(t as any).vec = Array.from(v, (x) => Math.round(x * 10000) / 10000)
-    // @ts-expect-error TS2790, from the conversion: The operand of a 'delete' operator must be optional.
     delete t.text
   }
   fs.writeFileSync(path.join(DIR, 'teachings.json'), JSON.stringify(teachings))

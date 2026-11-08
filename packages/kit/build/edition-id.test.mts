@@ -21,7 +21,7 @@ import assert from 'node:assert/strict'
 import { editionId, editionParts, editionFor, pictureId, partsOf, PART_NAMES } from './print/edition.mjs'
 
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
 
 const BASE = {
   templates: ['book.typ bytes', 'cover.typ bytes'],
@@ -33,7 +33,7 @@ const BASE = {
   picture: 'aaaaaaaaaaaaaaaa',
 }
 const id = (over = {}) => editionFor({ ...BASE, ...over })
-const spec = (over: any) => ({ spec: { ...BASE.spec, ...over } })
+const spec = (over: { cloth?: string; foil?: string; printers?: { softcover: string; }; providers?: { lulu: { package: string; }; }; }) => ({ spec: { ...BASE.spec, ...over } })
 
 t('the same book gives the same id', () => {
   assert.equal(id(), id())

@@ -9,7 +9,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('community-notes-db: ' + m)
+const note = (m: string) => console.log('community-notes-db: ' + m)
 if (process.env.NETWORK_TEST === '0') { note('skipped (NETWORK_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -19,9 +19,9 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const client = () => createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
-const as = async (email: any) => {
+const as = async (email: string) => {
   const sb = client()
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -52,8 +52,8 @@ try {
   await service.from('space_members').insert([{ space_id: spaceId, user_id: A.id }, { space_id: spaceId, user_id: B.id }])
   await service.from('channel_members').upsert([{ channel_id: room.id, user_id: A.id }, { channel_id: room.id, user_id: B.id }])
 
-  const list = async (who: any) => ((await who.sb.rpc('community_notifications', {})).data || [])
-  const count = async (who: any) => (await who.sb.rpc('community_unread')).data
+  const list = async (who: { sb: any; id?: string }) => ((await who.sb.rpc('community_notifications', {})).data || [])
+  const count = async (who: { sb: any; id?: string }) => (await who.sb.rpc('community_unread')).data
 
   /* ------------------------------------------------------------ a mention and a like */
   const { error: me } = await B.sb.from('space_messages').insert({ channel_id: room.id, author_id: B.id, body: `<@${A.id}> have a look at this` })
@@ -63,9 +63,9 @@ try {
   posts.push(p.id)
   await B.sb.from('network_likes').insert({ author_id: B.id, post_id: p.id })
   let L = await list(A)
-  ok('the mention is in their one list', L.some((r: any) => r.source === 'mention' && r.reason === 'mention-user' && r.actor_id === B.id))
-  ok('…and the like beside it', L.some((r: any) => r.source === 'network' && r.reason === 'like' && r.subject_post_id === p.id))
-  ok('…newest first', L.every((r: any, i: any) => i === 0 || new Date(L[i - 1].at) >= new Date(r.at)))
+  ok('the mention is in their one list', L.some((r: { source: string; reason: string; actor_id: string }) => r.source === 'mention' && r.reason === 'mention-user' && r.actor_id === B.id))
+  ok('…and the like beside it', L.some((r: { source: string; reason: string; subject_post_id: string }) => r.source === 'network' && r.reason === 'like' && r.subject_post_id === p.id))
+  ok('…newest first', L.every((r: { at: string|number|Date }, i: number) => i === 0 || new Date(L[i - 1].at) >= new Date(r.at)))
   ok('the count is two', (await count(A)) === 2, String(await count(A)))
   await look(A)
   ok('opening the list clears both', (await count(A)) === 0, String(await count(A)))
@@ -76,15 +76,15 @@ try {
   await B.sb.from('space_messages').insert({ channel_id: room.id, author_id: B.id, body: 'an answer', thread_root_id: root!.id })
   await B.sb.from('space_messages').insert({ channel_id: room.id, author_id: B.id, body: `<@${A.id}> and a second, to you`, thread_root_id: root!.id })
   L = await list(A)
-  ok('an answer in their thread is in the list', L.some((r: any) => r.source === 'reply' && r.item.body === 'an answer'))
-  ok('…an answer naming them is a mention, and only once', L.filter((r: any) => r.item && r.item.body === `<@${A.id}> and a second, to you`).length === 1
-    && L.some((r: any) => r.source === 'mention' && r.item.body.includes('a second')))
-  ok('their own lines are never in it', !L.some((r: any) => r.actor_id === A.id))
+  ok('an answer in their thread is in the list', L.some((r: { source: string; item: { body: string } }) => r.source === 'reply' && r.item.body === 'an answer'))
+  ok('…an answer naming them is a mention, and only once', L.filter((r: { item: { body: string } }) => r.item && r.item.body === `<@${A.id}> and a second, to you`).length === 1
+    && L.some((r: { source: string; item: { body: string|string[] } }) => r.source === 'mention' && r.item.body.includes('a second')))
+  ok('their own lines are never in it', !L.some((r: { actor_id: string }) => r.actor_id === A.id))
   ok('the count is the two new ones', (await count(A)) === 2, String(await count(A)))
 
   /* ------------------------------------------------------------ a stranger to the room */
   const LC = await list(C)
-  ok('somebody outside the room sees none of it', !LC.some((r: any) => r.source !== 'network' || r.subject_post_id === p.id))
+  ok('somebody outside the room sees none of it', !LC.some((r: { source: string; subject_post_id: string }) => r.source !== 'network' || r.subject_post_id === p.id))
   ok('…and counts none of it', (await count(C)) === 0, String(await count(C)))
 
   /* ------------------------------------------------------------ an event they are going to */
@@ -96,10 +96,10 @@ try {
   // @ts-expect-error TS18047, from the conversion: 'occ' is possibly 'null'.
   for (const o of occ) await service.from('calendar_rsvps').insert({ occurrence_id: o.id, user_id: A.id, state: 'going' })
   L = await list(A)
-  const evs = L.filter((r: any) => r.source === 'event')
-  ok('an event they are going to comes in the day before', evs.length === 1 && evs[0].item.starts_at.slice(0, 16) === soon.slice(0, 16), JSON.stringify(evs.map((e: any) => e.item.starts_at)))
+  const evs = L.filter((r: { source: string }) => r.source === 'event')
+  ok('an event they are going to comes in the day before', evs.length === 1 && evs[0].item.starts_at.slice(0, 16) === soon.slice(0, 16), JSON.stringify(evs.map((e: { item: { starts_at: any } }) => e.item.starts_at)))
   ok('…named, with its space', evs[0] && evs[0].item.title === 'A test evening' && evs[0].item.space === 'A community test space')
-  ok('…and not to anybody who did not say they are going', !(await list(B)).some((r: any) => r.source === 'event' && r.item.slug === SLUG))
+  ok('…and not to anybody who did not say they are going', !(await list(B)).some((r: { source: string; item: { slug: string } }) => r.source === 'event' && r.item.slug === SLUG))
 } catch (e: any) {
   fail++; console.log('  FAIL  ' + e.message)
 } finally {

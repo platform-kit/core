@@ -2,7 +2,7 @@
 import { wallToUtc, dayOf, offsetAt, rangesOn, openStarts, byDay, share, joiningCredit, offer, overLimit } from '../supabase/functions/_shared/schedulers/times.js'
 import { occurrences } from '../src/lib/recurrence.js'
 let n = 0, bad = 0
-const ok = (name: any, c: any) => { n++; if (!c) { bad++; console.log('  ✗', name) } }
+const ok = (name: string, c: boolean) => { n++; if (!c) { bad++; console.log('  ✗', name) } }
 const AMS = 'Europe/Amsterdam'
 /* a wall time resolves through the zone: summer is UTC+2, winter UTC+1 */
 ok('summer 09:00 Amsterdam is 07:00Z', new Date(wallToUtc('2026-07-06', '09:00', AMS)).toISOString() === '2026-07-06T07:00:00.000Z')
@@ -20,7 +20,7 @@ const now = Date.UTC(2026, 6, 5, 10)   /* Sunday 5 July 2026, 12:00 Amsterdam */
 const hours = { timezone: AMS, weekly, overrides: [], buffer_before: 0, buffer_after: 0, notice_hours: 24, max_per_day: 0 }
 const type = { duration: 60 }
 const starts = openStarts({ hours, type, from: '2026-07-06', to: '2026-07-07', now })
-const iso = (ms: any) => new Date(ms).toISOString()
+const iso = (ms: string|number|Date) => new Date(ms).toISOString()
 ok('Monday within 24 h of Sunday noon: nothing before 12:00 Monday, so no Monday starts', !starts.some((s) => dayOf(s, AMS).day === '2026-07-06'))
 const tue = starts.filter((s) => dayOf(s, AMS).day === '2026-07-07').map(iso)
 ok('Tuesday: 09:00 … 11:00 on a 15-minute step, ending inside noon (9 starts)', tue.length === 9 && tue[0] === '2026-07-07T07:00:00.000Z' && tue[8] === '2026-07-07T09:00:00.000Z')
@@ -51,17 +51,17 @@ ok('a 90-minute session ends inside noon: 09:00 … 10:30 (7 starts)', ninety.le
   const from = Date.parse('2026-09-24T00:00:00Z')
   const on = occurrences(call, { from, to: from + 30 * 864e5, limit: 50 })
   ok('a weekly call offers its own Tuesdays and nothing else',
-    on.length === 4 && on.every((o: any) => new Date(o.start).getUTCDay() === 2))
+    on.length === 4 && on.every((o: { start: string|number|Date; }) => new Date(o.start).getUTCDay() === 2))
   ok('…at the hour it says, in its own zone',
     new Date(on[0].start).toISOString() === '2026-09-29T18:00:00.000Z')   /* 19:00 BST */
   /* THE CLOCKS CHANGE and the wall time wins: the same call is an hour later in UTC afterwards */
   const winter = occurrences(call, { from: Date.parse('2026-10-20T00:00:00Z'), to: Date.parse('2026-11-10T00:00:00Z'), limit: 50 })
   ok('across the clocks going back it is still seven o\'clock there',
-    winter.some((o: any) => new Date(o.start).toISOString() === '2026-11-03T19:00:00.000Z'))
+    winter.some((o: { start: string|number|Date; }) => new Date(o.start).toISOString() === '2026-11-03T19:00:00.000Z'))
   ok('…which is a different hour in UTC from before, and that is the point',
     new Date(on[0].start).getUTCHours() === 18 && new Date(winter[winter.length - 1].start).getUTCHours() === 19)
   /* grouped for a reader the way the open hours are, so one surface draws both kinds */
-  const days = byDay(on.map((o: any) => o.start), 'Europe/London')
+  const days = byDay(on.map((o: { start: any; }) => o.start), 'Europe/London')
   ok('grouped by day like any other times', Object.keys(days).length === 4)
 }
 
@@ -71,8 +71,8 @@ ok('a 90-minute session ends inside noon: 09:00 … 10:30 (7 starts)', ninety.le
 {
   const busy1 = [{ start: Date.parse('2026-07-07T08:00:00Z'), end: Date.parse('2026-07-07T09:00:00Z') }]   /* 10:00–11:00 in Amsterdam */
   /* the file's `iso` is a full instant; these checks are about the clock on the host's wall */
-  const wall = (ms: any) => new Intl.DateTimeFormat('en-GB', { timeZone: AMS, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms))
-  const at = (h: any, ty?: any) => openStarts({ hours: { ...hours, ...h }, type: { duration: 30, ...(ty || {}) }, busy: busy1, from: '2026-07-07', to: '2026-07-07', now: later }).map(wall)
+  const wall = (ms: string|number|Date) => new Intl.DateTimeFormat('en-GB', { timeZone: AMS, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms))
+  const at = (h: { buffer_after?: number; buffer_before?: number; }, ty?: { bufferAfter: number; }|undefined) => openStarts({ hours: { ...hours, ...h }, type: { duration: 30, ...(ty || {}) }, busy: busy1, from: '2026-07-07', to: '2026-07-07', now: later }).map(wall)
 
   const none = at({})
   ok('with no room owed, the half hour straight after a call is offered', none.includes('11:00'))
@@ -133,9 +133,9 @@ ok('a 90-minute session ends inside noon: 09:00 … 10:30 (7 starts)', ninety.le
  * WHAT A TYPE OFFERS — each step of offer() on fixed numbers, and their order.
  */
 {
-  const hrs = (weekly: any) => ({ timezone: 'UTC', weekly, overrides: [], buffer_before: 0, buffer_after: 0, notice_hours: 0, max_per_day: 0 })
+  const hrs = (weekly: { 1: string[][]; 2?: string[][]; }) => ({ timezone: 'UTC', weekly, overrides: [], buffer_before: 0, buffer_after: 0, notice_hours: 0, max_per_day: 0 })
   const MON = '2026-10-05', TUE = '2026-10-06'   /* a Monday and the Tuesday after */
-  const at = (o: any) => new Date(o.start).toISOString().slice(11, 16)
+  const at = (o: { start: string|number|Date; }) => new Date(o.start).toISOString().slice(11, 16)
   const A = { id: 'a', hours: hrs({ 1: [['09:00', '12:00']] }), busy: [] }
   const B = { id: 'b', hours: hrs({ 1: [['10:00', '11:00']] }), busy: [] }
   const hour = { duration: 60, step: 60 }
@@ -173,7 +173,7 @@ ok('a 90-minute session ends inside noon: 09:00 … 10:30 (7 starts)', ninety.le
 
 /* THE HOST'S OWN WEEK, and which cap a time is past */
 {
-  const hrs = (weekly: any, extra?: any) => ({ timezone: 'UTC', weekly, overrides: [], buffer_before: 0, buffer_after: 0, notice_hours: 0, max_per_day: 0, ...extra })
+  const hrs = (weekly: { 1: string[][]; 2: string[][]; 3: string[][]; }, extra?: { max_per_week: number; }|undefined) => ({ timezone: 'UTC', weekly, overrides: [], buffer_before: 0, buffer_after: 0, notice_hours: 0, max_per_day: 0, ...extra })
   const week = { 1: [['09:00', '12:00']], 2: [['09:00', '12:00']], 3: [['09:00', '12:00']] }
   const MON = '2026-10-05', WED = '2026-10-07'
   const busy = [{ start: Date.UTC(2026, 9, 5, 9), end: Date.UTC(2026, 9, 5, 10) }, { start: Date.UTC(2026, 9, 6, 9), end: Date.UTC(2026, 9, 6, 10) }]

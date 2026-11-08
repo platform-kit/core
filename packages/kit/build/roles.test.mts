@@ -13,7 +13,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('roles: ' + m)
+const note = (m: string) => console.log('roles: ' + m)
 if (process.env.ROLES_TEST === '0') { note('skipped (ROLES_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
@@ -21,13 +21,13 @@ if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the
 try { await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(4000) }) } catch { note('skipped — the stack is not answering'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
 const service = createClient<Database>(url, serviceKey(), O)
-const as = async (email: any) => { const c = createClient<Database>(url, anonKey, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
-const idOf = async (c: any) => (await c.auth.getUser()).data.user?.id
+const as = async (email: string) => { const c = createClient<Database>(url, anonKey, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
+const idOf = async (c: { auth: { getUser: () => any } }) => (await c.auth.getUser()).data.user?.id
 /* refused, or let through and changed nothing: PostgREST answers an update its policy filters out with no rows */
-const refused = (r: any) => !!r.error || (Array.isArray(r.data) && !r.data.length) || r.data === null
+const refused = (r: { error: any; data: string|any[]|null }) => !!r.error || (Array.isArray(r.data) && !r.data.length) || r.data === null
 const stamp = Date.now().toString(36)
 
 const reader: any = await as('member@example.com'), editor = await as('editor@example.com'), provider: any = await as('coach@example.com'), admin: any = await as('admin@example.com')
@@ -43,10 +43,10 @@ for (const [who, c] of people) {
   for (const [field, value] of [['roles', ['admin']], ['role', 'admin'], ['email_verified_at', new Date().toISOString()], ['stripe_customer_id', 'cus_probe'], ['email', `probe-${stamp}@example.test`]]) {
     if (field === 'email_verified_at' && (before as any).email_verified_at) continue
     // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
-    const r = await (c as any).from('profiles').update({ [field]: value }).eq('id', id).select(field)
+    const r = await c.from('profiles').update({ [field]: value }).eq('id', id).select(field)
     ok(`${who} cannot write their own ${field}`, refused(r), JSON.stringify(r.data))
   }
-  const s = await (c as any).rpc('set_roles', { p_user: id, p_roles: ['admin'] })
+  const s = await c.rpc('set_roles', { p_user: id, p_roles: ['admin'] })
   ok(`${who} cannot give themselves a role through set_roles`, s.data?.ok !== true, JSON.stringify(s.data))
   for (const [table, row] of [
     ['entitlements', { user_id: id, kind: 'class', key: 'subscribed', source: 'grant', source_id: 'probe-' + stamp }],
@@ -56,12 +56,12 @@ for (const [who, c] of people) {
     ...(space ? [['space_members', { space_id: space.id, user_id: id }], ['space_member_roles', { space_id: space.id, user_id: id, role: 'moderator' }]] : []),
     ['team_members', { team: 'the-coaches', user_id: id }],
   ]) {
-    const r = await (c as any).from(table).insert(row).select()
+    const r = await c.from(table).insert(row).select()
     ok(`${who} cannot write themselves into ${table}`, refused(r), JSON.stringify(r.data))
     // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: string): PostgrestQueryBuilder<any, any, any, string, unknown>', gave the follow
     if (!r.error && r.data?.length) await service.from(table).delete().match(row)
   }
-  const e = await (c as any).from('entitlements').update({ active: true, expires_at: null }).eq('user_id', id).select('id')
+  const e = await c.from('entitlements').update({ active: true, expires_at: null }).eq('user_id', id).select('id')
   ok(`${who} cannot revive or extend their own entitlements`, refused(e), JSON.stringify(e.data))
   const { data: after } = await service.from('profiles').select('roles, role, email, email_verified_at, stripe_customer_id').eq('id', id).single()
   ok(`…and ${who}'s profile is as it was`, JSON.stringify(after) === JSON.stringify(before), JSON.stringify(after))

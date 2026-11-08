@@ -12,7 +12,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('copilot-db: ' + m)
+const note = (m: string) => console.log('copilot-db: ' + m)
 if (process.env.COPILOT_TEST === '0') { note('skipped (COPILOT_TEST=0)'); process.exit(0) }
 if (!(await moduleOn('copilot'))) { notHere('copilot-db', 'the copilot module is off'); process.exit(0) }
 const url = supabaseUrl()
@@ -23,8 +23,8 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
-const as = async (email: any) => {
+const ok = (m: string, c: boolean, d?: string|null|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
+const as = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -33,7 +33,7 @@ const as = async (email: any) => {
 const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 
 /* a 384-vector pointing mostly one way, so "near" and "far" are arranged rather than hoped for */
-const vec = (lean: any) => { const v = new Array(384).fill(0); v[lean] = 1; return v }
+const vec = (lean: number) => { const v = new Array(384).fill(0); v[lean] = 1; return v }
 const BOT = `zz-copilot-probe-${randomUUID()}`
 const made: any = []
 
@@ -43,7 +43,7 @@ try {
   const two = await as('member2@example.com')
 
   /* the platform writes, with the service role — never a client */
-  const put = async (user: any, said: any, lean: any) => {
+  const put = async (user: string, said: string, lean: number) => {
     const { data, error } = await service.from('copilot_memory')
       .insert({ user_id: user, bot: BOT, said, embedding: JSON.stringify(vec(lean)) }).select('id').single()
     if (error) throw new Error('insert: ' + error.message)
@@ -82,13 +82,13 @@ try {
   {
     const { data: near } = await service.rpc('copilot_recall', { p_user: one.id, p_bot: BOT, p_query: JSON.stringify(vec(0)), p_limit: 6 })
     // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-    ok('recall finds what was close', (near || []).length === 2 && (near as any)!.some((t: any) => /marathon/.test(t)), JSON.stringify(near))
+    ok('recall finds what was close', (near || []).length === 2 && near!.some((t) => /marathon/.test(t)), JSON.stringify(near))
     ok('THE FLOOR: an unrelated remark is not recalled, because a nearest neighbour is always something',
       // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-      !(near || []).some((t: any) => /chickens/.test(t)), JSON.stringify(near))
+      !(near || []).some((t) => /chickens/.test(t)), JSON.stringify(near))
     const { data: other } = await service.rpc('copilot_recall', { p_user: two.id, p_bot: BOT, p_query: JSON.stringify(vec(0)), p_limit: 6 })
     // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-    ok('and it never crosses between people', (other || []).length === 1 && /cello/.test((other as any)![0]), JSON.stringify(other))
+    ok('and it never crosses between people', (other || []).length === 1 && /cello/.test(other![0]), JSON.stringify(other))
     const { data: nobot } = await service.rpc('copilot_recall', { p_user: one.id, p_bot: 'a-different-bot', p_query: JSON.stringify(vec(0)), p_limit: 6 })
     // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
     ok('nor between assistants — what they told one is not the other\'s', (nobot || []).length === 0, JSON.stringify(nobot))
@@ -119,7 +119,7 @@ try {
    * deleted taking its lines with it rather than leaving them behind under a dead parent.
    */
   {
-    const mk = async (who: any, title: any) => {
+    const mk = async (who: { sb: any; id?: string }, title: string) => {
       const { data, error } = await who.sb.from('copilot_threads').insert({ bot: BOT, title }).select('id').single()
       if (error) throw new Error('thread: ' + error.message)
       return data.id

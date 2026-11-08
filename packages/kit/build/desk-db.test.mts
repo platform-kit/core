@@ -13,7 +13,7 @@ import * as coaching from '../src/lib/desk/coaching.js'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('desk-db: ' + m)
+const note = (m: string) => console.log('desk-db: ' + m)
 if (process.env.DESK_TEST === '0') { note('skipped (DESK_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -23,16 +23,16 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const as = async (email: any) => {
+const ok = (msg: string, cond: boolean|undefined, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const as = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return { sb, id: data.user.id }
 }
 const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
-const wait = (ms: any) => new Promise((r) => setTimeout(r, ms))
-const ago = (min: any) => new Date(Date.now() - min * 60000).toISOString()
+const wait = (ms: number|undefined) => new Promise((r) => setTimeout(r, ms))
+const ago = (min: number) => new Date(Date.now() - min * 60000).toISOString()
 
 const SLUG = 'desk-space-' + Math.random().toString(36).slice(2, 8)
 const TOKEN = 'desk-token-' + Math.random().toString(36).slice(2, 12)
@@ -79,7 +79,7 @@ try {
   await service.from('conversations').update({ last_message_at: ago(200) }).eq('id', chatConv)
 
   /* ---------------------------------------------------------------- the desk, as the staff see it */
-  const mine = async (who: any) => {
+  const mine = async (who: { sb: any; id: any }) => {
     const s = support.rowsOf(await support.list(who.sb), { wait: 15 })
     const c = coaching.rowsOf(await coaching.list(who.sb), { products: [{ kind: 'membership', tier: 'tier-2', 'chat-hours': 48 }], rank: () => 1, me: who.id })
     // @ts-expect-error TS2345, from the conversion: Argument of type '({ key: string; source: string; id: any; person: { id: any; name: any; kind: any; }; detail: any; last: { body: any; at: a
@@ -87,7 +87,7 @@ try {
   }
 
   const desk = await mine(admin)
-  const got = (src: any, id: any) => desk.find((r: any) => r.source === src && r.id === id)
+  const got = (src: string, id: any) => desk.find((r: any) => r.source === src && r.id === id)
   ok('the guest at the desk is in the list', !!got('support', supportConv))
   ok('the member waiting on their coach is in the list', !!got('coaching', chatConv))
   /* a room is not a queue: what waits in one is a mention or an unanswered direct message, and
@@ -127,9 +127,9 @@ try {
   /* and the desk no longer says any of them is waiting */
   const after = await mine(admin)
   // @ts-expect-error TS2339, from the conversion: Property 'waiting_since' does not exist on type '{}'.
-  ok('an answered thread stops waiting', !(after.find((r: any) => r.id === supportConv) || {}).waiting_since
+  ok('an answered thread stops waiting', !(after.find((r) => r.id === supportConv) || {}).waiting_since
     // @ts-expect-error TS2339, from the conversion: Property 'waiting_since' does not exist on type '{}'.
-    && !(after.find((r: any) => r.id === chatConv) || {}).waiting_since)
+    && !(after.find((r) => r.id === chatConv) || {}).waiting_since)
 
   /* ---------------------------------------------------------------- a line that is not words.
      An adapter that hands the surface a row without the file on it draws a word where a picture
@@ -158,11 +158,11 @@ try {
   /* ---------------------------------------------------------------- not for a reader */
   ok('a reader is refused the support inbox outright', (await reader.sb.rpc('support_inbox', { p_status: 'open' })).data === null)
   const rChat: any = (await reader.sb.rpc('chat_inbox')).data || []
-  ok('…and sees none of the coaching threads', !rChat.some((c: any) => c.id === chatConv))
+  ok('…and sees none of the coaching threads', !rChat.some((c: { id: any }) => c.id === chatConv))
   ok('…no message of the guest\'s', ((await reader.sb.from('support_messages').select('id').eq('conversation_id', supportConv)).data || []).length === 0)
   ok('…no conversation of the guest\'s', ((await reader.sb.from('support_conversations').select('id').eq('id', supportConv)).data || []).length === 0)
   // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-  ok('…no room of the staff\'s', !((await reader.sb.rpc('space_unread')).data || []).some((x: any) => x.channel === chan!.id))
+  ok('…no room of the staff\'s', !((await reader.sb.rpc('space_unread')).data || []).some((x) => x.channel === chan!.id))
   ok('…and the channel\'s history is refused', (await reader.sb.rpc('space_history', { p_channel: chan!.id })).data === null)
 
   /* ---------------------------------------------------------------- provider conversations have only a private desk mark */
@@ -180,7 +180,7 @@ try {
   }, { onConflict: 'user_id,source,ref' })
   if (otherMarkError) throw new Error('write second staff Social mark: ' + otherMarkError.message)
   const separateMarks = await Promise.all([admin, agent].map(async (staff) => {
-    const { data, error }: any = await staff.sb.from('desk_done').select('user_id').eq('ref', socialMarkRef)
+    const { data, error } = await staff.sb.from('desk_done').select('user_id').eq('ref', socialMarkRef)
     if (error) throw error
     return data || []
   }))

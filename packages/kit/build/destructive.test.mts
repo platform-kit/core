@@ -3,8 +3,8 @@
 import { destructive, guard, statements, digestOf, readAllowance } from './destructive.mjs'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
-const hit = (sql: any) => destructive(sql).map((h) => h.kind + ' ' + h.object)
+const ok = (msg: string, cond: boolean) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
+const hit = (sql: string) => destructive(sql).map((h) => h.kind + ' ' + h.object)
 
 ok('drop table', hit('DROP TABLE "public"."bookings";').join() === 'drop table public.bookings')
 ok('drop table if exists', hit('drop table if exists public.bookings cascade;').join() === 'drop table public.bookings')
@@ -80,7 +80,7 @@ ok('dropping a table that holds a generated column is still dropping a table',
  * the arithmetic over them — which is what is checked here, with no database anywhere.
  */
 const DROP = 'alter table public.space_members drop column role;'
-const cost = (c: any) => ({ costs: { 'public.space_members.role': c } })
+const cost = (c: { rows: number|null; kept: number|null; unknown: boolean; }) => ({ costs: { 'public.space_members.role': c } })
 
 ok('a drop that would lose nothing needs no consent at all',
   guard(DROP, {}, cost({ rows: 47, kept: 0, unknown: false })).ok === true)

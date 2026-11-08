@@ -72,7 +72,7 @@ async function act(name: any, fn: any, { theme = 'light', size = { width: 1280, 
   /* a resource that would not load names its address: the console's own line does not, and a failure that cannot say
      which request it was is one nobody can act on */
   page.on('console', (m: any) => { if (m.type() === 'error') errs.push((m.text() + (/Failed to load resource/.test(m.text()) && m.location()?.url ? ' — ' + m.location().url : '')).slice(0, 300)) })
-  const ours: any = () => errs.filter((e: any) => !(emptyBucket.length && /Failed to load resource/.test(e)))
+  const ours = () => errs.filter((e: any) => !(emptyBucket.length && /Failed to load resource/.test(e)))
   page.on('pageerror', (e: any) => errs.push('PAGEERROR ' + String(e.message || e).slice(0, 200)))
   /* A 429 from our own doors is a GUARD doing its job, not the surface being broken — the support
      function caps new guests and new threads per address per hour, so a lane run several times
@@ -103,14 +103,14 @@ async function act(name: any, fn: any, { theme = 'light', size = { width: 1280, 
   }).catch(() => {})
   try {
     await fn({ page, clear, errs, refused })
-    if (refused.length) { const why: any = 'the rate limit refused it (' + refused[0] + ') — the guard held, so this act did not run'; undone.push(name + ' — ' + why); console.log('  ⚠ ' + name + ' — NOT RUN: ' + why) }
+    if (refused.length) { const why = 'the rate limit refused it (' + refused[0] + ') — the guard held, so this act did not run'; undone.push(name + ' — ' + why); console.log('  ⚠ ' + name + ' — NOT RUN: ' + why) }
     else {
       if (emptyBucket.length) note(`(the audio bucket has nothing in it on this stack — ${emptyBucket[0]} and ${emptyBucket.length - 1} more; npm run tts -- --book <slug> refills it. Not counted against this act.)`)
       /* an interaction that threw nothing but logged an error is still a broken interaction */
       ok(name, ours().length === 0, ours().slice(0, 2).join(' | '))
     }
   } catch (e: any) {
-    if (refused.length) { const why: any = 'the rate limit refused it (' + refused[0] + ') — the guard held, so this act did not run'; undone.push(name + ' — ' + why); console.log('  ⚠ ' + name + ' — NOT RUN: ' + why) }
+    if (refused.length) { const why = 'the rate limit refused it (' + refused[0] + ') — the guard held, so this act did not run'; undone.push(name + ' — ' + why); console.log('  ⚠ ' + name + ' — NOT RUN: ' + why) }
     else if (e && e.undone) { undone.push(name + ' — ' + e.message); console.log('  ⚠ ' + name + ' — NOT RUN: ' + e.message) }
     else {
       const at = e && e.stack && e.stack.split('\n').find((line: any) => line.includes('interaction.test.mts:'))

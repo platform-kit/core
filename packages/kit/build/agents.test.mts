@@ -75,7 +75,7 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
 {
   const steps = [askedStep('lookup_order', { ref: '1042' })]
   // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; response: { message: { role: string; content: null; tool_calls: { id: string; type: string; function: { name: any; arg
-  const d: any = next({ run, bot, steps, now: t0 })
+  const d = next({ run, bot, steps, now: t0 })
   ok('a tool call is the next thing done', d.do === 'tool' && d.name === 'lookup_order' && (d.args as any).ref === '1042')
   ok('…and it is named by its own call id, so it is done once', d.call === 'c1')
   /* once the tool has answered, the model thinks again with the answer in hand */
@@ -373,9 +373,7 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
   /* the three really differ, which is the thing that was not true before */
   ok('the three settings build three different prompts', new Set([none, thread, person]).size === 3)
 
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ asked: string; said: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ asked: string; said: string;
   ok('recall reads as questions and answers', beforeNow(before) === 'Q: where is my order\nA: It shipped Tuesday.')
-  // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'never'.
   ok('and nothing of nothing', beforeNow() === '' && beforeNow([{}]) === '')
 }
 

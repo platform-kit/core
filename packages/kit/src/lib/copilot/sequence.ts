@@ -49,8 +49,7 @@ export function connectingRing(n: number) {
  */
 export function listeningRing(n: number) {
   const gcdUnder = (max: number) => {
-    // @ts-expect-error TS7023, from the conversion: 'gcd' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of 
-    const gcd = (a, b) => (b ? gcd(b, a % b) : a)
+    const gcd = (a: number, b: number): number => (b ? gcd(b, a % b) : a)
     for (let i = max; i >= 1; i--) if (gcd(n, i) === i) return i
     return 1
   }

@@ -5,7 +5,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (message: any) => console.log('social-security: ' + message)
+const note = (message: string) => console.log('social-security: ' + message)
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
 if (!url || !anon || !localStack()) {
@@ -19,9 +19,9 @@ if (!up) {
   process.exit(0)
 }
 
-const client = (key: any) => createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+const client = (key: string) => createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 const service = client(serviceKey())
-const as = async (email: any) => {
+const as = async (email: string) => {
   const sb = client(anon)
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(`${email}: ${error.message}`)
@@ -43,7 +43,7 @@ let grantId
 let vaultId
 let deskStaffGrantId
 
-const expectNoError = (label: any, result: any) => {
+const expectNoError = (label: string, result: any) => {
   if (result.error) throw new Error(`${label}: ${result.error.message}`)
   return result.data
 }
@@ -173,7 +173,7 @@ try {
   if (!edgeReady) {
     note('served Social Edge Function unavailable — direct Desk authorization checks skipped')
   } else {
-    const invokeDesk = async (person: any, body: any) => {
+    const invokeDesk = async (person: { sb: any; id?: string }, body: { action: string; accountId?: `${string}-${string}-${string}-${string}-${string}`; operation?: string; input?: { postId: string; commentId: string; conversationId: string; text: string }|{ postId: string }|{ conversationId: string }|{ postId: string; commentId: string; conversationId: string; text: string }; eventKind?: string; keyword?: string; botSlug?: string; destinations?: string[]; mode?: string; enabled?: boolean; responseId?: `${string}-${string}-${string}-${string}-${string}`; decision?: string }) => {
       const { data, error } = await person.sb.auth.getSession()
       if (error || !data.session) throw new Error('get test session for Social Edge request: ' + (error?.message || 'missing session'))
       const response = await fetch(url + '/functions/v1/social', {

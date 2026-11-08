@@ -88,7 +88,7 @@ export function trace({ proposal, deltas }: any) {
   /* 1. a promise naming a requirement no delta carries */
   const missing = rows.filter((r) => r.requirement)
     // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
-    .filter((r) => !(have[r.capability] || []).some((h: any) => norm(h) === norm(r.requirement)))
+    .filter((r) => !(have[r.capability] || []).some((h) => norm(h) === norm(r.requirement)))
     .map((r) => `${r.capability} — ${r.requirement}  (promised: ${r.promise})`)
 
   /* 2. a requirement nobody promised */
@@ -103,7 +103,7 @@ export function trace({ proposal, deltas }: any) {
   const named = new Set(rows.filter((r) => r.capability).map((r) => r.capability))
   const capabilities = [
     // @ts-expect-error TS18047, from the conversion: 'c' is possibly 'null'.
-    ...([...named].filter((c) => !(c in deltas)) as any).map((c: any) => `${c}: named in the table, no delta file`),
+    ...[...named].filter((c) => !(c in deltas)).map((c) => `${c}: named in the table, no delta file`),
     ...Object.keys(deltas).filter((c) => !named.has(c)).map((c) => `${c}: a delta file, no row in the table`),
   ]
   return { noTable: false, missing, unclaimed, capabilities, malformed }

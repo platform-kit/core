@@ -15,7 +15,7 @@ const c = await loadSite(ROOT)
 const theme = await loadTheme(c)
 const dir = path.dirname(theme.schemas)
 let pass = 0, fail = 0
-const ok = (cond: any, msg: any) => { if (cond) pass++; else { fail++; console.log('  ✗ ' + msg) } }
+const ok = (cond: boolean, msg: string) => { if (cond) pass++; else { fail++; console.log('  ✗ ' + msg) } }
 
 /* the registry and the schemas agree, both ways */
 const { SECTION_SCHEMAS } = await import(pathToFileURL(theme.schemas).href)
@@ -33,7 +33,7 @@ for (const k of Object.keys(SECTION_SCHEMAS)) {
   const d = SECTION_SCHEMAS[k]
   ok(d.label && d.description && typeof d.summary === 'function' && d.schema && d.defaults, `${k}: a schema entry is label, description, summary, defaults, schema`)
   const r = d.schema.safeParse(d.defaults)
-  ok(r.success, `${k}: its defaults do not validate: ${r.success ? '' : r.error.issues.map((i: any) => i.path.join('.') + ' ' + i.message).join('; ')}`)
+  ok(r.success, `${k}: its defaults do not validate: ${r.success ? '' : r.error.issues.map((i: { path: any[]; message: string }) => i.path.join('.') + ' ' + i.message).join('; ')}`)
   ok(d.group, `${k}: no group for the picker`)
 }
 

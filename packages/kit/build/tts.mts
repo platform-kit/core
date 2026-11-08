@@ -66,7 +66,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
-import { spawn, execFileSync } from 'node:child_process'
+import { spawn, execFileSync, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import matter from 'gray-matter'
 import { parseCompanionBody } from './companion-io.mjs'
@@ -110,6 +110,9 @@ const SIZE = sizeEngines()
 const WORKERS = SIZE.n
 const THREADS = Number(process.env.TTS_THREADS || 1)
 const log = (m: any) => console.log('[tts] ' + m)
+
+/* a book's audio index: chapter → section → its recording */
+type AudioManifest = { chapters?: Record<string, Record<string, { file?: string } | null>> }
 
 /* ---- the engine and its settings: what the hash is made of ---- */
 const ENGINE = {
@@ -204,10 +207,9 @@ async function pullBook(slug: any) {
   if (!st) return 0
   const { data, error } = await st.download('books/' + slug + '/index.json')
   if (error || !data) return 0
-  let m; try { m = JSON.parse(await data.text()) } catch { return 0 }
+  let m: AudioManifest; try { m = JSON.parse(await data.text()) } catch { return 0 }
   const held = storeHas(slug)
   let n = 0
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): unknown[]', gave the following error. 
   for (const e of Object.values(m.chapters || {})) for (const r of Object.values(e)) {
     if (!r || !(r as any).file || held.has((r as any).file)) continue
     const { data: blob, error: err } = await st.download('books/' + slug + '/' + (r as any).file)
@@ -284,18 +286,16 @@ function commitStore(what: any) {
 /* bring the bucket up to the store for one book: every recording the manifest
    names that the bucket lacks goes up (fetched from LFS first when this clone
    holds only the pointer), then the manifest itself */
-async function syncBook(slug: any, manifest: any) {
+async function syncBook(slug: string, manifest: AudioManifest) {
   const st = await getStorage()
   if (!st) return { uploaded: 0 }
-  const named = new Set()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): unknown[]', gave the following error. 
+  const named = new Set<string>()
   for (const e of Object.values(manifest.chapters || {})) for (const r of Object.values(e)) if (r && r.file) named.add(r.file)
   const inBucket = await listBucket(slug)
   const missing = [...named].filter((n) => !inBucket.has(n))
   const held = storeHas(slug)
   lfsPull(slug, missing.filter((n) => held.get(n) === 'pointer'))
   for (const n of missing) {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
     const f = path.join(storeDir(slug), n)
     if (!fs.existsSync(f)) throw new Error(slug + '/' + n + ' is in the manifest but not in the store')
     await put(slug, n, fs.readFileSync(f), 'audio/mpeg')
@@ -306,21 +306,30 @@ async function syncBook(slug: any, manifest: any) {
 
 /* ---- the engines: a pool of workers, each with the model loaded once, started
    the first time a recording is needed (the weights fetched then, if absent) ---- */
+/* one job for an engine: the text, the file it becomes, and how its caller hears back */
+interface PoolJob { id: string, text: string, out: string, resolve: (msg: unknown) => void, reject: (e: Error) => void }
+/* an engine process, the job it is on, and the line it has half read */
+interface PoolWorker { p: ChildProcessWithoutNullStreams, busy: PoolJob | null, buf: string }
 class Pool {
-  constructor(n: any) { ;(this as any).n = n; ;(this as any).workers = []; ;(this as any).queue = []; ;(this as any).idle = []; ;(this as any).starting = null }
+  n: number
+  workers: PoolWorker[] = []
+  queue: PoolJob[] = []
+  idle: PoolWorker[] = []
+  starting: Promise<void> | null = null
+  constructor(n: number) { this.n = n }
   start() {
-    if (!(this as any).starting) (this as any).starting = (async () => {
+    if (!this.starting) this.starting = (async () => {
       const { ready, setup } = await import('./tts/setup.mjs')
       if (!ready()) { log('fetching the weights'); await setup() }
-      await Promise.all(Array.from({ length: (this as any).n }, (_, i) => this.spawn(i)))
-      log(`${(this as any).n} engine${(this as any).n > 1 ? 's' : ''} ready (${SIZE.asked ? 'as asked' : SIZE.cores + ' cores, memory allows ' + SIZE.byMemory}; ${THREADS} thread${THREADS > 1 ? 's' : ''} each)`)
+      await Promise.all(Array.from({ length: this.n }, (_, i) => this.spawn(i)))
+      log(`${this.n} engine${this.n > 1 ? 's' : ''} ready (${SIZE.asked ? 'as asked' : SIZE.cores + ' cores, memory allows ' + SIZE.byMemory}; ${THREADS} thread${THREADS > 1 ? 's' : ''} each)`)
     })()
-    return (this as any).starting
+    return this.starting
   }
-  spawn(i: any) {
-    return new Promise((resolve, reject) => {
+  spawn(_i: number) {
+    return new Promise<void>((resolve, reject) => {
       const p = spawn(process.execPath, [WORKER], { cwd: ROOT, env: { ...process.env, TTS_THREADS: String(THREADS), TTS_VOICE: ENGINE.voice, TTS_STEPS: String(ENGINE.steps), TTS_SPEED: String(ENGINE.speed), TTS_GAP: String(ENGINE.gap) }, stdio: ['pipe', 'pipe', 'pipe'] })
-      const w = { p, busy: null, buf: '' }
+      const w: PoolWorker = { p, busy: null, buf: '' }
       p.stderr.on('data', (d) => { const s = d.toString(); if (/error|Traceback/i.test(s)) process.stderr.write(s) })
       p.stdout.on('data', (d) => {
         w.buf += d.toString()
@@ -329,34 +338,32 @@ class Pool {
           const line = w.buf.slice(0, nl); w.buf = w.buf.slice(nl + 1)
           if (!line.trim()) continue
           let msg; try { msg = JSON.parse(line) } catch { continue }
-          // @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
-          if (msg.ready) { resolve(); ;this.idle.push(w); this.pump(); continue }
-          const job: any = w.busy; w.busy = null
+          if (msg.ready) { resolve(); this.idle.push(w); this.pump(); continue }
+          const job = w.busy; w.busy = null
           if (job) (msg.ok ? job.resolve(msg) : job.reject(new Error(msg.error || 'engine failed')))
-          ;(this as any).idle.push(w); this.pump()
+          this.idle.push(w); this.pump()
         }
       })
-      p.on('exit', (code) => { if (w.busy) (w.busy as any).reject(new Error('engine exited ' + code)); reject(new Error('engine exited ' + code)) })
-      ;(this as any).workers.push(w)
+      p.on('exit', (code) => { if (w.busy) w.busy.reject(new Error('engine exited ' + code)); reject(new Error('engine exited ' + code)) })
+      this.workers.push(w)
     })
   }
-  async run(job: any) { await this.start(); return new Promise((resolve, reject) => { ;(this as any).queue.push({ ...job, resolve, reject }); this.pump() }) }
+  async run(job: Omit<PoolJob, 'resolve' | 'reject'>) { await this.start(); return new Promise((resolve, reject) => { this.queue.push({ ...job, resolve, reject }); this.pump() }) }
   pump() {
-    while ((this as any).idle.length && (this as any).queue.length) {
-      const w = (this as any).idle.pop(), job = (this as any).queue.shift()
+    while (this.idle.length && this.queue.length) {
+      const w = this.idle.pop()!, job = this.queue.shift()!
       w.busy = job
       w.p.stdin.write(JSON.stringify({ id: job.id, text: job.text, out: job.out }) + '\n')
     }
   }
-  stop() { for (const w of (this as any).workers) { try { w.p.stdin.end(); w.p.kill() } catch { /* gone */ } } }
+  stop() { for (const w of this.workers) { try { w.p.stdin.end(); w.p.kill() } catch { /* gone */ } } }
 }
 
 /* ---- encoding: the machine's ffmpeg, else the one npm ships (ffmpeg-static), so a
    deploy box with nothing installed can still encode ---- */
-async function ffmpeg() {
+async function ffmpeg(): Promise<string | null> {
   for (const c of [process.env.FFMPEG, 'ffmpeg']) { try { if (c) { execFileSync(c, ['-version'], { stdio: 'ignore' }); return c } } catch { /* next */ } }
-  // @ts-expect-error TS2307, from the conversion: Cannot find module 'ffmpeg-static' or its corresponding type declarations.
-  try { const m = await import('ffmpeg-static'); const c = m.default || m; if (c && fs.existsSync(c)) return c } catch { /* not installed */ }
+  try { const m = await import('ffmpeg-static'); const c = (m.default || m) as string | null; if (c && fs.existsSync(c)) return c } catch { /* not installed */ }
   return null
 }
 const FFMPEG = await ffmpeg()
@@ -366,8 +373,7 @@ function encode(wav: any, out: any) {
 }
 
 /* ---- the work ---- */
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ name: "supertonic-3"; voice: string; steps: number; speed: number; gap: number; }' is not assignable to parameter of typ
-const hashOf = (text) => createHash('sha1').update(hashInput(text, ENGINE)).digest('hex').slice(0, 16)
+const hashOf = (text: string) => createHash('sha1').update(hashInput(text, ENGINE as typeof DEFAULTS)).digest('hex').slice(0, 16)
 const stats = { spoken: 0, kept: 0, uploaded: 0, pulled: 0, chars: 0, seconds: 0, t0: Date.now() }
 
 function chaptersOf(bookRaw: any) {

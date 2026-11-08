@@ -5,7 +5,7 @@
 import { MEDIA, refuseMedia, shapeOf, planEmbed, kindOf, kindOfType } from '../supabase/functions/_shared/atproto/media.js'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const img = (n = 1, w = 1200, h = 900) => Array.from({ length: n }, (_, i) => ({ kind: 'image', path: 'p' + i, width: w, height: h }))
 const vid = (n = 1) => Array.from({ length: n }, (_, i) => ({ kind: 'video', path: 'v' + i, width: 1080, height: 1920 }))
 

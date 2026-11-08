@@ -9,9 +9,9 @@ import { configureHosts, renderHostConfig, renderSiteIncludes } from './hosts.mj
 import { platformkitRuntimePath } from './runtime-paths.mjs'
 
 const ROOT = workspaceRoot(process.cwd())
-const KIT = (file: any) => fileURLToPath(new URL('../' + file, import.meta.url))
+const KIT = (file: string) => fileURLToPath(new URL('../' + file, import.meta.url))
 let pass = 0
-const test = (name: any, run: any) => {
+const test = (name: string, run: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => {
   run()
   pass++
 }

@@ -12,7 +12,7 @@ import assert from 'node:assert/strict'
 import { availableOf, buyable, whyNot, offerOut, stockKey, madeOnDemand } from '../supabase/functions/_shared/stock.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, fn: any) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 3).join('\n    ')) } }
+const ok = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; }) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 3).join('\n    ')) } }
 
 console.log('\nSOLD OUT IS NOT THE SAME AS NOT SOLD\n')
 

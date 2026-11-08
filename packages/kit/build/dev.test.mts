@@ -4,7 +4,7 @@ import { portRequest, resolvePort } from './dev-ports.mjs'
 import { signalGroup, spawnGroup } from './dev-runtime.mjs'
 
 let pass = 0
-const test = async (name: any, run: any) => {
+const test = async (name: string, run: any) => {
   await run()
   pass++
   console.log(`dev: ✓ ${name}`)
@@ -30,7 +30,7 @@ await test('automatic port search requires the explicit auto option', async () =
     assert.deepEqual(portRequest(args, '--port', 3000), { auto: true, port: null })
     assert.equal(await resolvePort(args, '--port', 3000, {
       available: async () => false,
-      findFree: async (start: any) => start + 3,
+      findFree: async (start: number) => start + 3,
     }), 3003)
   }
 })

@@ -72,8 +72,7 @@ export function startFakeProcessor(port = 12111) {
     const chunks: any = []
     req.on('data', (chunk) => chunks.push(chunk))
     req.on('end', () => {
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string | URL'. Type 'undefined' is not assignable to type 'str
-      const url = new URL(req.url, 'http://fake')
+      const url = new URL(req.url!, 'http://fake')
       const form = parseForm(Buffer.concat(chunks).toString('utf8'))
       const path = url.pathname
 
@@ -139,8 +138,7 @@ export function startFakeProcessor(port = 12111) {
   return new Promise((resolve) => {
     server.listen(port, '0.0.0.0', () => resolve({
       port: (server.address() as any).port,
-      // @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
-      stop: () => new Promise((done) => { server.close(() => done()); server.closeAllConnections?.() }),
+      stop: () => new Promise<void>((done) => { server.close(() => done()); server.closeAllConnections?.() }),
     }))
   })
 }

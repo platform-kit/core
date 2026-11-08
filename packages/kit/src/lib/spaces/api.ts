@@ -330,7 +330,6 @@ export async function openChannel(id: string) {
       open.posts = await unsealAll((await rpc('space_posts', { p_channel: id })) || [])
     } else {
       const page = await unsealAll((await rpc('space_history', { p_channel: id })) || [])
-      // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
       open.messages = mergeMessages([], page)
       open.done = page.length < PAGE
       open.divider = dividerSeq(open.messages, row ? row.read : 0, uid())
@@ -353,7 +352,6 @@ export async function older() {
   open.loading = true
   try {
     const page = await unsealAll((await rpc('space_history', { p_channel: open.id, p_before: first.seq })) || [])
-    // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
     open.messages = mergeMessages(open.messages, page)
     open.done = page.length < PAGE
   } finally {
@@ -413,9 +411,7 @@ export async function send(channelId: any, body: string, opts: any = {}) {
     thread_root_id: opts.thread || null, echoed: !!opts.echo,
     created_at: new Date().toISOString(), pending: true, reply_count: 0,
   }
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
   if (opts.thread) thread.replies = mergeMessages(thread.replies, [temp])
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
   if (!opts.thread || opts.echo) open.messages = mergeMessages(open.messages, [temp])
   const row: any = {
     channel_id: channelId, author_id: me, kind: temp.kind, body,
@@ -459,7 +455,7 @@ export async function makePoll(channelId: any, question: any, options: any, opts
   const clean = (options || []).map((s: any) => String(s || '').trim()).filter(Boolean)
   if (!channelId || !String(question || '').trim() || clean.length < 2) return null
   const key = () => Math.random().toString(36).slice(2, 8)
-  const seen = new Set()
+  const seen = new Set<string>()
   const made = clean.map((text: any) => { let k = key(); while (seen.has(k)) k = key(); seen.add(k); return { key: k, text } })
   return send(channelId, String(question).trim(), {
     ...opts, kind: 'poll', meta: { poll: { options: made, multi: !!opts.multi } },
@@ -557,9 +553,7 @@ export async function sendVoice(channelId: string, blob: { arrayBuffer: () => an
     thread_root_id: opts.thread || null, echoed: !!opts.echo,
     created_at: new Date().toISOString(), pending: true, reply_count: 0, blob,
   }
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
   if (opts.thread) thread.replies = mergeMessages(thread.replies, [temp])
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
   if (!opts.thread || opts.echo) open.messages = mergeMessages(open.messages, [temp])
   /* SEALED: the bucket gets the ciphertext, and what it is — how long, whose voice, what was said
      with it — travels in the message. What is uploaded is bytes nobody can play. */
@@ -577,7 +571,7 @@ export async function sendVoice(channelId: string, blob: { arrayBuffer: () => an
       const wrapped = wrapFile({ name: null, type: 'audio/mpeg', size: blob.size, seconds }, info, opts.transcript)
       body = { id, channel_id: channelId, author_id: me, kind: 'voice', attachment: path,
         thread_root_id: opts.thread || null, echoed: !!opts.echo,
-        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'cipher' does not exist in type '{ id: any; channel_id: any; author_id: null; kind: st
+        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'cipher' does not exist in type '{ id: string; channel_id: string; author_id: any; kin
         cipher: await m.seal(me, channelId, await recipients(channelId), wrapped) }
     } catch (e: any) {
       drop(id); open.error = e
@@ -620,9 +614,7 @@ export async function sendFile(channelId: string, file: any, opts: any = {}) {
     thread_root_id: opts.thread || null, echoed: !!opts.echo,
     created_at: new Date().toISOString(), pending: true, reply_count: 0, blob: file,
   }
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
   if (opts.thread) thread.replies = mergeMessages(thread.replies, [row])
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
   if (!opts.thread || opts.echo) open.messages = mergeMessages(open.messages, [row])
   /* SEALED: as for a voice note, and the file's NAME goes inside — "severance-agreement.pdf" says
      most of what the message said, and the row's own check refuses a name beside a cipher anyway. */
@@ -640,7 +632,7 @@ export async function sendFile(channelId: string, file: any, opts: any = {}) {
       const wrapped = wrapFile(file, info, said)
       body = { id, channel_id: channelId, author_id: me, kind: 'file', attachment: path,
         thread_root_id: opts.thread || null, echoed: !!opts.echo,
-        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'cipher' does not exist in type '{ id: any; channel_id: any; author_id: null; kind: st
+        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'cipher' does not exist in type '{ id: string; channel_id: string; author_id: any; kin
         cipher: await m.seal(me, channelId, await recipients(channelId), wrapped) }
     } catch (e: any) {
       drop(id); open.error = e
@@ -1002,8 +994,7 @@ const lastSeqOf = (channelId: string) => {
 }
 
 const newId = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID()
-  // @ts-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'number[]' and 'number'.
-  : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)))
+  : (String([1e7]) + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c: string) => (Number(c) ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (Number(c) / 4)))).toString(16)))
 
 const drop = (id: string) => {
   open.messages = open.messages.filter((m: { id: any }) => m.id !== id)
@@ -1013,9 +1004,7 @@ const drop = (id: string) => {
 /* a row from anywhere — our own insert, the database's broadcast, a page — put where it belongs */
 function land(row: { id: any; channel_id: any; thread_root_id: any; echoed: any; seq: any; created_at: any; at: any; author_id: any }) {
   if (!row || !row.id) return
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
   if (row.channel_id === open.id && (!row.thread_root_id || row.echoed)) open.messages = mergeMessages(open.messages, [row])
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
   if (thread.root && row.thread_root_id === thread.root.id) thread.replies = mergeMessages(thread.replies, [row])
   if (thread.root && row.id === thread.root.id) thread.root = { ...thread.root, ...row }
   const u = unread.value.find((r: { channel: any }) => r.channel === row.channel_id)
@@ -1250,7 +1239,6 @@ const forget = () => {
 }
 /* the drain before the session ends: signing out reloads the page straight after, so this is only
    about letting the live channels go before the socket does */
-// @ts-expect-error TS2345, from the conversion: Argument of type '() => void' is not assignable to parameter of type 'never'.
 beforeSignOut.push(forget)
 /* AND THE OTHER HALF. Somebody arrived (or left, or is somebody else): throw away what belonged to
    whoever was here and load what belongs to whoever is here now. Without this a member who signs in

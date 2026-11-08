@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url'
 
 const dir = process.cwd() + '/.velite/'   /* the site's compiled content: the kit's scripts run in the site's root */
 /* a collection the site has not (a site's own is absent from another site) reads as empty */
-const load = (f: string, empty = []) => { try { return JSON.parse(readFileSync(dir + f, 'utf8')) } catch (e: any) { if (e.code === 'ENOENT') return empty; throw e } }
+const load = (f: string, empty: unknown = []): any => { try { return JSON.parse(readFileSync(dir + f, 'utf8')) } catch (e: any) { if (e.code === 'ENOENT') return empty; throw e } }
 
 export const articles = load('articles.json')
 export const wiki = load('wiki.json')
@@ -22,7 +22,9 @@ export const ads = load('ads.json')
 export const products = load('products.json')
 export const collections = load('collections.json')
 export const sessions = load('sessions.json')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{}' is not assignable to parameter of type 'never[]'. Type '{}' is missing the following properties from type 'never[]': l
+export const achievements = load('achievements.json')
+export const prices = load('prices.json')
+export const promotions = load('promotions.json')
 export const storefront = load('storefront.json', {})
 export const pages = load('pages.json')
 export const experiments = load('experiments.json')
@@ -31,11 +33,9 @@ export const forms = load('forms.json')
 /* the content models (the parsed records) and each one's entries by key — models_<key>.json, as velite names them */
 export const models = load('models.json')
 export const entriesOf = (key: any) => load('models_' + String(key).replace(/-/g, '_') + '.json')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{}' is not assignable to parameter of type 'never[]'. Type '{}' is missing the following properties from type 'never[]': l
 export const site = load('site.json', {})
 /* the community surface's own settings — a singleton like the site's, and empty where a site has
    written none, which is how every field falls through to the kit's own */
-// @ts-expect-error TS2345, from the conversion: Argument of type '{}' is not assignable to parameter of type 'never[]'. Type '{}' is missing the following properties from type 'never[]': l
 export const community = load('community.json', {})
 /* the instrument's collections are a site's own (velite.site.js): a site without them gets nothing here */
 export const personality = load('personality.json')

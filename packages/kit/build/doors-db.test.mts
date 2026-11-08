@@ -21,19 +21,19 @@ import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const note = (s: any) => console.log('  ' + s)
+const ok = (name: string, cond: boolean, detail: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const note = (s: string) => console.log('  ' + s)
 
 console.log('\nWHO GETS IN\n')
 
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The doors are NOT covered by this run.\n'); leave(0) }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The doors are NOT covered by this run.\n'); leave(0) }
 let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service-role key')
 
 const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
-const asPerson = async (email: any, password = 'password123') => {
+const asPerson = async (email: string, password = 'password123') => {
   const c = createClient<Database>(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
   const { error } = await c.auth.signInWithPassword({ email, password })
   return error ? null : c

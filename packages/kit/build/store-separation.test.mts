@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const KIT = path.join(HERE, '..')
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
 
 /* the words that belong to one kind of thing and to no shared table */
 const BOOKISH = ['edition', 'spine', 'foil', 'cloth', 'trim', 'chapter', 'paperback', 'hardcover', 'casewrap', 'interior', 'typeset']
@@ -77,13 +77,13 @@ const PRINTS = ['build/print', 'src/lib/print-offers.ts', 'supabase/functions/_s
    apparel kind would otherwise pass check (1) with flying colours */
 const CLOTHES = ['build/kinds/apparel.ts', 'supabase/functions/_shared/suppliers/printify.ts']
 
-const read = (rel: any) => { try { return fs.readFileSync(path.join(KIT, rel), 'utf8') } catch { return null } }
+const read = (rel: string) => { try { return fs.readFileSync(path.join(KIT, rel), 'utf8') } catch { return null } }
 /* A WORD IN A COMMENT IS DOCUMENTATION; A WORD IN CODE IS THE LEAK. `build/kinds` explains
    itself by naming the kinds it exists to hold apart — "a book in print has editions, a trim, a
    spine" — and a check that refused that would be a check against saying what the code is for.
    So comments and string literals of prose come out, and what is left is identifiers, keys,
    columns and values: the places a word would actually bind the store to one kind of thing. */
-const code = (src: any) => src
+const code = (src: string) => src
   .replace(/\/\*[^]*?\*\//g, ' ')       /* block comments */
   .replace(/(^|[^:])\/\/[^\n]*/g, '$1 ')  /* line comments, leaving a url's // alone */
   /* and SQL's own, which a declaration is mostly made of: without this a column's reason for
@@ -91,7 +91,7 @@ const code = (src: any) => src
      reads as an edition column — a false positive that would have blocked the very drop the
      carried-over check exists to force */
   .replace(/--[^\n]*/g, ' ')
-const walk = (rel: any, out = []) => {
+const walk = (rel: string, out = []) => {
   const abs = path.join(KIT, rel)
   let st; try { st = fs.statSync(abs) } catch { return out }
   // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.

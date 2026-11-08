@@ -26,19 +26,19 @@ import { statusOf, leave, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const note = (s: any) => console.log('  ' + s)
+const ok = (name: string, cond: boolean, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const note = (s: string) => console.log('  ' + s)
 
 console.log('\nA DRY RUN SENDS NOTHING\n')
 
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n    That "see who would get this" sends nothing is NOT covered by this run.\n'); leave(0) }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n    That "see who would get this" sends nothing is NOT covered by this run.\n'); leave(0) }
 let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.FUNCTIONS_URL) skip('the stack did not report a functions url')
 
 const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
-const call = async (body: any) => {
+const call = async (body: { dry: boolean }) => {
   const r = await fetch(`${cfg.FUNCTIONS_URL}/funnels-run`, {
     method: 'POST', headers: { Authorization: 'Bearer ' + cfg.SERVICE_ROLE_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify(body), signal: AbortSignal.timeout(60000),
@@ -113,7 +113,7 @@ ok('and moves nobody through a funnel', after.members === before.members, `${bef
     ok(`an audience by ${rule} is answered`, !error, error && error.message)
   }
   const { data: admins } = await admin.rpc('email_audience', { rules: { role: ['admin'] } })
-  ok('an audience by role finds the administrator', (admins || []).some((r: any) => r.email === 'admin@example.com'), JSON.stringify(admins))
+  ok('an audience by role finds the administrator', (admins || []).some((r) => r.email === 'admin@example.com'), JSON.stringify(admins))
 }
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)

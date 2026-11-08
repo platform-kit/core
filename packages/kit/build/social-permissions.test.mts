@@ -5,7 +5,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (message: any) => console.log('social-permissions: ' + message)
+const note = (message: string) => console.log('social-permissions: ' + message)
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
 if (!url || !anon || !localStack()) {
@@ -19,7 +19,7 @@ if (!up) {
   process.exit(0)
 }
 
-const client = (key: any) => createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+const client = (key: string) => createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 const service = client(serviceKey())
 const admin = client(anon)
 const email = `social-permissions-${randomUUID()}@example.com`
@@ -32,7 +32,7 @@ let grantId
 const postIds = []
 const deliveryIds = []
 
-const expectNoError = (label: any, result: any) => {
+const expectNoError = (label: string, result: any) => {
   if (result.error) throw new Error(`${label}: ${result.error.message}`)
   return result.data
 }
@@ -162,7 +162,7 @@ try {
   const approvalQueue = expectNoError('list granted publisher approval queue', await service.rpc('social_user_approval_queue', {
     p_user_id: userId,
   }))
-  assert.ok(approvalQueue.some((delivery: any) => delivery.id === pendingDelivery.id))
+  assert.ok(approvalQueue.some((delivery: { id: any }) => delivery.id === pendingDelivery.id))
 
   const unauthorizedReview = await service.rpc('social_review_delivery', {
     p_delivery_id: pendingDelivery.id,

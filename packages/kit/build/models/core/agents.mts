@@ -145,7 +145,6 @@ export const agentGrammar = {
       if (!l.length) delete d[k]
       else d[k] = l.length === 1 ? l[0] : l
     }
-    // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
     return matter.stringify('\n' + String(rec.content || '').replace(/^\n+/, ''), cleanData(d), DUMP)
   },
 }
@@ -266,8 +265,7 @@ export const bots = {
        membership tiers, its roles and the things it sells — so the field offers what can actually
        be chosen and nobody types a grammar. */
     audience: async ({ root, store }: any) => {
-      const out = [...AUDIENCE_CLASSES]
-      // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'group' does not exist in type '{ value: string; label: string; }'.
+      const out: Array<{ value: string, label: string, group?: string }> = [...AUDIENCE_CLASSES]
       for (const r of ['admin', 'provider', 'editor', 'support', 'analyst']) out.push({ value: 'role:' + r, label: 'Runs the site: ' + r, group: 'Roles' })
       try {
         const raw = await store.read('supabase/functions/_shared/catalog.json')
@@ -277,7 +275,6 @@ export const bots = {
           if ((o as any).kind === 'membership' && (o as any).tier) tiers.add((o as any).tier)
           else skus.push({ value: 'bought:' + sku, label: (o as any).title || sku, group: 'Bought' })
         }
-        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'group' does not exist in type '{ value: string; label: string; }'.
         for (const t of [...tiers].sort()) out.push({ value: 'tier:' + t, label: 'Members of ' + t, group: 'Tiers' })
         out.push(...skus.sort((a, b) => a.label.localeCompare(b.label)))
       } catch { /* a site with no catalog offers the classes and the roles, which is right */ }

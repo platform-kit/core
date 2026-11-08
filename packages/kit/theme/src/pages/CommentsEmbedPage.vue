@@ -62,7 +62,6 @@ function ancestor() {
 
 const state = ref('reading')   /* reading | ok | refused | nothing */
 onMounted(async () => {
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   setHead({ title: title || 'Comments', path: props.path || '/embed/comments', noindex: true })
   /* the host's page shows through: the site's own ground inside a frame on somebody's white blog
      reads as a grey box they forgot to style. The words and the rules are ours; the paper is theirs. */
@@ -73,7 +72,6 @@ onMounted(async () => {
     const { data } = await (supabase as any).rpc('comment_domains')
     domains = Array.isArray(data) ? data : []
   }
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'.
   state.value = embedAllowed(ancestor(), domains, location.origin) ? 'ok' : 'refused'
   tell()
 })

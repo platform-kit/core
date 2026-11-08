@@ -56,7 +56,7 @@ const walk = (dir: any, out = []) => {
 }
 
 let pass = 0, fail = 0
-const ok = (name: any, fn: any) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
+const ok = (name: string, fn: { (): void; (): void; (): void; (): void; (): void }) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 
 const files = RUNTIME.flatMap((d) => walk(path.join(REPO, d)))
 ok('there is runtime code to check', () => assert.ok(files.length > 200, files.length + ' files'))
@@ -86,7 +86,7 @@ ok('and none of them is a runtime dependency of any package', () => {
 })
 
 ok('the tests do drive them, so the list is not dead weight', () => {
-  const tests = walk(path.join(KIT, 'build')).filter((f: any) => /\.test\.m[jt]s$/.test(f))
+  const tests = walk(path.join(KIT, 'build')).filter((f) => /\.test\.m[jt]s$/.test(f))
   const driven = new Set()
   for (const f of tests) {
     const src = fs.readFileSync(f, 'utf8')

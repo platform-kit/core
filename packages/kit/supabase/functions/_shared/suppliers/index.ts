@@ -98,11 +98,10 @@ export function checkSupplier(x: any) {
   return bad
 }
 
-export function printers(env: { (k: string): any; (k: string): any }, own = []) {
+export function printers(env: { (k: string): any; (k: string): any }, own: unknown[] = []) {
   const PRINTERS: any = { lulu: lulu(env), mixam: mixam(env), bookvault: bookvault(env), printify: printify(env), 'post-room': postRoom(env), download: download(env) }
   /* and the site’s own, refused by name at registration rather than halfway through a sale */
   for (const make of own) {
-    // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
     const x = typeof make === 'function' ? make(env) : make
     const bad = checkSupplier(x)
     if (bad.length) throw new Error(`suppliers: ${(x && x.id) || 'a supplier'} does not keep the shape —\n  ${bad.join('\n  ')}`)

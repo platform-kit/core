@@ -8,7 +8,7 @@ sources:
     packages/kit/supabase/functions/_shared/suppliers/printify.ts,
     packages/kit/build/store-kinds.test.mts,
   ]
-reviewed: 2026-11-07
+reviewed: 2026-11-08
 ---
 
 A shirt is not a book and not an ordinary product. What is true only of it — the **product type**,

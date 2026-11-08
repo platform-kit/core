@@ -24,7 +24,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nPRINT PARITY\n')
 
@@ -79,7 +79,7 @@ const sample = `#set page(width: 6in, height: 9in, margin: 0.8in)
 = Another
 #lorem(400)
 `
-async function driverPdf(which: any, files: any, fonts: any) {
+async function driverPdf(which: string, files: { __path?: any; "sample.typ"?: string }, fonts: NonSharedBuffer[]) {
   const mod = await import(path.join(SEAM, which))
   const c = await mod.create(which === 'wasm-compiler.js'
     ? { files, fonts }
@@ -91,7 +91,6 @@ const pagesOf = (pdf: any) => { const m = Buffer.from(pdf).toString('latin1').ma
 let wasmThere = true
 try { await import('@myriaddreamin/typst-ts-web-compiler') } catch (e) { wasmThere = false }
 let nodeThere = true
-// @ts-expect-error TS2307, from the conversion: Cannot find module '@myriaddreamin/typst-ts-node-compiler' or its corresponding type declarations.
 try { await import('@myriaddreamin/typst-ts-node-compiler') } catch (e) { nodeThere = false }
 
 if (!nodeThere || !wasmThere) {

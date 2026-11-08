@@ -17,7 +17,6 @@ const signInCopy = computed(() => ({
   title: W.value['billing-signin-title'],
   description: W.value['billing-signin-description'],
 }))
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: W.value['billing-title'], description: '', path: ROUTES.billing, noindex: true })
 const state = ref('auth-loading')
 const authenticated = computed(() => authSettled.value && isSignedIn.value)

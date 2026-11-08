@@ -31,7 +31,7 @@ import { tokens, lexicalIndex, bm25, semantic, normalise, sentenceScores, combin
 
 const ROOT = process.cwd()
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
 
 /* ─── words ─── */
 
@@ -123,7 +123,7 @@ t('the weights are relative, so they need not sum to one', () => {
 })
 t('combine returns the best first', () => {
   const out = combine(['a', 'b', 'c'], [{ a: 0.1, b: 0.9, c: 0.5 }], [1])
-  assert.deepEqual(out.map((x: any) => x.slug), ['b', 'c', 'a'])
+  assert.deepEqual(out.map((x: { slug: any }) => x.slug), ['b', 'c', 'a'])
 })
 
 /* ─── the pace: a lean, not a verdict ─── */
@@ -164,7 +164,7 @@ t('the length is placed by its logarithm, so the shelf is spread evenly', () => 
 const SEARCH = path.join(ROOT, '.velite', 'search.json')
 if (!fs.existsSync(SEARCH)) console.log('  ⚠ .velite/search.json is not built — BM25 is not exercised against real prose in this run')
 else {
-  const rows = JSON.parse(fs.readFileSync(SEARCH, 'utf8')).filter((r: any) => r.kind === 'book').map((r: any) => ({ slug: r.id, text: r.text }))
+  const rows = JSON.parse(fs.readFileSync(SEARCH, 'utf8')).filter((r: { kind: string }) => r.kind === 'book').map((r: { id: any; text: any }) => ({ slug: r.id, text: r.text }))
   if (rows.length < 2) console.log('  ⚠ fewer than two books in the index — the real-prose checks are skipped')
   else {
     const real = lexicalIndex(rows)

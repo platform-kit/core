@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-// @ts-expect-error TS2307, from the conversion: Cannot find module 'onnxruntime-node' or its corresponding type declarations.
 import * as ort from 'onnxruntime-node';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -310,13 +309,11 @@ class TextToSpeech {
 /**
  * Convert lengths to binary mask
  */
-function lengthToMask(lengths: any, maxLen = null) {
-    // @ts-expect-error TS2322, from the conversion: Type 'number' is not assignable to type 'null'.
+function lengthToMask(lengths: any, maxLen: number | null = null) {
     maxLen = maxLen || Math.max(...lengths);
     const mask = [];
     for (let i = 0; i < lengths.length; i++) {
         const row = [];
-        // @ts-expect-error TS18047, from the conversion: 'maxLen' is possibly 'null'.
         for (let j = 0; j < maxLen; j++) {
             row.push(j < lengths[i] ? 1.0 : 0.0);
         }

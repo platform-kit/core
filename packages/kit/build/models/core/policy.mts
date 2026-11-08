@@ -10,8 +10,7 @@ export default {
   grammar: {
     parse: (text: any) => ({ data: matter(text).data, content: '' }),
     /* as the comment policy: the sending rules are worth a line of explanation in the file */
-    // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
-    serialise: (rec, ctx) => writeKeeping(ctx && ctx.current, rec.data, '\n', () => matter.stringify('\n', rec.data, DUMP)),
+    serialise: (rec: { data: object }, ctx: { current: any }) => writeKeeping(ctx && ctx.current, rec.data, '\n', () => matter.stringify('\n', rec.data, DUMP)),
   },
   prepare: async (rec: { data: any }, ctx: { store: string|undefined }) => { rec.data = { ...(await readPolicy(ctx.store)), ...(rec.data || {}) }; return rec },
   after: (rec: any, ctx: { script: (arg0: string) => any }) => ctx.script('funnels.mjs'),

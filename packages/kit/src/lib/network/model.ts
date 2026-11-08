@@ -42,8 +42,7 @@ export function joinPages(have: any[], more: { [x: string]: any; kind: any; at: 
   const seen = new Set(have.map(itemKey))
   const out = have.slice()
   for (const it of more) if (!seen.has(itemKey(it))) { seen.add(itemKey(it)); out.push(it) }
-  // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  return out.sort((a, b) => new Date(b.at) - new Date(a.at))
+  return out.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
 }
 
 /* the cursor for the page after this one: the oldest moment shown */
@@ -64,8 +63,7 @@ export function threadOf(root: { id: any; reply_parent_id?: any; created_at?: an
     if (!byParent.has(parent)) byParent.set(parent, [])
     byParent.get(parent).push(r)
   }
-  // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  for (const list of byParent.values()) list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+  for (const list of byParent.values()) list.sort((a: { created_at: string|number|Date; }, b: { created_at: string|number|Date; }) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
   const out = [{ post: root, depth: 0 }]
   const walk = (id: any, depth: number) => {
     for (const r of byParent.get(id) || []) {
@@ -132,9 +130,8 @@ export function postOfMessage(m: { id: any; author_id: any; body: any; created_a
 }
 
 /* the people a set of posts names, for one read of their names and faces */
-export function peopleIn(posts: any[], extra = []) {
+export function peopleIn(posts: any[], extra: string[] = []) {
   const ids = new Set(extra.filter(Boolean))
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
   for (const p of posts) { if (p && p.author_id) ids.add(p.author_id) }
   return [...ids]
 }
@@ -155,7 +152,7 @@ export function noteKind(n: { source: string; reason: string }) {
 /* THE LIST AS IT IS READ: likes and reposts of one post folded into one row ("Ada and 3 others
    liked your post"), follows into one row, everything else one row each; a group stands where its
    newest member stood, and is new when any of it is. `seen` is when the reader last opened it. */
-export function groupNotes(rows: any, seen = null) {
+export function groupNotes(rows: any, seen: string|number|Date | null = null) {
   const since = seen ? new Date(seen).getTime() : -Infinity
   const out = []
   const at = new Map()

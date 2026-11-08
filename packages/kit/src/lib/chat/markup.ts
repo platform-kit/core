@@ -32,11 +32,12 @@ const href = (raw: string) => (/^www\./i.test(raw) ? 'https://' + raw : raw)
 
 /* the text between the marks, as parts carrying the marks they are under. Code is taken first and
    whole: what is inside it is text, never a mark, which is the whole point of writing it in code. */
-// @ts-expect-error TS7023, from the conversion: 'inlineParts' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in
-export function inlineParts(text, marks = []) {
+/* a run of text and the marks it is under (code, bold, italic …) */
+export interface InlinePart { kind: string, text: string, href?: string, marks: string[] }
+export function inlineParts(text: string|null, marks: string[] = []): InlinePart[] {
   const s = String(text == null ? '' : text)
   if (!s) return []
-  const out = []
+  const out: InlinePart[] = []
 
   /* `code` — the one mark that stops the others */
   const c1 = s.indexOf(CODE)
@@ -44,7 +45,6 @@ export function inlineParts(text, marks = []) {
     const c2 = s.indexOf(CODE, c1 + 1)
     if (c2 > c1 + 1) {
       out.push(...inlineParts(s.slice(0, c1), marks))
-      // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(...items: ConcatArray<never>[]): never[]', gave the following error. Argument of type 'str
       out.push({ kind: 'text', text: s.slice(c1 + 1, c2), marks: marks.concat('code') })
       out.push(...inlineParts(s.slice(c2 + 1), marks))
       return out
@@ -60,7 +60,6 @@ export function inlineParts(text, marks = []) {
     /* ** ** with nothing between it is two asterisks somebody typed, not a mark */
     if (!inner.trim()) continue
     out.push(...inlineParts(s.slice(0, a), marks))
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     out.push(...inlineParts(inner, marks.includes(mark) ? marks : marks.concat(mark)))
     out.push(...inlineParts(s.slice(b + tag.length), marks))
     return out
@@ -95,7 +94,7 @@ function linkParts(s: string, marks: any) {
 /* A MESSAGE IS PARAGRAPHS, and two of its lines mean something on their own: one beginning `- ` is
    an item of a list, one beginning `> ` is quoted. A run of either is one block, so a list of three
    is a list and not three lists. Everything else is prose, and its own newlines are kept. */
-export function messageBlocks(body: string|null, inline = inlineParts) {
+export function messageBlocks(body: string|null, inline: (line: string) => any[] = inlineParts) {
   const whole = String(body == null ? '' : body)
   if (!whole.trim()) return []   /* an empty message draws nothing, not an empty paragraph */
   const lines = whole.split('\n')

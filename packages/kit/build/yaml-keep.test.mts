@@ -16,10 +16,10 @@ import { keepComments, same } from './models/yaml-keep.mjs'
 import { frontmatter } from './models/util.mjs'
 
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL ' + name + '\n    ' + String(e.message || e).split('\n').slice(0, 4).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL ' + name + '\n    ' + String(e.message || e).split('\n').slice(0, 4).join('\n    ')) } }
 /* an async check needs its own runner: handed to the sync one above, a rejected promise is never
    caught and the check passes by never having been made */
-const ta = async (name: any, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL ' + name + '\n    ' + String(e.message || e).split('\n').slice(0, 4).join('\n    ')) } }
+const ta = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): any }) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL ' + name + '\n    ' + String(e.message || e).split('\n').slice(0, 4).join('\n    ')) } }
 
 const FILE = `---
 # THE SITE'S COMMENT POLICY. Every record inherits what is here.
@@ -39,7 +39,7 @@ nested:
 the body
 `
 const data = (over = {}) => ({ allow: 'off', approval: 'none', votes: false, flagged: [], depth: 3, nested: { inner: 1, other: 'two' }, ...over })
-const fm = (text: any) => (/^---\r?\n([\s\S]*?)\r?\n---/ as any).exec(text)[1]
+const fm = (text: string) => (/^---\r?\n([\s\S]*?)\r?\n---/ as any).exec(text)[1]
 
 console.log('\nA SAVE KEEPS THE FILE\'S OWN WORDS\n')
 
@@ -58,7 +58,7 @@ t('a value changes and every comment stays', () => {
 
 t('the key order is the file\'s, not the object\'s', () => {
   const out: any = keepComments(FILE, { depth: 3, allow: 'off', approval: 'none', votes: false, flagged: [], nested: { inner: 1, other: 'two' } })
-  assert.deepEqual(out.split('\n').filter((l: any) => /^\w+:/.test(l)).map((l: any) => l.split(':')[0]),
+  assert.deepEqual(out.split('\n').filter((l: string) => /^\w+:/.test(l)).map((l: string) => l.split(':')[0]),
     ['allow', 'approval', 'votes', 'flagged', 'depth', 'nested'])
 })
 
@@ -175,10 +175,10 @@ await ta('every content file that carries comments survives a no-op save unchang
   const models = await registry(process.cwd(), { site: await loadSite(process.cwd()) })
   /* a SINGLE record owns one path and not a prefix: the tag vocabulary lives at content/tags.md,
      and reading its dir as a prefix hands it every file on the site */
-  const owns = models.filter((m: any) => m.grammar === frontmatter && m.dir)
-    .map((m: any) => (m.single ? { one: m.dir + '/' + m.single + '.md' } : { under: m.dir + '/' }))
+  const owns = models.filter((m: { grammar: { parse: (text: any) => { data: any; content: string }; serialise: (rec: any,ctx: any) => string }; dir: any }) => m.grammar === frontmatter && m.dir)
+    .map((m: { single: string; dir: string }) => (m.single ? { one: m.dir + '/' + m.single + '.md' } : { under: m.dir + '/' }))
   const files = execSync("git ls-files 'content/**/*.md' 'content/*.md'", { encoding: 'utf8' }).trim().split('\n')
-  const mine = files.filter((f) => owns.some((o: any) => (o.one ? f === o.one : f.startsWith(o.under))))
+  const mine = files.filter((f) => owns.some((o: { one: string; under: string }) => (o.one ? f === o.one : f.startsWith(o.under))))
   const withComments = mine.filter((f) => existsSync(f) && /^---\r?\n[\s\S]*?^\s*#/m.test(readFileSync(f, 'utf8')))
   assert.ok(withComments.length > 5, 'there are self-documenting files to protect: ' + withComments.length + ' of ' + mine.length)
   for (const f of withComments) {
@@ -221,10 +221,10 @@ what these are for
 `]])
   const store = {
     kind: 'rows',
-    read: async (p: any) => (rows.has(p) ? rows.get(p) : null),
-    write: async (p: any, text: any) => { rows.set(p, text) },
-    exists: async (p: any) => rows.has(p),
-    remove: async (p: any) => { rows.delete(p) },
+    read: async (p: string) => (rows.has(p) ? rows.get(p) : null),
+    write: async (p: string, text: string) => { rows.set(p, text) },
+    exists: async (p: string) => rows.has(p),
+    remove: async (p: string) => { rows.delete(p) },
     list: async () => [...rows.keys()],
     dirs: async () => [],
   }

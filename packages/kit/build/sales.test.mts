@@ -27,8 +27,8 @@ import { execSync } from 'node:child_process'
 import { statusOf } from './test-stack.mjs'
 
 let n = 0, bad = 0
-const t = async (name: any, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
-const note = (s: any) => console.log('  ' + s)
+const t = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
+const note = (s: string) => console.log('  ' + s)
 
 /* the report goes to a folder of the test's own: the site's .velite/sales.json is what its running app reads, and a
    rewrite there reloaded every open page mid-run */
@@ -77,7 +77,7 @@ else {
     const other: any = bookOffers.find((o: any) => o.book !== A.book)
     const PROBE = 'cs_sales_probe_'
     const clean = async () => { await admin.from('purchases').delete().like('stripe_checkout_session_id', PROBE + '%') }
-    const buy = async (offer: any, i: any, when: any) => admin.from('purchases').insert({
+    const buy = async (offer: { key: any; sku: any }, i: string|number, when: string) => admin.from('purchases').insert({
       stripe_checkout_session_id: PROBE + Date.now() + '_' + i, key: offer.key, sku: offer.sku,
       status: 'paid', amount_total: 1000, currency: 'usd', created_at: when,
     })
@@ -85,7 +85,7 @@ else {
     const before = run()
 
     try {
-      const ago = (d: any) => new Date(Date.now() - d * 86400e3).toISOString()
+      const ago = (d: number) => new Date(Date.now() - d * 86400e3).toISOString()
       /* three of A, so it outsells whatever the seed holds by a clear margin */
       const need = (before.books[A.book] || 0)
       // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'number'.

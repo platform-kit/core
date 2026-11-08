@@ -170,7 +170,7 @@ const bands = (p: any) => (p.min_quantity != null ? 1 : 0) + (p.max_quantity != 
 /* every currency a variant has a price in, which is what a Stripe price's `currency_options` is
    built from — one price per variant carrying them all, never a second price per currency */
 export function currenciesOf(lists: any, variant = '') {
-  const out = new Set()
+  const out = new Set<string>()
   for (const list of lists || []) for (const p of list.prices || []) {
     if ((p.variant || '') === (variant || '') && p.amount != null) out.add(String(p.currency || 'usd').toLowerCase())
   }

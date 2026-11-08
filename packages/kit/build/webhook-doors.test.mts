@@ -28,15 +28,15 @@ import { loadDotEnv, serviceKey, supabaseUrl } from './tts/storage.mjs'
 import { statusOf, leave, served, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 /* a door of a module the site has off is not served, and not this site's to check (openspec: module-switch-removes-backend) */
-const door = (fn: any) => served(fn) || (notHere(fn, 'its module is off'), false)
+const door = (fn: string) => served(fn) || (notHere(fn, 'its module is off'), false)
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const note = (s: any) => console.log('  ' + s)
+const ok = (name: string, cond: boolean, detail: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const note = (s: string) => console.log('  ' + s)
 
 console.log('\nTHE DOORS THAT FACE THE INTERNET\n')
 
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The unsigned-webhook and overwrite refusals are NOT covered by this run.\n'); leave(0) }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The unsigned-webhook and overwrite refusals are NOT covered by this run.\n'); leave(0) }
 let cfg: any = null
 loadDotEnv()
 const localUrl = supabaseUrl()
@@ -57,7 +57,7 @@ if (!cfg || !cfg.FUNCTIONS_URL) skip('the stack did not report a functions url')
 /* Is anything serving the functions? `supabase start` does not, on its own. A 503 is NOT "unserved"
    — it is stripe-webhook answering that this environment has no secret, which is itself one of the
    refusals below; only a 404 or a refused connection means nobody is listening. */
-const answers = async (name: any) => {
+const answers = async (name: string) => {
   try { const r = await fetch(`${cfg.FUNCTIONS_URL}/${name}`, { method: 'POST', body: '{}' }); return r.status !== 404 }
   catch { return false }
 }
@@ -153,8 +153,8 @@ if (served('cal-webhook')) {
   /* both doors Stripe may be pointed at: its own name, and the provider-neutral one a site registers once whatever
      the provider (payment-provider-webhook serves the same handler) */
   if (whsec) for (const door of ['stripe-webhook', 'payment-provider-webhook']) {
-    const stripe = async (raw: any, header: any) => { const r = await fetch(`${cfg.FUNCTIONS_URL}/${door}`, { method: 'POST', headers: { 'content-type': 'application/json', 'stripe-signature': header }, body: raw }); return { status: r.status, body: await r.text() } }
-    const sign = (raw: any, t: any, key = whsec) => `t=${t},v1=${createHmac('sha256', key).update(`${t}.${raw}`).digest('hex')}`
+    const stripe = async (raw: string, header: string) => { const r = await fetch(`${cfg.FUNCTIONS_URL}/${door}`, { method: 'POST', headers: { 'content-type': 'application/json', 'stripe-signature': header }, body: raw }); return { status: r.status, body: await r.text() } }
+    const sign = (raw: string, t: number, key = whsec) => `t=${t},v1=${createHmac('sha256', key).update(`${t}.${raw}`).digest('hex')}`
     const now = () => Math.floor(Date.now() / 1000)
     const ev = JSON.stringify({ id: 'evt_e2e_' + door + Date.now(), object: 'event', type: 'customer.created', created: now(), data: { object: { id: 'cus_e2e', object: 'customer' } } })
     const good = await stripe(ev, sign(ev, now()))
@@ -167,7 +167,7 @@ if (served('cal-webhook')) {
     ok(`${door} refuses a correctly signed event an hour old`, stale.status === 400, `answered ${stale.status}`)
   } else note('⚠ no STRIPE_WEBHOOK_SECRET in this environment — the signed Stripe checks are skipped (the end-to-end run supplies one)')
   const secret = process.env.CAL_WEBHOOK_SECRET || ''
-  const cal = async (raw: any, sig?: any) => {
+  const cal = async (raw: any, sig?: string|undefined) => {
     const r = await fetch(`${cfg.FUNCTIONS_URL}/cal-webhook`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-cal-signature-256': sig ?? createHmac('sha256', secret).update(raw).digest('hex') }, body: raw })
     return { status: r.status, body: await r.text() }
   }
@@ -175,7 +175,7 @@ if (served('cal-webhook')) {
   else if (!secret) note('⚠ no CAL_WEBHOOK_SECRET in this environment — the altered, stale and replayed cal.com checks are skipped')
   else {
     const uid = 'forged-replay-' + Date.now()
-    const created = (at: any) => JSON.stringify({ triggerEvent: 'BOOKING_CREATED', createdAt: at, payload: { uid, title: 'probe', startTime: new Date(Date.now() + 864e5).toISOString(), endTime: new Date(Date.now() + 9e7).toISOString(), attendees: [{ email: 'probe@example.test', name: 'Probe' }], organizer: { email: 'host@example.test' } } })
+    const created = (at: string) => JSON.stringify({ triggerEvent: 'BOOKING_CREATED', createdAt: at, payload: { uid, title: 'probe', startTime: new Date(Date.now() + 864e5).toISOString(), endTime: new Date(Date.now() + 9e7).toISOString(), attendees: [{ email: 'probe@example.test', name: 'Probe' }], organizer: { email: 'host@example.test' } } })
     const fresh = created(new Date().toISOString())
     const altered = fresh.replace('"probe"', '"probf"')
     const a = await cal(altered, createHmac('sha256', secret).update(fresh).digest('hex'))

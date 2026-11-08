@@ -9,7 +9,7 @@ import { localStack, loadDotEnv, serviceKey, supabaseUrl } from './tts/storage.m
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (message: any) => console.log('usage-db: ' + message)
+const note = (message: string) => console.log('usage-db: ' + message)
 loadDotEnv()
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -54,7 +54,7 @@ try {
     users.push({ id: data.user.id, email })
   }
   const source = `usage-db:${suffix}`
-  const grant = (userId: any, amount: any) => admin.rpc('usage_grant', {
+  const grant = (userId: any, amount: number) => admin.rpc('usage_grant', {
     p_user_id: userId, p_offer_key: offerKey, p_source: 'purchase',
     p_source_id: `checkout:${suffix}:${userId}`, p_units_micros: amount,
     p_period_start: null, p_expires_at: null,
@@ -98,7 +98,7 @@ try {
 
   const firstAdmission = await admin.rpc('usage_admit', { p_user_id: users[0].id, p_offer_key: offerKey })
   assert.equal((firstAdmission.data as any)?.admitted, true, 'a reader with prepaid units is admitted')
-  const record = async (userId: any, sourceRef: any, units: any, botId = 'usage-probe') => {
+  const record = async (userId: any, sourceRef: string, units: number, botId = 'usage-probe') => {
     const authorization = await admin.rpc('usage_authorize', {
       p_user_id: userId, p_offer_key: offerKey, p_reservation_ref: sourceRef,
       p_max_units_micros: units,
@@ -319,7 +319,7 @@ try {
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
   assert.equal(preference.error, null, preference.error?.message)
   assert.equal(preference.data, true, 'the server saves the reader-owned top-up preference')
-  const topupInput: any = (attemptRef: any, siteEnabled: any, amountMinor = 500, providerId = 'stripe') => admin.rpc('usage_topup_begin', {
+  const topupInput: any = (attemptRef: string, siteEnabled: boolean, amountMinor = 500, providerId = 'stripe') => admin.rpc('usage_topup_begin', {
     p_provider_id: providerId,
     p_user_id: users[0].id, p_attempt_ref: attemptRef, p_offer_key: offerKey,
     p_currency: 'usd', p_amount_minor: amountMinor, p_units_micros: 25_000_000,
@@ -539,7 +539,7 @@ try {
     'usage rows retain the unit snapshot resolved by the server-side offer')
   assert.equal(storedEvents.data.find((event) => event.source_ref === `${source}:step-1`)?.rate_micros, 10_000)
 
-  const readers = await Promise.all(users.map((user: any) => signedIn(user.id, user.email)))
+  const readers = await Promise.all(users.map((user: { id: any; email: any }) => signedIn(user.id, user.email)))
   const hiddenInferenceAttempts = await readers[0].from('usage_inference_attempts').select('invocation_ref')
   assert.ok(hiddenInferenceAttempts.error, 'provider attempt evidence is inaccessible to reader clients')
   const storedInferenceAttempts = await admin.from('usage_inference_attempts')
@@ -553,7 +553,7 @@ try {
   const ownEvents = await readers[0].from('usage_events').select('source_ref').eq('offer_key', offerKey)
   assert.equal(ownEvents.error, null, ownEvents.error?.message)
   assert.deepEqual(
-    ownEvents.data.map((event: any) => event.source_ref).sort(),
+    ownEvents.data.map((event: { source_ref: any }) => event.source_ref).sort(),
     [`${source}:step-1`, `${source}:step-2`, telemetryRef].sort(),
   )
   const otherEvents = await readers[1].from('usage_events').select('source_ref').eq('offer_key', offerKey)
@@ -564,7 +564,7 @@ try {
   assert.equal(ownGrants.data.length, 1, 'the second reader sees only their own grant')
   const ownReservations = await readers[0].from('usage_reservations').select('reservation_ref')
   assert.equal(ownReservations.error, null, ownReservations.error?.message)
-  assert.ok(ownReservations.data.every((reservation: any) => reservation.reservation_ref.startsWith(source)),
+  assert.ok(ownReservations.data.every((reservation: { reservation_ref: string }) => reservation.reservation_ref.startsWith(source)),
     'a reader sees only their reservations')
   const hiddenTopups = await readers[1].from('usage_topup_attempts').select('attempt_ref')
   assert.equal(hiddenTopups.error, null, hiddenTopups.error?.message)
@@ -598,11 +598,11 @@ try {
   assert.equal(promoted.error, null, promoted.error?.message)
   const usageReport = await readers[1].rpc('admin_usage', { p_days: 30 })
   assert.equal(usageReport.error, null, usageReport.error?.message)
-  const reportRows = usageReport.data.inference.filter((row: any) =>
+  const reportRows = usageReport.data.inference.filter((row: { operation_id: string }) =>
     row.operation_id === readerOperationId || row.operation_id === siteOperationId)
-  const readerRows = reportRows.filter((row: any) => row.operation_id === readerOperationId)
+  const readerRows = reportRows.filter((row: { operation_id: string }) => row.operation_id === readerOperationId)
   assert.equal(readerRows.length, 2, 'the report keeps distinct provider attempts as separate rows')
-  const measuredRow = readerRows.find((row: any) => row.provider_id === 'primary')
+  const measuredRow = readerRows.find((row: { provider_id: string }) => row.provider_id === 'primary')
   assert.deepEqual({
     attempts: measuredRow?.attempts,
     providerCost: measuredRow?.provider_cost_micros,
@@ -615,7 +615,7 @@ try {
     attempts: 1, providerCost: 400, markup: 1_500_000,
     customerCost: 600, customerUnits: 600_000, retailValue: 600, estimatedAttempts: 0,
   }, 'measured provider cost, markup, customer usage, and retail value remain distinct')
-  const estimatedRow = readerRows.find((row: any) => row.provider_id === 'backup')
+  const estimatedRow = readerRows.find((row: { provider_id: string }) => row.provider_id === 'backup')
   assert.equal(estimatedRow?.estimated_attempts, 1, 'the report surfaces estimated attempt counts')
   assert.deepEqual({
     providerCost: estimatedRow?.provider_cost_micros,
@@ -627,7 +627,7 @@ try {
     providerCost: 200, markup: 1_500_000,
     customerCost: 300, customerUnits: 300_000, retailValue: 300,
   })
-  const siteRow = reportRows.find((row: any) => row.operation_id === siteOperationId)
+  const siteRow = reportRows.find((row: { operation_id: string }) => row.operation_id === siteOperationId)
   assert.deepEqual({
     sponsor: siteRow?.sponsor,
     providerCost: siteRow?.provider_cost_micros,
@@ -641,7 +641,7 @@ try {
   const deletedReader = await admin.auth.admin.deleteUser(users[0].id)
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
   assert.equal(deletedReader.error, null, deletedReader.error?.message)
-  ;(users[0] as any).deleted = true
+  users[0].deleted = true
   const retainedAttempts = await admin.from('usage_inference_attempts')
     .select('user_id, sponsor, provider_cost_micros, measurement_status')
     .eq('invocation_ref', inferenceRef)
@@ -655,7 +655,7 @@ try {
 } finally {
   const cleanupErrors = []
   for (const user of users) {
-    if ((user as any).deleted) continue
+    if (user.deleted) continue
     const { error } = await admin.auth.admin.deleteUser(user.id)
     if (error) cleanupErrors.push(`${user.email}: ${error.message}`)
   }

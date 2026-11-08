@@ -24,11 +24,10 @@ export function parseStrings(raw: string) {
   const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw)
   return { scope: fm.data.scope || '', title: fm.data.title || '', fmRaw: m ? m[1] : `scope: ${fm.data.scope || ''}`, spaced: /^###[^\n]*\n\n/m.test(fm.content), groups }
 }
-export function serialiseStrings(fmRaw: string, groups: { [s: string]: unknown }|ArrayLike<unknown>, spaced = false) {
+export function serialiseStrings(fmRaw: string, groups: Record<string, Record<string, unknown>>, spaced = false) {
   const lines = ['---', fmRaw.replace(/\n+$/, ''), '---', '']
   for (const [gname, keys] of Object.entries(groups)) {
     lines.push('## ' + gname, '')
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): [string, unknown][]', gave the followi
     for (const [kname, fields] of Object.entries(keys)) {
       const { name, ...rest }: any = fields
       lines.push('### ' + kname + (name ? ' ' + name : ''))

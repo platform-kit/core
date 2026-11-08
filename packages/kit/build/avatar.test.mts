@@ -10,7 +10,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 const KIT = new URL('../', import.meta.url).pathname
 let pass = 0, fail = 0
-const ok = (m: any, c: any, d: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
+const ok = (m: string, c: boolean, d: string) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
 
 console.log('\nONE PERSON, ONE FACE\n')
 

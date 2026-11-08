@@ -22,8 +22,7 @@ md.use({
     name: 'sysmark', level: 'inline',
     start(src) { const i = src.indexOf('=='); return i < 0 ? undefined : i },
     tokenizer(src) { const m = /^==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/.exec(src); if (!m) return; return { type: 'sysmark', raw: m[0], colour: m[2] || 'sun', tokens: this.lexer.inlineTokens(m[1]) } },
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'Token[] | undefined' is not assignable to parameter of type 'Token[]'. Type 'undefined' is not assignable to type 'Token[]
-    renderer(tok) { return `<mark class="hl">${this.parser.parseInline(tok.tokens)}</mark>` },
+    renderer(tok) { return `<mark class="hl">${this.parser.parseInline(tok.tokens!)}</mark>` },
   }],
 })
 /* what marked writes is HTML; an EPUB wants XHTML — the few differences closed here */

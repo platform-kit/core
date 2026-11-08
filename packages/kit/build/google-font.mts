@@ -38,5 +38,4 @@ export const stackOf = (f: { n: any; c: string|number }) => `'${f.n}', ${FALLBAC
 export const slotsOf = (f: { n?: string; c: any; w?: number[]; i?: number; v?: string[]; p?: number }) => (f.c === 'm' ? ['mono'] : f.c === 'd' || f.c === 'h' ? ['heading'] : ['heading', 'body'])
 
 /* the kind word the picker and the refusals use */
-// @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ m: string; f: string; s: string; d: str
-export const kindOf = (f) => ({ m: 'mono', f: 'serif', s: 'sans', d: 'display', h: 'handwriting' })[f.c] || 'sans'
+export const kindOf = (f: { c: string|number; }) => ({ m: 'mono', f: 'serif', s: 'sans', d: 'display', h: 'handwriting' })[f.c] || 'sans'

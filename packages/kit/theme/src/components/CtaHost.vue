@@ -31,7 +31,6 @@ function evaluate(path: any) {
   newPageView(path)
   /* where nothing may appear is one rule, asked by the ad and by the chat alike (lib/interrupt.js):
      a place of work is not a place to be sold to */
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'.
   if (!mayInterrupt(path, INTERRUPT_ROUTES)) return
   if (/^\/content\/articles\/./.test(path)) return
   /* inside a book the reader is mid-sentence, and on a landing page they are
@@ -40,7 +39,6 @@ function evaluate(path: any) {
   const reading = /^\/content\/books\/./.test(path) || isPageRoute(path)
   timer = setTimeout(async () => {
     const b = await pickAd({ placement: 'modal' })
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'.
     if (!b || route.value !== path || !mayInterrupt(route.value, INTERRUPT_ROUTES)) return
     /* the corner belongs to whoever takes it first in a page view: if the chat is already saying
        something there, the ad waits for another page rather than stacking on it */

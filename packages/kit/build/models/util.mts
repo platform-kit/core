@@ -6,7 +6,8 @@ import { keepComments } from './yaml-keep.mjs'
 const KIT = (f: any) => path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', f)
 
 export const NAME_RE = /^[a-z0-9]+(?:[-/][a-z0-9]+)*$/
-export const DUMP = { lineWidth: -1 }
+/* js-yaml's dump option: gray-matter hands its options to the yaml engine, but declares only its own */
+export const DUMP = { lineWidth: -1 } as { lineWidth: number } & matter.GrayMatterOption<string, never>
 
 /* YAML auto-parses unquoted dates to Date objects; keep them as plain YYYY-MM-DD strings so a round-trip
    through the editor doesn't expand them to a timestamp */
@@ -43,15 +44,13 @@ export const frontmatter = {
   serialise: (rec: any, ctx: any) => {
     const body = '\n' + String(rec.content || '').replace(/^\n+/, '')
     const kept = ctx && ctx.current ? keepComments(ctx.current, cleanData(rec.data)) : null
-    // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
     return kept == null ? matter.stringify(body, cleanData(rec.data), DUMP) : '---\n' + kept + '\n---\n' + body
   },
 }
 /* a kit script spawned in the site's root — a hook's compile; rejects with its stderr */
-export const script = (name: any, args = [], root = process.cwd(), env = process.env) => new Promise((resolve, reject) => {
+export const script = (name: any, args = [], root = process.cwd(), env = process.env) => new Promise<void>((resolve, reject) => {
   const c = spawn(process.execPath, [KIT(name), ...args], { cwd: root, stdio: ['ignore', 'inherit', 'pipe'], env: { ...process.env, ...env } })
   let err = ''; c.stderr.on('data', (d) => { err += d })
-  // @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
   c.on('exit', (code) => (code ? reject(new Error(err.trim().split('\n').filter((l) => !/Deprecation|trace-deprecation/.test(l)).join(' ') || name + ' failed')) : resolve()))
 })
 export const issue = (path: any, message: any) => ({ path, message })

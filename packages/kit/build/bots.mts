@@ -245,7 +245,7 @@ export async function readSkills(st: any, { theme, themeSkills }: any = {}) {
 
 /* ------------------------------------------------------------------ bots */
 
-export async function readBots(st: any, { tools = {}, skills = {}, sealed = null } = {}) {
+export async function readBots(st: any, { tools = {}, skills = {}, sealed = null as Set<unknown> | null } = {}) {
   const names = await st.list('content/bots')
   const usageOfferKeys = new Set()
   for (const name of await st.list('content/store/products')) {
@@ -383,7 +383,7 @@ export async function readBots(st: any, { tools = {}, skills = {}, sealed = null
 
 /* ------------------------------------------------------------------ commands */
 
-export async function readCommands(st: any, { bots = [], tools = {} } = {}) {
+export async function readCommands(st: any, { bots = [], tools = {} }: { bots?: Array<{ slug: string }>, tools?: Record<string, unknown> } = {}) {
   const names = await st.list('content/commands')
   const out = []
   const faults = []
@@ -444,12 +444,9 @@ export async function compileBots({ root = process.cwd(), store, check = false, 
   let sealed = new Set()
   try {
     const { readSpaces, sealedRooms } = await import('./spaces-io.mjs')
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ channels: { data: { name: any; topic: any; mode: any; visibility: any; published: boolean; order: any; group: string; co
     sealed = sealedRooms(await readSpaces(st))
   } catch (e) { /* no spaces to read: nothing is sealed, and nothing is refused */ }
-  // @ts-expect-error TS2322, from the conversion: Type 'Set<unknown>' is not assignable to type 'null | undefined'.
   const { bots, faults: bf } = await readBots(st, { tools, skills, sealed })
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
   const { commands, faults: cf } = await readCommands(st, { bots, tools })
   /* a skill's own tools must exist too, or opening it offers a tool nothing can run */
   for (const [name, s] of Object.entries(skills)) {

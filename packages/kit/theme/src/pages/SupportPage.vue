@@ -12,7 +12,6 @@ import SupportPanel from '../components/support/SupportPanel.vue'
 import SiteMark from '../components/SiteMark.vue'
 
 const W = (us('support').widget || {}).page || {}
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: W.title || '', description: W.lead || '', path: ROUTES.support, noindex: true })
 onMounted(async () => { resolveDefault(); await boot(); open() })
 onBeforeUnmount(close)

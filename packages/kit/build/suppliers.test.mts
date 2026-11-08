@@ -38,8 +38,8 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const KIT = path.resolve(HERE, '..')
 let n = 0, bad = 0
 const QUEUE: any = []
-const t = (name: any, fn: any) => { n++; QUEUE.push([name, fn]) }
-const run: any = async () => {
+const t = (name: string, fn: any) => { n++; QUEUE.push([name, fn]) }
+const run = async () => {
   for (const [name, fn] of QUEUE) {
     try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) }
   }
@@ -68,7 +68,7 @@ t('every id resolves to the supplier it names, and the registry is the whole lis
  * Lulu answers, and neither knows what a page is.
  */
 t('the printers are the suppliers that make a printed format', () => {
-  for (const id of PRINTER_IDS) assert.ok(supplier(id).makes.some((f: any) => FORMATS_PRINTED.includes(f)), id)
+  for (const id of PRINTER_IDS) assert.ok(supplier(id).makes.some((f: string) => FORMATS_PRINTED.includes(f)), id)
 })
 
 t('a supplier that makes nothing is never offered as a way to make something', () => {
@@ -194,7 +194,6 @@ t('with mocks refused and no keys, nothing is offered', () => {
  */
 t('a site\'s own supplier joins the registry beside the kit\'s', async () => {
   const { bindery } = await import(DEMO_SUPPLIERS)
-  // @ts-expect-error TS2322, from the conversion: Type '(env: any) => { id: string; name: string; makes: string[]; sends: boolean; stateful: boolean; needs: string[]; keys: string[]; configu
   const r = printers(() => '', [bindery])
   assert.ok(r.ids.includes('bindery'), 'the site\'s own is there')
   for (const id of SUPPLIER_IDS) assert.ok(r.ids.includes(id), `and the kit's ${id} still is`)
@@ -203,7 +202,6 @@ t('a site\'s own supplier joins the registry beside the kit\'s', async () => {
 
 t('and is offered for what it makes, exactly as the kit\'s are', async () => {
   const { bindery } = await import(DEMO_SUPPLIERS)
-  // @ts-expect-error TS2322, from the conversion: Type '(env: any) => { id: string; name: string; makes: string[]; sends: boolean; stateful: boolean; needs: string[]; keys: string[]; configu
   const r = printers(() => '', [bindery])
   assert.ok(r.providersFor('hardcover').some((p) => p.id === 'bindery'))
   assert.ok(!r.providersFor('pdf').some((p) => p.id === 'bindery'), 'and not for what it does not')
@@ -212,17 +210,13 @@ t('and is offered for what it makes, exactly as the kit\'s are', async () => {
 /* A SUPPLIER THAT DOES NOT KEEP THE SHAPE IS REFUSED AT REGISTRATION, by name, rather than
    halfway through somebody buying something. */
 t('a malformed supplier is refused by name, with what is wrong with it', () => {
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; }' is not assignable to type 'never'.
   assert.throws(() => printers(() => '', [{ id: 'broken' }]), /broken/)
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; }' is not assignable to type 'never'.
   assert.throws(() => printers(() => '', [{ id: 'broken' }]), /does not keep the shape/)
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; name: string; makes: never[]; needs: never[]; }' is not assignable to type 'never'.
   assert.throws(() => printers(() => '', [{ id: 'Bad Id', name: 'x', makes: [], needs: [] }]), /id:/)
 })
 
 t('and two suppliers cannot share a name', async () => {
   const { bindery } = await import(DEMO_SUPPLIERS)
-  // @ts-expect-error TS2322, from the conversion: Type '(env: any) => { id: string; name: string; makes: string[]; sends: boolean; stateful: boolean; needs: string[]; keys: string[]; configu
   assert.throws(() => printers(() => '', [bindery, bindery]), /two suppliers are called/)
 })
 
@@ -277,11 +271,9 @@ t('and `keys` is never confused with `needs`, which is a different question', ()
 
 t('a site supplier with its key missing is a mock, and with it present is not', async () => {
   const { bindery } = await import(DEMO_SUPPLIERS)
-  // @ts-expect-error TS2322, from the conversion: Type '(env: any) => { id: string; name: string; makes: string[]; sends: boolean; stateful: boolean; needs: string[]; keys: string[]; configu
   const without = printers(() => '', [bindery]).supplier('bindery')
   assert.equal(without.configured(), false); assert.equal(without.mock(), true)
-  // @ts-expect-error TS2322, from the conversion: Type '(env: any) => { id: string; name: string; makes: string[]; sends: boolean; stateful: boolean; needs: string[]; keys: string[]; configu
-  const withKey = printers((k: any) => (k === 'BINDERY_EMAIL' ? 'hello@example.com' : ''), [bindery]).supplier('bindery')
+  const withKey = printers((k) => (k === 'BINDERY_EMAIL' ? 'hello@example.com' : ''), [bindery]).supplier('bindery')
   assert.equal(withKey.configured(), true); assert.equal(withKey.mock(), false)
 })
 
@@ -369,14 +361,14 @@ t('no module outside the printers names a printer id in code', () => {
  * catalogue dropping a value — which must take the thing off sale without a cart line losing its
  * meaning, and must come back on by itself when the catalogue restores it.
  */
-const CAT = (axes: any) => ({ ...supplier('post-room'), id: 'pod', name: 'A print-on-demand shop', catalogue: async () => axes })
+const CAT = (axes: { name: string; values: string[] }[]) => ({ ...supplier('post-room'), id: 'pod', name: 'A print-on-demand shop', catalogue: async () => axes })
 
 t('a catalogue supplies the axes as ordinary option rows, marked with whose they are', async () => {
   const pod = CAT([{ name: 'Colour', values: ['Black', 'White'] }, { name: 'Size', values: ['S', 'M', 'L'] }])
   const { options, added, gone } = reconcileOptions([], await pod.catalogue(), { from: pod.id })
   assert.deepEqual(options.map((o) => o.slug), ['colour', 'size'])
   assert.deepEqual(options.map((o) => o.from), ['pod', 'pod'])
-  assert.deepEqual(options[0].values.map((v: any) => v.value), ['black', 'white'])
+  assert.deepEqual(options[0].values.map((v: { value: any }) => v.value), ['black', 'white'])
   assert.equal(added.length, 5, 'every value is new the first time')
   assert.deepEqual(gone, [])
   /* and they are variants like any other, with the offer's own sku and lookup key */
@@ -415,16 +407,16 @@ t('A CATALOGUE THAT DROPS A VALUE takes it off sale and keeps its key readable',
 
   /* the row is still there, so a key still reads — and it is marked */
   const colour: any = two.options.find((o) => o.slug === 'colour')
-  assert.deepEqual(colour.values.map((v: any) => v.value), ['black', 'white'], 'nothing is deleted')
-  assert.equal(colour.values.find((v: any) => v.value === 'white').gone, true)
+  assert.deepEqual(colour.values.map((v: { value: any }) => v.value), ['black', 'white'], 'nothing is deleted')
+  assert.equal(colour.values.find((v: { value: string }) => v.value === 'white').gone, true)
   assert.deepEqual(readVariantKey('white.m', two.options).map((c) => c.label), ['White', 'M'],
     'an order in flight still reads as the words somebody chose')
 
   /* and it is off sale, by every route that decides */
   const vs: any = variantsOf(offer, two.options)
   assert.equal(vs.length, 4, 'the combination still exists')
-  assert.equal(vs.filter((v: any) => v.sold).length, 2, 'half of them are gone')
-  assert.ok(vs.find((v: any) => v.variant === 'white.m').gone, 'and say why')
+  assert.equal(vs.filter((v: { sold: any }) => v.sold).length, 2, 'half of them are gone')
+  assert.ok(vs.find((v: { variant: string }) => v.variant === 'white.m').gone, 'and say why')
   assert.equal(checkVariant(two.options, 'white.m'), null, 'the till refuses it')
   assert.ok(checkVariant(two.options, 'black.m'), 'and still sells the rest')
 })
@@ -434,9 +426,9 @@ t('a value the catalogue brings back sells again, with nothing to clean up', asy
   const one = reconcileOptions([], full, { from: 'pod' })
   const two = reconcileOptions(one.options, [{ name: 'Colour', values: ['Black'] }], { from: 'pod' })
   const three = reconcileOptions(two.options, full, { from: 'pod' })
-  assert.deepEqual(three.added.map((a: any) => a.value), ['white'], 'and the shop is told it is back')
+  assert.deepEqual(three.added.map((a: { value: any }) => a.value), ['white'], 'and the shop is told it is back')
   assert.deepEqual(three.gone, [])
-  assert.ok(three.options[0].values.every((v: any) => !v.gone))
+  assert.ok(three.options[0].values.every((v: { gone: any }) => !v.gone))
   assert.ok(variantsOf({ sku: 't', key: 'k' }, three.options).every((v) => v.sold))
   /* a value still absent on a later run is not reported a second time: it went once */
   const four = reconcileOptions(two.options, [{ name: 'Colour', values: ['Black'] }], { from: 'pod' })
@@ -457,9 +449,9 @@ t('AN AXIS THE CATALOGUE DROPS WHOLE is kept, because removing it renumbers ever
   const one = reconcileOptions([], [{ name: 'Colour', values: ['Black'] }, { name: 'Size', values: ['S', 'M'] }], { from: 'pod' })
   assert.equal(variantKey(readVariantKey('black.m', one.options)), 'black.m')
   const two: any = reconcileOptions(one.options, [{ name: 'Size', values: ['S', 'M'] }], { from: 'pod' })
-  assert.deepEqual(two.options.map((o: any) => o.slug), ['size', 'colour'], 'the dropped axis is kept, last')
-  assert.ok(two.options.find((o: any) => o.slug === 'colour').values.every((v: any) => v.gone))
-  assert.deepEqual(two.gone.map((g: any) => g.value), ['black'])
+  assert.deepEqual(two.options.map((o: { slug: any }) => o.slug), ['size', 'colour'], 'the dropped axis is kept, last')
+  assert.ok(two.options.find((o: { slug: string }) => o.slug === 'colour').values.every((v: { gone: any }) => v.gone))
+  assert.deepEqual(two.gone.map((g: { value: any }) => g.value), ['black'])
   /* nothing sells, which is right: there is no Colour to pick and every key holds one */
   assert.deepEqual(variantsOf({ sku: 't', key: 'k' }, two.options).filter((v) => v.sold), [])
 })
@@ -513,10 +505,10 @@ t('THE REFRESH ACTION reads a supplier\u2019s catalogue, and says so when there 
   /* a store of one product, in memory: the action reads and writes through it like any other */
   const files: any = { 'content/store/products/tee.md': '---\nsku: tee\ntitle: A tee\nsupplier: lulu\n---\n' }
   const store = {
-    read: async (f: any) => files[f] ?? null,
-    write: async (f: any, text: any) => { files[f] = text },
+    read: async (f: string|number) => files[f] ?? null,
+    write: async (f: string|number, text: any) => { files[f] = text },
     list: async () => Object.keys(files).map((f: any) => f.split('/').pop().replace(/[.]md$/, '')),
-    exists: async (f: any) => f in files,
+    exists: async (f: string) => f in files,
   }
   const ctx = { store, root: path.resolve(KIT, '../..') }
   /* Lulu publishes no catalogue, and that is a real answer rather than silence */
@@ -542,7 +534,7 @@ t('a product takes its axes from a site supplier\u2019s catalogue, and loses one
   const refresh = COLLECTIONS.products.actions.refresh
   const DEMO = path.resolve(KIT, '../../sites/demo')
   const files: any = { 'content/store/products/tee.md': '---\nsku: ridgeway-tee\nkey: aa11bb22\ntitle: A plain tee\nsupplier: ridgeway\nprice: 28\n---\nSoft, and it lasts.\n' }
-  const store = { read: async (f: any) => files[f] ?? null, write: async (f: any, t2: any) => { files[f] = t2 }, exists: async (f: any) => f in files, list: async () => ['tee'] }
+  const store = { read: async (f: string|number) => files[f] ?? null, write: async (f: string|number, t2: any) => { files[f] = t2 }, exists: async (f: string) => f in files, list: async () => ['tee'] }
   const ctx = { store, root: DEMO }
 
   /* counted from Ridgeway's own catalogue, so the fixture may change what it runs this month
@@ -550,12 +542,12 @@ t('a product takes its axes from a site supplier\u2019s catalogue, and loses one
   const { suppliersFor } = await import('./suppliers.mjs')
   const rg: any = (await suppliersFor({ root: DEMO })).find((x: any) => x.id === 'ridgeway')
   const axes = await rg.catalogue()
-  const every = axes.reduce((n2: any, o: any) => n2 + o.values.length, 0)
+  const every = axes.reduce((n2: any, o: { values: string|any[] }) => n2 + o.values.length, 0)
 
   const one = await refresh({ name: 'tee' }, ctx)
   assert.equal(one.changed, true)
-  assert.deepEqual(one.options.map((o: any) => o.name), axes.map((o: any) => o.name))
-  assert.ok(one.options.every((o: any) => o.from === 'ridgeway'))
+  assert.deepEqual(one.options.map((o: { name: any }) => o.name), axes.map((o: { name: any }) => o.name))
+  assert.ok(one.options.every((o: { from: string }) => o.from === 'ridgeway'))
   assert.equal(one.added.length, every, 'every value of every axis is new the first time')
   assert.deepEqual(one.gone, [])
   /* AND IT IS IN THE FILE, as rows a person could have typed */
@@ -567,9 +559,9 @@ t('a product takes its axes from a site supplier\u2019s catalogue, and loses one
 
   /* twelve shirts, every one on sale, each with its own sku */
   const vs: any = variantsOf({ sku: 'ridgeway-tee', key: 'aa11bb22' }, one.options)
-  assert.equal(vs.length, axes.reduce((n2: any, o: any) => n2 * o.values.length, 1))
-  assert.ok(vs.every((v: any) => v.sold))
-  assert.equal(vs.find((v: any) => v.variant === 'oat.l').sku, 'ridgeway-tee-oat-l')
+  assert.equal(vs.length, axes.reduce((n2: number, o: { values: string|any[] }) => n2 * o.values.length, 1))
+  assert.ok(vs.every((v: { sold: any }) => v.sold))
+  assert.equal(vs.find((v: { variant: string }) => v.variant === 'oat.l').sku, 'ridgeway-tee-oat-l')
 
   /* a second refresh changes nothing and writes nothing */
   const before = files['content/store/products/tee.md']
@@ -580,7 +572,7 @@ t('a product takes its axes from a site supplier\u2019s catalogue, and loses one
   /* now Ridgeway stops making Slate blue. The reconciler is pure, so this is the same call the
      action makes — what is being checked is that what came out of the file goes back in. */
   const doomed = axes[0].values[axes[0].values.length - 1]
-  const narrowed = axes.map((o: any, i: any) => (i ? o : { ...o, values: o.values.slice(0, -1) }))
+  const narrowed = axes.map((o: { values: string|any[] }, i: any) => (i ? o : { ...o, values: o.values.slice(0, -1) }))
   const { data } = (await import('gray-matter')).default(files['content/store/products/tee.md'])
   const three = reconcileOptions(data.options, narrowed, { from: 'ridgeway' })
   assert.deepEqual(three.gone.map((g) => g.label), [doomed.label], 'the shop is told, in the words it reads')

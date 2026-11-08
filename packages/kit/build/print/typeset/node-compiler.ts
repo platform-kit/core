@@ -8,7 +8,6 @@
 import path from 'node:path'
 
 export async function create({ workspace, fonts }: any = {}) {
-  // @ts-expect-error TS2307, from the conversion: Cannot find module '@myriaddreamin/typst-ts-node-compiler' or its corresponding type declarations.
   const { NodeCompiler } = await import('@myriaddreamin/typst-ts-node-compiler')
   const c = NodeCompiler.create({
     workspace: workspace || process.cwd(),

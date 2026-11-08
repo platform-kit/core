@@ -7,8 +7,8 @@ import {
 
 const platform = 'capability-fixture'
 const routes = ['comments.read', 'comments.write', 'messages.read', 'messages.write']
-const manifest = (capabilities: any) => ({ capabilities })
-const available = (operation: any) => ({
+const manifest = (capabilities: any[]) => ({ capabilities })
+const available = (operation: string) => ({
   operation,
   platform,
   availability: 'available',
@@ -82,7 +82,7 @@ assert.deepEqual(
 const socialClient = (webhooks = { verify() {}, decode() {} }) => ({
   adapter: () => ({ webhooks }),
 })
-const routesFor = (backend: any, provider: any, operations: any, webhooks?: any) =>
+const routesFor = (backend: string|undefined, provider: string, operations: any[], webhooks?: string|undefined) =>
   availableSocialAutomationRoutes(
     manifest(
       [

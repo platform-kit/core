@@ -37,6 +37,7 @@ import { loadSite } from './site.mjs'
 import { VeliteFile } from 'velite'
 import { loadDotEnv } from './tts/storage.mjs'
 import { siteFile } from './site-file.mjs'
+import type { Plugin } from 'vite'
 
 /* The keys from .env, for a process that has not read them. Vite puts only VITE_-prefixed values
    on import.meta.env and nothing on process.env, so a server-side key an admin route needs — an
@@ -159,7 +160,7 @@ async function startJob({ script, books, force }: any) {
 }
 
 
-export function adminServer() {
+export function adminServer(): Plugin {
   return {
     name: 'admin-content-api',
     apply: 'serve',

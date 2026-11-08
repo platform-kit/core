@@ -29,13 +29,13 @@ import { serialiseForm } from './form-io.mjs'
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
 import { leave, notHere, stackOf } from './test-stack.mjs'
 
-const note = (m: any) => console.log('forms-api: ' + m)
+const note = (m: string) => console.log('forms-api: ' + m)
 if (process.env.FORMS_API_TEST === '0') { note('skipped (FORMS_API_TEST=0)'); process.exit(0) }
 const ROOT = process.cwd()
 const c = await loadSite(ROOT)
 if (c.modules.forms === false || c.modules.api === false) { note('the forms or the api module is off — nothing to check'); { notHere('forms-api.test.mjs', 'its module is off'); process.exit(0) } }
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
+const ok = async (name: string, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 
 /* ---- (1) the shapes under Node ---- */
 const EVERY = `#! title = Every kind
@@ -94,17 +94,17 @@ await ok('a definition: every kind in Typeform\'s type, a group per slide, a sta
   assert.equal(def.id, 'every'); assert.equal(def.type, 'quiz'); assert.equal(def.title, 'Every kind')
   assert.equal(def.fields.length, 3, 'three body slides → three groups'); assert.ok(def.fields.every((g) => g.type === 'group'))
   const flat = flatFields(def)
-  const types = Object.fromEntries(flat.map((f: any) => [f.id, f.type]))
+  const types = Object.fromEntries(flat.map((f: { id: any; type: any }) => [f.id, f.type]))
   assert.deepEqual(types, { name: 'short_text', about: 'short_text', email: 'email', site: 'website', phone: 'phone_number', secret: 'short_text', age: 'number', city: 'dropdown', pick: 'multiple_choice', many: 'multiple_choice', pic: 'picture_choice', stars: 'rating', scale: 'opinion_scale', when: 'date', day: 'date', at: 'short_text', doc: 'file_upload' })
   for (const [kind, type] of Object.entries(TYPE_OF)) assert.ok(typeof type === 'string' && type, kind)
-  const pick = flat.find((f: any) => f.id === 'pick'); assert.deepEqual(pick.properties.choices.map((x: any) => x.label), ['a', 'Bee', 'c']); assert.equal(pick.properties.allow_multiple_selection, false); assert.equal(pick.ref, 'pick')
-  assert.equal(flat.find((f: any) => f.id === 'many').properties.allow_multiple_selection, true)
-  assert.equal(flat.find((f: any) => f.id === 'pic').properties.choices[0].attachment.href, '/a.png')
-  assert.equal(flat.find((f: any) => f.id === 'stars').properties.steps, 7)
-  const sc = flat.find((f: any) => f.id === 'scale'); assert.deepEqual([sc.properties.steps, sc.properties.start_at_one, sc.properties.labels.left, sc.properties.labels.right], [10, true, 'Not', 'Very'])
-  assert.deepEqual([flat.find((f: any) => f.id === 'age').validations.min_value, flat.find((f: any) => f.id === 'age').validations.max_value], [1, 120])
-  assert.equal(flat.find((f: any) => f.id === 'name').validations.required, true); assert.equal(flat.find((f: any) => f.id === 'about').validations.required, false)
-  assert.equal(flat.find((f: any) => f.id === 'about').properties.description, 'A paragraph')
+  const pick = flat.find((f: { id: string }) => f.id === 'pick'); assert.deepEqual(pick.properties.choices.map((x: { label: any }) => x.label), ['a', 'Bee', 'c']); assert.equal(pick.properties.allow_multiple_selection, false); assert.equal(pick.ref, 'pick')
+  assert.equal(flat.find((f: { id: string }) => f.id === 'many').properties.allow_multiple_selection, true)
+  assert.equal(flat.find((f: { id: string }) => f.id === 'pic').properties.choices[0].attachment.href, '/a.png')
+  assert.equal(flat.find((f: { id: string }) => f.id === 'stars').properties.steps, 7)
+  const sc = flat.find((f: { id: string }) => f.id === 'scale'); assert.deepEqual([sc.properties.steps, sc.properties.start_at_one, sc.properties.labels.left, sc.properties.labels.right], [10, true, 'Not', 'Very'])
+  assert.deepEqual([flat.find((f: { id: string }) => f.id === 'age').validations.min_value, flat.find((f: { id: string }) => f.id === 'age').validations.max_value], [1, 120])
+  assert.equal(flat.find((f: { id: string }) => f.id === 'name').validations.required, true); assert.equal(flat.find((f: { id: string }) => f.id === 'about').validations.required, false)
+  assert.equal(flat.find((f: { id: string }) => f.id === 'about').properties.description, 'A paragraph')
   const third = def.fields[2]; assert.equal(third.properties.fields[0].type, 'statement'); assert.equal(third.properties.fields[0].title, 'Some free words before the fields.')
   assert.equal(def.welcome_screens[0].title, 'Welcome'); assert.equal(def.welcome_screens[0].properties.button_text, 'Begin')
   assert.equal(def.thankyou_screens[0].title, 'Thanks'); assert.equal(def.thankyou_screens[0].properties.button_mode, 'redirect'); assert.equal(def.thankyou_screens[0].properties.redirect_url, 'https://example.com/thanks')
@@ -144,10 +144,10 @@ await ok('the Responses query: the arguments read, the page by token, the filter
   const p2 = parseResponsesQuery({ page_size: '10', after: r1.items[9].row.id }); const r2 = applyResponsesQuery(p2, structuredClone(items)); assert.equal(r2.items[0].row.id, 'r19', 'the page after a token')
   const done = applyResponsesQuery(parseResponsesQuery({ completed: 'true', page_size: '100' }), structuredClone(items)); assert.equal(done.total_items, 20)
   const open = applyResponsesQuery(parseResponsesQuery({ completed: 'false', page_size: '100' }), structuredClone(items)); assert.equal(open.total_items, 10)
-  const since = applyResponsesQuery(parseResponsesQuery({ since: '2026-09-20T00:00:00Z', page_size: '100' }), structuredClone(items)); assert.ok(since.total_items > 0 && since.items.every((it: any) => (it.row.completed_at || it.row.started_at) >= '2026-09-20'))
+  const since = applyResponsesQuery(parseResponsesQuery({ since: '2026-09-20T00:00:00Z', page_size: '100' }), structuredClone(items)); assert.ok(since.total_items > 0 && since.items.every((it) => (it.row.completed_at || it.row.started_at) >= '2026-09-20'))
   const jane = applyResponsesQuery(parseResponsesQuery({ query: 'jane', page_size: '100' }), structuredClone(items)); assert.equal(jane.total_items, 15)
   const withEmail = applyResponsesQuery(parseResponsesQuery({ answered_fields: 'email', page_size: '100' }), structuredClone(items)); assert.equal(withEmail.total_items, 6)
-  const only = applyResponsesQuery(parseResponsesQuery({ fields: 'email', page_size: '100' }), structuredClone(items)); assert.ok(only.items.every((it: any) => it.answers.every((a: any) => a.field === 'email')))
+  const only = applyResponsesQuery(parseResponsesQuery({ fields: 'email', page_size: '100' }), structuredClone(items)); assert.ok(only.items.every((it) => it.answers.every((a: { field: string }) => a.field === 'email')))
   const ids = applyResponsesQuery(parseResponsesQuery({ included_response_ids: 'r1,r2' }), structuredClone(items)); assert.equal(ids.total_items, 2)
   const asc = applyResponsesQuery(parseResponsesQuery({ sort: 'landed_at,asc' }), structuredClone(items)); assert.equal(asc.items[0].row.id, 'r0')
   assert.ok(parseResponsesQuery({ page_size: '5000' }).errors.length); assert.ok(parseResponsesQuery({ completed: 'maybe' }).errors.length); assert.ok(parseResponsesQuery({ sort: 'name,up' }).errors.length)
@@ -155,12 +155,12 @@ await ok('the Responses query: the arguments read, the page by token, the filter
 await ok('the insights summary: views and drop-offs per field from the slides reached', () => {
   const s = summaryOf(def, { started: 100, finished: 40, slides: [{ slide: 1, reached: 100 }, { slide: 2, reached: 70 }, { slide: 3, reached: 50 }], average_seconds: 90 })
   assert.equal(s.form.summary.completion_rate, 40); assert.equal(s.form.summary.total_visits, 100); assert.equal(s.form.summary.responses_count, 40); assert.equal(s.form.summary.average_time, 90)
-  assert.equal(s.fields.length, 17); assert.equal(s.fields.find((f: any) => f.id === 'age').views, 100); assert.equal(s.fields.find((f: any) => f.id === 'age').dropoffs, 30, 'the last field of slide 1 loses those who never reached slide 2')
+  assert.equal(s.fields.length, 17); assert.equal(s.fields.find((f: { id: string }) => f.id === 'age').views, 100); assert.equal(s.fields.find((f: { id: string }) => f.id === 'age').dropoffs, 30, 'the last field of slide 1 loses those who never reached slide 2')
 })
 
 /* ---- (2) the served door ---- */
 /* ---- (4) the writes: a definition back to a document, and the life of a form through the client in cloud mode ---- */
-const PROBE_DEF = (title: any) => ({
+const PROBE_DEF = (title: string) => ({
   title,
   settings: { is_public: true, show_progress_bar: true, meta: { description: 'A probe.' } },
   welcome_screens: [{ ref: 'welcome', title: 'Welcome', properties: { button_text: 'Begin', description: 'Two minutes.' } }],
@@ -183,14 +183,14 @@ await ok('a definition → the builder\'s model → a forms.md document → the 
   const doc = serialiseForm(m, null)
   const back = parseForm(doc); assert.deepEqual(back.errors, [], JSON.stringify(back.errors)); assert.deepEqual(back.warnings, [])
   assert.ok(doc.includes('#! title = Probe survey') && doc.includes('-> start -> Begin') && doc.includes('-> end -> https://example.com/done') && doc.includes("-> interest == 'other'") && doc.includes('| multiline'), doc)
-  const again = definitionOf({ title: back.title, kit: back.kit, settings: { page: back.settings.page }, api: apiShape(back, id) }, { long: (f: any) => !!f.multiline })
-  const types = flatFields(again).map((f: any) => f.type + ':' + f.ref)
+  const again = definitionOf({ title: back.title, kit: back.kit, settings: { page: back.settings.page }, api: apiShape(back, id) }, { long: (f: { multiline: any }) => !!f.multiline })
+  const types = flatFields(again).map((f: { type: string; ref: string }) => f.type + ':' + f.ref)
   assert.deepEqual(types, ['short_text:name', 'email:email', 'multiple_choice:interest', 'long_text:other_text', 'opinion_scale:score'])
   assert.deepEqual(again.fields.map((g) => g.properties.fields.length), [2, 1, 1, 1, 1], 'a group per slide')
   assert.deepEqual(again.logic, PROBE_DEF('x').logic, 'the jump comes back as given')
-  assert.equal(flatFields(again).find((f: any) => f.ref === 'interest').properties.choices.map((c: any) => c.label).join(','), 'Reading,Writing,Something else')
+  assert.equal(flatFields(again).find((f: { ref: string }) => f.ref === 'interest').properties.choices.map((c: { label: any }) => c.label).join(','), 'Reading,Writing,Something else')
   assert.deepEqual([again.welcome_screens[0].properties.button_text, again.thankyou_screens[0].properties.redirect_url], ['Begin', 'https://example.com/done'])
-  const sc = flatFields(again).find((f: any) => f.ref === 'score'); assert.deepEqual([sc.properties.steps, sc.properties.labels.left, sc.properties.labels.right], [10, 'Not at all', 'Very'])
+  const sc = flatFields(again).find((f: { ref: string }) => f.ref === 'score'); assert.deepEqual([sc.properties.steps, sc.properties.labels.left, sc.properties.labels.right], [10, 'Not at all', 'Very'])
   /* the refusals */
   assert.throws(() => modelFromDefinition({ title: 'x', fields: [{ ref: 'pay', type: 'payment', title: 'Pay' }] }), (e: any) => e.code === 'UNSUPPORTED_TYPE' && /payment/.test(e.message))
   assert.throws(() => modelFromDefinition({ title: 'x', fields: [{ ref: 'a', type: 'short_text', title: 'A' }, { ref: 'b', type: 'short_text', title: 'B' }, { ref: 'c', type: 'short_text', title: 'C' }], logic: [{ type: 'field', ref: 'a', actions: [{ action: 'jump', details: { to: { type: 'field', value: 'c' } }, condition: { op: 'begins_with', vars: [{ type: 'field', value: 'a' }, { type: 'constant', value: 'x' }] } }] }] }), (e: any) => e.code === 'LOGIC' && /begins_with/.test(e.message))
@@ -216,10 +216,10 @@ if (!live.length) { note(`${pass} passed — no published form on this site; the
 const { createClient } = await import('@supabase/supabase-js')
 const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const API = url + '/functions/v1/forms-api'
-const sha256 = async (s: any) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
+const sha256 = async (s: string|undefined) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
 const made: any = []
-const makeKey = async (kind: any) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: admin } = await service.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await service.from('api_keys').insert({ name: 'forms-api test', kind, gated: false, prefix: key.slice(0, 12), hash: await sha256(key), created_by: admin ? admin.id : null }); if (error) throw new Error(error.message); made.push(key); return key }
-const get = async (p: any, headers = {}, init = {}) => { const r = await fetch(API + p, { headers, ...init }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
+const makeKey = async (kind: string) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: admin } = await service.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await service.from('api_keys').insert({ name: 'forms-api test', kind, gated: false, prefix: key.slice(0, 12), hash: await sha256(key), created_by: admin ? admin.id : null }); if (error) throw new Error(error.message); made.push(key); return key }
+const get = async (p: string, headers = {}, init = {}) => { const r = await fetch(API + p, { headers, ...init }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
 try {
   const key = await makeKey('forms')
   const { createClient: tf } = await import('@typeform/api-client')
@@ -229,7 +229,7 @@ try {
   const tally: any = {}; for (const r of counts ?? []) tally[r.form] = (tally[r.form] || 0) + 1
   const slug = live.sort((a, b) => (tally[b] || 0) - (tally[a] || 0))[0]
   /* a completion on the runner's function, as a guest — the site's every field answered with something of its kind */
-  const complete = async (email: any) => {
+  const complete = async (email: string|Blob) => {
     const form = FORMS[slug]
     const fd = new FormData(); fd.append('_form', slug); fd.append('_slide', '0'); fd.append('_end', 'true')
     for (const f of form.fields) { if (f.kind === 'file') continue; fd.append(f.name, f.values && f.values.length ? f.values[0] : f.kind === 'email' ? email : f.kind === 'number' || f.kind === 'rating' || f.kind === 'scale' ? '3' : f.kind === 'date' ? '2026-01-01' : f.kind === 'url' ? 'https://example.com' : 'probe') }
@@ -241,13 +241,13 @@ try {
   await ok('the official client, one base changed: forms, a definition, responses, me, workspaces', async () => {
     /* a page holds ten by default, as Typeform's does: a site with more forms than that is asked for all of them */
     const list = await client.forms.list({ pageSize: 200 })
-    assert.equal(list.total_items, live.length); assert.deepEqual(list.items.map((i: any) => i.id).sort(), live.sort()); assert.ok(list.items[0]._links.display.endsWith('/to/' + list.items[0].id))
+    assert.equal(list.total_items, live.length); assert.deepEqual(list.items.map((i: { id: any }) => i.id).sort(), live.sort()); assert.ok(list.items[0]._links.display.endsWith('/to/' + list.items[0].id))
     const form = await client.forms.get({ uid: slug })
-    assert.equal(form.id, slug); assert.ok(Array.isArray(form.fields) && form.fields.length); assert.ok(form.fields.every((g: any) => g.type === 'group'))
+    assert.equal(form.id, slug); assert.ok(Array.isArray(form.fields) && form.fields.length); assert.ok(form.fields.every((g: { type: string }) => g.type === 'group'))
     const mine = definitionOf(FORMS[slug], { site: 'x', apiBase: 'y' }); assert.equal(flatFields(form).length, flatFields(mine).length, 'the served definition is the shape\'s')
     const res = await client.responses.list({ uid: slug, pageSize: 5, completed: 'true' })
-    assert.ok(res.total_items >= 1); assert.ok(res.items.length <= 5); assert.ok(res.items.every((it: any) => it.submitted_at && it.answers.length && it.token === it.response_id))
-    const first: any = res.items[0]; assert.ok(first.answers.every((a: any) => a.field && a.field.id && a.field.ref && a.type))
+    assert.ok(res.total_items >= 1); assert.ok(res.items.length <= 5); assert.ok(res.items.every((it: { submitted_at: any; answers: string|any[]; token: any; response_id: any }) => it.submitted_at && it.answers.length && it.token === it.response_id))
+    const first = res.items[0]; assert.ok(first.answers.every((a: { field: { id: any; ref: any }; type: any }) => a.field && a.field.id && a.field.ref && a.type))
     const me = (await get('/me', { Authorization: 'Bearer ' + key })).body; assert.ok(me.alias && typeof me.user_id === 'string', JSON.stringify(me))
     const ws = await client.workspaces.list(); assert.equal(ws.items[0].id, 'default')
     const one = await client.responses.list({ uid: slug, pageSize: 1, ids: first.token }); assert.equal(one.total_items, 1)
@@ -267,19 +267,19 @@ try {
     const got: any = []
     const server: any = http.createServer((req, res) => { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { got.push({ sig: req.headers['typeform-signature'], body: b }); res.writeHead(200); res.end('ok') }) })
     await new Promise((r) => server.listen(0, '0.0.0.0', r))
-    const port = (server.address() as any).port
+    const port = server.address().port
     const receiver = `http://host.docker.internal:${port}/hook`
     try {
       const secret = 'shh-' + Math.random().toString(36).slice(2)
-      const w: any = await client.webhooks.create({ uid: slug, tag: 'probe', url: receiver, enabled: true, secret })
+      const w = await client.webhooks.create({ uid: slug, tag: 'probe', url: receiver, enabled: true, secret })
       assert.equal(w.tag, 'probe'); assert.equal(w.enabled, true); assert.equal(w.url, receiver); assert.equal(w.secret, undefined, 'the secret is never answered back')
-      const list = await client.webhooks.list({ uid: slug }); assert.ok(list.items.some((x: any) => x.tag === 'probe'))
+      const list = await client.webhooks.list({ uid: slug }); assert.ok(list.items.some((x: { tag: string }) => x.tag === 'probe'))
       const j = { response_id: await complete('probe@example.com') }
       for (let i = 0; i < 40 && !got.length; i++) await new Promise((x) => setTimeout(x, 250))
       assert.equal(got.length, 1, 'one delivery')
-      const payload: any = JSON.parse(got[0].body)
+      const payload = JSON.parse(got[0].body)
       assert.equal(payload.event_type, 'form_response'); assert.equal(payload.form_response.form_id, slug); assert.equal(payload.form_response.token, j.response_id); assert.ok(payload.form_response.definition.fields.length); assert.ok(payload.form_response.answers.length)
-      const expect: any = 'sha256=' + createHmac('sha256', secret).update(got[0].body).digest('base64')
+      const expect = 'sha256=' + createHmac('sha256', secret).update(got[0].body).digest('base64')
       assert.equal(got[0].sig, expect, 'Typeform-Signature verifies with the secret')
       /* the response lists on the API, then is deleted with its rows */
       const listed = await client.responses.list({ uid: slug, ids: j.response_id }); assert.equal(listed.total_items, 1)
@@ -288,7 +288,7 @@ try {
       const { data: rows } = await service.from('form_answers').select('id').eq('response_id', j.response_id); assert.equal((rows ?? []).length, 0)
       /* deleted: the next completion is not delivered */
       await client.webhooks.delete({ uid: slug, tag: 'probe' })
-      const after = await client.webhooks.list({ uid: slug }); assert.ok(!after.items.some((x: any) => x.tag === 'probe'))
+      const after = await client.webhooks.list({ uid: slug }); assert.ok(!after.items.some((x: { tag: string }) => x.tag === 'probe'))
       const j2 = { response_id: await complete('probe2@example.com') }
       await new Promise((x) => setTimeout(x, 1500)); assert.equal(got.length, 1, 'nothing more arrives')
       await client.responses.delete({ uid: slug, ids: j2.response_id })
@@ -311,19 +311,19 @@ try {
     </script></body></html>`
     const host: any = http.createServer((req, res) => { res.writeHead(200, { 'content-type': 'text/html' }); res.end(page) })
     await new Promise((r) => host.listen(0, '127.0.0.1', r))
-    const origin = 'http://127.0.0.1:' + (host.address() as any).port
+    const origin = 'http://127.0.0.1:' + host.address().port
     try {
       const { chromium } = await import('playwright')
       const exe = process.env.PLAYWRIGHT_CHROMIUM_PATH
       const b = await chromium.launch(exe ? { executablePath: exe } : {})
       const p = await (await browserContext(b, { viewport: { width: 1280, height: 900 } })).newPage()
-      const errs: any = []; p.on('pageerror', (e: any) => errs.push(e.message))
+      const errs: any = []; p.on('pageerror', (e: { message: any }) => errs.push(e.message))
       await p.goto(origin + '/', { waitUntil: 'load' })
       await p.waitForFunction(() => (window as any).events.includes('ready'), null, { timeout: 30000 })
       const iframe = await p.$('#w iframe'); assert.ok(iframe, 'the iframe'); const src = await iframe.getAttribute('src'); assert.ok(src.includes('/to/' + slug + '?') && src.includes('typeform-embed=embed-widget'), src)
       const ev = await p.evaluate(() => (window as any).events)
-      assert.ok(ev.some((e: any) => e.startsWith('h:')), 'the height reported: ' + ev.join(','))
-      assert.ok(ev.some((e: any) => e.startsWith('q:')), 'a screen reported: ' + ev.join(','))
+      assert.ok(ev.some((e: string) => e.startsWith('h:')), 'the height reported: ' + ev.join(','))
+      assert.ok(ev.some((e: string) => e.startsWith('q:')), 'a screen reported: ' + ev.join(','))
       assert.deepEqual(errs, [])
       const dir = process.env.FORMS_API_SHOTS; if (dir) { await p.waitForTimeout(1500); await p.screenshot({ path: path.join(dir, 'typeform-embed-1280.png') }) }
       await b.close()
@@ -343,10 +343,10 @@ try {
     try {
       const made = await client.forms.create({ data: { ...PROBE_DEF('Probe ' + probe), id: probe } })
       assert.equal(made.id, probe); assert.equal(made.title, 'Probe ' + probe)
-      assert.deepEqual(flatFields(made).map((f: any) => f.type + ':' + f.ref), ['short_text:name', 'email:email', 'multiple_choice:interest', 'long_text:other_text', 'opinion_scale:score'])
+      assert.deepEqual(flatFields(made).map((f: { type: string; ref: string }) => f.type + ':' + f.ref), ['short_text:name', 'email:email', 'multiple_choice:interest', 'long_text:other_text', 'opinion_scale:score'])
       assert.deepEqual(made.logic, PROBE_DEF('x').logic)
       const read = await client.forms.get({ uid: probe }); assert.deepEqual(read.fields, made.fields); assert.deepEqual(read.logic, made.logic)
-      const listed = await client.forms.list({ search: probe }); assert.ok(listed.items.some((f: any) => f.id === probe), 'listed')
+      const listed = await client.forms.list({ search: probe }); assert.ok(listed.items.some((f: { id: string }) => f.id === probe), 'listed')
       /* the row, and the document it holds */
       const { data: row } = await service.from('content').select('text, published_at').eq('path', 'content/forms/' + probe + '.md').maybeSingle()
       assert.ok(row && row.published_at, 'the row is live (Typeform has no draft)'); const parsed = parseForm(row.text); assert.deepEqual(parsed.errors, []); assert.equal(parsed.title, 'Probe ' + probe); assert.equal(parsed.fields.length, 5)
@@ -354,8 +354,8 @@ try {
       const dup = await get('/forms', { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, { method: 'POST', body: JSON.stringify({ ...PROBE_DEF('Probe ' + probe), id: probe }) }); assert.equal(dup.status, 400); assert.match(dup.body.description, /PUT/)
       const upd = await client.forms.update({ uid: probe, data: { ...PROBE_DEF('Probe ' + probe + ' edited') }, override: true }); assert.equal(upd.title, 'Probe ' + probe + ' edited')
       /* a JSON Patch */
-      const patched: any = await client.forms.update({ uid: probe, data: [{ op: 'replace', path: '/title', value: 'Probe ' + probe + ' patched' }, { op: 'add', path: '/fields/-', value: { ref: 'when', type: 'date', title: 'When?' } }] })
-      assert.equal(patched.title, 'Probe ' + probe + ' patched'); assert.ok(flatFields(patched).some((f: any) => f.ref === 'when' && f.type === 'date'), 'the field added')
+      const patched = await client.forms.update({ uid: probe, data: [{ op: 'replace', path: '/title', value: 'Probe ' + probe + ' patched' }, { op: 'add', path: '/fields/-', value: { ref: 'when', type: 'date', title: 'When?' } }] })
+      assert.equal(patched.title, 'Probe ' + probe + ' patched'); assert.ok(flatFields(patched).some((f: { ref: string; type: string }) => f.ref === 'when' && f.type === 'date'), 'the field added')
       /* the refusals */
       const bad = await get('/forms/' + probe, { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, { method: 'PUT', body: JSON.stringify({ title: 'x', fields: [{ ref: 'pay', type: 'payment', title: 'Pay' }] }) }); assert.equal(bad.status, 400); assert.match(bad.body.description, /payment/)
       const badLogic = await get('/forms/' + probe, { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' }, { method: 'PUT', body: JSON.stringify({ title: 'x', fields: [{ ref: 'a', type: 'short_text', title: 'A' }, { ref: 'b', type: 'short_text', title: 'B' }, { ref: 'c', type: 'short_text', title: 'C' }], logic: [{ type: 'field', ref: 'a', actions: [{ action: 'jump', details: { to: { type: 'field', value: 'c' } }, condition: { op: 'begins_with', vars: [{ type: 'field', value: 'a' }, { type: 'constant', value: 'x' }] } }] }] }) }); assert.equal(badLogic.status, 400); assert.match(badLogic.body.description, /begins_with/)

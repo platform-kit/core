@@ -88,7 +88,6 @@ const patchAnswered = (i: any, patch: any) => writeAnswered(answered.value.map((
 const dropAnswered = (i: any) => { const rows = answered.value.filter((_: any, j: any) => j !== i); if (rows.length) writeAnswered(rows); else drop('answered') }
 
 /* the rules read back, and the count */
-// @ts-expect-error TS2322, from the conversion: Type '(slug: any) => any' is not assignable to type 'null | undefined'.
 const rules = computed(() => normalizeRules(a.value, { skusOf: (slug: any) => PRODUCTS.filter((p: any) => p.book === slug).map((p: any) => p.sku) }))
 const words = computed(() => describeRules(rules.value))
 const count = ref<any>(null), counting = ref(false), countErr = ref('')

@@ -18,14 +18,12 @@ const RUN_GAP = 5 * 60 * 1000   /* messages closer than this, from one person, r
 /* first/last of a run: the first carries the avatar and the name, the rest sit close under it. The
    chat's own groupRuns reads sender_id and a space message carries author_id, so this is its own —
    a system line never joins a run, and never lets two messages either side of it join one. */
-export function runsOf(messages = []) {
+export function runsOf<M extends { kind?: string, author_id?: unknown, created_at: string } & Record<string, any>>(messages: M[] = []) {
   return messages.map((m, i) => {
     const prev = messages[i - 1], next = messages[i + 1]
     const joins = (a: any, b: any) => !!a && !!b && a.kind !== 'system' && b.kind !== 'system'
       && a.author_id === b.author_id && !!a.author_id
-      // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-      && Math.abs(new Date(b.created_at) - new Date(a.created_at)) < RUN_GAP
-    // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
+      && Math.abs(new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) < RUN_GAP
     return { ...m, first: !joins(prev, m), last: !joins(m, next) }
   })
 }
@@ -101,7 +99,7 @@ export function cursorsOf(rows = []) {
 
 /* the answer applied: the messages to add per channel, and the channels too far behind to carry,
    which are paged rather than trusted. */
-export function mergeCatchup(answer = []) {
+export function mergeCatchup(answer: { channel: string; from: number; more: boolean; messages: { id: string; seq: number }[] }[] = []) {
   const add: any = {}, page = []
   for (const a of answer) {
     const id = (a as any)?.channel
@@ -113,13 +111,12 @@ export function mergeCatchup(answer = []) {
 }
 
 /* messages by seq, one of each, whatever order they arrived in (a broadcast, a page, a catch-up) */
-export function mergeMessages(list = [], incoming = []) {
+export function mergeMessages(list: { id: string; seq: number }[] = [], incoming: any[] = []) {
   const by = new Map()
   for (const m of list) if (m && (m as any).id) by.set((m as any).id, m)
   for (const m of incoming) {
     if (!m || !(m as any).id) continue
     const had = by.get((m as any).id)
-    // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
     by.set(m.id, had ? { ...had, ...m } : m)
   }
   return [...by.values()].sort((a, b) => Number(a.seq || 0) - Number(b.seq || 0))
@@ -127,7 +124,7 @@ export function mergeMessages(list = [], incoming = []) {
 
 /* where the "new messages" line sits: the first message past what was read that is not the reader's
    own. It is a seq and not an index, so it survives a reload and a page of older messages. */
-export function dividerSeq(messages = [], lastReadSeq = 0, me = null) {
+export function dividerSeq(messages: { id: string; seq: number; author_id: string }[] = [], lastReadSeq = 0, me: string | null = null) {
   for (const m of messages) {
     if (Number((m as any)?.seq || 0) <= Number(lastReadSeq || 0)) continue
     if (me && (m as any)?.author_id === me) continue
@@ -138,7 +135,7 @@ export function dividerSeq(messages = [], lastReadSeq = 0, me = null) {
 
 /* a thread's own state: how many replies, when the last one came, and whether the reader is in it
    (they wrote the root or a reply), which is one of the things that notifies them. */
-export function threadOf(root: { id?: string; author_id: any; reply_count: any; last_reply_at: any }, replies = [], me = null) {
+export function threadOf(root: { id?: string; author_id: any; reply_count: any; last_reply_at: any }, replies = [], me: string | null = null) {
   const count = Number(root?.reply_count ?? replies.length ?? 0)
   const last = root?.last_reply_at || (replies.length ? (replies[replies.length - 1] as any).created_at : null)
   const mine = !!me && (root?.author_id === me || replies.some((r: any) => r?.author_id === me))
@@ -174,7 +171,7 @@ export const canReply = (m: any) => !!m && !m.deleted_at && (m.kind !== 'system'
  *
  * `words` is the `events` group of the spaces scope; `fallback` its `unknown`.
  */
-export function saidIn(m: any, { names = {}, words = {}, money = (v: any) => String(v), unheard = '' } = {}) {
+export function saidIn(m: any, { names = {}, words = {}, money = (v: any, _currency?: string) => String(v), unheard = '' }: { names?: Record<string, string>, words?: Record<string, any>, money?: (v: any, currency?: string) => string, unheard?: string } & Record<string, any> = {}) {
   if (!m || m.deleted_at) return ''
   if (m.kind === 'system') {
     const meta = m.meta || {}
@@ -182,7 +179,6 @@ export function saidIn(m: any, { names = {}, words = {}, money = (v: any) => Str
     if (meta.bot) return plainBody(m.body || '', names)
     if (!meta.event) return plainBody(m.body || '', names)
     const rec = (words as any)[meta.event] || (words as any).unknown || {}
-    // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 2.
     const facts = { ...meta, amount: money(meta.amount, meta.currency) }
     return String(rec.line || '').replace(/\{(\w+)\}/g, (_, k) => (facts[k] == null ? '' : String(facts[k]))).replace(/\s+/g, ' ').trim()
   }
@@ -274,17 +270,16 @@ export const sidedRoom = (channel: { kind: any; mode?: string }|null) => !!chann
 /* A direct message has no name of its own: it is who is in it. One other person is their name; two
    or more are their names in order; and a room with nobody else in it is the reader talking to
    themselves, which is a real thing people do and deserves its own word rather than a blank. */
-export function dmTitle(members = [], names = {}, me = null, words: any = {}) {
+export function dmTitle(members: string[] = [], names: Record<string, string> = {}, me: string | null = null, words: any = {}) {
   const others = members.filter((id) => id !== me)
-  // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
-  if (!others.length) return words.self || (names[me] || '') + ' (you)'
+  if (!others.length) return words.self || (names[me ?? ''] || '') + ' (you)'
   const said = others.map((id) => names[id] || words.someone || 'someone').sort((a: any, b) => a.localeCompare(b))
   if (said.length <= 3) return said.join(', ')
   return said.slice(0, 2).join(', ') + ' ' + (words.more || '+{n}').replace('{n}', said.length - 2)
 }
 
 /* the rooms of a space, split the way a sidebar shows them */
-export function railSections(channels = [], rows = [], spaceId = null, groups = []) {
+export function railSections(channels = [], rows = [], spaceId: string | null = null, groups = []) {
   const row = (id: any) => rows.find((r: any) => r.channel === id) || null
   const mine = channels.filter((c: any) => !spaceId || c.space_id === spaceId)
   const starred: any = [], open: any = [], dms: any = []
@@ -386,7 +381,7 @@ export function botsMentioned(body: string) {
 /* every id a body names, once each, in the order they appear */
 export function mentionIds(body: string) {
   const out = []
-  const seen = new Set()
+  const seen = new Set<string>()
   for (const m of String(body || '').matchAll(TOKEN)) {
     /* a bot is named but nobody is notified; a role is resolved to its holders in the database,
        never here, because a client does not know who holds it */
@@ -625,12 +620,9 @@ export function untilWord(when: number, now = Date.now(), words = {}) {
   const ms = when - now
   if (ms <= 0) return w.now
   const mins = Math.round(ms / 60000)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Argument of type 'number' is not assignable to parameter of type 
-  if (mins < 60) return w.mins.replace('{n}', Math.max(1, mins))
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Argument of type 'number' is not assignable to parameter of type 
-  if (mins < 60 * 24) return w.hours.replace('{n}', Math.round(mins / 60))
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Argument of type 'number' is not assignable to parameter of type 
-  return w.days.replace('{n}', Math.round(mins / (60 * 24)))
+  if (mins < 60) return w.mins.replace('{n}', String(Math.max(1, mins)))
+  if (mins < 60 * 24) return w.hours.replace('{n}', String(Math.round(mins / 60)))
+  return w.days.replace('{n}', String(Math.round(mins / (60 * 24))))
 }
 
 /* on now: between its start and its end, with a few minutes' grace either side so somebody who is
@@ -643,7 +635,7 @@ export function isOn(o: { starts_at?: any; ends_at?: any }|null, now = Date.now(
 }
 
 /* the occurrences gathered under the day they fall on, which is how a calendar reads */
-export function byDay(list = [], zone: string) {
+export function byDay(list: { id: string; starts_at: string }[]|undefined = [], zone: string) {
   const days = new Map()
   for (const o of list) {
     const key = dayOf((o as any).starts_at, zone)

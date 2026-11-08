@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { resolveSocialOutcome } from '../supabase/functions/_shared/social/outcome.mjs'
 
-const knownFailure = (failure: any) => ({
+const knownFailure = (failure: { disposition: { kind: string }; code: any }) => ({
   status: failure.disposition?.kind === 'after-delay' ? 'retry_wait' : 'failed',
   errorCode: failure.code,
 })
@@ -22,7 +22,7 @@ try {
 }
 const acceptedButResponseLost = await resolveSocialOutcome({
   publishError,
-  reconcile: async (providerPostId: any) => {
+  reconcile: async (providerPostId: unknown) => {
     reconcileCalls++
     assert.equal(providerPostId, undefined)
     return { outcome: 'published', providerPostId: 'post-accepted', publishedAt: '2030-01-01T00:00:00Z' }

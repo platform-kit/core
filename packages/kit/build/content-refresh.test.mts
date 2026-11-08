@@ -2,17 +2,17 @@ import assert from 'node:assert/strict'
 import { refreshContent } from './content-refresh.mjs'
 
 let pass = 0, fail = 0
-const t = (name: any, fn: any) => {
+const t = (name: any, fn: () => void) => {
   try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL', name, '\n   ', String(e.message || e)) }
 }
-const ta = async (name: any, fn: any) => {
+const ta = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): any; }) => {
   try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL', name, '\n   ', String(e.message || e)) }
 }
 
 await ta('a local content change runs prepare, function data, site, then local projections', async () => {
   const calls: any = []
-  const run = async (phase: any, options: any) => { calls.push([phase, options.localProjectionOnly === true]); return [phase] }
-  const makeFunctionsData = async (options: any) => { calls.push(['functions-data', options.phases, options.changed]); return ['bots'] }
+  const run = async (phase: any, options: { localProjectionOnly: boolean; }) => { calls.push([phase, options.localProjectionOnly === true]); return [phase] }
+  const makeFunctionsData = async (options: { phases: any; changed: any; }) => { calls.push(['functions-data', options.phases, options.changed]); return ['bots'] }
   const result = await refreshContent({
     site: { root: '/site' }, changed: ['content/bots/companion.md'],
     env: { SUPABASE_URL: 'http://127.0.0.1:54321' }, run, makeFunctionsData,
@@ -31,7 +31,7 @@ await ta('a remote content change never runs database projections', async () => 
   await refreshContent({
     site: { root: '/site' }, changed: ['content/bots/companion.md'],
     env: { SUPABASE_URL: 'https://project.supabase.co' },
-    run: async (phase: any, options: any) => { calls.push([phase, options.localProjectionOnly === true]); return [] },
+    run: async (phase: any, options: { localProjectionOnly: boolean; }) => { calls.push([phase, options.localProjectionOnly === true]); return [] },
     makeFunctionsData: async () => [],
   })
   assert.deepEqual(calls, [['prepare', false], ['site', false]])

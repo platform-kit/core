@@ -6,12 +6,12 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { platformKitWorkspaceRoot } from './sites.mjs'
 
-const KIT = (file: any) => fileURLToPath(new URL('../' + file, import.meta.url))
+const KIT = (file: string) => fileURLToPath(new URL('../' + file, import.meta.url))
 const ROOT_PACKAGE = fileURLToPath(new URL('../../../package.json', import.meta.url))
 const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'platformkit-workspace-root-'))
 const installedFixture = fs.mkdtempSync(path.join(os.tmpdir(), 'platformkit-installed-cli-'))
 const env = { ...process.env }
-const git = (cwd: any, args: any) => {
+const git = (cwd: string, args: any[]|readonly string[]) => {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' })
   assert.equal(result.status, 0, `${args.join(' ')} failed: ${result.stderr}`)
   return result.stdout.trim()

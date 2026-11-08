@@ -8,7 +8,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const ROOT = process.cwd()
-// @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
 globalThis.__veliteStarted = true
 const { createServer } = await import('vite')
 const { platformkit } = await import('../vite/index.mjs')
@@ -16,7 +15,7 @@ const plugins = await platformkit({ root: ROOT })
 const server = await createServer({ root: ROOT, configFile: false, logLevel: 'error', optimizeDeps: { noDiscovery: true }, server: { middlewareMode: true, watch: null, hmr: false }, plugins })
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
+const ok = (msg: string, cond: boolean) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
 const dir = path.join(ROOT, '.platformkit', 'site')
 const ids = ['#site', '#site/looks', '#site/landing', '#site/app', '#site/routes', '#site/nav', '#site/analytics', '#site/instrument', '#site/recommendations', '#site/admin', '#site/member', '#site/permissions', '#site/desk']
 for (const id of ids) {

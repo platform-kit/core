@@ -26,9 +26,9 @@ const state = await import(join(M, 'state.js'))
 const errors = await import(join(M, 'errors.js'))
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
 const HOST = 'example.test'
-const U = (n: any) => `0000000${n}-0000-4000-8000-00000000000${n}`
+const U = (n: number) => `0000000${n}-0000-4000-8000-00000000000${n}`
 
 console.log('\nTHE MATRIX SURFACE — the translation\n')
 
@@ -64,7 +64,7 @@ console.log('\nTHE MATRIX SURFACE — the translation\n')
 
 /* ---- 1.2 events: a row each way, over every kind the constraint allows ---- */
 {
-  const row = (over: any) => ({
+  const row = (over: { kind?: string; attachment?: string|null; attachment_name?: string; title?: string|null; attachment_type?: string; seconds?: number; thread_root_id?: string; echoed?: boolean; body?: string; edited_at?: string; deleted_at?: string }) => ({
     id: U(5), channel_id: U(1), seq: 7, author_id: U(3), kind: 'text', body: 'hello',
     created_at: '2026-01-01T10:00:00Z', meta: {}, ...over,
   })
@@ -156,11 +156,11 @@ console.log('\nTHE MATRIX SURFACE — the translation\n')
 
   const ch = { id: U(1), name: 'General', topic: 'Anything', created_at: '2026-01-01T00:00:00Z', created_by: U(2) }
   const st = state.roomState(ch, { host: HOST, holders, members: [{ user_id: U(3), name: 'Ada' }] })
-  const types = st.map((e: any) => e.type)
+  const types = st.map((e: { type: any }) => e.type)
   for (const t of ['m.room.create', 'm.room.name', 'm.room.power_levels', 'm.room.history_visibility', 'm.room.join_rules', 'm.room.topic', 'm.room.member']) {
     ok(`a room's state carries ${t}`, types.includes(t))
   }
-  ok('history is shared, as our rooms are', (st.find((e: any) => e.type === 'm.room.history_visibility') || {}).content.history_visibility === 'shared')
+  ok('history is shared, as our rooms are', (st.find((e: { type: string }) => e.type === 'm.room.history_visibility') || {}).content.history_visibility === 'shared')
 
   /*
    * AND WHETHER THE ROOM IS SEALED. This is the one state event that changes what a client DOES
@@ -170,15 +170,15 @@ console.log('\nTHE MATRIX SURFACE — the translation\n')
    */
   ok('an unencrypted room says nothing about encryption', !types.includes('m.room.encryption'))
   const sealed = state.roomState({ ...ch, encrypted: true }, { host: HOST, holders, members: [] })
-  const enc = sealed.find((e: any) => e.type === 'm.room.encryption')
+  const enc = sealed.find((e: { type: string }) => e.type === 'm.room.encryption')
   ok('an encrypted room carries m.room.encryption', !!enc)
   ok('…naming megolm, which is what a client needs in order to seal anything', enc && enc.content.algorithm === 'm.megolm.v1.aes-sha2')
   ok('…and saying when a session rotates, so leaving a room eventually means leaving it', enc && enc.content.rotation_period_msgs > 0 && enc.content.rotation_period_ms > 0)
   ok('it is still state no client may set', state.powerLevels([], { host: HOST }).events['m.room.encryption'] === 100)
 
   const sp = state.spaceState({ id: U(2), name: 'The community', created_at: '2026-01-01T00:00:00Z' }, [{ id: U(1), position: 1 }], { host: HOST })
-  ok('a space says it is a Space', (sp.find((e: any) => e.type === 'm.room.create') || {}).content.type === 'm.space')
-  const child = sp.find((e: any) => e.type === 'm.space.child')
+  ok('a space says it is a Space', (sp.find((e: { type: string }) => e.type === 'm.room.create') || {}).content.type === 'm.space')
+  const child = sp.find((e: { type: string }) => e.type === 'm.space.child')
   ok('and its channels are its children', !!child && child.state_key === ids.roomId(U(1), HOST))
 }
 
@@ -233,7 +233,7 @@ if (!(await served())) {
 
 console.log('\nTHE MATRIX SURFACE — a real client\n')
 const sdk = await import('matrix-js-sdk')
-const seeded = (n: any) => ({ user: n + '@example.com', password: 'password123' })
+const seeded = (n: string) => ({ user: n + '@example.com', password: 'password123' })
 
 /* the seeded member, through the library's own login rather than a hand-made request */
 let client = null
@@ -259,12 +259,12 @@ if (client) {
   try {
     const got = await client.getJoinedRooms()
     rooms = got.joined_rooms || []
-    ok('a member has rooms, and every one of them is ours', rooms.length > 0 && rooms.every((r: any) => r.startsWith('!')), JSON.stringify(rooms).slice(0, 200))
+    ok('a member has rooms, and every one of them is ours', rooms.length > 0 && rooms.every((r: string) => r.startsWith('!')), JSON.stringify(rooms).slice(0, 200))
   } catch (e: any) { ok('a member has rooms', false, String(e && e.message).slice(0, 200)) }
 
   /* a channel, not a Space, to read and write in */
-  const channel: any = rooms.find((r: any) => r.startsWith('!c'))
-  const space: any = rooms.find((r: any) => r.startsWith('!s'))
+  const channel = rooms.find((r: string) => r.startsWith('!c'))
+  const space = rooms.find((r: string) => r.startsWith('!s'))
   ok('and among them a Space, so a client draws the site\'s own arrangement', !!space, JSON.stringify(rooms).slice(0, 160))
 
   if (channel) {
@@ -364,7 +364,7 @@ if (client) {
    * failure mode that cannot be seen from the outside — the room looks fine and no message in it
    * can ever be read. So each is asked to store something and then to give it back.
    */
-  const K = async (where: any, init: any = {}) => {
+  const K = async (where: string, init: any = {}) => {
     const r = await fetch(FN + where, {
       ...init,
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + client.getAccessToken(), ...(init.headers || {}) },
@@ -473,7 +473,7 @@ if (client) {
     if (!them || !them.access_token) {
       ok('a second account signs the first (skipped: no second seeded account)', true)
     } else {
-      const K2 = async (where: any, init: any = {}) => {
+      const K2 = async (where: string, init: any = {}) => {
         const r = await fetch(FN + where, { ...init, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + them.access_token, ...(init.headers || {}) } })
         return { status: r.status, body: await r.json().catch(() => null) }
       }
@@ -584,12 +584,12 @@ if (client) {
   ok('a to-device message is accepted', td.status === 200, JSON.stringify(td.body).slice(0, 160))
   const sync1 = await K('/_matrix/client/v3/sync')
   const events = ((sync1.body || {}).to_device || {}).events || []
-  ok('…and arrives in the next sync', events.some((e: any) => e.type === 'm.room_key'), JSON.stringify(events).slice(0, 200))
+  ok('…and arrives in the next sync', events.some((e: { type: string }) => e.type === 'm.room_key'), JSON.stringify(events).slice(0, 200))
   ok('a sync carries device_lists, so a client knows when to re-query', !!(sync1.body || {}).device_lists)
   const sync2 = await K('/_matrix/client/v3/sync?since=' + encodeURIComponent((sync1.body || {}).next_batch || '0'))
   const again = ((sync2.body || {}).to_device || {}).events || []
   ok('…and is gone from the one after, having been acknowledged',
-    !again.some((e: any) => e.type === 'm.room_key'), JSON.stringify(again).slice(0, 200))
+    !again.some((e: { type: string }) => e.type === 'm.room_key'), JSON.stringify(again).slice(0, 200))
 
   try { await fetch(FN + '/_matrix/client/v3/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + client.getAccessToken() } }) } catch { /* the run is over either way */ }
 }

@@ -15,7 +15,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('comments-db: ' + m)
+const note = (m: string) => console.log('comments-db: ' + m)
 if (process.env.COMMENTS_TEST === '0') { note('skipped (COMMENTS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -25,8 +25,8 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const as = async (email: any) => {
+const ok = (msg: string, cond: boolean|null, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const as = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -66,9 +66,9 @@ try {
   hadWords = was ? was.value : null
   await service.from('app_settings').upsert({ key: 'comment_flagged', value: '["fnord"]' }, { onConflict: 'key' })
 
-  const say = async (who: any, body: any, parent = null) =>
+  const say = async (who: { sb: any; id?: string }, body: string, parent = null) =>
     (await who.sb.rpc('comment_say', { p_kind: KIND, p_subject: SUBJ, p_body: body, p_parent: parent })).data
-  const readAs = async (who: any) => (await who.sb.rpc('comments_on', { p_kind: KIND, p_subject: SUBJ })).data || []
+  const readAs = async (who: { sb: any; id?: string }) => (await who.sb.rpc('comments_on', { p_kind: KIND, p_subject: SUBJ })).data || []
 
   /* ---- trusted, and not ---- */
   const free1 = await say(free, 'A first comment from somebody nobody knows.')
@@ -81,11 +81,11 @@ try {
     (await admin.sb.rpc('comment_trusted', { p_user: free.id })).data === false)
 
   /* ---- held is not hidden from its author, and is hidden from everybody else ---- */
-  const theirs = (await readAs(free)).find((c: any) => c.id === free1.id)
+  const theirs = (await readAs(free)).find((c: { id: any }) => c.id === free1.id)
   ok('its author sees it', !!theirs && theirs.state === 'waiting')
   ok('and is told it is waiting rather than believing it was published', theirs && theirs.state === 'waiting')
-  ok('nobody else sees it at all', !(await readAs(member)).some((c: any) => c.id === free1.id))
-  ok('a moderator does', (await readAs(admin)).some((c: any) => c.id === free1.id))
+  ok('nobody else sees it at all', !(await readAs(member)).some((c: { id: any }) => c.id === free1.id))
+  ok('a moderator does', (await readAs(admin)).some((c: { id: any }) => c.id === free1.id))
   ok('and it is not counted where it is not shown',
     // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type '"a-thing"' can't be used to index type 'string | number | true | { [key: st
     Number(((await member.sb.rpc('comment_counts', { p_kind: KIND, p_subjects: [SUBJ] })).data || {})[SUBJ]) === 1)
@@ -94,9 +94,9 @@ try {
   const mem2 = await say(member, 'This one says fnord, which the site has listed.')
   ok('a flagged word holds a trusted author too', mem2 && mem2.state === 'waiting', JSON.stringify(mem2))
   ok('the author is never told which word caught them', mem2 && mem2.flagged === undefined)
-  const held = (await readAs(admin)).find((c: any) => c.id === mem2.id)
+  const held = (await readAs(admin)).find((c: { id: any }) => c.id === mem2.id)
   ok('the moderator is', held && held.flagged === 'fnord', JSON.stringify(held && held.flagged))
-  ok('and the author still is not', ((await readAs(member)).find((c: any) => c.id === mem2.id) || {}).flagged === null)
+  ok('and the author still is not', ((await readAs(member)).find((c: { id: any }) => c.id === mem2.id) || {}).flagged === null)
   const inWord = await say(member, 'A word with fnords inside a longer one.')
   ok('a word inside another word does not match', inWord && inWord.state === 'live', JSON.stringify(inWord))
 
@@ -104,7 +104,7 @@ try {
   const before = ((await service.from('space_moderation').select('id').eq('kind', 'approve')).data || []).length
   const done: any = (await admin.sb.rpc('comment_approve', { p_comment: free1.id, p_reason: 'fine' })).data
   ok('a moderator releases it', done && done.ok === true, JSON.stringify(done))
-  ok('and everybody sees it', (await readAs(member)).some((c: any) => c.id === free1.id))
+  ok('and everybody sees it', (await readAs(member)).some((c: { id: any }) => c.id === free1.id))
   const after = (await service.from('space_moderation').select('id, actor_id, comment_id, reason').eq('kind', 'approve')).data || []
   /* the moderation record is the spaces' table: a site without spaces keeps none */
   if (!(await moduleOn('spaces'))) notHere('the release in the moderation record', 'the spaces module is off')
@@ -123,22 +123,22 @@ try {
   ok('and refusing removes it as any message is',
     // @ts-expect-error TS2339, from the conversion: Property 'state' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'state' does not 
     ((await admin.sb.rpc('comment_refuse', { p_comment: mem2.id })).data || {}).state === 'removed')
-  ok('the placeholder stays', (await readAs(admin)).some((c: any) => c.id === mem2.id && c.deleted_at))
+  ok('the placeholder stays', (await readAs(admin)).some((c: { id: any; deleted_at: any }) => c.id === mem2.id && c.deleted_at))
 
   /* ---- a reply keeps its real depth ---- */
   const r1 = await say(member, 'One.')
   const r2 = await say(member, 'Two, answering one.', r1.id)
   const r3 = await say(member, 'Three, answering two.', r2.id)
   const rows = await readAs(member)
-  const at = (id: any) => (rows.find((c: any) => c.id === id) || {}).parent
+  const at = (id: any) => (rows.find((c: { id: any }) => c.id === id) || {}).parent
   ok('a reply to a reply keeps the reply it answered', at(r3.id) === r2.id && at(r2.id) === r1.id,
-    JSON.stringify(rows.map((c: any) => [c.id, c.parent])))
+    JSON.stringify(rows.map((c: { id: any; parent: any }) => [c.id, c.parent])))
 
   /* ---- what may be done without writing a reply ---- */
   const target = { surface: 'comment', target_id: r1.id, user_id: member.id }
   ok('a vote is taken where the surface takes them',
     !(await member.sb.from('votes').upsert({ ...target, vote: 1 }, { onConflict: 'surface,target_id,user_id' })).error)
-  const voted = (await readAs(member)).find((c: any) => c.id === r1.id)
+  const voted = (await readAs(member)).find((c: { id: any }) => c.id === r1.id)
   ok('and comes back with the line, aggregated', voted && Number(voted.up) === 1 && Number(voted.my_vote) === 1)
   ok('changing it replaces the row rather than adding one',
     !(await member.sb.from('votes').upsert({ ...target, vote: -1 }, { onConflict: 'surface,target_id,user_id' })).error
@@ -146,7 +146,7 @@ try {
   const re1 = await member.sb.from('reactions').insert({ ...target, emoji: '👍' })
   const re2 = await member.sb.from('reactions').insert({ ...target, emoji: '🙏' })
   ok('a reaction is many per person', !re1.error && !re2.error, JSON.stringify([re1.error, re2.error]))
-  const react = (await readAs(member)).find((c: any) => c.id === r1.id)
+  const react = (await readAs(member)).find((c: { id: any }) => c.id === r1.id)
   ok('and comes back as a tally with this reader\'s own marked',
     react && Number(react.re['👍']) === 1 && (react.mine_re || []).includes('🙏'))
 

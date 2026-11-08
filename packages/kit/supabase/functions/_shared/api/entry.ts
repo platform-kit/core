@@ -106,7 +106,7 @@ export function linksIn(value: any, out = []) {
    cannot be resolved (an unpublished target, a missing file) listed under errors as Contentful lists it */
 export async function includesFor(items: any, depth: any, ctx: any) {
   const own = new Set(items.map((e: any) => e.sys.id))
-  const entries = new Map(), assets = new Map(), errors = [], seen = new Set()
+  const entries = new Map(), assets = new Map(), errors = [], seen = new Set<string>()
   let frontier = items
   for (let d = 0; d < depth && frontier.length; d++) {
     const next = []

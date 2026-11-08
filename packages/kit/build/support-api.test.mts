@@ -19,13 +19,13 @@ import { messageOf, conversationOf, contactOf, clientContactOf, clientConversati
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
 import { leave, notHere, stackOf } from './test-stack.mjs'
 
-const note = (m: any) => console.log('support-api: ' + m)
+const note = (m: string) => console.log('support-api: ' + m)
 if (process.env.SUPPORT_API_TEST === '0') { note('skipped (SUPPORT_API_TEST=0)'); process.exit(0) }
 const ROOT = process.cwd()
 const c = await loadSite(ROOT)
 if ((c.modules && c.modules.support === false) || (c.modules && c.modules.api === false)) { note('skipped — the support or the api module is off'); { notHere('support-api.test.mjs', 'its module is off'); process.exit(0) } }
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
+const ok = async (name: string, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 
 /* ---- (1) the shapes ---- */
 await ok('Chatwoot\'s shapes: a message by author with its type, an attachment, a conversation with its meta, a contact, the inbox, an agent, a webhook payload', () => {
@@ -65,13 +65,13 @@ try { served = !!(url && anon && localStack()) && (await fetch(FN + '/api/v1/pro
 if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the shapes — the local stack is not up or the support-api function is not served)`); leave(fail ? 1 : 0) }
 const { createClient } = await import('@supabase/supabase-js')
 const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
-const sha256 = async (s: any) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
+const sha256 = async (s: string|undefined) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
 const made: any = []
-const makeKey = async (kind: any) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: admin } = await service.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await service.from('api_keys').insert({ name: 'support-api test', kind, gated: false, prefix: key.slice(0, 12), hash: await sha256(key), created_by: admin ? admin.id : null }); if (error) throw new Error(error.message); made.push(key); return key }
+const makeKey = async (kind: string) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: admin } = await service.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await service.from('api_keys').insert({ name: 'support-api test', kind, gated: false, prefix: key.slice(0, 12), hash: await sha256(key), created_by: admin ? admin.id : null }); if (error) throw new Error(error.message); made.push(key); return key }
 /* this run's calls come from one visitor of their own, as the proxy would say (cf-connecting-ip): the guest
    limit counts new contacts per address, and every run on one machine is otherwise the same address */
 const VISITOR = `198.51.100.${Math.floor(Math.random() * 250) + 1}`
-const call = async (p: any, { method = 'GET', body = null, headers = {} } = {}) => { const r = await fetch(FN + p, { method, headers: { 'cf-connecting-ip': VISITOR, ...(body ? { 'Content-Type': 'application/json' } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined }); return { status: r.status, body: await r.json().catch(() => null) } }
+const call = async (p: string, { method = 'GET', body = null, headers = {} } = {}) => { const r = await fetch(FN + p, { method, headers: { 'cf-connecting-ip': VISITOR, ...(body ? { 'Content-Type': 'application/json' } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined }); return { status: r.status, body: await r.json().catch(() => null) } }
 // @ts-expect-error TS2774, from the conversion: This condition will always return true since this function is always defined. Did you mean to call it instead?
 const INBOX = (await import('./content-json.mjs')).contentIndex ? String((await (await import('./content-json.mjs')).contentIndex({ root: ROOT })).space) : ''
 const PUB = `/public/api/v1/inboxes/${INBOX}`
@@ -94,7 +94,7 @@ try {
     assert.equal(conv.body.status, 'open'); assert.ok(conv.body.pubsub_token, 'the thread\'s topic key'); assert.equal(conv.body.contact.id, made.body.id)
     // @ts-expect-error TS2322, from the conversion: Type '{ content: string; echo_id: string; }' is not assignable to type 'null | undefined'.
     const msg = await call(PUB + '/contacts/' + sourceId + '/conversations/' + convId + '/messages', { method: 'POST', body: { content: 'Where is my order?', echo_id: 'e-1' } }); assert.equal(msg.status, 200, JSON.stringify(msg.body)); assert.equal(msg.body.message_type, 0); assert.equal(msg.body.content, 'Where is my order?'); echoOk = msg.body.echo_id === 'e-1'
-    const list = await call(PUB + '/contacts/' + sourceId + '/conversations/' + convId + '/messages'); assert.equal(list.status, 200); assert.ok(list.body.some((x: any) => x.message_type === 0 && x.content === 'Where is my order?')); assert.ok(list.body.some((x: any) => x.message_type === 2), 'the acknowledgement as an activity line: ' + JSON.stringify(list.body.map((x: any) => [x.message_type, x.content])))
+    const list = await call(PUB + '/contacts/' + sourceId + '/conversations/' + convId + '/messages'); assert.equal(list.status, 200); assert.ok(list.body.some((x: { message_type: number; content: string }) => x.message_type === 0 && x.content === 'Where is my order?')); assert.ok(list.body.some((x: { message_type: number }) => x.message_type === 2), 'the acknowledgement as an activity line: ' + JSON.stringify(list.body.map((x: { message_type: any; content: any }) => [x.message_type, x.content])))
     const { data: row } = await service.from('support_contacts').select('token_hash, user_id').eq('id', made.body.id).single(); assert.equal((row as any).token_hash, await sha256(sourceId), 'the source_id is the contact token'); assert.equal((row as any).user_id, null)
     // @ts-expect-error TS2322, from the conversion: Type '{ typing_status: string; }' is not assignable to type 'null | undefined'.
     assert.equal((await call(PUB + '/contacts/' + sourceId + '/conversations/' + convId + '/toggle_typing', { method: 'POST', body: { typing_status: 'on' } })).status, 200)
@@ -102,7 +102,7 @@ try {
     // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'null | undefined'.
     assert.equal((await call(PUB + '/contacts/' + sourceId + '/conversations/' + convId + '/update_last_seen', { method: 'POST', body: {} })).status, 200)
     const { data: c2 } = await service.from('support_conversations').select('contact_read_at').eq('id', convId).single(); assert.ok((c2 as any).contact_read_at, 'read stamped')
-    const all = await call(PUB + '/contacts/' + sourceId + '/conversations'); assert.equal(all.status, 200); assert.ok(all.body.some((x: any) => x.id === convId))
+    const all = await call(PUB + '/contacts/' + sourceId + '/conversations'); assert.equal(all.status, 200); assert.ok(all.body.some((x: { id: any }) => x.id === convId))
     assert.equal((await call(PUB + '/contacts/' + sourceId + '/conversations/' + '0'.repeat(8) + '-0000-0000-0000-000000000000')).status, 404)
     assert.equal(echoOk, true, 'echo_id echoed')
   })
@@ -110,62 +110,62 @@ try {
     assert.equal((await call('/api/v1/profile')).status, 401)
     const dk = await makeKey('delivery'); assert.equal((await call('/api/v1/profile', { headers: { api_access_token: dk } })).status, 403)
     const me = await call('/api/v1/profile', { headers: AUTH }); assert.equal(me.status, 200); assert.equal(me.body.email, 'admin@example.com'); assert.equal(me.body.role, 'administrator')
-    const list = await call('/api/v1/accounts/1/conversations?status=open&assignee_type=all', { headers: AUTH }); assert.equal(list.status, 200, JSON.stringify(list.body)); assert.ok(list.body.data.meta.all_count >= 1); assert.ok(list.body.data.payload.some((x: any) => x.id === convId)); const mine: any = list.body.data.payload.find((x: any) => x.id === convId); assert.equal(mine.meta.sender.name, 'Guest'); assert.equal(mine.unread_count, 1)
-    const one: any = await call('/api/v1/accounts/1/conversations/' + convId, { headers: AUTH }); assert.equal(one.status, 200); assert.ok(one.body.messages.some((x: any) => x.message_type === 0)); assert.equal(one.body.additional_attributes.path, '/store')
+    const list = await call('/api/v1/accounts/1/conversations?status=open&assignee_type=all', { headers: AUTH }); assert.equal(list.status, 200, JSON.stringify(list.body)); assert.ok(list.body.data.meta.all_count >= 1); assert.ok(list.body.data.payload.some((x: { id: any }) => x.id === convId)); const mine = list.body.data.payload.find((x: { id: any }) => x.id === convId); assert.equal(mine.meta.sender.name, 'Guest'); assert.equal(mine.unread_count, 1)
+    const one = await call('/api/v1/accounts/1/conversations/' + convId, { headers: AUTH }); assert.equal(one.status, 200); assert.ok(one.body.messages.some((x: { message_type: number }) => x.message_type === 0)); assert.equal(one.body.additional_attributes.path, '/store')
     // @ts-expect-error TS2322, from the conversion: Type '{ content: string; message_type: string; }' is not assignable to type 'null | undefined'.
-    const reply: any = await call('/api/v1/accounts/1/conversations/' + convId + '/messages', { method: 'POST', headers: AUTH, body: { content: 'On its way.', message_type: 'outgoing' } }); assert.equal(reply.status, 200, JSON.stringify(reply.body)); assert.equal(reply.body.message_type, 1); assert.equal(reply.body.sender.type, 'user')
+    const reply = await call('/api/v1/accounts/1/conversations/' + convId + '/messages', { method: 'POST', headers: AUTH, body: { content: 'On its way.', message_type: 'outgoing' } }); assert.equal(reply.status, 200, JSON.stringify(reply.body)); assert.equal(reply.body.message_type, 1); assert.equal(reply.body.sender.type, 'user')
     const { data: m } = await service.from('support_messages').select('author, agent_id, body').eq('id', reply.body.id).single(); assert.equal((m as any).author, 'agent'); assert.equal((m as any).body, 'On its way.'); const { data: admin } = await service.from('profiles').select('id').eq('email', 'admin@example.com').single(); assert.equal((m as any).agent_id, (admin as any).id, 'the key\'s maker')
-    const msgs: any = await call('/api/v1/accounts/1/conversations/' + convId + '/messages', { headers: AUTH }); assert.equal(msgs.status, 200); assert.ok(msgs.body.payload.some((x: any) => x.id === reply.body.id)); assert.equal(msgs.body.meta.contact.id, ids.contacts[0])
-    const { data: agents } = await service.from('profiles').select('id, email').overlaps('roles', ['admin', 'support']); const other = (agents as any).find((a: any) => a.email !== 'admin@example.com') || (agents as any)[0]
+    const msgs = await call('/api/v1/accounts/1/conversations/' + convId + '/messages', { headers: AUTH }); assert.equal(msgs.status, 200); assert.ok(msgs.body.payload.some((x: { id: any }) => x.id === reply.body.id)); assert.equal(msgs.body.meta.contact.id, ids.contacts[0])
+    const { data: agents } = await service.from('profiles').select('id, email').overlaps('roles', ['admin', 'support']); const other = (agents as any).find((a: { email: string }) => a.email !== 'admin@example.com') || (agents as any)[0]
     // @ts-expect-error TS2322, from the conversion: Type '{ assignee_id: any; }' is not assignable to type 'null | undefined'.
-    const asg: any = await call('/api/v1/accounts/1/conversations/' + convId + '/assignments', { method: 'POST', headers: AUTH, body: { assignee_id: other.id } }); assert.equal(asg.status, 200); assert.equal(asg.body.id, other.id)
-    const { data: c1 }: any = await service.from('support_conversations').select('assignee_id').eq('id', convId).single(); assert.equal((c1 as any).assignee_id, other.id)
+    const asg = await call('/api/v1/accounts/1/conversations/' + convId + '/assignments', { method: 'POST', headers: AUTH, body: { assignee_id: other.id } }); assert.equal(asg.status, 200); assert.equal(asg.body.id, other.id)
+    const { data: c1 } = await service.from('support_conversations').select('assignee_id').eq('id', convId).single(); assert.equal((c1 as any).assignee_id, other.id)
     // @ts-expect-error TS2322, from the conversion: Type '{ assignee_id: string; }' is not assignable to type 'null | undefined'.
     assert.equal((await call('/api/v1/accounts/1/conversations/' + convId + '/assignments', { method: 'POST', headers: AUTH, body: { assignee_id: '00000000-0000-0000-0000-000000000000' } })).status, 422)
     // @ts-expect-error TS2322, from the conversion: Type '{ status: string; }' is not assignable to type 'null | undefined'.
-    const st: any = await call('/api/v1/accounts/1/conversations/' + convId + '/toggle_status', { method: 'POST', headers: AUTH, body: { status: 'resolved' } }); assert.equal(st.status, 200); assert.equal(st.body.payload.current_status, 'resolved')
-    const { data: c2 }: any = await service.from('support_conversations').select('status, resolved_at').eq('id', convId).single(); assert.equal((c2 as any).status, 'resolved'); assert.ok((c2 as any).resolved_at)
-    const resolved = await call('/api/v1/accounts/1/conversations?status=resolved', { headers: AUTH }); assert.ok(resolved.body.data.payload.some((x: any) => x.id === convId))
-    const contacts = await call('/api/v1/accounts/1/contacts', { headers: AUTH }); assert.equal(contacts.status, 200); const k = contacts.body.payload.find((x: any) => x.id === ids.contacts[0]); assert.ok(k, 'the guest listed'); assert.equal(k.name, 'Guest'); assert.deepEqual(k.custom_attributes, { plan: 'trial', city: 'Lisbon' })
+    const st = await call('/api/v1/accounts/1/conversations/' + convId + '/toggle_status', { method: 'POST', headers: AUTH, body: { status: 'resolved' } }); assert.equal(st.status, 200); assert.equal(st.body.payload.current_status, 'resolved')
+    const { data: c2 } = await service.from('support_conversations').select('status, resolved_at').eq('id', convId).single(); assert.equal((c2 as any).status, 'resolved'); assert.ok((c2 as any).resolved_at)
+    const resolved = await call('/api/v1/accounts/1/conversations?status=resolved', { headers: AUTH }); assert.ok(resolved.body.data.payload.some((x: { id: any }) => x.id === convId))
+    const contacts = await call('/api/v1/accounts/1/contacts', { headers: AUTH }); assert.equal(contacts.status, 200); const k = contacts.body.payload.find((x: { id: any }) => x.id === ids.contacts[0]); assert.ok(k, 'the guest listed'); assert.equal(k.name, 'Guest'); assert.deepEqual(k.custom_attributes, { plan: 'trial', city: 'Lisbon' })
     const kone = await call('/api/v1/accounts/1/contacts/' + ids.contacts[0], { headers: AUTH }); assert.equal(kone.body.payload.conversations_count, 1)
-    const kconvs = await call('/api/v1/accounts/1/contacts/' + ids.contacts[0] + '/conversations', { headers: AUTH }); assert.ok(kconvs.body.payload.some((x: any) => x.id === convId))
-    const ag = await call('/api/v1/accounts/1/agents', { headers: AUTH }); assert.ok(ag.body.some((a: any) => a.email === 'admin@example.com' && a.role === 'administrator'))
+    const kconvs = await call('/api/v1/accounts/1/contacts/' + ids.contacts[0] + '/conversations', { headers: AUTH }); assert.ok(kconvs.body.payload.some((x: { id: any }) => x.id === convId))
+    const ag = await call('/api/v1/accounts/1/agents', { headers: AUTH }); assert.ok(ag.body.some((a: { email: string; role: string }) => a.email === 'admin@example.com' && a.role === 'administrator'))
     const inb = await call('/api/v1/accounts/1/inboxes', { headers: AUTH }); assert.equal(inb.body.payload[0].website_token, INBOX); assert.equal(inb.body.payload[0].channel_type, 'Channel::WebWidget')
   })
   await ok('webhooks: a subscription made through the Application API receives a contact\'s line (the Client API), an agent\'s line under RLS (the seed\'s support agent), and a status change; listed, updated, deleted', async () => {
     const hits: any = []
     const server: any = http.createServer((rq, rs) => { let b = ''; rq.on('data', (c) => { b += c }); rq.on('end', () => { hits.push(JSON.parse(b)); rs.writeHead(200); rs.end('ok') }) })
     await new Promise((r) => server.listen(0, '0.0.0.0', r))
-    const receiver = `http://host.docker.internal:${(server.address() as any).port}/hook`
+    const receiver = `http://host.docker.internal:${server.address().port}/hook`
     try {
       // @ts-expect-error TS2322, from the conversion: Type '{ url: string; subscriptions: string[]; }' is not assignable to type 'null | undefined'.
       const w = await call('/api/v1/accounts/1/webhooks', { method: 'POST', headers: AUTH, body: { url: receiver, subscriptions: ['message_created', 'conversation_status_changed', 'conversation_created'] } }); assert.equal(w.status, 201, JSON.stringify(w.body)); const hookId = w.body.payload.webhook.id; ids.hooks.push(hookId)
-      const listed = await call('/api/v1/accounts/1/webhooks', { headers: AUTH }); assert.ok(listed.body.payload.webhooks.some((x: any) => x.id === hookId))
+      const listed = await call('/api/v1/accounts/1/webhooks', { headers: AUTH }); assert.ok(listed.body.payload.webhooks.some((x: { id: any }) => x.id === hookId))
       // @ts-expect-error TS2322, from the conversion: Type '{ webhook: { url: string; subscriptions: string[]; }; }' is not assignable to type 'null | undefined'.
       const upd = await call('/api/v1/accounts/1/webhooks/' + hookId, { method: 'PATCH', headers: AUTH, body: { webhook: { url: receiver, subscriptions: ['message_created', 'conversation_status_changed'] } } }); assert.equal(upd.status, 200); assert.deepEqual(upd.body.payload.webhook.subscriptions, ['message_created', 'conversation_status_changed'])
       /* a contact's line through the Client API */
       // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'null | undefined'.
-      const conv2: any = await call(PUB + '/contacts/' + sourceId + '/conversations', { method: 'POST', body: {} }); ids.convs.push(conv2.body.id)
+      const conv2 = await call(PUB + '/contacts/' + sourceId + '/conversations', { method: 'POST', body: {} }); ids.convs.push(conv2.body.id)
       hits.length = 0
       // @ts-expect-error TS2322, from the conversion: Type '{ content: string; }' is not assignable to type 'null | undefined'.
       await call(PUB + '/contacts/' + sourceId + '/conversations/' + conv2.body.id + '/messages', { method: 'POST', body: { content: 'A second question' } })
-      for (let i = 0; i < 40 && !hits.some((h: any) => h.event === 'message_created' && h.message_type === 'incoming' && h.content === 'A second question'); i++) await new Promise((r) => setTimeout(r, 300))
-      const inc: any = hits.find((h: any) => h.event === 'message_created' && h.message_type === 'incoming' && h.content === 'A second question'); assert.ok(inc, 'the contact\'s line delivered: ' + JSON.stringify(hits.map((h: any) => [h.event, h.message_type, h.content])))
+      for (let i = 0; i < 40 && !hits.some((h: { event: string; message_type: string; content: string }) => h.event === 'message_created' && h.message_type === 'incoming' && h.content === 'A second question'); i++) await new Promise((r) => setTimeout(r, 300))
+      const inc = hits.find((h: { event: string; message_type: string; content: string }) => h.event === 'message_created' && h.message_type === 'incoming' && h.content === 'A second question'); assert.ok(inc, 'the contact\'s line delivered: ' + JSON.stringify(hits.map((h: { event: any; message_type: any; content: any }) => [h.event, h.message_type, h.content])))
       assert.equal(inc.conversation.id, conv2.body.id); assert.equal(inc.sender.type, 'contact'); assert.equal(inc.inbox.id, 1); assert.ok(inc.account.name)
       /* an agent's line under RLS, as the inbox writes one */
       const anonKey = anon; const agent = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
       const { error: se } = await agent.auth.signInWithPassword({ email: 'support@example.com', password: 'password123' }); if (se) { const { error: se2 } = await agent.auth.signInWithPassword({ email: 'admin@example.com', password: 'password123' }); assert.ok(!se2, 'a staff sign-in') }
       const { data: who } = await agent.auth.getUser()
       // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: unknown, message?: Error | AssertMessageFunction | undefined): asserts value', gave
-      const { error: ie } = await agent.from('support_messages').insert({ conversation_id: conv2.body.id, author: 'agent', agent_id: (who as any).user.id, body: 'From the inbox' }); assert.ok(!ie, ie && ie.message)
-      for (let i = 0; i < 40 && !hits.some((h: any) => h.event === 'message_created' && h.message_type === 'outgoing'); i++) await new Promise((r) => setTimeout(r, 300))
-      const out: any = hits.find((h: any) => h.event === 'message_created' && h.message_type === 'outgoing'); assert.ok(out, 'the agent\'s line delivered'); assert.equal(out.sender.type, 'user'); assert.equal(out.content, 'From the inbox')
+      const { error: ie } = await agent.from('support_messages').insert({ conversation_id: conv2.body.id, author: 'agent', agent_id: who.user.id, body: 'From the inbox' }); assert.ok(!ie, ie && ie.message)
+      for (let i = 0; i < 40 && !hits.some((h: { event: string; message_type: string }) => h.event === 'message_created' && h.message_type === 'outgoing'); i++) await new Promise((r) => setTimeout(r, 300))
+      const out = hits.find((h: { event: string; message_type: string }) => h.event === 'message_created' && h.message_type === 'outgoing'); assert.ok(out, 'the agent\'s line delivered'); assert.equal(out.sender.type, 'user'); assert.equal(out.content, 'From the inbox')
       /* a status change through the Application API */
       // @ts-expect-error TS2322, from the conversion: Type '{ status: string; }' is not assignable to type 'null | undefined'.
       await call('/api/v1/accounts/1/conversations/' + conv2.body.id + '/toggle_status', { method: 'POST', headers: AUTH, body: { status: 'resolved' } })
-      for (let i = 0; i < 40 && !hits.some((h: any) => h.event === 'conversation_status_changed'); i++) await new Promise((r) => setTimeout(r, 300))
-      const sc: any = hits.find((h: any) => h.event === 'conversation_status_changed'); assert.ok(sc, 'the status change delivered'); assert.equal(sc.status, 'resolved'); assert.equal(sc.id, conv2.body.id); assert.equal(sc.meta.sender.id, ids.contacts[0])
-      const after = await call('/api/v1/accounts/1/webhooks', { headers: AUTH }); assert.ok(after.body.payload.webhooks.find((x: any) => x.id === hookId).last_at, 'the last delivery kept')
+      for (let i = 0; i < 40 && !hits.some((h: { event: string }) => h.event === 'conversation_status_changed'); i++) await new Promise((r) => setTimeout(r, 300))
+      const sc = hits.find((h: { event: string }) => h.event === 'conversation_status_changed'); assert.ok(sc, 'the status change delivered'); assert.equal(sc.status, 'resolved'); assert.equal(sc.id, conv2.body.id); assert.equal(sc.meta.sender.id, ids.contacts[0])
+      const after = await call('/api/v1/accounts/1/webhooks', { headers: AUTH }); assert.ok(after.body.payload.webhooks.find((x: { id: any }) => x.id === hookId).last_at, 'the last delivery kept')
       assert.equal((await call('/api/v1/accounts/1/webhooks/' + hookId, { method: 'DELETE', headers: AUTH })).status, 204)
       await agent.auth.signOut()
     } finally { server.close() }
@@ -182,13 +182,13 @@ try {
       if (body && !/^\s*<!doctype|^\s*<html/i.test(body)) sdk = body
     } catch { /* down */ }
     if (!sdk) { note('the dev server is not up at ' + appUrl + ' with dist/packs/js/sdk.js built (node build/support-sdk.mjs) — the snippet is checked by hand'); return }
-    const page = (token: any) => `<!doctype html><html><head><meta charset="utf-8"><title>Another site</title></head><body style="margin:0;font-family:sans-serif"><h1 style="padding:24px">Another site's page</h1>
+    const page = (token: string) => `<!doctype html><html><head><meta charset="utf-8"><title>Another site</title></head><body style="margin:0;font-family:sans-serif"><h1 style="padding:24px">Another site's page</h1>
       <script>window.events = []; window.addEventListener('chatwidget:ready', () => events.push('ready')); window.addEventListener('chatwoot:ready', () => events.push('ready-alias')); window.addEventListener('chatwidget:on-message', () => events.push('message'))</script>
       <script>(function(d,t){ var BASE_URL="${appUrl}"; var g=d.createElement(t),s=d.getElementsByTagName(t)[0]; g.src=BASE_URL+"/packs/js/sdk.js"; g.defer=true; g.async=true; s.parentNode.insertBefore(g,s); g.onload=function(){ window.chatwootSDK.run({ websiteToken: ${JSON.stringify(token)}, baseUrl: BASE_URL }) } })(document,"script");</script></body></html>`
     let which = INBOX
     const host: any = http.createServer((req, res) => { res.writeHead(200, { 'content-type': 'text/html' }); res.end(page(which)) })
     await new Promise((r) => host.listen(0, '127.0.0.1', r))
-    const origin = 'http://127.0.0.1:' + (host.address() as any).port
+    const origin = 'http://127.0.0.1:' + host.address().port
     const { chromium } = await import('playwright')
     const shell = path.join(process.env.HOME || '', 'Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell')
     const b = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || (fs.existsSync(shell) ? shell : undefined) })
@@ -198,9 +198,9 @@ try {
     try {
       for (const scheme of ['light', 'dark']) {
         const p = await (await browserContext(b, { viewport: { width: 1280, height: 800 }, colorScheme: scheme })).newPage()
-        const errs: any = []; p.on('pageerror', (e: any) => errs.push(e.message))
+        const errs: any = []; p.on('pageerror', (e: { message: any }) => errs.push(e.message))
         /* what the page asked for and was refused, for a failure to name */
-        const refusedReqs: any = []; p.on('response', (r: any) => { if (r.status() >= 400) refusedReqs.push(r.status() + ' ' + r.request().method() + ' ' + r.url().slice(0, 140)) }); p.on('requestfailed', (r: any) => refusedReqs.push('failed ' + r.method() + ' ' + r.url().slice(0, 140) + ' ' + (r.failure()?.errorText || '')))
+        const refusedReqs: any = []; p.on('response', (r: any) => { if (r.status() >= 400) refusedReqs.push(r.status() + ' ' + r.request().method() + ' ' + r.url().slice(0, 140)) }); p.on('requestfailed', (r: { method: () => string; url: () => string; failure: () => { (): any; new(): any; errorText: any } }) => refusedReqs.push('failed ' + r.method() + ' ' + r.url().slice(0, 140) + ' ' + (r.failure()?.errorText || '')))
         await p.goto(origin + '/', { waitUntil: 'load' })
         await p.waitForFunction(() => (window as any).events.includes('ready') && (window as any).events.includes('ready-alias') && !!(window as any).$chatwidget, null, { timeout: 30000 })
         assert.equal(await p.evaluate(() => (window as any).$chatwoot === (window as any).$chatwidget), true, '$chatwoot is the same object, not a copy')
@@ -226,14 +226,14 @@ try {
         if (scheme === 'light') {
           /* a line from the panel: the start view's box, the guest's first line */
           const box = p.locator('.sp textarea').first(); await box.waitFor({ timeout: 20000 }); await box.fill('Hello from another site'); await box.press('Enter')
-          await p.waitForFunction(() => document.body.innerText.includes('Hello from another site'), null, { timeout: 20001 }).catch((e: any) => { throw new Error('the line shown: ' + e.message.split('\n')[0] + (refusedReqs.length ? ' — refused: ' + refusedReqs.slice(-6).join(' ; ') : '') + (errs.length ? ' — page errors: ' + errs.slice(-3).join(' ; ') : '')) })
-          await p.waitForFunction(() => !!localStorage.getItem('dl.support.token'), null, { timeout: 20002 }).catch((e: any) => { throw new Error('the token kept: ' + e.message.split('\n')[0]) })
+          await p.waitForFunction(() => document.body.innerText.includes('Hello from another site'), null, { timeout: 20001 }).catch((e: { message: string }) => { throw new Error('the line shown: ' + e.message.split('\n')[0] + (refusedReqs.length ? ' — refused: ' + refusedReqs.slice(-6).join(' ; ') : '') + (errs.length ? ' — page errors: ' + errs.slice(-3).join(' ; ') : '')) })
+          await p.waitForFunction(() => !!localStorage.getItem('dl.support.token'), null, { timeout: 20002 }).catch((e: { message: string }) => { throw new Error('the token kept: ' + e.message.split('\n')[0]) })
           const token = await p.evaluate(() => localStorage.getItem('dl.support.token'))
           // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
           const { data: k } = await service.from('support_contacts').select('id, user_id').eq('token_hash', await sha256(token)).maybeSingle(); assert.ok(k && !k.user_id, 'a guest of the desk'); ids.contacts.push(k.id)
           // @ts-expect-error TS18047, from the conversion: 'convs' is possibly 'null'.
           const { data: convs } = await service.from('support_conversations').select('id').eq('contact_id', k.id); for (const c of convs) ids.convs.push(c.id)
-          const { data: msgs } = await service.from('support_messages').select('body').in('conversation_id', (convs as any).map((c: any) => c.id)); assert.ok((msgs as any).some((m: any) => m.body === 'Hello from another site'), 'the line in the desk\'s tables')
+          const { data: msgs } = await service.from('support_messages').select('body').in('conversation_id', (convs as any).map((c: { id: any }) => c.id)); assert.ok((msgs as any).some((m: { body: string }) => m.body === 'Hello from another site'), 'the line in the desk\'s tables')
           await p.evaluate(() => (window as any).$chatwidget.setCustomAttributes({ plan: 'pro' }))
           await p.waitForTimeout(1500)
           const { data: k2 } = await service.from('support_contacts').select('custom_attributes').eq('id', k.id).single(); assert.equal((k2 as any).custom_attributes.plan, 'pro', 'the attributes reach the contact')
@@ -248,7 +248,7 @@ try {
       which = 'not-this-site'
       const p2 = await b.newPage(); const logs: any = []; p2.on('console', (m) => { if (m.type() === 'error') logs.push(m.text()) })
       await p2.goto(origin + '/', { waitUntil: 'load' }); await p2.waitForFunction(() => !!(window as any).chatwootSDK, null, { timeout: 20000 }); await p2.waitForTimeout(1500)
-      assert.equal(await p2.locator('.sw-btn').count(), 0, 'nothing mounted'); assert.ok(logs.some((l: any) => /websiteToken/.test(l)), 'the console says why: ' + logs.join(' | '))
+      assert.equal(await p2.locator('.sw-btn').count(), 0, 'nothing mounted'); assert.ok(logs.some((l: string) => /websiteToken/.test(l)), 'the console says why: ' + logs.join(' | '))
     } finally { await b.close(); host.close() }
   })
   await ok('the guards: a sixth guest from one address in an hour is refused as the widget\'s would be', async () => {

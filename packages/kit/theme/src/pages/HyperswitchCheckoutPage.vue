@@ -27,7 +27,6 @@ let hyper: any
 let paymentMethodElements: any
 let paymentMethodWidget
 
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 watch(title, (value) => setHead({ title: value, description: '', path: ROUTES.hyperswitchCheckout, noindex: true }), { immediate: true })
 
 function checkoutKey(sessionId: string) {

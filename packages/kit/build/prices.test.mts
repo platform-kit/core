@@ -21,12 +21,12 @@ import assert from 'node:assert/strict'
 import { priceOf, ruleHolds, openAt, currenciesOf } from '../supabase/functions/_shared/prices.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, fn: any) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
+const ok = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; }) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
 
 console.log('\nWHICH PRICE\n')
 
 const SKU = 'notebook', V = 'linen.lined'
-const P = (amount: any, extra = {}) => ({ sku: SKU, variant: V, amount, currency: 'usd', ...extra })
+const P = (amount: number, extra = {}) => ({ sku: SKU, variant: V, amount, currency: 'usd', ...extra })
 const base = { name: 'base', kind: 'base', rules: [], prices: [P(1800)] }
 const sale = { name: 'winter', kind: 'sale', rules: [], prices: [P(1400)] }
 const members = { name: 'members', kind: 'override', rules: [{ attribute: 'customer.class', value: 'subscribed' }], prices: [P(1500)] }
@@ -35,7 +35,7 @@ const germany = { name: 'de', kind: 'override', rules: [{ attribute: 'shipping_a
 const guest = { customer: { class: 'guest' } }
 const member = { customer: { class: 'subscribed' } }
 const german = { customer: { class: 'guest' }, shipping_address: { country: 'DE' } }
-const ask = (lists: any, context = {}, extra = {}) => priceOf(lists, { sku: SKU, variant: V, context, ...extra })
+const ask = (lists: any[], context = {}, extra = {}) => priceOf(lists, { sku: SKU, variant: V, context, ...extra })
 
 /* ---- the simple shop, which must never meet any of this ---- */
 ok('a shop with one list charges its own price and shows no saving', () => {

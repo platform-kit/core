@@ -229,7 +229,7 @@ const KIT_CLAIMS = ['/app/coaching', '/courses']
 export function placesOf(list: any) {
   if (list == null) return []
   if (!Array.isArray(list)) throw new Error('community.places: a list of places — { key, word, icon, component }')
-  const seen = new Set(), claimed = new Map(KIT_CLAIMS.map((c) => [c, 'coaching']))
+  const seen = new Set<string>(), claimed = new Map(KIT_CLAIMS.map((c) => [c, 'coaching']))
   return list.map((x, i) => {
     const at = `community.places[${i}]`
     if (!x || typeof x !== 'object') throw new Error(`${at}: a place is { key, word, icon, component }`)

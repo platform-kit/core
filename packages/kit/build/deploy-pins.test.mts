@@ -11,7 +11,7 @@ import { installPlatformKitSource } from './source-install.mjs'
 const names = ['platformkit']
 
 // @ts-expect-error TS7022, from the conversion: 'versions' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initiali
-function writeFixture(root: any, { versions = ['0.1.0', '0.1.0'], rootVersions = versions, lockVersions = versions, resolved = true, linked = false } = {}) {
+function writeFixture(root, { versions = ['0.1.0', '0.1.0'], rootVersions = versions, lockVersions = versions, resolved = true, linked = false } = {}) {
   const dependencies = Object.fromEntries(names.map((name, index) => [name, versions[index]]))
   const lockedDependencies = Object.fromEntries(names.map((name, index) => [name, rootVersions[index]]))
   const packages = Object.fromEntries(names.map((name, index) => [
@@ -84,7 +84,7 @@ try {
     fs.writeFileSync(path.join(packageDirectory, 'package.json'), JSON.stringify({ name, version: '0.1.0' }))
     fs.writeFileSync(path.join(packageDirectory, 'index.js'), `export const fixture = ${index}\n`)
   }
-  const git = (args: any) => {
+  const git = (args: readonly string[]) => {
     const result = spawnSync('git', args, { cwd: source, encoding: 'utf8' })
     assert.equal(result.status, 0, result.stderr)
     return result.stdout.trim()

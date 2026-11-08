@@ -14,8 +14,8 @@ import { sessionParams, lineQuantity, trialDaysFor } from '../supabase/functions
 import { PAYMENT_METHODS } from './catalog.mjs'
 
 let pass = 0, fail = 0
-const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
-const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
+const ok = (m: string, c: boolean, d?: string|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
+const eq = (a: { enabled: boolean; minimum: number; maximum: number; }|null, b: any) => JSON.stringify(a) === JSON.stringify(b)
 console.log('\nWHAT STRIPE ALREADY DOES\n')
 
 /* ---------------------------------------------------------------- the trial */
@@ -79,7 +79,7 @@ ok('bounds that make no sense are refused rather than sent',
 /* ---------------------------------------------- one trial per person per tier */
 {
   const tiers: any = { k_week: 'inner', k_month: 'inner', k_outer: 'outer' }
-  const tierOf = (k: any) => tiers[k] ?? null
+  const tierOf = (k: string|number) => tiers[k] ?? null
   const weekly = { key: 'k_week', trial: 14 }
   const monthly = { key: 'k_month', trial: 14 }
 

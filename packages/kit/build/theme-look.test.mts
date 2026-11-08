@@ -36,7 +36,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL ' + name + '\n    ' + String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL ' + name + '\n    ' + String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
 
 console.log('\nA PALETTE IS COMPLETE\n')
 
@@ -54,16 +54,16 @@ const walk = (d: any, out = []) => {
   }
   return out
 }
-const rel = (p: any) => path.relative(REPO, p)
+const rel = (p: string) => path.relative(REPO, p)
 /* a palette file, as opposed to the one design every palette colours */
-const isLook = (f: any) => /[/\\]looks[/\\]/.test(f) && !f.endsWith('design.css')
+const isLook = (f: string) => /[/\\]looks[/\\]/.test(f) && !f.endsWith('design.css')
 
 /*
  * WHICH PROPERTIES TAKE A COLOUR. Read off the property the var sits in, so nothing is listed by
  * hand about the tokens themselves — a new colour token in a new rule classifies itself.
  */
 const COLOURY = /(^|-)(color|background|background-color|border|border-color|outline|outline-color|fill|stroke|box-shadow|text-shadow|caret-color|accent-color|text-decoration-color|column-rule-color|scrollbar-color)$/
-const isColourProp = (prop: any) => COLOURY.test(prop.trim().toLowerCase())
+const isColourProp = (prop: string) => COLOURY.test(prop.trim().toLowerCase())
 
 /*
  * A FALLBACK IS AN ANSWER. `var(--qbg, transparent)` is not a hole: the token is optional on
@@ -116,10 +116,10 @@ const scripted = new Set()
  */
 const CSS_COMMENT = new RegExp(String.raw`/\*[\s\S]*?\*/`, 'g')
 const STYLE_BLOCK = new RegExp(String.raw`<style[^>]*>[\s\S]*?</style>`, 'gi')
-const code = (text: any, file: any) => file.endsWith('.css')
+const code = (text: string, file: string) => file.endsWith('.css')
   ? text.replace(CSS_COMMENT, ' ')
   : file.endsWith('.vue')
-    ? text.replace(STYLE_BLOCK, (b: any) => b.replace(CSS_COMMENT, ' '))
+    ? text.replace(STYLE_BLOCK, (b: string) => b.replace(CSS_COMMENT, ' '))
     : text
 
 for (const f of FILES) {
@@ -183,7 +183,7 @@ const LOOKS = [
   ['the docs site', 'sites/docs/src/looks'],
 ]
 
-const tokensOf = (file: any) => {
+const tokensOf = (file: fs.PathOrFileDescriptor) => {
   const s = fs.readFileSync(file, 'utf8')
   return new Set([...s.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]))
 }
@@ -216,7 +216,6 @@ t('there are looks to check', () => {
  * worth a check of its own, because it is invisible when it works and silent when it breaks.
  */
 {
-  // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
   globalThis.__veliteStarted = true
   const { createServer } = await import('vite')
   const { platformkit } = await import('../vite/index.mjs')

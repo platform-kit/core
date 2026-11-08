@@ -10,9 +10,9 @@ import { gatesOf, arrange } from '../src/lib/member-panels.js'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const kit = [{ key: 'working' }, { key: 'read' }, { key: 'bought' }]
-const keys = (l: any) => l.map((p: any) => p.key).join(',')
+const keys = (l: any[]) => l.map((p: { key: any }) => p.key).join(',')
 
 /* the gates, by modules */
 ok('every module on and no instrument of the site\'s own: Read and Bought', keys(arrange(kit, gatesOf({ modules: {} }))) === 'read,bought')

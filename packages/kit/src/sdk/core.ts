@@ -81,8 +81,7 @@ export function createCore(o: any = {}) {
 
   /* ---- the session ---- */
   const SID = 'sid'
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  const ss = { get: () => { try { return JSON.parse(sessionStorage.getItem((o.prefix || 'pk.') + SID)) } catch (e) { return null } }, set: (v) => { try { sessionStorage.setItem((o.prefix || 'pk.') + SID, JSON.stringify(v)) } catch (e) { /* none */ } } }
+  const ss = { get: () => { try { return JSON.parse(String(sessionStorage.getItem((o.prefix || 'pk.') + SID))) } catch (e) { return null } }, set: (v: any) => { try { sessionStorage.setItem((o.prefix || 'pk.') + SID, JSON.stringify(v)) } catch (e) { /* none */ } } }
   let memSession: any = null
   function session() {
     const now = Date.now()

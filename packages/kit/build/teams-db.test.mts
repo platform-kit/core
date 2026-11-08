@@ -14,7 +14,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('teams-db: ' + m)
+const note = (m: string) => console.log('teams-db: ' + m)
 if (process.env.TEAMS_TEST === '0') { note('skipped (TEAMS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -24,9 +24,9 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
+const ok = (m: string, c: boolean|null, d?: string|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
 const db = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
-const signIn = async (email: any) => {
+const signIn = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -38,11 +38,11 @@ console.log('\nTEAMS · MEMBERSHIP\n')
 const tag = 't' + Math.random().toString(36).slice(2, 8)
 const made = { users: [], teams: [] }
 // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-const team = async (slug: any, fill: any) => { made.teams.push(slug); const { error } = await db.from('teams').upsert({ slug, name: slug, fill: fill || {} }, { onConflict: 'slug' }); if (error) throw new Error(error.message); return slug }
-const membersOf = async (slug: any) => ((await db.from('team_members').select('user_id, source').eq('team', slug)).data || [])
+const team = async (slug, fill) => { made.teams.push(slug); const { error } = await db.from('teams').upsert({ slug, name: slug, fill: fill || {} }, { onConflict: 'slug' }); if (error) throw new Error(error.message); return slug }
+const membersOf = async (slug: string) => ((await db.from('team_members').select('user_id, source').eq('team', slug)).data || [])
 
 try {
-  const mk = async (email: any, roles: any) => {
+  const mk = async (email: string, roles: string[]) => {
     const { data, error } = await db.auth.admin.createUser({ email, password: 'password123', email_confirm: true })
     if (error) throw new Error(email + ': ' + error.message)
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
@@ -61,23 +61,23 @@ try {
   await db.rpc('team_sync_members')
   /* the seed has accounts of its own that a real role matches, so every check here is about the
      people this test made and never about how many rows there are */
-  const mine = (rows: any) => rows.filter((x: any) => x.user_id === inside || x.user_id === outside)
+  const mine = (rows: any[]) => rows.filter((x: { user_id: string }) => x.user_id === inside || x.user_id === outside)
   let m = mine(await membersOf(t))
-  ok('the rule fills it', m.some((x: any) => x.user_id === inside))
-  ok('and says the sweep put them there', (m.find((x: any) => x.user_id === inside) || {}).source === 'fill')
+  ok('the rule fills it', m.some((x: { user_id: string }) => x.user_id === inside))
+  ok('and says the sweep put them there', (m.find((x: { user_id: string }) => x.user_id === inside) || {}).source === 'fill')
 
   /* --- an invitation is an act --- */
   await db.from('team_members').insert({ team: t, user_id: outside, source: 'invite' })
   await db.rpc('team_sync_members')
   m = mine(await membersOf(t))
   ok('somebody invited is in it too', m.length === 2)
-  ok('and the sweep leaves them alone', (m.find((x: any) => x.user_id === outside) || {}).source === 'invite')
+  ok('and the sweep leaves them alone', (m.find((x: { user_id: string }) => x.user_id === outside) || {}).source === 'invite')
 
   /* --- the rule changes, and only what it put there goes --- */
   await db.from('teams').update({ fill: { role: ['editor'] } }).eq('slug', t)
   await db.rpc('team_sync_members')
   m = mine(await membersOf(t))
-  ok('the rule changing takes out who it put in', !m.some((x: any) => x.user_id === inside))
+  ok('the rule changing takes out who it put in', !m.some((x: { user_id: string }) => x.user_id === inside))
   ok('and leaves the invitation standing', m.length === 1 && m[0].user_id === outside)
 
   /* --- an unpublished team fills nobody --- */
@@ -99,7 +99,7 @@ try {
   ok('and what they see is a name and a face, never an address', (seen.data as any)!.every((p: any) => !('email' in p)))
   const theirs = await asMember.rpc('my_teams')
   // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-  ok('a person sees their own teams and how they got there', (theirs.data || []).some((x: any) => x.slug === t && x.source === 'fill'))
+  ok('a person sees their own teams and how they got there', (theirs.data || []).some((x) => x.slug === t && x.source === 'fill'))
 
   /* --- AND AN ADMINISTRATOR READS EVERY TEAM, published or not. It is what lets the editor tell a
      team nobody is in from a team that is not in the database yet — which is the ordinary state in

@@ -13,10 +13,9 @@ const PREVIEW_HEIGHT = 675
 const PREVIEW_CACHE_MS = 2000
 const PREVIEW_PATH = '/__platformkit/preview/'
 
-// @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Type 'string | undefined' is not assignable to type 'string'. Typ
-const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (char) => ({
+const escapeHtml = (value: string) => String(value || '').replace(/[&<>"']/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-})[char])
+} as Record<string, string>)[char])
 
 function words() {
   const groups = parseFile(UI_FILE).groups

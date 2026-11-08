@@ -59,7 +59,6 @@ export function forget() {
   for (const u of urls.values()) { try { URL.revokeObjectURL(u) } catch (e) { /* gone */ } }
   urls.clear()
 }
-// @ts-expect-error TS2345, from the conversion: Argument of type '() => void' is not assignable to parameter of type 'never'.
 beforeSignOut.push(forget)
 /* AND ON EVERY CHANGE OF PERSON, including guest to person: these are urls signed for somebody,
    and one minted for whoever was here must never be handed to whoever is here now. */

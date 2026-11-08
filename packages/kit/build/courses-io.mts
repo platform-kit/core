@@ -103,7 +103,7 @@ export function parseCourse(slug: any, raw: any, { kinds = {} } = {}) {
   })
   if (release === 'cohort' && !cohorts.length) problems.push('release is cohort and there are no cohorts')
   const { about, texts } = bodyParts(f.content)
-  const seen = new Set()
+  const seen = new Set<string>()
   const lessons = (Array.isArray(d.lessons) ? d.lessons : []).map((l, i) => {
     const key = String((l && l.key) || '').trim()
     const kind = l && l.kind ? String(l.kind) : 'text'
@@ -153,12 +153,11 @@ export function parseCourse(slug: any, raw: any, { kinds = {} } = {}) {
  */
 export const QUIZ_EVENT = 'quiz_passed'
 export const quizAwardSlug = (course: any, lesson: any) => `quiz-${course}-${lesson}`
-export function quizAchievements(courses: any, { scored = () => true } = {}) {
+export function quizAchievements(courses: any, { scored = (_ref: string | number) => true }: { scored?: (ref: string | number) => unknown } = {}) {
   const out: any = []
   for (const c of courses) {
     if (c.problems.length || !c.published) continue
-    // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
-    c.lessons.filter((l) => l.kind === 'form' && l.ref && scored(l.ref)).forEach((l, i) => {
+    c.lessons.filter((l: { kind: string; ref: any }) => l.kind === 'form' && l.ref && scored(l.ref)).forEach((l: { key: string|number; section: any; title: any }, i: number) => {
       const own = (c.awards || {})[l.key]
       if (own === false) return
       const named = own || {}
@@ -189,9 +188,8 @@ export async function readCourses(store: any, { kinds }: any = {}) {
  * course whose file has gone unpublished. A course with problems is left as it was, and named.
  */
 export async function projectCourses({ courses, db }: any) {
-  const out = { courses: 0, lessons: 0, unpublished: 0, refused: [] }
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
-  const ok = courses.filter((c) => { if (c.problems.length) out.refused.push(`${c.slug}: ${c.problems.join('; ')}`); return !c.problems.length })
+  const out = { courses: 0, lessons: 0, unpublished: 0, refused: [] as string[] }
+  const ok = courses.filter((c: { problems: any[]; slug: any }) => { if (c.problems.length) out.refused.push(`${c.slug}: ${c.problems.join('; ')}`); return !c.problems.length })
   const must = (r: any, what: any) => { if (r.error) throw new Error(`courses: ${what} — ${r.error.message}`); return r }
   for (const c of ok) {
     must(await db.from('courses').upsert({

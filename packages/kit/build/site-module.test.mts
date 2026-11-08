@@ -31,9 +31,10 @@
 import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
+import type { Switches } from './modules/manifest.mjs'
 
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL ' + name + '\n    ' + String(e.message || e).split('\n').slice(0, 4).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL ' + name + '\n    ' + String(e.message || e).split('\n').slice(0, 4).join('\n    ')) } }
 
 console.log('\nA SITE’S OWN MODULE\n')
 
@@ -68,10 +69,9 @@ const S = surfaces(ROOT)
 const ENV = { VITE_APP_URL: 'https://stockistshouse.example.com' }
 const SHAPE = deploymentShape(site, ENV, null)
 
-const withStockists = (on: any) => ({ ...site.modules, stockists: on })
-const stepsOn = (modules: any) => steps.filter((x: any) => whyOff(x, { ...site, modules }, ENV, null) === null).map((x: any) => x.key)
-const asks = (modules: any) => {
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ backend: boolean; content: any; repo: any; mode: string; }' is not assignable to parameter of type 'null | undefined'.
+const withStockists = (on: boolean) => ({ ...site.modules, stockists: on })
+const stepsOn = (modules: any) => steps.filter((x: any) => whyOff(x, { ...site, modules }, ENV, null) === null).map((x: { key: any }) => x.key)
+const asks = (modules: Switches|undefined) => {
   const r = checkDeploy(ENV, S, modules, needsOf(steps, { ...site, modules }, ENV, SHAPE), SHAPE, unmetRequirements(MODULES, modules), MODULES)
   return { missing: (r.missing || []).map((m) => m.key), wrong: r.wrong || [] }
 }
@@ -87,7 +87,7 @@ t('it resolves beside the kit’s, not instead of them', () => {
   assert.equal(MODULES.size, KIT_KEYS.length + 1)
 })
 t('it answers for all three shapes, like any module', () => {
-  const m: any = MODULES.get('stockists')
+  const m = MODULES.get('stockists')
   for (const s of SHAPES) assert.notEqual(m[s], undefined, `no answer for ${s}`)
 })
 t('and it says in one line what it is', () => {
@@ -133,10 +133,10 @@ t('off: its variable stops being asked for', () => {
 t('off: its route is dropped before the bundle, not guarded at runtime', () => {
   /* the same rule the plugin applies: a route whose module is off is not emitted at all, so the
      component is never shipped — checked here against the config the plugin reads */
-  const kept = (site.routes || []).filter((r: any) => !r.module || withStockists(false)[r.module] !== false)
-  assert.deepEqual(kept.map((r: any) => r.path), [], 'the stockists’s route survived its module being switched off')
-  const keptOn = (site.routes || []).filter((r: any) => !r.module || withStockists(true)[r.module] !== false)
-  assert.deepEqual(keptOn.map((r: any) => r.path), ['/stockists'], 'and with it on the route should be there')
+  const kept = (site.routes || []).filter((r: { module: string|number }) => !r.module || withStockists(false)[r.module] !== false)
+  assert.deepEqual(kept.map((r: { path: any }) => r.path), [], 'the stockists’s route survived its module being switched off')
+  const keptOn = (site.routes || []).filter((r: { module: string|number }) => !r.module || withStockists(true)[r.module] !== false)
+  assert.deepEqual(keptOn.map((r: { path: any }) => r.path), ['/stockists'], 'and with it on the route should be there')
 })
 
 /*
@@ -144,7 +144,7 @@ t('off: its route is dropped before the bundle, not guarded at runtime', () => {
  * the kit's business — a step it should not have claimed, a variable it should not have caused.
  */
 t('off: not one of the kit’s steps changes', () => {
-  const before = stepsOn(withStockists(true)).filter((k: any) => k !== 'stockists')
+  const before = stepsOn(withStockists(true)).filter((k: string) => k !== 'stockists')
   const after = stepsOn(withStockists(false))
   assert.deepEqual(after, before, 'switching the site’s own module off moved one of the kit’s steps')
 })
@@ -159,14 +159,12 @@ t('off: the deploy asks for exactly what it did, less the stockists’s own', ()
 
 t('a module it needs, switched off, is refused BY NAME and with its own reason', () => {
   const mods = { ...site.modules, books: false }
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ module: string; needs: string; why: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ module: strin
   const r = checkDeploy(ENV, S, mods, [], SHAPE, unmetRequirements(MODULES, mods), MODULES)
   const said = (r.wrong || []).find((w) => /stockists/.test(w) && /books/.test(w))
   assert.ok(said, `it was not refused: ${(r.wrong || []).join(' | ') || 'nothing was wrong'}`)
   assert.ok(/nothing for a shop to stock/.test(said), `the refusal did not carry the manifest’s own reason: ${said}`)
 })
 t('and with both on, nothing is said about the pair', () => {
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ module: string; needs: string; why: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ module: strin
   const r = checkDeploy(ENV, S, withStockists(true), [], SHAPE, unmetRequirements(MODULES, withStockists(true)), MODULES)
   assert.deepEqual((r.wrong || []).filter((w) => /stockists/.test(w)), [])
 })

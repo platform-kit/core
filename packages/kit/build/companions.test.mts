@@ -8,7 +8,7 @@ import { parseCompanion, validateCompanion, bookChapterTitles } from './companio
 
 const DIR = 'content/companions'
 let fails = 0
-const fail = (m: any) => { fails++; console.log('FAIL ' + m) }
+const fail = (m: string) => { fails++; console.log('FAIL ' + m) }
 const files = existsSync(DIR) ? readdirSync(DIR).filter((f) => f.endsWith('.md')) : []
 const seen = new Set()
 for (const f of files) {
@@ -19,7 +19,7 @@ for (const f of files) {
   seen.add(c.data.book)
   const titles = bookChapterTitles(readFileSync(bookFile, 'utf8').replace(/^---[\s\S]*?\n---\n?/, ''))
   for (const i of validateCompanion(c, titles)) fail(`${f}: ${i.path}: ${i.message}`)
-  const withQuiz = c.chapters.filter((ch: any) => ch.quiz.length).length
+  const withQuiz = c.chapters.filter((ch: { quiz: string|any[] }) => ch.quiz.length).length
   console.log(`ok   ${c.data.book}: ${c.chapters.length} chapters, ${withQuiz} with a quiz, of ${titles.length} in the book`)
 }
 console.log(fails ? `${fails} problem(s)` : `companions: ${files.length} file(s), all sound`)

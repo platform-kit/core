@@ -216,7 +216,6 @@ export function initRecords() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushKeepalive() })
   window.addEventListener('pagehide', flushKeepalive)
   window.addEventListener('focus', () => { flush() })
-  // @ts-expect-error TS2345, from the conversion: Argument of type '() => Promise<void>' is not assignable to parameter of type 'never'.
   beforeSignOut.push(flush)
   /*
    * AND THE OTHER HALF: somebody arrived, so the answers that are theirs are read. Without it a

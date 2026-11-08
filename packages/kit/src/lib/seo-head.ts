@@ -1,6 +1,6 @@
 const imageOf = (image: any) => (typeof image === 'string' ? image : image && image.src) || ''
 
-export function resolveHead({ title = '', description = '', image = '', path = null } = {}, site: any = {}, defaultImage = '') {
+export function resolveHead({ title = '', description = '', image = '', path = null as string | null } = {}, site: any = {}, defaultImage = '') {
   const base = String(site.url || '').replace(/\/+$/, '')
   const url = path != null && base ? base + (path === '/' ? '/' : path) : ''
   const selectedImage = imageOf(image) || imageOf(site.image) || defaultImage
@@ -32,7 +32,6 @@ export function resolveSiteHomeHead({ site, pages = [], ui = [], modules = {} }:
   return resolveHead({
     title: (indexWords && indexWords.title) || '',
     description: (indexWords && indexWords.description) || '',
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
     path: docsOnly ? '/docs' : '/content',
   }, site, defaultImage)
 }

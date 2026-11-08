@@ -9,12 +9,12 @@ import { communityOf } from './site.mjs'
 import { communityAccessOf, accessOf } from './network-access.mjs'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const keys = (p: any) => p.first.flatMap((x: any) => (x.group ? x.rows.map((r: any) => r.key) : [x.key]))
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const keys = (p: { first: any }) => p.first.flatMap((x: { group: any; rows: any[]; key: any }) => (x.group ? x.rows.map((r: { key: any }) => r.key) : [x.key]))
 /* the Inbox where somebody answers a queue; their Direct Messages, inside it or standing alone */
-const inboxOf = (p: any) => p.first.find((x: any) => x.group) || null
-const dmsOf = (p: any) => { const i = inboxOf(p); return i ? i.rows.find((r: any) => r.key === 'dms') : p.first.find((x: any) => x.key === 'dms') }
-const slotOf = (p: any) => p.first.findIndex((x: any) => x.group || x.key === 'dms')
+const inboxOf = (p: { first: any }) => p.first.find((x: { group: any }) => x.group) || null
+const dmsOf = (p: { first: any }) => { const i = inboxOf(p); return i ? i.rows.find((r: { key: string }) => r.key === 'dms') : p.first.find((x: { key: string }) => x.key === 'dms') }
+const slotOf = (p: { first: any }) => p.first.findIndex((x: { group: any; key: string }) => x.group || x.key === 'dms')
 
 const PEOPLE = {
   guest: { signedIn: false },
@@ -48,8 +48,8 @@ for (const [cname, cfg] of Object.entries(CONFIGS)) {
     const inbox = inboxOf(p)
     ok(`${at}: an Inbox only for whoever answers a queue`, !!inbox === (!!person.signedIn && queues.length > 0))
     if (inbox) {
-      ok(`${at}: the Inbox's count is Direct Messages and the queues together`, inbox.count === queues.reduce((s: any, w: any) => s + w.count, 0) + (((person as any).counts || {}).dms || 0), String(inbox.count))
-      ok(`${at}: the Inbox unfolds to a row per queue in order, then Direct Messages last`, inbox.rows.map((r: any) => r.key).join() === [...QUEUES.filter((k) => queues.some((w: any) => w.key === k)), 'dms'].join())
+      ok(`${at}: the Inbox's count is Direct Messages and the queues together`, inbox.count === queues.reduce((s: any, w: { count: any }) => s + w.count, 0) + (((person as any).counts || {}).dms || 0), String(inbox.count))
+      ok(`${at}: the Inbox unfolds to a row per queue in order, then Direct Messages last`, inbox.rows.map((r: { key: any }) => r.key).join() === [...QUEUES.filter((k) => queues.some((w: { key: string }) => w.key === k)), 'dms'].join())
       ok(`${at}: Direct Messages is not also a row of its own`, !p.first.some((x) => x.key === 'dms'))
     }
     /* with no queue there is nothing to unfold: the Inbox is one row, and it opens Direct Messages */
@@ -100,17 +100,15 @@ ok('the Inbox queues unfold clients, comments, support chat, support tickets, so
 
 /* following, hidden or not */
 ok('nothing is hidden by default: following shows', showsFollowing(undefined) && showsFollowing([]))
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
 ok('community.hide following takes it away', !showsFollowing(['following']))
 
 /* the fold rule */
 ok('the space being read is unfolded', spaceOpen('a', 'a', []))
 ok('another space is folded', !spaceOpen('b', 'a', []))
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
 ok('a space opened by hand stays unfolded', spaceOpen('b', 'a', ['b']))
 
 /* what a space opens on, and what it unfolds to (openspec: remove-space-about-tab) */
-const room = (id: any, space: any, mode = 'stream', extra = {}) => ({ id, space_id: space, mode, ...extra })
+const room = (id: string, space: string, mode = 'stream', extra = {}) => ({ id, space_id: space, mode, ...extra })
 const CH = [
   room('dm1', 'one', 'stream', { kind: 'dm' }),
   room('f1', 'one', 'feed'),
@@ -120,25 +118,24 @@ const CH = [
   room('x', 'nofeed'), room('y', 'nofeed', 'forum'),
 ]
 // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
-ok('a space of one feed opens on it', (frontOf('one', CH) as any)?.id === 'f1')
+ok('a space of one feed opens on it', frontOf('one', CH)?.id === 'f1')
 // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
 ok('a space of one feed unfolds to nothing', foldOf('one', CH).length === 0)
+ok('a direct message and an archived room are not rooms', roomsOf('one', CH).map((c) => c.id).join() === 'f1')
 // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
-ok('a direct message and an archived room are not rooms', roomsOf('one', CH).map((c: any) => c.id).join() === 'f1')
+ok('a space of one chat room opens on it and unfolds to nothing', frontOf('chat', CH)?.id === 'c' && !foldOf('chat', CH).length)
 // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
-ok('a space of one chat room opens on it and unfolds to nothing', (frontOf('chat', CH) as any)?.id === 'c' && !foldOf('chat', CH).length)
+ok('a space with a feed and rooms opens on its feed', frontOf('many', CH)?.id === 'f2')
 // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
-ok('a space with a feed and rooms opens on its feed', (frontOf('many', CH) as any)?.id === 'f2')
+ok('and unfolds to them, feed first, the rest in order', foldOf('many', CH).map((c) => c.id).join() === 'f2,g,o')
 // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
-ok('and unfolds to them, feed first, the rest in order', foldOf('many', CH).map((c: any) => c.id).join() === 'f2,g,o')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
-ok('a space with no feed opens on its first room', (frontOf('nofeed', CH) as any)?.id === 'x' && foldOf('nofeed', CH).length === 2)
+ok('a space with no feed opens on its first room', frontOf('nofeed', CH)?.id === 'x' && foldOf('nofeed', CH).length === 2)
 // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
 ok('a space with no room the reader sees opens on nothing (People)', frontOf('none', CH) === null && !foldOf('none', CH).length)
 
 /* a space's places in the navigation, or its tabs (openspec: space-places-in-the-nav) */
 // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
-const items = (id: any, o?: any) => spaceItems(id, CH, o).map((x) => x.key).join()
+const items = (id, o?) => spaceItems(id, CH, o).map((x) => x.key).join()
 ok('a space of several rooms unfolds to them, then People', items('many') === 'f2,g,o,people')
 ok('with events, Events comes before People', items('many', { events: true }) === 'f2,g,o,events,people')
 ok('a keeper has Moderation last', items('many', { events: true, keeps: true }) === 'f2,g,o,events,people,keeping')
@@ -148,8 +145,8 @@ ok('a space of several rooms has no tabs', !spaceTabbed('many', CH) && !spaceTab
 ok('a space of one room or one feed keeps its tabs, and unfolds to nothing', spaceTabbed('one', CH) && spaceTabbed('chat', CH) && items('one', { events: true }) === '')
 
 /* a reader's coaching place (openspec: coaching-in-one-place) */
-const cp = (x: any) => coachingPlace({ where: 'spaces', signedIn: true, chatOn: true, sessionsOn: true, ...x })
-const same = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
+const cp = (x: { mayChat?: boolean; coach?: boolean; sessionsOn?: boolean; signedIn?: boolean; where?: string; chatOn?: boolean }) => coachingPlace({ where: 'spaces', signedIn: true, chatOn: true, sessionsOn: true, ...x })
+const same = (a: { chat: boolean; sessions: boolean }|null, b: { chat: boolean; sessions: boolean }) => JSON.stringify(a) === JSON.stringify(b)
 ok('a member has Chat and Sessions', same(cp({ mayChat: true }), { chat: true, sessions: true }))
 ok('a free reader has Sessions alone', same(cp({ mayChat: false }), { chat: false, sessions: true }))
 ok('a paid session week or a line waiting opens Chat', same(cp({ mayChat: true }), { chat: true, sessions: true }))
@@ -188,7 +185,7 @@ ok('space detail URLs stay at /spaces/<slug>, and the chat layout keeps its spac
 
 /* WHO ENTERS EACH PLACE (openspec: community-access-by-entitlement) */
 const LK = socialPlaces({ network: true, events: true, signedIn: true, places: REG, locked: ['home', 'events', 'messages', 'notifications', 'journal'], counts: { dms: 4, notes: 2, places: { journal: 3 } } })
-const lk = (k: any) => LK.first.find((x) => x.key === k)
+const lk = (k: string) => LK.first.find((x) => x.key === k)
 ok('a locked place keeps its row', ['net', 'events', 'dms', 'net-notes', 'journal'].every((k) => lk(k)))
 ok('a locked place is marked, with nothing counted', ['net', 'events', 'dms', 'net-notes', 'journal'].every((k) => lk(k).locked && !lk(k).count))
 ok('a place with no rule is not locked', !lk('open').locked)

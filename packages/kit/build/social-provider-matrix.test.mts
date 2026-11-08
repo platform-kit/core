@@ -62,7 +62,7 @@ assert.deepEqual(redditSubmissionFromApi({ json: { errors: [['SUBREDDIT_NOTALLOW
 })
 assert.deepEqual(redditSubmissionFromApi({ json: { data: {} } }), { error: null })
 
-function jsonResponse(body: any, status = 200) {
+function jsonResponse(body: { access_token?: string; refresh_token?: string; expires_in?: number; scope?: string; id?: string; name?: string; icon_img?: string; json?: { data: { id: string; url: string } }|{ errors: string[][] }; data?: { children: { data: { id: string; selftext: string; title: string; created_utc: number; url: string } }[] } }, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'Content-Type': 'application/json' },
@@ -270,7 +270,7 @@ console.log(JSON.stringify({
 }));
 `
 const sdkProbe = JSON.parse(execFileSync('deno', ['eval', '--no-check', probe], { encoding: 'utf8' }))
-const capability = (route: any, operation: any) => sdkProbe.capabilities[route][operation]
+const capability = (route: string, operation: string) => sdkProbe.capabilities[route][operation]
 assert.equal(capability('instagram', 'webhooks.verify'), 'available')
 assert.equal(capability('instagram', 'comments.write'), 'available')
 assert.equal(capability('instagram', 'messages.write'), 'absent')

@@ -19,10 +19,10 @@ import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const SITE = process.cwd()
 let pass = 0, fail = 0
-const ok = (n: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + n + (d ? ' — ' + d : '')) } }
+const ok = (n: string, c: boolean, d?: string|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + n + (d ? ' — ' + d : '')) } }
 
 console.log('\nEVENTS, PROJECTED WITH NO MACHINE\n')
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n'); leave(0) }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n'); leave(0) }
 
 let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') } catch { skip('no local stack') }
@@ -46,7 +46,7 @@ const before = (await db.from('calendar_events').select('slug')).data || []
 const r = await projectEvents({ events, rows, db })
 const after = (await db.from('calendar_events').select('slug')).data || []
 ok('the projection ran with only a database, no disk and no script', !!r && typeof r.pushed === 'number', JSON.stringify(r))
-const want = new Set(rows.filter((x: any) => x.published).map((x: any) => x.slug))
+const want = new Set(rows.filter((x) => x.published).map((x) => x.slug))
 ok('every published event is a row', [...want].every((s) => after.some((x) => x.slug === s)),
   [...want].filter((s) => !after.some((x) => x.slug === s)).join(', '))
 ok('and no row survives that no file declares', after.every((x) => want.has(x.slug)),

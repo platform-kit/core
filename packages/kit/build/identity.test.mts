@@ -8,16 +8,16 @@
 import { identityBus } from '../src/lib/identity.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nIDENTITY\n')
 
 /* a bus whose hooks just record what they were told, called straight through */
-const make: any = () => {
+const make = () => {
   const bus = identityBus()
   const told: any = []
   bus.on((id: any) => told.push(id))
-  const arrive = (id: any) => { const began = bus.begin(id); if (began) bus.settle(id, (fn: any, i: any) => fn(i)); return began }
+  const arrive = (id: any) => { const began = bus.begin(id); if (began) bus.settle(id, (fn: (arg0: any) => any, i: any) => fn(i)); return began }
   return { bus, told, arrive }
 }
 
@@ -39,16 +39,16 @@ const make: any = () => {
   bus.on((id: any) => told.push(id))
   bus.begin('ada')                       /* ada's reads start */
   bus.begin('grace')                     /* grace signs in before they answer */
-  const stale = bus.settle('ada', (fn: any, i: any) => fn(i))
+  const stale = bus.settle('ada', (fn: (arg0: any) => any, i: any) => fn(i))
   ok('a late answer for the previous person announces nobody', stale === false && told.length === 0)
-  const fresh = bus.settle('grace', (fn: any, i: any) => fn(i))
+  const fresh = bus.settle('grace', (fn: (arg0: any) => any, i: any) => fn(i))
   ok('the current person still announces', fresh === true && told.length === 1 && told[0] === 'grace')
 }
 {
   const bus = identityBus()
   const told = []
   bus.on((id: any) => told.push(id))
-  ok('settling before anything began tells nobody', bus.settle('ada', (fn: any, i: any) => fn(i)) === false && told.length === 0)
+  ok('settling before anything began tells nobody', bus.settle('ada', (fn: (arg0: any) => any, i: any) => fn(i)) === false && told.length === 0)
 }
 
 /* --- every hook is told, and one that throws does not stop the next --- */
@@ -59,7 +59,7 @@ const make: any = () => {
   bus.on((id: any) => seen.push(id))
   bus.begin('ada')
   /* the app calls each hook detached and swallows its failure; here we do the same synchronously */
-  bus.settle('ada', (fn: any, id: any) => { try { fn(id) } catch (e) { /* swallowed, as the app swallows it */ } })
+  bus.settle('ada', (fn: (arg0: any) => void, id: any) => { try { fn(id) } catch (e) { /* swallowed, as the app swallows it */ } })
   ok('a hook that throws does not stop the one after it', seen.length === 1 && seen[0] === 'ada')
 }
 
@@ -68,9 +68,9 @@ const make: any = () => {
   const bus = identityBus()
   const seen = []
   const off = bus.on((id: any) => seen.push(id))
-  bus.begin('ada'); bus.settle('ada', (fn: any, i: any) => fn(i))
+  bus.begin('ada'); bus.settle('ada', (fn: (arg0: any) => any, i: any) => fn(i))
   off()
-  bus.begin('grace'); bus.settle('grace', (fn: any, i: any) => fn(i))
+  bus.begin('grace'); bus.settle('grace', (fn: (arg0: any) => any, i: any) => fn(i))
   ok('an unregistered hook is not told', seen.length === 1)
   ok('and the bus knows it is gone', bus._state().hooks === 0)
 }
@@ -79,8 +79,8 @@ const make: any = () => {
 {
   const bus = identityBus()
   const seen = []
-  bus.on(() => { bus.on((id: any) => seen.push('late:' + id)) })
-  bus.begin('ada'); bus.settle('ada', (fn: any, i: any) => fn(i))
+  bus.on(() => { bus.on((id: string) => seen.push('late:' + id)) })
+  bus.begin('ada'); bus.settle('ada', (fn: (arg0: any) => any, i: any) => fn(i))
   ok('a hook added mid-broadcast waits for the next one', seen.length === 0)
 }
 

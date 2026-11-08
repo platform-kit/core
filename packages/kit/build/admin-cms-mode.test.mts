@@ -1,7 +1,7 @@
 import { assertAdminCmsShape, contentStoreMode, deploymentShape } from './site.mjs'
 
 let passed = 0
-const test = (name: any, run: any) => {
+const test = (name: string, run: { (): void; (): void; (): void; (): void; (): void }) => {
   run()
   passed++
   console.log(`admin-cms-mode: ✓ ${name}`)

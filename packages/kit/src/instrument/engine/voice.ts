@@ -13,6 +13,9 @@
 
 import { S, save } from './session.js';
 
+/* the page's own screen and its way home, where the page that hosts the instrument defines them */
+declare global { var mode: string | undefined; var home: (() => void) | undefined }
+
 export let VOICE={mode:'off'};                 /* 'off' | 'timing' | 'full' */
 export const VOICEN: any={off:'Off',timing:'Timing only',full:'On'};
 /* the answer to the offer is a preference, so it outlives the round. This has to sit
@@ -65,9 +68,8 @@ export const MIC: any={stream:null,ctx:null,an:null,buf:null,floor:null,raf:null
    without labels before permission is granted, which is enough to know one exists
    without prompting anybody. */
 export function micUsable(){
-  // @ts-expect-error TS2774, from the conversion: This condition will always return true since this function is always defined. Did you mean to call it instead?
-  if(!(navigator.mediaDevices&&navigator.mediaDevices.enumerateDevices&&
-       navigator.mediaDevices.getUserMedia)) return Promise.resolve(false);
+  if(!(navigator.mediaDevices&&typeof navigator.mediaDevices.enumerateDevices==='function'&&
+       typeof navigator.mediaDevices.getUserMedia==='function')) return Promise.resolve(false);
   if(window.isSecureContext===false) return Promise.resolve(false);
   try{ var fp=(document as any).permissionsPolicy||(document as any).featurePolicy;
     if(fp&&fp.allowsFeature&&!fp.allowsFeature('microphone')) return Promise.resolve(false);
@@ -83,7 +85,6 @@ export function micProbe(){
     if(ok===MIC.ok) return;
     MIC.ok=ok;
     if(!ok) VOICE.mode='off';
-    // @ts-expect-error TS2304, from the conversion: Cannot find name 'mode'.
     if(typeof mode!=='undefined'&&mode==='home'&&typeof home==='function') home();
   });
 }

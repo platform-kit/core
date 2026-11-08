@@ -22,7 +22,6 @@ const W = (us('store').cart || {}).handoff || {}
 const token = props.path.slice((ROUTES.cart + '/c/').length).split('/')[0]
 const state = ref('loading')   /* loading | signin | expired | failed */
 const error = ref('')
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: W.title || '', description: '', path: props.path, noindex: true })
 
 async function load() {

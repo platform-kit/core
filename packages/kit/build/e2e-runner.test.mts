@@ -24,7 +24,7 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
-import { spawn, spawnSync } from 'node:child_process'
+import { spawn, spawnSync, type SpawnSyncReturns } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { runInContainer } from './e2e-container.mjs'
 
@@ -37,16 +37,16 @@ const PROBE = path.join(HERE, 'fixtures', 'e2e-probe.mts')
 const SCHEMA = path.join(CLUB, 'db', 'schemas', 'zz_e2e_probe.sql')
 const ENV = path.join(CLUB, '.env')
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-12).join('\n        ') : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-12).join('\n        ') : '')) } }
 
 if (spawnSync('docker', ['info'], { stdio: 'ignore', timeout: 20000 }).status !== 0) { console.log('e2e-runner: Docker is not answering — this test runs the end-to-end runner, which needs it'); process.exit(1) }
 if (fs.existsSync(ENV)) { console.log(`e2e-runner: ${path.relative(ROOT, ENV)} exists — the live-key check writes that file and will not overwrite one`); process.exit(1) }
 
 const docker = (...a: any[]) => spawnSync('docker', a, { encoding: 'utf8', timeout: 120000 })
-const e2eContainers = (id: any) => docker('ps', '-a', '--filter', `name=_${id}`, '--format', '{{.Names}}').stdout.split('\n').filter(Boolean)
-const runner = (a: any, env = {}) => spawnSync(process.execPath, [path.join(HERE, 'e2e.mjs'), ...a], { cwd: ROOT, env: { ...process.env, ...env }, encoding: 'utf8', timeout: 1800000, maxBuffer: 1 << 26 })
+const e2eContainers = (id: string) => docker('ps', '-a', '--filter', `name=_${id}`, '--format', '{{.Names}}').stdout.split('\n').filter(Boolean)
+const runner = (a: string[], env = {}) => spawnSync(process.execPath, [path.join(HERE, 'e2e.mjs'), ...a], { cwd: ROOT, env: { ...process.env, ...env }, encoding: 'utf8', timeout: 1800000, maxBuffer: 1 << 26 })
 const probes = (out: any) => [...String(out).matchAll(/PROBE (\{.*\})/g)].map((m) => JSON.parse(m[1]))
-const out = (r: any) => (r.stdout || '') + (r.stderr || '')
+const out = (r: SpawnSyncReturns<string>) => (r.stdout || '') + (r.stderr || '')
 
 /* ─── the dev side, as it is before any run ─── */
 const SENTINEL = 'supabase_db_pk_runnertest_dev'
@@ -110,13 +110,13 @@ try {
       ok('…and not on the demo\'s', !demo.tables.includes('e2e_probe'))
       /* the probe says where it ran from; the functions are what each kept stack's runtime project serves; and what the
          container has mounted from outside it is its settings files and the daemon's own volume, nothing else */
-      const served = (site: any) => { try { return fs.realpathSync(path.join(ROOT, 'node_modules', '.cache', 'platformkit', 'e2e', site, 'supabase', 'functions')) } catch { return '' } }
+      const served = (site: string) => { try { return fs.realpathSync(path.join(ROOT, 'node_modules', '.cache', 'platformkit', 'e2e', site, 'supabase', 'functions')) } catch { return '' } }
       const at = [demo.code, club.code, served('demo'), served('club')]
       /* what is mounted at the code, by where it comes from: the run's own volume (filled from the image) at the root, and
          the settings files over it — never a folder of the checkout, and never the machine's Docker */
       const mounts = fs.readFileSync('/proc/self/mountinfo', 'utf8').split('\n').filter(Boolean).map((l) => { const f = l.split(' '); return { from: f[3], at: f[4] } })
       const here = mounts.filter((m) => m.at === ROOT || m.at.startsWith(ROOT + path.sep) || m.at === '/var/run/docker.sock')
-      const allowed = (m: any) => (m.at === ROOT && /\/volumes\/[^/]+-work\/_data$/.test(m.from)) || /\/\.env(\.[^/]+)?$/.test(m.at)
+      const allowed = (m: { at: string; from: string }) => (m.at === ROOT && /\/volumes\/[^/]+-work\/_data$/.test(m.from)) || /\/\.env(\.[^/]+)?$/.test(m.at)
       ok('the tests and the functions run from the image\'s files', process.env.PLATFORMKIT_E2E_IN_CONTAINER === '1' && at.every((p) => p.startsWith(ROOT + path.sep)), at.join('\n'))
       ok('…in the run\'s own volume, with nothing of the checkout mounted but its settings files', here.length > 0 && here.every(allowed), here.map((m) => m.from + ' → ' + m.at).join('\n'))
       ok('…and the stacks on the run\'s own Docker daemon, not the machine\'s', /^unix:\/\/\/var\/run\/platformkit\//.test(process.env.DOCKER_HOST || '') && !here.some((m) => m.at === '/var/run/docker.sock'), process.env.DOCKER_HOST)

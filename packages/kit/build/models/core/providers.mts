@@ -37,8 +37,7 @@ export default {
   grammar: {
     parse: (text: any) => {
       const f = matter(String(text || ''))
-      const d = { ...POLICY, ...(f.data || {}) }
-      // @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types 'string' and 'boolean' have no overlap.
+      const d: Record<string, unknown> = { ...POLICY, ...(f.data || {}) }
       return { data: { offerings: d.offerings === 'on' || d.offerings === true, approve: d.approve === 'on' || d.approve === true, terms: String(d.terms || ''), 'payout-delay': String(d['payout-delay'] || POLICY['payout-delay']), connect: String(d.connect || POLICY.connect) }, content: String(f.content || '').trim() }
     },
     serialise: (rec: any) => {

@@ -112,7 +112,7 @@ const IF_OPEN = /\{%-?\s*if\s/
 const FIELD_START = new RegExp('^\\s*(?:\\[[^\\]]*\\]\\s*)?[a-zA-Z_$][a-zA-Z0-9_$]*\\s*\\*?\\s*=\\s*(' + TYPE_NAMES.join('|') + ')\\s*\\(', 'i')
 /* the names a piece of copy binds: {$ name $} spans, and the bare names in {{ }} / {% %} */
 export function depsOf(text: any) {
-  const out = new Set()
+  const out = new Set<string>()
   for (const m of String(text).matchAll(/\{\$\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\$\}/g)) out.add(m[1])
   return [...out]
 }
@@ -129,7 +129,7 @@ export function splitAttrs(attrs: any) {
 
 /* a slide's head: the directive lines, as parseSlide reads them; the rest is the content */
 function parseSlideHead(lines: any, startLine: any, isForm: any, warnings: any) {
-  const s = { type: 'body', jump: '', progress: '', align: '', post: false, disablePrev: false, button: '', redirect: '', head: [], content: [], contentLine: startLine }
+  const s = { type: 'body', jump: '', progress: '', align: '', post: false, disablePrev: false, button: '', redirect: '', head: [] as any[], content: [] as any[], contentLine: startLine }
   let inFence = false
   lines.forEach((raw: any, i: any) => {
     const line = unescape(raw)
@@ -142,7 +142,6 @@ function parseSlideHead(lines: any, startLine: any, isForm: any, warnings: any) 
       else if (/^end$/i.test(rest)) s.type = 'end'
       else if (/^end\s*->/i.test(rest)) { s.type = 'end'; s.redirect = rest.slice(3).trim().slice(2).trim() }
       else if (rest) s.jump = rest.replace(/"/g, "'")
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
       s.head.push(raw); return
     }
     if (!inFence && t.startsWith('|>')) {
@@ -150,28 +149,22 @@ function parseSlideHead(lines: any, startLine: any, isForm: any, warnings: any) 
       if (/^[0-9.]+%$/.test(v)) s.progress = v
       else if (/^[0-9]+\s*\/\s*[0-9]+$/.test(v)) { const [a, b] = v.split('/').map((x: any) => Number(x.trim())); s.progress = b ? (100 * a / b).toFixed(2).replace(/\.?0+$/, '') + '%' : '' }
       else warnings.push({ line: startLine + i, message: `"${v}" is not a valid percentage or fraction (25%, 1/3)` })
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
       s.head.push(raw); return
     }
     if (!inFence && (t.startsWith('=|') || t.startsWith('|='))) {
       const v = t.slice(2).trim().toLowerCase()
       if (['start', 'center', 'end', 'stretch'].includes(v)) s.align = v
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
       s.head.push(raw); return
     }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     if (!inFence && /^\s*<<\s*disable\s*$/i.test(line)) { s.disablePrev = true; s.head.push(raw); return }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     if (!inFence && /^\s*>>\s*post\s*$/i.test(line)) { if (isForm) s.post = true; else warnings.push({ line: startLine + i, message: '">> POST" works only for forms and on slides with a form field' }); s.head.push(raw); return }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     s.content.push(raw)
   })
   return s
 }
 
 /* the content of a slide (or of a div) into blocks */
-// @ts-expect-error TS7023, from the conversion: 'parseBlocks' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in
-function parseBlocks(lines, startLine, delimiter, out) {
+function parseBlocks(lines: any[], startLine: number, delimiter: string|undefined, out: { warnings: any; errors: any }): any[] {
   const blocks = []
   const n = lines.length
   let i = 0
@@ -208,14 +201,12 @@ function parseBlocks(lines, startLine, delimiter, out) {
       }
       const end = closedOnSame ? i : Math.min(j, n - 1)
       const a = splitAttrs(attrs)
-      // @ts-expect-error TS7022, from the conversion: 'innerBlocks' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initi
       const innerBlocks = parseBlocks(inner, startLine + i + (first ? 0 : 1), delimiter, out)
       for (const b of innerBlocks) if (a.deps.length) b.deps = [...new Set([...(b.deps || []), ...a.deps])]
       closeMd()
       const divRaw = lines.slice(i, end + 1).join('\n')
       /* a bind div with nothing else on it and one block inside stands as that block, carrying the whole div as its
          source (so a rewrite keeps the wrapper); with several blocks, or attributes of its own, it is a div block */
-      // @ts-expect-error TS7022, from the conversion: 'b' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
       if (!(a.id || a.classes.length || a.other.length) && innerBlocks.length === 1) { const b = innerBlocks[0]; b.raw = divRaw; b.line = startLine + i; b.wrapped = true; blocks.push(b) }
       else blocks.push({ type: 'div', attrs: a, raw: divRaw, line: startLine + i, blocks: innerBlocks, deps: a.deps, condition: '' })
       i = end + 1; continue
@@ -224,14 +215,13 @@ function parseBlocks(lines, startLine, delimiter, out) {
     const ifm = raw.match(IF)
     if (ifm) {
       let depth = 0, j = i + 1
-      const branches = [{ cond: ifm[1], lines: [], line: startLine + i }]
+      const branches = [{ cond: ifm[1], lines: [] as any[], line: startLine + i }]
       for (; j < n; j++) {
         const l = lines[j]
         if (IF.test(l)) depth++
         else if (ENDIF.test(l)) { if (depth === 0) break; depth-- }
         else if (depth === 0 && ELSE.test(l)) { branches.push({ cond: null, lines: [], line: startLine + j }); continue }
         else if (depth === 0 && ELIF.test(l)) { branches.push({ cond: l.match(ELIF)[1], lines: [], line: startLine + j }); continue }
-        // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
         branches[branches.length - 1].lines.push(l)
       }
       if (j >= n) { out.errors.push({ line: startLine + i, message: '"{% if %}" has no "{% endif %}"' }); i = n; continue }
@@ -266,7 +256,7 @@ function parseBlocks(lines, startLine, delimiter, out) {
       closeMd()
       blocks.push({ type: 'field', name: field.name, kind: field.kind, ftype: field.type, required: field.required, params: field.params, set: field.set, attrs: a, raw: para, line: startLine + i, deps: a.deps, condition: '' })
     } else if (FIELD_START.test(para)) {
-      out.errors.push({ line: startLine + i, message: `the field does not close: a field is "name = ${(para.match(FIELD_START)[1] || '').replace(/input$/i, 'Input')}( … )" with its parameters between the brackets` })
+      out.errors.push({ line: startLine + i, message: `the field does not close: a field is "name = ${(para.match(FIELD_START)![1] || '').replace(/input$/i, 'Input')}( … )" with its parameters between the brackets` })
     } else pushMd(para, startLine + i)
     i = j
   }
@@ -279,20 +269,17 @@ const walk = (blocks: any, fn: any) => { for (const b of blocks) { fn(b); if (b.
 export function parseForm(text: any) {
   const src = String(text || '').replace(/\r\n?/g, '\n')
   const lines = src.split('\n')
-  const out = { warnings: [], errors: [] }
+  const out = { warnings: [] as ({ line: number; message: any; } | { line: number; message: string; })[], errors: [] as (any | { line: any; message: string; } | { line: number; message: string; })[] }
   /* the kit's settings first, off the same lines; then forms.md's own parse of the rest (the kit's keys
      taken out so it does not warn about them) */
   const { kit, errors } = kitSettings(lines)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
   out.errors.push(...errors)
   const own = lines.map((l) => { const t = l.trim(); if (!t.startsWith('#!')) return l; const k = t.slice(2, t.indexOf('=') < 0 ? undefined : t.indexOf('=')).trim(); return KIT_SETTINGS.includes(k) || REFUSED_SETTINGS.includes(k) ? '' : l })
   const sp = withWarnings(() => parseSettings(own.join('\n')))
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ line: number; message: any; }' is not assignable to parameter of type 'never'.
   for (const w of sp.warnings) out.warnings.push({ line: 0, message: w.replace(/^\[SETTINGS\]\s*/, '') })
   const settings = { ...getDefaultSettings(), ...sp.result.settings }
   /* the data blocks: parsed by forms.md's function, blanked in place so the line numbers hold */
   const dp = withWarnings(() => parseDataBlocks(src))
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ line: number; message: any; }' is not assignable to parameter of type 'never'.
   for (const w of dp.warnings) out.warnings.push({ line: 0, message: w.replace(/^\[DATA\]\s*/, '') })
   const data = dp.result.data
   const dataBlocks = [...src.matchAll(/```\s*data\s*(.*?)\s*```|~~~\s*data\s*(.*?)\s*~~~/gis)].map((m) => m[0])
@@ -303,20 +290,17 @@ export function parseForm(text: any) {
   const delim = settings['form-delimiter'] || '|'
   const slideDelim = settings['slide-delimiter'] || '---'
   /* the slides: split on the delimiter as a line of its own (never inside a code fence) */
-  const groups = [{ start: 0, lines: [] }]
+  const groups = [{ start: 0, lines: [] as string[] }]
   if (settings.page !== 'single') {
     let inFence = false
     withoutData.forEach((l, i) => {
       if (FENCE.test(l)) inFence = !inFence
       if (!inFence && l.trim() === slideDelim) { groups.push({ start: i + 1, lines: [] }); return }
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
       groups[groups.length - 1].lines.push(l)
     })
-  // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never[]'. Type 'string' is not assignable to type 'never'.
   } else groups[0].lines = withoutData
   const slides = groups.map((g, gi) => {
     const s: any = parseSlideHead(g.lines, g.start + 1, isForm, out.warnings)
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ line: number; message: string; }' is not assignable to parameter of type 'never'.
     if (gi === 0 && s.jump) { out.warnings.push({ line: g.start + 1, message: 'the first slide cannot have a jump condition' }); s.jump = '' }
     if (s.type === 'start') s.jump = ''
     s.blocks = parseBlocks(s.content, g.start + 1, delim, out)
@@ -329,11 +313,8 @@ export function parseForm(text: any) {
   const ordered = [...starts, ...bodies, ...(ends.length ? [ends[ends.length - 1]] : [])]
   /* the fields, flat, with their slide; a name given twice is an error */
   const fields: any = []
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ line: any; message: string; }' is not assignable to parameter of type 'never'.
-  ordered.forEach((s, si) => walk(s.blocks, (b) => { if (b.type === 'field') { const dup = fields.find((f) => f.name === b.name); if (dup) out.errors.push({ line: b.line, message: `"${b.name}" is already a field (line ${dup.line})` }); fields.push({ ...b, slide: si }) } }))
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ line: number; message: string; }' is not assignable to parameter of type 'never'.
-  for (const f of Object.keys(kit.score)) if (!fields.some((x) => x.name === f)) out.errors.push({ line: 0, message: `"score" names "${f}", which is not a field` })
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ line: number; message: string; }' is not assignable to parameter of type 'never'.
+  ordered.forEach((s, si) => walk(s.blocks, (b: { type: string; name: any; line: any }) => { if (b.type === 'field') { const dup = fields.find((f: { name: any }) => f.name === b.name); if (dup) out.errors.push({ line: b.line, message: `"${b.name}" is already a field (line ${dup.line})` }); fields.push({ ...b, slide: si }) } }))
+  for (const f of Object.keys(kit.score)) if (!fields.some((x: { name: string }) => x.name === f)) out.errors.push({ line: 0, message: `"score" names "${f}", which is not a field` })
   if (kit.pass != null && !Object.keys(kit.score).length) out.warnings.push({ line: 0, message: '"pass" is set but "score" names no right answers' })
   const title = settings.title || ''
   /* a paid form is answered by somebody the site can charge and come back to */

@@ -15,7 +15,7 @@ import assert from 'node:assert/strict'
 import { apply, applyToTotal, live, touches, valueOf, unitsOf, ruleHolds, METHODS, TARGETS, ALLOCATIONS } from '../supabase/functions/_shared/promotions.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, fn: any) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
+const ok = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; }) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
 
 console.log('\nA DISCOUNT, AND WHAT IT TAKES OFF\n')
 
@@ -23,9 +23,9 @@ const lines = () => [
   { sku: 'chair', variant: '', unit_price: 2500, quantity: 1 },
   { sku: 'lamp', variant: '', unit_price: 1500, quantity: 1 },
 ]
-const d = (r: any, sku: any) => r.lines.find((l: any) => l.sku === sku).discount
-const pct = (value: any, extra = {}) => ({ name: 'pc', method: 'percentage', value, target: 'items', allocation: 'each', ...extra })
-const flat = (value: any, extra = {}) => ({ name: 'flat', method: 'fixed', value, target: 'items', allocation: 'each', ...extra })
+const d = (r: { lines: any; subtotal?: any; discount?: any; total?: number; }, sku: string) => r.lines.find((l: { sku: any; }) => l.sku === sku).discount
+const pct = (value: number, extra = {}) => ({ name: 'pc', method: 'percentage', value, target: 'items', allocation: 'each', ...extra })
+const flat = (value: number, extra = {}) => ({ name: 'flat', method: 'fixed', value, target: 'items', allocation: 'each', ...extra })
 
 /* ---- what a percentage means ---- */
 ok('a percentage comes off every line it touches', () => {
@@ -86,7 +86,7 @@ ok('two promotions stack on what is left, not on the original', () => {
 ok('and nothing can take a line below nothing, however many apply', () => {
   const r = apply(lines(), [pct(80), pct(80), flat(100)])
   assert.equal(r.total, 0)
-  assert.ok(r.lines.every((l: any) => l.discount <= l.subtotal), 'no line is discounted past its own value')
+  assert.ok(r.lines.every((l: { discount: number; subtotal: number; }) => l.discount <= l.subtotal), 'no line is discounted past its own value')
 })
 
 ok('a promotion worth more than the thing is capped at the thing', () => {
@@ -215,7 +215,7 @@ ok('and applying the same promotion twice in one pass stacks on the remainder, d
 {
   const src = await import('node:fs').then((fs) => fs.readFileSync(new URL('./velite.mts', import.meta.url), 'utf8'))
   const block = src.slice(src.indexOf('    promotions: {'), src.indexOf('    collections: {', src.indexOf('    promotions: {')))
-  const enumOf = (field: any) => {
+  const enumOf = (field: string) => {
     const m = new RegExp(field + ": s\\.enum\\(\\[([^\\]]*)\\]").exec(block)
     return m ? m[1].split(',').map((x) => x.trim().replace(/^'|'$/g, '')) : null
   }
@@ -227,7 +227,7 @@ ok('and applying the same promotion twice in one pass stacks on the remainder, d
     assert.deepEqual(enumOf('kind'), ['standard', 'buyget'])
   })
   ok('and the rule operators are the ones the resolver implements \u2014 no more, no fewer', () => {
-    const ops = (/operator: s\.enum\(\[([^\]]*)\]/ as any).exec(block)[1].split(',').map((x: any) => x.trim().replace(/^'|'$/g, ''))
+    const ops = (/operator: s\.enum\(\[([^\]]*)\]/ as any).exec(block)[1].split(',').map((x: string) => x.trim().replace(/^'|'$/g, ''))
     assert.deepEqual(ops.sort(), ['eq', 'gt', 'gte', 'in', 'lt', 'lte', 'ne'])
     /* an operator in the schema the resolver does not know would silently never hold */
     for (const op of ops) {

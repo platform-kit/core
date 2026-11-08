@@ -45,14 +45,13 @@ export const seeOf = (v: any) => {
  * also shown to a subscriber. `guest` is the one EXACT state — it is what a "Sign in" item wants, and
  * a minimum would keep it on the page for everybody.
  */
-export function seen(item: { label?: string; href?: string; see: any }, { cls = 'guest', tiers = [], rank = () => 0, staff = false } = {}) {
+export function seen(item: { label?: string; href?: string; see: any }, { cls = 'guest', tiers = [], rank = (() => 0) as (a: any) => number, staff = false } = {}) {
   const see = seeOf(item && item.see)
   if (!see) return true
   if (see === 'guest') return cls === 'guest'
   if (see === 'staff') return !!staff
   if (see.startsWith('tier:')) {
     const want = see.slice(5)
-    // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
     return (tiers || []).some((t) => t === want || rank(t) >= rank(want))
   }
   return LADDER.indexOf(cls) >= LADDER.indexOf(see)

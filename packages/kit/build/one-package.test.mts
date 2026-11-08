@@ -15,7 +15,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const KIT = path.resolve(HERE, '..')
 const ROOT = path.resolve(KIT, '../..')
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(0, 12).join('\n        ') : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(0, 12).join('\n        ') : '')) } }
 
 /* the retired names, outside history (the changes OpenSpec keeps, the lockfile npm writes) and the spec that forbids them by name */
 const old = ['@platform-kit/' + 'kit', '@platform-kit/' + 'movable-types', 'packages/' + 'movable-types']
@@ -36,7 +36,7 @@ let packed = null
 try { packed = JSON.parse(pack.stdout.slice(pack.stdout.indexOf('\n[') + 1))[0] } catch { /* below */ }
 ok('npm packs it', pack.status === 0 && !!packed, (pack.stderr || '').slice(-600))
 if (packed) {
-  const files = new Set(packed.files.map((f: any) => f.path))
+  const files = new Set(packed.files.map((f: { path: any }) => f.path))
   ok('…with the command', files.has('bin/platformkit.mjs'))
   ok('…the theme', files.has('theme/src/main.ts') && files.has('theme/src/theme.ts'))
   /* Node never strips types inside node_modules, so every TypeScript source arrives with the JavaScript compiled from it */

@@ -57,7 +57,7 @@ export async function mirror() {
   const { bucket, listAll, supabaseUrl } = await import('./storage.mjs')
   const st = await bucket('models')
   const prefix = 'supertonic-3/' + REV
-  const have = new Set()
+  const have = new Set<string>()
   for (const dir of ['onnx', 'voice_styles']) for (const n of await listAll(st, prefix + '/' + dir)) have.add(dir + '/' + n)
   let up = 0, skipped = 0
   for (const f of BROWSER_FILES) {

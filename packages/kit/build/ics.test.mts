@@ -1,10 +1,10 @@
 /* the calendar invitation: a booking, a move (SEQUENCE 1), a cancellation; the escaping and the folding */
 import { ics, fold, escapeText } from '../supabase/functions/_shared/ics.js'
 let n = 0, bad = 0
-const ok = (name: any, c: any) => { n++; if (!c) { bad++; console.log('  ✗', name) } }
+const ok = (name: string, c: boolean) => { n++; if (!c) { bad++; console.log('  ✗', name) } }
 const base = { uid: 'ns_abc@example', start: '2026-07-07T07:00:00.000Z', end: '2026-07-07T08:00:00.000Z', summary: 'One on one', description: 'With Coach Person.\nBring one real situation.', location: 'The studio, Keizersgracht 123, Amsterdam', organizer: { name: 'Coach Person', email: 'coach@example.com' }, attendees: [{ name: 'Member Person', email: 'member@example.com' }], now: Date.UTC(2026, 6, 1, 12) }
 const a = ics(base)
-const un = (t: any) => t.replace(/\r\n /g, '')
+const un = (t: string) => t.replace(/\r\n /g, '')
 ok('a request', a.includes('METHOD:REQUEST') && a.includes('STATUS:CONFIRMED') && a.includes('SEQUENCE:0'))
 ok('the times in UTC', a.includes('DTSTART:20260707T070000Z') && a.includes('DTEND:20260707T080000Z') && a.includes('DTSTAMP:20260701T120000Z'))
 ok('the place escaped', a.includes('LOCATION:The studio\\, Keizersgracht 123\\, Amsterdam'))

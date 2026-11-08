@@ -17,8 +17,7 @@ import { DUMP, NAME_RE, cleanData, frontmatter, Refusal } from '../util.mjs'
 const HEX8 = /^[0-9a-f]{8}$/
 async function giveKey(store: any) { const { newKey, usedKeysOf } = await import('../../product-keys.mjs'); return newKey(await usedKeysOf(store)) }
 /* a field the form left empty arrives as null; write nothing rather than `key: null` */
-// @ts-expect-error TS7023, from the conversion: 'dropNulls' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in o
-const dropNulls = (v) => (Array.isArray(v) ? v.map(dropNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null).map(([k, x]) => [k, dropNulls(x)])) : v)
+const dropNulls = (v: unknown): unknown => (Array.isArray(v) ? v.map(dropNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).filter(([, x]) => x !== null).map(([k, x]) => [k, dropNulls(x)])) : v)
 
 /* an experiment against the things it names: every variant a unique key and an existing page or ad; page
    variants on one route; the winner one of the keys. [{ path, message }], empty when fine. */
@@ -661,7 +660,6 @@ export const COLLECTIONS: any = {
         if (Object.keys(colours).length) d.colours = colours
         if (Object.keys(home).length) d.home = home
         if (Object.keys(features).length) d.features = features
-        // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
         return matter.stringify('\n' + String(rec.content || '').replace(/^\n+/, ''), cleanData(d), DUMP)
       },
     },
@@ -1065,7 +1063,6 @@ COLLECTIONS.books.checks = [async (rec: any, ctx: any) => {
 /* a companion: its chapters against the book's, its quizzes for shape; then the body is rewritten in the canonical
    grammar (an editor's \[x\] escapes, a why: line, spacing) so the file reads the same way every time */
 COLLECTIONS.companions.checks = [async (rec: any, ctx: any) => {
-  // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
   const parsed = parseCompanion(matter.stringify('\n' + rec.content, rec.data, DUMP))
   let titles = null
   const book = await ctx.store.read('content/books/' + String(rec.data.book || '') + '.md')
@@ -1109,5 +1106,4 @@ COLLECTIONS.pages.checks = [(rec: any, ctx: any) => (ctx.validateSections ? ctx.
 COLLECTIONS.experiments.checks = [(rec: any, ctx: any) => validateExperiment(rec.data, 'variants', ctx.store)]
 COLLECTIONS.books.actions = {}   /* the enrichment runs are the server's own (a child process at a time, its log kept) */
 
-// @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-export const COLLECTION_MODELS = Object.entries(COLLECTIONS).map(([key, m]) => ({ key, ...m }))
+export const COLLECTION_MODELS = Object.entries(COLLECTIONS as Record<string, any>).map(([key, m]) => ({ key, ...m }))

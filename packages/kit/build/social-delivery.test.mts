@@ -33,7 +33,7 @@ if (loginError) throw new Error(`social delivery test admin sign-in failed: ${lo
 
 const testPosts: any = []
 const testAccounts: any = []
-const createdPost = async (body: any) => {
+const createdPost = async (body: string) => {
   const id = randomUUID()
   const { data, error } = await service.from('social_posts')
     .insert({ id, body, timezone: 'UTC', created_by: adminUser.id })
@@ -65,7 +65,7 @@ const claimDue = async () => {
   if (error) throw new Error(`social due claim failed: ${error.message}`)
   return data || []
 }
-const invokeSocial = async (body: any) => {
+const invokeSocial = async (body: { action: string; postId: string; text?: string; timezone?: string }) => {
   const { data, error } = await browser.auth.getSession()
   if (error || !data.session) throw new Error('social delivery lifecycle requires an admin session')
   const response = await fetch(url + '/functions/v1/social', {
@@ -112,7 +112,7 @@ try {
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
   assert.equal(initialScheduleError, null, initialScheduleError?.message)
   assert.equal(initialDeliveries.length, 3, 'one schedule creates an independent target per account')
-  assert.ok(initialDeliveries.every((delivery: any) => delivery.status === 'scheduled'))
+  assert.ok(initialDeliveries.every((delivery) => delivery.status === 'scheduled'))
 
   const { data: latestPost, error: latestPostError } = await service.from('social_posts')
     .select('updated_at').eq('id', schedulePost.id).single()
@@ -136,7 +136,7 @@ try {
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
   assert.equal(statesError, null, statesError?.message)
   assert.equal(rescheduledStates.length, 3)
-  assert.equal((rescheduledStates as any).find((item: any) => item.account_id === scheduleAccounts[2]).status, 'cancelled')
+  assert.equal((rescheduledStates as any).find((item: { account_id: string }) => item.account_id === scheduleAccounts[2]).status, 'cancelled')
   assert.ok(rescheduledStates.filter((item) => item.status === 'scheduled')
     .every((item) => Date.parse(item.scheduled_at) === Date.parse(rescheduleAt)))
 
@@ -178,7 +178,7 @@ try {
     .eq('id', originalLease.id).eq('status', 'claimed')
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
   assert.equal(expireClaimError, null, expireClaimError?.message)
-  const reclaimed = (await claimDue()).find((delivery: any) => delivery.id === originalLease.id)
+  const reclaimed = (await claimDue()).find((delivery) => delivery.id === originalLease.id)
   assert.ok(reclaimed, 'an expired pre-publish claim can be leased by another worker')
   assert.notEqual(reclaimed.lease_token, originalLease.lease_token)
 
@@ -270,7 +270,7 @@ try {
   assert.equal(expiredClaimsError, null, expiredClaimsError?.message)
   if (!otherDueTargets.length && !expiredClaims.length) {
     assert.equal(
-      (await claimDue()).some((delivery: any) => delivery.id === approvalTarget.id),
+      (await claimDue()).some((delivery) => delivery.id === approvalTarget.id),
       false,
       'the delivery worker does not claim a pending immediate target',
     )

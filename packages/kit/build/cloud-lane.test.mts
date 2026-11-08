@@ -35,11 +35,11 @@ const SITE = process.cwd()
 const KIT = resolve(HERE, '..')
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nTHE CLOUD LANE — content in rows, and nothing that rebuilds\n')
 
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The cloud shape is NOT covered by this run.\n'); leave(0) }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The cloud shape is NOT covered by this run.\n'); leave(0) }
 if (process.env.PLATFORMKIT_SKIP_CLOUD_LANE === '1') skip('PLATFORMKIT_SKIP_CLOUD_LANE=1')
 
 /* the stack this project's config names, read the way build/dev.mjs reads it */
@@ -59,9 +59,9 @@ const db = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { p
 const { registry } = await import('./models/index.mjs')
 const { loadSite } = await import('./site.mjs')
 const site = await loadSite(SITE)
-const models = (await registry(SITE, { site })).filter((m: any) => typeof m.projected === 'function')
+const models = (await registry(SITE, { site })).filter((m: { projected: any }) => typeof m.projected === 'function')
 ok('there are models that project on a publish', models.length > 0, 'none — the lane would prove nothing')
-console.log('  projecting on publish: ' + models.map((m: any) => m.key).join(', ') + '\n')
+console.log('  projecting on publish: ' + models.map((m: { key: any }) => m.key).join(', ') + '\n')
 
 /*
  * THE ROWS STORE. The same store the admin Edge Function uses, so this exercises the real path and
@@ -136,7 +136,7 @@ for (const m of models) {
  */
 const { gitStore } = await import('./store/git.mjs')
 const git = gitStore(SITE)
-const safeToProject = async (m: any) => {
+const safeToProject = async (m: { dir: string; ext: string }) => {
   if (!m.dir) return { ok: false, why: 'the model names no directory, so the two cannot be compared' }
   const ext = m.ext || 'md'
   const inFiles = (await git.list(m.dir, { ext }).catch(() => [])).length

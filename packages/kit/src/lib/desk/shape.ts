@@ -126,12 +126,12 @@ export function deskBadge(rows = [], now = Date.now()) {
 /* the list narrowed to one source, and to what is still open or what has been finished with. Those
    are the only two narrowings the desk has: everything else about a row — who is waiting, how long
    — is what the order already says. */
-export function filterDesk(rows = [], source = null, done = false) {
+export function filterDesk(rows = [], source: string|null = null, done = false) {
   return rows.filter((r: any) => r && (!source || r.source === source) && !!r.resolved === !!done)
 }
 
 /* The marks the database keeps, as something to ask: source and id to when it was finished with. */
-export function doneSet(rows = []) {
+export function doneSet(rows: { source: string; ref: string; resolved_at: string }[] = []) {
   const out: any = {}
   for (const r of rows) if (r && (r as any).source && (r as any).ref) out[(r as any).source + ':' + (r as any).ref] = (r as any).resolved_at || null
   return out
@@ -198,8 +198,7 @@ const RANK: any = { urgent: 0, high: 0, normal: 1, low: 2 }
 export function sortTickets(list = [], mode = 'busy') {
   const at = (t: any) => new Date(t.last_at || t.created_at || 0).getTime()
   const rows = [...(list || [])]
-  // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  if (mode === 'new') return rows.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+  if (mode === 'new') return rows.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
   if (mode === 'waiting') {
     return rows.sort((a: any, b: any) => {
       const wa = a.waiting_since ? new Date(a.waiting_since).getTime() : Infinity
@@ -238,7 +237,7 @@ export function owedOn(t: { status?: string; due_at?: any; waiting_since?: any }
 export const ageOf = (t: { created_at?: any }|null, now = Date.now()) => (t && t.created_at ? spanOf(now - new Date(t.created_at).getTime()) : '')
 
 /* the counts a desk wants at a glance: what is live, what is owed, what is mine */
-export function tally(list = [], me = null) {
+export function tally(list = [], me: string | null = null) {
   const rows = list || []
   return {
     live: rows.filter(isLive).length,
@@ -249,7 +248,7 @@ export function tally(list = [], me = null) {
 }
 
 /* the narrowing a list offers, applied in one place so the chips and the rows can never disagree */
-export function narrow(list = [], { status = 'open', assignee = null, priority = null, q = '', answer = null } = {}, me = null) {
+export function narrow(list = [], { status = 'open', assignee = null, priority = null, q = '', answer = null } = {}, me: string | null = null) {
   const want = String(q || '').trim().toLowerCase().replace(/^#/, '')
   return (list || []).filter((t: any) => {
     /* 'owed' is not a state a row holds: it is the derived fact that the contact has spoken since

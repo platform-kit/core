@@ -55,7 +55,7 @@ import {
 process.on('uncaughtException', (e) => { console.error('✖ ' + (e.message || e)); process.exit(1) })
 const KIT = fileURLToPath(new URL('../supabase/', import.meta.url))
 const ROOT = process.cwd()
-const arg = (name: string) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null }
+const arg = (name: string): string | null => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null }
 const site = await loadSite(ROOT)
 /* --off: the same site, with those modules switched off */
 const c = arg('--off') ? { ...site, modules: { ...(site.modules || {}), ...Object.fromEntries((arg('--off') as any).split(',').filter(Boolean).map((k: any) => [k, false])) } } : site
@@ -75,8 +75,8 @@ if (deploymentShape(c).backend === false) {
 }
 const D = { schemas: 'db/schemas', rows: 'db/data.sql', functions: 'db/functions', seed: 'db/seed.sql', ...(c.data || {}) }
 if (D.migrations) throw new Error('assemble: data.migrations is gone — a site declares its schema in db/schemas/*.sql (data.schemas) and its rows in db/data.sql (data.rows); a database is brought to the declaration by `platformkit migrate --plan`, never by a migration')
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-const OUT = arg('--out') ? path.resolve(arg('--out')) : path.join(ROOT, 'supabase')
+const OUT_ARG = arg('--out')
+const OUT = OUT_ARG ? path.resolve(OUT_ARG) : path.join(ROOT, 'supabase')
 const MANIFEST = path.join(OUT, '.assembled.json')
 /* the build's own files in the functions tree, never assembled and never removed — and never
    committed either: build/functions-data.mjs makes every one of them, and steps.test.mjs holds
@@ -93,8 +93,7 @@ export const BUILT = /^functions\/(_shared\/catalog\.json|_shared\/content\/inde
 /* what db reset applies, in order: the declaration (the kit's files, then the site's), the rows, the seed */
 export const SEED_PATHS = ['./schemas/*.sql', './schemas/glue/*.sql', './schemas/site/*.sql', './data.sql', './seed.sql']
 
-// @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-const walk = (d) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]) : []
+const walk = (d: string): string[] => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]) : []
 const sha = (buf: string|NodeJS.ArrayBufferView<ArrayBufferLike>|NonSharedBuffer) => createHash('sha1').update(buf).digest('hex').slice(0, 12)
 const rel = (base: string, f: string) => path.relative(base, f).split(path.sep).join('/')
 
@@ -202,7 +201,7 @@ const pipeImportMaps = [...plan, ...walk(path.join(KIT, 'functions')).filter((f:
     const imports = JSON.parse(content.toString()).imports || {}
     return Object.entries(imports).map(([key, target]) => ({ file, key, target }))
   })
-const sharedSpecifier = (specifier: string, importer: string, { lenient = false, only = null } = {}) => {
+const sharedSpecifier = (specifier: string, importer: string, { lenient = false, only = null as string | null } = {}) => {
   if (/^(?:\.{1,2}\/|\/|npm:|jsr:|node:|https?:|data:)/.test(specifier)) return specifier
   const matches = pipeImportMaps.filter(({ file }) => !only || file === only).filter(({ key }) => specifier === key || specifier.startsWith(key.endsWith('/') ? key : key + '/'))
   if (!matches.length && lenient) return specifier
@@ -320,8 +319,7 @@ for (const [target, entry] of plan) {
 for (const [target, entry] of plan) {
   const fn = /^functions\/([^/_][^/]*)\/.+\.(?:[cm]?js|m?ts)$/.exec(target)?.[1]
   if (!fn || !plan.has(`functions/${fn}/deno.json`)) continue
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  const rewrite = (_, prefix, quote, specifier) => `${prefix}${quote}${sharedSpecifier(specifier, target, { lenient: true, only: `functions/${fn}/deno.json` })}${quote}`
+  const rewrite = (_: any, prefix: any, quote: any, specifier: string) => `${prefix}${quote}${sharedSpecifier(specifier, target, { lenient: true, only: `functions/${fn}/deno.json` })}${quote}`
   const content = entry.content.toString('utf8')
     .replace(sharedStaticImportPattern, rewrite)
     .replace(sharedDynamicImportPattern, rewrite)

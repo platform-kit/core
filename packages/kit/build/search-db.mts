@@ -89,7 +89,7 @@ export async function projectSearch({ rows, db, log = () => {} }: any = {}) {
 }
 
 /* the whole of it, from a rows store: rebuild the collections, make the rows, write the index */
-export async function projectSearchFromStore(store: { client: any }, { log = () => {} } = {}) {
+export async function projectSearchFromStore(store: { client: any }, { log = () => {} }: { log?: (m: string) => void } = {}) {
   const db = store && store.client
   if (!db) return { pushed: 0 }
   const by = await collectionsFrom(store, { renderer })

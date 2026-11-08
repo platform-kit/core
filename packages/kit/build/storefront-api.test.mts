@@ -20,13 +20,13 @@ import { linesIn, linesUpdated, cartOf } from '../supabase/functions/_shared/api
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
 import { leave, notHere, stackOf } from './test-stack.mjs'
 
-const note = (m: any) => console.log('storefront-api: ' + m)
+const note = (m: string) => console.log('storefront-api: ' + m)
 if (process.env.STOREFRONT_API_TEST === '0') { note('skipped (STOREFRONT_API_TEST=0)'); process.exit(0) }
 const ROOT = process.cwd()
 const c = await loadSite(ROOT)
 if ((c.modules && c.modules.store === false) || (c.modules && c.modules.api === false)) { note('skipped — the store or the api module is off'); { notHere('storefront-api.test.mjs', 'its module is off'); process.exit(0) } }
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
+const ok = async (name: string, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 
 /* ---- (1) the shapes ---- */
 /*
@@ -38,7 +38,7 @@ const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: 
  * that kept passing while the real two drifted. So it calls the same two functions the catalog
  * calls, over the same record fields.
  */
-const shaped = (offer: any, d: any) => {
+const shaped = (offer: { sku: any; key: any; kind?: string; unit_amount: any; currency?: string; title?: string }, d: { sizes?: string[]; variants: any; unsold: any }) => {
   const opts = optionsOf(d)
   return { ...offer, options: opts.map((o) => ({ name: o.name, values: o.values })),
     variants: variantsOf({ sku: offer.sku, key: offer.key }, opts, { sold: { not: d.unsold || [] } }).map((v) => ({
@@ -63,18 +63,18 @@ const FIX = {
   ],
   collections: [{ path: 'books', data: { title: 'Books', products: ['quiet-room'], order: 1 }, body: 'Every title.' }, { path: 'goods', data: { title: 'Goods', products: ['tee'], order: 2 }, body: '' }],
   books: [{ path: 'the-quiet-room', data: { title: 'The Quiet Room', author: 'A. Author', cover: '/img/quiet.png', description: 'A book.', tags: ['stillness'] }, updated: '2026-01-01T00:00:00Z' }],
-  site: { name: 'Test Press', url: 'https://x.test' }, imageUrl: (a: any) => 'https://x.test/images' + a, imageSize: () => ({ width: 640, height: 960 }), shipsTo: ['US', 'GB'],
+  site: { name: 'Test Press', url: 'https://x.test' }, imageUrl: (a: string) => 'https://x.test/images' + a, imageSize: () => ({ width: 640, height: 960 }), shipsTo: ['US', 'GB'],
 }
 const store = storefrontOf(FIX)
 await ok('the products from the offers: a good with sizes, one product per book with its formats and print choices as variants, no membership; the collections; the money', () => {
-  assert.deepEqual(store.products.map((p: any) => p.handle), ['quiet-room', 'tee'], 'in the records\' order; no membership')
-  const tee = store.products.find((p: any) => p.handle === 'tee')
-  assert.deepEqual(tee.options.map((o: any) => o.name + ':' + o.values.join('/')), ['Size:S/M/L']); assert.equal(tee.variants.length, 3)
+  assert.deepEqual(store.products.map((p: { handle: any }) => p.handle), ['quiet-room', 'tee'], 'in the records\' order; no membership')
+  const tee = store.products.find((p: { handle: string }) => p.handle === 'tee')
+  assert.deepEqual(tee.options.map((o: { name: string; values: any[] }) => o.name + ':' + o.values.join('/')), ['Size:S/M/L']); assert.equal(tee.variants.length, 3)
   /* the id and the cart line key on the OFFER's sku and the variant key, which is what the bag sends */
-  assert.deepEqual(tee.variants.map((v: any) => v.id), ['gid://shopify/ProductVariant/tee/s', 'gid://shopify/ProductVariant/tee/m', 'gid://shopify/ProductVariant/tee/l'])
+  assert.deepEqual(tee.variants.map((v: { id: any }) => v.id), ['gid://shopify/ProductVariant/tee/s', 'gid://shopify/ProductVariant/tee/m', 'gid://shopify/ProductVariant/tee/l'])
   /* and Shopify's own sku field is the variant's own, which is what that field means */
-  assert.deepEqual(tee.variants.map((v: any) => v.sku), ['tee-s', 'tee-m', 'tee-l'])
-  assert.deepEqual(tee.variants.map((v: any) => v.selectedOptions), [[{ name: 'Size', value: 'S' }], [{ name: 'Size', value: 'M' }], [{ name: 'Size', value: 'L' }]])
+  assert.deepEqual(tee.variants.map((v: { sku: any }) => v.sku), ['tee-s', 'tee-m', 'tee-l'])
+  assert.deepEqual(tee.variants.map((v: { selectedOptions: any }) => v.selectedOptions), [[{ name: 'Size', value: 'S' }], [{ name: 'Size', value: 'M' }], [{ name: 'Size', value: 'L' }]])
   assert.deepEqual(tee.variants[0].price, { amount: '25.0', currencyCode: 'USD' }); assert.deepEqual(tee.variants[0].compareAtPrice, { amount: '30.0', currencyCode: 'USD' }); assert.equal(tee.variants[0].requiresShipping, true)
   /* a shape with its own price carries it; one the shop has withdrawn is LISTED and unbuyable */
   assert.deepEqual(tee.variants[2].price, { amount: '28.0', currencyCode: 'USD' }, 'L is dearer')
@@ -83,41 +83,41 @@ await ok('the products from the offers: a good with sizes, one product per book 
   assert.deepEqual(tee.priceRange.minVariantPrice, { amount: '25.0', currencyCode: 'USD' })
   assert.deepEqual(tee.priceRange.maxVariantPrice, { amount: '28.0', currencyCode: 'USD' }, 'the range follows the shapes')
   assert.equal(tee.featuredImage.url, 'https://x.test/images/img/tee.png'); assert.equal(tee.featuredImage.width, 640); assert.equal(tee.onlineStoreUrl, 'https://x.test/store/products/tee')
-  const book = store.products.find((p: any) => p.handle === 'quiet-room')
+  const book = store.products.find((p: { handle: string }) => p.handle === 'quiet-room')
   assert.equal(book.vendor, 'A. Author'); assert.equal(book.productType, 'book'); assert.equal(book.featuredImage.url, 'https://x.test/images/img/quiet.png')
-  assert.deepEqual(book.options.map((o: any) => o.name + ':' + o.values.join('/')), ['Format:Read online/Softcover/Hardcover/PDF', 'Contents:Parts/Full', 'Cloth:Black/Green'])
-  const ids = book.variants.map((v: any) => v.id.replace(GID.variant, ''))
+  assert.deepEqual(book.options.map((o: { name: string; values: any[] }) => o.name + ':' + o.values.join('/')), ['Format:Read online/Softcover/Hardcover/PDF', 'Contents:Parts/Full', 'Cloth:Black/Green'])
+  const ids = book.variants.map((v: { id: string }) => v.id.replace(GID.variant, ''))
   assert.deepEqual(ids, ['quiet-room', 'the-quiet-room-softcover/parts', 'the-quiet-room-softcover/full', 'the-quiet-room-hardcover/parts.black.gold', 'the-quiet-room-hardcover/parts.green.gold', 'the-quiet-room-hardcover/full.black.gold', 'the-quiet-room-hardcover/full.green.gold', 'the-quiet-room-pdf'])
   const hc = book.variants[4]; assert.deepEqual(hc.selectedOptions, [{ name: 'Format', value: 'Hardcover' }, { name: 'Contents', value: 'Parts' }, { name: 'Cloth', value: 'Green' }]); assert.equal(hc.sku, 'the-quiet-room-hardcover'); assert.equal(hc.title, 'Hardcover / Parts / Green')
   assert.deepEqual(lineOf(hc.id), { sku: 'the-quiet-room-hardcover', variant: 'parts.green.gold' }); assert.deepEqual(lineOf(book.variants[0].id), { sku: 'quiet-room', variant: '' })
   assert.equal(book.variants[0].requiresShipping, false); assert.equal(book.variants[7].requiresShipping, false); assert.equal(book.variants[1].requiresShipping, true)
   assert.deepEqual(book.priceRange, { minVariantPrice: { amount: '5.0', currencyCode: 'USD' }, maxVariantPrice: { amount: '35.0', currencyCode: 'USD' } })
-  assert.deepEqual(store.collections.map((x: any) => x.handle + ':' + x._products.map((p: any) => p.handle).join(',')), ['books:quiet-room', 'goods:tee'])
+  assert.deepEqual(store.collections.map((x: { handle: string; _products: any[] }) => x.handle + ':' + x._products.map((p: { handle: any }) => p.handle).join(',')), ['books:quiet-room', 'goods:tee'])
   assert.deepEqual(store.shop.shipsToCountries, ['US', 'GB']); assert.equal(store.shop.primaryDomain.host, 'x.test')
   assert.deepEqual(money(1234, 'usd'), { amount: '12.34', currencyCode: 'USD' }); assert.deepEqual(money(1500, 'eur'), { amount: '15.0', currencyCode: 'EUR' })
 })
 await ok('the schema builds and introspects; a query over the fixture answers Shopify\'s shapes', async () => {
   const s = schemaOf(); assert.ok(s.getType('Product') && s.getType('Cart') && s.getMutationType().getFields().cartCreate)
-  const carts = new Map(); const cs = { get: async (id: any) => carts.get(id) || null, create: async (row: any) => { const r = { id: 'tok', ...row }; carts.set('tok', r); return r }, save: async (row: any) => { carts.set(row.id, row); return row } }
+  const carts = new Map(); const cs = { get: async (id: any) => carts.get(id) || null, create: async (row: any) => { const r = { id: 'tok', ...row }; carts.set('tok', r); return r }, save: async (row: { id: any }) => { carts.set(row.id, row); return row } }
   const r: any = await execute(store, { query: '{ shop { name } products(first: 5, sortKey: TITLE) { edges { cursor node { handle title variants(first: 10) { nodes { id sku price { amount currencyCode } selectedOptions { name value } } } } } pageInfo { hasNextPage } } collection(handle: "books") { products(first: 3) { nodes { handle } } } node(id: "gid://shopify/Product/tee") { ... on Product { title } } }' }, cs, { site: 'https://x.test' })
   assert.ok(!r.errors, JSON.stringify(r.errors)); assert.equal(r.data.shop.name, 'Test Press')
-  assert.deepEqual(r.data.products.edges.map((e: any) => e.node.handle), ['quiet-room', 'tee']); assert.equal(r.data.products.edges[1].node.variants.nodes[1].selectedOptions[0].value, 'M')
-  assert.deepEqual(r.data.collection.products.nodes.map((n: any) => n.handle), ['quiet-room']); assert.equal(r.data.node.title, 'The tee')
+  assert.deepEqual(r.data.products.edges.map((e: { node: { handle: any } }) => e.node.handle), ['quiet-room', 'tee']); assert.equal(r.data.products.edges[1].node.variants.nodes[1].selectedOptions[0].value, 'M')
+  assert.deepEqual(r.data.collection.products.nodes.map((n: { handle: any }) => n.handle), ['quiet-room']); assert.equal(r.data.node.title, 'The tee')
   const m: any = await execute(store, { query: 'mutation($l: [CartLineInput!]) { cartCreate(input: { lines: $l, buyerIdentity: { countryCode: GB, email: "a@b.c" }, attributes: [{ key: "gift", value: "yes" }] }) { cart { id checkoutUrl totalQuantity cost { totalAmount { amount } } lines(first: 5) { nodes { id quantity merchandise { ... on ProductVariant { sku title } } cost { totalAmount { amount } } } } buyerIdentity { countryCode email } attributes { key value } } userErrors { code field message } } }', variables: { l: [{ merchandiseId: 'gid://shopify/ProductVariant/tee/m', quantity: 2 }, { merchandiseId: 'gid://shopify/ProductVariant/the-quiet-room-hardcover/full.green.gold' }] } }, cs, { site: 'https://x.test' })
   assert.ok(!m.errors, JSON.stringify(m.errors)); const cart = m.data.cartCreate.cart
-  assert.equal(cart.checkoutUrl, 'https://x.test/cart/c/tok'); assert.equal(cart.totalQuantity, 3); assert.equal(cart.cost.totalAmount.amount, '85.0'); assert.deepEqual(cart.lines.nodes.map((n: any) => n.merchandise.title), ['M', 'Hardcover / Full / Green']); assert.equal(cart.buyerIdentity.countryCode, 'GB'); assert.deepEqual(JSON.parse(JSON.stringify(cart.attributes)), [{ key: 'gift', value: 'yes' }])
+  assert.equal(cart.checkoutUrl, 'https://x.test/cart/c/tok'); assert.equal(cart.totalQuantity, 3); assert.equal(cart.cost.totalAmount.amount, '85.0'); assert.deepEqual(cart.lines.nodes.map((n: { merchandise: { title: any } }) => n.merchandise.title), ['M', 'Hardcover / Full / Green']); assert.equal(cart.buyerIdentity.countryCode, 'GB'); assert.deepEqual(JSON.parse(JSON.stringify(cart.attributes)), [{ key: 'gift', value: 'yes' }])
   const bad: any = await execute(store, { query: 'mutation { cartLinesAdd(cartId: "gid://shopify/Cart/tok", lines: [{ merchandiseId: "gid://shopify/ProductVariant/nope" }, { merchandiseId: "gid://shopify/ProductVariant/tee/s", quantity: 0 }]) { cart { totalQuantity } userErrors { code field } } }' }, cs)
-  assert.deepEqual(bad.data.cartLinesAdd.userErrors.map((e: any) => e.code), ['INVALID_MERCHANDISE_LINE', 'QUANTITY_MUST_BE_POSITIVE']); assert.equal(bad.data.cartLinesAdd.cart.totalQuantity, 3, 'nothing changed')
+  assert.deepEqual(bad.data.cartLinesAdd.userErrors.map((e: { code: any }) => e.code), ['INVALID_MERCHANDISE_LINE', 'QUANTITY_MUST_BE_POSITIVE']); assert.equal(bad.data.cartLinesAdd.cart.totalQuantity, 3, 'nothing changed')
   const upd: any = await execute(store, { query: `mutation { cartLinesUpdate(cartId: "gid://shopify/Cart/tok", lines: [{ id: "${cart.lines.nodes[0].id}", quantity: 5 }]) { cart { totalQuantity cost { totalAmount { amount } } } userErrors { code } } }` }, cs)
   assert.equal(upd.data.cartLinesUpdate.cart.totalQuantity, 6); assert.equal(upd.data.cartLinesUpdate.cart.cost.totalAmount.amount, '160.0')
   const rm: any = await execute(store, { query: `mutation { cartLinesRemove(cartId: "gid://shopify/Cart/tok", lineIds: ["${cart.lines.nodes[1].id}"]) { cart { totalQuantity lines(first: 5) { nodes { merchandise { ... on ProductVariant { sku } } } } } } }` }, cs)
-  assert.equal(rm.data.cartLinesRemove.cart.totalQuantity, 5); assert.deepEqual(rm.data.cartLinesRemove.cart.lines.nodes.map((n: any) => n.merchandise.sku), ['tee-m'], "the variant's own sku, as Shopify means that field")
+  assert.equal(rm.data.cartLinesRemove.cart.totalQuantity, 5); assert.deepEqual(rm.data.cartLinesRemove.cart.lines.nodes.map((n: { merchandise: { sku: any } }) => n.merchandise.sku), ['tee-m'], "the variant's own sku, as Shopify means that field")
   // @ts-expect-error TS18049, from the conversion: 'gone.data' is possibly 'null' or 'undefined'.
   const gone = await execute(store, { query: '{ cart(id: "gid://shopify/Cart/none") { id } }' }, cs); assert.equal(gone.data.cart, null)
   const stack = linesIn(store, [{ merchandiseId: 'gid://shopify/ProductVariant/quiet-room', quantity: 3 }], []); assert.equal(stack.rows[0].quantity, 1, 'an unlock never stacks')
   const cap = linesIn(store, [{ merchandiseId: 'gid://shopify/ProductVariant/tee/s', quantity: 40 }], []); assert.equal(cap.rows[0].quantity, 10, 'the bag\'s cap')
   const c2 = cartOf(store, { id: 'x', lines: cap.rows }, { site: 'https://x.test' }); assert.equal(c2.cost.totalAmount.amount, '250.0'); assert.equal(linesUpdated(store, [{ id: cap.rows[0].id, quantity: 0 }], cap.rows).rows.length, 0, 'zero removes')
-  const intro: any = await execute(store, { query: '{ __schema { mutationType { fields { name } } } }' }, cs); assert.ok(intro.data.__schema.mutationType.fields.some((f: any) => f.name === 'cartBuyerIdentityUpdate'))
+  const intro: any = await execute(store, { query: '{ __schema { mutationType { fields { name } } } }' }, cs); assert.ok(intro.data.__schema.mutationType.fields.some((f: { name: string }) => f.name === 'cartBuyerIdentityUpdate'))
 })
 
 /* ---- (2) the served door ---- */
@@ -128,9 +128,9 @@ try { served = !!(url && anon && localStack()) && (await fetch(FN + '/api/2024-1
 if (!served) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the shapes — the local stack is not up or the storefront-api function is not served)`); leave(fail ? 1 : 0) }
 const { createClient } = await import('@supabase/supabase-js')
 const service = createClient(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
-const sha256 = async (s: any) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
+const sha256 = async (s: string|undefined) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
 const made: any = []
-const makeKey = async (kind: any) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: admin } = await service.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await service.from('api_keys').insert({ name: 'storefront-api test', kind, gated: false, prefix: key.slice(0, 12), hash: await sha256(key), created_by: admin ? admin.id : null }); if (error) throw new Error(error.message); made.push(key); return key }
+const makeKey = async (kind: string) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: admin } = await service.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await service.from('api_keys').insert({ name: 'storefront-api test', kind, gated: false, prefix: key.slice(0, 12), hash: await sha256(key), created_by: admin ? admin.id : null }); if (error) throw new Error(error.message); made.push(key); return key }
 const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8'))
 const offers = Object.values(catalog.offers || {})
 const sellable = offers.filter((o: any) => ['good', 'book', 'print', 'download'].includes(o.kind))
@@ -143,13 +143,13 @@ const { createStorefrontApiClient } = await import('@shopify/storefront-api-clie
    for <site>/api/<version>/graphql.json — so the same door is served there too, which is also why
    /api/* is the last rule under the prefix and nothing else may sit at the top of /api. */
 await ok("the store's room needs an alias: Shopify's client discards a path on storeDomain", () => {
-  const urlOf = (d: any) => createStorefrontApiClient({ storeDomain: d, apiVersion: '2024-10', publicAccessToken: 'x', retries: 0, logger: () => {} }).config.apiUrl
+  const urlOf = (d: string) => createStorefrontApiClient({ storeDomain: d, apiVersion: '2024-10', publicAccessToken: 'x', retries: 0, logger: () => {} }).config.apiUrl
   const plain = urlOf('https://site.test')
   assert.equal(plain, 'https://site.test/api/2024-10/graphql.json')
   assert.equal(urlOf('https://site.test/api/store'), plain, 'a path on the domain is thrown away, so a room would never be asked for')
 })
-const clientFor = (token: any) => { const c = createStorefrontApiClient({ storeDomain: 'https://site.test', apiVersion: '2024-10', publicAccessToken: token, retries: 0, logger: () => {}, customFetchApi: (u, init) => fetch(String(u).replace('https://site.test', FN), init) }); return { request: async (q: any, o?: any) => { const r = await c.request(q, o); if (r.errors) throw new Error('graphql: ' + JSON.stringify(r.errors).slice(0, 400)); return r } } }
-const raw = async (token: any, body: any, headers = {}) => { const r = await fetch(FN + '/api/2024-10/graphql.json', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { 'X-Shopify-Storefront-Access-Token': token } : {}), ...headers }, body: JSON.stringify(body) }); return { status: r.status, body: await r.json().catch(() => null) } }
+const clientFor = (token: string) => { const c = createStorefrontApiClient({ storeDomain: 'https://site.test', apiVersion: '2024-10', publicAccessToken: token, retries: 0, logger: () => {}, customFetchApi: (u, init) => fetch(String(u).replace('https://site.test', FN), init) }); return { request: async (q: any, o?: any) => { const r = await c.request(q, o); if (r.errors) throw new Error('graphql: ' + JSON.stringify(r.errors).slice(0, 400)); return r } } }
+const raw = async (token: string|null, body: { query: string }, headers = {}) => { const r = await fetch(FN + '/api/2024-10/graphql.json', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { 'X-Shopify-Storefront-Access-Token': token } : {}), ...headers }, body: JSON.stringify(body) }); return { status: r.status, body: await r.json().catch(() => null) } }
 let createdCart = null
 try {
   const key = await makeKey('storefront')
@@ -159,16 +159,16 @@ try {
     const { data: list } = await client.request('{ products(first: 50) { nodes { id handle title productType vendor featuredImage { url } options { name values } variants(first: 50) { nodes { id sku title price { amount currencyCode } requiresShipping selectedOptions { name value } } } priceRange { minVariantPrice { amount } } } } }')
     assert.ok(list.products.nodes.length >= 1, 'products')
     /* a variant's sku is its offer's, or one of the offer's shapes with a sku of its own (notebook-linen-lined), priced as that shape */
-    const shapeOf = (sku: any) => { for (const x of offers) { if ((x as any).sku === sku) return { o: x, amount: (x as any).unit_amount }; const sh = ((x as any).variants || []).find((y: any) => y.sku === sku); if (sh) return { o: x, amount: sh.unit_amount } } return null }
+    const shapeOf = (sku: any) => { for (const x of offers) { if ((x as any).sku === sku) return { o: x, amount: (x as any).unit_amount }; const sh = ((x as any).variants || []).find((y: { sku: any }) => y.sku === sku); if (sh) return { o: x, amount: sh.unit_amount } } return null }
     for (const p of list.products.nodes) for (const v of p.variants.nodes) { const found = shapeOf(v.sku); assert.ok(found, v.sku + ' is an offer or one of its shapes'); const o: any = found.o; assert.equal(Math.round(Number(v.price.amount) * 100), found.amount, v.id + ' at the catalog\'s price'); assert.equal(v.price.currencyCode, o.currency.toUpperCase()); assert.equal(v.requiresShipping, o.kind === 'good' || o.kind === 'print') }
-    const bookProduct = list.products.nodes.find((p: any) => p.productType === 'book'); if (bookProduct) assert.ok(bookProduct.options[0].name === 'Format' && bookProduct.variants.nodes.length >= 1)
-    const sized = list.products.nodes.find((p: any) => p.options.some((o: any) => o.name === 'Size')); if (sized) assert.equal(sized.variants.nodes.length, sized.options.reduce((n: any, o: any) => n * o.values.length, 1), 'a variant per combination of its options (colour × size)')
+    const bookProduct = list.products.nodes.find((p: { productType: string }) => p.productType === 'book'); if (bookProduct) assert.ok(bookProduct.options[0].name === 'Format' && bookProduct.variants.nodes.length >= 1)
+    const sized = list.products.nodes.find((p: { options: any[] }) => p.options.some((o: { name: string }) => o.name === 'Size')); if (sized) assert.equal(sized.variants.nodes.length, sized.options.reduce((n: number, o: { values: string|any[] }) => n * o.values.length, 1), 'a variant per combination of its options (colour × size)')
     const first = list.products.nodes[0]
     const { data: one } = await client.request('query($h: String!) { product(handle: $h) { id handle } productByHandle(handle: $h) { title } }', { variables: { h: first.handle } }); assert.equal(one.product.id, first.id); assert.equal(one.productByHandle.title, first.title)
     const { data: cols } = await client.request('{ collections(first: 10) { nodes { handle title products(first: 20) { nodes { handle } } } } }')
     for (const col of cols.collections.nodes) { const { data: c1 } = await client.request('query($h: String!) { collection(handle: $h) { handle products(first: 20) { nodes { handle } } } }', { variables: { h: col.handle } }); assert.deepEqual(c1.collection.products.nodes, col.products.nodes) }
     const { data: intro } = await client.request('{ __schema { queryType { name } } }'); assert.equal(intro.__schema.queryType.name, 'QueryRoot')
-    const { data: search } = await client.request('query($q: String) { products(first: 5, query: $q) { nodes { title } } }', { variables: { q: first.title.split(' ')[0] } }); assert.ok(search.products.nodes.some((p: any) => p.title === first.title), 'the search finds it')
+    const { data: search } = await client.request('query($q: String) { products(first: 5, query: $q) { nodes { title } } }', { variables: { q: first.title.split(' ')[0] } }); assert.ok(search.products.nodes.some((p: { title: any }) => p.title === first.title), 'the search finds it')
   })
   await ok('no token, a revoked key, a delivery key; a query fault is GraphQL\'s', async () => {
     assert.equal((await raw(null, { query: '{ shop { name } }' })).status, 401)
@@ -179,8 +179,8 @@ try {
   })
   await ok('a cart\'s life through the client: created, added to, updated, a line removed, the buyer identity, the cost the catalog\'s arithmetic, the errors, the checkout url', async () => {
     const { data: list } = await client.request('{ products(first: 50) { nodes { handle variants(first: 50) { nodes { id sku price { amount } requiresShipping } } } } }')
-    const variants = list.products.nodes.flatMap((p: any) => p.variants.nodes)
-    const ship = variants.find((v: any) => v.requiresShipping) || variants[0], other = variants.find((v: any) => v.sku !== ship.sku) || ship
+    const variants = list.products.nodes.flatMap((p: { variants: { nodes: any } }) => p.variants.nodes)
+    const ship = variants.find((v: { requiresShipping: any }) => v.requiresShipping) || variants[0], other = variants.find((v: { sku: any }) => v.sku !== ship.sku) || ship
     const FIELDS = 'id checkoutUrl totalQuantity cost { totalAmount { amount currencyCode } subtotalAmount { amount } } lines(first: 10) { nodes { id quantity merchandise { ... on ProductVariant { id sku price { amount } } } cost { totalAmount { amount } } } } buyerIdentity { email countryCode }'
     const CART = 'cart { ' + FIELDS + ' }'
     const { data: c } = await client.request(`mutation($l: [CartLineInput!]) { cartCreate(input: { lines: $l }) { ${CART} userErrors { code message } } }`, { variables: { l: [{ merchandiseId: ship.id, quantity: 2 }] } })
@@ -190,11 +190,11 @@ try {
     const { data: a } = await client.request(`mutation($id: ID!, $l: [CartLineInput!]!) { cartLinesAdd(cartId: $id, lines: $l) { ${CART} userErrors { code } } }`, { variables: { id: createdCart.id, l: [{ merchandiseId: other.id, quantity: 1 }] } })
     const expect = other.sku === ship.sku ? Number(ship.price.amount) * Math.min(10, shipQty + 1) : Number(ship.price.amount) * shipQty + Number(other.price.amount)
     assert.equal(Number(a.cartLinesAdd.cart.cost.totalAmount.amount).toFixed(2), expect.toFixed(2), 'the arithmetic')
-    const line = a.cartLinesAdd.cart.lines.nodes.find((n: any) => n.merchandise.id === other.id)
+    const line = a.cartLinesAdd.cart.lines.nodes.find((n: { merchandise: { id: any } }) => n.merchandise.id === other.id)
     const { data: u } = await client.request(`mutation($id: ID!, $l: [CartLineUpdateInput!]!) { cartLinesUpdate(cartId: $id, lines: $l) { ${CART} userErrors { code } } }`, { variables: { id: createdCart.id, l: [{ id: line.id, quantity: 3 }] } })
-    const uLine = u.cartLinesUpdate.cart.lines.nodes.find((n: any) => n.id === line.id); assert.ok(uLine.quantity === 3 || uLine.quantity === 1, 'updated (or held at one for a line that never stacks)')
+    const uLine = u.cartLinesUpdate.cart.lines.nodes.find((n: { id: any }) => n.id === line.id); assert.ok(uLine.quantity === 3 || uLine.quantity === 1, 'updated (or held at one for a line that never stacks)')
     const { data: rm } = await client.request(`mutation($id: ID!, $ids: [ID!]!) { cartLinesRemove(cartId: $id, lineIds: $ids) { ${CART} userErrors { code } } }`, { variables: { id: createdCart.id, ids: [line.id] } })
-    assert.ok(!rm.cartLinesRemove.cart.lines.nodes.some((n: any) => n.id === line.id))
+    assert.ok(!rm.cartLinesRemove.cart.lines.nodes.some((n: { id: any }) => n.id === line.id))
     const { data: b } = await client.request(`mutation($id: ID!) { cartBuyerIdentityUpdate(cartId: $id, buyerIdentity: { email: "buyer@example.com", countryCode: US }) { ${CART} userErrors { code } } }`, { variables: { id: createdCart.id } })
     assert.deepEqual(JSON.parse(JSON.stringify(b.cartBuyerIdentityUpdate.cart.buyerIdentity)), { email: 'buyer@example.com', countryCode: 'US' })
     const { data: e } = await client.request(`mutation($id: ID!) { cartLinesAdd(cartId: $id, lines: [{ merchandiseId: "gid://shopify/ProductVariant/nope" }]) { cart { totalQuantity } userErrors { code field message } } }`, { variables: { id: createdCart.id } })
@@ -216,11 +216,11 @@ try {
     const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || (fs.existsSync(shell) ? shell : undefined) })
     const shots = process.env.STOREFRONT_API_SHOTS
     try {
-      const mk = async (merchandiseId: any, country: any) => { const { data } = await client.request('mutation($l: [CartLineInput!], $b: CartBuyerIdentityInput) { cartCreate(input: { lines: $l, buyerIdentity: $b }) { cart { id checkoutUrl } userErrors { code } } }', { variables: { l: [{ merchandiseId, quantity: 1 }], b: country ? { countryCode: country } : null } }); return data.cartCreate.cart }
-      const local = (u: any) => u.replace(/^https?:\/\/[^/]+/, appUrl)
+      const mk = async (merchandiseId: string, country: string|null) => { const { data } = await client.request('mutation($l: [CartLineInput!], $b: CartBuyerIdentityInput) { cartCreate(input: { lines: $l, buyerIdentity: $b }) { cart { id checkoutUrl } userErrors { code } } }', { variables: { l: [{ merchandiseId, quantity: 1 }], b: country ? { countryCode: country } : null } }); return data.cartCreate.cart }
+      const local = (u: string) => u.replace(/^https?:\/\/[^/]+/, appUrl)
       if (printOffer && mock) {
         const { data: list } = await client.request('{ products(first: 50) { nodes { variants(first: 50) { nodes { id sku } } } } }')
-        const v = list.products.nodes.flatMap((p: any) => p.variants.nodes).find((x: any) => x.sku === printOffer.sku)
+        const v = list.products.nodes.flatMap((p: { variants: { nodes: any } }) => p.variants.nodes).find((x: { sku: any }) => x.sku === printOffer.sku)
         const cart = await mk(v.id, 'US')
         const pg = await (await browserContext(browser, { viewport: { width: 1280, height: 800 } })).newPage()
         await pg.goto(local(cart.checkoutUrl), { waitUntil: 'domcontentloaded', timeout: 30000 })
@@ -239,13 +239,13 @@ try {
         await pg.goto(local(cart.checkoutUrl), { waitUntil: 'domcontentloaded', timeout: 30000 })
         await pg.waitForSelector('.handoff-h', { timeout: 20000 }); await pg.waitForSelector('.au-card', { timeout: 20000 })
         const title = pl.productByHandle ? pl.productByHandle.title : unlock.title
-        await pg.waitForFunction((t: any) => document.body.innerText.includes(t), title, { timeout: 20000 })   /* the bag drawer, open, holding the book */
+        await pg.waitForFunction((t: string) => document.body.innerText.includes(t), title, { timeout: 20000 })   /* the bag drawer, open, holding the book */
         assert.ok(await pg.locator('.au-card').count(), 'the sign-in offered')
         if (shots) { await pg.screenshot({ path: path.join(shots, 'handoff-signin.png') }); await pg.emulateMedia({ colorScheme: 'dark' }); await pg.screenshot({ path: path.join(shots, 'handoff-signin-dark.png') }) }
       }
       const pg = await (await browserContext(browser, { viewport: { width: 1280, height: 800 } })).newPage()
       await pg.goto(appUrl + '/cart/c/' + '0'.repeat(36), { waitUntil: 'domcontentloaded', timeout: 30000 })
-      await pg.waitForFunction((t: any) => document.body.innerText.includes(t), 'expired', { timeout: 20000 })
+      await pg.waitForFunction((t: string) => document.body.innerText.includes(t), 'expired', { timeout: 20000 })
       if (shots) { await pg.screenshot({ path: path.join(shots, 'handoff-expired.png') }); await pg.emulateMedia({ colorScheme: 'dark' }); await pg.screenshot({ path: path.join(shots, 'handoff-expired-dark.png') }) }
     } finally { await browser.close() }
   })

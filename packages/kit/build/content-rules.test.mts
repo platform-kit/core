@@ -16,7 +16,7 @@ import { RULES, NATIVE_ONLY, given, checkContent, rulesFor, report } from './con
 
 console.log('\nA DECLARATION THAT CONTRADICTS ITSELF\n')
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
 
 /* ---- a refused record and an accepted one, per rule ----------------------------------------- */
 
@@ -64,7 +64,7 @@ const FIXTURES: any = {
   ],
 }
 
-const all = Object.entries(RULES).flatMap(([c, rs]) => (rs as any).map((r: any) => ({ ...r, collection: c })))
+const all = Object.entries(RULES).flatMap(([c, rs]) => rs.map((r: any) => ({ ...r, collection: c })))
 ok('there are rules to check', all.length > 0, all.length + ' rule(s)')
 
 for (const rule of all) {
@@ -91,7 +91,7 @@ for (const rule of all) {
 
 /* ---- the site's seam ------------------------------------------------------------------------ */
 {
-  const site = { rules: { sessions: [{ key: 'site-own', why: 'the site cares about this', test: (r: any) => (r.slug === 'nope' ? 'the site refuses this one' : null) }] } }
+  const site = { rules: { sessions: [{ key: 'site-own', why: 'the site cares about this', test: (r: { slug: string }) => (r.slug === 'nope' ? 'the site refuses this one' : null) }] } }
   const got = checkContent({ sessions: [{ slug: 'nope' }] }, site)
   ok('a site adds a rule of its own', got.length === 1 && got[0].key === 'site-own', JSON.stringify(got))
 
@@ -115,7 +115,7 @@ for (const rule of all) {
     const rows = JSON.parse(fs.readFileSync(p, 'utf8'))
     /* a cal.com session declares none of the native-only fields, so every one of them must read
        as absent on it. If a field gains a non-empty default this fails, which is the point. */
-    const cal = rows.filter((r: any) => r.url && r.scheduler !== 'native')
+    const cal = rows.filter((r: { url: any; scheduler: string }) => r.url && r.scheduler !== 'native')
     if (cal.length) {
       for (const r of cal) {
         const stray = given(r, NATIVE_ONLY)

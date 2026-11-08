@@ -121,7 +121,6 @@ console.log('\nHUDDLE\n')
   const heard = [
     { id: 'me', at: at(0) }, { id: 'a', at: at(0) }, { id: 'a', at: at(2) }, { id: 'b', at: at(0) }, { id: 'old', at: at(5) },
   ]
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; at: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: string; at: string; }' is not
   const live = livePeers(heard, 'me', now)
   ok('the reader is not their own peer', !live.some((p) => p.id === 'me'))
   ok('one person heard twice is one person', live.filter((p) => p.id === 'a').length === 1)
@@ -240,7 +239,7 @@ if (process.env.HUDDLE_LIVE === '0' || !appUp) {
     ok('and no trouble to report', (await a.locator('.sq-trouble').count()) === 0)
     const PAGE_OWN = /(^|\.)(fonts\.googleapis\.com|fonts\.gstatic\.com|huggingface\.co|hf\.co)$/
     // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
-    const forCall: any = [...new Set(foreign)].filter((h) => !PAGE_OWN.test(h))
+    const forCall = [...new Set(foreign)].filter((h) => !PAGE_OWN.test(h))
     ok('nothing left the site to make the call happen', forCall.length === 0, forCall.join(', '))
 
     await a.locator('.sq-hang').click()

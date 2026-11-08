@@ -33,7 +33,7 @@ import { checkDeploy, surfaces } from './deploy-checks.mjs'
 import { FEATURES } from './modes.mjs'
 
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 5).join('\n    ')) } }
 
 console.log('\nONE MODULE OFF BREAKS NO OTHER\n')
 
@@ -44,7 +44,7 @@ const ENV = { ...process.env }
 
 const on = (modules: any) => {
   const s = { ...site, modules }
-  return steps.filter((x: any) => whyOff(x, s, ENV, null) === null).map((x: any) => x.key)
+  return steps.filter((x: any) => whyOff(x, s, ENV, null) === null).map((x: { key: any }) => x.key)
 }
 /* what the CONTENT switches on — the offers, the books in print, the sessions. It does not vary
    with the switches, so it is read once: the only thing changing between passes is the module. */
@@ -52,7 +52,6 @@ const SURFACES = surfaces(process.cwd())
 const UNMET = await import('./modules/manifest.mjs')
 const asks = (modules: any) => {
   const { unmetRequirements } = UNMET
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ module: string; needs: string; why: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ module: strin
   const r = checkDeploy(ENV, SURFACES, modules, [], null, unmetRequirements(MANIFESTS, modules))
   return [...(r.missing || []).map((m) => m.key), ...(r.wrong || [])].sort()
 }
@@ -128,7 +127,7 @@ for (const m of HERE) {
   /* only a module whose step is actually RUNNING can be expected to stop one. tts owns a step
      that is already off because TTS is not 1, and a switch cannot take away what is not there —
      counting that as inert was the test being imprecise, not the switch being broken. */
-  const running = steps.filter((s: any) => s.module === m && baseSteps.includes(s.key))
+  const running = steps.filter((s: { module: string; key: any }) => s.module === m && baseSteps.includes(s.key))
   if (!running.length) continue
   if (on(modules).length === baseSteps.length) inert.push(m)
 }
@@ -151,7 +150,7 @@ t('a module whose step is running stops it when switched off', () => {
   const { compileSpaces } = await import('./spaces.mjs')
   const { gitStore } = await import('./store/index.mjs')
   const root = fs.mkdtempSync(pathm.join(os.tmpdir(), 'enc-off-'))
-  const put = (rel: any, body: any) => { fs.mkdirSync(pathm.dirname(pathm.join(root, rel)), { recursive: true }); fs.writeFileSync(pathm.join(root, rel), body) }
+  const put = (rel: string, body: string|NodeJS.ArrayBufferView<ArrayBufferLike>) => { fs.mkdirSync(pathm.dirname(pathm.join(root, rel)), { recursive: true }); fs.writeFileSync(pathm.join(root, rel), body) }
   put('content/spaces/guild.md', '---\nname: The Guild\nkind: community\n---\n')
   put('content/spaces/guild/lounge.md', '---\nname: Lounge\nencrypted: true\n---\n')
   put('content/spaces/guild/open.md', '---\nname: Open\n---\n')
@@ -162,7 +161,7 @@ t('a module whose step is running stops it when switched off', () => {
     console.error = (m) => { said += m }; console.log = () => {}
     try { const r = await fn(); return { r, said } } finally { console.error = e; console.log = l; process.exitCode = 0 }
   }
-  const compile = (modules: any) => quiet(() => compileSpaces({ store: gitStore(root), write: false, catalog: {}, forms: [], modules }))
+  const compile = (modules: { "space-encryption"?: boolean; network?: boolean }|null) => quiet(() => compileSpaces({ store: gitStore(root), write: false, catalog: {}, forms: [], modules }))
 
   const off = await compile({ 'space-encryption': false })
   t('encrypted: true with the module off is refused', () => {
@@ -181,7 +180,7 @@ t('a module whose step is running stops it when switched off', () => {
   const on = await compile({ 'space-encryption': true })
   t('the same declaration compiles with the module on', () => {
     assert.ok(on.r && on.r.length === 1, `said: ${on.said}`)
-    const ch = Object.fromEntries(on.r[0].channels.map((c: any) => [c.slug, c.encrypted]))
+    const ch = Object.fromEntries(on.r[0].channels.map((c: { slug: any; encrypted: any }) => [c.slug, c.encrypted]))
     assert.equal(ch.lounge, true, 'the sealed room did not come out sealed')
     assert.equal(ch.open, false, 'a room that asked for nothing came out sealed')
   })
@@ -209,7 +208,7 @@ t('a module whose step is running stops it when switched off', () => {
   })
   const feedOn = await compile({ network: true })
   t('…and is read as a feed with it on', () => {
-    assert.ok(feedOn.r && feedOn.r[0].channels.find((c: any) => c.slug === 'lounge').mode === 'feed', `said: ${feedOn.said}`)
+    assert.ok(feedOn.r && feedOn.r[0].channels.find((c: { slug: string }) => c.slug === 'lounge').mode === 'feed', `said: ${feedOn.said}`)
   })
   fs.rmSync(root, { recursive: true, force: true })
 }

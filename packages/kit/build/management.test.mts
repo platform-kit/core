@@ -11,8 +11,8 @@ import { richTextFromMarkdown } from '../supabase/functions/_shared/api/richtext
 import { assetId, entryId } from '../supabase/functions/_shared/api/ids.js'
 
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
-const note = (m: any) => console.log('management: ' + m)
+const ok = async (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): any }) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
+const note = (m: string) => console.log('management: ' + m)
 
 const TYPE = { sys: { id: 'article' }, fields: [
   { id: 'title', type: 'Symbol' }, { id: 'date', type: 'Date' }, { id: 'published', type: 'Boolean' }, { id: 'rating', type: 'Number' }, { id: 'count', type: 'Integer' },
@@ -21,7 +21,7 @@ const TYPE = { sys: { id: 'article' }, fields: [
   { id: 'summary', type: 'RichText' }, { id: 'summaryMarkdown', type: 'Text' }, { id: 'meta', type: 'Object' },
 ] }
 const MODEL = { key: 'articles', body: true }
-const ctx = { space: 'demo', locale: 'en-US', assetAddress: (id: any) => (id === 'pic1' ? '/uploads/pic.png' : id === 'apiA' ? '/uploads/api/apiA/photo.png' : null) }
+const ctx = { space: 'demo', locale: 'en-US', assetAddress: (id: string) => (id === 'pic1' ? '/uploads/pic.png' : id === 'apiA' ? '/uploads/api/apiA/photo.png' : null) }
 
 await ok('a Management entry: fields by locale, the version rule, the published version and times, the User links', () => {
   const delivery = { sys: { id: 'article.hello', contentType: { sys: { type: 'Link', linkType: 'ContentType', id: 'article' } } }, fields: { title: 'Hello', tags: ['a', 'b'], cover: { sys: { type: 'Link', linkType: 'Asset', id: 'pic1' } } } }
@@ -53,7 +53,7 @@ await ok('Rich Text → markdown is the reverse of the reader\'s converter: mark
   const md = '# Head\n\nA **bold** and *soft* and `code` and __under__ [link](https://x.y) line.\n\n- one\n- two\n\n1. first\n2. second\n\n> quoted\n\n---\n\n| a | b |\n| --- | --- |\n| 1 | 2 |\n\n![](/uploads/pic.png)\n\nLast.\n'
   const assets = new Map([['/uploads/pic.png', { address: '/uploads/pic.png' }]])
   const doc = richTextFromMarkdown(md, { assetsByAddress: assets })
-  const back = markdownFromRichText(doc, { assetAddress: (id: any) => (id === assetId('/uploads/pic.png') ? '/uploads/pic.png' : null) })
+  const back = markdownFromRichText(doc, { assetAddress: (id: string) => (id === assetId('/uploads/pic.png') ? '/uploads/pic.png' : null) })
   assert.equal(back, md.replace('__under__', '**under**'), 'CommonMark reads __x__ as bold, so it comes back as bold')
   const again = richTextFromMarkdown(back, { assetsByAddress: assets })
   assert.deepEqual(again, doc, 'the document made again from the markdown is the same document')

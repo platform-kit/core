@@ -34,10 +34,10 @@ const THEME = path.resolve(HERE, '../theme/src')
 const SHEET = path.join(THEME, 'components/admin/admin-ui.css')
 
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 8).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 8).join('\n    ')) } }
 
 // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-const walk = (d: any) => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => {
+const walk = (d) => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => {
   const f = path.join(d, e.name)
   return e.isDirectory() ? walk(f) : f.endsWith('.vue') ? [f] : []
 }) : [])
@@ -47,7 +47,7 @@ const defined = (css: any) => new Set([...css.matchAll(/\.(ui-[a-z0-9-]+)/g)].ma
 
 /* and the ones a selector defines ON THEIR OWN: the last simple selector of a comma-part carries
    exactly one `ui-` class. `.ui-row.ui-wrap` defines neither on its own; `.ui-page` does. */
-function alone(css: any) {
+function alone(css: string) {
   const out = new Set()
   const noComments = css.replace(/\/\*[^]*?\*\//g, ' ')
   for (const block of noComments.split('}')) {
@@ -71,7 +71,7 @@ function worn(src: any) {
   for (const m of tpl.matchAll(/<[a-zA-Z][^>]*>/g)) {
     const tag = m[0]
     const stat = tag.match(/\bclass="([^"]*)"/)
-    const ui = stat ? stat[1].split(/\s+/).filter((c: any) => /^ui-[a-z0-9-]+$/.test(c)) : []
+    const ui = stat ? stat[1].split(/\s+/).filter((c: string) => /^ui-[a-z0-9-]+$/.test(c)) : []
     for (const c of ui) all.add(c)
     const bound = tag.match(/:class="([^"]*)"/)
     if (bound) for (const c of bound[1].matchAll(/'(ui-[a-z0-9-]+)'|\b(ui-[a-z0-9-]+)\b/g)) all.add(c[1] || c[2])

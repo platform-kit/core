@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 const HELPER = fileURLToPath(new URL('./test-stack.mjs', import.meta.url))
 const STORAGE = fileURLToPath(new URL('./tts/storage.mjs', import.meta.url))
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 
 /* the guard knows a test by its file name, in either language: a rename once switched it off, and stack tests reached a dev stack */
 {
@@ -19,7 +19,7 @@ const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail
   process.argv[1] = script; if (inherited) process.env.PLATFORMKIT_TEST_PROCESS = inherited
 }
 const clean = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(PLATFORMKIT_|SUPABASE_|VITE_SUPABASE_|VITE_APP_URL|APP_URL)/.test(k)))
-const child = (code: any, env = {}) => {
+const child = (code: string, env = {}) => {
   const r = spawnSync(process.execPath, ['--input-type=module', '-e', `import * as t from ${JSON.stringify('file://' + HELPER)}\nimport * as st from ${JSON.stringify('file://' + STORAGE)}\n${code}`], { env: { ...clean, ...env }, encoding: 'utf8' })
   return { status: r.status, out: (r.stdout || '') + (r.stderr || '') }
 }

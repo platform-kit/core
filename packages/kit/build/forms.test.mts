@@ -22,9 +22,9 @@ import { grade } from '../supabase/functions/_shared/forms/score.js'
 import { serialiseForm, composeField } from './form-io.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
-const fixture = (n: any) => readFileSync(path.join(HERE, 'fixtures/forms', n), 'utf8')
+const fixture = (n: string) => readFileSync(path.join(HERE, 'fixtures/forms', n), 'utf8')
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
 
 /* ---- forms.md's own tests, for what is vendored ---- */
 {
@@ -49,18 +49,18 @@ t('the data block is read', () => assert.deepEqual(m.data, { brand: 'Acme', plan
 t('the slides: start first, the bodies, the end last', () => assert.deepEqual(m.slides.map((s) => s.type), ['start', 'body', 'body', 'body', 'body', 'end']))
 t('the start slide: its button and its copy with a binding and an attribute line', () => { const s = m.slides[0]; assert.equal(s.button, 'Go'); assert.equal(s.blocks[0].type, 'markdown'); assert.deepEqual(s.blocks[0].deps, ['brand']); assert.ok(s.blocks[0].md.includes('[.text-center]')) })
 t('every kind is a field of its kind', () => {
-  const kinds = Object.fromEntries(m.fields.map((f: any) => [f.name, f.kind]))
+  const kinds = Object.fromEntries(m.fields.map((f: { name: any; kind: any }) => [f.name, f.kind]))
   assert.deepEqual(kinds, { name: 'text', email: 'email', site: 'url', phone: 'tel', secret: 'password', age: 'number', about: 'text', plan: 'select', pick: 'choice', many: 'choice', pickOther: 'text', picture: 'picture', stars: 'rating', nps: 'scale', when: 'date', at: 'time', stamp: 'datetime', file: 'file', said: 'voice', seen: 'video' })
-  assert.deepEqual([...new Set(m.fields.map((f: any) => f.kind))].sort(), [...KINDS].sort())   /* every kind the language has, at least once */
+  assert.deepEqual([...new Set(m.fields.map((f: { kind: any }) => f.kind))].sort(), [...KINDS].sort())   /* every kind the language has, at least once */
 })
 t('the parameters, per kind, as forms.md reads them', () => {
-  const f = Object.fromEntries(m.fields.map((x: any) => [x.name, x]))
+  const f = Object.fromEntries(m.fields.map((x: { name: any }) => [x.name, x]))
   assert.equal(f.name.required, true); assert.equal(f.name.params.maxlength, '40'); assert.equal(f.name.params.placeholder, 'Name')
   assert.equal(f.phone.params.country, 'GB'); assert.deepEqual(f.phone.params.availablecountries, ['GB', ' US']); assert.equal(f.phone.params.placeholder, '07400 123456')
   assert.equal(f.age.params.min, '0'); assert.equal(f.age.params.max, '120'); assert.equal(f.age.params.unitend, 'years')
   assert.equal(f.about.params.multiline, true)
   assert.deepEqual(f.plan.params.options, [{ value: 'free', label: 'Free' }, { value: 'pro', label: 'Pro' }, { value: 'Other', label: 'Other' }]); assert.equal(f.plan.params.selected, 'free')
-  assert.deepEqual(f.pick.params.choices.map((c: any) => c.value), ['a', 'b', 'C'])
+  assert.deepEqual(f.pick.params.choices.map((c: { value: any }) => c.value), ['a', 'b', 'C'])
   assert.equal(f.many.params.multiple, true); assert.equal(f.many.params.horizontal, true)
   assert.deepEqual(f.picture.params.choices, [{ value: 'Sun', label: 'Sun', image: 'https://example.com/sun.png' }, { value: 'Moon', label: 'Moon', image: 'https://example.com/moon.png' }]); assert.equal(f.picture.params.supersize, true)
   assert.equal(f.stars.params.outof, 7); assert.equal(f.stars.params.icon, 'heart')
@@ -68,15 +68,15 @@ t('the parameters, per kind, as forms.md reads them', () => {
   assert.equal(f.when.params.min, '2024-01-01'); assert.equal(f.when.params.placeholder, 'YYYY-MM-DD')
   assert.equal(f.file.params.sizelimit, 2); assert.equal(f.file.params.imageonly, true)
 })
-t('a display condition in a bind div lands on its field, with the dependency', () => { const f = m.fields.find((x: any) => x.name === 'pickOther'); assert.equal(f.condition, "(pick == 'C')"); assert.deepEqual(f.deps, ['pick']) })
+t('a display condition in a bind div lands on its field, with the dependency', () => { const f = m.fields.find((x: { name: string }) => x.name === 'pickOther'); assert.equal(f.condition, "(pick == 'C')"); assert.deepEqual(f.deps, ['pick']) })
 t('a jump condition lands on its slide', () => assert.equal(m.slides[3].jump, "plan == 'pro'"))
 t('the page progress is read as a percentage', () => assert.deepEqual(m.slides.slice(1, 5).map((s) => s.progress), ['25%', '50%', '75%', '100%']))
-t('a div with attributes is a div block, its attributes read, its source kept', () => { const d = m.slides[4].blocks.find((b: any) => b.type === 'div'); assert.ok(d); assert.deepEqual(d.attrs.classes, ['col-6']); assert.equal(d.attrs.id, 'half'); assert.ok(d.raw.startsWith('::: [.col-6 #half]')); assert.equal(d.blocks[0].type, 'markdown') })
-t('an if/else round copy gives each branch its condition, the two as a group with the whole source', () => { const g = m.slides[4].blocks.find((b: any) => b.type === 'div' && b.blocks.length === 2); assert.ok(g); assert.deepEqual(g.blocks.map((b: any) => b.condition), ["(plan == 'pro')", "not (plan == 'pro')"]); assert.ok(g.raw.startsWith('{% if') && g.raw.endsWith('{% endif %}')) })
-t('a field under a condition carries its whole bind div as its source', () => { const f = m.fields.find((x: any) => x.name === 'pickOther'); assert.ok(f.raw.startsWith('::: [{$ pick $}]') && f.raw.trim().endsWith(':::')) })
+t('a div with attributes is a div block, its attributes read, its source kept', () => { const d = m.slides[4].blocks.find((b: { type: string }) => b.type === 'div'); assert.ok(d); assert.deepEqual(d.attrs.classes, ['col-6']); assert.equal(d.attrs.id, 'half'); assert.ok(d.raw.startsWith('::: [.col-6 #half]')); assert.equal(d.blocks[0].type, 'markdown') })
+t('an if/else round copy gives each branch its condition, the two as a group with the whole source', () => { const g = m.slides[4].blocks.find((b: { type: string; blocks: string|any[] }) => b.type === 'div' && b.blocks.length === 2); assert.ok(g); assert.deepEqual(g.blocks.map((b: { condition: any }) => b.condition), ["(plan == 'pro')", "not (plan == 'pro')"]); assert.ok(g.raw.startsWith('{% if') && g.raw.endsWith('{% endif %}')) })
+t('a field under a condition carries its whole bind div as its source', () => { const f = m.fields.find((x: { name: string }) => x.name === 'pickOther'); assert.ok(f.raw.startsWith('::: [{$ pick $}]') && f.raw.trim().endsWith(':::')) })
 t('the end slide: its redirect and its binding', () => { const e = m.slides[5]; assert.equal(e.redirect, 'https://example.com/done'); assert.deepEqual(e.blocks[0].deps, ['name']) })
-t('the field contract the function checks against', () => { const c = fieldContract(m); assert.deepEqual(c.find((x: any) => x.name === 'pick'), { name: 'pick', question: 'Pick one', kind: 'choice', required: true, multiple: false, values: ['a', 'b', 'C'], slide: 2 }); assert.equal(c.find((x: any) => x.name === 'many').multiple, true) })
-t('every block knows its line', () => assert.equal(m.fields.find((x: any) => x.name === 'name').line, 27))
+t('the field contract the function checks against', () => { const c = fieldContract(m); assert.deepEqual(c.find((x: { name: string }) => x.name === 'pick'), { name: 'pick', question: 'Pick one', kind: 'choice', required: true, multiple: false, values: ['a', 'b', 'C'], slide: 2 }); assert.equal(c.find((x: { name: string }) => x.name === 'many').multiple, true) })
+t('every block knows its line', () => assert.equal(m.fields.find((x: { name: string }) => x.name === 'name').line, 27))
 
 /* ---- every example from docs.forms.md, as the parity pass pinned it (build/fixtures/formsmd/expected.json) ---- */
 {
@@ -84,7 +84,7 @@ t('every block knows its line', () => assert.equal(m.fields.find((x: any) => x.n
   const expected = JSON.parse(readFileSync(path.join(dir, 'expected.json'), 'utf8'))
   for (const [f, want] of Object.entries(expected)) t('docs example ' + f, () => {
     const m = parseForm(readFileSync(path.join(dir, f), 'utf8'))
-    assert.deepEqual({ errors: m.errors.map((e: any) => e.message.replace(/ — .*/, '')), slides: m.slides.map((s) => s.type + (s.jump ? '?' + s.jump : '') + (s.progress ? '@' + s.progress : '')), fields: m.fields.map((x: any) => x.name + ':' + x.kind + (x.required ? '*' : '') + (x.condition ? '?' : '')) }, want)
+    assert.deepEqual({ errors: m.errors.map((e: any) => e.message.replace(/ — .*/, '')), slides: m.slides.map((s) => s.type + (s.jump ? '?' + s.jump : '') + (s.progress ? '@' + s.progress : '')), fields: m.fields.map((x: { name: string; kind: string; required: any; condition: any }) => x.name + ':' + x.kind + (x.required ? '*' : '') + (x.condition ? '?' : '')) }, want)
   })
 }
 
@@ -106,11 +106,11 @@ t('one label changed: the field composed afresh, everything else byte for byte, 
   const doc = serialiseForm(w, raw)
   assert.notEqual(doc, raw)
   assert.ok(doc.includes('name* = TextInput(\n\t| question = What is your name?\n\t| placeholder = Name\n\t| maxlength = 40\n)'))
-  for (const b of [w.slides[1].blocks[1], w.slides[2].blocks[3], w.slides[4].blocks.find((x: any) => x.type === 'div')]) assert.ok(doc.includes(b.raw), 'kept: ' + b.raw.slice(0, 30))
+  for (const b of [w.slides[1].blocks[1], w.slides[2].blocks[3], w.slides[4].blocks.find((x: { type: string }) => x.type === 'div')]) assert.ok(doc.includes(b.raw), 'kept: ' + b.raw.slice(0, 30))
   assert.ok(doc.includes(w.head.dataBlocks[0]))
   const again = parseForm(doc)
   assert.deepEqual(again.errors, [])
-  assert.deepEqual(again.fields.map((x: any) => x.name), w.fields.map((x: any) => x.name))
+  assert.deepEqual(again.fields.map((x: { name: any }) => x.name), w.fields.map((x: { name: any }) => x.name))
   assert.equal(again.fields[0].params.question, 'What is your name?')
 })
 t('a field with a condition is composed inside its bind div', () => { const s = composeField({ kind: 'choice', name: 'q', required: true, params: { question: 'Pick', choices: [{ value: 'a', label: 'A' }, { value: 'B', label: 'B' }], multiple: true }, condition: "x == 'y'", deps: ['x'] }); assert.equal(s, "::: [{$ x $}]\n{% if x == 'y' %}\nq* = ChoiceInput(\n\t| question = Pick\n\t| choices = \"a\" A, B\n\t| multiple\n)\n{% endif %}\n:::") })
@@ -133,10 +133,10 @@ t('form-slides: a screen per slide, the end last, a jump as a skip', () => {
   const s = formScreens(m, () => ctx)
   assert.equal(s.length, 6); assert.equal(s[5].end, true); assert.equal(s[4].last, true); assert.equal(s[1].post, true); assert.equal(s[0].isForm, true)
   assert.equal(s[3].skip(), true); ctx.plan = 'pro'; assert.equal(s[3].skip(), false)
-  assert.deepEqual(s[1].fields.map((f: any) => f.name), ['name', 'email', 'site', 'phone', 'secret', 'age', 'about'])
-  assert.deepEqual(s.map((x: any) => x.progress), [0, 25, 50, 75, 100, 100])
+  assert.deepEqual(s[1].fields.map((f: { name: any }) => f.name), ['name', 'email', 'site', 'phone', 'secret', 'age', 'about'])
+  assert.deepEqual(s.map((x: { progress: any }) => x.progress), [0, 25, 50, 75, 100, 100])
 })
-t('slides: the same screens, nothing posted', () => { const w = parseForm(raw.replace('#! title = Every kind', '#! title = Every kind\n#! page = slides')); const s = formScreens(w, () => ({})); assert.equal(s.length, 6); assert.ok(s.every((x: any) => !x.post)); assert.equal(s[1].isForm, false) })
+t('slides: the same screens, nothing posted', () => { const w = parseForm(raw.replace('#! title = Every kind', '#! title = Every kind\n#! page = slides')); const s = formScreens(w, () => ({})); assert.equal(s.length, 6); assert.ok(s.every((x: { post: any }) => !x.post)); assert.equal(s[1].isForm, false) })
 t('single: one screen, every block', () => { const w = parseForm(raw.replace('#! title = Every kind', '#! title = Every kind\n#! page = single')); const s = formScreens(w, () => ({})); assert.equal(s.length, 1); assert.equal(s[0].single, true); assert.equal(s[0].fields.length, 20) })
 t('a document with no end slide gets the default one', () => { const w = parseForm('a = TextInput(| question = A)'); const s = formScreens(w, () => ({})); assert.equal(s.length, 2); assert.equal(s[1].defaultEnd, true) })
 

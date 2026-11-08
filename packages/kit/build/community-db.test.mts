@@ -10,7 +10,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('community-db: ' + m)
+const note = (m: string) => console.log('community-db: ' + m)
 if (process.env.COMMUNITY_TEST === '0') { note('skipped (COMMUNITY_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -20,8 +20,8 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const as = async (email: any) => {
+const ok = (msg: string, cond: boolean, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const as = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -30,7 +30,7 @@ const as = async (email: any) => {
 const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 /* the browser's own hashing: a token is made and hashed where it is made, and only the digest is sent */
 const token = () => randomBytes(24).toString('base64url')
-const hash = (tk: any) => createHash('sha256').update(tk).digest('hex')
+const hash = (tk: string|NodeJS.ArrayBufferView<ArrayBufferLike>) => createHash('sha256').update(tk).digest('hex')
 
 console.log('\nCOMMUNITY\n')
 
@@ -50,7 +50,7 @@ try {
   const nobody = await as('reader1@example.com')  /* in nothing, and never let in */
 
   /* ---- two spaces of a kind nobody has: a community and a paid server ---- */
-  const makeSpace = async (slug: any, name: any, kind: any, fill: any) => {
+  const makeSpace = async (slug: string, name: string, kind: string, fill: any) => {
     const { data, error } = await service.from('spaces').insert({ slug, name, kind, fill }).select().single()
     if (error) throw new Error(slug + ': ' + error.message)
     // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
@@ -65,7 +65,7 @@ try {
   const comm = await makeSpace(COMM, 'A community', 'community', { entitlement: 'subscribed' })
   const serv = await makeSpace(SERV, 'A server', 'server', { tier: TIER })
 
-  const grant = async (email: any, tier: any) => {
+  const grant = async (email: string, tier: string) => {
     const { data } = await service.from('entitlements').insert({
       // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
       user_id: (await service.from('profiles').select('id').eq('email', email).single()).data.id,
@@ -80,7 +80,7 @@ try {
   await service.rpc('space_sync_members')
 
   /* ---- one instance, three kinds ---- */
-  const seen = async (who: any) => ((await who.sb.from('spaces').select('slug')).data || []).map((s: any) => s.slug)
+  const seen = async (who: { sb: any; id?: string; email?: any }) => ((await who.sb.from('spaces').select('slug')).data || []).map((s: { slug: any }) => s.slug)
   const twoSees = await seen(two)
   ok('somebody the server\'s tier fills is in the server', twoSees.includes(SERV), JSON.stringify(twoSees))
   ok('and does not see the staff space', !twoSees.includes('the-team'))
@@ -111,7 +111,7 @@ try {
      It belongs on the membership rather than on whatever made it, because four things make one. */
   {
     const fresh = await as('reader2@example.com')
-    const roomsOf = async (who: any) => ((await service.from('channel_members').select('channel_id').eq('user_id', who)).data || [])
+    const roomsOf = async (who: string) => ((await service.from('channel_members').select('channel_id').eq('user_id', who)).data || [])
       .map((r) => r.channel_id)
     const before = await roomsOf(fresh.id)
     await service.from('space_members').insert({ space_id: comm.id, user_id: fresh.id, source: 'manual' })
@@ -119,7 +119,7 @@ try {
     ok('joining a space puts you in its open rooms', after.includes(comm.channel) && after.length > before.length)
     ok('and the rail has something in it at once',
       // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-      ((await fresh.sb.rpc('space_unread')).data || []).some((r: any) => r.channel === comm.channel))
+      ((await fresh.sb.rpc('space_unread')).data || []).some((r) => r.channel === comm.channel))
 
     /* a private room is still joined by being put in it */
     const { data: shut } = await service.from('channels')
@@ -155,7 +155,7 @@ try {
   ok('and the kit named no role to do it', true)
   const look: any = (await out.sb.rpc('space_invite_look', { p_hash: hash(t1) })).data
   ok('a link says what it is for before anybody presses anything', look && look.state === 'good' && look.space === COMM, JSON.stringify(look))
-  const accept = async (who: any, tk: any) => (await who.sb.rpc('space_invite_accept', { p_hash: hash(tk) })).data
+  const accept = async (who: { sb: any; id?: string; email?: any }, tk: string) => (await who.sb.rpc('space_invite_accept', { p_hash: hash(tk) })).data
   const a1 = await accept(out, t1)
   ok('the first use joins', a1 && a1.state === 'joined', JSON.stringify(a1))
   ok('and they are in the space\'s open rooms', ((await out.sb.from('channels').select('id').eq('id', comm.channel)).data || []).length === 1)
@@ -221,8 +221,8 @@ try {
   const r2 = (await out.sb.rpc('space_report', { p_message: said!.id, p_reason: 'spam' })).data
   ok('reporting it twice is one report, not two', r1 === r2)
   const queue: any = (await one.sb.rpc('space_reports', { p_space: comm.id })).data || []
-  ok('the queue shows it once to whoever may moderate', queue.filter((q: any) => q.message === said!.id).length === 1, JSON.stringify(queue.map((q: any) => q.reason)))
-  ok('and carries what was said and who said it', queue.some((q: any) => q.body === 'Something worth reporting.' && !!q.about))
+  ok('the queue shows it once to whoever may moderate', queue.filter((q: { message: string }) => q.message === said!.id).length === 1, JSON.stringify(queue.map((q: { reason: any }) => q.reason)))
+  ok('and carries what was said and who said it', queue.some((q: { body: string; about: any }) => q.body === 'Something worth reporting.' && !!q.about))
   // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
   ok('somebody who may not moderate is shown no queue', !((await two.sb.rpc('space_reports', { p_space: comm.id })).data || []).length)
 
@@ -232,13 +232,13 @@ try {
   const after: any = (await service.from('space_messages').select('deleted_at, body').eq('id', said!.id).single()).data
   ok('and it reads as withdrawn rather than vanishing', !!after.deleted_at && !!after.body)
   const closed: any = (await one.sb.rpc('space_reports', { p_space: comm.id })).data || []
-  ok('the report about it is answered by the act', !closed.some((q: any) => q.message === said!.id))
+  ok('the report about it is answered by the act', !closed.some((q: { message: string }) => q.message === said!.id))
 
   const mute = (await one.sb.rpc('space_moderate', { p_kind: 'mute', p_space: comm.id, p_user: two.id, p_reason: 'spam', p_minutes: 1440 })).data
   ok('a moderator may mute a member for a span', !!mute)
   const mine: any = (await two.sb.rpc('space_my_record')).data || []
-  ok('the member is told it was done and when it ends', mine.some((m: any) => m.kind === 'mute' && !!m.until))
-  ok('and is told nothing done to anybody else', mine.every((m: any) => m.kind !== 'report'))
+  ok('the member is told it was done and when it ends', mine.some((m: { kind: string; until: any }) => m.kind === 'mute' && !!m.until))
+  ok('and is told nothing done to anybody else', mine.every((m: { kind: string }) => m.kind !== 'report'))
   // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
   ok('somebody it was not done to reads none of it', !((await nobody.sb.rpc('space_my_record')).data || []).length)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
@@ -248,7 +248,7 @@ try {
   ok('nor read as a table by anybody', !((await one.sb.from('space_moderation').select('id')).data || []).length)
 
   /* ---- muting is a fence, not a filter ---- */
-  const write = async (who: any, channel: any, extra = {}) => (await who.sb.from('space_messages').insert({ channel_id: channel, author_id: who.id, body: 'muted?', ...extra })).error
+  const write = async (who: { sb: any; id: any; email?: any }, channel: string|null, extra = {}) => (await who.sb.from('space_messages').insert({ channel_id: channel, author_id: who.id, body: 'muted?', ...extra })).error
   ok('a muted member cannot write in a channel', !!(await write(two, comm.channel)))
   const { data: root } = await service.from('space_messages').insert({ channel_id: comm.channel, author_id: one.id, body: 'A thread.' }).select().single()
   ok('nor in a thread', !!(await write(two, comm.channel, { thread_root_id: root!.id })))
@@ -270,13 +270,13 @@ try {
 
   /* ---- the acts a space has had done in it ---- */
   const record: any = (await one.sb.rpc('space_record', { p_space: comm.id })).data || []
-  ok('the acts are listed for whoever may moderate, with who did each and why', record.length >= 3 && record.every((m: any) => m.kind !== 'report'), JSON.stringify(record.map((m: any) => m.kind)))
+  ok('the acts are listed for whoever may moderate, with who did each and why', record.length >= 3 && record.every((m: { kind: string }) => m.kind !== 'report'), JSON.stringify(record.map((m: { kind: any }) => m.kind)))
   // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
   ok('and are not listed for anybody else', !((await nobody.sb.rpc('space_record', { p_space: comm.id })).data || []).length)
 
   /* ---- the directory says only what is already public ---- */
   const people: any = (await one.sb.rpc('space_people', { p_space: comm.id })).data || []
-  ok('a member sees who else is in their space', people.length >= 1, JSON.stringify(people.map((p: any) => p.name)))
+  ok('a member sees who else is in their space', people.length >= 1, JSON.stringify(people.map((p: { name: any }) => p.name)))
   const keys = new Set(people.flatMap((p: any) => Object.keys(p)))
   ok('and no address is disclosed', !keys.has('email'), [...keys].join(', '))
   ok('nor anything bought', !keys.has('purchases') && !keys.has('tier'))
@@ -340,7 +340,7 @@ try {
     ((await one.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data || {}).about === line)
   ok('and in the directory beside their name',
     // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-    (((await one.sb.rpc('space_people', { p_space: comm.id })).data || []).find((p: any) => p.id === out.id) || {}).about === line)
+    (((await one.sb.rpc('space_people', { p_space: comm.id })).data || []).find((p) => p.id === out.id) || {}).about === line)
   const stolen = await one.sb.from('profiles').update({ about: 'written by somebody else' }).eq('id', out.id)
   ok('and nobody else may write it for them',
     // @ts-expect-error TS2339, from the conversion: Property 'about' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'about' does not 
@@ -350,12 +350,12 @@ try {
 
   /* ---- what a reader could be in ---- */
   const could: any = (await nobody.sb.rpc('space_discover')).data || []
-  ok('a reader is shown the spaces they could be in', could.some((s: any) => s.slug === COMM) && could.some((s: any) => s.slug === SERV), JSON.stringify(could.map((s: any) => s.slug)))
-  ok('and the staff space is never among them', !could.some((s: any) => s.slug === 'the-team'))
-  ok('each says what it would take', could.every((s: any) => s.fill && Object.keys(s.fill).length))
-  ok('and whether it is already theirs', could.find((s: any) => s.slug === COMM).mine === false
+  ok('a reader is shown the spaces they could be in', could.some((s: { slug: string }) => s.slug === COMM) && could.some((s: { slug: string }) => s.slug === SERV), JSON.stringify(could.map((s: { slug: any }) => s.slug)))
+  ok('and the staff space is never among them', !could.some((s: { slug: string }) => s.slug === 'the-team'))
+  ok('each says what it would take', could.every((s: any[]) => s.fill && Object.keys(s.fill).length))
+  ok('and whether it is already theirs', could.find((s: { slug: string }) => s.slug === COMM).mine === false
     // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-    && ((await one.sb.rpc('space_discover')).data || []).find((s: any) => s.slug === COMM).mine === true)
+    && ((await one.sb.rpc('space_discover')).data || []).find((s) => s.slug === COMM).mine === true)
 
   /* ------------------------------------------------------------------ a room with a rule of its own */
   /* The space takes the tier; the room inside it is narrower. A private room so that nothing but the
@@ -368,7 +368,7 @@ try {
   /* each row its own source_id: the table is unique on (user, kind, key, source_id), so a second
      grant of the same key to the same person under one id is the same row rather than another */
   let entN = 0
-  const entitle = async (who: any, key: any, extra = {}) => {
+  const entitle = async (who: any, key: string, extra = {}) => {
     const { data, error } = await service.from('entitlements').insert({
       user_id: who.id, kind: 'class', key, active: true, source: 'grant',
       source_id: 'probe-' + mark + '-' + (++entN), ...extra,

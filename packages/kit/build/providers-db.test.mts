@@ -26,7 +26,7 @@ import { leave, stackOf, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 if (!(await moduleOn('sessions'))) { notHere('providers-db', 'the sessions module is off'); process.exit(0) }
 
-const note = (m: any) => console.log('providers-db: ' + m)
+const note = (m: string) => console.log('providers-db: ' + m)
 /* IS THE SITE'S MAIL GOING TO THE LOCAL MAILPIT? Only then are the letters safe to read — and only
    then were they safe to send. A relay that delivers is a relay that delivers, whoever the address
    belongs to. */
@@ -38,7 +38,7 @@ function toMailpit() {
   return /^(127\.|localhost$|0\.0\.0\.0$|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host)
 }
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: string|number|boolean|null, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nPROVIDERS\n')
 
@@ -64,7 +64,7 @@ const service = createClient<Database>(url, serviceKey(), { auth: { persistSessi
 const tag = 'p' + Math.random().toString(36).slice(2, 8)
 const made = { users: [], terms: [], offerings: [], bookings: [] }
 const now = Date.now()
-const setting = async (k: any, v: any) => { await service.from('app_settings').upsert({ key: 'provider_' + k, value: v, updated_at: new Date().toISOString() }, { onConflict: 'key' }) }
+const setting = async (k: string, v: string) => { await service.from('app_settings').upsert({ key: 'provider_' + k, value: v, updated_at: new Date().toISOString() }, { onConflict: 'key' }) }
 let wasOfferings = null, wasApprove = null
 
 try {
@@ -72,7 +72,7 @@ try {
   wasOfferings = (was.data || []).find((r) => r.key === 'provider_offerings')?.value ?? 'off'
   wasApprove = (was.data || []).find((r) => r.key === 'provider_approve')?.value ?? 'on'
 
-  const mk = async (email: any, roles: any) => {
+  const mk = async (email: string, roles: string[]) => {
     const { data, error } = await service.auth.admin.createUser({ email, password: 'password123', email_confirm: true })
     if (error) throw new Error(email + ': ' + error.message)
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
@@ -80,7 +80,7 @@ try {
     if (roles) await service.from('profiles').update({ roles }).eq('id', data.user.id)
     return data.user.id
   }
-  const signIn = async (email: any) => {
+  const signIn = async (email: string) => {
     const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
     const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
     if (error) throw new Error(email + ': ' + error.message)
@@ -169,7 +169,7 @@ try {
   try { served = (await fetch(url + '/functions/v1/session-slots', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* not served */ }
   if (!served) console.log('  (the session functions are not served — npm run dev serves them)')
   else {
-    const call = async (sb: any, name: any, body: any) => {
+    const call = async (sb: any, name: string, body: { event?: string; from?: string; to?: string; timeZone?: string; start?: unknown; notes?: string; uid?: any; reason?: string }) => {
       const { data } = await sb.auth.getSession()
       const r = await fetch(url + '/functions/v1/' + name, {
         method: 'POST',
@@ -237,12 +237,12 @@ try {
     if (!(await moduleOn('emails'))) { notHere('providers-db: the booking letters', 'the emails module is off'); mail = null }
     else if (!mail) console.log('  (the site\'s relay is not the local Mailpit — the letters are not looked at)')
     else {
-      const to: any = (a: any) => (mail.messages || []).filter((m: any) => (m.To || []).some((x: any) => x.Address === a))
+      const to = (a: string) => (mail.messages || []).filter((m: { To: any }) => (m.To || []).some((x: { Address: any }) => x.Address === a))
       const reader = to(tag + '-reader@example.com'), host = to(tag + '-prov@example.com')
-      ok('the reader is told it is booked', reader.some((m: any) => /is booked/.test(m.Subject) && /An hour with me/.test(m.Subject)))
-      ok('the provider is told too', host.some((m: any) => /is booked/.test(m.Subject)))
-      ok('each with a calendar invitation attached', reader.concat(host).filter((m: any) => /is booked/.test(m.Subject)).every((m: any) => m.Attachments > 0))
-      ok('and the cancellation withdraws it, both ways', reader.some((m: any) => /cancelled/.test(m.Subject)) && host.some((m: any) => /cancelled/.test(m.Subject)))
+      ok('the reader is told it is booked', reader.some((m: { Subject: string }) => /is booked/.test(m.Subject) && /An hour with me/.test(m.Subject)))
+      ok('the provider is told too', host.some((m: { Subject: string }) => /is booked/.test(m.Subject)))
+      ok('each with a calendar invitation attached', reader.concat(host).filter((m: { Subject: string }) => /is booked/.test(m.Subject)).every((m: { Attachments: number }) => m.Attachments > 0))
+      ok('and the cancellation withdraws it, both ways', reader.some((m: { Subject: string }) => /cancelled/.test(m.Subject)) && host.some((m: { Subject: string }) => /cancelled/.test(m.Subject)))
     }
 
     /* a draft is not bookable either, and an unreleased one is not */
@@ -257,7 +257,7 @@ try {
 
   /* --- A HOST KEEPS MORE THAN ONE SET OF HOURS, and a type may ask for one ------------------- */
   if (served) {
-    const call = async (sb: any, name: any, body: any) => {
+    const call = async (sb: any, name: string, body: { event: string; from: string; to: string; timeZone: string }) => {
       const { data } = await sb.auth.getSession()
       const r = await fetch(url + '/functions/v1/' + name, {
         method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + data.session.access_token },
@@ -323,11 +323,11 @@ try {
   made.terms.push(v2)
   const { data: owed } = await service.rpc('provider_terms_owed', { p_version: v2 })
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-  const mine = (owed || []).find((x: any) => x.user_id === provId)
+  const mine = (owed || []).find((x) => x.user_id === provId)
   ok('a provider who signed the old one is owed the new one', !!mine)
   ok('and the letter can say which they signed', mine && mine.signed === v1)
   // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-  ok('a reader is not a provider and is not asked', !(owed || []).some((x: any) => x.user_id === readerId))
+  ok('a reader is not a provider and is not asked', !(owed || []).some((x) => x.user_id === readerId))
   const nosy = await asReader.rpc('provider_terms_owed', { p_version: v2 })
   ok('and the list is not a reader\'s to see', nosy.data === null)
 
@@ -366,7 +366,7 @@ try {
     const { policy } = await projectProviders({ data: { offerings: 'on', approve: 'off', terms: v, 'payout-delay': '2d', connect: 'own' }, body: 'The terms, as the function wrote them.', db: service })
     ok('the delay is resolved to minutes by the ledger\'s own arithmetic', policy.delay === 2880)
     const rows = (await service.from('app_settings').select('key, value').in('key', ['provider_offerings', 'provider_approve', 'provider_delay', 'provider_connect'])).data || []
-    const val = (k: any) => (rows.find((r) => r.key === 'provider_' + k) || {}).value
+    const val = (k: string) => (rows.find((r) => r.key === 'provider_' + k) || {}).value
     ok('the four answers are settings, written by the function', val('offerings') === 'on' && val('approve') === 'off' && val('delay') === '2880' && val('connect') === 'own')
     const t = (await service.from('provider_terms').select('version, body').eq('version', v).maybeSingle()).data
     ok('and the terms are a row of their own', t && t.body.startsWith('The terms, as the function'))

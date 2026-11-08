@@ -7,7 +7,8 @@
 import matter from 'gray-matter'
 import { dump as yamlDump } from 'js-yaml'
 
-const DUMP = { lineWidth: -1 }
+/* js-yaml's dump option: gray-matter hands its options to the yaml engine, but declares only its own */
+const DUMP = { lineWidth: -1 } as { lineWidth: number } & matter.GrayMatterOption<string, never>
 
 /* ---- personality: `## <n> <Name>` sections of `- statement` lines ---- */
 export function parsePersonality(raw: any) {
@@ -16,16 +17,14 @@ export function parsePersonality(raw: any) {
   let cur = null
   for (const line of fm.content.split(/\r?\n/)) {
     const h = /^##\s+(\d+)\s+(.+?)\s*$/.exec(line)
-    if (h) { cur = { n: Number(h[1]), name: h[2].trim(), statements: [] }; types.push(cur); continue }
+    if (h) { cur = { n: Number(h[1]), name: h[2].trim(), statements: [] as string[] }; types.push(cur); continue }
     const b = /^-\s+(.+?)\s*$/.exec(line)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     if (b && cur) cur.statements.push(b[1])
   }
   return { data: fm.data, types }
 }
 export function serialisePersonality({ data, types }: any) {
   const body = (types || []).map((t: any) => `## ${t.n} ${t.name}\n\n${(t.statements || []).filter((s: any) => s.trim()).map((s: any) => '- ' + s.trim()).join('\n')}`).join('\n\n')
-  // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
   return matter.stringify('\n' + body + '\n', data, DUMP)
 }
 
@@ -51,7 +50,6 @@ export function parseWords(raw: any) {
 }
 export function serialiseWords({ data, words }: any) {
   const lines = (words || []).filter((x: any) => x.w && x.w.trim()).map((x: any) => '- ' + x.w.trim() + (x.orig ? ' | orig: ' + x.orig.trim() : '') + (x.why ? ' | why: ' + x.why.trim() : ''))
-  // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
   return matter.stringify('\n## words\n\n' + lines.join('\n') + '\n', data, DUMP)
 }
 

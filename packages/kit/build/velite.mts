@@ -66,7 +66,6 @@ const withCover = (then: any) => async (data: any) => {
   const d = then(data)
   d.coverSource = data.cover || null   /* for cloud mode's adapter, as the books' */
   if (d.cover) {
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
     try { const src = await resolveAsset(d.cover, { fromFile: resolve('content', data.path + '.md') }); d.cover = src ? await processCover(src) : null } catch (e: any) { d.cover = null; console.warn(`[velite] ${d.path}: cover "${data.cover}" did not resolve — kept without a cover. ${e.message}`) }
   }
   return d
@@ -577,12 +576,6 @@ export async function kitConfig(): Promise<any> {
         history: s.array(s.record(s.string(), s.any())).default([]),
         /* the headings its rooms are gathered under, in the order they are drawn */
         groups: s.array(s.string()).default([]),
-        /* ITS OWN PICTURES: a face on the community's front page, and one in a list. A space with
-           neither is drawn from its own name, which is a good answer and not a placeholder. */
-        // @ts-expect-error TS1117, from the conversion: An object literal cannot have multiple properties with the same name.
-        cover: s.string().optional(),
-        // @ts-expect-error TS1117, from the conversion: An object literal cannot have multiple properties with the same name.
-        thumb: s.string().optional(),
         /* the badges this space invents. What they are is declared; who wears one is an act. */
         flair: s.array(s.object({
           slug: s.string(),
@@ -1415,7 +1408,6 @@ export async function kitConfig(): Promise<any> {
         if (data.cover) {
           try {
             /* the cover by its address (/uploads/…, /…, the bucket's); the old way beside the file still resolves */
-            // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
             const src = await resolveAsset(data.cover, { fromFile: resolve('content', data.path + '.md') })
             if (!src) throw new Error('no file at that address')
             out.cover = await processCover(src)

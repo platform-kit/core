@@ -52,7 +52,6 @@ const ALL_LINKS = navLinks({ content: SITE_NAV, config: SITE_LINKS, theme: THEME
    already uses — never a rule invented in this template, which is how the community link came to be
    hidden from everybody who had not already joined it */
 const LINKS = computed(() => ALL_LINKS.filter((l: any) => !l.cta && seen(l, {
-  // @ts-expect-error TS2322, from the conversion: Type '(slug: any) => any' is not assignable to type '() => number'.
   cls: userClass.value, tiers: memberTiers.value, rank: tierRank, staff: isStaff.value,
 })))
 const linkOn = (l: any) => l.prefix ? props.current.startsWith(l.href) : props.current === l.href

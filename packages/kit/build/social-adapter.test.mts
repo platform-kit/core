@@ -83,7 +83,7 @@ assert.deepEqual(await adapter.refreshToken({ tokens, credentials: {} }), {
   ...tokens,
   accessToken: 'fixture-refreshed-access-token',
 })
-assert.deepEqual((await adapter.listAccounts({ tokens, credentials: {} })).map((account: any) => account.id), ['account-1', 'account-2'])
+assert.deepEqual((await adapter.listAccounts({ tokens, credentials: {} })).map((account: { id: any }) => account.id), ['account-1', 'account-2'])
 
 const account = (await adapter.listAccounts({ tokens, credentials: {} }))[0]
 const capabilities = await adapter.capabilities({ account, tokens, credentials: {} })
@@ -101,7 +101,7 @@ const invalid = await adapter.validatePost({
   capabilities,
 })
 assert.equal(invalid.valid, false)
-assert.deepEqual(invalid.issues.map((issue: any) => issue.code), ['text_too_long', 'unsupported_media'])
+assert.deepEqual(invalid.issues.map((issue: { code: any }) => issue.code), ['text_too_long', 'unsupported_media'])
 
 const media = await adapter.uploadMedia({
   account,
@@ -141,7 +141,7 @@ assert.deepEqual(await adapter.reconcile({
 
 await assert.rejects(
   adapter.exchangeCode({ code: 'wrong', state: 'state-fixture', redirectUri: 'https://site.invalid/callback', verifier: 'verifier-fixture', credentials: {} }),
-  (error: any) => error instanceof SocialAdapterError && (error as any).code === 'invalid_code' && (error as any).outcome === 'known',
+  (error) => error instanceof SocialAdapterError && (error as any).code === 'invalid_code' && (error as any).outcome === 'known',
 )
 
 console.log('social-adapter: adapter registry and all normalized provider operations passed')

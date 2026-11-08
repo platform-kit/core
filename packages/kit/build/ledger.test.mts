@@ -15,7 +15,7 @@ import assert from 'node:assert/strict'
 import { buyerOf, emailOf, offerOfLine, grantsOf, ships, carriesFiles, opensOnline, lineSnapshot, offerOptions } from '../supabase/functions/_shared/ledger-rules.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, fn: any) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String(e && e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
+const ok = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; }) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String(e && e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
 
 console.log('\nWHAT A PAYMENT MEANS\n')
 
@@ -37,8 +37,8 @@ ok('the Checkout email is preferred, trimmed, lowercased, and empty values fall 
 })
 
 /* ---- which offer ---- */
-const byKey = (k: any) => (k === 'k-book' ? { key: 'k-book', sku: 'the-kybalion', kind: 'book', book: 'the-kybalion' } : null)
-const bySku = (s: any) => (s === 'old-sku' ? { key: 'k-old', sku: 'old-sku', kind: 'book', book: 'old-book' } : null)
+const byKey = (k: string) => (k === 'k-book' ? { key: 'k-book', sku: 'the-kybalion', kind: 'book', book: 'the-kybalion' } : null)
+const bySku = (s: string) => (s === 'old-sku' ? { key: 'k-old', sku: 'old-sku', kind: 'book', book: 'old-book' } : null)
 
 ok('a line is its price\'s lookup key, which is the offer\'s identity', () => {
   const r = offerOfLine({ price: { lookup_key: 'k-book' } }, byKey, bySku)
@@ -61,7 +61,7 @@ ok('a line naming nothing the files declare is nobody\'s offer', () => {
 
 /* ---- what it grants ---- */
 const S = 'cs_test_1'
-const keys = (g: any) => g.map((x: any) => x.kind + ':' + x.key)
+const keys = (g: any[]) => g.map((x: { kind: string; key: string; }) => x.kind + ':' + x.key)
 
 ok('anything paid for makes the buyer paid', () => {
   assert.deepEqual(keys(grantsOf({ offer: { kind: 'good' }, sku: 'cap', sessionId: S, userId: 'u1' })), ['class:paid'])
@@ -148,13 +148,13 @@ const NOTEBOOK = {
   options: [{ name: 'Cover', values: [{ value: 'linen', label: 'Linen' }, { value: 'leather', label: 'Leather' }] },
              { name: 'Ruling', values: [{ value: 'lined', label: 'Lined' }, { value: 'plain', label: 'Plain' }] }],
 }
-const line = (unit: any, qty = 1, extra = {}) => ({ quantity: qty, price: { unit_amount: unit, currency: 'usd' }, ...extra })
+const line = (unit: number, qty = 1, extra = {}) => ({ quantity: qty, price: { unit_amount: unit, currency: 'usd' }, ...extra })
 
 ok('the row keeps the title, the shape and the values as they read at the time', () => {
   const s: any = lineSnapshot(NOTEBOOK, line(2800), 'leather.lined', { amount_total: 2800, currency: 'usd' })
   assert.equal(s.title, 'The first-hour notebook')
   assert.equal(s.variant_title, 'Leather · Lined', 'the WORDS, not the key — nobody read "leather.lined"')
-  assert.deepEqual(s.options.map((o: any) => [o.option, o.value, o.label]), [['Cover', 'leather', 'Leather'], ['Ruling', 'lined', 'Lined']])
+  assert.deepEqual(s.options.map((o: { option: any; value: any; label: any; }) => [o.option, o.value, o.label]), [['Cover', 'leather', 'Leather'], ['Ruling', 'lined', 'Lined']])
 })
 
 ok('and reads back unchanged after the offer is renamed, reworded and re-priced', () => {
@@ -201,7 +201,7 @@ ok('a value the offer has since dropped still reads as itself', () => {
 ok('a book in print has options too, derived from its block and never named twice', () => {
   const book = { sku: 'the-kybalion-hardcover', key: 'bbbb1111', kind: 'print', title: 'The Kybalion — hardcover',
     contents: ['parts', 'full'], cloth: ['black', 'navy'], foil: ['gold'] }
-  assert.deepEqual(offerOptions(book).map((o: any) => o.name), ['Contents', 'Cloth', 'Foil'])
+  assert.deepEqual(offerOptions(book).map((o: { name: any; }) => o.name), ['Contents', 'Cloth', 'Foil'])
   const s: any = lineSnapshot(book, line(4500), 'parts.navy.gold', {})
   assert.equal(s.variant_title, 'parts · navy · gold')
   assert.equal(s.options.length, 3)
@@ -229,8 +229,8 @@ ok('a line with no price at all falls back to the session rather than writing no
  * ========================================================================================== */
 
 const OFFER = { sku: 'the-book', key: 'abcd1234', kind: 'book', book: 'a-quiet-room', title: 'A Quiet Room' }
-const findByKey = (k: any) => (k === OFFER.key ? OFFER : null)
-const findBySku = (k: any) => (k === OFFER.sku ? OFFER : null)
+const findByKey = (k: string) => (k === OFFER.key ? OFFER : null)
+const findBySku = (k: string) => (k === OFFER.sku ? OFFER : null)
 
 ok('a line from a catalog price is attributed by its lookup key, as it always was', () => {
   const line = { price: { lookup_key: 'abcd1234', metadata: { key: 'abcd1234', sku: 'the-book' } } }

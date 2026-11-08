@@ -34,13 +34,13 @@ const withHcKey = (raw: string, key: string) => raw.replace(/^(print:\n)/m, `$1 
 /* the same through the store (or a root), for the pipe */
 export async function usedKeysOf(store: any) {
   const { asStore } = await import('./store/index.mjs'); const st = asStore(store)
-  const used = new Set()
+  const used = new Set<string>()
   for (const n of await st.list('content/store/products')) { const k = keyOf(await st.read('content/store/products/' + n + '.md')); if (k) used.add(k) }
   for (const n of await st.list('content/books')) { const k = hcKeyOf(await st.read('content/books/' + n + '.md')); if (k) used.add(k) }
   return used
 }
 export function usedKeys() {
-  const used = new Set()
+  const used = new Set<string>()
   for (const n of readdirSync(DIR).filter((n) => n.endsWith('.md'))) { const k = keyOf(readFileSync(join(DIR, n), 'utf8')); if (k) used.add(k) }
   for (const n of readdirSync(BOOKS).filter((n) => n.endsWith('.md'))) { const k = hcKeyOf(readFileSync(join(BOOKS, n), 'utf8')); if (k) used.add(k) }
   return used
@@ -49,7 +49,7 @@ export function usedKeys() {
 export function productKeys({ write = true } = {}) {
   const files = readdirSync(DIR).filter((n) => n.endsWith('.md')).sort()
   const books = readdirSync(BOOKS).filter((n) => n.endsWith('.md')).sort()
-  const used = new Map(), missing = [], dup: any = []
+  const used = new Map<string, string>(), missing = [], dup: any = []
   const note = (k: string, n: string) => { if (used.has(k)) dup.push(`${n} and ${used.get(k)} share ${k}`); else used.set(k, n) }
   for (const n of files) { const k = keyOf(readFileSync(join(DIR, n), 'utf8')); if (!k) missing.push({ dir: DIR, n, hc: false }); else note(k, n) }
   for (const n of books) { const k = hcKeyOf(readFileSync(join(BOOKS, n), 'utf8')); if (k === undefined) continue; if (!k) missing.push({ dir: BOOKS, n, hc: true }); else note(k, 'books/' + n) }

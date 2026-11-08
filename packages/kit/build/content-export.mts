@@ -39,8 +39,7 @@ import { createRequire } from 'node:module'
 import { isMain } from './is-main.mjs'
 const require = createRequire(import.meta.url)
 
-// @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-const walk = (d) => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)])) : [])
+const walk = (d: string): string[] => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)])) : [])
 const TEXT = /\.(md|json|yml|yaml|txt|csv)$/i
 
 /* what the deployment declared: 'git' (a repository is in the cycle) · 'off' (it is not) ·
@@ -54,12 +53,12 @@ export function cloudModeOf(root: any) {
   } catch { return 'undecided' }
 }
 
-export async function exportRows(root: any, rows: any, { dry = false, log = () => {}, under = 'content', mode = null } = {}) {
+export async function exportRows(root: any, rows: any, { dry = false, log = () => {}, under = 'content', mode = null }: { dry?: boolean, log?: (m: string) => void, under?: string, mode?: string | null } = {}) {
   const git = gitStore(root)
   const sb = rows.client
   /* the repository's own rules run only where there is one */
   const withRepo = (mode || cloudModeOf(root)) !== 'off'
-  const out = { written: [], updated: [], inserted: [], removedFiles: [], removedRows: [], assets: [], seeded: [] }
+  const out = { written: [] as any[], updated: [] as any[], inserted: [] as string[], removedFiles: [] as any[], removedRows: [] as any[], assets: [] as any[], seeded: [] as any[] }
   const { data, error } = await sb.from('content').select('path, text, pending, deleted_at, sha').like('path', under + '/%')
   if (error) throw error
   const byPath = new Map((data || []).map((r: any) => [r.path, r]))
@@ -67,7 +66,6 @@ export async function exportRows(root: any, rows: any, { dry = false, log = () =
   for (const r of data || []) {
     const file = await git.read(r.path)
     if (r.deleted_at) {
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
       if (r.pending && file != null) { out.removedFiles.push(r.path); if (!dry) await git.remove(r.path) }
       continue
     }
@@ -75,16 +73,12 @@ export async function exportRows(root: any, rows: any, { dry = false, log = () =
     if (file == null) {
       /* THE ROW IS WRITTEN OUT unless the repository is the record and has dropped the file. With no
          repository in the cycle the checkout never holds content, so a missing file means nothing. */
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
       if (r.pending || !withRepo) { out.written.push(r.path); if (!dry) await git.write(r.path, r.text) }
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
       else { out.removedRows.push(r.path); if (!dry) await sb.from('content').delete().eq('path', r.path) }
       continue
     }
     if (file === r.text) continue
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     if (r.pending || !withRepo) { out.written.push(r.path); if (!dry) await git.write(r.path, r.text) }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     else { out.updated.push(r.path); if (!dry) await rows.write(r.path, file, { ...metaOf(r.path, file), live: true, pending: false }) }
   }
   /* the files with no row — the repository's rule: a file it tracks is content the rows have not
@@ -96,19 +90,16 @@ export async function exportRows(root: any, rows: any, { dry = false, log = () =
     if (!TEXT.test(rel) || byPath.has(rel)) continue
     if (rel.startsWith('content/uploads/')) continue
     const text = fs.readFileSync(abs, 'utf8')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     out.inserted.push(rel)
     if (!dry) await rows.write(rel, text, { ...metaOf(rel, text), live: true, pending: false })
   }
   /* the assets the checkout lacks */
-  // @ts-expect-error TS7023, from the conversion: 'list' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-  const list = async (prefix) => { const { data: objs } = await sb.storage.from('content-assets').list(prefix, { limit: 1000 }); const files = []; for (const o of objs || []) { if (o.id) files.push(prefix + '/' + o.name); else files.push(...(await list(prefix + '/' + o.name))) } return files }
-  const inBucket = new Set()
+  const list = async (prefix: string): Promise<string[]> => { const { data: objs } = await sb.storage.from('content-assets').list(prefix, { limit: 1000 }); const files = []; for (const o of objs || []) { if (o.id) files.push(prefix + '/' + o.name); else files.push(...(await list(prefix + '/' + o.name))) } return files }
+  const inBucket = new Set<string>()
   for (const rel of await list(under)) {
     inBucket.add(rel)
     if (rel.split('/').pop() === '.keep') continue
     if (await git.exists(rel)) continue
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     out.assets.push(rel)
     if (!dry) { const bytes = await rows.getAsset(rel); if (bytes) await git.putAsset(rel, bytes) }
   }
@@ -118,12 +109,10 @@ export async function exportRows(root: any, rows: any, { dry = false, log = () =
     const have = new Set([...inBucket, ...(await list('public'))])
     for (const rel of trackedUnder(root, ['content/uploads', 'public'])) {
       if (have.has(rel)) continue
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
       out.seeded.push(rel)
       if (!dry) { const bytes = await git.getAsset(rel); if (bytes) await rows.putAsset(rel, bytes, mimeOf(rel)) }
     }
   }
-  // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
   log(`content-export: ${out.written.length} row(s) written out (pending edits), ${out.updated.length} row(s) brought to a newer file, ${out.inserted.length} file(s) made rows, ${out.removedFiles.length} file(s) removed, ${out.removedRows.length} row(s) removed, ${out.assets.length} asset(s) pulled, ${out.seeded.length} file(s) put in the bucket${dry ? ' — dry, nothing touched' : ''}`)
   return out
 }

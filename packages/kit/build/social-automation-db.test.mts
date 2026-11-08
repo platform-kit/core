@@ -5,7 +5,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (message: any) => console.log('social-automation-db: ' + message)
+const note = (message: string) => console.log('social-automation-db: ' + message)
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
 if (!url || !anon || !localStack()) {
@@ -19,11 +19,11 @@ if (!up) {
   process.exit(0)
 }
 
-const client = (key: any) => createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+const client = (key: string) => createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 const service = client(serviceKey())
 const auth = client(anon)
 const publisherClient = client(anon)
-const expectNoError = (label: any, result: any) => {
+const expectNoError = (label: string, result: any) => {
   if (result.error) throw new Error(`${label}: ${result.error.message}`)
   return result.data
 }

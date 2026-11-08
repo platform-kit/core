@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 import { seconds, spanWord, parseWhen, serialiseWhen, globToRegExp, pageMatches, holds, describeWhen } from '../src/lib/support/when.js'
 
 let n = 0
-const t = (name: any, fn: any) => { fn(); n++ }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; }) => { fn(); n++ }
 
 t('seconds', () => {
   assert.equal(seconds('30s'), 30); assert.equal(seconds('2m'), 120); assert.equal(seconds('1h'), 3600); assert.equal(seconds('45'), 45)
@@ -70,7 +70,7 @@ t('nested choices', () => {
   const body = 'Hi\n\n- I have questions about coaching\n  - how much does it cost?\n  - how long does it take?\n- I need support\n  - Something else.\n- Other'
   const r = splitChoices(body)
   assert.equal(r.text, 'Hi')
-  assert.deepEqual(r.choices.map((c: any) => [c.key, c.children.map((x: any) => x.key)]), [['i-have-questions-about-coaching', ['i-have-questions-about-coaching/how-much-does-it-cost', 'i-have-questions-about-coaching/how-long-does-it-take']], ['i-need-support', ['i-need-support/something-else']], ['other', []]])
+  assert.deepEqual(r.choices.map((c: any) => [c.key, c.children.map((x: { key: any; }) => x.key)]), [['i-have-questions-about-coaching', ['i-have-questions-about-coaching/how-much-does-it-cost', 'i-have-questions-about-coaching/how-long-does-it-take']], ['i-need-support', ['i-need-support/something-else']], ['other', []]])
   assert.equal(joinChoices(r.text, r.choices), body)
   assert.equal(findChoice(r.choices, 'i-need-support/something-else').text, 'Something else.')
   assert.equal(findChoice(r.choices, 'nope'), null)
@@ -127,11 +127,11 @@ t('anything said after it takes the offer off the table', () => {
   /* the default asks about the LAST line: once somebody has spoken, no set is live at all */
   assert.equal(offerOf([offer(), { id: 'm3', body: 'something else' }]), null)
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  assert.equal((offerOf([offer(), { id: 'm3', body: 'something else' }], { at: 'm2' }) as any).live, false)
+  assert.equal(offerOf([offer(), { id: 'm3', body: 'something else' }], { at: 'm2' }).live, false)
 })
 t('a withdrawn line said after it does not spend it', () => {
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  assert.equal((offerOf([offer(), { id: 'm3', body: 'oops', deleted_at: 'now' }], { at: 'm2' }) as any).live, true)
+  assert.equal(offerOf([offer(), { id: 'm3', body: 'oops', deleted_at: 'now' }], { at: 'm2' }).live, true)
 })
 t('a message with no choices offers nothing', () => {
   assert.equal(offerOf([{ id: 'm2', body: 'just words' }]), null)

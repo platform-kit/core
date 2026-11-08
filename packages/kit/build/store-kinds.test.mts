@@ -18,7 +18,7 @@ import { kinds, kindOf, checkKind, unmet, ready } from './kinds/index.js'
 const KIT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
 
 console.log('\nA KIND REACHES THE STORE THROUGH TWO SLOTS\n')
 
@@ -28,27 +28,24 @@ const framed = {
   key: 'framed-print',
   name: 'A framed print',
   produces: ['artwork', 'mount'],
-  async options(offer: any) {
+  async options(offer: { sku?: string }) {
     return [
       { name: 'Size', values: [{ value: 'a4' }, { value: 'a3' }, { value: 'a2' }] },
       { name: 'Frame', values: [{ value: 'oak' }, { value: 'black' }] },
     ]
   },
-  async artefacts(variant: any) {
+  async artefacts(variant: { sku: any; option_values?: any }) {
     return { artwork: `art/${variant.sku}.tif`, mount: variant.option_values?.Size === 'a2' ? 'wide' : 'standard' }
   },
 }
 
 /* ---- the registry ---- */
 {
-  // @ts-expect-error TS2322, from the conversion: Type '{ key: string; name: string; produces: string[]; options(offer: any): Promise<{ name: string; values: { value: string; }[]; }[]>; arte
   const all = kinds([framed])
   ok('a site\'s own kind is registered beside the kit\'s', all.length >= 1 && !!kindOf(all, 'framed-print'))
   ok('an unknown key is null, never a throw', kindOf(all, 'nothing-like-this') === null)
-  // @ts-expect-error TS2322, from the conversion: Type '{ key: string; name: string; produces: string[]; options(offer: any): Promise<{ name: string; values: { value: string; }[]; }[]>; arte
   ok('no kind is registered twice', (() => { try { kinds([framed, { ...framed }]); return false } catch (e: any) { return /two kinds are called/.test(e.message) } })())
   ok('a kind that does not keep the shape is refused BY NAME', (() => {
-    // @ts-expect-error TS2322, from the conversion: Type '{ key: string; produces: never[]; }' is not assignable to type 'never'.
     try { kinds([{ key: 'broken', produces: [] }]); return false } catch (e: any) { return /broken/.test(e.message) && /options/.test(e.message) }
   })())
 }
@@ -127,7 +124,7 @@ const framed = {
   ok('a shop\u2019s own axis is left alone', checkValues([{ name: 'Gift wrap', values: ['yes'] }], AXES) === null)
 
   /* ── the three places, each asking the same function ── */
-  const files = (rel: any) => fs.readFileSync(path.join(KIT, rel), 'utf8')
+  const files = (rel: string) => fs.readFileSync(path.join(KIT, rel), 'utf8')
   ok('AT THE BUILD: the catalog asks it', /checkBlueprint/.test(files('build/catalog.mts')))
   ok('AT THE SAVE: the products model asks it', /checkBlueprint/.test(files('build/models/core/collections.mts')))
   ok('AT THE TILL: the checkout refuses a type that is not the supplier\u2019s',
@@ -158,7 +155,7 @@ const framed = {
  * down, for a fact that changes once a month.
  */
 {
-  const reads = (rel: any) => { try { return fs.readFileSync(path.join(KIT, rel), 'utf8') } catch { return '' } }
+  const reads = (rel: string) => { try { return fs.readFileSync(path.join(KIT, rel), 'utf8') } catch { return '' } }
   /* what runs when somebody asks for a page or buys something */
   const RUNTIME = [
     'supabase/functions/create-checkout-session/index.ts',

@@ -7,7 +7,7 @@ import { loadSite } from './site.mjs'
 import { loadTheme } from './theme.mjs'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 
 /* the grammar */
 const g = parseGroups(`---\nscope: x\n---\n\n## hero\n\n### title Named\nlabel: Hello\nnote: one\n\n### cta\nlabel: Go\n\n## foot\n\n### line\ntext: bye\n`)
@@ -36,11 +36,11 @@ ok('every theme scope is in the merged collection', Object.keys(T).every((s) => 
 ok('every site scope is in the merged collection', Object.keys(S).every((s) => byScope[s]))
 let lost = []
 // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: { [s: string]: unknown; } | ArrayLike<unknown>): [string, unknown][]', gave the followi
-for (const [scope, t] of Object.entries(T)) for (const [gk, keys] of Object.entries((t as any).groups)) for (const [k, fields] of Object.entries(keys)) for (const f of Object.keys(fields)) if (!(byScope[scope].groups[gk] && byScope[scope].groups[gk][k] && f in byScope[scope].groups[gk][k])) lost.push(`${scope}.${gk}.${k}.${f}`)
+for (const [scope, t] of Object.entries(T)) for (const [gk, keys] of Object.entries(t.groups)) for (const [k, fields] of Object.entries(keys)) for (const f of Object.keys(fields)) if (!(byScope[scope].groups[gk] && byScope[scope].groups[gk][k] && f in byScope[scope].groups[gk][k])) lost.push(`${scope}.${gk}.${k}.${f}`)
 ok(`no field of the theme's defaults is lost in the merge${lost.length ? ' — ' + lost.slice(0, 5).join(' ') : ''}`, lost.length === 0)
 let overwritten = []
 // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: { [s: string]: unknown; } | ArrayLike<unknown>): [string, unknown][]', gave the followi
-for (const [scope, s] of Object.entries(S)) for (const [gk, keys] of Object.entries((s as any).groups)) for (const [k, fields] of Object.entries(keys)) for (const [f, v] of Object.entries(fields)) if (byScope[scope].groups[gk][k][f] !== v) overwritten.push(`${scope}.${gk}.${k}.${f}`)
+for (const [scope, s] of Object.entries(S)) for (const [gk, keys] of Object.entries(s.groups)) for (const [k, fields] of Object.entries(keys)) for (const [f, v] of Object.entries(fields)) if (byScope[scope].groups[gk][k][f] !== v) overwritten.push(`${scope}.${gk}.${k}.${f}`)
 ok(`no word of the site's is overwritten by a default${overwritten.length ? ' — ' + overwritten.slice(0, 5).join(' ') : ''}`, overwritten.length === 0)
 const spacesRail = byScope.spaces.groups.rail.main
 ok('the Spaces rail names Social Comments and Social Messages separately',

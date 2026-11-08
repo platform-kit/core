@@ -3,7 +3,7 @@ import { coachingOf, pipeSiteConfigSource, publicSite } from './site.mjs'
 import { guestEmail, guestSessionSku, mayBookAsGuest } from '../supabase/functions/_shared/sessions/guest-booking.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, condition: any) => {
+const ok = (name: string, condition: boolean) => {
   if (condition) pass++
   else { fail++; console.log('  FAIL  ' + name) }
 }
@@ -27,7 +27,7 @@ ok('guest booking requires both site opt-in and a public session rule',
 ok('guest emails are trimmed and normalized before validation',
   guestEmail('  Reader+session@Example.COM ') === 'reader+session@example.com'
     && guestEmail('not-an-email') === null && guestEmail('') === null && guestEmail(null) === null)
-const offerOf = (sku: any) => sku === 'public-session' ? { kind: 'session' } : sku === 'book' ? { kind: 'book' } : null
+const offerOf = (sku: string) => sku === 'public-session' ? { kind: 'session' } : sku === 'book' ? { kind: 'book' } : null
 ok('guest Checkout accepts one eligible paid-session offer with a selected booking',
   guestSessionSku([{ sku: 'public-session', quantity: 1 }], { event: 'one-on-one', start: '2030-01-01T10:00:00Z' }, false, offerOf) === 'public-session')
 ok('guest Checkout refuses absent booking details, mixed lines, multiple units, and non-session offers',

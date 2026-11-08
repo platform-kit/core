@@ -21,7 +21,7 @@ import { supabaseUrl, localStack } from './tts/storage.mjs'
 import { leave, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('checkout-tamper: ' + m)
+const note = (m: string) => console.log('checkout-tamper: ' + m)
 if (process.env.CHECKOUT_TAMPER_TEST === '0') { note('skipped (CHECKOUT_TAMPER_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
@@ -37,18 +37,18 @@ if (!/^sk_test_/.test(sk) || /^(1|true|yes|on)$/i.test(process.env.STRIPE_MOCK |
   if (!offers.notebook) { notHere('checkout-tamper', 'the site does not sell the demo\'s notebook, whose variants these checks read'); process.exit(0) }
 }
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
-const as = async (email: any) => { const c = createClient<Database>(url, anonKey, O); const { data, error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : data.session.access_token }
+const as = async (email: string) => { const c = createClient<Database>(url, anonKey, O); const { data, error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : data.session.access_token }
 const made: any = []
-const checkout = async (body: any, token: any) => {
+const checkout = async (body: { items: { sku: string; variant: string; quantity: number; price: number; unit_amount: number; amount: number; currency: string; discount: number }[]|{ sku: string; variant: string; quantity: number }[]|{ sku: string; variant: string; quantity: number }[]|{ sku: string; variant: string; quantity: number }[]|{ sku: string; variant: string; quantity: number }[]|{ sku: string; variant: string; quantity: number }[]|{ sku: string; variant: string; quantity: number }[]|{ sku: string; variant: string; quantity: number }[]|{ sku: string; variant: string; quantity: number }[]|{ sku: string; quantity: number }[]; country?: string; currency?: string; amount?: number; discount?: number; promotion?: string; customer?: { class: string; tiers: string[] }|{ class: string }; shipping?: { amount: number; level: string }; shipping_rate?: number }, token: string|null) => {
   const r = await fetch(`${url}/functions/v1/create-checkout-session`, { method: 'POST', headers: { apikey: anonKey, 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) }, body: JSON.stringify(body) })
   const data = await r.json().catch(() => ({}))
   const id = data.checkoutId || /\/(cs_test_[A-Za-z0-9]+)/.exec(String(data.url || ''))?.[1]
   if (id) made.push(id)
   return { status: r.status, data, id }
 }
-const stripe = async (path: any, method = 'GET') => (await fetch('https://api.stripe.com/v1/' + path, { method, headers: { authorization: 'Bearer ' + sk } })).json()
+const stripe = async (path: string, method = 'GET') => (await fetch('https://api.stripe.com/v1/' + path, { method, headers: { authorization: 'Bearer ' + sk } })).json()
 const sessionOf = (id: any) => stripe(`checkout/sessions/${id}?expand[]=line_items&expand[]=shipping_options.shipping_rate`)
 
 const member = await as('member@example.com'), free = await as('free@example.com')
@@ -69,7 +69,7 @@ try {
     ok('…at the offer\'s own price', line?.price?.unit_amount === 2800 || line?.amount_subtotal === 2800, JSON.stringify(line?.price?.unit_amount ?? line))
     ok('…in the offer\'s own currency', s.currency === 'usd', s.currency)
     ok('…with no discount the request asked for', (s.total_details?.amount_discount ?? 0) === 0, JSON.stringify(s.total_details))
-    const rates = (s.shipping_options || []).map((o: any) => o.shipping_rate?.fixed_amount?.amount).sort((a: any, b: any) => a - b)
+    const rates = (s.shipping_options || []).map((o: { shipping_rate: { fixed_amount: { amount: any } } }) => o.shipping_rate?.fixed_amount?.amount).sort((a: number, b: number) => a - b)
     ok('…and the destination\'s shipping rates, not the request\'s', rates.length > 0 && rates[0] === 500 && !rates.includes(0), JSON.stringify(rates))
   }
 

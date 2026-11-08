@@ -92,10 +92,10 @@ const vapidPair = () => {
   return { VAPID_PUBLIC_KEY: ecdh.getPublicKey().toString('base64url'), VAPID_PRIVATE_KEY: Buffer.concat([Buffer.alloc(32), ecdh.getPrivateKey()]).subarray(-32).toString('base64url'), VAPID_SUBJECT: 'mailto:test@example.com' }
 }
 const readEnv = (file: any) => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '')
-const parseEnv = (text: string) => Object.fromEntries(text.split('\n').map((l: string) => /^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/.exec(l)).filter(Boolean).map((m: any) => [m[1], m[2].replace(/^["']|["']$/g, '')]))
+const parseEnv = (text: string): Record<string, string> => Object.fromEntries(text.split('\n').map((l: string) => /^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)\s*$/.exec(l)).filter(Boolean).map((m: any) => [m[1], m[2].replace(/^["']|["']$/g, '')]))
 
 const children = new Set()
-const stacks = new Set()
+const stacks = new Set<string>()
 const sb = (workdir: string, a: string[], opts = {}) => spawnSync('npx', ['supabase', ...a, '--workdir', workdir], { cwd: workdir, encoding: 'utf8', timeout: 600000, ...opts })
 /*
  * EVERY RUN'S DATA IS NEW; ITS DEPENDENCIES ARE NOT. A stack is stopped with its volumes, and then every one of them is
@@ -203,8 +203,7 @@ async function runSite(site: any, reserved: any) {
        without one fails here rather than passing with its payments unchecked */
     const PAY = ['STRIPE_SECRET_KEY', 'STRIPE_PUBLISHABLE_KEY', 'VITE_STRIPE_PUBLISHABLE_KEY']
     const workspaceEnv = parseEnv(readEnv(path.join(ROOT, '.env'))), siteEnv = parseEnv(base)
-    const pay = Object.fromEntries(PAY.map((k) => [k, process.env[k] || siteEnv[k] || workspaceEnv[k] || '']).filter(([, v]) => v))
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+    const pay: Record<string, string> = Object.fromEntries(PAY.map((k) => [k, process.env[k] || siteEnv[k] || workspaceEnv[k] || '']).filter(([, v]) => v))
     for (const [k, v] of Object.entries(pay)) if (LIVE.test(v)) throw new Error(`${k} is a live payment key — the end-to-end run never starts with one`)
     const manifests = await moduleSet(site.config)
     const paysByStripe = paymentProviderIdOf(site.config) === 'stripe' && [...manifests.values()].some((m) => (m.owns.env || []).includes('STRIPE_SECRET_KEY') && site.config.modules?.[m.key] !== false)

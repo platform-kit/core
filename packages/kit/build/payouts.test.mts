@@ -20,7 +20,7 @@ import { TRIGGERS, AMOUNTS, ruleFault, amountOf, payableAt, reversalOf, balanceO
 import { payoutStatusIsSettled } from '../supabase/functions/_shared/payment-provider.mjs'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nPAYOUTS\n')
 

@@ -158,8 +158,7 @@ export function writeModel(m: any) {
   const d = m.deliver || {}
   if (d.pages || d.json || d.section) { data.deliver = {}; for (const k of ['pages', 'json', 'section']) if (d[k]) data.deliver[k] = true }
   data.fields = (m.fields || []).map(fieldOut)
-  // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'lineWidth' does not exist in type 'GrayMatterOption<string, GrayMatterOption<string, 
-  return matter.stringify('', data, { lineWidth: -1 })
+  return matter.stringify('', data, { lineWidth: -1 } as { lineWidth: number } & matter.GrayMatterOption<string, never>)
 }
 
 /* ---- the set ---- */

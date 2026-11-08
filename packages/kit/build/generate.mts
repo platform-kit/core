@@ -184,10 +184,8 @@ function templateDir(level: any, kind: any, siteRoot: any) {
   if (level === 'site' && own && fs.existsSync(own)) return own
   return path.join(HERE, 'generators', level, kind)
 }
-// @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-function walk(dir, base = dir) {
+function walk(dir: string, base = dir): string[] {
   if (!fs.existsSync(dir)) return []
-  // @ts-expect-error TS7024, from the conversion: Function implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one 
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const f = path.join(dir, e.name)
     return e.isDirectory() ? walk(f, base) : [path.relative(base, f)]
@@ -262,11 +260,10 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
     if (kind === 'step') edits.push({ path: cfg, what: `build.steps += './build/steps/${name}.mjs'`, apply: (t: any) => pushIn(t, ['build', 'steps'], `'./build/steps/${name}.mjs'`) })
   }
 
-  if (level === 'core') {
+  if (level === 'core' && ws) {   /* ws is the checkout: core was refused above without one */
     /* a file of the kit's build by the name a site has, or — kept as TypeScript in the source — its .mts */
     const B = (f: any) => { const p = path.join(kitRoot, 'build', f); const t = p.replace(/\.(m?)js$/, '.$1ts'); return !fs.existsSync(p) && fs.existsSync(t) ? t : p }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-    const D = (f) => path.join(ws, 'sites', 'docs', 'content', 'docs', f)
+    const D = (f: string) => path.join(ws, 'sites', 'docs', 'content', 'docs', f)
     if (kind === 'module') {
       edits.push({ path: kitMods, what: `MODULES += ${name}`, apply: async (t: any) => { const a = await namedArray(t, 'MODULES'); return a ? appendRaw(t, a, fragment(dir, '_entry.js.tmpl', v)) : null } })
       /* the module pages list every module: the modules table and the config's modules row */
@@ -300,9 +297,7 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
       } })
     }
     /* the docs page that names every new file, or the docs check refuses them */
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-    const sources = writes.map((w) => path.relative(ws, w.path).split(path.sep).join('/'))
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
+    const sources = writes.map((w: { path: string }) => path.relative(ws, w.path).split(path.sep).join('/'))
     const page = path.join(ws, 'sites', 'docs', 'content', 'docs', 'building-a-site', `${owner || name}.md`)
     if (fs.existsSync(page)) edits.push({ path: page, what: `its sources += ${sources.join(', ')}`, apply: (t: any) => { const m = /^sources:\s*\[([\s\S]*?)\]/m.exec(t); if (!m) return null; const inner = m[1].replace(/[\s,]+$/, ''); return t.slice(0, m.index) + `sources: [${inner}${inner.trim() ? ', ' : ''}${sources.join(', ')}]` + t.slice(m.index + m[0].length) } })
     else writes.push({ path: page, text: fill(fs.readFileSync(path.join(HERE, 'generators', 'core', '_docs', 'page.md.tmpl'), 'utf8'), { ...v, sources: sources.join(', ') }) })

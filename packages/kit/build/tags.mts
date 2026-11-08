@@ -56,15 +56,12 @@ export async function freeTagging(store: any) { return (await readTags(store)).f
  */
 export async function learnTags(store: any, values: any) {
   const s = asStore(store)
-  const want = [...new Set((values || []).map(normalise).filter(Boolean))]
+  const want = [...new Set<string>((values || []).map(normalise).filter(Boolean))]
   const rec = await readTags(s)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
   const unknown = want.filter((v) => !rec.tags.includes(v))
   if (!unknown.length) return { values: want, added: [], refused: [] }
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
   if (!rec.free) return { values: want.filter((v) => rec.tags.includes(v)), added: [], refused: unknown }
   const tags = [...rec.tags, ...unknown].sort((a: any, b) => a.localeCompare(b))
-  // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'lineWidth' does not exist in type 'GrayMatterOption<string, GrayMatterOption<string, 
-  await s.write(TAGS_PATH, matter.stringify('\n' + String(rec.content || '').replace(/^\n+/, ''), { ...rec.data, tags }, { lineWidth: -1 }))
+  await s.write(TAGS_PATH, matter.stringify('\n' + String(rec.content || '').replace(/^\n+/, ''), { ...rec.data, tags }, { lineWidth: -1 } as { lineWidth: number } & matter.GrayMatterOption<string, never>))
   return { values: want, added: unknown, refused: [] }
 }

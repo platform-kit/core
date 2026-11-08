@@ -4,7 +4,7 @@
 import { mayInterrupt, newPageView, claimCorner, releaseCorner, cornerHolder, cornerFree, QUIET } from '../src/lib/interrupt.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nINTERRUPT\n')
 
@@ -22,11 +22,8 @@ ok('a path that is not a path is never interrupted', mayInterrupt('') === false 
 ok('a page merely beginning with a quiet word is not quiet', mayInterrupt('/applications') === true && mayInterrupt('/apps') === true)
 ok('and /spaces-of-the-sea is a page like any other', mayInterrupt('/spaces-of-the-sea') === true)
 ok('the quiet list is the one the module publishes', QUIET.includes('/admin') && QUIET.includes('/app') && QUIET.includes('/spaces') && QUIET.includes('/feed') && QUIET.includes('/p') && QUIET.includes('/checkout/'))
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
 ok('the configured community prefix is quiet', mayInterrupt('/community/coaching', ['/community']) === false)
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
 ok('a configured community prefix does not catch a neighboring route', mayInterrupt('/community-life/story', ['/community']) === true)
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
 ok('a custom community path is quiet', mayInterrupt('/our-community/social/notifications', ['/our-community']) === false)
 // @ts-expect-error TS2322, from the conversion: Type 'null' is not assignable to type 'never'.
 ok('invalid custom prefixes are ignored', mayInterrupt('/pricing', [null, 'community', 3]) === true)

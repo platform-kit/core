@@ -56,10 +56,9 @@ export function validateBlock(root: string|undefined, title: any, pr: { [x: stri
   for (const k of ['cloth', 'foil', 'trim', 'paper']) if (has(pr[k]) && !CHOICES[k].includes(pr[k])) out.push({ path: k, message: `${k} is one of ${CHOICES[k].join(' · ')}` })
   /* who prints each format, and each printer's options against what it offers */
   const printers = pr.printers && typeof pr.printers === 'object' ? pr.printers : {}
-  for (const [f, id] of Object.entries(printers)) {
+  for (const [f, id] of Object.entries(printers as Record<string, string | null>)) {
     if (!PRINTED.includes(f)) { out.push({ path: 'printers.' + f, message: `a printed format is one of ${PRINTED.join(' · ')}` }); continue }
     if (id === 'auto' || id == null || id === '') continue
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{}' is not assignable to parameter of type 'string'.
     if (!PRINTERS.includes(id)) { out.push({ path: 'printers.' + f, message: `a printer is one of ${PRINTERS.join(' · ')}, or auto` }); continue }
     if (!printer(id).formats.includes(f)) out.push({ path: 'printers.' + f, message: `${printer(id).name} does not make a ${f}` })
   }

@@ -4,12 +4,12 @@
 import { occurrences, nextAfter, describe, problems, spanMs, instantOf } from '../src/lib/recurrence.js'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const at = (s: any) => Date.parse(s)
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const at = (s: string) => Date.parse(s)
 /* an occurrence as the clock in its own zone reads it, which is the only reading that matters */
-const said = (ms: any, zone: any) => new Date(ms).toLocaleString('en-GB', { timeZone: zone, weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
-const list = (r: any, from: any, to: any, zone = r.zone || 'UTC') =>
-  occurrences(r, { from: at(from), to: at(to) }).map((o: any) => said(o.start, zone))
+const said = (ms: string|number|Date, zone: any) => new Date(ms).toLocaleString('en-GB', { timeZone: zone, weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
+const list = (r: { every?: string; on?: string|string[]|{ nth: number; day: string; }[]|{ nth: number; day: string; }[]|{ date: number; }[]|{ date: number; }[]|{ date: number; month: string; }[]; at?: string; zone?: any; lasts?: string; interval?: number; from?: string; except?: string[]; }, from: string, to: string, zone = r.zone || 'UTC') =>
+  occurrences(r, { from: at(from), to: at(to) }).map((o: { start: any; }) => said(o.start, zone))
 
 /* ---- a span ---- */
 ok('minutes', spanMs('90m') === 5400000)
@@ -28,14 +28,14 @@ ok('a sound rule has nothing wrong with it', problems({ every: 'week', on: ['tue
   const r = { every: 'week', on: ['tuesday'], at: '19:00', zone: 'Europe/London', lasts: '90m' }
   const got = list(r, '2026-03-01T00:00:00Z', '2026-04-01T00:00:00Z')
   ok('every Tuesday in March', got.length === 5, got.join(' | '))
-  ok('and each is a Tuesday at seven by its own clock', got.every((s: any) => /^Tue/.test(s) && /19:00/.test(s)), got[0])
+  ok('and each is a Tuesday at seven by its own clock', got.every((s: string) => /^Tue/.test(s) && /19:00/.test(s)), got[0])
   /* the clocks went forward on 29 March 2026: seven o'clock is seven o'clock on both sides of it */
   const across = list(r, '2026-03-20T00:00:00Z', '2026-04-10T00:00:00Z')
-  ok('a spring forward does not move the hour', across.every((s: any) => /19:00/.test(s)), across.join(' | '))
+  ok('a spring forward does not move the hour', across.every((s: string) => /19:00/.test(s)), across.join(' | '))
   const utc = occurrences(r, { from: at('2026-03-20T00:00:00Z'), to: at('2026-04-10T00:00:00Z') })
   ok('…which means the instant DOES move, by the hour the clocks did',
     new Date(utc[0].start).getUTCHours() === 19 && new Date(utc[utc.length - 1].start).getUTCHours() === 18,
-    utc.map((o: any) => new Date(o.start).toISOString()).join(' | '))
+    utc.map((o: { start: string|number|Date; }) => new Date(o.start).toISOString()).join(' | '))
   ok('an occurrence knows when it ends', utc[0].end - utc[0].start === 5400000)
 }
 
@@ -76,7 +76,7 @@ ok('weekends is two', list({ every: 'week', on: 'weekends', at: '09:00' }, '2026
     { from: at('2026-06-01T00:00:00Z'), to: at('2027-01-01T00:00:00Z') })
   ok('so does a date', until.length === 5, String(until.length))
   const skipped = list({ every: 'day', at: '09:00', except: ['2026-06-03'] }, '2026-06-01T00:00:00Z', '2026-06-06T00:00:00Z')
-  ok('a day it does not happen is left out', skipped.length === 4 && !skipped.some((s: any) => s.includes('03 Jun')), skipped.join(' | '))
+  ok('a day it does not happen is left out', skipped.length === 4 && !skipped.some((s: string|string[]) => s.includes('03 Jun')), skipped.join(' | '))
 }
 
 /* ---- the window ---- */

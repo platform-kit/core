@@ -29,8 +29,7 @@ export function gitStore(root = process.cwd()) {
     async remove(rel: string) { try { await fs.unlink(abs(rel)) } catch (e: any) { if (e.code !== 'ENOENT') throw e } },
     async rename(from: string, to: string) { const t = abs(to); if (fsSync.existsSync(t)) throw Object.assign(new Error('an entry with that slug exists'), { code: 409 }); await fs.mkdir(path.dirname(t), { recursive: true }); await fs.rename(abs(from), t) },
     async list(dir: string, { ext = 'md', deep = false } = {}) {
-      // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-      const walk = (d, base) => {
+      const walk = (d: string, base: string): string[] => {
         let entries = []
         try { entries = fsSync.readdirSync(d, { withFileTypes: true }) } catch { return [] }
         const out = []

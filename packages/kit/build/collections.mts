@@ -161,7 +161,7 @@ export async function collectionsConfig(root = process.cwd()) {
  * its singles and drops everything unpublished. Nothing downstream can tell which engine ran:
  * `#content` still resolves to `.velite`, and `entry.js` still reads the same fields.
  */
-export async function buildCollections({ root = process.cwd(), log = () => {} } = {}) {
+export async function buildCollections({ root = process.cwd(), log = () => {} }: { root?: string, log?: (m: string) => void } = {}) {
   const began = Date.now()
   for (const k of Object.keys(HELD)) delete HELD[k]
   ISSUES.length = 0
@@ -186,9 +186,7 @@ export async function buildCollections({ root = process.cwd(), log = () => {} } 
   if (typeof cfg.prepare === 'function') await cfg.prepare(data, { config: cfg })
   fs.mkdirSync(cfg.out, { recursive: true })
   for (const [key, rows] of Object.entries(data)) fs.writeFileSync(resolve(cfg.out, key + '.json'), JSON.stringify(rows, null, 2))
-  // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
   if (ISSUES.length) log('[collections] issues:\n  ' + ISSUES.join('\n  '))
-  // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
   log(`[collections] ${Object.keys(data).length} collection(s) in ${Date.now() - began}ms`)
   return { ms: Date.now() - began, collections: Object.keys(data).length }
 }
@@ -239,7 +237,7 @@ export async function engineFor(root = process.cwd(), env = process.env) {
     const mod = await import(/* @vite-ignore */ pathToFileURL(resolve(root, site.content.engine)).href)
     const build = mod.build || mod.default
     if (typeof build !== 'function') throw new Error(`content.engine (${site.content.engine}) exports no build({ root, config, log })`)
-    return { name: 'site:' + site.content.engine, build: async ({ root: r = root, log = () => {} } = {}) => build({ root: r, config: await veliteConfig(r), log }) }
+    return { name: 'site:' + site.content.engine, build: async ({ root: r = root, log = (_m: string) => {} }: { root?: string, log?: (m: string) => void } = {}) => build({ root: r, config: await veliteConfig(r), log }) }
   }
   return { name: 'velite', build: async () => { const { build } = await import('velite'); await build({ clean: true }) } }
 }

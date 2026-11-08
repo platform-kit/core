@@ -59,9 +59,8 @@ async function call(action: string, body = {}, file: any = null) {
   const headers: any = {}
   const t = getToken()
   if (t) headers['x-support-token'] = t
-  let payload = { action, path: location.pathname, anon_id: anonId(), ...body }
+  let payload: Record<string, unknown> | FormData = { action, path: location.pathname, anon_id: anonId(), ...body }
   /* a file goes up as a form; supabase-js sends a FormData as multipart */
-  // @ts-expect-error TS2739, from the conversion: Type 'FormData' is missing the following properties from type '{ action: any; path: string; anon_id: any; }': action, path, anon_id
   if (file) { const fd = new FormData(); for (const [k, v] of Object.entries(payload)) if (v != null) fd.append(k, String(v)); fd.append('file', file, file.name || 'file'); payload = fd }
   const { data, error } = await (supabase as any).functions.invoke('support', { body: payload, headers })
   if (error) {
@@ -231,8 +230,7 @@ export async function send(body: any, { prompt_id, choice, offer, text: shown }:
     thread.conversation = r.conversation
     const c = conversations.value.find((x: { id: any }) => x.id === thread.id)
     if (c) { const last = (r.extra || [])[0] || r.message; c.last = last; c.last_message_at = last.created_at; c.status = r.conversation.status }
-    // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-    conversations.value = conversations.value.slice().sort((a, b) => new Date(b.last_message_at || b.created_at) - new Date(a.last_message_at || a.created_at))
+    conversations.value = conversations.value.slice().sort((a: { last_message_at: any; created_at: any }, b: { last_message_at: any; created_at: any }) => new Date(b.last_message_at || b.created_at).getTime() - new Date(a.last_message_at || a.created_at).getTime())
     return r.message.id
   } catch (e: any) {
     thread.messages = thread.messages.filter((m: { id: string }) => m.id !== row.id)
@@ -336,7 +334,6 @@ watch(session, (s, was) => { if (s && !was && booted.value) refreshList() })
 /* signing out leaves the device as a fresh guest: no threads, no token (a linked account's token is
    already gone; one that never linked goes too — the next person here must not find the last one's
    conversations), nothing that says there is history; auth.js then resets the store and reloads */
-// @ts-expect-error TS2345, from the conversion: Argument of type '() => void' is not assignable to parameter of type 'never'.
 beforeSignOut.push(forget)
 /*
  * The other half — and it is NOT forget(), which would be a bug.

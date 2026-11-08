@@ -3,7 +3,7 @@
 import { printSpec, formatOffers } from '../src/lib/print-offers.js'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + detail : '')) } }
 
 const block = { key: 'a1b2c3d4', rights: 'Public domain.', contents: ['full', 'summary', 'parts'], formats: { softcover: 20, pdf: 5 } }
 const book = { slug: 'probe', print: block }

@@ -25,7 +25,7 @@ for (const name of readdirSync(dir).filter((n) => n.endsWith('.md') && n !== 're
   const parts = raw.split(/^---\r?\n[\s\S]*?\r?\n---\r?\n/m)   /* frontmatter off; keys live in the body */
   const fmEnd = raw.length - (parts[1] || '').length
   const head = raw.slice(0, fmEnd), body = raw.slice(fmEnd)
-  const used = new Set(); if (!ALL) for (const m of body.matchAll(/\{#([A-Za-z0-9._-]+)\}/g)) used.add(m[1])
+  const used = new Set<string>(); if (!ALL) for (const m of body.matchAll(/\{#([A-Za-z0-9._-]+)\}/g)) used.add(m[1])
   const fresh = () => { let k; do { k = randomUUID().replace(/-/g, '').slice(0, 8) } while (used.has(k)); used.add(k); return k }
   let movement: any = null, tier = 0, stamped = 0
   const out = body.split('\n').map((line) => {

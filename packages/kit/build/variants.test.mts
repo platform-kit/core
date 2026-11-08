@@ -21,7 +21,7 @@ import { variantOf } from '../src/lib/print-offers.js'
 import { loadSite } from './site.mjs'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
+const ok = (msg: string, cond: any, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
 
 console.log('\nOPTIONS IN, VARIANTS OUT\n')
 
@@ -101,11 +101,11 @@ ok('a slug is stable', slug('Deep Navy') === slug('deep navy'))
     unit_amount: offer.variants[v.variant] ? Math.round(offer.variants[v.variant].price * 100) : Math.round(offer.price * 100),
   }))
   ok('six variants', made.length === 6)
-  ok('a variant with no price of its own takes the offer\'s', made.find((v: any) => v.variant === 's.black').unit_amount === 2500)
-  ok('and one with its own takes that', made.find((v: any) => v.variant === 'l.black').unit_amount === 3000)
-  ok('an unsold combination is present and marked, not missing', made.find((v: any) => v.variant === 's.white').sold === false)
-  ok('every lookup key hangs off the offer\'s own, which never changes', made.every((v: any) => v.key.startsWith('abcd1234.')))
-  ok('every lookup key is distinct', new Set(made.map((v: any) => v.key)).size === 6)
+  ok('a variant with no price of its own takes the offer\'s', made.find((v: { variant: string }) => v.variant === 's.black').unit_amount === 2500)
+  ok('and one with its own takes that', made.find((v: { variant: string }) => v.variant === 'l.black').unit_amount === 3000)
+  ok('an unsold combination is present and marked, not missing', made.find((v: { variant: string }) => v.variant === 's.white').sold === false)
+  ok('every lookup key hangs off the offer\'s own, which never changes', made.every((v: { key: string }) => v.key.startsWith('abcd1234.')))
+  ok('every lookup key is distinct', new Set(made.map((v: { key: any }) => v.key)).size === 6)
 }
 
 /*
@@ -155,7 +155,7 @@ const printOn = (await loadSite(process.cwd())).modules.print !== false
 const inPrint = printOn ? (books || []).filter((b) => b && b.print && b.published !== false) : []
 
 /* print's options, derived from the block rather than typed a second time */
-const optionsOfPrintBlock = (p: any) => [
+const optionsOfPrintBlock = (p: { contents: string|any[]; cloth: string|any[]; foil: string|any[] }) => [
   { name: 'Contents', values: p.contents && p.contents.length ? p.contents : ['parts'] },
   ...(Array.isArray(p.cloth) && p.cloth.length ? [{ name: 'Cloth', values: p.cloth }] : []),
   ...(Array.isArray(p.foil) && p.foil.length ? [{ name: 'Foil', values: p.foil }] : []),

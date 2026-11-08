@@ -10,7 +10,7 @@
 import { SOURCES, sourceOf, configuredSources, missingFor, assetName } from './images/index.js'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 
 /* ---- the shape every source wears ---- */
 ok('there is at least one source', SOURCES.length > 0)
@@ -90,8 +90,8 @@ if (unsplash) {
        terms — a pick that skipped it would be a licence breach, so it is a test and not a comment. */
     const before = calls.length
     const taken = await unsplash.take(got.results[0], { env: env2 })
-    const after: any = calls.slice(before)
-    ok('choosing hits the download endpoint first', after[0] && after[0].url.includes('/download'), JSON.stringify(after.map((c: any) => c.url)))
+    const after = calls.slice(before)
+    ok('choosing hits the download endpoint first', after[0] && after[0].url.includes('/download'), JSON.stringify(after.map((c: { url: any; }) => c.url)))
     ok('the download is counted as us', after[0] && after[0].auth.includes('Client-ID'))
     ok('then the bytes come back with their type', taken.bytes.length === 3 && taken.type === 'image/jpeg')
     ok('the credit travels with the picture', taken.credit && taken.credit.name === 'A Photographer')

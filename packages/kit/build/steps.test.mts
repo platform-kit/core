@@ -31,7 +31,7 @@ t('the kit declares every step it should, keys unique, phases valid, run a funct
   assert.equal(STEPS.length, KIT_STEPS)
   assert.equal(new Set(STEPS.map((s) => s.key)).size, KIT_STEPS)
   for (const s of STEPS) { assert.ok(PHASES.includes(s.phase), s.key); assert.equal(typeof s.run, 'function', s.key); assert.ok(s.title, s.key) }
-  assert.ok(((STEPS as any).find((s: any) => s.key === 'tts') as any).needs.packages.includes('onnxruntime-node'))
+  assert.ok((STEPS as any).find((s: any) => s.key === 'tts').needs.packages.includes('onnxruntime-node'))
 })
 t('every phase of the kit orders, and the order respects every after', () => {
   const all = STEPS.map(norm)

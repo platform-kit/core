@@ -16,7 +16,8 @@
 import matter from 'gray-matter'
 import { createHash } from 'node:crypto'
 
-const DUMP = { lineWidth: -1 }
+/* js-yaml's dump option: gray-matter hands its options to the yaml engine, but declares only its own */
+const DUMP = { lineWidth: -1 } as { lineWidth: number } & matter.GrayMatterOption<string, never>
 import { areaKeys } from './quiz-io.mjs'
 /* the area keys are whatever the diagnostic files declare, read when asked */
 const AREAS = { get list() { return areaKeys() }, includes(k: any) { return areaKeys().includes(k) }, join(s: any) { return areaKeys().join(s) } }
@@ -41,7 +42,6 @@ export function parseCompanion(raw: any) {
 
 /* one canonical text */
 export function serialiseCompanion({ data, chapters }: any) {
-  // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
   return matter.stringify('\n' + serialiseCompanionBody(chapters) + '\n', data, DUMP)
 }
 

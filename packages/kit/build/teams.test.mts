@@ -17,7 +17,7 @@ import { compileTeams } from './teams.mjs'
 import { gitStore } from './store/index.mjs'
 
 let pass = 0, fail = 0
-const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
+const ok = (m: string, c: boolean, d?: string|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
 
 console.log('\nTEAMS\n')
 
@@ -36,12 +36,12 @@ ok('written back, it reads the same', round.name === t.name && round.position ==
 
 /* --- the refusals --- */
 const dir = mkdtempSync(join(tmpdir(), 'teams-'))
-const write = (slug: any, body: any) => { mkdirSync(join(dir, 'content/teams'), { recursive: true }); writeFileSync(join(dir, 'content/teams', slug + '.md'), body) }
+const write = (slug: string, body: string|NodeJS.ArrayBufferView<ArrayBufferLike>) => { mkdirSync(join(dir, 'content/teams'), { recursive: true }); writeFileSync(join(dir, 'content/teams', slug + '.md'), body) }
 const catalog = (sessions = [], tiers = []) => {
   mkdirSync(join(dir, 'supabase/functions/_shared'), { recursive: true })
   writeFileSync(join(dir, 'supabase/functions/_shared/catalog.json'), JSON.stringify({ sessions, offers: Object.fromEntries(tiers.map((t) => [t, { sku: t, key: t, kind: 'membership', tier: t }])) }))
 }
-const quiet = async (fn: any) => { const e = console.error; console.error = () => {}; try { return await fn() } finally { console.error = e } }
+const quiet = async (fn: { (): Promise<{ slug: string; name: string; about: string|null; thumb: string|null; position: number; published: boolean; fill: any }[]>; (): Promise<{ slug: string; name: string; about: string|null; thumb: string|null; position: number; published: boolean; fill: any }[]>; (): Promise<{ slug: string; name: string; about: string|null; thumb: string|null; position: number; published: boolean; fill: any }[]>; (): any }) => { const e = console.error; console.error = () => {}; try { return await fn() } finally { console.error = e } }
 const refuses = async (why?: any) => { try { await quiet(() => compileTeams({ store: gitStore(dir), write: false })); return false } catch (e: any) { return /fault/.test(e.message) } }
 
 catalog()

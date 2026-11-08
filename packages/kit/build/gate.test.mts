@@ -4,9 +4,9 @@
 import { chapterAllowance, readableChapters, splitChapters, bookTextFor, teaserOf, publicBook, publicPage, publicCompanion, isGatedPage, textWithheld, titlesOnly, holdsText, sentText, publicRow } from '../supabase/functions/_shared/gate.js'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
+const ok = (msg: string, cond: boolean) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
 
-const para = (word: any, n = 40) => Array.from({ length: n }, (_, i) => `${word} sentence ${i}.`).join(' ')
+const para = (word: string, n = 40) => Array.from({ length: n }, (_, i) => `${word} sentence ${i}.`).join(' ')
 const raw = `# One\n\n${para('alpha')}\n\n# Two\n\n${para('bravo')}\n\n# Three\n\n${para('charlie')}\n\n# Four\n\nDelta is short and private.\n`
 const book = { slug: 'probe', raw, canAccess: ['subscribed'], guestChapters: 1, authenticatedChapters: 2 }
 const open = { slug: 'open', raw, guestChapters: 1, authenticatedChapters: 2, paidChapters: 3 }

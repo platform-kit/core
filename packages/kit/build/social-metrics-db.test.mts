@@ -61,12 +61,12 @@ const failedDeliveryId = randomUUID()
 const authorId = users.users[0].id
 const publishedAt = new Date(Date.now() - 71 * 60 * 60 * 1000).toISOString()
 
-async function insert(table: any, values: any) {
+async function insert(table: any, values: { id: `${string}-${string}-${string}-${string}-${string}`; provider_id?: string; external_id?: string; name?: string; username?: string; connected_by?: string; body?: string; created_by?: string; post_id?: `${string}-${string}-${string}-${string}-${string}`; account_id?: `${string}-${string}-${string}-${string}-${string}`; scheduled_at?: string; status?: string; provider_post_id?: string; published_at?: string; metrics_state?: string }) {
   const { error } = await service.from(table).insert(values)
   if (error) throw new Error(`social-metrics-db: insert ${table} failed (${error.code})`)
 }
 
-async function expectRow(table: any, columns: any, id: any) {
+async function expectRow(table: any, columns: string, id: string) {
   const { data, error } = await service.from(table).select(columns).eq('id', id).single()
   if (error) throw new Error(`social-metrics-db: read ${table} failed (${error.code})`)
   return data

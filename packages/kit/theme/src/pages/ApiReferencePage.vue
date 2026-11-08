@@ -13,7 +13,6 @@ import SiteMark from '../components/SiteMark.vue'
 
 const W = (us('api').reference || {}).head || {}
 const S = Array.isArray(SITE) ? SITE[0] : SITE
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: W.title, description: W.description, path: ROUTES.api, noindex: true })
 const Scalar = shallowRef<any>(null), failed = ref('')
 const fns = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '')

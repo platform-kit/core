@@ -25,19 +25,19 @@ import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const note = (s: any) => console.log('  ' + s)
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const note = (s: string) => console.log('  ' + s)
 
 console.log('\nTHE SAME THING TWICE\n')
 
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n    What a repeated delivery costs is NOT covered by this run.\n'); leave(0) }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n    What a repeated delivery costs is NOT covered by this run.\n'); leave(0) }
 let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
 if (!cfg || !cfg.API_URL || !cfg.SERVICE_ROLE_KEY) skip('the stack did not report an API url and a service-role key')
 const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 
-const who = async (email: any) => (await admin.from('profiles').select('id, email').eq('email', email).maybeSingle()).data
+const who = async (email: string) => (await admin.from('profiles').select('id, email').eq('email', email).maybeSingle()).data
 const coach: any = await who('admin@example.com')
 const member: any = await who('member@example.com')
 if (!coach || !member) skip('the seed\'s accounts are not there (npx supabase db reset)')
@@ -113,7 +113,7 @@ else {
   else {
     const WK = 'twice-week-' + Date.now()
     const { data: credit } = await admin.from('entitlements').insert({ user_id: buyer.id, kind: 'product', key: 'session:twice-probe', source: 'grant', source_id: WK, active: false }).select('id').single()
-    const at = (h: any) => new Date(Date.now() + h * 3600e3).toISOString()
+    const at = (h: number) => new Date(Date.now() + h * 3600e3).toISOString()
     await admin.from('bookings').insert({ uid: WK, user_id: buyer.id, provider_id: giver.id, start_at: at(48), end_at: at(49), status: 'accepted', credit_id: (credit as any).id, title: 'probe' })
     cleanup.push(async () => { await admin.from('bookings').delete().eq('uid', WK); await admin.from('entitlements').delete().eq('source_id', WK) })
     const coaches = async () => ((await as.rpc('chat_session_coaches')).data || [])

@@ -70,8 +70,7 @@ const { enrich } = pipeline({ briefs, llm, log: (...a: any[]) => console.log(...
 const cacheFor = (slug: string) => fileCache(slug, { root: ROOT, fs, path })
 
 /* ---- the review page ---- */
-// @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Type 'string | undefined' is not assignable to type 'string'. Typ
-const esc = (s) => String(s || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+const esc = (s: string | number) => String(s || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' } as Record<string, string>)[c])
 function reviewPage(reports: any[]) {
   return `<!doctype html><meta charset="utf-8"><title>Enrichment review</title>
 <style>body{font:16px/1.5 Georgia,serif;max-width:860px;margin:40px auto;padding:0 20px;color:#1a1408;background:#fbfaf3}h1{font-size:28px;margin:48px 0 8px}h1 small{font:13px monospace;color:#777;margin-left:10px}h2{font-size:20px;margin:36px 0 8px;border-top:1px solid #e6e2d6;padding-top:18px}.meta{background:#f1eee2;padding:12px 16px;border-radius:8px}.ess{padding-left:18px}.quiz li{margin:10px 0}.quiz ul{list-style:none;padding-left:14px}.right{color:#0a7d4b;font-weight:600}.why{color:#666;font-size:14px}.bad{color:#b00}mark{background:#ffe9a8}</style>

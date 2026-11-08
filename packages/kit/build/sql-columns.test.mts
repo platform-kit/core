@@ -8,15 +8,15 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkColumns, declaredColumns, referencesOf, aliasBindings, functionsOf, triggersOf } from './sql-columns.mjs'
 
-const note = (m: any) => console.log('sql-columns: ' + m)
+const note = (m: string) => console.log('sql-columns: ' + m)
 if (process.env.SQL_COLUMNS === '0') { note('skipped (SQL_COLUMNS=0)'); process.exit(0) }
 
 const KIT = fileURLToPath(new URL('../supabase/schemas/', import.meta.url))
 const SITE = path.join(process.cwd(), 'db', 'schemas')
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
+const ok = (msg: string, cond: boolean) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
 
-const read = (dir: any, label: any) => fs.existsSync(dir)
+const read = (dir: any, label: string) => fs.existsSync(dir)
   ? fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).sort()
       .map((f) => ({ file: `${label}/${f}`, sql: fs.readFileSync(path.join(dir, f), 'utf8') }))
   : []

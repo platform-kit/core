@@ -57,8 +57,7 @@ export async function admission() {
 
 /* ---------------------------------------------------------------- who */
 
-export async function loadPeople(ids: any[]|Iterable<unknown>|null|undefined) {
-  // @ts-expect-error TS2538, from the conversion: Type '{}' cannot be used as an index type.
+export async function loadPeople(ids: Iterable<string>|null|undefined) {
   const want = [...new Set(ids)].filter((id) => id && !net.people[id])
   if (!want.length || !ok()) return
   const { data } = await (supabase as any).rpc('network_people', { p_ids: want })
@@ -93,7 +92,7 @@ export async function loadPosts(ids: any[]|Iterable<unknown>|null|undefined) {
   const rows = data || []
   for (const p of rows) net.posts[p.id] = { ...p, kind: 'post' }
   /* what they quote and answer, one level, so a card can say what it is answering */
-  const more = new Set()
+  const more = new Set<string>()
   for (const p of rows) { if (p.quote_id && !net.posts[p.quote_id]) more.add(p.quote_id); if (p.reply_parent_id && !net.posts[p.reply_parent_id]) more.add(p.reply_parent_id) }
   if (more.size) {
     const { data: extra } = await (supabase as any).from('network_posts').select(POST_COLS).in('id', [...more])
@@ -219,8 +218,7 @@ export function discover() {
       const items = [
         ...rows.map((r: { id: any; created_at: any }) => ({ kind: 'post', post_id: r.id, at: r.created_at, created_at: r.created_at })),
         ...spaceRows.map((r: { message_id: any; at: any }) => ({ kind: 'space', message_id: r.message_id, at: r.at, created_at: r.at })),
-      // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-      ].sort((x, y) => new Date(y.at) - new Date(x.at)).slice(0, PAGE)
+      ].sort((x, y) => new Date(y.at).getTime() - new Date(x.at).getTime()).slice(0, PAGE)
       st.items = reset ? items : st.items.concat(items)
       st.done = rows.length < PAGE && spaceRows.length < PAGE
     } catch (e: any) { st.error = e.message || String(e) } finally { st.loading = false }

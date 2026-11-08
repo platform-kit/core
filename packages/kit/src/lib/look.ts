@@ -19,8 +19,7 @@ export { LOOKS, DEFAULT_LOOK }
 function fromQuery() {
   try {
     const q = new URLSearchParams(location.search).get('look')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-    return LOOKS.includes(q) ? q : ''
+    return q !== null && LOOKS.includes(q) ? q : ''
   } catch (e) { return '' }
 }
 

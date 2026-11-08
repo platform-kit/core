@@ -20,7 +20,7 @@ import { supabaseUrl, localStack } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('abuse-limits: ' + m)
+const note = (m: string) => console.log('abuse-limits: ' + m)
 if (process.env.ABUSE_LIMITS_TEST === '0') { note('skipped (ABUSE_LIMITS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
@@ -28,20 +28,20 @@ if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the
 try { const r = await fetch(`${url}/functions/v1/ingest`, { method: 'OPTIONS', signal: AbortSignal.timeout(4000) }); if (r.status >= 500) throw new Error() } catch { note('skipped — the functions are not served'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const DB_URL = process.env.PLATFORMKIT_TEST_DB_URL || `postgresql://postgres:postgres@${new URL(url).hostname}:${Number(new URL(url).port || 54321) + 1}/postgres`
-const sql = async (q: any, args?: any) => { const db = new pg.Client({ connectionString: DB_URL }); await db.connect(); try { return (await db.query(q, args)).rows } finally { await db.end() } }
+const sql = async (q: string, args?: any[]|undefined) => { const db = new pg.Client({ connectionString: DB_URL }); await db.connect(); try { return (await db.query(q, args)).rows } finally { await db.end() } }
 /* the site's limits, as the functions read them (the policy record compiled beside them) */
 const funnels = path.join(process.cwd(), 'supabase/functions/_shared/emails/funnels.json')
 const policy = fs.existsSync(funnels) ? (JSON.parse(fs.readFileSync(funnels, 'utf8')).policy || {}) : {}
 const LIMIT = { checkout: policy['limit-checkout'] || 30, forms: policy['limit-forms'] || 300, analytics: policy['limit-analytics'] || 1200 }
 /* the counter's key for an address: a hash of it, as _shared/doors.ts makes it — never the address itself */
 const { createHash } = await import('node:crypto')
-const hashed = (ip: any) => 'a:' + createHash('sha256').update('platformkit-door:' + ip).digest('hex').slice(0, 32)
-const fill = (who: any, n: any) => sql('select public.api_rate_take($1, null) from generate_series(1, $2)', [who, n])
+const hashed = (ip: string) => 'a:' + createHash('sha256').update('platformkit-door:' + ip).digest('hex').slice(0, 32)
+const fill = (who: string, n: any) => sql('select public.api_rate_take($1, null) from generate_series(1, $2)', [who, n])
 const n = Math.floor(Math.random() * 200) + 20
 const flooder = `198.51.100.${n}`, other = `198.51.100.${n + 1}`
-const post = (fn: any, body: any, headers = {}) => fetch(`${url}/functions/v1/${fn}`, { method: 'POST', headers: { apikey: anonKey, 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) })
+const post = (fn: string, body: { items?: never[]; action?: string; form?: string; batch?: { type: string; anon_id: any; session_id: `${string}-${string}-${string}-${string}-${string}`; path: string }[]; body?: string }, headers = {}) => fetch(`${url}/functions/v1/${fn}`, { method: 'POST', headers: { apikey: anonKey, 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) })
 const uuid = () => crypto.randomUUID()
 
 try {
@@ -76,7 +76,7 @@ try {
   ok('…and still serve another visitor', f2.status !== 429, f2.status)
 
   /* ─── analytics intake ─── */
-  const batch = (anon: any) => ({ batch: [{ type: 'probe_flood', anon_id: anon, session_id: uuid(), path: '/' }] })
+  const batch = (anon: string) => ({ batch: [{ type: 'probe_flood', anon_id: anon, session_id: uuid(), path: '/' }] })
   await fill(`door:analytics:${hashed(flooder)}`, LIMIT.analytics)
   const a1 = await post('ingest', batch(uuid()), { 'cf-connecting-ip': flooder })
   // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.

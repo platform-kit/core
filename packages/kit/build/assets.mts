@@ -20,7 +20,7 @@ import { createHash } from 'node:crypto'
 import { collectionOf } from './store/index.mjs'
 import { platformkitRuntimePath } from './runtime-paths.mjs'
 
-const warned = new Set()
+const warned = new Set<string>()
 const BUCKET_RE = /\/storage\/v1\/object\/(?:public\/)?content-assets\/(.+)$/
 
 export function addressOf(rel: any) {
@@ -40,7 +40,7 @@ export function pathOfAddress(ref: any) {
   if (s.startsWith('/')) return 'public' + s
   return null
 }
-export async function resolveAsset(ref: any, { root = process.cwd(), fromFile = null, fetchFn = globalThis.fetch, log = console.warn } = {}) {
+export async function resolveAsset(ref: any, { root = process.cwd(), fromFile = null as string | null, fetchFn = globalThis.fetch, log = console.warn } = {}) {
   const s = String(ref || '').trim()
   if (!s) return null
   const rel = pathOfAddress(s)

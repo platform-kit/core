@@ -25,7 +25,7 @@ import { balanceOf } from '../src/lib/payouts.js'
 import { leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('payouts-db: ' + m)
+const note = (m: string) => console.log('payouts-db: ' + m)
 if (!(await moduleOn('sessions'))) { notHere('payouts-db', 'the sessions module is off'); process.exit(0) }
 const payoutSource = await readFile(new URL('../supabase/functions/_shared/payouts.ts', import.meta.url), 'utf8')
 const sendDueSource = payoutSource.slice(payoutSource.indexOf('export async function sendDue'))
@@ -41,7 +41,7 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: string|number|boolean|null, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 
 console.log('\nPAYOUTS · THE LEDGER\n')
@@ -50,20 +50,20 @@ console.log('\nPAYOUTS · THE LEDGER\n')
    suite, and a payout line left on one would be somebody else's confusing failure. */
 const tag = 't' + Math.random().toString(36).slice(2, 8)
 const made = { users: [], rules: [], bookings: [], purchases: [], credits: [], accounts: [] }
-const mkUser = async (email: any) => {
+const mkUser = async (email: string) => {
   const { data, error } = await service.auth.admin.createUser({ email, password: 'password123', email_confirm: true })
   if (error) throw new Error(email + ': ' + error.message)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
   made.users.push(data.user.id)
   return data.user.id
 }
-const signIn = async (email: any) => {
+const signIn = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
   return sb
 }
-const iso = (ms: any) => new Date(ms).toISOString()
+const iso = (ms: string|number|Date) => new Date(ms).toISOString()
 const now = Date.now()
 
 try {
@@ -76,7 +76,7 @@ try {
   ok('the delay is the policy\'s, in minutes', Number(delay) > 0, String(delay))
 
   /* --- the rules: a monthly retainer, a share of every call, a flat amount per call --- */
-  const rule = async (r: any) => {
+  const rule = async (r: { trigger: string; booking_type?: string; amount_kind: string; amount: number }) => {
     const { data, error } = await service.from('payout_rules').insert({ user_id: providerId, ...r }).select('id').single()
     if (error) throw new Error('rule: ' + error.message)
     // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
@@ -99,7 +99,7 @@ try {
   /* --- a call, and the payment it was for ---
      A PAID SESSION IS A PURCHASE, A CREDIT AND A BOOKING THAT SPENT IT, which is how the site really
      does it; the sweep follows that chain rather than guessing which payment a call belonged to. */
-  const purchase = async (amount: any, at: any) => {
+  const purchase = async (amount: number, at: string) => {
     const session = 'cs_' + tag + '_' + made.purchases.length
     const { data, error } = await service.from('purchases')
       .insert({ user_id: clientId, sku: tag + '-session', key: tag.slice(0, 8), status: 'paid', amount_total: amount, currency: 'usd', created_at: at, stripe_checkout_session_id: session })
@@ -115,7 +115,7 @@ try {
     made.credits.push(credit.data.id)
     return { id: data.id, credit: credit.data.id }
   }
-  const booking = async (uid: any, fields: any) => {
+  const booking = async (uid: string, fields: { credit_id?: string; no_show?: boolean; no_show_by?: string; start_at?: string; end_at?: string; status?: string }) => {
     const { error } = await service.from('bookings').insert({
       uid, user_id: clientId, provider_id: providerId, type: tag + '-call', event: tag + '-call',
       title: 'A call', status: 'ended', created_at: iso(now - 3 * 864e5),
@@ -242,7 +242,7 @@ try {
   try { served = (await fetch(url + '/functions/v1/payouts', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* not served */ }
   if (!served) console.log('  (the payouts function is not served — npm run dev serves it)')
   else {
-    const call = async (sb: any, body: any) => {
+    const call = async (sb: any, body: { action: string; user?: string }) => {
       const { data } = await sb.auth.getSession()
       const r = await fetch(url + '/functions/v1/payouts', {
         method: 'POST',
@@ -284,7 +284,7 @@ try {
     /* AT THIS POINT WHAT IS PAYABLE IS THE REVERSAL and nothing else — the earnings are either
        inside the window or already sent. So the person appears on the list owed less than nothing,
        is not sendable, and the reason is said in words rather than left to be inferred from a minus. */
-    const owing = (due.body.due || []).find((d: any) => d.user_id === providerId)
+    const owing = (due.body.due || []).find((d: { user_id: string }) => d.user_id === providerId)
     ok('a reversal with nothing to set against it puts them on the list owed less than nothing', owing && owing.amount < 0, JSON.stringify(owing))
     ok('nothing is sent for it', owing && owing.sendable === false)
     ok('and the reason is a sentence, not a minus sign', owing && /stands against what is earned next/.test(owing.why || ''))
@@ -293,13 +293,13 @@ try {
     await service.from('payout_lines').update({ payable_at: iso(now - 864e5), paid_at: null, payout_ref: null })
       .eq('user_id', providerId).is('reverses', null).gt('amount', 0).lt('payable_at', iso(now + 1e12))
     const due2 = await call(asAdmin, { action: 'due' })
-    const row = (due2.body.due || []).find((d: any) => d.user_id === providerId)
+    const row = (due2.body.due || []).find((d: { user_id: string }) => d.user_id === providerId)
     ok('once the delay has passed they are on the list', !!row, JSON.stringify(due2.body.due))
     ok('with what stands in the way said in words, or nothing', row && (row.why === null || typeof row.why === 'string'))
     const sent = await call(asAdmin, { action: 'send', user: providerId })
     ok('sending answers what went', sent.status === 200 && sent.body.sent > 0, JSON.stringify(sent.body))
     const after: any = await service.from('payout_lines').select('paid_at, payout_ref').eq('user_id', providerId).not('payout_ref', 'is', null)
-    ok('and every line it sent is stamped with when and under what reference', (after.data || []).length > 0 && after.data.every((l: any) => l.paid_at && l.payout_ref))
+    ok('and every line it sent is stamped with when and under what reference', (after.data || []).length > 0 && after.data.every((l: { paid_at: any; payout_ref: any }) => l.paid_at && l.payout_ref))
     const twiceSent = await call(asAdmin, { action: 'send', user: providerId })
     ok('sending again sends nothing, because nothing is payable', twiceSent.body.sent === 0, JSON.stringify(twiceSent.body))
 

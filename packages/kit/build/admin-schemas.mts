@@ -73,8 +73,7 @@ export function describeSchema(schema: ZodObject<{ [x: string]: any; },$strip>) 
 
 export async function collectionsFor(store = process.cwd()) {
   const out: any = {}
-  // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-  for (const [k, m] of Object.entries(COLLECTIONS)) out[k] = { ...m, schema: m.fields, label: m.name }
+  for (const [k, m] of Object.entries(COLLECTIONS as Record<string, { fields: unknown, name: string }>)) out[k] = { ...m, schema: m.fields, label: m.name }
   for (const m of await customModels(store)) out[m.key] = { ...m, schema: m.fields, label: m.name }
   return out
 }

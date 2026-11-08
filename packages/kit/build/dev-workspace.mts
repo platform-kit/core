@@ -205,8 +205,7 @@ function pipeOutput(child: any, name: any) {
     child[stream].on('data', (chunk: any) => {
       buffer += chunk
       const lines = buffer.split('\n')
-      // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string'. Type 'undefined' is not assignable to type 'string'.
-      buffer = lines.pop()
+      buffer = lines.pop()!
       for (const line of lines) (stream === 'stdout' ? process.stdout : process.stderr).write(`\x1b[2m[${name}]\x1b[0m ${line}\n`)
     })
     child[stream].on('end', () => {
@@ -384,9 +383,8 @@ export async function runWorkspace({
         detached: process.platform !== 'win32',
       })
       pipeOutput(child, site.name)
-      const record = { site, child, error: null }
+      const record = { site, child, error: null as Error | null }
       child.on('error', (error) => {
-        // @ts-expect-error TS2322, from the conversion: Type 'Error' is not assignable to type 'null'.
         record.error = error
         if (!shuttingDown) console.error(`[${site.name}] ${error.message}`)
       })

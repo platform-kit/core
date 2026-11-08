@@ -26,7 +26,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const KIT = path.resolve(HERE, '..')
 const WORKSPACE = path.resolve(KIT, '../..')
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).split('\n').join('\n        ') : '')) } }
+const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).split('\n').join('\n        ') : '')) } }
 
 const tests = fs.readdirSync(HERE).filter((f) => /\.(test|integration)\.m[jt]s$/.test(f) && f !== 'test-coverage.test.mts')
 const source = Object.fromEntries(tests.map((f) => [f, fs.readFileSync(path.join(HERE, f), 'utf8')]))
@@ -35,14 +35,14 @@ const source = Object.fromEntries(tests.map((f) => [f, fs.readFileSync(path.join
 const FN_DIR = path.join(KIT, 'supabase', 'functions')
 const functions = fs.readdirSync(FN_DIR).filter((d) => !d.startsWith('_') && fs.statSync(path.join(FN_DIR, d)).isDirectory())
 const callsFunctions = /functions\/v1|FUNCTIONS_URL|\bFN\b|\.functions\b/
-const namedBy = (fn: any) => Object.entries(source).filter(([, s]) => callsFunctions.test(s) && new RegExp(`functions/v1/${fn}\\b|['"\`/]${fn}['"\`?/]`).test(s)).map(([f]) => f)
+const namedBy = (fn: string) => Object.entries(source).filter(([, s]) => callsFunctions.test(s) && new RegExp(`functions/v1/${fn}\\b|['"\`/]${fn}['"\`?/]`).test(s)).map(([f]) => f)
 const untested = functions.filter((fn) => !namedBy(fn).length)
 ok(`every function is named by a test (${functions.length - untested.length} of ${functions.length})`, !untested.length, untested.join(', '))
 
 /* ─── 2. a stack test leaves early only through the helper ─── */
 const STACK = /from '\.\/test-stack\.mjs'|supabaseUrl\(\)|localStack\(\)|supabase status|statusOf\(|stackOf\(|requireStack\(|PLATFORMKIT_TEST_API_URL/
 /* an exit with failure hides nothing; only an exit that can come out as a pass is held to the helper */
-const allowed = (line: any, before: any) => /_TEST === '0'|notHere\(/.test(line) || /notHere\(/.test(before) || /process\.exit\(\s*[1-9]\d*\s*\)/.test(line)
+const allowed = (line: string, before: string) => /_TEST === '0'|notHere\(/.test(line) || /notHere\(/.test(before) || /process\.exit\(\s*[1-9]\d*\s*\)/.test(line)
 const early = []
 for (const [f, s] of Object.entries(source)) {
   if (!STACK.test(s)) continue
@@ -50,7 +50,7 @@ for (const [f, s] of Object.entries(source)) {
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'string'. Type 'number' is not assignable to type 'string'.
   const exits = lines.map((l, i) => [l, i]).filter(([l]) => /process\.exit\(/.test(l) && !/^\s*(\/\/|\*)/.test(l))
   // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  for (const [l, i] of exits.slice(0, -1)) if (!allowed(l, lines[i - 1] || '')) early.push(`${f}:${i + 1}  ${(l as any).trim().slice(0, 110)}`)
+  for (const [l, i] of exits.slice(0, -1)) if (!allowed(l, lines[i - 1] || '')) early.push(`${f}:${i + 1}  ${l.trim().slice(0, 110)}`)
 }
 ok('no stack test leaves early with a pass except through skip() or notHere()', !early.length, `${early.length} early exit(s):\n` + early.slice(0, 40).join('\n') + (early.length > 40 ? `\n… and ${early.length - 40} more` : ''))
 
@@ -61,7 +61,7 @@ ok('no stack test leaves early with a pass except through skip() or notHere()', 
   const deno = fs.readdirSync(HERE).filter((f) => /\.test\.ts$/.test(f))
   /* or driven by a wrapper test.mjs registers (the live integrations: stripe-testmode.integration.mjs runs its .test.ts) */
   const runs = new Set([...runnerText.matchAll(/\['([\w.-]+\.(?:test|integration)\.m[jt]s)'/g)].map((m) => m[1]))
-  const wrapped = (f: any) => fs.readdirSync(HERE).some((w) => /\.(test|integration)\.m[jt]s$/.test(w) && runs.has(w) && fs.readFileSync(path.join(HERE, w), 'utf8').includes(f))
+  const wrapped = (f: string) => fs.readdirSync(HERE).some((w) => /\.(test|integration)\.m[jt]s$/.test(w) && runs.has(w) && fs.readFileSync(path.join(HERE, w), 'utf8').includes(f))
   const unrun = deno.filter((f) => !listed.has(f) && !wrapped(f))
   ok('every Deno test is run by test.mjs', !unrun.length, unrun.join(', '))
 }
@@ -87,7 +87,7 @@ const NOT_A_STACK: any = {
   'e2e-runner.test.mts': 'runs the runner itself, which builds the stacks (CI\'s e2e job)',
 }
 /* the mark test.mjs finds stack tests by (STACK_SOURCE): the helper, or the storage helpers that read the run's SUPABASE_URL */
-const marked = (s: any) => /from '\.\/test-stack\.mjs'|supabaseUrl\(\)|localStack\(\)/.test(s)
+const marked = (s: string) => /from '\.\/test-stack\.mjs'|supabaseUrl\(\)|localStack\(\)/.test(s)
 const unmarked = Object.entries(source).filter(([f, s]) => REACHES.test(s) && !marked(s) && !NOT_A_STACK[f]).map(([f]) => f)
 ok('every test that reaches a stack takes it from test-stack.mjs', !unmarked.length, unmarked.join(', '))
 const staleNot = Object.keys(NOT_A_STACK).filter((f) => !source[f] || marked(source[f]))
@@ -95,14 +95,14 @@ ok('no test is excused as reaching no stack when it is gone or takes one', !stal
 /* a fallback to the dev ports (the stack's 543xx, the app's 5173) is a test that runs against whatever is there when the run's stack is not given */
 const FIXED = /(\|\||\?\?)\s*['"`][^'"`]*(127\.0\.0\.1|localhost):(5\d{4}|5173)\b|supabase status|'status', '-o'/
 // @ts-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'string'. Type 'number' is not assignable to type 'string'.
-const fixed = Object.entries(source).filter(([f, s]) => marked(s)).flatMap(([f, s]) => s.split('\n').map((l, i) => [l, i]).filter(([l]) => FIXED.test(l) && !/^\s*(\/\/|\*)/.test(l)).map(([l, i]) => `${f}:${i + 1}  ${(l as any).trim().slice(0, 110)}`))
+const fixed = Object.entries(source).filter(([f, s]) => marked(s)).flatMap(([f, s]) => s.split('\n').map((l, i) => [l, i]).filter(([l]) => FIXED.test(l) && !/^\s*(\/\/|\*)/.test(l)).map(([l, i]) => `${f}:${i + 1}  ${l.trim().slice(0, 110)}`))
 ok('no stack test reads `supabase status` or falls back to a fixed port', !fixed.length, fixed.join('\n'))
 
 /* every browser launch honours PLAYWRIGHT_CHROMIUM_PATH (or goes through browser.mjs, which does): a machine where
    Playwright's own build is not installed names its own, and a launch that ignores it fails there — six did */
 {
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'string'. Type 'number' is not assignable to type 'string'.
-  const launches = fs.readdirSync(HERE).filter((f) => /\.m?[jt]s$/.test(f) && !/\.d\.m?ts$/.test(f) && !/^browser\.m[jt]s$/.test(f)).flatMap((f) => fs.readFileSync(path.join(HERE, f), 'utf8').split('\n').map((l, i) => [f, l, i]).filter(([, l]) => /chromium\.launch\(/.test(l) && !/PLAYWRIGHT_CHROMIUM_PATH|executablePath: exe\b|\{ executablePath \}/.test(l)).map(([f, l, i]) => `${f}:${i + 1}  ${(l as any).trim().slice(0, 100)}`))
+  const launches = fs.readdirSync(HERE).filter((f) => /\.m?[jt]s$/.test(f) && !/\.d\.m?ts$/.test(f) && !/^browser\.m[jt]s$/.test(f)).flatMap((f) => fs.readFileSync(path.join(HERE, f), 'utf8').split('\n').map((l, i) => [f, l, i]).filter(([, l]) => /chromium\.launch\(/.test(l) && !/PLAYWRIGHT_CHROMIUM_PATH|executablePath: exe\b|\{ executablePath \}/.test(l)).map(([f, l, i]) => `${f}:${i + 1}  ${l.trim().slice(0, 100)}`))
   ok('every browser launch honours PLAYWRIGHT_CHROMIUM_PATH', !launches.length, launches.join('\n'))
 }
 
@@ -127,7 +127,7 @@ const KNOWN_GAPS: any = {
 }
 /* a change not yet started is a plan — the tests it names are still to be written; once any of its tasks is done, its
    claims count like the specs' */
-const started = (f: any) => { const m = /openspec\/changes\/([^/]+)\//.exec(f.split(path.sep).join('/')); if (!m) return true; const t = path.join(WORKSPACE, 'openspec', 'changes', m[1], 'tasks.md'); return fs.existsSync(t) && /^- \[x\]/m.test(fs.readFileSync(t, 'utf8')) }
+const started = (f: string) => { const m = /openspec\/changes\/([^/]+)\//.exec(f.split(path.sep).join('/')); if (!m) return true; const t = path.join(WORKSPACE, 'openspec', 'changes', m[1], 'tasks.md'); return fs.existsSync(t) && /^- \[x\]/m.test(fs.readFileSync(t, 'utf8')) }
 for (const f of specFiles.filter(started)) {
   const text = fs.readFileSync(f, 'utf8')
   for (const m of text.matchAll(/^Verified by:([^\n]*)$/gm)) for (const t of m[1].matchAll(/`(?:node )?(?:packages\/kit\/)?(?:build\/)?([\w.-]+\.(?:test|integration)\.m[jt]s)`/g)) {

@@ -82,7 +82,7 @@ export function docTree(collection: string|number) {
       description: e.description || '', readingTime: (e.metadata && e.metadata.readingTime) || 0 })
   }
   // @ts-expect-error TS7023, from the conversion: 'finish' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one 
-  const finish = (node) => {
+  const finish = (node: { dirs: any; docs: any }) => {
     // @ts-expect-error TS7022, from the conversion: 'dirs' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
     const dirs = Object.values(node.dirs).map(finish)
     dirs.forEach((d: { docs: any[]; dirs: any[]; order: number }) => {
@@ -226,18 +226,13 @@ const escapeHtml = (s: string) => s.replace(/[&<>"]/g, (ch: string|number) => ((
      type:article|wiki|doc|book  ·  after:2026-01  ·  before:2026-09  ·  tag:practice
    The palette's dropdowns pass the same filters as options. */
 export function parseQuery(query: string) {
-  const out = { toks: [], kind: null, after: null, before: null, tags: [] }
+  const out = { toks: [] as string[], kind: null as string | null, after: null as string | null, before: null as string | null, tags: [] as string[] }
   for (const raw of query.toLowerCase().split(/\s+/).filter(Boolean)) {
     const op = /^(type|kind|after|before|tag):(.+)$/.exec(raw)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     if (!op) { out.toks.push(raw); continue }
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null'.
     if (op[1] === 'after') out.after = op[2]
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null'.
     else if (op[1] === 'before') out.before = op[2]
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     else if (op[1] === 'tag') out.tags.push(op[2])
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null'.
     else out.kind = { articles: 'article', docs: 'doc', books: 'book' }[op[2]] || op[2]
   }
   return out

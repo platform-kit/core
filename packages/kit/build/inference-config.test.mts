@@ -5,7 +5,7 @@ import { providersFrom, ask } from '../supabase/functions/_shared/agents/provide
 import { resolveUsageOperation } from '../supabase/functions/_shared/usage-gate.mjs'
 import { inferenceOf, pipeSiteConfigSource, publicSite, usageOf } from './site.mjs'
 
-const site = (id: any, model: any, input: any, markup = 1.25) => ({
+const site = (id: string, model: string, input: number, markup = 1.25) => ({
   name: id,
   usage: { operations: {
     'agent.staff': { mode: 'site-funded' },
@@ -76,7 +76,7 @@ try {
     }), { status: 200, headers: { 'content-type': 'application/json' } })
   }
   const fallbackResult = await ask({
-    providers: { ...providerSet, list: providerSet.list.map((provider: any, i: any) => ({
+    providers: { ...providerSet, list: providerSet.list.map((provider: any, i: number) => ({
       ...provider, base: i === 0 ? 'https://primary.test/v1' : 'https://backup.test',
     })) },
     model: 'primary-model',

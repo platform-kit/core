@@ -26,7 +26,7 @@
 import { MESH_MAX } from '../supabase/functions/_shared/video/mesh.js'
 import { FEATURES } from './modes.mjs'
 import { MODULES } from './modules/kit.mjs'
-import { readManifests } from './modules/manifest.mjs'
+import { readManifests, type Modules, type PaymentProviderRegistration } from './modules/manifest.mjs'
 
 /* the kit's own, resolved once. A site's own modules are passed in (see the change's task 4.1);
    the default is the kit's rather than an empty set, because an empty set would silently mean
@@ -51,8 +51,7 @@ import {
 } from './payment-provider-registry.mjs'
 
 const has = (env: any, k: any) => !!String(env[k] ?? '').trim()
-// @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 4, '(command: string, options: ExecSyncOptionsWithStringEncoding): string', gave the following 
-const toolOnPath = (t) => { try { execSync('command -v ' + t, { stdio: 'ignore', shell: true }); return true } catch { return false } }
+const toolOnPath = (t: string) => { try { execSync('command -v ' + t, { stdio: 'ignore' }); return true } catch { return false } }
 const packageHere = (p: any, root: any) => { const from = path.resolve(root || process.cwd(), 'package.json'); try { createRequire(from).resolve(p + '/package.json'); return true } catch { try { createRequire(from).resolve(p); return true } catch { return false } } }
 const on = (v: any) => /^(1|true|yes|on)$/i.test(String(v || ''))
 const off = (v: any) => /^(0|false|no|off)$/i.test(String(v || '').trim())
@@ -138,13 +137,12 @@ export function surfaces(root = '.') {
  * module CAN ask for, and the judgement of when each is really owed stays here.
  */
 const asksFor = (manifests: any, key: any) => {
-  const out = new Set()
+  const out = new Set<string>()
   for (const m of (manifests || KIT_MANIFESTS).values()) for (const v of m.owns.env || []) if (v === key) out.add(m.key)
   return [...out]
 }
 /* a live module that can ask for this variable, or none */
-// @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
-const anyAsking = (manifests, modules, key) => asksFor(manifests, key).some((k) => modules[k] !== false)
+const anyAsking = (manifests: Modules, modules: { [x: string]: boolean }, key: string) => asksFor(manifests, key).some((k) => modules[k] !== false)
 /* every variable any module can ask for, live or not — what the coverage check below is asked about */
 export const declaredEnv = (manifests = KIT_MANIFESTS) => [...new Set([...manifests.values()].flatMap((m) => m.owns.env || []))]
 
@@ -170,7 +168,7 @@ export async function unmetFor(site: any, modules: any) {
   return unmetRequirements(await moduleSet(site), modules)
 }
 
-export function checkDeploy(env: any, s: any, modules: any = {}, stepNeeds = [], shape: any = null, unmet = [], manifests = KIT_MANIFESTS, site: any = null) {
+export function checkDeploy(env: any, s: any, modules: any = {}, stepNeeds: Array<{ step: { key: string, title: string }, env: string[], tools: string[], packages: string[] }> = [], shape: any = null, unmet: { module: string; needs: string; why: string; }[] = [], manifests = KIT_MANIFESTS, site: any = null) {
   const missing = [], wrong = [], notes = []
   /* every build step that is on for this deploy asks for its needs (build/steps.mjs needsOf): a variable, a tool on the path, a package the site installed */
   for (const n of stepNeeds) {
@@ -262,7 +260,8 @@ export function checkDeploy(env: any, s: any, modules: any = {}, stepNeeds = [],
   need('VITE_APP_URL', "the site's https origin — the sitemap, absolute links, and (with a backend) auth links, checkout returns and emails")
   /* anything for sale */
   let selectedPaymentProvider = 'stripe'
-  let selectedPaymentRegistration = STRIPE_PAYMENT_PROVIDER_REGISTRATION
+  // @ts-expect-error TS2322, from the conversion: Type 'Readonly<{ id: "stripe"; adapter: "stripe-payment-provider.ts"; capabilities: readonly string[]; secrets: readonly string[]; webhookPa
+  let selectedPaymentRegistration: PaymentProviderRegistration | null = STRIPE_PAYMENT_PROVIDER_REGISTRATION
   let selectedPaymentConfiguration: any = {}
   const configuredProvider = site?.payments?.provider
   if (typeof configuredProvider === 'string' && /^[a-z][a-z0-9-]*$/.test(configuredProvider)) {
@@ -279,7 +278,7 @@ export function checkDeploy(env: any, s: any, modules: any = {}, stepNeeds = [],
     .filter((module) => modules[module.key] !== false)
     .flatMap((module) => module.paymentProviders || [])
   if (selectedPaymentProvider !== 'stripe') {
-    // @ts-expect-error TS2322, from the conversion: Type 'Readonly<{ id: "hyperswitch"; adapter: "hyperswitch-payment-provider.ts"; capabilities: readonly string[]; secrets: readonly string[];
+    // @ts-expect-error TS2322, from the conversion: Type 'PaymentProviderRegistration | Readonly<{ id: "hyperswitch"; adapter: "hyperswitch-payment-provider.ts"; capabilities: readonly string[
     selectedPaymentRegistration = selectedPaymentProvider === 'hyperswitch'
       ? HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION
       : registeredProviders.find((provider) => provider.id === selectedPaymentProvider) || null
@@ -293,7 +292,7 @@ export function checkDeploy(env: any, s: any, modules: any = {}, stepNeeds = [],
     ...s.pricingSkus.filter((k: any) => !s.offers.some((o: any) => o.sku === k)).map((k: any) => `pricing row ${k}`),
   ]
   if (selectedPaymentProvider === 'hyperswitch' && selectedPaymentRegistration) {
-    const requiredCapabilities = new Set()
+    const requiredCapabilities = new Set<string>()
     if (selling.length) {
       if (s.offers.some((offer: any) => offer.billing !== 'subscription') || s.printed.length || s.pricingSkus.length) {
         requiredCapabilities.add('checkout.one-time')
@@ -923,10 +922,8 @@ if (isMain(import.meta.url)) {
     t('cloud mode passes with the service key and is noted', (() => { const r = checkDeploy({ ...base, CONTENT_STORE: 'cloud' }, none); return r.ok && r.notes.some((x) => /cloud/.test(x)) })())
     /* the coupling comes from the manifests now, so the case hands in what they say */
     const COUPLE = [{ module: 'instrument', needs: 'forms', why: 'the instrument runs on the forms runner' }]
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ module: string; needs: string; why: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ module: strin
-    t('a live module whose requirement is off is refused, naming both', wrongs(checkDeploy(base, none, { instrument: true, forms: false }, [], null, COUPLE)).some((w) => /modules\.instrument.*modules\.forms/.test(w)))
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ module: string; needs: string; why: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ module: strin
-    t('and the refusal says why, from the manifest', wrongs(checkDeploy(base, none, { instrument: true, forms: false }, [], null, COUPLE)).some((w) => /runs on the forms runner/.test(w)))
+    t('a live module whose requirement is off is refused, naming both', wrongs(checkDeploy(base, none, { instrument: true, forms: false }, [], null, COUPLE)).some((w: string) => /modules\.instrument.*modules\.forms/.test(w)))
+    t('and the refusal says why, from the manifest', wrongs(checkDeploy(base, none, { instrument: true, forms: false }, [], null, COUPLE)).some((w: string) => /runs on the forms runner/.test(w)))
     /* and the coupling is REALLY declared — a placeholder here would leave the rule read from
        manifests while nothing checked that any manifest carries one */
     {
@@ -939,15 +936,11 @@ if (isMain(import.meta.url)) {
     t('forms off with the instrument off is fine', checkDeploy(base, none, { instrument: false, forms: false }, [], null, []).ok)
     /* the build steps' needs: a step on asks for its variables, its tools and its packages, naming itself; a step off asks for nothing */
     const spoken = { step: { key: 'tts', title: 'The spoken books' }, env: ['SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_URL'], tools: ['git-lfs'], packages: ['onnxruntime-node', 'ffmpeg-static'] }
-    // @ts-expect-error TS2322, from the conversion: Type '{ step: { key: string; title: string; }; env: string[]; tools: string[]; packages: string[]; }' is not assignable to type 'never'.
     t('a step on asks for its variable, naming itself', (() => { const r = checkDeploy({ ...base, SUPABASE_SERVICE_ROLE_KEY: '' }, none, {}, [spoken]); return keys(r).includes('SUPABASE_SERVICE_ROLE_KEY') && r.missing.some((m) => m.key === 'SUPABASE_URL' && /spoken books/.test(m.why)) })())
     t('a step off asks for nothing', !keys(checkDeploy({ ...base, SUPABASE_URL: '' }, none, {}, [])).includes('SUPABASE_URL'))
-    // @ts-expect-error TS2322, from the conversion: Type '{ tools: string[]; packages: never[]; step: { key: string; title: string; }; env: string[]; }' is not assignable to type 'never'.
-    t('a tool off the path is wrong, naming the step', wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, none, {}, [{ ...spoken, tools: ['no-such-tool-zz'], packages: [] }])).some((w) => /no-such-tool-zz.*spoken books/.test(w)))
-    // @ts-expect-error TS2322, from the conversion: Type '{ tools: never[]; packages: string[]; step: { key: string; title: string; }; env: string[]; }' is not assignable to type 'never'.
-    t('a package not installed is wrong, naming the step and the install', wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, { ...none, root: '.' }, {}, [{ ...spoken, tools: [], packages: ['no-such-package-zz'] }])).some((w) => /no-such-package-zz.*spoken books.*npm install/.test(w)))
-    // @ts-expect-error TS2322, from the conversion: Type '{ tools: never[]; packages: string[]; step: { key: string; title: string; }; env: string[]; }' is not assignable to type 'never'.
-    t('a package installed passes', !wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, { ...none, root: '.' }, {}, [{ ...spoken, tools: [], packages: ['gray-matter'] }])).some((w) => /gray-matter/.test(w)))
+    t('a tool off the path is wrong, naming the step', wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, none, {}, [{ ...spoken, tools: ['no-such-tool-zz'], packages: [] }])).some((w: string) => /no-such-tool-zz.*spoken books/.test(w)))
+    t('a package not installed is wrong, naming the step and the install', wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, { ...none, root: '.' }, {}, [{ ...spoken, tools: [], packages: ['no-such-package-zz'] }])).some((w: string) => /no-such-package-zz.*spoken books.*npm install/.test(w)))
+    t('a package installed passes', !wrongs(checkDeploy({ ...base, SUPABASE_URL: 'x' }, { ...none, root: '.' }, {}, [{ ...spoken, tools: [], packages: ['gray-matter'] }])).some((w: string) => /gray-matter/.test(w)))
     /* the site's own steps, as they are: their tools and packages resolve here */
     const { loadSteps, needsOf, missingNeeds } = await import('./steps.mjs')
     const { loadSite } = await import('./site.mjs')
@@ -955,7 +948,7 @@ if (isMain(import.meta.url)) {
     const stepMissing = missingNeeds(needsOf(await loadSteps(siteCfg), siteCfg, process.env), process.env, siteCfg.root, ['tool', 'package'])
     t('every on step\'s tools and packages are here (' + (stepMissing.length ? stepMissing.map((m) => m.name).join(', ') : 'none missing') + ')', stepMissing.length === 0)
     /* ---- the three shapes: a feature that is off asks for nothing, and that includes the backend ---- */
-    const OFF = Object.fromEntries(Object.keys(FEATURES).map((k) => [k, false]))
+    const OFF: Record<string, boolean> = Object.fromEntries(Object.keys(FEATURES).map((k) => [k, false]))
     const STATIC = { backend: false, content: 'files', repo: false, mode: 'static' }
     const siteUrl = { VITE_APP_URL: 'https://example.com' }
     t('a static site with every module off needs nothing but its own address', checkDeploy(siteUrl, none, OFF, [], STATIC).ok)
@@ -965,11 +958,9 @@ if (isMain(import.meta.url)) {
     t('a static site is not asked for the push pair', !keys(checkDeploy(siteUrl, none, OFF, [], STATIC)).includes('VAPID_PRIVATE_KEY'))
     t('a static site still needs its own address (the sitemap and absolute links)', keys(checkDeploy({}, none, OFF, [], STATIC)).includes('VITE_APP_URL'))
     /* REFUSED BY THE FEATURE, NOT THE VARIABLE */
-    for (const [m, word] of [['store', /nowhere to keep an order/], ['sessions', /nowhere to keep a booking/], ['spaces', /nowhere to keep a room/]]) {
-      // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
+    for (const [m, word] of [['store', /nowhere to keep an order/], ['sessions', /nowhere to keep a booking/], ['spaces', /nowhere to keep a room/]] as Array<[string, RegExp]>) {
       const r = checkDeploy(siteUrl, none, { ...OFF, [m]: true }, [], STATIC)
       t(`a static site with ${m} on is refused by the feature`, !r.ok && r.missing.some((x) => x.key === m && (word as any).test(x.why)))
-      // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
       t(`…and not by a variable name`, !keys(checkDeploy(siteUrl, none, { ...OFF, [m]: true }, [], STATIC)).includes('SUPABASE_DB_URL'))
     }
     /* a declaration beside a stray key is a mistake, not an override */
@@ -1005,7 +996,6 @@ if (isMain(import.meta.url)) {
   const { deploymentShape } = await import('./site.mjs')
   const shape = deploymentShape(site, env)
   const { loadSteps, needsOf } = await import('./steps.mjs')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ backend: boolean; content: any; repo: any; mode: string; }' is not assignable to parameter of type 'null | undefined'.
   const r = checkDeploy(env, s, site.modules, needsOf(await loadSteps(site), site, env, shape), shape, [], undefined, site)
   console.log(format(r, s))
   process.exit(r.ok ? 0 : 1)

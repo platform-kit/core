@@ -16,14 +16,14 @@ import { loadSite } from './site.mjs'
 import { FILE, PLACEHOLDER, NEEDS, needsFor, parseRedirects, fillRedirects, renderNginx, checkRules, siteRules } from './rewrites.mjs'
 import { leave, notHere } from './test-stack.mjs'
 
-const note = (m: any) => console.log('rewrites: ' + m)
+const note = (m: string) => console.log('rewrites: ' + m)
 if (process.env.REWRITES_TEST === '0') { note('skipped (REWRITES_TEST=0)'); process.exit(0) }
 const ROOT = process.cwd()
 const c = await loadSite(ROOT)
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
+const ok = async (name: string, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 // The local Edge Runtime may briefly return gateway errors while regenerated functions start.
-const retryGateway = async (target: any, init?: any) => {
+const retryGateway = async (target: string|URL|Request, init?: RequestInit|undefined) => {
   for (let attempt = 0; attempt < 20; attempt++) {
     const response = await fetch(target, init)
     if (![502, 503].includes(response.status) || attempt === 19) return response
@@ -80,11 +80,10 @@ await ok('the file parsed and checked: every need covered, a rule for a module o
 await ok('per-site redirects inherit only enabled backend rooms and apply local overrides without changing another site', () => {
   const shared = parseRedirects(FULL)
   const modules = { api: false, support: false, sessions: false, forms: false, store: false, network: false }
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ source: string; to: string; status: number; comment: string; }[]' is not assignable to parameter of type 'never[]'. Type
   const perSite = siteRules(shared, parseRedirects('/legacy /index.html 200\n'), modules)
   assert.deepEqual(checkRules(perSite, modules), [])
-  assert.ok(!perSite.some((rule: any) => ['/api/content/*', '/api/desk/*', '/api/scheduling/*', '/api/forms/*', '/api/store/*', '/xrpc/*', '/.well-known/did.json'].includes(rule.source)))
-  assert.ok(perSite.some((rule: any) => rule.source === '/legacy'))
+  assert.ok(!perSite.some((rule) => ['/api/content/*', '/api/desk/*', '/api/scheduling/*', '/api/forms/*', '/api/store/*', '/xrpc/*', '/.well-known/did.json'].includes(rule.source)))
+  assert.ok(perSite.some((rule) => rule.source === '/legacy'))
   const demo = renderNginx(shared)
   const brochure = renderNginx(perSite)
   assert.ok(demo.includes('proxy_pass ${SUPABASE_URL}/functions/v1/content/;'))
@@ -102,7 +101,7 @@ const has = fs.existsSync(path.join(ROOT, FILE))
 if (!has) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the rules)`); notHere('rewrites: the nginx instance', 'the site keeps no ' + FILE); process.exit(fail ? 1 : 0) }
 if (!docker || !up) { note(`${pass} passed${fail ? ', ' + fail + ' failed' : ''} (the rules — ${!docker ? 'Docker is not running' : 'the local stack is not up or the functions are not served'}; the instance is not run)`); leave(fail ? 1 : 0) }
 const rules = parseRedirects(fs.readFileSync(path.join(ROOT, FILE), 'utf8'))
-const hasRule = (source: any) => rules.some((r) => r.source === source)
+const hasRule = (source: string) => rules.some((r) => r.source === source)
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'rewrites-'))
 /* the image's own build context: deploy/nginx as it is, a stand-in dist */
 const dist = path.join(tmp, 'dist')
@@ -131,8 +130,8 @@ try {
   let ready = false
   for (let i = 0; i < 40 && !ready; i++) { await new Promise((r) => setTimeout(r, 500)); try { ready = (await fetch(base + '/', { signal: AbortSignal.timeout(2000) })).status === 200 } catch { /* starting */ } }
   if (!ready) { const logs = spawnSync('docker', ['logs', name], { encoding: 'utf8' }); throw new Error('nginx did not come up:\n' + (logs.stdout + logs.stderr).slice(-2000)) }
-  const request = (p: any, init = {}) => retryGateway(base + p, { redirect: 'manual', ...init })
-  const get = async (p: any, headers = {}) => { const r = await request(p, { headers }); return { status: r.status, type: r.headers.get('content-type') || '', text: await r.text() } }
+  const request = (p: string, init = {}) => retryGateway(base + p, { redirect: 'manual', ...init })
+  const get = async (p: string, headers = {}) => { const r = await request(p, { headers }); return { status: r.status, type: r.headers.get('content-type') || '', text: await r.text() } }
   await ok('every other path is the app: the shell at /, a prerendered page as it is, an unbaked route the shell, a file itself — all 200', async () => {
     const root = await get('/'); assert.equal(root.status, 200); assert.ok(root.text.includes('data-shell'))
     const about = await get('/about'); assert.equal(about.status, 200); assert.ok(about.text.includes('data-prerendered="/about"'), 'the prerendered page')
@@ -178,7 +177,7 @@ try {
     const i = await request('/api/events', { method: 'OPTIONS' }); assert.ok(i.status < 500, 'a preflight: ' + i.status)
   })
   if (hasRule('/api/*')) await ok('the store: its room and the alias Shopify\'s client insists on are one door; /api itself is still the app', async () => {
-    const shop = (p: any) => request(p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    const shop = (p: string) => request(p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
     const r = await shop('/api/2024-10/graphql.json')
     assert.equal(r.status, 401); const j = await r.json(); assert.ok(j.errors && j.errors[0].message)
     const room = await shop('/api/store/api/2024-10/graphql.json')

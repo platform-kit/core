@@ -187,7 +187,7 @@ if (process.env.ANALYTICS_TEST !== '0') {
            the same millisecond can find one row or none. Wait for what was sent rather than
            asserting on whatever happened to have landed: that race passed on a warm function and
            failed in a full run, which is the worst way for a check to be wrong. */
-        const rowsIn: any = async (n: any) => { let r: any = []; for (let i = 0; i < 40; i++) { r = (await service.from('events').select('type, user_id, props, source').eq('session_id', sid).order('occurred_at')).data || []; if (r.length >= n) return r; await new Promise((z) => setTimeout(z, 250)) } return r }
+        const rowsIn = async (n: any) => { let r: any = []; for (let i = 0; i < 40; i++) { r = (await service.from('events').select('type, user_id, props, source').eq('session_id', sid).order('occurred_at')).data || []; if (r.length >= n) return r; await new Promise((z) => setTimeout(z, 250)) } return r }
         const got = await rowsIn(2)
         ok('the signed-in reader\'s rows carry their user from the JWT alone, the name as sent, the country from the header', () => {
           assert.equal(mine.status, 200); assert.equal(got.length, 2)

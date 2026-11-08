@@ -14,7 +14,7 @@
 /* the tree, from the flat list the database returns. Oldest first; an orphan (its parent gone from
    this page, or a parent that would loop) is treated as a top-level line rather than dropped —
    losing somebody's words to a broken pointer is the worse failure. */
-export function treeOf(rows = []) {
+export function treeOf(rows: { id: any; parent: any; name: any; created_at: string; body: any; up: number; down: number }[] = []) {
   const list = (rows || []).filter((r: any) => r && r.id)
   const by = new Map(list.map((r: any) => [r.id, { ...r, kids: [] }]))
   const roots = []
@@ -179,7 +179,7 @@ export function voteTally(c: { up: any; down: any; my_vote: any }, next: number)
    "assassin" get held, and a filter that cries wolf is one a moderator stops reading. The same
    rule is written in SQL in 97-comments.sql, because that is where a comment is actually held;
    build/comments-db.test.mjs runs these same cases through the database so the two cannot drift. */
-export function flaggedWord(body = '', words = []) {
+export function flaggedWord(body = '', words: string[] = []) {
   const text = String(body || '')
   for (const raw of words || []) {
     const w = String(raw || '').trim()
@@ -221,7 +221,7 @@ export function holdsFor({ approval = 'none', body = '', words = [], trusted = f
  * This is not a secret and cannot be: somebody determined can comment by visiting the site itself.
  * What it prevents is a site's comments appearing under pages it did not agree to.
  */
-export function embedAllowed(origin: string|URL, domains = [], self = '') {
+export function embedAllowed(origin: string|URL, domains: string[] = [], self = '') {
   const list = (domains || []).map((d) => String(d || '').trim().toLowerCase()
     .replace(/^[a-z]+:\/\//, '').replace(/\/.*$/, '').replace(/:\d+$/, '')).filter(Boolean)
   if (!list.length) return true

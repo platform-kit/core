@@ -15,15 +15,15 @@ import { CORE } from './models/core/index.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 let n = 0, bad = 0
-const ta = async (name: any, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 4).join('\n    ')) } }
+const ta = async (name: string, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 4).join('\n    ')) } }
 const ROOT = process.cwd()
 
 /* ---- the round trip: every record of every model with a file, read and serialised — byte for byte where the file is
    already in its model's canonical form (every file the admin wrote is), and by meaning otherwise: the record it parses
    to again, its data and its body, deep-equal. A file that loses meaning is a fault; one that only gains its canonical
    form is counted. ---- */
-const same = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
-async function roundTrip(root: any, models: any) {
+const same = (a: { data: any; content: string; parsed: any }, b: { data: any; content: string; parsed: any }) => JSON.stringify(a) === JSON.stringify(b)
+async function roundTrip(root: string, models: any[]) {
   const diffs = [], seen = [], canonical = []
   for (const m of models) {
     if (m.list && !m.grammar.parse) continue
@@ -43,7 +43,7 @@ async function roundTrip(root: any, models: any) {
       let back
       try { back = await m.grammar.parse(out, { root, name, file }) } catch (e: any) { diffs.push(`${rel}: the file written back does not parse — ${e.message}`); continue }
       /* what the writer never writes — `published: true` (the default), an empty list, a blank — is no loss; a trailing blank line is nothing */
-      const strip = (r: any) => ({ data: cleanData(r.data || {}), content: String(r.content || '').replace(/\s+$/, ''), parsed: r.parsed })
+      const strip = (r: { data: any; content: any; parsed: any }) => ({ data: cleanData(r.data || {}), content: String(r.content || '').replace(/\s+$/, ''), parsed: r.parsed })
       if (!same(strip(back), strip(rec))) diffs.push(rel)
     }
   }
@@ -52,7 +52,7 @@ async function roundTrip(root: any, models: any) {
 
 if (process.argv.includes('--roundtrip')) {
   const models = await registry(ROOT)
-  const { diffs, seen, canonical } = await roundTrip(ROOT, models.filter((m: any) => !['print', 'recommendations', 'policy'].includes(m.key)))
+  const { diffs, seen, canonical } = await roundTrip(ROOT, models.filter((m: { key: string }) => !['print', 'recommendations', 'policy'].includes(m.key)))
   console.log(`${seen.length} file(s) read through their models and written back: ${canonical.length} byte for byte, ${seen.length - canonical.length - diffs.length} the same in meaning (hand-written, canonical once saved)`)
   if (diffs.length) { console.log('✖ these lose meaning:\n  ' + diffs.join('\n  ')); process.exit(1) }
   console.log('✔ no file loses a key, a value or its body'); process.exit(0)
@@ -83,9 +83,9 @@ await ta('the route table: the pipe\'s endpoints and the three beside it, and no
   assert.deepEqual(routes, ['action', 'asset', 'collections', 'drafts', 'file', 'images', 'keep', 'list', 'media', 'media-file', 'options', 'preview', 'publish', 'run', 'run/stop', 'upload', 'upload-image'])   /* drafts · publish · keep: cloud mode's, answered from the checkout as empty and no-ops */
   const theme = path.join(HERE, '../theme/src')
   // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-  const walk = (d: any) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
-  const hits = walk(theme).filter((f: any) => /\.(vue|js|ts)$/.test(f)).filter((f: any) => /__admin\/(forms|funnels|emails|strings|models|print|quiz|recommendations)\b/.test(fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))
-  assert.deepEqual(hits.map((f: any) => path.relative(theme, f)), [])
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
+  const hits = walk(theme).filter((f: string) => /\.(vue|js|ts)$/.test(f)).filter((f: fs.PathOrFileDescriptor) => /__admin\/(forms|funnels|emails|strings|models|print|quiz|recommendations)\b/.test(fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))
+  assert.deepEqual(hits.map((f: string) => path.relative(theme, f)), [])
 })
 await ta('a save through the pipe: refused before the write and the hook; a good save writes once and runs the hook once', async () => {
   const d = fs.mkdtempSync(path.join(HERE, '.pipe-'))
@@ -139,8 +139,8 @@ await ta('every bare name a function reaches is in its own import map', async ()
   if (!fs.existsSync(fns)) return   /* not assembled here */
   const BARE = /^\s*(?:import|export)\s[^'"\n]*?from\s*['"]([^'"]+)['"]/gm
   const PLAIN = /^\s*import\s*['"]([^'"]+)['"]/gm
-  const ext = (p: any) => (fs.existsSync(p) ? p : ['.ts', '.js', '.mjs', '/index.ts', '/index.js', '/index.mjs'].map((e) => p + e).find((c) => fs.existsSync(c)))
-  const specs = (text: any) => [...text.matchAll(BARE), ...text.matchAll(PLAIN)].map((m) => m[1])
+  const ext = (p: fs.PathLike) => (fs.existsSync(p) ? p : ['.ts', '.js', '.mjs', '/index.ts', '/index.js', '/index.mjs'].map((e) => p + e).find((c) => fs.existsSync(c)))
+  const specs = (text: string) => [...text.matchAll(BARE), ...text.matchAll(PLAIN)].map((m) => m[1])
   function reach(entry: any) {
     const seen = new Set(), names = new Set(), queue = [entry]
     while (queue.length) {
@@ -179,7 +179,7 @@ await ta('shared pipe imports do not depend on a function-scoped import map', as
   const STATIC_IMPORT = /^\s*(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]/gm
   const DYNAMIC_IMPORT = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g
   // @ts-expect-error TS7023, from the conversion: 'code' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-  const code = (dir: any) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+  const code = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const file = path.join(dir, entry.name)
     if (entry.isDirectory()) return code(file)
     return /\.(?:[cm]?js|ts)$/.test(file) ? [file] : []

@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 import { searchRows, pageWords, OFF_PALETTE, offPalette, quotable, FREE_TO_QUOTE } from '../src/lib/search-rows.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nSEARCH\n')
 
@@ -54,7 +54,7 @@ console.log('\nSEARCH\n')
     { kind: 'page', id: 'p', title: 'Money', sub: '', text: 'money money', tags: [], href: '/p' },
     { kind: 'product', id: 'q', title: 'Money', sub: '', text: 'money money', tags: [], href: '/q' },
   ]
-  const kinds = (kind?: any) => offPalette(rows, kind).map((r: any) => r.kind)
+  const kinds = (kind?: any) => offPalette(rows, kind).map((r) => r.kind)
   ok('a page is in the index', rows.some((r) => r.kind === 'page'))
   ok('…and out of an ordinary search', !kinds().includes('page'), kinds().join(','))
   ok('…unless the search asks for pages', kinds('page').includes('page'))
@@ -77,13 +77,13 @@ console.log('\nSEARCH\n')
     // @ts-expect-error TS2322, from the conversion: Type '{ id: string; title: string; description: string; body: string; }' is not assignable to type 'never'.
     articles: [{ id: 'a', title: 'A', description: 'd', body: '<p>free to read</p>' }],
   })
-  const book = rows.find((r: any) => r.kind === 'book')
-  const art = rows.find((r: any) => r.kind === 'article')
+  const book = rows.find((r: { kind: string }) => r.kind === 'book')
+  const art = rows.find((r: { kind: string }) => r.kind === 'article')
   ok('a book matches on the whole of itself', book.text.includes('universe is mental'))
   ok('…and quotes only what is on its cover', book.quote === 'Seven principles.', book.quote)
   ok('…so no paywalled line can be quoted back', !book.quote.includes('universe is mental'))
   ok('a free document quotes what it matches on', art.quote === art.text)
-  ok('every row says which it is', rows.every((r: any) => typeof r.quote === 'string'))
+  ok('every row says which it is', rows.every((r: { quote: any }) => typeof r.quote === 'string'))
   ok('a book is not free to quote', quotable('book') === false)
   ok('an article is', quotable('article') === true)
   /* a kind nobody has classified is treated as free, which is the forgiving default — so a NEW

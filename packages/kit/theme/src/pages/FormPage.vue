@@ -12,7 +12,6 @@ const props = defineProps({ path: { type: String, required: true } })
 const slug = computed(() => props.path.slice((props.path.startsWith(ROUTES.to + '/') ? ROUTES.to : ROUTES.form).length + 1).split('/')[0])
 const form = computed(() => (FORMS || []).find((f: { slug: string; published: boolean }) => f.slug === slug.value && f.published !== false) || null)
 const W = (us('forms').end || {}).state || {}
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: form.value ? form.value.title : (W.off || ''), description: form.value ? (form.value.model.settings['meta-description'] || '') : '', path: props.path, noindex: !form.value })
 </script>
 

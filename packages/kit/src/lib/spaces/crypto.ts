@@ -659,8 +659,7 @@ export function context({ me, device, db, host, store }: any) {
       }
       sessions[roomId] = { sessions: held }
     }
-    // @ts-expect-error TS18046, from the conversion: 'n' is of type 'unknown'.
-    const count = Object.values(sessions).reduce((n, r) => n + Object.keys(r.sessions || {}).length, 0)
+    const count = Object.values(sessions as Record<string, { sessions?: object }>).reduce((n, r) => n + Object.keys(r.sessions || {}).length, 0)
     await db.from('space_key_backups')
       .update({ sessions, count, etag: String(Date.now()), updated_at: new Date().toISOString() })
       .eq('user_id', me).eq('version', row.version)

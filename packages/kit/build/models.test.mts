@@ -83,7 +83,7 @@ t('the fixture model reads clean and holds every kind', () => {
   assert.deepEqual(every.errors, [])
   const kinds = new Set(every.model.fields.map((f: any) => f.kind))
   for (const k of KIND_KEYS) assert.ok(kinds.has(k), 'kind ' + k)
-  const m: any = every.model
+  const m = every.model
   assert.equal(m.title, 'title'); assert.equal(m.body, 'Notes'); assert.deepEqual(m.access, ['authenticated'])
   assert.deepEqual(m.order, { by: 'rank', dir: 'desc' }); assert.deepEqual(m.deliver, { data: true, pages: true, json: true, section: true })
   const code = m.fields.find((f: any) => f.key === 'code')
@@ -160,7 +160,7 @@ t('required, unique, a reference that is not there, a rule — each named by fie
   assert.equal(errs({ ...first.data, title: '' })[0].message, 'Title is required.')
   assert.deepEqual(errs({ ...first.data, title: 'ab' }).map((e: any) => e.message), ['Title must be at least 3.'])
   // @ts-expect-error TS2322, from the conversion: Type '{ title: string; }' is not assignable to type 'never'.
-  assert.deepEqual(errs(first.data, [{ title: 'First entry' }]).map((e: any) => e.message), ['Title must be unique — another entry has this value.'])
+  assert.deepEqual(errs(first.data, [{ title: 'First entry' }]).map((e) => e.message), ['Title must be unique — another entry has this value.'])
   assert.deepEqual(errs({ ...first.data, host: 'zed' }).map((e: any) => e.message), ['Host: no entry "zed".'])
   assert.deepEqual(errs({ ...first.data, guests: ['bob', 'zed'] }).map((e: any) => e.field), ['guests'])
   assert.deepEqual(errs({ ...first.data, where: { seats: 1 } }).map((e: any) => e.field), ['where.city'])

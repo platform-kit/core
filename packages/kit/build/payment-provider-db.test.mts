@@ -5,7 +5,7 @@ import { localStack, loadDotEnv, serviceKey, supabaseUrl } from './tts/storage.m
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (message: any) => console.log('payment-provider-db: ' + message)
+const note = (message: string) => console.log('payment-provider-db: ' + message)
 const schema = readFileSync(new URL('../supabase/schemas/40-commerce.sql', import.meta.url), 'utf8')
 const data = readFileSync(new URL('../supabase/data.sql', import.meta.url), 'utf8')
 const webhook = readFileSync(new URL('../supabase/functions/stripe-webhook/index.ts', import.meta.url), 'utf8')
@@ -84,7 +84,7 @@ const refs = providers.map((provider, index) => ({
 }))
 
 try {
-  const writePurchase = (checkoutIdentity: any) => admin.rpc('purchase_write', {
+  const writePurchase = (checkoutIdentity: string) => admin.rpc('purchase_write', {
     p: {
       checkout_identity: checkoutIdentity,
       price_id: priceId,

@@ -17,8 +17,8 @@ import matter from 'gray-matter'
 import { parse as parseYaml } from 'yaml'
 
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String(e && e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
-const parseFrontmatter = (source: any) => matter(source, { engines: { yaml: { parse: parseYaml } } })
+const ok = async (name: string, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String(e && e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
+const parseFrontmatter = (source: string) => matter(source, { engines: { yaml: { parse: parseYaml } } })
 
 console.log('\nCONTENT COLLECTIONS, AS THE SECOND ENGINE\n')
 

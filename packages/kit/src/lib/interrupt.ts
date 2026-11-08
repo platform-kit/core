@@ -25,7 +25,7 @@
    site turning up uninvited. */
 export const QUIET = ['/admin', '/app', '/spaces', '/feed', '/p', '/__preview', '/__share', '/api', '/form/', '/to/', '/book/', '/cart/c/', '/checkout/', '/support', '/embed/']
 
-export function mayInterrupt(path: string|null, communityRoutes = []) {
+export function mayInterrupt(path: string|null, communityRoutes: string[] = []) {
   const p = String(path || '')
   if (!p.startsWith('/')) return false
   const prefixes = QUIET.concat(Array.isArray(communityRoutes) ? communityRoutes.filter((q: any) => typeof q === 'string' && q.startsWith('/')) : [])

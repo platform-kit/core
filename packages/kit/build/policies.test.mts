@@ -7,7 +7,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('policies: ' + m)
+const note = (m: string) => console.log('policies: ' + m)
 if (process.env.POLICY_TEST === '0') { note('skipped (POLICY_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -17,8 +17,8 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
-const as = async (email: any) => {
+const ok = (msg: string, cond: boolean) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
+const as = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -60,7 +60,7 @@ ok('admin_people answers a member nothing', none.data === null)
   const coach = await as('coach@example.com')
   const support = await as('support@example.com')
   const reader = await as('free@example.com')
-  const rolesOf = async (email: any) => ((await service.from('profiles').select('roles').eq('email', email).maybeSingle()).data || {}).roles || []
+  const rolesOf = async (email: string) => ((await service.from('profiles').select('roles').eq('email', email).maybeSingle()).data || {}).roles || []
 
   ok('the seed\'s coach holds coach and is not an administrator',
     (await rolesOf('coach@example.com')).join() === 'provider')
@@ -68,7 +68,7 @@ ok('admin_people answers a member nothing', none.data === null)
   ok('a reader holds nothing at all', (await rolesOf('free@example.com')).length === 0)
 
   /* the capabilities, asked of the database as the person */
-  const can = async (who: any, fn: any) => (await who.sb.rpc(fn)).data === true
+  const can = async (who: { sb: any; id?: string }, fn: string) => (await who.sb.rpc(fn)).data === true
   ok('a coach is a coach', await can(coach, 'is_provider'))
   ok('and is not an administrator', !(await can(coach, 'is_admin')))
   ok('and may not see the figures', !(await can(coach, 'may_see_figures')))
@@ -79,7 +79,7 @@ ok('admin_people answers a member nothing', none.data === null)
   ok('a reader is none of them', !(await can(reader, 'is_staff')) && !(await can(reader, 'is_provider')))
 
   /* and what that means for what they can read */
-  const inboxOf = async (who: any) => ((await who.sb.rpc('chat_inbox')).data || [])
+  const inboxOf = async (who: { sb: any; id?: string }) => ((await who.sb.rpc('chat_inbox')).data || [])
   if (await moduleOn('coaching')) ok('a coach is given the threads waiting on them', (await inboxOf(coach)).length > 0)
   else notHere('policies: a coach\'s inbox', 'the coaching module is off')
   ok('and somebody on the support desk is given none of them', (await inboxOf(support)).length === 0)

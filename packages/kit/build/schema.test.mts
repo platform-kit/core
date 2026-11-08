@@ -30,22 +30,22 @@ const SHADOW = RUN_SITE ? await findFreePort(PORT + 1) : PORT - 1
 /* its database is where Docker publishes: this machine, or the end-to-end run's own daemon beside its container */
 const DOCKER_AT = (process.env.SUPABASE_SERVICES_HOSTNAME || '').trim() || '127.0.0.1'
 const TARGET = `postgresql://postgres:postgres@${DOCKER_AT}:${PORT}/postgres?sslmode=disable`
-const note = (m: any) => console.log('schema: ' + m)
+const note = (m: string) => console.log('schema: ' + m)
 if (process.env.SCHEMA_TEST === '0') { note('skipped (SCHEMA_TEST=0)'); process.exit(0) }
 if (spawnSync('docker', ['info'], { stdio: 'ignore' }).status !== 0) { note('skipped — Docker is not running, and the plan needs a shadow'); process.exit(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
+const ok = (msg: string, cond: boolean) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg) } }
 /* --workdir names the scratch project outright: the CLI walks past a node_modules directory when it looks for one, and
    from the scratch's cwd alone it would find — and stop, and start — the site's own stack */
-const sb = (args: any, opts = {}) => spawnSync('npx', ['supabase', '--workdir', SCR, ...args], { cwd: SCR, encoding: 'utf8', env: process.env, ...opts })
+const sb = (args: string[], opts = {}) => spawnSync('npx', ['supabase', '--workdir', SCR, ...args], { cwd: SCR, encoding: 'utf8', env: process.env, ...opts })
 let db = new pg.Client({ connectionString: TARGET })
-const rows = async (s: any, p = []) => (await db.query(s, p)).rows
+const rows = async (s: string, p = []) => (await db.query(s, p)).rows
 const plan = (env = {}) => computePlan({ root: SCR, target: TARGET, shadowUrl: null, env: { ...process.env, PLATFORMKIT_ALLOW_DESTRUCTIVE: '', ...env } })
-const apply = async (env?: any) => { const p = await plan(env); await applyPlan(p, TARGET, () => {}); return p }
+const apply = async (env?: {}|undefined) => { const p = await plan(env); await applyPlan(p, TARGET, () => {}); return p }
 const diffOf = (p: any) => p.parts.diff.replace(/^SET local[^\n]*\n/m, '').trim()
-const site = (name: any, text: any) => { const d = path.join(SCR, 'supabase', 'schemas', 'site'); fs.mkdirSync(d, { recursive: true }); if (text == null) fs.rmSync(path.join(d, name), { force: true }); else fs.writeFileSync(path.join(d, name), text) }
-const kitFile = (name: any, fn: any) => { const f = path.join(SCR, 'supabase', 'schemas', name); fs.writeFileSync(f, fn(fs.readFileSync(f, 'utf8'))) }
+const site = (name: string, text: string|NodeJS.ArrayBufferView<ArrayBufferLike>|null) => { const d = path.join(SCR, 'supabase', 'schemas', 'site'); fs.mkdirSync(d, { recursive: true }); if (text == null) fs.rmSync(path.join(d, name), { force: true }); else fs.writeFileSync(path.join(d, name), text) }
+const kitFile = (name: string, fn: { (s: any): any; (s: any): any; (arg0: string): string|NodeJS.ArrayBufferView<ArrayBufferLike> }) => { const f = path.join(SCR, 'supabase', 'schemas', name); fs.writeFileSync(f, fn(fs.readFileSync(f, 'utf8'))) }
 
 /* ---- the scratch project: the kit's declaration copied, no migrations, a database of its own ---- */
 fs.rmSync(SCR, { recursive: true, force: true })
@@ -352,7 +352,7 @@ try {
     // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never'.
     [migrationExternalIds],
   )
-  const migratedKeys = new Set(migratedRefs.map((row: any) =>
+  const migratedKeys = new Set(migratedRefs.map((row: { object_type: any; external_id: any; entity_type: any; entity_id: any }) =>
     [row.object_type, row.external_id, row.entity_type, row.entity_id].join('|')))
   const expectedMigratedRefs = [
     ['customer', customerId, 'profiles', migrationUserId],
@@ -407,7 +407,7 @@ try {
   ok('repeat backfill creates no duplicate references or webhook events',
     replayRefs.length === migratedRefs.length && replayEvents.length === 1)
   ok('the repeat backfill keeps the declaration converged', (await plan()).empty && p.verdict.ok)
-  const storagePolicies = new Set((await rows("select policyname from pg_policies where schemaname = 'storage'")).map((row: any) => row.policyname))
+  const storagePolicies = new Set((await rows("select policyname from pg_policies where schemaname = 'storage'")).map((row: { policyname: any }) => row.policyname))
   const requiredStoragePolicies = [
     'social_media_publisher_read',
     'social_media_publisher_insert',
@@ -417,20 +417,20 @@ try {
   const authTriggers = await rows("select t.tgname from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'auth' and not t.tgisinternal")
   ok('the Social storage policies and auth trigger are there',
     requiredStoragePolicies.every((name) => storagePolicies.has(name))
-      && authTriggers.some((trigger: any) => trigger.tgname === 'trg_on_auth_user_created'))
-  const bucketIds = new Set((await rows('select id from storage.buckets')).map((row: any) => row.id))
+      && authTriggers.some((trigger: { tgname: string }) => trigger.tgname === 'trg_on_auth_user_created'))
+  const bucketIds = new Set((await rows('select id from storage.buckets')).map((row: { id: any }) => row.id))
   const requiredBuckets = ['audio', 'models', 'chat', 'spaces', 'print', 'support', 'social', 'forms', 'avatars', 'recordings', 'content-assets']
   ok('the data landed: required buckets are present', requiredBuckets.every((id) => bucketIds.has(id)))
   /* the platform's default privileges grant every new function to anon and authenticated as it is made, after the
      diff's revokes were computed against nothing: the apply's settling pass holds those revokes alone (grants and
      revokes, never a structural statement) and applies them in the same run, so the plan after is empty at once */
   p = await plan()
-  if (!p.empty) console.log('    the plan after one apply still holds:\n' + diffOf(p).split('\n').slice(0, 12).map((l: any) => '      ' + l).join('\n'))
+  if (!p.empty) console.log('    the plan after one apply still holds:\n' + diffOf(p).split('\n').slice(0, 12).map((l: string) => '      ' + l).join('\n'))
   ok('after one apply the plan is empty: the settling pass took the revokes the default privileges undid', p.empty && p.verdict.ok)
   /* 2. a kit change: a column added is the plan's one statement */
-  kitFile('20-instrument.sql', (s: any) => s.replace('CREATE TABLE IF NOT EXISTS "public"."signals" (', 'CREATE TABLE IF NOT EXISTS "public"."signals" (\n    "scratch_note" "text",'))
+  kitFile('20-instrument.sql', (s: string) => s.replace('CREATE TABLE IF NOT EXISTS "public"."signals" (', 'CREATE TABLE IF NOT EXISTS "public"."signals" (\n    "scratch_note" "text",'))
   p = await plan()
-  ok('a column added: the plan holds it', /ADD COLUMN "scratch_note" text/.test(p.parts.diff) && diffOf(p).split(';').filter((x: any) => x.trim()).length === 1)
+  ok('a column added: the plan holds it', /ADD COLUMN "scratch_note" text/.test(p.parts.diff) && diffOf(p).split(';').filter((x: string) => x.trim()).length === 1)
   await applyPlan(p, TARGET, () => {})
   ok('applied, the plan is empty', (await plan()).empty)
   /* 3. a site's own table with a foreign key to a kit table and a policy on is_admin() */
@@ -450,7 +450,7 @@ try {
   p = await plan()
   ok('a rename: the plan renames the table', /ALTER TABLE "public"."site_notes" RENAME TO "site_memos"/.test(p.parts.renames))
   ok('… and its key, its index and its sequence', /RENAME CONSTRAINT "site_notes_pkey"|ALTER INDEX "public"."site_notes_pkey"/.test(p.parts.renames) && /"site_notes_user_id_idx" RENAME TO "site_memos_user_id_idx"/.test(p.parts.renames) && /ALTER SEQUENCE "public"."site_notes_id_seq"/.test(p.parts.renames))
-  ok('… nothing destructive, and the old table\'s drop set aside', p.verdict.ok && !/DROP TABLE/.test(p.parts.diff) && p.setAside.some((x: any) => /DROP TABLE "public"."site_notes"/.test(x)))
+  ok('… nothing destructive, and the old table\'s drop set aside', p.verdict.ok && !/DROP TABLE/.test(p.parts.diff) && p.setAside.some((x: string) => /DROP TABLE "public"."site_notes"/.test(x)))
   await applyPlan(p, TARGET, () => {})
   ok('the rows are there under the new name', (await rows('select count(*)::int as n from public.site_memos'))[0].n === 3)
   ok('the policy came along and the plan is empty', (await rows("select count(*)::int as n from pg_policies where tablename = 'site_memos'"))[0].n === 1 && (await plan()).empty)
@@ -476,7 +476,7 @@ try {
    * with a value in it refuses, says how many values, and takes the plan's own digest as consent.
    */
   /* 5a. nothing in it: applied, with the count said out loud and nobody asked */
-  kitFile('20-instrument.sql', (s: any) => s.replace('\n    "scratch_note" "text",', ''))
+  kitFile('20-instrument.sql', (s: string) => s.replace('\n    "scratch_note" "text",', ''))
   p = await plan()
   ok('a column no row has written to: nothing to lose', p.verdict.ok && p.verdict.free.length === 1
     && p.verdict.free[0].object === 'public.signals.scratch_note' && p.verdict.free[0].cost.kept === 0)

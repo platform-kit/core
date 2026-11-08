@@ -19,8 +19,8 @@ import { REPO as SETUP_REPO, REV as SETUP_REV, BROWSER_FILES as SETUP_FILES } fr
 import { REPO, REV, BROWSER_FILES } from '../src/lib/tts/weights.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const hash = (text: any) => createHash('sha1').update(hashInput(text, ENGINE)).digest('hex').slice(0, 16)
+const ok = (name: string|boolean, cond: string|boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const hash = (text: string) => createHash('sha1').update(hashInput(text, ENGINE)).digest('hex').slice(0, 16)
 
 console.log('\nSPEECH\n')
 
@@ -81,7 +81,7 @@ ok('every weight the browser wants is one the script fetches', BROWSER_FILES.eve
  * empty one are the same answer.
  */
 {
-  const audioFor = (manifest: any, title: any) => (manifest && manifest[title]) || null
+  const audioFor = (manifest: { [x: string]: any; "Another Chapter"?: { full: {} }; "A Chapter"?: { full: { file: string } } }|null, title: string) => (manifest && manifest[title]) || null
   ok(audioFor(null, 'A Chapter') === null, 'no manifest at all: no recording')
   ok(audioFor({}, 'A Chapter') === null, 'an empty manifest: no recording')
   ok(audioFor({ 'Another Chapter': { full: {} } }, 'A Chapter') === null, 'a manifest without this chapter: no recording')

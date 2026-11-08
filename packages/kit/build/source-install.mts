@@ -33,7 +33,7 @@ export function platformKitPackageHash(root: string) {
   return hashPackageTree(root, hash)
 }
 
-function hashPackageTree(root: string, hash: crypto.Hash, includedFiles = null) {
+function hashPackageTree(root: string, hash: crypto.Hash, includedFiles: Iterable<unknown>|null|undefined = null) {
   const included = includedFiles === null ? null : new Set(includedFiles)
   const visit = (dir: any) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {

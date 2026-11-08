@@ -11,7 +11,7 @@ import {
 import { publicSite } from './site.mjs'
 
 let pass = 0, fail = 0
-const ok = (msg: any, fn: any) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL  ' + msg + ' — ' + (e && e.message ? e.message : e)) } }
+const ok = (msg: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL  ' + msg + ' — ' + (e && e.message ? e.message : e)) } }
 
 const CAPS = ['checkout.one-time', 'customer.create']
 const hsSite = { name: 'Probe', payments: { provider: 'hyperswitch', profileCapabilities: CAPS, controlCenterUrl: 'https://control.example.test' } }
@@ -43,7 +43,7 @@ ok('…and so does everything the bundle is given about the site', () => {
   for (const k of [...HYPERSWITCH.secrets, ...STRIPE.secrets]) assert.ok(!pub.includes(k), k)
 })
 
-const refuses = (msg: any, providers: any, selected = 'stripe', configuration = {}, pattern: any) => ok(msg, () => assert.throws(() => paymentProviderRegistrySource(providers, selected, configuration), pattern))
+const refuses = (msg: string, providers: any[], selected = 'stripe', configuration = {}, pattern: any) => ok(msg, () => assert.throws(() => paymentProviderRegistrySource(providers, selected, configuration), pattern))
 refuses('a registry that names a provider not registered is refused, naming it', [STRIPE], 'hyperswitch', { profileCapabilities: CAPS }, /hyperswitch/)
 refuses('a provider registered twice is refused', [STRIPE, { ...STRIPE }], 'stripe', {}, /more than once/)
 refuses('a registry without the built-in Stripe adapter is refused', [HYPERSWITCH], 'hyperswitch', { profileCapabilities: CAPS }, /Stripe/)

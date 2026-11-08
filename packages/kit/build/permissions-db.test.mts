@@ -26,12 +26,12 @@ import { statusOf, leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const note = (s: any) => console.log('  ' + s)
+const ok = (name: string, cond: boolean, detail: string) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const note = (s: string) => console.log('  ' + s)
 
 console.log('\nTHE ABILITY AND THE POLICIES, ASKED THE SAME QUESTION\n')
 
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The agreement between the rules and the policies is NOT covered by this run.\n'); leave(0) }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n    The agreement between the rules and the policies is NOT covered by this run.\n'); leave(0) }
 let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
@@ -47,7 +47,7 @@ const admin = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: 
  */
 const WHO = ['admin@example.com', 'support@example.com', 'member@example.com', 'free@example.com', 'analyst@example.com']
 
-async function identityFor(email: any) {
+async function identityFor(email: string) {
   const { data: u } = await admin.from('profiles').select('id, role, roles, email_verified_at').eq('email', email).maybeSingle()
   if (!u) return null
   /* the entitlements as the app would have them: read as that person, through the same rpc the
@@ -86,14 +86,14 @@ const KNOWN: any = [
    * fixed is as wrong as an undeclared one.
    */
 ]
-const known: any = (who: any, subject: any) => KNOWN.find((k: any) => k.who === who && k.subject === subject)
+const known = (who: string, subject: string) => KNOWN.find((k: { who: any; subject: any }) => k.who === who && k.subject === subject)
 
 const CASES = [
   { table: 'support_conversations', action: 'read', subject: 'SupportConversation', why: 'the desk' },
   { table: 'support_contacts', action: 'read', subject: 'Contact', why: 'who wrote to the desk' },
 ]
 
-const signedIn = async (email: any) => {
+const signedIn = async (email: string) => {
   const c = createClient<Database>(cfg.API_URL, cfg.ANON_KEY, { auth: { persistSession: false } })
   const { error } = await c.auth.signInWithPassword({ email, password: 'password123' })
   return error ? null : c

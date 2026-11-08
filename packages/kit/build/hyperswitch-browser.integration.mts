@@ -49,7 +49,7 @@ const stepsFile = path.join(here, 'hyperswitch-browser.steps.ts')
 const PAN = '4242424242424242'
 const DECLINED_PAN = '4000000000000002'
 const failures = []
-const check = (name: any, ok: any, detail = '') => {
+const check = (name: string, ok: boolean, detail = '') => {
   console.log(`${ok ? 'pass' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`)
   if (!ok) failures.push(name)
 }
@@ -70,7 +70,7 @@ if (!siteUrl) {
 }
 const siteOrigin = new URL(siteUrl).origin
 
-const deno = (args: any) => {
+const deno = (args: any[]) => {
   const result = spawnSync('deno', [
     'run', '--allow-net', '--allow-env', stepsFile, ...args,
   ], {
@@ -89,12 +89,12 @@ const deno = (args: any) => {
 const { launch, context: browserContext } = await import('./browser.mjs')
 const browser = await launch()
 
-async function checkout(card: any) {
+async function checkout(card: string) {
   const seeded = deno(['seed'])
   const context = await browserContext(browser)
   const page = await context.newPage()
   const siteBodies: any = []
-  context.on('request', (request: any) => {
+  context.on('request', (request: { url: () => string|URL; postData: () => any }) => {
     if (new URL(request.url()).origin === siteOrigin) siteBodies.push(`${request.url()} ${request.postData() ?? ''}`)
   })
   await page.goto(siteUrl, { waitUntil: 'domcontentloaded' })
@@ -111,7 +111,7 @@ async function checkout(card: any) {
   })
   await page.goto(`${siteUrl}/checkout/hyperswitch?session=${encodeURIComponent(seeded.checkoutId)}`, { waitUntil: 'domcontentloaded' })
   const fields = page.frameLocator('iframe').first().frameLocator('iframe').first()
-  const type = async (name: any, text: any) => {
+  const type = async (name: RegExp, text: string) => {
     const box = fields.getByRole('textbox', { name })
     await box.click({ timeout: 30000 })
     await box.pressSequentially(text, { delay: 25 })
@@ -131,7 +131,7 @@ try {
     reachedSuccess = true
   } catch { /* reported below */ }
   check('a paid card returns to the success page', reachedSuccess, paid.page.url())
-  check('no request to the site carried the card number', !paid.siteBodies.some((body: any) => body.includes(PAN)))
+  check('no request to the site carried the card number', !paid.siteBodies.some((body: string|string[]) => body.includes(PAN)))
   const finished = deno(['finish', paid.seeded.checkoutId, paid.seeded.customerId])
   check('retrieval reports the payment paid', finished.paymentState === 'paid', String(finished.paymentState))
   check('the one-time card was deleted', finished.savedMethods === 0, `${finished.savedMethods} saved`)
@@ -145,7 +145,7 @@ try {
   } catch { /* reported below */ }
   check('a declined card shows the checkout error', /could not be completed/i.test(alertText), alertText)
   check('a declined card stays on the checkout', declined.page.url().includes('/checkout/hyperswitch'))
-  check('no request to the site carried the declined card number', !declined.siteBodies.some((body: any) => body.includes(DECLINED_PAN)))
+  check('no request to the site carried the declined card number', !declined.siteBodies.some((body: string|string[]) => body.includes(DECLINED_PAN)))
   await declined.context.close()
 } finally {
   await browser.close()

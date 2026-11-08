@@ -26,7 +26,8 @@ import { randomUUID } from 'node:crypto'
 import matter from 'gray-matter'
 
 export const FUNNELS_DIR = 'content/funnels', BLASTS_DIR = 'content/blasts', POLICY = 'content/emails/policy.md'
-const DUMP = { lineWidth: -1 }
+/* js-yaml's dump option: gray-matter hands its options to the yaml engine, but declares only its own */
+const DUMP = { lineWidth: -1 } as { lineWidth: number } & matter.GrayMatterOption<string, never>
 export const slugOk = (s: any) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(s || ''))
 /* a goal is a path on the site: begins with /, no host, no space */
 export const goalOk = (s: any) => s == null || s === '' || /^\/[^\s]*$/.test(String(s))
@@ -63,7 +64,6 @@ export function serialiseFunnel(data: any, steps: any) {
   for (const k of ['title', 'published', 'design', 'cooldown', 'audience', 'goal']) if (data[k] != null && data[k] !== '' && !(k === 'published' && data[k] === true)) fm[k] = data[k]
   const head = (s: any) => (s.channel === 'chat' ? `channel: chat\nwhen: ${s.when || ''}${String(s.teaser || '').trim() ? '\nteaser: ' + String(s.teaser).trim().replace(/\s+/g, ' ') : ''}${String(s.image || '').trim() ? '\nimage: ' + String(s.image).trim() : ''}` : `after: ${s.after || '0d'}\nsubject: ${s.subject || ''}`)
   const body = steps.map((s: any) => `# ${s.title || 'Step'}\nid: ${keyed(s.id)}\n${head(s)}\n\n${(s.body || '').trim()}\n`).join('\n')
-  // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
   return matter.stringify('\n' + body, fm, DUMP)
 }
 export function parseBlast(raw: any) {
@@ -73,7 +73,6 @@ export function parseBlast(raw: any) {
 export function serialiseBlast(data: any, body: any) {
   const fm: any = { id: keyed(data.id) }
   for (const k of ['title', 'subject', 'design', 'audience', 'respect-cooldown', 'goal', 'status', 'sent_at', 'sent']) if (data[k] != null && data[k] !== '') fm[k] = data[k]
-  // @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
   return matter.stringify('\n' + (body || '').trim() + '\n', fm, DUMP)
 }
 /* the files, through the store (or a root, the checkout): every one async, nothing here opens the disk */
@@ -92,5 +91,4 @@ export async function keyAll(store = process.cwd()) {
   for (const name of await blastNames(store)) { const b = await readBlast(store, name); if (!UUID.test(b.data.id || '')) { await writeBlast(store, name, b.data, b.body); n++ } }
   return n
 }
-// @ts-expect-error TS2559, from the conversion: Type '{ lineWidth: number; }' has no properties in common with type 'GrayMatterOption<string, GrayMatterOption<string, unknown>>'.
-export const writePolicy = (store, data) => asStore(store).write(POLICY, matter.stringify('\n', data, DUMP), { collection: 'emails', slug: 'policy', data })
+export const writePolicy = (store: any, data: object) => asStore(store).write(POLICY, matter.stringify('\n', data, DUMP), { collection: 'emails', slug: 'policy', data })

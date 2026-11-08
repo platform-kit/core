@@ -424,7 +424,6 @@ function buildSpeaker() {
      other preference in this project keeps */
   sp = speaker({
     id, voice: { ...(got.voice || {}), ...voiceSettings(prefs.value, got.voice || {}) },
-    // @ts-expect-error TS2322, from the conversion: Type '(st: any) => void' is not assignable to type '() => void'.
     onState: (st) => {
       /* the endpoint may have failed and handed over, so the provider in force can change */
       if (st.at === 'ready') { fetching.value = null; speaking.value = 'browser' }
@@ -434,7 +433,6 @@ function buildSpeaker() {
     /* a FACTORY, not a worker: the endpoint may fail at any point and fall back to this, so
        the kit's own voice has to be reachable — but a deployment whose endpoint works should
        never build one, and a worker holds about a gigabyte once it has */
-    // @ts-expect-error TS2322, from the conversion: Type '() => any' is not assignable to type 'null | undefined'.
     worker: theWorker,
     // @ts-expect-error TS2322, from the conversion: Type '({ text, voice, format }: any) => Promise<ReadableStream<any> | null>' is not assignable to type 'null | undefined'.
     post: async ({ text, voice, format }) => {

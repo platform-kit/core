@@ -6,7 +6,7 @@ import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const threadBody = (accountId: any, commentId: any, text = 'Please send the guide') => Buffer.from(JSON.stringify({
+const threadBody = (accountId: string, commentId: string, text = 'Please send the guide') => Buffer.from(JSON.stringify({
   values: {
     field: 'replies',
     value: {
@@ -74,7 +74,7 @@ if (functionHealth.status >= 500) {
   process.exit(0)
 }
 
-const client = (key: any) => createClient<Database>(url, key, {
+const client = (key: string) => createClient<Database>(url, key, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 const service = client(serviceKey())
@@ -99,7 +99,7 @@ const clientId = `threads-client-${fixtureId}`
 let previousConfig
 let configSaved = false
 
-async function vaultPut(secret: any, name: any) {
+async function vaultPut(secret: string, name: string) {
   const { data, error } = await service.rpc('social_vault_put', {
     p_secret: secret,
     p_name: name,

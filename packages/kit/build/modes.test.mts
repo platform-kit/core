@@ -54,7 +54,7 @@ const REPO = join(KIT, '..', '..')
 const SITE = process.cwd()
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nDEPLOYMENT MODES\n')
 
@@ -72,7 +72,7 @@ ok('the models load', models.length > 10, String(models.length))
  * is a failure and not a note.
  */
 const MATRIX: any = ALL()
-const moduleOfModel = new Map(models.map((m: any) => [m.key, m.module || (MATRIX[m.key] ? m.key : null)]))
+const moduleOfModel = new Map(models.map((m: { key: string|number; module: any }) => [m.key, m.module || (MATRIX[m.key] ? m.key : null)]))
 /* a content directory belongs to the module of the model that edits it */
 const moduleOfDir = new Map()
 for (const [dir, k] of Object.entries(KINDS)) if (k && k.model) moduleOfDir.set(dir, moduleOfModel.get(k.model) || null)
@@ -108,9 +108,9 @@ for (const [t, d] of Object.entries(DECLARED)) {
    which is the quietest way for this file to be useless. */
 ok('every projected table belongs to a module the matrix names', unowned.length === 0,
   unowned.join('; ') + ' — give the model a `module`, or name the feature in build/modes.mjs')
-const tablesOf = (mod: any) => [...moduleOfTable].filter(([, m]) => m === mod).map(([t]) => t)
-const dirsOf = (mod: any) => [...moduleOfDir].filter(([, m]) => m === mod).map(([d]) => d)
-const artefactsOf = (mod: any) => Object.entries(FEEDS).filter(([k]) => moduleOfModel.get(k) === mod).map(([, a]) => a)
+const tablesOf = (mod: string) => [...moduleOfTable].filter(([, m]) => m === mod).map(([t]) => t)
+const dirsOf = (mod: string) => [...moduleOfDir].filter(([, m]) => m === mod).map(([d]) => d)
+const artefactsOf = (mod: unknown) => Object.entries(FEEDS).filter(([k]) => moduleOfModel.get(k) === mod).map(([, a]) => a)
 
 /* ------------------------------------------------------ 1. the forcing function: nothing unnamed */
 /*
@@ -165,7 +165,7 @@ for (const [name, f] of Object.entries(ALL())) {
 }
 
 /* ------------------------------------------------------------------- 3. a claim of CLOUD is held */
-const modelByKey = new Map(models.map((m: any) => [m.key, m]))
+const modelByKey = new Map(models.map((m: { key: any }) => [m.key, m]))
 const machineSrc = readFileSync(join(fnDir, 'admin', 'index.ts'), 'utf8')
 const MACHINE = (/const MACHINE = \[([^\]]*)\]/.exec(machineSrc) || [, ''])[1].split(',').map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean)
 ok('the admin function names its machine actions', MACHINE.length > 0, MACHINE.join(', '))
@@ -324,11 +324,11 @@ ok('the defaults are what a site already was', DEPLOYMENT_DEFAULTS.backend === t
   const shape = deploymentShape(site, {})
   const steps = await loadSteps(site)
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ backend: boolean; content: any; repo: any; mode: string; }' is not assignable to parameter of type 'null | undefined'.
-  const on = steps.filter((s: any) => isOn(s, site, {}, shape))
+  const on = steps.filter((s) => isOn(s, site, {}, shape))
   ok('the docs site is static', shape.mode === 'static')
   ok('steps load for it', steps.length > 10, String(steps.length))
   ok('not one step needing a backend runs there', on.filter(stepNeedsBackend).length === 0,
-    on.filter(stepNeedsBackend).map((s: any) => s.key).join(', '))
+    on.filter(stepNeedsBackend).map((s: { key: any }) => s.key).join(', '))
   /* and the inference is not vacuous: the backed site DOES have such steps */
   const root = await loadSite(SITE)
   const rootSteps = await loadSteps(root)
@@ -368,7 +368,7 @@ console.log('    machine-only actions       : ' + MACHINE.join(', '))
     ? readdirSync(join(REPO, 'openspec/changes/archive'))
     : []
   /* an archive folder carries its date: 2026-09-19-cloud-content closes "cloud-content" */
-  const closes = (name: any) => archived.filter((d) => d.replace(/^\d{4}-\d{2}-\d{2}-/, '') === name)
+  const closes = (name: string) => archived.filter((d) => d.replace(/^\d{4}-\d{2}-\d{2}-/, '') === name)
   for (const e of exceptions()) {
     if (!e.change) continue
     const found = closes(e.change)

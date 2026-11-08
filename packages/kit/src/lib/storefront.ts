@@ -12,7 +12,6 @@
  * uses, so the printed editions have no file of their own.
  */
 import { ref, computed } from 'vue'
-// @ts-expect-error TS2305, from the conversion: Module '"#content"' has no exported member 'prices'.
 import { products as PRODUCTS, collections as COLLECTIONS, books as BOOKS, storefront as STOREFRONT, prices as PRICE_LISTS, promotions as PROMOS } from '#content'
 import { printOffers, printSpec, coverFor, PRINTED } from './print-offers.js'
 import { bookCoverOf } from './book-art.js'
@@ -87,17 +86,15 @@ const byKind: any = { book: 'book_unlock', good: 'store_good', membership: 'subs
  * they share.
  */
 export function lists() {
-  const base = { name: 'base', kind: 'base', rules: [], priority: 0, prices: [] }
+  const base = { name: 'base', kind: 'base', rules: [], priority: 0, prices: [] as ({ sku: any; variant: any; amount: number; currency: any; } | { sku: any; variant: string; amount: number; currency: any; })[] }
   for (const d of PRODUCTS) {
     if (!d || d.published === false || !d.sku) continue
     const opts = optionsOf(d)
     if (opts.length) {
       for (const v of variantsOf({ sku: d.sku, key: d.key }, opts)) {
         const own = (d.variants || {})[v.variant]
-        // @ts-expect-error TS2345, from the conversion: Argument of type '{ sku: any; variant: any; amount: number; currency: any; }' is not assignable to parameter of type 'never'.
         base.prices.push({ sku: d.sku, variant: v.variant, amount: Math.round(Number(own && own.price != null ? own.price : d.price) * 100), currency: (d.currency || 'usd').toLowerCase() })
       }
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ sku: any; variant: string; amount: number; currency: any; }' is not assignable to parameter of type 'never'.
     } else base.prices.push({ sku: d.sku, variant: '', amount: Math.round(Number(d.price) * 100), currency: (d.currency || 'usd').toLowerCase() })
   }
   const further = (PRICE_LISTS || []).filter((r: any) => r && r.published !== false).map((r: any) => ({
@@ -211,7 +208,6 @@ export function bookArtOf(slug: any) {
   return cv ? { slug, title: b.title, author: b.author || '', art: cv.art, fallbackArt: bookCoverOf(slug), dims: cv.dims, binding: cv.binding, jacket: cv.jacket, cloth: cv.cloth, foil: cv.foil, foilArt: cv.foilArt, edges: cv.edges, sheets: cv.sheets, trim: spec.trim, pages: e.pages } : null
 }
 /* the books in print, worded by the store's own strings */
-// @ts-expect-error TS2345, from the conversion: Argument of type '(slug: any) => any' is not assignable to parameter of type '() => null'. Target signature provides too few arguments. Expe
 const HARDCOVERS = () => { const w = (us('store').product || {}).print || {}; return printOffers(BOOKS, { ...w, suffix: w.suffix ? w.suffix.replace(/ /g, '\u00a0') : '' }, editionOf)
   /* the page's About is the unlock's opening — what its file says about the book, before
      its own `## ` sections, which are about the unlock */

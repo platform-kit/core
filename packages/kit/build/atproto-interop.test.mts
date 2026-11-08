@@ -26,7 +26,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, siteUnderTest, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('atproto-interop: ' + m)
+const note = (m: string) => console.log('atproto-interop: ' + m)
 if (process.env.ATPROTO_INTEROP_TEST === '0') { note('skipped (ATPROTO_INTEROP_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -37,8 +37,8 @@ const PORT = Number(process.env.ATPROTO_PLC_PORT || 2582)
 /* whether the site lets other apps sign in at all (network.apps, off by default) */
 const APPS = ((await siteUnderTest()).network || {}).apps === true
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const wait = (ms: any) => new Promise((r) => setTimeout(r, ms))
+const ok = (msg: string, cond: boolean|null, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const wait = (ms: number|undefined) => new Promise((r) => setTimeout(r, ms))
 const until = async (fn: any, ms = 20000) => { const end = Date.now() + ms; while (Date.now() < end) { const v = await fn(); if (v) return v; await wait(400) } return null }
 
 /* ------------------------------------------------------------ a PLC directory of our own */
@@ -98,7 +98,7 @@ const appview = http.createServer(async (req, res) => {
 await new Promise((r, j) => appview.listen(PORT + 1, '0.0.0.0', r).on('error', j))
 
 const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
-const site = async (email: any) => {
+const site = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -131,15 +131,15 @@ try {
   const pe = (await A.sb.from('network_posts').insert({ author_id: A.id, text: 'public, on the wider network', audience: 'everyone' }).select().single()).data
   const ph = (await A.sb.from('network_posts').insert({ author_id: A.id, text: 'only for the people here', audience: 'here' }).select().single()).data
   const head = await until(async () => {
-    const r: any = await fetch(`${FN}/xrpc/com.atproto.sync.getLatestCommit?did=${identity}`).then((x) => x.json()).catch(() => null)
+    const r = await fetch(`${FN}/xrpc/com.atproto.sync.getLatestCommit?did=${identity}`).then((x) => x.json()).catch(() => null)
     if (!r || !r.cid) return null
-    const car: any = new Uint8Array(await (await fetch(`${FN}/xrpc/com.atproto.sync.getRepo?did=${identity}`)).arrayBuffer())
-    const v: any = await verifyRepoCar(car, identity, doc.verificationMethods.atproto).catch(() => null)
+    const car = new Uint8Array(await (await fetch(`${FN}/xrpc/com.atproto.sync.getRepo?did=${identity}`)).arrayBuffer())
+    const v = await verifyRepoCar(car, identity, doc.verificationMethods.atproto).catch(() => null)
     const cs = v ? (Array.isArray(v.creates) ? v.creates : Object.values(v.creates || {})) : []
     return cs.some((c: any) => c.rkey === pe!.rkey) ? v : null
   })
   const creates = head ? (Array.isArray(head.creates) ? head.creates : Object.values(head.creates)) : []
-  const paths = creates.map((c: any) => `${c.collection}/${c.rkey}`)
+  const paths = creates.map((c: { collection: any; rkey: any }) => `${c.collection}/${c.rkey}`)
   ok('the repository verifies against the signing key the DID document names', !!head, 'no verified repository')
   ok('…and holds the everyone post', paths.includes(`app.bsky.feed.post/${pe!.rkey}`), paths.join(' '))
   ok('…and not the post to the people here', !paths.includes(`app.bsky.feed.post/${ph!.rkey}`))
@@ -156,12 +156,12 @@ try {
   const docRes: any = await new Promise((resolve) => http.get(`http://127.0.0.1:${PORT}/${encodeURIComponent(identity)}`, (r) => { let b = ''; r.on('data', (c) => { b += c }); r.on('end', () => resolve(JSON.parse(b))) }))
   await didCache.cacheDid(identity, docRes)
   const idResolver = new IdResolver({ plcUrl: `http://localhost:${PORT}`, didCache })
-  const read = (cursor: any, stopAfter: any) => new Promise((resolve) => {
+  const read = (cursor: number, stopAfter: number) => new Promise((resolve) => {
     const runner = new MemoryRunner({ startCursor: cursor })
-    const fh: any = new Firehose({
+    const fh = new Firehose({
       idResolver, runner, service: FN.replace(/^http/, 'ws'), unauthenticatedHandles: true,
       // @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
-      handleEvent: async (evt: any) => { if (evt.did !== identity) return; seen.push({ seq: evt.seq, event: evt.event, path: evt.collection ? `${evt.collection}/${evt.rkey}` : '' }); last = evt.seq; if (seen.length >= stopAfter) { await fh.destroy(); resolve() } },
+      handleEvent: async (evt) => { if (evt.did !== identity) return; seen.push({ seq: evt.seq, event: evt.event, path: evt.collection ? `${evt.collection}/${evt.rkey}` : '' }); last = evt.seq; if (seen.length >= stopAfter) { await fh.destroy(); resolve() } },
       onError: (e) => { console.log('  firehose: ' + (e.message || e) + (e.cause ? ' — ' + ((e.cause as any).message || e.cause) : '')) },
     })
     fh.start()
@@ -172,30 +172,30 @@ try {
   /* a reader stopped mid-stream may finish the event in hand; once it has settled, its place is the
      last number it handled — exactly what a relay keeps */
   await wait(1500)
-  last = Math.max(...seen.map((s: any) => s.seq))
-  const firstTwo: any = seen.slice()
+  last = Math.max(...seen.map((s: { seq: any }) => s.seq))
+  const firstTwo = seen.slice()
   ok('a relay reads the member\'s events from the start, each commit\'s signature checked', firstTwo.length >= 2, JSON.stringify(firstTwo))
   await read(last, 100)
   /* one commit may carry several records, each its own event under the commit's number: an event is a
      number and a path, and none may come twice; the numbers may not go backwards */
-  const all: any = seen.map((s: any) => s.seq)
-  const keys: any = seen.map((s: any) => s.seq + ' ' + s.path)
-  ok('…dropped and resumed from its cursor, every event once, in order', all.length > 2 && all.every((s: any, i: any) => i === 0 || s >= all[i - 1]) && new Set(keys).size === keys.length, keys.join(','))
-  ok('…the everyone post among them as a create', seen.some((s: any) => s.event === 'create' && s.path === `app.bsky.feed.post/${pe!.rkey}`))
-  ok('…and nothing of the post to the people here', !seen.some((s: any) => s.path === `app.bsky.feed.post/${ph!.rkey}`))
+  const all = seen.map((s: { seq: any }) => s.seq)
+  const keys = seen.map((s: { seq: string; path: string }) => s.seq + ' ' + s.path)
+  ok('…dropped and resumed from its cursor, every event once, in order', all.length > 2 && all.every((s: number, i: number) => i === 0 || s >= all[i - 1]) && new Set(keys).size === keys.length, keys.join(','))
+  ok('…the everyone post among them as a create', seen.some((s: { event: string; path: string }) => s.event === 'create' && s.path === `app.bsky.feed.post/${pe!.rkey}`))
+  ok('…and nothing of the post to the people here', !seen.some((s: { path: string }) => s.path === `app.bsky.feed.post/${ph!.rkey}`))
 
   /* ------------------------------------------------------------ the world outside */
   /* other apps sign in only where the site lets them (network.apps); the demo does */
   if (!APPS) notHere('atproto-interop: another app signing in', 'the site does not let other apps sign in (network.apps)')
   else {
   const made = await fetch(FN + '/xrpc/com.atproto.server.createAppPassword', { method: 'POST', headers: { Authorization: 'Bearer ' + A.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'interop' }) }).then((r) => r.json())
-  const viaFn = (input: any, init: any) => { const u = new URL(String(input instanceof Request ? input.url : input)); const to = FN + u.pathname + u.search; return input instanceof Request ? fetch(new Request(to, input), init) : fetch(to, init) }
+  const viaFn = (input: any, init: RequestInit|undefined) => { const u = new URL(String(input instanceof Request ? input.url : input)); const to = FN + u.pathname + u.search; return input instanceof Request ? fetch(new Request(to, input), init) : fetch(to, init) }
   const a = new AtpAgent({ service: 'http://site.test', fetch: viaFn })
   await a.login({ identifier: joined.handle, password: made.password })
   const tl = (await a.getTimeline()).data.feed
   ok('a joined member\'s timeline holds what the people they follow elsewhere said', tl.some((f) => f.post.uri === outsidePost.uri), JSON.stringify(tl.map((f) => f.post.uri)))
   ok('…next to their own posts on the site', tl.some((f) => f.post.uri.endsWith('/' + pe!.rkey)))
-  ok('…asked of the app view with a service token signed by their own key', asked.some((x: any) => x.nsid === 'app.bsky.feed.getTimeline' && x.iss === identity))
+  ok('…asked of the app view with a service token signed by their own key', asked.some((x: { nsid: string; iss: any }) => x.nsid === 'app.bsky.feed.getTimeline' && x.iss === identity))
   const prof = (await a.getProfile({ actor: OUTSIDER })).data
   ok('somebody elsewhere is read through the app view', prof.displayName === 'Somebody elsewhere')
   const B = await site('member2@example.com')
@@ -210,14 +210,14 @@ try {
   /* ------------------------------------------------------------ moderation reaches it */
   await M.sb.rpc('network_remove_post', { p_post: pe!.id, p_reason: 'test' })
   const gone = await until(async () => {
-    const car: any = new Uint8Array(await (await fetch(`${FN}/xrpc/com.atproto.sync.getRepo?did=${identity}`)).arrayBuffer())
-    const v: any = await verifyRepoCar(car, identity, doc.verificationMethods.atproto).catch(() => null)
+    const car = new Uint8Array(await (await fetch(`${FN}/xrpc/com.atproto.sync.getRepo?did=${identity}`)).arrayBuffer())
+    const v = await verifyRepoCar(car, identity, doc.verificationMethods.atproto).catch(() => null)
     const cs = v ? (Array.isArray(v.creates) ? v.creates : Object.values(v.creates)) : []
     return v && !cs.some((c: any) => c.rkey === pe!.rkey) ? true : null
   })
   ok('a moderator\'s removal takes the post out of the repository', !!gone)
   const del = (await service.from('network_seq').select('body').eq('did', identity).eq('kind', 'commit').order('seq', { ascending: false }).limit(1).single()).data
-  ok('…and the stream carries its deletion', del && (del.body as any)!.ops.some((o: any) => o.action === 'delete' && o.path === `app.bsky.feed.post/${pe!.rkey}`), JSON.stringify(del && (del.body as any)!.ops))
+  ok('…and the stream carries its deletion', del && (del.body as any)!.ops.some((o: { action: string; path: string }) => o.action === 'delete' && o.path === `app.bsky.feed.post/${pe!.rkey}`), JSON.stringify(del && (del.body as any)!.ops))
 
   /* ------------------------------------------------------------ leaving */
   const left = await fetch(FN + '/network/leave', { method: 'POST', headers: { Authorization: 'Bearer ' + A.token } }).then((r) => r.json())

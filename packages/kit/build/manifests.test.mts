@@ -33,7 +33,7 @@ const CRON_MODULES = await moduleSet(CRON_SITE)
 const CRON_EXPECTED = activeCronJobs(CRON_MODULES, CRON_SITE.modules || {})
 
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 4).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 4).join('\n    ')) } }
 
 /* ---- ONE READING OF A SWITCH, AND NOTHING READS ONE ANOTHER WAY --------------------------- */
 /*
@@ -336,7 +336,7 @@ if (CRON_SITE.deployment.backend) {
   const { loadSteps } = await import('./steps.mjs')
   const { loadSite } = await import('./site.mjs')
   const steps = await loadSteps(await loadSite(process.cwd()))
-  const byKey = new Map(steps.map((s: any) => [s.key, s]))
+  const byKey = new Map(steps.map((s: { key: any }) => [s.key, s]))
 
   t('every step a manifest claims exists, and agrees that it belongs to that module', () => {
     const wrong = []
@@ -352,8 +352,8 @@ if (CRON_SITE.deployment.backend) {
 
   t('and every step that names a module is claimed by that module', () => {
     // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-    const orphans = steps.filter((s: any) => s.module).filter((s: any) => !(CRON_MODULES.get(s.module) || { owns: { steps: [] } }).owns.steps.includes(s.key))
-      .map((s: any) => `${s.key} says ${s.module}, which does not claim it`)
+    const orphans = steps.filter((s) => s.module).filter((s) => !(CRON_MODULES.get(s.module) || { owns: { steps: [] } }).owns.steps.includes(s.key))
+      .map((s: { key: any; module: any }) => `${s.key} says ${s.module}, which does not claim it`)
     assert.deepEqual(orphans, [], orphans.join(' | '))
   })
 }
@@ -472,7 +472,7 @@ if (CRON_SITE.deployment.backend) {
   /* a job runs while its module is on, so the function it calls must be declared by that module or by core —
      never only by a module that may be off (payouts-sweep was the store's and called the sessions' function) */
   t('every cron job calls a function its own module or core declares', () => {
-    const fileText = (f: any) => nodeFs.readFileSync(nodePath.join(KIT_SUPABASE, 'schemas', f), 'utf8')
+    const fileText = (f: string) => nodeFs.readFileSync(nodePath.join(KIT_SUPABASE, 'schemas', f), 'utf8')
     const coreText = CORE.schema.map(fileText).join('\n')
     const wrong = []
     for (const m of MODS.values()) for (const j of m.owns.cron) {

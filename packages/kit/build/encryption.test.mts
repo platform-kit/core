@@ -117,7 +117,6 @@ const town = {
     { slug: 'vault', data: { name: 'Vault', encrypted: true } },
   ],
 }
-// @ts-expect-error TS2322, from the conversion: Type '{ slug: string; data: { name: string; encrypted: boolean; }; channels: ({ slug: string; data: { name: string; encrypted?: undefined; }
 const sealed = sealedRooms([guild, town])
 ok('a room sealed by its space is in the set', sealed.has('guild/lounge'))
 ok('a room let out of a sealed space is not', !sealed.has('guild/open-house'))

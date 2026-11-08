@@ -20,7 +20,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('orders-db: ' + m)
+const note = (m: string) => console.log('orders-db: ' + m)
 if (process.env.ORDERS_TEST === '0') { note('skipped (ORDERS_TEST=0) — nothing about orders, fulfilments, transactions or returns was covered'); process.exit(0) }
 const url = supabaseUrl()
 if (!url || !localStack()) { note('skipped — no local stack in .env; nothing about orders, fulfilments, transactions or returns was covered'); leave(0) }
@@ -31,12 +31,12 @@ if (!up) { note('skipped — the local stack is not up; nothing about orders, fu
 
 const db = createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
-const eq = (a: any, b: any, m?: any) => { if (a !== b) throw new Error(`${m || ''} — expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`) }
-const rpc = async (fn: any, args: any) => { const { data, error } = await db.rpc(fn, args); if (error) throw new Error(fn + ': ' + error.message); return data }
+const ok = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
+const eq = (a: string|number|null, b: string|number, m?: string|undefined) => { if (a !== b) throw new Error(`${m || ''} — expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`) }
+const rpc = async (fn: any, args: { p_order?: string; p_lines?: { line: string; quantity: number }[]|{ line: string; quantity: number }[]|{ line: string; removed: boolean }[]|{ line: string; quantity: number }[]; p_version?: number; p_sku?: string; p_variant?: string }) => { const { data, error } = await db.rpc(fn, args); if (error) throw new Error(fn + ': ' + error.message); return data }
 /* a write whose error is not read is a write that looks like a silent no-op: the restock trigger
    was raising on every return and this test reported "expected 13, got 10" for an hour */
-const must = async (q: any, what: any) => { const { error } = await q; if (error) throw new Error(what + ': ' + error.message) }
+const must = async (q: any, what: string) => { const { error } = await q; if (error) throw new Error(what + ': ' + error.message) }
 
 const SKU = 'probe-orders'
 /* one order, two lines, nothing paid and nothing sent */
@@ -161,8 +161,8 @@ await ok('AN EDIT RAISES THE VERSION AND COPIES FORWARD ONLY WHAT IT TOUCHED', a
   eq(await rpc('order_total', { p_order: o.id }), 1000 + 2500, 'at v2')
   /* the line nobody touched was not copied: it is still the row written at v1 */
   const { data: rows } = await db.from('order_items').select('line, version').eq('order_id', o.id)
-  eq((rows as any).filter((r: any) => r.line === o.items[1].line).length, 1, 'the untouched line has one row')
-  eq((rows as any).filter((r: any) => r.line === o.items[0].line).length, 2, 'the edited line has two')
+  eq((rows as any).filter((r: { line: string }) => r.line === o.items[1].line).length, 1, 'the untouched line has one row')
+  eq((rows as any).filter((r: { line: string }) => r.line === o.items[0].line).length, 2, 'the edited line has two')
 })
 
 await ok('AN INVOICE RENDERED AGAIN AT VERSION 1 SHOWS VERSION 1', async () => {
@@ -171,7 +171,7 @@ await ok('AN INVOICE RENDERED AGAIN AT VERSION 1 SHOWS VERSION 1', async () => {
   eq(await rpc('order_total', { p_order: o.id, p_version: 1 }), 4500, 'what the buyer was shown')
   eq(await rpc('order_total', { p_order: o.id }), 5 * 1000 + 2500, 'what it is now')
   const was = await rpc('order_lines', { p_order: o.id, p_version: 1 })
-  eq(was.find((l: any) => l.line === o.items[0].line).quantity, 2, 'the quantity as it was')
+  eq(was.find((l: { line: string }) => l.line === o.items[0].line).quantity, 2, 'the quantity as it was')
 })
 
 await ok('a line removed by an edit leaves the versions before it readable', async () => {
@@ -227,7 +227,7 @@ await ok('a return reads back against the version it was raised at', async () =>
   await db.from('return_items').insert({ return_id: r!.id, line: o.items[0].line, quantity: 2 })
   await rpc('order_edit', { p_order: o.id, p_lines: [{ line: o.items[0].line, quantity: 1 }] })
   const was = await rpc('order_lines', { p_order: o.id, p_version: r!.order_version })
-  eq(was.find((l: any) => l.line === o.items[0].line).quantity, 2, 'what was actually sent')
+  eq(was.find((l: { line: string }) => l.line === o.items[0].line).quantity, 2, 'what was actually sent')
 })
 
 /* ─────────────── the print orders that were here before ─────────────── */

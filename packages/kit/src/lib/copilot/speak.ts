@@ -57,8 +57,9 @@ export function speakerIdOf({ voice = {}, haveEndpoint = false } = {}) {
  * sentence to learn the same thing. The worker is made only if it is needed, so a deployment
  * whose endpoint works never builds one.
  */
-export function speaker({ id = 'browser', worker = null, post = null, voice = {}, onState = () => {} } = {}) {
-  // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
+/* where the voice is: fetching its weights (done of total bytes), starting, or ready */
+export type SpeakerState = { at: 'fetching', done: number, total: number } | { at: 'starting' } | { at: 'ready' }
+export function speaker({ id = 'browser', worker = null, post = null, voice = {}, onState = () => {} }: { id?: string, worker?: unknown, post?: ((text: string) => Promise<unknown>) | null, voice?: Record<string, unknown>, onState?: (state: SpeakerState) => void } = {}) {
   const own = () => browserSpeaker({ worker: typeof worker === 'function' ? worker() : worker, voice, onState })
   if (id !== 'endpoint') return own()
   return failover({ first: endpointSpeaker({ post, voice }), own })
@@ -70,7 +71,7 @@ function failover({ first, own }: any) {
   const live = new Map()     /* our utterance id → whichever speaker is carrying it */
   return {
     get id() { return fallen ? 'browser' : 'endpoint' },
-    say(text: string, onChunk = () => {}) {
+    say(text: string, onChunk: (a: any) => void = () => {}) {
       const utterance = 'say-' + (++n)
       const p = (async () => {
         if (!fallen) {
@@ -78,8 +79,7 @@ function failover({ first, own }: any) {
           let got = null, failed = false
           /* the endpoint hands over raw bytes; those are the endpoint's own shape, and the page
              is told which speaker made them by what it is handed */
-          // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
-          try { got = await first.say(text, (c) => onChunk(c)).catch?.(() => { failed = true; return null }) }
+          try { got = await first.say(text, (c: any) => onChunk(c)).catch?.(() => { failed = true; return null }) }
           catch { failed = true }
           if (!live.has(utterance)) return null          /* cancelled while it was trying */
           if (got) { live.delete(utterance); return got }
@@ -172,10 +172,10 @@ export function engineOf(voice: any = {}) {
  */
 function endpointSpeaker({ post, voice }: any) {
   let n = 0
-  const gone = new Set()
+  const gone = new Set<{}>()
   return {
     id: 'endpoint',
-    say(text: any, onChunk = () => {}) {
+    say(text: any, onChunk: (a: any) => void = () => {}) {
       const utterance = 'say-' + (++n)
       const p = (async () => {
         const stream = await post({ text, voice: voice.say || undefined, format: voice.format || 'pcm' })
@@ -187,7 +187,6 @@ function endpointSpeaker({ post, voice }: any) {
           /* interrupted: stop pulling and let the rest of the answer go unheard */
           if (gone.has(utterance)) { try { await reader.cancel() } catch { /* already gone */ } return null }
           if (done) break
-          // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
           if (value && value.length) { chunks++; onChunk(value) }
         }
         return { chunks }

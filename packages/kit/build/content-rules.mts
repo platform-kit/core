@@ -60,7 +60,9 @@ export const is = {
    default later fails the suite instead of quietly turning the rule into a liar. */
 export const NATIVE_ONLY = ['seats', 'hosts', 'repeats', 'team', 'buffer', 'page']
 
-export const RULES = {
+/* a rule: its key (what a site names to switch it off), why it exists, and the test, which answers what is wrong or null */
+export interface ContentRule { key: string, why: string, test: (r: any, context?: { collection: string, records: any[], collections: any }) => string | null }
+export const RULES: Record<string, ContentRule[]> = {
   sessions: [
     {
       key: 'session-one-scheduler',
@@ -147,9 +149,8 @@ export const RULES = {
 /* ---- running them --------------------------------------------------------------------------- */
 
 /* every rule of a collection, the kit's and the site's, less the ones the site switched off */
-export function rulesFor(collection: any, { rules = {}, rulesOff = [] } = {}) {
+export function rulesFor(collection: string, { rules = {}, rulesOff = [] }: { rules?: Record<string, ContentRule[]>, rulesOff?: string[] } = {}) {
   const off = new Set(rulesOff)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
   return [...(RULES[collection] || []), ...(rules[collection] || [])].filter((r) => !off.has(r.key))
 }
 
