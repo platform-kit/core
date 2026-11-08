@@ -11,8 +11,7 @@ const newLineId = () => GID.line + (crypto.randomUUID ? crypto.randomUUID().repl
 const err = (code: string, message: string, field: string[]) => ({ code, message, field: field || null })
 
 /* the lines a mutation gives → the rows kept, or the errors */
-export function linesIn(store: { products: any }, input: any, existing = []) {
-  // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
+export function linesIn(store: { products: any }, input: any, existing: Array<Record<string, any>> = []) {
   const rows = existing.map((l) => ({ ...l })); const errors = []
   for (const [i, l] of (Array.isArray(input) ? input : []).entries()) {
     const v = l && l.merchandiseId ? findVariant(store, String(l.merchandiseId)) : null

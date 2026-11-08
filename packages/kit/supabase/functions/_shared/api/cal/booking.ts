@@ -6,8 +6,7 @@ import { eventTypeId } from './event-type.ts'
 
 const STATUS: any = { pending: 'pending', accepted: 'accepted', rescheduled: 'rescheduled', cancelled: 'cancelled', rejected: 'rejected', ended: 'accepted' }
 const iso = (v: any) => (v ? new Date(v).toISOString() : null)
-// @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-const minutes = (a, b) => (a && b ? Math.round((new Date(b) - new Date(a)) / 60000) : 0)
+const minutes = (a: string|number|Date, b: string|number|Date) => (a && b ? Math.round((new Date(b).getTime() - new Date(a).getTime()) / 60000) : 0)
 const nameOf = (email: any, name: any) => name || (email ? String(email).split('@')[0] : '')
 
 /**
@@ -17,8 +16,7 @@ const nameOf = (email: any, name: any) => name || (email ? String(email).split('
 export function bookingOf(row: any, o: any = {}) {
   const s = o.session || null
   const host = (o.hosts || [])[0] || (row.provider_email ? { id: row.provider_id || row.host_id, name: '', email: row.provider_email } : null)
-  const attendees = [{ name: nameOf(row.email, row.name), email: row.email || '', timeZone: (row.payload && row.payload.attendees && row.payload.attendees[0] && row.payload.attendees[0].timeZone) || 'UTC', language: 'en', absent: !!row.no_show, phoneNumber: (row.payload && row.payload.phone) || undefined }]
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ name: any; email: any; timeZone: string; language: string; absent: false; }' is not assignable to parameter of type '{ n
+  const attendees: Array<{ name: string, email: string, timeZone: string, language: string, absent: boolean, phoneNumber?: string }> = [{ name: nameOf(row.email, row.name), email: row.email || '', timeZone: (row.payload && row.payload.attendees && row.payload.attendees[0] && row.payload.attendees[0].timeZone) || 'UTC', language: 'en', absent: !!row.no_show, phoneNumber: (row.payload && row.payload.phone) || undefined }]
   for (const e of row.attendee_emails || []) if (e && e !== row.email) attendees.push({ name: nameOf(e, ''), email: e, timeZone: 'UTC', language: 'en', absent: false })
   const location = s ? ((s.where || {}).kind === 'video' ? (row.join_url || 'integrations:daily') : (s.where || {}).kind === 'link' ? (s.where.url || '') : (s.where || {}).kind === 'place' ? [s.where.name, s.where.address].filter(Boolean).join(', ') : (s.where || {}).kind === 'phone' ? (s.where.number || (row.payload && row.payload.phone) || 'phone') : '') : (row.join_url || '')
   return {

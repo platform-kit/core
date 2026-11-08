@@ -124,7 +124,6 @@ ok('another deployment\'s key opens nothing', (await open(good, 'a-different-ser
 {
   const spec = JSON.parse(fs.readFileSync(new URL('../../../sites/demo/content/tools/forecast-api.openapi.json', import.meta.url), 'utf8'))
   const headers = { 'User-Agent': 'PlatformKit demo assistant (contact: hello@example.com)' }
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   const tools = fromOpenApi(spec, { name: 'sample', only: ['point', 'gridpoint_forecast'], headers })
   let request: any
   const point: any = tools.find((tool) => tool.name === 'sample_point')

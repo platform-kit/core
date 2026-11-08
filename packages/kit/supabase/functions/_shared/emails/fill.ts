@@ -8,8 +8,7 @@
  * fills one for a preview, the build checks a design fills at all. Not a template language: no
  * helpers, no partials.
  */
-// @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Type 'string | undefined' is not assignable to type 'string'. Typ
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const esc = (s: any) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c])
 const get = (scope: string|any[], path: string) => {
   if (path === 'this' || path === '.') return scope[scope.length - 1]
   for (let i = scope.length - 1; i >= 0; i--) {
@@ -52,23 +51,18 @@ export function fill(tpl: string, data: any) {
   return out.join('')
 }
 export function parse(tpl: any) {
-  const root = { body: [] }, stack = [root]
+  const root = { body: [] as (any | { v: string; raw: boolean; } | { elseMark: boolean; } | { kind: string; path: string; body: never[]; } | { v: string; src: string; })[] }, stack = [root]
   let at = 0, m
   const top = () => stack[stack.length - 1]
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-  const text = (s) => { if (s) top().body.push(s) }
+  const text = (s: any) => { if (s) top().body.push(s) }
   TOKEN.lastIndex = 0
   while ((m = TOKEN.exec(tpl))) {
     text(tpl.slice(at, m.index)); at = m.index + m[0].length
     const [, raw, mark, word, path] = m
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ v: string; raw: boolean; }' is not assignable to parameter of type 'never'.
     if (raw) { top().body.push({ v: raw, raw: true }); continue }
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ elseMark: boolean; }' is not assignable to parameter of type 'never'.
     if (word === 'else' && !mark) { top().body.push({ elseMark: true }); continue }
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ kind: string; path: string; body: never[]; }' is not assignable to parameter of type 'never'.
     if (mark === '#') { const b = { kind: word || 'if', path, body: [] }; top().body.push(b); stack.push(b); continue }
     if (mark === '/') { if (stack.length > 1) stack.pop(); continue }
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ v: string; src: string; }' is not assignable to parameter of type 'never'.
     if (path) top().body.push({ v: path, src: m[0] })
   }
   text(tpl.slice(at))

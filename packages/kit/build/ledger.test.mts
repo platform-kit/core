@@ -21,11 +21,8 @@ console.log('\nWHAT A PAYMENT MEANS\n')
 
 /* ---- who paid ---- */
 ok('the buyer is what the checkout carried, then Stripe\'s reference, then the customer', () => {
-  // @ts-expect-error TS2345, from the conversion: Argument of type '"u3"' is not assignable to parameter of type 'null | undefined'.
   assert.equal(buyerOf({ metadata: { user_id: 'u1' }, client_reference_id: 'u2' }, 'u3'), 'u1', 'the metadata wins')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '"u3"' is not assignable to parameter of type 'null | undefined'.
   assert.equal(buyerOf({ client_reference_id: 'u2' }, 'u3'), 'u2', 'then the reference')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '"u3"' is not assignable to parameter of type 'null | undefined'.
   assert.equal(buyerOf({}, 'u3'), 'u3', 'then the customer')
   assert.equal(buyerOf({}, null), null, 'a guest is nobody, and that is a case rather than a fault')
   assert.equal(buyerOf(null, null), null)

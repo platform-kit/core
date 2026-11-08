@@ -231,7 +231,7 @@ export const BUILTINS: any = {
 
 /* An OpenAPI document becomes one tool per allowed operation. The description the model reads is
    the operation's own summary, which is what a spec is for; the parameters are its parameters. */
-export function fromOpenApi(spec: any, { only = [], name = 'api', base = '', headers = {} } = {}) {
+export function fromOpenApi(spec: any, { only = [], name = 'api', base = '', headers = {} }: { only?: string[], name?: string, base?: string, headers?: Record<string, string> } = {}) {
   const out = []
   const paths = (spec && spec.paths) || {}
   const server = base || ((spec.servers || [])[0] || {}).url || ''
@@ -250,7 +250,6 @@ export function fromOpenApi(spec: any, { only = [], name = 'api', base = '', hea
     for (const [method, op] of Object.entries(item || {})) {
       if (!['get', 'post', 'put', 'patch', 'delete'].includes(method)) continue
       const id = op.operationId || `${method}_${path.replace(/[^\w]+/g, '_').replace(/^_|_$/g, '')}`
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
       if (only.length && !only.includes(id)) continue
       const props: any = {}
       const required = []

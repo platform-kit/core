@@ -10,29 +10,24 @@
 import { Lexer } from 'marked'
 import { assetId } from './ids.ts'
 
-const text = (value: any, marks = []) => ({ nodeType: 'text', value: String(value), marks: marks.map((type) => ({ type })), data: {} })
-const node = (nodeType: any, content: any, data = {}) => ({ nodeType, content, data })
+/* Contentful's rich text: a node holds nodes, and a text node holds its value and its marks */
+type RichNode = { nodeType: string, content?: RichNode[], value?: string, marks?: Array<{ type: string }>, data: Record<string, unknown> }
+const text = (value: any, marks: string[] = []): RichNode => ({ nodeType: 'text', value: String(value), marks: marks.map((type) => ({ type })), data: {} })
+const node = (nodeType: string, content: RichNode[], data: Record<string, unknown> = {}): RichNode => ({ nodeType, content, data })
 const unescape = (s: any) => String(s).replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => (({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" } as any)[e]))
 
-function inline(tokens: any, marks: any, ctx: any, out = []) {
+function inline(tokens: any, marks: string[], ctx: any, out: RichNode[] = []): RichNode[] {
   for (const t of tokens || []) {
     switch (t.type) {
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: string; value: string; marks: { type: never; }[]; data: {}; }' is not assignable to parameter of type 'never'.
       case 'text': case 'escape': if (t.tokens) inline(t.tokens, marks, ctx, out); else out.push(text(unescape(t.text), marks)); break
       case 'strong': inline(t.tokens, [...marks, 'bold'], ctx, out); break
       case 'em': inline(t.tokens, [...marks, 'italic'], ctx, out); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: string; value: string; marks: { type: never; }[]; data: {}; }' is not assignable to parameter of type 'never'.
       case 'codespan': out.push(text(unescape(t.text), [...marks, 'code'])); break
       case 'del': inline(t.tokens, marks, ctx, out); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: string; value: string; marks: { type: never; }[]; data: {}; }' is not assignable to parameter of type 'never'.
       case 'br': out.push(text('\n', marks)); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
       case 'link': out.push(node('hyperlink', inline(t.tokens, marks, ctx), { uri: t.href })); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
       case 'image': { const a = ctx && ctx.assetsByAddress && ctx.assetsByAddress.get(t.href); if (a) out.push(node('embedded-asset-block', [], { target: { sys: { type: 'Link', linkType: 'Asset', id: assetId(a.address) } } })); else out.push(node('hyperlink', [text(t.text || t.href, marks)], { uri: t.href })); break }
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: string; value: string; marks: { type: never; }[]; data: {}; }' is not assignable to parameter of type 'never'.
       case 'html': out.push(text(t.text, marks)); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: string; value: string; marks: { type: never; }[]; data: {}; }' is not assignable to parameter of type 'never'.
       default: if (t.tokens) inline(t.tokens, marks, ctx, out); else if (t.text != null) out.push(text(unescape(t.text), marks))
     }
   }
@@ -46,33 +41,23 @@ function para(tokens: any, ctx: any) {
   flush()
   return out.length ? out : [node('paragraph', [text('')])]
 }
-function blocks(tokens: any, ctx: any, out = []) {
+function blocks(tokens: any, ctx: any, out: RichNode[] = []): RichNode[] {
   for (const t of tokens || []) {
     switch (t.type) {
       case 'space': break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
       case 'heading': out.push(node('heading-' + Math.min(6, Math.max(1, t.depth)), inline(t.tokens, [], ctx))); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
       case 'paragraph': out.push(...para(t.tokens, ctx)); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
       case 'text': out.push(node('paragraph', inline(t.tokens || [{ type: 'text', text: t.text }], [], ctx))); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
       case 'blockquote': out.push(node('blockquote', blocks(t.tokens, ctx))); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
       case 'code': out.push(node('paragraph', [text(t.text, ['code'])])); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
       case 'hr': out.push(node('hr', [])); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
       case 'html': out.push(node('paragraph', [text(t.text)])); break
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
-      case 'list': out.push(node(t.ordered ? 'ordered-list' : 'unordered-list', t.items.map((it) => node('list-item', blocks(it.tokens, ctx).length ? blocks(it.tokens, ctx) : [node('paragraph', [text(it.text || '')])])))); break
+      case 'list': out.push(node(t.ordered ? 'ordered-list' : 'unordered-list', t.items.map((it: { tokens: any; text: any }) => node('list-item', blocks(it.tokens, ctx).length ? blocks(it.tokens, ctx) : [node('paragraph', [text(it.text || '')])])))); break
       case 'table': {
         const cell = (c: any, head: any) => node(head ? 'table-header-cell' : 'table-cell', [node('paragraph', inline(c.tokens, [], ctx))])
         const rows = [node('table-row', t.header.map((c: any) => cell(c, true))), ...t.rows.map((r: any) => node('table-row', r.map((c: any) => cell(c, false))))]
-        // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
         out.push(node('table', rows)); break
       }
-      // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
       default: if (t.tokens) out.push(...blocks(t.tokens, ctx)); else if (t.text) out.push(node('paragraph', [text(t.text)]))
     }
   }

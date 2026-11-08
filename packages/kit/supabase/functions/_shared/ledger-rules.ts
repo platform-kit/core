@@ -19,7 +19,7 @@ import { checkVariant, readVariantKey } from './variants.ts'
  * them, and that is a real case rather than a failure — the purchase is written against the address
  * Stripe collected and claimed later when an account is made with it.
  */
-export function buyerOf(session: any, byCustomer = null) {
+export function buyerOf(session: any, byCustomer: string | null = null) {
   return (session && session.metadata && session.metadata.user_id) || (session && session.client_reference_id) || byCustomer || null
 }
 

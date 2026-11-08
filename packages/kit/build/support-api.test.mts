@@ -30,18 +30,13 @@ const ok = async (name: string, fn: any) => { try { await fn(); pass++ } catch (
 /* ---- (1) the shapes ---- */
 await ok('Chatwoot\'s shapes: a message by author with its type, an attachment, a conversation with its meta, a contact, the inbox, an agent, a webhook payload', () => {
   const contact = { id: 'k1', user_id: null, name: null, email: null, verified: false, kind: 'guest', custom_attributes: { plan: 'free' }, created_at: '2026-01-01T00:00:00Z', last_seen_at: '2026-01-02T00:00:00Z' }
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; user_id: null; name: null; email: null; verified: boolean; kind: string; custom_attributes: { plan: string; }; created_a
   const inc: any = messageOf({ id: 'm1', author: 'contact', kind: 'text', body: 'Hello', created_at: '2026-01-01T00:00:10Z' }, { contact, conversationId: 'c1', echoId: 'e1' })
   assert.equal(inc.message_type, 0); assert.equal(inc.content, 'Hello'); assert.equal(inc.sender.type, 'contact'); assert.equal(inc.sender.name, 'Guest'); assert.equal(inc.echo_id, 'e1'); assert.equal(inc.created_at, 1767225610); assert.equal(inc.content_type, 'text')
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; user_id: null; name: null; email: null; verified: boolean; kind: string; custom_attributes: { plan: string; }; created_a
   const out: any = messageOf({ id: 'm2', author: 'agent', agent_id: 'a1', kind: 'text', body: 'Hi', created_at: '2026-01-01T00:00:20Z' }, { contact, agentName: 'Sam' }); assert.equal(out.message_type, 1); assert.equal(out.sender.type, 'user'); assert.equal(out.sender.name, 'Sam')
   const sys = messageOf({ id: 'm3', author: 'system', kind: 'text', body: 'Got it', created_at: '2026-01-01T00:00:30Z' }); assert.equal(sys.message_type, 2); assert.equal(sys.sender, null)
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; user_id: null; name: null; email: null; verified: boolean; kind: string; custom_attributes: { plan: string; }; created_a
   const file = messageOf({ id: 'm4', author: 'contact', kind: 'file', body: 'a.png', attachment_path: 'c1/m4.png', attachment_type: 'image/png', attachment_name: 'a.png', attachment_size: 12, url: '/storage/v1/x', created_at: '2026-01-01T00:00:40Z' }, { contact })
   assert.equal(file.attachments[0].file_type, 'image'); assert.equal(file.attachments[0].data_url, '/storage/v1/x'); assert.equal(file.attachments[0].extension, 'png')
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; user_id: null; name: null; email: null; verified: boolean; kind: string; custom_attributes: { plan: string; }; created_a
   const voice = messageOf({ id: 'm5', author: 'contact', kind: 'voice', attachment_path: 'c1/m5.mp3', attachment_type: 'audio/mpeg', seconds: 4, url: '/s', created_at: '2026-01-01T00:00:50Z' }, { contact }); assert.equal(voice.attachments[0].file_type, 'audio'); assert.equal(voice.content_attributes.seconds, 4)
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; user_id: null; name: null; email: null; verified: boolean; kind: string; custom_attributes: { plan: string; }; created_a
   const gone = messageOf({ id: 'm6', author: 'contact', kind: 'text', body: null, deleted_at: '2026-01-01T00:01:00Z', created_at: '2026-01-01T00:00:55Z' }, { contact }); assert.equal(gone.content, null); assert.deepEqual(gone.content_attributes, { deleted: true })
   // @ts-expect-error TS2322, from the conversion: Type '{ id: string; user_id: null; name: null; email: null; verified: boolean; kind: string; custom_attributes: { plan: string; }; created_a
   const conv: any = conversationOf({ id: 'c1', status: 'open', source: 'contact', path: '/store', created_at: '2026-01-01T00:00:00Z', last_message_at: '2026-01-01T00:00:20Z', assignee_id: 'a1', agent_read_at: null, contact_read_at: null, custom_attributes: {} }, { contact, assignee: { id: 'a1', name: 'Sam', email: 's@x', role: 'support' }, messages: [inc, out, sys], unread: 1, waitingSince: '2026-01-01T00:00:10Z' })
@@ -52,8 +47,8 @@ await ok('Chatwoot\'s shapes: a message by author with its type, an attachment, 
   assert.equal(clientContactOf(contact, 'tok').source_id, 'tok'); assert.equal(clientConversationOf({ id: 'c1', status: 'open', listen_key: 'lk', created_at: '2026-01-01T00:00:00Z' }, { contact, messages: [inc] }).pubsub_token, 'lk')
   const inbox = inboxOf({ name: 'Site', space: 'site', url: 'https://x.test' }); assert.equal(inbox.channel_type, 'Channel::WebWidget'); assert.equal(inbox.website_token, 'site')
   assert.equal((agentOf({ id: 'a1', name: 'Sam', email: 's@x', roles: ['admin'] }) as any).role, 'administrator')
-  const wh = webhookPayload('message_created', { message: out, conversation: conv, site: { name: 'Site' } }); assert.equal(wh.event, 'message_created'); assert.equal(wh.message_type, 'outgoing'); assert.equal(wh.created_at, '2026-01-01T00:00:20.000Z'); assert.equal(wh.conversation.id, 'c1'); assert.equal(wh.inbox.name, 'Site'); assert.equal(wh.account.id, 1)
-  const wc = webhookPayload('conversation_status_changed', { conversation: conv, site: {} }); assert.equal(wc.event, 'conversation_status_changed'); assert.equal(wc.status, 'open')
+  const wh: any = webhookPayload('message_created', { message: out, conversation: conv, site: { name: 'Site' } }); assert.equal(wh.event, 'message_created'); assert.equal(wh.message_type, 'outgoing'); assert.equal(wh.created_at, '2026-01-01T00:00:20.000Z'); assert.equal(wh.conversation.id, 'c1'); assert.equal(wh.inbox.name, 'Site'); assert.equal(wh.account.id, 1)
+  const wc: any = webhookPayload('conversation_status_changed', { conversation: conv, site: {} }); assert.equal(wc.event, 'conversation_status_changed'); assert.equal(wc.status, 'open')
   assert.deepEqual(webhookOf({ id: 'w1', url: 'https://x', subscriptions: ['message_created'] }).subscriptions, ['message_created']); assert.ok(EVENTS.includes('conversation_created')); assert.equal(TYPE_WORD.agent, 'outgoing')
 })
 

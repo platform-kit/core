@@ -23,6 +23,7 @@ import { admin } from './lib.ts'
 import { renderEmail, sendEmail, DESIGNS } from './email.ts'
 import { of } from './compiled.ts'
 import type { Json } from './database.types.ts'
+import type { Choice } from './choices.ts'
 /* the funnels as this deployment has them: the shipped file, or the row a publish wrote */
 const funnelsJson = () => of<Record<string, any>>('funnels')
 
@@ -32,7 +33,7 @@ export type Policy = { daily: number; weekly: number; monthly: number; 'blasts-r
 export type Step = { id: string; title: string; after: number; subject: string; html: string; text: string; version: string }
 export type Funnel = { title: string; published: boolean; design: string; cooldown: number; rules: Rules; steps: Step[] }
 /* a funnel's chat step, as the support function needs it: the line the thread opens with */
-export type Choice = { key: string; text: string; children: Choice[] }
+export type { Choice }
 export type Prompt = { id: string; funnel: string; title: string; text: string; image?: string; choices: Choice[]; default: boolean; version: string }
 export type Blast = { id: string; version: string; title: string; subject: string; design: string; respectCooldown: boolean; status: string; rules: Rules; html: string; text: string }
 export const FUNNELS = (funnelsJson().funnels ?? {}) as Record<string, Funnel>

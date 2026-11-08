@@ -15,6 +15,9 @@
  * which is the right failure. Nothing here knows about a database, a component or a request.
  */
 
+/* one answer of a funnel prompt, with the answers that open under it */
+export type Choice = { key: string; text: string; children: Choice[] }
+
 /* WHAT WILL BE DRAWN AS BUTTONS, and what is left as a list. A cap is not a style rule: eleven
    options is not a choice, and a paragraph on a button is not a label. Over either, the list is
    not cut at all — the reader still reads it, as a list, which is the honest failure. */
@@ -40,9 +43,8 @@ export function joinChoices(text: any, choices: any) {
 export function splitChoices(body: any) {
   const lines = String(body || '').replace(/\s+$/, '').split('\n')
   const rows = []
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  while (lines.length && /^\s*[-*]\s+\S/.test(lines[lines.length - 1])) { const l = lines.pop(); const m = /^(\s*)[-*]\s+(.*)$/.exec(l); rows.unshift({ depth: Math.floor(m[1].replace(/\t/g, '  ').length / 2), text: m[2].trim() }) }
-  const root = { children: [], key: '' }
+  while (lines.length && /^\s*[-*]\s+\S/.test(lines[lines.length - 1])) { const l = lines.pop()!; const m = /^(\s*)[-*]\s+(.*)$/.exec(l)!; rows.unshift({ depth: Math.floor(m[1].replace(/\t/g, '  ').length / 2), text: m[2].trim() }) }
+  const root = { children: [] as any[], key: '' }
   const stack = [root]
   for (const r of rows) {
     const depth = Math.min(r.depth, stack.length - 1)
@@ -60,16 +62,13 @@ export function splitChoices(body: any) {
     const node: any = { key: (parent.key ? parent.key + '/' : '') + choiceKey(label), text: label, children: [] }
     if (to.startsWith('form:')) node.form = to.slice(5)
     else if (to) node.href = to
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     parent.children.push(node)
     stack.push(node)
   }
   return { text: lines.join('\n').replace(/\s+$/, ''), choices: root.children }
 }
 /* a choice by its key path, anywhere in the tree */
-// @ts-expect-error TS7023, from the conversion: 'findChoice' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in 
-export function findChoice(choices, key) {
-  // @ts-expect-error TS7022, from the conversion: 'd' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+export function findChoice(choices: Choice[] | null | undefined, key: string): Choice | null {
   for (const c of choices || []) { if (c.key === key) return c; const d = findChoice(c.children, key); if (d) return d }
   return null
 }

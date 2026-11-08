@@ -470,7 +470,6 @@ Deno.serve(async (req: Request) => {
       toDevice = { events: td.events }
       next[TD] = td.next
       const lastAt = since[AT] || 0
-      // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
       const changed = lastAt ? await changedDevices(s.db, { since: new Date(lastAt).toISOString() }) : []
       deviceLists = { changed: changed.map((u) => userId(u, host)), left: [] }
       next[AT] = Date.now()

@@ -20,47 +20,35 @@ console.log('\nWHAT STRIPE ALREADY DOES\n')
 
 /* ---------------------------------------------------------------- the trial */
 ok('a subscription takes its trial from its offer',
-  // @ts-expect-error TS2322, from the conversion: Type '{ trial: number; }' is not assignable to type 'never'.
   sessionParams([{ trial: 14 }], 'subscription').trial === 14)
 ok('a one-off takes none, whatever the record says',
-  // @ts-expect-error TS2322, from the conversion: Type '{ trial: number; }' is not assignable to type 'never'.
   sessionParams([{ trial: 14 }], 'payment').trial === 0)
 ok('no trial declared is no trial',
-  // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'never'.
   sessionParams([{}], 'subscription').trial === 0)
 
 /* ------------------------------------------------------------------ the tax */
 ok('any offer asking for automatic tax turns it on',
-  // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'never'.
   sessionParams([{}, { tax: { automatic: true } }]).automaticTax === true)
 ok('…which is deliberate: a mixed cart must not quietly go untaxed',
-  // @ts-expect-error TS2322, from the conversion: Type '{ tax: { automatic: true; }; }' is not assignable to type 'never'.
   sessionParams([{ tax: { automatic: true } }, { tax: {} }]).automaticTax === true)
 ok('a registration is asked for the same way',
-  // @ts-expect-error TS2322, from the conversion: Type '{ tax: { registration: true; }; }' is not assignable to type 'never'.
   sessionParams([{ tax: { registration: true } }]).taxId === true)
 ok('and the two are separate',
   // @ts-expect-error TS2322, from the conversion: Type '{ tax: { automatic: true; }; }' is not assignable to type 'never'.
   eq(sessionParams([{ tax: { automatic: true } }]), { trial: 0, automaticTax: true, taxId: false, methods: [] }))
 ok('neither is on by default',
-  // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'never'.
   sessionParams([{}, {}]).automaticTax === false && sessionParams([{}, {}]).taxId === false)
 
 /* ------------------------------------------------------- the payment methods */
 ok('one offer\'s methods are the session\'s',
-  // @ts-expect-error TS2322, from the conversion: Type '{ payments: string[]; }' is not assignable to type 'never'.
   eq(sessionParams([{ payments: ['card', 'link'] }]).methods, ['card', 'link']))
 ok('a cart takes the INTERSECTION, so no method is offered an offer refuses',
-  // @ts-expect-error TS2322, from the conversion: Type '{ payments: string[]; }' is not assignable to type 'never'.
   eq(sessionParams([{ payments: ['card', 'link', 'alipay'] }, { payments: ['card', 'link'] }]).methods, ['card', 'link']))
 ok('an offer naming none accepts whatever the shop does',
-  // @ts-expect-error TS2322, from the conversion: Type '{ payments: string[]; }' is not assignable to type 'never'.
   eq(sessionParams([{ payments: ['card', 'link'] }, {}]).methods, ['card', 'link']))
 ok('an empty intersection is empty, which means Stripe\'s own default',
-  // @ts-expect-error TS2322, from the conversion: Type '{ payments: string[]; }' is not assignable to type 'never'.
   eq(sessionParams([{ payments: ['alipay'] }, { payments: ['link'] }]).methods, []))
 ok('nothing is accepted by default — the list is empty unless a file says otherwise',
-  // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'never'.
   eq(sessionParams([{}, {}]).methods, []))
 ok('and the methods a shop may name are one list, not a free-for-all',
   PAYMENT_METHODS.includes('card') && PAYMENT_METHODS.includes('link') && !PAYMENT_METHODS.includes('sepa_debit'),
@@ -83,24 +71,17 @@ ok('bounds that make no sense are refused rather than sent',
   const weekly = { key: 'k_week', trial: 14 }
   const monthly = { key: 'k_month', trial: 14 }
 
-  // @ts-expect-error TS2345, from the conversion: Argument of type '(k: any) => any' is not assignable to parameter of type '() => null'. Target signature provides too few arguments. Expecte
   ok('a first trial is offered', trialDaysFor(weekly, [], tierOf) === 14)
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   ok('having trialled, the same offer gives none', trialDaysFor(weekly, ['k_week'], tierOf) === 0)
   ok('THE POINT: a weekly and a monthly of ONE tier share one trial',
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     trialDaysFor(monthly, ['k_week'], tierOf) === 0)
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   ok('another tier still has its own', trialDaysFor({ key: 'k_outer', trial: 7 }, ['k_week'], tierOf) === 7)
   ok('cancel and rejoin grants nothing, which is what this is for',
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     trialDaysFor(weekly, ['k_week', 'k_week'], tierOf) === 0)
   // @ts-expect-error TS2345, from the conversion: Argument of type '(k: any) => any' is not assignable to parameter of type '() => null'. Target signature provides too few arguments. Expecte
   ok('an offer with no trial is unaffected', trialDaysFor({ key: 'k_week' }, [], tierOf) === 0)
   ok('a subscription with no tier is counted per offer instead',
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     trialDaysFor({ key: 'solo', trial: 5 }, ['other'], () => null) === 5 &&
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     trialDaysFor({ key: 'solo', trial: 5 }, ['solo'], () => null) === 0)
 }
 

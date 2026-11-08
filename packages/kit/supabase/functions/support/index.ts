@@ -52,6 +52,7 @@ import { admin, json, preflight, appUrl, isServiceBearer } from '../_shared/lib.
 import { sendEmail } from '../_shared/email.ts'
 import { PRESENT_MS, MIN_GAP_MS, MAX_BODY, MAX_FILE, MIME, MSG, hush, LIMITS, UUID, sha256, newToken, clean, firstName, findChoice, ipOf, madeLately, W_ATTACH, publicContact, profileOf, CONV, withAgents, withUrls, resolve, seen, threads, ownConversation, acknowledge, isLeaf, withdraw, escalate, PROMPTS, POLICY, type Contact } from '../_shared/support.ts'
 import { providersFrom } from '../_shared/agents/provider.ts'
+import type { Choice } from '../_shared/choices.ts'
 /* the site's own name, for the one place the desk has to call itself something */
 import * as SITE from '../_shared/pipe/site.js'
 
@@ -275,7 +276,8 @@ Deno.serve(async (req: Request) => {
     if (body?.offer) {
       const { data: row } = await admin.from('support_messages')
         .select('id, choices, choice_at').eq('id', String(body.offer)).eq('conversation_id', conv.id).maybeSingle()
-      const c = row ? findChoice(row.choices, String(body?.choice ?? '')) : null
+      /* the jsonb column holds the choices this function wrote with the offer (splitChoices) */
+      const c = row ? findChoice(row.choices as Choice[] | null, String(body?.choice ?? '')) : null
       if (!row || !c) return json({ error: 'no such choice' }, 404)
       const { data: mine } = await admin.from('support_messages')
         .update({ choice_at: new Date().toISOString(), choice_key: c.key })

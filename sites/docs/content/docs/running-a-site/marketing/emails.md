@@ -38,9 +38,8 @@ Every email the site sends is a **design** built in the admin, compiled at build
 Each design's **subject** is a line under UI strings → `emails` (`## <kind>`, `### mail`, `subject`); the editor shows the theme's default until the site writes its own. Beside the subjects the file holds the session emails' lines for a place (`## session`: where a video call, a link, an address or a phone number is said) and the policy panel's labels, and nothing else about the emails.
 
 > Where a deployment cannot rebuild ([cloud mode](/content/docs/running-a-site/settings/cloud-mode) with git
-> out of the cycle and no deploy hook), **a publish compiles the designs itself** — in the Edge
+>
 > Function, with the same browser build of MJML the editor's Test uses — and the mailer reads what it
-> wrote. Nothing about editing a design changes.
 
 ## What a design may say
 

@@ -18,7 +18,7 @@
  */
 
 /* the session-wide three. `offers` is the catalogue records of what is in the cart, in any order. */
-export function sessionParams(offers = [], mode = 'payment') {
+export function sessionParams(offers: any[] = [], mode = 'payment') {
   const list = (offers || []).filter(Boolean)
   const trial = mode === 'subscription' ? Number((list.find((o: any) => o && o.trial) as any)?.trial || 0) : 0
   const automaticTax = list.some((o: any) => o && o.tax && o.tax.automatic === true)
@@ -55,12 +55,10 @@ export function lineQuantity(offer: any) {
  * stored twice. An offer with no tier — a non-membership subscription — is per offer key instead,
  * since there is no tier to share.
  */
-export function trialDaysFor(offer: { trial: any; key: any }, taken = [], tierOf = () => null) {
+export function trialDaysFor(offer: { trial: any; key: any }, taken: ((string | null))[] = [], tierOf: (a: any) => null = () => null) {
   const days = Number(offer && offer.trial) || 0
   if (!days) return 0
-  // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
   const mine = tierOf(offer.key)
-  // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
   const had = (taken || []).some((k) => (mine ? tierOf(k) === mine : k === offer.key))
   return had ? 0 : days
 }

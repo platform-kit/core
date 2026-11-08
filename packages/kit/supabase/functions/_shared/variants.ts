@@ -268,7 +268,7 @@ export function reconcileOptions(existing: any, fetched: any, { from }: any = {}
   for (const o of was.values()) {
     for (const v of o.values) if (!v.gone) gone.push({ option: o.name, slug: o.slug, value: v.value, label: v.label })
     // @ts-expect-error TS2345, from the conversion: Argument of type '{ values: any; from?: string | undefined; name: string; slug: string; }' is not assignable to parameter of type '{ from: a
-    options.push({ ...o, values: o.values.map((v) => ({ ...v, gone: true })) })
+    options.push({ ...o, values: o.values.map((v: any) => ({ ...v, gone: true })) })
   }
   /* the supplier's axes first, then the shop's — the order `optionsOf` already puts a kind's in,
      and the order a key is read in, so a refresh must not reorder what it does not own */

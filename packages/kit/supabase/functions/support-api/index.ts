@@ -46,7 +46,6 @@ async function messagesOf(convId: string, contact: any, since: string | null = n
   if (since) q = q.gt('created_at', since)
   const { data } = await q
   const rows = await withAgents(await withUrls(hush((data ?? []) as any[])))
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   return rows.map((m) => messageOf(m, { contact, agentName: m.agent_name, conversationId: convId }))
 }
 /* the Application API's conversation, whole */
@@ -75,11 +74,9 @@ async function deliver(event: string, id: string) {
     const conv = await fullConversation(c, { withMessages: false })
     const contact = conv.meta.sender
     const [row] = await withAgents(await withUrls([m]))
-    // @ts-expect-error TS2322, from the conversion: Type '{ content_type: string; content_attributes: { deleted: boolean; kind?: undefined; seconds?: undefined; } | { deleted?: undefined; kind
     payload = webhookPayload(event, { message: messageOf(row, { contact: { ...contact, custom_attributes: contact?.custom_attributes }, agentName: row.agent_name, conversationId: c.id }), conversation: conv, site: site() })
   } else if (event.startsWith('conversation_')) {
     const { data: c } = await admin.from('support_conversations').select(CONV_ALL).eq('id', id).maybeSingle(); if (!c) return { delivered: 0 }
-    // @ts-expect-error TS2322, from the conversion: Type '{ id: any; inbox_id: number; account_id: number; status: any; muted: boolean; can_reply: boolean; channel: string; priority: null; sno
     payload = webhookPayload(event, { conversation: await fullConversation(c), site: site() })
   } else if (event.startsWith('contact_')) {
     const { data: k } = await admin.from('support_contacts').select('*').eq('id', id).maybeSingle(); if (!k) return { delivered: 0 }
@@ -103,7 +100,6 @@ Deno.serve(async (req: Request) => {
   const q: Record<string, string> = {}; url.searchParams.forEach((v, k) => { q[k] = v })
   let extra: Record<string, string> = {}
   const reply = (body: unknown, status = 200, headers: Record<string, string> = {}) => new Response(status === 204 ? null : JSON.stringify(body), { status, headers: { ...CORS, ...extra, 'Content-Type': 'application/json', ...headers } })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'null | undefined'. Type 'string' is not assignable to type 'null | 
   const fail = (status: number, message: string, code: string | null = null) => reply(errorOf(message, code), status)
   if (!API_ON || !SUPPORT_ON) return fail(404, 'The Support API is not on for this site.')
   const m = req.method
@@ -183,7 +179,6 @@ Deno.serve(async (req: Request) => {
         const { data: msg, error } = await admin.from('support_messages').insert({ conversation_id: conv.id, author: 'contact', body: text }).select(MSG).single()
         if (error) return fail(500, error.message)
         await acknowledge(conv)
-        // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'null | undefined'. Type 'string' is not assignable to type 'null | undefined'.
         return reply(messageOf(msg, { contact: cv, conversationId: conv.id, echoId: body.echo_id ? String(body.echo_id) : null }))
       }
       return fail(405, 'GET or POST.')
@@ -244,7 +239,6 @@ Deno.serve(async (req: Request) => {
         const { data: msg, error } = await admin.from('support_messages').insert({ conversation_id: c.id, author: 'agent', agent_id: me.id, body: text }).select(MSG).single()
         if (error) return fail(500, error.message)
         await admin.from('support_conversations').update({ agent_read_at: new Date().toISOString() }).eq('id', c.id)
-        // @ts-expect-error TS2322, from the conversion: Type '{ id: any; name: any; email: any; type: string; avatar_url: null; thumbnail: null; phone_number: null; identifier: any; custom_attribu
         return reply(messageOf(msg, { contact: conv.meta.sender, agentName: me.name, conversationId: c.id }))
       }
       return fail(405, 'GET or POST.')

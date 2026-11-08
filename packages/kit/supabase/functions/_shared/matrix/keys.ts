@@ -361,8 +361,7 @@ export async function putRoomKeys(as: any, { userId, version, rooms }: any) {
   for (const [room, body] of Object.entries(rooms || {})) {
     sessions[room] = { ...(sessions[room] || {}), ...((body && (body as any).sessions) || {}) }
   }
-  // @ts-expect-error TS18046, from the conversion: 'n' is of type 'unknown'.
-  const count = Object.values(sessions).reduce((n, r) => n + Object.keys(r || {}).length, 0)
+  const count = Object.values(sessions as Record<string, object | null>).reduce((n, r) => n + Object.keys(r || {}).length, 0)
   const etag = String(Date.now())
   await as.from('space_key_backups').update({ sessions, count, etag, updated_at: new Date().toISOString() })
     .eq('user_id', userId).eq('version', String(version))
@@ -385,7 +384,7 @@ export async function getRoomKeys(as: any, { userId, version, room = null, sessi
  *
  * It is the people sharing a space with the caller whose device rows changed since the last sync.
  */
-export async function changedDevices(as: any, { since = null }) {
+export async function changedDevices(as: any, { since = null as string | null }) {
   if (!since) return []
   const { data } = await as.from('space_devices').select('user_id').gt('updated_at', since)
   return [...new Set((data || []).map((r: any) => r.user_id))]

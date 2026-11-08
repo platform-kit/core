@@ -37,8 +37,7 @@ export function assetFor(address: any, ctx: any) {
   }
   return null
 }
-// @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ png: string; jpg: string; jpeg: string;
-export const mimeOf = (f) => ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', avif: 'image/avif', pdf: 'application/pdf', mp3: 'audio/mpeg', mp4: 'video/mp4', txt: 'text/plain', md: 'text/markdown', json: 'application/json', css: 'text/css', js: 'application/javascript' })[String(f).split('?')[0].split('.').pop().toLowerCase()] || 'application/octet-stream'
+export const mimeOf = (f: any) => ({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', avif: 'image/avif', pdf: 'application/pdf', mp3: 'audio/mpeg', mp4: 'video/mp4', txt: 'text/plain', md: 'text/markdown', json: 'application/json', css: 'text/css', js: 'application/javascript' })[String(f).split('?')[0].split('.').pop()!.toLowerCase()] || 'application/octet-stream'
 
 /* the asset's url: the images door on this site, or the url itself for a picture elsewhere */
 export function assetUrl(a: any, ctx: any) {
@@ -94,9 +93,8 @@ export async function entryOf(r: any, ctx: any) {
 }
 
 /* the links an entry (or asset) holds, as [linkType, id] */
-export function linksIn(value: any, out = []) {
+export function linksIn(value: any, out: any[][] = []) {
   if (!value || typeof value !== 'object') return out
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never'.
   if (value.sys && value.sys.type === 'Link' && value.sys.linkType && value.sys.id) { out.push([value.sys.linkType, value.sys.id]); return out }
   for (const v of Object.values(value)) linksIn(v, out)
   return out
@@ -110,7 +108,6 @@ export async function includesFor(items: any, depth: any, ctx: any) {
   let frontier = items
   for (let d = 0; d < depth && frontier.length; d++) {
     const next = []
-    // @ts-expect-error TS2488, from the conversion: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
     for (const e of frontier) for (const [kind, id] of linksIn(e.fields)) {
       const key = kind + ':' + id
       if (seen.has(key)) continue; seen.add(key)

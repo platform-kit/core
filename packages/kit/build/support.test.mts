@@ -72,7 +72,7 @@ t('nested choices', () => {
   assert.equal(r.text, 'Hi')
   assert.deepEqual(r.choices.map((c: any) => [c.key, c.children.map((x: { key: any; }) => x.key)]), [['i-have-questions-about-coaching', ['i-have-questions-about-coaching/how-much-does-it-cost', 'i-have-questions-about-coaching/how-long-does-it-take']], ['i-need-support', ['i-need-support/something-else']], ['other', []]])
   assert.equal(joinChoices(r.text, r.choices), body)
-  assert.equal(findChoice(r.choices, 'i-need-support/something-else').text, 'Something else.')
+  assert.equal(findChoice(r.choices, 'i-need-support/something-else')!.text, 'Something else.')
   assert.equal(findChoice(r.choices, 'nope'), null)
   /* a jump of two levels reads as one, never crashes */
   assert.equal((splitChoices('L\n\n- a\n      - deep').choices[0] as any).children[0].key, 'a/deep')

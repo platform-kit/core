@@ -4,12 +4,11 @@
  * { '1': [['09:00','12:00']], … } (ISO weekday 1–7, see schedulers/times.js) and an override as a day with ranges (null: off).
  */
 import { eventTypeId } from './event-type.ts'
-const DAYS = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday', 7: 'Sunday' }
+const DAYS: Record<string, string> = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday', 7: 'Sunday' }
 export function scheduleOf(host: any, hours: any) {
   const availability = []
-  const byRange = new Map()
-  // @ts-expect-error TS2488, from the conversion: Type '{}' must have a '[Symbol.iterator]()' method that returns an iterator.
-  for (const [d, ranges] of Object.entries((hours && hours.weekly) || {})) for (const r of ranges || []) { const k = r[0] + '-' + r[1]; if (!byRange.has(k)) byRange.set(k, { days: [], startTime: r[0], endTime: r[1] }); byRange.get(k).days.push(DAYS[d] || d) }
+  const byRange: any = new Map<string, { days: string[], startTime: string, endTime: string }>()
+  for (const [d, ranges] of Object.entries<Array<[string, string]> | null>((hours && hours.weekly) || {})) for (const r of ranges || []) { const k = r[0] + '-' + r[1]; if (!byRange.has(k)) byRange.set(k, { days: [], startTime: r[0], endTime: r[1] }); byRange.get(k).days.push(DAYS[d] || d) }
   for (const v of byRange.values()) availability.push(v)
   const overrides = []
   for (const o of (hours && hours.overrides) || []) { const ranges = Array.isArray(o.ranges) ? o.ranges : []; if (!ranges.length) overrides.push({ date: o.day, startTime: '00:00', endTime: '00:00' }); else for (const r of ranges) overrides.push({ date: o.day, startTime: r[0], endTime: r[1] }) }

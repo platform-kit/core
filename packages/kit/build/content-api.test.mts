@@ -115,11 +115,11 @@ await ok('every operator, recomputed from the records', () => {
 })
 await ok('Rich Text from markdown: Contentful\'s node types and marks, a library picture an embedded asset', () => {
   const pic = index.assets.find((a: any) => /^image\//.test(a.mime))
-  const doc = richTextFromMarkdown(`# Head\n\nA **bold** *soft* \`code\` [link](https://x.y).\n\n- one\n- two\n\n1. first\n\n> quote\n\n---\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n![pic](${pic ? pic.address : '/nope.png'})\n`, ctx)
-  const types = doc.content.map((n: any) => n.nodeType)
+  const doc: any = richTextFromMarkdown(`# Head\n\nA **bold** *soft* \`code\` [link](https://x.y).\n\n- one\n- two\n\n1. first\n\n> quote\n\n---\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n![pic](${pic ? pic.address : '/nope.png'})\n`, ctx)
+  const types = doc.content!.map((n: any) => n.nodeType)
   assert.deepEqual(types, ['heading-1', 'paragraph', 'unordered-list', 'ordered-list', 'blockquote', 'hr', 'table', pic ? 'embedded-asset-block' : 'paragraph'])
-  const para = doc.content[1].content; assert.deepEqual(para[1].marks, [{ type: 'bold' }]); assert.deepEqual(para[3].marks, [{ type: 'italic' }]); assert.deepEqual(para[5].marks, [{ type: 'code' }]); assert.equal(para[7].nodeType, 'hyperlink'); assert.equal(para[7].data.uri, 'https://x.y')
-  if (pic) assert.equal(doc.content[7].data.target.sys.id, assetId(pic.address))
+  const para = doc.content![1].content; assert.deepEqual(para![1].marks, [{ type: 'bold' }]); assert.deepEqual(para![3].marks, [{ type: 'italic' }]); assert.deepEqual(para![5].marks, [{ type: 'code' }]); assert.equal(para![7].nodeType, 'hyperlink'); assert.equal(para![7].data.uri, 'https://x.y')
+  if (pic) assert.equal(doc.content![7].data.target.sys.id, assetId(pic.address))
   assert.ok(JSON.stringify(doc).includes('"data":{}'), 'every node carries data')
 })
 

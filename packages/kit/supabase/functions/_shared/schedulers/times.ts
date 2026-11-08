@@ -40,9 +40,9 @@ export function dayOf(ms: any, tz: any) {
 export function days(from: any, to: any, cap = 62) {
   const out = []
   // @ts-expect-error TS2556, from the conversion: A spread argument must either have a tuple type or be passed to a rest parameter.
-  let t = Date.UTC(...from.split('-').map((v, i) => Number(v) - (i === 1 ? 1 : 0)))
+  let t = Date.UTC(...from.split('-').map((v: any, i: number) => Number(v) - (i === 1 ? 1 : 0)))
   // @ts-expect-error TS2556, from the conversion: A spread argument must either have a tuple type or be passed to a rest parameter.
-  const end = Date.UTC(...to.split('-').map((v, i) => Number(v) - (i === 1 ? 1 : 0)))
+  const end = Date.UTC(...to.split('-').map((v: any, i: number) => Number(v) - (i === 1 ? 1 : 0)))
   while (t <= end && out.length < cap) { const d = new Date(t); out.push(`${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`); t += 864e5 }
   return out
 }

@@ -8,8 +8,7 @@ export const DEFAULT_PAGE = 25, MAX_PAGE = 1000
 export function parseResponsesQuery(q: any = {}) {
   const errors = []
   const n = (k: string, def: number) => { if (q[k] == null || q[k] === '') return def; const v = Number(q[k]); if (!Number.isInteger(v)) errors.push(`${k} is not a whole number`); return v }
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  const date = (k) => { if (!q[k]) return null; const d = new Date(q[k]); if (isNaN(d)) errors.push(`${k} is not a date`); return d.toISOString() }
+  const date = (k: string) => { if (!q[k]) return null; const d = new Date(q[k]); if (isNaN(d.getTime())) errors.push(`${k} is not a date`); return d.toISOString() }
   let pageSize = n('page_size', DEFAULT_PAGE); if (pageSize < 1 || pageSize > MAX_PAGE) errors.push('page_size is 1–' + MAX_PAGE)
   const completed = q.completed == null || q.completed === '' ? 'all' : ['true', 'false', 'all'].includes(String(q.completed)) ? String(q.completed) : (errors.push('completed is true, false or all'), 'all')
   const list = (k: string) => String(q[k] || '').split(',').map((s) => s.trim()).filter(Boolean)

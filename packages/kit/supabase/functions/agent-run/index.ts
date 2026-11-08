@@ -543,7 +543,7 @@ async function accountInferenceAttempts({
       model: attempt.model,
       protocol: attempt.protocol,
       outcome: attempt.outcome,
-      // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type '"not_sent" | "estimated" | "measured"'.
+      // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type '"estimated" | "not_sent" | "measured"'.
       measurementStatus: attempt.measurementStatus,
       usageDimensions: attempt.usageDimensions,
       providerCostMicros: attempt.providerCostMicros,

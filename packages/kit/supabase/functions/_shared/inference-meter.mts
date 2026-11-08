@@ -101,14 +101,13 @@ export function providerCostMicros(usage: any, tariff: any) {
   }
   const fallbackRate: any = { cachedInput: tariff.input, reasoning: tariff.output }
   let cost = 0n
-  for (const [dimension, count] of Object.entries(usage)) {
+  for (const [dimension, count] of Object.entries(usage as Record<string, number>)) {
     tokenCount(count, `usage.${dimension}`)
     if (!count) continue
     const rate = tariff[dimension] ?? fallbackRate[dimension]
     if (!Number.isSafeInteger(rate) || rate <= 0) {
       throw new Error(`site tariff has no positive rate for measured ${dimension} usage`)
     }
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{}' is not assignable to parameter of type 'string | number | bigint | boolean'.
     const amount = BigInt(count) * BigInt(rate)
     cost += (amount + TOKEN_RATE_SCALE - 1n) / TOKEN_RATE_SCALE
   }

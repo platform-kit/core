@@ -163,12 +163,10 @@ export const findVariant = (store: { products: any }, merchandiseId: string) => 
 export const findProduct = (store: { products: any[] }, id: string) => store.products.find((p: { id: any }) => p.id === id) || null
 
 /* a word over title and description (Shopify's `query`, the simple form), a sort key, cursor paging */
-export function pageOf(list: any, args: any = {}, { search = null, sort = null } = {}) {
+export function pageOf(list: any, args: any = {}, { search = null, sort = null }: { search?: ((item: any) => string) | null, sort?: ((key: string, a: any, b: any) => number) | null } = {}) {
   let items = list.slice()
-  // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
-  if (args.query && search) { const q = String(args.query).toLowerCase().replace(/^title:/, '').replace(/['"*]/g, '').trim(); if (q) items = items.filter((x) => search(x).toLowerCase().includes(q)) }
-  // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
-  if (args.sortKey && sort) { const key = String(args.sortKey); items.sort((a, b) => sort(key, a, b)) }
+  if (args.query && search) { const q = String(args.query).toLowerCase().replace(/^title:/, '').replace(/['"*]/g, '').trim(); if (q) items = items.filter((x: any) => search(x).toLowerCase().includes(q)) }
+  if (args.sortKey && sort) { const key = String(args.sortKey); items.sort((a: any, b: any) => sort(key, a, b)) }
   if (args.reverse) items.reverse()
   const cursorOf = (i: number) => btoa(String(i))
   let from = 0; if (args.after) { try { from = Number(atob(String(args.after))) + 1 } catch { from = 0 } if (!Number.isFinite(from) || from < 0) from = 0 }

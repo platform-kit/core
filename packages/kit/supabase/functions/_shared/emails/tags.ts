@@ -140,10 +140,6 @@ export const PAIRS: any = {
     { label: 'Only when there is a subtotal', before: '{{#if subtotal}}', after: '{{/if}}', group: 'Show when' },
     { label: 'Only when there is shipping', before: '{{#if shipping}}', after: '{{/if}}', group: 'Show when' },
   ],
-  'session-booked': [
-    { label: 'Each answer they gave', before: '{{#each answers}}', after: '{{/each}}', group: 'Repeat' },
-    { label: 'Only when they answered something', before: '{{#if answers}}', after: '{{/if}}', group: 'Show when' },
-  ],
   shipped: [
     { label: 'Each line of the address', before: '{{#each address}}', after: '{{/each}}', group: 'Repeat' },
     { label: 'Only with a tracking number', before: '{{#if tracking_id}}', after: '{{/if}}', group: 'Show when' },
@@ -154,18 +150,20 @@ export const PAIRS: any = {
     { label: 'Only for a signed-in buyer', before: '{{#unless guest}}', after: '{{/unless}}', group: 'Show when' },
   ],
   chat: [], support: [], 'support-digest': [], 'magic-link': [], recovery: [], invitation: [], campaign: [],
-  // @ts-expect-error TS1117, from the conversion: An object literal cannot have multiple properties with the same name.
   'session-booked': [
     { label: 'Only when there is a place', before: '{{#if where}}', after: '{{/if}}', group: 'Show when' },
     { label: 'Only with a link to join', before: '{{#if join}}', after: '{{/if}}', group: 'Show when' },
+    { label: 'Each answer they gave', before: '{{#each answers}}', after: '{{/each}}', group: 'Repeat' },
+    { label: 'Only when they answered something', before: '{{#if answers}}', after: '{{/if}}', group: 'Show when' },
   ],
   'session-moved': null, 'session-cancelled': null, 'session-reminder': null,
   'course-lesson': [],
   'course-complete': [{ label: 'Only with a certificate', before: '{{#if certificate}}', after: '{{/if}}', group: 'Show when' }],
   'provider-terms': [{ label: 'Only for somebody who signed an earlier version', before: '{{#if signed}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only for somebody who has never signed', before: '{{#unless signed}}', after: '{{/unless}}', group: 'Show when' }],
 }
-/* the four session emails share their tags and pairs; the reminder adds how soon */
-for (const k of ['session-moved', 'session-cancelled', 'session-reminder', 'event-reminder']) { TAGS[k] = TAGS['session-booked'].slice(); PAIRS[k] = PAIRS['session-booked'].slice() }
+/* the four session emails share their tags and pairs; the reminder adds how soon. The answers go only with the
+   booking itself (session-mail.ts sends them for a booking and a booking to confirm), so the others leave them out */
+for (const k of ['session-moved', 'session-cancelled', 'session-reminder', 'event-reminder']) { TAGS[k] = TAGS['session-booked'].slice(); PAIRS[k] = PAIRS['session-booked'].filter((p: { before: string }) => !p.before.includes('answers')) }
 TAGS['session-reminder'].push({ label: 'How soon', value: '{{in}}', group: 'Session', sample: 'in 24 hours' })
 TAGS['event-reminder'].push({ label: 'How soon', value: '{{in}}', group: 'Session', sample: 'in 24 hours' })
 TAGS['event-reminder'].push({ label: 'What it is', value: '{{what}}', group: 'Session', sample: 'The members\' call' })

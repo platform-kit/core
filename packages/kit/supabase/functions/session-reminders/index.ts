@@ -53,7 +53,6 @@ Deno.serve(async (req: Request) => {
     const { data: still } = await admin.from('bookings').update({ status: 'rejected', updated_at: new Date().toISOString() }).eq('uid', uid).eq('status', 'pending').select('uid')
     if (!still?.length) continue   /* another run, or the host, got there first */
     await admin.rpc('booking_release', { p_uid: uid })
-    // @ts-expect-error TS2345, from the conversion: Argument of type '"session-declined"' is not assignable to parameter of type 'SessionMailKind'.
     await sessionMail('session-declined', uid).catch((e) => console.warn('session-declined', uid, String(e)))
   }
   let sent = 0

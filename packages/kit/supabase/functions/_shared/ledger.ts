@@ -174,7 +174,6 @@ export async function checkoutCompleted(o: any, provider = 'stripe') {
   }
   if (typeof o.id !== 'string' || !o.id) throw new Error(`provider "${provider}" returned a checkout without an id`)
   const checkoutIdentity = providerScopedId(provider, o.id)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'null | undefined'. Type 'string' is not assignable to type 'null | 
   const userId: string | null = buyerOf(o, await userByCustomer(o.customer, provider))
   if (userId && o.customer) {
     const customerId = idOf(o.customer)

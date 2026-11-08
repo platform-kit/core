@@ -25,7 +25,7 @@ export const senderOf = (m: { author: string; agent_id: any; agent_name: any }, 
 export const contactSender = (c: { id: any; name: any; email: any; user_id: any; custom_attributes: any }|null) => (c ? { id: c.id, name: c.name || 'Guest', email: c.email || null, type: 'contact', avatar_url: null, thumbnail: null, phone_number: null, identifier: c.user_id || null, custom_attributes: c.custom_attributes || {} } : null)
 
 /** a message as Chatwoot answers one (the Client API and the Application API share it) */
-export function messageOf(m: any, { contact = null, agentName = null, conversationId = null, echoId = null } = {}) {
+export function messageOf(m: any, { contact = null as { custom_attributes: any; id?: any; name?: any; email?: any; type?: string | undefined; avatar_url?: null | undefined; thumbnail?: null | undefined; phone_number?: null | undefined; identifier?: any; } | { id: any; name: any; email: any; type: string; avatar_url: null; thumbnail: null; phone_number: null; identifier: any; custom_attributes: any; } | null, agentName = null as string | null | undefined, conversationId = null as string | null, echoId = null as string | null } = {}) {
   const withdrawn = !!m.deleted_at
   return {
     id: m.id, content: withdrawn ? null : (m.body ?? null), inbox_id: INBOX_ID, conversation_id: conversationId || m.conversation_id || null, echo_id: echoId || undefined,
@@ -56,7 +56,7 @@ export function clientContactOf(c: { id: any; name: any; email: any; user_id: an
 /** an agent as Chatwoot lists one */
 export const agentOf = (p: any) => (p ? { id: p.id, name: p.name || p.display_name || null, email: p.email || null, role: (p.roles || []).includes('admin') ? 'administrator' : 'agent', availability_status: 'online', auto_offline: false, confirmed: true, available_name: p.name || p.display_name || null, thumbnail: null, account_id: ACCOUNT_ID } : null)
 /** the Application API's conversation */
-export function conversationOf(c: { id: any; status: any; last_message_at: any; created_at: any; last_agent_at: any; agent_read_at: any; contact_read_at: any; path: any; source: any; prompt_id: any; resolved_at: any; custom_attributes: any }, { contact = null, assignee = null, messages = [], unread = 0, waitingSince = null } = {}) {
+export function conversationOf(c: { id: any; status: any; last_message_at: any; created_at: any; last_agent_at: any; agent_read_at: any; contact_read_at: any; path: any; source: any; prompt_id: any; resolved_at: any; custom_attributes: any }, { contact = null, assignee = null as { name: string | null; id: string; display_name: string | null; email: string | null; roles: string[]; } | null, messages = [], unread = 0, waitingSince = null as string | null } = {}) {
   const last = messages.length ? messages[messages.length - 1] : null
   return {
     id: c.id, inbox_id: INBOX_ID, account_id: ACCOUNT_ID, status: c.status, muted: false, can_reply: true, channel: 'Channel::WebWidget', priority: null, snoozed_until: null,
@@ -83,15 +83,13 @@ export const accountOf = (site: any = {}) => ({ id: ACCOUNT_ID, name: site.name 
 export const webhookOf = (w: any) => ({ id: w.id, url: w.url, subscriptions: w.subscriptions || [], account_id: ACCOUNT_ID, inbox_id: null, webhook_type: 'account', last_at: w.last_at || null, last_error: w.last_error || null })
 export const EVENTS = ['conversation_created', 'conversation_status_changed', 'conversation_updated', 'message_created', 'message_updated', 'contact_created', 'contact_updated', 'webwidget_triggered']
 /** the webhook payload: a message event carries the message with the conversation; a conversation event the conversation */
-export function webhookPayload(event: string, { message = null, conversation = null, site = {} } = {}) {
+export function webhookPayload(event: string, { message = null, conversation = null, site = {} }: { message?: Record<string, any> | null, conversation?: Record<string, any> | null, site?: Record<string, any> } = {}) {
   const inbox = { id: INBOX_ID, name: (site as any).name || 'Support' }
   if (message) {
-    // @ts-expect-error TS2700, from the conversion: Rest types may only be created from object types.
     const { sender, ...m } = message
     return { event, ...m, message_type: ['incoming', 'outgoing', 'activity'][(message as any).message_type] || 'activity', created_at: (message as any).created_at ? new Date((message as any).created_at * 1000).toISOString() : null, sender, inbox, conversation, account: accountOf(site) }
   }
-  // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
   return { event, ...conversation, inbox, account: accountOf(site) }
 }
 /** Chatwoot's Client API contact_identifier → the contact token (the source_id is the token itself) */
-export const errorOf = (message: string, code = null) => ({ error: message, ...(code ? { code } : {}), errors: [message] })
+export const errorOf = (message: string, code: string | null = null) => ({ error: message, ...(code ? { code } : {}), errors: [message] })

@@ -21,7 +21,7 @@ export async function richText(md: any, key: any, ctx: any) {
 
 /* `index`: { space, site, locales, models, types, records, assets }; `records` here are the door's — the published
    ones, or under a preview key the drafts and every entry */
-export function makeContext(index: any, { preview = false, gated = false, locale = null, imagesBase = '' } = {}) {
+export function makeContext(index: any, { preview = false, gated = false, locale = null as string | null, imagesBase = '' } = {}) {
   const allLocales = locale === '*'
   const code = !locale || locale === '*' ? (index.locales.find((l: any) => l.default) || index.locales[0] || { code: 'en' }).code : locale
   const records = index.records.filter((r: any) => r.typeId && (preview || r.published))

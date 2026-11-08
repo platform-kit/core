@@ -182,15 +182,14 @@ Deno.serve(async (req: Request) => {
   if (needsShipping && !shipsTo(country)) return json({ error: country ? `we do not ship to ${country}` : 'choose where it ships', code: 'ship_to' }, 400)
   const rates = needsShipping ? ratesFor(country) : []
   const inCart = [...merged.keys()].map((sku) => offerOf(sku)).filter(Boolean) as any[]
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'. Type 'any' is not assignable to type 'never'.
   const { trial: offered, automaticTax: wantsAutoTax, taxId: wantsTaxId, methods } = sessionParams(inCart, mode)
   let trialDays = offered
   if (offered && user) {
     const { data: past } = await admin.from('subscriptions').select('key').eq('user_id', user.id).eq('trialed', true)
     const taken = (past || []).map((r) => r.key).filter(Boolean)
     const withTrial = inCart.find((o) => o?.trial)
-    // @ts-expect-error TS2345, from the conversion: Argument of type '(k: any) => string | null' is not assignable to parameter of type '() => null'. Target signature provides too few argument
-    trialDays = trialDaysFor(withTrial, taken, (k) => (offerByKey(k)?.tier ?? null))
+    // @ts-expect-error TS2345, from the conversion: Argument of type '(k: string) => string | null' is not assignable to parameter of type '(a: any) => null'. Type 'string | null' is not assig
+    trialDays = trialDaysFor(withTrial, taken, (k: string) => (offerByKey(k)?.tier ?? null))
   }
   let selectedPaymentProvider: PaymentProviderAdapter
   try {

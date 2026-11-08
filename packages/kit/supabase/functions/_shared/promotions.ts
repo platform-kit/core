@@ -79,14 +79,11 @@ export function ruleHolds(rule: { attribute: any; value: any; operator: any }, c
     case 'eq': return Array.isArray(have) ? have.map(String).includes(String(want)) : String(have) === String(want)
     case 'ne': return Array.isArray(have) ? !have.map(String).includes(String(want)) : String(have) !== String(want)
     case 'in': return (Array.isArray(want) ? want : [want]).map(String).some((w) => (Array.isArray(have) ? have.map(String).includes(w) : String(have) === w))
-    // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-    case 'gt': return n(have) !== null && n(have) > n(want)
-    // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-    case 'gte': return n(have) !== null && n(have) >= n(want)
-    // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-    case 'lt': return n(have) !== null && n(have) < n(want)
-    // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-    case 'lte': return n(have) !== null && n(have) <= n(want)
+    /* a wanted value that is not a number compares as 0, which is what `> null` always did */
+    case 'gt': { const h = n(have); return h !== null && h > (n(want) ?? 0) }
+    case 'gte': { const h = n(have); return h !== null && h >= (n(want) ?? 0) }
+    case 'lt': { const h = n(have); return h !== null && h < (n(want) ?? 0) }
+    case 'lte': { const h = n(have); return h !== null && h <= (n(want) ?? 0) }
     default: return false
   }
 }

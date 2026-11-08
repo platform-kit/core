@@ -49,7 +49,6 @@ export async function makeBooking(s: Session, o: { start: string; attendee: Atte
     /* A BOOKING THAT WAITS SENDS TWO DIFFERENT LETTERS: the reader is told the time is held, the
        host that somebody is waiting on them. Telling the reader "you're booked" and then declining
        is the worst version of this feature, so the word "booked" is never used until it is. */
-    // @ts-expect-error TS2345, from the conversion: Argument of type '"session-booked" | "session-held"' is not assignable to parameter of type 'SessionMailKind'. Type '"session-held"' is not 
     await sessionMail(made.status === 'pending' ? 'session-held' : 'session-booked', made.uid).catch((e) => console.warn('session mail', String(e)))
     await tell('BOOKING_CREATED', made.uid)
   }

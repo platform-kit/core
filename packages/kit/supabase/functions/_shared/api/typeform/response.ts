@@ -28,8 +28,7 @@ export function answerOf(field: any, a: any, fileUrl: any) {
       if (Array.isArray(v)) return { ...head, type: 'choices', choices: { ids: v.map((x) => slugify(x)), refs: v.map((x) => slugify(x)), labels: v.map(label) } }
       return { ...head, type: 'choice', choice: { id: slugify(v), ref: slugify(v), label: label(v) } }
     }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-    case 'date': { const d = new Date(String(v ?? '')); return { ...head, type: 'date', date: isNaN(d) ? String(v ?? '') : d.toISOString() } }
+    case 'date': { const d = new Date(String(v ?? '')); return { ...head, type: 'date', date: isNaN(d.getTime()) ? String(v ?? '') : d.toISOString() } }
     default: return { ...head, type: 'text', text: Array.isArray(v) ? v.join(', ') : String(v ?? '') }
   }
 }
