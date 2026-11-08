@@ -9,7 +9,7 @@ sources:
     packages/kit/src/lib/community,
     packages/kit/theme/src/pages/SpacesPage.vue,
   ]
-reviewed: 2026-11-07
+reviewed: 2026-11-08
 ---
 
 Spaces are the site's shared places for people to gather. A community can have a public front page, discoverable spaces, and rooms for different kinds of conversation. The site's owner decides how each space is presented and who can enter; the people who actually join are recorded as membership, not listed in a content file.

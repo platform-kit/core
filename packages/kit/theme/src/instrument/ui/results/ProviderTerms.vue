@@ -25,7 +25,7 @@ import { marked } from 'marked'
 const props = defineProps({ standing: { type: Object as PropType<any>, default: null }, open: { type: Boolean, default: false } })
 const emit = defineEmits(['close', 'signed'])
 const T = us('library').coaching.terms || {}
-const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: { [x: string]: string }) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const saving = ref(false), error = ref('')
 const terms = computed(() => (props.standing && props.standing.terms) || null)

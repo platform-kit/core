@@ -45,7 +45,7 @@ let channel: any = null, refreshTimer: any = null
 /* the filters, remembered per browser */
 const PREF = 'dl.support.inbox'
 const read = () => { try { return JSON.parse(localStorage.getItem(PREF) || '{}') } catch (e) { return {} } }
-const f = reactive<any>({ status: 'open', who: 'all', assignee: 'all', unread: false, sort: 'waiting', ...read() })
+const f = reactive({ status: 'open', who: 'all', assignee: 'all', unread: false, sort: 'waiting', ...read() })
 watch(f, () => { try { localStorage.setItem(PREF, JSON.stringify({ ...f })) } catch (e) { /* private mode */ } })
 
 async function load() {
@@ -60,7 +60,7 @@ async function load() {
   if (!agents.value.length) { const { data: ag } = await (supabase as any).rpc('support_agents'); agents.value = ag || [] }
   listen()
 }
-const refresh: any = () => { clearTimeout(refreshTimer); refreshTimer = setTimeout(load, 250) }
+const refresh = () => { clearTimeout(refreshTimer); refreshTimer = setTimeout(load, 250) }
 
 /* ---- presence: I am at the desk ---- */
 const SEEN_MS = 60 * 1000

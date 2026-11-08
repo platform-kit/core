@@ -26,11 +26,11 @@ onMounted(loadMyTickets)
 const open = computed(() => mine.open && mine.open.ticket)
 const timeline = computed(() => (mine.open && mine.open.timeline) || [])
 /* the states as the person who raised it reads them, not as the desk files them */
-const stateWord = (s: any) => W.value['mine-' + s] || W.value['state-' + s] || s
-const replies = (t: any) => (Number(t.replies) === 1 ? W.value['replies-one'] : (W.value['replies-many'] || '').replace('{n}', t.replies))
+const stateWord = (s: string) => W.value['mine-' + s] || W.value['state-' + s] || s
+const replies = (t: { replies: any }) => (Number(t.replies) === 1 ? W.value['replies-one'] : (W.value['replies-many'] || '').replace('{n}', t.replies))
 /* where it got to, rather than the desk's own book-keeping: "now Waiting on you" says the thing
    they want to know, and a from-and-to says the thing we want to know */
-const said = (e: any) => {
+const said = (e: { kind: string; data: { to: any } }) => {
   const to = e.kind === 'status' && e.data && e.data.to
   return to ? (W.value['said-now'] || '').replace('{to}', stateWord(to)) : ''
 }

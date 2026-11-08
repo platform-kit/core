@@ -31,19 +31,19 @@ async function load() {
     models.value = [...custom.map((m: any) => ({ ...m, core: false })), ...core]
   } catch (e) { msg.value = (e as any).message } finally { loading.value = false }
 }
-const coreOf = (key: any) => models.value.find((m: any) => m.core && m.key === key) || null
-const kindOf = (f: any) => (f.kind ? ((us('models').kinds || {})[f.kind] || {}).name || f.kind : f.widget || f.type)
+const coreOf = (key: any) => models.value.find((m: { core: any; key: any }) => m.core && m.key === key) || null
+const kindOf = (f: { kind: string|number; widget: any; type: any }) => (f.kind ? ((us('models').kinds || {})[f.kind] || {}).name || f.kind : f.widget || f.type)
 onMounted(load)
 watch(() => props.name, (n) => { if (!n) load() })
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
-const getRowId = (q: any) => q.data.key
+const getRowId = (q: { data: { key: any } }) => q.data.key
 const columnDefs = computed(() => [
-  { headerName: G['col-name'], field: 'name', pinned: 'left', flex: 1.4, minWidth: 200, cellRenderer: (q: any) => `<span class="ma-gtitle">${q.value}</span><span class="ma-gaddr">${q.data.core ? q.data.dir : 'content/models/' + q.data.key}</span>` },
-  { headerName: G['col-kind'], width: 110, valueGetter: (q: any) => (q.data.core ? G.core : G.custom), cellRenderer: (q: any) => `<span class="ui-pill ${q.data.core ? 'ui-off' : 'ui-ok'}">${q.value}</span>` },
-  { headerName: G['col-on'], width: 110, valueGetter: (q: any) => (q.data.errors && q.data.errors.length ? '!' : q.data.published ? '✓' : '—'), cellRenderer: (q: any) => (q.data.errors && q.data.errors.length ? `<span class="ui-pill ui-warn" title="${q.data.errors.join('\n').replace(/"/g, '&quot;')}">!</span>` : `<span class="ui-pill ${q.data.published ? 'ui-ok' : 'ui-off'}">${q.value}</span>`) },
+  { headerName: G['col-name'], field: 'name', pinned: 'left', flex: 1.4, minWidth: 200, cellRenderer: (q: { value: any; data: { core: any; dir: any; key: string } }) => `<span class="ma-gtitle">${q.value}</span><span class="ma-gaddr">${q.data.core ? q.data.dir : 'content/models/' + q.data.key}</span>` },
+  { headerName: G['col-kind'], width: 110, valueGetter: (q: { data: { core: any } }) => (q.data.core ? G.core : G.custom), cellRenderer: (q: { data: { core: any }; value: any }) => `<span class="ui-pill ${q.data.core ? 'ui-off' : 'ui-ok'}">${q.value}</span>` },
+  { headerName: G['col-on'], width: 110, valueGetter: (q: { data: { errors: string|any[]; published: any } }) => (q.data.errors && q.data.errors.length ? '!' : q.data.published ? '✓' : '—'), cellRenderer: (q: { data: { errors: any[]; published: any }; value: any }) => (q.data.errors && q.data.errors.length ? `<span class="ui-pill ui-warn" title="${q.data.errors.join('\n').replace(/"/g, '&quot;')}">!</span>` : `<span class="ui-pill ${q.data.published ? 'ui-ok' : 'ui-off'}">${q.value}</span>`) },
   { headerName: G['col-fields'], field: 'fields', width: 100, type: 'numericColumn' },
   { headerName: G['col-entries'], field: 'entries', width: 100, type: 'numericColumn' },
-  { headerName: G['col-deliver'], flex: 1, minWidth: 180, valueGetter: (q: any) => (q.data.deliver || []).map((k: any) => D[k] || k).join(' · ') },
+  { headerName: G['col-deliver'], flex: 1, minWidth: 180, valueGetter: (q: { data: { deliver: any } }) => (q.data.deliver || []).map((k: string|number) => D[k] || k).join(' · ') },
 ])
 </script>
 

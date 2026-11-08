@@ -79,7 +79,7 @@ async function message() {
     const cid = await openDm(dmSpace.value, [them.value.id])
     if (!cid) { dmSpace.value = null; return }
     const { data } = await (supabase as any).from('channels').select('slug, spaces(slug)').eq('id', cid).single()
-    if (data && data.spaces) navigate(ROUTES.spaces + '/' + (data.spaces as any).slug + '/' + data.slug)
+    if (data && data.spaces) navigate(ROUTES.spaces + '/' + data.spaces.slug + '/' + data.slug)
   } finally { dmBusy.value = false }
 }
 async function loadNetwork(t: any) {
@@ -116,7 +116,7 @@ const awards = ref<any>([])
 const locked = computed(() => {
   const ALL = allAwards()
   if (!awards.value.length && !ALL.length) return []
-  const got = new Set(awards.value.map((x: any) => (x as any).slug))
+  const got = new Set(awards.value.map((x: any) => x.slug))
   return ALL.filter((x) => x.shown !== false && !got.has(x.slug)).sort((a, b) => (a.order || 99) - (b.order || 99))
 })
 /* the username in the path, or nothing — which means the reader's own settings */
@@ -143,7 +143,7 @@ watch(handle, async (h) => {
   } catch { them.value = null } finally { looking.value = false }
 }, { immediate: true })
 watch(them, (t) => {
-  if (t) setHead({ title: (t as any).name, description: (t as any).about || '' })
+  if (t) setHead({ title: t.name, description: t.about || '' })
   loadNetwork(t)
 })
 
@@ -156,7 +156,7 @@ const nameState = ref('')   /* '' | checking | free | taken | bad */
 
 async function mineLoad() {
   if (!mine.value || !isSignedIn.value) return
-  try { await loadMe(); draft.value = { ...(me.value || {}) }; awards.value = me.value ? await awardsOf((me.value as any).id) : []; loadCatalogue() }
+  try { await loadMe(); draft.value = { ...(me.value || {}) }; awards.value = me.value ? await awardsOf(me.value.id) : []; loadCatalogue() }
   catch (e) { err.value = (e as any).message || String(e) }
 }
 /* THE TEAMS THEY ARE IN — theirs, on their own account. A team is a group the site points work
@@ -182,7 +182,7 @@ watch(() => draft.value && draft.value.username, async (u) => {
   const want = String(u || '').trim().toLowerCase()
   if (!want) { nameState.value = ''; return }
   if (!usernameOk(want)) { nameState.value = 'bad'; return }
-  if (me.value && want === (me.value as any).username) { nameState.value = 'free'; return }
+  if (me.value && want === me.value.username) { nameState.value = 'free'; return }
   nameState.value = 'checking'
   const n = ++tick
   try { const free = await nameFree(want); if (n === tick) nameState.value = free ? 'free' : 'taken' }
@@ -194,7 +194,7 @@ async function save() {
   if (!draft.value || saving.value) return
   saving.value = true; err.value = ''; saved.value = false
   try {
-    const d: any = draft.value
+    const d = draft.value
     await saveMe({
       username: String(d.username || '').trim().toLowerCase() || null,
       display_name: String(d.display_name || '').trim() || null,
@@ -217,7 +217,7 @@ const pickFace = ({ style, seed, options }: any) => {
   draft.value.avatar = null
   draft.value.avatar_style = style
   /* the seed the database resolved is the default, so choosing it back means choosing nothing */
-  draft.value.avatar_seed = seed === (me.value && (me.value as any).seed) ? null : seed
+  draft.value.avatar_seed = seed === (me.value && me.value.seed) ? null : seed
   draft.value.seed = seed
   /* and the parts they designed; nothing chosen is null rather than {}, so "I left it alone" and
      "I chose these" are different answers in the row as well as in the picker */

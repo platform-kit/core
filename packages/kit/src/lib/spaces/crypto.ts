@@ -39,7 +39,7 @@
 import { spaceOut, tighten } from './model.js'
 export { spaceOut, tighten }
 
-const pack = (id: any) => String(id || '').replace(/-/g, '').toLowerCase()
+const pack = (id: string) => String(id || '').replace(/-/g, '').toLowerCase()
 const env = (k: string) => {
   try { return (import.meta.env && import.meta.env[k]) || '' } catch { return '' }
 }
@@ -133,7 +133,7 @@ const B64 = {
 const utf8 = (s: string|undefined) => new TextEncoder().encode(s)
 const randomBytes = (n: number) => crypto.getRandomValues(new Uint8Array(n))
 
-async function aesFor(recoveryKey: any, salt: Uint8Array<any>) {
+async function aesFor(recoveryKey: string, salt: Uint8Array<any>) {
   const material = await crypto.subtle.importKey('raw', B64.from(recoveryKey), 'HKDF', false, ['deriveKey'])
   return crypto.subtle.deriveKey(
     { name: 'HKDF', hash: 'SHA-256', salt, info: utf8('platformkit.spaces.secrets.v1') },

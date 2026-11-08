@@ -73,7 +73,7 @@ export function serialiseCompanionBody(chapters: any) {
     if (c.essence && c.essence.length) parts.push('## Essence\n\n' + c.essence.map((e: string) => '- ' + e.trim()).join('\n'))
     if (c.quiz && c.quiz.length) {
       parts.push('## Quiz\n\n' + c.quiz.map((x: { options: any[]; answer: any; q: string; why: string }, i: number) => {
-        const opts = x.options.map((o: string, j: any) => `   - [${j === x.answer ? 'x' : ' '}] ${o.trim()}`).join('\n')
+        const opts = x.options.map((o: string, j) => `   - [${j === x.answer ? 'x' : ' '}] ${o.trim()}`).join('\n')
         return `${i + 1}. ${x.q.trim()}\n${opts}` + (x.why ? `\n   > ${x.why.trim()}` : '')
       }).join('\n\n'))
     }

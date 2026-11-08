@@ -15,8 +15,8 @@ const hours = ref<any>(emptyHours()), overrides = ref<any>([]), had = ref(false)
    one of them theirs by default. The panel edits ONE at a time, picked here; a booking type asks
    for a set by name and anything that asks for none uses the default. */
 const sets = ref<any>([]), picked = ref<any>(null)
-const current = computed(() => sets.value.find((s: any) => (s as any).id === picked.value) || null)
-const isDefault = computed(() => !!(current.value && (current.value as any).is_default))
+const current = computed(() => sets.value.find((s: any) => s.id === picked.value) || null)
+const isDefault = computed(() => !!(current.value && current.value.is_default))
 const { list: ZONES } = zones()
 const on = (d: any) => Array.isArray(hours.value.weekly[d]) && hours.value.weekly[d].length > 0
 function toggle(d: any) { if (on(d)) delete hours.value.weekly[d]; else hours.value.weekly[d] = [['09:00', '17:00']]; hours.value.weekly = { ...hours.value.weekly } }
@@ -28,12 +28,12 @@ async function load() {
     const r = await getHours()
     sets.value = r.schedules || (r.hours ? [r.hours] : [])
     // @ts-expect-error TS2339, from the conversion: Property 'id' does not exist on type 'never'.
-    if (!picked.value || !sets.value.some((s) => (s as any).id === picked.value)) picked.value = (sets.value.find((s) => (s as any).is_default) || sets.value[0] || {}).id ?? null
-    const mine = sets.value.find((s: any) => (s as any).id === picked.value) || r.hours
+    if (!picked.value || !sets.value.some((s) => s.id === picked.value)) picked.value = (sets.value.find((s) => s.is_default) || sets.value[0] || {}).id ?? null
+    const mine = sets.value.find((s: any) => s.id === picked.value) || r.hours
     if (mine) { hours.value = { ...emptyHours(), ...mine }; had.value = true }
     /* an exception belongs to the set it was written on; one written before there were several has
        no set and belongs to the default */
-    overrides.value = (r.overrides || []).filter((o: any) => o.schedule_id === picked.value || (!o.schedule_id && (current.value ? (current.value as any).is_default : true)))
+    overrides.value = (r.overrides || []).filter((o: any) => o.schedule_id === picked.value || (!o.schedule_id && (current.value ? current.value.is_default : true)))
   }
   catch (e) { error.value = (e as any).message } finally { loading.value = false }
 }
@@ -43,7 +43,7 @@ async function save() {
   try {
     const r = await setHours(hours.value, picked.value || undefined)
     sets.value = r.schedules || []
-    const mine = sets.value.find((s: any) => (s as any).name === hours.value.name) || sets.value.find((s: any) => (s as any).id === picked.value) || r.hours
+    const mine = sets.value.find((s: any) => s.name === hours.value.name) || sets.value.find((s: any) => s.id === picked.value) || r.hours
     if (mine) { picked.value = mine.id; hours.value = { ...emptyHours(), ...mine } }
     had.value = true; saved.value = true; setTimeout(() => { saved.value = false }, 1800)
   }
@@ -64,7 +64,7 @@ function addRange(o: any) { o.ranges = [...(o.ranges || []), ['13:00', '17:00']]
 function dropRange(o: any, i: any) { o.ranges = (o.ranges || []).filter((_: any, j: any) => j !== i); if (!o.ranges.length) o.ranges = null; saveRanges(o) }
 async function removeDay(o: any) { try { const r = await removeOverride(o.day, picked.value || undefined); overrides.value = r.overrides || [] } catch (e) { error.value = (e as any).message } }
 const dayLabel = (d: any) => { try { return new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(d + 'T12:00:00')) } catch (e) { return d } }
-const usual = computed(() => sets.value.find((s: any) => (s as any).is_default) || sets.value[0] || null)
+const usual = computed(() => sets.value.find((s: any) => s.is_default) || sets.value[0] || null)
 const summary = computed(() => { const w = (usual.value || hours.value).weekly || {}; return WEEKDAYS.filter((d) => Array.isArray(w[d]) && w[d].length).map((d) => DAYS[d].slice(0, 3)).join(' · ') })
 </script>
 

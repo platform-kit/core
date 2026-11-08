@@ -63,7 +63,7 @@ const features = { edit: false, newfile: false, newfolder: true, preview: true, 
 
 /* the selection, shared with the slot components (the toolbar's actions, the status bar's address) */
 const selection = shallowRef<any>([])
-const withUrl = (it: any) => ({ ...it, url: it.url || driver.urlOf(toStore(it.path)) })
+const withUrl = (it: { url: any; path: any }) => ({ ...it, url: it.url || driver.urlOf(toStore(it.path)) })
 function onSelect(items: any) { selection.value = (items || []).map(withUrl); askUsage() }
 provide(SELECTION, selection)
 /* a file in use: the records that name each chosen entry, asked of the pipe a beat after the selection settles */
@@ -71,15 +71,15 @@ const usage = shallowRef<any>({})
 let usageTimer: any = null
 function askUsage() {
   clearTimeout(usageTimer)
-  const paths = selection.value.map((i: any) => toStore((i as any).path))
+  const paths = selection.value.map((i: { path: any }) => toStore(i.path))
   if (!paths.length) { usage.value = {}; return }
-  usageTimer = setTimeout(async () => { try { const u = await driver.usage(paths); if (selection.value.map((i: any) => toStore((i as any).path)).join() === paths.join()) usage.value = u } catch (e) { usage.value = {} } }, 120)
+  usageTimer = setTimeout(async () => { try { const u = await driver.usage(paths); if (selection.value.map((i: { path: any }) => toStore(i.path)).join() === paths.join()) usage.value = u } catch (e) { usage.value = {} } }, 120)
 }
 provide(USAGE, usage)
 
 /* the picker: one file at a time; the chosen entry's address is what the field takes */
-const chosen = computed<any>(() => (selection.value.length ? selection.value[selection.value.length - 1] : null))
-function use() { const c: any = chosen.value; if (c && c.type !== 'dir') emit('pick', { path: toStore(c.path), url: c.url, name: c.basename, mime: c.mime_type }) }
+const chosen = computed(() => (selection.value.length ? selection.value[selection.value.length - 1] : null))
+function use() { const c = chosen.value; if (c && c.type !== 'dir') emit('pick', { path: toStore(c.path), url: c.url, name: c.basename, mime: c.mime_type }) }
 function onDclick(e: any) { if (props.pick && e && e.item && e.item.type === 'file') { selection.value = [withUrl(e.item)]; use() } }
 const mimes = computed(() => (props.pictures ? ['image/'] : []))
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }

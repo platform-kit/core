@@ -41,7 +41,7 @@ const props = defineProps({ id: { type: String, required: true } })
 /* the admin's live preview provides a draft entry in place of the compiled one */
 const preview = inject<any>('dl-preview', null)
 const a = computed(() =>
-  preview ? ((preview as any).value ? articleView((preview as any).value) : null) : article(props.id),
+  preview ? (preview.value ? articleView(preview.value) : null) : article(props.id),
 )
 /* a canAccess bar in the frontmatter closes the body (hero stays) until the reader clears it */
 /* ASKED, NOT DECIDED: the entry carries its own bar and the ability answers (lib/permissions.js).
@@ -65,7 +65,7 @@ const img = computed(
     a.value &&
     (a.value.data.image ||
       (Array.isArray(a.value.data.media)
-        ? a.value.data.media.find((m: any) => m.poster)?.poster
+        ? a.value.data.media.find((m: { poster: any }) => m.poster)?.poster
         : a.value.data.media?.poster) ||
       null),
 )

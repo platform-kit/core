@@ -178,7 +178,7 @@ async function crypto_() {
 }
 
 /* whether a room is sealed is the channel's own field, projected from its markdown */
-export const isSealed = (channelId: any) => {
+export const isSealed = (channelId: string) => {
   const c = channels.value.find((x: { id: any }) => x.id === channelId)
   return !!(c && c.encrypted)
 }
@@ -189,7 +189,7 @@ export const isSealed = (channelId: any) => {
  * the people they join are already there; narrowing it to the joined would leave a member who
  * opened the room a minute later with a timeline of ciphertext nobody could ever fix.
  */
-async function recipients(channelId: any) {
+async function recipients(channelId: string) {
   const c = channels.value.find((x: { id: any }) => x.id === channelId)
   if (!c) return []
   const { data } = await (supabase as any).from('space_members').select('user_id').eq('space_id', c.space_id)
@@ -309,7 +309,7 @@ export function unskip() { sealing.skipped = false; sealing.wrong = false }
 
 /* ------------------------------------------------------------------ the open channel */
 
-export async function openChannel(id: any) {
+export async function openChannel(id: string) {
   if (!on() || !id) return
   const meta = channels.value.find((c: { id: any }) => c.id === id)
   open.id = id
@@ -807,7 +807,7 @@ export async function setNotify(channelId: any, notify: any) {
    reader, because to a reader they are never in the same menu. */
 export const hushes = ref<any>([])
 export async function loadHushes() { if (on()) hushes.value = (await rpc('space_my_mutes')) || [] }
-export const hushOf = (kind: any, ref: any) => (hushes.value || []).find((m: { kind: any; ref: any }) => m.kind === kind && m.ref === ref) || null
+export const hushOf = (kind: string, ref: any) => (hushes.value || []).find((m: { kind: any; ref: any }) => m.kind === kind && m.ref === ref) || null
 export const isHushed = (kind: any, ref: any) => !!hushOf(kind, ref)
 
 export async function hush(kind: string, ref: any, until = null) {
@@ -994,7 +994,7 @@ export async function search(query: any) {
 
 /* ------------------------------------------------------------------ live */
 
-const lastSeqOf = (channelId: any) => {
+const lastSeqOf = (channelId: string) => {
   let n = 0
   for (const m of open.id === channelId ? open.messages : []) if (Number(m.seq) < Number.MAX_SAFE_INTEGER) n = Math.max(n, Number(m.seq) || 0)
   const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
@@ -1030,7 +1030,7 @@ function watchAll() {
   for (const row of unread.value) watch(row.channel)
 }
 
-function watch(channelId: any) {
+function watch(channelId: string) {
   if (!on() || !channelId || live.has(channelId)) return
   const ch = (supabase as any).channel(topicOf(channelId), { config: { private: true, broadcast: { self: false } } })
     .on('broadcast', { event: 'message' }, ({ payload }: any) => arrived(channelId, payload))
@@ -1100,7 +1100,7 @@ function sweepTyping() {
   if (!any && typingTimer) { clearInterval(typingTimer); typingTimer = null }
 }
 
-const say = (channelId: any, event: string, payload: { user: any; seq?: any }) => {
+const say = (channelId: string, event: string, payload: { user: any; seq?: any }) => {
   const ch = live.get(channelId)
   if (ch) ch.send({ type: 'broadcast', event, payload }).catch(() => {})
 }
@@ -1217,8 +1217,8 @@ export async function makeInvite(space: any, { role = null, uses = 1, days = nul
 }
 export const invitesOf = (space: any) => rpc('space_invites_of', { p_space: space })
 export const dropInvite = (id: any) => rpc('space_invite_drop', { p_id: id })
-export const lookInvite = async (token: any) => rpc('space_invite_look', { p_hash: await tokenHash(token) })
-export const acceptInvite = async (token: any) => rpc('space_invite_accept', { p_hash: await tokenHash(token) })
+export const lookInvite = async (token: string|undefined) => rpc('space_invite_look', { p_hash: await tokenHash(token) })
+export const acceptInvite = async (token: string|undefined) => rpc('space_invite_accept', { p_hash: await tokenHash(token) })
 
 /* moderation: a report by anybody, three acts by whoever the space granted it, and the record */
 export const report = (message: any, reason: any, note = null) => rpc('space_report', { p_message: message, p_reason: reason, p_note: note })

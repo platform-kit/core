@@ -9,7 +9,7 @@ const SOURCE_DIR: any = { platformkit: 'kit' }
 const RECEIPT = 'node_modules/.cache/platformkit/source-install.json'
 const CORE_REPOSITORY = 'https://github.com/platform-kit/core'
 
-function gitOutput(sourceRoot: any, ...args: any[]) {
+function gitOutput(sourceRoot: string, ...args: any[]) {
   const result = spawnSync('git', args, { cwd: sourceRoot, encoding: 'utf8' })
   return result.status === 0 ? result.stdout.trim() : null
 }

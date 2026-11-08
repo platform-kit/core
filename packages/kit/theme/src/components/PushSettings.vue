@@ -16,7 +16,7 @@ import AdminHead from './admin/AdminHead.vue'
 
 const W = us('push').page
 const H = W.head, D = W.device, T = W.topics, O = W.devices
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const state = ref('idle')          /* idle | denied | ok */
 const row = ref<any>(null)              /* this browser's row */
@@ -40,7 +40,7 @@ async function load() {
   state.value = 'ok'
   row.value = await mine().catch(() => null)
   picked.value = row.value ? row.value.topics.slice() : allowed.value.slice()
-  others.value = (await devices().catch(() => [])).filter((d: any) => !row.value || d.id !== row.value.id)
+  others.value = (await devices().catch(() => [])).filter((d: { id: any }) => !row.value || d.id !== row.value.id)
 }
 onMounted(load)
 watch([isSignedIn, roleKnown, isStaff], load)
@@ -59,10 +59,10 @@ async function sendTest() {
   busy.value = true; said.value = ''
   try { const r = await test(); said.value = r && r.sent ? D['test-sent'] : D['test-none'] } catch (e) { said.value = D.failed } finally { busy.value = false }
 }
-async function drop(d: any) { await forget(d.id); await load() }
-const when = (iso: any) => { const d: any = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+async function drop(d: { id: any }) { await forget(d.id); await load() }
+const when = (iso: string|number|Date) => { const d: any = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
 const kindOf = (ua: any) => { const s = String(ua || ''); return /iPhone|iPad/.test(s) ? 'ios' : /Android/.test(s) ? 'android' : /Mac/.test(s) ? 'mac' : /Windows/.test(s) ? 'windows' : 'other' }
-const phone = (k: any) => k === 'ios' || k === 'android'
+const phone = (k: string) => k === 'ios' || k === 'android'
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 

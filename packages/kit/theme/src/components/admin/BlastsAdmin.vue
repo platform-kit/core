@@ -29,7 +29,7 @@ const A = ug('admin', 'actions')['blasts'] || {}
 /* the view the editor holds: the funnels (each with its steps and its audience described), the blasts, the policy, the compiled designs */
 async function loadView() {
   const [funnels, blasts, policy, designs] = await Promise.all([pipe.items('funnels'), pipe.items('blasts'), pipe.read('policy', 'policy'), pipe.options('designs')])
-  return { funnels, blasts, policy: policy.data || {}, designs: designs.map((d: any) => d.value) }
+  return { funnels, blasts, policy: policy.data || {}, designs: designs.map((d: { value: any }) => d.value) }
 }
 
 const data = ref<any>(null), stats = ref<any>(null), loading = ref(true), msg = ref('')
@@ -37,14 +37,14 @@ async function load() { loading.value = true; try { data.value = await loadView(
 async function loadStats() { if (!supabaseOn || !isSignedIn.value) return; try { const { data: s } = await (supabase as any).rpc('email_stats'); stats.value = s } catch (e) { /* none */ } }
 onMounted(load)
 onIdentity((id: any) => { if (id) loadStats() })
-const statOf = (id: any) => { const rows = stats.value && stats.value.sent ? stats.value.sent.filter((x: any) => x.email_id === id) : []; return { n: rows.reduce((a: any, x: any) => a + x.n, 0), opened: rows.reduce((a: any, x: any) => a + x.opened, 0), clicked: rows.reduce((a: any, x: any) => a + x.clicked, 0) } }
-const pct = (a: any, b: any) => (b ? Math.round((a / b) * 100) + '%' : '—')
-const when = (iso: any) => (iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '')
-const line = (b: any) => { if (b.data.status !== 'sent') return 'draft'; const s = statOf(b.data.id); const n = s.n || b.data.sent || 0; return `sent to ${n} · ${pct(s.opened, n)} opened · ${pct(s.clicked, n)} clicked · ${when(b.data.sent_at)}` }
+const statOf = (id: any) => { const rows = stats.value && stats.value.sent ? stats.value.sent.filter((x: { email_id: any }) => x.email_id === id) : []; return { n: rows.reduce((a: any, x: { n: any }) => a + x.n, 0), opened: rows.reduce((a: any, x: { opened: any }) => a + x.opened, 0), clicked: rows.reduce((a: any, x: { clicked: any }) => a + x.clicked, 0) } }
+const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) + '%' : '—')
+const when = (iso: string|number|Date) => (iso ? new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '')
+const line = (b: { data: { status: string; id: any; sent: any; sent_at: any } }) => { if (b.data.status !== 'sent') return 'draft'; const s = statOf(b.data.id); const n = s.n || b.data.sent || 0; return `sent to ${n} · ${pct(s.opened, n)} opened · ${pct(s.clicked, n)} clicked · ${when(b.data.sent_at)}` }
 
 const VIEWS = [['email', 'Email'], ['audience', 'Audience'], ['send', 'Send']]
 const view = ref('email')
-const cur = computed(() => (data.value && props.name ? data.value.blasts.find((b: any) => b.name === props.name) || null : null))
+const cur = computed(() => (data.value && props.name ? data.value.blasts.find((b: { name: string }) => b.name === props.name) || null : null))
 const form = ref<any>(null), saved = ref(''), creating = ref(false)
 const dirty = computed(() => !!form.value && JSON.stringify(form.value) !== saved.value)
 const sent = computed(() => !!cur.value && cur.value.data.status === 'sent' && !creating.value)
@@ -64,7 +64,7 @@ async function save() {
   if (!form.value) return
   saving.value = true; msg.value = ''
   try {
-    const f: any = form.value
+    const f = form.value
     await pipe.save('blasts', f.name, { data: { title: f.title, subject: f.subject, design: f.design, audience: f.audience, 'respect-cooldown': f.respect, goal: (f.goal || '').trim() || undefined }, content: f.body }, { create: creating.value })
     data.value = await loadView()
     const was = creating.value; creating.value = false
@@ -95,7 +95,7 @@ async function renderPreview() {
   } catch (e) { previewErr.value = (e as any).message || 'Could not render' } finally { previewing.value = false }
 }
 watch([() => form.value && [form.value.body, form.value.subject, form.value.design].join('|'), showPreview, view], () => { clearTimeout(timer); timer = setTimeout(renderPreview, 500) })
-const me = computed(() => (session.value && (session.value as any).user && (session.value as any).user.email) || '')
+const me = computed(() => (session.value && session.value.user && session.value.user.email) || '')
 const testing = ref(false)
 async function sendTest() {
   if (!form.value || !me.value) return

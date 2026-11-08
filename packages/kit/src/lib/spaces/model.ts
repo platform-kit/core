@@ -31,8 +31,8 @@ export function runsOf(messages = []) {
 }
 
 /* a channel row (last_seq) with the caller's membership (last_read_seq, mention_count) */
-export const unreadOf = (row: any) => Math.max(0, (Number(row?.seq ?? row?.last_seq ?? 0)) - Number(row?.read ?? row?.last_read_seq ?? 0))
-export const mentionsOf = (row: any) => Math.max(0, Number(row?.mentions ?? row?.mention_count ?? 0))
+export const unreadOf = (row: { channel?: string; space?: string|undefined; kind?: string|undefined; channel_kind?: string|undefined; seq?: any; read?: any; unread?: number|undefined; mentions?: number|undefined; hushed?: boolean|undefined; muted_until?: string|null|undefined; notify?: string|undefined; last_seq?: any; last_read_seq?: any }) => Math.max(0, (Number(row?.seq ?? row?.last_seq ?? 0)) - Number(row?.read ?? row?.last_read_seq ?? 0))
+export const mentionsOf = (row: { channel?: string; space?: string|undefined; kind?: string|undefined; channel_kind?: string|undefined; seq?: number|undefined; read?: number|undefined; unread?: number|undefined; mentions?: any; hushed?: boolean|undefined; muted_until?: string|null|undefined; notify?: string|undefined; mention_count?: any }) => Math.max(0, Number(row?.mentions ?? row?.mention_count ?? 0))
 
 /* is this channel muted right now */
 /* is this channel quiet right now — this membership's own snooze (muted_until), or the reader's
@@ -243,7 +243,7 @@ export function roomAsProse(messages = [], { names = {}, words = {}, money, some
   /* `who` lets a surface label a line by SIDE rather than by person — a support desk has two of
      them and no names — while what was SAID stays the one function, so a voice note or an
      attachment is never silently dropped from one surface's transcript and not another's. */
-  const name = who || ((m: any) => saidBy(m, names, someone))
+  const name = who || ((m: { author_id?: any; meta?: any; kind?: string; body?: string }) => saidBy(m, names, someone))
   return messages.slice(-limit)
     .map((m) => ({ notice: fromEvent(m), who: name(m), said: saidIn(m, { names, words, money, unheard }) }))
     .filter((l) => l.said)

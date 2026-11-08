@@ -15,7 +15,7 @@ const props = defineProps({
   lead: { type: String, default: '' },
   form: { type: String, default: '' },
 })
-const form = computed(() => (FORMS || []).find((f: any) => f.slug === props.form && f.published !== false) || null)
+const form = computed(() => (FORMS || []).find((f: { slug: string; published: boolean }) => f.slug === props.form && f.published !== false) || null)
 </script>
 
 <template>

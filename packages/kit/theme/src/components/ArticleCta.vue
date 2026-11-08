@@ -19,7 +19,7 @@ const U = us('cta').card.ui
 const ad = ref<any>(null)
 
 onMounted(async () => {
-  const b: any = await pickAd({ placement: 'inline', pageTopics: props.topics })
+  const b = await pickAd({ placement: 'inline', pageTopics: props.topics })
   if (!b) return
   ad.value = b
   capture('cta_impression', { ad_id: b.id, mode: 'inline' })

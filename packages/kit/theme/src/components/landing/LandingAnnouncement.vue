@@ -32,7 +32,7 @@ const el = ref<any>(null)
 let ro: any = null
 /* the offset is the first section's to give and take back: a strip further down never clears one it did not set */
 let held = false
-const offset = (h: any) => { if (!h && !held) return; held = !!h; try { document.documentElement.style.setProperty('--sitehead-top', h ? h + 'px' : '') } catch (e) { /* no document */ } }
+const offset = (h: string|number) => { if (!h && !held) return; held = !!h; try { document.documentElement.style.setProperty('--sitehead-top', h ? h + 'px' : '') } catch (e) { /* no document */ } }
 const first = () => el.value && el.value.parentElement && el.value.parentElement.querySelector('section, .lpwrap') === el.value
 function measure() { if (!el.value || gone.value || !first()) return offset(0); offset(el.value.offsetHeight) }
 onMounted(() => { measure(); if (typeof ResizeObserver !== 'undefined' && el.value) { ro = new ResizeObserver(measure); ro.observe(el.value) } })

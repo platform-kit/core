@@ -21,10 +21,10 @@ const ready = computed(() => !!question.value.trim() && options.value.filter((o)
 async function add() {
   options.value.push('')
   await nextTick()
-  const last: any = rows.value && rows.value.querySelectorAll('input')
-  if (last && last.length) (last[last.length - 1] as any).focus()
+  const last = rows.value && rows.value.querySelectorAll('input')
+  if (last && last.length) last[last.length - 1].focus()
 }
-const drop = (i: any) => { if (options.value.length > 2) options.value.splice(i, 1); else options.value[i] = '' }
+const drop = (i: number) => { if (options.value.length > 2) options.value.splice(i, 1); else options.value[i] = '' }
 function ask() {
   if (!ready.value) return
   emit('ask', { question: question.value.trim(), options: options.value.map((o) => o.trim()).filter(Boolean), multi: multi.value })

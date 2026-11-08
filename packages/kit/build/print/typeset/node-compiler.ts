@@ -22,8 +22,8 @@ export async function create({ workspace, fonts }: any = {}) {
     return r
   }
   return {
-    pdf(file: any) { must(file); return c.pdf({ mainFilePath: file }) },
-    svg(file: any) { must(file); return c.svg({ mainFilePath: file }) },
-    query(file: any, selector: any) { return c.query(must(file).result, { selector }) },
+    pdf(file: string) { must(file); return c.pdf({ mainFilePath: file }) },
+    svg(file: string) { must(file); return c.svg({ mainFilePath: file }) },
+    query(file: string, selector: any) { return c.query(must(file).result, { selector }) },
   }
 }

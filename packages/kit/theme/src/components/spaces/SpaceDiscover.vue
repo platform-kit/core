@@ -52,20 +52,20 @@ onMounted(async () => {
    whether to join does not want a truth table. So this says the ONE way in that is theirs to take:
    something they could buy before something only the site can give them (nobody can make themselves
    staff), and an invitation only when there is no other way at all. */
-function wayIn(set: any) {
+function wayIn(set: { tier: any; product: any; entitlement: any }) {
   if (set.tier) {
-    const offer = products.find((p: any) => p.kind === 'membership' && p.tier === set.tier)
+    const offer = products.find((p: { kind: string; tier: any }) => p.kind === 'membership' && p.tier === set.tier)
     return { rank: 1, word: (W.value['with-membership'] || '').replace('{name}', offer ? offer.title : set.tier), href: offer ? '/store/products/' + offer.sku : '/pricing' }
   }
   if (set.product) {
-    const offer = products.find((p: any) => p.key === set.product)
+    const offer = products.find((p: { key: any }) => p.key === set.product)
     return { rank: 1, word: (W.value['buy-it'] || '').replace('{name}', offer ? offer.title : ''), href: offer ? '/store/products/' + offer.sku : null }
   }
   if (set.entitlement) return { rank: 0, word: W.value['with-any-membership'], href: '/pricing' }
   /* a role is not something anybody can give themselves, so it is never the way offered */
   return null
 }
-function takes(s: any) {
+function takes(s: { mine: any; fill: any }) {
   if (s.mine) return { word: W.value.yours, href: null }
   const f = s.fill
   const sets = (Array.isArray(f) ? f : f && typeof f === 'object' ? [f] : []).filter((x) => x && Object.keys(x).length)
@@ -99,10 +99,10 @@ const sent = ref('')            /* accepted | waiting, once it has gone */
 
 const doorForm = computed(() => {
   const slug = door.value && door.value.joining && door.value.joining.form
-  return slug ? forms.find((x: any) => x.slug === slug) || null : null
+  return slug ? forms.find((x: { slug: any }) => x.slug === slug) || null : null
 })
 /* what the button says, and whether there is anything to say at all */
-function doorOf(sp: any) {
+function doorOf(sp: { joining: any; mine: any; asked: string }) {
   const j = (sp && sp.joining) || {}
   const how = j.how || 'none'
   if (sp.mine || how === 'none') return null
@@ -127,7 +127,7 @@ function knock(sp: any) {
   door.value = sp
 }
 async function ask() {
-  const sp: any = door.value
+  const sp = door.value
   if (!sp || busy.value) return
   busy.value = true; err.value = ''
   try {

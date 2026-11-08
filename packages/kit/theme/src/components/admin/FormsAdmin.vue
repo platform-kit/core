@@ -25,18 +25,18 @@ async function load() { loading.value = true; try { forms.value = await pipe.ite
 onMounted(load)
 watch(() => props.name, (n) => { if (!n) load() })
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
-const getRowId = (q: any) => q.data.name
+const getRowId = (q: { data: { name: any } }) => q.data.name
 const yes = (v: any) => (v ? '✓' : '—')
 const columnDefs = computed(() => [
-  { headerName: W['col-title'], field: 'title', pinned: 'left', flex: 1.6, minWidth: 220, cellRenderer: (q: any) => `<span class="fa-gtitle">${q.value}</span><span class="fa-gaddr">/form/${q.data.name}</span>` },
-  { headerName: W['col-on'], width: 100, valueGetter: (q: any) => (q.data.published ? W.on : W.off), cellRenderer: (q: any) => `<span class="ui-pill ${q.data.published ? 'ui-ok' : 'ui-off'}">${q.value}</span>` },
+  { headerName: W['col-title'], field: 'title', pinned: 'left', flex: 1.6, minWidth: 220, cellRenderer: (q: { value: any; data: { name: any } }) => `<span class="fa-gtitle">${q.value}</span><span class="fa-gaddr">/form/${q.data.name}</span>` },
+  { headerName: W['col-on'], width: 100, valueGetter: (q: { data: { published: any } }) => (q.data.published ? W.on : W.off), cellRenderer: (q: { data: { published: any }; value: any }) => `<span class="ui-pill ${q.data.published ? 'ui-ok' : 'ui-off'}">${q.value}</span>` },
   { headerName: W['col-slides'], field: 'slides', width: 100, type: 'numericColumn' },
   { headerName: W['col-fields'], field: 'fields', width: 100, type: 'numericColumn' },
-  { headerName: W.quiz, width: 90, valueGetter: (q: any) => yes(q.data.quiz), cellClass: 'fa-gc' },
-  { headerName: W.once, width: 90, valueGetter: (q: any) => yes(q.data.once), cellClass: 'fa-gc' },
-  { headerName: W['col-state'], flex: 1, minWidth: 160, valueGetter: (q: any) => (q.data.errors && q.data.errors.length ? W.errors : q.data.warnings && q.data.warnings.length ? W.warnings.replace('{n}', q.data.warnings.length) : ''), cellRenderer: (q: any) => (q.data.errors && q.data.errors.length ? `<span class="ui-err">${q.value}</span>` : q.value) },
+  { headerName: W.quiz, width: 90, valueGetter: (q: { data: { quiz: any } }) => yes(q.data.quiz), cellClass: 'fa-gc' },
+  { headerName: W.once, width: 90, valueGetter: (q: { data: { once: any } }) => yes(q.data.once), cellClass: 'fa-gc' },
+  { headerName: W['col-state'], flex: 1, minWidth: 160, valueGetter: (q: { data: { errors: string|any[]; warnings: string|any[] } }) => (q.data.errors && q.data.errors.length ? W.errors : q.data.warnings && q.data.warnings.length ? W.warnings.replace('{n}', q.data.warnings.length) : ''), cellRenderer: (q: { data: { errors: string|any[] }; value: any }) => (q.data.errors && q.data.errors.length ? `<span class="ui-err">${q.value}</span>` : q.value) },
 ])
-const slug = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+const slug = (s: string) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 async function startNew() {
   const title = prompt(W.new + ' — ' + (us('forms').admin.settings || {}).title)
   if (!title) return

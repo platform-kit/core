@@ -24,8 +24,8 @@ const props = defineProps({ compact: { type: Boolean, default: false } })
 const W = computed(() => us('network').access.main)
 const sku = (site.network && site.network.access && site.network.access.join) || ''
 const plans = (site.network && site.network.access && site.network.access.plans) || ''
-function toPlans(e: any) { e.preventDefault(); navigate(plans) }
-const offer = computed(() => (sku ? products.value.find((p: any) => p.sku === sku) || null : null))
+function toPlans(e: { preventDefault: () => void }) { e.preventDefault(); navigate(plans) }
+const offer = computed(() => (sku ? products.value.find((p: { sku: string }) => p.sku === sku) || null : null))
 const price = computed(() => {
   const o = offer.value
   if (!o || o.unit_amount == null) return ''

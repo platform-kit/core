@@ -39,7 +39,7 @@ export function shippingRules(s: any = {}) {
   if (!(Number(s.default) >= 0)) issues.push('shipping needs a default price')
   const overrides: any = {}
   for (const [c, v] of Object.entries(s.overrides || {})) { if (!(Number(v) >= 0)) issues.push(`the override for ${c} is not a price`); else overrides[code(c)] = cents(v) }
-  const methods = (Array.isArray(s.methods) && s.methods.length ? s.methods : [{ level: 'standard', label: 'Standard' }]).map((m: any, i: number) => {
+  const methods = (Array.isArray(s.methods) && s.methods.length ? s.methods : [{ level: 'standard', label: 'Standard' }]).map((m: { level: any; days: any; label: any; plus: unknown; }, i: number) => {
     const level = levelOf(m.level || 'standard')
     if (!LEVELS.includes(level)) issues.push(`method ${i + 1}: level "${m.level}" is not one of ours (${LEVELS.join(' · ')})`)
     const d = /^(\d+)\s*-\s*(\d+)$/.exec(String(m.days || ''))

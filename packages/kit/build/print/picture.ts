@@ -50,7 +50,7 @@ export function transformUrl(url: any, { height = MAX_HEIGHT } = {}) {
   return `${rendered}${sep}height=${height}&resize=contain`
 }
 
-export async function resizeFromStorage(url: any, { height = MAX_HEIGHT, fetchFn = fetch } = {}) {
+export async function resizeFromStorage(url: string, { height = MAX_HEIGHT, fetchFn = fetch } = {}) {
   const at = transformUrl(url, { height })
   if (!at) throw new Error('print: no picture to size')
   const r = await fetchFn(at)

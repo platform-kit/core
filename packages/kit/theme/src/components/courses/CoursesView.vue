@@ -97,11 +97,11 @@ async function enroll() {
 const earned = ref<any>(null)
 async function lookUpEarned(force = false) {
   earned.value = null
-  const l = state.value && lessonKey.value ? (state.value.lessons || []).find((x: any) => x.key === lessonKey.value) : null
+  const l = state.value && lessonKey.value ? (state.value.lessons || []).find((x: { key: string|null }) => x.key === lessonKey.value) : null
   if (!l || l.kind !== 'form' || !l.done) return
   try {
     const held = await loadMine(force)
-    earned.value = (held || []).find((a: any) => (a as any).slug === `quiz-${slug.value}-${lessonKey.value}`) || null
+    earned.value = (held || []).find((a: { slug: string }) => a.slug === `quiz-${slug.value}-${lessonKey.value}`) || null
   } catch { /* no achievements here */ }
 }
 watch(() => [lessonKey.value, state.value && state.value.slug], () => lookUpEarned(), { immediate: true })
@@ -113,7 +113,7 @@ async function formDone() {
   const was = !!(state.value && state.value.enrollment && state.value.enrollment.completed_at)
   try {
     const s = await loadCourse(slug.value)
-    const l = s && (s.lessons || []).find((x: any) => x.key === at)
+    const l = s && (s.lessons || []).find((x: { key: string|null }) => x.key === at)
     if (l && l.done) { capture('lesson_completed', { course: slug.value, lesson: at }); await lookUpEarned(true) }
     if (s && s.enrollment && s.enrollment.completed_at && !was) outcome.value = 'course-done'
   } catch (e) { problem.value = String((e as any).message || e) }
@@ -130,8 +130,8 @@ async function complete() {
     if (r && r.error) { problem.value = S.value[r.error] || r.error; busy.value = false; return }
     keepCourse(slug.value, r)
     capture('lesson_completed', { course: slug.value, lesson: at })
-    const ls = r.lessons || [], i = ls.findIndex((l: any) => l.key === at)
-    const go = ls.find((l: any, j: any) => j > i && l.open && !l.done) || ls.find((l: any) => l.open && !l.done && l.required)
+    const ls = r.lessons || [], i = ls.findIndex((l: { key: string|null }) => l.key === at)
+    const go = ls.find((l: { open: any; done: any }, j: number) => j > i && l.open && !l.done) || ls.find((l: { open: any; done: any; required: any }) => l.open && !l.done && l.required)
     if (r.enrollment && r.enrollment.completed_at && !was) outcome.value = 'course-done'
     else if (go) navigate(props.base + '/' + slug.value + '/' + go.key)
     else outcome.value = 'lesson-done'

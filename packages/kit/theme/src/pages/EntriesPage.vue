@@ -26,7 +26,7 @@ const props = defineProps({ path: { type: String, required: true } })
 const W = us('models').pages || {}, WI = W.index || {}, WE = W.entry || {}
 const MODELS = CONTENT.models || []
 const parsed = computed(() => { const [key, ...rest] = props.path.slice(ROUTES.entries.length + 1).split('/'); return { key, slug: rest.join('/') } })
-const model = computed(() => MODELS.find((m: any) => m.key === parsed.value.key && m.deliver && m.deliver.pages) || null)
+const model = computed(() => MODELS.find((m: { key: string; deliver: { pages: any } }) => m.key === parsed.value.key && m.deliver && m.deliver.pages) || null)
 const listOf = (key: any) => { const c = (CONTENT as any)['models_' + String(key).replace(/-/g, '_')]; return Array.isArray(c) ? c : c ? [c] : [] }
 const entries = computed(() => (model.value ? listOf(model.value.key) : []))
 /* the count in the model's own words: "3 authors", never "3 entries" */
@@ -40,20 +40,20 @@ const counted = computed(() => {
     : String(WI.count || '').replace('{n}', n).replace('{things}', many)
 })
 const entry = computed(() => (parsed.value.slug ? entries.value.find((e) => e.slug === parsed.value.slug) || null : null))
-const titleOf = (m: any, e: any) => String(e[m.title] || e.slug)
+const titleOf = (m: { title: string|number }, e: { [x: string]: any; slug: any }) => String(e[m.title] || e.slug)
 /* the summary: the model's first long-text or markdown field */
-const summaryField = (m: any) => m.fields.find((f: any) => f.kind === 'long-text' || f.kind === 'markdown')
-const summaryOf = (m: any, e: any) => { const f = summaryField(m); return f && e[f.key] ? String(e[f.key]).replace(/[#*_>`]/g, '').split('\n').find((l) => l.trim()) || '' : '' }
-const dateField = (m: any) => m.fields.find((f: any) => f.kind === 'date' || f.kind === 'datetime')
-const imageField = (m: any) => m.fields.find((f: any) => f.kind === 'image')
+const summaryField = (m: { fields: any[] }) => m.fields.find((f: { kind: string }) => f.kind === 'long-text' || f.kind === 'markdown')
+const summaryOf = (m: any, e: { [x: string]: any }) => { const f = summaryField(m); return f && e[f.key] ? String(e[f.key]).replace(/[#*_>`]/g, '').split('\n').find((l) => l.trim()) || '' : '' }
+const dateField = (m: { fields: any[] }) => m.fields.find((f: { kind: string }) => f.kind === 'date' || f.kind === 'datetime')
+const imageField = (m: { fields: any[] }) => m.fields.find((f: { kind: string }) => f.kind === 'image')
 /* a model's own bar, asked of the ability */
 // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 const allowed = computed(() => !model.value || can('read', entrySubject({ kind: 'entries', slug: model.value.key, canAccess: model.value.access })))
 /* a reference: the other model's entry, and its page when that model has pages */
-const refOf = (f: any, slug: any) => { const m = MODELS.find((x: any) => x.key === f.model); const e = m && listOf(m.key).find((x) => x.slug === slug); return { title: e ? titleOf(m, e) : slug, href: m && e && m.deliver && m.deliver.pages ? `${ROUTES.entries}/${m.key}/${e.slug}` : null } }
-const src = (v: any) => (v && typeof v === 'object' ? v.src : v)
-const empty = (v: any) => v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length) || (typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length)
-const shown = computed(() => (entry.value && model.value ? model.value.fields.filter((f: any) => f.key !== model.value.title && !empty(entry.value[f.key])) : []))
+const refOf = (f: { model: any }, slug: any) => { const m = MODELS.find((x: { key: any }) => x.key === f.model); const e = m && listOf(m.key).find((x) => x.slug === slug); return { title: e ? titleOf(m, e) : slug, href: m && e && m.deliver && m.deliver.pages ? `${ROUTES.entries}/${m.key}/${e.slug}` : null } }
+const src = (v: { src: any }) => (v && typeof v === 'object' ? v.src : v)
+const empty = (v: string|any[]|null|undefined) => v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length) || (typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length)
+const shown = computed(() => (entry.value && model.value ? model.value.fields.filter((f: { key: string|number }) => f.key !== model.value.title && !empty(entry.value[f.key])) : []))
 const md = (s: any) => marked.parse(String(s || ''))
 const when = (s: any) => { const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(String(s || '')); if (!m) return s; const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) + (m[4] ? `, ${m[4]}:${m[5]}` : '') }
 watch([model, entry], ([m, e]) => {

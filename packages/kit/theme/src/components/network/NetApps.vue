@@ -12,7 +12,7 @@ import { user } from 'platformkit/lib/auth.js'
 
 const props = defineProps({ username: { type: String, default: '' } })
 const W = computed(() => us('network').apps.main)
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const server = typeof window !== 'undefined' ? window.location.origin : ''
 const domain = ref('')
 const rows = ref<any>([])
@@ -27,7 +27,7 @@ const handle = computed(() => {
   const name = props.username || (user.value ? 'm' + user.value.id.replace(/-/g, '').slice(-12) : '')
   return name && domain.value ? `${name}.${domain.value}` : ''
 })
-const when = (iso: any) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch { return '' } }
+const when = (iso: string|number|Date) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch { return '' } }
 
 async function load() {
   const [d, list] = await Promise.all([describe().catch(() => null), listAppPasswords().catch(() => [])])
@@ -45,9 +45,9 @@ async function make() {
 async function copy() {
   try { await navigator.clipboard.writeText(made.value.password); copied.value = true } catch { copied.value = false }
 }
-async function revoke(r: any) {
+async function revoke(r: { id: any }) {
   if (!window.confirm(W.value['revoke-confirm'])) return
-  try { await revokeAppPassword(r.id); rows.value = rows.value.filter((x: any) => (x as any).id !== r.id) } catch (e) { err.value = W.value.failed }
+  try { await revokeAppPassword(r.id); rows.value = rows.value.filter((x: { id: any }) => x.id !== r.id) } catch (e) { err.value = W.value.failed }
 }
 </script>
 

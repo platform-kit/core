@@ -42,7 +42,7 @@ async function open(r: any, what: any) {
   } catch (e) { media.value = { ...media.value, [r.uid]: { error: (e as any).message } } } finally { mediaBusy.value = '' }
 }
 // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
-async function retry(r: any) { mediaBusy.value = r.uid; try { const out = await fetchAgain(r.uid); const i = rows.value.findIndex((x) => (x as any).uid === r.uid); if (i >= 0) rows.value[i] = { ...rows.value[i], recording_state: out.state === 'pulled' ? null : out.state, recording_error: out.error || null, recording_path: out.state === 'pulled' ? r.uid + '/recording.mp4' : (rows.value[i] as any).recording_path } } catch (e) { /* the row says */ } finally { mediaBusy.value = '' } }
+async function retry(r) { mediaBusy.value = r.uid; try { const out = await fetchAgain(r.uid); const i = rows.value.findIndex((x) => x.uid === r.uid); if (i >= 0) rows.value[i] = { ...rows.value[i], recording_state: out.state === 'pulled' ? null : out.state, recording_error: out.error || null, recording_path: out.state === 'pulled' ? r.uid + '/recording.mp4' : rows.value[i].recording_path } } catch (e) { /* the row says */ } finally { mediaBusy.value = '' } }
 const state = ref('idle')      /* idle | loading | ok | denied | error */
 const rows = ref<any>([])
 const people = ref<any>({})
@@ -69,8 +69,8 @@ async function names(list: any) {
 function listen() {
   if (channel || !supabase) return
   channel = supabase.channel('bookings').on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, async (p) => {
-    if (p.eventType === 'DELETE') { rows.value = rows.value.filter((r: any) => (r as any).uid !== p.old.uid); return }
-    const i = rows.value.findIndex((r: any) => (r as any).uid === p.new.uid)
+    if (p.eventType === 'DELETE') { rows.value = rows.value.filter((r: any) => r.uid !== p.old.uid); return }
+    const i = rows.value.findIndex((r: any) => r.uid === p.new.uid)
     if (i >= 0) rows.value.splice(i, 1, p.new); else rows.value.unshift(p.new)
     await names([p.new])
   }).subscribe()
@@ -86,7 +86,7 @@ const stateOf = (r: any) => (r.refused ? 'refused' : r.no_show ? 'no-show' : isU
 const stateWord = (r: any) => { const k = stateOf(r); const w = ST[k] || k; return k === 'refused' && RF[r.refused] ? `${w} · ${RF[r.refused]}` : w }
 
 // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-const upcoming = computed(() => rows.value.filter(isUpcoming).sort((a, b) => new Date((a as any).start_at) - new Date((b as any).start_at)))
+const upcoming = computed(() => rows.value.filter(isUpcoming).sort((a, b) => new Date(a.start_at) - new Date(b.start_at)))
 const past = computed(() => rows.value.filter((r: any) => !isUpcoming(r)))
 const shown = computed(() => (tab.value === 'upcoming' ? upcoming.value : tab.value === 'past' ? past.value : [...upcoming.value, ...past.value]))
 const counts = computed(() => ({ upcoming: upcoming.value.length, past: past.value.length, all: rows.value.length }))
@@ -97,7 +97,7 @@ const who = (id: any) => (id && people.value[id]) || null
 const attendee = (r: any) => { const p = who(r.user_id); return p ? { name: p.name, email: p.email, account: true } : { name: r.name || '', email: r.email || (r.attendee_emails || [])[0] || '', account: false } }
 const coach = (r: any) => { const p = who(r.provider_id); return p ? p.name + (p.email ? ' · ' + p.email : '') : r.provider_email || '—' }
 // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const when = (d: any) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+const when = (d) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
 /*
  * WHAT THEY ANSWERED ON THE WAY IN. A type may ask a form's questions before the booking is made,
  * and the host needs them where they are looking at the booking rather than in the forms section
@@ -135,7 +135,7 @@ async function loadAnswers(rows: any) {
 }
 const answersOf = (r: any) => (r.response_id && answers.value[r.response_id]) || []
 // @ts-expect-error TS2363, from the conversion: The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-const minutes = (r: any) => { const a = new Date(r.start_at), b: any = new Date(r.end_at); const n = Math.round((b - a) / 60000); return n > 0 ? fill(R.minutes, { n }) : '' }
+const minutes = (r) => { const a = new Date(r.start_at), b = new Date(r.end_at); const n = Math.round((b - a) / 60000); return n > 0 ? fill(R.minutes, { n }) : '' }
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 

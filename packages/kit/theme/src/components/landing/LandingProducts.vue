@@ -35,23 +35,23 @@ const props = defineProps({
 const W = (us('sections').products || {}).card || {}
 const P = us('store').product.ui
 const items = computed(() => {
-  let list = PRODUCTS.value.filter((p: any) => !p.hidden && p.kind !== 'membership' && p.kind !== 'session')
-  if (props.source === 'featured') list = list.filter((p: any) => p.featured)
+  let list = PRODUCTS.value.filter((p: { hidden: any; kind: string }) => !p.hidden && p.kind !== 'membership' && p.kind !== 'session')
+  if (props.source === 'featured') list = list.filter((p: { featured: any }) => p.featured)
   else if (props.source === 'collection' && props.collection) { const c = collectionOf(props.collection); list = c ? c.items : [] }
-  else if (props.source === 'tag' && props.tag) list = list.filter((p: any) => (p.tags || []).includes(props.tag))
-  else if (props.source === 'skus' && props.skus.length) list = props.skus.map((s) => list.find((p: any) => p.sku === s)).filter(Boolean)
-  if (props.sort === 'price-asc') list = list.slice().sort((a: any, b: any) => (a.unit_amount || 0) - (b.unit_amount || 0))
-  if (props.sort === 'price-desc') list = list.slice().sort((a: any, b: any) => (b.unit_amount || 0) - (a.unit_amount || 0))
+  else if (props.source === 'tag' && props.tag) list = list.filter((p: { tags: any }) => (p.tags || []).includes(props.tag))
+  else if (props.source === 'skus' && props.skus.length) list = props.skus.map((s) => list.find((p: { sku: any }) => p.sku === s)).filter(Boolean)
+  if (props.sort === 'price-asc') list = list.slice().sort((a: { unit_amount: any }, b: { unit_amount: any }) => (a.unit_amount || 0) - (b.unit_amount || 0))
+  if (props.sort === 'price-desc') list = list.slice().sort((a: { unit_amount: any }, b: { unit_amount: any }) => (b.unit_amount || 0) - (a.unit_amount || 0))
   return props.limit > 0 ? list.slice(0, props.limit) : list
 })
 const added = ref('')
-function quickAdd(p: any, e: any) {
+function quickAdd(p: { sku: string; id: any; title: any; unit_amount: any; currency: any; kindKey: any; image: { src: string|null|undefined } }, e: { preventDefault: () => void }) {
   e.preventDefault()
   cart.add({ sku: p.sku, slug: p.id, name: p.title, variant: '', unit_amount: p.unit_amount, currency: p.currency, kind: p.kindKey, image: p.image ? p.image.src : null })
   capture('click', { kind: 'add_to_cart', product_id: p.sku, from: 'section' })
   added.value = p.sku; setTimeout(() => { added.value = '' }, 1400); cart.openCart()
 }
-const quick = (p: any) => p.available && p.kind !== 'print' && p.kind !== 'book' && !(p.sizes && p.sizes.length)
+const quick = (p: { available: any; kind: string; sizes: string|any[] }) => p.available && p.kind !== 'print' && p.kind !== 'book' && !(p.sizes && p.sizes.length)
 </script>
 <template>
   <section class="lpsec lpproducts" :class="'lppd-' + layout">

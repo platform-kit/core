@@ -31,7 +31,7 @@ sources:
     packages/kit/build/module-drop.mts,
     packages/kit/build/modules-off-db.test.mts,
   ]
-reviewed: 2026-11-07
+reviewed: 2026-11-08
 ---
 
 ## Module switches

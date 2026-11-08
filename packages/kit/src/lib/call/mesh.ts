@@ -27,7 +27,7 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
   const seen: any = []                       /* the hellos we have heard */
   let channel: any = null, timer: any = null, watch: any = null
 
-  const peerRow = (id: any, name: any) => {
+  const peerRow = (id: string, name: any) => {
     let row = peers.find((p: { id: any }) => p.id === id)
     /* the clock runs from when THIS person appeared, not from when we joined: somebody sitting in
        a huddle for a minute must not be told the call cannot be made the moment another arrives */
@@ -35,7 +35,7 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
     else if (name) row.name = name
     return row
   }
-  const drop = (id: any) => {
+  const drop = (id: string) => {
     const pc = pcs.get(id)
     if (pc) { try { pc.close() } catch (e) { /* already gone */ } pcs.delete(id) }
     const i = peers.findIndex((p: { id: any }) => p.id === id)
@@ -44,7 +44,7 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
 
   const say = (event: string, payload: { to?: any; candidate?: RTCIceCandidateInit; sdp?: any; name?: any; muted?: any; cameraOff?: any }) => { if (channel) channel.send({ type: 'broadcast', event, payload: { from: me.id, ...payload } }).catch(() => {}) }
 
-  function connect(id: any, name: any) {
+  function connect(id: string, name: any) {
     if (pcs.has(id)) return pcs.get(id)
     const pc = new RTCPeerConnection({ iceServers })
     pcs.set(id, pc)
@@ -62,7 +62,7 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
     return pc
   }
 
-  async function offerTo(id: any, name: any) {
+  async function offerTo(id: string, name: any) {
     const pc = connect(id, name)
     const offer = await pc.createOffer()
     await pc.setLocalDescription(offer)

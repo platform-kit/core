@@ -25,13 +25,13 @@ watch(() => props.user, async (id) => {
 }, { immediate: true })
 
 const titleOf = (sku: any) => {
-  const p = (products || []).find((x: any) => x.sku === sku)
+  const p = (products || []).find((x: { sku: any }) => x.sku === sku)
   return (p && p.title) || sku
 }
-const money = (n: any, cur: any) => (typeof n === 'number'
+const money = (n: number, cur: any) => (typeof n === 'number'
   ? new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format(n / 100)
   : '')
-const when = (v: any) => {
+const when = (v: string|number|Date) => {
   const d = new Date(v)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })

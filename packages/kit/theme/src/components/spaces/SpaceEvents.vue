@@ -39,29 +39,29 @@ onMounted(load)
 watch(() => props.space && props.space.id, load)
 
 const all = computed(() => calendar.upcoming || [])
-const upcoming = computed(() => all.value.filter((o: any) => new Date((o as any).starts_at).getTime() >= now))
-const past = computed(() => all.value.filter((o: any) => new Date((o as any).starts_at).getTime() < now).reverse())
+const upcoming = computed(() => all.value.filter((o: { starts_at: string|number|Date }) => new Date(o.starts_at).getTime() >= now))
+const past = computed(() => all.value.filter((o: { starts_at: string|number|Date }) => new Date(o.starts_at).getTime() < now).reverse())
 const shown = computed(() => (showing.value === 'past' ? past.value : upcoming.value))
-const next = computed<any>(() => (showing.value === 'upcoming' ? upcoming.value[0] || null : null))
+const next = computed(() => (showing.value === 'upcoming' ? upcoming.value[0] || null : null))
 const rest = computed(() => (showing.value === 'upcoming' ? upcoming.value.slice(1) : past.value))
 
 /* grouped by month, because a calendar is read in months and a flat list of forty is not read */
 const months = computed(() => {
   const out: any = []
   for (const o of rest.value) {
-    const d = new Date((o as any).starts_at)
+    const d = new Date(o.starts_at)
     const key = d.getFullYear() + '-' + d.getMonth()
     const label = d.toLocaleString(undefined, { month: 'long', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' })
-    const had: any = out.find((m: any) => m.key === key)
+    const had = out.find((m: { key: string }) => m.key === key)
     if (had) had.items.push(o); else out.push({ key, label, items: [o] })
   }
   return out
 })
 
-const day = (iso: any) => new Date(iso).getDate()
-const mon = (iso: any) => new Date(iso).toLocaleString(undefined, { month: 'short' })
+const day = (iso: string|number|Date) => new Date(iso).getDate()
+const mon = (iso: string|number|Date) => new Date(iso).toLocaleString(undefined, { month: 'short' })
 const dayWords = computed(() => ({ today: C.value.today, tomorrow: C.value.tomorrow }))
-const placeWord = (o: any) => (o.place && o.place.kind === 'place' ? B.value['in-person'] : B.value.online)
+const placeWord = (o: { place: { kind: string } }) => (o.place && o.place.kind === 'place' ? B.value['in-person'] : B.value.online)
 const hostWord = (o: any) => {
   const h = o.hosts || []
   if (!h.length) return ''
@@ -72,13 +72,13 @@ const hostWord = (o: any) => {
 }
 /* a ground of its own, from the slug, so an event with no artwork still looks like something and
    looks like the SAME something every time */
-const ground = (o: any) => {
+const ground = (o: { slug: any; id: any }) => {
   let n = 0
   for (const ch of String(o.slug || o.id || '')) n = (n * 31 + ch.charCodeAt(0)) % 360
   return { '--a': `hsl(${n} 52% 46%)`, '--b': `hsl(${(n + 42) % 360} 56% 38%)` }
 }
 
-async function going(o: any, state: any) {
+async function going(o: { id: string; mine: any }, state: string|undefined) {
   if (busy.value) return
   busy.value = o.id
   await rsvp(o.id, o.mine === state ? 'out' : state)

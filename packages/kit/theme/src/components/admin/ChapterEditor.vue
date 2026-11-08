@@ -31,7 +31,7 @@ function split(md: any) {
   }
   return { pre: pre.join('\n'), chapters: chapters.map((c) => ({ title: c.title, body: c.lines.join('\n') })) }
 }
-function join(pre: any, chapters: any) {
+function join(pre: string, chapters: any) {
   const parts = []
   if (pre.trim()) parts.push(pre.replace(/\n+$/, ''))
   for (const c of chapters) parts.push('# ' + c.title.trim() + '\n\n' + c.body.replace(/^\n+/, '').replace(/\n+$/, ''))
@@ -62,20 +62,20 @@ const cur = computed(() => chapters.value[active.value] || null)
 const words = (s: any) => (s || '').trim().split(/\s+/).filter(Boolean).length
 const marks = (s: any) => ((s || '').match(/==[^=]+==/g) || []).length
 
-function onBody(v: any) { if (cur.value) { (cur.value as any).body = v; emitAll() } }
-function onTitle(v: any) { if (cur.value) { (cur.value as any).title = v; emitAll() } }
-function onPre(v: any) { pre.value = v; emitAll() }
+function onBody(v: any) { if (cur.value) { cur.value.body = v; emitAll() } }
+function onTitle(v: any) { if (cur.value) { cur.value.title = v; emitAll() } }
+function onPre(v: string) { pre.value = v; emitAll() }
 function add() { chapters.value.push({ id: ++ids, title: 'New chapter', body: '' }); active.value = chapters.value.length - 1; emitAll() }
-function remove(i: any) {
+function remove(i: string|number) {
   const c = chapters.value[i]
-  if (!confirm(`Remove “${(c as any).title}” and its ${words((c as any).body)} words?`)) return
+  if (!confirm(`Remove “${c.title}” and its ${words(c.body)} words?`)) return
   chapters.value.splice(i, 1); active.value = Math.max(0, Math.min(active.value, chapters.value.length - 1)); emitAll()
 }
-function onEnd(e: any) {
+function onEnd(e: { oldIndex: any; newIndex: any }) {
   if (e.oldIndex === e.newIndex) return
-  const id = cur.value && (cur.value as any).id
+  const id = cur.value && cur.value.id
   const [m] = chapters.value.splice(e.oldIndex, 1); chapters.value.splice(e.newIndex, 0, m)
-  active.value = Math.max(0, chapters.value.findIndex((c: any) => (c as any).id === id))
+  active.value = Math.max(0, chapters.value.findIndex((c: { id: any }) => c.id === id))
   emitAll()
 }
 const showPre = ref(false)

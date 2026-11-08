@@ -12,13 +12,13 @@ const props = defineProps({
   max: { type: Number, default: 3 },
 })
 const emit = defineEmits(['update:modelValue'])
-const node = (text: any) => ({ key: '', text, children: [] })
-const put = (list: any) => emit('update:modelValue', list)
-const list = () => props.modelValue.map((c) => ({ ...c, children: ((c as any).children || []).slice() }))
+const node = (text: string) => ({ key: '', text, children: [] })
+const put = (list: any[]) => emit('update:modelValue', list)
+const list = () => props.modelValue.map((c) => ({ ...c, children: (c.children || []).slice() }))
 function edit(i: any, text: any) { const l = list(); l[i].text = text; put(l) }
 function add() { put(list().concat([node('New choice')])) }
 function addUnder(i: any) { const l = list(); l[i].children = l[i].children.concat([node('New follow-up')]); put(l) }
-function drop(i: any) { put(list().filter((_, j) => j !== i)) }
+function drop(i: number) { put(list().filter((_, j) => j !== i)) }
 function move(i: any, d: any) { const l = list(); const j = i + d; if (j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; put(l) }
 function children(i: any, kids: any) { const l = list(); l[i].children = kids; put(l) }
 </script>

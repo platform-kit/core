@@ -30,14 +30,14 @@ import AwardBadge from '../components/AwardBadge.vue'
 const W = computed(() => us('awards').page.main)
 const slug = computed(() => decodeURIComponent((route.value || '').slice(ROUTES.awards.length + 1).split('/')[0]))
 const a = computed(() => awardOf(slug.value))
-const held = computed<any>(() => (mine.value || []).find((x: any) => (x as any).slug === slug.value) || null)
+const held = computed(() => (mine.value || []).find((x: { slug: string }) => x.slug === slug.value) || null)
 const allowed = computed(() => allowedBy(a.value && a.value.canAccess, userClass.value))
 
 loadMine()
 /* a quiz's achievement is declared from its course, not a file: the catalogue reads those from the database */
 if (!awardOf(slug.value)) loadCatalogue()
 watch(a, (x) => { if (x) setHead({ title: x.title, description: x.sub || '' }) }, { immediate: true })
-const when = (iso: any) => new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+const when = (iso: string|number|Date) => new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
 </script>
 
 <template>

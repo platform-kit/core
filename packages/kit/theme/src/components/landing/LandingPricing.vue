@@ -55,18 +55,18 @@ const props = defineProps({
   switchedLater: { type: String, default: '' },   /* the toast after a step down; {name}, {date} */
   kept: { type: String, default: '' },            /* the toast after calling a step down off; {name} */
 })
-const when = (iso: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' }).format(new Date(iso)) } catch (e) { return '' } }
-const options = computed(() => ((props.filter && props.filter.options) || []).filter((o: any) => o && o.tag && o.label))
+const when = (iso: string|number|Date) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' }).format(new Date(iso)) } catch (e) { return '' } }
+const options = computed(() => ((props.filter && props.filter.options) || []).filter((o: { tag: any; label: any }) => o && o.tag && o.label))
 const toggled = computed(() => options.value.length >= 2)
 const active = ref((props.filter && props.filter.default) || (options.value[0] && options.value[0].tag) || '')
-const shown = (t: any) => !toggled.value || !Array.isArray(t.tags) || !t.tags.length || t.tags.includes(active.value)
+const shown = (t: { tags: string|any[] }) => !toggled.value || !Array.isArray(t.tags) || !t.tags.length || t.tags.includes(active.value)
 /* a feature line written "- Priority support" is one the rung lacks: drawn crossed */
-const featLines = (t: any) => (t.features || []).map((f: any) => (/^-\s+/.test(f) ? { text: f.replace(/^-\s+/, ''), off: true } : { text: f, off: false }))
+const featLines = (t: { features: any }) => (t.features || []).map((f: string) => (/^-\s+/.test(f) ? { text: f.replace(/^-\s+/, ''), off: true } : { text: f, off: false }))
 const chosen = ref(0)
 const ticked = ref<any>({})
 const selTotal = computed(() => rows.value.reduce((n, t, i) => n + (ticked.value[i] ? Number(String(t.price || '').replace(/[^\d.]/g, '')) || 0 : 0), 0))
 const rows = computed(() => props.tiers.map((t) => {
-  const offer = (t as any).sku ? PRODUCTS.find((p: any) => p.sku === (t as any).sku) : null
+  const offer = t.sku ? PRODUCTS.find((p: { sku: any }) => p.sku === t.sku) : null
   const subscription = !!offer && offer.billing === 'subscription'
   /* a rung is the reader's by the offer's key, so a renamed sku still finds its subscriber */
   const current = subscription && !!planKey.value && planKey.value === offer.key
@@ -76,8 +76,8 @@ const rows = computed(() => props.tiers.map((t) => {
      subscribe should know the first days are free before they press, and the only place that can
      say so is here — Stripe's own page is the one after the decision. */
   const trialDays = Number(offer && offer.trial) || 0
-  return { ...t, priceText: (t as any).price || '', perText: (t as any).per || '', link: withBooker((t as any).href || ''), buys: !!offer, current, pending, switching, trialDays,
-    label: current ? (props.ctaCurrent || (t as any).cta) : pending ? (props.ctaPending || (t as any).cta).replace('{date}', when(planNextAt.value)) : switching ? (props.ctaSwitch || (t as any).cta) : (t as any).cta }
+  return { ...t, priceText: t.price || '', perText: t.per || '', link: withBooker(t.href || ''), buys: !!offer, current, pending, switching, trialDays,
+    label: current ? (props.ctaCurrent || t.cta) : pending ? (props.ctaPending || t.cta).replace('{date}', when(planNextAt.value)) : switching ? (props.ctaSwitch || t.cta) : t.cta }
 }))
 
 /* buying from the page: sign in first when there is none, then the offer's own
@@ -85,17 +85,17 @@ const rows = computed(() => props.tiers.map((t) => {
 const SW = (us('store').page || {}).head || {}
 const busy = ref('')
 let pending = ''
-async function buy(t: any) {
+async function buy(t: { buys: any; sku: string; current: any; pending: any; name: string }) {
   if (!t.buys || busy.value) return
   if (!isSignedIn.value) { pending = t.sku; if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'buy' }); return }
-  const offer = PRODUCTS.find((p: any) => p.sku === t.sku)
+  const offer = PRODUCTS.find((p: { sku: any }) => p.sku === t.sku)
   busy.value = t.sku
   try {
     /* the plan they are on: its button opens the portal (cancel, cards, invoices) */
     if (t.current) { await openPortal(); return }
     if (offer.billing === 'subscription') {
       /* the rung a step down is waiting for: pressing it again calls the step down off (their own plan, asked for again) */
-      const own = PRODUCTS.find((p: any) => p.key === planKey.value)
+      const own = PRODUCTS.find((p: { key: any }) => p.key === planKey.value)
       const d = await subscribe(t.pending ? (own ? own.sku : plan.value) : t.sku)
       if (d && d.switched) {
         await refreshEntitlements().catch(() => {})
@@ -112,7 +112,7 @@ async function buy(t: any) {
 }
 watch(isSignedIn, (on) => { if (on && pending) { const t = rows.value.find((r) => r.sku === pending); pending = ''; if (t) buy(t) } })
 /* the rungs in the order written, grouped: a band stands alone, columns between bands share a row */
-const groups: any = computed(() => {
+const groups = computed(() => {
   const out: any = []
   let run: any = null
   rows.value.forEach((t, i) => {
@@ -125,7 +125,7 @@ const groups: any = computed(() => {
 /* the compare table: a column per rung shown as a column */
 const compareCols = computed(() => rows.value.filter((t) => shown(t)))
 const YES = /^(yes|true|✓|✔|included)$/i, NO = /^(no|false|—|-|×|✗|not included)$/i
-const cell = (c: any) => (c == null || c === '' ? 'blank' : YES.test(String(c).trim()) ? 'yes' : NO.test(String(c).trim()) ? 'no' : 'text')
+const cell = (c: string|null) => (c == null || c === '' ? 'blank' : YES.test(String(c).trim()) ? 'yes' : NO.test(String(c).trim()) ? 'no' : 'text')
 </script>
 
 <template>

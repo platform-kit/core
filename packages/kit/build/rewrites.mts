@@ -154,8 +154,8 @@ const enabledFor = (rule: { source: string }, modules: { api?: any; support?: an
 }
 
 export function siteRules(defaultRules: any[], localRules = [], modules = {}) {
-  const merged = defaultRules.filter((rule: any) => enabledFor(rule, modules)).map((rule: any) => ({ ...rule }))
-  const positions = new Map(merged.map((rule: { source: any }, index: any) => [rule.source, index]))
+  const merged = defaultRules.filter((rule) => enabledFor(rule, modules)).map((rule) => ({ ...rule }))
+  const positions = new Map(merged.map((rule: { source: any }, index) => [rule.source, index]))
   const seen = new Set()
   for (const rule of localRules) {
     if (seen.has((rule as any).source)) throw new Error(`site redirects contain "${(rule as any).source}" more than once`)

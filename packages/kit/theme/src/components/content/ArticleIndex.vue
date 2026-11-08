@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { articleIndex } from 'platformkit/lib/content.js'
 const articles = articleIndex()
-const img = (a: any) => a.data.image || (Array.isArray(a.data.media) ? a.data.media.find((m: any) => m.poster)?.poster : a.data.media?.poster) || null
-const badge = (a: any) => a.data.media ? (Array.isArray(a.data.media) ? 'Playlist' : (a.data.media.type === 'audio' ? 'Audio' : 'Video')) : null
+const img = (a: { data: { image: any; media: { find: (arg0: (m: any) => any) => { (): any; new(): any; poster: any }; poster: any } } }) => a.data.image || (Array.isArray(a.data.media) ? a.data.media.find((m: { poster: any }) => m.poster)?.poster : a.data.media?.poster) || null
+const badge = (a: { data: { media: { type: string } } }) => a.data.media ? (Array.isArray(a.data.media) ? 'Playlist' : (a.data.media.type === 'audio' ? 'Audio' : 'Video')) : null
 </script>
 
 <template>

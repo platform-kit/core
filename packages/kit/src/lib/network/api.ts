@@ -410,8 +410,8 @@ async function mark(table: string, postId: string|number, on: boolean) {
   const { error } = await q
   if (error) { if (before) net.posts[postId] = before; throw error }
 }
-export const like = (postId: any, on: any) => mark('network_likes', postId, on)
-export const repost = (postId: any, on: any) => mark('network_reposts', postId, on)
+export const like = (postId: string|number, on: boolean) => mark('network_likes', postId, on)
+export const repost = (postId: string|number, on: boolean) => mark('network_reposts', postId, on)
 
 export async function follow(userId: any, on: any) {
   const q = on

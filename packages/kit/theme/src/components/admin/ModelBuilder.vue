@@ -30,9 +30,9 @@ const dirty = computed(() => !!model.value && (snapshot() !== saved.value || ren
 async function load() {
   loading.value = true; msg.value = ''; failing.value = null; renames.value = []
   try {
-    models.value = (await pipe.items('models')).filter((m: any) => !m.errors.length)
+    models.value = (await pipe.items('models')).filter((m: { errors: string|any[] }) => !m.errors.length)
     if (isNew.value) { model.value = blank(); entries.value = 0 }
-    else { const r: any = await pipe.read('models', props.name); model.value = r.data || blank(); entries.value = r.entries; if (r.errors && r.errors.length) msg.value = r.errors.join('\n') }
+    else { const r = await pipe.read('models', props.name); model.value = r.data || blank(); entries.value = r.entries; if (r.errors && r.errors.length) msg.value = r.errors.join('\n') }
     saved.value = snapshot(); picked.value = 0
   } catch (e) { msg.value = (e as any).message } finally { loading.value = false }
 }
@@ -44,22 +44,22 @@ const fields = computed(() => (model.value ? model.value.fields : []))
 const cur = computed(() => fields.value[picked.value] || null)
 const keyOf = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 function setName(v: any) { model.value.name = v; if (isNew.value) model.value.key = keyOf(v) }
-function addField() { let i = fields.value.length + 1; let key = 'field' + i; while (fields.value.some((f: any) => f.key === key)) key = 'field' + ++i; fields.value.push({ key, kind: 'text', label: '', _new: true }); picked.value = fields.value.length - 1; if (!model.value.title) model.value.title = key }
-function removeField(i: any) { if (!window.confirm(WF['remove-confirm'].replace('{label}', fields.value[i].label || fields.value[i].key))) return; const k = fields.value[i].key; fields.value.splice(i, 1); if (model.value.title === k) model.value.title = (fields.value[0] && fields.value[0].key) || ''; if (model.value.order.by === k) model.value.order.by = ''; if (model.value.slug === k) model.value.slug = 'title'; picked.value = Math.max(0, i - 1) }
+function addField() { let i = fields.value.length + 1; let key = 'field' + i; while (fields.value.some((f: { key: string }) => f.key === key)) key = 'field' + ++i; fields.value.push({ key, kind: 'text', label: '', _new: true }); picked.value = fields.value.length - 1; if (!model.value.title) model.value.title = key }
+function removeField(i: number) { if (!window.confirm(WF['remove-confirm'].replace('{label}', fields.value[i].label || fields.value[i].key))) return; const k = fields.value[i].key; fields.value.splice(i, 1); if (model.value.title === k) model.value.title = (fields.value[0] && fields.value[0].key) || ''; if (model.value.order.by === k) model.value.order.by = ''; if (model.value.slug === k) model.value.slug = 'title'; picked.value = Math.max(0, i - 1) }
 function rename({ from, to }: any) {
-  const f = fields.value.find((x: any) => x.key === from); if (!f) return
+  const f = fields.value.find((x: { key: any }) => x.key === from); if (!f) return
   f.key = to
   if (model.value.title === from) model.value.title = to
   if (model.value.order.by === from) model.value.order.by = to
   if (model.value.slug === from) model.value.slug = to
   for (const x of fields.value) if (x.shown && x.shown.field === from) x.shown.field = to
-  const prev = renames.value.find((r: any) => (r as any).to === from)
-  if (prev) (prev as any).to = to; else renames.value.push({ from, to })
+  const prev = renames.value.find((r: { to: any }) => r.to === from)
+  if (prev) prev.to = to; else renames.value.push({ from, to })
 }
-const kindChanged = computed(() => fields.value.some((f: any) => f._kindChanged && !f._new))
+const kindChanged = computed(() => fields.value.some((f: { _kindChanged: any; _new: any }) => f._kindChanged && !f._new))
 const canSave = computed(() => !!(model.value && model.value.name && fields.value.length))
-const fieldOptions = computed(() => fields.value.map((f: any) => ({ value: f.key, label: f.label || f.key })))
-const slugOptions = computed(() => [{ value: 'title', label: WO['slug-title'] }, ...fields.value.filter((f: any) => f.kind === 'text').map((f: any) => ({ value: f.key, label: f.label || f.key }))])
+const fieldOptions = computed(() => fields.value.map((f: { key: any; label: any }) => ({ value: f.key, label: f.label || f.key })))
+const slugOptions = computed(() => [{ value: 'title', label: WO['slug-title'] }, ...fields.value.filter((f: { kind: string }) => f.kind === 'text').map((f: { key: any; label: any }) => ({ value: f.key, label: f.label || f.key }))])
 
 /* ---- save ---- */
 async function save(force: any) {
@@ -68,13 +68,13 @@ async function save(force: any) {
   try {
     const m = strip(model.value)
     /* a new field's key follows its label until saved, so what named it earlier may be stale */
-    const keys = m.fields.map((f: any) => f.key)
+    const keys = m.fields.map((f: { key: any }) => f.key)
     if (!keys.includes(m.title)) m.title = keys[0] || ''
     if (!keys.includes(m.order.by)) m.order.by = m.title
     if (m.slug !== 'title' && !keys.includes(m.slug)) m.slug = 'title'
     if (!m.singular) m.singular = m.name
     /* a field renamed under entries: the entries first, then the model that names it */
-    for (const r of renames.value) if (!isNew.value) await pipe.action('models', 'rename-field', { key: props.name || m.key, from: (r as any).from, to: (r as any).to })
+    for (const r of renames.value) if (!isNew.value) await pipe.action('models', 'rename-field', { key: props.name || m.key, from: r.from, to: r.to })
     renames.value = []
     const r = await pipe.save('models', m.key, { data: m }, { create: isNew.value, check: !force && kindChanged.value && entries.value > 0 })
     if (r.ok === false && r.failing) { failing.value = r.failing; return }

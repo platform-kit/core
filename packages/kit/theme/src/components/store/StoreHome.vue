@@ -34,7 +34,7 @@ const A = computed(() => arrange(preview ? (preview as any).value : null))
 const hero = computed(() => A.value.hero)
 /* the title, with one *word* in italic: the markdown's asterisks, nothing else */
 // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-const esc = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 const heroTitle = computed(() => esc(hero.value.title).replace(/\*([^*]+)\*/g, '<em>$1</em>'))
 /* the row under the buttons: the price the shelf starts at, what comes with a copy, where it ships */
 const HR = T.home.hero || {}

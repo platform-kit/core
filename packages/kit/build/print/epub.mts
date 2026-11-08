@@ -58,7 +58,7 @@ mark.hl { background: #fbeeb6; color: inherit; border-radius: 3px; padding: 0 0.
 .rule { text-align: center; color: #8a847c; margin: 1.6em 0; }
 `
 
-const doc = (title: any, body: string, lang = 'en') => `<?xml version="1.0" encoding="utf-8"?>
+const doc = (title: string, body: string, lang = 'en') => `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${lang}" lang="${lang}">
 <head><meta charset="utf-8" /><title>${esc(title)}</title><link rel="stylesheet" type="text/css" href="style.css" /></head>
@@ -87,7 +87,7 @@ export async function makeEpub({ book, companion, contents = 'parts', note = '',
   const files: any = []            /* { id, href, title, body, nav } */
   const add = (id: string, title: any, body: string, nav = true) => { files.push({ id, href: id + '.xhtml', title, body, nav }); return files.length - 1 }
   const marks: any = []            /* { text, href, part } */
-  const collect = (src: any, href: string, part: any) => { for (const m of flow(src).matchAll(/==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/g)) marks.push({ text: plain(m[1]).replace(/\s+/g, ' ').trim(), href, part }) }
+  const collect = (src: string, href: string, part: any) => { for (const m of flow(src).matchAll(/==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/g)) marks.push({ text: plain(m[1]).replace(/\s+/g, ' ').trim(), href, part }) }
 
   /* the title page, the note, the introduction */
   add('title', book.title, `<section class="title" epub:type="titlepage"><h1>${esc(book.title)}</h1><p class="author">${esc(book.author || '')}</p><p class="edition eyebrow">${esc(W('edition', 'The modern edition'))}</p></section>`, false)
@@ -96,7 +96,7 @@ export async function makeEpub({ book, companion, contents = 'parts', note = '',
 
   const chapterFile = (c: { i?: number; n: any; title: any; md?: string; summaryMd?: any; essence?: any }, id: string, text: string, essence: any[], part: any) => {
     const head = `<section class="opener"><p class="eyebrow">${c.n == null ? '' : esc(W('chapter', 'Chapter') + ' ' + c.n)}</p><h1>${esc(c.title)}</h1>`
-    const box = essence.length ? `<aside class="companion"><p class="eyebrow">${esc(W('insights', 'Key insights'))}</p><ol>${essence.map((e: any) => `<li>${render(e).replace(/^<p>|<\/p>\s*$/g, '')}</li>`).join('')}</ol></aside>` : ''
+    const box = essence.length ? `<aside class="companion"><p class="eyebrow">${esc(W('insights', 'Key insights'))}</p><ol>${essence.map((e) => `<li>${render(e).replace(/^<p>|<\/p>\s*$/g, '')}</li>`).join('')}</ol></aside>` : ''
     add(id, c.n == null ? c.title : c.n + '. ' + c.title, head + render(text) + box + '</section>')
     collect(text, id + '.xhtml', part)
   }

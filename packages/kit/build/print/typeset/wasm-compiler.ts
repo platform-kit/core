@@ -66,10 +66,10 @@ export async function create({ files = {}, fonts = [], wasm }: any = {}) {
   const c = await builder.build()
   for (const [p, text] of Object.entries(files)) c.add_source(p.startsWith('/') ? p : '/' + p, String(text))
 
-  const main = (file: any) => (String(file).startsWith('/') ? String(file) : '/' + String(file))
+  const main = (file: string) => (String(file).startsWith('/') ? String(file) : '/' + String(file))
   return {
     pdf(file: string) { return must(c.compile(main(file), null, 'pdf', 0), file) },
-    svg(file: any) { return must(c.compile(main(file), null, 'svg', 0), file) },
+    svg(file: string) { return must(c.compile(main(file), null, 'svg', 0), file) },
     query(file: string, selector: any) {
       const said = c.query(main(file), null, selector, null)
       try { return JSON.parse(said || '[]') } catch (e) { throw new Error('typst: ' + file + ' — the query did not answer with json') }

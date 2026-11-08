@@ -14,7 +14,7 @@ const props = defineProps({ open: { type: Boolean, default: false } })
 const emit = defineEmits(['update:open', 'pick'])
 const q = ref(''), input = ref<any>(null), active = ref(0)
 const GROUPS = ['Openers', 'Content', 'Proof', 'Commerce', 'People', 'From the site', 'Closers', 'This site']
-const groupOf = (k: any) => SECTION_SCHEMAS[k].group || 'This site'
+const groupOf = (k: string) => SECTION_SCHEMAS[k].group || 'This site'
 /* the kit's sections in the order a page tends to use them; a section not named here (a site's own) follows in its file's order */
 const ORDER = ['Announcement', 'Hero', 'Marquee',
   'Features', 'Split', 'Bento', 'Steps', 'Showcase', 'BeforeAfter', 'Carousel', 'Tabs', 'Gallery', 'Video', 'Prose', 'Timeline', 'Divider', 'How',
@@ -23,7 +23,7 @@ const ORDER = ['Announcement', 'Hero', 'Marquee',
   'Team', 'Creator', 'Newsletter', 'Contact', 'Form',
   'Articles', 'Entries', 'Library', 'Coaching',
   'Cta', 'Countdown', 'Close', 'Footer']
-const rank = (k: any) => { const i = ORDER.indexOf(k); return i < 0 ? ORDER.length + SECTION_KEYS.indexOf(k) : i }
+const rank = (k: string) => { const i = ORDER.indexOf(k); return i < 0 ? ORDER.length + SECTION_KEYS.indexOf(k) : i }
 const hits = computed(() => {
   const s = q.value.trim().toLowerCase()
   return [...SECTION_KEYS].sort((a, b) => rank(a) - rank(b)).filter((k) => !s || [k, SECTION_SCHEMAS[k].label, SECTION_SCHEMAS[k].description, groupOf(k)].join(' ').toLowerCase().includes(s))
@@ -34,8 +34,8 @@ const flat = computed(() => groups.value.flatMap((g) => g.keys))
 watch(hits, () => { active.value = 0 })
 watch(() => props.open, async (v) => { if (v) { q.value = ''; active.value = 0; await nextTick(); input.value && input.value.focus() } })
 function close() { emit('update:open', false) }
-function pick(k: any) { emit('pick', k); close() }
-function onKey(e: any) {
+function pick(k: string) { emit('pick', k); close() }
+function onKey(e: { key: string; preventDefault: () => void }) {
   if (e.key === 'Escape') { close(); return }
   const n = flat.value.length; if (!n) return
   const cols = 3

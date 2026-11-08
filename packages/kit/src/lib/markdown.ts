@@ -60,7 +60,7 @@ export function renderer({ highlight }: any = {}) {
 }
 
 /* a quote or an apostrophe in prose stays itself (marked writes the entity; rehype did not, and the text reads the same) — inside a tag it is left alone */
-const quotes = (html: string) => html.replace(/(<[^>]*>)|&#39;|&quot;/g, (m: string, tag: any) => (tag ? tag : m === '&#39;' ? "'" : '"'))
+const quotes = (html: string) => html.replace(/(<[^>]*>)|&#39;|&quot;/g, (m: string, tag) => (tag ? tag : m === '&#39;' ? "'" : '"'))
 
 /* the headings of a document as a tree, urls to their ids, the shape velite's toc gave */
 function tocOf(md: string, m: Marked<string,string>) {

@@ -42,12 +42,12 @@ const words = computed(() => ({ today: W.value.today, tomorrow: W.value.tomorrow
 const untilWords = computed(() => ({ now: W.value['on-now'], mins: W.value['in-mins'], hours: W.value['in-hours'], days: W.value['in-days'] }))
 
 // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
-const when = (o: any) => whenWord(o.starts_at, now.value, words.value)
+const when = (o) => whenWord(o.starts_at, now.value, words.value)
 // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
-const at = (o: any) => clockOf(o.starts_at)
-const until = (o: any) => untilWord(new Date(o.starts_at).getTime(), now.value, untilWords.value)
-const live = (o: any) => isOn(o, now.value)
-const noRoom = (o: any) => !!o.capacity && Number(o.going) >= Number(o.capacity) && o.mine !== 'going'
+const at = (o) => clockOf(o.starts_at)
+const until = (o: { starts_at: string|number|Date }) => untilWord(new Date(o.starts_at).getTime(), now.value, untilWords.value)
+const live = (o: { starts_at?: any; ends_at?: any }|null) => isOn(o, now.value)
+const noRoom = (o: { capacity: any; going: any; mine: string }) => !!o.capacity && Number(o.going) >= Number(o.capacity) && o.mine !== 'going'
 const placeWord = (o: any) => {
   const p = o.place || {}
   if (p.kind === 'room') return W.value['in-a-room']
@@ -58,7 +58,7 @@ const placeWord = (o: any) => {
 }
 
 const busy = ref('')
-async function say(o: any, state: any) {
+async function say(o: { id: string; mine: any }, state: string|undefined) {
   busy.value = o.id
   await rsvp(o.id, o.mine === state ? 'out' : state)
   busy.value = ''

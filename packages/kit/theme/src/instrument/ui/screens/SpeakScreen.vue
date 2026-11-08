@@ -36,12 +36,12 @@ function settle(r: any) {
 function begin() {
   take = micListen({
     t0, target: props.screen.meta.item.t,
-    onLevel(v: any) {
+    onLevel(v) {
       scale.value = 1 + v * 0.9
       if (!spoke && v > 0.25) { spoke = true; dot.value = 'live'
         state.value = 'Take your time. It stops when you do.' }
     },
-    onPartial(t: any) { partial.value = t },
+    onPartial(t) { partial.value = t },
     onDone: settle,
   })
 }

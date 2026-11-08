@@ -88,26 +88,26 @@ const list = ref<any>([]), loading = ref(true)
 watch(() => (user.value ? user.value.id : null), async () => {
   loading.value = true
   // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
-  try { list.value = (await rpc('courses_list')) || [] } catch (e) { console.warn('courses:', (e as any).message || e) }
+  try { list.value = (await rpc('courses_list')) || [] } catch (e) { console.warn('courses:', e.message || e) }
   loading.value = false
 }, { immediate: true })
 setHead({ title: L.value.title })
 
-const hrefOf = (c: any) => props.base + '/' + c.slug
-const lessonsWord = (n: any) => (n === 1 ? L.value.lesson : fill(L.value.lessons, { n }))
-const modulesWord = (n: any) => (n === 1 ? L.value.module : fill(L.value.modules, { n }))
-const metaOf = (c: any) => (c.sections > 1 ? `${lessonsWord(c.lessons)} · ${modulesWord(c.sections)}` : lessonsWord(c.lessons))
+const hrefOf = (c: { slug: string }) => props.base + '/' + c.slug
+const lessonsWord = (n: number) => (n === 1 ? L.value.lesson : fill(L.value.lessons, { n }))
+const modulesWord = (n: number) => (n === 1 ? L.value.module : fill(L.value.modules, { n }))
+const metaOf = (c: { sections: number; lessons: any }) => (c.sections > 1 ? `${lessonsWord(c.lessons)} · ${modulesWord(c.sections)}` : lessonsWord(c.lessons))
 
 /* what they are taking, the last one they were in first; what they finished; and everything else */
-const mine = computed(() => list.value.filter((c: any) => (c as any).enrolled))
-const taking = computed(() => mine.value.filter((c: any) => !(c as any).completed_at).sort((a: any, b: any) => String((b as any).last_at || '').localeCompare(String((a as any).last_at || ''))))
-const current = computed<any>(() => taking.value[0] || null)
+const mine = computed(() => list.value.filter((c: { enrolled: any }) => c.enrolled))
+const taking = computed(() => mine.value.filter((c: { completed_at: any }) => !c.completed_at).sort((a: { last_at: any }, b: { last_at: any }) => String(b.last_at || '').localeCompare(String(a.last_at || ''))))
+const current = computed(() => taking.value[0] || null)
 const others = computed(() => taking.value.slice(1))
-const finished = computed(() => mine.value.filter((c: any) => (c as any).completed_at))
-const catalogue = computed(() => list.value.filter((c: any) => !(c as any).enrolled))
+const finished = computed(() => mine.value.filter((c: { completed_at: any }) => c.completed_at))
+const catalogue = computed(() => list.value.filter((c: { enrolled: any }) => !c.enrolled))
 
 /* what getting into a course takes, said from where this reader stands */
-const accessOf = (c: any) => {
+const accessOf = (c: { access: any; free: any; skus: string|any[] }) => {
   if (c.access) return c.free ? L.value['access-free'] : L.value['access-yours']
   if (c.free) return L.value['access-free-sign-in']
   if (c.skus && c.skus.length) return L.value['access-buy']
@@ -115,8 +115,8 @@ const accessOf = (c: any) => {
 }
 
 /* one course on a shelf: the cover and the title are the way in; the certificate is a way of its own */
-const CourseCard = (p: any) => {
-  const c: any = p.c
+const CourseCard = (p: { c: any }) => {
+  const c = p.c
   const foot = c.completed_at
     ? [h('span', { class: 'crs-card-state is-done' }, [h(CourseIcon, { name: 'done', size: 16 }), L.value.finished]),
        c.certificate_id ? h('a', { class: 'crs-card-cert', href: ROUTES.certificates + '/' + c.certificate_id }, [h(CourseIcon, { name: 'award', size: 15 }), L.value.certificate]) : null]

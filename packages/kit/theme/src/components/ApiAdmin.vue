@@ -39,8 +39,8 @@ import AdminHead from './admin/AdminHead.vue'
 watch(state, (s) => { if (s === 'ok') load() })
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-const random = (n: any) => { const bytes = new Uint8Array(n); crypto.getRandomValues(bytes); return [...bytes].map((b) => ALPHABET[b % ALPHABET.length]).join('') }
-const sha256 = async (s: any) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
+const random = (n: number) => { const bytes = new Uint8Array(n); crypto.getRandomValues(bytes); return [...bytes].map((b) => ALPHABET[b % ALPHABET.length]).join('') }
+const sha256 = async (s: string|undefined) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
 
 function startNew() { form.value = { name: '', kind: 'delivery', gated: false }; failed.value = ''; reveal.value = null }
 async function create() {
@@ -57,14 +57,14 @@ async function create() {
   } catch (e) { failed.value = K.failed + (e && (e as any).message ? ' ' + (e as any).message : '') }
   finally { making.value = false }
 }
-async function revoke(k: any) {
+async function revoke(k: { id: any }) {
   if (!window.confirm(K['revoke-confirm'])) return
   await (supabase as any).from('api_keys').update({ revoked_at: new Date().toISOString() }).eq('id', k.id)
   await load()
 }
 async function copy() { try { await navigator.clipboard.writeText(reveal.value.key); copied.value = true; setTimeout(() => { copied.value = false }, 1600) } catch { /* the field is selectable */ } }
 // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const when = (iso: any) => { if (!iso) return K.never; const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const when = (iso) => { if (!iso) return K.never; const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 

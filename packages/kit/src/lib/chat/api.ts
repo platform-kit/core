@@ -80,7 +80,7 @@ function peerOf(id: any) {
   return row ? row.peer : null
 }
 
-export async function openThread(id: any) {
+export async function openThread(id: string) {
   if (!on() || !id) return
   if (thread.id !== id) {
     closeThread()
@@ -170,7 +170,7 @@ function subscribe(id: string) {
     .subscribe((status: string) => { if (status === 'SUBSCRIBED') catchUp(id) })
 }
 
-async function catchUp(id: any) {
+async function catchUp(id: string) {
   if (thread.id !== id) return
   const last = thread.messages[thread.messages.length - 1]
   const q = (supabase as any).from('messages').select('*').eq('conversation_id', id).order('created_at', { ascending: true }).limit(PAGE)

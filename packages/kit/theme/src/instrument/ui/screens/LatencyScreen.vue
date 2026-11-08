@@ -53,7 +53,7 @@ function submit() {
 function listen() {
   take = micListen({
     t0,
-    onPartial(text: any) {
+    onPartial(text) {
       /* straight into the same input, so the two routes are one measurement */
       if (!text) return
       heard.value = true
@@ -61,7 +61,7 @@ function listen() {
       typed.value = text
       onInput()
     },
-    onDone(r: any) {
+    onDone(r) {
       if (sent) return
       if (r.onset === null) { take = null; return }   /* nothing said — carry on typing */
       source = 'spoken'

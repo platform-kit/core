@@ -18,7 +18,7 @@ import { github, drafts as readDrafts, publish, keep } from '../lib/admin/api.js
 const emit = defineEmits(['published'])
 const W = us('publishing').page
 const H = W.head, D = W.drafts, F = W.form, S = W.status, R = W.rebuild, C = W.copy
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: { [x: string]: string; n?: any; error?: any; name?: any; issue?: any }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const state = ref('idle')          /* idle | denied | loading | ok */
 const st = ref<any>(null)               /* the pushes: repo, branch, token (set or not), connected, last_push, error, pending */
@@ -63,10 +63,10 @@ async function publishAll() {
     emit('published')
     await load()
   } catch (e) {
-    published.value = (e as any).issues && (e as any).issues.length ? fill(D.checks, { name: (e as any).name || '', issue: (e as any).issues.map((i: any) => (i.path ? i.path + ': ' : '') + i.message).join('; ') }) : (D.failed + ((e as any).message ? ' ' + (e as any).message : ''))
+    published.value = (e as any).issues && (e as any).issues.length ? fill(D.checks, { name: (e as any).name || '', issue: (e as any).issues.map((i: { path: string; message: string }) => (i.path ? i.path + ': ' : '') + i.message).join('; ') }) : (D.failed + ((e as any).message ? ' ' + (e as any).message : ''))
   } finally { publishing.value = false }
 }
-async function keepOne(d: any) { try { await keep(d.path); await load() } catch (e) { published.value = (e as any).message } }
+async function keepOne(d: { path: any }) { try { await keep(d.path); await load() } catch (e) { published.value = (e as any).message } }
 async function save() {
   busy.value = true; said.value = ''
   try { const g = await github('put', { repo: repo.value, branch: branch.value, token: token.value || undefined }); st.value = { ...st.value, ...g }; token.value = ''; said.value = F.saved }
@@ -104,7 +104,7 @@ async function push() {
   catch (e) { pushed.value = (e as any).message }
   finally { pushing.value = false }
 }
-const when = (iso: any) => { const d: any = new Date(iso); return isNaN(d) ? '' : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+const when = (iso: string|number|Date) => { const d: any = new Date(iso); return isNaN(d) ? '' : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
 const connected = computed(() => st.value && st.value.connected)
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>

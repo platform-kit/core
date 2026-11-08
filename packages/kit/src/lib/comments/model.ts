@@ -27,7 +27,7 @@ export function treeOf(rows = []) {
     if (p && !loops) p.kids.push(r)
     else roots.push(r)
   }
-  const at = (n: { depth: any; kids: any[] }, d: number) => { n.depth = d; n.kids.forEach((k: any) => at(k, d + 1)) }
+  const at = (n: { depth: any; kids: any[] }, d: number) => { n.depth = d; n.kids.forEach((k) => at(k, d + 1)) }
   roots.forEach((n) => at(n, 0))
   return roots
 }
@@ -73,7 +73,7 @@ export function shape(rows = [], { depth = 3, collapse = 5, open = [] } = {}) {
 
 /* every descendant of a node, oldest first, each remembering the line it answers — the flat run
    under a comment once the indent has stopped */
-function deep(node: any) {
+function deep(node: { depth?: number; kids: any; id?: any }) {
   const out: any = []
   const go = (n: { kids: any }) => { for (const k of n.kids) { out.push({ ...k, of: n }); go(k) } }
   go(node)
@@ -125,8 +125,8 @@ export function sortComments(rows = [], order = 'oldest') {
   const roots = list.filter((r: any) => !r.parent)
   const rest = list.filter((r: any) => r.parent)
   const by: any = {
-    oldest: (a: any, b: any) => stamp(a) - stamp(b),
-    newest: (a: any, b: any) => stamp(b) - stamp(a),
+    oldest: (a: { created_at: any }, b: { created_at: any }) => stamp(a) - stamp(b),
+    newest: (a: { created_at: any }, b: { created_at: any }) => stamp(b) - stamp(a),
     top: (a: any, b: any) => scoreOf(b) - scoreOf(a) || stamp(a) - stamp(b),
     best: (a: any, b: any) => bestOf(b) - bestOf(a) || stamp(a) - stamp(b),
     controversial: (a: any, b: any) => heatOf(b) - heatOf(a) || stamp(a) - stamp(b),

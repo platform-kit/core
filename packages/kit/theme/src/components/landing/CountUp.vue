@@ -18,7 +18,7 @@ function run() {
   const [, pre, num, post] = m.value
   const decimals = (num.split('.')[1] || '').length, target = Number(num.replace(/,/g, '')), grouped = num.includes(',')
   const t0 = performance.now()
-  const step = (t: any) => {
+  const step = (t: number) => {
     const k = Math.min(1, (t - t0) / props.duration), e = 1 - Math.pow(1 - k, 3)
     let v = (target * e).toFixed(decimals); if (grouped) v = Number(v).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
     shown.value = pre + v + post

@@ -54,7 +54,7 @@ const FW = computed(() => us('spaces').flair.main)
 const giving = ref(false)
 const badges = ref<any>([])
 const busyFlair = ref('')
-const worn = computed(() => new Set(((card.value && card.value.flair) || []).map((x: any) => (x as any).slug)))
+const worn = computed(() => new Set(((card.value && card.value.flair) || []).map((x: any) => x.slug)))
 async function openGiving() {
   giving.value = !giving.value
   if (giving.value && !badges.value.length) badges.value = (await flairsOf(props.space.id)) || []

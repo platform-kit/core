@@ -32,7 +32,7 @@ const tabs = computed(() => [
 const tab = ref(read())
 /* the remembered tab where it is still offered, else the first: the conversation where there is one */
 watch(tabs, (t) => { if (!t.some((x) => x.key === tab.value)) tab.value = (t[0] || {}).key || '' }, { immediate: true })
-function choose(k: any) { tab.value = k; try { localStorage.setItem(KEY, k) } catch (e) { /* this browser keeps nothing */ } }
+function choose(k: string) { tab.value = k; try { localStorage.setItem(KEY, k) } catch (e) { /* this browser keeps nothing */ } }
 </script>
 
 <template>

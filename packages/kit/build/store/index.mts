@@ -46,7 +46,7 @@ export function collectionOf(rel: string) {
 /* the library's roots: the only directories the media manager reaches — a path outside them, or with a dot-segment
    or a slash where a name is wanted, is refused before any store looks */
 export const ROOTS = ['content/uploads', 'public']
-export function insideRoots(rel: any) {
+export function insideRoots(rel: string) {
   const p = String(rel || '').replace(/\\/g, '/').replace(/^\.?\//, '').replace(/\/$/, '')
   if (!p || p.split('/').some((seg) => seg === '..' || seg === '')) return null
   return ROOTS.some((r) => p === r || p.startsWith(r + '/')) ? p : null

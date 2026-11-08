@@ -36,10 +36,10 @@ const found = ref<any>([])
 const looking = ref(false)
 const busy = ref('')
 
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-const how = (r: any) => (r.source === 'fill' ? W.value['by-fill'] : r.source === 'invite' ? W.value['by-invite'] : W.value['by-manual'])
-const when = (iso: any) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch (e) { return '' } }
-const nameOf = (r: any) => r.name || r.username || ''
+const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const how = (r: { source: string }) => (r.source === 'fill' ? W.value['by-fill'] : r.source === 'invite' ? W.value['by-invite'] : W.value['by-manual'])
+const when = (iso: string|number|Date) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch (e) { return '' } }
+const nameOf = (r: { name: any; username: any }) => r.name || r.username || ''
 
 async function load() {
   if (!props.team || !props.saved) { rows.value = []; projected.value = null; return }
@@ -63,17 +63,17 @@ watch(q, (v) => {
   }, 300)
 })
 
-async function add(p: any) {
+async function add(p: { id: string }) {
   busy.value = p.id; err.value = ''
   try { await inviteToTeam(props.team, p.id); q.value = ''; found.value = []; asking.value = false; await load() }
   catch (e) { err.value = W.value.failed } finally { busy.value = '' }
 }
-async function drop(r: any) {
+async function drop(r: { user_id: string }) {
   busy.value = r.user_id; err.value = ''
   try { await removeFromTeam(props.team, r.user_id); await load() }
   catch (e) { err.value = W.value.failed } finally { busy.value = '' }
 }
-const already = (id: any) => rows.value.some((r: any) => (r as any).user_id === id)
+const already = (id: any) => rows.value.some((r: { user_id: any }) => r.user_id === id)
 </script>
 
 <template>

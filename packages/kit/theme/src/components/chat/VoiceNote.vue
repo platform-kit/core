@@ -56,8 +56,8 @@ async function make() {
     container: box.value, url, height: 26, waveColor: c.wave, progressColor: c.progress, cursorColor: c.progress,
     cursorWidth: 1, barWidth: 2, barGap: 2, barRadius: 2, normalize: true, dragToSeek: true, audioRate: rate.value,
   })
-  ws.on('ready', (d: any) => { ready.value = true; if (d) total.value = d })
-  ws.on('timeupdate', (t: any) => { now.value = t })
+  ws.on('ready', (d: number) => { ready.value = true; if (d) total.value = d })
+  ws.on('timeupdate', (t: number) => { now.value = t })
   ws.on('play', () => { playing.value = true })
   ws.on('pause', () => { playing.value = false })
   ws.on('finish', () => { playing.value = false; now.value = 0 })

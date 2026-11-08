@@ -111,7 +111,7 @@ export async function job(script: string, subject: string, { options = {}, budge
 
 /* what a run has done so far: its status, what it spent, and a line per step — for a job, which
    has no room to say anything in and so says it where it was started from */
-export async function progress(runId: any) {
+export async function progress(runId: string) {
   if (!supabase || !runId) return null
   const [{ data: run }, { data: steps }] = await Promise.all([
     supabase.from('agent_runs').select('id, status, step, spent_cents, budget_cents, error, said, job').eq('id', runId).maybeSingle(),

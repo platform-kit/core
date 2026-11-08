@@ -6,7 +6,7 @@ import type { PropType } from 'vue'
 import { computed } from 'vue'
 import { renderMarkdown } from 'platformkit/lib/forms/markdown.js'
 const props = defineProps({ field: { type: Object as PropType<any>, required: true }, ctx: { type: Object as PropType<any>, default: () => ({}) }, words: { type: Object as PropType<any>, default: () => ({}) }, id: { type: String, default: '' }, tag: { type: String, default: 'label' } })
-const strip = (html: any) => String(html).replace(/^<p>([\s\S]*)<\/p>\s*$/, '$1')
+const strip = (html: string|Promise<string>) => String(html).replace(/^<p>([\s\S]*)<\/p>\s*$/, '$1')
 const question = computed(() => strip(renderMarkdown(props.field.params.question || '', props.ctx)))
 const description = computed(() => props.field.params.description ? strip(renderMarkdown(props.field.params.description, props.ctx)) : '')
 const small = computed(() => props.field.params.labelstyle === 'classic' || props.field.params.subfield !== undefined || props.field.params.fieldsize === 'sm')

@@ -17,13 +17,13 @@ const multiline = computed(() => kind.value === 'text' && p.value.multiline !== 
 const placeholder = computed(() => p.value.placeholder || (kind.value === 'number' ? props.words['number-placeholder'] : props.words['text-placeholder']) || '')
 /* a tel value is "CC +code number" on the way out, as forms.md posts it; the two halves are edited apart */
 const country = ref((p.value.country || 'US').toUpperCase())
-const countries = computed(() => { const a = (p.value.availablecountries || []).map((c: any) => c.trim().toUpperCase()).filter((c: any) => (placeholdersAndCallingCodes as any)[c]); if (!a.includes(country.value)) a.unshift(country.value); return a.length ? a : Object.keys(placeholdersAndCallingCodes) })
+const countries = computed(() => { const a = (p.value.availablecountries || []).map((c: string) => c.trim().toUpperCase()).filter((c: string|number) => (placeholdersAndCallingCodes as any)[c]); if (!a.includes(country.value)) a.unshift(country.value); return a.length ? a : Object.keys(placeholdersAndCallingCodes) })
 const number = ref('')
 if (kind.value === 'tel' && props.modelValue) { const m = /^([A-Z]{2}) (\+\d+) ?(.*)$/.exec(String(props.modelValue)); if (m) { country.value = m[1]; number.value = m[3] } else number.value = String(props.modelValue) }
 function telOut() { emit('update:modelValue', number.value ? `${country.value} ${(placeholdersAndCallingCodes as any)[country.value].callingCode} ${number.value}` : '') }
 const input = ref<any>(null)
 onMounted(() => { if (props.autofocus && input.value) setTimeout(() => input.value.focus(), 60) })
-function grow(e: any) { const t = e.target; t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px' }
+function grow(e: { target: any }) { const t = e.target; t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px' }
 </script>
 
 <template>

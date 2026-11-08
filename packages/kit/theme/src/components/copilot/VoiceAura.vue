@@ -116,18 +116,18 @@ void main(){
 }`,
 }
 
-const rgb = (hex: any) => {
+const rgb = (hex: string) => {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex).trim())
   return m ? [1, 2, 3].map((i) => parseInt(m[i], 16) / 255) : [0.12, 0.84, 0.98]
 }
 
 function build() {
-  const el: any = canvas.value
+  const el = canvas.value
   if (!el) return false
   gl = el.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: false, depth: false })
   if (!gl) return false
-  const sh: any = (kind: any, src: any) => {
-    const s: any = gl.createShader(kind); gl.shaderSource(s, src); gl.compileShader(s)
+  const sh = (kind: any, src: string) => {
+    const s = gl.createShader(kind); gl.shaderSource(s, src); gl.compileShader(s)
     if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) || 'shader')
     return s
   }
@@ -150,14 +150,14 @@ function build() {
 }
 
 /* the mood eases toward the state rather than snapping, so a turn change is a swell */
-const now: any = { ...MOOD.listening }
+const now = { ...MOOD.listening }
 /*
  * The rotation is INTEGRATED rather than computed from the clock. Multiplying the time by a
  * speed that changes makes the whole picture jump backwards and forwards as the speed moves —
  * the phase has to accumulate, so it only ever goes on turning, faster or slower.
  */
 let spin = 0, lastMs = 0
-function draw(ms: any) {
+function draw(ms: number) {
   const el = canvas.value
   if (!el || !gl) return
   if (!t0) t0 = ms
@@ -194,7 +194,7 @@ function draw(ms: any) {
 
 onMounted(() => {
   try { if (!build()) return emit('fail') } catch { return emit('fail') }
-  lost = (e: any) => { e.preventDefault(); cancelAnimationFrame(raf); emit('fail') }
+  lost = (e: { preventDefault: () => void }) => { e.preventDefault(); cancelAnimationFrame(raf); emit('fail') }
   canvas.value.addEventListener('webglcontextlost', lost)
   raf = requestAnimationFrame(draw)
 })

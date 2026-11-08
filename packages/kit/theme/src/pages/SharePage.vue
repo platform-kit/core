@@ -36,7 +36,7 @@ const frame = computed(() => (kind.value === 'icon' ? { width: size.value + 'px'
 
 /* the default landing page's first section, exactly as the page draws it */
 const hero = computed(() => {
-  const page = (PAGES || []).find((p: any) => (p.route || '/') === '/')
+  const page = (PAGES || []).find((p: { route: any }) => (p.route || '/') === '/')
   const s = page && page.sections && page.sections[0]
   const comp = s && SECTIONS[s.component]
   return comp ? { comp, props: s.props || {} } : null
@@ -53,18 +53,18 @@ const RECORDS: any = { articles: () => ARTICLES, wiki: () => WIKI, docs: () => D
 const record = computed(() => {
   if (kind.value === 'pages') {
     const route = '/' + String(id.value || '').replace(/-/g, '/')
-    const p = (PAGES || []).find((x: any) => (x.route || '/') === route)
+    const p = (PAGES || []).find((x: { route: any }) => (x.route || '/') === route)
     return p ? { title: p.seoTitle || p.title, description: p.description, image: p.image } : null
   }
   const list = (RECORDS[kind.value] || (() => []))()
-  const e = (list || []).find((x: any) => (x.id || x.slug) === id.value)
+  const e = (list || []).find((x: { id: any; slug: any }) => (x.id || x.slug) === id.value)
   if (!e) return null
   return { title: e.title, description: e.description || e.subtitle || strip(e.excerpt), image: e.image || imageOf(e.cover) }
 })
 const strip = (h: any) => String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-const imageOf = (c: any) => (c && typeof c === 'object' ? c.src : c) || null
+const imageOf = (c: { src: any }) => (c && typeof c === 'object' ? c.src : c) || null
 
-const article = computed(() => (ARTICLES || []).find((a: any) => a.id === id.value) || null)
+const article = computed(() => (ARTICLES || []).find((a: { id: string }) => a.id === id.value) || null)
 
 /*
  * A LONG TITLE USED TO PUSH THE CARD APART. The text block is anchored to the bottom, which is
@@ -78,7 +78,7 @@ const article = computed(() => (ARTICLES || []).find((a: any) => a.id === id.val
  */
 const fitArt = computed(() => fitCard({ title: (record.value && record.value.title) || '', sub: (record.value && record.value.description) || '', variant: 'picture' }))
 const fitPlain = computed(() => fitCard({ title: SITE.tagline || '', sub: SITE.description || '', variant: 'paper' }))
-const book = computed(() => bookShelf().find((b: any) => b.slug === id.value) || null)
+const book = computed(() => bookShelf().find((b: { slug: string }) => b.slug === id.value) || null)
 
 /* the camera wants the light theme and decoded artwork, whatever the machine prefers */
 onMounted(async () => {

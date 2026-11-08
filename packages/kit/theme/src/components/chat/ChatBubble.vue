@@ -37,7 +37,7 @@ const emit = defineEmits(['react', 'reply', 'remove', 'jump'])
 const C = us('chat').composer.main
 const T = us('chat').ticks.main
 
-const saidIn = (m: any) => messageBlocks(m && m.body)
+const saidIn = (m: { body: any }) => messageBlocks(m && m.body)
 const own = computed(() => props.message.sender_id === props.me)
 const tick = computed(() => tickOf(props.message, props.me, props.peerReadAt))
 const chips = computed(() => reactionChips(props.reactions, props.me))
@@ -60,10 +60,10 @@ const quotedText = computed(() => previewOf(props.quoted, C))
 /* the strip: on hover through css; pinned open by a long press until a tap elsewhere */
 const open = ref(false)
 let press: any = null
-function down(e: any) { if (e.pointerType === 'mouse' || gone.value) return; press = setTimeout(() => { open.value = true; press = null }, 420) }
+function down(e: { pointerType: string }) { if (e.pointerType === 'mouse' || gone.value) return; press = setTimeout(() => { open.value = true; press = null }, 420) }
 function up() { if (press) { clearTimeout(press); press = null } }
 function away() { open.value = false }
-function act(fn: any) { fn(); open.value = false }
+function act(fn: () => void) { fn(); open.value = false }
 </script>
 
 <template>

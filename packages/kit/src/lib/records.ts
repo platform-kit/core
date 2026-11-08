@@ -72,7 +72,7 @@ function saveBox() { try { storeSet(OUTBOX_KEY, JSON.stringify(box())) } catch (
 
 let timer: any = null
 /* the engine calls this (through session.setRecorder) at every write site */
-export function record(corpus: any, entry: any) {
+export function record(corpus: string, entry: any) {
   const id = uid()
   if (!id || !configured) return
   const row = rowFor(corpus, entry, id)

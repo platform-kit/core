@@ -36,7 +36,7 @@ import AdminHead from './admin/AdminHead.vue'
 
 const W = computed(() => us('spaces').admin.main)
 const NW = computed(() => us('spaces').notify.main)
-const me = computed(() => (session.value && (session.value as any).user && (session.value as any).user.id) || '')
+const me = computed(() => (session.value && session.value.user && session.value.user.id) || '')
 
 const VIEWS = ['rooms', 'members', 'moderation', 'voice']
 const view = ref('rooms')
@@ -67,14 +67,14 @@ const err = ref('')
 const note = ref('')
 const dirty = ref(false)
 
-const spaces = computed(() => files.value.filter((f: any) => (f as any).kind === 'space'))
+const spaces = computed(() => files.value.filter((f: any) => f.kind === 'space'))
 const space = computed(() => (doc.value ? doc.value.data : null))
 /* the words a sealed room is marked with, and the ONE reading of whether a room is one: the
    channel's own answer where it gives one, the space's otherwise — the same `encryptedOf` the
    build and the Matrix surface ask, so the admin cannot show a different answer from the room */
 const EN = computed(() => us('spaces').encryption)
 const sealed = (c: any) => encryptedOf((c && c.data) || {}, space.value || {})
-const row = computed(() => rows.value.find((r: any) => (r as any).slug === slug.value) || null)
+const row = computed(() => rows.value.find((r: any) => r.slug === slug.value) || null)
 const tiers = computed(() => [...new Set(products.filter((p: any) => p.kind === 'membership' && p.tier).map((p: any) => p.tier))])
 const offers = computed(() => products.filter((p: any) => p.sku).map((p: any) => ({ sku: p.sku, key: p.key, title: p.title || p.sku })))
 /* the booking types a room's rule may hang a window on — the only way in that looks FORWARD */
@@ -90,15 +90,15 @@ async function run(fn: any, done: any) {
 
 async function loadFiles() {
   files.value = await pipe.items('spaces')
-  if (!slug.value && spaces.value.length) slug.value = (spaces.value[0] as any).name
+  if (!slug.value && spaces.value.length) slug.value = spaces.value[0].name
 }
 async function openSpace(name: any) {
   if (!name) { doc.value = null; rooms.value = []; return }
   doc.value = await pipe.read('spaces', name)
-  const mine = files.value.filter((f: any) => (f as any).kind === 'channel' && (f as any).space === name)
+  const mine = files.value.filter((f: any) => f.kind === 'channel' && f.space === name)
   // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'.
-  rooms.value = await Promise.all(mine.map((f) => pipe.read('spaces', (f as any).name)))
-  rooms.value.sort((a: any, b: any) => (((a as any).data.order ?? 99) - ((b as any).data.order ?? 99)) || (a as any).name.localeCompare((b as any).name))
+  rooms.value = await Promise.all(mine.map((f) => pipe.read('spaces', f.name)))
+  rooms.value.sort((a: any, b: any) => ((a.data.order ?? 99) - (b.data.order ?? 99)) || a.name.localeCompare(b.name))
   dirty.value = false
 }
 async function loadRows() {
@@ -112,29 +112,29 @@ async function loadRows() {
 async function loadMembers() {
   if (!row.value) { members.value = []; dbRoles.value = []; held.value = {}; return }
   const [m, r, h] = await Promise.all([
-    (supabase as any).from('space_members').select('*').eq('space_id', (row.value as any).id),
-    (supabase as any).from('space_roles').select('*').eq('space_id', (row.value as any).id).order('rank', { ascending: false }),
-    (supabase as any).from('space_member_roles').select('user_id, role_id').eq('space_id', (row.value as any).id),
+    (supabase as any).from('space_members').select('*').eq('space_id', row.value.id),
+    (supabase as any).from('space_roles').select('*').eq('space_id', row.value.id).order('rank', { ascending: false }),
+    (supabase as any).from('space_member_roles').select('user_id, role_id').eq('space_id', row.value.id),
   ])
   members.value = m.data || []
   dbRoles.value = r.data || []
   const by: any = {}
   for (const x of h.data || []) (by[x.user_id] = by[x.user_id] || []).push(x.role_id)
   held.value = by
-  await namesFor(members.value.map((m2: any) => (m2 as any).user_id))
+  await namesFor(members.value.map((m2: any) => m2.user_id))
 }
 async function loadSaid() {
-  const ids = dbChannels.value.filter((c: any) => (c as any).kind !== 'dm' && (!row.value || (c as any).space_id === (row.value as any).id)).map((c: any) => (c as any).id)
+  const ids = dbChannels.value.filter((c: any) => c.kind !== 'dm' && (!row.value || c.space_id === row.value.id)).map((c: any) => c.id)
   if (!ids.length) { said.value = []; return }
   const { data } = await (supabase as any).from('space_messages').select('id, channel_id, author_id, kind, body, title, created_at, deleted_at')
     .in('channel_id', ids).order('created_at', { ascending: false }).limit(60)
   said.value = data || []
-  await namesFor(said.value.map((m: any) => (m as any).author_id))
+  await namesFor(said.value.map((m: any) => m.author_id))
 }
 async function loadGrants() {
   const { data } = await (supabase as any).from('space_grants').select('*').order('created_at', { ascending: false })
   grants.value = data || []
-  await namesFor(grants.value.map((g: any) => (g as any).user_id))
+  await namesFor(grants.value.map((g: any) => g.user_id))
 }
 /* a name for every id on screen, asked once each — profiles are self-select, so this is the door */
 async function namesFor(ids: any) {
@@ -181,7 +181,7 @@ const sameRule = (a: any, b: any) => JSON.stringify(a || {}) === JSON.stringify(
    staff — so this is a list of the same worded rules it always offered, and any one of them is
    enough. One row writes a mapping, exactly what every space had before this existed. */
 const fillRows = computed(() => {
-  const f: any = space.value && space.value.fill
+  const f = space.value && space.value.fill
   const sets = Array.isArray(f) ? f : f && Object.keys(f).length ? [f] : []
   return sets.length ? sets : [{}]
 })
@@ -299,7 +299,7 @@ function hears(c: any, e: any, on: any) { c.data.hears = on ? [...new Set([...(c
 async function saveAll() {
   await run(async () => {
     await pipe.save('spaces', doc.value.name, { data: space.value, content: doc.value.content })
-    for (const c of rooms.value) await pipe.save('spaces', (c as any).name, { data: (c as any).data, content: (c as any).content })
+    for (const c of rooms.value) await pipe.save('spaces', c.name, { data: c.data, content: c.content })
     await loadAll()
   }, W.value.saved)
 }
@@ -334,7 +334,7 @@ async function makeSpace() {
 async function dropSpace() {
   if (!window.confirm((W.value['space-drop-sure'] || '').replace('{name}', space.value.name))) return
   await run(async () => {
-    for (const c of rooms.value) await pipe.remove('spaces', (c as any).name)
+    for (const c of rooms.value) await pipe.remove('spaces', c.name)
     await pipe.remove('spaces', doc.value.name)
     slug.value = ''
     await loadAll()
@@ -373,17 +373,17 @@ watch(finding, (q) => {
   if (q.trim().length < 2) { found.value = []; return }
   findTimer = setTimeout(async () => {
     const { data } = await (supabase as any).rpc('space_find_people', { q: q.trim(), lim: 12 })
-    const have = new Set(members.value.map((m: any) => (m as any).user_id))
+    const have = new Set(members.value.map((m: any) => m.user_id))
     found.value = (data || []).filter((p: any) => !have.has(p.id))
   }, 250)
 })
 async function addMember(p: any) {
   await run(async () => {
-    const { error } = await (supabase as any).from('space_members').insert({ space_id: (row as any).value.id, user_id: p.id, source: 'invite' })
+    const { error } = await (supabase as any).from('space_members').insert({ space_id: row.value.id, user_id: p.id, source: 'invite' })
     if (error) throw error
     /* an open channel of the space is theirs to be in from the start */
-    const open = dbChannels.value.filter((c: any) => (c as any).space_id === (row as any).value.id && (c as any).kind !== 'dm' && (c as any).visibility === 'open')
-    if (open.length) await (supabase as any).from('channel_members').insert(open.map((c: any) => ({ channel_id: (c as any).id, user_id: p.id })))
+    const open = dbChannels.value.filter((c: any) => c.space_id === row.value.id && c.kind !== 'dm' && c.visibility === 'open')
+    if (open.length) await (supabase as any).from('channel_members').insert(open.map((c: any) => ({ channel_id: c.id, user_id: p.id })))
     finding.value = ''
     found.value = []
     await loadMembers()
@@ -392,7 +392,7 @@ async function addMember(p: any) {
 /* A role is given or taken away one at a time, because a person holds several. The names are the
    space's own — there is no list of them in this file — and 'member' is what being in the space
    means, so it is given with the membership and never taken off. */
-const givable = computed(() => dbRoles.value.filter((r: any) => (r as any).slug !== 'member'))
+const givable = computed(() => dbRoles.value.filter((r: any) => r.slug !== 'member'))
 const holds = (m: any, role: any) => (held.value[m.user_id] || []).includes(role.id)
 async function toggleRole(m: any, role: any) {
   if (role.slug === 'member') return
@@ -408,7 +408,7 @@ async function toggleRole(m: any, role: any) {
 }
 async function removeMember(m: any) {
   await run(async () => {
-    const ids = dbChannels.value.filter((c: any) => (c as any).space_id === m.space_id).map((c: any) => (c as any).id)
+    const ids = dbChannels.value.filter((c: any) => c.space_id === m.space_id).map((c: any) => c.id)
     if (ids.length) await (supabase as any).from('channel_members').delete().eq('user_id', m.user_id).in('channel_id', ids)
     const { error } = await (supabase as any).from('space_members').delete().eq('space_id', m.space_id).eq('user_id', m.user_id)
     if (error) throw error
@@ -427,7 +427,7 @@ async function withdraw(m: any) {
   }, W.value.withdrawn)
 }
 // @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
-const roomName = (id: any) => (dbChannels.value.find((c) => (c as any).id === id) || {}).name || ''
+const roomName = (id) => (dbChannels.value.find((c) => c.id === id) || {}).name || ''
 
 /* ------------------------------------------------------------------ voice */
 
@@ -435,8 +435,8 @@ const roomName = (id: any) => (dbChannels.value.find((c) => (c as any).id === id
    read-only, with the file that gives it. What is left is the one-off: a capability given to ONE
    PERSON, which names somebody and is therefore an act — written through space_grant_person, which
    marks it 'hand' so the projection never touches it. */
-const declaredGrants = computed(() => grants.value.filter((g: any) => (g as any).source === 'file'))
-const handGrants = computed(() => grants.value.filter((g: any) => (g as any).source !== 'file'))
+const declaredGrants = computed(() => grants.value.filter((g: any) => g.source === 'file'))
+const handGrants = computed(() => grants.value.filter((g: any) => g.source !== 'file'))
 const newGrant = ref({ capability: 'voice', user_id: '', space_id: '', channel_id: '', days: '', note: '' })
 const grantFinding = ref('')
 const grantFound = ref<any>([])
@@ -450,7 +450,7 @@ watch(grantFinding, (q) => {
   }, 250)
 })
 async function addGrant() {
-  const g: any = newGrant.value
+  const g = newGrant.value
   await run(async () => {
     const { error } = await (supabase as any).rpc('space_grant_person', {
       p_user: g.user_id, p_capability: g.capability,
@@ -473,12 +473,12 @@ function grantSays(g: any) {
   const cap = w['cap-' + g.capability] || g.capability
   const where = g.channel_id ? (w['says-channel'] || '').replace('{name}', roomName(g.channel_id) || '—')
     // @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
-    : g.space_id ? (w['says-space'] || '').replace('{name}', (rows.value.find((s) => (s as any).id === g.space_id) || {}).name || '—')
+    : g.space_id ? (w['says-space'] || '').replace('{name}', (rows.value.find((s) => s.id === g.space_id) || {}).name || '—')
       : w['says-site']
   const who = g.scope === 'user' ? (w['says-user'] || '').replace('{name}', nameOf(g.user_id))
     : g.scope === 'tier' ? (w['says-tier'] || '').replace('{tier}', g.tier)
       // @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
-      : g.scope === 'role' ? (w['says-role'] || '').replace('{name}', (dbRoles.value.find((r) => (r as any).id === g.role_id) || {}).name || '—')
+      : g.scope === 'role' ? (w['says-role'] || '').replace('{name}', (dbRoles.value.find((r) => r.id === g.role_id) || {}).name || '—')
         : g.scope === 'product' ? (g.days
           ? (w['says-product-days'] || '').replace('{name}', (offers.value.find((o: any) => o.key === g.product_key) || {}).title || g.product_key).replace('{n}', g.days)
           : (w['says-product'] || '').replace('{name}', (offers.value.find((o: any) => o.key === g.product_key) || {}).title || g.product_key))

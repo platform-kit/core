@@ -41,7 +41,7 @@ function enumValues(base: { options: any; def: any[]; }) {
   const e = base.def && base.def.entries
   return e ? Object.values(e) : []
 }
-const titleCase = (s: string) => s.replace(/(^|_)(\w)/g, (_: any, a: any, c: string) => (a ? ' ' : '') + c.toUpperCase())
+const titleCase = (s: string) => s.replace(/(^|_)(\w)/g, (_, a, c: string) => (a ? ' ' : '') + c.toUpperCase())
 
 export function describeSchema(schema: ZodObject<{ [x: string]: any; },$strip>) {
   const shape = schema.shape
@@ -50,8 +50,8 @@ export function describeSchema(schema: ZodObject<{ [x: string]: any; },$strip>) 
     const type = baseType(base)
     /* a z.enum drives a single-choice dropdown, an array of z.enum a fixed multi-
        select: the enum values become the options either way */
-    const choices = meta.choices ? meta.choices : type === 'enum' ? enumValues(base).map((v: any) => ({ value: v, label: titleCase(v) }))
-      : type === 'multienum' ? enumValues(base.def.element).map((v: any) => ({ value: v, label: titleCase(v) }))
+    const choices = meta.choices ? meta.choices : type === 'enum' ? enumValues(base).map((v) => ({ value: v, label: titleCase(v) }))
+      : type === 'multienum' ? enumValues(base.def.element).map((v) => ({ value: v, label: titleCase(v) }))
       : null
     return {
       name, type, required,

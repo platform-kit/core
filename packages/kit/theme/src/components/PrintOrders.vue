@@ -21,7 +21,7 @@ const ST = T.page.status
 const R = T.page.row
 /* a status's word: the keys are hyphenated, the column's values underscored */
 const statusWord = (st: any) => ST[String(st || '').replace(/_/g, '-')] || st
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const state = ref('idle')      /* idle | loading | ok | denied | error */
 const rows = ref<any>([])
@@ -42,8 +42,8 @@ async function load() {
 function listen() {
   if (channel || !supabase) return
   channel = supabase.channel('fulfilments').on('postgres_changes', { event: '*', schema: 'public', table: 'fulfilments' }, (p) => {
-    if (p.eventType === 'DELETE') { rows.value = rows.value.filter((r: any) => (r as any).id !== p.old.id); return }
-    const i = rows.value.findIndex((r: any) => (r as any).id === p.new.id)
+    if (p.eventType === 'DELETE') { rows.value = rows.value.filter((r: { id: any }) => r.id !== p.old.id); return }
+    const i = rows.value.findIndex((r: { id: any }) => r.id === p.new.id)
     if (i >= 0) rows.value.splice(i, 1, p.new); else rows.value.unshift(p.new)
   }).subscribe()
 }
@@ -52,23 +52,23 @@ onIdentity(load)
 onBeforeUnmount(() => { if (channel) (supabase as any).removeChannel(channel); channel = null })
 
 const OPEN = ['new', 'submitted', 'in_production'], TROUBLE = ['failed', 'rejected']
-const shown = computed(() => rows.value.filter((r: any) => filter.value === 'all' || (filter.value === 'open' ? OPEN.includes((r as any).status) : filter.value === 'shipped' ? (r as any).status === 'shipped' : TROUBLE.includes((r as any).status))))
-const counts = computed(() => ({ all: rows.value.length, open: rows.value.filter((r: any) => OPEN.includes((r as any).status)).length, shipped: rows.value.filter((r: any) => (r as any).status === 'shipped').length, trouble: rows.value.filter((r: any) => TROUBLE.includes((r as any).status)).length }))
+const shown = computed(() => rows.value.filter((r: { status: string }) => filter.value === 'all' || (filter.value === 'open' ? OPEN.includes(r.status) : filter.value === 'shipped' ? r.status === 'shipped' : TROUBLE.includes(r.status))))
+const counts = computed(() => ({ all: rows.value.length, open: rows.value.filter((r: { status: string }) => OPEN.includes(r.status)).length, shipped: rows.value.filter((r: { status: string }) => r.status === 'shipped').length, trouble: rows.value.filter((r: { status: string }) => TROUBLE.includes(r.status)).length }))
 
-const bookTitle = (slug: any) => { const b = BOOKS.find((x: any) => x.slug === slug); return b ? b.title : slug }
+const bookTitle = (slug: any) => { const b = BOOKS.find((x: { slug: any }) => x.slug === slug); return b ? b.title : slug }
 // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const when = (d: any) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
-const addressLines = (a: any) => [a.name, a.line1, a.line2, [a.city, a.state, a.postal_code].filter(Boolean).join(' '), a.country].filter((x) => x && String(x).trim())
-const money = (c: any) => (c && typeof c.print === 'number' ? new Intl.NumberFormat(undefined, { style: 'currency', currency: c.currency || 'USD' }).format(c.print + (c.shipping || 0)) : '')
-const canSubmit = (r: any) => r.status === 'new' || r.status === 'failed'
+const when = (d) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+const addressLines = (a: { name: any; line1: any; line2: any; city: any; state: any; postal_code: any; country: any }) => [a.name, a.line1, a.line2, [a.city, a.state, a.postal_code].filter(Boolean).join(' '), a.country].filter((x) => x && String(x).trim())
+const money = (c: { print: any; currency: any; shipping: any }) => (c && typeof c.print === 'number' ? new Intl.NumberFormat(undefined, { style: 'currency', currency: c.currency || 'USD' }).format(c.print + (c.shipping || 0)) : '')
+const canSubmit = (r: { status: string }) => r.status === 'new' || r.status === 'failed'
 
-async function act(r: any, action: any) {
+async function act(r: { id: string|number }, action: string) {
   busy[r.id] = action
   try {
     const { data, error } = await (supabase as any).functions.invoke('print-order', { body: { id: r.id, action } })
     if (error) throw error
     // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-    if (data && data.order) { const i = rows.value.findIndex((x) => (x as any).id === r.id); if (i >= 0) rows.value.splice(i, 1, data.order) }
+    if (data && data.order) { const i = rows.value.findIndex((x) => x.id === r.id); if (i >= 0) rows.value.splice(i, 1, data.order) }
     said[r.id] = action === 'submit' && data && data.ok ? R.sent : ''
   } catch (e) { said[r.id] = (e && (e as any).message) || 'failed' }
   busy[r.id] = ''

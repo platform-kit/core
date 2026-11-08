@@ -52,7 +52,7 @@ const S = T.home.sections
 const PR = T.home.promise
 const preview = inject<any>('dl-preview', null)
 
-const p = computed(() => (preview ? ((preview as any).value ? resolveProduct((preview as any).value) : null) : product(props.id)))
+const p = computed(() => (preview ? (preview.value ? resolveProduct(preview.value) : null) : product(props.id)))
 const col = computed(() => (p.value ? collectionOf(p.value) : null))
 const others = computed(() => (p.value && !preview ? related(p.value, 6) : []))
 const isMember = computed(() => userClass.value === 'subscribed')
@@ -94,7 +94,7 @@ watch(offer, (o) => {
 }, { immediate: true })
 const shipsNow = computed(() => (formats.value.length ? PRINTED.includes(fmt.value) : ships(p.value)))
 const chosen = computed(() => (pr.value ? { contents: cnt.value, cloth: fmt.value === 'hardcover' ? cloth.value : '', foil: fmt.value === 'hardcover' ? foil.value : '' } : null))
-const pagesOf = computed(() => { const e: any = edition.value && edition.value.editions && edition.value.editions[cnt.value]; return e && e.pages ? e.pages : 0 })
+const pagesOf = computed(() => { const e = edition.value && edition.value.editions && edition.value.editions[cnt.value]; return e && e.pages ? e.pages : 0 })
 const editionLine = computed(() => {
   if (!pr.value || !isPrint.value) return ''
   const c: any = chosen.value
@@ -213,7 +213,7 @@ function previewHtml(markdown: any) {
   let html = String(previewRenderer.parse(source))
   for (const { token, text } of marks) {
     // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ '&': string; '<': string; '>': string; 
-    const safeText = text.replace(/[&<>"']/g, (character: any) => ({
+    const safeText = text.replace(/[&<>"']/g, (character) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     })[character])
     html = html.replace(token, `<mark class="print-preview-mark">${safeText}</mark>`)
@@ -296,7 +296,7 @@ const slides = computed(() => {
   if (sh) {
     const cap = (k: any) => fill(HC['shot-' + k] || '', { chapter: sh.chapter || '' })
     // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ full: any; summary: any; parts: any; bo
-    const previewThumb = (contents: any) => ({
+    const previewThumb = (contents) => ({
       full: HC['shot-thumb-full'],
       summary: HC['shot-thumb-summary'],
       parts: HC['shot-thumb-parts'],
@@ -317,7 +317,7 @@ const zoom = ref<any>(null)
 function onKey(e: any) { if (e.key === 'Escape') zoom.value = null }
 watch(zoom, (v) => { if (v) window.addEventListener('keydown', onKey); else window.removeEventListener('keydown', onKey) })
 const rail = ref<any>(null)
-function show(i: any) { at.value = i; const el: any = rail.value; if (el && el.children[i]) el.children[i].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' }) }
+function show(i: any) { at.value = i; const el = rail.value; if (el && el.children[i]) el.children[i].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' }) }
 function onRailScroll() { const el = rail.value; if (!el) return; const w = el.clientWidth || 1; at.value = Math.round(el.scrollLeft / w) }
 function slideLabel(sl: any, i: any) {
   if (sl.book) return HC['mock-thumb'] || String(i + 1)
@@ -330,7 +330,7 @@ function startGallerySwipe(e: any) {
   gallerySwipe = { id: e.pointerId, x: e.clientX, y: e.clientY, left: rail.value.scrollLeft, slide: at.value, horizontal: false }
 }
 function moveGallerySwipe(e: any) {
-  const swipe: any = gallerySwipe, el = rail.value
+  const swipe = gallerySwipe, el = rail.value
   if (!swipe || !el || e.pointerId !== swipe.id) return
   const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y
   if (!swipe.horizontal) {
@@ -342,7 +342,7 @@ function moveGallerySwipe(e: any) {
   el.scrollLeft = swipe.left - dx
 }
 function endGallerySwipe(e: any) {
-  const swipe: any = gallerySwipe, el = rail.value
+  const swipe = gallerySwipe, el = rail.value
   if (!swipe || !el || e.pointerId !== swipe.id) return
   gallerySwipe = null
   if (!swipe.horizontal) return

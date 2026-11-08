@@ -53,14 +53,14 @@ const matrix = computed(() => variantsOf(props.offer, options.value, { sold: { n
  * ever; one that has run out says so and may come back. One boolean would make the page say
  * "no longer made" about a jumper on a lorry.
  */
-const holds = (v: any, optName: any, value: any) => v.chosen.every((c: any) => (c.option === optName ? c.value === value : (!props.modelValue[c.option] || props.modelValue[c.option] === c.value)))
+const holds = (v: { gone?: any; variant?: any; chosen: any; sku?: any; lookup?: any; label?: string; sold?: boolean }, optName: any, value: any) => v.chosen.every((c: { option: string|number; value: any }) => (c.option === optName ? c.value === value : (!props.modelValue[c.option] || props.modelValue[c.option] === c.value)))
 function made(optName: any, value: any) { return matrix.value.some((v) => v.sold && holds(v, optName, value)) }
 function had(optName: any, value: any) { return matrix.value.some((v) => v.sold && holds(v, optName, value) && buyable(props.offer, v.variant, props.stock)) }
 /* pressable: it is made AND there is one. The two are separate only in what is SAID. */
 function reachable(optName: any, value: any) { return made(optName, value) && had(optName, value) }
 
-function pick(optName: any, value: any) {
-  const next: any = { ...props.modelValue, [optName]: value }
+function pick(optName: string, value: any) {
+  const next = { ...props.modelValue, [optName]: value }
   /* a choice may strand a later one — picking small where white is only large. Rather than
      leaving a dead selection, the stranded ones are dropped and the buyer re-picks, which is
      honest; silently changing their colour would not be. */

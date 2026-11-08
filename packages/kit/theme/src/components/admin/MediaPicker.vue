@@ -39,12 +39,12 @@ async function askSources() {
 
 /* a source's own name is a word of the scope, under its key — so a new source needs one line of
    markdown and no change here */
-const nameOf = (key: any) => S.value[key] || key
-const shown = computed(() => (pickState.value && (pickState.value as any).pictures ? (sources.value || []) : []))
+const nameOf = (key: string|number) => S.value[key] || key
+const shown = computed(() => (pickState.value && pickState.value.pictures ? (sources.value || []) : []))
 
-function onKey(e: any) { if (e.key === 'Escape') answerPick(null) }
+function onKey(e: { key: string }) { if (e.key === 'Escape') answerPick(null) }
 watch(pickState, (s) => {
-  if (s) { document.addEventListener('keydown', onKey); tab.value = 'library'; if ((s as any).pictures) askSources() }
+  if (s) { document.addEventListener('keydown', onKey); tab.value = 'library'; if (s.pictures) askSources() }
   else document.removeEventListener('keydown', onKey)
 })
 </script>

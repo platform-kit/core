@@ -46,7 +46,7 @@ export function gitStore(root = process.cwd()) {
     async dirs(dir: string) { try { return fsSync.readdirSync(abs(dir), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort() } catch { return [] } },
     async getAsset(rel: string) { try { return new Uint8Array(await fs.readFile(abs(rel))) } catch (e: any) { if (e.code === 'ENOENT') return null; throw e } },
     async putAsset(rel: string, bytes: string|NodeJS.ArrayBufferView<ArrayBufferLike>|Iterable<string|NodeJS.ArrayBufferView<ArrayBufferLike>>|AsyncIterable<string|NodeJS.ArrayBufferView<ArrayBufferLike>>) { const f = abs(rel); await fs.mkdir(path.dirname(f), { recursive: true }); await fs.writeFile(f, bytes) },
-    async removeAsset(rel: any) { return this.remove(rel) },
+    async removeAsset(rel: string) { return this.remove(rel) },
     /* an asset's address on the site: a file under public/ is served at its path; one under content/uploads at /uploads */
     assetUrl(rel: string) { const p = String(rel).replace(/\\/g, '/'); return p.startsWith('public/') ? '/' + p.slice(7) : p.startsWith('content/uploads/') ? '/uploads/' + p.slice(16) : '/' + p },
     /* the library's browse: the two roots on disk */
@@ -76,6 +76,6 @@ export function gitStore(root = process.cwd()) {
       },
     },
   }
-  const guard = (rel: any) => { const p = insideRoots(rel); if (!p) throw refuse('not a path the library reaches'); return p }
+  const guard = (rel: string) => { const p = insideRoots(rel); if (!p) throw refuse('not a path the library reaches'); return p }
   return store
 }

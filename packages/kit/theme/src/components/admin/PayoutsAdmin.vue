@@ -86,7 +86,7 @@ const blank = () => ({ trigger: 'booking', booking_type: TYPES.value[0] || '', a
 watch(() => draft.value && draft.value.amount_kind, (k, was) => { if (draft.value && k && was && k !== was) draft.value.amount = k === 'share' ? 10 : 50 })
 function addRule() { draft.value = blank(); editing.value = true }
 const asRule = computed(() => {
-  const d: any = draft.value
+  const d = draft.value
   if (!d) return null
   return { ...d, booking_type: d.trigger === 'booking' ? d.booking_type : null, amount: Math.round(Number(d.amount) * 100) }
 })

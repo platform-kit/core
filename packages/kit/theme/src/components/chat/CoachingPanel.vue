@@ -66,18 +66,18 @@ const gate = computed(() => {
   return null
 })
 defineExpose({ gate, ready })
-const active = computed<any>(() => inbox.value.find((c: any) => (c as any).id === activeId.value) || null)
+const active = computed(() => inbox.value.find((c: { id: string|null }) => c.id === activeId.value) || null)
 
 const narrow = ref(typeof window !== 'undefined' && window.matchMedia('(max-width: 819px)').matches)
 let mq = null
 
 const names = computed(() => {
   const by: any = {}
-  for (const p of people.value) by[(p as any).id] = (p as any).name
-  for (const c of inbox.value) if ((c as any).peer) by[(c as any).peer.id] = (c as any).peer.name
+  for (const p of people.value) by[p.id] = p.name
+  for (const c of inbox.value) if (c.peer) by[c.peer.id] = c.peer.name
   return by
 })
-const nameOf = (id: any) => (id === me.value ? P.you : (names as any).value[id] || '')
+const nameOf = (id: string|number) => (id === me.value ? P.you : names.value[id] || '')
 
 /* whether this person answers as a coach is the capability and nothing else: auth.js has already
    read the profile's roles for this session. */
@@ -89,12 +89,12 @@ async function boot() {
   if (session.value) {
     await Promise.all([roleCheck(), loadInbox(), loadPeople()])
     /* one coach and nothing said yet: straight in */
-    const coaches = people.value.filter((p: any) => ((p as any).roles || []).includes('provider') || ((p as any).roles || []).includes('coach'))
+    const coaches = people.value.filter((p: { roles: any }) => (p.roles || []).includes('provider') || (p.roles || []).includes('coach'))
     if (!coach.value && allowed.value && !inbox.value.length && coaches.length === 1 && !activeId.value) {
-      const id = await open((coaches[0] as any).id).catch(() => null)
+      const id = await open(coaches[0].id).catch(() => null)
       if (id) go(id, true)
     } else if (!activeId.value && !narrow.value && inbox.value.length === 1) {
-      go((inbox.value[0] as any).id, true)
+      go(inbox.value[0].id, true)
     }
   }
   ready.value = true
@@ -102,7 +102,7 @@ async function boot() {
 }
 
 /* the one place the two hosts differ */
-function go(id: any, quietly = false) {
+function go(id: string, quietly = false) {
   if (!props.home) { held.value = id; return }
   ;(quietly ? replace : navigate)(props.home + '/' + id)
 }
@@ -120,7 +120,7 @@ watch(unread, () => { if (ready.value && session.value) loadInbox() })
 
 /* the picker: a coach choosing whom to write to */
 const picking = ref(false)
-function picked(m: any) { picking.value = false; if (m.conversation_id) go(m.conversation_id); else start(m.id) }
+function picked(m: { conversation_id: any; id: any }) { picking.value = false; if (m.conversation_id) go(m.conversation_id); else start(m.id) }
 async function start(peerId: any) {
   const id = await open(peerId).catch(() => null)
   if (id) go(id)

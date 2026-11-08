@@ -390,7 +390,7 @@ const walk2 = (d, exts) => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes:
        the loop is doing its work (the row edited → the change proposed → the spec's table changes at archive) */
     const changes = path.join(ROOT, 'openspec', 'changes')
     const proposed = fs.existsSync(changes) ? fs.readdirSync(changes).filter((c) => c !== 'archive' && fs.existsSync(path.join(changes, c, 'specs', 'kit-principles', 'spec.md'))).map((c) => ({ change: c, text: norm(fs.readFileSync(path.join(changes, c, 'specs', 'kit-principles', 'spec.md'), 'utf8')) })) : []
-    const proposedIn = (name: any) => { const p = proposed.find((x) => x.change !== 'platformkit' && x.text.includes(norm(name))); return p && p.change }
+    const proposedIn = (name: string) => { const p = proposed.find((x) => x.change !== 'platformkit' && x.text.includes(norm(name))); return p && p.change }
     for (const p of pages.filter((x) => /COMPETITORS\.md$|what-platformkit-is\.md$/.test(x.file))) {
       const rows = table(p.text)
       const seen = new Set()

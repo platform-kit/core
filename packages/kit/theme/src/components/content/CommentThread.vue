@@ -88,7 +88,7 @@ onMounted(load)
 watch(() => [props.kind, props.subject].join('/'), load)
 watch(session, load)
 
-const live = computed(() => rows.value.filter((r: any) => !(r as any).deleted_at && (r as any).state !== 'waiting'))
+const live = computed(() => rows.value.filter((r: { deleted_at: any; state: string }) => !r.deleted_at && r.state !== 'waiting'))
 const count = computed(() => (live.value.length === 1 ? W.value.one : String(W.value.many || '').replace('{n}', live.value.length)))
 /* the lines to draw, in the reader's order, at this surface's shape */
 const drawn = computed(() => shape(sortComments(rows.value, orders.value.includes(order.value) ? order.value : 'oldest'), {
@@ -107,17 +107,17 @@ const EMOJI = ['👍', '❤️', '🙏', '😂', '🤔']
 function signIn() { if (typeof window !== 'undefined' && (window as any).DLauth) (window as any).DLauth.open({ intent: 'comment' }) }
 
 // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const when = (v: any) => { const d = new Date(v); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const when = (v) => { const d = new Date(v); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
+const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'.
-const unfold = (id: any) => { opened.value = opened.value.includes(id) ? opened.value.filter((x) => x !== id) : [...opened.value, id] }
+const unfold = (id) => { opened.value = opened.value.includes(id) ? opened.value.filter((x) => x !== id) : [...opened.value, id] }
 
 async function post() {
   const body = draft.value.trim()
   if (!body || busy.value) return
   busy.value = true; failed.value = false
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'null | undefined'.
-  const r: any = await say(props.kind, props.subject, body, answering.value, props.title || null, props.href || null)
+  const r = await say(props.kind, props.subject, body, answering.value, props.title || null, props.href || null)
   if (r && r.error) failed.value = true
   else { draft.value = ''; answering.value = null; await load() }
   busy.value = false
@@ -132,22 +132,22 @@ async function withdraw(id: any) {
 
 /* A PRESS SHOWS AT ONCE and is exchanged for what the database says on the next read: a tally that
    waits for a round trip is a tally people press twice. */
-async function pressEmoji(row: any, emoji: any) {
+async function pressEmoji(row: { mine_re: any; id: any }, emoji: string|number) {
   const mine = ((row.mine_re || []).includes(emoji))
-  const held = rows.value.find((r: any) => (r as any).id === row.id)
+  const held = rows.value.find((r: { id: any }) => r.id === row.id)
   if (held) {
-    const re = { ...((held as any).re || {}) }
+    const re = { ...(held.re || {}) }
     re[emoji] = Math.max(0, (Number(re[emoji]) || 0) + (mine ? -1 : 1))
     if (!re[emoji]) delete re[emoji]
-    ;(held as any).re = re
-    ;(held as any).mine_re = mine ? ((held as any).mine_re || []).filter((e: any) => e !== emoji) : [...((held as any).mine_re || []), emoji]
+    held.re = re
+    held.mine_re = mine ? (held.mine_re || []).filter((e: any) => e !== emoji) : [...(held.mine_re || []), emoji]
   }
   const r = await react(row.id, emoji, !mine)
   if (r && r.error) await load()
 }
-async function pressVote(row: any, dir: any) {
+async function pressVote(row: { my_vote: number; id: any }, dir: number) {
   const next = voteAfter(row.my_vote, dir)
-  const held = rows.value.find((r: any) => (r as any).id === row.id)
+  const held = rows.value.find((r: { id: any }) => r.id === row.id)
   if (held) Object.assign(held, voteTally(held, next))
   const r = await vote(row.id, next)
   if (r && r.error) await load()

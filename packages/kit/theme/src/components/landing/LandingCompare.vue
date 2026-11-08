@@ -20,7 +20,7 @@ defineProps({
 })
 const W = (us('sections').compare || {}).cell || {}
 const YES = /^(yes|true|✓|✔|included)$/i, NO = /^(no|false|—|-|×|✗|not included)$/i
-const kind = (c: any) => (c == null || c === '' ? 'blank' : YES.test(String(c).trim()) ? 'yes' : NO.test(String(c).trim()) ? 'no' : 'text')
+const kind = (c: string|null) => (c == null || c === '' ? 'blank' : YES.test(String(c).trim()) ? 'yes' : NO.test(String(c).trim()) ? 'no' : 'text')
 </script>
 
 <template>

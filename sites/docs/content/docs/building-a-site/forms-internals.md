@@ -20,7 +20,7 @@ sources:
     packages/kit/theme/src/pages/FormPage.vue,
     packages/kit/build/embed-content.mts,
   ]
-reviewed: 2026-11-07
+reviewed: 2026-11-08
 ---
 
 The forms module is forms.md's language on the kit's own runner, with the backend forms.md lacks. This page is how it is put together; [Forms](/docs/running-a-site/marketing/forms) is what it does.

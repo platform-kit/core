@@ -11,7 +11,7 @@ sources:
     packages/kit/theme/src/components/Orders.vue,
     packages/kit/theme/src/components/Bookings.vue,
   ]
-reviewed: 2026-11-07
+reviewed: 2026-11-08
 ---
 
 ## Two admins, one address

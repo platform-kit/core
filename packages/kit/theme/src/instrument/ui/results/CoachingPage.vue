@@ -125,14 +125,14 @@ const asCoach = (b: any) => !!user.value && (b.provider_id === user.value.id || 
 const attending = computed(() => rows.value.filter((b: any) => !asCoach(b)));
 const live = (b: any) => (b.status === "accepted" || b.status === "pending") && b.end_at && new Date(b.end_at).getTime() > now();
 // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-const upcoming = computed(() => rows.value.filter(live).sort((a, b) => new Date((a as any).start_at) - new Date((b as any).start_at)));
+const upcoming = computed(() => rows.value.filter(live).sort((a, b) => new Date(a.start_at) - new Date(b.start_at)));
 /* HOW MANY SESSIONS THE RUN HOLDS, for the row that says "One of 6". Counted from the rows in hand
    rather than asked for: they are all the reader's own, so they are all here already. */
 const runOf = computed(() => {
   const n: any = {}
-  for (const b of rows.value) if ((b as any).run_of) n[(b as any).run_of] = (n[(b as any).run_of] || 0) + 1
+  for (const b of rows.value) if (b.run_of) n[b.run_of] = (n[b.run_of] || 0) + 1
   const out: any = {}
-  for (const b of rows.value) if ((b as any).run_of && n[(b as any).run_of] > 1) out[(b as any).uid] = n[(b as any).run_of]
+  for (const b of rows.value) if (b.run_of && n[b.run_of] > 1) out[b.uid] = n[b.run_of]
   return out
 })
 /* WHO ELSE IS COMING to each group booking the reader holds a seat of, where its type says to show
@@ -142,14 +142,14 @@ const company = ref<any>({})
 watch([upcoming, options], async ([rows, opts]) => {
   const out = {}
   for (const b of rows || []) {
-    const type = (opts || []).find((o) => o.event === (b as any).event)
+    const type = (opts || []).find((o) => o.event === b.event)
     if (!type || (type.page || {}).attendees !== true || !(type.seats > 0)) continue
-    const names = await companyOf((b as any).uid).catch(() => [])
-    if (names.length) (out as any)[(b as any).uid] = names
+    const names = await companyOf(b.uid).catch(() => [])
+    if (names.length) (out as any)[b.uid] = names
   }
   company.value = out
 }, { immediate: true })
-const past = computed(() => rows.value.filter((b: any) => !live(b) && (b as any).status !== "rescheduled"));
+const past = computed(() => rows.value.filter((b: any) => !live(b) && b.status !== "rescheduled"));
 /* what a row says after its title: who it is with (for the coach), and its state */
 const note = (b: any) => [asCoach(b) && b.name ? C.with + " " + b.name : "", placeLine(b), madeBy(b), b.status === "pending" ? C.pending : b.status === "cancelled" ? C.cancelled : b.status === "rejected" ? C.rejected : "", b.no_show ? C["no-show"] : ""].filter(Boolean);
 const tab = ref('book')

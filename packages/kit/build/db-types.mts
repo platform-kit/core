@@ -73,7 +73,7 @@ export function nullableArgs(source: string): string {   /* and FILLED_ON_INSERT
   const ts = createRequire(import.meta.url)('typescript')
   const sf = ts.createSourceFile('database.types.ts', source, ts.ScriptTarget.Latest, true)
   const edits: Array<{ at: number, end: number, text: string }> = []
-  const visit = (n: any) => {
+  const visit = (n: { name: { getText: (arg0: any) => string }; type: { members: any }; parent: { parent: { name: { getText: (arg0: any) => any } } } }) => {
     if (ts.isPropertySignature(n) && n.name.getText(sf) === 'Args' && n.type && ts.isTypeLiteralNode(n.type)) {
       for (const m of n.type.members) if (ts.isPropertySignature(m) && m.type && !/\|\s*null$/.test(m.type.getText(sf))) {
         edits.push({ at: m.type.getStart(sf), end: m.type.getEnd(), text: `${m.type.getText(sf)} | null` })

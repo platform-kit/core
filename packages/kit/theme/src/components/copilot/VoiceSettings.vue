@@ -43,7 +43,7 @@ const card = ref<any>(null)
 
 /* the browser's own name for a language, in the reader's language. A browser too old for it
    falls back to the code, which is still an answer a person can act on. */
-const named = (code: any) => {
+const named = (code: string) => {
   try { return new Intl.DisplayNames(undefined, { type: 'language' }).of(code) || code } catch { return code }
 }
 const langs = computed(() => LANGS.map((c) => ({ c, name: named(c) })).sort((a, b) => a.name.localeCompare(b.name)))
@@ -57,8 +57,8 @@ const visual = computed(() => props.prefs.visual || props.visualNow)
 const set = (patch: any) => emit('change', { ...props.prefs, ...patch })
 
 /* a dialogue traps the keyboard or it is not one */
-watch(card, (el) => el && (el as any).focus())
-const keys = (e: any) => { if (e.key === 'Escape') emit('close') }
+watch(card, (el) => el && el.focus())
+const keys = (e: { key: string }) => { if (e.key === 'Escape') emit('close') }
 </script>
 
 <template>

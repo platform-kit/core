@@ -36,8 +36,8 @@ const shapes = computed(() => {
   const made = variantsOf({ sku: props.form.sku || '', key: props.form.key || '' }, opts, { sold: { not: props.form.unsold || [] } })
   return made.filter((v) => v.sold)
 })
-const countOf: any = (variant: any) => (rows.value || []).find((r: any) => (r as any).variant === (variant || '')) || null
-const availableOf = (variant: any) => { const r = countOf(variant); return r ? Math.max(0, (r as any).stocked - (r as any).reserved) : null }
+const countOf = (variant: any) => (rows.value || []).find((r: any) => r.variant === (variant || '')) || null
+const availableOf = (variant: any) => { const r = countOf(variant); return r ? Math.max(0, r.stocked - r.reserved) : null }
 
 async function load() {
   if (!configured || !props.form.sku) { rows.value = []; return }

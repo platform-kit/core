@@ -19,9 +19,9 @@ import SiteMark from '../components/SiteMark.vue'
 
 const props = defineProps({ path: { type: String, required: true } })
 const slug = computed(() => props.path.slice(ROUTES.book.length + 1).split('/')[0])
-const type = computed(() => (SESSIONS || []).find((s: any) => s.slug === slug.value && s.published !== false) || null)
+const type = computed(() => (SESSIONS || []).find((s: { slug: string; published: boolean }) => s.slug === slug.value && s.published !== false) || null)
 const W = (us('library').coaching || {})['book-page'] || {}
-const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: { [x: string]: string; session?: any }) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 setHead({ title: type.value ? fill(W.title, { session: type.value.title }) : (W.none || ''), description: type.value ? (type.value.line || '') : '', path: props.path, noindex: true })
 
@@ -48,8 +48,8 @@ onMounted(() => {
 })
 watch(options, (o) => { if (cal && o.length) setTimeout(() => cal.linkReady(), 0) }, { immediate: true })
 onBeforeUnmount(() => { if (ro) ro.disconnect() })
-function onBooked(b: any) { if (cal && b) cal.booked({ ...b, eventTypeId: type.value ? eventTypeId(type.value.slug) : null }) }
-function onMoved(b: any) { if (cal && b) cal.moved({ ...b, eventTypeId: type.value ? eventTypeId(type.value.slug) : null }) }
+function onBooked(b: { uid: any; title: any; start: any; end: any; eventTypeId: any; status: any; join_url: any }) { if (cal && b) cal.booked({ ...b, eventTypeId: type.value ? eventTypeId(type.value.slug) : null }) }
+function onMoved(b: { uid: any; title: any; start: any; end: any; eventTypeId: any; status: any }) { if (cal && b) cal.moved({ ...b, eventTypeId: type.value ? eventTypeId(type.value.slug) : null }) }
 </script>
 
 <template>

@@ -8,7 +8,7 @@ const props = defineProps({
   note: { type: String, default: '' },
 })
 const hasRange = () => typeof props.low === 'number' && typeof props.high === 'number' && props.high > props.low
-const clamp = (n: any) => Math.max(0, Math.min(100, n))
+const clamp = (n: number) => Math.max(0, Math.min(100, n))
 </script>
 
 <template>

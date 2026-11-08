@@ -12,7 +12,7 @@ sources:
     packages/kit/theme/src/components/AdCard.vue,
     packages/kit/theme/src/components/SiteClose.vue,
   ]
-reviewed: 2026-11-04
+reviewed: 2026-11-08
 ---
 
 ## Ads

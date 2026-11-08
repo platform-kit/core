@@ -36,7 +36,7 @@ export function lcsLen(a: string|any[],b: string|any[]){
   return prev[n]||0;
 }
 /* how much of the prompt actually got said, and how much got added */
-export function promptFit(target: any,said: any){
+export function promptFit(target: string,said: any){
   var A=normWords(target), B=normWords(said);
   if(!A.length) return null;
   if(!B.length) return {kept:0,added:0,words:A.length,spoken:0};

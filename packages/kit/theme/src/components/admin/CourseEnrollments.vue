@@ -10,20 +10,20 @@ import { supabase } from 'platformkit/lib/supabase.js'
 import AdminHead from './AdminHead.vue'
 
 const W = computed(() => ((us('courses').admin || {}).enrollments) || {})
-const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : String(m[k])))
-const day = (iso: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso)) } catch { return '' } }
-const pct = (d: any, t: any) => (t ? Math.round((100 * d) / t) : 0)
+const fill = (t: any, m: { [x: string]: any }) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : String(m[k])))
+const day = (iso: string|number|Date) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso)) } catch { return '' } }
+const pct = (d: number, t: number) => (t ? Math.round((100 * d) / t) : 0)
 
 const courses = ref<any>([]), pick = ref(''), view = ref<any>(null), loading = ref(true), error = ref('')
-const course = computed<any>(() => courses.value.find((c: any) => (c as any).slug === pick.value) || null)
+const course = computed(() => courses.value.find((c: { slug: string }) => c.slug === pick.value) || null)
 /* a course with a form lesson shows each person's scores */
-const quizzed = computed(() => !!(view.value && (view.value.people || []).some((p: any) => (p.quizzes || []).length)))
-const lessonTitle = (key: any) => { const s = view.value && view.value.lessons; return (s && s[key]) || key }
+const quizzed = computed(() => !!(view.value && (view.value.people || []).some((p: { quizzes: any }) => (p.quizzes || []).length)))
+const lessonTitle = (key: string|number) => { const s = view.value && view.value.lessons; return (s && s[key]) || key }
 
 onMounted(async () => {
   const { data } = await (supabase as any).rpc('courses_list')
   courses.value = data || []
-  pick.value = (courses.value[0] && (courses.value[0] as any).slug) || ''
+  pick.value = (courses.value[0] && courses.value[0].slug) || ''
   if (!pick.value) loading.value = false
 })
 watch(pick, async (slug) => {
@@ -31,7 +31,7 @@ watch(pick, async (slug) => {
   loading.value = true; error.value = ''
   const [{ data, error: e }, { data: state }] = await Promise.all([(supabase as any).rpc('admin_course_enrollments', { p_course: slug }), (supabase as any).rpc('course_state', { p_course: slug })])
   if (e || (data && data.error)) { error.value = data && data.error === 'not-allowed' ? W.value.denied : (e && e.message) || ''; view.value = null }
-  else view.value = { ...data, lessons: Object.fromEntries(((state && state.lessons) || []).map((l: any) => [l.key, l.title])) }
+  else view.value = { ...data, lessons: Object.fromEntries(((state && state.lessons) || []).map((l: { key: any; title: any }) => [l.key, l.title])) }
   loading.value = false
 })
 </script>

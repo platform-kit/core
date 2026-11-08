@@ -47,7 +47,7 @@ const recording = computed(() => (isVideo.value ? vrec.value : rec.state.recordi
 const seconds = computed(() => (isVideo.value ? secs.value : rec.state.seconds))
 const left = computed(() => Math.max(0, cap.value - seconds.value))
 
-const clock = (s: any) => {
+const clock = (s: number) => {
   const n = Math.floor(s)
   return String(Math.floor(n / 60)) + ':' + String(n % 60).padStart(2, '0')
 }
@@ -63,7 +63,7 @@ async function startVideo() {
     vstream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: true })
   } catch (e) { vrec.value = false; denied.value = props.words['record-denied'] || 'No camera'; return }
   mr = new MediaRecorder(vstream)
-  mr.ondataavailable = (e: any) => { if (e.data && e.data.size) chunks.push(e.data) }
+  mr.ondataavailable = (e: { data: { size: any } }) => { if (e.data && e.data.size) chunks.push(e.data) }
   mr.start(250)
   vrec.value = true
   secs.value = 0
@@ -77,7 +77,7 @@ function stopVideo() {
     if (!mr) return done(null)
     const type = mr.mimeType || 'video/webm'
     mr.onstop = () => {
-      const blob: any = new Blob(chunks, { type })
+      const blob = new Blob(chunks, { type })
       const ext = /mp4/.test(type) ? 'mp4' : 'webm'
       done(new File([blob], 'answer.' + ext, { type }))
     }
@@ -102,7 +102,7 @@ async function stop() {
   if (isVideo.value) {
     clearInterval(vtick); vtick = null
     file = await stopVideo()
-    try { vstream.getTracks().forEach((t: any) => t.stop()) } catch { /* gone */ }
+    try { vstream.getTracks().forEach((t: { stop: () => any }) => t.stop()) } catch { /* gone */ }
     if (live.value) live.value.srcObject = null
     mr = null; vstream = null; vrec.value = false
   } else {

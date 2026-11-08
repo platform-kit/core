@@ -28,7 +28,7 @@ const A = computed(() => us('comments').admin || {})
 const H = computed(() => A.value.head || {})
 const FL = computed(() => A.value.filters || {})
 const R = computed(() => A.value.row || {})
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const state = ref('idle')      /* idle | loading | ok | denied | error */
 const rows = ref<any>([])
@@ -39,7 +39,7 @@ const draft = ref('')
 /* the narrowings, remembered per browser */
 const PREF = 'dl.comments.admin'
 const read = () => { try { return JSON.parse(localStorage.getItem(PREF) || '{}') } catch (e) { return {} } }
-const f = reactive<any>({ state: 'waiting', kind: 'all', where: 'all', ...read() })
+const f = reactive({ state: 'waiting', kind: 'all', where: 'all', ...read() })
 watch(f, () => { try { localStorage.setItem(PREF, JSON.stringify({ ...f })) } catch (e) { /* private mode */ } })
 
 async function load() {
@@ -62,8 +62,8 @@ watch([isSignedIn, roleKnown], load)
 
 /* the kinds actually in hand, so the narrowing offers what there is rather than a list of every
    kind a site could ever have */
-const kinds = computed(() => [...new Set(rows.value.map((r: any) => (r as any).kind))].sort())
-const waiting = computed(() => rows.value.filter((r: any) => (r as any).state === 'waiting').length)
+const kinds = computed(() => [...new Set(rows.value.map((r: { kind: any }) => r.kind))].sort())
+const waiting = computed(() => rows.value.filter((r: { state: string }) => r.state === 'waiting').length)
 
 async function decide(row: any, yes: any) {
   if (busy.value) return
@@ -78,7 +78,7 @@ async function decide(row: any, yes: any) {
 
 /* AN ANSWER IS A COMMENT LIKE ANYBODY'S — under the moderator's own name, in the open, a reply to
    the line it answers. Never a note that appears to come from the site. */
-async function answer(row: any) {
+async function answer(row: { id: string; kind: any; subject: any }) {
   const body = draft.value.trim()
   if (!body || busy.value) return
   busy.value = row.id
@@ -91,7 +91,7 @@ async function answer(row: any) {
 }
 
 // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const when = (v: any) => { const d = new Date(v); return isNaN(d) ? '' : spanOf(Date.now() - d.getTime()) }
+const when = (v) => { const d = new Date(v); return isNaN(d) ? '' : spanOf(Date.now() - d.getTime()) }
 </script>
 
 <template>

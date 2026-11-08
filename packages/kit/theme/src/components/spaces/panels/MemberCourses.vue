@@ -20,7 +20,7 @@ watch(() => props.user, async (id) => {
   rows.value = data || []
   done.value = true
 }, { immediate: true })
-const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : String(m[k])))
+const fill = (t: any, m: { [x: string]: any }) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : String(m[k])))
 </script>
 
 <template>

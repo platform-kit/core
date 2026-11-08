@@ -3,7 +3,7 @@ import { masteryOf } from 'platformkit/lib/mastery.js'
 import Trophy from '../Trophy.vue'
 import Book3D from '../Book3D.vue'
 import { bookShelf, bookProgress, coverTint, us } from 'platformkit/lib/content.js'
-const books = bookShelf().map((b: any) => ({ ...b, prog: bookProgress(b.slug) }))
+const books = bookShelf().map((b: { slug: string }) => ({ ...b, prog: bookProgress(b.slug) }))
 const S = us('library').shelf.page
 const P = us('library').progress.label
 const TR = us('library').trophy.tier

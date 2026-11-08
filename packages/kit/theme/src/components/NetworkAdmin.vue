@@ -47,8 +47,8 @@ async function load() {
   reports.value = r.data || []
   suspended.value = (s.data || []).filter((x: any) => !lifted.has(x.id) && (!x.until || new Date(x.until).getTime() > now))
   await Promise.all([
-    loadPosts(reports.value.map((x: any) => (x as any).post_id).filter(Boolean)),
-    loadPeople([...reports.value, ...suspended.value].flatMap((x) => [(x as any).actor_id, (x as any).subject_id])),
+    loadPosts(reports.value.map((x: any) => x.post_id).filter(Boolean)),
+    loadPeople([...reports.value, ...suspended.value].flatMap((x) => [x.actor_id, x.subject_id])),
   ])
   state.value = 'ok'
 }

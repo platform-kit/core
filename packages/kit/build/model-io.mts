@@ -28,7 +28,7 @@ export const fieldKeyOk = (s: string) => /^[a-z][a-zA-Z0-9]*(?:[_-][a-zA-Z0-9]+)
 /* the keys an entry carries of its own — the file's name, its flag, its body — which no field may take */
 export const RESERVED = ['slug', 'path', 'published', 'body', 'raw', 'id', 'metadata', 'toc', 'excerpt']
 
-export const modelNames = async (store: any) => asStore(store).list(DIR)
+export const modelNames = async (store: string) => asStore(store).list(DIR)
 export const entryNames = async (store: string, key: string) => asStore(store).list(DIR + '/' + key)
 
 /* ---- reading ---- */

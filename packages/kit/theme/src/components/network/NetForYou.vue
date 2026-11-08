@@ -28,37 +28,37 @@ async function more() {
   busy.value = true
   try {
     const page = await forYou(items.value.length)
-    const have = new Set(items.value.map((x: any) => (x as any).id))
+    const have = new Set(items.value.map((x: { id: any }) => x.id))
     items.value = items.value.concat(page.items.filter((x) => !have.has(x.id)))
     done.value = page.done
   } catch { failed.value = true } finally { busy.value = false }
 }
 
 /* what a tile shows: the first item's picture, or a video's poster */
-const urlsOf = (it: any) => (it.kind === 'space' ? mediaUrls : net.images)
+const urlsOf = (it: { kind: string }) => (it.kind === 'space' ? mediaUrls : net.images)
 function coverOf(it: any) {
   const m = (it.post.media || [])[0] || {}
   const at = urlsOf(it)
   return kindOf(m) === 'video' ? (m.poster ? at[m.poster] : '') : at[m.path] || ''
 }
-const isVideo = (it: any) => kindOf((it.post.media || [])[0] || {}) === 'video'
-const isMany = (it: any) => (it.post.media || []).length > 1
-const likes = (it: any) => (it.post.like_count || 0)
-const replies = (it: any) => (it.post.reply_count || 0)
+const isVideo = (it: { post: { media: any } }) => kindOf((it.post.media || [])[0] || {}) === 'video'
+const isMany = (it: { post: { media: any } }) => (it.post.media || []).length > 1
+const likes = (it: { post: { like_count: any } }) => (it.post.like_count || 0)
+const replies = (it: { post: { reply_count: any } }) => (it.post.reply_count || 0)
 
 /* the viewer */
 const open = ref(-1)
-const current = computed<any>(() => (open.value >= 0 ? items.value[open.value] : null))
-function show(i: any) { open.value = i; document.documentElement.style.overflow = 'hidden' }
+const current = computed(() => (open.value >= 0 ? items.value[open.value] : null))
+function show(i: number) { open.value = i; document.documentElement.style.overflow = 'hidden' }
 function close() { open.value = -1; document.documentElement.style.overflow = '' }
-function step(d: any) { const n = open.value + d; if (n >= 0 && n < items.value.length) open.value = n }
-function onKey(e: any) {
+function step(d: number) { const n = open.value + d; if (n >= 0 && n < items.value.length) open.value = n }
+function onKey(e: { key: string }) {
   if (open.value < 0) return
   if (e.key === 'Escape') close()
   else if (e.key === 'ArrowRight') step(1)
   else if (e.key === 'ArrowLeft') step(-1)
 }
-const threadOf = (it: any) => (it.kind === 'space' ? '' : ROUTES.feed + '/post/' + it.id)
+const threadOf = (it: { kind: string; id: string }) => (it.kind === 'space' ? '' : ROUTES.feed + '/post/' + it.id)
 
 /* more as the foot of the grid comes into view */
 const foot = ref<any>(null)

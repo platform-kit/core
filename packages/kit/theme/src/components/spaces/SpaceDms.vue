@@ -34,18 +34,18 @@ const R = computed(() => us('spaces').rail.main)
 
 const q = ref('')
 /* a direct message has no name of its own: it is who is in it */
-const titleOf = (row: any) => {
-  const said = (row.people || []).map((p: any) => p.name).filter(Boolean)
+const titleOf = (row: { people: any }) => {
+  const said = (row.people || []).map((p: { name: any }) => p.name).filter(Boolean)
   if (!said.length) return R.value.self
   if (said.length <= 3) return said.join(', ')
   return said.slice(0, 2).join(', ') + ' ' + (R.value.more || '+{n}').replace('{n}', said.length - 2)
 }
-const nameOf = (row: any, id: any) => (id === props.me ? D.value.you : ((row.people || []).find((p: any) => p.id === id) || {}).name || R.value.someone)
+const nameOf = (row: { people: any }, id: string) => (id === props.me ? D.value.you : ((row.people || []).find((p: { id: any }) => p.id === id) || {}).name || R.value.someone)
 /* The last line. Whose it is, is said only where it is not already obvious: between two people the
    name is on the row above, so their own line stands bare and only the reader's own is marked
    "You"; in a conversation between three or more, every line is named. A voice note or a file has
    no words, so it is named instead of quoted. */
-const lineOf = (row: any) => {
+const lineOf = (row: { last: any; people: any }) => {
   const l = row.last
   if (!l) return D.value['nothing-said']
   const body = l.kind === 'voice' ? D.value.voice : l.kind === 'file' ? D.value.file : plainBody(l.body, {})
@@ -54,7 +54,7 @@ const lineOf = (row: any) => {
   if (!mine && !many) return body
   return (D.value.line || '{who}: {what}').replace('{who}', nameOf(row, l.author)).replace('{what}', body)
 }
-const when = (v: any) => {
+const when = (v: string|number|Date) => {
   const d = new Date(v)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   if (isNaN(d)) return ''
@@ -63,13 +63,13 @@ const when = (v: any) => {
   const hrs = Math.round(mins / 60)
   return hrs < 24 ? hrs + 'h' : Math.round(hrs / 24) + 'd'
 }
-const spaceName = (row: any) => row.space_name || ((props.spaces || []).find((s) => (s as any).id === row.space) || {}).name || ''
+const spaceName = (row: { space_name: any; space: any }) => row.space_name || ((props.spaces || []).find((s) => s.id === row.space) || {}).name || ''
 const shown = computed(() => {
   const t = q.value.trim().toLowerCase()
   if (!t) return props.rows
   return props.rows.filter((r) => (titleOf(r) + ' ' + lineOf(r)).toLowerCase().includes(t))
 })
-const unread = computed(() => props.rows.filter((r) => (r as any).unread > 0).length)
+const unread = computed(() => props.rows.filter((r) => r.unread > 0).length)
 </script>
 
 <template>

@@ -16,7 +16,7 @@ import { ug } from './strings.js'
 /* the page checkout was started from — where a cancelled checkout comes back to */
 /* where a checkout comes back to: this page, or a path the caller names (a paid form sends them
    back to the form itself, so the answer is the next thing they see). A path on this site only. */
-const here = (path?: any) => (path && String(path).startsWith('/') ? String(path) : window.location.pathname + window.location.search)
+const here = (path?: string|undefined) => (path && String(path).startsWith('/') ? String(path) : window.location.pathname + window.location.search)
 async function call(name: string, body: { country?: any; items?: any; return?: string; booking?: any; success?: string }) {
   const { data, error } = await (supabase as any).functions.invoke(name, { body })
   const fail = (msg: string|undefined, code: string) => {

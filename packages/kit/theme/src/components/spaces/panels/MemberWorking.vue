@@ -28,7 +28,7 @@ watch(() => props.user, async (id) => {
 }, { immediate: true })
 
 /* a level is named once, in the glossary, and read from there by everything — never as a literal */
-const nameOf = (lv: any) => (lv && (LEVELS as any)[lv] && (LEVELS as any)[lv].name) || ''
+const nameOf = (lv: string|number) => (lv && LEVELS[lv] && LEVELS[lv].name) || ''
 const working = computed(() => nameOf(row.value && row.value.working))
 const secured = computed(() => nameOf(row.value && row.value.secured))
 const areas = computed(() => (row.value && row.value.areas) || [])

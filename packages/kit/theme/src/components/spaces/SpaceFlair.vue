@@ -27,7 +27,7 @@ const props = defineProps({
   size: { type: Number, default: 13 },
 })
 /* inline shows only what asked to be there; the card shows everything they have */
-const rows = computed(() => (props.flair || []).filter((f) => props.mode !== 'inline' || (f as any).inline !== false))
+const rows = computed(() => (props.flair || []).filter((f) => props.mode !== 'inline' || f.inline !== false))
 </script>
 
 <template>

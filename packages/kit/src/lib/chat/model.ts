@@ -38,7 +38,7 @@ export function daySections(messages: { id: any; sender_id: any; kind: string; b
 /* first/last flags for a run of messages from one sender close in time: the
    first carries the avatar, the last the tail and the time */
 export function groupRuns(messages: any[]) {
-  return messages.map((m: any, i: number) => {
+  return messages.map((m, i: number) => {
     const prev = messages[i - 1], next = messages[i + 1]
     // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
     const joins = (a, b) => a && b && a.sender_id === b.sender_id && Math.abs(new Date(b.created_at) - new Date(a.created_at)) < RUN_GAP
@@ -148,7 +148,7 @@ export function sortInbox(list: any, mode = 'activity') {
     if (wb != null) return 1
     return at(b) - at(a)
   })
-  return rows.sort((a: any, b: any) => at(b) - at(a))
+  return rows.sort((a: { last_message_at: any; created_at: any }, b: { last_message_at: any; created_at: any }) => at(b) - at(a))
 }
 
 export function reactionSet(line: string) {

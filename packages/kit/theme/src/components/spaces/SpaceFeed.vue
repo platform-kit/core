@@ -32,8 +32,8 @@ const emptyLine = computed(() => F.value[props.kind + '-empty-line'])
 /* Who said it. These places cross every space, and the names a page holds are the open space's —
    so a row that crosses brings its own name and that one wins; the map is the fallback for a row
    from the space in front. */
-const who = (row: any, id: any) => (row && row.author) || props.names[id] || R.value.someone
-const whereOf = (row: any) => {
+const who = (row: { author: any }, id: string|number) => (row && row.author) || props.names[id] || R.value.someone
+const whereOf = (row: { channel_id: string|number; channel_kind: string; peers: any[]; channel: any }) => {
   const space = props.spaceOf[row.channel_id] || ''
   const dm = row.channel_kind === 'dm'
   /* a row that crosses spaces brings its own names (`peers`); one from the open space is named
@@ -51,7 +51,7 @@ const whereOf = (row: any) => {
     ? (F.value['in-dm'] || '').replace('{who}', who)
     : (F.value['in-channel'] || '').replace('{channel}', row.channel)
 }
-const when = (v: any) => {
+const when = (v: string|number|Date) => {
   const d: any = new Date(v)
   if (isNaN(d)) return ''
   const mins = Math.max(1, Math.round((Date.now() - d.getTime()) / 60000))
@@ -60,7 +60,7 @@ const when = (v: any) => {
   return hrs < 24 ? hrs + 'h' : Math.round(hrs / 24) + 'd'
 }
 const count = (n: any) => (Number(n) === 1 ? F.value['replies-one'] : (F.value['replies-many'] || '').replace('{n}', Number(n) || 0))
-const unread = computed(() => props.rows.filter((r) => (r as any).unread).length)
+const unread = computed(() => props.rows.filter((r) => r.unread).length)
 </script>
 
 <template>

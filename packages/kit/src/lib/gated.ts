@@ -42,7 +42,7 @@ export const readerPage = (collection: string, slug: string) => ask(collection +
  *   g.html (the page's html — the bundle's, or the fetched one), g.state ('' | 'loading' | 'error' | 'done'), g.retry()
  * `record` is { id, html, gated }; nothing is asked for a page the bundle carries whole or the reader may not read.
  */
-export function useGatedPage(collection: any, record: () => any, allowed: () => any) {
+export function useGatedPage(collection: string, record: () => any, allowed: () => any) {
   const fetched = ref<any>(null), state = ref(''), turn = ref(0)
   const want = () => { const r = record(); return r && r.gated && allowed() ? r : null }
   watch([() => (want() || {}).id, allowed, turn], async () => {

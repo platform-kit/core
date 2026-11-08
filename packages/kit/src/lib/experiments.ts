@@ -44,7 +44,7 @@ export function experimentFor(kind: string, itemId: any) {
 }
 
 function pickWeighted(variants: any[]) {
-  const total = variants.reduce((n: any, v: { weight: number }) => n + (v.weight > 0 ? v.weight : 0), 0)
+  const total = variants.reduce((n, v: { weight: number }) => n + (v.weight > 0 ? v.weight : 0), 0)
   if (!total) return variants[0]
   let r = Math.random() * total
   for (const v of variants) { r -= v.weight > 0 ? v.weight : 0; if (r <= 0) return v }
@@ -74,7 +74,7 @@ export function endsAt(exp: { ends: string }, state: { started_at: string }) {
   return null
 }
 /* the winning variant: declared, else the best conversion rate so far */
-export function winnerOf(exp: any, state: { variants: any }) {
+export function winnerOf(exp: { variants: any; id?: string|number; winner?: any }, state: { variants: any }) {
   const vs = exp.variants || []
   if (exp.winner) return vs.find((v: { key: any }) => v.key === exp.winner) || null
   const rows = (state && state.variants) || []
@@ -86,7 +86,7 @@ export function winnerOf(exp: any, state: { variants: any }) {
   }
   return best
 }
-export function statusOf(exp: any, state: any) {
+export function statusOf(exp: any, state: { started_at: string }) {
   if (exp.winner) return 'ended'
   const ends = endsAt(exp, state)
   if (ends && Date.now() > ends) return 'ended'

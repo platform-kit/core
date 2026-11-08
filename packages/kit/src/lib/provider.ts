@@ -60,7 +60,7 @@ export const hasOwnTitle = (person: { title: any; provider_title: any }) => !!St
  *   say(W.heading)              →  "Work through it with a coach."
  *   say(W['chat-link'], peer)   →  "Message your supervisor"
  */
-export function say(text: any, who: any) {
+export function say(text: any, who: { title: any; provider_title: any }) {
   const w = roleWord()
   const one = who ? titleOf(who) : (w.name || '')
   const lower = (s: any) => (s || '').charAt(0).toLowerCase() + (s || '').slice(1)

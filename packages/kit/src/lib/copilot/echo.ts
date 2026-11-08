@@ -50,7 +50,7 @@ export function echoGuard({ quiet = QUIET, tail = TAIL_MS, floorMin = FLOOR_MIN,
   let until = 0          /* when the assistant was last audible, plus the tail */
   let said = ''          /* and what it was saying, for the text check */
 
-  const norm = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()
+  const norm = (s: string) => String(s || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim()
 
   return {
     /* every frame: how loud we are playing, how loud the microphone is */

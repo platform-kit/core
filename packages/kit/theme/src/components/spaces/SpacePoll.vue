@@ -33,13 +33,13 @@ const said = computed(() => {
   if (!t || !t.people) return W.value['none-yet']
   return t.people === 1 ? W.value['people-one'] : (W.value['people-many'] || '').replace('{n}', t.people)
 })
-const countOf = (n: any) => (n === 1 ? W.value['votes-one'] : (W.value['votes-many'] || '').replace('{n}', n))
-const pct = (share: any) => Math.round(share * 100)
+const countOf = (n: number) => (n === 1 ? W.value['votes-one'] : (W.value['votes-many'] || '').replace('{n}', n))
+const pct = (share: number) => Math.round(share * 100)
 /* who answered, said as names — a community poll is not a secret ballot, and this is the half of it
    that makes one worth asking */
-const whoOf = (o: any) => (o.who || []).map((id: any) => props.names[id] || '').filter(Boolean).join(', ')
+const whoOf = (o: { who: any }) => (o.who || []).map((id: string|number) => props.names[id] || '').filter(Boolean).join(', ')
 
-function press(o: any) {
+function press(o: { mine: any; key: any }) {
   if (!tally.value || tally.value.closed) return
   if (o.mine) emit('unvote', o.key)
   else emit('vote', { key: o.key, multi: tally.value.multi })

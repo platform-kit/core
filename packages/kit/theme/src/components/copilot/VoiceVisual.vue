@@ -58,7 +58,7 @@ const hue = ref('#1FD5F9')
 const still = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 const stillNow = still()
 
-function colours(el: any) {
+function colours(el: Element) {
   const s = getComputedStyle(el)
   accent = s.getPropertyValue('--accent').trim() || s.color
   ink = s.getPropertyValue('--ink3').trim() || s.color
@@ -66,7 +66,7 @@ function colours(el: any) {
 }
 
 /* the aura needs the same numbers but paints none of them itself, so the loop still runs */
-function tick(now: any) {
+function tick(now: number) {
   const at = still() ? 0 : now - started
   const f = frame({ state: props.state, mine: props.mine, theirs: props.theirs, previous: level.value, at })
   level.value = f.level; live.value = f.live
@@ -74,8 +74,8 @@ function tick(now: any) {
   if (!still()) raf = requestAnimationFrame(tick)
 }
 
-function draw(now: any) {
-  const el: any = canvas.value
+function draw(now: number) {
+  const el = canvas.value
   if (!el) return
   const ctx = el.getContext('2d')
   const dpr = Math.min(2, window.devicePixelRatio || 1)

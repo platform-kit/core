@@ -27,7 +27,7 @@ const box = ref<any>(null)
 const root = ref<any>(null)
 const recent = ref<any>([])
 /* clicking away closes it — the thing every popup owes, said once here rather than by each host */
-const away = (e: any) => { if (root.value && !root.value.contains(e.target)) emit('close') }
+const away = (e: { target: any }) => { if (root.value && !root.value.contains(e.target)) emit('close') }
 onMounted(async () => {
   try { recent.value = JSON.parse(localStorage.getItem(KEY) || '[]') } catch { recent.value = [] }
   await nextTick()
@@ -44,7 +44,7 @@ const sections = computed(() => {
   return recent.value.length ? [[W.value.recent, recent.value], ...out] : out
 })
 
-function choose(e: any) {
+function choose(e: string) {
   recent.value = remember(recent.value, e)
   try { localStorage.setItem(KEY, JSON.stringify(recent.value)) } catch { /* a private window */ }
   emit('pick', e)

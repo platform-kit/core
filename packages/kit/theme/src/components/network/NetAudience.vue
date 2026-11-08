@@ -8,7 +8,7 @@ import { us } from 'platformkit/lib/content.js'
 
 const props = defineProps({ post: { type: Object as PropType<any>, required: true } })
 const A = computed(() => us('network').audience.main)
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: { [x: string]: string; space?: any }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const kind = computed(() => (props.post.kind === 'space' ? 'space' : props.post.audience))
 const word = computed(() => (kind.value === 'space' ? fill(A.value.space, { space: (props.post.space && props.post.space.name) || '' }) : A.value[kind.value]))
 const note = computed(() => A.value[kind.value + '-note'])

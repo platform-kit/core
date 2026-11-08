@@ -40,10 +40,10 @@ onMounted(load)
 watch(() => props.slug, load)
 
 /* the next one that has not happened, which is what a page is about */
-const next = computed(() => (row.value?.occurrences || []).find((o: any) => new Date(o.starts_at) > new Date()) || null)
+const next = computed(() => (row.value?.occurrences || []).find((o: { starts_at: string|number|Date }) => new Date(o.starts_at) > new Date()) || null)
 const past = computed(() => !!row.value && !next.value)
 const place = computed(() => row.value?.place || {})
-const comments = computed(() => (row.value?.comments || []).filter((c: any) => !c.deleted_at))
+const comments = computed(() => (row.value?.comments || []).filter((c: { deleted_at: any }) => !c.deleted_at))
 const left = computed(() => {
   const cap = row.value?.capacity
   return cap && next.value ? Math.max(0, cap - (next.value.going || 0)) : null
@@ -75,7 +75,7 @@ async function sayWhy() {
   busy.value = false
 }
 
-async function going(state: any) {
+async function going(state: string|undefined) {
   if (!next.value || busy.value) return
   busy.value = true
   await rsvp(next.value.id, next.value.mine === state ? 'out' : state)

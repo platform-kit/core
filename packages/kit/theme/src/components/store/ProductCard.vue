@@ -116,7 +116,7 @@ const priceText = computed(() => {
   if (printP.value && printP.value.available) {
     const m = money(printP.value.unit_amount, printP.value.currency)
     const more = (printP.value.print.formats || []).some(
-      (f: any) => f.kind === 'print' && f.price * 100 > printP.value.unit_amount,
+      (f: { kind: string; price: number }) => f.kind === 'print' && f.price * 100 > printP.value.unit_amount,
     )
     return more && HC['main-price'] ? HC['main-price'] + ' ' + m : m
   }
@@ -129,7 +129,7 @@ const context = computed(
   () => (p.value.bookMeta && p.value.bookMeta.author) || p.value.subtitle || '',
 )
 const added = ref(false)
-function quickAdd(e: any) {
+function quickAdd(e: { preventDefault: () => void; stopPropagation: () => void }) {
   e.preventDefault()
   e.stopPropagation()
   cart.add({

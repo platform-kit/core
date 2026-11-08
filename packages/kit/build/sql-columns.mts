@@ -79,7 +79,7 @@ export function declaredColumns(files: { file: string; sql: string; }[]) {
 }
 
 /* relations whose columns this parser does not know: a reference into one is skipped, not blamed */
-export function otherRelations(files: any) {
+export function otherRelations(files: { file: string; sql: string; }[]) {
   const rel = new Set()
   for (const { sql } of files) {
     const clean = stripNoise(sql)
@@ -93,7 +93,7 @@ export function otherRelations(files: any) {
 
 /* ---- reading the functions ------------------------------------------------------------------ */
 
-export function functionsOf(files: any) {
+export function functionsOf(files: { file: string; sql: string; }[]) {
   const out = []
   for (const { file, sql } of files) {
     const re = new RegExp(`CREATE\\s+(?:OR\\s+REPLACE\\s+)?FUNCTION\\s+"?public"?\\.${ident}\\s*\\(`, 'gi')
@@ -139,7 +139,7 @@ export function triggersOf(files: { file: string; sql: string; }[]) {
    The rule is therefore blunt on purpose: a name used either way, anywhere in the body, is not
    checked at all. That loses coverage, which is counted and reported; the alternative loses
    correctness, which is not acceptable in a guard people are meant to believe. */
-export function shadowedNames(body: any) {
+export function shadowedNames(body: string|string[]) {
   const clean = stripNoise(body)
   const out = new Set()
   /* a CTE: WITH a AS ( ... ), b AS ( ... ) */

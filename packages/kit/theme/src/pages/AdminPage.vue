@@ -82,7 +82,7 @@ import { look } from 'platformkit/lib/look.js'
 /* what this site would show having declared no header of its own: its config's, else the theme's.
    The same two layers SiteLayout falls through, from the same module, so the editor's promise and
    the header agree. */
-const INHERITED_NAV = (Array.isArray(CONFIG_NAV) && (CONFIG_NAV as any).length) ? CONFIG_NAV : themeNav({ storeOn: moduleOn('store') })
+const INHERITED_NAV = (Array.isArray(CONFIG_NAV) && CONFIG_NAV.length) ? CONFIG_NAV : themeNav({ storeOn: moduleOn('store') })
 const LOOK_TOKENS = (LOOK_TOKEN_FILE && ((LOOK_TOKEN_FILE as any)[look.value] || Object.values(LOOK_TOKEN_FILE)[0])) || {}
 import { checkEntry, shownHolds } from 'platformkit/lib/models/entry.js'
 import { us, ug } from 'platformkit/lib/strings.js'
@@ -116,8 +116,8 @@ const API = '/__admin'
 /* the enrichment runs (the Books grid's scripts) are the dev server's own endpoint, beside the pipe — a machine's work, none of it in cloud mode */
 async function api(path: any, opts: any) {
   if (CLOUD) throw new Error('this runs from a checkout or the deploy, not the live admin')
-  const r: any = await fetch(API + path, opts)
-  const j: any = await r.json().catch(() => ({}))
+  const r = await fetch(API + path, opts)
+  const j = await r.json().catch(() => ({}))
   if (!r.ok) throw Object.assign(new Error(j.error || r.statusText), { issues: j.issues })
   return j
 }
@@ -259,7 +259,7 @@ const MOVED: any = { 'print-orders': 'orders' }
 const view = computed(() => { const v = MOVED[parsed.value.view] || parsed.value.view; if (!v || (v === 'publishing' && !CLOUD) || !allowed(v)) return homeView.value; return v })   /* Publishing is cloud mode's; a view the desk does not offer opens the home view */
 /* the generic grid and drawer draw a model with no editor of its own; a model with one (the forms, the funnels, the strings, the
    print editions, a site's tests…) is drawn by that editor below, and never by the drawer */
-const col = computed(() => { const c: any = collections.value[view.value]; return c && !c.editor ? c : null })
+const col = computed(() => { const c = collections.value[view.value]; return c && !c.editor ? c : null })
 /* the full-screen preference applies to drawer editors only: a settings page
    (a single-file collection) is already the main surface, so it ignores it and
    the preference is kept for the next book or article */
@@ -281,7 +281,7 @@ const modelOf = computed(() => {
 const touched = reactive<any>({})
 const entryErrs = computed(() => {
   if (!modelOf.value || !drawer.value) return {}
-  const siblings = items.value.filter((x: any) => (x as any).name !== form.name).map((x: any) => (x as any).data)
+  const siblings = items.value.filter((x: any) => x.name !== form.name).map((x: any) => x.data)
   const out: any = {}
   for (const e of checkEntry(modelOf.value, form.data, { siblings, words: MW })) { const k = e.field.split(/[.[]/)[0]; if (!out[k]) out[k] = e.message }
   return out
@@ -306,7 +306,7 @@ const inlineSlot = ref<any>(null)   /* the element the editor teleports into; it
    server) or one of the three views with their own editors. Any collection not
    named here still appears, under Other, so a new content type is never lost. */
 /* which module each view or collection belongs to: off in platformkit.config.js, it leaves the rail */
-const MODULE_OF: any = { notifications: 'push', api: 'api', articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => (s as any).module).map((s: any) => [(s as any).key, (s as any).module])), emails: 'emails', funnels: 'funnels', blasts: 'funnels', 'funnel-analytics': 'funnels', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', print: 'print', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models', courses: 'courses', 'course-enrollments': 'courses' }
+const MODULE_OF: any = { notifications: 'push', api: 'api', articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => s.module).map((s: any) => [s.key, s.module])), emails: 'emails', funnels: 'funnels', blasts: 'funnels', 'funnel-analytics': 'funnels', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', print: 'print', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models', courses: 'courses', 'course-enrollments': 'courses' }
 const modelWords = (us('models').admin || {}).page || {}
 /* IS THE VIEW BEHIND THIS KEY AVAILABLE? A VIEW key, not a module id — `products` is a view and
    `store` is the module behind it (MODULE_OF). It was called moduleOn, which is the kit's own name
@@ -372,17 +372,17 @@ const VIEWS = {
   people: ((us('people').page || {}).main || {}).title || RAILVIEWS.people,
   media: ((us('media').page || {}).head || {}).rail || RAILVIEWS.media,
   publishing: ((us('publishing').page || {}).head || {}).rail || RAILVIEWS.publishing,
-  ...Object.fromEntries(SITE_SECTIONS.map((s: any) => [(s as any).key, RAILVIEWS[(s as any).key] || (s as any).label])),
+  ...Object.fromEntries(SITE_SECTIONS.map((s: any) => [s.key, RAILVIEWS[s.key] || s.label])),
 }
 /* the site's sections join the rail: under their group where it exists, else in a group of their own after the theme's */
-const SITE_BY_KEY = Object.fromEntries(SITE_SECTIONS.map((s: any) => [(s as any).key, s]))
+const SITE_BY_KEY = Object.fromEntries(SITE_SECTIONS.map((s: any) => [s.key, s]))
 for (const s of SITE_SECTIONS) {
   /* a site names a group by its key or by the name it reads under, since both have been written */
   const match = (x: any, want: any) => x.key === want || secName(x.key) === want
-  const g = NAV.find((x) => match(x, (s as any).sec))
-  if (g) { if (!g.items.includes((s as any).key)) g.items.push((s as any).key); continue }
-  const at = (s as any).after ? NAV.findIndex((x) => match(x, (s as any).after)) : -1   /* a new group goes after the one it names, else last */
-  NAV.splice(at >= 0 ? at + 1 : NAV.length, 0, { key: (s as any).sec, items: [(s as any).key] })
+  const g = NAV.find((x) => match(x, s.sec))
+  if (g) { if (!g.items.includes(s.key)) g.items.push(s.key); continue }
+  const at = s.after ? NAV.findIndex((x) => match(x, s.after)) : -1   /* a new group goes after the one it names, else last */
+  NAV.splice(at >= 0 ? at + 1 : NAV.length, 0, { key: s.sec, items: [s.key] })
 }
 /* WHICH GROUP EACH SECTION IS IN, and so what it needs — read once, after the site's sections have
    joined the rail. Naming every item would mean remembering to name the next one; the group already
@@ -500,7 +500,7 @@ const IC: any = {
   experiments: '<path d="M3.5 10h4"/><path d="M7.5 10c2.5 0 2.5-4.5 5-4.5h4"/><path d="M7.5 10c2.5 0 2.5 4.5 5 4.5h4"/><circle cx="14.5" cy="5.5" r="1.3"/><circle cx="14.5" cy="14.5" r="1.3"/>',
   sessions: '<circle cx="10" cy="10" r="6.5"/><path d="M10 6.5V10l2.5 1.5"/>',
   site: '<circle cx="10" cy="10" r="6.5"/><path d="M3.5 10h13"/><path d="M10 3.5c2.2 2 2.2 11 0 13"/><path d="M10 3.5c-2.2 2-2.2 11 0 13"/><path d="M5 6.5h10M5 13.5h10"/>',
-  ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => (s as any).icon).map((s: any) => [(s as any).key, (s as any).icon])),
+  ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => s.icon).map((s: any) => [s.key, s.icon])),
   'api-docs': '<path d="M7.5 4 5 10l2.5 6"/><path d="M12.5 4 15 10l-2.5 6"/><path d="M11 5.5 9 14.5"/>',   /* braces and a slash: a reference */
   studio: '<ellipse cx="10" cy="5.5" rx="6" ry="2.5"/><path d="M4 5.5v9c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-9"/><path d="M4 10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5"/>',
   /* ───── drawn for the rows that used to fall back to the generic square ───── */
@@ -563,7 +563,7 @@ const headTitle = computed(() => {
   const f = col.value.fields.find((x: any) => x.name === col.value.title)
   const v = form.data[col.value.title]
   if (f && f.options && v) { const o = msOptions(f.options).find((x: any) => x.value === v); if (o) return o.label }
-  return v || (form.data as any).title || form.name
+  return v || form.data.title || form.name
 })
 const withCurrent = (opts: any, v: any) => (v && Array.isArray(opts) && !opts.some((o) => o.value === v || (o.items || []).some((x: any) => x.value === v))) ? opts.concat({ value: v, label: v + ' (no such option now)' }) : opts
 const msOptions = (key: any) => groupedCache[key] || optionsCache[key] || []
@@ -724,7 +724,7 @@ function watchCloud() {
     const A = await import('platformkit/lib/agents/api.js')
     let moving = false
     for (const r of cloudRuns.value) {
-      const got = await A.progress((r as any).id); if (!got) continue
+      const got = await A.progress(r.id); if (!got) continue
       Object.assign(r, { status: got.status, spent: Number(got.spent_cents) || 0, steps: got.steps || [], said: got.said || '', error: got.error })
       if (got.status === 'queued' || got.status === 'running') moving = true
     }
@@ -753,7 +753,7 @@ async function stopRun() {
 async function attachRun() {
   if (job.value) return
   // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
-  try { const { jobs } = await api('/run'); const live = jobs.find((j: any) => j.running); if (live) { job.value = live; watchJob() } } catch (e) { /* no runs */ }
+  try { const { jobs } = await api('/run'); const live = jobs.find((j) => j.running); if (live) { job.value = live; watchJob() } } catch (e) { /* no runs */ }
 }
 const jobState = computed(() => {
   const j = job.value; if (!j) return ''
@@ -789,21 +789,21 @@ async function loadExperimentsIndex() {
 /* the companion a book has, for the strip in its drawer */
 const companionsIndex = ref<any>([])
 let compByBook: any = {}
-watch(companionsIndex, (list) => { compByBook = {}; for (const c of list) if ((c as any).data && (c as any).data.book) compByBook[(c as any).data.book] = c }, { immediate: true })
+watch(companionsIndex, (list) => { compByBook = {}; for (const c of list) if (c.data && c.data.book) compByBook[c.data.book] = c }, { immediate: true })
 async function loadCompanionsIndex() {
   try { companionsIndex.value = await pipe.items('companions') } catch (e) { companionsIndex.value = [] }
 }
 const companionOf = computed(() => {
   if (!drawer.value || drawer.value.create || view.value !== 'books') return null
-  const c = companionsIndex.value.find((x: any) => (x as any).data.book === form.name)
+  const c = companionsIndex.value.find((x: any) => x.data.book === form.name)
   const total = (form.content.match(/^# /gm) || []).length
-  return { name: c ? (c as any).name : null, chapters: c ? ((c as any).headings || 0) : 0, total }
+  return { name: c ? c.name : null, chapters: c ? (c.headings || 0) : 0, total }
 })
 const memberships = computed(() => {
   if (!drawer.value || drawer.value.create || !['pages', 'ads'].includes(view.value)) return []
   const kind = view.value === 'ads' ? 'ad' : 'page'
-  return experimentsIndex.value.filter((e: any) => ((e as any).data.kind || 'page') === kind && ((e as any).data.variants || []).some((v: any) => v.item === form.name))
-    .map((e: any) => ({ name: (e as any).name, title: (e as any).data.title || (e as any).name, key: (e as any).data.variants.find((v: any) => v.item === form.name).key, active: (e as any).data.active !== false, winner: (e as any).data.winner || '' }))
+  return experimentsIndex.value.filter((e: any) => (e.data.kind || 'page') === kind && (e.data.variants || []).some((v: any) => v.item === form.name))
+    .map((e: any) => ({ name: e.name, title: e.data.title || e.name, key: e.data.variants.find((v: any) => v.item === form.name).key, active: e.data.active !== false, winner: e.data.winner || '' }))
 })
 async function openEdit(name: any) {
   saveError.value = ''; issues.value = []
@@ -936,13 +936,13 @@ const toRow = (t: any) => (typeof t === 'string'
   ? { src: t, type: detectType(t), title: '', poster: '' }
   : { src: t.src || '', type: t.type || detectType(t.src), title: t.title || '', poster: t.poster || '' })
 function initMedia() {
-  const m = (form.data as any).media
+  const m = form.data.media
   mediaRows.value = Array.isArray(m) ? m.map(toRow) : (m ? [toRow(m)] : [])
   editing.value = -1
 }
 /* which track's edit panel is open; a track with no source yet is always open */
 const editing = ref(-1)
-const isEd = (i: any) => editing.value === i || !(mediaRows.value[i] && ((mediaRows.value[i] as any).src || '').trim())
+const isEd = (i: any) => editing.value === i || !(mediaRows.value[i] && (mediaRows.value[i].src || '').trim())
 function editTrack(i: any) { editing.value = editing.value === i ? -1 : i }
 function addTrack() { mediaRows.value.push({ src: '', type: 'video', title: '', poster: '' }); editing.value = mediaRows.value.length - 1 }
 function removeTrack(i: any) { mediaRows.value.splice(i, 1); if (editing.value >= i) editing.value = -1 }
@@ -951,14 +951,14 @@ function ytId(src: any) { const m = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|e
 function posterFor(t: any) { if (t.poster && t.poster.trim()) return t.poster.trim(); const id = ytId(t.src); return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : '' }
 function trackLabel(t: any) { if (t.title && t.title.trim()) return t.title.trim(); const s = (t.src || '').split(/[?#]/)[0].split('/').pop(); return s || 'Untitled track' }
 function serializeMedia() {
-  const tracks = mediaRows.value.filter((r: any) => (r as any).src.trim()).map((r: any) => {
-    const t = { type: (r as any).type || detectType((r as any).src), src: (r as any).src.trim() }
-    if ((r as any).title.trim()) (t as any).title = (r as any).title.trim()
-    if ((r as any).poster.trim()) (t as any).poster = (r as any).poster.trim()
+  const tracks = mediaRows.value.filter((r: any) => r.src.trim()).map((r: any) => {
+    const t = { type: r.type || detectType(r.src), src: r.src.trim() }
+    if (r.title.trim()) (t as any).title = r.title.trim()
+    if (r.poster.trim()) (t as any).poster = r.poster.trim()
     return t
   })
-  if (!tracks.length) delete (form.data as any).media
-  else (form.data as any).media = tracks.length === 1 ? tracks[0] : tracks
+  if (!tracks.length) delete form.data.media
+  else form.data.media = tracks.length === 1 ? tracks[0] : tracks
 }
 
 const slug = (t: any) => t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')

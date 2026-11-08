@@ -9,7 +9,7 @@ const p = computed(() => props.field.params || {})
 const n = computed(() => Number(p.value.outof) || 5)
 const hover = ref(0)
 const value = computed(() => Number(props.modelValue) || 0)
-const lit = (i: any) => i <= (hover.value || value.value)
+const lit = (i: number) => i <= (hover.value || value.value)
 const heart = computed(() => p.value.icon === 'heart' || p.value.icon === 'hearts')
 function pick(i: any) { if (p.value.disabled !== undefined) return; emit('update:modelValue', i); emit('enter', 'pick') }
 </script>

@@ -10,7 +10,7 @@ const p = computed(() => props.field.params || {})
 const id = computed(() => 'f_' + props.field.name)
 const over = ref(false)
 const name = computed(() => (props.modelValue && typeof props.modelValue === 'object' ? (props.modelValue as any).name : typeof props.modelValue === 'string' ? (props.modelValue as any).split('/').pop() : ''))
-function take(files: any) { const f = files && files[0]; if (!f || p.value.disabled !== undefined) return; emit('update:modelValue', f) }
+function take(files: any[]) { const f = files && files[0]; if (!f || p.value.disabled !== undefined) return; emit('update:modelValue', f) }
 function clear() { emit('update:modelValue', null) }
 </script>
 

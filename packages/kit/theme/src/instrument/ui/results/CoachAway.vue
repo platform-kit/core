@@ -7,14 +7,14 @@ import { ref, onMounted } from 'vue'
 import { us } from '../strings.js'
 import { getAway, addAway, removeAway, coverChoices } from 'platformkit/lib/hours.js'
 const A = us('library').coaching.away || {}
-const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: { [x: string]: string; from?: any; to?: any }) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const open = ref(false), loading = ref(true), saving = ref(false), error = ref('')
 const rows = ref<any>([]), covers = ref<any>([])
 const draft = ref({ from: '', to: '', reason: '', cover: '' })
 const today = new Date().toISOString().slice(0, 10)
 // @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
-const nameOf = (id: any) => (covers.value.find((c) => (c as any).id === id) || {}).name || ''
-const dayLabel = (d: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d + 'T12:00:00')) } catch (e) { return d } }
+const nameOf = (id) => (covers.value.find((c) => c.id === id) || {}).name || ''
+const dayLabel = (d: string) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d + 'T12:00:00')) } catch (e) { return d } }
 async function load() {
   loading.value = true
   try { rows.value = await getAway(); covers.value = await coverChoices() }
@@ -30,7 +30,7 @@ async function add() {
   } catch (e) { error.value = A.error || (e as any).message } finally { saving.value = false }
 }
 async function drop(id: any) { try { rows.value = await removeAway(id) } catch (e) { error.value = (e as any).message } }
-const summary = () => (rows.value.length ? rows.value.map((r: any) => fill(A.one, { from: dayLabel((r as any).from), to: dayLabel((r as any).to) })).join(' · ') : A['none-yet'])
+const summary = () => (rows.value.length ? rows.value.map((r: { from: any; to: any }) => fill(A.one, { from: dayLabel(r.from), to: dayLabel(r.to) })).join(' · ') : A['none-yet'])
 </script>
 
 <template>

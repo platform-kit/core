@@ -35,7 +35,7 @@ const props = defineProps({
 const W = (us('sections').products || {}).card || {}
 const SW = (us('sections').spotlight || {}).drop || {}
 const P = us('store').product.ui
-const p = computed(() => PRODUCTS.value.find((x: any) => x.sku === props.sku) || null)
+const p = computed(() => PRODUCTS.value.find((x: { sku: string }) => x.sku === props.sku) || null)
 const at = ref(0), size = ref(''), qty = ref(1), needSize = ref(false), added = ref(false)
 const text = computed(() => props.body || (p.value && p.value.excerpt) || '')
 function add() {

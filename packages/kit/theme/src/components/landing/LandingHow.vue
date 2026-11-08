@@ -12,7 +12,7 @@ const ICONS: any = {
   bars: '<path d="M3 16.5V10M8 16.5V4M13 16.5v-4.5M18 16.5V7.5"/>',
   doc: '<rect x="2.5" y="3" width="15" height="14" rx="2.5"/><path d="M5.5 7.5h9M5.5 11h6"/>',
 }
-const icon = (k: any) => ICONS[k] || ICONS.sun
+const icon = (k: string|number) => ICONS[k] || ICONS.sun
 </script>
 
 <template>

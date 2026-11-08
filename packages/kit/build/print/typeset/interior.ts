@@ -22,7 +22,7 @@ import { readback } from './readback.js'
 import { padFor } from '../plan-pieces.mjs'
 
 /* the pages in a PDF, by its page tree's counts (print-render reads it the same way) */
-export const pageCount = (pdf: any) => {
+export const pageCount = (pdf: AllowSharedBufferSource|undefined) => {
   const s = new TextDecoder('latin1').decode(pdf)
   const m = s.match(/\/Count\s+(\d+)/g)
   return m ? Math.max(...m.map((x) => Number(x.replace(/\D/g, '')))) : 0

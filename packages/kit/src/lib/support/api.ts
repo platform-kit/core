@@ -118,7 +118,7 @@ function listen(conv: { listen_key: string; id: any }) {
 function unlisten() { if (channel) { try { (supabase as any).removeChannel(channel) } catch (e) { /* gone */ } channel = null } live = false }
 
 /* ---- the open thread ---- */
-export async function openThread(id: any) {
+export async function openThread(id: string) {
   if (!id) return
   if (thread.id !== id) { thread.id = id; thread.messages = []; thread.conversation = null; thread.error = null }
   thread.loading = true

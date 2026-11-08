@@ -157,7 +157,7 @@ const langNow = computed(() => (document.documentElement.lang || 'en').slice(0, 
 const visualNow = computed(() => bot.value?.voice?.visual || 'aura')
 const visual = computed(() => prefs.value.visual || visualNow.value)
 
-function setPrefs(next: any) {
+function setPrefs(next: { aloud: any; voice: any; visual?: any; lang: any; speed: any; hold: any }) {
   const was = prefs.value
   prefs.value = writePrefs(box, next)
   /* silenced mid-sentence means mid-sentence: what is already playing stops */
@@ -177,7 +177,7 @@ const said_when = (at: any) => whenOf(at, WHEN.value)
  * usually not written. The thread itself is made by the first thing said rather than on arrival,
  * so opening the page and walking away leaves nothing in the list.
  */
-async function keep(line: any) {
+async function keep(line: { who: string; text: any }) {
   if (!store) return
   try {
     const first = !threadId.value
@@ -235,7 +235,7 @@ async function dropMemory(id: any) {
     const { error } = await (supabase as any).from('copilot_memory')
       .delete().eq('id', id).eq('bot', slug.value)
     if (error) throw error
-    memories.value = memories.value.filter((item: any) => (item as any).id !== id)
+    memories.value = memories.value.filter((item: { id: any }) => item.id !== id)
     askingMemory.value = null
   } catch (error) {
     console.error('Unable to delete assistant memory', error)
@@ -265,7 +265,7 @@ let settle = 0            /* the timer that decides the sentence has ended */
 
 const phase = computed(() => forced || (ended.value ? 'connecting' : (chat.value?.state.phase || 'connecting')))
 const label = computed(() => {
-  const f: any = fetching.value
+  const f = fetching.value
   if (f) return (W.value[f.pct >= 100 ? 'starting' : 'fetching'] || '').replace('{n}', String(f.pct))
   if (phase.value === 'thinking') return W.value.holding || ''
   return W.value[phase.value] || ''
@@ -302,7 +302,7 @@ const logEl = ref<any>(null)
 const clipped = ref(false)
 watch(() => [log.value.length, showLog.value], async () => {
   await nextTick()
-  const el: any = logEl.value
+  const el = logEl.value
   if (!el) return
   const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
   el.scrollTo({ top: el.scrollHeight, behavior: still ? 'auto' : 'smooth' })
@@ -311,7 +311,7 @@ watch(() => [log.value.length, showLog.value], async () => {
 const needsSignIn = computed(() => fault.value === (W.value['sign-in'] || ''))
 const openAuth = () => { if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'buy' }) }
 
-async function reportStt(elapsedMs: any) {
+async function reportStt(elapsedMs: number) {
   if (!grant || !bot.value?.usage?.offer_key || elapsedMs <= 0) return
   const secondsMicros = Math.min(Math.round(elapsedMs * 1000), Number(bot.value.minutes || 0) * 60_000_000)
   if (!secondsMicros) return
@@ -344,7 +344,7 @@ async function begin() {
     body: JSON.stringify({ bot: slug.value }),
   }).catch(() => null)
   if (!r || !r.ok) { fault.value = W.value['no-bot'] || ''; return }
-  const got: any = await r.json()
+  const got = await r.json()
   grant = got.grant; bot.value = got
 
   if (got.transport) {
@@ -381,7 +381,7 @@ async function begin() {
    * later fails, the failover builds it then.
    */
   if (sp.id === 'browser') warmEngine()
-  chat.value = conversation({ speaker: voiced, ask, onSaid: (line: any) => {
+  chat.value = conversation({ speaker: voiced, ask, onSaid: (line: { who: string; text: string }) => {
     if (line.who === 'them') {
       ear.speaking(line.text)
     }
@@ -425,7 +425,7 @@ function buildSpeaker() {
   sp = speaker({
     id, voice: { ...(got.voice || {}), ...voiceSettings(prefs.value, got.voice || {}) },
     // @ts-expect-error TS2322, from the conversion: Type '(st: any) => void' is not assignable to type '() => void'.
-    onState: (st: any) => {
+    onState: (st) => {
       /* the endpoint may have failed and handed over, so the provider in force can change */
       if (st.at === 'ready') { fetching.value = null; speaking.value = 'browser' }
       else if (st.at === 'starting') fetching.value = { pct: 100 }
@@ -437,7 +437,7 @@ function buildSpeaker() {
     // @ts-expect-error TS2322, from the conversion: Type '() => any' is not assignable to type 'null | undefined'.
     worker: theWorker,
     // @ts-expect-error TS2322, from the conversion: Type '({ text, voice, format }: any) => Promise<ReadableStream<any> | null>' is not assignable to type 'null | undefined'.
-    post: async ({ text, voice, format }: any) => {
+    post: async ({ text, voice, format }) => {
       const res = await fetch(`${functionsBase()}/copilot-speak`, {
         method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${grant}` },
         body: JSON.stringify({ text, voice, format: format || 'pcm' }),
@@ -482,7 +482,7 @@ function buildSpeaker() {
      */
     say: (text: any) => (!aloud.value
       ? Object.assign(Promise.resolve(null), { utterance: null })
-      : sp.say(text, (c: any) => { if (c && c.pcm) out.frames(c.pcm, c.rate); else out.write(c) })),
+      : sp.say(text, (c: { pcm: any; rate: any }) => { if (c && c.pcm) out.frames(c.pcm, c.rate); else out.write(c) })),
   }
 }
 
@@ -497,7 +497,7 @@ async function ask(text: any) {
   return (await r.json()).choices?.[0]?.message?.content || ''
 }
 
-async function connectVoiceRoom(transport: any) {
+async function connectVoiceRoom(transport: { url: string; token: string }) {
   const room = new Room()
   room.on(RoomEvent.DataReceived, (payload, participant, _kind, topic) => {
     if (topic !== ROOM_OUTPUT || participant?.identity === room.localParticipant.identity) return
@@ -565,7 +565,7 @@ async function openMic() {
    * permission is asked and survives a refusal. Starting it inside the success path left a
    * person with no microphone watching a dead shape while the answer played.
    */
-  const tick: any = () => {
+  const tick = () => {
     mine.value = muted.value || !mic ? 0 : mic.read()
     theirs.value = out ? out.level() : 0
     const t = performance.now()
@@ -604,7 +604,7 @@ async function openMic() {
 }
 
 /* the microphone, as the reader asked to be heard */
-function listenAs(hold: any) {
+function listenAs(hold: boolean) {
   if (!recog) return
   if (hold) { try { recog.stop() } catch { /* not started */ } return }
   try { recog.start() } catch { /* already going */ }
@@ -641,7 +641,7 @@ function listen() {
   }
   const forget = () => { clearTimeout(settle); settle = 0; breath = ''; heard.value = '' }
 
-  recog.onresult = (e: any) => {
+  recog.onresult = (e: { resultIndex: any; results: string|any[] }) => {
     /* muted mid-sentence: whatever is on the big line was heard before the microphone was shut
        and leaving it there says the surface is still listening, which it is not */
     if (muted.value) { forget(); return }

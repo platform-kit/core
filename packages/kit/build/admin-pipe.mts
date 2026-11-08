@@ -185,7 +185,7 @@ export async function adminRequest(env: any, { method, seg, q, body }: any) {
     if (seg === 'media' && method === 'POST') {
       const { op, ...a } = body || {}
       const A = store.assets
-      const dir = (d: any) => { const p = insideRoots(d); if (!p) throw refuse('not a path the library reaches'); return p }
+      const dir = (d: string) => { const p = insideRoots(d); if (!p) throw refuse('not a path the library reaches'); return p }
       const entry = async (rel: string) => (await A.list(rel.split('/').slice(0, -1).join('/'))).find((e: { path: any }) => e.path === rel) || null
       /* a file in use is kept: before a removal, a rename or a move, the records that name it (a folder: any file
          under it) — one found refuses the whole request with them, and nothing is written */

@@ -19,13 +19,13 @@ const q = ref('')
 const saving = ref(false)
 const msg = ref('')
 const err = ref('')
-const current = computed(() => files.value.find((f: any) => (f as any).file === active.value) || null)
-const label = (f: any) => f.scope || f.title || f.file
+const current = computed(() => files.value.find((f: { file: string }) => f.file === active.value) || null)
+const label = (f: { scope: any; title: any; file: any }) => f.scope || f.title || f.file
 async function load() {
   err.value = ''
   try {
-    files.value = (await pipe.items(MODEL[props.dir] || props.dir)).map((f: any) => ({ ...f, name: f.name }))
-    if (!active.value || !files.value.find((f: any) => (f as any).file === active.value)) active.value = (files.value[0] as any)?.file || ''
+    files.value = (await pipe.items(MODEL[props.dir] || props.dir)).map((f: { name: any }) => ({ ...f, name: f.name }))
+    if (!active.value || !files.value.find((f: { file: string }) => f.file === active.value)) active.value = files.value[0]?.file || ''
   } catch (e) { err.value = (e as any).message }
 }
 onMounted(load)
@@ -33,8 +33,8 @@ watch(() => props.dir, load)
 
 /* the search: a key, a field name, a group name or the text itself */
 const needle = computed(() => q.value.trim().toLowerCase())
-const hit = (s: any) => String(s ?? '').toLowerCase().includes(needle.value)
-function matches(file: any) {
+const hit = (s: unknown) => String(s ?? '').toLowerCase().includes(needle.value)
+function matches(file: { groups: any }) {
   const out: any = {}
   for (const [g, keys] of Object.entries(file.groups || {})) {
     // @ts-expect-error TS2769, from the conversion: No overload matches this call.
@@ -47,18 +47,18 @@ function matches(file: any) {
 }
 const visible = computed(() => (current.value ? matches(current.value) : {}))
 // @ts-expect-error TS18046, from the conversion: 'n' is of type 'unknown'.
-const visibleCount = (groups: any) => Object.values(groups).reduce((n, keys) => n + Object.keys(keys).length, 0)
+const visibleCount = (groups) => Object.values(groups).reduce((n, keys) => n + Object.keys(keys).length, 0)
 const countFor = (f: any) => (needle.value ? visibleCount(matches(f)) : null)
 /* the dropdown: each file, with how many of its strings match while searching */
-const fileOptions = computed(() => files.value.map((f: any) => ({ value: (f as any).file, label: label(f), count: countFor(f), total: visibleCount((f as any).groups || {}) })))
-const total = computed(() => (current.value ? visibleCount((current.value as any).groups || {}) : 0))
+const fileOptions = computed(() => files.value.map((f: any) => ({ value: f.file, label: label(f), count: countFor(f), total: visibleCount(f.groups || {}) })))
+const total = computed(() => (current.value ? visibleCount(current.value.groups || {}) : 0))
 /* only show the fields that matched when the text itself is what matched */
 function fieldShown(g: any, k: any, fn: any, v: any) {
   if (!needle.value || hit(g) || hit(k)) return true
   return hit(fn) || hit(v)
 }
 async function save() {
-  const f: any = current.value; if (!f) return
+  const f = current.value; if (!f) return
   saving.value = true; msg.value = ''; err.value = ''
   try { await pipe.save(MODEL[props.dir] || props.dir, f.name, { data: { scope: f.scope, title: f.title }, parsed: { fmRaw: f.fmRaw, spaced: f.spaced, groups: f.groups } }); msg.value = 'Saved.' }
   catch (e) { err.value = (e as any).message }

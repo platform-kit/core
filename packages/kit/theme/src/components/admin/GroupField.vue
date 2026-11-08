@@ -8,8 +8,8 @@ const props = defineProps({ fields: { type: Array as PropType<any[]>, default: (
 const emit = defineEmits(['update:modelValue'])
 /* a field of a row that only one kind of row has — "which event" on a mention is a question with no
    answer, and asking it is how a form starts teaching a grammar */
-const on = (g: any) => !g.shown || shownHolds(g.shown, props.modelValue || {})
-function setSub(key: any, v: any) { const next = { ...(props.modelValue || {}) }; if (v === undefined || v === '' || v === null) delete next[key]; else next[key] = v; emit('update:modelValue', Object.keys(next).length ? next : undefined) }
+const on = (g: { shown: any }) => !g.shown || shownHolds(g.shown, props.modelValue || {})
+function setSub(key: string|number, v: string|null|undefined) { const next = { ...(props.modelValue || {}) }; if (v === undefined || v === '' || v === null) delete next[key]; else next[key] = v; emit('update:modelValue', Object.keys(next).length ? next : undefined) }
 </script>
 
 <template>

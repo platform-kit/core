@@ -93,11 +93,11 @@ export function onCommit(fn: () => void) {
 }
 function notifyCommit() { for (const f of commitFns) { try { f() } catch (e) { /* a listener must never break a write */ } } }
 
-function toLoro(key: any, value: any) {
+function toLoro(key: string, value: string|null) {
   if (map) { map.set(key, value); doc.commit(); scheduleSnapshot(); notifyCommit() }
   else pending.push([key, value, 'set'])
 }
-function delLoro(key: any) {
+function delLoro(key: string) {
   if (map) { map.delete(key); doc.commit(); scheduleSnapshot(); notifyCommit() }
   else pending.push([key, null, 'del'])
 }

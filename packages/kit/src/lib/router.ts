@@ -113,7 +113,7 @@ export const DOCS_BASE = DOCS_ONLY ? ROUTES.docs : ROUTES.content + '/docs'
 export const PAGE_ROUTES = new Set(PAGES.map((p: { route: any }) => p.route || '/'))
 export const isPageRoute = (p: unknown) => PAGE_ROUTES.has(p)
 /* the site's route a path belongs to: exact, or the path and everything under it when the route says prefix */
-export const siteRouteOf = (p: string) => SITE_ROUTES.find((r: any) => p === r.path || (r.prefix && p.startsWith(r.path + '/'))) || null
+export const siteRouteOf = (p: string) => SITE_ROUTES.find((r: { path: string; prefix: any }) => p === r.path || (r.prefix && p.startsWith(r.path + '/'))) || null
 /* THE ADDRESSES COMMUNITY PLACES HAVE CLAIMED: the kit's Coaching (where coaching lives in the
    community, /app/coaching) and every place a site registered (community.places claims) */
 const CLAIMS = [
@@ -223,7 +223,7 @@ export function navigate(path: string|URL) {
   }
 }
 /* the same without a history entry: for making an address canonical in place */
-export function replace(path: any) {
+export function replace(path: string) {
   const next = normalise(path)
   if (next !== location.pathname) history.replaceState(null, '', next)
   current.value = next

@@ -73,7 +73,7 @@ const TITLES = {
 
 /* the public pages set their own title and meta (src/lib/seo.js); only the
    dev-only admin, which has no page of its own to do it, is titled here */
-function applyRouteMeta(path: any) {
+function applyRouteMeta(path: string) {
   if (path === ROUTES.admin || path.startsWith(ROUTES.admin + '/')) document.title = TITLES[ROUTES.admin]
 }
 

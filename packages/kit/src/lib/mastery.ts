@@ -16,7 +16,7 @@ const KEY = (slug: string) => 'dl.book.' + slug + '.quiz'
 /* bumps whenever an attempt is recorded, so computed views re-read the store */
 export const masteryRev = ref(0)
 
-export function quizState(slug: any) {
+export function quizState(slug: string) {
   try { return { v: 1, chapters: {}, mastered: null, ...JSON.parse(stored(KEY(slug)) || '{}') } } catch (e) { return { v: 1, chapters: {}, mastered: null } }
 }
 const passed = (rec: { total: number; best: number }) => !!rec && rec.total > 0 && rec.best >= passMark(rec.total)
@@ -40,7 +40,7 @@ export const chapterResult = (slug: any, title: string|number) => (masteryOf(slu
 
 /* an attempt: the best score is kept; the tier before and after come back so a
    caller can say what was just earned */
-export function recordAttempt(slug: any, title: string|number, correct: number, total: any) {
+export function recordAttempt(slug: string, title: string|number, correct: number, total: number) {
   const before = masteryOf(slug)
   const s = quizState(slug)
   const prev = s.chapters[title] || { best: 0, total, tries: 0, passedAt: null }

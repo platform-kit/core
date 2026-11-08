@@ -29,13 +29,13 @@ async function loadSessions() {
   try {
     const { data } = await (supabase as any).from('bookings').select('uid, title, start_at, end_at, status, user_id, provider_id, host_id')
       .in('status', ['accepted', 'pending']).gt('end_at', new Date().toISOString()).order('start_at').limit(20)
-    sessions.value = (data || []).filter((b: any) => b.user_id === me || b.host_id === me || b.provider_id === me)
+    sessions.value = (data || []).filter((b: { user_id: any; host_id: any; provider_id: any }) => b.user_id === me || b.host_id === me || b.provider_id === me)
   } catch (e) { sessions.value = [] }
 }
 /* one list, by time: an event is a way to its page, a session a way to the reader's sessions */
 const next = computed(() => [
-  ...(calendar.upcoming || []).map((o: any) => ({ kind: 'event', key: 'e' + (o as any).id, at: (o as any).starts_at, title: (o as any).title, slug: (o as any).slug })),
-  ...sessions.value.map((b: any) => ({ kind: 'session', key: 's' + (b as any).uid, at: (b as any).start_at, title: (b as any).title, hosting: (b as any).user_id !== (user.value || {}).id })),
+  ...(calendar.upcoming || []).map((o: { id: string; starts_at: any; title: any; slug: any }) => ({ kind: 'event', key: 'e' + o.id, at: o.starts_at, title: o.title, slug: o.slug })),
+  ...sessions.value.map((b: { uid: string; start_at: any; title: any; user_id: any }) => ({ kind: 'session', key: 's' + b.uid, at: b.start_at, title: b.title, hosting: b.user_id !== (user.value || {}).id })),
 // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
 ].sort((a, b) => new Date(a.at) - new Date(b.at)).slice(0, 4))
 const titleWord = computed(() => (sessions.value.length ? S.value['coming-up'] : S.value.events))

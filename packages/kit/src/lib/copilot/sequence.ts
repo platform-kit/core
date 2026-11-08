@@ -76,7 +76,7 @@ export function connectingSquare(rows: number, cols: number, radius: number) {
  * THE WHOLE CHOREOGRAPHY, by shape and state. `speaking` is null and that is the point: there is
  * nothing to choreograph when there is a voice, because the voice is the choreography.
  */
-export function stepsOf(shape: string, state: string, n: any, rows = 6) {
+export function stepsOf(shape: string, state: string, n: number, rows = 6) {
   if (state === 'speaking') return null
   const ring = shape === 'radial'
   const grid = shape === 'grid'

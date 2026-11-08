@@ -262,7 +262,7 @@ function facetFilter(rows: any[], { kind, after, before, tags }: { kind: any; af
    binding it here, so `searchContent` below threw `offPalette is not defined` on every search. */
 export { OFF_PALETTE, offPalette }
 
-export function searchContent(rows: any[], query: any, opts: { kind: any; after: any; before: any; tags: any }) {
+export function searchContent(rows: any[], query: string, opts: { kind: any; after: any; before: any; tags: any }) {
   const parsed = parseQuery(query)
   const kind = (opts && opts.kind) || parsed.kind
   rows = offPalette(rows, kind)
@@ -307,7 +307,7 @@ export function cosineSim(a: string|any[], b: number[]) {
 
 /* Given a query embedding (from ternlight, in the browser), rank the corpus by
    meaning. Same facet options as the keyword search; min cuts weak matches. */
-export function semanticSearch(rows: any[], qvec: any, opts: any = {}) {
+export function semanticSearch(rows: any[], qvec: number[], opts: any = {}) {
   const min = opts.min ?? 0.3
   const parsed = parseQuery(opts.query || '')
   rows = offPalette(rows, opts.kind || parsed.kind)
@@ -354,7 +354,7 @@ export async function embedText(text: string) {
    prescription: what a site puts in front of somebody deliberately is the strongest signal there
    is, and the rest reorders underneath it. `weights` may be any object of subject → number,
    including none, in which case this ranks exactly as it did before there were any. */
-export function forYou(rows: any[], profileVec: any, opts: any = {}) {
+export function forYou(rows: any[], profileVec: number[], opts: any = {}) {
   const at = { themeTags: opts.themeTags || [], prescribed: new Set(opts.prescribed || []), weights: opts.weights || {} }
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ themeTags: any; prescribed: Set<unknown>; weights: any; }' is not assignable to parameter of type '{ themeTags?: never[]
   return rows.map((r) => ({ ...r, ...scoreRow({ sem: cosineSim(r.vec, profileVec), tags: r.tags, href: r.href }, at) }))

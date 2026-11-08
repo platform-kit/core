@@ -12,7 +12,7 @@ const props = defineProps({
   me: { type: String, default: '' },
 })
 const TAG: any = { b: 'strong', i: 'em', s: 's', code: 'code' }
-const marks = computed(() => (props.part.marks || []).filter((m: any) => TAG[m]))
+const marks = computed(() => (props.part.marks || []).filter((m: string|number) => TAG[m]))
 const inner = computed(() => ({ ...props.part, marks: marks.value.slice(1) }))
 </script>
 

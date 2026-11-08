@@ -15,5 +15,5 @@ export function inputOf(payload: AllowSharedBufferSource|undefined) {
 
 export function assistantText(item: { type: any; role: any; content: any }) {
   if (item?.type !== 'message' || item.role !== 'assistant' || !Array.isArray(item.content)) return ''
-  return item.content.filter((part: any) => typeof part === 'string').join('').trim()
+  return item.content.filter((part) => typeof part === 'string').join('').trim()
 }

@@ -23,7 +23,7 @@ const trim = (u: string) => u.replace(/\/+$/, '')
    run's own Docker daemon beside it, by the name the Supabase CLI is given for it (SUPABASE_SERVICES_HOSTNAME, its
    documented setting for a daemon elsewhere). A test that starts a container of its own reaches it here. */
 export const dockerHost = () => env('SUPABASE_SERVICES_HOSTNAME') || '127.0.0.1'
-const isLocal = (u: any) => {
+const isLocal = (u: string) => {
   try {
     const x = new URL(trim(u))
     return /^https?:$/.test(x.protocol) && (x.pathname === '/' || x.pathname === '') && ['localhost', '127.0.0.1', 'host.docker.internal', dockerHost()].includes(x.hostname)

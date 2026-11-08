@@ -50,7 +50,7 @@ export function spanMs(v: string|number|null) {
 
 /* what a zone's clock read at an instant, as numbers. Intl is the only thing that knows the rules,
    and it is in every runtime this code meets. */
-function partsIn(ms: number|Date|undefined, zone: any) {
+function partsIn(ms: number|Date|undefined, zone: string) {
   const f = new Intl.DateTimeFormat('en-US', {
     timeZone: zone || 'UTC', hour12: false,
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -140,7 +140,7 @@ function readOn(on: any) {
 }
 
 /* a day written as a date, in the rule's own zone: '2026-12-25' */
-const dayKey = (y: any, mo: any, d: any) => `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+const dayKey = (y: number, mo: number, d: number) => `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 
 /* ------------------------------------------------------------------ is it well formed */
 

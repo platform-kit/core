@@ -226,7 +226,7 @@ const liveOffer = computed(() => (offer.value && offer.value.live && botIsInPlay
 /* a day's label, then its lines, in one keyed list */
 type Line = { key: string; day?: string; m?: any }
 const lines = computed<Line[]>(() => sections.value.flatMap((s): Line[] => [{ key: 'day:' + s.key, day: s.label } as Line]
-  .concat(s.messages.map((m: any) => ({ key: m.id, m })))))
+  .concat(s.messages.map((m) => ({ key: m.id, m })))))
 /* a choice is the reader saying those words: the offer's row says what they are, not the client */
 async function choose(m: any, c: any) {
   if (busy.value) return

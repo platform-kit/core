@@ -77,7 +77,7 @@ const iconOf = (k: any) => (k === 'everyone' ? 'globe' : k === 'here' ? 'house' 
 const canPost = computed(() => !busy.value && left.value >= 0 && (text.value.trim().length > 0 || files.value.length > 0))
 
 /* the box grows with what is written, to a point */
-function grow() { const el: any = box.value; if (!el) return; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 360) + 'px' }
+function grow() { const el = box.value; if (!el) return; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 360) + 'px' }
 
 /* PICTURES AND VIDEOS: up to ten, refused by name before anything is sent (_shared/atproto/media.js) */
 const ACCEPT = [...MEDIA.imageTypes, ...MEDIA.videoTypes].join(',')
@@ -89,8 +89,8 @@ function addPictures(e: any) {
   err.value = ''
   for (const f of list) files.value.push({ file: f, url: URL.createObjectURL(f), alt: '', kind: kindOfType(f.type) })
 }
-function dropPicture(i: any) { URL.revokeObjectURL((files.value[i] as any).url); files.value.splice(i, 1) }
-function clearPictures() { for (const f of files.value) URL.revokeObjectURL((f as any).url); files.value = [] }
+function dropPicture(i: any) { URL.revokeObjectURL(files.value[i].url); files.value.splice(i, 1) }
+function clearPictures() { for (const f of files.value) URL.revokeObjectURL(f.url); files.value = [] }
 
 async function send() {
   if (!canPost.value) return
@@ -98,7 +98,7 @@ async function send() {
   try {
     const out = await publish({
       text: text.value, audience: chosen.value.key,
-      files: files.value.map((f: any) => (f as any).file), alts: files.value.map((f: any) => (f as any).alt),
+      files: files.value.map((f: any) => f.file), alts: files.value.map((f: any) => f.alt),
       replyTo: props.replyTo ? props.replyTo.id : null,
     })
     text.value = ''; clearPictures(); await nextTick(); grow()

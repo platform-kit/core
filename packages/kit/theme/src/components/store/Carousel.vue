@@ -9,7 +9,7 @@ import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 
 const props = defineProps({
   items: { type: Array as PropType<any[]>, default: () => [] },
-  keyOf: { type: Function, default: (x: any, i: any) => (x && (x.id || x.slug)) || i },
+  keyOf: { type: Function, default: (x: { id: any; slug: any }, i: any) => (x && (x.id || x.slug)) || i },
   labelPrev: { type: String, default: 'Previous' },
   labelNext: { type: String, default: 'Next' },
 })
@@ -18,12 +18,12 @@ const rail = ref<any>(null)
 const canPrev = ref(false)
 const canNext = ref(false)
 function measure() {
-  const el: any = rail.value
+  const el = rail.value
   if (!el) return
   canPrev.value = el.scrollLeft > 4
   canNext.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 4
 }
-function step(dir: any) {
+function step(dir: number) {
   const el = rail.value
   if (!el) return
   const first = el.firstElementChild
@@ -33,12 +33,12 @@ function step(dir: any) {
 
 /* drag to scroll with a mouse; touch scrolls natively */
 let drag: any = null
-function down(e: any) {
+function down(e: { pointerType: string; clientX: any }) {
   if (e.pointerType !== 'mouse') return
   drag = { x: e.clientX, left: rail.value.scrollLeft, moved: false }
   rail.value.classList.add('dragging')
 }
-function move(e: any) {
+function move(e: { clientX: number }) {
   if (!drag) return
   const dx = e.clientX - drag.x
   if (Math.abs(dx) > 4) drag.moved = true
@@ -50,7 +50,7 @@ function up() {
   drag = null
   rail.value.classList.remove('dragging')
   /* a drag must not also count as a click on whatever it ended over */
-  if (moved) { const stop = (ev: any) => { ev.stopPropagation(); ev.preventDefault() }; rail.value.addEventListener('click', stop, { capture: true, once: true }); setTimeout(() => rail.value && rail.value.removeEventListener('click', stop, { capture: true }), 0) }
+  if (moved) { const stop = (ev: { stopPropagation: () => void; preventDefault: () => void }) => { ev.stopPropagation(); ev.preventDefault() }; rail.value.addEventListener('click', stop, { capture: true, once: true }); setTimeout(() => rail.value && rail.value.removeEventListener('click', stop, { capture: true }), 0) }
 }
 
 let ro: any = null

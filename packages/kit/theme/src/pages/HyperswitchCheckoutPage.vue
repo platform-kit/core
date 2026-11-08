@@ -30,7 +30,7 @@ let paymentMethodWidget
 // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
 watch(title, (value) => setHead({ title: value, description: '', path: ROUTES.hyperswitchCheckout, noindex: true }), { immediate: true })
 
-function checkoutKey(sessionId: any) {
+function checkoutKey(sessionId: string) {
   return `platformkit:hyperswitch-checkout:${sessionId}`
 }
 
@@ -59,7 +59,7 @@ function validSummary(summary: any) {
       (Number.isSafeInteger(summary.trialDays) && summary.trialDays >= 1 && summary.trialDays <= 365))
 }
 
-function validCheckout(value: any) {
+function validCheckout(value: { provider: string; apiBaseUrl: string|URL; publishableKey: any; clientSecret: any; paymentMethodSessionId: any; sdkAuthorization: any; profileId: any; successUrl: string|URL; cancelUrl: string|URL; summary: any }) {
   if (!value || value.provider !== 'hyperswitch' ||
       typeof value.apiBaseUrl !== 'string' ||
       typeof value.publishableKey !== 'string' ||
@@ -88,7 +88,7 @@ function intervalLabel(interval: any) {
   return W.value[`checkout-interval-${interval}`] || interval
 }
 
-function itemTerm(item: any) {
+function itemTerm(item: { billing: string; interval: any }) {
   if (item.billing !== 'subscription') return W.value['checkout-once'] || 'One-time purchase'
   const cadence = intervalLabel(item.interval || 'month')
   return String(W.value['checkout-frequency'] || 'Billed every {interval}')
@@ -106,7 +106,7 @@ function safePaymentError(error: any) {
   return W.value['checkout-error'] || 'Your payment could not be completed. Check your details and try again.'
 }
 
-async function loadSdk(data: any) {
+async function loadSdk(data: { clientUrl: any; publishableKey: any; apiBaseUrl: any; profileId: any }) {
   const Hyper = await loadHyperswitchSdk(data.clientUrl)
   return createHyperswitchClient(Hyper, data.publishableKey, data.apiBaseUrl, data.profileId)
 }

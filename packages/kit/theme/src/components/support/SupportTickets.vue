@@ -20,7 +20,7 @@ import { whenOf } from 'platformkit/lib/chat/model.js'
 import SupportMark from './SupportMark.vue'
 
 const T = us('support').widget.tickets
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: { [x: string]: string; what?: any }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 /* list | one | new */
 const view = ref('list')
@@ -31,7 +31,7 @@ const title = ref('')
 const body = ref('')
 
 const statusWord = (s: any) => T[`status-${s}`] || s
-const at = (iso: any) => whenOf(iso)
+const at = (iso: string|number|Date) => whenOf(iso)
 
 onMounted(() => loadTickets())
 
@@ -61,8 +61,8 @@ async function report() {
 }
 
 /* what a timeline entry says. A state change is a sentence, not a row of fields. */
-const lineOf = (e: any) => (e.kind === 'status' ? fill(T.changed, { what: statusWord((e.data || {}).to) }) : e.body || '')
-const shown = computed<any>(() => (ticket.timeline || []).filter((e: any) => lineOf(e)))
+const lineOf = (e: { kind: string; data: any; body: any }) => (e.kind === 'status' ? fill(T.changed, { what: statusWord((e.data || {}).to) }) : e.body || '')
+const shown = computed(() => (ticket.timeline || []).filter((e: any) => lineOf(e)))
 </script>
 
 <template>

@@ -99,14 +99,14 @@ const searchBox = ref<any>(null)
 
 const SLOTS = Object.keys(SPEC).map((slot) => ({ slot, what: (us('pages').fonts?.what || {})[slot] || '' }))
 
-const defaultName = (slot: any) => DEFAULTS[slot]
-const defaultStack = (slot: any) => familyOf(DEFAULTS[slot]).stack
-const chosen = (slot: any) => value.value[slot] || DEFAULTS[slot]
+const defaultName = (slot: string|number) => DEFAULTS[slot]
+const defaultStack = (slot: string|number) => familyOf(DEFAULTS[slot]).stack
+const chosen = (slot: string) => value.value[slot] || DEFAULTS[slot]
 const stackOf = (slot: any) => (familyOf(chosen(slot)) || familyOf(DEFAULTS[slot])).stack
 
-const found = (slot: any) => searchFamilies(slot, query.value)
+const found = (slot: string) => searchFamilies(slot, query.value)
 
-const toggle = (slot: any) => {
+const toggle = (slot: string) => {
   open.value = open.value === slot ? '' : slot
   query.value = ''
   if (open.value) nextTick(() => { const b: any = [].concat(searchBox.value)[0]; if (b) b.focus() })
@@ -114,7 +114,7 @@ const toggle = (slot: any) => {
 
 /* an empty choice is the theme's, and is written as ABSENT rather than as a name — so a site that
    never chose keeps following the theme when the theme's own default changes */
-const choose = (slot: any, name: any) => {
+const choose = (slot: string|number, name: any) => {
   const next = { ...value.value }
   if (name) next[slot] = name
   else delete next[slot]
@@ -134,13 +134,13 @@ const choose = (slot: any, name: any) => {
  * whole family is what the chooser is judging, so the regular weight of each is the honest ask.
  */
 const asked = new Set()
-const load = (names: any) => {
-  const want = names.filter((n: any) => n && !asked.has(n))
+const load = (names: any[]) => {
+  const want = names.filter((n: unknown) => n && !asked.has(n))
   if (!want.length) return
   for (const n of want) asked.add(n)
   const link = document.createElement('link')
   link.rel = 'stylesheet'
-  link.href = 'https://fonts.googleapis.com/css2?' + want.map((n: any) => 'family=' + n.replace(/ /g, '+')).join('&') + '&display=swap'
+  link.href = 'https://fonts.googleapis.com/css2?' + want.map((n: string) => 'family=' + n.replace(/ /g, '+')).join('&') + '&display=swap'
   document.head.appendChild(link)
 }
 

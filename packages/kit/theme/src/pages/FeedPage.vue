@@ -34,7 +34,7 @@ const composing = ref(false)
 const signIn = () => { if ((window as any).DLauth) (window as any).DLauth.open() }
 function compose() { if (!isSignedIn.value) return signIn(); composing.value = true }
 function posted() { composing.value = false; if (column.value) column.value.refresh() }
-function onKey(e: any) { if (e.key === 'Escape') composing.value = false }
+function onKey(e: { key: string }) { if (e.key === 'Escape') composing.value = false }
 watch(composing, (on) => { if (on) document.addEventListener('keydown', onKey); else document.removeEventListener('keydown', onKey) })
 </script>
 

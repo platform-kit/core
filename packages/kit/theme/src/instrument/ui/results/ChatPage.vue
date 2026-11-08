@@ -23,7 +23,7 @@ const ready = computed(() => !!panel.value && panel.value.ready)
 const root = ref<any>(null)
 const height = ref(0)
 function fit() {
-  const el: any = root.value
+  const el = root.value
   if (!el) return
   const stage = el.closest('.qzstage')
   if (stage) stage.scrollTop = 0

@@ -128,7 +128,7 @@ function watchBot(name: any) {
   watching = setInterval(async () => {
     if (!open.id) return clearInterval(watching)
     const all = await runsHere(open.id)
-    const bad = all.find((r: any) => r.mine && r.status === 'failed' && r.error)
+    const bad = all.find((r) => r.mine && r.status === 'failed' && r.error)
     if (bad) {
       const b = (BOTS as any).find((x: any) => x.slug === bad.bot)
       botTrouble.value = { name: (b && b.name) || bad.bot, why: whyFailed(bad.error) }
@@ -479,7 +479,7 @@ const composerSays = computed(() => {
 const sided = computed(() => sidedRoom(channel.value))
 const typingNow = computed(() => whoIsTyping(open.id).map((id) => names.value[id]).filter(Boolean))
 const reactionsFor = (id: any) => {
-  const by: any = new Map()
+  const by = new Map()
   for (const r of open.reactions) {
     if (r.message_id !== id) continue
     if (!by.has(r.emoji)) by.set(r.emoji, { emoji: r.emoji, users: [], mine: false })
@@ -624,7 +624,7 @@ async function togglePinHome() {
    take the width beside the navigation, with no sidebar, the way a desk does. A member's coaching
    place is the same shape — a conversation in two panes, or their sessions — and takes the same room. */
 const WORK_VIEWS = ['support', 'tickets', 'clients', 'comments', 'social-comments', 'social-dms']
-const WIDE = computed(() => SOCIAL && (WORK_VIEWS.includes(view.value) || !!(placeOf(view.value) && (placeOf(view.value) as any).wide)))
+const WIDE = computed(() => SOCIAL && (WORK_VIEWS.includes(view.value) || !!(placeOf(view.value) && placeOf(view.value).wide)))
 /* the navigation's Events is every space's: a space's own events are its tab, not that place */
 const navView = computed(() => (view.value === 'events' && !eventsAll.value ? 'space-events'
   /* without the network, Notifications is Mentions and Threads as tabs: either is that place */

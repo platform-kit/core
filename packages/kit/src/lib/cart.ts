@@ -46,13 +46,13 @@ export function add(p: CartLine, quantity = 1) {
   return key
 }
 export function remove(key: any) { items.value = items.value.filter((x: { key: any }) => x.key !== key); persist() }
-export function setQty(key: any, q: any) {
+export function setQty(key: any, q: number) {
   const line = items.value.find((x: { key: any }) => x.key === key)
   if (!line) return
   line.quantity = clamp(q); items.value = [...items.value]; persist()
 }
 export function clear() { items.value = []; persist() }
-export const has = (sku: any, variant: any) => items.value.some((x: { key: string }) => x.key === keyOf(sku, variant))
+export const has = (sku: string, variant: string|undefined) => items.value.some((x: { key: string }) => x.key === keyOf(sku, variant))
 export const hasProduct = (sku: any) => items.value.some((x: { sku: any }) => x.sku === sku)
 export const count = computed(() => items.value.reduce((n: any, i: { quantity: any }) => n + i.quantity, 0))
 export const total = computed(() => items.value.reduce((n: number, i: { unit_amount: any; quantity: number }) => n + (i.unit_amount || 0) * i.quantity, 0))

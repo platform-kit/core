@@ -11,7 +11,7 @@ import { ROUTES } from 'platformkit/lib/router.js'
    the social layout's sidebar used to hold, kept where search already is */
 const PEOPLE = moduleOn('network')
 // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-const esc = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 async function peopleHits(text: any) {
   if (!PEOPLE || !isSignedIn.value || !text.trim() || kind.value) return []
   const { findPeople, net } = await import('platformkit/lib/network/api.js')
@@ -79,13 +79,13 @@ let semTimer: any = null
 async function run() {
   await ensure()
   const { after, before } = rangeBounds()
-  const opts = { kind: kind.value || null, after, before, tags: tags.value.map((t: any) => (t as any).toLowerCase()) }
-  const kw: any = searchContent(corpus, q.value, opts)
+  const opts = { kind: kind.value || null, after, before, tags: tags.value.map((t: any) => t.toLowerCase()) }
+  const kw = searchContent(corpus, q.value, opts)
   hits.value = kw
   sel.value = 0
   /* people come back from the database, a beat after the shelf's own results */
   const asked = q.value
-  peopleHits(asked).then((ppl) => { if (ppl.length && q.value === asked) hits.value = ppl.concat(hits.value.filter((h: any) => (h as any).kind !== 'person')) })
+  peopleHits(asked).then((ppl) => { if (ppl.length && q.value === asked) hits.value = ppl.concat(hits.value.filter((h: any) => h.kind !== 'person')) })
 
   /* the semantic pass only runs when there are real words to mean something */
   const words = parseQuery(q.value).toks
@@ -96,9 +96,9 @@ async function run() {
     let qvec
     try { qvec = await embedText(snapshot) } catch (e) { return }
     if (q.value !== snapshot) return                     /* the query moved on */
-    const sem: any = semanticSearch(corpus, qvec, { ...opts, query: snapshot, min: 0.2, topK: 8 })
+    const sem = semanticSearch(corpus, qvec, { ...opts, query: snapshot, min: 0.2, topK: 8 })
     const have = new Set(kw.map((h: any) => h.href))
-    const extra = sem.filter((s: any) => !have.has(s.href)).map((s: any) => ({ ...s, semantic: true }))
+    const extra = sem.filter((s) => !have.has(s.href)).map((s) => ({ ...s, semantic: true }))
     hits.value = kw.concat(extra)
   }, 180)
 }
@@ -111,8 +111,8 @@ function toggleTag(t: any) {
 const grouped = computed(() => {
   const g: any = []
   for (const h of hits.value) {
-    let grp: any = g.find((x: any) => x.kind === (h as any).kind)
-    if (!grp) { grp = { kind: (h as any).kind, label: (h as any).kind === 'person' ? us('network').shell.main['explore-people'] : (KIND_LABEL as any)[(h as any).kind], rows: [] }; g.push(grp) }
+    let grp = g.find((x: any) => x.kind === h.kind)
+    if (!grp) { grp = { kind: h.kind, label: h.kind === 'person' ? us('network').shell.main['explore-people'] : (KIND_LABEL as any)[h.kind], rows: [] }; g.push(grp) }
     grp.rows.push(h)
   }
   return g

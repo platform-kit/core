@@ -19,10 +19,10 @@ const kinds = computed(() => (props.nested ? LEAF_KINDS : KIND_KEYS))
 /* the kinds grouped for the select: Text · Choices · Media · Structure */
 const grouped = computed(() => GROUPS.map((g) => ({ group: (KG[g] || {}).name || g, items: kinds.value.filter((k) => KINDS[k].group === g).map((k) => ({ value: k, label: (K[k] || {}).name || k, line: (K[k] || {}).line || '' })) })).filter((g) => g.items.length))
 const rowKinds = computed(() => grouped.value.map((g) => ({ ...g, items: g.items.filter((x) => x.value !== 'list') })))
-const kindName = (k: any) => (K[k] || {}).name || k
+const kindName = (k: string|number) => (K[k] || {}).name || k
 const camel = (s: any) => String(s || '').trim().replace(/[^A-Za-z0-9]+(.)?/g, (_, c) => (c ? c.toUpperCase() : '')).replace(/^[A-Z]/, (c) => c.toLowerCase()).replace(/^[^a-z]+/, '')
 function setLabel(v: any) { f.value.label = v; if (f.value._new) f.value.key = camel(v) || 'field' }
-function setKind(k: any) {
+function setKind(k: string) {
   const was = f.value.kind
   if (!k || was === k) return
   f.value.kind = k
@@ -33,20 +33,20 @@ function setKind(k: any) {
   if (k !== 'list') delete f.value.of
   if (k === 'list' && !f.value.of) f.value.of = 'text'
   if ((k === 'select' || k === 'multi-select') && !f.value.options) f.value.options = [{ value: '', label: '' }]
-  if (k === 'reference' && !f.value.model) f.value.model = (props.models[0] && (props.models[0] as any).key) || ''
+  if (k === 'reference' && !f.value.model) f.value.model = (props.models[0] && props.models[0].key) || ''
   if (k === 'group' && !f.value.fields) f.value.fields = []
   if (f.value.unique && !(KINDS[k].base === 'string' && k !== 'markdown')) delete f.value.unique
-  if (f.value.rules) f.value.rules = f.value.rules.filter((r: any) => rulesFor(k).includes(r.rule))
+  if (f.value.rules) f.value.rules = f.value.rules.filter((r: { rule: string }) => rulesFor(k).includes(r.rule))
   if (!f.value.rules || !f.value.rules.length) delete f.value.rules
   delete f.value.default
   f.value._kindChanged = true
 }
-function setOf(of: any) {
+function setOf(of: string) {
   if (!of) return
   f.value.of = of
   if (of === 'select' && !f.value.options) f.value.options = [{ value: '', label: '' }]
   if (of !== 'select') delete f.value.options
-  if (of === 'reference' && !f.value.model) f.value.model = (props.models[0] && (props.models[0] as any).key) || ''
+  if (of === 'reference' && !f.value.model) f.value.model = (props.models[0] && props.models[0].key) || ''
   if (of !== 'reference') { delete f.value.model; delete f.value.many }
   if (of === 'group' && !f.value.fields) f.value.fields = []
   if (of !== 'group') delete f.value.fields
@@ -54,41 +54,41 @@ function setOf(of: any) {
 }
 const uniqueOk = computed(() => !props.nested && KINDS[f.value.kind] && KINDS[f.value.kind].base === 'string' && f.value.kind !== 'markdown')
 const defaultKind = computed(() => (({ text: 'text', url: 'url', email: 'email', number: 'number', boolean: 'boolean', date: 'date', datetime: 'datetime-local', 'long-text': 'textarea', select: 'select' } as any)[f.value.kind] || null))
-function setDefault(v: any) { if (v === '' || v === undefined || v === null) delete f.value.default; else f.value.default = f.value.kind === 'number' ? Number(v) : v }
+function setDefault(v: string|null|undefined) { if (v === '' || v === undefined || v === null) delete f.value.default; else f.value.default = f.value.kind === 'number' ? Number(v) : v }
 function setHelp(v: any) { if (v) f.value.help = v; else delete f.value.help }
-function flag(k: any, on: any) { if (on) f.value[k] = true; else delete f.value[k]; if (k === 'required') f.value._kindChanged = true }
+function flag(k: string, on: any) { if (on) f.value[k] = true; else delete f.value[k]; if (k === 'required') f.value._kindChanged = true }
 const yesNo = [{ value: 'true', label: WE.yes || 'Yes' }, { value: 'false', label: WE.no || 'No' }]
 
 /* ---- shown when ---- */
-const others = computed(() => props.fields.filter((x) => x !== f.value && (x as any).key).map((x) => ({ value: (x as any).key, label: (x as any).label || (x as any).key, field: x })))
+const others = computed(() => props.fields.filter((x) => x !== f.value && x.key).map((x) => ({ value: x.key, label: x.label || x.key, field: x })))
 const target = computed(() => (f.value.shown ? others.value.find((x) => x.value === f.value.shown.field) : null))
 const comparisons = [{ value: 'is', label: WS.is }, { value: 'is-not', label: WS['is-not'] }, { value: 'empty', label: WS.empty }, { value: 'not-empty', label: WS['not-empty'] }]
 function setShown(on: any) { if (!on) delete f.value.shown; else { f.value.shown = { field: (others.value[0] && others.value[0].value) || '', is: 'is', value: '' }; shownField(f.value.shown.field) } }
-function shownField(k: any) { if (!k) return; f.value.shown.field = k; const t = others.value.find((x) => x.value === k); const tf: any = t && t.field; f.value.shown.value = tf && tf.kind === 'boolean' ? true : tf && tf.options && tf.options[0] ? tf.options[0].value : '' }
-function shownIs(v: any) { if (!v) return; f.value.shown.is = v; if (v === 'empty' || v === 'not-empty') delete f.value.shown.value; else if (!('value' in f.value.shown)) f.value.shown.value = '' }
-const targetOptions = computed(() => (target.value && (target as any).value.field.options ? (target as any).value.field.options.map((o: any) => ({ value: o.value, label: o.label || o.value })) : []))
+function shownField(k: any) { if (!k) return; f.value.shown.field = k; const t = others.value.find((x) => x.value === k); const tf = t && t.field; f.value.shown.value = tf && tf.kind === 'boolean' ? true : tf && tf.options && tf.options[0] ? tf.options[0].value : '' }
+function shownIs(v: string) { if (!v) return; f.value.shown.is = v; if (v === 'empty' || v === 'not-empty') delete f.value.shown.value; else if (!('value' in f.value.shown)) f.value.shown.value = '' }
+const targetOptions = computed(() => (target.value && target.value.field.options ? target.value.field.options.map((o: { value: any; label: any }) => ({ value: o.value, label: o.label || o.value })) : []))
 
 /* ---- rules ---- */
 const ruleKeys = computed(() => rulesFor(f.value.kind === 'list' ? 'list' : f.value.kind))
 const ruleOptions = computed(() => ruleKeys.value.map((k) => ({ value: k, label: (R[k] || {}).name || k })))
-const shape = (rule: any) => (RULES[rule] || {}).params
-function addRule() { const rule = ruleKeys.value.find((r) => !(f.value.rules || []).some((x: any) => x.rule === r)) || ruleKeys.value[0]; if (!rule) return; f.value.rules = [...(f.value.rules || []), fresh(rule)]; f.value._kindChanged = true }
-function fresh(rule: any) { const s = shape(rule); return s === 'none' ? { rule } : s === 'range' ? { rule, params: [0, 10] } : s === 'list' ? { rule, params: [''] } : s === 'n' ? { rule, params: 1 } : { rule, params: '' } }
+const shape = (rule: string|number) => (RULES[rule] || {}).params
+function addRule() { const rule = ruleKeys.value.find((r) => !(f.value.rules || []).some((x: { rule: string }) => x.rule === r)) || ruleKeys.value[0]; if (!rule) return; f.value.rules = [...(f.value.rules || []), fresh(rule)]; f.value._kindChanged = true }
+function fresh(rule: string) { const s = shape(rule); return s === 'none' ? { rule } : s === 'range' ? { rule, params: [0, 10] } : s === 'list' ? { rule, params: [''] } : s === 'n' ? { rule, params: 1 } : { rule, params: '' } }
 function setRule(i: any, rule: any) { if (!rule) return; f.value.rules.splice(i, 1, fresh(rule)); f.value._kindChanged = true }
-function setParam(i: any, v: any, j: any) { const r = f.value.rules[i]; const s = shape(r.rule); if (s === 'n') r.params = Number(v); else if (s === 'range') { r.params = [...r.params]; r.params[j] = Number(v) } else r.params = v; f.value._kindChanged = true }
-function setListParam(i: any, j: any, v: any) { const r = f.value.rules[i]; r.params = [...r.params]; r.params[j] = v; f.value._kindChanged = true }
-function addListParam(i: any) { f.value.rules[i].params = [...f.value.rules[i].params, '']; f.value._kindChanged = true }
-function removeListParam(i: any, j: any) { const r = f.value.rules[i]; r.params = r.params.filter((_: any, k: any) => k !== j); if (!r.params.length) r.params = ['']; f.value._kindChanged = true }
+function setParam(i: string|number, v: any, j: string|number) { const r = f.value.rules[i]; const s = shape(r.rule); if (s === 'n') r.params = Number(v); else if (s === 'range') { r.params = [...r.params]; r.params[j] = Number(v) } else r.params = v; f.value._kindChanged = true }
+function setListParam(i: string|number, j: string|number, v: any) { const r = f.value.rules[i]; r.params = [...r.params]; r.params[j] = v; f.value._kindChanged = true }
+function addListParam(i: string|number) { f.value.rules[i].params = [...f.value.rules[i].params, '']; f.value._kindChanged = true }
+function removeListParam(i: string|number, j: any) { const r = f.value.rules[i]; r.params = r.params.filter((_: any, k: any) => k !== j); if (!r.params.length) r.params = ['']; f.value._kindChanged = true }
 function removeRule(i: any) { f.value.rules.splice(i, 1); if (!f.value.rules.length) delete f.value.rules; f.value._kindChanged = true }
 
 /* ---- options, sub-fields ---- */
 function addOption() { f.value.options = [...(f.value.options || []), { value: '', label: '' }] }
-function setOption(i: any, k: any, v: any) { const o = { ...f.value.options[i], [k]: v }; if (k === 'label' && (!o.value || o.value === camel(f.value.options[i].label))) o.value = camel(v); f.value.options.splice(i, 1, o) }
+function setOption(i: string|number, k: string, v: any) { const o = { ...f.value.options[i], [k]: v }; if (k === 'label' && (!o.value || o.value === camel(f.value.options[i].label))) o.value = camel(v); f.value.options.splice(i, 1, o) }
 function removeOption(i: any) { f.value.options.splice(i, 1) }
 function addSub() { f.value.fields = [...(f.value.fields || []), { key: 'field' + ((f.value.fields || []).length + 1), kind: 'text', label: '', _new: true, _open: true }] }
 function removeSub(i: any) { f.value.fields.splice(i, 1) }
-function rename() { const to = window.prompt(W['rename-prompt'], f.value.key); if (!to || to === f.value.key) return; if (props.fields.some((x) => x !== f.value && (x as any).key === to)) { window.alert(W['rename-refused']); return } emit('rename', { from: f.value.key, to }) }
-const modelOptions = computed(() => props.models.map((m) => ({ value: (m as any).key, label: (m as any).name })))
+function rename() { const to = window.prompt(W['rename-prompt'], f.value.key); if (!to || to === f.value.key) return; if (props.fields.some((x) => x !== f.value && x.key === to)) { window.alert(W['rename-refused']); return } emit('rename', { from: f.value.key, to }) }
+const modelOptions = computed(() => props.models.map((m) => ({ value: m.key, label: m.name })))
 </script>
 
 <template>

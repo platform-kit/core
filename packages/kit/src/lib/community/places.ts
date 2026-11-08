@@ -156,7 +156,7 @@ export function foldOf(spaceId: string, channels = []) {
  * whoever keeps it — and has no tabs. A space of one room (or only its feed) keeps the tabs, since a
  * list of one room and three places under it would be a menu for a single page.
  */
-export function spaceItems(spaceId: any, channels = [], { events = false, keeps = false } = {}) {
+export function spaceItems(spaceId: string, channels = [], { events = false, keeps = false } = {}) {
   const rooms = foldOf(spaceId, channels)
   if (!rooms.length) return []
   return [

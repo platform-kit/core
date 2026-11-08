@@ -25,7 +25,7 @@ const cur = computed(() => tracks.value[at.value])
 
 const autoplay = ref(true)     /* auto-advance the playlist (reader can switch it off) */
 const autostart = ref(false)   /* whether the mounting track should begin playing itself */
-function selectTrack(i: any) { autostart.value = true; at.value = i }
+function selectTrack(i: number) { autostart.value = true; at.value = i }
 function onEnded() {
   if (autoplay.value && at.value < tracks.value.length - 1) { autostart.value = true; at.value += 1 }
 }

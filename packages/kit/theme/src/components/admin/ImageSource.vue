@@ -33,7 +33,7 @@ const taking = ref('')
 const trouble = ref('')
 const searched = ref(false)
 
-const fill = (t: any, v: any) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m))
+const fill = (t: any, v: { [x: string]: string }) => String(t || '').replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m))
 
 async function look() {
   const term = q.value.trim()
@@ -47,7 +47,7 @@ async function look() {
 
 /* the moment a picture is actually chosen: the source does whatever its terms ask, the bytes
    come back, and the library holds them before the field is told anything */
-async function take(r: any) {
+async function take(r: { id: string }) {
   if (taking.value) return
   taking.value = r.id; trouble.value = ''
   try {

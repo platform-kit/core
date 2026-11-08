@@ -207,7 +207,7 @@ class EndpointSynthesizeStream extends SynthesizeStream {
     this.putFrame(last, segmentId, true)
   }
 
-  putFrame(frame: AudioFrame, segmentId: any, final: boolean) {
+  putFrame(frame: AudioFrame, segmentId: string, final: boolean) {
     this.queue.put({
       requestId: randomUUID(),
       segmentId,

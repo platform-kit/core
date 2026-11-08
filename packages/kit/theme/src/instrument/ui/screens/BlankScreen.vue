@@ -38,7 +38,7 @@ function onInput() {
   if (first === null && typed.value.trim()) first = now
   if (first !== null) last = now
 }
-function send(text: any) {
+function send(text: string) {
   if (sent) return
   sent = true
   emit('answer', text, { firstMs: first, lastMs: last, hidden: hid })

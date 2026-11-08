@@ -26,7 +26,7 @@ const W = computed(() => us('spaces').commands.main)
 
 /* the units a span is offered in, shortest first — the same letters the files use */
 const UNITS = ['m', 'h', 'd', 'w']
-const unitWord = (u: any) => W.value['unit-' + u] || u
+const unitWord = (u: string) => W.value['unit-' + u] || u
 
 /* every argument starts at its default, taken apart into the controls that will put it back */
 const vals = ref<any>({})
@@ -54,7 +54,7 @@ const args = computed(() => {
   }
   return out
 })
-const ready = computed(() => (props.command.args || []).every((a: any) => !a.required || String((args as any).value[a.name] ?? '').trim() !== ''))
+const ready = computed(() => (props.command.args || []).every((a: { required: any; name: string|number }) => !a.required || String(args.value[a.name] ?? '').trim() !== ''))
 const go = () => { if (ready.value) emit('run', args.value) }
 onMounted(() => { if (!(props.command.args || []).length) go() })
 </script>

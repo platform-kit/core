@@ -63,8 +63,8 @@ export function sourcesOn(modules: any = {}, registered: any[] = []) {
     return modules.coaching !== false
   })
   const custom = [...new Map(registered
-    .filter((adapter: any) => adapter && typeof adapter.id === 'string' && adapter.id && !SOURCES.includes(adapter.id))
-    .map((adapter: any) => [adapter.id, adapter])).values()]
+    .filter((adapter) => adapter && typeof adapter.id === 'string' && adapter.id && !SOURCES.includes(adapter.id))
+    .map((adapter) => [adapter.id, adapter])).values()]
     .filter((adapter) => modules[adapter.module || adapter.id] !== false)
     .map((adapter) => adapter.id)
   return [...builtIn, ...custom]
@@ -72,7 +72,7 @@ export function sourcesOn(modules: any = {}, registered: any[] = []) {
 
 /* what is owed: the promise the row carries, run from when the run began. A row that promises
    nothing owes nothing — it is still waiting, and that is a different sentence. */
-export function dueOf(row: any, now = Date.now()) {
+export function dueOf(row: { waiting_since: any; due?: any; source?: string }|undefined, now = Date.now()) {
   if (!row || !row.waiting_since || !(Number(row.due) > 0)) return null
   const since = new Date(row.waiting_since).getTime()
   if (!isFinite(since)) return null

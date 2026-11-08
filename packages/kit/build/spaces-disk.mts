@@ -19,12 +19,12 @@ import { writeIfChanged } from './write-if-changed.mjs'
 const readJson = (root: string, rel: string) => { try { return JSON.parse(readFileSync(join(root, rel), 'utf8')) } catch { return null } }
 
 /* the catalog as the compile wants it: the offers by sku and the booking types */
-export const catalogFrom = (root: any) => {
+export const catalogFrom = (root: string) => {
   const c = readJson(root, 'supabase/functions/_shared/catalog.json')
   return c ? { offers: c.offers || {}, sessions: c.sessions || [] } : null
 }
 /* the names of the forms this site has */
-export const formsFrom = (root: any) => {
+export const formsFrom = (root: string) => {
   const f = readJson(root, 'supabase/functions/_shared/forms.json')
   return f ? Object.keys(f) : null
 }

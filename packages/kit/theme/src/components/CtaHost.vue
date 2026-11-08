@@ -39,7 +39,7 @@ function evaluate(path: any) {
      full modal */
   const reading = /^\/content\/books\/./.test(path) || isPageRoute(path)
   timer = setTimeout(async () => {
-    const b: any = await pickAd({ placement: 'modal' })
+    const b = await pickAd({ placement: 'modal' })
     // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'.
     if (!b || route.value !== path || !mayInterrupt(route.value, INTERRUPT_ROUTES)) return
     /* the corner belongs to whoever takes it first in a page view: if the chat is already saying
@@ -57,19 +57,19 @@ onBeforeUnmount(clear)
 
 function dismiss() {
   const b = ad.value
-  if (b) { markDismissed((b as any).id); capture('click', { kind: 'cta_dismiss', ad_id: (b as any).id, mode: mode.value }) }
+  if (b) { markDismissed(b.id); capture('click', { kind: 'cta_dismiss', ad_id: b.id, mode: mode.value }) }
   ad.value = null
   releaseCorner('ad')   /* put away: the chat may have the corner for the rest of the page */
 }
 function go() {
   const b = ad.value
   if (!b) return
-  capture('cta_click', { ad_id: (b as any).id, mode: mode.value })
-  markDismissed((b as any).id)
+  capture('cta_click', { ad_id: b.id, mode: mode.value })
+  markDismissed(b.id)
   ad.value = null
-  if (!(b as any).href) return
-  if ((b as any).href.startsWith('/')) navigate((b as any).href)
-  else window.open((b as any).href, '_blank', 'noopener')
+  if (!b.href) return
+  if (b.href.startsWith('/')) navigate(b.href)
+  else window.open(b.href, '_blank', 'noopener')
 }
 </script>
 

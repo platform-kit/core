@@ -33,7 +33,7 @@ export const VERBOSE = verbose()
  * was asked for.
  */
 export function some(lines: any[], n = 8, verb = VERBOSE) {
-  const l = lines.filter((x: any) => x != null && String(x).trim())
+  const l = lines.filter((x) => x != null && String(x).trim())
   if (verb || l.length <= n) return l
   return [...l.slice(0, n), `… and ${l.length - n} more (PLATFORMKIT_VERBOSE=1 for all of them)`]
 }

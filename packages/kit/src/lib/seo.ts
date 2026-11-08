@@ -35,8 +35,8 @@ const strip = (html: any) => String(html || '').replace(/<[^>]+>/g, ' ').replace
 export const SHARE = {
   default: '/share/default.png',
   of: (kind: string, id: string) => (id ? '/share/' + kind + '/' + id + '.png' : '/share/default.png'),
-  article: (id: any) => SHARE.of('articles', id),
-  book: (slug: any) => SHARE.of('books', slug),
+  article: (id: string) => SHARE.of('articles', id),
+  book: (slug: string) => SHARE.of('books', slug),
   page: (route: string) => (route && route !== '/' ? SHARE.of('pages', String(route).replace(/^\/+|\/+$/g, '').replace(/\//g, '-')) : '/share/default.png'),
 }
 

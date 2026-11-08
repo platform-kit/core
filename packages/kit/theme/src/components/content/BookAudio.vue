@@ -31,7 +31,7 @@ const total = ref(props.seconds || 0)
 const RATES = [1, 1.25, 1.5]
 const rate = ref(1)
 
-const fmt = (s: any) => { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') }
+const fmt = (s: number) => { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') }
 const clock = computed(() => fmt(now.value) + ' / ' + fmt(total.value))
 const eyebrow = computed(() => (props.kind === 'summary' ? A['eyebrow-summary'] : props.kind === 'intro' ? A['eyebrow-intro'] : A.eyebrow) || '')
 
@@ -48,8 +48,8 @@ function make() {
     container: box.value, url: props.src, height: 36, waveColor: c.wave, progressColor: c.progress, cursorColor: c.progress,
     cursorWidth: 1, barWidth: 2, barGap: 2, barRadius: 2, normalize: true, dragToSeek: true, audioRate: rate.value,
   })
-  ws.on('ready', (d: any) => { ready.value = true; total.value = d || total.value })
-  ws.on('timeupdate', (t: any) => { now.value = t })
+  ws.on('ready', (d: number) => { ready.value = true; total.value = d || total.value })
+  ws.on('timeupdate', (t: number) => { now.value = t })
   ws.on('play', () => { playing.value = true })
   ws.on('pause', () => { playing.value = false })
   ws.on('finish', () => { playing.value = false })

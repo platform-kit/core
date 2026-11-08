@@ -41,14 +41,14 @@ const q = ref(blankQuery())
 const more = ref(false)
 const labels = computed(() => {
   const out: any = {}
-  for (const p of props.people) out[(p as any).id] = (p as any).name
-  for (const c of props.channels) out[(c as any).id] = '#' + (c as any).name
+  for (const p of props.people) out[p.id] = p.name
+  for (const c of props.channels) out[c.id] = '#' + c.name
   return out
 })
 const chips = computed(() => chipsOf(q.value, W.value, labels.value))
 const said = computed(() => describeQuery(q.value, W.value, labels.value))
 const n = computed(() => narrowingCount(q.value))
-const channelOf = (id: any) => (props.channels.find((c) => (c as any).id === id) || {}).name || ''
+const channelOf = (id: any) => (props.channels.find((c) => c.id === id) || {}).name || ''
 const drop = (chip: any) => { q.value = { ...q.value, ...chip.clear }; go() }
 const go = () => { if (!emptyQuery(q.value)) emit('search', { ...q.value }) }
 let t: any = null

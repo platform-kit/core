@@ -90,7 +90,7 @@ const line = computed(() => (!waiting.value ? W.value['line-quiet']
 /* the rule that makes a colour out of a name is shared — the store asks the same question of a
    product with no photograph (lib/tint.js). */
 const band = computed(() => tint((props.spaces[0] || {}).slug || (props.spaces[0] || {}).name || 'community'))
-const rooms = computed(() => (props.rows || []).filter((r) => (r as any).kind !== 'dm').length)
+const rooms = computed(() => (props.rows || []).filter((r) => r.kind !== 'dm').length)
 /* WHAT THE OWNER HAS SAID ABOUT THIS PAGE (content/community.md): its name and tagline, the picture
    behind its head, and which parts of it are drawn. Every one of those is a decision about how the
    place feels rather than about how the code is put together, so none of it is in the config and
@@ -98,15 +98,15 @@ const rooms = computed(() => (props.rows || []).filter((r) => (r as any).kind !=
 const C2 = computed(() => settings())
 const home = computed(() => C2.value.home)
 
-const on = computed<any>(() => (calendar.upcoming || []).slice(0, 4))
+const on = computed(() => (calendar.upcoming || []).slice(0, 4))
 const here = computed(() => (props.people || []).slice(0, 8))
 const more = computed(() => Math.max(0, (props.people || []).length - here.value.length))
-const unreadIn = (id: any) => (props.rows || []).filter((r) => (r as any).space === id).reduce((n, r) => n + unreadOf(r), 0)
-const roomsIn = (id: any) => (props.rows || []).filter((r) => (r as any).space === id && (r as any).kind !== 'dm').length
+const unreadIn = (id: any) => (props.rows || []).filter((r) => r.space === id).reduce((n, r) => n + unreadOf(r), 0)
+const roomsIn = (id: any) => (props.rows || []).filter((r) => r.space === id && r.kind !== 'dm').length
 
 /* HOW LONG AGO, in as few characters as it takes: a feed is scanned, and a card that says the full
    date makes a reader work out for themselves whether it is new. */
-function ago(v: any) {
+function ago(v: string|number|Date) {
   const d = new Date(v)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
   if (isNaN(d)) return ''
@@ -124,8 +124,8 @@ function ago(v: any) {
    empty card attributed to "Someone", which is two wrongs: there is no someone, and there were
    words to show. */
 const EV = computed(() => us('spaces').events || {})
-const isSystem = (m: any) => m.kind === 'system' && !m.bot
-const said = (m: any) => {
+const isSystem = (m: { kind: string; bot: any }) => m.kind === 'system' && !m.bot
+const said = (m: { kind: string; title: any; body: any }) => {
   if (m.kind === 'system') return saidIn({ ...m, kind: 'system' }, { names: props.names, words: EV.value, money: (v) => String(v ?? '') })
   return m.title ? m.title : titleOf({ body: m.body }, props.names, { max: 150 })
 }
@@ -137,11 +137,11 @@ const replies = (n: any) => (n === 1 ? W.value['replies-one'] : String(W.value['
    same way every time. */
 const SHOWS = ['all', 'unread', 'mine']
 const show = ref('all')
-const unreadRooms = computed(() => new Set((props.rows || []).filter((r) => unreadOf(r) > 0).map((r) => (r as any).channel)))
+const unreadRooms = computed(() => new Set((props.rows || []).filter((r) => unreadOf(r) > 0).map((r) => r.channel)))
 const shown = computed(() => {
   let list = feed.value
-  if (show.value === 'unread') list = list.filter((m: any) => unreadRooms.value.has((m as any).channel))
-  else if (show.value === 'mine') list = list.filter((m: any) => (props.spaces || []).some((s) => (s as any).id === (m as any).space))
+  if (show.value === 'unread') list = list.filter((m: { channel: any }) => unreadRooms.value.has(m.channel))
+  else if (show.value === 'mine') list = list.filter((m: { space: any }) => (props.spaces || []).some((s) => s.id === m.space))
   /* a row with nothing in it is not news: a platform line whose event this site has no words for
      says nothing, and a card saying nothing is worse than one fewer card */
   return list.filter((m: any) => String(said(m) || '').trim())

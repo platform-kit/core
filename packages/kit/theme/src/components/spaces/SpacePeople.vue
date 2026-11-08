@@ -38,17 +38,17 @@ const busy = ref(false)
 const err = ref('')
 const filter = ref('')
 
-const aRoom = computed(() => (props.space ? (props.channels.find((c) => (c as any).space_id === props.space.id && (c as any).kind !== 'dm') || null) : null))
+const aRoom = computed(() => (props.space ? (props.channels.find((c) => c.space_id === props.space.id && c.kind !== 'dm') || null) : null))
 const shown = computed(() => {
   const q = filter.value.trim().toLowerCase()
   const list = people.value
-  return q ? list.filter((p: any) => String((p as any).name || '').toLowerCase().includes(q)) : list
+  return q ? list.filter((p: { name: any }) => String(p.name || '').toLowerCase().includes(q)) : list
 })
 
 async function load() {
   if (!props.space) { people.value = []; invites.value = []; return }
   people.value = (await peopleOf(props.space.id)) || []
-  mayAsk.value = aRoom.value ? !!(await mayInvite((aRoom.value as any).id)) : false
+  mayAsk.value = aRoom.value ? !!(await mayInvite(aRoom.value.id)) : false
   invites.value = mayAsk.value ? ((await invitesOf(props.space.id)) || []) : []
 }
 onMounted(load)

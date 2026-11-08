@@ -10,7 +10,7 @@ const props = defineProps({ screen: { type: Object as PropType<any>, required: t
 const emit = defineEmits(['answer'])
 const other = ref(false), text = ref(''), input = ref<any>(null)
 function pick(o: any) {
-  if (o.other) { other.value = true; nextTick(() => { const el: any = Array.isArray(input.value) ? input.value[0] : input.value; el && el.focus() }); return }
+  if (o.other) { other.value = true; nextTick(() => { const el = Array.isArray(input.value) ? input.value[0] : input.value; el && el.focus() }); return }
   emit('answer', o.v, {})
 }
 function sendOther() { const t = text.value.trim(); if (t) emit('answer', 'other', { text: t }) }

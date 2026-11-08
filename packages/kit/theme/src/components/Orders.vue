@@ -34,7 +34,7 @@ const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) =>
 
 /* every sku the site sells → its title and kind: the products, then each book's formats */
 const OFFERS = (() => {
-  const m: any = new Map()
+  const m = new Map()
   for (const p of PRODUCTS || []) m.set(p.sku, { title: p.title, kind: p.kind, book: p.book || '' })
   for (const b of BOOKS || []) for (const f of formatOffers(b)) m.set(f.sku, { title: b.title, kind: f.kind, format: f.format, book: b.slug })
   return m
@@ -126,7 +126,7 @@ const filters = computed(() => FILTERS.filter((f) => f === 'all' || counts.value
 
 const who = (r: any) => (r.user_id && people.value[r.user_id]) || null
 // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const when = (d: any) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+const when = (d) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
 const cash = (n: any, cur: any) => (typeof n === 'number' ? new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format(n / 100) : '')
 const money = (r: any) => cash(r.total, r.currency)
 /* what has actually been taken: the transactions, which is the same sum the database derives

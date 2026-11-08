@@ -42,16 +42,16 @@ const flashId = ref<any>(null)
 const error = ref('')
 const busy = ref(false)
 
-const byId = computed(() => Object.fromEntries(thread.messages.map((m: any) => [(m as any).id, m])))
+const byId = computed(() => Object.fromEntries(thread.messages.map((m: { id: any }) => [m.id, m])))
 const sections = computed(() => daySections(groupRuns(thread.messages), Date.now(), P).map((s) => ({ ...s })))
 const readAt = computed(() => { void thread.members; return peerReadAt() })
-const reactionsOf = (id: any) => thread.reactions.filter((r: any) => (r as any).message_id === id)
-const peerName = computed(() => (props.peer && props.peer.name) || (thread.peer && (thread.peer as any).name) || '')
+const reactionsOf = (id: any) => thread.reactions.filter((r: { message_id: any }) => r.message_id === id)
+const peerName = computed(() => (props.peer && props.peer.name) || (thread.peer && thread.peer.name) || '')
 /* whether the other party answers as a coach is the ROLES they hold, not the one word the profile
    used to carry: this compared role === 'admin' and so called every coach a member, and drew MEMBER
    under a coach's own name at the head of their own thread. */
 const peerIsCoach = computed(() => {
-  const r: any = props.peer || thread.peer || {}
+  const r = props.peer || thread.peer || {}
   const roles = Array.isArray(r.roles) ? r.roles : (r.role ? [r.role] : [])
   return roles.includes('provider') || roles.includes('coach') || roles.includes('admin')
 })
@@ -60,14 +60,14 @@ const role = computed(() => (peerIsCoach.value ? titleOf(props.peer) : P['member
 
 const NEAR = 80
 function onScroll() {
-  const el: any = scroller.value
+  const el = scroller.value
   if (!el) return
   const near = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR
   atBottom.value = near
   setWantsRead(near && document.visibilityState === 'visible')
   if (near) fresh.value = 0
 }
-function toBottom(smooth: any) {
+function toBottom(smooth: boolean) {
   const el = scroller.value
   if (!el) return
   el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' })
@@ -86,9 +86,9 @@ useIntersectionObserver(top, async ([entry]) => {
 
 /* a new last message: follow it down if the reader was at the foot (or sent it), else count it */
 watch(() => thread.messages.length && thread.messages[thread.messages.length - 1], async (last, prev) => {
-  if (!last || (prev && (last as any).id === (prev as any).id)) return
+  if (!last || (prev && last.id === prev.id)) return
   await nextTick()
-  if (atBottom.value || (last as any).sender_id === props.me) toBottom(!!prev)
+  if (atBottom.value || last.sender_id === props.me) toBottom(!!prev)
   else fresh.value += 1
 })
 
@@ -137,7 +137,7 @@ async function onFile(file: any) {
   try { await sendFile(file, replyTo.value && replyTo.value.id); replyTo.value = null } catch (e) { error.value = V['file-failed'] }
   busy.value = false
 }
-function jump(id: any) {
+function jump(id: string) {
   const el = scroller.value && scroller.value.querySelector('[data-id="' + id + '"]')
   if (!el) return
   el.scrollIntoView({ block: 'center', behavior: 'smooth' })

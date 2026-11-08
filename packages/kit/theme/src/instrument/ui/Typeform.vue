@@ -40,12 +40,12 @@ watch(() => props.screens, () => { i.value = 0; answers = [] })
 
    A screen can carry skip(), a predicate read at the moment it would be shown,
    which is what lets it depend on an answer given seconds earlier. */
-function skipped(s: any) {
+function skipped(s: { kind: string; skip: () => boolean }) {
   if (!s) return false
   if (s.kind === 'speak' && VOICE.mode === 'off') return true
   return typeof s.skip === 'function' && s.skip() === true
 }
-function settle(n: any) {
+function settle(n: number) {
   let k = n
   while (k < props.screens.length && skipped(props.screens[k])) k++
   return k
@@ -55,12 +55,12 @@ const current = computed(() => props.screens[settle(i.value)] || null)
 /* when the current screen appeared, so an answer can carry how long it took */
 let shownAt = Date.now()
 watch(current, () => { shownAt = Date.now() })
-const component = computed(() => (current.value ? KINDS[(current.value as any).kind] || ChoiceScreen : null))
+const component = computed(() => (current.value ? KINDS[current.value.kind] || ChoiceScreen : null))
 
 function report() {
   const at = settle(i.value)
   emit('progress', at / Math.max(props.screens.length, 1))
-  emit('label', (current.value && (current.value as any).label) || props.title || '')
+  emit('label', (current.value && current.value.label) || props.title || '')
   /* an empty list is a round that has not been handed over yet, not a finished
      one — completing on it would report an answer nobody gave */
   if (props.screens.length && at >= props.screens.length) emit('complete', answers)
@@ -68,7 +68,7 @@ function report() {
 watch(current, report, { immediate: true })
 
 function onAnswer(value: any, extra: any) {
-  const s: any = current.value
+  const s = current.value
   const ex = Object.assign({}, extra || {}, { ms: Date.now() - shownAt })
   answers.push({ id: s.id, value, extra: ex, meta: s.meta || null })
   emit('answer', s, value, ex)
@@ -82,19 +82,19 @@ function back() {
   while (k >= 0 && skipped(props.screens[k])) k--
   if (k < 0) return false
   const s = props.screens[k]
-  const at: any = answers.map((a: any) => a.id).lastIndexOf((s as any).id)
+  const at = answers.map((a: { id: any }) => a.id).lastIndexOf(s.id)
   if (at >= 0) answers.splice(at, 1)
   i.value = k
   return true
 }
 
 /* the number keys pick an option — the shell forwards them */
-function key(n: any) {
+function key(n: number) {
   const s = current.value
-  if (!s || !(s as any).options || !(s as any).options[n - 1]) return
-  if ((s as any).kind === 'pick') return   /* the pick screen takes its own keys: "other" opens a line, not an answer */
+  if (!s || !s.options || !s.options[n - 1]) return
+  if (s.kind === 'pick') return   /* the pick screen takes its own keys: "other" opens a line, not an answer */
   // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
-  onAnswer((s as any).options[n - 1].v)
+  onAnswer(s.options[n - 1].v)
 }
 
 defineExpose({ key, back, index: () => settle(i.value), total: () => props.screens.length })

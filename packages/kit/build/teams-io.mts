@@ -76,7 +76,7 @@ const WAY: any = {
 export const TEAM_WAYS = WAY
 /* a role may be written as one word or a list, and both mean the same set — so they are compared
    as the same thing rather than as the text somebody happened to type */
-const flat = (s: any) => { const o: any = {}; for (const [k, v] of Object.entries(s || {})) o[k] = k === 'role' ? (Array.isArray(v) ? [...v] : [v]).map(String).sort() : v; return JSON.stringify(Object.keys(o).sort().map((k) => [k, o[k]])) }
+const flat = (s: unknown) => { const o: any = {}; for (const [k, v] of Object.entries(s || {})) o[k] = k === 'role' ? (Array.isArray(v) ? [...v] : [v]).map(String).sort() : v; return JSON.stringify(Object.keys(o).sort().map((k) => [k, o[k]])) }
 const same = (a: unknown, b: any) => flat(a) === flat(b)
 /* the file's fill → the keys to tick */
 export function fillWays(fill: any) {

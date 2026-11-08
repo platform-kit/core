@@ -39,7 +39,7 @@ const main = computed(() => fields.value.filter((f) => f.cfg.group !== 'look'))
 const look = computed(() => fields.value.filter((f) => f.cfg.group === 'look'))
 const fields = computed(() => {
   const s = unwrap(props.shape)
-  const shape: any = (s && s.shape) || {}
+  const shape = (s && s.shape) || {}
   return Object.keys(shape).map((key) => {
     const z = shape[key], b = unwrap(z), cfg = (props.config || {})[key] || {}
     const t = b._def.typeName

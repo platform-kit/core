@@ -18,7 +18,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const FIRST = (v: any) => String(v || '').split(',')[0].trim().replace(/^['"]|['"]$/g, '')
+const FIRST = (v: string) => String(v || '').split(',')[0].trim().replace(/^['"]|['"]$/g, '')
 const grab = (css: string, name: string) => {
   /* the last declaration wins, as the cascade would have it for a token set at the root */
   let out = null

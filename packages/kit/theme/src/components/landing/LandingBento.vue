@@ -27,10 +27,10 @@ const props = defineProps({
   gap: { type: String, default: 'normal' },     /* tight | normal */
   items: { type: Array as PropType<any[]>, default: () => [] },    /* [{ kind, size, tone, icon, title, body, image, video, href, value, label, points, quote, name }] */
 })
-const tiles = computed(() => props.items.map((t) => ({ ...t, kind: (t as any).kind || 'feature', size: (t as any).size || '1x1', tone: (t as any).tone || 'paper' })))
-const src = (t: any) => { const e = embedOf(t.video); return e && e.kind === 'file' ? e.src : '' }
+const tiles = computed(() => props.items.map((t) => ({ ...t, kind: t.kind || 'feature', size: t.size || '1x1', tone: t.tone || 'paper' })))
+const src = (t: { video: any }) => { const e = embedOf(t.video); return e && e.kind === 'file' ? e.src : '' }
 /* the spotlight: the pointer's place on each tile, as custom properties its ::before reads */
-function move(e: any) { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', (e.clientX - r.left) + 'px'); e.currentTarget.style.setProperty('--my', (e.clientY - r.top) + 'px') }
+function move(e: { currentTarget: { getBoundingClientRect: () => any; style: { setProperty: (arg0: string,arg1: string) => void } }; clientX: number; clientY: number }) { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--mx', (e.clientX - r.left) + 'px'); e.currentTarget.style.setProperty('--my', (e.clientY - r.top) + 'px') }
 </script>
 
 <template>

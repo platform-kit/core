@@ -77,8 +77,8 @@ export function normalise(scores: any) {
 
 /* one sentence: meaning and words, each normalised, halved and summed → { slug: 0..1 } */
 export function sentenceScores(slugs: any, pieces: any, index: any, qvec: any, text: any) {
-  const sem: any = normalise(Object.fromEntries(slugs.map((s: any) => [s, semantic(pieces, qvec)[s] || 0])))
-  const lex: any = normalise(Object.fromEntries(slugs.map((s: any) => [s, bm25(index, text)[s] || 0])))
+  const sem = normalise(Object.fromEntries(slugs.map((s: any) => [s, semantic(pieces, qvec)[s] || 0])))
+  const lex = normalise(Object.fromEntries(slugs.map((s: any) => [s, bm25(index, text)[s] || 0])))
   return Object.fromEntries(slugs.map((s: any) => [s, 0.5 * sem[s] + 0.5 * lex[s]]))
 }
 
@@ -97,6 +97,6 @@ export const PACE = 0.15
 export function paceLean(slugs: any, wordsOf: any, pref: any) {
   if (pref !== 'short' && pref !== 'long') return Object.fromEntries(slugs.map((s: any) => [s, 0]))
   const ln = Object.fromEntries(slugs.map((s: any) => [s, Math.log(Math.max(1, wordsOf[s] || 1))]))
-  const pos: any = normalise(ln)
+  const pos = normalise(ln)
   return Object.fromEntries(slugs.map((s: any) => [s, PACE * (pref === 'short' ? 1 - pos[s] : pos[s])]))
 }

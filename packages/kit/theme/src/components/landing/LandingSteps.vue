@@ -26,7 +26,7 @@ const props = defineProps({
   items: { type: Array as PropType<any[]>, default: () => [] },     /* [{ title, body, icon?, image?, href? }] */
 })
 const W = (us('sections').steps || {}).label || {}
-const n = (i: any) => String(i + 1).padStart(2, '0')
+const n = (i: number) => String(i + 1).padStart(2, '0')
 /* the path: a curve through the numbers, measured from the cards' places */
 const row = ref<any>(null), d = ref(''), box = ref({ w: 0, h: 0 })
 let ro: any = null
@@ -35,7 +35,7 @@ function draw() {
   const R = row.value.getBoundingClientRect(); box.value = { w: R.width, h: R.height }
   const pts = [...row.value.querySelectorAll('.lpsp-num')].map((el) => { const r = el.getBoundingClientRect(); return [r.left - R.left + r.width / 2, r.top - R.top + r.height / 2] })
   if (pts.length < 2) { d.value = ''; return }
-  let s: any = `M ${pts[0][0]} ${pts[0][1]}`
+  let s = `M ${pts[0][0]} ${pts[0][1]}`
   for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; const c = (x1 - x0) * 0.5; s += ` C ${x0 + c} ${y0}, ${x1 - c} ${y1}, ${x1} ${y1}` }
   d.value = s
 }

@@ -136,7 +136,7 @@ async function load() {
   ch.value = Math.min(state.value.ch || 0, chapters.value.length - 1)
   /* ?chapter=N opens the Nth chapter (counted from 1, the introduction not counted): where a course lesson sends somebody */
   const asked = Number(new URLSearchParams(location.search).get('chapter'))
-  if (Number.isInteger(asked) && asked >= 1) ch.value = Math.min(asked - 1 + (chapters.value[0] && (chapters.value[0] as any).intro ? 1 : 0), chapters.value.length - 1)
+  if (Number.isInteger(asked) && asked >= 1) ch.value = Math.min(asked - 1 + (chapters.value[0] && chapters.value[0].intro ? 1 : 0), chapters.value.length - 1)
   fetchGated()
   prepareSpeech().catch(() => {})
 
@@ -163,7 +163,7 @@ if (preview) watch(preview, load)
 const TEASER_ORDER = ['sun', 'ember', 'sky', 'ocean', 'leaf']
 function rollTeaser() {
   const byColor: any = {}
-  for (const s of suggestions.value) (byColor[(s as any).color] || (byColor[(s as any).color] = [])).push(s)
+  for (const s of suggestions.value) (byColor[s.color] || (byColor[s.color] = [])).push(s)
   teaser.value = TEASER_ORDER
     .filter((c) => byColor[c])
     .map((c) => { const a = byColor[c]; return a[Math.floor(Math.random() * a.length)] })
@@ -174,7 +174,7 @@ function teaserText(t: any) {
 watch(view, (v) => { if (v === 'cover') rollTeaser() })
 
 /* about 200 words a minute, and honest rounding */
-const words = computed(() => chapters.value.reduce((n: any, c: any) => n + (c as any).md.split(/\s+/).length, 0))
+const words = computed(() => chapters.value.reduce((n: any, c: any) => n + c.md.split(/\s+/).length, 0))
 const readTime = computed(() => {
   const mins = Math.max(1, Math.round(words.value / 200))
   return mins < 60 ? R.time.about + ' ' + mins + ' ' + (mins === 1 ? R.time.minute : R.time.minutes)
@@ -184,16 +184,16 @@ const started = computed(() => state.value.ch > 0 || state.value.bookmarks.lengt
 /* ---- the companion: summaries, the insight, the quizzes and the trophy ---- */
 const essOpen = ref(false)   /* the bottom line, opened past its first three lines */
 const comp = computed(() => (preview ? null : companionFor(props.slug)))
-const hasSummary = (i: any) => !!(comp.value && chapters.value[i] && (chapterCompanion(props.slug, (chapters.value[i] as any).title) || {}).summaryMd)
-const chapterQuiz = (i: any) => (comp.value && chapters.value[i] ? (chapterCompanion(props.slug, (chapters.value[i] as any).title) || {}).quiz || [] : [])
+const hasSummary = (i: any) => !!(comp.value && chapters.value[i] && (chapterCompanion(props.slug, chapters.value[i].title) || {}).summaryMd)
+const chapterQuiz = (i: any) => (comp.value && chapters.value[i] ? (chapterCompanion(props.slug, chapters.value[i].title) || {}).quiz || [] : [])
 const insight = computed(() => (preview ? '' : insightFor(props.slug)))
 /* one page ahead of the chapters when the book has an introduction */
-const introOffset = computed(() => (chapters.value[0] && (chapters.value[0] as any).intro ? 1 : 0))
+const introOffset = computed(() => (chapters.value[0] && chapters.value[0].intro ? 1 : 0))
 /* the chapters proper, for the cover's count */
 const chapterCount = computed(() => chapters.value.length - introOffset.value)
 const summaryTimeLabel = computed(() => { const m = summaryTime(props.slug); return m ? R.time.about + ' ' + m + ' ' + (m === 1 ? R.time.minute : R.time.minutes) : '' })
 const mastery = computed(() => { void masteryRev.value; return preview ? { done: 0, total: 0, tier: null } : masteryOf(props.slug) })
-const quizResult = computed(() => { void masteryRev.value; return chapters.value[ch.value] ? chapterResult(props.slug, (chapters.value[ch.value] as any).title) : null })
+const quizResult = computed(() => { void masteryRev.value; return chapters.value[ch.value] ? chapterResult(props.slug, chapters.value[ch.value].title) : null })
 /* a book whose text is withheld (fullText: false) is read in its summaries alone: there is no full text to switch to */
 const textless = computed(() => !!fm.value && fm.value.fullText === false)
 function setMode(m: any) { if (textless.value) return; if (state.value.mode !== m) { state.value.mode = m; essOpen.value = false; saveState(); if (view.value === 'read') repaint() } }
@@ -203,7 +203,7 @@ const inSummary = computed(() => (state.value.mode === 'summary' || textless.val
    player follows the mode — the summary's recording in summary mode, the text's
    otherwise — and a chapter with no file for its mode has no player at all. */
 const audio = computed(() => {
-  const a = fm.value && fm.value.audio, c: any = chapters.value[ch.value]
+  const a = fm.value && fm.value.audio, c = chapters.value[ch.value]
   const key = c && (c.key || c.title)
   if (!a || !c || !a[key]) return null
   /* the introduction reads the same in both modes, so it has one recording */
@@ -225,10 +225,10 @@ const speechHash = ref<any>({})        /* "<key>|<kind>" → hash, for every pag
 function jobFor(i: any, summary: any) {
   const c = chapters.value[i]
   if (!c) return null
-  if (!summary && textless.value && !(c as any).intro) return null   /* no text to read aloud: the summary is the page */
-  const cc = summary && !(c as any).intro ? chapterCompanion(props.slug, (c as any).title) : null
+  if (!summary && textless.value && !c.intro) return null   /* no text to read aloud: the summary is the page */
+  const cc = summary && !c.intro ? chapterCompanion(props.slug, c.title) : null
   const kind = cc && cc.summaryMd ? 'summary' : 'full'
-  return { index: i, key: (c as any).key || (c as any).title, kind, title: (c as any).title, text: chapterSpeech(c, kind === 'summary' ? cc.summaryMd : undefined) }
+  return { index: i, key: c.key || c.title, kind, title: c.title, text: chapterSpeech(c, kind === 'summary' ? cc.summaryMd : undefined) }
 }
 const hashKey = (j: any) => j.key + '|' + j.kind
 async function prepareSpeech() {
@@ -257,9 +257,9 @@ const currentHash = computed(() => (currentJob.value ? speechHash.value[hashKey(
 const localTrack = computed(() => (speech.value && currentHash.value ? speech.value.tracks[currentHash.value] : null))
 /* a recording made here plays exactly as one from the store */
 const localAudio = computed(() => {
-  const t: any = localTrack.value, c = chapters.value[ch.value]
+  const t = localTrack.value, c = chapters.value[ch.value]
   if (!t || t.status !== 'done' || !c) return null
-  return { src: t.url, seconds: t.seconds || 0, kind: (c as any).intro ? 'intro' : (currentJob as any).value.kind, title: (c as any).title, local: true }
+  return { src: t.url, seconds: t.seconds || 0, kind: c.intro ? 'intro' : (currentJob as any).value.kind, title: c.title, local: true }
 })
 const playable = computed(() => audio.value || localAudio.value)
 const canGenerate = computed(() => canSpeak && !!speech.value && !playable.value && !gate.value && view.value === 'read' && !!currentHash.value)
@@ -284,7 +284,7 @@ onBeforeUnmount(() => { if (speech.value) speech.value.stop() })
 const quizOpen = ref(false)
 /* the bottom line: the chapter's key insights, shown under the text in both
    modes — three by default, the rest on request */
-const essence = computed(() => (chapters.value[ch.value] && comp.value ? (chapterCompanion(props.slug, (chapters.value[ch.value] as any).title) || {}).essence || [] : []))
+const essence = computed(() => (chapters.value[ch.value] && comp.value ? (chapterCompanion(props.slug, chapters.value[ch.value].title) || {}).essence || [] : []))
 const essShown = computed(() => (essOpen.value ? essence.value : essence.value.slice(0, 3)))
 function openQuiz() { quizOpen.value = true; window.scrollTo({ top: 0, behavior: 'smooth' }) }
 function quizNext() { quizOpen.value = false; if (ch.value < chapters.value.length - 1) ch.value++ }
@@ -333,7 +333,7 @@ const gate = ref<any>(null)   /* null, or { required, teaser } while the current
    and if it cannot be fetched it says so with a retry — never the paywall, which would tell somebody who
    has paid that they have not. ---- */
 const gatedState = ref('')   /* '' | 'loading' | 'error' | 'done' */
-const waitingFor = (i: any) => typeof fm.value.gatedFrom === 'number' && !isLocked(i) && !(chapters.value[i] && (chapters.value[i] as any).intro)
+const waitingFor = (i: any) => typeof fm.value.gatedFrom === 'number' && !isLocked(i) && !(chapters.value[i] && chapters.value[i].intro)
   && i - introOffset.value >= fm.value.gatedFrom && gatedState.value !== 'done'
 async function fetchGated() {
   if (preview || typeof fm.value.gatedFrom !== 'number') return
@@ -342,7 +342,7 @@ async function fetchGated() {
   gatedState.value = 'loading'
   try {
     const r = await readerBook(props.slug)
-    const intro = chapters.value[0] && (chapters.value[0] as any).intro ? chapters.value[0] : null
+    const intro = chapters.value[0] && chapters.value[0].intro ? chapters.value[0] : null
     const next = bookChapters(r.raw)
     if (intro) next.unshift(intro)
     chapters.value = next
@@ -374,7 +374,7 @@ async function render() {
   if (isLocked(ch.value)) {
     gate.value = {
       required: bookAllowed.value ? requiredForChapter(fm.value, ch.value - introOffset.value) : requiredBy(fm.value.canAccess),
-      teaser: (c as any).md.replace(/[#*_=`{}]/g, '').replace(/\s+/g, ' ').trim().slice(0, 260),
+      teaser: c.md.replace(/[#*_=`{}]/g, '').replace(/\s+/g, ' ').trim().slice(0, 260),
     }
     html.value = ''
     state.value.ch = ch.value
@@ -384,10 +384,10 @@ async function render() {
   }
   gate.value = null
   if (waitingFor(ch.value)) { html.value = ''; return }
-  const cc = inSummary.value && !(c as any).intro ? chapterCompanion(props.slug, (c as any).title) : null
-  if ((c as any).intro) {
+  const cc = inSummary.value && !c.intro ? chapterCompanion(props.slug, c.title) : null
+  if (c.intro) {
     // @ts-expect-error TS2322, from the conversion: Type 'string | Promise<string>' is not assignable to type 'string'.
-    html.value = marked.parse((c as any).md)   /* the introduction: the same page whichever way the book is read */
+    html.value = marked.parse(c.md)   /* the introduction: the same page whichever way the book is read */
   } else if (cc && cc.summaryMd) {
     /* the summary; the reader's own highlights anchor to the full text, so they
        are not painted here. The bottom line follows the text in both modes. */
@@ -395,7 +395,7 @@ async function render() {
   } else {
     /* a book whose text is withheld has only its summaries: a chapter without one says so, and nothing else */
     html.value = textless.value ? '<p class="rd-nosum">' + escapeHtml(R.mode['no-summary']) + '</p>'
-      : (inSummary.value ? '<p class="rd-nosum">' + escapeHtml(R.mode['no-summary']) + '</p>' : '') + marked.parse((c as any).md)
+      : (inSummary.value ? '<p class="rd-nosum">' + escapeHtml(R.mode['no-summary']) + '</p>' : '') + marked.parse(c.md)
   }
   state.value.ch = ch.value
   saveState()
@@ -404,7 +404,7 @@ async function render() {
   toolbar.value.open = false
 }
 // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-const escapeHtml = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const escapeHtml = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 watch(ch, () => { quizOpen.value = false; essOpen.value = false; render(); askCanSay() })
 watch(chapterSubject, askCanSay, { immediate: true })
 /* between one chapter fading out and the next fading in, the window is at the top */
@@ -421,26 +421,26 @@ function textNodesUnder(el: any) {
 function paintHighlights() {
   const el = body.value
   if (!el) return
-  for (const h of state.value.highlights.filter((x: any) => (x as any).ch === ch.value)) {
+  for (const h of state.value.highlights.filter((x: any) => x.ch === ch.value)) {
     const nodes = textNodesUnder(el)
     const full = nodes.map((n) => n.textContent).join('')
     let at = -1
-    for (let i = full.indexOf((h as any).quote); i >= 0; i = full.indexOf((h as any).quote, i + 1)) {
+    for (let i = full.indexOf(h.quote); i >= 0; i = full.indexOf(h.quote, i + 1)) {
       const pre = full.slice(Math.max(0, i - 16), i)
-      if (!(h as any).prefix || pre.endsWith((h as any).prefix.slice(-Math.min(16, (h as any).prefix.length)))) { at = i; break }
+      if (!h.prefix || pre.endsWith(h.prefix.slice(-Math.min(16, h.prefix.length)))) { at = i; break }
     }
     if (at < 0) continue
     let pos = 0
     for (const node of nodes) {
       const start = pos, end = pos + (node as any).textContent.length
       pos = end
-      const s = Math.max(at, start), e = Math.min(at + (h as any).quote.length, end)
+      const s = Math.max(at, start), e = Math.min(at + h.quote.length, end)
       if (s >= e) continue
       const range = document.createRange()
       range.setStart(node, s - start); range.setEnd(node, e - start)
       const mark = document.createElement('mark')
-      mark.className = 'bk-hl hl-' + ((h as any).color || 'sun')
-      mark.dataset.id = (h as any).id
+      mark.className = 'bk-hl hl-' + (h.color || 'sun')
+      mark.dataset.id = h.id
       try { range.surroundContents(mark) } catch (err) { /* crosses elements; the node-by-node pass covers it */ }
     }
   }
@@ -504,15 +504,15 @@ function onBodyClick(e: any) {
   markMenu.value = { open: true, x: mx, y: r.bottom - host.top + 8, id: m.dataset.id }
 }
 async function recolor(color: any) {
-  const h = state.value.highlights.find((x: any) => (x as any).id === markMenu.value.id)
-  if (h) { (h as any).color = color; state.value.lastColor = color; saveState(); await repaint() }
+  const h = state.value.highlights.find((x: any) => x.id === markMenu.value.id)
+  if (h) { h.color = color; state.value.lastColor = color; saveState(); await repaint() }
   markMenu.value.open = false
 }
 function noteFromMenu() {
   modal.value = 'saved'; editing.value = markMenu.value.id; markMenu.value.open = false
 }
 async function removeHighlight(id: any) {
-  state.value.highlights = state.value.highlights.filter((h: any) => (h as any).id !== id)
+  state.value.highlights = state.value.highlights.filter((h: any) => h.id !== id)
   editing.value = ''
   markMenu.value.open = false
   saveState(); await repaint()
@@ -521,14 +521,14 @@ const doomHighlight = (id: any) => confirmThen(id, () => removeHighlight(id))
 const doomBookmark = (id: any) => confirmThen(id, () => removeBookmark(id))
 
 /* ---- bookmarks: one per chapter, toggled ---- */
-const hasBookmark = computed(() => state.value.bookmarks.some((b: any) => (b as any).ch === ch.value))
+const hasBookmark = computed(() => state.value.bookmarks.some((b: any) => b.ch === ch.value))
 function toggleBookmark() {
   if (hasBookmark.value) {
-    state.value.bookmarks = state.value.bookmarks.filter((b: any) => (b as any).ch !== ch.value)
+    state.value.bookmarks = state.value.bookmarks.filter((b: any) => b.ch !== ch.value)
   } else {
     const frac = body.value ? Math.min(1, window.scrollY / Math.max(1, document.body.scrollHeight - innerHeight)) : 0
     state.value.bookmarks.push({ id: 'b' + Date.now(), ch: ch.value, frac,
-      label: (chapters.value[ch.value] as any).title })
+      label: chapters.value[ch.value].title })
   }
   saveState()
 }
@@ -537,21 +537,21 @@ function gotoBookmark(b: any) {
   nextTick().then(() => window.scrollTo(0, b.frac * (document.body.scrollHeight - innerHeight)))
 }
 function removeBookmark(id: any) {
-  state.value.bookmarks = state.value.bookmarks.filter((b: any) => (b as any).id !== id); saveState()
+  state.value.bookmarks = state.value.bookmarks.filter((b: any) => b.id !== id); saveState()
 }
 
 /* ---- in-book search ---- */
 const q = ref('')
-const found: any = computed(() => {
+const found = computed(() => {
   const needle = q.value.trim().toLowerCase()
   if (needle.length < 2) return []
   const out: any = []
   chapters.value.forEach((c: any, i: any) => {
-    const t = (c as any).md.toLowerCase()
+    const t = c.md.toLowerCase()
     let at = t.indexOf(needle)
     while (at >= 0 && out.length < 30) {
-      out.push({ ch: i, chTitle: (c as any).title,
-        excerpt: '…' + (c as any).md.slice(Math.max(0, at - 34), at + needle.length + 60).replace(/\s+/g, ' ') + '…' })
+      out.push({ ch: i, chTitle: c.title,
+        excerpt: '…' + c.md.slice(Math.max(0, at - 34), at + needle.length + 60).replace(/\s+/g, ' ') + '…' })
       at = t.indexOf(needle, at + needle.length)
     }
   })
@@ -563,7 +563,7 @@ function gotoHit(hit: any) { ch.value = hit.ch; modal.value = ''; q.value = ''; 
    Nothing kept is destroyed on one tap: the first tap arms the button and it
    asks plainly; a second tap within a few seconds does it. */
 const savedTab = ref('bookmarks')
-const noted = computed(() => state.value.highlights.filter((h: any) => (h as any).note && (h as any).note.trim()))
+const noted = computed(() => state.value.highlights.filter((h: any) => h.note && h.note.trim()))
 const confirmId = ref('')
 let confirmTimer: any = null
 function armed(id: any) { return confirmId.value === id }

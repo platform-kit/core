@@ -13,7 +13,7 @@ sources:
     packages/kit/theme/src/components/admin/BlastsAdmin.vue,
     packages/kit/theme/src/components/admin/AudienceEditor.vue,
   ]
-reviewed: 2026-11-07
+reviewed: 2026-11-08
 ---
 
 Marketing mail is markdown, targeted by what the account knows, under a cooldown. Marketing → **Funnels**, and the **Blasts** tab of Marketing → Emails. Module: `funnels` (and `emails` to send).

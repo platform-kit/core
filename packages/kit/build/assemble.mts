@@ -308,7 +308,7 @@ if (c.admin && c.admin.models) {
 for (const [target, entry] of plan) {
   if (!target.startsWith('functions/_shared/') || !/\.(?:[cm]?js|m?ts)$/.test(target)) continue
   const lenient = !target.startsWith('functions/_shared/pipe/')
-  const rewrite = (_: any, prefix: any, quote: any, specifier: any) => `${prefix}${quote}${sharedSpecifier(specifier, target, { lenient })}${quote}`
+  const rewrite = (_: any, prefix: any, quote: any, specifier: string) => `${prefix}${quote}${sharedSpecifier(specifier, target, { lenient })}${quote}`
   const content = entry.content.toString('utf8')
     .replace(sharedStaticImportPattern, rewrite)
     .replace(sharedDynamicImportPattern, rewrite)

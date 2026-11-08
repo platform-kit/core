@@ -124,7 +124,7 @@ function clean(pr: { [x: string]: any; main: string }) {
 
 /* write the block back (or remove it, pr null), the rest of the file byte for byte; a
    block with no key is given one. Returns the block as written. */
-export async function writeBlock(store: any, slug: string, pr: any) {
+export async function writeBlock(store: any, slug: string, pr: { [x: string]: any; main: string }) {
   const st = asStore(store)
   const file = 'content/books/' + slug + '.md'
   const raw = await st.read(file)

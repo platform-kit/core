@@ -40,7 +40,7 @@ const done = ref(false)
 const state = reactive<any>({
   answers, data: model.value.data || {}, words: W, grade: null, already: false, closed: false, signin: false, unpaid: false, wasForm: settings.value.page === 'form-slides',
   autofocusAll: settings.value.autofocus === 'all-slides',
-  submit: async (values: any, screen: any) => {
+  submit: async (values: any, screen: { last: any; index: any }) => {
     Object.assign(answers, values)
     if (settings.value.page !== 'form-slides') return
     const r = await postSlide(props.form.slug, values, { end: !!screen.last, slide: screen.index })
@@ -59,12 +59,12 @@ function finish(r: any) {
   done.value = true
   if (tf) tf.submit(props.form.slug, r && r.response_id ? r.response_id : '')
   state.grade = Object.keys(kit.value.score || {}).length ? (r && r.score != null ? { score: r.score, total: r.total, passed: r.passed } : gradeOf(kit.value.score, answers, kit.value.pass)) : null
-  capture('form_complete', { form: props.form.slug, score: state.grade ? (state.grade as any).score : null })
+  capture('form_complete', { form: props.form.slug, score: state.grade ? state.grade.score : null })
   /* the response's own id goes with it: a caller that must point at what was answered — a space
      asking a form of somebody at its door — has nothing else to hold on to */
   emit('complete', { answers: { ...answers }, grade: state.grade, response: r && r.response_id ? r.response_id : null })
 }
-function onAnswer(screen: any, values: any) {
+function onAnswer(screen: { index: number; last: any }, values: any) {
   if (!started.value) { started.value = true; capture('form_start', { form: props.form.slug }); if (tf) tf.started() }
   capture('form_slide', { form: props.form.slug, slide: screen.index })
   if (screen.last && settings.value.page !== 'form-slides') finish(null)
@@ -81,7 +81,7 @@ const showControls = computed(() => settings.value['slide-controls'] !== 'hide' 
 const showProgress = computed(() => settings.value['page-progress'] !== 'hide' && settings.value.page !== 'single')
 const decorative = computed(() => settings.value['page-progress'] === 'decorative')
 function back() { if (runner.value && runner.value.back()) sync() }
-function next() { if (state.active && (state.active as any).submit) (state.active as any).submit() }
+function next() { if (state.active && state.active.submit) state.active.submit() }
 function sync() { if (!runner.value) return; index.value = runner.value.index(); current.value = shown.value[index.value] || null; if (tf && current.value) tf.screen(current.value.fields && current.value.fields[0] ? current.value.fields[0].name : 'slide-' + index.value) }
 
 /* what this person has answered already: a return picks up on the next slide; a `once` form already finished shows its end */

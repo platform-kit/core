@@ -24,13 +24,13 @@ const props = defineProps({
 })
 const W = (us('sections').articles || {}).card || {}
 const items = computed(() => {
-  const all = (ARTICLES || []).filter((a: any) => a.published !== false && (!props.tag || (a.tags || []).includes(props.tag)))
-  all.sort((a: any, b: any) => String(b.date || '').localeCompare(String(a.date || '')))
+  const all = (ARTICLES || []).filter((a: { published: boolean; tags: any }) => a.published !== false && (!props.tag || (a.tags || []).includes(props.tag)))
+  all.sort((a: { date: any }, b: { date: any }) => String(b.date || '').localeCompare(String(a.date || '')))
   return all.slice(0, Math.max(1, props.limit))
 })
-const when = (d: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) } catch (e) { return '' } }
-const link = (a: any) => `${ROUTES.content}/articles/${a.id}`
-const line = (a: any) => a.description || ''
+const when = (d: string|number|Date) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) } catch (e) { return '' } }
+const link = (a: { id: any }) => `${ROUTES.content}/articles/${a.id}`
+const line = (a: { description: any }) => a.description || ''
 </script>
 
 <template>

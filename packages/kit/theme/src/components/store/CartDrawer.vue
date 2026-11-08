@@ -25,7 +25,7 @@ import { lineShips } from 'platformkit/lib/shipto.js'
  * page is one the shopper had no chance to understand.
  */
 const cut = computed(() => {
-  const lines = cart.items.value.map((l: any) => ({ sku: l.sku, variant: l.variant || '', unit_price: l.unit_amount, quantity: l.quantity }))
+  const lines = cart.items.value.map((l: { sku: any; variant: any; unit_amount: any; quantity: any }) => ({ sku: l.sku, variant: l.variant || '', unit_price: l.unit_amount, quantity: l.quantity }))
   if (!lines.length) return null
   const ctx = { ...priceContext(), item_total: cart.total.value }
   const r = applyPromotions(lines, promoList(), { context: ctx })
@@ -34,9 +34,9 @@ const cut = computed(() => {
 /* named by their titles, which is what a shopper reads — `name` is the file, for the machine */
 const cutNames = computed(() => {
   const r = cut.value; if (!r) return ''
-  const byName = Object.fromEntries(promoList().map((x: any) => [x.name, x.title || x.name]))
+  const byName = Object.fromEntries(promoList().map((x: { name: any; title: any }) => [x.name, x.title || x.name]))
   // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
-  return [...new Set(r.lines.flatMap((l: any) => l.by))].map((n) => byName[n] || n).join(' · ')
+  return [...new Set(r.lines.flatMap((l) => l.by))].map((n) => byName[n] || n).join(' · ')
 })
 const C = us('store').cart.ui
 const S = us('store').page.head
@@ -55,7 +55,7 @@ async function doCheckout() {
   catch (e) { error.value = (e && (e as any).message) || S['error-heading']; errorCode.value = (e && (e as any).code) || '' }
   finally { busy.value = false }
 }
-function onKey(e: any) { if (e.key === 'Escape' && cart.open.value) cart.closeCart() }
+function onKey(e: { key: string }) { if (e.key === 'Escape' && cart.open.value) cart.closeCart() }
 onMounted(() => document.addEventListener('keydown', onKey))
 onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 /* the page behind must not scroll while the drawer is open */

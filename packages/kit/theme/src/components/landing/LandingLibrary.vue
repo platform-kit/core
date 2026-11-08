@@ -35,9 +35,9 @@ const props = defineProps({
   href: { type: String, default: '/content' },
 })
 /* the chapter's markdown as the reader would show it, marks as wavy underlines */
-const marks = (s: any) => String(s || '').replace(/==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/g, (_, t, c) => '<mark class="sys-mark sug-' + (c || 'sun') + '">' + t + '</mark>')
-const html = (mdText: any, paragraphs: any) => marked.parse(marks(String(mdText || '').split(/\n{2,}/).filter((p) => p.trim()).slice(0, paragraphs).join('\n\n')))
-const book = computed(() => (BOOKS || []).find((b: any) => b.slug === props.book) || null)
+const marks = (s: string) => String(s || '').replace(/==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/g, (_, t, c) => '<mark class="sys-mark sug-' + (c || 'sun') + '">' + t + '</mark>')
+const html = (mdText: string, paragraphs: number|undefined) => marked.parse(marks(String(mdText || '').split(/\n{2,}/).filter((p) => p.trim()).slice(0, paragraphs).join('\n\n')))
+const book = computed(() => (BOOKS || []).find((b: { slug: string }) => b.slug === props.book) || null)
 const chapter = computed(() => {
   const b = book.value
   if (!b) return null
@@ -46,7 +46,7 @@ const chapter = computed(() => {
 })
 const companion = computed(() => (book.value && chapter.value ? chapterCompanion(book.value.slug, chapter.value.title) : null))
 const text = computed(() => (chapter.value ? html(chapter.value.md, 2) : ''))
-const sentences = (mdText: any, n: any) => { const p = String(mdText || '').split(/\n{2,}/).find((x) => x.trim()) || ''; const m = p.match(/[^.!?]+[.!?]+(\s|$)/g); return m ? m.slice(0, n).join('').trim() : p }
+const sentences = (mdText: string, n: number|undefined) => { const p = String(mdText || '').split(/\n{2,}/).find((x) => x.trim()) || ''; const m = p.match(/[^.!?]+[.!?]+(\s|$)/g); return m ? m.slice(0, n).join('').trim() : p }
 const summary = computed(() => (companion.value ? html(sentences(companion.value.summaryMd, 2), 1) : ''))
 /* what the voice is reading: the opening, the first sentence lit as the spoken part */
 const spoken = computed(() => {
@@ -66,7 +66,7 @@ const clock = computed(() => {
 /* a still waveform, the same picture for the same chapter */
 const bars = computed(() => {
   const out = [], n = 64
-  let x: any = (chapter.value ? chapter.value.md.length : 7) % 97 || 7
+  let x = (chapter.value ? chapter.value.md.length : 7) % 97 || 7
   for (let i = 0; i < n; i++) { x = (x * 48271) % 2147483647; out.push(6 + (x % 26)) }
   return out
 })

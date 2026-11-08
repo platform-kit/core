@@ -59,7 +59,7 @@ export async function load({ timeout = 8000 } = {}) {
 /* the rows into the bundle: only the collections the bundle carries move; a collection with no row at all is left as built */
 export function apply(rows: string|any[], { renderer, toEntry, targetOf, searchRows }: { renderer: ({ highlight }?: any) => { parse(md: any): any; toc(md: {}|null): never[] }; toEntry: (collection: any,row: any,ctx: any) => any; targetOf: (row: any) => any; searchRows: ({ articles,wiki,docs,books,products,pages }: { articles?: never[]|undefined; wiki?: never[]|undefined; docs?: never[]|undefined; books?: never[]|undefined; products?: never[]|undefined; pages?: never[]|undefined }) => any }) {
   const R = renderer()
-  const ctx = { render: (md: any) => R.parse(md), toc: (md: any) => R.toc(md), bundle: CONTENT, models: CONTENT.models }
+  const ctx = { render: (md: any) => R.parse(md), toc: (md: {}|null) => R.toc(md), bundle: CONTENT, models: CONTENT.models }
   const by: any = {}
   for (const row of rows) {
     const target = targetOf(row)

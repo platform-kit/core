@@ -53,7 +53,7 @@ export const BODY_MAX = 200_000
 /* the rows as the table takes them — the one shape, whichever side built the collections */
 export function indexRows(rows: any[]) {
   const now = new Date().toISOString()
-  return rows.map((r: any) => ({
+  return rows.map((r) => ({
     kind: r.kind, ref: String(r.id),
     title: r.title || String(r.id), sub: r.sub || '', href: r.href,
     image: r.image || null, date: r.date || null,

@@ -33,21 +33,21 @@ async function search() {
 }
 watch(q, () => { clearTimeout(timer); timer = setTimeout(search, 160) })
 
-function move(d: any) {
+function move(d: number) {
   if (!rows.value.length) return
   cursor.value = (cursor.value + d + rows.value.length) % rows.value.length
-  const el: any = list.value && list.value.children[cursor.value]
+  const el = list.value && list.value.children[cursor.value]
   if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' })
 }
 function choose(m: any) { if (m) emit('pick', m) }
-function key(e: any) {
+function key(e: { key: string; preventDefault: () => void }) {
   if (e.key === 'ArrowDown') { e.preventDefault(); move(1) }
   else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1) }
   else if (e.key === 'Enter') { e.preventDefault(); choose(rows.value[cursor.value]) }
 }
 
 /* Escape closes wherever focus is */
-function esc(e: any) { if (e.key === 'Escape') { e.preventDefault(); emit('close') } }
+function esc(e: { key: string; preventDefault: () => void }) { if (e.key === 'Escape') { e.preventDefault(); emit('close') } }
 onMounted(() => { search(); document.addEventListener('keydown', esc); setTimeout(() => box.value && box.value.focus(), 30) })
 onBeforeUnmount(() => { clearTimeout(timer); document.removeEventListener('keydown', esc) })
 </script>

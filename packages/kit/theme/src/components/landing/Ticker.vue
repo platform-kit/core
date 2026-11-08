@@ -14,7 +14,7 @@ const props = defineProps({
 })
 const track = ref<any>(null), dur = ref(30)
 let ro: any = null
-function size() { const el: any = track.value; if (!el) return; const len = props.vertical ? el.scrollHeight / 2 : el.scrollWidth / 2; dur.value = Math.max(8, len / props.speed) }
+function size() { const el = track.value; if (!el) return; const len = props.vertical ? el.scrollHeight / 2 : el.scrollWidth / 2; dur.value = Math.max(8, len / props.speed) }
 onMounted(() => { size(); ro = new ResizeObserver(size); ro.observe(track.value) })
 onBeforeUnmount(() => ro && ro.disconnect())
 </script>

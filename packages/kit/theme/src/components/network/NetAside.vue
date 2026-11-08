@@ -33,7 +33,7 @@ async function load() {
 onMounted(load)
 watch(isSignedIn, load)
 function search() { const s = q.value.trim(); navigate(ROUTES.feed + '/explore' + (s ? '?q=' + encodeURIComponent(s) : '')) }
-async function togglePin(s: any) { pinBusy.value = s.space_id; try { await pin(s.space_id, !s.pinned); emit('pinned') } finally { pinBusy.value = '' } }
+async function togglePin(s: { space_id: string; pinned: any }) { pinBusy.value = s.space_id; try { await pin(s.space_id, !s.pinned); emit('pinned') } finally { pinBusy.value = '' } }
 </script>
 
 <template>

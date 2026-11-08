@@ -87,12 +87,12 @@ const form = reactive<any>({
   targetOptions: {},
   attachments: [],
 })
-const providerForm = reactive<any>({ providerId: 'x', clientId: '', clientSecret: '' })
-const backendForm = reactive<any>({ backendId: '', apiKey: '', webhookSecret: '' })
-const managedConnectForm = reactive<any>({ backendId: '', platform: '', profileId: '' })
+const providerForm = reactive({ providerId: 'x', clientId: '', clientSecret: '' })
+const backendForm = reactive({ backendId: '', apiKey: '', webhookSecret: '' })
+const managedConnectForm = reactive({ backendId: '', platform: '', profileId: '' })
 const inviteEmail = ref('')
 const settingsPane = ref('providers')
-const accountInspector = reactive<any>({
+const accountInspector = reactive({
   openId: '',
   loadingId: '',
   error: '',
@@ -120,13 +120,13 @@ const analyticsTo = ref(dayKey(new Date(), UTC_HERE))
 const canReviewApprovals = computed(
   () =>
     isAdmin.value ||
-    accounts.value.some((account: any) => (account as any).permissions?.approve_posts === true),
+    accounts.value.some((account: any) => account.permissions?.approve_posts === true),
 )
 const connectedAccounts = computed(() =>
-  accounts.value.filter((account: any) => (account as any).status === 'connected'),
+  accounts.value.filter((account: any) => account.status === 'connected'),
 )
 const canViewAutomations = computed(() =>
-  accounts.value.some((account: any) => (account as any).permissions?.view_results === true),
+  accounts.value.some((account: any) => account.permissions?.view_results === true),
 )
 const workspaceNavigation = computed(() =>
   [
@@ -255,7 +255,7 @@ function zonedInputToIso(value: any, zone: any) {
 async function invoke(endpoint: any, body: any) {
   const { data, error } = await (supabase as any).functions.invoke(endpoint, { body })
   if (error) {
-    let message: any = error.message || PAGE['request-failed']
+    let message = error.message || PAGE['request-failed']
     let databaseCode = ''
     if (error.context instanceof Response) {
       try {
@@ -268,14 +268,14 @@ async function invoke(endpoint: any, body: any) {
           databaseCode = detail.databaseCode
         if (Array.isArray(detail?.targetErrors)) {
           const targetLines = detail.targetErrors.flatMap((target: any) => {
-            const account = accounts.value.find((item: any) => (item as any).id === target.accountId)
+            const account = accounts.value.find((item: any) => item.id === target.accountId)
             const accountName = account
-              ? `${(account as any).provider_id} · @${(account as any).username}`
+              ? `${account.provider_id} · @${account.username}`
               : target.accountId
             return (target.issues || []).map((issue: any) => {
               const attachment = form.attachments.find((item: any) => item.id === issue.attachmentId)
               const reason = attachment
-                ? `${(attachment as any).file_name}: ${issue.message}`
+                ? `${attachment.file_name}: ${issue.message}`
                 : issue.message || issue.code
               return EDITOR['target-error-line']
                 .replace('{account}', accountName)
@@ -317,19 +317,19 @@ async function load() {
     canManageSocialAccounts.value = accountResult.canManageAccounts === true
     providers.value = providerResult.providers || []
     backends.value = providerResult.backends || []
-    if (!providers.value.some((provider: any) => (provider as any).id === providerForm.providerId))
-      providerForm.providerId = (providers.value[0] as any)?.id || ''
-    if (!backends.value.some((backend: any) => (backend as any).id === backendForm.backendId))
-      backendForm.backendId = (backends.value[0] as any)?.id || ''
-    if (!backends.value.some((backend: any) => (backend as any).id === managedConnectForm.backendId))
+    if (!providers.value.some((provider: any) => provider.id === providerForm.providerId))
+      providerForm.providerId = providers.value[0]?.id || ''
+    if (!backends.value.some((backend: any) => backend.id === backendForm.backendId))
+      backendForm.backendId = backends.value[0]?.id || ''
+    if (!backends.value.some((backend: any) => backend.id === managedConnectForm.backendId))
       managedConnectForm.backendId =
-        (backends.value.find((backend: any) => (backend as any).configured) as any)?.id || ''
+        backends.value.find((backend: any) => backend.configured)?.id || ''
     const connectBackend = backends.value.find(
-      (backend: any) => (backend as any).id === managedConnectForm.backendId,
+      (backend: any) => backend.id === managedConnectForm.backendId,
     )
-    if (!(connectBackend as any)?.platforms?.includes(managedConnectForm.platform))
-      managedConnectForm.platform = (connectBackend as any)?.platforms?.[0] || ''
-    if (managedConnectForm.backendId === 'zernio' && (connectBackend as any)?.configured)
+    if (!connectBackend?.platforms?.includes(managedConnectForm.platform))
+      managedConnectForm.platform = connectBackend?.platforms?.[0] || ''
+    if (managedConnectForm.backendId === 'zernio' && connectBackend?.configured)
       await loadManagedProfiles()
     posts.value = await Promise.all(
       (postResult.posts || []).map(async (post: any) => ({
@@ -337,12 +337,12 @@ async function load() {
         attachments: await Promise.all((post.attachments || []).map(withPreview)),
       })),
     )
-    if (!posts.value.some((post: any) => (post as any).id === selectedPostId.value))
-      selectedPostId.value = (posts.value[0] as any)?.id || ''
+    if (!posts.value.some((post: any) => post.id === selectedPostId.value))
+      selectedPostId.value = posts.value[0]?.id || ''
     if (isAdmin.value) {
       const publisherResult = await social('publishers')
       publishers.value = publisherResult.publishers || []
-      if (!publishers.value.some((publisher: any) => (publisher as any).id === selectedPublisherId.value))
+      if (!publishers.value.some((publisher: any) => publisher.id === selectedPublisherId.value))
         selectedPublisherId.value = ''
     } else publishers.value = []
     state.value = 'ready'
@@ -412,7 +412,7 @@ async function invokeCapability(accountId: any, operation: any, input = {}) {
   return result.result ?? result
 }
 function currentAccount() {
-  return accounts.value.find((account: any) => (account as any).id === workspaceAccountId.value) || null
+  return accounts.value.find((account: any) => account.id === workspaceAccountId.value) || null
 }
 async function openAccountView(view: any, account: any) {
   workspaceAccountId.value = account.id
@@ -458,7 +458,7 @@ async function setView(view: any) {
     }
     return
   }
-  const account = currentAccount() || accounts.value.find((item: any) => (item as any).status === 'connected')
+  const account = currentAccount() || accounts.value.find((item: any) => item.status === 'connected')
   if (!account) {
     workspaceAccountId.value = ''
     if (view === 'analytics') {
@@ -474,11 +474,11 @@ async function setView(view: any) {
     }
     return
   }
-  workspaceAccountId.value = (account as any).id
+  workspaceAccountId.value = account.id
   if (view === 'posts') {
     try {
       workspaceLoading.value = true
-      await ensureAccountOperations((account as any).id)
+      await ensureAccountOperations(account.id)
       await loadProviderPosts()
     } catch (error) {
       workspaceError.value =
@@ -490,7 +490,7 @@ async function setView(view: any) {
   }
   try {
     workspaceLoading.value = true
-    await ensureAccountOperations((account as any).id)
+    await ensureAccountOperations(account.id)
     if (view === 'comments') await loadComments()
     else if (view === 'analytics') await loadAnalytics()
     else if (view === 'inbox') await loadInbox()
@@ -642,19 +642,19 @@ function workspaceTimestamp(item: any) {
 function workspaceSelection(item: any) {
   workspaceSelectedId.value = item?._key || ''
 }
-const workspaceSelected = computed<any>(
-  () => workspaceRecords.value.find((item: any) => (item as any)._key === workspaceSelectedId.value) || null,
+const workspaceSelected = computed(
+  () => workspaceRecords.value.find((item: any) => item._key === workspaceSelectedId.value) || null,
 )
-const workspaceAccount = computed<any>(
-  () => accounts.value.find((account: any) => (account as any).id === workspaceAccountId.value) || null,
+const workspaceAccount = computed(
+  () => accounts.value.find((account: any) => account.id === workspaceAccountId.value) || null,
 )
 const postGridRows = computed(() =>
   posts.value.map((post: any) => {
-    const activeDeliveries = ((post as any).deliveries || []).filter((delivery: any) => delivery.status !== 'cancelled')
+    const activeDeliveries = (post.deliveries || []).filter((delivery: any) => delivery.status !== 'cancelled')
     return {
       ...post,
-      _summary: (post as any).body || PAGE['media-post'],
-      _updated: new Date((post as any).updated_at || (post as any).created_at).toLocaleString(),
+      _summary: post.body || PAGE['media-post'],
+      _updated: new Date(post.updated_at || post.created_at).toLocaleString(),
       _scheduled: activeDeliveries
         .map((delivery: any) => new Date(delivery.scheduled_at).toLocaleString())
         .join(' · '),
@@ -674,11 +674,11 @@ const postGridColumns = computed(() => [
 ])
 const postRowId = (params: any) => params.data.id
 const selectedPost = computed(
-  () => posts.value.find((post: any) => (post as any).id === selectedPostId.value) || null,
+  () => posts.value.find((post: any) => post.id === selectedPostId.value) || null,
 )
 const commentableDeliveries = computed(() =>
   posts.value.flatMap((post: any) =>
-    ((post as any).deliveries || [])
+    (post.deliveries || [])
       .filter(
         (delivery: any) =>
           delivery.status === 'published' &&
@@ -700,7 +700,7 @@ const analyticsDelivery = computed(
 )
 const analyticsSnapshotsInRange = computed(() =>
   analyticsSnapshots.value.filter((snapshot: any) => {
-    const collectedDay = dayKey(new Date((snapshot as any).collected_at), UTC_HERE)
+    const collectedDay = dayKey(new Date(snapshot.collected_at), UTC_HERE)
     return (
       (!analyticsFrom.value || collectedDay >= analyticsFrom.value) &&
       (!analyticsTo.value || collectedDay <= analyticsTo.value)
@@ -738,7 +738,7 @@ async function loadComments() {
   })
   // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
   workspaceRecords.value = workspaceRows(result, ['comments'])
-  workspaceSelectedId.value = (workspaceRecords.value[0] as any)?._key || ''
+  workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
 }
 async function selectWorkspaceAccount(event: any) {
   workspaceAccountId.value = event.target.value
@@ -760,7 +760,7 @@ async function openAnalytics(delivery: any) {
   await setView('analytics')
 }
 async function replyToComment() {
-  const item: any = (workspaceSelected.value as any)?._source
+  const item = workspaceSelected.value?._source
   const commentId = recordId(item, ['commentId', 'comment_id', 'id', 'ref'])
   if (!selectedDelivery.value || !commentId || !workspaceReply.value.trim()) return
   workspaceBusy.value = true
@@ -830,11 +830,11 @@ async function loadAnalytics() {
 }
 function analyticsSnapshotContext(snapshot: any) {
   const delivery = posts.value
-    .flatMap((post: any) => ((post as any).deliveries || []).map((item: any) => ({ ...item, post })))
+    .flatMap((post: any) => (post.deliveries || []).map((item: any) => ({ ...item, post })))
     .find((item: any) => item.id === snapshot.delivery_id)
   const post = posts.value.find((item: any) => item.id === snapshot.post_id)
-  const account = accounts.value.find((item: any) => (item as any).id === snapshot.account_id)
-  return `${delivery?.post.body?.slice(0, 75) || (post as any)?.body?.slice(0, 75) || PAGE['media-post']} · ${(account as any)?.name || snapshot.account_id}`
+  const account = accounts.value.find((item: any) => item.id === snapshot.account_id)
+  return `${delivery?.post.body?.slice(0, 75) || post?.body?.slice(0, 75) || PAGE['media-post']} · ${account?.name || snapshot.account_id}`
 }
 function metricsRows(value: any) {
   if (!value || typeof value !== 'object') return []
@@ -854,7 +854,7 @@ async function loadInbox() {
     const result = await invokeCapability(workspaceAccountId.value, 'notifications.read')
     // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
     workspaceRecords.value = workspaceRows(result, ['notifications'])
-    workspaceSelectedId.value = (workspaceRecords.value[0] as any)?._key || ''
+    workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
     return
   }
   if (!hasOperation(workspaceAccountId.value, 'messages.read')) {
@@ -864,7 +864,7 @@ async function loadInbox() {
   const result = await invokeCapability(workspaceAccountId.value, 'messages.read')
   // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
   workspaceRecords.value = workspaceRows(result, ['conversations', 'threads'])
-  workspaceSelectedId.value = (workspaceRecords.value[0] as any)?._key || ''
+  workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
   if (workspaceSelected.value) await loadConversation(workspaceSelected.value)
 }
 async function loadConversation(conversation: any) {
@@ -892,7 +892,7 @@ async function selectConversation(row: any) {
   }
 }
 async function sendConversationReply() {
-  const conversationId = recordId((workspaceSelected.value as any)?._source, [
+  const conversationId = recordId(workspaceSelected.value?._source, [
     'conversationId',
     'conversation_id',
     'id',
@@ -944,7 +944,7 @@ async function searchWorkspace() {
     })
     // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
     workspaceRecords.value = workspaceRows(result, ['posts', 'items', 'results'])
-    workspaceSelectedId.value = (workspaceRecords.value[0] as any)?._key || ''
+    workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
   } catch (error) {
     workspaceError.value =
       error instanceof Error ? error.message : ACCOUNT_OPERATIONS['operation-failed']
@@ -978,7 +978,7 @@ async function loadRelationships() {
     })
     // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
     workspaceRecords.value = workspaceRows(result, ['profiles', 'users', 'items', 'results'])
-    workspaceSelectedId.value = (workspaceRecords.value[0] as any)?._key || ''
+    workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
   } catch (error) {
     workspaceError.value =
       error instanceof Error ? error.message : ACCOUNT_OPERATIONS['operation-failed']
@@ -987,7 +987,7 @@ async function loadRelationships() {
   }
 }
 async function actOnSelectedProfile(operation: any) {
-  const profile: any = workspaceProfile.value || (workspaceSelected.value as any)?._source
+  const profile = workspaceProfile.value || workspaceSelected.value?._source
   const profileId = recordId(profile, ['profileId', 'profile_id', 'id', 'did'])
   if (!profileId || !hasOperation(workspaceAccountId.value, operation)) return
   workspaceBusy.value = true
@@ -1003,7 +1003,7 @@ async function actOnSelectedProfile(operation: any) {
   }
 }
 async function performRemotePostAction(operation: any) {
-  const source = (workspaceSelected.value as any)?._source
+  const source = workspaceSelected.value?._source
   if (!source || !hasOperation(workspaceAccountId.value, operation)) return
   const fields =
     operation === 'posts.cancelScheduled'
@@ -1048,14 +1048,14 @@ const weekdayLabels = computed(() =>
 )
 const scheduledPosts = computed(() =>
   posts.value.filter((post: any) =>
-    ((post as any).deliveries || []).some((delivery: any) => !['cancelled'].includes(delivery.status)),
+    (post.deliveries || []).some((delivery: any) => !['cancelled'].includes(delivery.status)),
   ),
 )
 const scheduledTargetCount = computed(() =>
   posts.value.reduce(
     (count: any, post: any) =>
       count +
-      ((post as any).deliveries || []).filter((delivery: any) =>
+      (post.deliveries || []).filter((delivery: any) =>
         ['scheduled', 'remote-scheduled'].includes(delivery.status),
       ).length,
     0,
@@ -1063,18 +1063,18 @@ const scheduledTargetCount = computed(() =>
 )
 const draftPosts = computed(() =>
   posts.value.filter(
-    (post: any) => !((post as any).deliveries || []).some((delivery: any) => !['cancelled'].includes(delivery.status)),
+    (post: any) => !(post.deliveries || []).some((delivery: any) => !['cancelled'].includes(delivery.status)),
   ),
 )
 const lockedPost = computed(() => {
   const post = posts.value.find((item: any) => item.id === form.id)
-  return ((post as any)?.deliveries || []).some(
+  return (post?.deliveries || []).some(
     (delivery: any) => !['scheduled', 'cancelled'].includes(delivery.status),
   )
 })
 const redditTargets = computed(() =>
   accounts.value.filter(
-    (account: any) => (account as any).provider_id === 'reddit' && form.accountIds.includes((account as any).id),
+    (account: any) => account.provider_id === 'reddit' && form.accountIds.includes(account.id),
   ),
 )
 const redditSelected = computed(() => redditTargets.value.length > 0)
@@ -1083,7 +1083,7 @@ function ensureTargetOptions(accountId: any) {
 }
 function postsOn(key: any) {
   return scheduledPosts.value.filter((post: any) =>
-    (post as any).deliveries.some(
+    post.deliveries.some(
       (delivery: any) => dayKey(new Date(delivery.scheduled_at), timezone.value) === key,
     ),
   )
@@ -1091,14 +1091,14 @@ function postsOn(key: any) {
 function accountsForPost(post: any) {
   return (post.deliveries || [])
     .filter((delivery: any) => delivery.status !== 'cancelled')
-    .map((delivery: any) => accounts.value.find((account: any) => (account as any).id === delivery.account_id))
+    .map((delivery: any) => accounts.value.find((account: any) => account.id === delivery.account_id))
     .filter(Boolean)
 }
 function statusWord(status: any) {
   return PAGE_STATUS[status.replaceAll('_', '-')] || status
 }
 function accountName(delivery: any) {
-  return (accounts.value.find((item: any) => (item as any).id === delivery.account_id) as any)?.name || delivery.account_id
+  return accounts.value.find((item: any) => item.id === delivery.account_id)?.name || delivery.account_id
 }
 function eventTime(post: any) {
   const delivery = (post.deliveries || []).find((item: any) => item.status !== 'cancelled')
@@ -1166,8 +1166,8 @@ async function savePost() {
     form.id = result.post.id
     notice.value = PAGE['draft-saved']
     await load()
-    const saved = posts.value.find((post: any) => (post as any).id === form.id)
-    if (saved) form.attachments = [...(saved as any).attachments]
+    const saved = posts.value.find((post: any) => post.id === form.id)
+    if (saved) form.attachments = [...saved.attachments]
   } catch (error) {
     errorText.value = error instanceof Error ? error.message : PAGE['request-failed']
   } finally {
@@ -1194,7 +1194,7 @@ async function uploadFiles(event: any, attachmentId: any) {
       const item = await withPreview(result.attachment)
       if (attachmentId) {
         form.attachments = form.attachments.map((attachment: any) =>
-          (attachment as any).id === attachmentId ? item : attachment,
+          attachment.id === attachmentId ? item : attachment,
         )
       } else form.attachments.push(item)
     }
@@ -1209,7 +1209,7 @@ async function removeAttachment(attachmentId: any) {
   errorText.value = ''
   try {
     await social('remove_attachment', { attachmentId })
-    form.attachments = form.attachments.filter((attachment: any) => (attachment as any).id !== attachmentId)
+    form.attachments = form.attachments.filter((attachment: any) => attachment.id !== attachmentId)
   } catch (error) {
     errorText.value = error instanceof Error ? error.message : PAGE['request-failed']
   } finally {
@@ -1312,9 +1312,9 @@ async function recoverDelivery(delivery: any, resolution: any) {
   }
 }
 const connectBackend = computed(() =>
-  backends.value.find((backend: any) => (backend as any).id === managedConnectForm.backendId),
+  backends.value.find((backend: any) => backend.id === managedConnectForm.backendId),
 )
-const managedPlatformChoices = computed<any>(() => (connectBackend.value as any)?.platforms || [])
+const managedPlatformChoices = computed(() => connectBackend.value?.platforms || [])
 async function loadManagedProfiles() {
   managedProfiles.value = []
   managedConnectForm.profileId = ''
@@ -1322,7 +1322,7 @@ async function loadManagedProfiles() {
   try {
     const result = await social('managed_profiles', { backendId: 'zernio' })
     managedProfiles.value = result.profiles || []
-    managedConnectForm.profileId = (managedProfiles.value[0] as any)?.id || ''
+    managedConnectForm.profileId = managedProfiles.value[0]?.id || ''
   } catch (error) {
     errorText.value = error instanceof Error ? error.message : PAGE['request-failed']
   }
@@ -1449,8 +1449,8 @@ async function revokePublisher(publisher: any) {
     busy.value = false
   }
 }
-const selectedPublisher = computed<any>(
-  () => publishers.value.find((publisher: any) => (publisher as any).id === selectedPublisherId.value) || null,
+const selectedPublisher = computed(
+  () => publishers.value.find((publisher: any) => publisher.id === selectedPublisherId.value) || null,
 )
 function editPublisherPermissions(publisher: any) {
   selectedPublisherId.value = publisher.id
@@ -1460,9 +1460,9 @@ function editPublisherPermissions(publisher: any) {
   )
   publisherPermissionDraft.value = Object.fromEntries(
     accounts.value.map((account: any) => {
-      const permissions: any = saved.get((account as any).id) || {}
+      const permissions: any = saved.get(account.id) || {}
       return [
-        (account as any).id,
+        account.id,
         Object.fromEntries(ACCESS_ACTIONS.map(([key]) => [key, permissions[key] === true])),
       ]
     }),
@@ -1474,16 +1474,16 @@ async function savePublisherPermissions() {
   errorText.value = ''
   try {
     await social('save_permissions', {
-      grantId: (selectedPublisher.value as any).id,
+      grantId: selectedPublisher.value.id,
       canManageAccounts: publisherCanManageAccounts.value,
       permissions: accounts.value.map((account: any) => ({
-        accountId: (account as any).id,
-        ...(publisherPermissionDraft.value[(account as any).id] || {}),
+        accountId: account.id,
+        ...(publisherPermissionDraft.value[account.id] || {}),
       })),
     })
-    const selectedId = (selectedPublisher.value as any).id
+    const selectedId = selectedPublisher.value.id
     await load()
-    const publisher = publishers.value.find((item: any) => (item as any).id === selectedId)
+    const publisher = publishers.value.find((item: any) => item.id === selectedId)
     if (publisher) editPublisherPermissions(publisher)
     notice.value = ACCESS['permissions-saved']
   } catch (error) {
@@ -1514,10 +1514,10 @@ async function reviewApproval(delivery: any, decision: any) {
     if (!updatedDelivery?.id || updatedDelivery.id !== delivery.id)
       throw new Error(PAGE['request-failed'])
     posts.value = posts.value.map((post: any) =>
-      (post as any).id === updatedDelivery.post_id
+      post.id === updatedDelivery.post_id
         ? {
             ...post,
-            deliveries: ((post as any).deliveries || []).map((item: any) =>
+            deliveries: (post.deliveries || []).map((item: any) =>
               item.id === updatedDelivery.id ? { ...item, ...updatedDelivery } : item,
             ),
           }
@@ -1536,7 +1536,7 @@ function canReviewApproval(delivery: any) {
     isAdmin.value ||
     accounts.value.some(
       (account: any) =>
-        (account as any).id === delivery.account_id && (account as any).permissions?.approve_posts === true,
+        account.id === delivery.account_id && account.permissions?.approve_posts === true,
     )
   )
 }

@@ -12,8 +12,8 @@ const multiple = computed(() => p.value.multiple !== undefined)
 const picture = computed(() => props.field.kind === 'picture')
 const chosen = computed(() => (multiple.value ? (Array.isArray(props.modelValue) ? props.modelValue : []) : props.modelValue == null ? '' : String(props.modelValue)))
 // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-const isOn = (v: any) => (multiple.value ? chosen.value.includes(v) : chosen.value === v)
-function pick(v: any) {
+const isOn = (v) => (multiple.value ? chosen.value.includes(v) : chosen.value === v)
+function pick(v: string) {
   if (p.value.disabled !== undefined) return
   if (multiple.value) { const cur = [...chosen.value]; const i = cur.indexOf(v); if (i >= 0) cur.splice(i, 1); else cur.push(v); emit('update:modelValue', cur) }
   else { emit('update:modelValue', v); emit('enter', 'pick') }

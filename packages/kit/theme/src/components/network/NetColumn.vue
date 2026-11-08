@@ -68,7 +68,7 @@ const tab = ref(!FOLLOWING ? 'discover' : (() => { try { return sessionStorage.g
 function setTab(t: any) { tab.value = t; try { sessionStorage.setItem('dl.feed.tab', t) } catch { /* private window */ } ; if (t === 'discover' && !ds.st.items.length) ds.refresh(); window.scrollTo({ top: 0 }) }
 const source = computed(() => (view.value === 'explore' || tab.value === 'discover' ? ds : tl))
 // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-const items = computed(() => source.value.st.items.map((it) => ({ ...it, post: (it as any).post_id ? net.posts[(it as any).post_id] : net.messages[(it as any).message_id] })).filter((it) => it.post))
+const items = computed(() => source.value.st.items.map((it) => ({ ...it, post: it.post_id ? net.posts[it.post_id] : net.messages[it.message_id] })).filter((it) => it.post))
 
 /* ---------------------------------------------------------------- explore: people by name */
 const q = ref('')
@@ -112,7 +112,7 @@ async function moreNotes() {
   if (notesBusy.value || notesDone.value || !notes.value.length) return
   notesBusy.value = true
   try {
-    const rows = await fetchNotes((notes.value[notes.value.length - 1] as any).at)
+    const rows = await fetchNotes(notes.value[notes.value.length - 1].at)
     notes.value = notes.value.concat(rows); notesDone.value = rows.length < (SPACES ? PAGE : 50)
   } catch { notesErr.value = true } finally { notesBusy.value = false }
 }
@@ -139,7 +139,7 @@ function runs(tpl: any, map: any, bold: any) {
 function noteRuns(g: any) {
   const W = N.value
   if (g.source === 'event') {
-    const it: any = g.item || {}
+    const it = g.item || {}
     const start = new Date(it.starts_at)
     const now = new Date()
     const key = start <= now ? 'event-on' : start.toDateString() === now.toDateString() ? 'event-today' : 'event-tomorrow'
@@ -214,7 +214,7 @@ async function posted(out: any) {
 }
 /* a report, over whatever view raised it */
 const reporting = ref<any>(null)
-const removed = (id: any) => { tl.st.items = tl.st.items.filter((it: any) => (it as any).post_id !== id); if (view.value === 'thread' && id === threadId.value) navigate(ROUTES.feed) }
+const removed = (id: any) => { tl.st.items = tl.st.items.filter((it: any) => it.post_id !== id); if (view.value === 'thread' && id === threadId.value) navigate(ROUTES.feed) }
 
 const signIn = () => { if ((window as any).DLauth) (window as any).DLauth.open() }
 /* a post made elsewhere — the post window — lands in whatever this column is showing */

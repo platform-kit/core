@@ -10,10 +10,10 @@ const props = defineProps({ field: { type: Object as PropType<any>, required: tr
 const emit = defineEmits(['update:modelValue'])
 const W = (us('models').drawer || {}).entry || {}
 const rows = () => (Array.isArray(props.modelValue) ? props.modelValue.map((r) => ({ v: r })) : [])
-const put = (list: any) => emit('update:modelValue', list.length ? list.map((r: any) => r.v) : undefined)
+const put = (list: any[]) => emit('update:modelValue', list.length ? list.map((r: { v: any }) => r.v) : undefined)
 function add() { put([...rows(), { v: props.field.of === 'group' ? {} : props.field.of === 'boolean' ? false : props.field.of === 'multi-select' || props.field.of === 'tags' ? [] : '' }]) }
 function setRow(i: any, v: any) { const list = rows(); list[i] = { v }; put(list) }
-function remove(i: any) { const list = rows(); list.splice(i, 1); put(list) }
+function remove(i: number) { const list = rows(); list.splice(i, 1); put(list) }
 function reorder(list: any) { put(list) }
 const leaf = () => ({ kind: props.field.of, choices: props.field.choices, options: props.field.options, many: props.field.many })
 </script>

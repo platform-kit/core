@@ -2,7 +2,7 @@
 title: Landing pages and the page builder
 description: The home page, the pricing page, the about page and any other page built from sections.
 order: 12
-reviewed: 2026-11-07
+reviewed: 2026-11-08
 sources:
   [
     packages/kit/src/lib/chrome.ts,

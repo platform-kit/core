@@ -26,7 +26,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'valid', 'focus'])
 
 if (import.meta.env.DEV) {
-  const a = new Set(SECTION_KEYS), b: any = new Set(SECTION_NAMES)
+  const a = new Set(SECTION_KEYS), b = new Set(SECTION_NAMES)
   for (const k of SECTION_NAMES) if (!a.has(k)) console.warn('[pages] section without a schema:', k)
   for (const k of SECTION_KEYS) if (!b.has(k)) console.warn('[pages] schema without a section:', k)
 }
@@ -36,7 +36,7 @@ const blocks = ref<any>([])
 const clone = (v: any) => JSON.parse(JSON.stringify(v == null ? null : v))
 /* `key:` with nothing after it is null in YAML; the form treats it as blank */
 // @ts-expect-error TS7023, from the conversion: 'blankNulls' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in 
-const blankNulls = (v: any) => (v === null ? undefined : Array.isArray(v) ? v.map(blankNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, blankNulls(x)])) : v)
+const blankNulls = (v) => (v === null ? undefined : Array.isArray(v) ? v.map(blankNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, blankNulls(x)])) : v)
 const def = (b: any) => SECTION_SCHEMAS[b.component] || null
 /* the section against its schema, and its conditional record against the chosen kind's: { errors by path, valid } */
 function check(b: any) {
@@ -59,21 +59,21 @@ watch(() => props.modelValue, (v) => {
   const json = JSON.stringify(v || [])
   if (json === lastEmitted) return
   blocks.value = hydrate(v)
-  emit('valid', blocks.value.every((b: any) => (b as any).valid))
+  emit('valid', blocks.value.every((b: any) => b.valid))
 }, { immediate: true, deep: true })
 
 function serialize() {
   return blocks.value.map((b: any) => {
-    const d = def(b), p = clone((b as any).props || {})
+    const d = def(b), p = clone(b.props || {})
     if (d && d.conditional && !subSchema(d, p)) delete p[d.conditional.field]   /* a stage's words go with the stage */
-    return Object.keys(p).length ? { component: (b as any).component, props: p } : { component: (b as any).component }
+    return Object.keys(p).length ? { component: b.component, props: p } : { component: b.component }
   })
 }
 function emitAll() {
   const out = serialize()
   lastEmitted = JSON.stringify(out)
   emit('update:modelValue', out)
-  emit('valid', blocks.value.every((b: any) => (b as any).valid))
+  emit('valid', blocks.value.every((b: any) => b.valid))
 }
 const plain = (s: any) => String(s || '').replace(/[*_`~]+/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
 const summary = (b: any) => { const d = def(b); try { return plain((d && d.summary(b.props)) || '') } catch (e) { return '' } }
@@ -84,7 +84,7 @@ const meta = (b: any) => {
   for (const k of Object.keys(p)) if (Array.isArray(p[k]) && p[k].length && typeof p[k][0] === 'object') { const n = p[k].length, cfg = (d.fieldConfig || {})[k] || {}, one = (cfg.item || k.replace(/s$/, '')).toLowerCase(); return n + ' ' + (n === 1 ? one : (cfg.items || one + 's')) }
   return ''
 }
-const allValid = computed(() => blocks.value.every((b: any) => (b as any).valid))
+const allValid = computed(() => blocks.value.every((b: any) => b.valid))
 
 function onChange(b: any, values: any) {
   const d = def(b)
@@ -105,27 +105,27 @@ async function add(key: any) {
   const d = SECTION_SCHEMAS[key]
   const b = { id: ++seq, component: key, props: clone(d.defaults || {}), open: true, valid: true, errors: {}, rawText: '' }
   Object.assign(b, check(b))
-  for (const x of blocks.value) (x as any).open = false
+  for (const x of blocks.value) x.open = false
   if (insertAt.value >= 0) blocks.value.splice(insertAt.value, 0, b); else blocks.value.push(b)
   emitAll(); await nextTick(); scrollTo(b); emit('focus', blocks.value.indexOf(b))
 }
 function duplicate(i: any) {
   const b = blocks.value[i]
-  blocks.value.splice(i + 1, 0, { ...clone({ component: (b as any).component, props: (b as any).props }), id: ++seq, open: false, valid: (b as any).valid, errors: clone((b as any).errors), rawText: '' })
+  blocks.value.splice(i + 1, 0, { ...clone({ component: b.component, props: b.props }), id: ++seq, open: false, valid: b.valid, errors: clone(b.errors), rawText: '' })
   emitAll()
 }
 function remove(i: any) {
   const b = blocks.value[i]
-  if ((b as any).props && Object.keys((b as any).props).length && !confirm('Remove this section?')) return
+  if (b.props && Object.keys(b.props).length && !confirm('Remove this section?')) return
   blocks.value.splice(i, 1)
   emitAll()
 }
 function moveBy(i: any, d: any) { const j = i + d; if (j < 0 || j >= blocks.value.length) return; const [b] = blocks.value.splice(i, 1); blocks.value.splice(j, 0, b); emitAll() }
-function toggle(b: any) { b.open = !b.open; if (b.open) { for (const x of blocks.value) if (x !== b) (x as any).open = false; emit('focus', blocks.value.indexOf(b)) } }
+function toggle(b: any) { b.open = !b.open; if (b.open) { for (const x of blocks.value) if (x !== b) x.open = false; emit('focus', blocks.value.indexOf(b)) } }
 const list = ref<any>(null)
-function scrollTo(b: any) { const el: any = list.value && list.value.$el && list.value.$el.querySelector(`[data-block="${b.id}"]`); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }
+function scrollTo(b: any) { const el = list.value && list.value.$el && list.value.$el.querySelector(`[data-block="${b.id}"]`); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }
 /* the preview's click: open that block */
-watch(() => props.pick, (i) => { const b = blocks.value[i]; if (!b) return; for (const x of blocks.value) (x as any).open = x === b; nextTick(() => scrollTo(b)) })
+watch(() => props.pick, (i) => { const b = blocks.value[i]; if (!b) return; for (const x of blocks.value) x.open = x === b; nextTick(() => scrollTo(b)) })
 /* an unknown component (a typo in the file): editable as text so the page is not stuck */
 function setRaw(b: any, text: any) {
   b.rawText = text

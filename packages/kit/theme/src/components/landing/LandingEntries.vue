@@ -20,14 +20,14 @@ const props = defineProps({
 })
 const W = (us('models').pages || {}).index || {}
 const MODELS = CONTENT.models || []
-const model = computed(() => MODELS.find((m: any) => m.key === props.model && m.deliver && m.deliver.section) || null)
+const model = computed(() => MODELS.find((m: { key: string; deliver: { section: any } }) => m.key === props.model && m.deliver && m.deliver.section) || null)
 const entries = computed(() => { if (!model.value) return []; const c = (CONTENT as any)['models_' + model.value.key.replace(/-/g, '_')]; const list = Array.isArray(c) ? c : c ? [c] : []; return props.limit > 0 ? list.slice(0, props.limit) : list })
-const titleOf = (e: any) => String(e[model.value.title] || e.slug)
-const summaryField = computed(() => (model.value ? model.value.fields.find((f: any) => f.kind === 'long-text' || f.kind === 'markdown') : null))
-const summaryOf = (e: any) => (summaryField.value && e[summaryField.value.key] ? String(e[summaryField.value.key]).replace(/[#*_>`]/g, '').split('\n').find((l) => l.trim()) || '' : '')
-const imageField = computed(() => (model.value ? model.value.fields.find((f: any) => f.kind === 'image') : null))
-const imageOf = (e: any) => { const v = imageField.value && e[imageField.value.key]; return v && typeof v === 'object' ? v.src : v || '' }
-const hrefOf = (e: any) => (model.value.deliver.pages ? `${ROUTES.entries}/${model.value.key}/${e.slug}` : null)
+const titleOf = (e: { [x: string]: any; slug: any }) => String(e[model.value.title] || e.slug)
+const summaryField = computed(() => (model.value ? model.value.fields.find((f: { kind: string }) => f.kind === 'long-text' || f.kind === 'markdown') : null))
+const summaryOf = (e: { [x: string]: any }) => (summaryField.value && e[summaryField.value.key] ? String(e[summaryField.value.key]).replace(/[#*_>`]/g, '').split('\n').find((l) => l.trim()) || '' : '')
+const imageField = computed(() => (model.value ? model.value.fields.find((f: { kind: string }) => f.kind === 'image') : null))
+const imageOf = (e: { [x: string]: any }) => { const v = imageField.value && e[imageField.value.key]; return v && typeof v === 'object' ? v.src : v || '' }
+const hrefOf = (e: { slug: any }) => (model.value.deliver.pages ? `${ROUTES.entries}/${model.value.key}/${e.slug}` : null)
 const indexHref = computed(() => (model.value && model.value.deliver.pages ? `${ROUTES.entries}/${model.value.key}` : null))
 </script>
 

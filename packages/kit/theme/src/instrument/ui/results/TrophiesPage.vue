@@ -17,19 +17,19 @@ import { masteryOf, masteryRev } from 'platformkit/lib/mastery.js'
 const T = us('library').trophy
 const P = T.page || {}
 const order: any = { gold: 0, silver: 1, bronze: 2 }
-const fill = (s: any, v: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (v[k] == null ? '' : v[k]))
-const when = (ms: any) => { try { return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) } catch (e) { return '' } }
+const fill = (s: any, v: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (v[k] == null ? '' : v[k]))
+const when = (ms: string|number|Date) => { try { return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) } catch (e) { return '' } }
 const rows = computed(() => {
   void masteryRev.value
-  return companions().map((c: any) => {
-    const b = (BOOKS || []).find((x: any) => x.slug === c.book)
+  return companions().map((c: { book: any }) => {
+    const b = (BOOKS || []).find((x: { slug: any }) => x.slug === c.book)
     const m = masteryOf(c.book)
     /* the next trophy and the chapters it takes: bronze for the first, silver at half, gold for all */
     const next = !m.tier ? ['bronze', 1] : m.tier === 'bronze' ? ['silver', Math.ceil(m.total / 2)] : m.tier === 'silver' ? ['gold', m.total] : null
     return b && m.total ? { slug: c.book, title: b.title, author: b.author, cover: b.cover && (typeof b.cover === 'string' ? b.cover : b.cover.src), ...m, next } : null
-  }).filter(Boolean).sort((a: any, b: any) => (a.tier ? order[a.tier] : 3) - (b.tier ? order[b.tier] : 3) || (b.done / b.total) - (a.done / a.total) || a.title.localeCompare(b.title))
+  }).filter(Boolean).sort((a: { tier: string|number; done: number; total: number; title: string }, b: { tier: string|number; done: number; total: number; title: any }) => (a.tier ? order[a.tier] : 3) - (b.tier ? order[b.tier] : 3) || (b.done / b.total) - (a.done / a.total) || a.title.localeCompare(b.title))
 })
-const won = computed(() => rows.value.filter((r: any) => r.tier))
+const won = computed(() => rows.value.filter((r: { tier: any }) => r.tier))
 </script>
 
 <template>

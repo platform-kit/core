@@ -43,22 +43,22 @@ const EN = computed(() => us('spaces').encryption)
 const filter = ref('')
 const shut = ref<any>({})
 
-const rowOf = (id: any) => props.unread.find((r) => (r as any).channel === id) || null
+const rowOf = (id: any) => props.unread.find((r) => r.channel === id) || null
 const joined = (id: any) => !!rowOf(id)
 // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
-const titleOf = (c: any) => (c.kind === 'dm' ? dmTitle(props.members[c.id] || [], props.names, props.me, { self: W.value.self, more: W.value.more, someone: W.value.someone }) : c.name)
+const titleOf = (c) => (c.kind === 'dm' ? dmTitle(props.members[c.id] || [], props.names, props.me, { self: W.value.self, more: W.value.more, someone: W.value.someone }) : c.name)
 // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const sections = computed(() => railSections(props.channels, props.unread, props.space ? props.space.id : null, (props.space && props.space.groups) || []))
 /* The rail's runs, in the order they are drawn: the headings the space's own file declares (each
    with the rooms that name it), then what this person starred, then whatever sits under no heading,
    then the direct messages. A space that declares no heading has exactly the rail it always had. */
 const runs = computed(() => [
-  ...sections.value.groups.map((g: any) => ({ key: 'group:' + g.name, label: g.name, list: g.channels })),
+  ...sections.value.groups.map((g: { name: string; channels: any }) => ({ key: 'group:' + g.name, label: g.name, list: g.channels })),
   { key: 'starred', label: W.value['section-starred'], list: sections.value.starred },
   { key: 'channels', label: W.value['section-channels'], list: sections.value.channels },
   { key: 'dms', label: W.value['section-direct'], list: sections.value.dms },
 ])
-const shown = (list: any) => {
+const shown = (list: any[]) => {
   const q = filter.value.trim().toLowerCase()
   return q ? list.filter((c: any) => titleOf(c).toLowerCase().includes(q)) : list
 }
@@ -81,12 +81,12 @@ function badge(id: any) {
   if (!row) return null
   const m = mentionsOf(row), u = unreadOf(row)
   if (m) return { text: String(m), mention: true }
-  if (!u || (row as any).notify === 'none' || mutedNow(row)) return null
+  if (!u || row.notify === 'none' || mutedNow(row)) return null
   return { text: '', mention: false }
 }
 /* a direct message with one other person shows whether they are here */
-const soloPeer = (c: any) => {
-  const ids = (props.members[c.id] || []).filter((id: any) => id !== props.me)
+const soloPeer = (c: { id: string|number }) => {
+  const ids = (props.members[c.id] || []).filter((id: string) => id !== props.me)
   return ids.length === 1 ? ids[0] : null
 }
 </script>

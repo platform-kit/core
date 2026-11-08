@@ -25,9 +25,9 @@ const props = defineProps({
 })
 const emit = defineEmits(['react', 'comment'])
 const W = computed(() => us('spaces').channel.main)
-const like = computed(() => props.reactions.find((r) => (r as any).emoji === LIKE) || null)
-const liked = computed(() => !!(like.value && (like.value as any).mine))
-const likes = computed(() => (like.value ? (like.value as any).users.length : 0))
+const like = computed(() => props.reactions.find((r) => r.emoji === LIKE) || null)
+const liked = computed(() => !!(like.value && like.value.mine))
+const likes = computed(() => (like.value ? like.value.users.length : 0))
 const comments = computed(() => props.message.reply_count || 0)
 const copied = ref(false)
 async function share() {

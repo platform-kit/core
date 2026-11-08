@@ -35,52 +35,52 @@ async function load() {
     const { data, error } = await (supabase as any).from('form_responses').select('id, form, user_id, anon_id, started_at, completed_at, score, total, passed, webhook_at, webhook_error').order('started_at', { ascending: false }).limit(500)
     if (error) throw error
     rows.value = data || []
-    const ids = [...new Set(rows.value.map((r: any) => (r as any).user_id).filter(Boolean))]
+    const ids = [...new Set(rows.value.map((r: { user_id: any }) => r.user_id).filter(Boolean))]
     if (ids.length) { const { data: p } = await (supabase as any).from('profiles').select('id, display_name, email').in('id', ids); for (const x of p || []) names.value[x.id] = x.display_name || x.email || x.id.slice(0, 8) }
   } catch (e) { msg.value = (e as any).message } finally { loading.value = false }
 }
 onMounted(load)
 onIdentity((id: any) => { if (id) load() })
-const formsList = computed(() => [...new Set([...(FORMS || []).map((f: any) => f.slug), ...rows.value.map((r: any) => (r as any).form)])])
-const shown = computed(() => rows.value.filter((r: any) => (!form.value || (r as any).form === form.value) && (status.value === 'all' || (status.value === 'done' ? !!(r as any).completed_at : !(r as any).completed_at))))
+const formsList = computed(() => [...new Set([...(FORMS || []).map((f: { slug: any }) => f.slug), ...rows.value.map((r: { form: any }) => r.form)])])
+const shown = computed(() => rows.value.filter((r: { form: string; completed_at: any }) => (!form.value || r.form === form.value) && (status.value === 'all' || (status.value === 'done' ? !!r.completed_at : !r.completed_at))))
 const who = (r: any) => (r.user_id ? names.value[r.user_id] || r.user_id.slice(0, 8) : W.guest)
-const when = (s: any) => (s ? new Date(s).toLocaleString() : '')
+const when = (s: string|number|Date) => (s ? new Date(s).toLocaleString() : '')
 /* the grid: every response a row; a click opens it */
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
-const getRowId = (q: any) => q.data.id
+const getRowId = (q: { data: { id: any } }) => q.data.id
 const columnDefs = computed(() => {
   void names.value
   return [
     { headerName: W.form, field: 'form', pinned: 'left', flex: 1.2, minWidth: 160, cellClass: 'fr-gform' },
-    { headerName: W.who, flex: 1, minWidth: 140, valueGetter: (q: any) => who(q.data) },
-    { headerName: W.started, flex: 1, minWidth: 170, valueGetter: (q: any) => q.data.started_at, valueFormatter: (q: any) => when(q.value), sort: 'desc' },
-    { headerName: W.finished, flex: 1, minWidth: 170, valueGetter: (q: any) => q.data.completed_at || '', valueFormatter: (q: any) => (q.value ? when(q.value) : W.unfinished), cellClass: (q: any) => (q.value ? '' : 'fr-gopen') },
-    { headerName: W.score, width: 96, type: 'numericColumn', valueGetter: (q: any) => (q.data.total ? q.data.score + '/' + q.data.total : '') },
+    { headerName: W.who, flex: 1, minWidth: 140, valueGetter: (q: { data: any }) => who(q.data) },
+    { headerName: W.started, flex: 1, minWidth: 170, valueGetter: (q: { data: { started_at: any } }) => q.data.started_at, valueFormatter: (q: { value: any }) => when(q.value), sort: 'desc' },
+    { headerName: W.finished, flex: 1, minWidth: 170, valueGetter: (q: { data: { completed_at: any } }) => q.data.completed_at || '', valueFormatter: (q: { value: any }) => (q.value ? when(q.value) : W.unfinished), cellClass: (q: { value: any }) => (q.value ? '' : 'fr-gopen') },
+    { headerName: W.score, width: 96, type: 'numericColumn', valueGetter: (q: { data: { total: string; score: string } }) => (q.data.total ? q.data.score + '/' + q.data.total : '') },
   ]
 })
-const fieldsOf = (slug: any) => { const f = (FORMS || []).find((x: any) => x.slug === slug); return f ? f.model.fields : [] }
+const fieldsOf = (slug: any) => { const f = (FORMS || []).find((x: { slug: any }) => x.slug === slug); return f ? f.model.fields : [] }
 
 /* one response */
-const cur = computed<any>(() => rows.value.find((r: any) => (r as any).id === props.name) || null)
+const cur = computed(() => rows.value.find((r: { id: string }) => r.id === props.name) || null)
 const answers = ref<any>([]), files = ref<any>({})
 async function loadOne() {
   answers.value = []; files.value = {}
   if (!cur.value) return
-  const { data } = await (supabase as any).from('form_answers').select('field, value, file_path, file_name, file_type, file_size, slide, answered_at').eq('response_id', (cur.value as any).id)
-  const order = fieldsOf((cur.value as any).form).map((f: any) => f.name)
-  answers.value = (data || []).sort((a: any, b: any) => (order.indexOf(a.field) - order.indexOf(b.field)) || a.answered_at.localeCompare(b.answered_at))
-  const paths = answers.value.filter((a: any) => (a as any).file_path).map((a: any) => (a as any).file_path)
+  const { data } = await (supabase as any).from('form_answers').select('field, value, file_path, file_name, file_type, file_size, slide, answered_at').eq('response_id', cur.value.id)
+  const order = fieldsOf(cur.value.form).map((f: { name: any }) => f.name)
+  answers.value = (data || []).sort((a: { field: any; answered_at: string }, b: { field: any; answered_at: any }) => (order.indexOf(a.field) - order.indexOf(b.field)) || a.answered_at.localeCompare(b.answered_at))
+  const paths = answers.value.filter((a: { file_path: any }) => a.file_path).map((a: { file_path: any }) => a.file_path)
   if (paths.length) { const { data: s } = await (supabase as any).storage.from('forms').createSignedUrls(paths, 3600); for (const x of s || []) if (x.signedUrl) files.value[x.path] = x.signedUrl }
 }
 watch([cur, rows], loadOne, { immediate: true })
-const question = (slug: any, name: any) => { const f = fieldsOf(slug).find((x: any) => x.name === name); return f && f.question && f.question !== '...' ? f.question : name }
-const show = (a: any) => (a.file_path ? a.file_name : Array.isArray(a.value) ? a.value.join(', ') : a.value == null ? '' : typeof a.value === 'object' ? JSON.stringify(a.value) : String(a.value))
-async function remove() { if (!cur.value || !confirm(W1.delete + '?')) return; await (supabase as any).from('form_responses').delete().eq('id', (cur.value as any).id); rows.value = rows.value.filter((r: any) => (r as any).id !== (cur as any).value.id); emit('back') }
+const question = (slug: any, name: any) => { const f = fieldsOf(slug).find((x: { name: any }) => x.name === name); return f && f.question && f.question !== '...' ? f.question : name }
+const show = (a: { file_path: any; file_name: any; value: any[]|null }) => (a.file_path ? a.file_name : Array.isArray(a.value) ? a.value.join(', ') : a.value == null ? '' : typeof a.value === 'object' ? JSON.stringify(a.value) : String(a.value))
+async function remove() { if (!cur.value || !confirm(W1.delete + '?')) return; await (supabase as any).from('form_responses').delete().eq('id', cur.value.id); rows.value = rows.value.filter((r: { id: any }) => r.id !== cur.value.id); emit('back') }
 
 /* CSV: the rows shown, every answer of each as a column */
 async function exportCsv() {
   const list = shown.value
-  const ids = list.map((r: any) => (r as any).id)
+  const ids = list.map((r: { id: any }) => r.id)
   const all = []
   for (let i = 0; i < ids.length; i += 200) { const { data } = await (supabase as any).from('form_answers').select('response_id, field, value, file_name').in('response_id', ids.slice(i, i + 200)); all.push(...(data || [])) }
   const byResp: any = {}
@@ -89,7 +89,7 @@ async function exportCsv() {
   const esc = (v: any) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'
   const head = ['id', 'form', 'who', 'started', 'finished', 'score', 'total', 'passed', ...fields]
   const lines = [head.map(esc).join(',')]
-  for (const r of list) lines.push([(r as any).id, (r as any).form, who(r), (r as any).started_at, (r as any).completed_at || '', (r as any).score ?? '', (r as any).total ?? '', (r as any).passed == null ? '' : (r as any).passed, ...fields.map((f) => (byResp[(r as any).id] || {})[f] ?? '')].map(esc).join(','))
+  for (const r of list) lines.push([r.id, r.form, who(r), r.started_at, r.completed_at || '', r.score ?? '', r.total ?? '', r.passed == null ? '' : r.passed, ...fields.map((f) => (byResp[r.id] || {})[f] ?? '')].map(esc).join(','))
   const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = (form.value || 'responses') + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000)
 }

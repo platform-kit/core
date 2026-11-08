@@ -101,7 +101,7 @@ export async function runInContainer(script: string, args: string[]) {
     return path.posix.join(WORK, rel.split(path.sep).join('/'))
   }
   /* a path argument names the same file inside */
-  const mapped = args.map((a: any) => (path.isAbsolute(a) && fs.existsSync(a) ? inside(a) : a))
+  const mapped = args.map((a) => (path.isAbsolute(a) && fs.existsSync(a) ? inside(a) : a))
   const id = path.basename(root).toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + crypto.createHash('sha1').update(root).digest('hex').slice(0, 8)
   const name = `platformkit-e2e-${id}`
   const image = `platformkit-e2e:${id}`

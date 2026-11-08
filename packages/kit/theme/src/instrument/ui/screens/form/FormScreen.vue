@@ -28,7 +28,7 @@ const sendError = ref('')
 /* the fields shown now: a field behind a false condition is neither checked nor sent */
 function visibleFields() {
   const out: any = []
-  const walk = (blocks: any, on: any) => { for (const b of blocks) { const ok = on && (!b.condition || holds(b.condition, ctx.value)); if (b.type === 'field' && ok) out.push(b); if (b.blocks) walk(b.blocks, ok) } }
+  const walk = (blocks: any, on: boolean) => { for (const b of blocks) { const ok = on && (!b.condition || holds(b.condition, ctx.value)); if (b.type === 'field' && ok) out.push(b); if (b.blocks) walk(b.blocks, ok) } }
   walk(props.screen.blocks, true)
   return out
 }
@@ -50,7 +50,7 @@ async function submit() {
   }
   emit('answer', out)
 }
-function onEnter(how: any) { if (how !== 'pick') submit() }
+function onEnter(how: string) { if (how !== 'pick') submit() }
 const buttonText = computed(() => {
   const s = props.screen
   if (s.type === 'start') return s.button || W.value.start

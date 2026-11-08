@@ -23,8 +23,8 @@ const props = defineProps({
   cta: { type: String, default: '' }, href: { type: String, default: '' },
 })
 const W = (us('sections').collections || {}).tile || {}
-const items = computed(() => { let list = props.ids.length ? props.ids.map((id) => COLLECTIONS.value.find((c: any) => c.id === id)).filter(Boolean) : COLLECTIONS.value; return props.limit > 0 ? list.slice(0, props.limit) : list })
-const count = (c: any) => (W.count || '{n} items').replace('{n}', c.items.length)
+const items = computed(() => { let list = props.ids.length ? props.ids.map((id) => COLLECTIONS.value.find((c: { id: any }) => c.id === id)).filter(Boolean) : COLLECTIONS.value; return props.limit > 0 ? list.slice(0, props.limit) : list })
+const count = (c: { items: string|any[] }) => (W.count || '{n} items').replace('{n}', c.items.length)
 </script>
 <template>
   <section class="lpsec lpcollections" :class="'lpcl-' + layout">

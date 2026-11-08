@@ -56,7 +56,7 @@ ${includes.join('\n')}
   location / { try_files $uri $uri/index.html @page; }`
 }
 
-function proxyLocations(site: any, domain: any, port: number|null) {
+function proxyLocations(site: { root: any; name: any }, domain: any, port: number|null) {
   if (!port) return missingSitePage(site, domain)
   const upstream = `http://host.docker.internal:${port}`
   return `  location / {

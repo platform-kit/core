@@ -26,7 +26,7 @@ let ready = false
 const look = ref(siteLook.value)
 function setLook(l: any) {
   look.value = l
-  const w: any = frame.value && frame.value.contentWindow
+  const w = frame.value && frame.value.contentWindow
   if (w && ready) w.postMessage({ type: 'dl-look', look: l }, window.location.origin)
 }
 function post() {
@@ -36,7 +36,7 @@ function post() {
   const entry = props.entry ? JSON.parse(JSON.stringify(props.entry)) : null
   w.postMessage({ type: 'dl-preview', col: props.col, entry }, window.location.origin)
 }
-function onMessage(e: any) {
+function onMessage(e: { origin: string; data: { type: string; index: any } }) {
   if (e.origin !== window.location.origin || !e.data) return
   if (e.data.type === 'dl-preview-ready') { ready = true; post(); setLook(look.value) }
   if (e.data.type === 'dl-preview-close') emit('close')
@@ -44,7 +44,7 @@ function onMessage(e: any) {
 }
 watch(() => [props.col, props.entry], post)
 watch(() => props.focus, (i) => { const w = frame.value && frame.value.contentWindow; if (w && ready && i >= 0) w.postMessage({ type: 'dl-focus', index: i }, window.location.origin) })
-function onKey(e: any) { if (e.key === 'Escape' && !e.defaultPrevented) emit('close') }
+function onKey(e: { key: string; defaultPrevented: any }) { if (e.key === 'Escape' && !e.defaultPrevented) emit('close') }
 onMounted(() => { window.addEventListener('message', onMessage); document.addEventListener('keydown', onKey) })
 onBeforeUnmount(() => { window.removeEventListener('message', onMessage); document.removeEventListener('keydown', onKey) })
 </script>

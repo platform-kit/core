@@ -32,17 +32,17 @@ import * as comments from './comments.js'
 
 const EXTRA_ADAPTERS = Array.isArray(registeredSources) ? registeredSources : []
 for (const adapter of EXTRA_ADAPTERS) {
-  if (!adapter || typeof (adapter as any).id !== 'string' || !(adapter as any).id
-    || typeof (adapter as any).module !== 'string' || !(adapter as any).module
-    || ['support', 'coaching', 'comments'].includes((adapter as any).id)
-    || typeof (adapter as any).list !== 'function' || typeof (adapter as any).messages !== 'function'
-    || typeof (adapter as any).send !== 'function' || typeof (adapter as any).resolve !== 'function') {
+  if (!adapter || typeof adapter.id !== 'string' || !adapter.id
+    || typeof adapter.module !== 'string' || !adapter.module
+    || ['support', 'coaching', 'comments'].includes(adapter.id)
+    || typeof adapter.list !== 'function' || typeof adapter.messages !== 'function'
+    || typeof adapter.send !== 'function' || typeof adapter.resolve !== 'function') {
     throw new Error('A registered Desk source must export a unique id and list, messages, send, and resolve operations.')
   }
 }
 const ADAPTERS = {
   support, coaching, comments,
-  ...Object.fromEntries(EXTRA_ADAPTERS.map((adapter: any) => [adapter.id, adapter])),
+  ...Object.fromEntries(EXTRA_ADAPTERS.map((adapter) => [adapter.id, adapter])),
 }
 const LAST_ROWS = new Map()
 
@@ -117,7 +117,7 @@ async function gather(name: string) {
   // @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'. Type 'any' is not assignable to type 'never'.
   else if (name === 'comments') result = comments.rowsOf(await comments.list(supabase), {})
   else if (name === 'coaching') result = coaching.rowsOf(await coaching.list(supabase), { products, rank: tierRank, me: uid(), marks })
-  else if (EXTRA_ADAPTERS.some((adapter: any) => adapter.id === name)) {
+  else if (EXTRA_ADAPTERS.some((adapter) => adapter.id === name)) {
     const response = await ADAPTERS[name].list(supabase, marks)
     const found = response.rows || []
     const failures = Array.isArray(response.failures) ? response.failures : []

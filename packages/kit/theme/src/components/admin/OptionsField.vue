@@ -52,7 +52,7 @@ const opts = computed({ get: () => props.modelValue || [], set: (v) => emit('upd
 /* the sizes field is one Size option; shown here so the two are never edited in two places */
 const effective = computed(() => normaliseOptions([
   ...(props.modelValue || []),
-  ...((props.form.sizes || []).length && !(props.modelValue || []).some((o) => slug((o as any).name) === 'size') ? [{ name: 'Size', values: props.form.sizes }] : []),
+  ...((props.form.sizes || []).length && !(props.modelValue || []).some((o) => slug(o.name) === 'size') ? [{ name: 'Size', values: props.form.sizes }] : []),
 ]))
 const rows = computed(() => variantsOf(
   { sku: props.form.sku || 'sku', key: props.form.key || '00000000' },
@@ -79,7 +79,7 @@ const setSold = (key: any, on: any) => {
 /* ---- the options themselves ---- */
 const addOption = () => { opts.value = [...opts.value, { name: '', values: [] }] }
 const dropOption = (i: any) => {
-  const o: any = opts.value[i]
+  const o = opts.value[i]
   const hurt = rows.value.filter((r) => (variants.value[r.variant] || unsold.value.includes(r.variant)) && r.chosen.some((c) => (c as any).option === o.name))
   if (hurt.length && !confirm(fill((W as any)['drop-option'], { name: o.name || '?', n: hurt.length }))) return
   opts.value = opts.value.filter((_, j) => j !== i)
@@ -104,12 +104,12 @@ const moveOption = (i: any, by: any) => {
   const next = [...opts.value]; const [x] = next.splice(i, 1); next.splice(j, 0, x)
   opts.value = next
   /* and carry the settings across, by name rather than by position */
-  const after = normaliseOptions([...next, ...((props.form.sizes || []).length && !next.some((o) => slug((o as any).name) === 'size') ? [{ name: 'Size', values: props.form.sizes }] : [])])
+  const after = normaliseOptions([...next, ...((props.form.sizes || []).length && !next.some((o) => slug(o.name) === 'size') ? [{ name: 'Size', values: props.form.sizes }] : [])])
   const moved = remapKeys([...Object.keys(variants.value), ...unsold.value], before, after)
   const vs: any = {}
   // @ts-expect-error TS2538, from the conversion: Type '{}' cannot be used as an index type.
   for (const [was, now] of Object.entries(moved)) if (now && variants.value[was]) vs[now] = variants.value[was]
-  const un = [...new Set(unsold.value.map((k: any) => (moved as any)[k]).filter(Boolean))]
+  const un = [...new Set(unsold.value.map((k: any) => moved[k]).filter(Boolean))]
   emit('patch', { variants: vs, unsold: un })
 }
 const valuesOf = (o: any) => (o.values || []).map((v: any) => (v && typeof v === 'object' ? String(v.label ?? v.value) : String(v)))

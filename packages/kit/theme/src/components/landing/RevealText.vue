@@ -11,8 +11,8 @@ const props = defineProps({ text: { type: String, default: '' }, mode: { type: S
 /* the rendered inline html, its text nodes split into word spans */
 const html = computed(() => {
   const h = md(props.text); let i = 0
-  return h.replace(/>([^<]+)</g, (_: any, t: any) => '>' + t.replace(/(\S+)(\s*)/g, (m: any, w: any, sp: any) => `<span class="lprw" style="--w:${i++}">${w}</span>${sp}`) + '<')
-    .replace(/^([^<]+)/, (t: any) => t.replace(/(\S+)(\s*)/g, (m: any, w: any, sp: any) => `<span class="lprw" style="--w:${i++}">${w}</span>${sp}`))
+  return h.replace(/>([^<]+)</g, (_: any, t: string) => '>' + t.replace(/(\S+)(\s*)/g, (m: any, w: any, sp: any) => `<span class="lprw" style="--w:${i++}">${w}</span>${sp}`) + '<')
+    .replace(/^([^<]+)/, (t: string) => t.replace(/(\S+)(\s*)/g, (m: any, w: any, sp: any) => `<span class="lprw" style="--w:${i++}">${w}</span>${sp}`))
 })
 const el = ref<any>(null)
 let onScroll: any = null

@@ -228,7 +228,7 @@ export async function printBook(slug: any, { local = false, force = false, keepT
         shots.chapter = pick.chapter.title
         shots.edition = { contents, page: pick.chapter.page, art: await keep(interior, pick.chapter.page, `page-${pick.chapter.page}.jpg`) }
         if (contents === 'parts') {
-          const twice = me.where.filter((w: any) => w.kind === 'chapter' && w.title === pick.chapter.title).map((w: any) => w.page).filter((p: any) => p !== pick.chapter.page)
+          const twice = me.where.filter((w: any) => w.kind === 'chapter' && w.title === pick.chapter.title).map((w: any) => w.page).filter((p) => p !== pick.chapter.page)
           if (twice.length) shots.other = { contents: 'full', page: twice[0], art: await keep(interior, twice[0], `page-${twice[0]}.jpg`) }
         } else if (book.fullText !== false) {
           /* the other edition, set for this alone — its print file is not kept; a book whose text is withheld has none */

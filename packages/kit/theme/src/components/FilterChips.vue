@@ -5,7 +5,7 @@ import { us } from 'platformkit/lib/content.js'
 import { useFilters } from '../lib/analytics-filters.js'
 const FW = (us('analytics').page || {}).filters || {}
 const { chips, remove, clear } = useFilters(FW)
-const valueWords = (chip: any) => {
+const valueWords = (chip: { key: string; value: string }) => {
   const T = us('analytics')
   if (chip.key === 'channel') return ((T.acquisition && T.acquisition.ui) || {})['channel-' + chip.value] || chip.value
   if (chip.key === 'device' || chip.key === 'browser' || chip.key === 'os') return ((T.audience && T.audience.ui) || {})[chip.key + '-' + chip.value] || chip.value

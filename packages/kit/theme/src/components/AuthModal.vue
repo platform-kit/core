@@ -46,7 +46,7 @@ const submitLabel = computed(() => busy.value ? M.buttons.working : mode.value =
 /* why we are asking, when a feature (not the header) opened the modal: one line
    under the subtitle, keyed into modal.intent in auth.md */
 const intent = ref('')
-function show(opts: any) {
+function show(opts: { mode: any; intent?: any; onAuthenticated?: any; returnTo?: any }) {
   intent.value = (opts && opts.intent && M.intent && M.intent[opts.intent]) ? opts.intent : ''
   onAuthenticated.value = typeof opts?.onAuthenticated === 'function' ? opts.onAuthenticated : null
   returnTo.value = opts?.returnTo || ''
@@ -83,7 +83,7 @@ const mapErr = (e: any) => {
   if (/invalid|credentials|password/i.test(m)) return M.errors.invalid
   return M.errors.generic
 }
-async function run(fn: any) {
+async function run(fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) {
   busy.value = true; error.value = ''; unconfirmed.value = false
   try { await fn() } catch (e) { error.value = mapErr(e) } finally { busy.value = false }
 }
@@ -129,7 +129,7 @@ watch(session, (s) => {
   else if (!sent.value) hide()
 })
 
-function onKey(e: any) { if (e.key === 'Escape' && open.value) hide() }
+function onKey(e: { key: string }) { if (e.key === 'Escape' && open.value) hide() }
 onMounted(() => { if (!inline) (window as any).DLauth = { open: show, close: hide }; document.addEventListener('keydown', onKey) })
 onBeforeUnmount(() => { document.removeEventListener('keydown', onKey); if (!inline && (window as any).DLauth) delete (window as any).DLauth })
 </script>

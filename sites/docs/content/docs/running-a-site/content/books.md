@@ -23,7 +23,7 @@ sources:
     packages/kit/src/lib/finding-score.ts,
     packages/kit/theme/src/pages/AdminPage.vue,
   ]
-reviewed: 2026-11-07
+reviewed: 2026-11-08
 ---
 
 ## A book is one file, edited by chapter
