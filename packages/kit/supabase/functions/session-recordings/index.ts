@@ -14,7 +14,7 @@ import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { pull, pullPending, retain } from '../_shared/recordings.ts'
 import { POLICY } from '../_shared/marketing.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
   let body: any = {}
@@ -33,6 +33,6 @@ Deno.serve(async (req: any) => {
     if (!service) return json({ error: 'a uid, or the service key' }, 400)
     return json({ pulled: await pullPending() })
   }
-  if (action === 'retain') return json(await retain(service && body.days != null ? Number(body.days) : Number((POLICY as any)['recordings-keep'] ?? 0)))
+  if (action === 'retain') return json(await retain(service && body.days != null ? Number(body.days) : Number(POLICY['recordings-keep'] ?? 0)))
   return json({ error: 'unknown action' }, 400)
 })

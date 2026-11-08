@@ -12,7 +12,7 @@ import { deliverSchedulingEvent } from '../_shared/scheduling-events.ts'
 import { typeFor, videoOf, videoIdOf } from '../_shared/cal.ts'
 import type { Database } from '../_shared/database.types.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   const user = await getUser(req)
@@ -25,7 +25,7 @@ Deno.serve(async (req: any) => {
   const { data: b } = await mine.from('bookings').select('uid, user_id, host_id, provider_id, event, type, status, start_at, end_at, room, seat_of, where, title, name').eq('uid', uid).maybeSingle()
   if (!b) return json({ error: 'not your booking', code: 'not-yours' }, 403)
   const s = await typeFor(b.event, { any: true })
-  const v = s ? (videoOf(s) as any) : null
+  const v = s ? videoOf(s) : null
   if (!v || videoIdOf(s) !== 'livekit') return json({ error: 'this session has no room on the site', code: 'no-room' }, 404)
   if (!['accepted', 'pending', 'ended'].includes(b.status)) return json({ error: 'this session is cancelled', code: 'over' }, 410)
   const { data: prof } = await admin.from('profiles').select('role, display_name, email').eq('id', user.id).maybeSingle()

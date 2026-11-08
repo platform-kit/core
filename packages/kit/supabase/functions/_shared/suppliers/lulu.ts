@@ -74,7 +74,7 @@ export function lulu(env: any) {
     /* the cover's size in points for a product and a page count: a casewrap's sheet (the wrap
        round the boards as `bleed`), a jacket's with its two flaps, a paperback's */
     async measure({ product, artefacts = {} }: any) {
-      const { pages }: any = artefacts
+      const { pages } = artefacts
       const t = TRIM_PT[product.trim] || TRIM_PT['6x9'], jacket = product.jacket
       if (mock()) {
         const spine = Math.round(pages * 0.00274 * 72 + 0.117 * 72)
@@ -87,7 +87,7 @@ export function lulu(env: any) {
     },
     /* what a copy costs to print and to ship to a country, before our price */
     async quote({ product, artefacts = {}, quantity = 1, country = 'US', level = 'standard' }: any) {
-      const { pages }: any = artefacts
+      const { pages } = artefacts
       if (mock()) return { print: (product.paperback ? 3.5 : 12.5) + pages * 0.012, shipping: country === 'US' ? 5.99 : 14.99, currency: 'USD', days: 7, mock: true }
       const r = await call('/print-job-cost-calculations/', {
         line_items: [{ page_count: pages, pod_package_id: product.pod, quantity }],
@@ -100,7 +100,7 @@ export function lulu(env: any) {
     },
     /* the printer normalises the files and says whether they print, and how many pages it sees */
     async validate({ product, artefacts = {} }: any) {
-      const { pages, files }: any = artefacts
+      const { pages, files } = artefacts
       if (mock()) return { ok: true, pages, mock: true }
       const poll = async (kind: any, id: any) => {
         for (let i = 0; i < 60; i++) {
@@ -118,12 +118,12 @@ export function lulu(env: any) {
     },
     /* the job: one line, the edition's files by url, the address as Stripe gave it */
     async order({ product, artefacts = {}, title, quantity = 1, address = {}, email, level = 'standard', externalId, foilStamp }: any) {
-      const { files }: any = artefacts
-      if (mock()) { const id = 'job_mock_' + Date.now(); return { id, status: 'CREATED', cost: { print: 12.5 * quantity, shipping: ((address as any).country || 'US') === 'US' ? 5.99 : 14.99, currency: 'USD', mock: true } } }
+      const { files } = artefacts
+      if (mock()) { const id = 'job_mock_' + Date.now(); return { id, status: 'CREATED', cost: { print: 12.5 * quantity, shipping: (address.country || 'US') === 'US' ? 5.99 : 14.99, currency: 'USD', mock: true } } }
       const contact = email || env('SMTP_FROM') || 'orders@example.com'
       const job = await call('/print-jobs/', {
         external_id: externalId, contact_email: contact, shipping_level: (this as any).levels[level] || level || 'MAIL',
-        shipping_address: { name: (address as any).name || '', street1: (address as any).line1 || '', street2: (address as any).line2 || undefined, city: (address as any).city || '', state_code: (address as any).state || undefined, postcode: (address as any).postal_code || '', country_code: (address as any).country || 'US', phone_number: (address as any).phone || '0000000000', email: contact },
+        shipping_address: { name: address.name || '', street1: address.line1 || '', street2: address.line2 || undefined, city: address.city || '', state_code: address.state || undefined, postcode: address.postal_code || '', country_code: address.country || 'US', phone_number: address.phone || '0000000000', email: contact },
         line_items: [{ external_id: externalId, title, quantity, printable_normalization: { pod_package_id: product.pod, interior: { source_url: files.interior }, cover: { source_url: files.cover },
           /* a linen wrap: the title and author stamped in foil on the spine — inside the normalization, the API insists */
           ...(product.jacket && foilStamp ? { foil_stamp_title_text: foilStamp.title, ...(foilStamp.author ? { foil_stamp_author_text: foilStamp.author } : {}) } : {}) } }],

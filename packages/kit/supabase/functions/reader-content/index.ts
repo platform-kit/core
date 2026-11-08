@@ -41,17 +41,17 @@ async function entitlementsOf(req: Request) {
 
 async function rows(req: Request) {
   const user = await getUser(req)
-  const isAdmin = user ? (await asReader(req).rpc('is_admin').then((r: any) => r.data === true, () => false)) : false
+  const isAdmin = user ? (await asReader(req).rpc('is_admin').then((r) => r.data === true, () => false)) : false
   let q = admin.from('content').select('collection, slug, path, published, data, body, text').is('deleted_at', null).order('path')
   if (!isAdmin) q = q.eq('published', true).not('text', 'is', null)
   const { data, error } = await q
   if (error) return fail('content could not be read', 500)
   if (isAdmin) return json({ rows: data ?? [] })
-  const books = new Map((data ?? []).filter((r: any) => r.collection === 'books').map((r: any) => [r.slug, r.data || {}]))
-  return json({ rows: (data ?? []).map((r: any) => publicRow(r, books, COMPANION)) }, 200)
+  const books = new Map((data ?? []).filter((r) => r.collection === 'books').map((r) => [r.slug, r.data || {}]))
+  return json({ rows: (data ?? []).map((r) => publicRow(r, books, COMPANION)) }, 200)
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return fail('method not allowed', 405)
   const body = await req.json().catch(() => ({}))
@@ -75,7 +75,7 @@ Deno.serve(async (req: any) => {
       const owned = Array.isArray(ent?.products) && ent!.products!.includes(slug)
       const n = readableChapters(fm, cls, { owned })
       const raw = rec.body || ''
-      const comp = live.records.find((r) => r.model === 'companions' && r.data && (r.data as any).book === slug && r.published)
+      const comp = live.records.find((r) => r.model === 'companions' && r.data && r.data.book === slug && r.published)
       return json({
         raw: sentText(fm, raw, n),   /* a book whose text is withheld sends its chapters' titles alone, to anyone */
         chapters: splitChapters(raw).length,

@@ -129,7 +129,7 @@ export function readModel(text: string, name: string|undefined) {
 }
 
 /* ---- writing ---- */
-function fieldOut(f: { key: any; kind: any; label: any; help: any; default: undefined; required: any; unique: any; grid: any; shown: { field: any; is: any; value: any }; rules: any[]; options: any[]; model: any; many: any; of: any; fields: any[] }) {
+function fieldOut(f: any) {
   const o: any = { key: f.key, kind: f.kind, label: f.label }
   if (f.help) o.help = f.help
   if (f.default !== undefined) o.default = f.default

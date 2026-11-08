@@ -60,9 +60,9 @@ export async function genesis(handle: string, signingDid: string, pds: string) {
     services: { atproto_pds: { type: 'AtprotoPersonalDataServer', endpoint: pds } },
     prev: null,
   }
-  const sig = await rot.sign(cborEncode(jsonToLex(unsigned as any)))
+  const sig = await rot.sign(cborEncode(jsonToLex(unsigned)))
   const op = { ...unsigned, sig: b64u(sig) }
-  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', cborEncode(jsonToLex(op as any))))
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', cborEncode(jsonToLex(op))))
   return { did: 'did:plc:' + base32(hash).slice(0, 24), op }
 }
 
@@ -75,7 +75,7 @@ const now = () => new Date().toISOString()
 
 /* ---------------------------------------------------------------- the repository */
 
-async function keypairOf(identity: any) {
+async function keypairOf(identity: { created_at: string; did: string; joined_at: string|null; left_at: string|null; signing_key_id: string|null; signing_key_public: string|null; user_id: string }) {
   const hex = (await admin.rpc('network_key_read', { p_secret_id: identity.signing_key_id })).data as string
   return Secp256k1Keypair.import(hex)
 }
@@ -289,19 +289,19 @@ export async function recordCar(did: string, collection: string, rkey: string) {
 /* ---------------------------------------------------------------- the stream's frames */
 
 /* an event as it goes down the socket: a CBOR header, then the CBOR body — the blocks restored as bytes */
-export function frameOf(row: any) {
+export function frameOf(row: { kind: string; body: any; seq: any; blocks: string }) {
   const t = '#' + row.kind
-  const body: any = { ...row.body, seq: Number(row.seq) }
-  const lex: any = jsonToLex(body)
+  const body = { ...row.body, seq: Number(row.seq) }
+  const lex = jsonToLex(body)
   if (row.kind === 'commit') lex.blocks = row.blocks ? fromHex(row.blocks) : new Uint8Array()
-  const head = cborEncode({ op: 1, t } as any)
+  const head = cborEncode({ op: 1, t })
   const tail = cborEncode(lex)
   const out = new Uint8Array(head.length + tail.length)
   out.set(head, 0); out.set(tail, head.length)
   return out
 }
 export const errorFrame = (error: string, message: string) => {
-  const head = cborEncode({ op: -1 } as any), tail = cborEncode({ error, message } as any)
+  const head = cborEncode({ op: -1 }), tail = cborEncode({ error, message })
   const out = new Uint8Array(head.length + tail.length); out.set(head, 0); out.set(tail, head.length); return out
 }
 

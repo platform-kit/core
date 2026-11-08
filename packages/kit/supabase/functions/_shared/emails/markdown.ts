@@ -28,7 +28,7 @@ const STYLE = {
   strong: `font-weight:600`,
   em: `font-style:italic;color:${INK2}`,
 }
-export function mdToEmailHtml(md: any) {
+export function mdToEmailHtml(md: string) {
   let html: any = marked.parse(String(md || ''), { gfm: true, breaks: false })
   for (const [tag, style] of Object.entries(STYLE)) html = html.replace(new RegExp(`<${tag}(\\s[^>]*)?>`, 'g'), (m: any, attrs = '') => (/\sstyle=/.test(attrs) ? m : `<${tag}${attrs} style="${style}">`))
   /* a link opens in its own tab; a heading's anchor id is no use in mail */

@@ -21,7 +21,7 @@ export const WRITABLE = [POST, LIKE, REPOST, FOLLOW, BLOCK, PROFILE]
    record key says so, and that key is never a TID, so it can never meet a real one */
 export const SPACE_KEY = 's~'
 export const spaceKey = (messageId: any) => SPACE_KEY + String(messageId).replace(/-/g, '')
-export const messageOfKey = (rkey: any) => {
+export const messageOfKey = (rkey: string) => {
   const hex = String(rkey || '').startsWith(SPACE_KEY) ? String(rkey).slice(SPACE_KEY.length) : ''
   return /^[0-9a-f]{32}$/.test(hex) ? `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}` : null
 }
@@ -29,10 +29,10 @@ export const messageOfKey = (rkey: any) => {
 export const cleanDomain = (d: any) => String(d || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace(/^\.+|\.+$/g, '')
 
 /* a member's handle: their username under the handle domain, or nothing — no username, no handle */
-export const handleOf = (username: any, domain: any) => (username && cleanDomain(domain) ? `${String(username).toLowerCase()}.${cleanDomain(domain)}` : null)
+export const handleOf = (username: string, domain: string) => (username && cleanDomain(domain) ? `${String(username).toLowerCase()}.${cleanDomain(domain)}` : null)
 
 /* the username a handle under our domain names, or nothing for a handle elsewhere */
-export function usernameOfHandle(handle: any, domain: any) {
+export function usernameOfHandle(handle: string|null, domain: string) {
   const h = String(handle || '').trim().toLowerCase().replace(/^@/, '')
   const d = cleanDomain(domain)
   if (!d || !h.endsWith('.' + d)) return null
@@ -42,12 +42,12 @@ export function usernameOfHandle(handle: any, domain: any) {
 
 /* a member's DID: the portable one where they joined, else the site's did:web on their handle.
    did:web may not carry a port, so a domain with one is written with %3A as the method requires. */
-export const didWebOf = (handle: any) => (handle ? 'did:web:' + String(handle).replace(/:/g, '%3A') : null)
-export const nameOf = (person: any) => (person && (person.handle_name || person.username)) || null
-export const didOf = (person: any, domain: any) => (person && person.plc_did) || didWebOf(handleOf(nameOf(person), domain))
+export const didWebOf = (handle: string|null) => (handle ? 'did:web:' + String(handle).replace(/:/g, '%3A') : null)
+export const nameOf = (person: { handle_name: any; username: any }) => (person && (person.handle_name || person.username)) || null
+export const didOf = (person: any, domain: string) => (person && person.plc_did) || didWebOf(handleOf(nameOf(person), domain))
 
 /* the handle a did:web names, where it is one of ours */
-export function handleOfDidWeb(did: any) {
+export function handleOfDidWeb(did: string) {
   const m = /^did:web:(.+)$/.exec(String(did || ''))
   return m ? decodeURIComponent(m[1]) : null
 }
@@ -55,14 +55,14 @@ export function handleOfDidWeb(did: any) {
 export const isDid = (s: any) => /^did:(plc:[a-z2-7]{24}|web:[a-zA-Z0-9.%-]+)$/.test(String(s || ''))
 
 /* at://<did>/<collection>/<rkey>, and back */
-export const uriOf = (did: any, collection: any, rkey: any) => `at://${did}/${collection}/${rkey}`
-export function parseUri(uri: any) {
+export const uriOf = (did: string, collection: string, rkey: string) => `at://${did}/${collection}/${rkey}`
+export function parseUri(uri: string) {
   const m = /^at:\/\/([^/]+)\/([a-zA-Z0-9.]+)\/([A-Za-z0-9._:~-]+)$/.exec(String(uri || ''))
   return m ? { did: m[1], collection: m[2], rkey: m[3] } : null
 }
 
 /* a TID: thirteen characters of base32-sortable time, first character no higher than j */
-export const isTid = (s: any) => /^[234567abcdefghij][234567abcdefghijklmnopqrstuvwxyz]{12}$/.test(String(s || ''))
+export const isTid = (s: string) => /^[234567abcdefghij][234567abcdefghijklmnopqrstuvwxyz]{12}$/.test(String(s || ''))
 const S32 = '234567abcdefghijklmnopqrstuvwxyz'
 export function newTid(now = Date.now(), clock = Math.floor(Math.random() * 1024)) {
   let v = (BigInt(Math.floor(now)) * 1000n << 10n) | BigInt(clock & 1023)
@@ -72,7 +72,7 @@ export function newTid(now = Date.now(), clock = Math.floor(Math.random() * 1024
 }
 
 /* a cursor is the moment the page stopped at, as the protocol passes it back */
-export const cursorOf = (rows: any, key = 'created_at') => (rows.length ? String(rows[rows.length - 1][key]) : undefined)
+export const cursorOf = (rows: string|any[], key = 'created_at') => (rows.length ? String(rows[rows.length - 1][key]) : undefined)
 
 /*
  * MAY THIS METHOD BE ASKED AT ALL? Other apps signing in (network.apps) is the site owner's choice,
@@ -81,7 +81,7 @@ export const cursorOf = (rows: any, key = 'created_at') => (rows.length ? String
  * (sync, a handle, a public record). Everything an app would sign in to use is refused.
  */
 const PUBLIC_WHEN_FEDERATING = new Set(['com.atproto.identity.resolveHandle', 'com.atproto.repo.describeRepo', 'com.atproto.repo.getRecord', 'com.atproto.repo.listRecords'])
-export function clientAllowed(nsid: any, { apps = false, federate = false } = {}) {
+export function clientAllowed(nsid: string, { apps = false, federate = false } = {}) {
   if (apps) return true
   if (nsid === 'com.atproto.server.describeServer') return true
   if (federate && (/^com\.atproto\.sync\./.test(nsid) || PUBLIC_WHEN_FEDERATING.has(nsid))) return true

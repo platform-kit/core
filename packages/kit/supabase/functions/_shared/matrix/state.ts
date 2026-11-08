@@ -51,7 +51,7 @@ export function powerLevels(holders: any, { host }: any = {}) {
   const users: any = {}
   for (const h of holders || []) {
     if (!h || !h.user_id) continue
-    const n = h.admin ? LEVEL.admin : Math.max(0, ...(h.capabilities || []).map((c: any) => FROM_CAPABILITY[c] || 0))
+    const n = h.admin ? LEVEL.admin : Math.max(0, ...(h.capabilities || []).map((c: string|number) => FROM_CAPABILITY[c] || 0))
     if (n > 0) users[userId(h.user_id, host)] = n
   }
   return {
@@ -81,10 +81,19 @@ export function powerLevels(holders: any, { host }: any = {}) {
 }
 
 /* the state events of a channel: what it is called, what it is about, who may do what */
-export function roomState(channel: any, { host, holders = [], members = [], creator = null }: any = {}) {
+export function roomState(channel: { id: any; created_at: any; created_by: any; name: any; slug: any; topic: any; encrypted: any }, { host, holders = [], members = [], creator = null }: any = {}) {
   const id = roomId(channel.id, host)
   const at = Date.parse(channel.created_at || 0) || 0
-  const ev = (type: any, content: any, stateKey = '') => ({
+  const ev = (type: string, content: {
+creator?: string; room_version?: string; name?: any; users?: any; users_default?: number; events_default?: number; state_default?: number; ban?: number; kick?: number; redact?: number; invite?: number; events?: {
+'m.room.name': number; 'm.room.topic': number; 'm.room.avatar': number; 'm.room.power_levels': number; 'm.room.history_visibility': number
+/* SET BY THE DECLARATION, NEVER BY A CLIENT. A room is sealed because its file says so, so
+the level is the one no client holds — the event is emitted below for a channel whose
+`encrypted` column the compile wrote, and a client asking to set it is refused like any
+other state. (It used to be refused outright, before a channel could be sealed at all.) */
+'m.room.encryption': number; 'm.room.message': number; 'm.reaction': number
+}; history_visibility?: string; join_rule?: string; guest_access?: string; topic?: any; algorithm?: string; rotation_period_ms?: number; rotation_period_msgs?: number; membership?: string; displayname?: any; avatar_url?: any
+}, stateKey = '') => ({
     type, state_key: stateKey, content, room_id: id, origin_server_ts: at,
     sender: userId(creator || channel.created_by || '00000000-0000-0000-0000-000000000000', host),
     event_id: `$state_${type}_${stateKey}_${channel.id}`,
@@ -121,9 +130,9 @@ export function roomState(channel: any, { host, holders = [], members = [], crea
   for (const m of members) {
     out.push(ev('m.room.member', {
       membership: 'join',
-      displayname: (m as any).name || undefined,
-      avatar_url: (m as any).avatar_mxc || undefined,
-    }, userId((m as any).user_id, host)))
+      displayname: m.name || undefined,
+      avatar_url: m.avatar_mxc || undefined,
+    }, userId(m.user_id, host)))
   }
   return out
 }
@@ -132,11 +141,11 @@ export function roomState(channel: any, { host, holders = [], members = [], crea
  * A SPACE IS A ROOM WHOSE CHILDREN ARE ITS CHANNELS. This is the whole of what makes a client
  * show the site's own arrangement rather than a flat list of rooms, and it is three state events.
  */
-export function spaceState(space: any, channels: any, { host, viewer = null }: any = {}) {
+export function spaceState(space: { id: any; created_at: any; name: any; slug: any }, channels: any[], { host, viewer = null }: any = {}) {
   const viewerId = viewer ? (String(viewer).startsWith('@') ? String(viewer) : userId(viewer, host)) : null
   const id = spaceId(space.id, host)
   const at = Date.parse(space.created_at || 0) || 0
-  const ev = (type: any, content: any, stateKey = '') => ({
+  const ev = (type: string, content: any, stateKey = '') => ({
     type, state_key: stateKey, content, room_id: id, origin_server_ts: at,
     sender: userId('00000000-0000-0000-0000-000000000000', host),
     event_id: `$state_${type}_${stateKey}_${space.id}`,

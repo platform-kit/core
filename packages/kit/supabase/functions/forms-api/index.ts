@@ -39,21 +39,21 @@ const apiBase = () => site() + '/v1/forms-api'
 const published = async () => Object.entries(await formsNow()).filter(([, f]) => f.kit?.published !== false && f.settings?.page === 'form-slides')
 const formOf = async (id: string) => { const f = (await formsNow())[id]; return f && f.kit?.published !== false && f.settings?.page === 'form-slides' ? f : null }
 const WEBHOOK_COLS = 'id, form, tag, url, enabled, verify_ssl, created_at, updated_at'
-const webhookView = (w: any) => ({ id: w.id, form_id: w.form, tag: w.tag, url: w.url, enabled: !!w.enabled, verify_ssl: !!w.verify_ssl, created_at: w.created_at, updated_at: w.updated_at })
+const webhookView = (w: { id: string; form: string; tag: string; url: string; enabled: boolean; verify_ssl: boolean; created_at: string; updated_at: string }) => ({ id: w.id, form_id: w.form, tag: w.tag, url: w.url, enabled: !!w.enabled, verify_ssl: !!w.verify_ssl, created_at: w.created_at, updated_at: w.updated_at })
 
 /* the responses of a form with their answers, shaped for the query plan */
 async function responsesOf(slug: string) {
   const { data: rows } = await admin.from('form_responses').select('*').eq('form', slug).order('started_at', { ascending: false }).limit(MAX_ROWS)
-  const ids = (rows ?? []).map((r: any) => r.id)
+  const ids = (rows ?? []).map((r) => r.id)
   const answers: Record<string, any[]> = {}
   for (let i = 0; i < ids.length; i += 500) {
     const { data } = await admin.from('form_answers').select('response_id, field, value, file_path, file_name, file_type, file_size, slide, answered_at').in('response_id', ids.slice(i, i + 500))
     for (const a of data ?? []) (answers[a.response_id] ||= []).push(a)
   }
-  return (rows ?? []).map((row: any) => ({ row, answers: answers[row.id] || [] }))
+  return (rows ?? []).map((row) => ({ row, answers: answers[row.id] || [] }))
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const url = new URL(req.url)
   const q: Record<string, string> = {}; url.searchParams.forEach((v, k) => { q[k] = v })
@@ -90,20 +90,20 @@ Deno.serve(async (req: any) => {
         return writeForm(slug, patched)
       }
       const form = await formOf(slug); if (!form) return fail('NOT_FOUND', `No published form "${slug}".`)
-      const def = () => definitionOf(form, { site: site(), apiBase: apiBase(), long: (f: any) => !!f.multiline })
+      const def = () => definitionOf(form, { site: site(), apiBase: apiBase(), long: (f: { multiline: any }) => !!f.multiline })
       if (seg.length === 2) { if (m === 'GET') return reply(def()); return fail('METHOD_NOT_ALLOWED') }
 
       if (seg[2] === 'responses') {
         if (seg.length === 3 && m === 'GET') {
           const plan = parseResponsesQuery(q); if (plan.errors.length) return fail('VALIDATION_ERROR', plan.errors.join('; '))
           const page = applyResponsesQuery(plan, await responsesOf(slug))
-          return reply({ total_items: page.total_items, page_count: page.page_count, items: page.items.map((it: any) => itemOf(it.row, it.answers, form, (p: string) => fileUrlOf(apiBase(), slug, p))) })
+          return reply({ total_items: page.total_items, page_count: page.page_count, items: page.items.map((it) => itemOf(it.row, it.answers, form, (p: string) => fileUrlOf(apiBase(), slug, p))) })
         }
         if (seg.length === 3 && m === 'DELETE') {
           const ids = String(q.included_tokens || q.included_response_ids || '').split(',').map((s) => s.trim()).filter(Boolean)
           if (!ids.length) return fail('VALIDATION_ERROR', 'included_tokens names the responses to delete.')
           const { data: rows } = await admin.from('form_responses').select('id').eq('form', slug).in('id', ids)
-          const found = (rows ?? []).map((r: any) => r.id)
+          const found = (rows ?? []).map((r) => r.id)
           if (found.length) {
             const { data: files } = await admin.from('form_answers').select('file_path').in('response_id', found).not('file_path', 'is', null)
             const paths = (files ?? []).map((f: any) => f.file_path); if (paths.length) await admin.storage.from('forms').remove(paths)
@@ -180,20 +180,20 @@ Deno.serve(async (req: any) => {
     const exists = current.status === 200
     if (!id && exists) return fail('VALIDATION_ERROR', `A form "${made.id}" exists: PUT /forms/${made.id} to replace it.`)
     const w = await call('POST', 'file', {}, { col: 'forms', name: made.id, data: { title: made.title, published: made.published }, content: '', parsed: made.model, create: !exists })
-    if (w.status !== 200) { const b: any = w.body || {}; return fail(w.status === 422 || w.status === 400 ? 'VALIDATION_ERROR' : 'BAD_REQUEST', String(b.error || (b.issues || []).map((i: any) => i.message).join('; ') || 'the document was refused')) }
-    const p = await call('POST', 'publish', {}, { col: 'forms', name: made.id }); if (p.status !== 200 && p.status !== 404) { const b: any = p.body || {}; return fail('BAD_REQUEST', String(b.error || 'the publish failed')) }
+    if (w.status !== 200) { const b = w.body || {}; return fail(w.status === 422 || w.status === 400 ? 'VALIDATION_ERROR' : 'BAD_REQUEST', String(b.error || (b.issues || []).map((i: { message: any }) => i.message).join('; ') || 'the document was refused')) }
+    const p = await call('POST', 'publish', {}, { col: 'forms', name: made.id }); if (p.status !== 200 && p.status !== 404) { const b = p.body || {}; return fail('BAD_REQUEST', String(b.error || 'the publish failed')) }
     await pushPending(admin, maker.by, { message: `${exists ? 'update' : 'create'} forms/${made.id} (Forms API)` }).catch(() => {})
     invalidateForms()
     const form = (await formsNow())[made.id]
     if (!form) return fail('BAD_REQUEST', 'The form was written but does not read back.')
-    return reply(definitionOf(form, { site: site(), apiBase: apiBase(), long: (f: any) => !!f.multiline }), exists ? 200 : 201)
+    return reply(definitionOf(form, { site: site(), apiBase: apiBase(), long: (f: { multiline: any }) => !!f.multiline }), exists ? 200 : 201)
   }
   async function deleteForm(id: string) {
     if (!CLOUD) return fail('METHOD_NOT_ALLOWED', 'This site keeps its forms as files in a checkout (git mode): a form is removed in the admin.')
     const maker = await makerOf(caller as any)
     const { call } = pipeFor(maker.by)
-    const r = await call('DELETE', 'file', { col: 'forms', name: id }); if (r.status === 404) return fail('NOT_FOUND', `No form "${id}".`); if (r.status !== 200) return fail('BAD_REQUEST', String((r.body as any)?.error || 'the delete failed'))
-    const p = await call('POST', 'publish', {}, { col: 'forms', name: id }); if (p.status !== 200 && p.status !== 404) return fail('BAD_REQUEST', String((p.body as any)?.error || 'the publish failed'))
+    const r = await call('DELETE', 'file', { col: 'forms', name: id }); if (r.status === 404) return fail('NOT_FOUND', `No form "${id}".`); if (r.status !== 200) return fail('BAD_REQUEST', String(r.body?.error || 'the delete failed'))
+    const p = await call('POST', 'publish', {}, { col: 'forms', name: id }); if (p.status !== 200 && p.status !== 404) return fail('BAD_REQUEST', String(p.body?.error || 'the publish failed'))
     await pushPending(admin, maker.by, { message: `delete forms/${id} (Forms API)` }).catch(() => {})
     invalidateForms()
     return reply(null, 204)

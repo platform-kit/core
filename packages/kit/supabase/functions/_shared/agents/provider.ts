@@ -33,7 +33,7 @@ export const PRICES: any = {
   'claude-opus-5': { in: 15, out: 75 },
   'claude-haiku-4-5-20251001': { in: 1, out: 5 },
 }
-export const priceOf = (model: any) => PRICES[model] || PRICES[String(model || '').replace(/-\d{8}$/, '')] || {}
+export const priceOf = (model: string|number) => PRICES[model] || PRICES[String(model || '').replace(/-\d{8}$/, '')] || {}
 
 export const DEFAULT_MODEL = 'gpt-4o-mini'
 export const DEFAULT_BASE = 'https://api.openai.com/v1'
@@ -50,7 +50,7 @@ export const ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001'
  *
  * 404 counts as the provider's, because a model one provider has is not a model another has.
  */
-export const worthAnother = (status: any) => !(status === 400 || status === 422)
+export const worthAnother = (status: number) => !(status === 400 || status === 422)
 
 /*
  * WHERE THINKING MAY BE BOUGHT, in the order it is tried.
@@ -75,7 +75,7 @@ export function providersFrom(env: any = {}, inference: any = null) {
   const asked = env.PLATFORMKIT_AGENT_MOCK === '1'
   const live = env.AGENTS_LIVE === '1'
   if (inference) {
-    const list = inference.providers.map((provider: any) => ({
+    const list = inference.providers.map((provider: { id: any; protocol: string; baseUrl: any; secretEnv: string|number; model: any; models: any; maxOutputTokens: any }) => ({
       id: provider.id,
       kind: provider.protocol === 'anthropic' ? 'anthropic' : 'openai',
       protocol: provider.protocol,
@@ -85,12 +85,12 @@ export function providersFrom(env: any = {}, inference: any = null) {
       models: provider.models,
       maxTokens: provider.maxOutputTokens,
     })).slice(0, inference.fallback.enabled ? inference.fallback.maxAttempts : 1)
-    const missing = list.find((provider: any) => !provider.key)
+    const missing = list.find((provider: { key: any }) => !provider.key)
     return {
       mock: asked || !live,
       why: asked ? 'asked for' : !live ? 'not switched on (AGENTS_LIVE)' : '',
       error: missing && live && !asked
-        ? `inference provider "${missing.id}" is missing deployment secret ${inference.providers.find((provider: any) => provider.id === missing.id).secretEnv}`
+        ? `inference provider "${missing.id}" is missing deployment secret ${inference.providers.find((provider: { id: any }) => provider.id === missing.id).secretEnv}`
         : null,
       list,
       retryStatuses: inference.fallback.retryStatuses,
@@ -117,7 +117,7 @@ export function providersFrom(env: any = {}, inference: any = null) {
   }
   /* the site's own order, where it has one; anything it does not name is left out */
   const wanted = String(env.AGENT_PROVIDERS || '').split(',').map((s) => s.trim()).filter(Boolean)
-  const list: any = wanted.length ? wanted.map((id) => all.find((p: any) => p.id === id)).filter(Boolean) : all
+  const list = wanted.length ? wanted.map((id) => all.find((p: { id: string }) => p.id === id)).filter(Boolean) : all
   return {
     mock: asked || !live || !list.length,
     why: asked ? 'asked for' : !list.length ? 'no key' : !live ? 'not switched on (AGENTS_LIVE)' : '',
@@ -143,7 +143,7 @@ export function providerFrom(env = {}) {
 const SORE = new Set()
 /* 401 and 403 are keys; 402 and 429 are money and rate. A 5xx is the provider having a moment and
    is worth asking again, since the next step may be a minute later. */
-const SORE_STATUS = (s: any) => s === 401 || s === 402 || s === 403 || s === 429
+const SORE_STATUS = (s: number) => s === 401 || s === 402 || s === 403 || s === 429
 
 /*
  * A SHAPE THE REPLY MUST HAVE, rather than a sentence asking for one.
@@ -184,7 +184,7 @@ export async function ask({ provider, providers, model, messages, tools = [], sc
    * The memory is per isolate and dies with it, so a key that is topped up is tried again within
    * moments and nothing has to be cleared by hand.
    */
-  const order = where.list.filter((p: any) => !SORE.has(p.id))
+  const order = where.list.filter((p: { id: unknown }) => !SORE.has(p.id))
   const list = order.length ? order : where.list   /* all sore: try them all again rather than give up */
   let last: any = null
   const attempts = []
@@ -265,7 +265,7 @@ async function askOpenAI({ p, model, messages, tools = [], schema = null, temper
        build/llm.mjs has always sent the new one. Sent only when a caller asks — a bot never does. */
     ...(maxTokens ? { max_completion_tokens: maxTokens } : {}),
     ...(all.length ? { tools: all.map((t: any) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: t.parameters || { type: 'object', properties: {} } } })) } : {}),
-    ...(schema ? { tool_choice: { type: 'function', function: { name: (schema as any).name } } } : {}),
+    ...(schema ? { tool_choice: { type: 'function', function: { name: schema.name } } } : {}),
     ...(temperature != null ? { temperature } : {}),
   }
   const r = await fetch(p.base + '/chat/completions', {
@@ -308,7 +308,7 @@ async function askAnthropic({ p, model, messages, tools = [], schema = null, sig
       ...(shaped.system ? { system: shaped.system } : {}),
       messages: shaped.messages,
       ...(shaped.tools.length ? { tools: shaped.tools } : {}),
-      ...(schema ? { tool_choice: { type: 'tool', name: (schema as any).name } } : {}),
+      ...(schema ? { tool_choice: { type: 'tool', name: schema.name } } : {}),
     }),
   }).catch((e) => { throw Object.assign(new Error('could not reach the model: ' + (e.message || e)), { status: 0 }) })
   if (!r.ok) {
@@ -326,9 +326,9 @@ async function askAnthropic({ p, model, messages, tools = [], schema = null, sig
  * is the JSON it called with; putting that in `content` means every caller that parses the text
  * keeps working and none of them has to know how the shape was guaranteed.
  */
-function asReply(out: any, schema: any) {
+function asReply(out: any, schema: { name: any }|null) {
   if (!schema || !out || !out.message) return out
-  const call = (out.message.tool_calls || []).find((c: any) => c.function && c.function.name === schema.name)
+  const call = (out.message.tool_calls || []).find((c: { function: { name: any } }) => c.function && c.function.name === schema.name)
   if (!call) return out
   return { ...out, message: { ...out.message, content: String(call.function.arguments || ''), tool_calls: undefined } }
 }
@@ -391,11 +391,11 @@ export const hasScript = (messages = []) => scriptFrom(messages).length > 0
 
 /* the script is carried in the system message, because that is the one thing the loop always
    rebuilds from the run — nothing in the provider has to know about runs to find it */
-function scriptFrom(messages: any) {
-  const system = messages.find((m: any) => m.role === 'system')
+function scriptFrom(messages: any[]) {
+  const system = messages.find((m: { role: string }) => m.role === 'system')
   const m = /<<mock:(\[[\s\S]*?\])>>/.exec(String((system && system.content) || ''))
   if (!m) return []
   try { return JSON.parse(m[1]) } catch { return [] }
 }
 /* which turn this is: one per assistant message already in the conversation */
-const countTurns = (messages: any) => messages.filter((m: any) => m.role === 'assistant').length
+const countTurns = (messages: any) => messages.filter((m: { role: string }) => m.role === 'assistant').length

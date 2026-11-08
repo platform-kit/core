@@ -14,7 +14,7 @@ export function isRight(want: any, got: any) {
 }
 
 /* { score, total, passed } — passed is null when the form sets no pass mark */
-export function grade(score: any, answers: any, pass: any) {
+export function grade(score: Record<string,string>, answers: Record<string,unknown>, pass: number|null) {
   const names = Object.keys(score || {})
   const total = names.length
   const right = names.filter((n) => isRight(score[n], (answers || {})[n])).length

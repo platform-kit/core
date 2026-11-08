@@ -27,8 +27,8 @@ export const MAX_TOKENS = 4096
 export function toAnthropic(messages = [], tools = []) {
   const system = messages.filter((m: any) => m && m.role === 'system').map((m: any) => String(m.content || '')).join('\n\n').trim()
   const out: any = []
-  const push = (role: any, block: any) => {
-    const last: any = out[out.length - 1]
+  const push = (role: string, block: { type: string; tool_use_id?: string; content?: any; text?: any; id?: string; name?: string; input?: {} }) => {
+    const last = out[out.length - 1]
     if (last && last.role === role) last.content.push(block)
     else out.push({ role, content: [block] })
   }
@@ -73,8 +73,8 @@ export function toAnthropic(messages = [], tools = []) {
 /* its answer → the one message shape the loop stores, replays and reads a tool call out of */
 export function fromAnthropic(body: any = {}) {
   const blocks = Array.isArray(body.content) ? body.content : []
-  const text = blocks.filter((b: any) => b && b.type === 'text').map((b: any) => String(b.text || '')).join('').trim()
-  const calls = blocks.filter((b: any) => b && b.type === 'tool_use').map((b: any) => ({
+  const text = blocks.filter((b: { type: string }) => b && b.type === 'text').map((b: { text: any }) => String(b.text || '')).join('').trim()
+  const calls = blocks.filter((b: { type: string }) => b && b.type === 'tool_use').map((b: { id: any; name: any; input: any }) => ({
     id: String(b.id || ''),
     type: 'function',
     function: { name: String(b.name || ''), arguments: JSON.stringify(b.input ?? {}) },

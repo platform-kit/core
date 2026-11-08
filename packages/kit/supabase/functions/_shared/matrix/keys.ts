@@ -55,7 +55,7 @@ export async function uploadKeys(as: any, { userId, deviceId, body }: any) {
   take(b.fallback_keys || b['org.matrix.msc2732.fallback_keys'], true)
   if (rows.length) {
     /* a fallback key REPLACES the previous one rather than queueing beside it */
-    const fb: any = rows.filter((r: any) => r.fallback)
+    const fb = rows.filter((r: any) => r.fallback)
     if (fb.length) await as.from('space_one_time_keys').delete().eq('user_id', userId).eq('device_id', deviceId).eq('fallback', true)
     await as.from('space_one_time_keys').upsert(rows, { onConflict: 'user_id,device_id,key_id' })
   }

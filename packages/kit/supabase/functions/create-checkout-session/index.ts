@@ -51,7 +51,7 @@ import { judge } from '../_shared/cal.ts'
 import { coaching as siteCoaching } from '../_shared/pipe/site.js'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   await fresh()
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
@@ -127,7 +127,7 @@ Deno.serve(async (req: any) => {
      */
     if (o.kind === 'apparel') {
       if (!o.blueprint) return json({ error: `${sku}: no product type — it has to come from the supplier's catalogue` }, 400)
-      if (!(o.options ?? []).some((x: any) => x && x.from)) return json({ error: `${sku}: its shapes were not taken from the supplier's catalogue` }, 400)
+      if (!(o.options ?? []).some((x: { from: any }) => x && x.from)) return json({ error: `${sku}: its shapes were not taken from the supplier's catalogue` }, 400)
     }
     const key = shapeOf(o, String(it.variant ?? ''))
     if (key === null) return json({ error: o.kind === 'apparel' ? `${sku}: not made in that` : `${sku}: not offered that way` }, 400)
@@ -187,10 +187,10 @@ Deno.serve(async (req: any) => {
   let trialDays = offered
   if (offered && user) {
     const { data: past } = await admin.from('subscriptions').select('key').eq('user_id', user.id).eq('trialed', true)
-    const taken = (past || []).map((r: any) => r.key).filter(Boolean)
+    const taken = (past || []).map((r) => r.key).filter(Boolean)
     const withTrial = inCart.find((o) => o?.trial)
     // @ts-expect-error TS2345, from the conversion: Argument of type '(k: any) => string | null' is not assignable to parameter of type '() => null'. Target signature provides too few argument
-    trialDays = trialDaysFor(withTrial, taken, (k: any) => (offerByKey(k)?.tier ?? null))
+    trialDays = trialDaysFor(withTrial, taken, (k) => (offerByKey(k)?.tier ?? null))
   }
   let selectedPaymentProvider: PaymentProviderAdapter
   try {
@@ -207,7 +207,7 @@ Deno.serve(async (req: any) => {
     }))
   } catch (error: any) {
     if (error instanceof PaymentProviderError) {
-      return json({ error: error.message, code: (error as any).code }, (error as any).status)
+      return json({ error: error.message, code: error.code }, error.status)
     }
     throw error
   }
@@ -226,7 +226,7 @@ Deno.serve(async (req: any) => {
       }))
     } catch (error: any) {
       if (error instanceof PaymentProviderError) {
-        return json({ error: error.message, code: (error as any).code }, (error as any).status)
+        return json({ error: error.message, code: error.code }, error.status)
       }
       throw error
     }
@@ -303,10 +303,10 @@ Deno.serve(async (req: any) => {
       return json({ switched: true, from: live.sku, to: sku, at })
     } catch (e: any) {
       const message = e instanceof Error ? e.message : String(e)
-      const status = e instanceof PaymentProviderError ? (e as any).status : 502
+      const status = e instanceof PaymentProviderError ? e.status : 502
       return json({
         error: `${selectedPaymentProvider.id}: ${message}`,
-        ...(e instanceof PaymentProviderError ? { code: (e as any).code } : {}),
+        ...(e instanceof PaymentProviderError ? { code: e.code } : {}),
       }, status)
     }
   }
@@ -318,7 +318,7 @@ Deno.serve(async (req: any) => {
     const bk = JSON.parse(booking)
     if (Date.parse(bk.start) < Date.now()) return json({ error: 'that time has passed', code: 'past' }, 400)
     const v = await judge(bk.event, user.id, user.email ?? null, null)
-    if (!v.ok && v.reason !== 'unpaid') return json({ error: v.reason, code: v.reason, next: (v as any).next ?? null, allowance: (v as any).allowance ?? null }, 403)
+    if (!v.ok && v.reason !== 'unpaid') return json({ error: v.reason, code: v.reason, next: v.next ?? null, allowance: v.allowance ?? null }, 403)
     if (v.ok || !v.session || !v.session.sku || !merged.has(v.session.sku)) return json({ error: 'the session being booked is not the one being paid for', code: 'mismatch' }, 400)
   }
   if (booking && guestSessionBooking) {
@@ -346,7 +346,7 @@ Deno.serve(async (req: any) => {
   const myTiers: string[] = await (async () => {
     if (!user) return []
     const { data } = await admin.from('entitlements').select('key').eq('user_id', user.id).eq('kind', 'class').eq('active', true)
-    return (data ?? []).map((r: any) => String(r.key)).filter((k: string) => k !== 'paid')
+    return (data ?? []).map((r) => String(r.key)).filter((k: string) => k !== 'paid')
   })()
   const who = {
     customer: { class: user ? (myTiers.length ? 'subscribed' : 'authenticated') : 'guest', tiers: myTiers },
@@ -622,10 +622,10 @@ Deno.serve(async (req: any) => {
      })
   } catch (e: any) {
     const message = e instanceof Error ? e.message : String(e)
-    const status = e instanceof PaymentProviderError ? (e as any).status : 502
+    const status = e instanceof PaymentProviderError ? e.status : 502
     return json({
       error: `${selectedPaymentProvider.id}: ${message}`,
-      ...(e instanceof PaymentProviderError ? { code: (e as any).code } : {}),
+      ...(e instanceof PaymentProviderError ? { code: e.code } : {}),
     }, status)
   }
 })
@@ -648,10 +648,10 @@ function variantIn(list: string[], sku: string): string {
  * the shop sells — never an invented one, which would miss the price list and be charged the base
  * price, and miss the stock and pass as available. An offer with no shapes takes none. null refuses.
  */
-function shapeOf(o: any, raw: string): string | null {
+function shapeOf(o: { options: any; variants: any }, raw: string): string | null {
   const opts = Array.isArray(o?.options) ? o.options : []
   const listed = Array.isArray(o?.variants) ? o.variants : []
-  const sold = (k: string) => listed.some((v: any) => v && v.variant === k && v.sold !== false)
+  const sold = (k: string) => listed.some((v: { variant: string; sold: boolean }) => v && v.variant === k && v.sold !== false)
   if (opts.length) {
     const chosen = checkVariant(opts, raw)
     if (!chosen) return null

@@ -67,7 +67,7 @@ export function mixam(env: any) {
     },
     /* the cover sheet: the trim per panel, a 3 mm bleed, the spine from the offer's own word for it */
     async measure({ product, artefacts = {} }: any) {
-      const { pages }: any = artefacts
+      const { pages } = artefacts
       const s = SIZES[product.trim] || SIZES['6x9'], bleed = 3 / 25.4 * 72
       let spine = pages * 0.0048 * 72 + (product.hard ? 0.35 * 72 : 0)
       if (!mock()) { try { const o = await call('/api/public/offers', offerBody(product, pages, 1)); const sp = Array.isArray(o) ? o[0]?.spine : o?.spine; if (sp) spine = Number(sp) * 72 } catch (e) { /* the estimate stands */ } }
@@ -75,7 +75,7 @@ export function mixam(env: any) {
       return { width: s.w * 2 + spine + 2 * (bleed + wrap) + 2 * flap, height: s.h + 2 * (bleed + wrap), spine, bleed: bleed + wrap, flap, unit: 'pt', mock: mock() }
     },
     async quote({ product, artefacts = {}, quantity = 1, country = 'US' }: any) {
-      const { pages }: any = artefacts
+      const { pages } = artefacts
       if (mock()) return { print: (product.hard ? 15 : 4.5) + pages * 0.03, shipping: country === 'US' ? 6.5 : 18, currency: 'USD', days: 7, mock: true }
       const o = await call('/api/public/offers', offerBody(product, pages, quantity))
       const best = (Array.isArray(o) ? o : [o]).filter((x) => x && x.total != null).sort((a, b) => a.total - b.total)[0]
@@ -85,14 +85,14 @@ export function mixam(env: any) {
     /* Mixam validates the artwork after the order is placed and says so on the callback */
     async validate({ artefacts = {} }) { return { ok: true, pages: (artefacts as any).pages, deferred: true } },
     async order({ product, artefacts = {}, title, quantity = 1, address = {}, email, externalId, callbackUrl }: any) {
-      const { pages, files }: any = artefacts
+      const { pages, files } = artefacts
       if (mock()) { const id = 'mixam_mock_' + Date.now(); return { id, status: 'CREATED', cost: { print: 15 * quantity, shipping: 6.5, currency: 'USD', mock: true } } }
       const assets = [{ name: 'interior.pdf', url: files.interior }, { name: 'cover.pdf', url: files.cover }]
       if (product.jacket && files.jacket) assets.push({ name: 'jacket.pdf', url: files.jacket })
       const o = await call('/api/public/orders', {
         metadata: { externalOrderId: externalId, statusCallbackUrl: callbackUrl },
         orderItems: [{ product: 'BOOK', subProductId: 0, quoteType: 'QUOTE', itemSpecification: itemSpec(product, pages, quantity), assets, metadata: { title } }],
-        deliveryAddress: { firstName: ((address as any).name || '').split(' ')[0] || 'Reader', lastName: ((address as any).name || '').split(' ').slice(1).join(' ') || '-', line1: (address as any).line1 || '', line2: (address as any).line2 || '', town: (address as any).city || '', county: (address as any).state || '', postcode: (address as any).postal_code || '', country: (address as any).country || 'US', phone: (address as any).phone || '', email: email || env('SMTP_FROM') || '' },
+        deliveryAddress: { firstName: (address.name || '').split(' ')[0] || 'Reader', lastName: (address.name || '').split(' ').slice(1).join(' ') || '-', line1: address.line1 || '', line2: address.line2 || '', town: address.city || '', county: address.state || '', postcode: address.postal_code || '', country: address.country || 'US', phone: address.phone || '', email: email || env('SMTP_FROM') || '' },
       })
       return { id: String(o.id || o.orderId), status: String(o.status || 'CREATED'), cost: o.total != null ? { print: Number(o.total), shipping: 0, currency: o.currency?.currencyCode || 'USD' } : null }
     },

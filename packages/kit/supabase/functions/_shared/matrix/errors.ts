@@ -33,7 +33,7 @@ export const M = {
 }
 
 /* a refusal: the code, the sentence, the status, and — for a rate limit — how long to wait */
-export const refusal = (errcode: any, error: any, status = 400, extra = null) =>
+export const refusal = (errcode: string, error: string, status = 400, extra = null) =>
   ({ status, body: { errcode, error, ...(extra || {}) } })
 
 export const REFUSALS = {
@@ -42,13 +42,13 @@ export const REFUSALS = {
   expired: () => refusal(M.UNKNOWN_TOKEN, 'Your session has ended — the password may have been changed, or you signed out everywhere. Sign in again.', 401),
   badLogin: () => refusal(M.FORBIDDEN, 'That email and password do not match an account on this site.', 403),
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ retry_after_ms: number; }' is not assignable to parameter of type 'null | undefined'.
-  tooManyLogins: (seconds: any) => refusal(M.LIMIT_EXCEEDED, `Too many sign-in attempts from here. Try again in ${Math.ceil(seconds / 60)} minutes.`, 429, { retry_after_ms: seconds * 1000 }),
+  tooManyLogins: (seconds) => refusal(M.LIMIT_EXCEEDED, `Too many sign-in attempts from here. Try again in ${Math.ceil(seconds / 60)} minutes.`, 429, { retry_after_ms: seconds * 1000 }),
   noRegister: (where: any) => refusal(M.FORBIDDEN, `This server does not create accounts. Sign up at ${where}, then sign in here with the same email and password.`, 403),
   notInRoom: () => refusal(M.FORBIDDEN, 'You are not in that room, or it does not exist. Rooms here follow your membership of the space they belong to.', 403),
   noSuchRoom: () => refusal(M.NOT_FOUND, 'There is no room with that id on this server.', 404),
   /* an upload that storage itself refused. It says so plainly: the old code answered this with
      "you may read this room but not write in it", which named a room an upload does not have. */
-  cannotStage: (why: any) => refusal(M.FORBIDDEN, `That file could not be stored${why ? ': ' + why : '.'}`, 403),
+  cannotStage: (why: string) => refusal(M.FORBIDDEN, `That file could not be stored${why ? ': ' + why : '.'}`, 403),
   /* a backup that does not exist, which is every day here: no room is encrypted, so there is
      nothing to back up. M_NOT_FOUND rather than M_UNRECOGNIZED, because a client reads the first
      as "none yet" and the second as "this server is too old to ask". */

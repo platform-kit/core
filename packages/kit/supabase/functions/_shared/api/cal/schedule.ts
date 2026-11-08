@@ -4,7 +4,7 @@
  * { '1': [['09:00','12:00']], … } (ISO weekday 1–7, see schedulers/times.js) and an override as a day with ranges (null: off).
  */
 import { eventTypeId } from './event-type.ts'
-const DAYS: any = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday', 7: 'Sunday' }
+const DAYS = { 1: 'Monday', 2: 'Tuesday', 3: 'Wednesday', 4: 'Thursday', 5: 'Friday', 6: 'Saturday', 7: 'Sunday' }
 export function scheduleOf(host: any, hours: any) {
   const availability = []
   const byRange = new Map()

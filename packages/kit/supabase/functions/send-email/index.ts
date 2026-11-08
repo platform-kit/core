@@ -12,7 +12,7 @@ import { renderEmail, sendEmail, smtpConfigured, SAMPLES, type EmailKind } from 
 
 const KINDS: EmailKind[] = ['order', 'shipped', 'files', 'chat', 'support', 'support-digest', 'magic-link', 'recovery', 'campaign', 'provider-terms', 'session-booked', 'session-held', 'session-to-confirm', 'session-declined', 'session-moved', 'session-cancelled', 'session-reminder', 'event-reminder']
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pf = preflight(req); if (pf) return pf
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   const user = await getUser(req)
@@ -23,7 +23,7 @@ Deno.serve(async (req: any) => {
   const kind = String(body?.kind ?? 'order') as EmailKind
   if (!KINDS.includes(kind)) return json({ error: 'unknown email' }, 400)
   const opts = { ...(typeof body?.html === 'string' && body.html.length ? { html: String(body.html).slice(0, 400_000) } : {}), ...(typeof body?.subject === 'string' ? { subject: String(body.subject).slice(0, 300) } : {}) }
-  const data = { ...(SAMPLES as any)[kind], ...(body?.sample && typeof body.sample === 'object' ? body.sample : {}) }
+  const data = { ...SAMPLES[kind], ...(body?.sample && typeof body.sample === 'object' ? body.sample : {}) }
   const to = String(body?.to ?? '').trim()
   if (!to) return json({ ok: true, ...renderEmail(kind, data, opts) })
   if (!smtpConfigured) return json({ error: 'SMTP is not configured on the functions (SMTP_HOST, SMTP_PORT, SMTP_FROM)', code: 'no-smtp' }, 400)

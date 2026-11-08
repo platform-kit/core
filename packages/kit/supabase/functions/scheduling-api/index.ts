@@ -40,12 +40,12 @@ type Caller = { kind: 'key'; id: string } | { kind: 'jwt'; id: string; email: st
 const site = () => appUrl()
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const typeOf = (idOrSlug: string | null) => { if (!idOrSlug) return null; const n = Number(idOrSlug); return SESSIONS.find((s) => s.slug === idOrSlug || (Number.isFinite(n) && eventTypeId(s.slug) === n)) ?? null }
-async function hostsOf(s: Session) { if (!s.hosts?.length) return []; const { data } = await admin.from('profiles').select('id, email, display_name').in('email', s.hosts); return (data ?? []).map((h: any) => ({ id: h.id, email: h.email, name: h.display_name || '' })) }
+async function hostsOf(s: Session) { if (!s.hosts?.length) return []; const { data } = await admin.from('profiles').select('id, email, display_name').in('email', s.hosts); return (data ?? []).map((h) => ({ id: h.id, email: h.email, name: h.display_name || '' })) }
 const priceOf = (s: Session) => { if (!s.sku) return null; try { const o = offer(s.sku) as any; return o ? { amount: Number(o.price) || 0, currency: String(o.currency || 'usd').toLowerCase() } : null } catch { return null } }
 const WEBHOOK_COLS = 'id, subscriber_url, triggers, active, payload_template, event_type_slug, created_by, created_at, updated_at, last_at, last_error'
-const webhookView = (w: any) => ({ id: eventTypeId('webhook:' + w.id), uid: w.id, subscriberUrl: w.subscriber_url, triggers: w.triggers, active: !!w.active, payloadTemplate: w.payload_template || null, eventTypeId: w.event_type_slug ? eventTypeId(w.event_type_slug) : null, userId: w.created_by ? eventTypeId('user:' + w.created_by) : null, createdAt: w.created_at, updatedAt: w.updated_at, lastDeliveredAt: w.last_at, lastError: w.last_error })
+const webhookView = (w: { id: string; subscriber_url: string; triggers: string[]; active: boolean; payload_template: string|null; event_type_slug: string|null; created_by: string|null; created_at: string; updated_at: string; last_at: string|null; last_error: string|null }) => ({ id: eventTypeId('webhook:' + w.id), uid: w.id, subscriberUrl: w.subscriber_url, triggers: w.triggers, active: !!w.active, payloadTemplate: w.payload_template || null, eventTypeId: w.event_type_slug ? eventTypeId(w.event_type_slug) : null, userId: w.created_by ? eventTypeId('user:' + w.created_by) : null, createdAt: w.created_at, updatedAt: w.updated_at, lastDeliveredAt: w.last_at, lastError: w.last_error })
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   await fresh()
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const url = new URL(req.url)
@@ -84,7 +84,7 @@ Deno.serve(async (req: any) => {
     if (seg[1] === 'event-types') {
       if (m !== 'GET') return err(405, 'Event types are written in content/sessions; the API reads them.')
       const list = []
-      for (const s of SESSIONS) { if (!(await admitted(s))) continue; if (q.eventSlug && s.slug !== q.eventSlug) continue; const hosts = await hostsOf(s); if (q.username && !hosts.some((h: any) => String(h.email).split('@')[0] === q.username || h.email === q.username)) continue; list.push(eventTypeOf(s, { hosts, price: priceOf(s), site: site(), form: (s as any).form ? (await formsNow())[(s as any).form] : null })) }
+      for (const s of SESSIONS) { if (!(await admitted(s))) continue; if (q.eventSlug && s.slug !== q.eventSlug) continue; const hosts = await hostsOf(s); if (q.username && !hosts.some((h) => String(h.email).split('@')[0] === q.username || h.email === q.username)) continue; list.push(eventTypeOf(s, { hosts, price: priceOf(s), site: site(), form: (s as any).form ? (await formsNow())[(s as any).form] : null })) }
       if (seg.length === 2) return reply(ok(list))
       const one = list.find((e) => String(e.id) === seg[2] || e.slug === seg[2]); return one ? reply(ok(one)) : err(404, `No event type ${seg[2]}.`)
     }
@@ -95,17 +95,17 @@ Deno.serve(async (req: any) => {
       const day = (v: string) => { const d = new Date(v); return isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10) }
       const from = day(q.start || ''), to = day(q.end || ''); if (!from || !to) return err(400, 'start and end are dates.')
       const timeZone = q.timeZone || 'UTC'
-      const r = await (schedulerOf(s) as any).slots(s, from, to, timeZone)
+      const r = await schedulerOf(s).slots(s, from, to, timeZone)
       const data: Record<string, { start: string; end?: string }[]> = {}
       for (const [d, list] of Object.entries(r.slots || {})) data[d] = (list as string[]).map((start) => (q.format === 'range' ? { start, end: new Date(Date.parse(start) + (r.minutes || s.duration) * 60000).toISOString() } : { start }))
       return reply(ok(data))
     }
     /* ---- bookings ---- */
     if (seg[1] === 'bookings') {
-      const own = (row: any) => isKey || row.user_id === caller.id || row.host_id === caller.id || row.provider_id === caller.id || (caller as any).role === 'admin' || (row.attendee_emails || []).includes((caller as any).email)
+      const own = (row: { uid: string; user_id: string|null; email: string|null; host_id: string|null; provider_id: string|null; attendee_emails: string[]; event: string|null; status: string; start_at: string|null; credit_id: string|null }) => isKey || row.user_id === caller.id || row.host_id === caller.id || row.provider_id === caller.id || (caller as any).role === 'admin' || (row.attendee_emails || []).includes((caller as any).email)
       const view = async (uid: string) => { const b = await calBookingOf(uid); return b }
       if (seg.length === 2 && m === 'GET') {
-        let qb: any = admin.from('bookings').select('uid, user_id, host_id, provider_id, attendee_emails, email, start_at, event, status').order('start_at', { ascending: q.sortStart !== 'desc' })
+        let qb = admin.from('bookings').select('uid, user_id, host_id, provider_id, attendee_emails, email, start_at, event, status').order('start_at', { ascending: q.sortStart !== 'desc' })
         qb = statusFilter(q.status)(qb)
         if (q.attendeeEmail) qb = qb.or(`email.ilike.${q.attendeeEmail},attendee_emails.cs.{${q.attendeeEmail}}`)
         if (q.eventTypeId || q.eventTypeSlug) { const s = typeOf(q.eventTypeId || q.eventTypeSlug); if (!s) return reply(ok([])); qb = qb.eq('event', s.event) }
@@ -133,7 +133,7 @@ Deno.serve(async (req: any) => {
         const phone = String(a.phoneNumber || (body.bookingFieldsResponses || {}).attendeePhoneNumber || '').slice(0, 40)
         if (!user_id && !['anyone', 'guest'].includes(s.requires)) return err(403, 'No account with that address; this type is for members.', { code: 'guest' })
         const v = await judge(s.event, user_id, email, null)
-        if (!v.ok) return err(v.reason === 'unpaid' ? 402 : 403, v.reason === 'unpaid' ? 'This type is paid: a credit on the account is needed.' : v.reason === 'over' ? 'Over the allowance.' : v.reason === 'guest' ? 'Sign in: this type is for members.' : 'Not included in the plan.', { code: v.reason, next: (v as any).next ?? null, allowance: (v as any).allowance ?? null })
+        if (!v.ok) return err(v.reason === 'unpaid' ? 402 : 403, v.reason === 'unpaid' ? 'This type is paid: a credit on the account is needed.' : v.reason === 'over' ? 'Over the allowance.' : v.reason === 'guest' ? 'Sign in: this type is for members.' : 'Not included in the plan.', { code: v.reason, next: v.next ?? null, allowance: v.allowance ?? null })
         if (schedulerIdOf(s) === 'native') { if ((!s.hosts?.length && !s.team) || !(s.duration > 0)) return err(503, 'This type has no host or no length yet.'); if (s.where?.kind === 'phone' && !s.where.number && !phone) return err(400, 'attendee.phoneNumber is required for this type.') }
         try {
           const made = await makeBooking(s, { start, attendee: { email, name, timeZone, user_id }, user_id, notes, phone, credit: v.credit })
@@ -182,13 +182,13 @@ Deno.serve(async (req: any) => {
     if (seg[1] === 'ooo' && m === 'GET') {
       /* a key reads every host's; a person reads their own — cal.com's route is per user and this
          answers the same shape for whichever of the two is asking */
-      let q2: any = admin.from('provider_ooo').select('id, user_id, from, to, reason, cover_id').order('from')
+      let q2 = admin.from('provider_ooo').select('id, user_id, from, to, reason, cover_id').order('from')
       if (!isKey && (caller as any).role !== 'admin') q2 = q2.eq('user_id', caller.id)
       const { data: rows } = await q2
-      const ids = [...new Set((rows ?? []).flatMap((r: any) => [r.user_id, r.cover_id]).filter(Boolean))] as string[]
+      const ids = [...new Set((rows ?? []).flatMap((r) => [r.user_id, r.cover_id]).filter(Boolean))] as string[]
       const { data: ps } = ids.length ? await admin.from('profiles').select('id, email, display_name').in('id', ids) : { data: [] }
-      const who = (id: string) => (ps ?? []).find((p: any) => p.id === id)
-      return reply(ok((rows ?? []).map((r: any) => ({
+      const who = (id: string) => (ps ?? []).find((p) => p.id === id)
+      return reply(ok((rows ?? []).map((r) => ({
         id: r.id, userId: eventTypeId('user:' + (who(r.user_id)?.email || r.user_id)),
         start: r.from, end: r.to, notes: r.reason || null,
         reason: { emoji: '🌴', reason: r.reason || 'unspecified' },
@@ -199,7 +199,7 @@ Deno.serve(async (req: any) => {
     /* ---- schedules ---- */
     if (seg[1] === 'schedules' && m === 'GET') {
       let hosts: { id: string; email: string; name: string }[]
-      if (isKey || (caller as any).role === 'admin') { const { data } = await admin.from('provider_schedules').select('user_id'); const ids = (data ?? []).map((h: any) => h.user_id); const { data: ps } = ids.length ? await admin.from('profiles').select('id, email, display_name').in('id', ids) : { data: [] }; hosts = (ps ?? []).map((p: any) => ({ id: p.id, email: p.email, name: p.display_name || '' })) }
+      if (isKey || (caller as any).role === 'admin') { const { data } = await admin.from('provider_schedules').select('user_id'); const ids = (data ?? []).map((h) => h.user_id); const { data: ps } = ids.length ? await admin.from('profiles').select('id, email, display_name').in('id', ids) : { data: [] }; hosts = (ps ?? []).map((p: any) => ({ id: p.id, email: p.email, name: p.display_name || '' })) }
       else { const c = caller as Extract<Caller, { kind: 'jwt' }>; hosts = [{ id: c.id, email: c.email, name: c.name }] }
       const out = []
       /* EVERY set a host keeps, not one: cal.com answers all of them with one marked isDefault, and a
@@ -208,7 +208,7 @@ Deno.serve(async (req: any) => {
         const { data: sets } = await admin.from('provider_schedules').select('id, name, is_default, timezone, weekly, buffer_before, buffer_after, notice_hours, max_per_day, max_per_week').eq('user_id', h.id).order('is_default', { ascending: false }).order('name')
         if (!sets || !sets.length) continue
         const { data: ov } = await admin.from('provider_overrides').select('day, ranges, schedule_id').eq('user_id', h.id)
-        for (const s of sets) out.push(scheduleOf(h, { ...s, overrides: (ov ?? []).filter((x: any) => x.schedule_id === s.id || (!x.schedule_id && s.is_default)) }))
+        for (const s of sets) out.push(scheduleOf(h, { ...s, overrides: (ov ?? []).filter((x) => x.schedule_id === s.id || (!x.schedule_id && s.is_default)) }))
       }
       if (seg.length === 2) return reply(ok(out))
       const one = out.find((x) => String(x.id) === seg[2]); return one ? reply(ok(one)) : err(404, `No schedule ${seg[2]}.`)
@@ -238,7 +238,7 @@ Deno.serve(async (req: any) => {
       }
       if (seg.length === 3) {
         const { data: w } = await admin.from('scheduling_webhooks').select(WEBHOOK_COLS).or(`id.eq.${/^[0-9a-f-]{36}$/.test(seg[2]) ? seg[2] : '00000000-0000-0000-0000-000000000000'}`).maybeSingle()
-        const byNum = w ? w : (await (async () => { const { data: all } = await admin.from('scheduling_webhooks').select(WEBHOOK_COLS); return (all ?? []).find((x: any) => String(eventTypeId('webhook:' + x.id)) === seg[2]) ?? null })())
+        const byNum = w ? w : (await (async () => { const { data: all } = await admin.from('scheduling_webhooks').select(WEBHOOK_COLS); return (all ?? []).find((x) => String(eventTypeId('webhook:' + x.id)) === seg[2]) ?? null })())
         if (!byNum) return err(404, `No webhook ${seg[2]}.`)
         if (m === 'GET') return reply(ok(webhookView(byNum)))
         if (m === 'PATCH') { const body = await readBody(); if (!body) return err(400, 'A JSON body.'); const p = parse(body, true); if (p.error) return err(400, p.error); const { data, error } = await admin.from('scheduling_webhooks').update({ ...p.value, updated_at: new Date().toISOString() }).eq('id', byNum.id).select(WEBHOOK_COLS).single(); if (error) return err(400, error.message); return reply(ok(webhookView(data))) }

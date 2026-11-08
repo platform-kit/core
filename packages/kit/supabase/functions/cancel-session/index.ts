@@ -13,7 +13,7 @@ import { typeFor, schedulerIdOf } from '../_shared/cal.ts'
 import { mayReader } from '../_shared/sessions/page.ts'
 import { cancelBooking } from '../_shared/booking.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   const user = await getUser(req)

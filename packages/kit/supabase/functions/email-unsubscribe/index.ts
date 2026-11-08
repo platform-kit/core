@@ -8,11 +8,11 @@
  */
 import { admin } from '../_shared/lib.ts'
 import * as SITE from '../_shared/pipe/site.js'
-const SITE_NAME = String((SITE as any).name || '')
+const SITE_NAME = String(SITE.name || '')
 import { unsubscribeOk } from '../_shared/marketing.ts'
 import strings from '../_shared/emails/strings.json' with { type: 'json' }
 
-const W = ((strings as any).unsubscribe ?? {}) as Record<string, string>
+const W = (strings.unsubscribe ?? {}) as Record<string, string>
 const site = () => (Deno.env.get('APP_URL') ?? Deno.env.get('VITE_APP_URL') ?? 'http://localhost:5173').replace(/\/+$/, '')
 const esc = (s: string) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string))
 const page = (title: string, body: string) => new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><meta name="robots" content="noindex"></head>
@@ -21,7 +21,7 @@ const page = (title: string, body: string) => new Response(`<!doctype html><html
 <h1 style="font-size:26px;line-height:1.15;margin:0 0 12px;font-weight:600">${esc(title)}</h1><p style="font-size:16px;line-height:1.6;color:#4a4c47;margin:0 0 22px">${esc(body)}</p>
 <a href="${site()}" style="display:inline-block;background:#0c0d0b;color:#fbfaf3;text-decoration:none;border-radius:999px;padding:12px 22px;font-weight:600">${esc(W.back ?? 'Back')}</a></div></body></html>`, { headers: { 'content-type': 'text/html; charset=utf-8' } })
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: { url: string|URL }) => {
   const url = new URL(req.url)
   const u = url.searchParams.get('u') ?? '', t = url.searchParams.get('t') ?? '', l = url.searchParams.get('l') ?? ''
   if (!(await unsubscribeOk(u, t))) return page(W['bad-title'] ?? 'That link did not work', W['bad-body'] ?? '')

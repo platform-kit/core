@@ -17,7 +17,7 @@ import {
 } from '../_shared/payment-provider.mts'
 import type { PaymentCheckoutSnapshot, PaymentProviderAdapter } from '../_shared/payment-provider.d.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   /* a guest's session (metadata.guest) is confirmed with no user: the ledger's writes are
@@ -52,7 +52,7 @@ Deno.serve(async (req: any) => {
     return json({ ok: true, mode: snapshot.mode })
   } catch (e: any) {
     const message = e instanceof Error ? e.message : String(e)
-    const status = e instanceof PaymentProviderError ? (e as any).status : 502
+    const status = e instanceof PaymentProviderError ? e.status : 502
     return json({ error: message }, status)
   }
 })

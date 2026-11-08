@@ -509,7 +509,7 @@ async function automationOptions(body: Row) {
   })
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const options = preflight(req)
   if (options) return options
   if (req.method !== 'POST') return json({ error: 'POST is required.' }, 405)

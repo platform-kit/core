@@ -19,6 +19,7 @@ import { makeContext } from './context.ts'
 import { entryOf, assetOf, strip } from './entry.ts'
 import { managementEntryOf, managementAssetOf, recordOf, idFor, splitId, versionOf, uploadOf, apiAssetFolder, apiAssetAddress, webhookDefinitionOf, webhookDefinitionInput, topicMatches, validationFailed, versionMismatch, unwrap } from './management.ts'
 import { assetId } from './ids.ts'
+import type { Json } from '../database.types.ts'
 
 const UPLOADS = '.uploads'
 const BUCKET = 'content-assets'
@@ -29,8 +30,8 @@ const gitMode = (rid: string) => err(405, 'BadRequest', 'This site keeps its con
 /* the pipe (api/pipe.ts) with the content webhooks' hook */
 const pipeFor = (by: string) => pipeOf(by, (e: unknown) => deliverContentEvent(e as any))
 const fresh = async () => { invalidateIndex(); return contentIndexes() }
-const modelFor = (index: Index, typeId: string) => { const t = index.types.find((x: any) => x.sys.id === typeId); return t ? { type: t, model: index.models.find((m: any) => m.key === (t as any)._model) } : null }
-const nameOf = (model: any, path: string) => (model.single ? '' : path)
+const modelFor = (index: Index, typeId: string) => { const t = index.types.find((x) => x.sys.id === typeId); return t ? { type: t, model: index.models.find((m) => m.key === t._model) } : null }
+const nameOf = (model: { single: any }, path: string) => (model.single ? '' : path)
 
 /* the Management entry of a record, from the preview index (a draft over its live version) */
 async function entryView(id: string, rid: string, gated = true) {
@@ -45,8 +46,8 @@ async function entryView(id: string, rid: string, gated = true) {
 }
 async function assetView(id: string) {
   const both = await contentIndexes()
-  const a = both.preview.assets.find((x: any) => x.address && assetId(x.address) === id)
-  if (a) { const ctx = makeContext(both.preview, { preview: true, gated: true, locale: null, imagesBase: (both.preview.site.url || appUrl()).replace(/^https?:/, '') + '/images' }); const d = assetOf(a as any, ctx); return managementAssetOf(SPACE, d.sys.id, { name: (a as any).name, title: d.fields.title, address: (a as any).address, url: d.fields.file.url, size: (a as any).size, mime: (a as any).mime, width: (a as any).width, height: (a as any).height, revision: 1, created: (a as any).modified, updated: (a as any).modified, publishedAt: (a as any).modified, published: true }, { space: SPACE, locale: locale() }) }
+  const a = both.preview.assets.find((x) => x.address && assetId(x.address) === id)
+  if (a) { const ctx = makeContext(both.preview, { preview: true, gated: true, locale: null, imagesBase: (both.preview.site.url || appUrl()).replace(/^https?:/, '') + '/images' }); const d = assetOf(a, ctx); return managementAssetOf(SPACE, d.sys.id, { name: a.name, title: d.fields.title, address: a.address, url: d.fields.file.url, size: a.size, mime: a.mime, width: a.width, height: a.height, revision: 1, created: a.modified, updated: a.modified, publishedAt: a.modified, published: true }, { space: SPACE, locale: locale() }) }
   const pending = await pendingAsset(id)
   return pending ? managementAssetOf(SPACE, id, { name: pending.fileName, title: pending.title, description: pending.description, revision: 1, created: pending.at, updated: pending.at, draft: true, pendingFile: pending.file }, { space: SPACE, locale: locale() }) : null
 }
@@ -68,7 +69,7 @@ export async function manage(req: Request, o: { sub: string; method: string; q: 
   if (/^\/webhook_definitions(\/|$)/.test(sub)) {
     if (!isMgmt) return err(403, 'AccessDenied', 'The webhook definitions are the management key\'s.', rid)
     const id = (/^\/webhook_definitions\/([^/]+)$/.exec(sub) || [])[1]
-    const view = (row: any) => webhookDefinitionOf(SPACE, row)
+    const view = (row: { active: boolean; created_at: string; created_by: string|null; headers: Json; id: string; last_at: string|null; last_error: string|null; name: string; source: string; topics: string[]; updated_at: string; url: string }) => webhookDefinitionOf(SPACE, row)
     if (method === 'GET' && !id) { const { data } = await admin.from('content_webhooks').select('*').order('created_at'); return { status: 200, body: { sys: { type: 'Array' }, total: (data ?? []).length, skip: 0, limit: 100, items: (data ?? []).map(view) } } }
     if (method === 'GET' && id) { const { data } = await admin.from('content_webhooks').select('*').eq('id', id).maybeSingle(); return data ? { status: 200, body: view(data) } : err(404, 'NotFound', 'The resource could not be found.', rid, { type: 'WebhookDefinition', id }) }
     if (method === 'POST' || method === 'PUT') {
@@ -102,7 +103,7 @@ export async function manage(req: Request, o: { sub: string; method: string; q: 
     return { status: 201, body: uploadOf(SPACE, id, at, expiresAt) }
   }
   const up = /^\/uploads\/([^/]+)$/.exec(sub)
-  if (up && method === 'GET') { const { data } = await admin.storage.from(BUCKET).list(UPLOADS, { search: up[1] }); const f = (data ?? []).find((x: any) => x.name === up[1]); return f ? { status: 200, body: uploadOf(SPACE, up[1], f.created_at, new Date(Date.parse(f.created_at) + 864e5).toISOString()) } : err(404, 'NotFound', 'The resource could not be found.', rid, { type: 'Upload', id: up[1] }) }
+  if (up && method === 'GET') { const { data } = await admin.storage.from(BUCKET).list(UPLOADS, { search: up[1] }); const f = (data ?? []).find((x) => x.name === up[1]); return f ? { status: 200, body: uploadOf(SPACE, up[1], f.created_at, new Date(Date.parse(f.created_at) + 864e5).toISOString()) } : err(404, 'NotFound', 'The resource could not be found.', rid, { type: 'Upload', id: up[1] }) }
   if (up && method === 'DELETE') { await admin.storage.from(BUCKET).remove([`${UPLOADS}/${up[1]}`]); return { status: 204, body: null } }
 
   /* ---- assets ---- */
@@ -110,7 +111,7 @@ export async function manage(req: Request, o: { sub: string; method: string; q: 
   if (assetM) {
     const id = assetM[1], processing = sub.endsWith('/process'), publishing = sub.endsWith('/published')
     if (method === 'GET' && id && !processing && !publishing) { const a = await assetView(id); return a ? { status: 200, body: a } : err(404, 'NotFound', 'The resource could not be found.', rid, { type: 'Asset', id }) }
-    if (method === 'GET' && !id) { const both = await contentIndexes(); const items = []; for (const a of both.preview.assets) { const v = await assetView(assetId((a as any).address)); if (v) items.push(v) } return { status: 200, body: { sys: { type: 'Array' }, total: items.length, skip: 0, limit: 1000, items } } }
+    if (method === 'GET' && !id) { const both = await contentIndexes(); const items = []; for (const a of both.preview.assets) { const v = await assetView(assetId(a.address)); if (v) items.push(v) } return { status: 200, body: { sys: { type: 'Array' }, total: items.length, skip: 0, limit: 1000, items } } }
     if ((method === 'POST' && !id) || (method === 'PUT' && id && !processing && !publishing)) {
       let body: any; try { body = await req.json() } catch { return err(400, 'BadRequest', 'The body is not JSON.', rid) }
       const aid = id || newId()
@@ -138,7 +139,7 @@ export async function manage(req: Request, o: { sub: string; method: string; q: 
     if (method === 'DELETE' && id && publishing) return err(400, 'BadRequest', 'An asset in the library is always published; delete it to remove it.', rid)
     if (method === 'DELETE' && id) {
       const both = await contentIndexes()
-      const a: any = both.preview.assets.find((x: any) => x.address && assetId(x.address) === id)
+      const a = both.preview.assets.find((x) => x.address && assetId(x.address) === id)
       if (!a) { await admin.storage.from(BUCKET).remove([`${UPLOADS}/assets/${id}.json`]); return { status: 204, body: null } }
       const { store } = await pipeFor(maker.by)
       const rel = 'content' + a.address.replace(/^\/(?!uploads)/, '/static/')
@@ -172,7 +173,7 @@ export async function manage(req: Request, o: { sub: string; method: string; q: 
     const name = nameOf(found.model, split.path)
     const current = await call('GET', 'file', { col: found.model.key, name })
     if (current.status !== 200) return err(404, 'NotFound', 'The resource could not be found.', rid, { type: 'Entry', id })
-    const rec: any = current.body
+    const rec = current.body
     if (method === 'PUT' && published) {
       /* an entry the API made is unpublished (published: false) until now: the flag is turned before the draft goes live */
       if (rec.data && rec.data.published === false) { const w = await call('POST', 'file', {}, { col: found.model.key, name, data: { ...rec.data, published: true }, content: rec.content || '' }); if (w.status !== 200) return pipeFault(w, rid) }
@@ -201,8 +202,8 @@ export async function manage(req: Request, o: { sub: string; method: string; q: 
     const typeId = method === 'POST' ? (req.headers.get('x-contentful-content-type') || '') : (splitId(id || '')?.typeId || '')
     const found = typeId ? modelFor(both.preview, typeId) : null
     if (!found || !found.model) return err(method === 'POST' ? 400 : 404, method === 'POST' ? 'BadRequest' : 'NotFound', method === 'POST' ? 'X-Contentful-Content-Type names no content type of this site.' : 'The resource could not be found.', rid, { type: method === 'POST' ? 'ContentType' : 'Entry', id: typeId || id })
-    const model = found.model as any, type = found.type as any
-    const ctxAssets = (aid: string) => { const a: any = both.preview.assets.find((x: any) => x.address && assetId(x.address) === aid); return a ? a.address : null }   /* an asset's id is assetId(address): the API's folder name, or the hash of any other library file */
+    const model = found.model, type = found.type
+    const ctxAssets = (aid: string) => { const a = both.preview.assets.find((x) => x.address && assetId(x.address) === aid); return a ? a.address : null }   /* an asset's id is assetId(address): the API's folder name, or the hash of any other library file */
     let parsed: { data: Record<string, unknown>; body: string | null }
     try { parsed = recordOf(entry, type, model, { locale: locale(), assetAddress: ctxAssets }) } catch (e: any) {
       if (e.code === 'UnknownField') return err(422, 'ValidationFailed', 'Unknown field', rid, { errors: e.fields.map((f: string) => ({ name: 'unknown', path: ['fields', f], details: 'The content type has no such field' })) })
@@ -222,10 +223,10 @@ export async function manage(req: Request, o: { sub: string; method: string; q: 
       const given = req.headers.get('x-contentful-version')
       if (given != null && view && Number(given) !== view.sys.version) return { status: 409, body: versionMismatch(rid) }
     }
-    const rec: any = exists ? current.body : { data: {}, content: '' }
+    const rec = exists ? current.body : { data: {}, content: '' }
     /* Contentful replaces the fields whole: a typed field absent from the entry is dropped; what the type does not know (published, the admin's own) is kept */
     const data: Record<string, unknown> = { ...(rec.data || {}) }
-    for (const f of type.fields) if (!f.id.endsWith('Markdown') || !type.fields.some((x: any) => x.id + 'Markdown' === f.id)) { if (parsed.data[f.id] !== undefined) data[f.id] = parsed.data[f.id]; else if (entry.fields && Object.keys(entry.fields).length) delete data[f.id] }
+    for (const f of type.fields) if (!f.id.endsWith('Markdown') || !type.fields.some((x: { id: string }) => x.id + 'Markdown' === f.id)) { if (parsed.data[f.id] !== undefined) data[f.id] = parsed.data[f.id]; else if (entry.fields && Object.keys(entry.fields).length) delete data[f.id] }
     if (!('published' in data)) data.published = false   /* a new entry is unpublished until PUT …/published, as Contentful's is */
     const content = parsed.body != null ? parsed.body : (rec.content || '')
     const w = await call('POST', 'file', {}, { col: model.key, name, data, content, create: !exists })
@@ -250,16 +251,16 @@ const TOPIC_OF = { create: 'create', save: 'save', publish: 'publish', unpublish
 export async function deliverContentEvent(e: { kind: 'Entry' | 'Asset'; topic: string; path: string; collection?: string | null; slug?: string | null; data?: unknown; body?: string | null; by?: string | null }) {
   const topic = `${e.kind}.${TOPIC_OF[e.topic] || e.topic}`
   const { data: subs } = await admin.from('content_webhooks').select('*').eq('active', true)
-  const want = (subs ?? []).filter((w: any) => topicMatches(w.topics || [], topic))
+  const want = (subs ?? []).filter((w) => topicMatches(w.topics || [], topic))
   if (!want.length) return
   const both = await fresh()
   let payload: unknown
   if (e.kind === 'Entry') {
     /* the record's model: the deepest directory the path is under (content/ is the site's own, so a single model never wins over a collection) */
-    const dirOf = (x: any) => String(x.dir).replace(/^\.?\//, '')
-    const m = both.preview.models.filter((x: any) => e.path.startsWith(dirOf(x) + '/')).sort((x: any, y: any) => (y.single ? 0 : 1) - (x.single ? 0 : 1) || dirOf(y).length - dirOf(x).length)[0] as any
+    const dirOf = (x: { dir: any }) => String(x.dir).replace(/^\.?\//, '')
+    const m = both.preview.models.filter((x) => e.path.startsWith(dirOf(x) + '/')).sort((x, y) => (y.single ? 0 : 1) - (x.single ? 0 : 1) || dirOf(y).length - dirOf(x).length)[0]
     const path = m ? e.path.slice(dirOf(m).length + 1).replace(/\.md$/, '') : e.path
-    const t = m ? both.preview.types.find((x: any) => x._model === m.key) as any : null
+    const t = m ? both.preview.types.find((x) => x._model === m.key) : null
     const id = t ? `${t.sys.id}.${path.replace(/\//g, '.')}` : e.path
     if (e.topic === 'delete') payload = { sys: { type: 'DeletedEntry', id, space: { sys: { type: 'Link', linkType: 'Space', id: SPACE } }, environment: { sys: { id: 'master', type: 'Link', linkType: 'Environment' } }, deletedAt: new Date().toISOString(), ...(t ? { contentType: { sys: { type: 'Link', linkType: 'ContentType', id: t.sys.id } } } : {}) } }
     else payload = (await entryView(id, 'webhook').catch(() => null)) ?? { sys: { type: 'Entry', id }, fields: {} }
@@ -279,7 +280,7 @@ export async function deliverContentEvent(e: { kind: 'Entry' | 'Asset'; topic: s
     } catch (err2) { await admin.from('content_webhooks').update({ last_error: String((err2 as Error)?.message ?? err2).slice(0, 300) }).eq('id', w.id) }
   }
 }
-export const adminStoreHook = (e: any) => deliverContentEvent(e)
+export const adminStoreHook = (e: { kind: "Entry"|"Asset"; topic: string; path: string; collection?: string|null; slug?: string|null; data?: unknown; body?: string|null; by?: string|null }) => deliverContentEvent(e)
 
 /* the uploads' sweep: an upload lasts a day (its Upload says so: expiresAt), and an asset made from one but never processed
    goes with it — pg_cron asks once a day (sweep_uploads → POST /sweep-uploads under the service key); the library is never
@@ -287,10 +288,10 @@ export const adminStoreHook = (e: any) => deliverContentEvent(e)
 export async function sweepUploads(req: Request, o: { rid: string; olderThanMs?: number }) {
   if (!(await isServiceBearer(req))) return err(403, 'AccessDenied', 'The sweep is the cron\'s (the service key).', o.rid)
   const cutoff = Date.now() - (o.olderThanMs ?? 864e5)
-  const old = (list: any[] | null) => (list ?? []).filter((f: any) => f.name && f.id && Date.parse(f.created_at || f.updated_at || 0) < cutoff)
+  const old = (list: any[] | null) => (list ?? []).filter((f) => f.name && f.id && Date.parse(f.created_at || f.updated_at || 0) < cutoff)
   const { data: files } = await admin.storage.from(BUCKET).list(UPLOADS, { limit: 1000 })
   const { data: pending } = await admin.storage.from(BUCKET).list(`${UPLOADS}/assets`, { limit: 1000 })
-  const gone = [...old(files).map((f: any) => `${UPLOADS}/${f.name}`), ...old(pending).map((f: any) => `${UPLOADS}/assets/${f.name}`)]
+  const gone = [...old(files).map((f) => `${UPLOADS}/${f.name}`), ...old(pending).map((f) => `${UPLOADS}/assets/${f.name}`)]
   if (gone.length) await admin.storage.from(BUCKET).remove(gone)
   /* and the Store API's carts older than thirty days (store-api) */
   const { data: carts } = await admin.from('storefront_carts').delete().lt('updated_at', new Date(Date.now() - 30 * 864e5).toISOString()).select('id')

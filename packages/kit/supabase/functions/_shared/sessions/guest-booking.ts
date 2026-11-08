@@ -1,4 +1,4 @@
-export function mayBookAsGuest(requireAuthToBook: any, requires: any) {
+export function mayBookAsGuest(requireAuthToBook: boolean, requires: string|string[]) {
   return requireAuthToBook === false && (requires === 'anyone' || requires === 'guest')
 }
 

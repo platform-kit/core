@@ -59,7 +59,7 @@ export function seen(item: { label?: string; href?: string; see: any }, { cls = 
 }
 
 /* one item, in the shape the header draws, from whatever a layer wrote */
-const item = (raw: { href: any; label: null|undefined; key: null|undefined; icon: any; prefix: any; see: any; cta: any }) => {
+const item = (raw: any) => {
   if (!raw || typeof raw !== 'object') return null
   const href = String(raw.href || '').trim()
   const label = raw.label === undefined || raw.label === null ? undefined : String(raw.label)

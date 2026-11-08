@@ -410,7 +410,7 @@ export function createPaymentProvider(
           'line_items.data.price.product',
           'shipping_cost.shipping_rate',
         ],
-      }).catch((e: any) => {
+      }).catch((e: { code: string; statusCode: number }) => {
         if (e?.code === 'resource_missing' || e?.statusCode === 404) throw new PaymentProviderError('checkout_not_found', 'No such checkout.', 404)
         throw e
       })

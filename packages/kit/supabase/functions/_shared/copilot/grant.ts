@@ -20,8 +20,8 @@
 const enc = new TextEncoder()
 
 /* base64url without padding — a grant travels in a header and in a job's metadata */
-const b64u = (bytes: any) => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-const unb64u = (s: any) => {
+const b64u = (bytes: ArrayBuffer|Uint8Array<ArrayBuffer>) => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+const unb64u = (s: string) => {
   const t = String(s).replace(/-/g, '+').replace(/_/g, '/')
   const bin = atob(t + '='.repeat((4 - (t.length % 4)) % 4))
   return Uint8Array.from(bin, (c) => c.charCodeAt(0))

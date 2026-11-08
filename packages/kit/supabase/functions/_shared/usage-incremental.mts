@@ -71,7 +71,7 @@ export function createIncrementalUsageSettler({
         !/^[a-z]{3}$/.test(snapshots[0].currency)) {
       throw new Error(`subscription ${subscriptionId} has inconsistent incremental usage terms within period ${periodStartIso}`)
     }
-    const { threshold, currency }: any = snapshots[0]
+    const { threshold, currency } = snapshots[0]
     const amountMinor = incrementalUsageAmount(events ?? [], currency, toMinorUnits)
     if (amountMinor <= 0) return { amountMinor, chargedMinor: 0 }
 
@@ -80,7 +80,7 @@ export function createIncrementalUsageSettler({
     let customerId: any
     let paymentMethodId: any
 
-    const getSavedPaymentDetails: any = async () => {
+    const getSavedPaymentDetails = async () => {
       if (customerId && paymentMethodId) return { customerId, paymentMethodId }
       let customerIds = await findProviderExternalIds(provider.id, 'customer', 'profiles', subscription.user_id)
       if (!customerIds.length && provider.id === 'stripe') {

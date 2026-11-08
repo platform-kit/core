@@ -22,7 +22,7 @@ import { coaching as siteCoaching } from '../_shared/pipe/site.js'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
 /* whether this account is one of a type's hosts: named by its address, or a member of its team */
-async function hostsType(s: any, userId: string): Promise<boolean> {
+async function hostsType(s: { hosts: any; team: string }, userId: string): Promise<boolean> {
   const emails = (s.hosts || []).map((e: unknown) => String(e).toLowerCase()).filter(Boolean)
   if (emails.length) {
     const { data } = await admin.from('profiles').select('id').eq('id', userId).in('email', emails).maybeSingle()
@@ -32,7 +32,7 @@ async function hostsType(s: any, userId: string): Promise<boolean> {
   return false
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   await fresh()
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
@@ -66,7 +66,7 @@ Deno.serve(async (req: any) => {
       const s = await typeFor(row.event, { any: true })
       /* everything a booking gets the moment it is real: the room, the invitation, the week of chat */
       if (s) {
-        const v = videoOf(s) as any
+        const v = videoOf(s)
         if (v) { const { data: b2 } = await admin.from('bookings').select('*').eq('uid', uid).maybeSingle(); if (b2 && !b2.join_url) { const r = v.room(b2); await admin.from('bookings').update({ join_url: r.join_url, room: r.ref }).eq('uid', uid) } }
       }
       await sessionMail('session-booked', uid).catch((e) => console.warn('session-booked mail', String(e)))
@@ -97,7 +97,7 @@ Deno.serve(async (req: any) => {
     const email = guestEmail(body.email)
     if (!email) return json({ error: 'a valid email address is required', code: 'email' }, 400)
     const v = await judge(event, null, email, null)
-    if (!v.ok) return json({ error: v.reason, code: v.reason, next: (v as any).next ?? null, allowance: (v as any).allowance ?? null, sku: v.session?.sku ?? null }, v.reason === 'unpaid' ? 402 : 403)
+    if (!v.ok) return json({ error: v.reason, code: v.reason, next: v.next ?? null, allowance: v.allowance ?? null, sku: v.session?.sku ?? null }, v.reason === 'unpaid' ? 402 : 403)
     const s: any = v.session
     if (!mayBookAsGuest(siteCoaching.requireAuthToBook, s.requires)) return json({ error: 'this session is not available to guests', code: 'guest' }, 403)
     const priced = lengthChosen(s, minutesIn).sku || s.sku
@@ -138,7 +138,7 @@ Deno.serve(async (req: any) => {
     if (s.seats > 0 && invitees.length > s.seats) return json({ error: 'more than the seats', code: 'seats', seats: s.seats }, 400)
     if (schedulerIdOf(s) === 'native' && ((!s.hosts?.length && !s.team) || !(s.duration > 0))) return json({ error: 'this type has no host or no length yet', code: 'no-host' }, 503)
     const { data: accounts } = await admin.from('profiles').select('id, email, display_name').in('email', invitees)
-    const attendees = invitees.map((e) => { const a = (accounts ?? []).find((p: any) => String(p.email).toLowerCase() === e); return { email: e, name: a?.display_name || '', user_id: a?.id || null, timeZone } })
+    const attendees = invitees.map((e) => { const a = (accounts ?? []).find((p) => String(p.email).toLowerCase() === e); return { email: e, name: a?.display_name || '', user_id: a?.id || null, timeZone } })
     const first = attendees[0]
     try {
       const made = await makeBooking(s, { start, attendee: first, user_id: first.user_id, notes, phone, credit: null, forOthers: { attendees, made_by: user.id, made_by_name: name || email, host: typeof body.host === 'string' && body.host ? body.host : (s.hosts || []).includes(email.toLowerCase()) ? user.id : null } })   /* the caller takes it when they are among the type's hosts */
@@ -165,7 +165,7 @@ Deno.serve(async (req: any) => {
     owner = row.user_id ?? user.id
   }
   const v = await judge(event, owner, email, moving, minutesIn)
-  if (!v.ok) return json({ error: v.reason, code: v.reason, next: (v as any).next ?? null, allowance: (v as any).allowance ?? null, sku: v.session?.sku ?? null }, v.reason === 'unpaid' ? 402 : 403)
+  if (!v.ok) return json({ error: v.reason, code: v.reason, next: v.next ?? null, allowance: v.allowance ?? null, sku: v.session?.sku ?? null }, v.reason === 'unpaid' ? 402 : 403)
   const s: any = v.session
   if (schedulerIdOf(s) === 'native') {
     if ((!s.hosts?.length && !s.team) || !(s.duration > 0)) return json({ error: 'this type has no host or no length yet', code: 'no-host' }, 503)

@@ -69,7 +69,7 @@ function country(req: Request) {
   return null
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const origin = req.headers.get('origin') ?? ''
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsFor(origin) })
   const url = new URL(req.url), q: Record<string, string> = {}; url.searchParams.forEach((v, k) => { q[k] = v })

@@ -34,14 +34,14 @@ async function signed(path: string) {
 export type Printed = { provider: string; product: any; products?: Record<string, any> | null; key: string; covers: Record<string, string>; ref?: string | number | null }
 export type Edition = { edition: string; pages: number; printers: Record<string, Printed>; epub: boolean; foilStamp?: { title: string; author: string } | null }
 export const editionOf = (slug: string, contents?: string): Edition | null => {
-  const b = ((catalog() as any).editions ?? {})[slug]
+  const b = (catalog().editions ?? {})[slug]
   if (!b || !b.editions) return null
   return b.editions[contents || Object.keys(b.editions)[0]] ?? null
 }
-export const editionsOf = (slug: string): Record<string, Edition> => (((catalog() as any).editions ?? {})[slug] ?? {}).editions ?? {}
+export const editionsOf = (slug: string): Record<string, Edition> => ((catalog().editions ?? {})[slug] ?? {}).editions ?? {}
 /* the book behind its editions: its title and each format's offer key — there whether or not a
    format is on sale, since a proof is ordered before it is */
-export const bookOf = (slug: string): { title: string; keys: Record<string, string> } | null => { const b = ((catalog() as any).editions ?? {})[slug]; return b ? { title: b.title ?? slug, keys: b.keys ?? {} } : null }
+export const bookOf = (slug: string): { title: string; keys: Record<string, string> } | null => { const b = (catalog().editions ?? {})[slug]; return b ? { title: b.title ?? slug, keys: b.keys ?? {} } : null }
 /* the cover's key for what was chosen: a linen's by its cloth and foil, the others the format's one */
 export const coverKeyOf = (p: Printed, cloth?: string | null, foil?: string | null) => {
   if (p.products && cloth) { const k = `${p.key.split('-').slice(0, 2).join('-')}-${cloth}-${foil || 'gold'}`; if (p.covers[k]) return k }

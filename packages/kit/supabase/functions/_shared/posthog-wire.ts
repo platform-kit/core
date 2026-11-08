@@ -16,7 +16,7 @@
  * path and referrer, the timestamp, and the properties less the ids and the token.
  */
 export const PATHS = { events: ['/e', '/i/v0/e', '/capture', '/batch'], flags: ['/flags', '/decide'], config: /^\/array\/([^/]+)\/config(\.js)?$/, recordings: ['/s'], asset: /^\/static\/array\.js$/ }
-export const kindOf = (path: any) => {
+export const kindOf = (path: string) => {
   const p = String(path || '').replace(/\/+$/, '') || '/'
   if (PATHS.events.includes(p)) return 'events'
   if (PATHS.flags.includes(p)) return 'flags'
@@ -28,11 +28,11 @@ export const kindOf = (path: any) => {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 /* an id that is not a uuid (an SDK's own) becomes one by FNV-1a over it, twice, so it stays the same id */
-function asUuid(v: any) {
+function asUuid(v: string|null) {
   const s = String(v == null ? '' : v)
   if (UUID.test(s)) return s.toLowerCase()
   if (!s) return null
-  const h = (seed: any) => { let x = seed; for (const b of new TextEncoder().encode(s)) { x ^= b; x = Math.imul(x, 0x01000193) >>> 0 } return x.toString(16).padStart(8, '0') }
+  const h = (seed: number) => { let x = seed; for (const b of new TextEncoder().encode(s)) { x ^= b; x = Math.imul(x, 0x01000193) >>> 0 } return x.toString(16).padStart(8, '0') }
   const a = h(0x811c9dc5), b = h(0x01000193), c = h(0x9e3779b9), d = h(0x7f4a7c15)
   return `${a}-${b.slice(0, 4)}-4${b.slice(5, 8)}-8${c.slice(1, 4)}-${c.slice(4, 8)}${d}`
 }
@@ -42,7 +42,7 @@ function asUuid(v: any) {
 export const MAX_DECODED = 1 << 20
 
 /* the JSON of a PostHog body, whatever its encoding; `body` is the raw bytes, `contentType` and `query` the request's */
-export async function decodeBody(body: any, { contentType = '', query = {}, contentEncoding = '' } = {}) {
+export async function decodeBody(body: Uint8Array<any>, { contentType = '', query = {}, contentEncoding = '' } = {}) {
   let bytes = body instanceof Uint8Array ? body : new Uint8Array(body)
   const gz = (query as any).compression === 'gzip-js' || /gzip/i.test(contentEncoding) || (bytes.length > 2 && bytes[0] === 0x1f && bytes[1] === 0x8b)
   if (gz) {
@@ -63,7 +63,7 @@ export async function decodeBody(body: any, { contentType = '', query = {}, cont
   }
   return JSON.parse(text)
 }
-const b64 = (s: any) => { const bin = atob(s.replace(/\s/g, '')); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return new TextDecoder().decode(out) }
+const b64 = (s: string) => { const bin = atob(s.replace(/\s/g, '')); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return new TextDecoder().decode(out) }
 
 /* the key and the events of a decoded body: an event, an array, or a batch */
 export function decode(json: any, query: any = {}) {
@@ -74,7 +74,7 @@ export function decode(json: any, query: any = {}) {
 
 const DROP = new Set(['token', 'distinct_id', '$device_id', '$session_id'])
 /* one PostHog event as the door's row (the type, the ids, the path and referrer, the time, the properties) */
-export function toRow(e: any) {
+export function toRow(e: { properties: any; distinct_id: any; event: any; timestamp: any }) {
   const p = e.properties && typeof e.properties === 'object' ? e.properties : {}
   const device = asUuid(p.$device_id || p.$anon_distinct_id || p.distinct_id || e.distinct_id)
   const session = asUuid(p.$session_id) || device
@@ -92,9 +92,9 @@ export function toRow(e: any) {
 const safePath = (u: any) => { try { return new URL(String(u)).pathname } catch { return null } }
 
 /* what the SDK is told about flags, recording, surveys and compression: everything off, gzip-js welcome */
-export const FLAGS = (token: any) => ({
+export const FLAGS = (token: string) => ({
   flags: {}, featureFlags: {}, featureFlagPayloads: {}, errorsWhileComputingFlags: false, hasFeatureFlags: false,
   sessionRecording: false, surveys: false, heatmaps: false, autocapture_opt_out: true, capturePerformance: false, autocaptureExceptions: false,
   supportedCompression: ['gzip-js'], config: { enable_collect_everything: false }, siteApps: [], toolbarParams: {}, isAuthenticated: false, elementsChainAsString: false, token,
 })
-export const remoteConfigJs = (token: any) => `window._POSTHOG_REMOTE_CONFIG = window._POSTHOG_REMOTE_CONFIG || {};\nwindow._POSTHOG_REMOTE_CONFIG[${JSON.stringify(token)}] = { config: ${JSON.stringify(FLAGS(token))}, siteApps: [] };\n`
+export const remoteConfigJs = (token: string) => `window._POSTHOG_REMOTE_CONFIG = window._POSTHOG_REMOTE_CONFIG || {};\nwindow._POSTHOG_REMOTE_CONFIG[${JSON.stringify(token)}] = { config: ${JSON.stringify(FLAGS(token))}, siteApps: [] };\n`

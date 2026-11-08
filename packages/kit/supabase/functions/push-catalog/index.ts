@@ -14,7 +14,7 @@ import { ensureAll, OFFERS } from '../_shared/offers.ts'
 import { assertPaymentCapabilities, PaymentProviderError } from '../_shared/payment-provider.mts'
 import type { PaymentProviderAdapter } from '../_shared/payment-provider.d.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   /* the deploy sends the service key (in whichever form it holds it — lib.ts checks it against the admin API, never by string) */
@@ -32,7 +32,7 @@ Deno.serve(async (req: any) => {
     provider = await getPaymentProvider()
     assertPaymentCapabilities(provider, ['catalog.sync'])
   } catch (error: any) {
-    if (error instanceof PaymentProviderError) return json({ error: error.message, code: (error as any).code }, (error as any).status)
+    if (error instanceof PaymentProviderError) return json({ error: error.message, code: error.code }, error.status)
     throw error
   }
   if (provider.id === 'stripe' && !stripeConfigured) return stripeUnconfigured()
@@ -43,7 +43,7 @@ Deno.serve(async (req: any) => {
     return json({ offers: Object.keys(OFFERS).length, made, result })
   } catch (e: any) {
     const message = e instanceof Error ? e.message : String(e)
-    const status = e instanceof PaymentProviderError ? (e as any).status : 502
+    const status = e instanceof PaymentProviderError ? e.status : 502
     return json({ error: `${provider.id}: ${message}` }, status)
   }
 })

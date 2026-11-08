@@ -228,7 +228,7 @@ export function printify(env: any) {
         body: JSON.stringify({
           title: title || sku, description: title || sku,
           blueprint_id: product.blueprint, print_provider_id: product.provider,
-          variants: [], print_areas: [{ variant_ids: [], placeholders: [{ position: product.placement, images: [{ src: (artefacts as any).artwork, x: 0.5, y: 0.5, scale: 1, angle: 0 }] }] }],
+          variants: [], print_areas: [{ variant_ids: [], placeholders: [{ position: product.placement, images: [{ src: artefacts.artwork, x: 0.5, y: 0.5, scale: 1, angle: 0 }] }] }],
         }),
       })
       return { ref: String(made?.id ?? ''), paid: false, validated: true }
@@ -245,11 +245,11 @@ export function printify(env: any) {
           shipping_method: level === 'express' ? 2 : 1,
           send_shipping_notification: false,
           address_to: {
-            first_name: String((address as any).name ?? '').split(' ')[0] || 'Customer',
-            last_name: String((address as any).name ?? '').split(' ').slice(1).join(' ') || '.',
-            email: email ?? '', country: (address as any).country ?? 'US',
-            region: (address as any).state ?? '', address1: (address as any).line1 ?? '', address2: (address as any).line2 ?? '',
-            city: (address as any).city ?? '', zip: (address as any).postal_code ?? '',
+            first_name: String(address.name ?? '').split(' ')[0] || 'Customer',
+            last_name: String(address.name ?? '').split(' ').slice(1).join(' ') || '.',
+            email: email ?? '', country: address.country ?? 'US',
+            region: address.state ?? '', address1: address.line1 ?? '', address2: address.line2 ?? '',
+            city: address.city ?? '', zip: address.postal_code ?? '',
           },
         }),
       })

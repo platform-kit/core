@@ -40,7 +40,7 @@ export { SAMPLES }
 
 /* the email as it will arrive: the compiled design (or one handed in — the admin's, as it is
    being built) and the subject, filled with the order */
-export function renderEmail(kind: EmailKind, data: any, opts: { html?: string; subject?: string } = {}) {
+export function renderEmail(kind: EmailKind, data: { name?: string; subject: any; body?: string; unsubscribe_url?: string }, opts: { html?: string; subject?: string } = {}) {
   /* a subject dropped into the design as {{subject}} is filled first, so its own {{name}} is a name */
   const d = data && typeof data.subject === 'string' ? { ...data, subject: fill(data.subject, data) } : data
   const html = fill(opts.html ?? DESIGNS[kind] ?? '', d)
@@ -65,12 +65,12 @@ export async function sendEmail(to: string, kind: EmailKind, data: any, opts: { 
 
 /* ---- the data each email is made from, by the names tags.js gives them ---- */
 const money = (cents: number | null | undefined, currency: string) => (typeof cents === 'number' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: (currency || 'usd').toUpperCase() }).format(cents / 100) : '')
-export const addressLines = (a: any) => (a ? [a.name, a.line1, a.line2, [a.city, a.state, a.postal_code].filter(Boolean).join(' '), a.country].map((x) => String(x || '').trim()).filter(Boolean) : [])
+export const addressLines = (a: { name: any; line1: any; line2: any; city: any; state: any; postal_code: any; country: any }) => (a ? [a.name, a.line1, a.line2, [a.city, a.state, a.postal_code].filter(Boolean).join(' '), a.country].map((x) => String(x || '').trim()).filter(Boolean) : [])
 const firstName = (s: string | null | undefined) => String(s || '').trim().split(/\s+/)[0] || ''
 
 /* the order's confirmation, from Stripe's session and what the ledger read of its lines */
 export type BoughtLine = { title: string; detail: string; qty: number; amount: number; currency: string; book?: string | null; files?: boolean; ships?: boolean }
-export async function orderEmail(o: any, lines: BoughtLine[], opts: { guest: boolean; url: string | null }) {
+export async function orderEmail(o: { customer_details: { email: any; name: any }; customer_email: any; currency: any; shipping_details: any; collected_information: { shipping_details: any }; amount_subtotal: any; shipping_cost: { amount_total: any }; amount_total: any }, lines: BoughtLine[], opts: { guest: boolean; url: string | null }) {
   const to = o.customer_details?.email ?? o.customer_email ?? ''
   const currency = o.currency ?? lines[0]?.currency ?? 'usd'
   const ships = lines.some((l) => l.ships)

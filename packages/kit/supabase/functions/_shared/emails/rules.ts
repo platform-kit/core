@@ -19,7 +19,7 @@ const LIST_KEYS = { subscription: 'subscription', interest: 'interest', level: '
 const UNIT: any = { d: 1, w: 7, h: 1 / 24, m: 30 }
 
 /* "3d" → 3, "2w" → 14, "12h" → 0.5; a bare number is days; null when it is not a span */
-export function days(s: any) {
+export function days(s: string) {
   if (typeof s === 'number') return s
   const m = /^\s*(\d+(?:\.\d+)?)\s*([dwhm])?\s*$/i.exec(String(s ?? ''))
   return m ? Number(m[1]) * UNIT[(m[2] || 'd').toLowerCase()] : null
@@ -35,7 +35,7 @@ export function span(s: any) {
   if (t.endsWith('-')) { const d = days(t.slice(0, -1)); return d == null ? null : { max: d } }
   const d = days(t); return d == null ? null : { min: d }
 }
-const list = (v: any) => (Array.isArray(v) ? v : v == null || v === '' ? [] : String(v).split(/[,\s]+/)).map((x) => String(x).trim()).filter(Boolean)
+const list = (v: string|null) => (Array.isArray(v) ? v : v == null || v === '' ? [] : String(v).split(/[,\s]+/)).map((x) => String(x).trim()).filter(Boolean)
 
 /* the markdown's `audience` → the query's rules; `skusOf(slug)` widens a book's slug to its
    skus for bought / not-bought (the build knows the catalog; the admin passes it through) */
@@ -51,7 +51,7 @@ export function normalizeRules(audience: any, { skusOf = null } = {}) {
     if (l.length) out[key] = l
   }
   if (Array.isArray(a.answered)) {
-    const l = a.answered.map((r: any) => (typeof r === 'string' ? parseAnswered(r) : r && r.item ? { item: String(r.item), ...(r.truth ? { truth: String(r.truth) } : {}), ...(r.charge ? { charge: String(r.charge) } : {}) } : null)).filter(Boolean)
+    const l = a.answered.map((r: { item: any; truth: any; charge: any }) => (typeof r === 'string' ? parseAnswered(r) : r && r.item ? { item: String(r.item), ...(r.truth ? { truth: String(r.truth) } : {}), ...(r.charge ? { charge: String(r.charge) } : {}) } : null)).filter(Boolean)
     if (l.length) out.answered = l
   }
   if (a.verified === true || a.verified === false) out.verified = a.verified
@@ -59,7 +59,7 @@ export function normalizeRules(audience: any, { skusOf = null } = {}) {
   return out
 }
 /* "abundance.da569750 = yes" | "abundance.da569750 charge" | "abundance.da569750 = no, clear" */
-function parseAnswered(s: any) {
+function parseAnswered(s: string) {
   const m = /^\s*([\w-]+\.[\w-]+)\s*(?:=\s*(yes|no|partly))?\s*,?\s*(charge|clear|cognitive|emotional|somatic|behavioral)?\s*$/i.exec(String(s))
   if (!m) return null
   const r: any = { item: m[1] }
@@ -72,15 +72,15 @@ function parseAnswered(s: any) {
 export function describeRules(rules: any) {
   const r = rules || {}
   const out = []
-  const spanWords = (what: any, s: any) => s.none ? `never ${what}` : s.min != null && s.max != null ? `${what} ${fmt(s.min)}–${fmt(s.max)} ago` : s.min != null ? `${what} ${fmt(s.min)}+ ago` : `${what} within ${fmt(s.max)}`
+  const spanWords = (what: string, s: any) => s.none ? `never ${what}` : s.min != null && s.max != null ? `${what} ${fmt(s.min)}–${fmt(s.max)} ago` : s.min != null ? `${what} ${fmt(s.min)}+ ago` : `${what} within ${fmt(s.max)}`
   if (r.inactive) out.push(r.inactive.min != null && r.inactive.max == null ? `inactive ${fmt(r.inactive.min)}+` : spanWords('last active', r.inactive))
   if (r.signed_up) out.push(spanWords('signed up', r.signed_up))
   if (r.since_purchase) out.push(spanWords('bought', r.since_purchase))
   if (r.since_session) out.push(spanWords('had a session', r.since_session))
-  if (r.subscription) out.push(r.subscription.map((t: any) => (t === 'none' ? 'no membership' : t === 'any' ? 'any membership' : t)).join(' or '))
+  if (r.subscription) out.push(r.subscription.map((t: string) => (t === 'none' ? 'no membership' : t === 'any' ? 'any membership' : t)).join(' or '))
   if (r.interest) out.push('interested in ' + r.interest.join(', '))
   if (r.level) out.push('working at ' + r.level.join(' or '))
-  if (r.answered) out.push(r.answered.map((x: any) => `answered ${x.item}${x.truth ? ' = ' + x.truth : ''}${x.charge ? ' (' + x.charge + ')' : ''}`).join('; '))
+  if (r.answered) out.push(r.answered.map((x: { item: any; truth: string; charge: string }) => `answered ${x.item}${x.truth ? ' = ' + x.truth : ''}${x.charge ? ' (' + x.charge + ')' : ''}`).join('; '))
   if (r.bought) out.push('bought ' + r.bought.join(' or '))
   if (r.not_bought) out.push('never bought ' + r.not_bought.join(', '))
   if (r.role) out.push(r.role.join(' or '))
@@ -92,7 +92,7 @@ const fmt = (d: any) => (d < 1 ? Math.round(d * 24) + 'h' : d % 7 === 0 && d >= 
 
 /* the global policy (content/emails/policy.md) and a funnel's own cooldown, as days */
 export function normalizePolicy(p: any) {
-  const n = (v: any, d: any) => { const x = Number(v); return Number.isFinite(x) && x >= 0 ? x : d }
+  const n = (v: any, d: number) => { const x = Number(v); return Number.isFinite(x) && x >= 0 ? x : d }
   const q = p && typeof p === 'object' ? p : {}
   /* the hours before a native session at which the reader is reminded: a list (or a comma string from an older file), each 0 < h ≤ 720, unique, largest first; absent = 24 and 1; an empty list = none */
   const reminders = (v: any) => { if (v === undefined || v === null) return [24, 1]; const list = Array.isArray(v) ? v : String(v).split(/[,\s]+/); const out = [...new Set(list.map(Number).filter((x) => Number.isFinite(x) && x > 0 && x <= 720))]; return out.sort((a, b) => b - a) }

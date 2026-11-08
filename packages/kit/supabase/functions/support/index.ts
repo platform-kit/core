@@ -55,7 +55,7 @@ import { providersFrom } from '../_shared/agents/provider.ts'
 /* the site's own name, for the one place the desk has to call itself something */
 import * as SITE from '../_shared/pipe/site.js'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   let body: any
@@ -90,7 +90,7 @@ Deno.serve(async (req: any) => {
     const paths = (old ?? []).map((m: any) => m.attachment_path)
     if (paths.length) {
       await admin.storage.from('support').remove(paths)
-      await admin.from('support_messages').update({ attachment_path: null }).in('id', (old ?? []).map((m: any) => m.id))
+      await admin.from('support_messages').update({ attachment_path: null }).in('id', (old ?? []).map((m) => m.id))
     }
     return json({ removed: paths.length })
   }
@@ -150,7 +150,7 @@ Deno.serve(async (req: any) => {
     const { data: agent } = msg.agent_id ? await admin.from('profiles').select('display_name, email').eq('id', msg.agent_id).maybeSingle() : { data: null }
     /* the site's own name where an agent has none — never a constant: this said one customer's
        name to every other customer of every other site */
-    const name = agent?.display_name || firstName(agent?.email) || String((SITE as any).name || 'Support')
+    const name = agent?.display_name || firstName(agent?.email) || String(SITE.name || 'Support')
     const path = String(conv.path || '/').replace(/[?#].*$/, '')
     const sent = await sendEmail(to.email, 'support', { name, message: msg.body || (W_ATTACH(msg)), url: `${appUrl()}${path.startsWith('/') ? path : '/'}?support=${conv.id}` })
     if (!sent) return json({ skipped: 'no-smtp' })
@@ -275,7 +275,7 @@ Deno.serve(async (req: any) => {
     if (body?.offer) {
       const { data: row } = await admin.from('support_messages')
         .select('id, choices, choice_at').eq('id', String(body.offer)).eq('conversation_id', conv.id).maybeSingle()
-      const c = row ? findChoice((row as any).choices, String(body?.choice ?? '')) : null
+      const c = row ? findChoice(row.choices, String(body?.choice ?? '')) : null
       if (!row || !c) return json({ error: 'no such choice' }, 404)
       const { data: mine } = await admin.from('support_messages')
         .update({ choice_at: new Date().toISOString(), choice_key: c.key })
@@ -327,7 +327,7 @@ Deno.serve(async (req: any) => {
     const since = body?.since ? new Date(String(body.since)) : null
     if (since && !isNaN(since.getTime())) q = q.gt('created_at', since.toISOString())
     const { data: messages } = await q
-    const { contact_id: _c, ...pub } = conv as any
+    const { contact_id: _c, ...pub } = conv
     return json({ conversation: pub, messages: await withAgents(await withUrls(hush(messages ?? []))) })
   }
 

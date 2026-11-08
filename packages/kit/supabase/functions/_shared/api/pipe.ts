@@ -20,7 +20,7 @@ const MACHINE = ['enrich', 'introduce', 'render', 'save', 'set', 'quote', 'pdf',
 
 export function pipeFor(by: string, onEvent: ((e: unknown) => unknown) | null = null) {
   const store = rowsStore({ client: admin, by, url: '', key: '', onEvent })
-  const site = { root: '', modules: (SITE as any).modules, admin: {} }
+  const site = { root: '', modules: SITE.modules, admin: {} }
   const env = { root: '', store, by, theme: THEME, models: () => registry('', { site, siteModels: SITE_MODELS, store }), describe, refuseActions: (m: { key: string }, action: string) => (MACHINE.includes(action) || m.key === 'print' ? 'this runs from a checkout or the deploy, not the live admin' : null) }
   return { store, env, call: (method: string, seg: string, q: Record<string, string> = {}, body: unknown = null) => adminRequest(env, { method, seg, q, body }) }
 }

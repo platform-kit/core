@@ -30,7 +30,7 @@ const list = (v: any) => String(v || '').split(',').map((s) => s.trim()).filter(
 
 /* coturn's own scheme: a name that expires, and its HMAC. The person is in the name so a credential
    handed to one member is of no use to another once it is read off the wire. */
-export async function hmacCredential(secret: any, person: any, ttlSeconds: any) {
+export async function hmacCredential(secret: string|undefined, person: any, ttlSeconds: number) {
   const expiry = Math.floor(Date.now() / 1000) + Math.max(60, ttlSeconds || 3600)
   const username = expiry + ':' + String(person || 'guest')
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign'])

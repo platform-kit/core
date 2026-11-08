@@ -110,7 +110,7 @@ export function runLlm({ run, providers, model, admin, think = 'low', onSpend = 
            stage it died in or what it had already paid for */
         await admin.from('agent_steps').insert({
           run_id: run.id, n: n++, kind: 'model', name: asked, error: String(e.message || e), ms: Date.now() - began,
-          request: { stage: label || '', providers: providers.list.map((p: any) => p.id) },
+          request: { stage: label || '', providers: providers.list.map((p: { id: any }) => p.id) },
         })
         throw e
       }

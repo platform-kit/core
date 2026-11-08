@@ -11,7 +11,7 @@ import { rolesOf, isProvider } from '../_shared/roles.ts'
 import type { TablesInsert } from '../_shared/database.types.ts'
 
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/
-const ZONES = new Set((Intl as any).supportedValuesOf ? (Intl as any).supportedValuesOf('timeZone') : [])
+const ZONES = new Set(Intl.supportedValuesOf ? Intl.supportedValuesOf('timeZone') : [])
 const cleanRanges = (v: unknown): [string, string][] | null => {
   if (!Array.isArray(v)) return null
   const out: [string, string][] = []
@@ -19,7 +19,7 @@ const cleanRanges = (v: unknown): [string, string][] | null => {
   return out
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   const user = await getUser(req)
@@ -34,8 +34,8 @@ Deno.serve(async (req: any) => {
   const setOf = async (id?: unknown) => {
     const { data } = await admin.from('provider_schedules').select('*').eq('user_id', user.id)
     const all = data || []
-    if (id) return all.find((s: any) => s.id === String(id)) ?? null
-    return all.find((s: any) => s.is_default) ?? all[0] ?? null
+    if (id) return all.find((s) => s.id === String(id)) ?? null
+    return all.find((s) => s.is_default) ?? all[0] ?? null
   }
   const read = async () => {
     const { data: sets } = await admin.from('provider_schedules')
@@ -43,7 +43,7 @@ Deno.serve(async (req: any) => {
       .eq('user_id', user.id).order('is_default', { ascending: false }).order('name')
     const { data: overrides } = await admin.from('provider_overrides').select('id, day, ranges, note, schedule_id').eq('user_id', user.id).order('day')
     const all = sets ?? []
-    const dflt = all.find((s: any) => s.is_default) ?? all[0] ?? null
+    const dflt = all.find((s) => s.is_default) ?? all[0] ?? null
     /* `hours` is the default set, as it always was: a surface that has not learned about several
        still reads the one it used to */
     return { schedules: all, hours: dflt, overrides: overrides ?? [] }

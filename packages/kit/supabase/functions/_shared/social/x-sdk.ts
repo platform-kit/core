@@ -166,7 +166,7 @@ export const xAdapter = defineSocialAdapter({
       targets: [{ account: refFor(account) }] as const,
       content: { text, media: await mediaContent(attachments) },
     })
-    return { valid: prepared.ok, issues: prepared.issues.map((issue: any) => ({ code: issue.code, message: issue.message })) }
+    return { valid: prepared.ok, issues: prepared.issues.map((issue: { code: any; message: any }) => ({ code: issue.code, message: issue.message })) }
   },
   async uploadMedia({ account, media, tokens }: any) {
     const social = clientFor(account, tokens)
@@ -180,7 +180,7 @@ export const xAdapter = defineSocialAdapter({
       targets: [{ account: refFor(account) }] as const,
       content: {
         text,
-        media: media.map((item: any) => ({
+        media: media.map((item: { kind: any; providerMediaId: string; mimeType: any; fileName: any; size: any }) => ({
           kind: item.kind,
           source: { kind: 'media-ref' as const, ref: JSON.parse(item.providerMediaId) },
           mimeType: item.mimeType,
@@ -206,11 +206,11 @@ export const xAdapter = defineSocialAdapter({
     const social = clientFor(account, tokens)
     const page = await social.posts.list(refFor(account), { limit: 100 })
     if (providerPostId) {
-      const found = page.items.find((post: any) => post.id === providerPostId)
+      const found = page.items.find((post: { id: any }) => post.id === providerPostId)
       if (found) return { outcome: 'published' as const, providerPostId, publishedAt: String(found.created_at || '') }
     }
     const lowerBound = Date.parse(submittedAt) - 60_000
-    const matches = page.items.filter((post: any) => {
+    const matches = page.items.filter((post: { text: any; id: any; created_at: string }) => {
       if (post.text !== text || typeof post.id !== 'string') return false
       const createdAt = typeof post.created_at === 'string' ? Date.parse(post.created_at) : NaN
       return Number.isFinite(createdAt) && createdAt >= lowerBound

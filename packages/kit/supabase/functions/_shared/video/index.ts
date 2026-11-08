@@ -31,7 +31,7 @@ import { videoIdOf } from './choose.ts'
 
 export function videos({ db, env, ice }: any) {
   const VIDEO: any = { livekit: livekit({ db, env }), 'cal-video': calVideo({ env }), mesh: mesh({ db, env, ice }) }
-  const video = (id: any) => { const v = VIDEO[id]; if (!v) throw new Error('no video provider named ' + id); return v }
+  const video = (id: string) => { const v = VIDEO[id]; if (!v) throw new Error('no video provider named ' + id); return v }
   const videoOf = (type: any) => { const id = videoIdOf(type, env); return id ? video(id) : null }
   return { VIDEO, video, videoOf }
 }

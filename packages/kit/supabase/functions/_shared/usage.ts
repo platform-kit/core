@@ -304,13 +304,13 @@ export async function reportPendingUsage(limit = 100) {
   const incrementalRows = incrementalReports ?? []
   const { data: incrementalEvents, error: incrementalEventsError } = incrementalRows.length
     ? await admin.from('usage_events').select('id, subscription_id, period_start')
-      .in('id', incrementalRows.map((report: any) => report.usage_event_id))
+      .in('id', incrementalRows.map((report) => report.usage_event_id))
     : { data: [], error: null }
   if (incrementalEventsError) throw new Error(`incremental usage periods could not be loaded: ${incrementalEventsError.message}`)
-  const incrementalEventsById = new Map((incrementalEvents ?? []).map((event: any) => [event.id, event]))
+  const incrementalEventsById = new Map((incrementalEvents ?? []).map((event) => [event.id, event]))
   for (const report of incrementalRows) {
     try {
-      const event: any = incrementalEventsById.get(report.usage_event_id)
+      const event = incrementalEventsById.get(report.usage_event_id)
       if (!event?.subscription_id || !event.period_start) {
         throw new Error(`incremental usage report ${report.identifier} has no subscription period`)
       }

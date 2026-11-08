@@ -95,7 +95,7 @@ export function createSpeechHandler({
     if (req.method !== 'POST') return json({ error: 'POST' }, 405)
 
     const bearer = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim()
-    const grant: any = await open(bearer, service)
+    const grant = await open(bearer, service)
     if (grant.error) return json({ error: `grant ${grant.error}` }, 401)
 
     if (!base || !key) {

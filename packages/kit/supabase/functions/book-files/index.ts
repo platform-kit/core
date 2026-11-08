@@ -11,7 +11,7 @@ import { admin, json, preflight, getUser } from '../_shared/lib.ts'
 import { OFFERS } from '../_shared/offers.ts'
 import { editionsOf } from '../_shared/print.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pf = preflight(req); if (pf) return pf
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   const user = await getUser(req)

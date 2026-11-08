@@ -16,7 +16,7 @@ import { rolesOf, isAdmin } from '../_shared/roles.ts'
 import { offerByKey } from '../_shared/offers.ts'
 import { submitPrintOrder, refreshPrintOrder, editionOf, bookOf, chosenOf } from '../_shared/print.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pf = preflight(req); if (pf) return pf
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   const user = await getUser(req)

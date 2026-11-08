@@ -98,7 +98,7 @@ export function checkSupplier(x: any) {
   return bad
 }
 
-export function printers(env: any, own = []) {
+export function printers(env: { (k: string): any; (k: string): any }, own = []) {
   const PRINTERS: any = { lulu: lulu(env), mixam: mixam(env), bookvault: bookvault(env), printify: printify(env), 'post-room': postRoom(env), download: download(env) }
   /* and the site’s own, refused by name at registration rather than halfway through a sale */
   for (const make of own) {

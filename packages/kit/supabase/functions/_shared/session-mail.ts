@@ -17,7 +17,7 @@ import type { Json } from './database.types.ts'
 
 export type SessionMailKind = 'session-booked' | 'session-moved' | 'session-cancelled' | 'session-reminder'
 const APP = () => (Deno.env.get('APP_URL') ?? '').replace(/\/$/, '')
-const W = ((strings as any).session ?? {}) as Record<string, string>
+const W = (strings.session ?? {}) as Record<string, string>
 const fill = (t: string, m: Record<string, unknown>) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : String(m[k])))
 /* THE ANSWERS A BOOKING COLLECTED, as { label, value } for the letter — the question as it was
    asked, not the field's key, because a key is not a question. */
@@ -31,8 +31,8 @@ async function answersOf(responseId: string): Promise<Array<{ label: string; val
   const fields = (doc?.fields ?? doc?.model?.fields ?? []) as any[]
   const labelOf = (key: string) => { const q = fields.find((y) => y.name === key)?.question; return q && q !== '...' ? q : key }
   const order = fields.map((y) => y.name)
-  rows.sort((a: any, b: any) => (order.indexOf(a.field) + 1 || 99) - (order.indexOf(b.field) + 1 || 99))
-  return rows.map((r: any) => ({
+  rows.sort((a, b) => (order.indexOf(a.field) + 1 || 99) - (order.indexOf(b.field) + 1 || 99))
+  return rows.map((r) => ({
     label: labelOf(r.field),
     value: r.file_name ? String(r.file_name) : Array.isArray(r.value) ? r.value.join(', ') : r.value && typeof r.value === 'object' ? JSON.stringify(r.value) : String(r.value ?? ''),
   }))
@@ -76,7 +76,7 @@ export async function sessionMail(kind: SessionMailKind, uid: string, extra: Rec
   const addresses = [...new Set([b.email, ...(b.attendee_emails || [])].filter((e): e is string => Boolean(e)).map((e) => String(e).toLowerCase()))]
   const { data: people } = addresses.length ? await admin.from('profiles').select('email, display_name').in('email', addresses) : { data: [] }
   for (const to of addresses) {
-    const who = (people ?? []).find((p: any) => String(p.email).toLowerCase() === to)
+    const who = (people ?? []).find((p) => String(p.email).toLowerCase() === to)
     // @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types 'SessionMailKind' and '"session-to-confirm"' have no overlap.
     if (kind === 'session-to-confirm') continue   /* that one is the host's */
     out.push(await sendEmail(to, kind, { ...base, name: first(who?.display_name || (to === String(b.email || '').toLowerCase() ? b.name : ''), to), with: host?.display_name || '', when: when(b.start_at, readerTz) }, held ? {} : { ical: { method, content: invite } }))

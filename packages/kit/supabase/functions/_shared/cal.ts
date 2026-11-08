@@ -16,7 +16,7 @@ const env = (k: string) => Deno.env.get(k) ?? ''
 export const { SCHEDULERS, scheduler, schedulerOf } = schedulers({ db: admin, env })
 /* the video rooms behind their own seam: a provider for the one kind of place that is a room on this site */
 export const { VIDEO, video, videoOf } = videos({ db: admin, env })
-export const CAL = SCHEDULERS.cal as any
+export const CAL = SCHEDULERS.cal
 
 export type CalRecording = { id: string | number; url: string; startTs: number; duration: number; status: string }
 export type CalTranscript = { format: string; url: string }

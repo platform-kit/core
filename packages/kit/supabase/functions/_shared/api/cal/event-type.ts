@@ -4,7 +4,7 @@
  * under Node against cal.com's published shape. The id is a stable positive integer from the slug (FNV-1a, 31 bits),
  * given once and always the same, since cal.com's ids are integers and its clients type them so.
  */
-export function eventTypeId(slug: any) {
+export function eventTypeId(slug: string) {
   let h = 0x811c9dc5
   for (const ch of String(slug)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0 }
   return (h & 0x7fffffff) || 1
@@ -29,11 +29,11 @@ const FIELD: any = { text: 'text', email: 'email', url: 'url', tel: 'phone', num
  * @param {object} s      the session, as catalog.json holds it
  * @param {object} o      { hosts: [{ id, name, email, priority, weight, fixed }], price, site, form }
  */
-export function eventTypeOf(s: any, o: any = {}) {
-  const users = (o.hosts || []).map((h: any) => ({ id: eventTypeId('user:' + (h.email || h.id)), name: h.name || h.email || '', email: h.email || '', username: String(h.email || '').split('@')[0], avatarUrl: null, weekStart: 'Monday', brandColor: null, darkBrandColor: null, metadata: {} }))
+export function eventTypeOf(s: { title: any; slug: any; event?: string; scheduler: any; username?: string|null; requires: any; below: any; weekly: any; monthly: any; sku: any; duration: any; hosts: any; seats: any; buffer: any; notice: any; where: any; record: any; hours?: any; repeats?: any; page?: any; limits?: any; rota?: any; assign?: any; lengths?: any; line?: any; interval?: any; offset?: any; repeat?: any; team?: any; form?: any; name?: any; schedule?: any; confirm?: any; windowDays?: any; windowFrom?: any; windowTo?: any; }, o: any = {}) {
+  const users = (o.hosts || []).map((h: { email: any; id: any; name: any; }) => ({ id: eventTypeId('user:' + (h.email || h.id)), name: h.name || h.email || '', email: h.email || '', username: String(h.email || '').split('@')[0], avatarUrl: null, weekStart: 'Monday', brandColor: null, darkBrandColor: null, metadata: {} }))
   const page = s.page || {}
   const limits = s.limits || {}
-  const rota = Object.fromEntries((s.rota || []).map((r: any) => [String(r.email || '').toLowerCase(), r]))
+  const rota = Object.fromEntries((s.rota || []).map((r: { email: any; }) => [String(r.email || '').toLowerCase(), r]))
   /* HOW A BOOKING IS SHARED, under cal.com's own name. One host is a rota with one name in it, so
      it answers ROUND_ROBIN rather than inventing a fourth word cal.com's clients do not know. */
   const schedulingType = SCHEDULING[String(s.assign || 'round-robin')] || 'ROUND_ROBIN'
@@ -46,7 +46,7 @@ export function eventTypeOf(s: any, o: any = {}) {
     { type: 'email', slug: 'email', required: true, isDefault: true },
     ...(page.notes === false ? [] : [{ type: 'notes', slug: 'notes', required: false, isDefault: true }]),
     ...(s.where && s.where.kind === 'phone' && !s.where.number ? [{ type: 'phone', slug: 'attendeePhoneNumber', required: true, isDefault: true }] : []),
-    ...((o.form && o.form.fields) || []).map((x: any) => ({
+    ...((o.form && o.form.fields) || []).map((x: { kind: string|number; name: any; question: string; required: any; values: string|any[]; }) => ({
       type: FIELD[x.kind] || 'text', slug: x.name, label: x.question && x.question !== '...' ? x.question : x.name,
       required: !!x.required, isDefault: false,
       ...(Array.isArray(x.values) && x.values.length ? { options: x.values } : {}),
@@ -57,7 +57,7 @@ export function eventTypeOf(s: any, o: any = {}) {
     lengthInMinutes: s.duration || 0,
     /* every length it offers, the default first — one length answers as a list of one, which is what
        cal.com does for a type that offers no choice */
-    lengthInMinutesOptions: (Array.isArray(s.lengths) && s.lengths.length ? s.lengths : [{ minutes: s.duration || 0 }]).map((l: any) => (typeof l === 'number' ? l : l.minutes)),
+    lengthInMinutesOptions: (Array.isArray(s.lengths) && s.lengths.length ? s.lengths : [{ minutes: s.duration || 0 }]).map((l: { minutes: any; }) => (typeof l === 'number' ? l : l.minutes)),
     title: s.title || s.slug, slug: s.slug, description: s.line || '',
     locations: locationsOf(s.where), bookingFields,
     disableGuests: true,
@@ -87,7 +87,7 @@ export function eventTypeOf(s: any, o: any = {}) {
     confirmationPolicy: !s.confirm ? { type: 'disabled' } : s.confirm === 'notice' ? { type: 'time', noticeThreshold: { count: s.notice || 0, unit: 'hours' }, blockUnconfirmedBookingsInBooker: true } : { type: 'always', blockUnconfirmedBookingsInBooker: true },
     color: null, customName: s.name || null, users,
     /* who gives it, and how the rota treats each */
-    hosts: (o.hosts || []).map((h: any) => { const r = rota[String(h.email || '').toLowerCase()] || {}; return { userId: eventTypeId('user:' + (h.email || h.id)), name: h.name || h.email || '', mandatory: !!r.fixed, priority: ['lowest', 'low', 'medium', 'high', 'highest'][r.priority == null ? 2 : r.priority], scheduleId: null } }),
+    hosts: (o.hosts || []).map((h: { email: any; id: any; name: any; }) => { const r = rota[String(h.email || '').toLowerCase()] || {}; return { userId: eventTypeId('user:' + (h.email || h.id)), name: h.name || h.email || '', mandatory: !!r.fixed, priority: ['lowest', 'low', 'medium', 'high', 'highest'][r.priority == null ? 2 : r.priority], scheduleId: null } }),
     /* a type given by a team takes every member, so cal.com's own word for that is true */
     schedulingType, assignAllTeamMembers: !!(s.team && !(s.hosts || []).length), teamId: s.team ? eventTypeId('team:' + s.team) : null,
     bookingLimitsCount: { ...(limits.day ? { day: limits.day } : {}), ...(limits.week ? { week: limits.week } : {}), ...(limits.month ? { month: limits.month } : {}), ...(limits.year ? { year: limits.year } : {}) },

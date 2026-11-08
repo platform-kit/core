@@ -23,7 +23,7 @@ assert.equal(
   source,
   'the served Social function must be assembled from the kit source',
 )
-assert.match(source, /Deno\.serve\(async \(req(: any)?\) => \{/)
+assert.match(source, /Deno\.serve\(async \(req(: [A-Za-z]+)?\) => \{/)
 assert.doesNotMatch(source, /from\s+['"]node:|from\s+['"](?:fs|path|child_process)['"]/)
 assert.equal(
   fs.readFileSync(assembledWebhookPath, 'utf8'),

@@ -62,7 +62,7 @@ export function commandOf(e: { key: any; metaKey: any; ctrlKey: any; shiftKey: a
 }
 
 /* how to write a shortcut for a person to read, in the symbols their machine uses */
-export function sayKey(k: { command: string; mod: boolean; shift: boolean; key: string; alt?: undefined }|{ command: string; mod: boolean; key: string; shift?: undefined; alt?: undefined }|{ command: string; alt: boolean; key: string; mod?: undefined; shift?: undefined }|{ command: string; alt: boolean; shift: boolean; key: string; mod?: undefined }|{ command: string; key: string; mod?: undefined; shift?: undefined; alt?: undefined }, { mac = true } = {}) {
+export function sayKey(k: any, { mac = true } = {}) {
   const out = []
   if (k.mod) out.push(mac ? '⌘' : 'Ctrl')
   if (k.alt) out.push(mac ? '⌥' : 'Alt')

@@ -12,17 +12,17 @@
  */
 export const INBOX_ID = 1
 export const ACCOUNT_ID = 1
-const unix = (iso: any) => (iso ? Math.floor(new Date(iso).getTime() / 1000) : null)
+const unix = (iso: string|number|Date|null) => (iso ? Math.floor(new Date(iso).getTime() / 1000) : null)
 const TYPE_N: any = { contact: 0, agent: 1, system: 2 }
 export const TYPE_WORD = { contact: 'incoming', agent: 'outgoing', system: 'activity' }
-const attachmentOf = (m: any) => {
+const attachmentOf = (m: { attachment_path: any; url: any; attachment_type: any; kind: string; id: any; attachment_name: any; attachment_size: any; seconds: any }) => {
   if (!m.attachment_path && !m.url) return []
   const type = String(m.attachment_type || '')
   const fileType = m.kind === 'voice' || type.startsWith('audio/') ? 'audio' : type.startsWith('image/') ? 'image' : 'file'
   return [{ id: m.id, message_id: m.id, account_id: ACCOUNT_ID, file_type: fileType, extension: String(m.attachment_name || '').split('.').pop() || null, data_url: m.url || null, thumb_url: fileType === 'image' ? (m.url || null) : null, file_size: m.attachment_size ?? null, ...(m.seconds ? { duration: m.seconds } : {}) }]
 }
-export const senderOf = (m: any, contact: any, agentName: any) => (m.author === 'agent' ? { id: m.agent_id || null, name: agentName || m.agent_name || null, type: 'user', email: null, avatar_url: null, thumbnail: null, availability_status: 'online' } : m.author === 'contact' ? contactSender(contact) : null)
-export const contactSender = (c: any) => (c ? { id: c.id, name: c.name || 'Guest', email: c.email || null, type: 'contact', avatar_url: null, thumbnail: null, phone_number: null, identifier: c.user_id || null, custom_attributes: c.custom_attributes || {} } : null)
+export const senderOf = (m: { author: string; agent_id: any; agent_name: any }, contact: any, agentName: any) => (m.author === 'agent' ? { id: m.agent_id || null, name: agentName || m.agent_name || null, type: 'user', email: null, avatar_url: null, thumbnail: null, availability_status: 'online' } : m.author === 'contact' ? contactSender(contact) : null)
+export const contactSender = (c: { id: any; name: any; email: any; user_id: any; custom_attributes: any }|null) => (c ? { id: c.id, name: c.name || 'Guest', email: c.email || null, type: 'contact', avatar_url: null, thumbnail: null, phone_number: null, identifier: c.user_id || null, custom_attributes: c.custom_attributes || {} } : null)
 
 /** a message as Chatwoot answers one (the Client API and the Application API share it) */
 export function messageOf(m: any, { contact = null, agentName = null, conversationId = null, echoId = null } = {}) {
@@ -41,7 +41,7 @@ export function messageOf(m: any, { contact = null, agentName = null, conversati
      */
     ...(!withdrawn && (m.choices || []).length
       ? { content_type: 'input_select',
-          content_attributes: { items: m.choices.map((c: any) => ({ title: c.text, value: c.key })), ...(m.choice_key ? { taken: m.choice_key } : {}) } }
+          content_attributes: { items: m.choices.map((c: { text: any; key: any }) => ({ title: c.text, value: c.key })), ...(m.choice_key ? { taken: m.choice_key } : {}) } }
       : {}),
   }
 }
@@ -50,13 +50,13 @@ export function clientConversationOf(c: any, { contact = null, messages = [] } =
   return { id: c.id, inbox_id: INBOX_ID, status: c.status, contact_last_seen_at: unix(c.contact_read_at), agent_last_seen_at: unix(c.agent_read_at), messages, contact: contactSender(contact), custom_attributes: c.custom_attributes || {}, additional_attributes: { path: c.path || null, source: c.source || null }, pubsub_token: c.listen_key || null, created_at: unix(c.created_at) }
 }
 /** the Client API's contact */
-export function clientContactOf(c: any, sourceId: any, { pubsubToken = null } = {}) {
+export function clientContactOf(c: { id: any; name: any; email: any; user_id: any; custom_attributes: any; verified: any }, sourceId: string, { pubsubToken = null } = {}) {
   return { id: c.id, source_id: sourceId, name: c.name || null, email: c.email || null, phone_number: null, identifier: c.user_id || null, pubsub_token: pubsubToken, custom_attributes: c.custom_attributes || {}, additional_attributes: { verified: !!c.verified }, avatar_url: null }
 }
 /** an agent as Chatwoot lists one */
 export const agentOf = (p: any) => (p ? { id: p.id, name: p.name || p.display_name || null, email: p.email || null, role: (p.roles || []).includes('admin') ? 'administrator' : 'agent', availability_status: 'online', auto_offline: false, confirmed: true, available_name: p.name || p.display_name || null, thumbnail: null, account_id: ACCOUNT_ID } : null)
 /** the Application API's conversation */
-export function conversationOf(c: any, { contact = null, assignee = null, messages = [], unread = 0, waitingSince = null } = {}) {
+export function conversationOf(c: { id: any; status: any; last_message_at: any; created_at: any; last_agent_at: any; agent_read_at: any; contact_read_at: any; path: any; source: any; prompt_id: any; resolved_at: any; custom_attributes: any }, { contact = null, assignee = null, messages = [], unread = 0, waitingSince = null } = {}) {
   const last = messages.length ? messages[messages.length - 1] : null
   return {
     id: c.id, inbox_id: INBOX_ID, account_id: ACCOUNT_ID, status: c.status, muted: false, can_reply: true, channel: 'Channel::WebWidget', priority: null, snoozed_until: null,
@@ -83,7 +83,7 @@ export const accountOf = (site: any = {}) => ({ id: ACCOUNT_ID, name: site.name 
 export const webhookOf = (w: any) => ({ id: w.id, url: w.url, subscriptions: w.subscriptions || [], account_id: ACCOUNT_ID, inbox_id: null, webhook_type: 'account', last_at: w.last_at || null, last_error: w.last_error || null })
 export const EVENTS = ['conversation_created', 'conversation_status_changed', 'conversation_updated', 'message_created', 'message_updated', 'contact_created', 'contact_updated', 'webwidget_triggered']
 /** the webhook payload: a message event carries the message with the conversation; a conversation event the conversation */
-export function webhookPayload(event: any, { message = null, conversation = null, site = {} } = {}) {
+export function webhookPayload(event: string, { message = null, conversation = null, site = {} } = {}) {
   const inbox = { id: INBOX_ID, name: (site as any).name || 'Support' }
   if (message) {
     // @ts-expect-error TS2700, from the conversion: Rest types may only be created from object types.
@@ -94,4 +94,4 @@ export function webhookPayload(event: any, { message = null, conversation = null
   return { event, ...conversation, inbox, account: accountOf(site) }
 }
 /** Chatwoot's Client API contact_identifier → the contact token (the source_id is the token itself) */
-export const errorOf = (message: any, code = null) => ({ error: message, ...(code ? { code } : {}), errors: [message] })
+export const errorOf = (message: string, code = null) => ({ error: message, ...(code ? { code } : {}), errors: [message] })

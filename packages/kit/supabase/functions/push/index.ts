@@ -21,7 +21,7 @@ import strings from '../_shared/emails/strings.json' with { type: 'json' }
 
 const env = (k: string) => Deno.env.get(k) ?? ''
 const configured = () => !!(env('VAPID_PUBLIC_KEY') || env('VITE_VAPID_PUBLIC_KEY')) && !!env('VAPID_PRIVATE_KEY')
-const WORDS = ((strings as any).push ?? {}) as Record<string, { title?: string; body?: string; url?: string }>
+const WORDS = (strings.push ?? {}) as Record<string, { title?: string; body?: string; url?: string }>
 /* `space-mention-sealed` is the same notification from an end-to-end encrypted room: the same
    facts (who, which room) and no words, because there are none to have — a topic of its own
    rather than an `if` here, so the sentence lives in the strings with every other one */
@@ -60,7 +60,7 @@ async function sendAll(rows: any[], payload: Record<string, unknown>) {
   return { sent, gone, failed }
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   let body: any
@@ -82,9 +82,9 @@ Deno.serve(async (req: any) => {
     const { data: rows } = await admin.from('push_subscriptions').select('*').contains('topics', [topic])
     if (!rows?.length) return json({ sent: 0 })
     /* the row says what was asked; the role says what may be had */
-    const { data: profs } = await admin.from('profiles').select('id, role').in('id', [...new Set(rows.map((r: any) => r.user_id))])
-    const role = new Map((profs ?? []).map((p: any) => [p.id, p.role]))
-    const allowed = rows.filter((r: any) => { const ro = role.get(r.user_id); return ro === 'admin' || (ro === 'support' && STAFF_TOPICS.includes(topic)) })
+    const { data: profs } = await admin.from('profiles').select('id, role').in('id', [...new Set(rows.map((r) => r.user_id))])
+    const role = new Map((profs ?? []).map((p) => [p.id, p.role]))
+    const allowed = rows.filter((r) => { const ro = role.get(r.user_id); return ro === 'admin' || (ro === 'support' && STAFF_TOPICS.includes(topic)) })
     return json(await sendAll(allowed, compose(topic, body?.data ?? {})))
   }
 

@@ -191,7 +191,7 @@ async function releaseBudgets(session: { metadata?: Readonly<Record<string, stri
   }
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   let provider: PaymentProviderAdapter
   let events: readonly PaymentProviderEvent[]
@@ -201,8 +201,8 @@ Deno.serve(async (req: any) => {
     events = (await provider.verifyWebhook(req)).map((event) => normalizePaymentEvent(provider.id, event))
   } catch (error: any) {
     const message = error instanceof Error ? error.message : String(error)
-    const status = error instanceof PaymentProviderError ? (error as any).status : 502
-    return json({ error: message, ...(error instanceof PaymentProviderError ? { code: (error as any).code } : {}) }, status)
+    const status = error instanceof PaymentProviderError ? error.status : 502
+    return json({ error: message, ...(error instanceof PaymentProviderError ? { code: error.code } : {}) }, status)
   }
   let duplicates = 0
   let applied = 0

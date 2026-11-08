@@ -12,7 +12,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { BUCKET } from '../_shared/recordings.ts'
 import type { Database } from '../_shared/database.types.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'POST only' }, 405)
   const user = await getUser(req); if (!user) return json({ error: 'sign in' }, 401)

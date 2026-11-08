@@ -14,7 +14,7 @@ const slugify = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g,
 const iso = (v: any) => (v ? new Date(v).toISOString() : null)
 
 export function answerOf(field: any, a: any, fileUrl: any) {
-  const type = (TYPE_OF as any)[field.kind] || 'short_text'
+  const type = TYPE_OF[field.kind] || 'short_text'
   const head = { field: { id: field.name, type, ref: field.name } }
   const v = a.value
   if (a.file_path) return { ...head, type: 'file_url', file_url: fileUrl ? fileUrl(a.file_path) : a.file_path }

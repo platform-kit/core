@@ -5,16 +5,16 @@
  * product that sells it share a slug), an asset's a hash of its address (two FNV-1a passes, sixteen hex characters), a
  * content type's the model's key made singular and camelCase.
  */
-export const entryId = (typeId: any, path: any) => (String(typeId || '') + '.' + String(path || '').replace(/\//g, '.')).replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 64)
+export const entryId = (typeId: any, path: string) => (String(typeId || '') + '.' + String(path || '').replace(/\//g, '.')).replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 64)
 
-function fnv(s: any, seed: any) {
+function fnv(s: any, seed: number) {
   let h = seed >>> 0
   for (const b of new TextEncoder().encode(String(s))) { h ^= b; h = Math.imul(h, 0x01000193) >>> 0 }
   return h.toString(16).padStart(8, '0')
 }
 /* an asset the Management API made lives at /uploads/api/<id>/<file>, so the id the client chose is the id the address answers */
-export const assetId = (address: any) => { const m = /^\/uploads\/api\/([A-Za-z0-9._-]{1,64})\/[^/]+$/.exec(String(address || '')); return m ? m[1] : fnv(address, 0x811c9dc5) + fnv(address, 0x9e3779b9) }
-export const hashOf = (s: any) => fnv(s, 0x811c9dc5) + fnv(s, 0x01000193)
+export const assetId = (address: string) => { const m = /^\/uploads\/api\/([A-Za-z0-9._-]{1,64})\/[^/]+$/.exec(String(address || '')); return m ? m[1] : fnv(address, 0x811c9dc5) + fnv(address, 0x9e3779b9) }
+export const hashOf = (s: string) => fnv(s, 0x811c9dc5) + fnv(s, 0x01000193)
 
 /*
  * A model's key as a content type id: the singular the model names, else the key with a trailing `s` dropped, camelCase.
@@ -23,7 +23,7 @@ export const hashOf = (s: any) => fnv(s, 0x811c9dc5) + fnv(s, 0x01000193)
  * one, and two content types under one id is a space where a query, a link validation and an entry's id all mean two
  * things at once (the demo had it: its Events model and the spaces' events).
  */
-export function typeIdOf(model: any) {
+export function typeIdOf(model: { key: any; model: { singular: any; }; }) {
   const key = String(model.key || '')
   const own = key.startsWith('models/')
   const single = model.model && model.model.singular ? String(model.model.singular) : null

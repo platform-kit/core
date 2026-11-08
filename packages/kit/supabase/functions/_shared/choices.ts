@@ -21,7 +21,7 @@
 export const CHOICE_CAP = { many: 6, chars: 70, deep: 3 }
 
 /* the markdown's closing `- ` list → { text, choices: [{ key, text }] }; the key is the words, slugged */
-export const choiceKey = (t: any) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40)
+export const choiceKey = (t: string) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40)
 /* A prompt's choices are a tree: a `- ` list closing its markdown, nested by two spaces —
  *   - I have questions about coaching
  *     - how much does it cost?
@@ -33,7 +33,7 @@ export const choiceKey = (t: any) => String(t || '').toLowerCase().replace(/[^a-
 export function joinChoices(text: any, choices: any) {
   const line = String(text || '').replace(/\s+$/, '')
   const rows: any = []
-  const walk = (list: any, depth: any) => { for (const c of list || []) { const t = String(typeof c === 'string' ? c : c && c.text || '').trim(); if (!t) continue; rows.push('  '.repeat(depth) + '- ' + t); walk(typeof c === 'string' ? [] : c.children, depth + 1) } }
+  const walk = (list: any, depth: number) => { for (const c of list || []) { const t = String(typeof c === 'string' ? c : c && c.text || '').trim(); if (!t) continue; rows.push('  '.repeat(depth) + '- ' + t); walk(typeof c === 'string' ? [] : c.children, depth + 1) } }
   walk(choices, 0)
   return line + (rows.length ? '\n\n' + rows.join('\n') : '')
 }
@@ -41,7 +41,7 @@ export function splitChoices(body: any) {
   const lines = String(body || '').replace(/\s+$/, '').split('\n')
   const rows = []
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  while (lines.length && /^\s*[-*]\s+\S/.test(lines[lines.length - 1])) { const l = lines.pop(); const m: any = /^(\s*)[-*]\s+(.*)$/.exec(l); rows.unshift({ depth: Math.floor(m[1].replace(/\t/g, '  ').length / 2), text: m[2].trim() }) }
+  while (lines.length && /^\s*[-*]\s+\S/.test(lines[lines.length - 1])) { const l = lines.pop(); const m = /^(\s*)[-*]\s+(.*)$/.exec(l); rows.unshift({ depth: Math.floor(m[1].replace(/\t/g, '  ').length / 2), text: m[2].trim() }) }
   const root = { children: [], key: '' }
   const stack = [root]
   for (const r of rows) {
@@ -68,7 +68,7 @@ export function splitChoices(body: any) {
 }
 /* a choice by its key path, anywhere in the tree */
 // @ts-expect-error TS7023, from the conversion: 'findChoice' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in 
-export function findChoice(choices: any, key: any) {
+export function findChoice(choices, key) {
   // @ts-expect-error TS7022, from the conversion: 'd' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
   for (const c of choices || []) { if (c.key === key) return c; const d = findChoice(c.children, key); if (d) return d }
   return null
@@ -90,7 +90,7 @@ export function findChoice(choices: any, key: any) {
  *
  * Over the cap it is not a list of choices, it is a list, and it stays in the text.
  */
-export function cutAnswer(body: any, cap = CHOICE_CAP) {
+export function cutAnswer(body: string, cap = CHOICE_CAP) {
   const out = splitChoices(body)
   if (!out.choices.length) return { text: String(body || ''), choices: [] }
   /* AND A LIST IS NOT AN OFFER ON ITS OWN. An answer that is all list — a summary in bullets, a set
@@ -99,7 +99,7 @@ export function cutAnswer(body: any, cap = CHOICE_CAP) {
      Something has to have been said before there is anything to answer. */
   if (!out.text.trim()) return { text: String(body || ''), choices: [] }
   let many = 0, worst = 0, deep = 0
-  const walk = (list: any, d: any) => { deep = Math.max(deep, d); for (const c of list) { many++; worst = Math.max(worst, c.text.length); walk(c.children || [], d + 1) } }
+  const walk = (list: any, d: number) => { deep = Math.max(deep, d); for (const c of list) { many++; worst = Math.max(worst, c.text.length); walk(c.children || [], d + 1) } }
   walk(out.choices, 1)
   if (many > cap.many || worst > cap.chars || deep > cap.deep) return { text: String(body || ''), choices: [] }
   return out
@@ -112,11 +112,11 @@ export function cutAnswer(body: any, cap = CHOICE_CAP) {
  * route the conversation left long ago. Spent is not hidden: the buttons stay under their own
  * answer, dead, so the thread still reads as what was offered and what was taken.
  */
-export function offerOf(messages: any, { at = null, answered = (m: any) => m.choice_at } = {}) {
+export function offerOf(messages: any, { at = null, answered = (m: { choice_at: any }) => m.choice_at } = {}) {
   const list = messages || []
-  const i = at == null ? list.length - 1 : list.findIndex((m: any) => m.id === at)
+  const i = at == null ? list.length - 1 : list.findIndex((m: { id: any }) => m.id === at)
   const m = list[i]
   if (!m || !(m.choices && m.choices.length)) return null
-  const after = list.slice(i + 1).some((x: any) => x && !x.deleted_at)
+  const after = list.slice(i + 1).some((x: { deleted_at: any }) => x && !x.deleted_at)
   return { id: m.id, choices: m.choices, live: !answered(m) && !after && !m.deleted_at }
 }

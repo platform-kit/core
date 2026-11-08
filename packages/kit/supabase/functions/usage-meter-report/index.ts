@@ -1,7 +1,7 @@
 import { admin, json, preflight, getUser, isServiceBearer } from '../_shared/lib.ts'
 import { reportPendingUsage } from '../_shared/usage.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   const user = await getUser(req)

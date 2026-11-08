@@ -28,7 +28,7 @@
  * live in content/app/ui/chat.md (## followup) and arrive as strings.json.
  */
 const FOLLOWUP_MS = 5 * 60 * 1000
-const LINES: string[] = Object.values(((strings as any).lines ?? {}) as Record<string, string>).filter((l) => typeof l === 'string' && l.trim())
+const LINES: string[] = Object.values((strings.lines ?? {}) as Record<string, string>).filter((l) => typeof l === 'string' && l.trim())
 const followupLine = () => (LINES.length ? LINES[Math.floor(Math.random() * LINES.length)] : null)
 import { admin, json } from '../_shared/lib.ts'
 import strings from './strings.json' with { type: 'json' }
@@ -44,7 +44,7 @@ const TOLERANCE_MS = 24 * 3600e3
 const SETTLED = ['cancelled', 'rejected', 'rescheduled', 'ended']
 
 const SECRET = Deno.env.get('CAL_WEBHOOK_SECRET') ?? ''
-const REFUSAL: Record<string, string> = ((strings as any).refusal ?? {}) as Record<string, string>
+const REFUSAL: Record<string, string> = (strings.refusal ?? {}) as Record<string, string>
 /* the time as the attendee sees it (their cal.com time zone, else the host's) */
 const when = (iso: string | null, tz?: string | null) => { if (!iso) return ''; try { return new Date(iso).toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', ...(tz ? { timeZone: tz } : {}) }) } catch { return new Date(iso).toLocaleString('en-US') } }
 /* "Your weekly 1-on-1" reads as "the weekly 1-on-1" inside the line */
@@ -208,7 +208,7 @@ async function handle(evt: any) {
       const fields: Record<string, unknown> = { recording_state: 'pending', recording_error: null }
       if (p.downloadLink ?? p.recordingUrl) fields.recording_url = p.downloadLink ?? p.recordingUrl
       /* RECORDING_TRANSCRIPTION_GENERATED carries downloadLinks: { transcription: [{ format, link }], recording } (apps/web/lib/daily-webhook/triggerWebhooks.ts) */
-      const tr = p.downloadLinks?.transcription; const vtt = Array.isArray(tr) ? (tr.find((t: any) => /vtt/i.test(t?.format)) ?? tr[0]) : null
+      const tr = p.downloadLinks?.transcription; const vtt = Array.isArray(tr) ? (tr.find((t) => /vtt/i.test(t?.format)) ?? tr[0]) : null
       if (vtt?.link) fields.transcript_url = vtt.link
       else if (p.transcriptUrl ?? p.transcriptionUrl) fields.transcript_url = p.transcriptUrl ?? p.transcriptionUrl
       if (!fields.recording_url && p.downloadLinks?.recording) fields.recording_url = p.downloadLinks.recording

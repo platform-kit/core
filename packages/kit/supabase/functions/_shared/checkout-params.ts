@@ -55,7 +55,7 @@ export function lineQuantity(offer: any) {
  * stored twice. An offer with no tier — a non-membership subscription — is per offer key instead,
  * since there is no tier to share.
  */
-export function trialDaysFor(offer: any, taken = [], tierOf = () => null) {
+export function trialDaysFor(offer: { trial: any; key: any }, taken = [], tierOf = () => null) {
   const days = Number(offer && offer.trial) || 0
   if (!days) return 0
   // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.

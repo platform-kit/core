@@ -222,7 +222,7 @@ export function availableSocialAutomationRoutes(manifest: any, platform: any, cl
 }
 
 export async function invokeSocialOperation({ client, account, operation, input = {}, context }: any) {
-  const page = { cursor: CURSOR((input as any).cursor), limit: LIMIT((input as any).limit) }
+  const page = { cursor: CURSOR(input.cursor), limit: LIMIT(input.limit) }
   const postRef = (postId: any) =>
     ref(account, 'platform-post', { postId: requiredId(postId, 'post id') })
   const commentRef = (postId: any, commentId: any) =>
@@ -239,46 +239,46 @@ export async function invokeSocialOperation({ client, account, operation, input 
     case 'accounts.read':
       return client.accounts.get(accountRef(account))
     case 'posts.read':
-      if ((input as any).queryMode !== undefined && !['list', 'post', 'delivery'].includes((input as any).queryMode))
+      if (input.queryMode !== undefined && !['list', 'post', 'delivery'].includes(input.queryMode))
         throw Object.assign(new Error('Choose a supported posts view.'), {
           code: 'operation_input_invalid',
         })
-      if ((input as any).queryMode === 'delivery' || (input as any).deliveryId) {
+      if (input.queryMode === 'delivery' || input.deliveryId) {
         return client.posts.getDelivery(
           ref(account, 'delivery', {
-            deliveryId: requiredId((input as any).referenceId || (input as any).deliveryId, 'delivery id'),
+            deliveryId: requiredId(input.referenceId || input.deliveryId, 'delivery id'),
           }),
         )
       }
-      if ((input as any).queryMode === 'post' || (input as any).postId)
-        return client.posts.get(postRef((input as any).referenceId || (input as any).postId))
+      if (input.queryMode === 'post' || input.postId)
+        return client.posts.get(postRef(input.referenceId || input.postId))
       return client.posts.list(accountRef(account), page)
     case 'media.upload':
-      if (!(input as any).mediaAttachment || typeof (input as any).mediaAttachment !== 'object')
+      if (!input.mediaAttachment || typeof input.mediaAttachment !== 'object')
         throw Object.assign(new Error('Choose a saved image or video attachment.'), {
           code: 'operation_input_invalid',
         })
-      return client.media.upload((input as any).mediaAttachment, accountRef(account))
+      return client.media.upload(input.mediaAttachment, accountRef(account))
     case 'search.posts':
-      if (typeof (input as any).query !== 'string' || !(input as any).query.trim() || (input as any).query.length > 500)
+      if (typeof input.query !== 'string' || !input.query.trim() || input.query.length > 500)
         throw Object.assign(new Error('Enter a search phrase of up to 500 characters.'), {
           code: 'operation_input_invalid',
         })
       return client.search.posts(accountRef(account), {
-        query: (input as any).query.trim(),
+        query: input.query.trim(),
         ...(page.cursor ? { cursor: page.cursor } : {}),
         limit: page.limit,
       })
     case 'analytics.account.read':
       return client.analytics.getAccountMetrics(accountRef(account))
     case 'analytics.read':
-      return client.analytics.getPostMetrics(postRef((input as any).postId))
+      return client.analytics.getPostMetrics(postRef(input.postId))
     case 'analytics.report.read': {
-      const from = requiredId((input as any).from, 'start date')
-      const to = requiredId((input as any).to, 'end date')
+      const from = requiredId(input.from, 'start date')
+      const to = requiredId(input.to, 'end date')
       const metrics =
-        Array.isArray((input as any).metrics) && (input as any).metrics.length <= 50
-          ? (input as any).metrics.filter(
+        Array.isArray(input.metrics) && input.metrics.length <= 50
+          ? input.metrics.filter(
               (value: any) => typeof value === 'string' && /^[a-z0-9_.-]{1,80}$/i.test(value),
             )
           : []
@@ -295,9 +295,9 @@ export async function invokeSocialOperation({ client, account, operation, input 
         from,
         to,
         metrics,
-        ...(Array.isArray((input as any).dimensions)
+        ...(Array.isArray(input.dimensions)
           ? {
-              dimensions: (input as any).dimensions
+              dimensions: input.dimensions
                 .filter((value: any) => typeof value === 'string' && /^[a-z0-9_.-]{1,80}$/i.test(value))
                 .slice(0, 50),
             }
@@ -306,26 +306,26 @@ export async function invokeSocialOperation({ client, account, operation, input 
     }
     case 'profiles.read':
       if (
-        (typeof (input as any).profileId !== 'string' || !(input as any).profileId) &&
-        (typeof (input as any).handle !== 'string' || !(input as any).handle)
+        (typeof input.profileId !== 'string' || !input.profileId) &&
+        (typeof input.handle !== 'string' || !input.handle)
       )
         throw Object.assign(new Error('Enter a profile id or handle.'), {
           code: 'operation_input_invalid',
         })
       return client.graph.getProfile(accountRef(account), {
-        ...(typeof (input as any).profileId === 'string' && (input as any).profileId
-          ? { profileId: requiredId((input as any).profileId, 'profile id') }
+        ...(typeof input.profileId === 'string' && input.profileId
+          ? { profileId: requiredId(input.profileId, 'profile id') }
           : {}),
-        ...(typeof (input as any).handle === 'string' && (input as any).handle
-          ? { handle: requiredHandle((input as any).handle) }
+        ...(typeof input.handle === 'string' && input.handle
+          ? { handle: requiredHandle(input.handle) }
           : {}),
       })
     case 'graph.read':
-      if (!['following', 'followers', 'blocked', 'muted'].includes((input as any).kind))
+      if (!['following', 'followers', 'blocked', 'muted'].includes(input.kind))
         throw Object.assign(new Error('Choose a supported relationship list.'), {
           code: 'operation_input_invalid',
         })
-      return client.graph.listRelationships(accountRef(account), { kind: (input as any).kind, ...page })
+      return client.graph.listRelationships(accountRef(account), { kind: input.kind, ...page })
     case 'graph.follow':
     case 'graph.unfollow':
     case 'graph.block':
@@ -333,74 +333,74 @@ export async function invokeSocialOperation({ client, account, operation, input 
     case 'graph.mute':
     case 'graph.unmute': {
       const target = ref(account, 'profile', {
-        profileId: requiredId((input as any).profileId, 'profile id'),
+        profileId: requiredId(input.profileId, 'profile id'),
       })
       const method = operation.slice('graph.'.length)
       return client.graph[method](target)
     }
     case 'comments.read':
-      return client.comments.list(postRef((input as any).postId), page, context)
+      return client.comments.list(postRef(input.postId), page, context)
     case 'comments.write':
-      return client.comments.reply(commentRef((input as any).postId, (input as any).commentId), {
-        text: textInput((input as any).text),
+      return client.comments.reply(commentRef(input.postId, input.commentId), {
+        text: textInput(input.text),
       }, context)
     case 'messages.read':
-      if ((input as any).conversationId)
-        return client.messages.listMessages(conversationRef((input as any).conversationId), page, context)
+      if (input.conversationId)
+        return client.messages.listMessages(conversationRef(input.conversationId), page, context)
       return client.messages.listConversations(accountRef(account), page, context)
     case 'messages.write':
-      return client.messages.send(conversationRef((input as any).conversationId), {
-        text: textInput((input as any).text),
+      return client.messages.send(conversationRef(input.conversationId), {
+        text: textInput(input.text),
       }, context)
     case 'notifications.read':
       return client.notifications.list(accountRef(account), page)
     case 'notifications.seen':
       return client.notifications.markSeen(accountRef(account), {
-        ...(typeof (input as any).seenAt === 'string' ? { seenAt: (input as any).seenAt } : {}),
+        ...(typeof input.seenAt === 'string' ? { seenAt: input.seenAt } : {}),
       })
     case 'posts.cancelScheduled':
       return client.posts.cancelScheduled(
         ref(account, 'scheduled-job', {
-          jobId: requiredId((input as any).jobId, 'scheduled job id'),
+          jobId: requiredId(input.jobId, 'scheduled job id'),
         }),
       )
     case 'posts.deleteBackendRecord':
       return client.posts.deleteBackendRecord(
         ref(account, 'backend-post', {
-          recordId: requiredId((input as any).recordId, 'backend record id'),
+          recordId: requiredId(input.recordId, 'backend record id'),
         }),
       )
     case 'posts.removeFromPlatform':
-      return client.posts.removeFromPlatform(postRef((input as any).postId))
+      return client.posts.removeFromPlatform(postRef(input.postId))
     case 'webhooks.verify':
     case 'webhooks.decode': {
       if (
-        typeof (input as any).body !== 'string' ||
-        ((input as any).headers !== undefined &&
-          (!(input as any).headers || typeof (input as any).headers !== 'object' || Array.isArray((input as any).headers))) ||
-        ((input as any).headers && Object.keys((input as any).headers).length > 30) ||
-        ((input as any).headerName !== undefined &&
-          (typeof (input as any).headerName !== 'string' || !(input as any).headerName)) ||
-        (operation === 'webhooks.verify' && (input as any).signature !== undefined &&
-          (typeof (input as any).signature !== 'string' || (input as any).headerName === undefined)) ||
+        typeof input.body !== 'string' ||
+        (input.headers !== undefined &&
+          (!input.headers || typeof input.headers !== 'object' || Array.isArray(input.headers))) ||
+        (input.headers && Object.keys(input.headers).length > 30) ||
+        (input.headerName !== undefined &&
+          (typeof input.headerName !== 'string' || !input.headerName)) ||
+        (operation === 'webhooks.verify' && input.signature !== undefined &&
+          (typeof input.signature !== 'string' || input.headerName === undefined)) ||
         (operation === 'webhooks.decode' &&
-          (((input as any).headerName === undefined) !== ((input as any).headerValue === undefined) ||
-            ((input as any).headerValue !== undefined && typeof (input as any).headerValue !== 'string')))
+          ((input.headerName === undefined) !== (input.headerValue === undefined) ||
+            (input.headerValue !== undefined && typeof input.headerValue !== 'string')))
       )
         throw Object.assign(new Error('Provide a valid webhook body and headers.'), {
           code: 'operation_input_invalid',
         })
-      const body = new TextEncoder().encode((input as any).body)
+      const body = new TextEncoder().encode(input.body)
       if (body.byteLength > 1_048_576)
         throw Object.assign(new Error('Webhook body must be no larger than 1 MiB.'), {
           code: 'operation_input_invalid',
         })
       const headers = new Headers()
-      const headerEntries = (input as any).headers ? Object.entries((input as any).headers) : []
-      if (typeof (input as any).headerName === 'string' && (input as any).headerName) {
+      const headerEntries = input.headers ? Object.entries(input.headers) : []
+      if (typeof input.headerName === 'string' && input.headerName) {
         headerEntries.push([
-          (input as any).headerName,
-          operation === 'webhooks.verify' ? (input as any).signature : (input as any).headerValue,
+          input.headerName,
+          operation === 'webhooks.verify' ? input.signature : input.headerValue,
         ])
       }
       if (headerEntries.length > 30)

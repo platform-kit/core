@@ -132,7 +132,7 @@ function buildSchema(index: any) {
       if (k === 'AND') { if (!(v as any).every((w: any) => matches(r, w, t, c))) return false; continue }
       if (k === 'OR') { if (!(v as any).some((w: any) => matches(r, w, t, c))) return false; continue }
       // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): [string, unknown][]', gave the followi
-      if (k === 'sys') { const s: any = { id: entryId(r.typeId, r.path), publishedAt: r.updated, firstPublishedAt: r.created, publishedVersion: r.revision }; for (const [sk, sv] of Object.entries(v)) { const [base, op] = splitOp(sk); if (!cmp(s[base], op, sv)) return false } continue }
+      if (k === 'sys') { const s = { id: entryId(r.typeId, r.path), publishedAt: r.updated, firstPublishedAt: r.created, publishedVersion: r.revision }; for (const [sk, sv] of Object.entries(v)) { const [base, op] = splitOp(sk); if (!cmp(s[base], op, sv)) return false } continue }
       if (k === 'contentfulMetadata') continue
       const [base, op] = splitOp(k)
       const f = fieldById(t, base); if (!f) continue

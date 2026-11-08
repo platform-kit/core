@@ -22,8 +22,8 @@ export async function calBookingOf(uid: string) {
   const s = await typeFor(row.event, { any: true })
   const hostIds = [row.host_id, row.provider_id].filter((id): id is string => Boolean(id))
   const { data: hosts } = hostIds.length ? await admin.from('profiles').select('id, email, display_name').in('id', hostIds) : { data: [] }
-  let hostList = (hosts ?? []).map((h: any) => ({ id: h.id, email: h.email, name: h.display_name || '' }))
-  if (!hostList.length && s && s.hosts?.length) { const { data: hs } = await admin.from('profiles').select('id, email, display_name').in('email', s.hosts); hostList = (hs ?? []).map((h: any) => ({ id: h.id, email: h.email, name: h.display_name || '' })) }
+  let hostList = (hosts ?? []).map((h) => ({ id: h.id, email: h.email, name: h.display_name || '' }))
+  if (!hostList.length && s && s.hosts?.length) { const { data: hs } = await admin.from('profiles').select('id, email, display_name').in('email', s.hosts); hostList = (hs ?? []).map((h) => ({ id: h.id, email: h.email, name: h.display_name || '' })) }
   for (const h of hostList) { const { data: hr } = await admin.from('provider_schedules').select('timezone').eq('user_id', h.id).eq('is_default', true).maybeSingle(); (h as any).timeZone = hr?.timezone || 'UTC' }
   return bookingOf(row, { session: s, hosts: hostList })
 }

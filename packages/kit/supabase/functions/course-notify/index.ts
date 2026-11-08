@@ -14,7 +14,7 @@ import { sendEmail } from '../_shared/email.ts'
 
 const APP = () => (Deno.env.get('APP_URL') ?? '').replace(/\/$/, '')
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')

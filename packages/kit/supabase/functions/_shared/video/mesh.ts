@@ -19,16 +19,16 @@ import { iceServers } from './ice.ts'
 
 export const MESH_MAX = 5
 
-const b64url = (b: any) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+const b64url = (b: ArrayBuffer|Uint8Array<ArrayBuffer>) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 
-async function sign(secret: any, payload: any) {
+async function sign(secret: string|undefined, payload: { room: any; id: any; name: any; role: any; exp: number }) {
   const body = b64url(new TextEncoder().encode(JSON.stringify(payload)))
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body))
   return body + '.' + b64url(sig)
 }
 
-export async function readToken(secret: any, token: any) {
+export async function readToken(secret: string|undefined, token: any) {
   const [body, sig] = String(token || '').split('.')
   if (!body || !sig) return null
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'])
@@ -53,7 +53,7 @@ export function mesh({ db, env, ice }: any) {
     max: MESH_MAX,
     records: false,
 
-    room: (b: any) => ({ join_url: `${app()}/app/call/${b.uid || b.id}`, ref: 'mesh:' + (b.room || b.uid || b.id) }),
+    room: (b: { uid: any; id: any; room: any }) => ({ join_url: `${app()}/app/call/${b.uid || b.id}`, ref: 'mesh:' + (b.room || b.uid || b.id) }),
 
     /* the credentials for one person and one room: what to subscribe to, who they are on it, and
        where to find themselves — and a relay only where the site was given one. */
@@ -73,7 +73,7 @@ export function mesh({ db, env, ice }: any) {
     record: () => ({ error: 'a call made browser to browser is not recorded; a video account is what records one' }),
 
     /* everyone is told to leave on the room's own topic; there is no server holding it open */
-    async end(b: any) {
+    async end(b: { room: any; uid: any; id: any }) {
       const ref = (b.room || b.uid || b.id)
       try { await db.rpc('space_wake', { p_channel: null, p_event: 'call-end', p_payload: { room: ref } }) } catch (e) { /* the room simply empties */ }
       return { ended: true }

@@ -102,7 +102,7 @@ async function userOfIdentifier(id: string) {
   return userOfActor(s, domain())
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (!NETWORK_ON) return no(REFUSALS.off())
 
@@ -149,7 +149,7 @@ Deno.serve(async (req: any) => {
     const s = await sessionOf(bearer(req))
     if (!s || s === 'expired' || s.kind !== 'site') return no(REFUSALS.auth())
     if (path === '/network/leave') return json(await leave(s.userId))
-    const out: any = await join(s.userId, domain())
+    const out = await join(s.userId, domain())
     if (out.error === 'username') return no(REFUSALS.noHandle())
     if (out.error) return no(REFUSALS.badRequest(out.error))
     await requestCrawl()
@@ -248,7 +248,7 @@ Deno.serve(async (req: any) => {
       need()
       const b = await body()
       const made = await makeAppPassword(s!.userId, String(b.name || ''))
-      if ((made as any).error) return no(REFUSALS.badRequest((made as any).error === 'taken' ? 'An app password with that name already exists' : (made as any).error))
+      if (made.error) return no(REFUSALS.badRequest(made.error === 'taken' ? 'An app password with that name already exists' : made.error))
       return json(made)
     }
     if (nsid === 'com.atproto.server.listAppPasswords') {
@@ -381,8 +381,8 @@ Deno.serve(async (req: any) => {
       const ids: string[] = [], msgs: string[] = [], order: string[] = []
       for (const u of q.getAll('uris').slice(0, 25)) {
         const r = await resolvePost(ctx, u)
-        if (r && (r as any).post) { ids.push((r as any).post); order.push('p' + (r as any).post) }
-        else if (r && (r as any).message) { msgs.push((r as any).message); order.push('m' + (r as any).message) }
+        if (r && r.post) { ids.push(r.post); order.push('p' + r.post) }
+        else if (r && r.message) { msgs.push(r.message); order.push('m' + r.message) }
       }
       const [pv, mv] = await Promise.all([postViews(ctx, ids), messageViews(ctx, msgs)])
       return json({ posts: order.map((k) => (k[0] === 'p' ? pv.get(k.slice(1)) : mv.get(k.slice(1)))).filter(Boolean) })
@@ -390,8 +390,8 @@ Deno.serve(async (req: any) => {
     if (nsid === 'app.bsky.feed.getPostThread') return json({ thread: await thread(ctx, String(q.get('uri') || ''), Number(q.get('depth') || 6), Number(q.get('parentHeight') || 80)) })
     if (nsid === 'app.bsky.feed.getLikes' || nsid === 'app.bsky.feed.getRepostedBy') {
       const r = await resolvePost(ctx, String(q.get('uri') || ''))
-      if (!r || !(r as any).post) return json(nsid === 'app.bsky.feed.getLikes' ? { uri: q.get('uri'), likes: [] } : { uri: q.get('uri'), repostedBy: [] })
-      const { data } = await ctx.db.from(nsid === 'app.bsky.feed.getLikes' ? 'network_likes' : 'network_reposts').select('author_id, created_at').eq('post_id', (r as any).post).order('created_at', { ascending: false }).limit(Math.min(Number(q.get('limit') || 50), 100))
+      if (!r || !r.post) return json(nsid === 'app.bsky.feed.getLikes' ? { uri: q.get('uri'), likes: [] } : { uri: q.get('uri'), repostedBy: [] })
+      const { data } = await ctx.db.from(nsid === 'app.bsky.feed.getLikes' ? 'network_likes' : 'network_reposts').select('author_id, created_at').eq('post_id', r.post).order('created_at', { ascending: false }).limit(Math.min(Number(q.get('limit') || 50), 100))
       const rows = (data || []) as any[]
       await loadPeople(ctx, rows.map((x) => x.author_id))
       if (nsid === 'app.bsky.feed.getRepostedBy') return json({ uri: q.get('uri'), repostedBy: rows.map((x) => profileBasic(ctx, x.author_id)).filter(Boolean) })
@@ -428,7 +428,7 @@ Deno.serve(async (req: any) => {
       const rows = ((await mq).data || []) as any[]
       if (nsid === 'app.bsky.feed.getFeedSkeleton') {
         const mv = await messageViews(ctx, rows.map((r) => r.id))
-        return json({ feed: rows.map((r) => mv.get(r.id)).filter(Boolean).map((v: any) => ({ post: v.uri })), ...(rows.length ? { cursor: cursorOf(rows) } : {}) })
+        return json({ feed: rows.map((r) => mv.get(r.id)).filter(Boolean).map((v) => ({ post: v.uri })), ...(rows.length ? { cursor: cursorOf(rows) } : {}) })
       }
       return json({ feed: await feedItems(ctx, rows.map((r) => ({ message_id: r.id, at: r.created_at }))), ...(rows.length ? { cursor: cursorOf(rows) } : {}) })
     }
@@ -499,9 +499,9 @@ Deno.serve(async (req: any) => {
       const mine = FEDERATES && !q.get('cursor') ? await joinedIdentity(s!.userId) : null
       if (mine) {
         const outside = await ask(mine, nsid, { limit: '50' })
-        const ours = new Set(notes.map((n: any) => n.uri))
+        const ours = new Set(notes.map((n) => n.uri))
         for (const n of (outside && outside.notifications) || []) if (!ours.has(n.uri)) notes.push(n)
-        notes.sort((a: any, b: any) => new Date(b.indexedAt).getTime() - new Date(a.indexedAt).getTime())
+        notes.sort((a, b) => new Date(b.indexedAt).getTime() - new Date(a.indexedAt).getTime())
       }
       return json({ notifications: notes, ...(rows.length ? { cursor: cursorOf(rows, 'at') } : {}), ...(seen ? { seenAt: seen.seen_at } : {}) })
     }
@@ -523,7 +523,7 @@ Deno.serve(async (req: any) => {
 
     return no(REFUSALS.unsupported(nsid))
   } catch (e) {
-    if (e && typeof e === 'object' && 'status' in (e as any) && 'body' in (e as any)) return no(e as any)
+    if (e && typeof e === 'object' && 'status' in e && 'body' in e) return no(e as any)
     console.error('atproto:', nsid, e)
     return no(REFUSALS.badRequest('Something went wrong answering that'))
   }
@@ -621,16 +621,16 @@ function guestDb() {
    under it to a depth — each one the reader may read, a missing one said as missing */
 async function thread(ctx: Ctx, uri: string, depth: number, height: number): Promise<any> {
   const r = await resolvePost(ctx, uri)
-  if (!r || (r as any).message) {
-    if (r && (r as any).message) {
-      const mv = await messageViews(ctx, [(r as any).message])
-      const v = mv.get((r as any).message)
+  if (!r || r.message) {
+    if (r && r.message) {
+      const mv = await messageViews(ctx, [r.message])
+      const v = mv.get(r.message)
       if (v) return { $type: 'app.bsky.feed.defs#threadViewPost', post: v, replies: [] }
     }
     return { $type: 'app.bsky.feed.defs#notFoundPost', uri, notFound: true }
   }
-  if (!(r as any).post) return { $type: 'app.bsky.feed.defs#notFoundPost', uri, notFound: true }
-  const id = (r as any).post
+  if (!r.post) return { $type: 'app.bsky.feed.defs#notFoundPost', uri, notFound: true }
+  const id = r.post
   await loadPosts(ctx, [id])
   const row = ctx.posts.get(id)
   if (!row) return { $type: 'app.bsky.feed.defs#notFoundPost', uri, notFound: true }
@@ -641,7 +641,7 @@ async function thread(ctx: Ctx, uri: string, depth: number, height: number): Pro
   const kids = new Map<string, string[]>()
   for (const x of (data || []) as any[]) { const k = x.reply_parent_id; if (!kids.has(k)) kids.set(k, []); kids.get(k)!.push(x.id) }
   const down = (pid: string, d: number): any[] => (d <= 0 ? [] : (kids.get(pid) || []).map((cid) => views.get(cid) ? { $type: 'app.bsky.feed.defs#threadViewPost', post: views.get(cid), replies: down(cid, d - 1) } : null).filter(Boolean))
-  const up = async (p: any, h: number): Promise<any> => {
+  const up = async (p: { reply_parent_id: string|null|undefined }, h: number): Promise<any> => {
     if (!p.reply_parent_id || h <= 0) return undefined
     await loadPosts(ctx, [p.reply_parent_id])
     const parent = ctx.posts.get(p.reply_parent_id)

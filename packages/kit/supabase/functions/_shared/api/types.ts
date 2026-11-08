@@ -12,25 +12,25 @@
  */
 import { typeIdOf } from './ids.ts'
 
-const modelKeyOf = (options: any, models: any) => {
+const modelKeyOf = (options: any, models: any[]) => {
   if (!options) return null
   const o = String(options)
   const key = o.startsWith('model:') ? 'models/' + o.slice(6) : o
-  return models.some((m: any) => m.key === key && m.fields) ? key : null
+  return models.some((m: { key: string; fields: any }) => m.key === key && m.fields) ? key : null
 }
-const title = (s: any) => String(s || '').replace(/[-_]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase())
+const title = (s: string) => String(s || '').replace(/[-_]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase())
 
 /* one described field → Contentful's field records (two for markdown), or none for a status field */
-export function fieldsOf(f: any, models: any) {
+export function fieldsOf(f: { name: string; label: any; required: any; choices: any; kind: string; of: string; options: any; widget: string; multiple: any; type: string; integer: any }, models: any[]) {
   if (f.name === 'published') return []
   const base = { id: f.name, name: f.label || title(f.name), localized: false, required: !!f.required, disabled: false, omitted: false, validations: [] }
-  const choices = (f.choices || []).map((c: any) => (c && typeof c === 'object' ? c.value : c)).filter((v: any) => v != null)
+  const choices = (f.choices || []).map((c: { value: any }) => (c && typeof c === 'object' ? c.value : c)).filter((v: any) => v != null)
   const kind = f.kind || ''
   const ref = kind === 'reference' ? (f.of ? 'models/' + String(f.of).replace(/^models\//, '') : modelKeyOf(f.options, models)) : (f.widget === 'select' ? modelKeyOf(f.options, models) : null)
   if (kind === 'markdown') return [{ ...base, type: 'RichText' }, { ...base, id: f.name + 'Markdown', name: base.name + ' (markdown)', type: 'Text' }]
   if (kind === 'image' || f.widget === 'image') return [{ ...base, type: 'Link', linkType: 'Asset' }]
   if (ref) {
-    const m = models.find((x: any) => x.key === ref)
+    const m = models.find((x: { key: string }) => x.key === ref)
     const link = { type: 'Link', linkType: 'Entry', validations: [{ linkContentType: [typeIdOf(m)] }] }
     return kind === 'reference' && f.multiple ? [{ ...base, type: 'Array', items: link }] : [{ ...base, ...link }]
   }
@@ -49,12 +49,12 @@ export function fieldsOf(f: any, models: any) {
 }
 
 /* every content type of a site: the models with fields, in the registry's order */
-export function contentTypes(models: any, { space = '', now = new Date().toISOString() } = {}) {
-  return models.filter((m: any) => m.fields && m.fields.length).map((m: any) => {
+export function contentTypes(models: any[], { space = '', now = new Date().toISOString() } = {}) {
+  return models.filter((m: { fields: string|any[] }) => m.fields && m.fields.length).map((m: { fields?: any; body?: any; bodyLabel?: any; model: any; name?: any; description?: any; key: any }) => {
     const fields = m.fields.flatMap((f: any) => fieldsOf(f, models))
     if (m.body) fields.push({ id: 'body', name: m.bodyLabel || 'Body', type: 'RichText', localized: false, required: false, disabled: false, omitted: false, validations: [] }, { id: 'bodyMarkdown', name: (m.bodyLabel || 'Body') + ' (markdown)', type: 'Text', localized: false, required: false, disabled: false, omitted: false, validations: [] })
     const id = typeIdOf(m)
-    const display = ['title', 'name', 'label'].find((k) => fields.some((f: any) => f.id === k)) || (fields.find((f: any) => f.type === 'Symbol') || {}).id || null
+    const display = ['title', 'name', 'label'].find((k) => fields.some((f: { id: string }) => f.id === k)) || (fields.find((f: { type: string }) => f.type === 'Symbol') || {}).id || null
     return {
       sys: { space: { sys: { type: 'Link', linkType: 'Space', id: space } }, id, type: 'ContentType', createdAt: now, updatedAt: now, environment: { sys: { id: 'master', type: 'Link', linkType: 'Environment' } }, revision: 1 },
       displayField: display, name: m.model && m.model.name ? m.model.name : (m.name || title(id)), description: m.description || '', fields,

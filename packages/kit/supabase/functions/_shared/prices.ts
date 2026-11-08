@@ -46,12 +46,12 @@ export function ruleHolds(rule: any, context: any) {
     default: return false
   }
 }
-const num = (v: any) => (v == null || v === '' || Number.isNaN(Number(v)) ? null : Number(v))
+const num = (v: string|null) => (v == null || v === '' || Number.isNaN(Number(v)) ? null : Number(v))
 /* `customer.tiers` reads through a dotted path, as the documented attributes do */
 const valueAt = (o: any, path: any) => String(path).split('.').reduce((v, k) => (v == null ? v : v[k]), o)
 
 /* a window: a list may start, end, or do neither. An undated list is always open. */
-export function openAt(list: any, now: any) {
+export function openAt(list: any, now: string|number|Date|null) {
   const t = now ? new Date(now).getTime() : Date.now()
   if (list.starts && new Date(list.starts).getTime() > t) return false
   if (list.ends && new Date(list.ends).getTime() < t) return false
@@ -59,7 +59,7 @@ export function openAt(list: any, now: any) {
 }
 
 /* a price entry may be for a quantity band; one with neither bound is for any quantity */
-const quantityFits = (p: any, qty: any) => {
+const quantityFits = (p: any, qty: number) => {
   const q = Number(qty) || 1
   if (p.min_quantity != null && q < Number(p.min_quantity)) return false
   if (p.max_quantity != null && q > Number(p.max_quantity)) return false
@@ -110,7 +110,7 @@ const quantityFits = (p: any, qty: any) => {
  * member’s rate shows the saving against THEIR rate rather than against the shop’s.
  */
 
-export function priceOf(lists: any, { sku = '', variant = '', currency = 'usd', quantity = 1, context = {}, now = null } = {}) {
+export function priceOf(lists: any[], { sku = '', variant = '', currency = 'usd', quantity = 1, context = {}, now = null } = {}) {
   const cur = String(currency || 'usd').toLowerCase()
   const all = []
   for (const list of lists || []) {
@@ -164,7 +164,7 @@ export function priceOf(lists: any, { sku = '', variant = '', currency = 'usd', 
     shop: plain ? plain.price.amount : amount,
   }
 }
-const isBase = (c: any) => (c.list.kind === 'base' ? 1 : 0)
+const isBase = (c: { list: any; price?: any; rules?: any }) => (c.list.kind === 'base' ? 1 : 0)
 const bands = (p: any) => (p.min_quantity != null ? 1 : 0) + (p.max_quantity != null ? 1 : 0)
 
 /* every currency a variant has a price in, which is what a Stripe price's `currency_options` is

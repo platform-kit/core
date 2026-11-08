@@ -17,7 +17,7 @@ export async function findProviderEntities(
     .eq('external_id', externalId)
     .eq('entity_type', entityType)
   if (error) throw new Error(`payment provider reference lookup failed: ${error.message}`)
-  return (data ?? []).map((row: any) => row.entity_id)
+  return (data ?? []).map((row) => row.entity_id)
 }
 
 export async function findProviderEntity(
@@ -48,7 +48,7 @@ export async function findProviderExternalIds(
     .eq('entity_type', entityType)
     .eq('entity_id', entityId)
   if (error) throw new Error(`payment provider reference lookup failed: ${error.message}`)
-  return (data ?? []).map((row: any) => row.external_id)
+  return (data ?? []).map((row) => row.external_id)
 }
 
 export async function linkProviderEntity(

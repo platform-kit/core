@@ -18,7 +18,7 @@ export function paymentPeriodEnd(start: any, interval = 'month') {
   return Math.floor(date.getTime() / 1000)
 }
 
-export function meteredUsageAmountMinor(numerator: any, currency: any) {
+export function meteredUsageAmountMinor(numerator: string|number|bigint|boolean, currency: string) {
   let value
   try {
     value = BigInt(numerator)

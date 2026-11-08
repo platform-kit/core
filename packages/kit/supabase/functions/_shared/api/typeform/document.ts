@@ -21,10 +21,10 @@ const KIND_OF: any = { short_text: 'text', long_text: 'text', email: 'email', we
 export const UNSUPPORTED = ['payment', 'legal', 'matrix', 'ranking', 'yes_no', 'contact_info', 'address', 'nps', 'calendly']
 const OP_OF: any = { equal: 'is', not_equal: 'isnot', greater_than: 'gt', lower_than: 'lt', contains: 'contains', is: 'set', is_not: 'unset' }
 const NEG: any = { is: 'isnot', isnot: 'is', gt: 'lt', lt: 'gt', set: 'unset', unset: 'set' }   /* contains has no negation the rows can say */
-const fail = (code: any, message: any) => { const e: any = new Error(message); e.code = code; throw e }
+const fail = (code: string, message: string|undefined) => { const e: any = new Error(message); e.code = code; throw e }
 export const slugify = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64)
 /* a field's name in the document: its ref (or id, or title) as an identifier */
-const nameOf = (f: any, i: any) => { const raw = String(f.ref || f.id || slugify(f.title) || 'field' + i).replace(/[^a-zA-Z0-9_$]+/g, '_').replace(/^([0-9])/, '_$1'); return raw || 'field' + i }
+const nameOf = (f: { ref: any; id: any; title: any }, i: string) => { const raw = String(f.ref || f.id || slugify(f.title) || 'field' + i).replace(/[^a-zA-Z0-9_$]+/g, '_').replace(/^([0-9])/, '_$1'); return raw || 'field' + i }
 const str = (v: any) => (v == null ? '' : String(v))
 
 function fieldBlock(f: any, i: any) {
@@ -38,7 +38,7 @@ function fieldBlock(f: any, i: any) {
   if (p.description) params.description = str(p.description)
   if (type === 'long_text') params.multiline = true
   if (kind === 'select' || kind === 'choice' || kind === 'picture') {
-    params.choices = (p.choices || []).map((c: any, j: any) => { const label = str(c.label || c.ref || c.id || 'choice ' + (j + 1)); const value = str(c.ref || c.id || label); return { label, value: value === label ? label : value, ...(kind === 'picture' ? { image: c.attachment && c.attachment.href ? str(c.attachment.href) : '' } : {}) } })
+    params.choices = (p.choices || []).map((c: { label: any; ref: any; id: any; attachment: { href: any } }, j: number) => { const label = str(c.label || c.ref || c.id || 'choice ' + (j + 1)); const value = str(c.ref || c.id || label); return { label, value: value === label ? label : value, ...(kind === 'picture' ? { image: c.attachment && c.attachment.href ? str(c.attachment.href) : '' } : {}) } })
     if (kind !== 'select' && p.allow_multiple_selection) params.multiple = true
   }
   if (kind === 'rating') { if (p.steps) params.outof = Number(p.steps) }
@@ -47,7 +47,7 @@ function fieldBlock(f: any, i: any) {
   return { type: 'field', kind, name: nameOf(f, i), required: !!v.required, params, attrs: {}, dirty: true, deps: [], condition: '' }
 }
 const statementBlock = (f: any) => { const p = f.properties || {}; const md = ['# ' + str(f.title).trim(), str(p.description).trim()].filter(Boolean).join('\n\n'); return { type: 'markdown', md, dirty: true, deps: [], condition: '' } }
-const slide = (type: any, blocks: any, extra = {}) => ({ type, jump: '', progress: '', align: '', post: false, disablePrev: false, button: '', redirect: '', blocks, headDirty: true, dirty: true, ...extra })
+const slide = (type: string, blocks: ({ type: string; kind: any; name: string; required: boolean; params: any; attrs: {}; dirty: boolean; deps: never[]; condition: string }|{ type: string; md: string; dirty: boolean; deps: never[]; condition: string })[], extra = {}) => ({ type, jump: '', progress: '', align: '', post: false, disablePrev: false, button: '', redirect: '', blocks, headDirty: true, dirty: true, ...extra })
 
 /**
  * @param {object} def   Typeform's form definition (title, fields, welcome_screens, thankyou_screens, logic, settings)
@@ -108,15 +108,15 @@ export function modelFromDefinition(def: any, o: any = {}) {
 }
 
 /* Typeform's condition — a jump when it holds — as the negated rows the next slide shows on */
-function rowsOfCondition(c: any, fieldSlides: any, from: any) {
+function rowsOfCondition(c: { op: string; vars: any }, fieldSlides: any[], from: string) {
   if (!c || c.op === 'always') fail('LOGIC', `a jump from ${from} with no condition skips the next screen for everyone — leave the screen out instead`)
   const one = (x: any) => {
     const op = OP_OF[x.op]
     if (!op) fail('LOGIC', `the condition on ${from} uses "${x.op}", which the runner cannot say (equal, not_equal, greater_than, lower_than, is, is_not)`)
     const vars = x.vars || []
-    const fv = vars.find((v: any) => v.type === 'field'), cv = vars.find((v: any) => v.type === 'constant')
+    const fv = vars.find((v: { type: string }) => v.type === 'field'), cv = vars.find((v: { type: string }) => v.type === 'constant')
     if (!fv) fail('LOGIC', `the condition on ${from} names no field`)
-    const name = (fieldSlides.flatMap((s: any) => s.refs).find((r: any) => r.ref === str(fv.value)) || {}).name
+    const name = (fieldSlides.flatMap((s: { refs: any }) => s.refs).find((r: { ref: string }) => r.ref === str(fv.value)) || {}).name
     if (!name) fail('LOGIC', `the condition on ${from} names a field the form does not have: ${str(fv.value)}`)
     const neg = NEG[op]
     if (!neg) fail('LOGIC', `the condition on ${from} uses contains, which the runner cannot negate`)
@@ -130,7 +130,7 @@ function rowsOfCondition(c: any, fieldSlides: any, from: any) {
 /* condition.js's exprOf, kept here so this file has no imports: the same words */
 const lit = (v: any) => (/^-?\d+(\.\d+)?$/.test(String(v).trim()) ? String(v).trim() : `'${String(v).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`)
 export function exprOf(rows: any) {
-  return (rows || []).filter((r: any) => r && r.field).map((r: any) => {
+  return (rows || []).filter((r: { field: any }) => r && r.field).map((r: { op: any; field: any; value: any }) => {
     switch (r.op) {
       case 'isnot': return `${r.field} != ${lit(r.value)}`
       case 'contains': return `${lit(r.value)} in ${r.field}`
@@ -144,9 +144,9 @@ export function exprOf(rows: any) {
 }
 
 /* ---- JSON Patch (RFC 6902), the operations Typeform takes on a definition: add, replace, remove; test, move, copy ---- */
-const parsePointer = (p: any) => { const s = String(p || ''); if (s === '') return []; if (!s.startsWith('/')) fail('VALIDATION_ERROR', `a JSON pointer starts with /: ${s}`); return s.slice(1).split('/').map((x) => x.replace(/~1/g, '/').replace(/~0/g, '~')) }
+const parsePointer = (p: string) => { const s = String(p || ''); if (s === '') return []; if (!s.startsWith('/')) fail('VALIDATION_ERROR', `a JSON pointer starts with /: ${s}`); return s.slice(1).split('/').map((x) => x.replace(/~1/g, '/').replace(/~0/g, '~')) }
 const clone = (v: any) => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)))
-function walkTo(doc: any, tokens: any, path: any) {
+function walkTo(doc: any, tokens: string[], path: string) {
   let cur = doc
   for (const t of tokens) {
     if (Array.isArray(cur)) { const i = Number(t); if (!Number.isInteger(i) || i < 0 || i >= cur.length) fail('VALIDATION_ERROR', `no such path: ${path}`); cur = cur[i] }
@@ -155,7 +155,7 @@ function walkTo(doc: any, tokens: any, path: any) {
   }
   return cur
 }
-function setAt(doc: any, tokens: any, value: any, path: any, { insert = false, mustExist = false } = {}) {
+function setAt(doc: any, tokens: any, value: any, path: string, { insert = false, mustExist = false } = {}) {
   if (!tokens.length) return value
   const parent = walkTo(doc, tokens.slice(0, -1), path), last = tokens[tokens.length - 1]
   if (Array.isArray(parent)) {
@@ -166,7 +166,7 @@ function setAt(doc: any, tokens: any, value: any, path: any, { insert = false, m
   else fail('VALIDATION_ERROR', `no such path: ${path}`)
   return doc
 }
-function removeAt(doc: any, tokens: any, path: any) {
+function removeAt(doc: any, tokens: any, path: string) {
   if (!tokens.length) fail('VALIDATION_ERROR', 'the whole document cannot be removed')
   const parent = walkTo(doc, tokens.slice(0, -1), path), last = tokens[tokens.length - 1]
   if (Array.isArray(parent)) { const i = Number(last); if (!Number.isInteger(i) || i < 0 || i >= parent.length) fail('VALIDATION_ERROR', `no such path: ${path}`); return parent.splice(i, 1)[0] }
@@ -178,7 +178,7 @@ function removeAt(doc: any, tokens: any, path: any) {
  * @param {Array} ops          [{ op: 'add' | 'replace' | 'remove' | 'move' | 'copy' | 'test', path, value?, from? }]
  * @returns {object} the patched definition (a copy)
  */
-export function applyPatch(definition: any, ops: any) {
+export function applyPatch(definition: any, ops: any[]) {
   if (!Array.isArray(ops)) fail('VALIDATION_ERROR', 'a JSON Patch is a list of operations')
   let doc = clone(definition)
   for (const [i, op] of ops.entries()) {

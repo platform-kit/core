@@ -14,13 +14,15 @@
  * not vanish when a rule changes.
  */
 
+import type { Where } from "../sessions.ts"
+
 /* a copy's event carries the member's username after the type's slug, so it is an address somebody
    can be given ("book me at /p/ada") and can never collide with a declared type's slug */
 export const MANAGED = '@'
 export const managedEvent = (slug: any, username: any) => `${slug}${MANAGED}${String(username || '').toLowerCase()}`
 export const isManaged = (e: any) => String(e == null ? '' : e).includes(MANAGED)
 /* → { slug, username } for a managed event, else null */
-export function parseManaged(e: any) {
+export function parseManaged(e: string|null) {
   const s = String(e == null ? '' : e)
   const i = s.indexOf(MANAGED)
   if (i <= 0 || i === s.length - 1) return null
@@ -35,7 +37,7 @@ export function parseManaged(e: any) {
  *   type    the declared type, from the catalog
  *   person  { email, username, name }
  */
-export function managedCopy(type: any, person: any) {
+export function managedCopy(type: { title?: string; slug: any; event?: string; scheduler?: "native"|"cal"; username?: string|null; requires?: string|string[]; below?: string|null; weekly?: number; monthly?: number; sku?: string|null; duration?: number; hosts?: string[]; seats?: number; buffer?: number; notice?: number; where?: Where; record?: boolean; hours?: any; repeats?: any }, person: { email: any; username: any; name: any }) {
   if (!type || !person || !person.username) return null
   return {
     ...type,
@@ -54,7 +56,7 @@ export function managedCopy(type: any, person: any) {
 export function managedFor(sessions: any, person: any, memberOf: any) {
   const teams = memberOf instanceof Set ? memberOf : new Set(memberOf || [])
   return (sessions || [])
-    .filter((s: any) => s && s.assign === 'managed' && s.team && teams.has(s.team) && s.published !== false)
+    .filter((s: { assign: string; team: any; published: boolean }) => s && s.assign === 'managed' && s.team && teams.has(s.team) && s.published !== false)
     .map((s: any) => managedCopy(s, person))
     .filter(Boolean)
 }

@@ -26,7 +26,7 @@ export function addressOf(req: Request): string {
 }
 
 export function doorLimit(door: Door): number {
-  const p = ((of<Record<string, any>>('funnels') as any)?.policy ?? {}) as Record<string, unknown>
+  const p = (of<Record<string, any>>('funnels')?.policy ?? {}) as Record<string, unknown>
   const n = Number(p['limit-' + door])
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : DOOR_DEFAULTS[door]
 }

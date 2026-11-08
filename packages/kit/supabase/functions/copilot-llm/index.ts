@@ -82,7 +82,7 @@ type UsageRecorded = { admitted: boolean; duplicate?: boolean; usage_event_id?: 
 /* what copilot_turn answers: the run this turn made, or why it made none */
 type CopilotTurn = { ok: true; id: string; bot: string; name: string; messages?: unknown[] } | { ok?: undefined; error: string; window?: string }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: { method: string; url: string|URL; headers: { get: (arg0: string) => any }; json: () => Promise<any> }) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return json({ error: 'POST' }, 405)
 
@@ -102,11 +102,11 @@ Deno.serve(async (req: any) => {
     if (!me) return json({ error: { message: 'sign in to speak', type: 'invalid_request_error' } }, 401)
     const asked = await req.json().catch(() => ({}))
     const slug = String(asked.bot || '').trim()
-    const bot: any = (bots as any[]).find((b) => b.slug === slug && (b.surfaces || []).includes('voice'))
+    const bot = (bots as any[]).find((b) => b.slug === slug && (b.surfaces || []).includes('voice'))
     if (!bot) return json({ error: { message: 'no bot of that name speaks', type: 'invalid_request_error' } }, 404)
 
-    let usage: any = null
-    let usageSummary: any = null
+    let usage = null
+    let usageSummary = null
     if (bot.billing) {
       await fresh()
       const offers = Object.values((of('catalog') as any).offers || {}) as any[]
@@ -322,7 +322,7 @@ Deno.serve(async (req: any) => {
      embedding is made here because the database has no model of its own; it costs nothing and
      leaves the deployment never. A failure to remember must never fail the answer. */
   async function remember(said: string) {
-    const bot: any = (bots as any[]).find((b) => b.slug === g.bot)
+    const bot = (bots as any[]).find((b) => b.slug === g.bot)
     if (!bot || !recalls(bot) || !ask.trim()) return
     try {
       // @ts-ignore the edge runtime's own model

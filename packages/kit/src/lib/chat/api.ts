@@ -279,7 +279,7 @@ export async function sendFile(file: { name: any; type: any; size: any }, replyT
   return id
 }
 
-function touchInbox(row: { id: any; conversation_id: any; sender_id: any; kind: any; body: any; reply_to?: any; created_at: any; deleted_at?: null; pending?: boolean; audio_path?: string; seconds?: any; blob?: any; attachment_path?: string; attachment_name?: string; attachment_type?: any; attachment_size?: any }) {
+function touchInbox(row: any) {
   const c = inbox.value.find((x: { id: any }) => x.id === row.conversation_id)
   if (c) { c.last = { id: row.id, kind: row.kind, body: row.body, sender_id: row.sender_id, created_at: row.created_at, deleted_at: null }; c.last_message_at = row.created_at }
   // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.

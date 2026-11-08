@@ -1,16 +1,16 @@
 const WORD = /[\p{L}\p{N}_]/u
 
-const value = (record: any, snake: any, camel: any) => record?.[snake] ?? record?.[camel]
-const id = (record: any, snake: any, camel: any) => {
+const value = (record: any, snake: string, camel: string) => record?.[snake] ?? record?.[camel]
+const id = (record: any, snake: string, camel: string) => {
   const result = value(record, snake, camel)
   return typeof result === 'string' ? result : ''
 }
 
-function escapedPhrase(phrase: any) {
-  return phrase.trim().split(/\s+/u).map((part: any) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+')
+function escapedPhrase(phrase: string) {
+  return phrase.trim().split(/\s+/u).map((part: string) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+')
 }
 
-export function socialKeywordMatches(text: any, keyword: any) {
+export function socialKeywordMatches(text: string, keyword: string) {
   if (typeof text !== 'string' || typeof keyword !== 'string') return false
   const phrase = keyword.normalize('NFC').trim()
   const content = text.normalize('NFC')
@@ -33,7 +33,7 @@ export function socialBotAllowsAnonymousSubject(bot: any) {
   )
 }
 
-export function socialAutomationPrompt(event: any, accountExternalId: any) {
+export function socialAutomationPrompt(event: any, accountExternalId: string) {
   const eventKind = value(event, 'event_kind', 'eventKind')
   const body = value(event, 'body', 'body')
   if (!['comment', 'dm'].includes(eventKind) || typeof body !== 'string' || !body.trim()) return ''
@@ -83,11 +83,11 @@ export function matchSocialAutomations({ event, account, automations = [], bots 
     if (
       !automationId ||
       matched.has(automationId) ||
-      (automation as any).enabled !== true ||
+      automation.enabled !== true ||
       automationAccountId !== accountId ||
       value(automation, 'event_kind', 'eventKind') !== eventKind ||
       !socialBotAllowsAnonymousSubject(bot) ||
-      !socialKeywordMatches(body, (automation as any).keyword)
+      !socialKeywordMatches(body, automation.keyword)
     ) continue
     matched.set(automationId, { automation, bot })
   }

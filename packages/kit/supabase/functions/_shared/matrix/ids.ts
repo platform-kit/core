@@ -21,7 +21,7 @@ const HEX32 = /^[0-9a-f]{32}$/i
 
 /* a uuid without its hyphens, and back */
 export const packUuid = (id: any) => String(id || '').replace(/-/g, '').toLowerCase()
-export function unpackUuid(local: any) {
+export function unpackUuid(local: string) {
   const h = String(local || '').toLowerCase()
   if (!HEX32.test(h)) return null
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`
@@ -32,30 +32,30 @@ export function unpackUuid(local: any) {
    every client's stored room list. */
 export const KIND = { channel: 'c', space: 's', message: 'm' }
 
-const sigil = (s: any) => (s === 'user' ? '@' : s === 'event' ? '$' : '!')
+const sigil = (s: string) => (s === 'user' ? '@' : s === 'event' ? '$' : '!')
 
 /* `!c<hex>:host` for a channel, `!s<hex>:host` for a space, `@<hex>:host` for a person,
    `$m<hex>` for a message — an event id carries no host, as Matrix stopped doing in room v4. */
 export const roomId = (channel: any, host: any) => `!${KIND.channel}${packUuid(channel)}:${host}`
 export const spaceId = (space: any, host: any) => `!${KIND.space}${packUuid(space)}:${host}`
-export const userId = (profile: any, host: any) => `@${packUuid(profile)}:${host}`
-export const eventId = (message: any) => `$${KIND.message}${packUuid(message)}`
+export const userId = (profile: unknown, host: any) => `@${packUuid(profile)}:${host}`
+export const eventId = (message: string) => `$${KIND.message}${packUuid(message)}`
 
 /* and back. Each answers `{ kind, id }` or null — never a throw and never a guess, because these
    read strings a client chose and a client may send anything at all. */
-export function readRoom(s: any) {
+export function readRoom(s: string) {
   const m = /^!([cs])([0-9a-f]{32}):(.+)$/i.exec(String(s || ''))
   if (!m) return null
   const id = unpackUuid(m[2])
   return id ? { kind: m[1].toLowerCase() === KIND.channel ? 'channel' : 'space', id, host: m[3] } : null
 }
-export function readUser(s: any) {
+export function readUser(s: string) {
   const m = /^@([0-9a-f]{32}):(.+)$/i.exec(String(s || ''))
   if (!m) return null
   const id = unpackUuid(m[1])
   return id ? { kind: 'user', id, host: m[2] } : null
 }
-export function readEvent(s: any) {
+export function readEvent(s: string) {
   const m = /^\$m([0-9a-f]{32})$/i.exec(String(s || ''))
   if (!m) return null
   const id = unpackUuid(m[1])
@@ -68,12 +68,12 @@ export function readEvent(s: any) {
  * than a lookup that finds nothing and reads as an empty room. So the host is compared, and a
  * room id we could not have minted is foreign whatever it looks like.
  */
-export function isOurs(s: any, host: any) {
+export function isOurs(s: string, host: string) {
   const r = readRoom(s) || readUser(s)
   if (!r) return false
   return !r.host || r.host === host
 }
-export const foreignHost = (s: any) => {
+export const foreignHost = (s: string) => {
   const r = readRoom(s) || readUser(s)
   return r && r.host ? r.host : null
 }

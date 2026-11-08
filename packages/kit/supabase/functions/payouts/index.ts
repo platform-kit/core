@@ -18,7 +18,7 @@ import { connectAccount, refreshAccount, whatIsDue, sendDue, payoutPolicy, payou
 import { assertPaymentCapabilities } from '../_shared/payment-provider.mts'
 import { hyperswitchClientUrl } from '../_shared/hyperswitch-api.mts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pf = preflight(req); if (pf) return pf
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   const user = await getUser(req)
@@ -125,7 +125,7 @@ Deno.serve(async (req: any) => {
     if (body?.user) return json(await sendDue(String(body.user)))
     const out = []
     for (const d of await whatIsDue()) if (d.sendable) out.push({ user_id: d.user_id, ...(await sendDue(d.user_id)) })
-    return json({ runs: out, sent: out.filter((r: any) => r.sent).length })
+    return json({ runs: out, sent: out.filter((r) => r.sent).length })
   }
 
   return json({ error: 'unknown action' }, 400)

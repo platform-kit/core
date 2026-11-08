@@ -145,7 +145,7 @@ async function start(userId: string, providerId: string, loginHint?: string) {
     }
   }
   if (expiredStates?.length) {
-    const { error } = await admin.from('social_oauth_states').delete().in('id', expiredStates.map((item: any) => item.id))
+    const { error } = await admin.from('social_oauth_states').delete().in('id', expiredStates.map((item) => item.id))
     if (error) return json({ error: 'Could not remove expired authorization attempts.', code: 'oauth_cleanup_failed' }, 500)
   }
 
@@ -482,7 +482,7 @@ async function refresh(userId: string, accountId: string) {
   }
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const options = preflight(req)
   if (options) return options
 

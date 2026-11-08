@@ -11,14 +11,14 @@ const esc = (s: any) => String(s)
 const wrap = (value: any, marks: any) => {
   let v = esc(value)
   if (!v) return v
-  const has = (m: any) => (marks || []).some((x: any) => x.type === m)
+  const has = (m: string) => (marks || []).some((x: { type: any }) => x.type === m)
   if (has('code')) return '`' + v.replace(/`/g, '\\`') + '`'
   if (has('bold')) v = '**' + v + '**'
   if (has('italic')) v = '*' + v + '*'
   if (has('underline')) v = '__' + v + '__'
   return v
 }
-function inline(nodes: any, ctx: any) {
+function inline(nodes: any, ctx: { assetAddress: (arg0: any) => any }) {
   let out = ''
   for (const n of nodes || []) {
     if (n.nodeType === 'text') out += wrap(n.value, n.marks)
@@ -30,33 +30,33 @@ function inline(nodes: any, ctx: any) {
   return out
 }
 // @ts-expect-error TS7023, from the conversion: 'block' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one o
-function block(n: any, ctx: any, depth = 0) {
+function block(n, ctx, depth = 0) {
   const t = n.nodeType
   const h = /^heading-(\d)$/.exec(t)
   if (h) return '#'.repeat(Number(h[1])) + ' ' + inline(n.content, ctx)
   if (t === 'paragraph') return inline(n.content, ctx)
-  if (t === 'blockquote') return blocks(n.content, ctx, depth).split('\n').map((l: any) => '> ' + l).join('\n')
+  if (t === 'blockquote') return blocks(n.content, ctx, depth).split('\n').map((l: string) => '> ' + l).join('\n')
   if (t === 'hr') return '---'
   if (t === 'embedded-asset-block') { const a = ctx.assetAddress ? ctx.assetAddress((((n.data || {}).target || {}).sys || {}).id) : null; return a ? '![](' + a + ')' : '' }
   if (t === 'unordered-list' || t === 'ordered-list') {
-    return (n.content || []).map((li: any, i: any) => {
+    return (n.content || []).map((li: { content: any }, i: number) => {
       const mark = t === 'ordered-list' ? `${i + 1}. ` : '- '
       const inner = blocks(li.content, ctx, depth + 1)
       const [first, ...rest] = inner.split('\n')
-      return '  '.repeat(depth) + mark + first + (rest.length ? '\n' + rest.map((l: any) => (l ? '  '.repeat(depth + 1) + l : l)).join('\n') : '')
+      return '  '.repeat(depth) + mark + first + (rest.length ? '\n' + rest.map((l: string) => (l ? '  '.repeat(depth + 1) + l : l)).join('\n') : '')
     }).join('\n')
   }
   if (t === 'table') {
-    const rows = (n.content || []).map((r: any) => (r.content || []).map((c: any) => inline((c.content || []).flatMap((p: any) => p.content || []), ctx).replace(/\|/g, '\\|')))
+    const rows = (n.content || []).map((r: { content: any }) => (r.content || []).map((c: { content: any }) => inline((c.content || []).flatMap((p: { content: any }) => p.content || []), ctx).replace(/\|/g, '\\|')))
     if (!rows.length) return ''
     const head = rows[0], body = rows.slice(1)
-    return ['| ' + head.join(' | ') + ' |', '|' + head.map(() => ' --- ').join('|') + '|', ...body.map((r: any) => '| ' + r.join(' | ') + ' |')].join('\n')
+    return ['| ' + head.join(' | ') + ' |', '|' + head.map(() => ' --- ').join('|') + '|', ...body.map((r: any[]) => '| ' + r.join(' | ') + ' |')].join('\n')
   }
   if (t === 'embedded-entry-block' || t === 'embedded-entry-inline') return ''
   return inline(n.content, ctx)
 }
 // @ts-expect-error TS7023, from the conversion: 'blocks' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one 
-function blocks(nodes: any, ctx: any, depth = 0) {
+function blocks(nodes, ctx, depth = 0) {
   const out = []
   for (const n of nodes || []) {
     // @ts-expect-error TS7022, from the conversion: 'b' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.

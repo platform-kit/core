@@ -46,7 +46,7 @@ async function original(address: string): Promise<{ bytes: Uint8Array; type: str
 const hex = (buf: ArrayBuffer) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
 const sha = async (s: string) => hex(await crypto.subtle.digest('SHA-1', new TextEncoder().encode(s)))
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: { method: string; url: string|URL; headers: { get: (arg0: string) => string } }) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'GET' && req.method !== 'HEAD') return err('BadRequest', 'This method is not allowed.', 405)
   const url = new URL(req.url)

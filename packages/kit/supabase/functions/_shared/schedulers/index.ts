@@ -24,7 +24,7 @@ export const schedulerIdOf = (type: any) => (type?.scheduler === 'native' || typ
 
 export function schedulers({ db, env }: any) {
   const SCHEDULERS: any = { native: native({ db, env }), cal: cal(env) }
-  const scheduler = (id: any) => { const s = SCHEDULERS[id]; if (!s) throw new Error('no scheduler named ' + id); return s }
+  const scheduler = (id: string) => { const s = SCHEDULERS[id]; if (!s) throw new Error('no scheduler named ' + id); return s }
   const schedulerOf = (type: any) => scheduler(schedulerIdOf(type))
   return { SCHEDULERS, scheduler, schedulerOf }
 }

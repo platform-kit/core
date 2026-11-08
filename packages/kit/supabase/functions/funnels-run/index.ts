@@ -26,7 +26,7 @@ async function allowed(req: Request) {
   return isAdmin(await rolesOf(user.id))
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pf = preflight(req); if (pf) return pf
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   if (!(await allowed(req))) return json({ error: 'not allowed' }, 401)
@@ -48,11 +48,11 @@ Deno.serve(async (req: any) => {
     if (!people.length) continue
     const ids = people.map((p) => p.user_id)
     const { data: mrows } = await admin.from('funnel_members').select('user_id, entered_at, step, last_sent_at, done_at').eq('funnel', name).in('user_id', ids)
-    const members = new Map((mrows ?? []).map((m: any) => [m.user_id, m]))
+    const members = new Map((mrows ?? []).map((m) => [m.user_id, m]))
     const sends = await recentSends(ids)
     const now = Date.now()
     for (const p of people) {
-      let m: any = members.get(p.user_id)
+      let m = members.get(p.user_id)
       if (!m) {
         /* entering now: the row first, so a crash between never sends step one twice */
         m = { user_id: p.user_id, entered_at: new Date().toISOString(), step: 0, last_sent_at: null, done_at: null }

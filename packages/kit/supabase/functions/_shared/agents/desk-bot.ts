@@ -88,7 +88,7 @@ card number, a password, or anything you would not ask for in public.`,
 
 /* a site's bot may start from it. The kit's conduct comes first and the site's words after, so a
    site is adding to the rules rather than arguing with them halfway down. */
-export function extend(bot: any, base = DESK_BOT) {
+export function extend(bot: { extends: string; prompt: any; tools: any; limits: any }, base = DESK_BOT) {
   if (!bot || bot.extends !== base.slug) return bot
   return {
     ...base, ...bot,

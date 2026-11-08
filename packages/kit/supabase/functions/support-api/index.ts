@@ -30,7 +30,7 @@ import { MSG, CONV, LIMITS, MAX_BODY, MIN_GAP_MS, UUID, sha256, newToken, clean,
 import { messageOf, clientConversationOf, clientContactOf, conversationOf, contactOf, agentOf, inboxOf, webhookOf, webhookPayload, EVENTS, errorOf, contactSender } from '../_shared/api/chatwoot/shapes.ts'
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, accept, api_access_token, api-access-token, x-support-token', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS' }
-const site = () => ({ name: (SITE as any).name || 'Support', space: SPACE, url: appUrl() })
+const site = () => ({ name: SITE.name || 'Support', space: SPACE, url: appUrl() })
 const PAGE = 25
 
 /* a contact with the words the shapes want: the account's name and address, its kind */
@@ -47,7 +47,7 @@ async function messagesOf(convId: string, contact: any, since: string | null = n
   const { data } = await q
   const rows = await withAgents(await withUrls(hush((data ?? []) as any[])))
   // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  return rows.map((m: any) => messageOf(m, { contact, agentName: m.agent_name, conversationId: convId }))
+  return rows.map((m) => messageOf(m, { contact, agentName: m.agent_name, conversationId: convId }))
 }
 /* the Application API's conversation, whole */
 async function fullConversation(c: any, { withMessages = true } = {}) {
@@ -66,7 +66,7 @@ const CONV_ALL = `${CONV}, contact_id, assignee_id, custom_attributes` as const 
 /* the webhooks' delivery: Chatwoot's payload for the event, to every subscription holding it */
 async function deliver(event: string, id: string) {
   const { data: subs } = await admin.from('support_webhooks').select('*')
-  const want = (subs ?? []).filter((w: any) => (w.subscriptions || []).includes(event))
+  const want = (subs ?? []).filter((w) => (w.subscriptions || []).includes(event))
   if (!want.length) return { delivered: 0 }
   let payload: any = null
   if (event === 'message_created' || event === 'message_updated') {
@@ -74,9 +74,9 @@ async function deliver(event: string, id: string) {
     const { data: c } = await admin.from('support_conversations').select(CONV_ALL).eq('id', m.conversation_id).maybeSingle(); if (!c) return { delivered: 0 }
     const conv = await fullConversation(c, { withMessages: false })
     const contact = conv.meta.sender
-    const [row] = await withAgents(await withUrls([m as any]))
+    const [row] = await withAgents(await withUrls([m]))
     // @ts-expect-error TS2322, from the conversion: Type '{ content_type: string; content_attributes: { deleted: boolean; kind?: undefined; seconds?: undefined; } | { deleted?: undefined; kind
-    payload = webhookPayload(event, { message: messageOf(row as any, { contact: { ...contact, custom_attributes: contact?.custom_attributes }, agentName: (row as any).agent_name, conversationId: c.id }), conversation: conv, site: site() })
+    payload = webhookPayload(event, { message: messageOf(row, { contact: { ...contact, custom_attributes: contact?.custom_attributes }, agentName: row.agent_name, conversationId: c.id }), conversation: conv, site: site() })
   } else if (event.startsWith('conversation_')) {
     const { data: c } = await admin.from('support_conversations').select(CONV_ALL).eq('id', id).maybeSingle(); if (!c) return { delivered: 0 }
     // @ts-expect-error TS2322, from the conversion: Type '{ id: any; inbox_id: number; account_id: number; status: any; muted: boolean; can_reply: boolean; channel: string; priority: null; sno
@@ -96,7 +96,7 @@ async function deliver(event: string, id: string) {
   return { delivered }
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const url = new URL(req.url)
   const path = url.pathname.replace(/^(?:.*?\/functions\/v1)?\/support-api(?=\/|$)/, '').replace(/\/+$/, '') || '/'
@@ -160,7 +160,7 @@ Deno.serve(async (req: any) => {
       if (m === 'POST') {
         if (await madeLately(ipOf(req), 'threads') >= LIMITS.threads) return fail(429, 'Too many new conversations from this address; try again later.', 'slow down')
         /* the desk's default prompt opens the thread, as the panel's start does; none: an empty thread waiting for its first line */
-        const def = Object.values(PROMPTS).find((p: any) => p.default) as any
+        const def = Object.values(PROMPTS).find((p) => p.default)
         const { data: conv, error } = await admin.from('support_conversations').insert({ contact_id: contact.id, source: def ? 'prompt' : 'contact', path: clean(body.path, 300) || null, custom_attributes: body.custom_attributes && typeof body.custom_attributes === 'object' ? body.custom_attributes : {} }).select(CONV_ALL).single()
         if (error || !conv) return fail(500, error?.message ?? 'not made')
         if (def) await admin.from('support_messages').insert({ conversation_id: conv.id, author: 'system', body: def.text })
@@ -184,7 +184,7 @@ Deno.serve(async (req: any) => {
         if (error) return fail(500, error.message)
         await acknowledge(conv)
         // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'null | undefined'. Type 'string' is not assignable to type 'null | undefined'.
-        return reply(messageOf(msg as any, { contact: cv, conversationId: conv.id, echoId: body.echo_id ? String(body.echo_id) : null }))
+        return reply(messageOf(msg, { contact: cv, conversationId: conv.id, echoId: body.echo_id ? String(body.echo_id) : null }))
       }
       return fail(405, 'GET or POST.')
     }
@@ -207,12 +207,12 @@ Deno.serve(async (req: any) => {
   const { data: keyRow } = await admin.from('api_keys').select('created_by, name').eq('id', caller.id!).maybeSingle()
   const me = await agentRow(keyRow?.created_by ?? null)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'Role[]'. Type 'string' is not assignable to type 'Role'.
-  if (!me || !isSupport(((me as any).roles ?? []) as string[])) return fail(403, 'The key\'s maker is not on the desk.')
+  if (!me || !isSupport((me.roles ?? []) as string[])) return fail(403, 'The key\'s maker is not on the desk.')
   const seg = (app[1] || '').split('/').filter(Boolean)
   const paged = (list: any[]) => { const page = Math.max(1, Number(q.page) || 1); return list.slice((page - 1) * PAGE, page * PAGE) }
 
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'Role[]'. Type 'string' is not assignable to type 'Role'.
-  if (seg[0] === 'profile' && m === 'GET') return reply({ ...agentOf(me), accounts: [{ id: 1, name: S.name, role: isAdmin(((me as any).roles ?? []) as string[]) ? 'administrator' : 'agent' }] })
+  if (seg[0] === 'profile' && m === 'GET') return reply({ ...agentOf(me), accounts: [{ id: 1, name: S.name, role: isAdmin((me.roles ?? []) as string[]) ? 'administrator' : 'agent' }] })
   if (seg[0] === 'inboxes' && m === 'GET') return reply({ payload: [inboxOf(S)] })
   /* who is on the desk is the set of roles, never the old single column: somebody given `support`
      on the People page keeps whatever `role` said before, so filtering on that dropped them. */
@@ -225,7 +225,7 @@ Deno.serve(async (req: any) => {
       if (status) sel = sel.eq('status', status)
       const { data: rows } = await sel
       const all = (rows ?? []) as any[]
-      const mine = all.filter((c) => c.assignee_id === (me as any).id), unassigned = all.filter((c) => !c.assignee_id)
+      const mine = all.filter((c) => c.assignee_id === me.id), unassigned = all.filter((c) => !c.assignee_id)
       const which = q.assignee_type === 'me' ? mine : q.assignee_type === 'unassigned' ? unassigned : all
       const payload = []; for (const c of paged(which)) payload.push(await fullConversation(c, { withMessages: false }))
       return reply({ data: { meta: { mine_count: mine.length, unassigned_count: unassigned.length, all_count: all.length }, payload } })
@@ -241,11 +241,11 @@ Deno.serve(async (req: any) => {
         const text = clean(body.content, MAX_BODY).trim(); if (!text) return fail(400, 'content is required.')
         if (body.private) return fail(422, 'Private notes are not kept here: the note on the contact is (contacts.notes).')
         if (body.message_type && body.message_type !== 'outgoing') return fail(422, 'An agent\'s message is outgoing.')
-        const { data: msg, error } = await admin.from('support_messages').insert({ conversation_id: c.id, author: 'agent', agent_id: (me as any).id, body: text }).select(MSG).single()
+        const { data: msg, error } = await admin.from('support_messages').insert({ conversation_id: c.id, author: 'agent', agent_id: me.id, body: text }).select(MSG).single()
         if (error) return fail(500, error.message)
         await admin.from('support_conversations').update({ agent_read_at: new Date().toISOString() }).eq('id', c.id)
         // @ts-expect-error TS2322, from the conversion: Type '{ id: any; name: any; email: any; type: string; avatar_url: null; thumbnail: null; phone_number: null; identifier: any; custom_attribu
-        return reply(messageOf(msg as any, { contact: conv.meta.sender, agentName: (me as any).name, conversationId: c.id }))
+        return reply(messageOf(msg, { contact: conv.meta.sender, agentName: me.name, conversationId: c.id }))
       }
       return fail(405, 'GET or POST.')
     }
@@ -258,7 +258,7 @@ Deno.serve(async (req: any) => {
       const id = body.assignee_id == null || body.assignee_id === 0 || body.assignee_id === '' ? null : String(body.assignee_id)
       const agent = id ? await agentRow(id) : null
       // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'Role[]'. Type 'string' is not assignable to type 'Role'.
-      if (id && (!agent || !isSupport(((agent as any).roles ?? []) as string[]))) return fail(422, 'No such agent.')
+      if (id && (!agent || !isSupport((agent.roles ?? []) as string[]))) return fail(422, 'No such agent.')
       await admin.from('support_conversations').update({ assignee_id: id }).eq('id', c.id)
       return reply(agent ? agentOf(agent) : null)
     }
@@ -280,12 +280,12 @@ Deno.serve(async (req: any) => {
   }
 
   if (seg[0] === 'webhooks') {
-    const view = (w: any) => ({ payload: { webhook: webhookOf(w) } })
+    const view = (w: { created_at: string; created_by: string|null; id: string; last_at: string|null; last_error: string|null; source: string; subscriptions: string[]; updated_at: string; url: string }) => ({ payload: { webhook: webhookOf(w) } })
     if (seg.length === 1 && m === 'GET') { const { data } = await admin.from('support_webhooks').select('*').order('created_at'); return reply({ payload: { webhooks: (data ?? []).map(webhookOf) } }) }
     const input = () => { const w = body.webhook && typeof body.webhook === 'object' ? body.webhook : body; const urlOk = typeof w.url === 'string' && /^https?:\/\/\S+$/.test(w.url); const subs = Array.isArray(w.subscriptions) ? w.subscriptions.map(String).filter((e: string) => EVENTS.includes(e)) : null; return { url: urlOk ? w.url : null, subscriptions: subs } }
     if (seg.length === 1 && m === 'POST') {
       const w = input(); if (!w.url) return fail(422, 'url is required and must be http(s).'); if (!w.subscriptions || !w.subscriptions.length) return fail(422, 'subscriptions names at least one event: ' + EVENTS.join(', '))
-      const { data, error } = await admin.from('support_webhooks').insert({ url: w.url, subscriptions: w.subscriptions, created_by: (me as any).id }).select('*').single(); if (error) return fail(500, error.message)
+      const { data, error } = await admin.from('support_webhooks').insert({ url: w.url, subscriptions: w.subscriptions, created_by: me.id }).select('*').single(); if (error) return fail(500, error.message)
       return reply(view(data), 201)
     }
     if (!UUID.test(String(seg[1] ?? ''))) return fail(404, 'Not found.')

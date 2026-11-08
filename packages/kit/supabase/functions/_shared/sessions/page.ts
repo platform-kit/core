@@ -7,17 +7,17 @@
  * before there was a block at all. `cancel` and `reschedule` take a third answer, 'notice': they
  * may, until the type's own minimum notice, which is what most of them want.
  */
-export const pageOf = (type: any) => (type && type.page) || {}
+export const pageOf = (type: { page: any }) => (type && type.page) || {}
 
 /* is a part of the page shown? notes · organiser · details · zone */
-export const shows = (type: any, part: any) => pageOf(type)[part] !== false
+export const shows = (type: any, part: string|number) => pageOf(type)[part] !== false
 
 /* WHETHER A READER MAY CANCEL OR MOVE THIS BOOKING NOW, and why not where they may not:
  *   { ok: true } | { ok: false, why: 'never' | 'too-soon' | 'past', hours }
  * A HOST IS NOT ASKED. These switches are about the reader's page; a host cancels a session they
  * are giving whenever they need to, which is what "the host's own" has always meant here.
  */
-export function mayReader(type: any, what: any, startsAt: any, now = Date.now(), status = 'accepted') {
+export function mayReader(type: any, what: string, startsAt: string|null|undefined, now = Date.now(), status = 'accepted') {
   const rule = pageOf(type)[what]
   if (rule === false) return { ok: false, why: 'never' }
   const start = typeof startsAt === 'number' ? startsAt : Date.parse(startsAt || '')
@@ -42,7 +42,7 @@ export function mayReader(type: any, what: any, startsAt: any, now = Date.now(),
  *              look. This is the one most hosts want, and the one nobody would think to build.
  *   true       always
  */
-export function waitsForYes(type: any, startsAt: any, now = Date.now()) {
+export function waitsForYes(type: any, startsAt: number, now = Date.now()) {
   const rule = (type || {}).confirm
   if (rule === true) return true
   if (rule !== 'notice') return false
@@ -62,13 +62,13 @@ export function lengthsOf(type: any) {
   if (!rows.length) return []
   /* a length may be written as a bare number of minutes or as a row with a price of its own, and
      the collection keeps whichever was written — so both are read here rather than in two places */
-  return rows.map((x: any) => (typeof x === "number" ? { minutes: x } : x || {})).map((r: any) => ({ minutes: Math.max(5, Number(r.minutes) || 0), price: r.price || (type || {}).price || '', sku: r.sku || (type || {}).sku || null })).filter((r: any) => r.minutes)
+  return rows.map((x: any) => (typeof x === "number" ? { minutes: x } : x || {})).map((r: { minutes: any; price: any; sku: any }) => ({ minutes: Math.max(5, Number(r.minutes) || 0), price: r.price || (type || {}).price || '', sku: r.sku || (type || {}).sku || null })).filter((r: { minutes: any }) => r.minutes)
 }
 /* the one a booking is being made at: the length asked for if the type offers it, else its default */
-export function lengthChosen(type: any, minutes: any) {
+export function lengthChosen(type: any, minutes: number) {
   const rows = lengthsOf(type)
   if (!rows.length) return { minutes: Math.max(5, Number((type || {}).duration) || 60), price: (type || {}).price || '', sku: (type || {}).sku || null }
-  return rows.find((r: any) => r.minutes === Number(minutes)) || rows[0]
+  return rows.find((r: { minutes: number }) => r.minutes === Number(minutes)) || rows[0]
 }
 
 /*

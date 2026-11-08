@@ -15,14 +15,14 @@ const tell = (trigger: string, uid: string) => deliverSchedulingEvent(trigger, u
 /* `status` because a booking that WAITS for the host's word is made as `pending`, and what happens
    next — which letter, what the page says — follows from it */
 export type Made = { uid: string; start_at: string; end_at: string; title: string; join_url: string | null; where: any; host_id: string | null; status: string }
-const ofCal = (b: any): Made => ({ uid: b.uid, start_at: b.start, end_at: b.end, title: b.title, join_url: b.meetingUrl ?? null, where: null, host_id: null, status: b.status === 'pending' ? 'pending' : 'accepted' })
-const ofNative = (b: any): Made => ({ uid: b.uid, start_at: b.start_at, end_at: b.end_at, title: b.title, join_url: b.join_url ?? null, where: b.where, host_id: b.host_id, status: b.status || 'accepted' })
+const ofCal = (b: { uid: any; start: any; end: any; title: any; meetingUrl: any; status: string }): Made => ({ uid: b.uid, start_at: b.start, end_at: b.end, title: b.title, join_url: b.meetingUrl ?? null, where: null, host_id: null, status: b.status === 'pending' ? 'pending' : 'accepted' })
+const ofNative = (b: { uid: any; start_at: any; end_at: any; title: any; join_url: any; where: any; host_id: any; status: any }): Made => ({ uid: b.uid, start_at: b.start_at, end_at: b.end_at, title: b.title, join_url: b.join_url ?? null, where: b.where, host_id: b.host_id, status: b.status || 'accepted' })
 
 export type Attendee = { email: string; name: string; timeZone: string; user_id?: string | null }
 /* a host's booking for others: `for` names the invitees (the first is the row's own), made_by the host, and nothing is judged, spent or charged */
 export type ForOthers = { attendees: Attendee[]; made_by: string; made_by_name: string; host?: string | null }
 export async function makeBooking(s: Session, o: { start: string; attendee: Attendee; user_id: string | null; notes: string; phone?: string; credit: string | null; forOthers?: ForOthers; response?: string | null; minutes?: number; count?: number; checkoutIdentity?: string; stripeCheckoutSessionId?: string }): Promise<Made> {
-  const sch = schedulerOf(s) as any
+  const sch = schedulerOf(s)
   let made: Made
   const f = o.forOthers
   if (schedulerIdOf(s) === 'cal') {
@@ -43,7 +43,7 @@ export async function makeBooking(s: Session, o: { start: string; attendee: Atte
     })
     if (o.credit) await spendCredit(o.credit)
     /* a video room on this site: the provider names the room and the row's Join opens the call page; every other kind of place asks nothing */
-    const v = videoOf(s) as any
+    const v = videoOf(s)
     if (v) { const r = v.room(b); await admin.from('bookings').update({ join_url: r.join_url, room: r.ref }).eq('uid', b.uid); b.join_url = r.join_url; b.room = r.ref }
     made = ofNative(b)
     /* A BOOKING THAT WAITS SENDS TWO DIFFERENT LETTERS: the reader is told the time is held, the
@@ -68,7 +68,7 @@ export async function makeBooking(s: Session, o: { start: string; attendee: Atte
 
 /* a move: a cal.com booking gets a new uid from cal.com (the old row marked rescheduled); a native one keeps its uid */
 export async function moveBooking(s: Session, uid: string, start: string, by: { email: string; role: 'reader' | 'host' | 'admin' }, user_id: string): Promise<Made> {
-  const sch = schedulerOf(s) as any
+  const sch = schedulerOf(s)
   if (schedulerIdOf(s) === 'cal') {
     const b = await sch.reschedule(uid, start, by.email, 'moved from the app')
     const { data: was } = await admin.from('bookings').select('credit_id').eq('uid', uid).maybeSingle()
@@ -89,13 +89,13 @@ export async function moveBooking(s: Session, uid: string, start: string, by: { 
 
 export async function cancelBooking(row: { uid: string; user_id: string | null; event: string | null; credit_id: string | null }, by: { email: string; role: 'reader' | 'host' | 'admin' }, reason: string) {
   const s = await typeFor(row.event, { any: true })
-  const sch = s ? (schedulerOf(s) as any) : null
+  const sch = s ? schedulerOf(s) : null
   if (!s || schedulerIdOf(s) === 'cal') {
     if (sch) await sch.cancel(row.uid, by.role, reason)
     await admin.from('bookings').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('uid', row.uid)
   } else {
     await sch.cancel(row.uid, by.role, reason)
-    const v = videoOf(s) as any
+    const v = videoOf(s)
     if (v) { const { data: b } = await admin.from('bookings').select('uid, room, seat_of').eq('uid', row.uid).maybeSingle(); if (b && !b.seat_of) await v.end(b).catch(() => {}) }
     await sessionMail('session-cancelled', row.uid).catch((e) => console.warn('session-cancelled mail', String(e)))
     await tell('BOOKING_CANCELLED', row.uid)

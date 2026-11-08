@@ -72,7 +72,7 @@ sources:
     deploy/prerender,
     deploy/relay,
   ]
-reviewed: 2026-11-04
+reviewed: 2026-11-07
 ---
 
 ## Restarting development

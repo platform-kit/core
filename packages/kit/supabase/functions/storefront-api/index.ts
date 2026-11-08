@@ -39,13 +39,13 @@ async function storeNow() {
   const { live } = await contentIndexes()
   const imagesBase = (live.site.url || site()).replace(/^https?:/, '') + '/images'
   const ctx = makeContext(live, { imagesBase })
-  const recs = (m: string) => live.records.filter((r: any) => r.model === m)
+  const recs = (m: string) => live.records.filter((r) => r.model === m)
   const store = storefrontOf({
     offers: OFFERS, products: recs('products'), collections: recs('collections'), books: recs('books'),
     site: { name: live.site.name, url: live.site.url || site(), description: live.site.description },
     imageUrl: (address: string) => { const a = ctx.assetsByAddress.get(address); return a ? 'https:' + assetUrl(a, ctx) : (address && /^https?:/.test(address) ? address : null) },
     imageSize: (address: string) => { const a: any = ctx.assetsByAddress.get(address); return a && a.width ? { width: a.width, height: a.height } : null },
-    shipsTo: ((catalog as any).shipping?.countries ?? []),
+    shipsTo: (catalog.shipping?.countries ?? []),
   })
   cached = { at: Date.now(), store }
   return store
@@ -54,10 +54,10 @@ const newToken = () => { const b = new Uint8Array(18); crypto.getRandomValues(b)
 const carts = (keyId: string | null) => ({
   get: async (id: string) => { if (!/^[a-f0-9]{36}$/.test(id)) return null; const { data } = await admin.from(TABLE).select('*').eq('id', id).maybeSingle(); return data ?? null },
   create: async (row: any) => { const rec = { ...row, id: newToken(), key_id: keyId }; const { data, error } = await admin.from(TABLE).insert(rec).select('*').single(); if (error) throw new Error(error.message); return data },
-  save: async (row: any) => { const { id, ...rest } = row; const { data, error } = await admin.from(TABLE).update(rest).eq('id', id).select('*').single(); if (error) throw new Error(error.message); return data },
+  save: async (row: { [x: string]: any; id: any }) => { const { id, ...rest } = row; const { data, error } = await admin.from(TABLE).update(rest).eq('id', id).select('*').single(); if (error) throw new Error(error.message); return data },
 })
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   await fresh()
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const url = new URL(req.url)
@@ -80,7 +80,7 @@ Deno.serve(async (req: any) => {
     if (!row) return fail(404, 'The cart does not exist.')
     const store = await storeNow()
     const c = cartOf(store, row, { site: site() })
-    return reply({ id: row.id, checkoutUrl: c.checkoutUrl, buyerIdentity: c.buyerIdentity, totalQuantity: c.totalQuantity, lines: c._lines.map((l: any) => ({ id: l.id, quantity: l.quantity, sku: l.merchandise._line.sku, variant: l.merchandise._line.variant, kind: l.merchandise._line.kind, name: l.merchandise._line.name, label: l.merchandise._line.label, unit_amount: Math.round(Number(l.merchandise.price.amount) * 100), currency: l.merchandise.price.currencyCode.toLowerCase(), image: l.merchandise.image?._address ?? l.merchandise.image?.url ?? null, handle: l.merchandise.product.handle })) })   /* the picture by its own address: the site serves it, as the product page's line does */
+    return reply({ id: row.id, checkoutUrl: c.checkoutUrl, buyerIdentity: c.buyerIdentity, totalQuantity: c.totalQuantity, lines: c._lines.map((l) => ({ id: l.id, quantity: l.quantity, sku: l.merchandise._line.sku, variant: l.merchandise._line.variant, kind: l.merchandise._line.kind, name: l.merchandise._line.name, label: l.merchandise._line.label, unit_amount: Math.round(Number(l.merchandise.price.amount) * 100), currency: l.merchandise.price.currencyCode.toLowerCase(), image: l.merchandise.image?._address ?? l.merchandise.image?.url ?? null, handle: l.merchandise.product.handle })) })   /* the picture by its own address: the site serves it, as the product page's line does */
   }
 
   if (!/^\/api\/[^/]+\/graphql(\.json)?$/.test(path)) return fail(404, 'Not found: the endpoint is /api/<version>/graphql.json.')

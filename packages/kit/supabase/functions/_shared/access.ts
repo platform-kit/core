@@ -5,25 +5,25 @@
  * ladder from here; the content API asks `mayReadEntry` before it serves a gated entry's body.
  */
 export const CLASSES = ['guest', 'authenticated', 'paid', 'subscribed']
-const rank = (c: any) => Math.max(0, CLASSES.indexOf(c))
+const rank = (c: string) => Math.max(0, CLASSES.indexOf(c))
 
 /* monotonic: a subscriber also clears every lower bar */
-export const hasClass = (current: any, required: any) => CLASSES.indexOf(current) >= CLASSES.indexOf(required)
+export const hasClass = (current: string, required: string) => CLASSES.indexOf(current) >= CLASSES.indexOf(required)
 
 /* canAccess is a MINIMUM bar on the ladder: empty or absent admits everyone; [paid] admits paid and subscribed */
-export function allowedBy(canAccess: any, cls: any) {
+export function allowedBy(canAccess: unknown, cls: string) {
   if (!Array.isArray(canAccess) || !canAccess.length) return true
   return rank(cls) >= Math.min(...canAccess.map(rank))
 }
 
 /* the lowest class that clears a canAccess bar */
-export function requiredBy(canAccess: any) {
+export function requiredBy(canAccess: any[]) {
   if (!Array.isArray(canAccess) || !canAccess.length) return 'guest'
   return CLASSES[Math.min(...canAccess.map(rank))]
 }
 
 /* the rung an account stands on: what get_my_entitlements says its class is, else authenticated; no account, guest */
-export function classOf(entitlements: any, signedIn: any) {
+export function classOf(entitlements: { class?: string; products?: string[] }|null, signedIn: boolean) {
   if (!signedIn) return 'guest'
   const c = entitlements && entitlements.class
   return c === 'paid' || c === 'subscribed' ? c : 'authenticated'
@@ -32,7 +32,7 @@ export function classOf(entitlements: any, signedIn: any) {
 export const mayRead = (canAccess: any, entitlements: any, signedIn: any) => allowedBy(canAccess, classOf(entitlements, signedIn))
 
 /* a book bought outright lifts its buyer to paid for that book, as the reader does (BookReader.vue's effClass) */
-export function mayReadEntry(entry: any, entitlements: any, signedIn: any) {
+export function mayReadEntry(entry: { kind: string; slug: any; canAccess: any }, entitlements: any, signedIn: any) {
   let cls = classOf(entitlements, signedIn)
   const owned = entry && entry.kind === 'books' && entitlements && Array.isArray(entitlements.products) && entitlements.products.includes(entry.slug)
   if (owned && rank(cls) < rank('paid')) cls = 'paid'

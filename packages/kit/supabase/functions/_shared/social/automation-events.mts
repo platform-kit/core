@@ -6,7 +6,7 @@ const asText = (value: any, max = 10000) =>
     ? value.trim()
     : undefined
 
-const asId = (value: any, max = 500) =>
+const asId = (value: string|any[], max = 500) =>
   typeof value === 'string' && value.length > 0 && value.length <= max ? value : undefined
 
 function normalized({
@@ -34,7 +34,7 @@ function normalized({
   }
 }
 
-function normalizeInstagram(payload: any, event: any) {
+function normalizeInstagram(payload: { entry: any }, event: { id: any }) {
   const result = []
   for (const entryValue of Array.isArray(payload.entry) ? payload.entry : []) {
     const entry = asRecord(entryValue)
@@ -77,7 +77,7 @@ function normalizeInstagram(payload: any, event: any) {
   return result
 }
 
-function normalizeThreads(payload: any, event: any) {
+function normalizeThreads(payload: any[], event: { id: any }) {
   const values = asRecord(payload.values)
   if (values.field !== 'replies') return []
   const value = asRecord(values.value)
@@ -96,7 +96,7 @@ function normalizeThreads(payload: any, event: any) {
   return item ? [item] : []
 }
 
-function normalizeLinkedIn(payload: any, event: any) {
+function normalizeLinkedIn(payload: { notifications: any }, event: { id: any }) {
   const result = []
   for (const value of Array.isArray(payload.notifications) ? payload.notifications : []) {
     const notification = asRecord(value)
@@ -124,7 +124,7 @@ function normalizeLinkedIn(payload: any, event: any) {
   return result
 }
 
-function normalizeManaged(payload: any, event: any) {
+function normalizeManaged(payload: { data: any }, event: { type: string; id: any }) {
   const data = asRecord(payload.data)
   const source = Object.keys(data).length ? data : payload
   const kind = event.type === 'comment.received' ? 'comment' : event.type === 'message.received' ? 'dm' : null

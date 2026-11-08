@@ -342,7 +342,7 @@ async function deliverManaged(
   const capabilities = client.capabilities()
   const manifest = Object.values(capabilities).find((item: any) =>
     Array.isArray(item?.capabilities) &&
-    item.capabilities.some((capability: any) =>
+    item.capabilities.some((capability: { platform: any; operation: string; availability: string }) =>
       capability?.platform === account.provider_id &&
       capability?.operation === 'posts.publish' &&
       capability?.availability === 'available',
@@ -648,7 +648,7 @@ async function finishMetrics(
   if (data !== true) throw new Error('The social metrics lease expired before its result could be recorded.')
 }
 
-function metricsManifest(client: any, directManifest?: unknown) {
+function metricsManifest(client: { capabilities: () => any }, directManifest?: unknown) {
   const manifest = directManifest || client?.capabilities?.()
   return Array.isArray(manifest) ? manifest : [manifest, ...Object.values(manifest || {})]
 }
@@ -786,4 +786,4 @@ async function handle(req: Request) {
   return json({ claimed: deliveries.length, processed, errors }, errors ? 207 : 200)
 }
 
-Deno.serve((req: any) => preflight(req) ?? handle(req))
+Deno.serve((req: Request) => preflight(req) ?? handle(req))

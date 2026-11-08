@@ -16,7 +16,7 @@ import { sendEmail, smtpConfigured } from '../_shared/email.ts'
 
 const PRESENT_MS = 2 * 60 * 1000
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
 
@@ -35,7 +35,7 @@ Deno.serve(async (req: any) => {
   if (msg.sender_id !== user.id) return json({ error: 'not yours' }, 403)
   if (msg.deleted_at) return json({ skipped: 'deleted' })
 
-  const conv = msg.conversations as any
+  const conv = msg.conversations
   const to = conv.member_id === user.id ? conv.provider_id : conv.member_id
 
   const { data: cm } = await admin.from('conversation_members')

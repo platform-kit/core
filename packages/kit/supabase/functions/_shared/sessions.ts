@@ -104,7 +104,7 @@ export async function typeFor(event: string | null, opts: { any?: boolean } = {}
 
 /* the row, from the API's own answer, so the sheet shows the session the moment
    it is made; the webhook's fuller projection lands over it a moment later */
-export async function mirror(b: any, user_id: string | null, s: Session | null, credit_id: string | null = null, checkoutIdentity: string | null = null, stripeCheckoutSessionId: string | null = null) {
+export async function mirror(b: { hosts: any; attendees: any; uid: any; metadata: { checkout_identity: any; stripe_checkout_session_id: any }; title: any; eventType: { slug: any }; start: any; end: any; meetingUrl: any; status: string }, user_id: string | null, s: Session | null, credit_id: string | null = null, checkoutIdentity: string | null = null, stripeCheckoutSessionId: string | null = null) {
   /* cal.com's answer; a native booking is written by its scheduler and never comes here */
   const host = (b.hosts ?? [])[0] ?? {}
   const att = (b.attendees ?? [])[0] ?? {}
@@ -115,7 +115,7 @@ export async function mirror(b: any, user_id: string | null, s: Session | null, 
     stripe_checkout_session_id: stripeCheckoutSessionId ?? b.metadata?.stripe_checkout_session_id ?? null,
     email: att.email ?? null, name: att.name ?? null,
     provider_id: coach?.id ?? null, provider_email: host.email ? String(host.email).toLowerCase() : null,
-    attendee_emails: (b.attendees ?? []).map((a: any) => String(a.email || '').toLowerCase()).filter(Boolean),
+    attendee_emails: (b.attendees ?? []).map((a: { email: any }) => String(a.email || '').toLowerCase()).filter(Boolean),
     title: b.title ?? s?.title ?? null, event: b.eventType?.slug ?? s?.event ?? null,
     start_at: b.start ?? null, end_at: b.end ?? null, join_url: b.meetingUrl ?? null,
     status: b.status === 'pending' ? 'pending' : 'accepted', payload: b, provider: 'cal', type: s?.slug ?? null, updated_at: new Date().toISOString(),
@@ -130,8 +130,8 @@ export async function tiersOf(user_id: string | null): Promise<{ rank: number; t
   if (!user_id) return { rank: 0, tiers: [] }
   const { data } = await admin.from('entitlements').select('tier, expires_at').eq('user_id', user_id).eq('kind', 'class').eq('key', 'subscribed').eq('active', true)
   const now = Date.now()
-  const tiers = (data ?? []).filter((e: any) => e.tier && (!e.expires_at || new Date(e.expires_at).getTime() > now)).map((e: any) => e.tier as string)
-  return { rank: Math.max(0, ...tiers.map((t: any) => TIERS[t] ?? 0)), tiers }
+  const tiers = (data ?? []).filter((e) => e.tier && (!e.expires_at || new Date(e.expires_at).getTime() > now)).map((e) => e.tier as string)
+  return { rank: Math.max(0, ...tiers.map((t) => TIERS[t] ?? 0)), tiers }
 }
 export async function rankOf(user_id: string | null): Promise<number> { return (await tiersOf(user_id)).rank }
 /* what the reader's tiers say of a type: the listing with the highest rank wins; null when none lists it */
@@ -150,7 +150,7 @@ export const forRank = (s: Session, rank: number, signed: boolean, tiers: string
 export async function credits(user_id: string, sku: string) {
   const o = offer(sku)
   const { data } = await admin.from('entitlements').select('id').eq('user_id', user_id).eq('kind', 'product').eq('key', 'session:' + (o?.key ?? sku)).eq('active', true)
-  return (data ?? []).map((r: any) => r.id as string)
+  return (data ?? []).map((r) => r.id as string)
 }
 
 export type Verdict = { ok: true; session: Session; credit: string | null } | { ok: false; reason: 'unknown' | 'guest' | 'not-included' | 'over' | 'unpaid'; session: Session | null; next?: string; allowance?: string }
@@ -181,7 +181,7 @@ export async function judge(event: string | null, user_id: string | null, email:
   const { data: others } = await q
   for (const [n, ms, word] of [[weekly, WEEK, 'one a week'], [monthly, MONTH, 'one a month']] as const) {
     if (!(n > 0)) continue
-    const counted = (others ?? []).filter((b: any) => b.start_at && new Date(b.start_at).getTime() >= now - ms).sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
+    const counted = (others ?? []).filter((b) => b.start_at && new Date(b.start_at).getTime() >= now - ms).sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
     if (counted.length >= n) return { ok: false, reason: 'over', session: s, next: new Date(new Date(counted[0].start_at ?? 0).getTime() + ms).toISOString(), allowance: n === 1 ? word : `${n} a ${word.split(' ').pop()}` }
   }
   /* a paid session is booked with a credit — unless the reader's tier includes it */

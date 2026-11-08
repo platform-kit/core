@@ -37,7 +37,7 @@ const MSGTYPE: any = {
 /* a picture is a file whose type says so — Matrix separates them and we do not */
 const isImage = (t: any) => /^image\//i.test(String(t || ''))
 
-const ts = (v: any) => (v ? Date.parse(v) : 0) || 0
+const ts = (v: string) => (v ? Date.parse(v) : 0) || 0
 
 /*
  * ROW → EVENT.
@@ -47,7 +47,7 @@ const ts = (v: any) => (v ? Date.parse(v) : 0) || 0
  * pure module that knew the host would not be pure.
  */
 /* what the sender said about the picture, kept on meta and never editable */
-const imageOf = (row: any) => (row && row.meta && typeof row.meta === 'object' && row.meta.image) || null
+const imageOf = (row: { meta: { image: any } }) => (row && row.meta && typeof row.meta === 'object' && row.meta.image) || null
 
 export function toEvent(row: any, { host, mediaUrl = () => null }: any = {}) {
   if (!row) return null
@@ -130,7 +130,7 @@ export function toEvent(row: any, { host, mediaUrl = () => null }: any = {}) {
 }
 
 /* what a client shows when it understands nothing else about the message */
-function bodyOf(row: any) {
+function bodyOf(row: { kind: string; attachment_name: any; title: any; body: any }) {
   if (row.kind === 'voice') return row.attachment_name || 'Voice message'
   if (row.kind === 'file') return row.attachment_name || 'File'
   if (row.kind === 'poll' && row.title) return row.title
@@ -158,7 +158,7 @@ export type EventMedia = { path: string; type?: string; name?: string; size?: nu
 export type MessageRow = { channel_id: string; kind: string; body?: string | null; cipher?: Json; thread_root_id?: string; attachment?: string; attachment_type?: string; attachment_name?: string; attachment_size?: number; seconds?: number }
 export type FromEvent = { ok: true; replaces: string | null; row: MessageRow } | { ok: false; why: string }
 
-export function fromEvent(ev: any, { channelId, media = null, sealed = false }: { channelId: string; media?: EventMedia | null; sealed?: boolean }): FromEvent {
+export function fromEvent(ev: { type: any; content: any }, { channelId, media = null, sealed = false }: { channelId: string; media?: EventMedia | null; sealed?: boolean }): FromEvent {
   if (!ev || typeof ev !== 'object') return { ok: false, why: 'no event' }
   const c = ev.content || {}
   /*

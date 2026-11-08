@@ -7,7 +7,7 @@ import { eventTypeId } from './event-type.ts'
 const STATUS: any = { pending: 'pending', accepted: 'accepted', rescheduled: 'rescheduled', cancelled: 'cancelled', rejected: 'rejected', ended: 'accepted' }
 const iso = (v: any) => (v ? new Date(v).toISOString() : null)
 // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-const minutes = (a: any, b: any) => (a && b ? Math.round((new Date(b) - new Date(a)) / 60000) : 0)
+const minutes = (a, b) => (a && b ? Math.round((new Date(b) - new Date(a)) / 60000) : 0)
 const nameOf = (email: any, name: any) => name || (email ? String(email).split('@')[0] : '')
 
 /**

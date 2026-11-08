@@ -80,7 +80,7 @@ export async function pull(uid: string, opts: { force?: boolean; source?: Source
 export async function pullPending(limit = 20): Promise<PullResult[]> {
   const { data } = await admin.from('bookings').select('uid').eq('recording_state', 'pending').lt('recording_tries', TRIES).order('updated_at', { ascending: true }).limit(limit)
   const out: PullResult[] = []
-  for (const r of data ?? []) out.push(await pull((r as any).uid))
+  for (const r of data ?? []) out.push(await pull(r.uid))
   return out
 }
 
@@ -91,10 +91,10 @@ export async function retain(days: number): Promise<{ removed: number }> {
   const { data: old } = await admin.from('bookings').select('uid, recording_path, transcript_path').not('recording_path', 'is', null).lt('recording_at', before)
   let removed = 0
   for (const r of old ?? []) {
-    const paths = [(r as any).recording_path, (r as any).transcript_path].filter(Boolean) as string[]
+    const paths = [r.recording_path, r.transcript_path].filter(Boolean) as string[]
     const { error } = await admin.storage.from(BUCKET).remove(paths)
     if (error) continue
-    await admin.from('bookings').update({ recording_path: null, transcript_path: null, recording_state: 'removed', recording_error: String(days) }).eq('uid', (r as any).uid)
+    await admin.from('bookings').update({ recording_path: null, transcript_path: null, recording_state: 'removed', recording_error: String(days) }).eq('uid', r.uid)
     removed++
   }
   return { removed }

@@ -73,7 +73,7 @@ let presence: any = null                  /* the space's own topic */
 const lastTyped = new Map()          /* channelId → when we last said we were typing */
 let typingTimer: any = null
 
-const rpc = async (name: string, args?: { p_channel?: any; p_before?: any; p_roots?: any; p_n?: number; p_root?: any; p_space?: any; p_on?: boolean; p_seq?: any; p_with?: any; p_q?: string; p_from?: any; p_after?: string|null; p_cursors?: any; p_lim?: number; p_note?: null; p_response?: null; p_agreed?: boolean; p_flair?: any; p_user?: any; p_request?: any; p_yes?: any; p_hash?: string; p_role?: null; p_uses?: number; p_days?: null; p_id?: any; p_message?: any; p_reason?: any; p_open?: boolean; p_kind?: string; p_minutes?: any; p_capability?: string }|undefined) => {
+const rpc = async (name: string, args?: any) => {
   const { data, error } = await (supabase as any).rpc(name, args || {})
   if (error) throw error
   return data
@@ -1055,7 +1055,7 @@ function unwatch(channelId: any) {
 }
 
 /* the database's own send. A payload without its body is a message too large to carry: fetch it. */
-async function arrived(channelId: any, payload: { id: any; cipher: null; body: null; kind: string; deleted_at: null; title: null; channel: any; seq: any; root: any; author: any; attachment: any; attachment_type: any; seconds: any; meta: any; at: any; edited_at: any }) {
+async function arrived(channelId: any, payload: any) {
   if (!payload || !payload.id) return
   /* a sealed message's words ARE its cipher, which the wake carries, so it is not a payload that
      lost its body and must not be fetched again */

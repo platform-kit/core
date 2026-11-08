@@ -280,7 +280,7 @@ async function accept(req: Request, backendId: string, providerId: string) {
   return json({ received: true, accepted })
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS')
     return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' } })
   const url = new URL(req.url)

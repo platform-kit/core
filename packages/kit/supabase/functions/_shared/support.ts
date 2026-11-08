@@ -50,7 +50,7 @@ export async function madeLately(ip: string | null, what: 'guests' | 'threads' |
   const since = new Date(Date.now() - HOUR).toISOString()
   if (what === 'guests') { const { count } = await admin.from('support_contacts').select('id', { count: 'exact', head: true }).eq('ip', ip).gte('created_at', since); return count ?? 0 }
   const { data: ks } = await admin.from('support_contacts').select('id').eq('ip', ip)
-  const ids = (ks ?? []).map((k: any) => k.id)
+  const ids = (ks ?? []).map((k) => k.id)
   if (!ids.length) return 0
   if (what === 'threads') { const { count } = await admin.from('support_conversations').select('id', { count: 'exact', head: true }).in('contact_id', ids).gte('created_at', since); return count ?? 0 }
   const { count } = await admin.from('support_messages').select('id, support_conversations!inner(contact_id)', { count: 'exact', head: true }).in('support_conversations.contact_id', ids).neq('kind', 'text').gte('created_at', since)
@@ -58,7 +58,7 @@ export async function madeLately(ip: string | null, what: 'guests' | 'threads' |
 }
 /* the contact as the widget sees it: who they are comes from the account, or is nothing */
 /* what an away email says of a line that is not words */
-export const W_ATTACH = (m: any) => ((WORDS as any).support?.[m.kind === 'voice' ? 'voice-line' : 'file-line']) || (m.attachment_name ?? '')
+export const W_ATTACH = (m: any) => (WORDS.support?.[m.kind === 'voice' ? 'voice-line' : 'file-line']) || (m.attachment_name ?? '')
 export const nameOf = (p: Profile | null) => (p ? p.display_name || String(p.email || '').split('@')[0] || null : null)
 export const publicContact = (c: Contact, p: Profile | null) => ({ id: c.id, signed_in: !!c.user_id, name: nameOf(p), email: p?.email ?? null, verified: !!p?.email_verified_at })
 export async function profileOf(uid: string | null): Promise<Profile | null> {
@@ -115,7 +115,7 @@ export async function adopt(guest: Contact, uid: string): Promise<Contact> {
     return data as Contact
   }
   const { data: mine } = await admin.from('support_conversations').select('prompt_id').eq('contact_id', own.id).not('prompt_id', 'is', null)
-  const had = new Set((mine ?? []).map((c: any) => c.prompt_id))
+  const had = new Set((mine ?? []).map((c) => c.prompt_id))
   const { data: theirs } = await admin.from('support_conversations').select('id, prompt_id').eq('contact_id', guest.id)
   for (const c of theirs ?? []) {
     await admin.from('support_conversations').update({ contact_id: own.id, ...(c.prompt_id && had.has(c.prompt_id) ? { prompt_id: null } : {}) }).eq('id', c.id)
@@ -147,7 +147,7 @@ export async function resolve(req: Request, token: string | null): Promise<Who |
   return { user: null, profile: null, contact: null, linked: false, staff: false }
 }
 
-export async function seen(contact: Contact, body: any, req: Request) {
+export async function seen(contact: Contact, body: { path: any; anon_id?: any }, req: Request) {
   await admin.from('support_contacts').update({
     last_seen_at: new Date().toISOString(), last_path: clean(body?.path, 300) || null,
     ua: clean(req.headers.get('user-agent'), 300) || null, ip: ipOf(req), ...(UUID.test(String(body?.anon_id ?? '')) ? { anon_id: String(body.anon_id) } : {}),
@@ -171,15 +171,15 @@ export async function threads(contact: Contact) {
 export async function ownConversation(contact: Contact, id: unknown): Promise<any | null> {
   if (!UUID.test(String(id ?? ''))) return null
   const { data } = await admin.from('support_conversations').select(`${CONV}, contact_id` as const).eq('id', String(id)).eq('contact_id', contact.id).maybeSingle()
-  return (data as any) ?? null
+  return data ?? null
 }
 
 /* the desk's acknowledgement, once per thread: after the reader's first real line — words, a file,
    or the last choice of a prompt's tree — a system line says the message is in and a person will
    answer when they can; nothing more until someone does */
-export async function acknowledge(conv: any): Promise<any | null> {
+export async function acknowledge(conv: { id: string; status: string; source: string; prompt_id: string|null; path: string|null; created_at: string; last_message_at: string|null; last_contact_at: string|null; last_agent_at: string|null; resolved_at: string|null; contact_read_at: string|null; agent_read_at: string|null; agent_typing_at: string|null; acknowledged_at: string|null; listen_key: string; bot_off_at: string|null }): Promise<any | null> {
   if (conv.acknowledged_at) return null
-  const line = (WORDS as any).support?.received
+  const line = WORDS.support?.received
   if (!line) return null
   const { data: had } = await admin.from('support_messages').select('id').eq('conversation_id', conv.id).eq('author', 'agent').limit(1)
   if (had && had.length) return null
@@ -205,7 +205,7 @@ export async function escalate(dry = false) {
   const now = Date.now()
   const waitMs = POLICY['support-wait'] * 60000, presenceMs = POLICY['support-presence'] * 60000
   const { data: seen } = await admin.from('support_agents_seen').select('user_id, last_seen_at')
-  const present = new Set((seen ?? []).filter((a: any) => now - new Date(a.last_seen_at).getTime() < presenceMs).map((a: any) => a.user_id))
+  const present = new Set((seen ?? []).filter((a) => now - new Date(a.last_seen_at).getTime() < presenceMs).map((a) => a.user_id))
   const { data: convs } = await admin.from('support_conversations').select('id, contact_id, assignee_id, last_contact_at, last_agent_at, created_at')
     .eq('status', 'open').is('escalated_at', null).not('last_contact_at', 'is', null)
   const due: any[] = []
@@ -224,15 +224,15 @@ export async function escalate(dry = false) {
   if (!due.length || dry) return { escalated: 0, recipients: 0, would: due.map((c) => ({ id: c.id, name: c.name, since: c.since, assignee_id: c.assignee_id })) }
   /* who gets which: the assignee their own; the rest to the desk */
   let desk = env('SUPPORT_EMAIL').split(/[,\s]+/).filter(Boolean)
-  if (!desk.length) { const { data } = await admin.from('profiles').select('email').overlaps('roles', ['admin', 'support']).not('email', 'is', null); desk = (data ?? []).map((p: any) => p.email).filter(Boolean) }
+  if (!desk.length) { const { data } = await admin.from('profiles').select('email').overlaps('roles', ['admin', 'support']).not('email', 'is', null); desk = (data ?? []).map((p) => p.email).filter(Boolean) }
   const byAddr = new Map<string, any[]>()
   for (const c of due) {
     let addrs = desk
     if (c.assignee_id) { const a = await profileOf(c.assignee_id); if (a?.email) addrs = [a.email] }
     for (const addr of addrs) byAddr.set(addr, (byAddr.get(addr) ?? []).concat([c]))
   }
-  const W = (WORDS as any)['support-digest'] ?? {}
-  const waiting = (c: any) => String(W.waiting || 'waiting {span}').replace('{span}', spanOf(now - new Date(c.since).getTime()))
+  const W = WORDS['support-digest'] ?? {}
+  const waiting = (c: { since: string|number|Date }) => String(W.waiting || 'waiting {span}').replace('{span}', spanOf(now - new Date(c.since).getTime()))
   const row = (c: any) => `<p style="margin:0 0 12px;font-family:Georgia,serif;font-size:15px;line-height:1.5;color:#0c0d0b"><b>${esc(c.name)}</b> · ${esc(waiting(c))}<br><span style="color:#6c6f69">${esc(c.line.slice(0, 200))}</span></p>`
   let sent = 0
   for (const [addr, list] of byAddr) {

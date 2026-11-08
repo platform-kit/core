@@ -18,7 +18,7 @@ import { POLICY } from '../_shared/marketing.ts'
 import { sendEmail } from '../_shared/email.ts'
 import strings from '../_shared/emails/strings.json' with { type: 'json' }
 
-const W = ((strings as any).session ?? {}) as Record<string, string>
+const W = (strings.session ?? {}) as Record<string, string>
 const APP = () => (Deno.env.get('APP_URL') ?? '').replace(/\/$/, '')
 const fill = (t: string, m: Record<string, unknown>) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : String(m[k])))
 const soon = (h: number) => (h >= 2 ? fill(W['in-hours'] || 'in {n} hours', { n: h }) : h === 1 ? (W['in-hour'] || 'in an hour') : fill(W['in-minutes'] || 'in {n} minutes', { n: Math.round(h * 60) }))
@@ -40,7 +40,7 @@ function placeWord(place: any) {
   return 'Online'
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')

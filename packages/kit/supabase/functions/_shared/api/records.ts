@@ -5,10 +5,10 @@
  * which model a file belongs to from its path alone (the longest directory that claims it; a single model claims exactly
  * its own file), so a file under content/ and a row of public.content map the same way.
  */
-export const isRecordModel = (m: any) => !!(m && m.fields && m.fields.length && m.dir)
+export const isRecordModel = (m: { fields: string|any[]; dir: any }) => !!(m && m.fields && m.fields.length && m.dir)
 
 /* the model a content path belongs to, of the models with fields, or null */
-export function modelOfPath(models: any, rel: any) {
+export function modelOfPath(models: any[], rel: string) {
   const p = String(rel || '').replace(/^\.?\//, '')
   if (!p.endsWith('.md')) return null
   let best = null
@@ -26,6 +26,6 @@ export function modelOfPath(models: any, rel: any) {
   return best
 }
 /* the entry's path within its model: the file's path less the directory and the extension */
-export const pathWithin = (m: any, rel: any) => (m.single ? m.key.replace(/^.*\//, '') : String(rel).replace(/^\.?\//, '').slice(String(m.dir).replace(/\/$/, '').length + 1).replace(/\.md$/, ''))
+export const pathWithin = (m: { single: any; key: string; dir: any }, rel: string) => (m.single ? m.key.replace(/^.*\//, '') : String(rel).replace(/^\.?\//, '').slice(String(m.dir).replace(/\/$/, '').length + 1).replace(/\.md$/, ''))
 
-export const isPublished = (data: any) => !(data && data.published === false)
+export const isPublished = (data: Record<string,unknown>) => !(data && data.published === false)

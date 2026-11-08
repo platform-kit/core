@@ -17,7 +17,7 @@ import { mdToEmailHtml } from '../_shared/emails/markdown.ts'
 
 const firstName = (n: string | null) => String(n ?? '').trim().split(/\s+/)[0] || 'there'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pf = preflight(req); if (pf) return pf
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   let body: any
@@ -42,7 +42,7 @@ Deno.serve(async (req: any) => {
     /* provider_terms_owed answers the providers who have not signed this version */
     const owed = answered as Array<{ user_id: string; email: string | null; name: string; signed?: string | null }> | null
     const people = (owed ?? []).filter((p): p is typeof p & { email: string } => Boolean(p.email))
-    if (body?.dry) return json({ version: want, would: people.length, people: (owed ?? []).map((p: any) => ({ email: p.email, signed: p.signed })) })
+    if (body?.dry) return json({ version: want, would: people.length, people: (owed ?? []).map((p) => ({ email: p.email, signed: p.signed })) })
     /* the terms themselves ride in the letter: somebody asked to agree to something reads it there
        rather than being sent to go and find it */
     const html = mdToEmailHtml(String(row?.body ?? ''))

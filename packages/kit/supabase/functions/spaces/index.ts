@@ -21,7 +21,7 @@ import type { Database } from '../_shared/database.types.ts'
 
 const env = (k: string) => Deno.env.get(k) ?? ''
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
   let body: any
@@ -79,7 +79,7 @@ Deno.serve(async (req: any) => {
        where it has none. A huddle is a room like any other. */
     const { video } = videos({ db: admin, env })
     const id = env('LIVEKIT_URL') && env('LIVEKIT_API_KEY') && env('LIVEKIT_API_SECRET') ? 'livekit' : 'mesh'
-    const v: any = video(id)
+    const v = video(id)
     const room = { id: channel, uid: channel, room: channel, start_at: new Date(Date.now() - 6e4).toISOString(), end_at: new Date(Date.now() + 12 * 36e5).toISOString() }
     const cred = await v.admit(room, { id: user.id, name }, 'member')
     if (cred?.early || cred?.over) return json({ error: 'the room is not open', code: 'closed' }, 425)

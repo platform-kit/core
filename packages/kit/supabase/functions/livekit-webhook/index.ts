@@ -9,9 +9,9 @@ import { json, admin } from '../_shared/lib.ts'
 import { deliverSchedulingEvent } from '../_shared/scheduling-events.ts'
 import { video } from '../_shared/cal.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: { method: string }) => {
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
-  const ev = await (video('livekit') as any).event(req)
+  const ev = await video('livekit').event(req)
   if (!ev) return json({ ok: true, ignored: true })
   if (ev.refused) return json({ error: ev.refused }, 400)
   if (!ev.ref) return json({ ok: true, ignored: true })

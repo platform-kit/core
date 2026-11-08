@@ -9,7 +9,7 @@
 import { admin, json } from '../_shared/lib.ts'
 import { printer, refreshPrintOrder } from '../_shared/print.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: { method: string; url: string|URL; json: () => any }) => {
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   const id = new URL(req.url).searchParams.get('provider') || 'lulu'
   let p: any

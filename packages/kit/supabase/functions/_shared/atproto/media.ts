@@ -23,13 +23,13 @@ export const MEDIA = {
 export const kindOf = (item: any) => (item && item.kind === 'video' ? 'video' : 'image')
 
 /* a file's kind by its type, or null where it is neither */
-export const kindOfType = (type: any) => (MEDIA.imageTypes.includes(type) ? 'image' : MEDIA.videoTypes.includes(type) ? 'video' : null)
+export const kindOfType = (type: string) => (MEDIA.imageTypes.includes(type) ? 'image' : MEDIA.videoTypes.includes(type) ? 'video' : null)
 
 /*
  * WHY A SET OF FILES CANNOT GO ON A POST, or null where it can: files are { type, size, duration? },
  * `have` how many the post already holds. The answer is a key the composer words (network.md).
  */
-export function refuseMedia(files: any, have = 0) {
+export function refuseMedia(files: string|any[], have = 0) {
   if (have + files.length > MEDIA.max) return 'media-many'
   for (const f of files) {
     const k = kindOfType(f.type)

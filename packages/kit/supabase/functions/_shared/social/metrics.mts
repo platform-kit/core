@@ -3,13 +3,13 @@ export const METRICS_DAILY_MS = 24 * METRICS_HOURLY_MS
 export const METRICS_RECENT_WINDOW_MS = 72 * METRICS_HOURLY_MS
 export const METRICS_MAX_PAYLOAD_BYTES = 32 * 1024
 
-export function metricsCadenceMs(publishedAt: any, now = Date.now()) {
+export function metricsCadenceMs(publishedAt: string, now = Date.now()) {
   const published = Date.parse(publishedAt)
   if (!Number.isFinite(published)) throw new TypeError('A valid publication time is required.')
   return published > now - METRICS_RECENT_WINDOW_MS ? METRICS_HOURLY_MS : METRICS_DAILY_MS
 }
 
-export function nextMetricsFetchAt(publishedAt: any, collectedAt = Date.now()) {
+export function nextMetricsFetchAt(publishedAt: string, collectedAt = Date.now()) {
   const collected = typeof collectedAt === 'string' ? Date.parse(collectedAt) : collectedAt
   if (!Number.isFinite(collected)) throw new TypeError('A valid collection time is required.')
   const published = Date.parse(publishedAt)
@@ -36,7 +36,7 @@ export function hasSocialCapability(manifests: any, operation: any, platform: an
   const values = Array.isArray(manifests) ? manifests : [manifests]
   return values.some((manifest) =>
     Array.isArray(manifest?.capabilities) &&
-    manifest.capabilities.some((capability: any) =>
+    manifest.capabilities.some((capability: { operation: any; platform: string; availability: string }) =>
       capability &&
       capability.operation === operation &&
       (capability.platform === '*' || capability.platform === platform) &&
@@ -82,8 +82,8 @@ export function normalizePostMetrics(value: any) {
   const encoded = JSON.stringify(providerMetrics)
   if (new TextEncoder().encode(encoded).byteLength > METRICS_MAX_PAYLOAD_BYTES)
     throw Object.assign(new Error('The provider metrics response is too large to store.'), { code: 'metrics_response_too_large' })
-  const flat: any = flattenMetrics(providerMetrics)
-  const find = (names: any) => {
+  const flat = flattenMetrics(providerMetrics)
+  const find = (names: string[]) => {
     for (const name of names) {
       const key = Object.keys(flat).find((candidate) => candidate.toLowerCase().replaceAll(/[-\s]/g, '_') === name)
       if (key !== undefined) {

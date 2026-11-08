@@ -10,7 +10,7 @@ export function calVideo({ env }: any) {
     id: 'cal-video',
     configured: () => api.configured(),
     mock: () => false,
-    room: (b: any) => ({ join_url: b.join_url || null, ref: null }),
+    room: (b: { join_url: any }) => ({ join_url: b.join_url || null, ref: null }),
     admit: () => null,
     record: async () => ({ started: false }),
     end: async () => {},

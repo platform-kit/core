@@ -9,8 +9,8 @@
  * helpers, no partials.
  */
 // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Type 'string | undefined' is not assignable to type 'string'. Typ
-const esc = (s: any) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
-const get = (scope: any, path: any) => {
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const get = (scope: string|any[], path: string) => {
   if (path === 'this' || path === '.') return scope[scope.length - 1]
   for (let i = scope.length - 1; i >= 0; i--) {
     let v = scope[i]
@@ -21,12 +21,12 @@ const get = (scope: any, path: any) => {
   }
   return undefined
 }
-const truthy = (v: any) => !(v == null || v === false || v === '' || v === 0 || (Array.isArray(v) && !v.length))
+const truthy = (v: string|number|boolean|any[]|null) => !(v == null || v === false || v === '' || v === 0 || (Array.isArray(v) && !v.length))
 
 /* the template as a tree: text, a value, or a block with its body; an else is a marker inside the
    block's body, so nesting stays simple */
 const TOKEN = /\{\{\{\s*([\w.]+)\s*\}\}\}|\{\{\s*([#/])?\s*(each|if|unless|else)?\s*([\w.]*)\s*\}\}/g
-function run(nodes: any, scope: any, out: any) {
+function run(nodes: any, scope: any[], out: string[]) {
   for (const n of nodes) {
     if (typeof n === 'string') { out.push(n); continue }
     if ('v' in n) {
@@ -41,11 +41,11 @@ function run(nodes: any, scope: any, out: any) {
   }
 }
 /* the body up to the else, and after it */
-function split(b: any) {
-  const i = b.body.findIndex((x: any) => x && x.elseMark)
+function split(b: { body: any[] }) {
+  const i = b.body.findIndex((x: { elseMark: any }) => x && x.elseMark)
   return i < 0 ? [b.body, []] : [b.body.slice(0, i), b.body.slice(i + 1)]
 }
-export function fill(tpl: any, data: any) {
+export function fill(tpl: string, data: any) {
   const tree = parse(tpl)
   const out: any = []
   run(tree.body, [data || {}], out)
@@ -56,7 +56,7 @@ export function parse(tpl: any) {
   let at = 0, m
   const top = () => stack[stack.length - 1]
   // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-  const text = (s: any) => { if (s) top().body.push(s) }
+  const text = (s) => { if (s) top().body.push(s) }
   TOKEN.lastIndex = 0
   while ((m = TOKEN.exec(tpl))) {
     text(tpl.slice(at, m.index)); at = m.index + m[0].length

@@ -41,7 +41,7 @@ export const ALLOCATIONS = ['each', 'across', 'once']
 
 /* what a promotion is worth against one amount. A percentage is of that amount; a fixed value is
    the value itself, and the caller has already decided what share of it this line gets. */
-export const valueOf = (promo: any, amount: any) =>
+export const valueOf = (promo: { method: string; value: any }, amount: number) =>
   promo.method === 'percentage'
     ? Math.round((Number(promo.value) || 0) / 100 * amount)
     : Math.round(Number(promo.value) * 100)
@@ -70,11 +70,11 @@ export function live(promo: any, context: any, now = null) {
 
 /* the same rule grammar the price lists use, with the operators Medusa's promotion rules have
    (which include `in` and `ne`, unlike its pricing rules) */
-export function ruleHolds(rule: any, context: any) {
+export function ruleHolds(rule: { attribute: any; value: any; operator: any }, context: any) {
   if (!rule || !rule.attribute) return false
   const have = String(rule.attribute).split('.').reduce((v, k) => (v == null ? v : v[k]), context)
   const want = rule.value
-  const n = (v: any) => (v == null || v === '' || Number.isNaN(Number(v)) ? null : Number(v))
+  const n = (v: string|null) => (v == null || v === '' || Number.isNaN(Number(v)) ? null : Number(v))
   switch (rule.operator || 'eq') {
     case 'eq': return Array.isArray(have) ? have.map(String).includes(String(want)) : String(have) === String(want)
     case 'ne': return Array.isArray(have) ? !have.map(String).includes(String(want)) : String(have) !== String(want)
@@ -100,7 +100,7 @@ export function ruleHolds(rule: any, context: any) {
  *
  * Returns the lines with `discount` on each, and the cart's totals.
  */
-export function apply(lines: any, promos: any, { context = {}, now = null } = {}) {
+export function apply(lines: any, promos: any[], { context = {}, now = null } = {}) {
   const out = (lines || []).map((l: any) => ({
     ...l,
     subtotal: (Number(l.unit_price) || 0) * (Number(l.quantity) || 1),
@@ -118,11 +118,11 @@ export function apply(lines: any, promos: any, { context = {}, now = null } = {}
     if (promo.allocation === 'across') {
       /* PROPORTIONALLY, by each line's share of what is left — re-measured each time, so a second
          promotion distributes over the reduced amounts rather than the original ones */
-      const pot = mine.reduce((n: any, l: any) => n + remaining(l), 0)
+      const pot = mine.reduce((n: number, l: any) => n + remaining(l), 0)
       if (pot <= 0) continue
       const whole = promo.method === 'percentage' ? Math.round(Number(promo.value) / 100 * pot) : Math.round(Number(promo.value) * 100)
       let left = Math.min(whole, pot)
-      mine.forEach((l: any, i: any) => {
+      mine.forEach((l: { discount: number; by: any[] }, i: number) => {
         /* the last line takes the rounding, so the parts always sum to the whole */
         const share = i === mine.length - 1 ? left : Math.min(left, Math.round(whole * (remaining(l) / pot)))
         const took = Math.min(share, remaining(l))
@@ -144,15 +144,15 @@ export function apply(lines: any, promos: any, { context = {}, now = null } = {}
       }
     }
   }
-  const subtotal = out.reduce((n: any, l: any) => n + l.subtotal, 0)
-  const discount = out.reduce((n: any, l: any) => n + l.discount, 0)
+  const subtotal = out.reduce((n: any, l: { subtotal: any }) => n + l.subtotal, 0)
+  const discount = out.reduce((n: any, l: { discount: any }) => n + l.discount, 0)
   return { lines: out, subtotal, discount, total: Math.max(0, subtotal - discount) }
 }
 
 const remaining = (l: any) => Math.max(0, l.subtotal - l.discount)
-const total = (lines: any) => lines.reduce((n: any, l: any) => n + Math.max(0, l.subtotal - l.discount), 0)
+const total = (lines: any[]) => lines.reduce((n: number, l: { subtotal: number; discount: number }) => n + Math.max(0, l.subtotal - l.discount), 0)
 /* how much of what is already discounted falls inside the units a capped promotion reaches */
-const taken = (l: any, units: any) => Math.min(l.discount, (Number(l.unit_price) || 0) * units)
+const taken = (l: { discount: number; unit_price: any }, units: number) => Math.min(l.discount, (Number(l.unit_price) || 0) * units)
 
 /*
  * AND WHAT COMES OFF THE ORDER OR THE SHIPPING. Kept apart from the lines because they are

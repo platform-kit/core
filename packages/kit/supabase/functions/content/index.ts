@@ -39,9 +39,9 @@ const site = () => (Deno.env.get('APP_URL') ?? Deno.env.get('VITE_APP_URL') ?? '
 /* the compiled forms, for the Forms API's part of the document — none where the forms module is off (no file) */
 /* the session types, for the Scheduling API's part — none where the sessions module is off */
 async function sessionsFor() { if (!SESSIONS_ON) return null; try { const { of } = await import('../_shared/compiled.ts'); return (of('catalog') as any).sessions ?? [] } catch { return null } }
-async function formsFor() { if (!FORMS_ON) return null; try { const mod = await import('../_shared/forms.json', { with: { type: 'json' } }); return (mod as any).default ?? mod } catch { return null } }
+async function formsFor() { if (!FORMS_ON) return null; try { const mod = await import('../_shared/forms.json', { with: { type: 'json' } }); return mod.default ?? mod } catch { return null } }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const url = new URL(req.url)
   const q: Q = {}; url.searchParams.forEach((v, k) => { q[k] = v })
@@ -114,11 +114,11 @@ Deno.serve(async (req: any) => {
   const ctx = ctxOf(q.locale ?? null)
   if (sub === '/content_types') return reply(page(ctx.types, q))
   let one = /^\/content_types\/([^/]+)$/.exec(sub)
-  if (one) { const t = ctx.types.find((x: any) => x.sys.id === one![1]); return t ? reply(t) : fail(ERR.notFound('The resource could not be found.', { type: 'ContentType', id: one[1] })) }
+  if (one) { const t = ctx.types.find((x: { sys: { id: string } }) => x.sys.id === one![1]); return t ? reply(t) : fail(ERR.notFound('The resource could not be found.', { type: 'ContentType', id: one[1] })) }
 
   /* ---- entries ---- */
   // @ts-expect-error TS2322, from the conversion: Type '{ code: string; name: string; default: boolean; fallbackCode: string | null; }[]' is not assignable to type 'never[]'. Type '{ code: s
-  const a: any = parse(q, { kind: sub.startsWith('/assets') ? 'assets' : 'entries', types: ctx.types, locales: index.locales })
+  const a = parse(q, { kind: sub.startsWith('/assets') ? 'assets' : 'entries', types: ctx.types, locales: index.locales })
   if ('error' in a) { const e = a.error as { id: string; message: string; details?: unknown }; return fail({ status: e.id === 'UnknownContentType' ? 400 : 400, body: { sys: { type: 'Error', id: e.id }, message: e.message, ...(e.details ? { details: e.details } : {}), requestId: rid } }) }
   one = /^\/entries\/([^/]+)$/.exec(sub)
   if (one) {
@@ -154,7 +154,7 @@ const page = (items: unknown[], q: Q) => { const skip = Math.max(0, parseInt(q.s
 /* the sync API: a token is the time the caller last saw and its page; every locale on every item, as Contentful syncs */
 const enc = (o: unknown) => btoa(JSON.stringify(o)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const dec = (s: string) => { try { return JSON.parse(atob(String(s).replace(/-/g, '+').replace(/_/g, '/'))) } catch { return null } }
-async function sync(q: Q, index: Index, ctx: any, url: URL) {
+async function sync(q: Q, index: Index, ctx: { space?: any; site?: any; locales?: any; models?: any; types?: any; modelsByKey?: Map<unknown,unknown>; typesByModel?: Map<unknown,unknown>; records: any; recordsById?: Map<unknown,unknown>; assets: any; assetsByAddress?: Map<unknown,unknown>; assetsById?: Map<unknown,unknown>; preview?: boolean; gated?: boolean; locale?: any; allLocales?: boolean; imagesBase?: string; rich?: (md: any,key: any) => Promise<any> }, url: URL) {
   const base = `${url.origin}${url.pathname}`
   const SIZE = 100
   let since: string | null = null, pageNo = 1, type = q.type ?? 'all', ct = q.content_type ?? null
@@ -163,9 +163,9 @@ async function sync(q: Q, index: Index, ctx: any, url: URL) {
   const after = (t: string | null | undefined) => !since || (t && t > since)
   const wantEntries = type === 'all' || type === 'Entry', wantAssets = type === 'all' || type === 'Asset', wantDeleted = type === 'all' || type === 'Deletion' || type === 'DeletedEntry' || type === 'DeletedAsset'
   const items: unknown[] = []
-  if (wantEntries) for (const r of ctx.records.filter((r: any) => (!ct || r.typeId === ct) && after(r.updated))) items.push(strip(await entryOf(r, ctx)))
-  if (wantAssets && !ct) for (const x of ctx.assets.filter((x: any) => after(x.modified))) items.push(assetOf(x, ctx))
-  const typeOfModel = (k: string) => { const t = index.types.find((x: any) => x._model === k); return t ? t.sys.id : k }
+  if (wantEntries) for (const r of ctx.records.filter((r: { typeId: string; updated: string|null|undefined }) => (!ct || r.typeId === ct) && after(r.updated))) items.push(strip(await entryOf(r, ctx)))
+  if (wantAssets && !ct) for (const x of ctx.assets.filter((x: { modified: string|null|undefined }) => after(x.modified))) items.push(assetOf(x, ctx))
+  const typeOfModel = (k: string) => { const t = index.types.find((x) => x._model === k); return t ? t.sys.id : k }
   if (wantDeleted && since) for (const d of index.deleted.filter((d) => d.at > since!)) items.push({ sys: { type: 'DeletedEntry', id: entryId(typeOfModel(d.model), d.path), space: { sys: { type: 'Link', linkType: 'Space', id: index.space } }, environment: { sys: { id: 'master', type: 'Link', linkType: 'Environment' } }, createdAt: d.at, updatedAt: d.at, deletedAt: d.at, revision: 1 } })
   const start = (pageNo - 1) * SIZE, slice = items.slice(start, start + SIZE)
   const out: Record<string, unknown> = { sys: { type: 'Array' }, items: slice }

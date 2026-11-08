@@ -35,10 +35,10 @@ export type Funnel = { title: string; published: boolean; design: string; cooldo
 export type Choice = { key: string; text: string; children: Choice[] }
 export type Prompt = { id: string; funnel: string; title: string; text: string; image?: string; choices: Choice[]; default: boolean; version: string }
 export type Blast = { id: string; version: string; title: string; subject: string; design: string; respectCooldown: boolean; status: string; rules: Rules; html: string; text: string }
-export const FUNNELS = ((funnelsJson() as any).funnels ?? {}) as Record<string, Funnel>
-export const BLASTS = ((funnelsJson() as any).blasts ?? {}) as Record<string, Blast>
-export const PROMPTS = ((funnelsJson() as any).prompts ?? {}) as Record<string, Prompt>
-export const POLICY = ((funnelsJson() as any).policy ?? { daily: 1, weekly: 3, monthly: 8, 'blasts-respect-cooldown': true, 'support-wait': 15, 'support-presence': 5, 'support-keep-files': 90, 'recordings-keep': 0, 'session-reminders': [24, 1] }) as Policy
+export const FUNNELS = (funnelsJson().funnels ?? {}) as Record<string, Funnel>
+export const BLASTS = (funnelsJson().blasts ?? {}) as Record<string, Blast>
+export const PROMPTS = (funnelsJson().prompts ?? {}) as Record<string, Prompt>
+export const POLICY = (funnelsJson().policy ?? { daily: 1, weekly: 3, monthly: 8, 'blasts-respect-cooldown': true, 'support-wait': 15, 'support-presence': 5, 'support-keep-files': 90, 'recordings-keep': 0, 'session-reminders': [24, 1] }) as Policy
 
 const env = (k: string) => Deno.env.get(k) ?? ''
 export const functionsUrl = () => env('SUPABASE_URL').replace(/\/+$/, '') + '/functions/v1'

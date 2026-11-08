@@ -177,7 +177,7 @@ function mergedText(rules: { source: any; to: any; status: any; comment: any }[]
   return rules.map(({ source, to, status, comment }) => `${comment ? `# ${comment}\n` : ''}${source} ${to} ${status}`).join('\n') + '\n'
 }
 
-async function buildForSite(root: string, site: { dirty: boolean; ahead: number; head: string; name: any; remote: any; ref: any; directory: string; dist: string; root: boolean; managed: boolean; fetched: boolean }|{ name: string; directory: string; dist: string; root: boolean; fetched?: undefined; managed?: undefined; remote?: undefined; ref?: undefined }|{ name: string; directory: string; dist: string; root: boolean; fetched: boolean; managed: boolean; remote?: undefined; ref?: undefined }|{ dirty: boolean; ahead: number; head: null; name: any; remote: any; ref: any; directory: string; dist: string; root: boolean; managed: boolean; fetched: boolean }|{ name: any; directory: string; dist: string; root: boolean; managed: boolean; fetched: boolean; remote: any; ref: any }, defaultRules: { source: string; to: string; status: number; comment: string }[], { check, env }: { check: boolean; env: NodeJS.ProcessEnv }) {
+async function buildForSite(root: string, site: any, defaultRules: { source: string; to: string; status: number; comment: string }[], { check, env }: { check: boolean; env: NodeJS.ProcessEnv }) {
   const config = await loadSite(site.directory)
   if (deploymentShape(config).backend === false) return { skipped: true }
   const localFile = site.root ? null : path.join(site.directory, '_redirects')

@@ -96,7 +96,7 @@ function theType(): Promise<Uint8Array[]> {
     typeHeld = (async () => {
       const { data, error } = await admin.storage.from(BUCKET).list(FONT_PREFIX)
       if (error) throw new Error(`print: the type could not be listed — ${error.message}`)
-      const files = (data ?? []).filter((f: any) => /\.(ttf|otf)$/i.test(f.name))
+      const files = (data ?? []).filter((f) => /\.(ttf|otf)$/i.test(f.name))
       if (!files.length) throw new Error('print: there is no type in the bucket — the deploy uploads it (build/print/templates.mjs --fonts)')
       const out: Uint8Array[] = []
       for (const f of files) {
@@ -168,7 +168,7 @@ function jobOf(row: Record<string, any>) {
   return job
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'POST' }, 405)
 
@@ -287,7 +287,7 @@ Deno.serve(async (req: any) => {
   if (!row && call.cancel) {
     const { data } = await admin.from('print_jobs').update({ cancel_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq('book', slug).eq('contents', contents).in('state', ['queued', 'waiting', 'running']).select('id')
-    return json({ cancelling: (data ?? []).map((r: any) => r.id) })
+    return json({ cancelling: (data ?? []).map((r) => r.id) })
   }
   /* a new set opens a job, or joins the one already open for this book and edition */
   if (!row) {
@@ -449,7 +449,7 @@ Deno.serve(async (req: any) => {
     await job.stopIfCancelled()
     const { min, step } = bindingFor(spec, Object.keys((spec.formats ?? {}) as Record<string, unknown>).filter((f) => FORMATS_PRINTED.includes(f)), (s: any, format: string) => candidatesOf(s, format, bound), { trim: String(spec.trim ?? '6x9'), paper: String(spec.paper ?? 'cream') })
     const blankLeaves = (n: number) => `\n#blank-pages(${n})\n`
-    const exists = async (name: string) => ((await admin.storage.from(BUCKET).list(at0, { search: name })).data ?? []).some((x: any) => x.name === name)
+    const exists = async (name: string) => ((await admin.storage.from(BUCKET).list(at0, { search: name })).data ?? []).some((x) => x.name === name)
     let interior = (job.done.interior ?? null) as Record<string, any> | null
     if (interior && (interior.edition !== edition || !(await exists('interior.pdf')))) interior = null
     if (!interior) {
@@ -476,7 +476,7 @@ Deno.serve(async (req: any) => {
     }
     if (!interior && handover) {
       const { data: type } = await admin.storage.from(BUCKET).list(FONT_PREFIX)
-      const names = (type ?? []).filter((x: any) => /\.(ttf|otf)$/i.test(x.name)).map((x: any) => `${FONT_PREFIX}/${x.name}`)
+      const names = (type ?? []).filter((x) => /\.(ttf|otf)$/i.test(x.name)).map((x) => `${FONT_PREFIX}/${x.name}`)
       if (!names.length) throw new Error('print: there is no type in the bucket — the deploy uploads it (build/print/templates.mjs --fonts)')
       const { data: urls, error: e1 } = await admin.storage.from(BUCKET).createSignedUrls(names, 3600)
       const { data: upload, error: e2 } = await admin.storage.from(BUCKET).createSignedUploadUrl(`${at0}/interior.pdf`, { upsert: true })
@@ -484,7 +484,7 @@ Deno.serve(async (req: any) => {
       /* a path and its query, no host: inside this runtime the gateway's name is one no browser resolves */
       const rel = (u: string) => { const x = new URL(u, 'http://x'); return x.pathname + x.search }
       return json({ job: job.id, book: slug, contents, edition, min, step, files: { ...TEMPLATES, 'interior.typ': source },
-        fonts: urls.map((u: any) => rel(u.signedUrl)), upload: rel(upload.signedUrl) })
+        fonts: urls.map((u) => rel(u.signedUrl)), upload: rel(upload.signedUrl) })
     }
     if (!interior) {
       await admin.from('print_jobs').update({ state: 'waiting', done: { ...job.done, edition }, lease_until: null, leased_by: null, updated_at: new Date().toISOString() }).eq('id', job.id)
@@ -710,7 +710,7 @@ Deno.serve(async (req: any) => {
         const live = idx?.[slug]?.editions?.[contents]?.edition === edition
         if (!live) {
           const { data: files } = await admin.storage.from(BUCKET).list(`${slug}/${edition}`)
-          if (files?.length) await admin.storage.from(BUCKET).remove(files.map((f: any) => `${slug}/${edition}/${f.name}`))
+          if (files?.length) await admin.storage.from(BUCKET).remove(files.map((f) => `${slug}/${edition}/${f.name}`))
         }
       }
       await admin.from('print_jobs').update({ state: 'cancelled', finished_at: now, updated_at: now, lease_until: null, leased_by: null }).eq('id', job.id)

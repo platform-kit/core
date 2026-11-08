@@ -66,7 +66,7 @@ async function formCredit(userId: string, sku: string) {
   const o = offer(sku)
   const { data } = await admin.from('entitlements').select('id').eq('user_id', userId)
     .eq('kind', 'product').eq('key', 'form:' + (o?.key ?? sku)).eq('active', true).limit(1)
-  return data && data.length ? (data[0] as any).id as string : null
+  return data && data.length ? data[0].id as string : null
 }
 
 /* the response this person is on for the form: open, or the completed one on a `once` form */
@@ -75,8 +75,8 @@ async function findResponse(slug: string, form: Form, w: { user: any; anon: stri
   q = w.user ? q.eq('user_id', w.user.id) : q.is('user_id', null).eq('anon_id', w.anon)
   const { data } = await q.order('started_at', { ascending: false }).limit(5)
   const rows = data ?? []
-  const open = rows.find((r: any) => !r.completed_at)
-  const done = rows.find((r: any) => r.completed_at)
+  const open = rows.find((r) => !r.completed_at)
+  const done = rows.find((r) => r.completed_at)
   if (form.kit.once && done) return { row: done, already: true }
   return { row: open ?? null, already: false }
 }
@@ -98,8 +98,8 @@ async function responseView(id: string) {
   const { data: rows } = await admin.from('form_answers').select('field, value, file_path, file_name, file_type, file_size, slide, answered_at').eq('response_id', id).order('answered_at')
   const answers: Record<string, unknown> = {}
   for (const a of rows ?? []) answers[a.field] = a.file_path ? { name: a.file_name, type: a.file_type, size: a.file_size } : a.value
-  const lastSlide = (rows ?? []).reduce((m: number | null, a: any) => (a.slide == null ? m : m == null ? a.slide : Math.max(m, a.slide)), null as number | null)
-  return { ...r, answers, last_slide: lastSlide, files: (rows ?? []).filter((a: any) => a.file_path).map((a: any) => ({ field: a.field, name: a.file_name, type: a.file_type, size: a.file_size })) }
+  const lastSlide = (rows ?? []).reduce((m: number | null, a) => (a.slide == null ? m : m == null ? a.slide : Math.max(m, a.slide)), null as number | null)
+  return { ...r, answers, last_slide: lastSlide, files: (rows ?? []).filter((a) => a.file_path).map((a) => ({ field: a.field, name: a.file_name, type: a.file_type, size: a.file_size })) }
 }
 
 /* the subscribers of a form: the API's rows, and the document's own webhook as one more (its secret the site's) */
@@ -148,14 +148,14 @@ async function retry(slug: string, form: Form, except: string) {
   for (const r of data ?? []) await deliver(slug, form, r.id)
 }
 /* what the Responses API says about the visit: kept on the row when it is made */
-function metaOf(req: Request, body: any) {
+function metaOf(req: Request, body: { _hidden: any }) {
   let hidden: Record<string, string> = {}
   try { const h = JSON.parse(String(body._hidden || '{}')); if (h && typeof h === 'object') for (const [k, v] of Object.entries(h).slice(0, 20)) hidden[String(k).slice(0, 40)] = String(v).slice(0, 200) } catch { /* none */ }
   const ua = req.headers.get('user-agent') || ''
   return { user_agent: ua.slice(0, 300), referer: (req.headers.get('referer') || req.headers.get('x-form-origin') || '').slice(0, 300), platform: /mobile|android|iphone|ipad/i.test(ua) ? 'mobile' : 'other', browser: 'default', hidden }
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   await fresh()
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
@@ -240,7 +240,7 @@ Deno.serve(async (req: any) => {
   if (end) {
     const view = await responseView(id)
     const g = grade(form.kit.score || {}, view.answers, form.kit.pass)
-    const patch: any = { completed_at: new Date().toISOString() }
+    const patch = { completed_at: new Date().toISOString() }
     if (g.total) Object.assign(patch, { score: g.score, total: g.total, passed: g.passed })
     await admin.from('form_responses').update(patch).eq('id', id)
     out = { response_id: id, completed: true, score: g.total ? g.score : null, total: g.total || null, passed: g.passed }
@@ -258,7 +258,7 @@ Deno.serve(async (req: any) => {
       let contact: string | null = null
       if (w.user) {
         const { data: c } = await admin.from('support_contacts').select('id').eq('user_id', w.user.id).maybeSingle()
-        contact = c ? (c as any).id : null
+        contact = c ? c.id : null
       }
       /* the body is every answer, said plainly, so a ticket reads as something before anybody opens the form */
       const body = Object.entries(a).map(([k, v]) => k + ': ' + (Array.isArray(v) ? v.join(', ') : String(v ?? ''))).join('\n')

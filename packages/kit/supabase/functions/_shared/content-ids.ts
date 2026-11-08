@@ -5,10 +5,10 @@
  */
 export const KINDS = ['articles', 'docs', 'books', 'wiki']
 
-export function fnv(s: any) {
+export function fnv(s: string) {
   let h = 0x811c9dc5
   for (const c of String(s)) { for (const b of new TextEncoder().encode(c)) { h ^= b; h = Math.imul(h, 0x01000193) >>> 0 } }
   return (h & 0x7fffffff) || 2
 }
-export const idOf = (kind: any, path: any) => fnv(kind + ':' + path)
-export const mediaId = (address: any) => fnv('media:' + address)
+export const idOf = (kind: string, path: string) => fnv(kind + ':' + path)
+export const mediaId = (address: string) => fnv('media:' + address)

@@ -144,6 +144,6 @@ t('an offer may be asked for by name, wherever it is', () => {
 t('a room says taken its own way', () => {
   /* a space message keeps it in its own column, so the caller says how to read it */
   const m = { id: 'm2', choices: [{ key: 'a', text: 'A' }], choice_at: null, taken_here: true }
-  assert.equal((offerOf([m], { answered: (x) => x.taken_here }) as any).live, false)
+  assert.equal((offerOf([m], { answered: (x: any) => x.taken_here }) as any).live, false)
 })
 console.log(`support: ${n} checks pass`)

@@ -16,7 +16,7 @@ import { rolesOf, isProvider } from '../_shared/roles.ts'
 import { typeFor, sessionOf, tiersOf, forRank, schedulerOf, schedulerIdOf } from '../_shared/cal.ts'
 import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   await fresh()
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405)
@@ -43,6 +43,6 @@ Deno.serve(async (req: any) => {
   const minutes = Number(body.minutes) > 0 ? Math.round(Number(body.minutes)) : 0
   /* how many sessions of a run they are asking for: a run is only offered where all of it fits */
   const count = Number(body.count) > 0 ? Math.round(Number(body.count)) : 0
-  try { const r = await (schedulerOf(s) as any).slots(s, from, to, timeZone, host, minutes, count); return json({ ...r, scheduler: schedulerIdOf(s), where: s.where ?? null, notice: s.notice ?? 0 }) }
+  try { const r = await schedulerOf(s).slots(s, from, to, timeZone, host, minutes, count); return json({ ...r, scheduler: schedulerIdOf(s), where: s.where ?? null, notice: s.notice ?? 0 }) }
   catch (e) { return json({ error: `${schedulerIdOf(s)}: ${(e as any)?.message ?? e}` }, 502) }
 })

@@ -53,7 +53,7 @@ export async function cloudMode() {
 }
 
 export async function githubSettings(sb: any) {
-  const s: any = await readSettings(sb)
+  const s = await readSettings(sb)
   const { repo, branch, declared, off } = await targetOf(s)
   /* with git out of the cycle nothing is owed to anybody: a pending row is not debt, it is just a
      row that has never been pushed and never will be, so it is not counted and not shown */
@@ -83,7 +83,7 @@ export async function saveHook(sb: any, url: any) {
 /* asked after a publish: fire and forget. The rows are already live, so a hook that refuses is
    something to show, never something that fails a publish. */
 export async function askRebuild(sb: any, { fetchFn = fetch } = {}) {
-  const s: any = await readSettings(sb)
+  const s = await readSettings(sb)
   if (!s.hook) return { asked: false }
   let err = ''
   try {
@@ -165,7 +165,7 @@ export async function commitFiles({ fetchFn = fetch, token, repo, branch, files,
 
 /* ---- every pending row, as one commit ---- */
 export async function pushPending(sb: any, by = '', { fetchFn = fetch, message = '', limit = 200 } = {}) {
-  const s: any = await readSettings(sb)
+  const s = await readSettings(sb)
   const { repo, branch, off } = await targetOf(s)
   /* git out of the cycle: there is nothing to push to, and a row's pending flag is not debt */
   if (off) return { pushed: 0, skipped: 'no repository in this deployment' }

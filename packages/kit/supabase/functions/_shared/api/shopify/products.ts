@@ -14,19 +14,19 @@
  * bag sends them (`lineOf`). Money is Shopify's `{ amount: "15.0", currencyCode: "USD" }`.
  */
 export const GID = { product: 'gid://shopify/Product/', variant: 'gid://shopify/ProductVariant/', collection: 'gid://shopify/Collection/', cart: 'gid://shopify/Cart/', line: 'gid://shopify/CartLine/', image: 'gid://shopify/ProductImage/', shop: 'gid://shopify/Shop/' }
-export const money = (cents: any, currency: any) => ({ amount: ((Number(cents) || 0) / 100).toFixed(2).replace(/0$/, ''), currencyCode: String(currency || 'usd').toUpperCase() })
+export const money = (cents: number, currency: any) => ({ amount: ((Number(cents) || 0) / 100).toFixed(2).replace(/0$/, ''), currencyCode: String(currency || 'usd').toUpperCase() })
 const title = (s: any) => String(s || '').replace(/\b\w/g, (c) => c.toUpperCase())
 const FORMAT_WORDS: any = { softcover: 'Softcover', hardcover: 'Hardcover', premium: 'Premium hardcover', pdf: 'PDF', epub: 'EPUB', book: 'Read online' }
 /* a Shopify option, the one shape both branches build */
-const opt = (p: any, name: any, values: any) => ({ id: p.id + '/' + name, name, values, optionValues: values.map((v: any) => ({ id: p.id + '/' + name + '/' + v, name: v })) })
+const opt = (p: { id: string }, name: string, values: any[]) => ({ id: p.id + '/' + name, name, values, optionValues: values.map((v: string) => ({ id: p.id + '/' + name + '/' + v, name: v })) })
 /* a variant key back into Shopify's selectedOptions, by the options' declared order — the same
    positional reading `readVariantKey` makes, written here so this file keeps its no-imports rule */
 const chosenOf = (options: any, key: any) => {
   const parts = String(key || '').split('.').filter(Boolean)
-  return (options || []).map((o: any, i: any) => {
-    const v = (o.values || []).find((x: any) => x.value === parts[i])
+  return (options || []).map((o: { values: any; name: any }, i: any) => {
+    const v = (o.values || []).find((x: { value: string }) => x.value === parts[i])
     return { name: o.name, value: v ? (v.label || v.value) : (parts[i] || '') }
-  }).filter((x: any) => x.value)
+  }).filter((x: { value: any }) => x.value)
 }
 const plain = (md: any) => String(md || '').replace(/^---[\s\S]*?---\s*/, '').replace(/[#*_>`]/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\n{2,}/g, '\n\n').trim()
 export const handleOf = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
@@ -42,18 +42,18 @@ export const handleOf = (s: any) => String(s || '').toLowerCase().replace(/[^a-z
  * @param {function} [o.imageSize] (address) → { width, height } | null
  * @param {function} [o.render]  (markdown) → html
  */
-export function storefrontOf(o: any) {
+export function storefrontOf(o: { offers: any; products: any; collections: any; books: any; site: any; imageUrl: any; imageSize: any; shipsTo: any; render?: any }) {
   const offers = Object.values(o.offers || {}).filter((x: any) => x && x.sku)
   const site = o.site || {}
   const img = (address: any, alt: any) => { if (!address) return null; const url = o.imageUrl ? o.imageUrl(address) : null; if (!url) return null; const s = (o.imageSize && o.imageSize(address)) || {}; return { id: GID.image + handleOf(address), url, src: url, originalSrc: url, transformedSrc: url, altText: alt || null, width: s.width || null, height: s.height || null, _address: address } }
   const html = (md: any) => (o.render ? o.render(md) : '<p>' + plain(md).split('\n\n').join('</p><p>') + '</p>')
   const products: any = []
-  const recBySku = new Map((o.products || []).filter((r: any) => r.data && r.data.sku).map((r: any) => [r.data.sku, r]))
-  const recByBook = new Map((o.products || []).filter((r: any) => r.data && r.data.kind === 'book' && r.data.book).map((r: any) => [r.data.book, r]))
-  const bookBy = new Map((o.books || []).map((b: any) => [b.path, b]))
+  const recBySku = new Map((o.products || []).filter((r: { data: { sku: any } }) => r.data && r.data.sku).map((r: { data: { sku: any } }) => [r.data.sku, r]))
+  const recByBook = new Map((o.products || []).filter((r: { data: { kind: string; book: any } }) => r.data && r.data.kind === 'book' && r.data.book).map((r: { data: { book: any } }) => [r.data.book, r]))
+  const bookBy = new Map((o.books || []).map((b: { path: any }) => [b.path, b]))
   const seenBooks = new Set()
-  const base = (handle: any, rec: any, times: any) => ({ id: GID.product + handle, handle, createdAt: times.created || times.updated || null, updatedAt: times.updated || null, publishedAt: times.updated || null, onlineStoreUrl: site.url ? `${String(site.url).replace(/\/+$/, '')}/store/products/${rec}` : null, availableForSale: true, requiresSellingPlan: false, isGiftCard: false, tags: [], productType: '', vendor: site.name || '', seo: { title: null, description: null }, metafield: null, metafields: [] })
-  const variantOf = (product: any, sku: any, variant: any, opts: any, price: any, currency: any, extra: any = {}) => ({ id: GID.variant + sku + (variant ? '/' + variant : ''), sku: extra.variantSku || sku, title: opts.map((x: any) => x.value).join(' / ') || 'Default Title', selectedOptions: opts, price: money(price, currency), compareAtPrice: extra.compareAt ? money(extra.compareAt, currency) : null, availableForSale: extra.sold !== false, currentlyNotInStock: extra.sold === false, quantityAvailable: null, requiresShipping: !!extra.ships, weight: null, weightUnit: 'KILOGRAMS', image: product.featuredImage, barcode: null, taxable: true, unitPrice: null, unitPriceMeasurement: null, product, _line: { sku, variant: variant || '', kind: extra.kind, name: product.title, label: opts.map((x: any) => x.value).join(' · ') } })
+  const base = (handle: string, rec: any, times: { created: any; updated: any }) => ({ id: GID.product + handle, handle, createdAt: times.created || times.updated || null, updatedAt: times.updated || null, publishedAt: times.updated || null, onlineStoreUrl: site.url ? `${String(site.url).replace(/\/+$/, '')}/store/products/${rec}` : null, availableForSale: true, requiresSellingPlan: false, isGiftCard: false, tags: [], productType: '', vendor: site.name || '', seo: { title: null, description: null }, metafield: null, metafields: [] })
+  const variantOf = (product: { featuredImage: any; title: any }, sku: string, variant: string, opts: any[], price: any, currency: any, extra: any = {}) => ({ id: GID.variant + sku + (variant ? '/' + variant : ''), sku: extra.variantSku || sku, title: opts.map((x: { value: any }) => x.value).join(' / ') || 'Default Title', selectedOptions: opts, price: money(price, currency), compareAtPrice: extra.compareAt ? money(extra.compareAt, currency) : null, availableForSale: extra.sold !== false, currentlyNotInStock: extra.sold === false, quantityAvailable: null, requiresShipping: !!extra.ships, weight: null, weightUnit: 'KILOGRAMS', image: product.featuredImage, barcode: null, taxable: true, unitPrice: null, unitPriceMeasurement: null, product, _line: { sku, variant: variant || '', kind: extra.kind, name: product.title, label: opts.map((x: { value: any }) => x.value).join(' · ') } })
   /* the goods, and the books (one product per book) */
   for (const rec of o.products || []) {
     const d = rec.data || {}; if (d.published === false) continue
@@ -76,14 +76,14 @@ export function storefrontOf(o: any) {
       const compareAt = d.compare ? Math.round(Number(String(d.compare).replace(/[^0-9.]/g, '')) * 100) || 0 : 0
       const shapes = Array.isArray(offer.variants) && offer.variants.length ? offer.variants : null
       p.options = shapes
-        ? (offer.options || []).map((o: any) => opt(p, o.name, o.values.map((v: any) => v.label || v.value)))
+        ? (offer.options || []).map((o: { name: any; values: any[] }) => opt(p, o.name, o.values.map((v: { label: any; value: any }) => v.label || v.value)))
         : [opt(p, 'Title', ['Default Title'])]
       /* the id and the cart line stay on the OFFER's sku — that is what the bag sends and what the
          checkout resolves; `v.sku` is the variant's own, which is what Shopify's `sku` field means.
          A shape the shop has withdrawn is listed and unbuyable (availableForSale false), never
          missing: a value that vanishes as another option is picked reads as a broken page. */
       p.variants = shapes
-        ? shapes.map((v: any) => variantOf(p, offer.sku, v.variant, chosenOf(offer.options, v.variant), v.unit_amount, offer.currency, { ships: true, kind: 'good', compareAt, sold: v.sold, variantSku: v.sku }))
+        ? shapes.map((v: { variant: any; unit_amount: any; sold: any; sku: any }) => variantOf(p, offer.sku, v.variant, chosenOf(offer.options, v.variant), v.unit_amount, offer.currency, { ships: true, kind: 'good', compareAt, sold: v.sold, variantSku: v.sku }))
         : [variantOf(p, offer.sku, '', [], offer.unit_amount, offer.currency, { ships: true, kind: 'good', compareAt })]
       p._collections = (d.collections || []); p._order = Number(d.order) || 0; p._skus = [offer.sku]
       products.push(p)
@@ -133,22 +133,22 @@ export function storefrontOf(o: any) {
     products.push(p)
   }
   for (const p of products) {
-    const prices = (p as any).variants.map((v: any) => Number(v.price.amount)); const cur = (p as any).variants[0] ? (p as any).variants[0].price.currencyCode : 'USD'
-    const m = (n: any) => ({ amount: n.toFixed(2).replace(/0$/, ''), currencyCode: cur })
-    ;(p as any).priceRange = { minVariantPrice: m(Math.min(...prices)), maxVariantPrice: m(Math.max(...prices)) }
-    const cmp = (p as any).variants.map((v: any) => v.compareAtPrice && Number(v.compareAtPrice.amount)).filter((x: any) => x != null)
-    ;(p as any).compareAtPriceRange = { minVariantPrice: m(cmp.length ? Math.min(...cmp) : 0), maxVariantPrice: m(cmp.length ? Math.max(...cmp) : 0) }
-    ;(p as any).totalInventory = null
+    const prices = p.variants.map((v: { price: { amount: any } }) => Number(v.price.amount)); const cur = p.variants[0] ? p.variants[0].price.currencyCode : 'USD'
+    const m = (n: number) => ({ amount: n.toFixed(2).replace(/0$/, ''), currencyCode: cur })
+    p.priceRange = { minVariantPrice: m(Math.min(...prices)), maxVariantPrice: m(Math.max(...prices)) }
+    const cmp = p.variants.map((v: { compareAtPrice: { amount: any } }) => v.compareAtPrice && Number(v.compareAtPrice.amount)).filter((x: any) => x != null)
+    p.compareAtPriceRange = { minVariantPrice: m(cmp.length ? Math.min(...cmp) : 0), maxVariantPrice: m(cmp.length ? Math.max(...cmp) : 0) }
+    p.totalInventory = null
   }
-  products.sort((a: any, b: any) => a._order - b._order || a.title.localeCompare(b.title))
+  products.sort((a: { _order: number; title: string }, b: { _order: number; title: any }) => a._order - b._order || a.title.localeCompare(b.title))
   /* the collections: the records, their products by the ids they name (a sku, or a book's slug) */
-  const collections = (o.collections || []).filter((c: any) => c.data && c.data.published !== false).slice().sort((a: any, b: any) => (Number(a.data.order) || 0) - (Number(b.data.order) || 0)).map((c: any) => {
+  const collections = (o.collections || []).filter((c: { data: { published: boolean } }) => c.data && c.data.published !== false).slice().sort((a: { data: { order: any } }, b: { data: { order: any } }) => (Number(a.data.order) || 0) - (Number(b.data.order) || 0)).map((c: { data: { products: any[]; title: any; subtitle: any; image: any }; path: string; body: any; updated: any }) => {
     const ids = Array.isArray(c.data.products) ? c.data.products.map(String) : []
-    const named: any = products.filter((p: any) => ids.includes(p.handle) || p._skus.some((s: any) => ids.includes(s)) || (p._collections || []).includes(c.path))
-    return { id: GID.collection + c.path, handle: c.path, title: c.data.title || c.path, description: plain(c.body) || String(c.data.subtitle || ''), descriptionHtml: html(c.body) || `<p>${c.data.subtitle || ''}</p>`, image: img(c.data.image, c.data.title), updatedAt: c.updated || null, onlineStoreUrl: site.url ? `${String(site.url).replace(/\/+$/, '')}/store/collections/${c.path}` : null, seo: { title: null, description: null }, _products: named.slice().sort((a: any, b: any) => (ids.indexOf(a.handle) + 1 || 999) - (ids.indexOf(b.handle) + 1 || 999)) }
+    const named = products.filter((p: { handle: any; _skus: any[]; _collections: any }) => ids.includes(p.handle) || p._skus.some((s: any) => ids.includes(s)) || (p._collections || []).includes(c.path))
+    return { id: GID.collection + c.path, handle: c.path, title: c.data.title || c.path, description: plain(c.body) || String(c.data.subtitle || ''), descriptionHtml: html(c.body) || `<p>${c.data.subtitle || ''}</p>`, image: img(c.data.image, c.data.title), updatedAt: c.updated || null, onlineStoreUrl: site.url ? `${String(site.url).replace(/\/+$/, '')}/store/collections/${c.path}` : null, seo: { title: null, description: null }, _products: named.slice().sort((a: { handle: any }, b: { handle: any }) => (ids.indexOf(a.handle) + 1 || 999) - (ids.indexOf(b.handle) + 1 || 999)) }
   })
-  for (const p of products) (p as any)._collectionRefs = collections.filter((c: any) => c._products.includes(p))
-  const shop = { id: GID.shop + '1', name: site.name || 'Store', description: site.description || null, primaryDomain: { url: site.url || null, host: site.url ? String(site.url).replace(/^https?:\/\//, '').replace(/\/.*$/, '') : null, sslEnabled: true }, paymentSettings: { currencyCode: (products[0] && (products[0] as any).variants[0] && (products[0] as any).variants[0].price.currencyCode) || 'USD', enabledPresentmentCurrencies: [(products[0] && (products[0] as any).variants[0] && (products[0] as any).variants[0].price.currencyCode) || 'USD'], supportedDigitalWallets: [] }, shipsToCountries: o.shipsTo || [], moneyFormat: '${{amount}}', brand: null, privacyPolicy: null, refundPolicy: null, shippingPolicy: null, termsOfService: null }
+  for (const p of products) p._collectionRefs = collections.filter((c: { _products: string|any[] }) => c._products.includes(p))
+  const shop = { id: GID.shop + '1', name: site.name || 'Store', description: site.description || null, primaryDomain: { url: site.url || null, host: site.url ? String(site.url).replace(/^https?:\/\//, '').replace(/\/.*$/, '') : null, sslEnabled: true }, paymentSettings: { currencyCode: (products[0] && products[0].variants[0] && products[0].variants[0].price.currencyCode) || 'USD', enabledPresentmentCurrencies: [(products[0] && products[0].variants[0] && products[0].variants[0].price.currencyCode) || 'USD'], supportedDigitalWallets: [] }, shipsToCountries: o.shipsTo || [], moneyFormat: '${{amount}}', brand: null, privacyPolicy: null, refundPolicy: null, shippingPolicy: null, termsOfService: null }
   return { shop, products, collections }
 }
 
@@ -159,21 +159,21 @@ export function lineOf(merchandiseId: any) {
   const i = tail.indexOf('/')
   return i < 0 ? { sku: tail, variant: '' } : { sku: tail.slice(0, i), variant: tail.slice(i + 1) }
 }
-export const findVariant = (store: any, merchandiseId: any) => { for (const p of store.products) for (const v of p.variants) if (v.id === merchandiseId) return v; return null }
-export const findProduct = (store: any, id: any) => store.products.find((p: any) => p.id === id) || null
+export const findVariant = (store: { products: any }, merchandiseId: string) => { for (const p of store.products) for (const v of p.variants) if (v.id === merchandiseId) return v; return null }
+export const findProduct = (store: { products: any[] }, id: string) => store.products.find((p: { id: any }) => p.id === id) || null
 
 /* a word over title and description (Shopify's `query`, the simple form), a sort key, cursor paging */
 export function pageOf(list: any, args: any = {}, { search = null, sort = null } = {}) {
   let items = list.slice()
   // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
-  if (args.query && search) { const q = String(args.query).toLowerCase().replace(/^title:/, '').replace(/['"*]/g, '').trim(); if (q) items = items.filter((x: any) => search(x).toLowerCase().includes(q)) }
+  if (args.query && search) { const q = String(args.query).toLowerCase().replace(/^title:/, '').replace(/['"*]/g, '').trim(); if (q) items = items.filter((x) => search(x).toLowerCase().includes(q)) }
   // @ts-expect-error TS2349, from the conversion: This expression is not callable. Type 'never' has no call signatures.
-  if (args.sortKey && sort) { const key = String(args.sortKey); items.sort((a: any, b: any) => sort(key, a, b)) }
+  if (args.sortKey && sort) { const key = String(args.sortKey); items.sort((a, b) => sort(key, a, b)) }
   if (args.reverse) items.reverse()
-  const cursorOf = (i: any) => btoa(String(i))
+  const cursorOf = (i: number) => btoa(String(i))
   let from = 0; if (args.after) { try { from = Number(atob(String(args.after))) + 1 } catch { from = 0 } if (!Number.isFinite(from) || from < 0) from = 0 }
   const first = Math.min(250, Math.max(1, Number(args.first) || 20))
   const slice = items.slice(from, from + first)
-  return { edges: slice.map((node: any, j: any) => ({ cursor: cursorOf(from + j), node })), nodes: slice, pageInfo: { hasNextPage: from + first < items.length, hasPreviousPage: from > 0, startCursor: slice.length ? cursorOf(from) : null, endCursor: slice.length ? cursorOf(from + slice.length - 1) : null }, totalCount: items.length }
+  return { edges: slice.map((node: any, j: number) => ({ cursor: cursorOf(from + j), node })), nodes: slice, pageInfo: { hasNextPage: from + first < items.length, hasPreviousPage: from > 0, startCursor: slice.length ? cursorOf(from) : null, endCursor: slice.length ? cursorOf(from + slice.length - 1) : null }, totalCount: items.length }
 }
-export const productSort = (key: any, a: any, b: any) => key === 'TITLE' ? a.title.localeCompare(b.title) : key === 'PRICE' ? Number(a.priceRange.minVariantPrice.amount) - Number(b.priceRange.minVariantPrice.amount) : key === 'CREATED_AT' || key === 'UPDATED_AT' ? String(a.updatedAt || '').localeCompare(String(b.updatedAt || '')) : a._order - b._order
+export const productSort = (key: string, a: { title: string; priceRange: { minVariantPrice: { amount: any } }; updatedAt: any; _order: number }, b: { title: any; priceRange: { minVariantPrice: { amount: any } }; updatedAt: any; _order: number }) => key === 'TITLE' ? a.title.localeCompare(b.title) : key === 'PRICE' ? Number(a.priceRange.minVariantPrice.amount) - Number(b.priceRange.minVariantPrice.amount) : key === 'CREATED_AT' || key === 'UPDATED_AT' ? String(a.updatedAt || '').localeCompare(String(b.updatedAt || '')) : a._order - b._order

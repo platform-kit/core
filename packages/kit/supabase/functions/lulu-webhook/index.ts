@@ -5,7 +5,7 @@
 import { admin, json } from '../_shared/lib.ts'
 import { printer, refreshPrintOrder } from '../_shared/print.ts'
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: { method: string; json: () => any }) => {
   if (req.method !== 'POST') return json({ error: 'method' }, 405)
   const p = printer('lulu')
   /* a mocked printer has nobody to call it, and each read of a mock job moves it on a step: a call here

@@ -1,8 +1,8 @@
 /* a picture's size from its first bytes — PNG, JPEG, GIF, WebP — plain JavaScript, for the assets of cloud mode */
-export function imageSize(b: any) {
+export function imageSize(b: string|any[]|Uint8Array<ArrayBuffer>) {
   if (!b || b.length < 24) return null
-  const u32 = (i: any) => ((b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3]) >>> 0
-  const u16le = (i: any) => b[i] | (b[i + 1] << 8), u16be = (i: any) => (b[i] << 8) | b[i + 1]
+  const u32 = (i: number) => ((b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3]) >>> 0
+  const u16le = (i: number) => b[i] | (b[i + 1] << 8), u16be = (i: number) => (b[i] << 8) | b[i + 1]
   if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return { width: u32(16), height: u32(20) }
   if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return { width: u16le(6), height: u16le(8) }
   if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) {

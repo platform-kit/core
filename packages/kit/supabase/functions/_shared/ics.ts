@@ -5,11 +5,11 @@
  * imports, no environment; the kit's test pins it. Lines are folded at 75 octets and text is
  * escaped as the standard says, so a place with a comma in its address lands as written.
  */
-const pad = (n: any) => String(n).padStart(2, '0')
-export const stamp = (ms: any) => { const d = new Date(ms); return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z` }
+const pad = (n: number) => String(n).padStart(2, '0')
+export const stamp = (ms: string|number|Date) => { const d = new Date(ms); return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z` }
 export const escapeText = (s: any) => String(s ?? '').replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
 /* a content line folded at 75 octets, the continuation lines beginning with a space */
-export function fold(line: any) {
+export function fold(line: string|undefined) {
   const bytes = new TextEncoder().encode(line)
   if (bytes.length <= 75) return line
   const out = []; let i = 0

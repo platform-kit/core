@@ -27,7 +27,7 @@ export async function joinedIdentity(userId: string | null) {
 
 /* A SERVICE TOKEN: who is asking (the member), whom (the app view), for which method, for a minute —
    signed with the member's own key, which their DID document names */
-export async function serviceToken(identity: any, aud: string, lxm: string) {
+export async function serviceToken(identity: { signing_key_id: any; did: any }, aud: string, lxm: string) {
   const hex = (await admin.rpc('network_key_read', { p_secret_id: identity.signing_key_id })).data as string
   const key = await Secp256k1Keypair.import(hex)
   const head = b64u(enc.encode(JSON.stringify({ typ: 'JWT', alg: 'ES256K' })))
@@ -38,7 +38,7 @@ export async function serviceToken(identity: any, aud: string, lxm: string) {
 }
 
 /* ask the app view, as the member; null when it cannot be asked or does not answer */
-export async function ask(identity: any, nsid: string, params: URLSearchParams | Record<string, string | string[]>) {
+export async function ask(identity: { did: string; signing_key_id: string|null; joined_at: string|null; left_at: string|null }, nsid: string, params: URLSearchParams | Record<string, string | string[]>) {
   try {
     const q = params instanceof URLSearchParams ? params : new URLSearchParams(Object.entries(params).flatMap(([k, v]) => (Array.isArray(v) ? v.map((x) => [k, x]) : [[k, v]])))
     const token = await serviceToken(identity, appviewDid(), nsid)
@@ -53,7 +53,7 @@ export async function ask(identity: any, nsid: string, params: URLSearchParams |
 
 /* two pages of a feed made one: newest first by when each item happened, nothing twice */
 export function mergeFeeds(a: any[], b: any[], limit: number) {
-  const at = (f: any) => new Date((f.reason && f.reason.indexedAt) || (f.post && f.post.indexedAt) || 0).getTime()
+  const at = (f: { reason: { indexedAt: any }; post: { indexedAt: any } }) => new Date((f.reason && f.reason.indexedAt) || (f.post && f.post.indexedAt) || 0).getTime()
   const seen = new Set<string>()
   return [...a, ...b].sort((x, y) => at(y) - at(x)).filter((f) => {
     const k = (f.post && f.post.uri) + '|' + ((f.reason && f.reason.by && f.reason.by.did) || '')

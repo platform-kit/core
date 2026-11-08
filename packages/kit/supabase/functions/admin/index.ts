@@ -76,7 +76,7 @@ async function contentsOf(slug: string): Promise<string[]> {
   return spec && spec.contents.length ? spec.contents : ['parts']
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return json({ error: 'POST' }, 405)
   let call: Record<string, unknown> = {}

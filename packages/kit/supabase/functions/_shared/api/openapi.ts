@@ -18,7 +18,7 @@ const pascal = (s: any) => String(s).replace(/^./, (c) => c.toUpperCase())
 
 /* a content type's field as JSON schema */
 // @ts-expect-error TS7023, from the conversion: 'fieldSchema' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in
-function fieldSchema(f: any) {
+function fieldSchema(f) {
   switch (f.type) {
     case 'Symbol': case 'Text': return f.validations && f.validations[0] && f.validations[0].in ? { type: 'string', enum: f.validations[0].in } : { type: 'string' }
     case 'Integer': return { type: 'integer' }
@@ -75,7 +75,7 @@ export function openapiFor(index: any, { base = '', functions = '', sources = []
     // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'minimum' does not exist in type '{ type: string; }'.
     q('include', 'How deep to resolve links into `includes` (0–10).', { type: 'integer', minimum: 0, maximum: 10, default: 1 }),
     // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'enum' does not exist in type '{ type: string; }'.
-    q('locale', 'A locale of the site\'s, or `*` for every locale.', { type: 'string', enum: [...index.locales.map((l: any) => l.code), '*'] }),
+    q('locale', 'A locale of the site\'s, or `*` for every locale.', { type: 'string', enum: [...index.locales.map((l) => l.code), '*'] }),
     q('order', 'A list of `sys.createdAt`, `sys.updatedAt`, `sys.id`, `sys.revision`, `fields.<f>`, `-` for descending.'),
     // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'minimum' does not exist in type '{ type: string; }'.
     q('limit', '1–1000.', { type: 'integer', minimum: 1, maximum: 1000, default: 100 }),

@@ -7,7 +7,7 @@ const stableRef = async (userId: any, invocationRef: any, offerKey: any) => {
   return `ut_${hash}`
 }
 
-const paymentState = (intent: any) => {
+const paymentState = (intent: { status: string }) => {
   if (intent?.status === 'succeeded') return 'succeeded'
   if (intent?.status === 'requires_action' || intent?.status === 'requires_confirmation') return 'requires_action'
   return 'failed'

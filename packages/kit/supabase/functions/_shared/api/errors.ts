@@ -1,5 +1,5 @@
 /* Contentful's error envelope and ids — plain JavaScript */
-const make = (id: any, message: any, status: any, details?: any) => ({ status, body: { sys: { type: 'Error', id }, message, ...(details ? { details } : {}), requestId: Math.random().toString(36).slice(2, 12) } })
+const make = (id: string, message: string, status: number, details?: { errors: { name: string; value: string }[] }|undefined) => ({ status, body: { sys: { type: 'Error', id }, message, ...(details ? { details } : {}), requestId: Math.random().toString(36).slice(2, 12) } })
 export const ERR = {
   notFound: (what = 'The resource could not be found.', details?: any) => make('NotFound', what, 404, details),
   badQuery: (message: any, details: any) => make('BadQuery', message, 400, details),

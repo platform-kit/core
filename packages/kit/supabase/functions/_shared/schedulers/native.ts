@@ -325,7 +325,7 @@ export function native({ db, env }: any) {
            a fence against an unbounded scan and not a rule about how far ahead anything may be —
            and a run of six weekly sessions asked for from the first of a month is longer than it. */
         // @ts-expect-error TS18048, from the conversion: 'last' is possibly 'undefined'.
-        const until = (new Date(last + 864e5) as any).toISOString().slice(0, 10)
+        const until = (new Date(last + 864e5)).toISOString().slice(0, 10)
         const wideSpan = Math.ceil((Date.parse(until + 'T12:00:00Z') - Date.parse(from + 'T12:00:00Z')) / 864e5) + 2
         const wide = await offerOf(type, from, until, now, wideSpan)
         const free = new Set(wide.slots.map((s) => s.start))

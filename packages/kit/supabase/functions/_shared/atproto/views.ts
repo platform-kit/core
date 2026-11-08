@@ -19,7 +19,7 @@ import { POST, LIKE, REPOST, FOLLOW, BLOCK, GENERATOR, didOf, handleOf, nameOf, 
 import { planEmbed, kindOf } from './media.ts'
 
 /* the whole post on the site, for a record that cannot carry all its media */
-const postLink = (_ctx: Ctx, row: any) => (Deno.env.get('APP_URL') || '').replace(/\/$/, '') + '/feed/post/' + row.id
+const postLink = (_ctx: Ctx, row: { id: string }) => (Deno.env.get('APP_URL') || '').replace(/\/$/, '') + '/feed/post/' + row.id
 
 export type Ctx = {
   db: any
@@ -65,7 +65,7 @@ export const didFor = (ctx: Ctx, id: string) => didOf(ctx.people.get(id), ctx.do
 const handleFor = (ctx: Ctx, id: string) => handleOf(nameOf(ctx.people.get(id)), ctx.domain) || 'handle.invalid'
 
 /* the face somebody uploaded, where they did; a drawn face is the site's own and has no address */
-const avatarOf = (p: any) => (p && p.avatar && /^https?:\/\//.test(p.avatar) ? p.avatar : undefined)
+const avatarOf = (p: { avatar: string }) => (p && p.avatar && /^https?:\/\//.test(p.avatar) ? p.avatar : undefined)
 
 export function profileBasic(ctx: Ctx, id: string) {
   const p = ctx.people.get(id)
@@ -109,14 +109,14 @@ export async function profileDetailed(ctx: Ctx, id: string) {
 /* a picture's blob, as the protocol names it: its CID is the hash of its bytes, worked out once and
    kept on the post (derived; the service role writes it), and the picture is served by an address
    the reader's own session signs */
-async function blobOf(row: any, im: any) {
+async function blobOf(row: { media: any; id: string }, im: any) {
   if (!im.cid) {
     const dl = await admin.storage.from('network').download(im.path)
     if (dl.error || !dl.data) return null
     const bytes = new Uint8Array(await dl.data.arrayBuffer())
     im.cid = String(await cidForRawBytes(bytes))
     im.size = bytes.length
-    const media = (row.media || []).map((x: any) => (x.path === im.path ? { ...x, cid: im.cid, size: im.size } : x))
+    const media = (row.media || []).map((x: { path: any }) => (x.path === im.path ? { ...x, cid: im.cid, size: im.size } : x))
     await admin.from('network_posts').update({ media }).eq('id', row.id)
   }
   return { $type: 'blob', ref: { $link: im.cid }, mimeType: im.mime || (kindOf(im) === 'video' ? 'video/mp4' : 'image/jpeg'), size: im.size || 0 }
@@ -165,7 +165,7 @@ export async function recordOf(ctx: Ctx, row: any) {
   delete extra.$type; delete extra.text; delete extra.createdAt; delete extra.reply
   const embedExtra = extra.embed && extra.embed.$type === 'app.bsky.embed.external' ? extra.embed : null
   delete extra.embed
-  const rec: any = { $type: POST, text: row.text || '', createdAt: new Date(row.created_at).toISOString(), ...extra }
+  const rec = { $type: POST, text: row.text || '', createdAt: new Date(row.created_at).toISOString(), ...extra }
   if (row.reply_parent_id) {
     const parent = await strongRef(ctx, row.reply_parent_id)
     const root = row.reply_root_id && row.reply_root_id !== row.reply_parent_id ? await strongRef(ctx, row.reply_root_id) : parent
@@ -176,8 +176,8 @@ export async function recordOf(ctx: Ctx, row: any) {
   /* what the protocol's records carry (_shared/atproto/media.js): four pictures, or one video; more,
      or a mix, goes as the first four pictures with a link to the whole post on the site */
   const plan = planEmbed(row.media)
-  const ratio = (m: any) => (m.width && m.height ? { aspectRatio: { width: m.width, height: m.height } } : {})
-  let media: any = embedExtra
+  const ratio = (m: { width: any; height: any }) => (m.width && m.height ? { aspectRatio: { width: m.width, height: m.height } } : {})
+  let media = embedExtra
   if (plan && plan.video) {
     const blob = await blobOf(row, plan.video)
     if (blob) media = { $type: 'app.bsky.embed.video', video: blob, ...(plan.video.alt ? { alt: plan.video.alt } : {}), ...ratio(plan.video) }
@@ -209,7 +209,7 @@ export async function recordOf(ctx: Ctx, row: any) {
 export async function cidOf(ctx: Ctx, key: string, rec: unknown) {
   const have = ctx.cids.get(key)
   if (have) return have
-  const cid = String(await cidForLex(jsonToLex(rec as any)))
+  const cid = String(await cidForLex(jsonToLex(rec)))
   ctx.cids.set(key, cid)
   return cid
 }
@@ -217,7 +217,7 @@ export async function cidOf(ctx: Ctx, key: string, rec: unknown) {
 /* ---------------------------------------------------------------- posts */
 
 async function signImages(ctx: Ctx, rows: any[]) {
-  const paths = rows.flatMap((r) => (r.media || []).flatMap((im: any) => [im.path, im.poster])).filter(Boolean)
+  const paths = rows.flatMap((r) => (r.media || []).flatMap((im: { path: any; poster: any }) => [im.path, im.poster])).filter(Boolean)
   const out = new Map<string, string>()
   if (!paths.length) return out
   const { data } = await ctx.db.storage.from('network').createSignedUrls(paths, 3600)
@@ -242,11 +242,11 @@ async function myMarks(ctx: Ctx, ids: string[]) {
 export async function postViews(ctx: Ctx, ids: string[]) {
   await loadPosts(ctx, ids)
   const rows = ids.map((id) => ctx.posts.get(id)).filter(Boolean)
-  const quoted = rows.map((r: any) => r.quote_id).filter(Boolean)
+  const quoted = rows.map((r) => r.quote_id).filter(Boolean)
   await loadPosts(ctx, quoted)
   const all = [...rows, ...quoted.map((id: string) => ctx.posts.get(id)).filter(Boolean)]
-  await loadPeople(ctx, all.map((r: any) => r.author_id))
-  const [urls, marks] = await Promise.all([signImages(ctx, all), myMarks(ctx, rows.map((r: any) => r.id))])
+  await loadPeople(ctx, all.map((r) => r.author_id))
+  const [urls, marks] = await Promise.all([signImages(ctx, all), myMarks(ctx, rows.map((r) => r.id))])
   const out = new Map<string, any>()
   for (const row of rows as any[]) {
     const author = profileBasic(ctx, row.author_id)
@@ -273,15 +273,15 @@ export async function postViews(ctx: Ctx, ids: string[]) {
 
 /* what is embedded in a post, as a client draws it: the pictures by an address the reader may open,
    and a quoted post as its own view, or as missing where the reader cannot read it */
-async function embedView(ctx: Ctx, row: any, record: any, urls: Map<string, string>) {
-  const vid = (row.media || []).find((m: any) => kindOf(m) === 'video')
+async function embedView(ctx: Ctx, row: { media: any; quote_id: string }, record: { embed: { $type: string; external: any; record: { uri: any; record: { uri: any } } } }, urls: Map<string, string>) {
+  const vid = (row.media || []).find((m: { kind: string }) => kindOf(m) === 'video')
   if (vid && (row.media || []).length === 1 && urls.get(vid.path)) {
     return { embed: { $type: 'app.bsky.embed.video#view', cid: vid.cid || '', playlist: urls.get(vid.path), ...(vid.poster && urls.get(vid.poster) ? { thumbnail: urls.get(vid.poster) } : {}), ...(vid.alt ? { alt: vid.alt } : {}), ...(vid.width && vid.height ? { aspectRatio: { width: vid.width, height: vid.height } } : {}) } }
   }
-  const imgs = (row.media || []).filter((im: any) => kindOf(im) === 'image').slice(0, 4).map((im: any) => ({
+  const imgs = (row.media || []).filter((im: { kind: string }) => kindOf(im) === 'image').slice(0, 4).map((im: { path: string; alt: any; width: any; height: any }) => ({
     thumb: urls.get(im.path) || '', fullsize: urls.get(im.path) || '', alt: im.alt || '',
     ...(im.width && im.height ? { aspectRatio: { width: im.width, height: im.height } } : {}),
-  })).filter((x: any) => x.thumb)
+  })).filter((x: { thumb: any }) => x.thumb)
   const media = imgs.length ? { $type: 'app.bsky.embed.images#view', images: imgs }
     : record.embed && record.embed.$type === 'app.bsky.embed.external' ? { $type: 'app.bsky.embed.external#view', external: record.embed.external } : null
   let quoted: any = null
@@ -330,7 +330,7 @@ export async function messageViews(ctx: Ctx, ids: string[]) {
 export async function feedItems(ctx: Ctx, items: { post_id?: string | null; message_id?: string | null; reposted_by?: string | null; at?: string }[]) {
   const postIds = items.map((i) => i.post_id).filter(Boolean) as string[]
   await loadPosts(ctx, postIds)
-  const parentIds = postIds.map((id) => ctx.posts.get(id)).filter(Boolean).flatMap((r: any) => [r.reply_parent_id, r.reply_root_id]).filter(Boolean)
+  const parentIds = postIds.map((id) => ctx.posts.get(id)).filter(Boolean).flatMap((r) => [r.reply_parent_id, r.reply_root_id]).filter(Boolean)
   await loadPeople(ctx, items.map((i) => i.reposted_by))
   const [views, parents, msgs] = await Promise.all([
     postViews(ctx, postIds), postViews(ctx, parentIds), messageViews(ctx, items.map((i) => i.message_id).filter(Boolean) as string[]),
@@ -362,8 +362,8 @@ const notFound = (uri: string) => ({ $type: 'app.bsky.feed.defs#notFoundPost', u
 export const generatorUri = (ctx: Ctx, slug: string) => uriOf(ctx.serviceDid, GENERATOR, slug)
 /* the generator's record, as a client would read it from the site's own repository: the space's name,
    the service that answers it — and the CID its hash, like every record here */
-export const generatorRecord = (ctx: Ctx, s: any) => ({ $type: GENERATOR, did: ctx.serviceDid, displayName: String(s.name || s.slug).slice(0, 24), createdAt: '2026-01-01T00:00:00.000Z' })
-export async function generatorView(ctx: Ctx, s: any) {
+export const generatorRecord = (ctx: Ctx, s: { name: any; slug: any }) => ({ $type: GENERATOR, did: ctx.serviceDid, displayName: String(s.name || s.slug).slice(0, 24), createdAt: '2026-01-01T00:00:00.000Z' })
+export async function generatorView(ctx: Ctx, s: { slug: string; space_id: string; name: any }) {
   return {
     $type: 'app.bsky.feed.defs#generatorView',
     uri: generatorUri(ctx, s.slug), cid: await cidOf(ctx, 'g' + s.space_id, generatorRecord(ctx, s)),

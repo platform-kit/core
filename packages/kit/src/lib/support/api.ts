@@ -78,7 +78,7 @@ async function call(action: string, body = {}, file: any = null) {
 }
 
 function countUnread() { unread.value = conversations.value.reduce((n: number, c: { unread: any }) => n + (Number(c.unread) || 0), 0) }
-function take(hello: { contact: null; conversations: never[]; staff: any; bot: null|undefined; linked: any }) {
+function take(hello: any) {
   contact.value = hello.contact || null
   conversations.value = hello.conversations || []
   staff.value = !!hello.staff

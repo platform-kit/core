@@ -108,10 +108,10 @@ async function holdersOf(s: Session, spaceId_: string) {
 
 /* a media id is the attachment's path, so nothing has to be stored to resolve one; the bucket's
    own url never leaves this function (3.10) */
-const mediaOf = (row: any) => (row?.attachment ? `mxc://${HOST()}/${btoa(String(row.attachment)).replace(/=+$/, '')}` : null)
+const mediaOf = (row: { attachment: any }) => (row?.attachment ? `mxc://${HOST()}/${btoa(String(row.attachment)).replace(/=+$/, '')}` : null)
 const pathOfMedia = (id: string) => { try { return atob(id.replace(/-/g, '+').replace(/_/g, '/')) } catch { return null } }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
   /* OFF MEANS GONE. The surface is the community served as a homeserver, so it comes and goes with
@@ -611,7 +611,7 @@ Deno.serve(async (req: any) => {
           size: Number(info.size) || 0,
         }
       }
-      const made = fromEvent({ type: decodeURIComponent(seg[6] ?? 'm.room.message'), content: b }, { channelId: ch.id, media, sealed: ENCRYPTION_ON && !!(ch as any).encrypted })
+      const made = fromEvent({ type: decodeURIComponent(seg[6] ?? 'm.room.message'), content: b }, { channelId: ch.id, media, sealed: ENCRYPTION_ON && !!ch.encrypted })
       /* a picture's size in pixels, as the sender measured it: a client needs it to lay the
          timeline out before the bytes arrive, and it rides on meta, which never changes */
       if (made.ok && media) {
@@ -630,17 +630,17 @@ Deno.serve(async (req: any) => {
       if (made.replaces) {
         const { data, error } = await s.db.from('space_messages').update({ body: made.row.body, edited_at: new Date().toISOString() }).eq('id', made.replaces).select().single()
         if (error) return no(REFUSALS.cannotSend())
-        return json({ event_id: eventId((data as any).id) })
+        return json({ event_id: eventId(data.id) })
       }
       /* written as them: the insert policy is the one the browser meets, so a room they may read
          and not write in refuses here for the same reason it would there */
       const { data, error } = await s.db.from('space_messages').insert({ ...made.row, author_id: s.userId, ...(mediaId ? { id: mediaId } : {}) }).select().single()
       if (error) {
         /* the file is already at a name built from an id no row will ever hold: take it back */
-        if (mediaId) await s.db.storage.from('spaces').remove([`${ch.id}/${mediaId}.${(made.row as any).attachment?.split('.').pop() ?? 'bin'}`])
+        if (mediaId) await s.db.storage.from('spaces').remove([`${ch.id}/${mediaId}.${made.row.attachment?.split('.').pop() ?? 'bin'}`])
         return no(REFUSALS.cannotSend())
       }
-      return json({ event_id: eventId((data as any).id) })
+      return json({ event_id: eventId(data.id) })
     }
 
     if (what === 'redact' && req.method === 'PUT') {
@@ -664,7 +664,7 @@ Deno.serve(async (req: any) => {
       const target = readEvent(evId)
       if (target) {
         const { data } = await s.db.from('space_messages').select('seq').eq('id', target.id).maybeSingle()
-        const seq = Number((data as any)?.seq || 0)
+        const seq = Number(data?.seq || 0)
         /* the Matrix client's own position, kept apart from our web client's on purpose: reading
            on a phone should not mark the room read in a browser somebody left open */
         if (seq) await s.db.from('matrix_read').upsert({ user_id: s.userId, channel_id: ch.id, seq, updated_at: new Date().toISOString() })

@@ -82,7 +82,7 @@ export function bookvault(env: any) {
     },
     /* the sheet from the title calculator: its expected cover size and spine, in millimetres */
     async measure({ product, artefacts = {} }: any) {
-      const { pages }: any = artefacts
+      const { pages } = artefacts
       const t = product.size, mm = 72 / 25.4, bleed = 3 * mm
       let spine = pages * 0.06 * mm + (product.hard ? 6 * mm : 0), wrap = product.hard ? 15 * mm : 0
       if (!mock()) { try { const r = await call('/CalculateTitle', titleBody(product, pages, 'quote', 'quote')); if (r?.Specifications?.Spine) spine = Number(r.Specifications.Spine) * mm; if (r?.Specifications?.CoverSizing?.RequiredBleed) { /* the bleed as they size it */ } } catch (e) { /* the estimate stands */ } }
@@ -90,7 +90,7 @@ export function bookvault(env: any) {
       return { width: t.w * mm * 2 + spine + 2 * (bleed + wrap) + 2 * flap, height: t.h * mm + 2 * (bleed + wrap), spine, bleed: bleed + wrap, flap, unit: 'pt', mock: mock() }
     },
     async quote({ product, artefacts = {}, quantity = 1, country = 'US' }: any) {
-      const { pages }: any = artefacts
+      const { pages } = artefacts
       if (mock()) return { print: (product.binding === 3 ? 7.5 : product.hard ? 5.5 : 2) + pages * 0.015, shipping: country === 'GB' ? 3.5 : 12, currency: 'GBP', days: product.ukOnly ? 10 : 6, mock: true, from: 'GB' }
       const r = await call('/CalculateTitle', titleBody(product, pages, 'quote', 'quote'))
       const rows = (r?.Pricing || []).filter((p: any) => p.Price > 0)
@@ -101,7 +101,7 @@ export function bookvault(env: any) {
     async validate({ artefacts = {} }) { return { ok: true, pages: (artefacts as any).pages, deferred: true } },   /* their pre-press validates the title once made */
     /* a title, found by our SKU or made — the fee paid through the API — and its files set by url */
     async register({ product, artefacts = {}, title, sku, existing }: any) {
-      const { pages, files }: any = artefacts
+      const { pages, files } = artefacts
       if (mock()) return { ref: existing?.ref || ('bv_mock_' + sku), paid: true, validated: true, mock: true }
       let ref = existing?.ref && !/^bv_mock_/.test(String(existing.ref)) ? existing.ref : null
       if (!ref) {
@@ -130,7 +130,7 @@ export function bookvault(env: any) {
       if (mock()) { const id = 'bv_mock_' + Date.now(); return { id, status: 'CREATED', cost: { print: 7.5 * quantity, shipping: 12, currency: 'GBP', mock: true } } }
       const o = await call('/Order?payMethod=Saved', {
         DocRef: externalId, Notifications: { NotifyCustomer: true },
-        Address: { Name: (address as any).name || '', Line1: (address as any).line1 || '', Line2: (address as any).line2 || '', Town: (address as any).city || '', County: (address as any).state || '', Postcode: (address as any).postal_code || '', Country: (address as any).country || 'US', Phone: (address as any).phone || '', Email: email || '' },
+        Address: { Name: address.name || '', Line1: address.line1 || '', Line2: address.line2 || '', Town: address.city || '', County: address.state || '', Postcode: address.postal_code || '', Country: address.country || 'US', Phone: address.phone || '', Email: email || '' },
         DispatchRequest: { Service: (this as any).levels[level] || 'STANDARD' },
         OrderLines: [{ LineNumber: 1, Title: { LibID: ref }, Quantity: quantity }],
       })

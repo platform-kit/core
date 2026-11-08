@@ -20,7 +20,7 @@ import { providerScopedId } from './payment-provider.mts'
 import type { PaymentCheckoutSnapshot, PaymentSubscriptionSnapshot } from './payment-provider.d.ts'
 
 export const iso = (unix?: number | null) => (unix ? new Date(unix * 1000).toISOString() : null)
-export const idOf = (x: any) => (typeof x === 'string' ? x : x?.id ?? null)
+export const idOf = (x: { id: any }) => (typeof x === 'string' ? x : x?.id ?? null)
 
 function checkoutForLedger(snapshot: PaymentCheckoutSnapshot) {
   if (!snapshot.checkoutId || !snapshot.provider || !snapshot.metadata || !Array.isArray(snapshot.lines)) {
@@ -198,12 +198,12 @@ export async function checkoutCompleted(o: any, provider = 'stripe') {
   if (!before.length) {
     const { data, error } = await admin.from('purchases').select('id').eq('checkout_identity', checkoutIdentity).limit(1)
     if (error) throw new Error(`purchase checkout identity lookup failed: ${error.message}`)
-    before = (data ?? []).map((row: any) => row.id)
+    before = (data ?? []).map((row) => row.id)
     if (!before.length && provider === 'stripe') {
       const { data: legacyRows, error: legacyError } = await admin.from('purchases').select('id')
         .eq('stripe_checkout_session_id', o.id).limit(1)
       if (legacyError) throw new Error(`legacy Stripe purchase lookup failed: ${legacyError.message}`)
-      before = (legacyRows ?? []).map((row: any) => row.id)
+      before = (legacyRows ?? []).map((row) => row.id)
     }
   }
   const seen = before.length > 0
@@ -317,7 +317,7 @@ export async function checkoutCompleted(o: any, provider = 'stripe') {
     if (!transactionIds.length) {
       const { data, error } = await admin.from('order_transactions').select('id').eq('reference', transactionReference).limit(1)
       if (error) throw new Error(`payment transaction identity lookup failed: ${error.message}`)
-      transactionIds = (data ?? []).map((row: any) => row.id)
+      transactionIds = (data ?? []).map((row) => row.id)
     }
     if (transactionIds.length > 1) throw new Error(`payment reference ${externalPaymentId} maps to multiple order transactions`)
     if (transactionIds.length) {
@@ -417,7 +417,7 @@ export async function checkoutCompleted(o: any, provider = 'stripe') {
  * a deployment whose database is behind the code still takes payments and still writes purchases,
  * which is the half that must never depend on the half being added.
  */
-async function openOrder(o: any, userId: string | null, provider = 'stripe'): Promise<string | null> {
+async function openOrder(o: { id: string; shipping_details: any; collected_information: { shipping_details: any }; currency: any; shipping_level: any; customer_details: { address: any }; shipping_cost: { amount_total: any } }, userId: string | null, provider = 'stripe'): Promise<string | null> {
   const mapped = await findProviderEntity(provider, 'checkout', o.id, 'orders')
   if (mapped) return mapped
   const checkoutIdentity = providerScopedId(provider, String(o.id ?? ''))
@@ -454,7 +454,7 @@ async function openOrder(o: any, userId: string | null, provider = 'stripe'): Pr
 
 /* a line's second line in the confirmation: the format, a linen's colours, the contents — from
    the catalog's own words for the offer (its title carries the format) and the variant */
-const lineDetail = (bought: any, v: { contents: string; cloth: string; foil: string } | null) => {
+const lineDetail = (bought: { format: string }, v: { contents: string; cloth: string; foil: string } | null) => {
   if (!bought) return ''
   const P = WORDS.print || {}
   const fmt = bought.format ? P['format-' + bought.format] ?? bought.format : ''
@@ -465,7 +465,7 @@ const lineDetail = (bought: any, v: { contents: string; cloth: string; foil: str
    the event finds it) and the printer's job; the address is the session's shipping details */
 /* the variant a sku was bought at, from the session's metadata */
 const variantOf = (variants: unknown, sku: string) => { const m = new RegExp('(?:^|, )' + sku.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ':([\\w.-]+?)x\\d+(?:,|$)').exec(String(variants ?? '')); return m ? m[1] : '' }
-async function printOrdered(o: any, bought: any, quantity: number, userId: string | null, variant = '', provider = 'stripe') {
+async function printOrdered(o: { shipping_details: any; collected_information: { shipping_details: any }; customer_details: { name: any; phone: any; email: any }; shipping_level: any; shipping_cost: { shipping_rate: any }; id: string; customer_email: any }, bought: { key: string; contents: any[]; cloth: any[]; foil: any[]; book: string; format: any; title: string }, quantity: number, userId: string | null, variant = '', provider = 'stripe') {
   const sd = o.shipping_details ?? o.collected_information?.shipping_details ?? null
   const a = sd?.address ?? {}
   const address = { name: sd?.name ?? o.customer_details?.name ?? '', line1: a.line1 ?? '', line2: a.line2 ?? '', city: a.city ?? '', state: a.state ?? '', postal_code: a.postal_code ?? '', country: a.country ?? '', phone: o.customer_details?.phone ?? '' }
@@ -525,7 +525,7 @@ export async function subscriptionChanged(o: any, provider = 'stripe') {
   const subscriptionId = mappedSubscriptionId
     ?? (provider === 'stripe' ? externalSubscriptionId : providerScopedId(provider, externalSubscriptionId))
   const items = o.items?.data ?? []
-  const usageItem = items.find((i: any) =>
+  const usageItem = items.find((i: { price: { metadata: { usage: string; usage_meter: any }; lookup_key: any } }) =>
     i.price?.metadata?.usage === 'metered' ||
     String(i.price?.lookup_key ?? '').endsWith('_usage') ||
     (provider === 'hyperswitch' && !!i.price?.metadata?.usage_meter))
@@ -536,7 +536,7 @@ export async function subscriptionChanged(o: any, provider = 'stripe') {
   /* THAT A TRIAL HAPPENED IS STICKY. The question asked later is "has this person ever trialled
      this tier", and a cancelled subscription's row is the only record of it — so this is only ever
      set, never cleared. Stripe says so two ways: the status while it runs, and trial_end after. */
-  const trialed = o.status === 'trialing' || !!(o as any).trial_end
+  const trialed = o.status === 'trialing' || !!o.trial_end
   const periodEnd = iso(o.current_period_end)
   const key = item?.price?.lookup_key ?? item?.price?.metadata?.key ?? null
   const known = (key ? offerByKey(key) : null) ?? (item?.price?.metadata?.sku ? offer(item.price.metadata.sku) : null)

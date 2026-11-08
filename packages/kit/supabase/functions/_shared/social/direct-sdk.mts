@@ -24,7 +24,7 @@ const scopeSets: any = {
   reddit: ['identity', 'read', 'submit'],
 }
 
-const socialAccount = (account: any) => ({
+const socialAccount = (account: { id: any; providerId: any; name: any; username: any; avatarUrl: any }) => ({
   id: account.id,
   providerId: account.providerId,
   name: account.name,
@@ -32,7 +32,7 @@ const socialAccount = (account: any) => ({
   avatarUrl: account.avatarUrl || null,
 })
 
-function backendFor(account: any, tokens: any, webhookSecret: any) {
+function backendFor(account: { id: any; providerId: any; name?: any; username?: any; avatarUrl?: any }, tokens: { accessToken: any; providerData: { blueskySession: any } }, webhookSecret: any) {
   switch (account.providerId) {
     case 'reddit':
       return createRedditBackend(account, tokens, {
@@ -79,18 +79,18 @@ function backendFor(account: any, tokens: any, webhookSecret: any) {
   }
 }
 
-const refFor = (account: any) => connectedAccountRef({
+const refFor = (account: { providerId: any; id: any }) => connectedAccountRef({
   backend: 'default',
   platform: account.providerId,
   accountId: account.id,
 })
 
-async function digest(bytes: any) {
+async function digest(bytes: BufferSource) {
   const hash = await crypto.subtle.digest('SHA-256', bytes)
   return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-async function mediaContent(items: any) {
+async function mediaContent(items: any[]) {
   return Promise.all(items.map(async (item: any) => ({
     kind: item.kind,
     source: {
@@ -108,7 +108,7 @@ function clientFor(account: any, tokens: any, webhookSecret?: any) {
   return createSocial({ backend: backendFor(socialAccount(account), tokens, webhookSecret) })
 }
 
-export function createDirectWebhookClient(providerId: any, webhookSecret: any) {
+export function createDirectWebhookClient(providerId: string, webhookSecret: any) {
   const account = {
     id: 'webhook',
     providerId,
@@ -119,7 +119,7 @@ export function createDirectWebhookClient(providerId: any, webhookSecret: any) {
   return clientFor(account, { accessToken: 'webhook-verification-only', refreshToken: null, scopes: [] }, webhookSecret)
 }
 
-function tokenValue(token: any) {
+function tokenValue(token: { accessToken: any; refreshToken: any; expiresAt: any; scopes: any }) {
   return {
     accessToken: token.accessToken,
     refreshToken: token.refreshToken || null,
@@ -128,7 +128,7 @@ function tokenValue(token: any) {
   }
 }
 
-function createAdapter(id: any, displayName: any) {
+function createAdapter(id: string, displayName: string) {
   const scopes = scopeSets[id]
   return defineSocialAdapter({
     id,
@@ -159,7 +159,7 @@ function createAdapter(id: any, displayName: any) {
       })
       return {
         valid: prepared.ok,
-        issues: prepared.issues.map((issue: any) => ({ code: issue.code, message: issue.message })),
+        issues: prepared.issues.map((issue: { code: any; message: any }) => ({ code: issue.code, message: issue.message })),
       }
     },
     async uploadMedia({ account, media, tokens }: any) {
@@ -174,7 +174,7 @@ function createAdapter(id: any, displayName: any) {
         targets: [{ account: refFor(account), ...(options ? { options } : {}) }],
         content: {
           text,
-          media: media.map((item: any) => ({
+          media: media.map((item: { kind: any; providerMediaId: string; mimeType: any; fileName: any; size: any }) => ({
             kind: item.kind,
             source: { kind: 'media-ref', ref: JSON.parse(item.providerMediaId) },
             mimeType: item.mimeType,
@@ -204,12 +204,12 @@ function createAdapter(id: any, displayName: any) {
       const social = clientFor(account, tokens)
       const page = await social.posts.list(refFor(account), { limit: 100 })
       if (providerPostId) {
-        const found = page.items.find((post: any) => post.id === providerPostId)
+        const found = page.items.find((post: { id: any }) => post.id === providerPostId)
         if (found)
           return { outcome: 'published', providerPostId, publishedAt: String(found.created_at || '') }
       }
       const lowerBound = Date.parse(submittedAt) - 60_000
-      const matches = page.items.filter((post: any) => {
+      const matches = page.items.filter((post: { text: any; id: any; created_at: string }) => {
         if (post.text !== text || typeof post.id !== 'string') return false
         const createdAt = typeof post.created_at === 'string' ? Date.parse(post.created_at) : NaN
         return Number.isFinite(createdAt) && createdAt >= lowerBound
@@ -223,7 +223,7 @@ function createAdapter(id: any, displayName: any) {
       return { outcome: 'unknown' }
     },
     connection: {
-      async start(input: any) {
+      async start(input: { credentials: { clientId: any; clientSecret: any }; redirectUri: any; scopes: any[]; state: any; codeChallenge: any; loginHint: any }) {
         if (id === 'reddit') return { authorizationUrl: redditAuthorizationUrl({
           clientId: input.credentials.clientId,
           redirectUri: input.redirectUri,

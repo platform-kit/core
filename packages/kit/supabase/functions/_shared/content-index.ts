@@ -53,7 +53,7 @@ async function fromRows(): Promise<{ live: Index; preview: Index }> {
   let models: any[] = []
   try {
     const reg = await registry('', { site, siteModels: SITE_MODELS, store })
-    models = reg.filter((m: any) => m.fields && m.dir).map((m: any) => ({ key: m.key, name: m.name, dir: String(m.dir).replace(/^\.?\//, ''), single: !!m.single, nested: !!m.nested, body: !!m.body, bodyLabel: m.bodyLabel || null, fields: describeSchema(m.fields), model: m.model ? { key: m.model.key, name: m.model.name, singular: m.model.singular } : null })).filter(isRecordModel)
+    models = reg.filter((m: { fields: any; dir: any }) => m.fields && m.dir).map((m: { key: any; name: any; dir: any; single: any; nested: any; body: any; bodyLabel: any; fields: any; model: { key: any; name: any; singular: any } }) => ({ key: m.key, name: m.name, dir: String(m.dir).replace(/^\.?\//, ''), single: !!m.single, nested: !!m.nested, body: !!m.body, bodyLabel: m.bodyLabel || null, fields: describeSchema(m.fields), model: m.model ? { key: m.model.key, name: m.model.name, singular: m.model.singular } : null })).filter(isRecordModel)
   } catch (e) { console.warn('content: the registry —', (e as Error).message) }
   const { data: rows, error } = await admin.from('content').select('path, published, data, body, text, updated_at, updated_by, published_at, deleted_at, content_drafts(text, data, body, at, by, deleted)')
   if (error) { console.warn('content: content rows —', error.message); return rowsIndex ?? { live: EMPTY(), preview: EMPTY() } }
@@ -76,7 +76,7 @@ async function fromRows(): Promise<{ live: Index; preview: Index }> {
   const siteRec = live.find((x) => x.model === 'site')
   const sd = (siteRec?.data ?? {}) as Record<string, unknown>
   const types = contentTypes(models, { space: SPACE, now })
-  for (const list of [live, preview]) for (const x of list) { const t = types.find((y: any) => y._model === x.model); x.typeId = t ? t.sys.id : null }
+  for (const list of [live, preview]) for (const x of list) { const t = types.find((y) => y._model === x.model); x.typeId = t ? t.sys.id : null }
   const mk = (records: Rec[]): Index => ({ ...EMPTY(), built: now, site: { name: String(sd.name ?? S.name ?? ''), tagline: String(sd.tagline ?? ''), description: String(sd.description ?? ''), url: String(sd.url ?? '').replace(/\/+$/, '') }, models, types, records, assets, deleted })
   rowsIndex = { live: mk(live), preview: mk(preview) }
   rowsAt = Date.now()

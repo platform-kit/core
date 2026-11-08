@@ -50,7 +50,7 @@ async function savedPaymentMethod(provider: Awaited<ReturnType<typeof getPayment
   return method.paymentMethodId ? { customer: customerId, paymentMethod: method.paymentMethodId } : null
 }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
   if (req.method !== 'POST') return fail('method not allowed', 405)
   const user = await getUser(req)
@@ -68,7 +68,7 @@ Deno.serve(async (req: any) => {
         admin.from('subscriptions').select('id').eq('user_id', user.id),
         'usage subscriptions could not be loaded',
       )
-      const ids = (owned ?? []).map((subscription: any) => subscription.id)
+      const ids = (owned ?? []).map((subscription: { id: any }) => subscription.id)
       const open = ids.length
         ? await query(
           admin.from('usage_incremental_settlements').select('status')
@@ -77,7 +77,7 @@ Deno.serve(async (req: any) => {
           'usage payments could not be loaded',
         )
         : []
-      const statuses = new Set((open ?? []).map((settlement: any) => settlement.status))
+      const statuses = new Set((open ?? []).map((settlement: { status: any }) => settlement.status))
       return json({ attention: statuses.has('requires_action') ? 'requires_action' : statuses.has('failed') ? 'failed' : null })
     }
     if (provider.id === 'stripe' && !stripeConfigured) return stripeUnconfigured()
@@ -102,7 +102,7 @@ Deno.serve(async (req: any) => {
         admin.from('subscriptions').select('id, key').eq('user_id', user.id),
         'incremental usage subscriptions could not be loaded',
       )
-      const subscriptionKeys = new Map<string, string>((subscriptions ?? []).map((subscription: any) => [subscription.id, subscription.key]))
+      const subscriptionKeys = new Map<string, string>((subscriptions ?? []).map((subscription: { id: any; key: any }) => [subscription.id, subscription.key]))
       const subscriptionIds = [...subscriptionKeys.keys()]
       const settlements = subscriptionIds.length
         ? await query(
@@ -119,7 +119,7 @@ Deno.serve(async (req: any) => {
         preferences: prefs,
         has_payment_method: !!method,
         can_manage_payment_method: provider.id === 'stripe' || typeof provider.createPaymentMethodSession === 'function',
-        incremental_attention: (settlements ?? []).map((settlement: any) => ({
+        incremental_attention: (settlements ?? []).map((settlement: { subscription_id: string; period_start: any; settlement_key: any; amount_minor: any; currency: any; status: any }) => ({
           subscription_id: settlement.subscription_id,
           period_start: settlement.period_start,
           settlement_key: settlement.settlement_key,
@@ -266,7 +266,7 @@ Deno.serve(async (req: any) => {
         return json({ error: 'automatic top-up is not enabled by this site', code: 'topup_site_disabled' }, 409)
       }
       if (body.enabled === true) assertPaymentCapabilities(provider, ['usage.prepaid-top-up'])
-      const pack = config.packs?.find((item: any) => item.key === body.offer_key)
+      const pack = config.packs?.find((item: { key: any }) => item.key === body.offer_key)
       if (!pack || pack.currency !== config.currency) return fail('choose an eligible usage pack')
       const enabled = body.enabled === true
       let consentAt = null

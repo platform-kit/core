@@ -25,7 +25,7 @@ export const payoutsLive = async () => providerIsLive((await getPaymentProvider(
 /* the site's two answers about paying people, read where the projection put them */
 export async function payoutPolicy(): Promise<{ connect: 'own' | 'managed'; delay: number }> {
   const { data } = await admin.from('app_settings').select('key, value').in('key', ['provider_connect', 'provider_delay'])
-  const at = (k: string) => (data ?? []).find((r: any) => r.key === k)?.value ?? null
+  const at = (k: string) => (data ?? []).find((r) => r.key === k)?.value ?? null
   return { connect: at('provider_connect') === 'own' ? 'own' : 'managed', delay: Number(at('provider_delay') ?? 43200) }
 }
 
@@ -115,8 +115,8 @@ export async function whatIsDue() {
   const { data: people } = await admin.from('profiles').select('id, display_name, first_name, username, email').in('id', ids)
   const { data: accts } = await admin.from('payout_accounts').select('user_id, account_id, kind, ready').in('user_id', ids)
   return [...by.values()].map((d) => {
-    const p = (people ?? []).find((x: any) => x.id === d.user_id)
-    const a = (accts ?? []).find((x: any) => x.user_id === d.user_id)
+    const p = (people ?? []).find((x) => x.id === d.user_id)
+    const a = (accts ?? []).find((x) => x.user_id === d.user_id)
     return {
       ...d,
       name: p?.display_name || p?.first_name || (p?.username ? '@' + p.username : null), email: p?.email ?? null,
@@ -143,11 +143,11 @@ export async function sendDue(userId: string) {
     .eq('user_id', userId).is('paid_at', null).lte('payable_at', now)
   const rows = lines ?? []
   if (!rows.length) return { sent: 0, amount: 0, reason: 'nothing is payable' }
-  const existingRef = rows.find((line: any) => typeof line.payout_ref === 'string' && line.payout_ref)?.payout_ref ?? null
+  const existingRef = rows.find((line) => typeof line.payout_ref === 'string' && line.payout_ref)?.payout_ref ?? null
   const payoutRows = existingRef
-    ? rows.filter((line: any) => line.payout_ref === existingRef)
-    : rows.filter((line: any) => !line.payout_ref)
-  const amount = payoutRows.reduce((n: any, line: any) => n + (Number(line.amount) || 0), 0)
+    ? rows.filter((line) => line.payout_ref === existingRef)
+    : rows.filter((line) => !line.payout_ref)
+  const amount = payoutRows.reduce((n, line) => n + (Number(line.amount) || 0), 0)
   if (!payoutRows.length || amount <= 0) {
     return { sent: 0, amount, reason: payoutRows.length ? 'a reversal stands against what is earned next' : 'payout lines are already being reconciled' }
   }
@@ -162,7 +162,7 @@ export async function sendDue(userId: string) {
   const live = providerIsLive(provider.id)
   const currency = payoutRows[0].currency ?? 'usd'
   const ref = existingRef ?? (live ? 'po_' : 'po_mock_') + crypto.randomUUID().replace(/-/g, '').slice(0, 16)
-  const ids = payoutRows.map((line: any) => line.id)
+  const ids = payoutRows.map((line) => line.id)
 
   if (!existingRef) {
     const { data: claimed, error: claimErr } = await admin.from('payout_lines')
@@ -176,7 +176,7 @@ export async function sendDue(userId: string) {
       if (claimed?.length) {
         const { error } = await admin.from('payout_lines')
           .update({ payout_ref: null })
-          .in('id', claimed.map((line: any) => line.id))
+          .in('id', claimed.map((line) => line.id))
           .is('paid_at', null)
         if (error) throw new Error(`partial payout claim could not be released: ${error.message}`)
       }
@@ -214,7 +214,7 @@ export async function sendDue(userId: string) {
     return { sent: ids.length, amount, currency, ref, mock: !live }
   } catch (e: any) {
     const uncertain = provider.id === 'hyperswitch' &&
-      e instanceof PaymentProviderError && (e as any).status >= 500
+      e instanceof PaymentProviderError && e.status >= 500
     if (!uncertain) {
       const { error } = await admin.from('payout_lines')
         .update({ payout_ref: null })

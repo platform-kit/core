@@ -20,7 +20,7 @@ import { Lexicons, jsonToLex } from 'npm:@atproto/lexicon@0.7.16'
 
 /* the records' lexicons, from Bluesky's own schemas, checked by the same package that turns a JSON
    record into what it is — so a blob is recognised as a blob */
-const lexicons = new Lexicons(schemas as any)
+const lexicons = new Lexicons(schemas)
 import { cidForRawBytes } from 'npm:@atproto/lex-data@0.1.8'
 import { POST, LIKE, REPOST, FOLLOW, BLOCK, PROFILE, WRITABLE, parseUri, uriOf, isTid, messageOfKey, spaceKey, handleOfDidWeb, usernameOfHandle, cleanDomain } from './ids.ts'
 import { MEDIA, kindOfType } from './media.ts'
@@ -70,13 +70,13 @@ export async function resolvePost(ctx: Ctx, uri: string) {
 
 /* ---------------------------------------------------------------- validating */
 
-function valid(collection: string, record: any) {
+function valid(collection: string, record: { $type: string }) {
   if (!WRITABLE.includes(collection)) fail(REFUSALS.invalid(`${collection} is not something this site keeps`))
   if (!record || record.$type !== collection) fail(REFUSALS.invalid(`the record's $type must be ${collection}`))
   /* a record arrives as JSON; its lexicon is checked against what it IS — a blob a blob, a CID a CID */
   try { lexicons.assertValidRecord(collection, jsonToLex(record)) } catch (e) { fail(REFUSALS.invalid((e as Error).message)) }
 }
-const dbFail = (error: any) => {
+const dbFail = (error: { message: any }) => {
   const m = String((error && error.message) || error || '')
   if (/more people/.test(m)) return REFUSALS.invalid(m.replace(/^network:\s*/, ''))
   if (/block|cannot be read|does not exist/.test(m)) return REFUSALS.forbidden(m.replace(/^network:\s*/, ''))
@@ -103,7 +103,7 @@ export async function createRecord(ctx: Ctx, collection: string, record: any, rk
     delete extra.$type; delete extra.text; delete extra.createdAt
     if (record.reply) {
       const parent = await resolvePost(ctx, record.reply.parent && record.reply.parent.uri)
-      if (!parent || (parent as any).missing) fail(REFUSALS.notFound('The post being answered'))
+      if (!parent || parent.missing) fail(REFUSALS.notFound('The post being answered'))
       if ((parent as any).message) {
         /* AN ANSWER TO A SPACE'S POST is said in the space, as a reply in its thread, under the room's
            own guards — it never becomes a network post anybody outside the room could read */
@@ -144,7 +144,7 @@ export async function createRecord(ctx: Ctx, collection: string, record: any, rk
     } else delete extra.embed
     if (quoteRef) {
       const q = await resolvePost(ctx, quoteRef.uri)
-      if (!q || (q as any).missing || (q as any).message) fail(REFUSALS.notFound('The post being quoted'))
+      if (!q || q.missing || q.message) fail(REFUSALS.notFound('The post being quoted'))
       if ((q as any).external) { if (!joined) fail(REFUSALS.notJoined()); row.quote_uri = quoteRef.uri; extra.embed = embed }
       else row.quote_id = (q as any).post
     }
@@ -158,7 +158,7 @@ export async function createRecord(ctx: Ctx, collection: string, record: any, rk
 
   if (collection === LIKE || collection === REPOST) {
     const target = await resolvePost(ctx, record.subject && record.subject.uri)
-    if (!target || (target as any).missing) fail(REFUSALS.notFound('The post'))
+    if (!target || target.missing) fail(REFUSALS.notFound('The post'))
     if ((target as any).message) {
       if (collection === REPOST) fail(REFUSALS.invalid('A space’s post stays in the space; it cannot be reposted'))
       /* a like on a space's post is the room's own ❤️ — the same act the room's members make */
@@ -238,7 +238,7 @@ export async function getRecord(ctx: Ctx, author: string, collection: string, rk
   if (collection === PROFILE && rkey === 'self') {
     const p = ctx.people.get(author)
     if (!p) return null
-    const value: any = { $type: PROFILE, ...(p.name ? { displayName: p.name } : {}), ...(p.about ? { description: p.about } : {}) }
+    const value = { $type: PROFILE, ...(p.name ? { displayName: p.name } : {}), ...(p.about ? { description: p.about } : {}) }
     return { uri: uriOf(did, PROFILE, 'self'), cid: await cidOf(ctx, 'profile' + author, value), value }
   }
   const rows = await listRecords(ctx, author, collection, 1, undefined, rkey)
@@ -256,7 +256,7 @@ export async function listRecords(ctx: Ctx, author: string, collection: string, 
     if (cursor) q = q.lt('rkey', cursor)
     if (only) q = q.eq('rkey', only)
     const { data } = await q
-    await loadPosts(ctx, (data || []).map((r: any) => r.id))
+    await loadPosts(ctx, (data || []).map((r: { id: any }) => r.id))
     for (const r of (data || []) as any[]) {
       const value = await recordOf(ctx, ctx.posts.get(r.id))
       out.push({ uri: uriOf(did, POST, r.rkey), cid: await cidOf(ctx, r.id, value), value })
@@ -284,7 +284,7 @@ export async function listRecords(ctx: Ctx, author: string, collection: string, 
     if (cursor) q = q.lt('rkey', cursor)
     if (only) q = q.eq('rkey', only)
     const { data } = await q
-    await loadPeople(ctx, (data || []).map((r: any) => r.subject_id || r.blocked_id))
+    await loadPeople(ctx, (data || []).map((r: { subject_id: any; blocked_id: any }) => r.subject_id || r.blocked_id))
     for (const r of (data || []) as any[]) {
       const subject = r.subject_did || didFor(ctx, r.subject_id || r.blocked_id)
       if (!subject) continue

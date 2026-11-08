@@ -209,7 +209,7 @@ async function channelAt(path: string) {
   if (!space || !channel) return null
   const { data } = await admin.from('channels')
     .select('id, spaces!inner(slug)').eq('slug', channel).eq('spaces.slug', space).maybeSingle()
-  return data ? (data as any).id : null
+  return data ? data.id : null
 }
 
 /* ------------------------------------------------------------------ one run, one step */
@@ -427,8 +427,8 @@ async function step(run: any) {
     const said = roomAsProse(rows || [], {
       words: bot.events || {}, unheard: W.voice, someone: W.someone,
       who: run.surface === 'spaces' ? undefined : (m: any) => (m.mine ? W.us : W.them),
-      names: Object.fromEntries((rows || []).filter((m: any) => m.author_id)
-        .map((m: any) => [m.author_id, m.name || W.someone])),
+      names: Object.fromEntries((rows || []).filter((m) => m.author_id)
+        .map((m) => [m.author_id, m.name || W.someone])),
     })
     if (said) {
       const inThread = run.surface === 'spaces' && run.root_id && run.root_id !== run.channel_id
@@ -446,7 +446,7 @@ async function step(run: any) {
   for (const s of bot.skills || []) if (s && s.name) named[s.name] = s.audience || []
   for (const n of bot.tools || []) named[n] = ((bot.declared || {})[n] || {}).audience || []
   let allowed: Set<string> | null = null
-  if (Object.values(named).some((a: any) => (a || []).length)) {
+  if (Object.values(named).some((a) => (a || []).length)) {
     const { data: ok } = await admin.rpc('agent_permits', { p_run: run.id, p_named: named })
     allowed = new Set<string>((ok || []) as string[])
   }
@@ -600,7 +600,7 @@ async function think(run: any, bot: any, taken: any[], messages: any[]) {
     const model = bot.model || providers.list[0]?.model
     /* the mock's script rides on the system message, so the provider needs to know nothing of runs */
     const msgs = run.state?.mock
-      ? messages.map((m: any, i: number) => (i === 0 && m.role === 'system'
+      ? messages.map((m, i: number) => (i === 0 && m.role === 'system'
         ? { ...m, content: `${m.content}\n<<mock:${JSON.stringify(run.state.mock)}>>` }
         : m))
       : messages
@@ -702,12 +702,12 @@ async function think(run: any, bot: any, taken: any[], messages: any[]) {
     const { data: modelStep, error: stepError } = await admin.from('agent_steps').insert({
       run_id: run.id, n: taken.length, kind: 'model', name: out.model || model,
       request: {
-        messages: messages.length, tools: tools.map((t: any) => t.name),
+        messages: messages.length, tools: tools.map((t) => t.name),
         ...(out.provider ? { provider: out.provider } : {}),
         /* said out loud, because a site quietly paying a second vendor is a thing to notice */
         ...(out.fellBackFrom ? { fell_back_from: out.fellBackFrom } : {}),
         ...(inferenceAccounting ? {
-          attempts: providerAttempts.map(({ provider, model: usedModel, outcome, measurementStatus, status }: any) => ({
+          attempts: providerAttempts.map(({ provider, model: usedModel, outcome, measurementStatus, status }) => ({
             provider, model: usedModel, outcome, measurement: measurementStatus, status,
           })),
           measurement: inferenceAccounting.measurementStatus,
@@ -802,8 +802,8 @@ async function use(run: any, bot: any, taken: any[], what: any) {
     /* ON OFFER, OR NOT AT ALL. A model may name a tool it was never given — a skill's tool before
        the skill is open, a desk tool in a room — and the answer is the same as if it did not exist. */
     const offered = toolsFor({ bot, declared: bot.declared || {}, surface: run.surface, opened: openedSkills(taken), allowed: run.allowed })
-    if (!offered.some((t: any) => t.name === what.name)) throw new Error(`no tool called ${what.name}`)
-    const builtin = (BUILTINS as any)[what.name]
+    if (!offered.some((t) => t.name === what.name)) throw new Error(`no tool called ${what.name}`)
+    const builtin = BUILTINS[what.name]
     if (builtin) {
       if (builtin.needs === 'desk' && run.surface !== 'support') throw new Error('that is not something I can do here')
       /* no asker is passed. A personal tool names the RUN and the database resolves whose data that

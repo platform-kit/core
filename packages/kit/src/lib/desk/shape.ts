@@ -243,7 +243,7 @@ export function tally(list = [], me = null) {
   return {
     live: rows.filter(isLive).length,
     owed: rows.filter(isOwed).length,
-    mine: rows.filter((t: any) => isLive(t) && (t.assignees || []).some((a: { id: null }) => a.id === me)).length,
+    mine: rows.filter((t: any) => isLive(t) && (t.assignees || []).some((a: any) => a.id === me)).length,
     unassigned: rows.filter((t: any) => isLive(t) && !(t.assignees || []).length).length,
   }
 }
@@ -262,7 +262,7 @@ export function narrow(list = [], { status = 'open', assignee = null, priority =
        "the billing ones", "the urgent ones", "the ones about the reader". It is the whole of what
        makes a form worth asking before a ticket is raised. */
     if (answer && (answer as any).field) { const v = (t.answers || {})[(answer as any).field]; if (String(v == null ? '' : v) !== String((answer as any).value)) return false }
-    if (assignee === 'mine' && !(t.assignees || []).some((a: { id: null }) => a.id === me)) return false
+    if (assignee === 'mine' && !(t.assignees || []).some((a: any) => a.id === me)) return false
     if (assignee === 'nobody' && (t.assignees || []).length) return false
     if (assignee && assignee !== 'mine' && assignee !== 'nobody' && !(t.assignees || []).some((a: { id: any }) => a.id === assignee)) return false
     if (!want) return true

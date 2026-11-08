@@ -170,7 +170,7 @@ export function printVariant(o: any, variant: any) {
     ...(o.cloth && o.cloth.length ? [{ name: 'Cloth', values: o.cloth }] : []),
     ...(o.foil && o.foil.length ? [{ name: 'Foil', values: o.foil }] : []),
   ]
-  const chosen: any = checkVariant(opts, variant)
+  const chosen = checkVariant(opts, variant)
   if (!chosen) return null
   /* the shape print's callers read: three named fields, empty where the book offers no choice */
   return { contents: chosen.Contents || 'parts', cloth: chosen.Cloth || '', foil: chosen.Foil || '' }

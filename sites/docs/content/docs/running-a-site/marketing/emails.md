@@ -10,7 +10,7 @@ sources:
     packages/kit/theme/src/components/admin/EmailsAdmin.vue,
     packages/kit/build/auth-config.mts,
   ]
-reviewed: 2026-11-04
+reviewed: 2026-11-07
 ---
 
 Every email the site sends is a **design** built in the admin, compiled at build time, and filled with the real facts when it is sent. Marketing → **Emails** is a rail of the designs, one open in a drag-and-drop editor mounted with the site's colours and fonts. Module: `emails`.

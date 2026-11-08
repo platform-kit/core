@@ -16,7 +16,7 @@ const parts = (ms: any, tz: any) => {
 }
 /* the zone's offset from UTC at an instant, in ms */
 export function offsetAt(ms: any, tz: any) {
-  const p: any = parts(ms, tz)
+  const p = parts(ms, tz)
   return Date.UTC(p.year, p.month - 1, p.day, p.hour === 24 ? 0 : p.hour, p.minute, p.second) - Math.floor(ms / 1000) * 1000
 }
 /* a wall time ('YYYY-MM-DD', 'HH:MM') in a zone → the instant (ms) */
@@ -29,7 +29,7 @@ export function wallToUtc(day: any, hhmm: any, tz: any) {
 }
 /* the day ('YYYY-MM-DD') and ISO weekday (1 Monday … 7 Sunday) an instant falls on in a zone */
 export function dayOf(ms: any, tz: any) {
-  const p: any = parts(ms, tz)
+  const p = parts(ms, tz)
   const day = `${p.year}-${pad(p.month)}-${pad(p.day)}`
   const w = new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()
   return { day, weekday: w === 0 ? 7 : w }
@@ -40,9 +40,9 @@ export function dayOf(ms: any, tz: any) {
 export function days(from: any, to: any, cap = 62) {
   const out = []
   // @ts-expect-error TS2556, from the conversion: A spread argument must either have a tuple type or be passed to a rest parameter.
-  let t = Date.UTC(...from.split('-').map((v: any, i: any) => Number(v) - (i === 1 ? 1 : 0)))
+  let t = Date.UTC(...from.split('-').map((v, i) => Number(v) - (i === 1 ? 1 : 0)))
   // @ts-expect-error TS2556, from the conversion: A spread argument must either have a tuple type or be passed to a rest parameter.
-  const end = Date.UTC(...to.split('-').map((v: any, i: any) => Number(v) - (i === 1 ? 1 : 0)))
+  const end = Date.UTC(...to.split('-').map((v, i) => Number(v) - (i === 1 ? 1 : 0)))
   while (t <= end && out.length < cap) { const d = new Date(t); out.push(`${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`); t += 864e5 }
   return out
 }
@@ -88,7 +88,7 @@ export function openStarts({ hours, type, busy = [], from, to, now, span = 62 }:
   const weekCap = Math.max(0, Number(hours.max_per_week) || 0)
   const mondayOf = (d: any) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() - ((x.getUTCDay() + 6) % 7)); return x.toISOString().slice(0, 10) }
   const perWeek: any = {}
-  if (weekCap) for (const b2 of busy) { const k = mondayOf(dayOf((b2 as any).start, tz).day); perWeek[k] = (perWeek[k] || 0) + 1 }
+  if (weekCap) for (const b2 of busy) { const k = mondayOf(dayOf(b2.start, tz).day); perWeek[k] = (perWeek[k] || 0) + 1 }
   const out = []
   for (const day of days(from, to, span)) {
     const noon = wallToUtc(day, '12:00', tz)
@@ -218,27 +218,27 @@ export function overLimit(type: any = {}, start: any, taken = [], tz = 'UTC') {
 }
 
 export function offer({ type = {}, hosts = [], taken = [], from, to, now = Date.now(), tz = 'UTC', span = 62 }: any) {
-  const dur = Math.max(5, Number((type as any).duration) || 60)
+  const dur = Math.max(5, Number(type.duration) || 60)
   /* 1 — every host's own candidate starts, on the type's own grid (step and offset) */
   const byStart = new Map()
   for (const h of hosts) {
     /* their AWAY days come off here — after their own hours, before the type's limits: a day
        somebody is away is not a day they keep, and a cap should not be spent on a day nobody could
        have booked anyway */
-    const theirs = notAway(openStarts({ hours: (h as any).hours || {}, type, busy: (h as any).busy || [], from, to, now, span }), (h as any).away || [], ((h as any).hours || {}).timezone || tz)
+    const theirs = notAway(openStarts({ hours: h.hours || {}, type, busy: h.busy || [], from, to, now, span }), h.away || [], (h.hours || {}).timezone || tz)
     for (const s of theirs) {
       if (!byStart.has(s)) byStart.set(s, new Set())
-      byStart.get(s).add((h as any).id)
+      byStart.get(s).add(h.id)
     }
   }
   /* 2 — the window the type takes bookings in (its grid was applied in step 1) */
-  const windowFrom = (type as any).windowFrom ? wallToUtc((type as any).windowFrom, '00:00', tz) : null
-  const windowTo = (type as any).windowTo ? wallToUtc((type as any).windowTo, '00:00', tz) + 864e5 : null
-  const rolling = Number((type as any).windowDays) > 0 ? now + Number((type as any).windowDays) * 864e5 : null
+  const windowFrom = type.windowFrom ? wallToUtc(type.windowFrom, '00:00', tz) : null
+  const windowTo = type.windowTo ? wallToUtc(type.windowTo, '00:00', tz) + 864e5 : null
+  const rolling = Number(type.windowDays) > 0 ? now + Number(type.windowDays) * 864e5 : null
   /* 3 — assignment */
-  const fixed = ((type as any).fixed || []).filter((id: any) => hosts.some((h: any) => h.id === id))
+  const fixed = (type.fixed || []).filter((id: any) => hosts.some((h: any) => h.id === id))
   const rotating = hosts.filter((h: any) => !fixed.includes(h.id)).map((h: any) => h.id)
-  const kind = String((type as any).assign || 'one')
+  const kind = String(type.assign || 'one')
   const admits = (ids: any) => {
     if (kind === 'collective') return hosts.every((h: any) => ids.has(h.id))
     /* every fixed host comes to every booking, so a time none of them keeps is no time at all */
@@ -249,11 +249,11 @@ export function offer({ type = {}, hosts = [], taken = [], from, to, now = Date.
     .filter((s) => (!windowFrom || s >= windowFrom) && (!windowTo || s < windowTo) && (!rolling || s <= rolling) && admits(byStart.get(s)))
   /* 4 — the type's own limits, over what it already holds. A cap is reached, not approached: a day
      already at its count offers nothing more that day, whoever is free. */
-  const L = (type as any).limits || {}
+  const L = type.limits || {}
   const held: any = { day: {}, week: {}, month: {}, year: {}, minutesDay: {}, minutesWeek: {} }
   for (const b of taken) {
-    const mins = Math.max(0, ((b as any).end - (b as any).start) / 6e4)
-    const d = dayOf((b as any).start, tz).day, w = weekKey((b as any).start, tz), m = monthKey((b as any).start, tz), y = yearKey((b as any).start, tz)
+    const mins = Math.max(0, (b.end - b.start) / 6e4)
+    const d = dayOf(b.start, tz).day, w = weekKey(b.start, tz), m = monthKey(b.start, tz), y = yearKey(b.start, tz)
     held.day[d] = (held.day[d] || 0) + 1; held.week[w] = (held.week[w] || 0) + 1
     held.month[m] = (held.month[m] || 0) + 1; held.year[y] = (held.year[y] || 0) + 1
     held.minutesDay[d] = (held.minutesDay[d] || 0) + mins; held.minutesWeek[w] = (held.minutesWeek[w] || 0) + mins
@@ -286,7 +286,7 @@ export function runTimes(start: any, { count = 1, every = 'week' } = {}, tz = 'U
   const first = typeof start === 'number' ? start : Date.parse(start || '')
   if (!Number.isFinite(first)) return []
   const { day } = dayOf(first, tz)
-  const p: any = parts(first, tz)
+  const p = parts(first, tz)
   const hhmm = `${pad(p.hour === 24 ? 0 : p.hour)}:${pad(p.minute)}`
   const [y, m, d] = day.split('-').map(Number)
   const out = []

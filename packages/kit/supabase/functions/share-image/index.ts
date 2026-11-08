@@ -190,7 +190,7 @@ return ({
   },
 }) }
 
-Deno.serve(async (req: any) => {
+Deno.serve(async (req: { method: string; url: string|URL }) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   const u = new URL(req.url)
   const path = (u.searchParams.get('path') || u.pathname.replace(/^.*\/share-image\/?/, '')).replace(/\.png$/, '')

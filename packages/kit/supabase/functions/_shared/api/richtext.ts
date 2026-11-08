@@ -41,7 +41,7 @@ function inline(tokens: any, marks: any, ctx: any, out = []) {
 /* a paragraph's inline run, with any embedded asset lifted out as its own block */
 function para(tokens: any, ctx: any) {
   const run = inline(tokens, [], ctx), out: any = [], cur: any = []
-  const flush: any = () => { if (cur.length) { out.push(node('paragraph', cur.splice(0))) } }
+  const flush = () => { if (cur.length) { out.push(node('paragraph', cur.splice(0))) } }
   for (const n of run) { if ((n as any).nodeType === 'embedded-asset-block') { flush(); out.push(n) } else cur.push(n) }
   flush()
   return out.length ? out : [node('paragraph', [text('')])]
@@ -65,7 +65,7 @@ function blocks(tokens: any, ctx: any, out = []) {
       // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
       case 'html': out.push(node('paragraph', [text(t.text)])); break
       // @ts-expect-error TS2345, from the conversion: Argument of type '{ nodeType: any; content: any; data: {}; }' is not assignable to parameter of type 'never'.
-      case 'list': out.push(node(t.ordered ? 'ordered-list' : 'unordered-list', t.items.map((it: any) => node('list-item', blocks(it.tokens, ctx).length ? blocks(it.tokens, ctx) : [node('paragraph', [text(it.text || '')])])))); break
+      case 'list': out.push(node(t.ordered ? 'ordered-list' : 'unordered-list', t.items.map((it) => node('list-item', blocks(it.tokens, ctx).length ? blocks(it.tokens, ctx) : [node('paragraph', [text(it.text || '')])])))); break
       case 'table': {
         const cell = (c: any, head: any) => node(head ? 'table-header-cell' : 'table-cell', [node('paragraph', inline(c.tokens, [], ctx))])
         const rows = [node('table-row', t.header.map((c: any) => cell(c, true))), ...t.rows.map((r: any) => node('table-row', r.map((c: any) => cell(c, false))))]
