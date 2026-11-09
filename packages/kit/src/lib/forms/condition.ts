@@ -9,7 +9,7 @@
 export const OPS = ['is', 'isnot', 'contains', 'gt', 'lt', 'set', 'unset']
 const NAME = "[a-zA-Z_$][a-zA-Z0-9_$]*"
 const VAL = `'((?:[^'\\\\]|\\\\.)*)'|"((?:[^"\\\\]|\\\\.)*)"|(-?\\d+(?:\\.\\d+)?)`
-const ROW = [
+const ROW: Array<[RegExp, string]> = [
   [new RegExp(`^(${NAME})\\s*==\\s*(?:${VAL})$`), 'is'],
   [new RegExp(`^(${NAME})\\s*!=\\s*(?:${VAL})$`), 'isnot'],
   [new RegExp(`^(?:${VAL})\\s+in\\s+(${NAME})$`), 'contains'],
@@ -66,6 +66,5 @@ export function describe(cond: any, fields: any, words: any) {
   if (rows === null) return String(cond || '')
   const w = words || {}
   const q = (n: any) => { const f = (fields || []).find((x: { name: any }) => x.name === n); const t = f && (f.question || (f.params && f.params.question)); return t && t !== '...' ? t : n }
-  // @ts-expect-error TS2538, from the conversion: Type 'RegExp' cannot be used as an index type.
   return rows.map((r) => [q(r.field), w[r.op] || r.op, r.op === 'set' || r.op === 'unset' ? '' : r.value].filter(Boolean).join(' ')).join(' ' + (w.and || 'and') + ' ')
 }

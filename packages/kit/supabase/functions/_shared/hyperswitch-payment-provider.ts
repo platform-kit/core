@@ -878,7 +878,6 @@ export function createPaymentProvider(
       }
     },
 
-    // @ts-expect-error TS2322, from the conversion: Type '(request: Request) => Promise<{ invoice?: { lines: never[]; billingReason?: any; subscriptionId?: any; provider: string; invoiceId: an
     async verifyWebhook(request) {
       return verifyHyperswitchWebhook(request, webhookSecret)
     },

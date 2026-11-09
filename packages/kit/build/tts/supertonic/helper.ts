@@ -253,14 +253,13 @@ class TextToSpeech {
                 current_step: arrayToTensor(currentStepArray, scalarShape)
             });
 
-            const denoisedLatent = Array.from(vectorEstResult.denoised_latent.data);
+            const denoisedLatent = Array.from(vectorEstResult.denoised_latent.data as Float32Array);
 
             // Update latent with the denoised output
             let idx = 0;
             for (let b = 0; b < noisyLatent.length; b++) {
                 for (let d = 0; d < noisyLatent[b].length; d++) {
                     for (let t = 0; t < noisyLatent[b][d].length; t++) {
-                        // @ts-expect-error TS2322, from the conversion: Type 'unknown' is not assignable to type 'number'.
                         noisyLatent[b][d][t] = denoisedLatent[idx++];
                     }
                 }

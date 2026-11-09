@@ -557,7 +557,7 @@ export async function sendVoice(channelId: string, blob: { arrayBuffer: () => an
   if (!opts.thread || opts.echo) open.messages = mergeMessages(open.messages, [temp])
   /* SEALED: the bucket gets the ciphertext, and what it is — how long, whose voice, what was said
      with it — travels in the message. What is uploaded is bytes nobody can play. */
-  let body = { id, channel_id: channelId, author_id: me, kind: 'voice', attachment: path,
+  let body: Record<string, unknown> = { id, channel_id: channelId, author_id: me, kind: 'voice', attachment: path,
     attachment_type: 'audio/mpeg', seconds, body: opts.transcript || null,
     thread_root_id: opts.thread || null, echoed: !!opts.echo }
   let put = blob, type = 'audio/mpeg'
@@ -571,7 +571,6 @@ export async function sendVoice(channelId: string, blob: { arrayBuffer: () => an
       const wrapped = wrapFile({ name: null, type: 'audio/mpeg', size: blob.size, seconds }, info, opts.transcript)
       body = { id, channel_id: channelId, author_id: me, kind: 'voice', attachment: path,
         thread_root_id: opts.thread || null, echoed: !!opts.echo,
-        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'cipher' does not exist in type '{ id: string; channel_id: string; author_id: any; kin
         cipher: await m.seal(me, channelId, await recipients(channelId), wrapped) }
     } catch (e: any) {
       drop(id); open.error = e
@@ -618,7 +617,7 @@ export async function sendFile(channelId: string, file: any, opts: any = {}) {
   if (!opts.thread || opts.echo) open.messages = mergeMessages(open.messages, [row])
   /* SEALED: as for a voice note, and the file's NAME goes inside — "severance-agreement.pdf" says
      most of what the message said, and the row's own check refuses a name beside a cipher anyway. */
-  let body = { id, channel_id: channelId, author_id: me, kind: 'file', attachment: path,
+  let body: Record<string, unknown> = { id, channel_id: channelId, author_id: me, kind: 'file', attachment: path,
     attachment_type: type, attachment_name: file.name, attachment_size: file.size, body: said,
     thread_root_id: opts.thread || null, echoed: !!opts.echo }
   let put = file, putType = type
@@ -632,7 +631,6 @@ export async function sendFile(channelId: string, file: any, opts: any = {}) {
       const wrapped = wrapFile(file, info, said)
       body = { id, channel_id: channelId, author_id: me, kind: 'file', attachment: path,
         thread_root_id: opts.thread || null, echoed: !!opts.echo,
-        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'cipher' does not exist in type '{ id: string; channel_id: string; author_id: any; kin
         cipher: await m.seal(me, channelId, await recipients(channelId), wrapped) }
     } catch (e: any) {
       drop(id); open.error = e

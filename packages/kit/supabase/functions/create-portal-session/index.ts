@@ -63,7 +63,6 @@ Deno.serve(async (req: Request) => {
 
   let provider: PaymentProviderAdapter
   try {
-    // @ts-expect-error TS2322, from the conversion: Type 'PaymentProviderAdapter | null' is not assignable to type 'PaymentProviderAdapter'. Type 'null' is not assignable to type 'PaymentProvi
     provider = await getPaymentProvider()
   } catch (error: any) {
     if (error instanceof PaymentProviderError) return json({ error: error.message, code: error.code }, error.status)

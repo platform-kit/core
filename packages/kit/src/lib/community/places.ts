@@ -192,7 +192,7 @@ export function coachingPlace(ctx: any = {}) {
  * it where it is, and an address nothing claims gives null. Kit claims (Coaching's) are passed in the
  * same list as { key, claims }.
  */
-export function forwardOf(path: string, places = [], base = '/feed') {
+export function forwardOf(path: string, places: Array<{ key: string, claims?: string[] }> = [], base = '/feed') {
   const p = (path || '').replace(/\/+$/, '') || '/'
   const under = (c: string) => p === c || p.startsWith(c + '/')
   let best = null

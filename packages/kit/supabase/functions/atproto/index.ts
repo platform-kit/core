@@ -532,8 +532,7 @@ Deno.serve(async (req: Request) => {
 /* THE SYNC METHODS: what a relay and an app view read of a joined member's public repository */
 async function sync(req: Request, nsid: string, q: URLSearchParams): Promise<Response> {
   const did = String(q.get('did') || '')
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Uint8Array<ArrayBufferLike>' is not assignable to parameter of type 'BodyInit | null | undefined'. Type 'Uint8Array<ArrayB
-  const car = (bytes: Uint8Array) => new Response(bytes, { headers: { ...CORS, 'Content-Type': 'application/vnd.ipld.car' } })
+  const car = (bytes: Uint8Array<ArrayBuffer>) => new Response(bytes, { headers: { ...CORS, 'Content-Type': 'application/vnd.ipld.car' } })
   const gone = (st: any) => no(st.status === 'takendown' ? { status: 400, body: { error: 'RepoTakendown', message: 'This repository has been taken down' } } : { status: 400, body: { error: 'RepoDeactivated', message: 'This account has left the wider network' } })
   if (nsid === 'com.atproto.sync.subscribeRepos') return subscribe(req, q.get('cursor'))
   if (nsid === 'com.atproto.sync.listRepos') {

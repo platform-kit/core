@@ -940,8 +940,7 @@ export async function kitConfig(): Promise<any> {
         url: s.string().optional(),
         image: s.string().optional(),
         twitter: s.string().optional(),
-        // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(values: readonly [string, ...string[]], params?: RawCreateParams): ZodEnum<[string, ...str
-        look: s.enum(Object.keys(c.looks).length ? Object.keys(c.looks) : [(c.themeLook && c.themeLook.name) || 'default']).optional(),   /* one of the site's looks (platformkit.config.js); lib/look.js */
+        look: s.enum((Object.keys(c.looks).length ? Object.keys(c.looks) : [(c.themeLook && c.themeLook.name) || 'default']) as [string, ...string[]]).optional(),   /* one of the site's looks (platformkit.config.js); lib/look.js */
         /* THE COLOURS THIS SITE CHANGED, over the look's own. A key is the token
            ("--accent") or the scope and the token ("landing --ink"); a value is a colour for the
            day, or { light, dark } for both. Every one of them is offered in Site settings, read
@@ -1341,11 +1340,9 @@ export async function kitConfig(): Promise<any> {
           /* the choices are the printers themselves (PRINTER_IDS), never a list written here: a
              fourth printer is one file and its name in that list, and a schema that enumerated them
              again would refuse a book that named it. */
-          // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(values: readonly [string, ...string[]], params?: RawCreateParams): ZodEnum<[string, ...str
-          printers: s.record(s.enum(FORMATS_PRINTED), s.enum([...PRINTER_IDS, 'auto'])).optional(),
+          printers: s.record(s.enum(FORMATS_PRINTED as [string, ...string[]]), s.enum([...PRINTER_IDS, 'auto'] as string[] as [string, ...string[]])).optional(),
           /* each printer's own options, as its module names them (build/print/block.mjs checks them) */
-          // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(values: readonly [string, ...string[]], params?: RawCreateParams): ZodEnum<[string, ...str
-          providers: s.record(s.enum(PRINTER_IDS), s.record(s.string(), s.union([s.string(), s.number(), s.boolean()]))).optional(),
+          providers: s.record(s.enum(PRINTER_IDS as [string, ...string[]]), s.record(s.string(), s.union([s.string(), s.number(), s.boolean()]))).optional(),
           rights: s.string().optional(),
           /* per contents, the id of the edition a printed proof was read and passed at: an edition is sold only once proofed */
           proofed: s.record(s.enum(['parts', 'full', 'summary', 'both']), s.string().regex(/^[0-9a-f]{16}$/)).optional(),

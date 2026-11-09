@@ -220,7 +220,6 @@ what these are for
     list: async () => [...rows.keys()],
     dirs: async () => [],
   }
-  // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'store' does not exist in type '{ create?: boolean | undefined; }'.
   await write(model, 'tags', { data: { free: false, tags: ['meditation', 'astrology'] }, content: 'what these are for\n' }, process.cwd(), { store })
   const out = rows.get(PATH)
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'

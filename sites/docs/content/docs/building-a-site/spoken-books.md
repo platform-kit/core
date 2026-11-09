@@ -12,7 +12,7 @@ sources:
     packages/kit/theme/src/components/content/BookAudio.vue,
     packages/kit/theme/src/components/content/BookGenerate.vue,
   ]
-reviewed: 2026-11-08
+reviewed: 2026-11-09
 ---
 
 ## The step

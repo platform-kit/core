@@ -22,7 +22,7 @@
  *   POST /deliver { event, id }                                               the database's, with the service bearer
  */
 import { admin, appUrl, isServiceBearer } from '../_shared/lib.ts'
-import { isAdmin, isSupport } from '../_shared/roles.ts'
+import { isAdmin, isSupport, type Role } from '../_shared/roles.ts'
 import { tokenOf, keyOf, rateLimit } from '../_shared/api/keys.ts'
 import { API_ON, SPACE, SUPPORT_ON } from '../_shared/api/flags.ts'
 import * as SITE from '../_shared/pipe/site.js'
@@ -57,7 +57,6 @@ async function fullConversation(c: any, { withMessages = true } = {}) {
   const { count: unread } = await admin.from('support_messages').select('id', { count: 'exact', head: true }).eq('conversation_id', c.id).eq('author', 'contact').gt('created_at', c.agent_read_at ?? '1970-01-01')
   let waitingSince: string | null = null
   if (c.status !== 'resolved' && c.last_contact_at && (!c.last_agent_at || new Date(c.last_contact_at) > new Date(c.last_agent_at))) { const { data: first } = await admin.from('support_messages').select('created_at').eq('conversation_id', c.id).eq('author', 'contact').gt('created_at', c.last_agent_at ?? '1970-01-01').order('created_at', { ascending: true }).limit(1).maybeSingle(); waitingSince = first?.created_at ?? c.last_contact_at }
-  // @ts-expect-error TS2322, from the conversion: Type '{ content_type: string; content_attributes: { deleted: boolean; kind?: undefined; seconds?: undefined; } | { deleted?: undefined; kind
   return conversationOf(c, { contact, assignee, messages, unread: unread ?? 0, waitingSince })
 }
 const CONV_ALL = `${CONV}, contact_id, assignee_id, custom_attributes` as const   /* a literal, so supabase-js reads the columns */
@@ -151,7 +150,6 @@ Deno.serve(async (req: Request) => {
     if (seg[2] !== 'conversations') return fail(404, 'Not found.')
     const cv = await view()
     if (seg.length === 3) {
-      // @ts-expect-error TS2322, from the conversion: Type '{ content_type: string; content_attributes: { deleted: boolean; kind?: undefined; seconds?: undefined; } | { deleted?: undefined; kind
       if (m === 'GET') { const list = await threads(contact); const out = []; for (const c of list) { const msgs = await messagesOf(c.id, cv); out.push(clientConversationOf(c, { contact: cv, messages: msgs })) } return reply(out) }
       if (m === 'POST') {
         if (await madeLately(ipOf(req), 'threads') >= LIMITS.threads) return fail(429, 'Too many new conversations from this address; try again later.', 'slow down')
@@ -161,14 +159,12 @@ Deno.serve(async (req: Request) => {
         if (error || !conv) return fail(500, error?.message ?? 'not made')
         if (def) await admin.from('support_messages').insert({ conversation_id: conv.id, author: 'system', body: def.text })
         await seen(contact, { path: body.path }, req)
-        // @ts-expect-error TS2322, from the conversion: Type '{ content_type: string; content_attributes: { deleted: boolean; kind?: undefined; seconds?: undefined; } | { deleted?: undefined; kind
         return reply(clientConversationOf(conv, { contact: cv, messages: await messagesOf(conv.id, cv) }))
       }
       return fail(405, 'GET or POST.')
     }
     const conv = await ownConversation(contact, seg[3])
     if (!conv) return fail(404, 'No such conversation.')
-    // @ts-expect-error TS2322, from the conversion: Type '{ content_type: string; content_attributes: { deleted: boolean; kind?: undefined; seconds?: undefined; } | { deleted?: undefined; kind
     if (seg.length === 4) { if (m === 'GET') return reply(clientConversationOf(conv, { contact: cv, messages: await messagesOf(conv.id, cv) })); return fail(405, 'GET.') }
     const op = seg[4]
     if (op === 'messages') {
@@ -185,7 +181,6 @@ Deno.serve(async (req: Request) => {
     }
     if (op === 'toggle_typing' && m === 'POST') { if (String(body.typing_status || 'on') !== 'off') await admin.from('support_conversations').update({ contact_typing_at: new Date().toISOString() }).eq('id', conv.id); return reply({ ok: true }) }
     if (op === 'update_last_seen' && m === 'POST') { await admin.from('support_conversations').update({ contact_read_at: new Date().toISOString() }).eq('id', conv.id); return reply({ ok: true }) }
-    // @ts-expect-error TS2322, from the conversion: Type '{ content_type: string; content_attributes: { deleted: boolean; kind?: undefined; seconds?: undefined; } | { deleted?: undefined; kind
     if (op === 'toggle_status' && m === 'POST') { const { data: c2 } = await admin.from('support_conversations').update({ status: 'resolved', resolved_at: new Date().toISOString() }).eq('id', conv.id).select(CONV_ALL).single(); return reply(clientConversationOf(c2, { contact: cv, messages: await messagesOf(conv.id, cv) })) }
     return fail(404, 'Not found.')
   }
@@ -201,13 +196,11 @@ Deno.serve(async (req: Request) => {
   if (rl.over) return reply(errorOf('Throttled'), 429, { 'Retry-After': String(rl.reset) })
   const { data: keyRow } = await admin.from('api_keys').select('created_by, name').eq('id', caller.id!).maybeSingle()
   const me = await agentRow(keyRow?.created_by ?? null)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'Role[]'. Type 'string' is not assignable to type 'Role'.
-  if (!me || !isSupport((me.roles ?? []) as string[])) return fail(403, 'The key\'s maker is not on the desk.')
+  if (!me || !isSupport((me.roles ?? []) as Role[])) return fail(403, 'The key\'s maker is not on the desk.')
   const seg = (app[1] || '').split('/').filter(Boolean)
   const paged = (list: any[]) => { const page = Math.max(1, Number(q.page) || 1); return list.slice((page - 1) * PAGE, page * PAGE) }
 
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'Role[]'. Type 'string' is not assignable to type 'Role'.
-  if (seg[0] === 'profile' && m === 'GET') return reply({ ...agentOf(me), accounts: [{ id: 1, name: S.name, role: isAdmin((me.roles ?? []) as string[]) ? 'administrator' : 'agent' }] })
+  if (seg[0] === 'profile' && m === 'GET') return reply({ ...agentOf(me), accounts: [{ id: 1, name: S.name, role: isAdmin((me.roles ?? []) as Role[]) ? 'administrator' : 'agent' }] })
   if (seg[0] === 'inboxes' && m === 'GET') return reply({ payload: [inboxOf(S)] })
   /* who is on the desk is the set of roles, never the old single column: somebody given `support`
      on the People page keeps whatever `role` said before, so filtering on that dropped them. */
@@ -251,8 +244,7 @@ Deno.serve(async (req: Request) => {
     if (seg[2] === 'assignments' && m === 'POST') {
       const id = body.assignee_id == null || body.assignee_id === 0 || body.assignee_id === '' ? null : String(body.assignee_id)
       const agent = id ? await agentRow(id) : null
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'Role[]'. Type 'string' is not assignable to type 'Role'.
-      if (id && (!agent || !isSupport((agent.roles ?? []) as string[]))) return fail(422, 'No such agent.')
+      if (id && (!agent || !isSupport((agent.roles ?? []) as Role[]))) return fail(422, 'No such agent.')
       await admin.from('support_conversations').update({ assignee_id: id }).eq('id', c.id)
       return reply(agent ? agentOf(agent) : null)
     }

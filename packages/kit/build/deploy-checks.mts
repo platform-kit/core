@@ -26,7 +26,7 @@
 import { MESH_MAX } from '../supabase/functions/_shared/video/mesh.js'
 import { FEATURES } from './modes.mjs'
 import { MODULES } from './modules/kit.mjs'
-import { readManifests, type Modules, type PaymentProviderRegistration } from './modules/manifest.mjs'
+import { readManifests, type Module, type Modules, type PaymentProviderRegistration } from './modules/manifest.mjs'
 
 /* the kit's own, resolved once. A site's own modules are passed in (see the change's task 4.1);
    the default is the kit's rather than an empty set, because an empty set would silently mean
@@ -260,7 +260,6 @@ export function checkDeploy(env: any, s: any, modules: any = {}, stepNeeds: Arra
   need('VITE_APP_URL', "the site's https origin — the sitemap, absolute links, and (with a backend) auth links, checkout returns and emails")
   /* anything for sale */
   let selectedPaymentProvider = 'stripe'
-  // @ts-expect-error TS2322, from the conversion: Type 'Readonly<{ id: "stripe"; adapter: "stripe-payment-provider.ts"; capabilities: readonly string[]; secrets: readonly string[]; webhookPa
   let selectedPaymentRegistration: PaymentProviderRegistration | null = STRIPE_PAYMENT_PROVIDER_REGISTRATION
   let selectedPaymentConfiguration: any = {}
   const configuredProvider = site?.payments?.provider
@@ -278,7 +277,6 @@ export function checkDeploy(env: any, s: any, modules: any = {}, stepNeeds: Arra
     .filter((module) => modules[module.key] !== false)
     .flatMap((module) => module.paymentProviders || [])
   if (selectedPaymentProvider !== 'stripe') {
-    // @ts-expect-error TS2322, from the conversion: Type 'PaymentProviderRegistration | Readonly<{ id: "hyperswitch"; adapter: "hyperswitch-payment-provider.ts"; capabilities: readonly string[
     selectedPaymentRegistration = selectedPaymentProvider === 'hyperswitch'
       ? HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION
       : registeredProviders.find((provider) => provider.id === selectedPaymentProvider) || null
@@ -590,11 +588,9 @@ if (isMain(import.meta.url)) {
     const customProviderManifests = new Map(KIT_MANIFESTS)
     customProviderManifests.set('site-mock-payments', {
       key: 'site-mock-payments',
-      // @ts-expect-error TS2740, from the conversion: Type '{ env: string[]; }' is missing the following properties from type 'Required<Owns>': routes, admin, schema, functions, and 2 more.
       owns: { env: ['SITE_MOCK_PAYMENT_SECRET'] },
-      // @ts-expect-error TS2739, from the conversion: Type '{ id: string; capabilities: string[]; secrets: string[]; }' is missing the following properties from type 'PaymentProviderRegistration
       paymentProviders: [customProvider],
-    })
+    } as unknown as Module)   /* only what the check reads: the module's key, its variable and its provider */
     const pricedInferenceSite = {
       inference: {
         providers: [

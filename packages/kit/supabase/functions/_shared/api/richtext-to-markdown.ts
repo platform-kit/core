@@ -18,7 +18,7 @@ const wrap = (value: any, marks: any) => {
   if (has('underline')) v = '__' + v + '__'
   return v
 }
-function inline(nodes: any, ctx: { assetAddress: (arg0: any) => any }) {
+function inline(nodes: any, ctx: { assetAddress?: (arg0: any) => any }) {
   let out = ''
   for (const n of nodes || []) {
     if (n.nodeType === 'text') out += wrap(n.value, n.marks)
@@ -32,9 +32,7 @@ function inline(nodes: any, ctx: { assetAddress: (arg0: any) => any }) {
 function block(n: { nodeType: any; content: any; data: any }, ctx: { assetAddress?: any }, depth = 0): string {
   const t = n.nodeType
   const h = /^heading-(\d)$/.exec(t)
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ assetAddress?: any; }' is not assignable to parameter of type '{ assetAddress: (arg0: any) => any; }'. Property 'assetAd
   if (h) return '#'.repeat(Number(h[1])) + ' ' + inline(n.content, ctx)
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ assetAddress?: any; }' is not assignable to parameter of type '{ assetAddress: (arg0: any) => any; }'. Property 'assetAd
   if (t === 'paragraph') return inline(n.content, ctx)
   if (t === 'blockquote') return blocks(n.content, ctx, depth).split('\n').map((l: string) => '> ' + l).join('\n')
   if (t === 'hr') return '---'
@@ -48,14 +46,12 @@ function block(n: { nodeType: any; content: any; data: any }, ctx: { assetAddres
     }).join('\n')
   }
   if (t === 'table') {
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ assetAddress?: any; }' is not assignable to parameter of type '{ assetAddress: (arg0: any) => any; }'. Property 'assetAd
     const rows = (n.content || []).map((r: { content: any }) => (r.content || []).map((c: { content: any }) => inline((c.content || []).flatMap((p: { content: any }) => p.content || []), ctx).replace(/\|/g, '\\|')))
     if (!rows.length) return ''
     const head = rows[0], body = rows.slice(1)
     return ['| ' + head.join(' | ') + ' |', '|' + head.map(() => ' --- ').join('|') + '|', ...body.map((r: any[]) => '| ' + r.join(' | ') + ' |')].join('\n')
   }
   if (t === 'embedded-entry-block' || t === 'embedded-entry-inline') return ''
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ assetAddress?: any; }' is not assignable to parameter of type '{ assetAddress: (arg0: any) => any; }'. Property 'assetAd
   return inline(n.content, ctx)
 }
 function blocks(nodes: any, ctx: { assetAddress?: any }, depth = 0): string {

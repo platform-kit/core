@@ -13,7 +13,7 @@ const list = (v: any) => String(v == null ? '' : v).split(',').map((s) => s.trim
 const MIME_GROUPS: any = { image: /^image\//, audio: /^audio\//, video: /^video\//, pdfdocument: /^application\/pdf$/, plaintext: /^text\/plain$/, richtext: /^(text\/rtf|application\/rtf)/, presentation: /presentation/, spreadsheet: /(spreadsheet|excel)/, code: /(javascript|json|css|html|xml)/, archive: /(zip|tar|gzip)/, attachment: /./ }
 
 /* the settled arguments, or an error */
-export function parse(q: any, { kind = 'entries', types = [], locales = [] } = {}) {
+export function parse(q: any, { kind = 'entries', types = [], locales = [] }: { kind?: string, types?: any[], locales?: Array<{ code: string, name?: string, default?: boolean, fallbackCode?: string | null }> } = {}) {
   const err = (id: any, message: any, details?: any) => ({ error: { id, message, details } })
   const num = (k: any, d: any, lo: any, hi: any) => { if (q[k] == null || q[k] === '') return d; const n = Number(q[k]); if (!Number.isInteger(n) || n < lo || n > hi) throw err('BadQuery', `The query parameter ${k} must be an integer between ${lo} and ${hi}.`); return n }
   try {

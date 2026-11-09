@@ -81,7 +81,7 @@ export default {
       const p = PRINTERS[payload.provider]
       if (!p || !FORMATS_PRINTED.includes(payload.format)) throw new Refusal(400, 'unknown printer or format')
       const { printSpec } = await import('../../../src/lib/print-offers.js')
-      const spec = printSpec(payload.print || (await readBlock(ctx.store, slug)).print || {})
+      const spec = printSpec(payload.print || (await readBlock(ctx.store, slug)).print || {})!   /* the print module is on: this model is its */
       const contents = payload.contents || spec.contents[0]
       const d = (drafts.get(slug) || {}).editions || {}, e = d[contents] || (((await printIndex(ctx.store))[slug] || {}).editions || {})[contents]
       const pages = e ? e.pages : 120

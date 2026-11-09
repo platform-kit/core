@@ -226,9 +226,9 @@ function epochSeconds(value: any) {
   return null
 }
 
-function stringMetadata(value: any) {
+function stringMetadata(value: any): Record<string, string> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
-  return Object.fromEntries(Object.entries(value).filter(([, item]) => typeof item === 'string'))
+  return Object.fromEntries(Object.entries(value).filter((e): e is [string, string] => typeof e[1] === 'string'))
 }
 
 /* how old a signed event may be: Hyperswitch retries a failed delivery over hours, so three days is

@@ -6,6 +6,7 @@
  * endpapers and sprayed edges are the Bespoke line, printed in the UK and shipped from there.
  * PRINT_MOCK=1 / BOOKVAULT_MOCK=1, or no key, answers every call here.
  */
+import type { PrinterOption } from './index.ts'
 const on = (v: any) => /^(1|true|yes|on)$/i.test(String(v || ''))
 const SIZES: any = { '6x9': { id: 8, w: 152, h: 229 }, '5x8': { id: 17, w: 127, h: 203 } }
 const STATUS: any = { CREATED: 'submitted', ACKNOWLEDGED: 'submitted', RECEIVED: 'submitted', PREPRESS: 'submitted', 'IN PRODUCTION': 'in_production', PRODUCTION: 'in_production', PRINTED: 'in_production', DISPATCHED: 'shipped', SHIPPED: 'shipped', COMPLETE: 'shipped', COMPLETED: 'shipped', CANCELLED: 'canceled', CANCELED: 'canceled', REJECTED: 'rejected', ERROR: 'failed', FAILED: 'failed' }
@@ -53,12 +54,11 @@ export function bookvault(env: any) {
     configured, mock,
     levels: { standard: 'STANDARD', priority: 'TRACKED', express: 'EXPRESS' },
     options(format: any) {
-      const o = [
+      const o: PrinterOption[] = [
         { key: 'textStock', label: 'Paper', type: 'select', choices: [{ value: 193, label: '80 gsm premium cream' }, { value: 158, label: '70 gsm cream' }, { value: 1, label: '80 gsm white' }], default: 193 },
       ]
       if (format === 'premium') o.push(
         { key: 'coverStock', label: 'Cloth', type: 'select', choices: CLOTHS, default: 146 },
-        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'help' does not exist in type '{ key: string; label: string; type: string; choices: { 
         { key: 'foilColour', label: 'Foil', type: 'select', choices: [{ value: 0, label: 'None' }, { value: 10, label: 'Gold' }, { value: 11, label: 'Silver' }], default: 10, help: 'the title and author blocked on the cloth — included' },
         { key: 'frontFoil', label: 'Foil on the front', type: 'select', choices: [{ value: 0, label: 'None' }, { value: 1, label: 'Top' }, { value: 2, label: 'Middle' }, { value: 3, label: 'Bottom' }], default: 2 },
         { key: 'spineFoil', label: 'Foil on the spine', type: 'select', choices: [{ value: 0, label: 'None' }, { value: 4, label: 'Top' }, { value: 5, label: 'Middle' }, { value: 6, label: 'Bottom' }], default: 5 },
@@ -69,7 +69,6 @@ export function bookvault(env: any) {
         { key: 'endpapers', label: 'Printed endpapers', type: 'toggle', default: false, help: 'from £1.50 a copy' },
         { key: 'sprayedEdges', label: 'Sprayed edges', type: 'text', default: '', help: 'a colour, or blank for none — from £5 a copy' },
       )
-      // @ts-expect-error TS2322, from the conversion: Type 'boolean' is not assignable to type 'number'.
       else if (format === 'hardcover') o.push({ key: 'jacket', label: 'Dust jacket', type: 'toggle', default: true })
       return o
     },

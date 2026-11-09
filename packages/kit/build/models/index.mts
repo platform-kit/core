@@ -248,7 +248,7 @@ export async function keep(models: any, path: any, root: any, extra: any = {}) {
   return { ok: true }
 }
 /* a write: prepare → the fields → the checks → the grammar → the file → the hook; refused before anything is written */
-export async function write(model: any, name: any, rec: any, root: any, { create = false, ...extra } = {}) {
+export async function write(model: any, name: any, rec: any, root: any, { create = false, ...extra }: { create?: boolean, check?: boolean, [k: string]: any } = {}) {
   const ctx = ctxOf(model, root, { name, create, ...extra })
   let record = { name, data: compact(rec.data), content: rec.content || '', parsed: rec.parsed }
   if (model.prepare) record = (await model.prepare(record, ctx)) || record

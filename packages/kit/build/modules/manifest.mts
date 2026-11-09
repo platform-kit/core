@@ -62,8 +62,9 @@ export interface Requirement { module: string, why?: string }
 export interface PaymentProviderRegistration {
   id: string
   adapter: string
-  capabilities: string[]
-  secrets: string[]
+  capabilities: readonly string[]
+  secrets: readonly string[]
+  optionalSecrets?: readonly string[]
   webhookPath: string
 }
 export interface ModuleDeclaration {

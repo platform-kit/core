@@ -19,7 +19,7 @@ type SocialMedia = {
   mimeType: string
   fileName: string
   size: number
-  bytes: Uint8Array
+  bytes: Uint8Array<ArrayBuffer>
 }
 
 type SocialTokenSet = {
@@ -51,7 +51,6 @@ const mediaContent = async (items: SocialMedia[]) => Promise.all(items.map(async
   kind: item.kind,
   source: {
     kind: 'blob' as const,
-    // @ts-expect-error TS2322, from the conversion: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'. Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'Array
     blob: new Blob([item.bytes], { type: item.mimeType }),
     fingerprint: await digest(item.bytes),
   },
@@ -223,8 +222,7 @@ export const xAdapter = defineSocialAdapter({
 
 export const SOCIAL_ADAPTERS = createSocialAdapterRegistry([xAdapter])
 
-async function digest(bytes: Uint8Array) {
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Uint8Array<ArrayBufferLike>' is not assignable to parameter of type 'BufferSource'. Type 'Uint8Array<ArrayBufferLike>' is 
+async function digest(bytes: Uint8Array<ArrayBuffer>) {
   const hash = await crypto.subtle.digest('SHA-256', bytes)
   return [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }

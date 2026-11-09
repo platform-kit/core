@@ -188,12 +188,10 @@ Deno.serve(async (req: Request) => {
     const { data: past } = await admin.from('subscriptions').select('key').eq('user_id', user.id).eq('trialed', true)
     const taken = (past || []).map((r) => r.key).filter(Boolean)
     const withTrial = inCart.find((o) => o?.trial)
-    // @ts-expect-error TS2345, from the conversion: Argument of type '(k: string) => string | null' is not assignable to parameter of type '(a: any) => null'. Type 'string | null' is not assig
     trialDays = trialDaysFor(withTrial, taken, (k: string) => (offerByKey(k)?.tier ?? null))
   }
   let selectedPaymentProvider: PaymentProviderAdapter
   try {
-    // @ts-expect-error TS2322, from the conversion: Type 'PaymentProviderAdapter | null' is not assignable to type 'PaymentProviderAdapter'. Type 'null' is not assignable to type 'PaymentProvi
     selectedPaymentProvider = await getPaymentProvider()
     assertPaymentCapabilities(selectedPaymentProvider, paymentCapabilitiesForCheckout({
       mode,

@@ -85,7 +85,7 @@ async function markMine(ids: string|any[]) {
 }
 
 /* posts by id, with what they quote and answer, their people, and the reader's own marks */
-export async function loadPosts(ids: any[]|Iterable<unknown>|null|undefined) {
+export async function loadPosts(ids: Iterable<string>|null|undefined) {
   const want = [...new Set(ids)].filter(Boolean)
   if (!want.length || !ok()) return []
   const { data } = await (supabase as any).from('network_posts').select(POST_COLS).in('id', want)
@@ -98,13 +98,12 @@ export async function loadPosts(ids: any[]|Iterable<unknown>|null|undefined) {
     const { data: extra } = await (supabase as any).from('network_posts').select(POST_COLS).in('id', [...more])
     for (const p of extra || []) net.posts[p.id] = { ...p, kind: 'post' }
   }
-  // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
   const all = want.concat([...more]).map((id) => net.posts[id]).filter(Boolean)
   await Promise.all([loadPeople(peopleIn(all)), markMine(want), signImages(all)])
   return rows
 }
 
-async function loadMessages(ids: any[]|Iterable<unknown>|null|undefined) {
+async function loadMessages(ids: Iterable<string>|null|undefined) {
   const want = [...new Set(ids)].filter(Boolean)
   if (!want.length || !ok()) return
   const { data, error } = await (supabase as any).from('space_messages').select(MSG_COLS).in('id', want)
@@ -113,7 +112,6 @@ async function loadMessages(ids: any[]|Iterable<unknown>|null|undefined) {
     const ch = m.channels || {}
     net.messages[m.id] = postOfMessage({ ...m, channel_slug: ch.slug }, ch.spaces || null)
   }
-  // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
   await Promise.all([loadPeople(peopleIn(want.map((id) => net.messages[id]).filter(Boolean))), markMessages(want),
     import('../spaces/api.js').then((m) => m.signMedia(data || [])).catch(() => {})])
 }
@@ -266,7 +264,7 @@ export function authorFeed(userId: any) {
 /* a thread: the post, its root when it answers something, and every answer the reader may read */
 export async function loadThread(postId: string|number) {
   if (!ok() || !postId) return null
-  await loadPosts([postId])
+  await loadPosts([String(postId)])
   const p = net.posts[postId]
   if (!p) return null
   const rootId = p.reply_root_id || p.id

@@ -57,6 +57,8 @@ import { download } from './download.ts'
 import { printify } from './printify.ts'
 
 /* THE PRINTERS, which are the suppliers that make a printed thing */
+/* one thing the admin may set on a printer for a format: a choice, a switch or a value, with what it means */
+export interface PrinterOption { key: string, label: string, type: string, choices?: Array<{ value: string | number, label: string }>, default?: string | number | boolean, help?: string, applies?: string[] }
 export const PRINTER_IDS = ['lulu', 'mixam', 'bookvault']
 /* and every supplier, printers among them: a shop's own post room and a download are suppliers
    too, and treating them as such is what keeps every surface that reads an order free of

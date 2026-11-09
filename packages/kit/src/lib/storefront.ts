@@ -150,8 +150,7 @@ export function resolveProduct(p: any) {
   const recurring = p.billing === 'subscription'
   const book = (p.kind === 'book' || p.kind === 'print') && p.book ? BOOKS.find((b: any) => b.slug === p.book) : null
   const cover = book && book.cover ? book.cover : null
-  const images = [].concat(
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(...items: ConcatArray<never>[]): never[]', gave the following error. Argument of type '{ s
+  const images = ([] as Array<{ src: string, blur: string | null }>).concat(
     p.image ? [{ src: p.image, blur: null }] : cover ? [{ src: cover.src, blur: cover.blurDataURL }] : [],
     (p.gallery || []).map((src: any) => ({ src, blur: null })))
   return {

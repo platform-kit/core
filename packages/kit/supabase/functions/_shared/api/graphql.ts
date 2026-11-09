@@ -51,7 +51,7 @@ function buildSchema(index: any) {
   const AssetLinking = new GraphQLObjectType({ name: 'AssetLinkingCollections', fields: () => ({ entryCollection: { type: EntryCollection, args: pageArgs(), resolve: (src, args, c) => linkedFrom(src, args, c, null) }, ...Object.fromEntries(types.map((t: any) => [t.sys.id + 'Collection', { type: collections[t.sys.id], args: pageArgs(), resolve: (src: any, args: any, c: any) => linkedFrom(src, args, c, t.sys.id) }])) }) })
   const pageArgs = () => ({ skip: { type: GraphQLInt, defaultValue: 0 }, limit: { type: GraphQLInt, defaultValue: 100 }, preview: { type: GraphQLBoolean }, locale: { type: GraphQLString } })
 
-  const objects: any = {}, collections: any = {}, filters: any = {}, orders: any = {}
+  const objects: Record<string, GraphQLObjectType> = {}, collections: Record<string, GraphQLObjectType> = {}, filters: Record<string, GraphQLInputObjectType> = {}, orders: Record<string, GraphQLEnumType> = {}
   const fieldGql = (t: any, f: any) => {
     const name = graphqlName(f.id)
     if (f.type === 'RichText') return { name, gtype: richType(t, f) }
@@ -114,8 +114,7 @@ function buildSchema(index: any) {
     for (const f of t.fields) if (['Symbol', 'Date', 'Integer', 'Number', 'Boolean'].includes(f.type)) { values[graphqlName(f.id) + '_ASC'] = {}; values[graphqlName(f.id) + '_DESC'] = {} }
     orders[t.sys.id] = new GraphQLEnumType({ name: pascal(t.sys.id) + 'Order', values })
   }
-  // @ts-expect-error TS7022, from the conversion: 'AssetFilter' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initi
-  const AssetFilter = new GraphQLInputObjectType({ name: 'AssetFilter', fields: () => ({ sys: { type: SysFilter }, title: { type: GraphQLString }, title_contains: { type: GraphQLString }, title_exists: { type: GraphQLBoolean }, fileName: { type: GraphQLString }, fileName_contains: { type: GraphQLString }, contentType: { type: GraphQLString }, contentType_in: { type: new GraphQLList(GraphQLString) }, width_gt: { type: GraphQLInt }, width_lt: { type: GraphQLInt }, height_gt: { type: GraphQLInt }, height_lt: { type: GraphQLInt }, AND: { type: new GraphQLList(AssetFilter) }, OR: { type: new GraphQLList(AssetFilter) } }) })
+  const AssetFilter: GraphQLInputObjectType = new GraphQLInputObjectType({ name: 'AssetFilter', fields: () => ({ sys: { type: SysFilter }, title: { type: GraphQLString }, title_contains: { type: GraphQLString }, title_exists: { type: GraphQLBoolean }, fileName: { type: GraphQLString }, fileName_contains: { type: GraphQLString }, contentType: { type: GraphQLString }, contentType_in: { type: new GraphQLList(GraphQLString) }, width_gt: { type: GraphQLInt }, width_lt: { type: GraphQLInt }, height_gt: { type: GraphQLInt }, height_lt: { type: GraphQLInt }, AND: { type: new GraphQLList(AssetFilter) }, OR: { type: new GraphQLList(AssetFilter) } }) })
   const AssetOrder = new GraphQLEnumType({ name: 'AssetOrder', values: { sys_id_ASC: {}, sys_id_DESC: {}, sys_publishedAt_ASC: {}, sys_publishedAt_DESC: {}, sys_firstPublishedAt_ASC: {}, sys_firstPublishedAt_DESC: {}, title_ASC: {}, title_DESC: {}, fileName_ASC: {}, fileName_DESC: {}, contentType_ASC: {}, contentType_DESC: {}, size_ASC: {}, size_DESC: {}, width_ASC: {}, width_DESC: {}, height_ASC: {}, height_DESC: {} } })
   const EntryFilter = new GraphQLInputObjectType({ name: 'EntryFilter', fields: { sys: { type: SysFilter }, contentfulMetadata: { type: MetaFilter } } })
   const EntryOrder = new GraphQLEnumType({ name: 'EntryOrder', values: { sys_id_ASC: {}, sys_id_DESC: {}, sys_publishedAt_ASC: {}, sys_publishedAt_DESC: {}, sys_firstPublishedAt_ASC: {}, sys_firstPublishedAt_DESC: {}, sys_publishedVersion_ASC: {}, sys_publishedVersion_DESC: {} } })
@@ -131,8 +130,7 @@ function buildSchema(index: any) {
       if (v === undefined) continue
       if (k === 'AND') { if (!(v as any).every((w: any) => matches(r, w, t, c))) return false; continue }
       if (k === 'OR') { if (!(v as any).some((w: any) => matches(r, w, t, c))) return false; continue }
-      // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): [string, unknown][]', gave the followi
-      if (k === 'sys') { const s: any = { id: entryId(r.typeId, r.path), publishedAt: r.updated, firstPublishedAt: r.created, publishedVersion: r.revision }; for (const [sk, sv] of Object.entries(v)) { const [base, op] = splitOp(sk); if (!cmp(s[base], op, sv)) return false } continue }
+      if (k === 'sys') { const s: any = { id: entryId(r.typeId, r.path), publishedAt: r.updated, firstPublishedAt: r.created, publishedVersion: r.revision }; for (const [sk, sv] of Object.entries(v as object)) { const [base, op] = splitOp(sk); if (!cmp(s[base], op, sv)) return false } continue }
       if (k === 'contentfulMetadata') continue
       const [base, op] = splitOp(k)
       const f = fieldById(t, base); if (!f) continue
@@ -183,7 +181,6 @@ function buildSchema(index: any) {
     queryFields[t.sys.id] = { type: objects[t.sys.id], args: { id: { type: new GraphQLNonNull(GraphQLString) }, preview: { type: GraphQLBoolean }, locale: { type: GraphQLString } }, resolve: async (_s: any, args: any, c0: any) => { const c = scope(c0, args); const r = c.ctx.recordsById.get(args.id); return r && r.typeId === t.sys.id ? shaped(r, c) : null } }
     queryFields[t.sys.id + 'Collection'] = { type: collections[t.sys.id], args: { ...pageArgs(), where: { type: filters[t.sys.id] }, order: { type: new GraphQLList(orders[t.sys.id]) } }, resolve: collectionOf(t) }
   }
-  // @ts-expect-error TS2322, from the conversion: Type 'unknown' is not assignable to type 'GraphQLNamedType'.
   return new GraphQLSchema({ query: new GraphQLObjectType({ name: 'Query', fields: queryFields }), types: [...Object.values(objects), Asset, EntryCollection] })
 }
 

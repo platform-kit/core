@@ -138,9 +138,8 @@ export class TextToSpeech {
 
 /* the four models from their bytes, on the given providers */
 export async function loadTextToSpeech({ buffers, cfgs, indexer, providers }: any) {
-  const opts = { executionProviders: providers, graphOptimizationLevel: 'all' }
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Argument of type 'string | ArrayBufferLike | Uint8Array<ArrayBuff
-  const make = (b: string|ArrayBufferLike|Uint8Array<ArrayBufferLike>) => ort.InferenceSession.create(b, opts)
+  const opts: ort.InferenceSession.SessionOptions = { executionProviders: providers, graphOptimizationLevel: 'all' }
+  const make = (b: Uint8Array) => ort.InferenceSession.create(b, opts)
   const [dpOrt, textEncOrt, vectorEstOrt, vocoderOrt] = await Promise.all([make(buffers.dp), make(buffers.textEnc), make(buffers.vectorEst), make(buffers.vocoder)])
   return new TextToSpeech(cfgs, new UnicodeProcessor(indexer), dpOrt, textEncOrt, vectorEstOrt, vocoderOrt)
 }

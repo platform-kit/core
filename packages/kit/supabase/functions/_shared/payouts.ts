@@ -19,7 +19,6 @@ import { assertPaymentCapabilities, PaymentProviderError, payoutStatusIsSettled 
 
 export const payoutsMock = /^(1|true|yes|on)$/i.test(Deno.env.get('PAYOUTS_MOCK') ?? '')
 const providerIsLive = (providerId: string) => !payoutsMock && (providerId !== 'stripe' || stripeLive)
-// @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
 export const payoutsLive = async () => providerIsLive((await getPaymentProvider()).id)
 
 /* the site's two answers about paying people, read where the projection put them */

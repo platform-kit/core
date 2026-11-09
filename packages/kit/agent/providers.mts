@@ -112,16 +112,19 @@ class EndpointLLMStream extends LLMStream {
 
 export class EndpointTTS extends TTS {
   label = 'platform speech endpoint'
+  declare url: string
+  declare grant: string
+  declare fetchImpl: typeof fetch
 
   constructor({ url, grant, fetchImpl = fetch, sampleRate = 24000 }: any) {
     super(sampleRate, 1, { streaming: true })
-    ;(this as any).url = url
-    ;(this as any).grant = grant
-    ;(this as any).fetchImpl = fetchImpl
+    this.url = url
+    this.grant = grant
+    this.fetchImpl = fetchImpl
   }
 
-  // @ts-expect-error TS2416, from the conversion: Property 'synthesize' in type 'EndpointTTS' is not assignable to the same property in base type 'TTS'. Type '() => void' is not assignable t
-  synthesize() {
+  /* a whole utterance at once is not offered: the agent speaks through stream() */
+  synthesize(_text: string): never {
     throw new Error('use the streaming speech endpoint')
   }
 
@@ -130,14 +133,18 @@ export class EndpointTTS extends TTS {
   }
 }
 
-// @ts-expect-error TS2515, from the conversion: Non-abstract class 'EndpointSynthesizeStream' does not implement inherited abstract member label from class 'SynthesizeStream'.
 class EndpointSynthesizeStream extends SynthesizeStream {
-  constructor(tts: any, connOptions: any) {
+  label = 'platform speech endpoint'
+  declare url: string
+  declare grant: string
+  declare fetchImpl: typeof fetch
+  declare sampleRate: number
+  constructor(tts: EndpointTTS, connOptions: any) {
     super(tts, connOptions)
-    ;(this as any).url = tts.url
-    ;(this as any).grant = tts.grant
-    ;(this as any).fetchImpl = tts.fetchImpl
-    ;(this as any).sampleRate = tts.sampleRate
+    this.url = tts.url
+    this.grant = tts.grant
+    this.fetchImpl = tts.fetchImpl
+    this.sampleRate = tts.sampleRate
   }
 
   async run() {
@@ -158,10 +165,10 @@ class EndpointSynthesizeStream extends SynthesizeStream {
 
   async speak(text: string, segmentId: string) {
     this.markStarted()
-    const response = await (this as any).fetchImpl((this as any).url, {
+    const response = await this.fetchImpl(this.url, {
       method: 'POST',
       headers: {
-        authorization: `Bearer ${(this as any).grant}`,
+        authorization: `Bearer ${this.grant}`,
         'content-type': 'application/json',
         accept: 'audio/pcm',
       },
@@ -174,9 +181,9 @@ class EndpointSynthesizeStream extends SynthesizeStream {
     if (response.headers.get('x-audio-format')?.toLowerCase() === 'wav') {
       throw new Error('speech endpoint returned WAV instead of raw PCM')
     }
-    const rate = Number(response.headers.get('x-audio-rate') || (this as any).sampleRate)
-    if (rate !== (this as any).sampleRate) {
-      throw new Error(`speech endpoint sample rate ${rate} does not match ${(this as any).sampleRate}`)
+    const rate = Number(response.headers.get('x-audio-rate') || this.sampleRate)
+    if (rate !== this.sampleRate) {
+      throw new Error(`speech endpoint sample rate ${rate} does not match ${this.sampleRate}`)
     }
 
     const reader = response.body.getReader()
@@ -190,7 +197,7 @@ class EndpointSynthesizeStream extends SynthesizeStream {
           const samples = pcmSamples(carry.subarray(0, FRAME_SAMPLES * 2))
           carry = carry.subarray(FRAME_SAMPLES * 2)
           if (last) this.putFrame(last, segmentId, false)
-          last = new AudioFrame(samples, (this as any).sampleRate, 1, samples.length)
+          last = new AudioFrame(samples, this.sampleRate, 1, samples.length)
         }
         if (done) break
       }
@@ -201,7 +208,7 @@ class EndpointSynthesizeStream extends SynthesizeStream {
     if (carry.length) {
       const samples = pcmSamples(carry)
       if (last) this.putFrame(last, segmentId, false)
-      last = new AudioFrame(samples, (this as any).sampleRate, 1, samples.length)
+      last = new AudioFrame(samples, this.sampleRate, 1, samples.length)
     }
     if (!last) throw new Error('speech endpoint returned no audio')
     this.putFrame(last, segmentId, true)

@@ -115,7 +115,6 @@ Deno.serve(async (req: Request) => {
   if (one) { const t = ctx.types.find((x: { sys: { id: string } }) => x.sys.id === one![1]); return t ? reply(t) : fail(ERR.notFound('The resource could not be found.', { type: 'ContentType', id: one[1] })) }
 
   /* ---- entries ---- */
-  // @ts-expect-error TS2322, from the conversion: Type '{ code: string; name: string; default: boolean; fallbackCode: string | null; }[]' is not assignable to type 'never[]'. Type '{ code: s
   const a = parse(q, { kind: sub.startsWith('/assets') ? 'assets' : 'entries', types: ctx.types, locales: index.locales })
   if ('error' in a) { const e = a.error as { id: string; message: string; details?: unknown }; return fail({ status: e.id === 'UnknownContentType' ? 400 : 400, body: { sys: { type: 'Error', id: e.id }, message: e.message, ...(e.details ? { details: e.details } : {}), requestId: rid } }) }
   one = /^\/entries\/([^/]+)$/.exec(sub)

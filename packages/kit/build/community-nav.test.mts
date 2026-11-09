@@ -158,15 +158,10 @@ ok('registered places come after Messages and before Notifications, in the order
 ok('a registered place carries its count', withReg.first.find((x) => x.key === 'journal').count === 3)
 ok('a guest sees only the places registered for everyone', socialPlaces({ network: true, signedIn: false, places: REG }).first.filter((x) => x.place).map((x) => x.key).join() === 'open')
 const CL = [{ key: 'coaching', claims: ['/app/coaching'] }, { key: 'diagnostics', claims: ['/app', '!/app/call', '!/app/voice'] }]
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ key: string; claims: string[]; }[]' is not assignable to parameter of type 'never[]'. Type '{ key: string; claims: strin
 ok('a claimed address forwards to its place', forwardOf('/app', CL) === '/feed/diagnostics')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ key: string; claims: string[]; }[]' is not assignable to parameter of type 'never[]'. Type '{ key: string; claims: strin
 ok('what follows the claim follows it', forwardOf('/app/quiz/teachings', CL) === '/feed/diagnostics/quiz/teachings' && forwardOf('/app/accomplishments/', CL) === '/feed/diagnostics/accomplishments')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ key: string; claims: string[]; }[]' is not assignable to parameter of type 'never[]'. Type '{ key: string; claims: strin
 ok('the longest claim wins', forwardOf('/app/coaching', CL) === '/feed/coaching')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ key: string; claims: string[]; }[]' is not assignable to parameter of type 'never[]'. Type '{ key: string; claims: strin
 ok('an address kept out stays where it is', forwardOf('/app/call/abc', CL) === null && forwardOf('/app/voice/x', CL) === null)
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ key: string; claims: string[]; }[]' is not assignable to parameter of type 'never[]'. Type '{ key: string; claims: strin
 ok('an address nothing claims gives null', forwardOf('/store', CL) === null && forwardOf('/apple', CL) === null)
 ok('the bare spaces home follows the configured social community path', socialSpacesHome('/spaces', 'social', '/spaces', '/community') === '/community')
 ok('space detail URLs stay at /spaces/<slug>, and the chat layout keeps its spaces home',

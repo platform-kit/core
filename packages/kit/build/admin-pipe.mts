@@ -110,7 +110,6 @@ export async function adminRequest(env: any, { method, seg, q, body }: any) {
           }
         }
         if (to !== undefined) return { status: 200, body: await rename(m, name, to, root, extra) }
-        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'check' does not exist in type '{ create?: boolean | undefined; }'.
         return { status: 200, body: await write(m, name, rec, root, { ...extra, create: !!create, check: !!check }) }
       }
       if (method === 'DELETE') {

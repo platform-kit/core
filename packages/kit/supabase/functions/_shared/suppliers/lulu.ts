@@ -8,6 +8,7 @@
  * the paper's thickness, a job whose status walks CREATED → IN_PRODUCTION → SHIPPED as it is
  * read — so the whole chain runs with no account.
  */
+import type { PrinterOption } from './index.ts'
 const on = (v: any) => /^(1|true|yes|on)$/i.test(String(v || ''))
 const TRIM_PT: any = { '6x9': { w: 432, h: 648 }, '5x8': { w: 360, h: 576 } }
 /* the jacket's flap and its bleed; a casewrap's wrap round the board (bleed included); a paperback's bleed */
@@ -58,8 +59,7 @@ export function lulu(env: any) {
     levels: { standard: 'MAIL', priority: 'PRIORITY_MAIL', express: 'EXPRESS' },
     /* what the admin may set, per format: a hardcover's style; the code itself when not the rule's */
     options(format: any) {
-      const o = [{ key: 'package', label: 'Product code', type: 'text', help: "the printer's pod_package_id, when not the one the rule makes", applies: ['softcover', 'hardcover'] }]
-      // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'choices' does not exist in type '{ key: string; label: string; type: string; help: st
+      const o: PrinterOption[] = [{ key: 'package', label: 'Product code', type: 'text', help: "the printer's pod_package_id, when not the one the rule makes", applies: ['softcover', 'hardcover'] }]
       if (format === 'hardcover') o.unshift({ key: 'style', label: 'Hardcover', type: 'select', choices: [{ value: 'linen', label: 'Linen wrap, foil-stamped spine, dust jacket' }, { value: 'casewrap', label: 'Printed case (casewrap)' }], default: 'linen' })
       return o
     },

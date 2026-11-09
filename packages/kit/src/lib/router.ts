@@ -143,7 +143,6 @@ function normalise(pathname: string) {
   const library = appCourses(p)
   if (library) return library
   /* an address a community place has claimed lives there now (community.places claims) */
-  // @ts-expect-error TS2345, from the conversion: Argument of type '({ load: null; key: string; word: string; icon: string; component: any; wide: boolean; shows: string; claims: any; } | { k
   const moved = NETWORK_ON ? forwardOf(p, CLAIMS, ROUTES.feed) : null
   if (moved) p = moved
   if (p === '/diagnostics') p = ROUTES.diagnostics /* the old address still works */
@@ -237,7 +236,6 @@ export const APP_PAGES: any = { sum: 'overview', pairs: 'personality', areas: 'r
    address, so the sheet, a round and its tabs read and write addresses there and the instrument
    needs to know nothing about it. A video call and a voice
    session stay at /app (ROUTES.diagnostics) whatever claims the rest. */
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ load: null; key: string; word: string; icon: string; component: any; wide: boolean; shows: string; claims: any; } | { k
 export const APP_BASE = (NETWORK_ON && forwardOf(ROUTES.diagnostics, CLAIMS, ROUTES.feed)) || ROUTES.diagnostics
 /* a page's former slug, still read so a link made before the rename lands on it */
 const APP_PAGES_FORMER: any = { diagnostics: 'areas' }

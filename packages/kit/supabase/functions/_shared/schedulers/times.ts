@@ -39,10 +39,10 @@ export function dayOf(ms: any, tz: any) {
    window says so, which is what a run of six monthly sessions needs) */
 export function days(from: any, to: any, cap = 62) {
   const out = []
-  // @ts-expect-error TS2556, from the conversion: A spread argument must either have a tuple type or be passed to a rest parameter.
-  let t = Date.UTC(...from.split('-').map((v: any, i: number) => Number(v) - (i === 1 ? 1 : 0)))
-  // @ts-expect-error TS2556, from the conversion: A spread argument must either have a tuple type or be passed to a rest parameter.
-  const end = Date.UTC(...to.split('-').map((v: any, i: number) => Number(v) - (i === 1 ? 1 : 0)))
+  /* a YYYY-MM-DD as the three numbers Date.UTC takes (its month from 0) */
+  const ymd = (s: string) => s.split('-').map((v, i) => Number(v) - (i === 1 ? 1 : 0)) as [number, number, number]
+  let t = Date.UTC(...ymd(from))
+  const end = Date.UTC(...ymd(to))
   while (t <= end && out.length < cap) { const d = new Date(t); out.push(`${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`); t += 864e5 }
   return out
 }

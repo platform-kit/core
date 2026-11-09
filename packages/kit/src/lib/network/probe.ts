@@ -5,7 +5,7 @@
  */
 import { kindOfType } from '../../../supabase/functions/_shared/atproto/media.js'
 
-const picture = (file: Blob|MediaSource) => new Promise((resolve) => {
+const picture = (file: Blob|MediaSource) => new Promise<{ width?: number, height?: number }>((resolve) => {
   try {
     const url = URL.createObjectURL(file)
     const im = new Image()
@@ -16,9 +16,9 @@ const picture = (file: Blob|MediaSource) => new Promise((resolve) => {
 })
 
 /* a video's size, length and first frame (a moment in, where the first frame is often black) */
-const video = (file: Blob|MediaSource) => new Promise((resolve) => {
+const video = (file: Blob|MediaSource) => new Promise<{ width?: number, height?: number, duration?: number, poster?: Blob }>((resolve) => {
   let done = false
-  const finish = (v: unknown) => { if (!done) { done = true; resolve(v) } }
+  const finish = (v: { width?: number, height?: number, duration?: number, poster?: Blob }) => { if (!done) { done = true; resolve(v) } }
   try {
     const url = URL.createObjectURL(file)
     const v = document.createElement('video')
@@ -39,11 +39,9 @@ const video = (file: Blob|MediaSource) => new Promise((resolve) => {
   } catch { finish({}) }
 })
 
-export async function probe(file: { type: any }) {
+export async function probe(file: File) {
   const kind = kindOfType(file.type)
-  // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
   if (kind === 'video') return { kind, ...(await video(file)) }
-  // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
   if (kind === 'image') return { kind, ...(await picture(file)) }
-  return { kind: null }
+  return { kind: null } as { kind: null, width?: number, height?: number, duration?: number, poster?: Blob }
 }

@@ -62,8 +62,7 @@ export const registryOf = (idx: { [x: string]: { titles: any } }, slug: string|n
 /* the bucket's record over the index's, printer by printer: neither alone is the whole truth */
 export function mergeRegistry(reg: { titles: any }, fromBucket: { titles: any }) {
   const titles = { ...(reg.titles || {}) }
-  // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-  for (const [p, m] of Object.entries((fromBucket && fromBucket.titles) || {})) titles[p] = { ...(titles[p] || {}), ...m }
+  for (const [p, m] of Object.entries<Record<string, unknown>>((fromBucket && fromBucket.titles) || {})) titles[p] = { ...(titles[p] || {}), ...m }
   return { titles }
 }
 

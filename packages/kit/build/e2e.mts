@@ -225,8 +225,7 @@ async function runSite(site: any, reserved: any) {
     /* its content, compiled now and prepared as `platformkit build` does it (the engine the site asks for, then the
        prepare steps — the search index among them): the drop-in scripts compile it in, and a copy of the code has none
        an earlier build left */
-    for (const [what, a] of [['content', ['--input-type=module', '-e', `const { engineFor } = await import(${JSON.stringify(pathToFileURL(path.join(HERE, 'collections.mjs')).href)}); const e = await engineFor(process.cwd()); await e.build({ root: process.cwd(), log: () => {} })`]], ['prepare steps', [path.join(HERE, 'steps.mjs'), '--run', 'prepare']]]) {
-      // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 8, '(command: string, args: readonly string[], options: SpawnSyncOptionsWithStringEncoding): Sp
+    for (const [what, a] of ([['content', ['--input-type=module', '-e', `const { engineFor } = await import(${JSON.stringify(pathToFileURL(path.join(HERE, 'collections.mjs')).href)}); const e = await engineFor(process.cwd()); await e.build({ root: process.cwd(), log: () => {} })`]], ['prepare steps', [path.join(HERE, 'steps.mjs'), '--run', 'prepare']]] as Array<[string, string[]]>)) {
       const r = spawnSync(process.execPath, a, { cwd: site.directory, encoding: 'utf8', env: { ...process.env, ...parseEnv(base) } })
       if (r.status !== 0) throw new Error(`its ${what} would not build:\n` + ((r.stdout || '') + (r.stderr || '')).trim().split('\n').slice(-8).join('\n'))
     }

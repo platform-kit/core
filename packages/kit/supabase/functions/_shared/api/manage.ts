@@ -210,8 +210,7 @@ export async function manage(req: Request, o: { sub: string; method: string; q: 
       if (e.code === 'UnresolvedLink') return err(422, 'ValidationFailed', 'A link cannot be resolved', rid, { errors: [{ name: 'notResolvable', path: ['fields', e.field], details: `No asset ${e.id}` }] })
       return err(422, 'ValidationFailed', String(e.message), rid, { errors: [{ name: 'invalid', path: ['fields', e.field || ''], details: String(e.message) }] })
     }
-    let entryId = id
-    // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string'. Type 'null' is not assignable to type 'string'.
+    let entryId: string | null = id
     if (method === 'POST') { entryId = idFor(type, parsed.data); if (!entryId) return err(400, 'BadRequest', 'A new entry needs a slug field or a title to make its id from (or PUT it at an id).', rid) }
     const split = splitId(entryId!)!
     const name = nameOf(model, split.path)

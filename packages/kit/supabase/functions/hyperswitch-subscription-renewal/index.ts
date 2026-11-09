@@ -25,7 +25,6 @@ async function settleMeteredUsage(provider: Awaited<ReturnType<typeof getPayment
   const incrementalEvents = events.filter((event) => Number(event.usage_incremental_charge_minor) > 0)
   let incrementalAmountMinor = 0
   if (incrementalEvents.length) {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'PaymentProviderAdapter | null' is not assignable to parameter of type 'PaymentProviderAdapter'. Type 'null' is not assigna
     const result = await settleIncrementalUsage(provider, {
       subscriptionId: row.subscription_id,
       periodStart: row.period_start,

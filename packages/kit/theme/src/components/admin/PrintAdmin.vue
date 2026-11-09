@@ -132,7 +132,7 @@ const saving = ref(false), setting = ref(false), msg = ref('')
 /* the form's shape: the spec, with every format present (on or off) so the rows are stable */
 const DEFAULT_FORMAT: any = { softcover: { markup: 8 }, hardcover: { markup: 15 }, premium: { markup: 25 }, pdf: { price: 8 }, epub: { price: 8 } }
 function formOf(pr: any) {
-  const spec = printSpec(pr || {})
+  const spec = printSpec(pr || {})!   /* the print admin is open only with the print module on, and {} reads as the defaults */
   const formats: any = {}
   for (const f of FORMATS) {
     const rec = spec.formats[f]

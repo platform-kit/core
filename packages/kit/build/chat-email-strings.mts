@@ -24,9 +24,9 @@ const OUT = { followup: 'supabase/functions/cal-webhook/strings.json' }
 /* the store's emails: the subject of each (the bodies are designs, content/emails/<kind>.json), each group's one `### mail` record flattened */
 export const EMAILS_SRC = 'content/app/ui/emails.md', EMAILS_OUT = 'supabase/functions/_shared/emails/strings.json'
 export async function emailWords() {
-  const g = await uiScope('emails')
+  /* group → record → field: the scope's groups as the strings file holds them */
+  const g = await uiScope('emails') as Record<string, Record<string, Record<string, string>>>
   /* a group is one record flattened — except push, whose records are the topics, each with its own words */
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): unknown[]', gave the following error. 
   const w = Object.fromEntries(Object.entries(g).map(([k, recs]) => [k, k === 'push' ? recs : Object.assign({}, ...Object.values(recs))]))
   /* the store's own words for a printed book — the formats, the contents, the colours — so the
      confirmation says a line as the store's page did (`## product / ### print` in store.md) */

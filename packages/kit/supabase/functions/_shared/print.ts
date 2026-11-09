@@ -58,8 +58,7 @@ export const chosenOf = (row: any) => (row?.chosen ?? {}) as
 /* submit a row to its printer; on a failure the row says so and stays for a retry */
 export async function submitPrintOrder(row: any, title: string) {
   const c = chosenOf(row)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  const ed = editionOf(c.book, c.contents || undefined)
+  const ed = editionOf(c.book ?? '', c.contents || undefined)
   const stamp = { updated_at: new Date().toISOString() }
   const fail = async (error: string) => { await admin.from('fulfilments').update({ status: 'failed', error, ...stamp }).eq('id', row.id); return null }
   if (!ed) return fail('no edition of this book has been set — node build/print.mjs --book ' + c.book)
@@ -101,7 +100,6 @@ export async function refreshPrintOrder(row: any) {
   if (status === row.status && job.status === row.supplier_status && !job.tracking) return false
   await admin.from('fulfilments').update({ status, supplier_status: job.status, ...(job.tracking ? { tracking: job.tracking } : {}), ...(job.cost ? { cost: job.cost } : {}), updated_at: new Date().toISOString() }).eq('id', row.id)
   /* the parcel shipped: the buyer told once, with the tracking, the moment the status turns */
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  if (status === 'shipped' && row.status !== 'shipped') await shippedEmail({ ...row, tracking: job.tracking ?? row.tracking }, bookOf(chosenOf(row).book)?.title ?? chosenOf(row).book ?? '')
+  if (status === 'shipped' && row.status !== 'shipped') await shippedEmail({ ...row, tracking: job.tracking ?? row.tracking }, bookOf(chosenOf(row).book ?? '')?.title ?? chosenOf(row).book ?? '')
   return true
 }

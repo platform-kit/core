@@ -57,13 +57,14 @@ export function normaliseOptions(raw: any) {
 
 /* every combination, in declared order, options outermost-first so the first option varies
    slowest — which is the order a person reads a table of them in */
-export function combinations(options: any) {
+/* one value chosen for one option: a variant is one of these per option */
+export interface VariantPick { option: string, slug: string, value: any, label: any, gone?: boolean }
+export function combinations(options: any): VariantPick[][] {
   if (!options.length) return [[]]
-  let out = [[]]
+  let out: VariantPick[][] = [[]]
   for (const o of options) {
-    const next = []
+    const next: VariantPick[][] = []
     for (const row of out) for (const v of o.values) next.push([...row, { option: o.name, slug: o.slug, value: v.value, label: v.label, ...(v.gone ? { gone: true } : {}) }])
-    // @ts-expect-error TS2322, from the conversion: Type '{ gone?: boolean | undefined; option: any; slug: any; value: any; label: any; }[][]' is not assignable to type 'never[][]'. Type '{ go
     out = next
   }
   return out
@@ -246,7 +247,7 @@ export function reconcileOptions(existing: any, fetched: any, { from }: any = {}
 
   const gone = []
   const added: any = []
-  const options = theirs.map((o) => {
+  const options: Array<Record<string, any>> = theirs.map((o) => {
     const before = was.get(o.slug)
     was.delete(o.slug)
     if (!before) {
@@ -267,7 +268,6 @@ export function reconcileOptions(existing: any, fetched: any, { from }: any = {}
   })
   for (const o of was.values()) {
     for (const v of o.values) if (!v.gone) gone.push({ option: o.name, slug: o.slug, value: v.value, label: v.label })
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ values: any; from?: string | undefined; name: string; slug: string; }' is not assignable to parameter of type '{ from: a
     options.push({ ...o, values: o.values.map((v: any) => ({ ...v, gone: true })) })
   }
   /* the supplier's axes first, then the shop's — the order `optionsOf` already puts a kind's in,

@@ -53,16 +53,20 @@ const num = (v: any) => (v == null || v === '' ? null : Number(v))
 import { modules as MODULES } from '#site'
 /* the print module's switch: off, no book is in print however its block reads. Given the book, a book whose
    text is withheld (`fullText: false`) keeps the summary edition alone, and is not in print without one */
-// @ts-expect-error TS7023, from the conversion: 'printSpec' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in o
-export function printSpec(pr: { [x: string]: any; main?: any; key?: any; rights?: any; contents?: any; formats?: any; cloth?: any; foil?: any; providers?: any; package?: any; printers?: any; currency?: any; trim?: any; paper?: any; spine?: any; blurb?: any; flap?: any; note?: any; ebook?: any; proofed?: any; includes?: any; files?: any }, book: any = null) {
+/* a book's print block, read: what is printed, by whom, and at what price */
+export interface PrintSpec {
+  key: string, rights: string, currency: string, trim: string, paper: string, cloth: string, foil: string
+  spine: string, blurb: string, flap: string, note: string, package: string, ebook: boolean
+  proofed: Record<string, string>, main: string, contents: string[], formats: Record<string, any>
+  printers: Record<string, string>, providers: Record<string, any>, includes: string[], files: Array<{ title: string, file: string }>
+}
+export function printSpec(pr: { [x: string]: any; main?: any; key?: any; rights?: any; contents?: any; formats?: any; cloth?: any; foil?: any; providers?: any; package?: any; printers?: any; currency?: any; trim?: any; paper?: any; spine?: any; blurb?: any; flap?: any; note?: any; ebook?: any; proofed?: any; includes?: any; files?: any }, book: any = null): PrintSpec | null {
   if (MODULES.print === false) return null
   if (!pr || typeof pr !== 'object') return null
   if (book && book.fullText === false) {
-    // @ts-expect-error TS7022, from the conversion: 'spec' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
     const spec = printSpec(pr)
-    // @ts-expect-error TS7022, from the conversion: 'contents' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initiali
     const contents = spec ? spec.contents.filter((c: string) => c === 'summary') : []
-    return contents.length ? { ...spec, contents } : null
+    return spec && contents.length ? { ...spec, contents } : null
   }
   const cloth = CLOTHS.includes(pr.cloth) ? pr.cloth : 'black', foil = FOILS.includes(pr.foil) ? pr.foil : 'gold'
   const formats: any = {}

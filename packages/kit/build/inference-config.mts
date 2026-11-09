@@ -46,8 +46,7 @@ function ratesFor(models: any, providerId: any) {
       audioInputPerMillionUsd: 'audioInput',
       audioOutputPerMillionUsd: 'audioOutput',
     }
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: {}): string[]', gave the following error. Argument of type 'unknown' is not assignable 
-    for (const field of Object.keys(value)) {
+    for (const field of Object.keys(value as object)) {
       if (!Object.hasOwn(dimensions, field)) fail(`providers.${providerId}.models.${model}.${field} is not a supported usage dimension`)
     }
     for (const field of ['inputPerMillionUsd', 'outputPerMillionUsd']) {

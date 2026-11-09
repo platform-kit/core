@@ -89,7 +89,7 @@ export function validateBlock(root: string|undefined, title: any, pr: { [x: stri
 
 /* the block, cleaned to what is written: numbers as numbers, lists as lists, nothing empty */
 function clean(pr: { [x: string]: any; main: string }) {
-  const spec = printSpec(pr)
+  const spec = printSpec(pr)!   /* a block is cleaned only where the print module is on, and pr is the block */
   const out: any = {}
   for (const k of ORDER) {
     if (k === 'ebook') { if (spec.ebook === false) out.ebook = false; continue }

@@ -68,9 +68,13 @@ const day = (d: any) => (d ? String(d).slice(0, 10) : null)
 /* The tree under a hierarchical collection (wiki, docs). Ids look like
    "getting-oriented/start-here"; folders come from the path, their titles from
    the prettified directory name, their order from the earliest child. */
+/* a directory of the docs: the directories under it by name, and its pages */
+export interface DocDir { dirs: Record<string, DocDir>, docs: any[], [k: string]: any }
+/* the same directory finished: its directories in order, each with the order of its earliest page */
+export interface DocNode { dirs: DocNode[], docs: any[], order?: number, title?: string, [k: string]: any }
 export function docTree(collection: string|number) {
   const entries = COLLECTION[collection] || []
-  const root = { dirs: {}, docs: [] }
+  const root: DocDir = { dirs: {}, docs: [] }
   for (const e of entries) {
     const parts = e.id.split('/')
     let node: any = root
@@ -81,18 +85,17 @@ export function docTree(collection: string|number) {
     node.docs.push({ id: e.id, slug: parts[parts.length - 1], title: e.title, order: e.order ?? 99,
       description: e.description || '', readingTime: (e.metadata && e.metadata.readingTime) || 0 })
   }
-  // @ts-expect-error TS7023, from the conversion: 'finish' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one 
-  const finish = (node: { dirs: any; docs: any }) => {
-    // @ts-expect-error TS7022, from the conversion: 'dirs' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+  const finish = (node: DocDir): DocNode => {
     const dirs = Object.values(node.dirs).map(finish)
-    dirs.forEach((d: { docs: any[]; dirs: any[]; order: number }) => {
-      const orders = d.docs.map((x: { order: any }) => x.order).concat(d.dirs.map((x: { order: any }) => x.order))
+    dirs.forEach((d) => {
+      const orders = d.docs.map((x: { order: any }) => x.order).concat(d.dirs.map((x) => x.order))
       d.order = orders.length ? Math.min(...orders) : 99
     })
     return {
       ...node,
       docs: node.docs.slice().sort((a: { order: number; title: string }, b: { order: number; title: any }) => a.order - b.order || a.title.localeCompare(b.title)),
-      dirs: dirs.sort((a: { order: number; title: string }, b: { order: number; title: any }) => a.order - b.order || a.title.localeCompare(b.title)),
+      /* each directory's order was set just above, from its earliest page; its title is its prettified name */
+      dirs: dirs.sort((a, b) => a.order! - b.order! || a.title!.localeCompare(b.title!)),
     }
   }
   return finish(root)
@@ -350,8 +353,7 @@ export async function embedText(text: string) {
    is, and the rest reorders underneath it. `weights` may be any object of subject → number,
    including none, in which case this ranks exactly as it did before there were any. */
 export function forYou(rows: any[], profileVec: number[], opts: any = {}) {
-  const at = { themeTags: opts.themeTags || [], prescribed: new Set(opts.prescribed || []), weights: opts.weights || {} }
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ themeTags: any; prescribed: Set<unknown>; weights: any; }' is not assignable to parameter of type '{ themeTags?: never[]
+  const at = { themeTags: opts.themeTags || [], prescribed: new Set<string>(opts.prescribed || []), weights: opts.weights || {} }
   return rows.map((r) => ({ ...r, ...scoreRow({ sem: cosineSim(r.vec, profileVec), tags: r.tags, href: r.href }, at) }))
     .sort((a: { score: number }, b: { score: number }) => b.score - a.score)
 }

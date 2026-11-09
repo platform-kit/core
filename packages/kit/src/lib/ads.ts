@@ -54,13 +54,9 @@ async function signalSlugs() {
     const sig: any = readerSignals()
     if (!sig || !sig.has) return w
     const put = (t: any, score: any) => { if (t && t.slug) w[t.slug] = Math.max(w[t.slug] || 0, score) }
-    // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 2.
     if (sig.area && sig.stage) put(topicByKey('cell', sig.area + ':' + sig.stage), 4)
-    // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 2.
     if (sig.area) for (const st of STAGES) put(topicByKey('cell', sig.area + ':' + st), 3)
-    // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 2.
     if (sig.type) put(topicByKey('type', String(sig.type)), 2)
-    // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 2.
     for (const c of sig.complexes || []) put(topicByKey('complex', c), 2)
   } catch (e) { /* no results, or the engine failed to load — browse signals still apply */ }
   return w

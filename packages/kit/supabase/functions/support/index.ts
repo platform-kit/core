@@ -172,7 +172,6 @@ Deno.serve(async (req: Request) => {
    * asked for a person, nothing starts a run on that thread again until a human has it.
    */
   if (action === 'bot') {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'Contact | null' is not assignable to parameter of type 'Contact'. Type 'null' is not assignable to type 'Contact'.
     const conv = await ownConversation(contact, body?.conversation_id)
     if (!conv) return json({ error: 'no such conversation' }, 404)
     if (conv.bot_off_at) return json({ error: 'asked-for-a-person' }, 409)
@@ -192,7 +191,6 @@ Deno.serve(async (req: Request) => {
   /* somebody saying their own question is answered. Theirs to say, and theirs to undo: writing
      again reopens it, which the bump trigger has always done. */
   if (action === 'sorted') {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'Contact | null' is not assignable to parameter of type 'Contact'. Type 'null' is not assignable to type 'Contact'.
     const conv = await ownConversation(contact, body?.conversation_id)
     if (!conv) return json({ error: 'no such conversation' }, 404)
     await admin.from('support_conversations').update({ status: 'resolved' }).eq('id', conv.id)
@@ -201,7 +199,6 @@ Deno.serve(async (req: Request) => {
   }
 
   if (action === 'human') {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'Contact | null' is not assignable to parameter of type 'Contact'. Type 'null' is not assignable to type 'Contact'.
     const conv = await ownConversation(contact, body?.conversation_id)
     if (!conv) return json({ error: 'no such conversation' }, 404)
     await admin.rpc('support_want_human', { p_conversation: conv.id })

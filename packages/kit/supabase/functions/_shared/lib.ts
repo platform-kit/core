@@ -38,10 +38,8 @@ export const stripe = new Stripe(STRIPE_KEY || 'sk_test_unconfigured', {
   httpClient: Stripe.createFetchHttpClient(),
 })
 let paymentProviderPromise: Promise<PaymentProviderAdapter> | null = null
-export const getPaymentProvider = () => {
-  paymentProviderPromise ??= createSitePaymentProvider(Deno.env.toObject(), { stripe })
-  return paymentProviderPromise
-}
+export const getPaymentProvider = (): Promise<PaymentProviderAdapter> =>
+  (paymentProviderPromise ??= createSitePaymentProvider(Deno.env.toObject(), { stripe }))
 export const stripeUnconfigured = () =>
   json({ error: 'Payments are not configured in this environment (no STRIPE_SECRET_KEY).', code: 'stripe_unconfigured' }, 503)
 

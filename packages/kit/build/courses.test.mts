@@ -145,7 +145,6 @@ ok('…owning its schema, its push, its function, its routes and its sweep', mod
   const social = { name: 'x', modules: {}, community: { layout: 'social', places: [{ key: 'diagnostics', word: 'diagnostics', component: './x.vue', claims: ['/app'] }] } }
   const places = communityOf(social).places, place = places.find((p) => p.key === 'courses')
   ok('with a community, Courses is one of its places, before the site\'s own', !!place && places[0] === place && place.wide && place.shows === 'everyone' && place.icon === 'course')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ key: string; word: string; icon: string; component: any; wide: boolean; shows: string; claims: any; }[]' is not assignab
   ok('…claiming nothing, so /courses stays the courses\' own pages', place && place.claims.length === 0 && forwardOf('/courses/writing-plainly', places, '/feed') === null)
   ok('…its page named by package, so no path of the build machine reaches the browser', place && place.component === 'platformkit/theme/components/courses/CoursesPlace.vue' && !JSON.stringify(publicSite({ ...social, looks: {} })).includes(process.cwd()))
   let refused = ''

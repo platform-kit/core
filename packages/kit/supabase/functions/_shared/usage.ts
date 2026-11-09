@@ -172,7 +172,7 @@ export async function authorizeUsage(input: {
   botId?: string | null
   expiresAt?: string | null
   operationId?: string
-  markupMicros?: number
+  markupMicros?: number | null
 }) {
   await fresh()
   return usageGate(input)
@@ -278,7 +278,6 @@ async function settleClosedIncrementalUsage(provider: Awaited<ReturnType<typeof 
       const periodEnd = Number.isFinite(currentStart) && start < currentStart
         ? subscription.current_period_start
         : subscription.current_period_end
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'PaymentProviderAdapter | null' is not assignable to parameter of type 'PaymentProviderAdapter'. Type 'null' is not assigna
       await settleIncrementalUsage(provider, {
         subscriptionId: subscription.id,
         periodStart,

@@ -268,7 +268,7 @@ const KIT_TESTS = [
   ['modules-off-db.test.mts'],   /* every module off in turn, assembled and applied to a database of its own; the data kept, then dropped */
   ['policies.test.mts'],   /* who may read what, on the local stack's seed: an administrator every order and booking, a reader their own; skipped when the stack is down or POLICY_TEST=0 */
   fs.existsSync(path.join(WORKSPACE_ROOT, 'sites', 'docs', 'content', 'docs')) && ['docs-check.mts'],   /* the docs agree with the code (the reference pages exactly; every page's sources exist) */
-].filter(Boolean)
+].filter((t): t is string[] => Array.isArray(t))
 
 /*
  * WHICH CHECKS NEED A STACK — read from each one's own source rather than kept as a list: a test that asks
@@ -287,7 +287,6 @@ const E2E_ALSO = ['db-types.test.mts', 'schema.test.mts', 'modules-off-db.test.m
 
 if (E2E) {
   /* every stack check this site's modules switch on, the site's own among them; each runs whatever came before */
-  // @ts-expect-error TS2488, from the conversion: Type 'false | "" | string[] | undefined' must have a '[Symbol.iterator]()' method that returns an iterator.
   const kit = KIT_TESTS.filter(([f]) => needsStack(KIT(f)) || E2E_ALSO.includes(f)).map(([f, ...a]) => [`kit: ${f}`, KIT(f), a])
   const own = ((c.build && c.build.tests) || []).filter((t: string) => needsStack(path.resolve(ROOT, t))).map((t: string) => [`site: ${t}`, path.resolve(ROOT, t), []])
   const cloud = [['lane: cloud', KIT('cloud-lane.test.mts'), []]]

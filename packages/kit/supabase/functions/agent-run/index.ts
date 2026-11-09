@@ -517,7 +517,7 @@ async function accountInferenceAttempts({
 }: any) {
   if (!attempts.length) {
     if (usageAuthorization?.admitted) await usageAuthorization.release()
-    return { providerCostMicros: 0, customerCostMicros: 0, customerUnitsMicros: 0, measurementStatus: 'measured' }
+    return { providerCostMicros: 0, customerCostMicros: 0, customerUnitsMicros: 0, measurementStatus: 'measured' as const }
   }
   if (!bound?.attempts?.length) throw new Error('provider work has no reserved inference-attempt bounds')
 
@@ -543,8 +543,7 @@ async function accountInferenceAttempts({
       model: attempt.model,
       protocol: attempt.protocol,
       outcome: attempt.outcome,
-      // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type '"estimated" | "not_sent" | "measured"'.
-      measurementStatus: attempt.measurementStatus,
+      measurementStatus: attempt.measurementStatus as 'measured' | 'estimated' | 'not_sent',
       usageDimensions: attempt.usageDimensions,
       providerCostMicros: attempt.providerCostMicros,
       markupMicros: attempt.markupMicros,
@@ -650,7 +649,6 @@ async function think(run: any, bot: any, taken: any[], messages: any[]) {
           maxUnitsMicros,
           botId: bot.slug,
           operationId: operation.operationId,
-          // @ts-expect-error TS2322, from the conversion: Type 'number | null' is not assignable to type 'number | undefined'. Type 'null' is not assignable to type 'number | undefined'.
           markupMicros,
         })
       } else {

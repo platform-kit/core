@@ -27,7 +27,6 @@ Deno.serve(async (req: Request) => {
   const id = typeof body?.session === 'string' ? body.session.trim() : ''
   if (!id || id.length > 255 || /[\u0000-\u001f\u007f]/.test(id)) return json({ error: 'no session' }, 400)
   try {
-    // @ts-expect-error TS2322, from the conversion: Type 'PaymentProviderAdapter | null' is not assignable to type 'PaymentProviderAdapter'. Type 'null' is not assignable to type 'PaymentProvi
     const provider: PaymentProviderAdapter = await getPaymentProvider()
     assertPaymentCapabilities(provider, ['checkout.confirm'])
     if (provider.id === 'stripe' && !stripeConfigured) return stripeUnconfigured()

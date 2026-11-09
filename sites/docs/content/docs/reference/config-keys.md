@@ -11,7 +11,7 @@ sources:
     packages/kit/build/payment-provider-registry.mts,
     packages/kit/build/modules/manifest.mts,
   ]
-reviewed: 2026-11-08
+reviewed: 2026-11-09
 ---
 
 | Key                                                     | Type                                                                                     | Default                                       | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |

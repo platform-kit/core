@@ -130,7 +130,7 @@ export async function printBook(slug: any, { local = false, force = false, keepT
     const asked = (printSpec(book.print) || { contents: [] }).contents.filter((c: any) => c !== 'summary')
     if (asked.length || (only && only !== 'summary')) throw new Error(`${slug}: fullText is false, so the book has only a summary edition — not ${[...new Set([...asked, ...(only && only !== 'summary' ? [only] : [])])].join(', ')}`)
   }
-  const spec = printSpec(book.print, book) || printSpec({})
+  const spec = (printSpec(book.print, book) || printSpec({}))!   /* the build of the print module: on, so {} reads as the defaults */
   /* nothing is sent to a printer without a line saying on what footing the text is printed and
      sold; a local render (a look at the pages) needs none */
   if (!local && !spec.rights) throw new Error(`${slug}: the print block needs rights: — on what footing the text is printed and sold`)

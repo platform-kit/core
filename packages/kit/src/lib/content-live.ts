@@ -52,15 +52,15 @@ export async function load({ timeout = 8000 } = {}) {
    */
   const idx = rows.find((r: { path: string }) => r.path === 'content/store/print.json')
   if (idx) { const { setEditions } = await import('./print-index.js'); if (setEditions(idx.text)) loaded.editions = true }
-  // @ts-expect-error TS2322, from the conversion: Type '({ highlight }?: any) => { parse(md: any): any; toc(md: {} | null): { title: any; url: string; items: never[]; }[]; }' is not assignab
   return apply(rows, { renderer, toEntry, targetOf, searchRows })
 }
 
 /* the rows into the bundle: only the collections the bundle carries move; a collection with no row at all is left as built */
-export function apply(rows: string|any[], { renderer, toEntry, targetOf, searchRows }: { renderer: ({ highlight }?: any) => { parse(md: any): any; toc(md: {}|null): never[] }; toEntry: (collection: any,row: any,ctx: any) => any; targetOf: (row: any) => any; searchRows: ({ articles,wiki,docs,books,products,pages }: { articles?: never[]|undefined; wiki?: never[]|undefined; docs?: never[]|undefined; books?: never[]|undefined; products?: never[]|undefined; pages?: never[]|undefined }) => any }) {
+export function apply(rows: string|any[], { renderer, toEntry, targetOf, searchRows }: { renderer: ({ highlight }?: any) => { parse(md: any): any; toc(md: {}|null): any[] }; toEntry: (collection: any,row: any,ctx: any) => any; targetOf: (row: any) => any; searchRows: ({ articles,wiki,docs,books,products,pages }: { articles?: never[]|undefined; wiki?: never[]|undefined; docs?: never[]|undefined; books?: never[]|undefined; products?: never[]|undefined; pages?: never[]|undefined }) => any }) {
   const R = renderer()
   const ctx = { render: (md: any) => R.parse(md), toc: (md: {}|null) => R.toc(md), bundle: CONTENT, models: CONTENT.models }
-  const by: any = {}
+  /* collection → its rows, as the bundle holds them */
+  const by: Record<string, any[]> = {}
   for (const row of rows) {
     const target = targetOf(row)
     if (!target || !(target in CONTENT)) continue
@@ -76,9 +76,7 @@ export function apply(rows: string|any[], { renderer, toEntry, targetOf, searchR
     if (SINGLE.has(target) || (cur && !Array.isArray(cur))) { for (const k of Object.keys(cur)) delete cur[k]; Object.assign(cur, (list as any)[0]); continue }
     if (!Array.isArray(cur)) continue
     /* the strings: the theme's scopes stay as built, a site's file replaces its scope (a file removed in cloud mode keeps its words until the deploy) */
-    // @ts-expect-error TS18046, from the conversion: 'list' is of type 'unknown'.
     if (target === 'ui') { for (const e of list) { const i = cur.findIndex((u) => u && u.scope === e.scope); if (i >= 0) cur.splice(i, 1, e); else cur.push(e) } continue }
-    // @ts-expect-error TS2488, from the conversion: Type 'unknown' must have a '[Symbol.iterator]()' method that returns an iterator.
     cur.length = 0; cur.push(...list)
   }
   /* the palette's rows again from what is live; a built row keeps its vector while its words are the same */

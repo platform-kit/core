@@ -103,7 +103,6 @@ const funnels = byKey(await registry(dir, { site: ALL }), 'funnels')
 const rec = { data: { title: 'Welcome', published: true }, parsed: { steps: [{ title: 'One', after: '1d', subject: 'Hi', body: 'Hello' }] } }
 await ta('a record through the pipe over the checkout', async () => {
   const st = gitStore(dir)
-  // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'store' does not exist in type '{ create?: boolean | undefined; }'.
   await write({ ...funnels, after: null }, 'welcome', rec, dir, { create: true, store: st })
   const back = await read(funnels, 'welcome', dir, { store: st })
   assert.equal(back.data.title, 'Welcome'); assert.equal(back.parsed.steps.length, 1)
@@ -189,7 +188,6 @@ else {
       await rows.client.from('content').delete().eq('path', P)
     })
     await ta('a record through the pipe over the rows, byte-identical to the checkout', async () => {
-      // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'store' does not exist in type '{ create?: boolean | undefined; }'.
       await write({ ...funnels, after: null }, 'probe-welcome', rec, dir, { create: true, store: rows })
       const text = await rows.read('content/funnels/probe-welcome.md')
       const noId = (t: any) => t.replace(/^id: [0-9a-f-]{36}$/m, 'id: <uuid>')   /* the step's id is minted on the first save */

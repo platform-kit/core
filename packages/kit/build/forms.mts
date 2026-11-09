@@ -40,7 +40,7 @@ export async function readForm(store: string, name: string) {
   return { raw, model: parseForm(raw) }
 }
 /* the Forms API's shape of a document is src/lib/forms/api-shape.js (pure, shared with the functions in cloud mode); here with the file's time */
-export function apiShape(model: { settings: any; kit: any; data: any; title: any; slides: any[]; fields: any; head: { settingsLines: string[]; dataBlocks: string[] }; warnings: Array<{ line: number, message: string }>; errors: Array<{ line: number, message: string }> }, name: string, mtime: any = null) {
+export function apiShape(model: { settings: any; kit: any; data: any; title: any; slides: any[]; fields: any; head: { settingsLines: string[]; dataBlocks: string[] }; warnings: Array<{ line: number, message: string }>; errors: Array<{ line: number, message: string }> }, name: string, mtime: Date | string | null = null) {
   const at = mtime && typeof mtime === 'object' && mtime.toISOString ? mtime.toISOString() : (typeof mtime === 'string' && mtime.includes('T') ? mtime : null)
   return shapeOf(model, name, { updated: at, created: at })
 }
@@ -57,8 +57,7 @@ export async function compileForms(store = ROOT) {
     const { model } = await readForm(store, name)
     for (const e of model.errors) faults.push(`${DIR}/${name}.md${(e as any).line ? ':' + (e as any).line : ''}: ${(e as any).message}`)
     for (const w of model.warnings) notes.push(`${DIR}/${name}.md${(w as any).line ? ':' + (w as any).line : ''}: ${(w as any).message}`)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-    out[name] = { title: model.title || name, fields: fieldContract(model), kit: model.kit, settings: { page: model.settings.page }, api: apiShape(model, name, (() => { try { return stat ? stat(join(at, DIR, name + '.md')).mtime.toISOString() : null } catch { return null } })()) }
+    out[name] = { title: model.title || name, fields: fieldContract(model), kit: model.kit, settings: { page: model.settings.page }, api: apiShape(model, name, (() => { try { return stat && at ? stat(join(at, DIR, name + '.md')).mtime.toISOString() : null } catch { return null } })()) }
   }
   return { forms: out, faults, notes }
 }

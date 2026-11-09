@@ -7,6 +7,7 @@
  * off-API. Mixam has no 6 × 9: a book is set at their 6.14 × 9.21, the nearest.
  * PRINT_MOCK=1 / MIXAM_MOCK=1, or no login, answers every call here.
  */
+import type { PrinterOption } from './index.ts'
 const on = (v: any) => /^(1|true|yes|on)$/i.test(String(v || ''))
 const SIZES: any = { '6x9': { std: 'IN_6_14_X_9_21', format: 5, w: 442, h: 663 }, '6.14x9.21': { std: 'IN_6_14_X_9_21', format: 5, w: 442, h: 663 }, '5x8': { std: 'IN_5_5_X_8_5', format: 5, w: 396, h: 612 } }
 const PAPER: any = { cream: { typeId: 1, weightId: 8, colourId: 0 }, white: { typeId: 1, weightId: 8, colourId: 0 } }
@@ -55,8 +56,7 @@ export function mixam(env: any) {
     configured, mock,
     levels: { standard: 'STANDARD', priority: 'PRIORITY', express: 'EXPRESS' },
     options(format: any) {
-      const o = [{ key: 'lamination', label: 'Cover lamination', type: 'select', choices: [{ value: 'MATT', label: 'Matte' }, { value: 'GLOSS', label: 'Gloss' }], default: 'MATT' }]
-      // @ts-expect-error TS2322, from the conversion: Type 'boolean' is not assignable to type 'string'.
+      const o: PrinterOption[] = [{ key: 'lamination', label: 'Cover lamination', type: 'select', choices: [{ value: 'MATT', label: 'Matte' }, { value: 'GLOSS', label: 'Gloss' }], default: 'MATT' }]
       if (format === 'hardcover') o.push({ key: 'jacket', label: 'Dust jacket', type: 'toggle', default: true })
       return o
     },

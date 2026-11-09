@@ -177,13 +177,12 @@ export function printify(env: any) {
       if (!ref) return {}
       /* a registered product carries its rendered images, each naming the variants it is of */
       const prod = await call(`/shops/${shop()}/products/${ref}.json`)
-      const byVariant = new Map((prod?.variants ?? []).map((v: any) => [v.id, String(v.options?.color ?? v.title ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')]))
-      const out = {}
+      const byVariant = new Map<unknown, string>((prod?.variants ?? []).map((v: any) => [v.id, String(v.options?.color ?? v.title ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')]))
+      const out: Record<string, string> = {}
       for (const img of prod?.images ?? []) {
         if (!img?.src) continue
         for (const id of img.variant_ids ?? []) {
           const slug = byVariant.get(id)
-          // @ts-expect-error TS2538, from the conversion: Type '{}' cannot be used as an index type.
           if (slug && !out[slug]) out[slug] = img.src
         }
       }

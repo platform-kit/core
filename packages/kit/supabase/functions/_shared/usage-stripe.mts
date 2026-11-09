@@ -118,7 +118,7 @@ function sameMeterConfiguration(meter: any) {
 }
 
 async function findMeter(stripe: any, eventName: any) {
-  let params = { status: 'active', limit: 100 }
+  let params: { status: string, limit: number, starting_after?: string } = { status: 'active', limit: 100 }
   while (true) {
     const page = await stripe.billing.meters.list(params)
     const matches = page.data.filter((meter: any) => meter.event_name === eventName)
@@ -127,7 +127,6 @@ async function findMeter(stripe: any, eventName: any) {
     if (!page.has_more) return null
     const last = page.data.at(-1)
     if (!last) throw new Error(`Stripe returned an empty meter page while listing event ${eventName}`)
-    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'starting_after' does not exist in type '{ status: string; limit: number; }'.
     params = { ...params, starting_after: last.id }
   }
 }

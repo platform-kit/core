@@ -17,8 +17,9 @@ const q = (name: any, description: any, schema: Record<string, unknown> = { type
 const pascal = (s: any) => String(s).replace(/^./, (c) => c.toUpperCase())
 
 /* a content type's field as JSON schema */
-// @ts-expect-error TS7023, from the conversion: 'fieldSchema' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in
-function fieldSchema(f: { type: any; validations: any[]; linkType: string; items: { linkType: any } }) {
+/* a content type's field, as the index describes it */
+type FieldDef = { type?: any, validations?: any[], linkType?: string, items?: FieldDef }
+function fieldSchema(f: FieldDef): Record<string, unknown> {
   switch (f.type) {
     case 'Symbol': case 'Text': return f.validations && f.validations[0] && f.validations[0].in ? { type: 'string', enum: f.validations[0].in } : { type: 'string' }
     case 'Integer': return { type: 'integer' }
@@ -27,8 +28,7 @@ function fieldSchema(f: { type: any; validations: any[]; linkType: string; items
     case 'Date': return { type: 'string', format: 'date-time' }
     case 'Object': return { type: 'object', additionalProperties: true }
     case 'RichText': return ref('RichTextDocument')
-    case 'Link': return { allOf: [ref('Link')], description: f.linkType === 'Asset' ? 'A link to an asset (resolved into includes.Asset)' : `A link to an entry of ${((f.validations.find((v: any) => v.linkContentType) || {}).linkContentType || []).join(', ') || 'any type'} (resolved into includes.Entry)` }
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ linkType: any; }' is not assignable to parameter of type '{ type: any; validations: any[]; linkType: string; items: { li
+    case 'Link': return { allOf: [ref('Link')], description: f.linkType === 'Asset' ? 'A link to an asset (resolved into includes.Asset)' : `A link to an entry of ${((f.validations!.find((v: any) => v.linkContentType) || {}).linkContentType || []).join(', ') || 'any type'} (resolved into includes.Entry)` }
     case 'Array': return { type: 'array', items: f.items ? (f.items.linkType ? ref('Link') : fieldSchema(f.items)) : { type: 'string' } }
     default: return {}
   }
@@ -84,7 +84,7 @@ export function openapiFor(index: any, { base = '', functions = '', sources = []
     { name: 'fields.{field}[{op}]', in: 'query', description: 'A filter on any field of the content type: `fields.title=x` (equality), `[ne]`, `[in]`, `[nin]`, `[exists]`, `[lt]`, `[lte]`, `[gt]`, `[gte]`, `[match]`, `[all]`; `fields.<link>.sys.id` on a link. Needs content_type.', schema: { type: 'string' }, allowReserved: true },
   ]
   const security = [{ key: [] }, {}]
-  const paths = {
+  const paths: Record<string, any> = {
     [`${A}/spaces/${space}`]: { get: { tags: ['Content Delivery'], summary: 'Get the space', operationId: 'getSpace', security, responses: { 200: jsonOf({ type: 'object', properties: { sys: { type: 'object' }, name: { type: 'string' }, locales: { type: 'array', items: ref('Locale') } } }), 404: errors[404] } } },
     [`${P}/entries`]: { get: { tags: ['Content Delivery'], summary: 'List entries', description: 'Every published entry, or one content type\'s; with a preview key drafts and unpublished entries too. A gated entry carries its body only for a key allowed gated content.', operationId: 'getEntries', security, parameters: collectionParams, responses: { 200: jsonOf(ref('EntryCollection')), ...errors } } },
     [`${P}/entries/{id}`]: { get: { tags: ['Content Delivery'], summary: 'Get an entry by id', operationId: 'getEntry', security, parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: '`<contentType>.<path>`' }, q('select', 'The fields to return.'), q('locale', 'A locale, or `*`.')], responses: { 200: jsonOf(ref('Entry')), ...errors } } },
@@ -107,7 +107,6 @@ export function openapiFor(index: any, { base = '', functions = '', sources = []
   }
   const mgmt = managementApi(index, { A, P, space, typeIds })
   /* the Management API's operations sit on the Delivery routes: merged method by method */
-  // @ts-expect-error TS2322, from the conversion: Type '{ post: { tags: string[]; summary: string; description: string; operationId: string; security: { managementKey: never[]; }[]; paramete
   for (const [route, ops] of Object.entries(mgmt.paths)) paths[route] = { ...(paths[route] || {}), ...ops }
   Object.assign(schemas, mgmt.schemas)
   const formsPart = forms ? formsApi(forms, { base }) : null

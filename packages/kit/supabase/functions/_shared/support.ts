@@ -5,7 +5,7 @@
  * is the same guest of the desk. The `support` function's header says what each does.
  */
 import { admin, json, getUser, appUrl } from './lib.ts'
-import { isSupport } from './roles.ts'
+import { isSupport, type Role } from './roles.ts'
 import { sendEmail, WORDS } from './email.ts'
 import { addressOf } from './doors.ts'
 import { PROMPTS, POLICY, type Choice } from './marketing.ts'
@@ -130,8 +130,7 @@ export async function resolve(req: Request, token: string | null): Promise<Who |
   const user = await getUser(req)
   if (user) {
     const profile = await profileOf(user.id)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'Role[]'. Type 'string' is not assignable to type 'Role'.
-    const staff = isSupport((profile?.roles ?? []) as string[])
+    const staff = isSupport((profile?.roles ?? []) as Role[])
     let contact = await byUser(user.id)
     let linked = false
     const guest = await byToken(token)
@@ -168,8 +167,9 @@ export async function threads(contact: Contact) {
   return out
 }
 
-export async function ownConversation(contact: Contact, id: unknown): Promise<any | null> {
-  if (!UUID.test(String(id ?? ''))) return null
+/* a conversation that is this contact's; somebody with no contact yet has none */
+export async function ownConversation(contact: Contact | null, id: unknown): Promise<any | null> {
+  if (!contact || !UUID.test(String(id ?? ''))) return null
   const { data } = await admin.from('support_conversations').select(`${CONV}, contact_id` as const).eq('id', String(id)).eq('contact_id', contact.id).maybeSingle()
   return data ?? null
 }

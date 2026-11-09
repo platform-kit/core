@@ -46,7 +46,9 @@ export function messageOf(m: any, { contact = null as { custom_attributes: any; 
   }
 }
 /** the Client API's conversation: the contact's own view */
-export function clientConversationOf(c: any, { contact = null, messages = [] } = {}) {
+/* a support contact as the desk's rows hold it */
+type ContactRow = { id: any; name: any; email: any; user_id: any; custom_attributes: any }
+export function clientConversationOf(c: any, { contact = null, messages = [] }: { contact?: ContactRow | null, messages?: any[] } = {}) {
   return { id: c.id, inbox_id: INBOX_ID, status: c.status, contact_last_seen_at: unix(c.contact_read_at), agent_last_seen_at: unix(c.agent_read_at), messages, contact: contactSender(contact), custom_attributes: c.custom_attributes || {}, additional_attributes: { path: c.path || null, source: c.source || null }, pubsub_token: c.listen_key || null, created_at: unix(c.created_at) }
 }
 /** the Client API's contact */
@@ -56,7 +58,7 @@ export function clientContactOf(c: { id: any; name: any; email: any; user_id: an
 /** an agent as Chatwoot lists one */
 export const agentOf = (p: any) => (p ? { id: p.id, name: p.name || p.display_name || null, email: p.email || null, role: (p.roles || []).includes('admin') ? 'administrator' : 'agent', availability_status: 'online', auto_offline: false, confirmed: true, available_name: p.name || p.display_name || null, thumbnail: null, account_id: ACCOUNT_ID } : null)
 /** the Application API's conversation */
-export function conversationOf(c: { id: any; status: any; last_message_at: any; created_at: any; last_agent_at: any; agent_read_at: any; contact_read_at: any; path: any; source: any; prompt_id: any; resolved_at: any; custom_attributes: any }, { contact = null, assignee = null as { name: string | null; id: string; display_name: string | null; email: string | null; roles: string[]; } | null, messages = [], unread = 0, waitingSince = null as string | null } = {}) {
+export function conversationOf(c: { id: any; status: any; last_message_at: any; created_at: any; last_agent_at: any; agent_read_at: any; contact_read_at: any; path: any; source: any; prompt_id: any; resolved_at: any; custom_attributes: any }, { contact = null, assignee = null as { name: string | null; id: string; display_name: string | null; email: string | null; roles: string[]; } | null, messages = [] as any[], unread = 0, waitingSince = null as string | null } = {}) {
   const last = messages.length ? messages[messages.length - 1] : null
   return {
     id: c.id, inbox_id: INBOX_ID, account_id: ACCOUNT_ID, status: c.status, muted: false, can_reply: true, channel: 'Channel::WebWidget', priority: null, snoozed_until: null,

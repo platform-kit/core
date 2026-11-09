@@ -32,7 +32,7 @@ const FOCUS = ['center', 'top', 'right', 'left', 'bottom', 'top_right', 'top_lef
 const FITS = ['pad', 'fill', 'scale', 'crop', 'thumb']
 const FORMATS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif']
 
-async function original(address: string): Promise<{ bytes: Uint8Array; type: string } | null> {
+async function original(address: string): Promise<{ bytes: Uint8Array<ArrayBuffer>; type: string } | null> {
   if (/^https?:\/\//i.test(address)) { const r = await fetch(address); return r.ok ? { bytes: new Uint8Array(await r.arrayBuffer()), type: r.headers.get('content-type') ?? '' } : null }
   if (CLOUD) {
     const rel = address.startsWith('/uploads/') ? 'content/uploads/' + address.slice(9) : 'public' + address
@@ -83,7 +83,6 @@ Deno.serve(async (req: { method: string; url: string|URL; headers: { get: (arg0:
 
   const src = await original(asset.address)
   if (!src) return err('NotFound', 'The original could not be read.', 404)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Uint8Array<ArrayBufferLike> | null' is not assignable to parameter of type 'BodyInit | null | undefined'. Type 'Uint8Array
   if (!wantsWork) return new Response(req.method === 'HEAD' ? null : src.bytes, { status: 200, headers: headers(etag, src.type || asset.mime || 'application/octet-stream', src.bytes.byteLength) })
 
   await ready
@@ -104,9 +103,9 @@ Deno.serve(async (req: { method: string; url: string|URL; headers: { get: (arg0:
   else if (w || h) { const s = Math.min(tw / W, th / H, 1); img = scaled(Math.round(W * s), Math.round(H * s)) }
   if (r) img = rounded(img, r === 'max' ? Math.min(img.get_width(), img.get_height()) / 2 : r)
   if (outFormat === 'jpg' && bg) img = flatten(img, rgba(bg.slice(4)))
-  const out: Uint8Array = outFormat === 'jpg' ? img.get_bytes_jpeg(qual ?? 80) : outFormat === 'webp' ? img.get_bytes_webp() : img.get_bytes()
+  /* photon hands back a copy out of its own memory: a plain ArrayBuffer underneath */
+  const out = (outFormat === 'jpg' ? img.get_bytes_jpeg(qual ?? 80) : outFormat === 'webp' ? img.get_bytes_webp() : img.get_bytes()) as Uint8Array<ArrayBuffer>
   admin.storage.from(BUCKET).upload(cacheKey, out, { contentType: mime, upsert: true }).then(() => {}, () => {})
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Uint8Array<ArrayBufferLike> | null' is not assignable to parameter of type 'BodyInit | null | undefined'. Type 'Uint8Array
   return new Response(req.method === 'HEAD' ? null : out, { status: 200, headers: headers(etag, mime, out.byteLength) })
 })
 

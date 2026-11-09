@@ -368,11 +368,11 @@ Deno.serve(async (req: Request) => {
         const raw = await fetch(at)
         if (!raw.ok) throw new Error(`HTTP ${raw.status}`)
         pictureHash = pictureId(new Uint8Array(await raw.arrayBuffer()))
-        pictureBytes = await sizePicture(at, { driver: 'storage', height: MAX_HEIGHT })
+        const sized: Uint8Array = await sizePicture(at, { driver: 'storage', height: MAX_HEIGHT })
+        pictureBytes = sized
         /* named by what the bytes ARE: Storage's transform keeps the original's format (a machine's sharp makes PNG),
            and a WebP saved as .png was read by the typesetter as a PNG and refused */
-        // @ts-expect-error TS2345, from the conversion: Argument of type 'Uint8Array<ArrayBufferLike> | null' is not assignable to parameter of type 'Uint8Array<ArrayBufferLike>'. Type 'null' is n
-        picture = '/picture.' + kindOf(pictureBytes).ext
+        picture = '/picture.' + kindOf(sized).ext
       } catch (e) { notes.push(`the paperback's picture could not be read — ${(e as Error).message}`) }
     }
 

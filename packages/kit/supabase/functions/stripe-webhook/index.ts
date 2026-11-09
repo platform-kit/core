@@ -98,8 +98,8 @@ async function handle(event: PaymentProviderEvent, provider: PaymentProviderAdap
         meteredLine?.metadata ?? {},
       )
       if (usageGrant) await grantUsage(
-        // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type '"subscription" | "purchase"'.
-        usageGrant.user_id, usageGrant.offer_key, usageGrant.source, usageGrant.source_id,
+        /* the row's source is one the grant itself wrote: a purchase or a subscription */
+        usageGrant.user_id, usageGrant.offer_key, usageGrant.source as 'purchase' | 'subscription', usageGrant.source_id,
         usageGrant.units_micros, usageGrant.period_start, usageGrant.expires_at,
         usageGrant, provider.id,
       )
@@ -196,7 +196,6 @@ Deno.serve(async (req: Request) => {
   let provider: PaymentProviderAdapter
   let events: readonly PaymentProviderEvent[]
   try {
-    // @ts-expect-error TS2322, from the conversion: Type 'PaymentProviderAdapter | null' is not assignable to type 'PaymentProviderAdapter'. Type 'null' is not assignable to type 'PaymentProvi
     provider = await getPaymentProvider()
     events = (await provider.verifyWebhook(req)).map((event) => normalizePaymentEvent(provider.id, event))
   } catch (error: any) {
