@@ -26,7 +26,7 @@ const emit = defineEmits(['open', 'back', 'edit'])
 const T = us('analytics')
 const H = T.page.head
 const FW = T.funnels ? T.funnels.ui : {}
-const wn = (key: any, n: any, m: any) => String(FW[key] || '').replace('{n}', n).replace('{m}', m == null ? '' : m)
+const wn = (key: any, n: any, m?: any) => String(FW[key] || '').replace('{n}', n).replace('{m}', m == null ? '' : m)
 /* the funnels' shape: names, steps, goals, audiences — the database knows the log alone */
 const INDEX: any = Object.values(import.meta.glob('#content/funnels-index.json', { eager: true, import: 'default' }))[0] || { funnels: [], blasts: [] }
 const FUNNELS = INDEX.funnels || [], BLASTS = INDEX.blasts || []
@@ -70,15 +70,13 @@ const pct = (a: any, b: any) => (b ? Math.round((a / b) * 100) : 0)
 const money = (n: any, c: any) => new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase(), maximumFractionDigits: 0 }).format((n || 0) / 100)
 const delta = (now: any, before: any) => { if (!before) return null; const d = Math.round(((now - before) / before) * 100); return { dir: d > 0 ? 'up' : d < 0 ? 'down' : 'flat', text: (d > 0 ? '+' : '') + d + '%' } }
 const dayKey = (d: any) => String(d || '').slice(0, 10)
-// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t.getTime()) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
 const when = (d: any) => { if (!d) return FW['last-none']; const t = new Date(d); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' + t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) }
 const dateOnly = (d: any) => { if (!d) return ''; const t = new Date(d); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
 const rangeLabel = computed(() => H.range.replace('{days}', days.value))
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 const pathOf = (u: any) => { try { const x: any = new URL(u); return x.pathname + x.search } catch (e) { return u } }
 const choiceWords = (c: any) => c.text || (String(c.choice || '') as any).split('/').pop().replace(/-/g, ' ')
-// @ts-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2.
 const stepsWord = (n: any) => (n === 1 ? FW['steps-one'] : wn('steps', n))
 
 /* ---- the index ---- */
@@ -251,7 +249,7 @@ const hourLabel = (h: any) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
                 <template v-if="s.chat">
                   <div class="an-jstep an-jchat">
                     <div class="an-jhead">
-                      <span class="an-stepn"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ wn('step', s.n) }} · {{ FW.chat }}</span>
+                      <span class="an-stepn">{{ wn('step', s.n) }} · {{ FW.chat }}</span>
                       <span class="an-stepq">{{ s.title }}</span>
                       <span v-if="s.text" class="an-jtext">{{ s.text }}</span>
                     </div>
@@ -270,7 +268,7 @@ const hourLabel = (h: any) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
                 <template v-else>
                   <div class="an-jstep">
                     <div class="an-jhead">
-                      <span class="an-stepn"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ wn('step', s.n) }} · {{ FW.email }}</span>
+                      <span class="an-stepn">{{ wn('step', s.n) }} · {{ FW.email }}</span>
                       <span class="an-stepq">{{ stepLabel(s) }}</span>
                     </div>
                     <div class="an-jrow"><div class="an-jbar"><span class="an-jfill" :style="{ width: s.width + '%' }" /></div><span class="an-jsent"><b>{{ num(s.g.sent) }}</b> {{ FW.reached.toLowerCase() }}<i v-if="s.ofPrev !== null"> · {{ s.ofPrev }}% {{ FW['of-previous'] }}</i></span></div>
@@ -377,7 +375,7 @@ const hourLabel = (h: any) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
         <div v-else class="an-grid2">
           <button v-for="b in cards.blasts" :key="b.kind + b.name" type="button" class="an-card an-formcard an-fcard" @click="emit('open', { kind: 'blast', name: b.name })">
             <span class="an-formtitle">{{ b.title }} <span class="an-pill" :class="b.published ? 'on' : 'off'">{{ FW['kind-blast'] }}</span></span>
-            <span class="an-fmeta"><!-- @vue-expect-error TS2554, from the conversion: Expected 3 arguments, but got 2. -->{{ b.last ? wn('sent-on', '').replace('{when}', dateOnly(b.last)) : FW['none-blast'] }}</span>
+            <span class="an-fmeta">{{ b.last ? wn('sent-on', '').replace('{when}', dateOnly(b.last)) : FW['none-blast'] }}</span>
             <span class="an-formnums an-fnums">
               <span><i>{{ FW.sent }}</i><b>{{ num(b.sent) }}</b></span>
               <span><i>{{ FW.opened }}</i><b>{{ rate(b, 'opened') }}%</b></span>

@@ -7,7 +7,7 @@
 
 export function initLanding() {
   var CLEAN: any = []
-  var on = function (t: any, ev: any, fn: any, opt: any) { t.addEventListener(ev, fn, opt); CLEAN.push(function () { t.removeEventListener(ev, fn, opt) }) }
+  var on = function (t: any, ev: any, fn: any, opt?: any) { t.addEventListener(ev, fn, opt); CLEAN.push(function () { t.removeEventListener(ev, fn, opt) }) }
   var obs = function (o: any) { CLEAN.push(function () { o.disconnect() }); return o }
 
 var RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -25,7 +25,7 @@ function svg(vb: any){var s=el('svg',{viewBox:vb});return s;}
 /* the marquee's words are LandingMarquee's props now; it fills the band itself */
 
 /* ---------- chart wheel ---------- */
-function wheel(node: any,size: any){
+function wheel(node: any,size?: any){
   if(!node) return;
   var s=svg('0 0 200 200'), c=100, R=92, R2=72, R3=52;
   var g=el('g',{});
@@ -63,7 +63,6 @@ function wheel(node: any,size: any){
   s.appendChild(pg);
   node.appendChild(s);
 }
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 wheel(document.getElementById('lpwheelArt'));
 
 /* refusal / cross art */
@@ -234,9 +233,7 @@ laneArt('lpartConnect',function(s: any){
     tip.style.top='6px';
   }
   function hide(){ cross.style.opacity='0'; hd.setAttribute('opacity','0'); tip.style.opacity='0'; }
-  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   on(hit,'pointermove',show);
-  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   on(hit,'pointerleave',hide);
 
   /* draw-in on scroll */
@@ -343,7 +340,6 @@ if(revs.length&&!RM){
 
 /* ---------- pointer glow on area cards ---------- */
 document.querySelectorAll('#lpareas .lparea').forEach(function(c: any){
-  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
   on(c,'pointermove',function(ev: any){
     var r=c.getBoundingClientRect();
     c.style.setProperty('--mx',(ev.clientX-r.left)+'px');

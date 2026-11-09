@@ -29,7 +29,8 @@ const glyph = (label: any) => z.string().describe(label).default('spark')
 
 /* the hero's visual: the kit's kinds, then the site's stages (landing.stages), each a component the hero mounts with `stage` as its props */
 const STAGE_KEYS = Object.keys(STAGE_SCHEMAS || {})
-const VISUAL_KINDS = ['none', 'image', 'video', 'frame', 'phone', 'laptop', ...STAGE_KEYS]
+/* zod's enum wants at least one member, which this always has */
+const VISUAL_KINDS = ['none', 'image', 'video', 'frame', 'phone', 'laptop', ...STAGE_KEYS] as [string, ...string[]]
 
 /* the forms by slug, for the Form section's choice; with none (or the module off) the section is not offered */
 const FORM_SLUGS = (FORMS || []).map((f: any) => f.slug)
@@ -91,7 +92,6 @@ export const SECTION_SCHEMAS: any = {
       href2: opt('Second button link'),
       fine: opt('Fine print'),
       visual: z.object({
-        // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(values: readonly [string, ...string[]], params?: RawCreateParams): ZodEnum<[string, ...str
         kind: z.enum(VISUAL_KINDS).describe('What stands beside the words'),
         image: opt('Picture (for an image or a frame)'),
         alt: opt('What the picture shows, for a screen reader'),
@@ -684,8 +684,7 @@ export const SECTION_KEYS = Object.keys(SECTION_SCHEMAS)
 /* a page's sections against the schemas: [{ path, message }], empty when fine.
    Used by the admin server on save — the same schema that drew the form. */
 /* `key:` with nothing after it is null in YAML; the forms and the components treat it as blank */
-// @ts-expect-error TS7023, from the conversion: 'blankNulls' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in 
-const blankNulls = (v: any) => (v === null ? undefined : Array.isArray(v) ? v.map(blankNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, blankNulls(x)])) : v)
+const blankNulls = (v: any): any => (v === null ? undefined : Array.isArray(v) ? v.map(blankNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, blankNulls(x)])) : v)
 
 /* the schema a section's conditional sub-record is drawn from for these props (the stage the hero's visual names), or null */
 export function subSchema(def: any, props: any) {

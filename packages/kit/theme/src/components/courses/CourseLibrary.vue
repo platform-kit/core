@@ -87,8 +87,7 @@ const list = ref<any>([]), loading = ref(true)
 
 watch(() => (user.value ? user.value.id : null), async () => {
   loading.value = true
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
-  try { list.value = (await rpc('courses_list')) || [] } catch (e) { console.warn('courses:', e.message || e) }
+  try { list.value = (await rpc('courses_list')) || [] } catch (e) { console.warn('courses:', (e as any).message || e) }
   loading.value = false
 }, { immediate: true })
 setHead({ title: L.value.title })

@@ -67,7 +67,7 @@ function report() {
 }
 watch(current, report, { immediate: true })
 
-function onAnswer(value: any, extra: any) {
+function onAnswer(value: any, extra?: any) {
   const s = current.value
   const ex = Object.assign({}, extra || {}, { ms: Date.now() - shownAt })
   answers.push({ id: s.id, value, extra: ex, meta: s.meta || null })
@@ -93,7 +93,6 @@ function key(n: number) {
   const s = current.value
   if (!s || !s.options || !s.options[n - 1]) return
   if (s.kind === 'pick') return   /* the pick screen takes its own keys: "other" opens a line, not an answer */
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   onAnswer(s.options[n - 1].v)
 }
 

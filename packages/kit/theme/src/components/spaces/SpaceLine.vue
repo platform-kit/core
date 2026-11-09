@@ -88,8 +88,7 @@ const who = computed(() => botName.value || props.names[props.message.author_id]
 const mine = computed(() => props.message.author_id === props.me)
 const when = computed(() => {
   const d = new Date(props.message.created_at)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  return isNaN(d) ? '' : d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+  return isNaN(d.getTime()) ? '' : d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 })
 const ago = computed(() => {
   const v = props.message.last_reply_at

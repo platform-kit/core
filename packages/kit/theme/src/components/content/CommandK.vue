@@ -11,7 +11,7 @@ import { ROUTES } from 'platformkit/lib/router.js'
    the social layout's sidebar used to hold, kept where search already is */
 const PEOPLE = moduleOn('network')
 // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const esc = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 async function peopleHits(text: any) {
   if (!PEOPLE || !isSignedIn.value || !text.trim() || kind.value) return []
   const { findPeople, net } = await import('platformkit/lib/network/api.js')
@@ -118,7 +118,7 @@ const grouped = computed(() => {
   return g
 })
 
-async function show(preset: any) {
+async function show(preset?: any) {
   open.value = true
   /* opened with a scope (e.g. from the wiki/docs search field): reset to a clean
      search narrowed to that kind */
@@ -135,7 +135,6 @@ function hide() { open.value = false; q.value = '' }
 function go(h: any) { hide(); navigate(h.href) }
 
 function onKey(e: any) {
-  // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); open.value ? hide() : show(); return }
   if (!open.value) return
   if (e.key === 'Escape') { hide() }

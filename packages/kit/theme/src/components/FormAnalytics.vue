@@ -47,8 +47,7 @@ const num = (n: any) => new Intl.NumberFormat().format(Math.round(n || 0))
 const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0)
 const secs = (s: number) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
 const dayKey = (d: any) => String(d || '').slice(0, 10)
-// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const day = (d) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t.getTime()) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
 const when = (d: string|number|Date) => { if (!d) return FM['last-none']; const t = new Date(d); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' + t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) }
 const rangeLabel = computed(() => H.range.replace('{days}', days.value))
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
@@ -63,8 +62,7 @@ const isScale = (k: string) => ['rating', 'scale', 'number'].includes(k)
 /* ---- the index: every form the window saw, and every published form that saw nothing ---- */
 const index = computed(() => {
   const seen = stats.value || []
-  // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-  const rows = seen.map((s) => ({ ...s, title: formTitle(s.form) }))
+  const rows = seen.map((s: any) => ({ ...s, title: formTitle(s.form) }))
   for (const f of FORMS || []) if (!seen.some((s: { form: any }) => s.form === f.slug)) rows.push({ form: f.slug, title: f.title, started: 0, finished: 0, completion: 0, last_at: null, series: [] })
   return rows
 })
@@ -91,8 +89,7 @@ const sparkPath = (key: string|number) => { const rows = series.value; if (rows.
 const overTimeOption = computed(() => {
   void chartKey.value; void chartKind.value
   const b = base(), t = tokens()
-  const line = (name: any, key: string, color: string, area: boolean|undefined) => timeSeries({ name, color, area, data: series.value.map((r) => (r as any)[key]) })
-  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
+  const line = (name: any, key: string, color: string, area?: boolean|undefined) => timeSeries({ name, color, area, data: series.value.map((r) => (r as any)[key]) })
   return { ...b, xAxis: timeAxis({ ...b.xAxis, data: series.value.map((r) => day(r.day)) }), yAxis: { ...b.yAxis, minInterval: 1 }, series: [line(FM.started, 'started', t.accent, true), line(FM.finished, 'finished', PALETTE[1])] }
 })
 /* the steps: each body slide by its number, named by its questions; reached from the answers' slides, the first step

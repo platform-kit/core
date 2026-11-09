@@ -34,7 +34,7 @@ const A = computed(() => arrange(preview ? (preview as any).value : null))
 const hero = computed(() => A.value.hero)
 /* the title, with one *word* in italic: the markdown's asterisks, nothing else */
 // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const esc = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 const heroTitle = computed(() => esc(hero.value.title).replace(/\*([^*]+)\*/g, '<em>$1</em>'))
 /* the row under the buttons: the price the shelf starts at, what comes with a copy, where it ships */
 const HR = T.home.hero || {}
@@ -49,14 +49,13 @@ const checkoutSuccessSubtitle = computed(() => checkoutMode.value === 'payment'
 const busy = ref(false)
 const error = ref('')
 const errorCode = ref('')
-async function run(fn: any, evt: any) {
+async function run(fn: any, evt?: any) {
   if (!isSignedIn.value) { if ((window as any).DLauth) (window as any).DLauth.open(); return }
   busy.value = true; error.value = ''; errorCode.value = ''
   if (evt) capture('click', evt)
   try { await fn() } catch (e) { error.value = (e && (e as any).message) || HD['error-heading']; errorCode.value = (e && (e as any).code) || '' } finally { busy.value = false }
 }
 const join = (m: any) => run(() => subscribe(m.sku), { kind: 'subscribe', product_id: m.sku })
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 const manage = () => run(() => openPortal())
 const perText = (p: any) => (p.recurring ? ' ' + (S['per-' + (p.interval || 'month')] || '') : '')
 const shelf = (c: any) => c.items.slice(0, 12)

@@ -26,8 +26,7 @@ watch(() => props.user, async (id) => {
 
 const when = (v: string|number|Date) => {
   const d = new Date(v)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }
 </script>
 

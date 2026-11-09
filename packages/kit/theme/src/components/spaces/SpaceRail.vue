@@ -45,9 +45,8 @@ const shut = ref<any>({})
 
 const rowOf = (id: any) => props.unread.find((r) => r.channel === id) || null
 const joined = (id: any) => !!rowOf(id)
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
-const titleOf = (c) => (c.kind === 'dm' ? dmTitle(props.members[c.id] || [], props.names, props.me, { self: W.value.self, more: W.value.more, someone: W.value.someone }) : c.name)
-// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
+const titleOf = (c: any) => (c.kind === 'dm' ? dmTitle(props.members[c.id] || [], props.names, props.me, { self: W.value.self, more: W.value.more, someone: W.value.someone }) : c.name)
+// @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'.
 const sections = computed(() => railSections(props.channels, props.unread, props.space ? props.space.id : null, (props.space && props.space.groups) || []))
 /* The rail's runs, in the order they are drawn: the headings the space's own file declares (each
    with the rooms that name it), then what this person starred, then whatever sits under no heading,

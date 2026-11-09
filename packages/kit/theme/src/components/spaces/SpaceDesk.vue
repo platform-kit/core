@@ -236,8 +236,7 @@ const placeholder = computed(() => (thread.row ? (W.value.placeholder || '').rep
 
 const when = (v: any) => {
   const d = new Date(v)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  if (isNaN(d)) return ''
+  if (isNaN(d.getTime())) return ''
   const mins = Math.max(1, Math.round((now.value - d.getTime()) / 60000))
   if (mins < 60) return mins + 'm'
   const hrs = Math.round(mins / 60)
@@ -412,7 +411,7 @@ onBeforeUnmount(() => { clearInterval(tick); stop(); closeRow() })
               <p v-if="m.body && m.kind !== 'text'" class="sd-body sd-caption"><MessageText :blocks="saidIn(m)" /></p>
               <p v-else-if="m.kind === 'text' || !m.kind" class="sd-body"><MessageText :blocks="saidIn(m)" /></p>
             </template>
-            <time :datetime="m.created_at"><!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clock(m.created_at) }}</time>
+            <time :datetime="m.created_at">{{ clock(m.created_at) }}</time>
           </div>
         </div>
         <p v-if="thread.row.resolved" class="sd-closed">{{ W['closed-note'] }}</p>

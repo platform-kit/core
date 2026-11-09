@@ -59,8 +59,7 @@ const faceOf = (id: any) => props.names[id] || P.value.someone
    week is a date, because by then the exact hour has stopped mattering. */
 function ago(v: any) {
   const d = new Date(v)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  if (isNaN(d)) return ''
+  if (isNaN(d.getTime())) return ''
   const s = Math.max(0, (Date.now() - d.getTime()) / 1000)
   if (s < 60) return W.value['just-now']
   if (s < 3600) return Math.floor(s / 60) + 'm'

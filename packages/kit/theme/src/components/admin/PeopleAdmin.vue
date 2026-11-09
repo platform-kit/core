@@ -108,8 +108,7 @@ const marks = (row: any) => [
   ...(row.customer ? [{ k: 'customer', w: W.value['is-customer'] }] : []),
   ...(row.verified === false ? [{ k: 'unconfirmed', w: W.value['is-unconfirmed'] }] : []),
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const when = (v: any) => { const d = new Date(v); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
+const when = (v: any) => { const d = new Date(v); return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
 const money = (a: any, c: any) => (a == null ? '' : new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase() }).format(Number(a) / 100))
 /* the processor's own page for this customer — the site keeps the id and nothing else */
 const invoicesAt = computed(() => (person.value && person.value.billing_id

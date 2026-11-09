@@ -55,7 +55,7 @@ export function identityOf({ signedIn = false, entitlements = null, role = '', r
 }
 
 /* the subject an entry is, for a rule to match: its own bar on the ladder, as a class name */
-export function entrySubject(entry: any, identity: any) {
+export function entrySubject(entry: any, identity?: any) {
   const owned = entry && entry.kind === 'books' && identity && identity.products.includes(entry.slug)
   return {
     __caslSubjectType__: 'Entry',

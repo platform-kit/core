@@ -37,7 +37,7 @@ const when = (d: any) => { try { return new Intl.DateTimeFormat(undefined, { day
 const forever = (d: any) => !d || new Date(d).getTime() > Date.now() + 100 * 365 * 864e5
 const TYPES = computed(() => (SESSIONS || []).filter((s: any) => s.published !== false).map((s: any) => s.slug))
 
-async function call(action: any, body: any) {
+async function call(action: any, body?: any) {
   const { data, error: e } = await (supabase as any).functions.invoke('payouts', { body: { action, ...(body || {}) } })
   if (e) throw e
   if (data && data.error) throw new Error(data.error)
@@ -45,7 +45,6 @@ async function call(action: any, body: any) {
 }
 async function load() {
   loading.value = true; error.value = ''
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   try { const r = await call('due'); due.value = r.due || []; live.value = !!r.live }
   catch (e) { error.value = (e as any).message || W.value.error } finally { loading.value = false }
 }
@@ -54,7 +53,6 @@ onMounted(load)
 async function sweep() {
   busy.value = 'sweep'; error.value = ''; note.value = ''
   try {
-    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     const r = await call('sweep')
     note.value = !r.written ? W.value['swept-none'] : r.written === 1 ? W.value['swept-one'] : fill(W.value.swept, { n: r.written })
     await load()
@@ -63,7 +61,6 @@ async function sweep() {
 }
 async function sendAll() {
   busy.value = 'send'; error.value = ''; note.value = ''
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   try { const r = await call('send'); note.value = r.sent === 1 ? W.value['sent-one'] : fill(W.value.sent, { n: r.sent || 0 }); await load() }
   catch (e) { error.value = (e as any).message || W.value.error } finally { busy.value = '' }
 }
@@ -72,7 +69,7 @@ async function sendOne(d: any) {
   try { const r = await call('send', { user: d.user_id }); note.value = r.sent ? fill(W.value.sent, { n: 1 }) : (r.reason || ''); await load() }
   catch (e) { error.value = (e as any).message || W.value.error } finally { busy.value = '' }
 }
-async function openPerson(id: any, keep: any) {
+async function openPerson(id: any, keep?: any) {
   if (!keep && openId.value === id) { openId.value = ''; person.value = null; return }
   openId.value = id; person.value = null; editing.value = false
   try { person.value = await call('status', { user: id }) } catch (e) { error.value = (e as any).message || W.value.error }
@@ -145,7 +142,7 @@ const ruleWords = (r: any) => {
           <!-- what stands in the way, in words -->
           <span v-if="d.why" class="pa-why">{{ d.why }}</span>
           <span class="pa-row-acts">
-            <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. --><button type="button" class="pa-act" @click="openPerson(d.user_id)">{{ openId === d.user_id ? W.close : W.open }}</button>
+            <button type="button" class="pa-act" @click="openPerson(d.user_id)">{{ openId === d.user_id ? W.close : W.open }}</button>
             <button type="button" class="pa-act pa-go" :disabled="!d.sendable || busy === d.user_id" @click="sendOne(d)">{{ W['send-one'] }}</button>
           </span>
         </div>

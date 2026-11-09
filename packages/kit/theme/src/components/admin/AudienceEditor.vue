@@ -55,8 +55,7 @@ function drop(key: any) { added.value = added.value.filter((k: any) => k !== key
 
 /* the choices */
 const TIERS = [...new Map(PRODUCTS.filter((p: any) => p.kind === 'membership' && p.tier).map((p: any) => [p.tier, p.title])).entries()]
-// @ts-expect-error TS2488, from the conversion: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
-const AREAS = DOMAINS.map(([k, name]) => [k, name])
+const AREAS = DOMAINS.map(([k, name]: any) => [k, name])
 const LVLS = Object.entries(LEVELS).map(([k, l]) => [k, (l as any).name])
 const BOOKLIST = BOOKS.map((b: any) => [b.slug, b.title])
 const CHARGES = [['clear', 'nothing stirred'], ...CHS.map((c: any) => [(c as any).k, (c as any).label])]

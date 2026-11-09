@@ -42,7 +42,7 @@ const summary = computed(() => {
   return [money(bal.value.payable) + ' ' + String(E.payable || '').toLowerCase(), bal.value.waiting ? money(bal.value.waiting) + ' ' + String(E.waiting || '').toLowerCase() : ''].filter(Boolean).join(' · ')
 })
 
-async function call(action: any, body: any) {
+async function call(action: any, body?: any) {
   const { data, error: e } = await (supabase as any).functions.invoke('payouts', { body: { action, ...(body || {}) } })
   if (e) throw e
   if (data && data.error) throw new Error(data.error)
@@ -51,7 +51,6 @@ async function call(action: any, body: any) {
 async function load() {
   if (!configured || !user.value) { loading.value = false; return }
   loading.value = true; error.value = ''
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   try { state.value = await call('status') } catch (e) { error.value = (e as any).message || E.error } finally { loading.value = false }
 }
 onMounted(load)
@@ -60,7 +59,6 @@ defineExpose({ reload: load })
 async function connect() {
   busy.value = 'connect'; error.value = ''
   try {
-    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     const r = await call('connect')
     if (r && r.url) { window.location.href = r.url; return }
     await load()
@@ -68,7 +66,6 @@ async function connect() {
 }
 async function refresh() {
   busy.value = 'refresh'; error.value = ''
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   try { await call('refresh'); await load() } catch (e) { error.value = (e as any).message || E.error } finally { busy.value = '' }
 }
 </script>

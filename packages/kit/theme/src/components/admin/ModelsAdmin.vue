@@ -72,7 +72,7 @@ const columnDefs = computed(() => [
       <p v-if="loading" class="ui-muted">…</p>
       <div v-else-if="!models.length" class="ui-empty"><p>{{ W.empty }}</p><button type="button" class="ui-btn ui-primary" @click="emit('open', '__new')">{{ W.new }}</button></div>
       <div v-else class="ma-grid">
-        <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: any; field: string; pinned: string; flex: number; minWidth: number; cellRenderer: (q: any) => string; width?: undefined --><AgGridVue class="ma-aggrid" :theme="theme" :row-data="models" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
+        <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: any; field: string; pinned: string; flex: number; minWidth: number; cellRenderer: (q: { value: any; data: { core: any;  --><AgGridVue class="ma-aggrid" :theme="theme" :row-data="models" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
                    :row-height="54" :suppress-cell-focus="true" @row-clicked="emit('open', $event.data.key)" />
       </div>
     </template>

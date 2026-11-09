@@ -47,7 +47,6 @@ const a = computed(() =>
 /* ASKED, NOT DECIDED: the entry carries its own bar and the ability answers (lib/permissions.js).
    The answer is the ladder's — permissions.test.mjs pins the two together — and a site that narrows
    what may be read narrows this with it. */
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 const allowed = computed(() => can('read', entrySubject({ kind: 'articles', slug: a.value && a.value.slug, canAccess: a.value && a.value.data.canAccess })))
 /* a gated article ships without its body (_shared/gate.js); a reader who may read it is sent it by reader-content */
 const GW = us('library').reader.gated || {}

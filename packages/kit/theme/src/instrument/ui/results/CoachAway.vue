@@ -12,8 +12,7 @@ const open = ref(false), loading = ref(true), saving = ref(false), error = ref('
 const rows = ref<any>([]), covers = ref<any>([])
 const draft = ref({ from: '', to: '', reason: '', cover: '' })
 const today = new Date().toISOString().slice(0, 10)
-// @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
-const nameOf = (id) => (covers.value.find((c) => c.id === id) || {}).name || ''
+const nameOf = (id: any) => (covers.value.find((c: any) => c.id === id) || {}).name || ''
 const dayLabel = (d: string) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d + 'T12:00:00')) } catch (e) { return d } }
 async function load() {
   loading.value = true

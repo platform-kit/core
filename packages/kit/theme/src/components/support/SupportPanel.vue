@@ -370,10 +370,10 @@ const at = (c: any) => whenOf(c.last_message_at || c.created_at, Date.now(), { y
       <p v-if="thread.loading && !thread.messages.length" class="sp-note">{{ P.loading }}</p>
       <TransitionGroup name="sp-line" tag="div" class="sp-lines" appear>
         <template v-for="(l, i) in lines" :key="l.key">
-          <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'number'. --><div v-if="l.day" class="sp-day" :style="{ '--i': Math.min(i, 12) }"><span>{{ l.day }}</span></div>
-          <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'number'. --><a v-else-if="l.m.author === 'system' && l.m.kind === 'file'" class="sp-sysimg" :style="{ '--i': Math.min(i, 12) }" :href="l.m.url" target="_blank" rel="noopener"><img :src="l.m.url" alt="" loading="lazy" /></a>
-          <!-- @vue-expect-error TS2365, from the conversion: Operator '>' cannot be applied to types 'string | number' and 'number'. --><div v-else-if="l.m.author === 'system'" class="sp-sys" :class="{ 'sp-ack': i > 0 && lines[i - 1].m && lines[i - 1].m.author === 'contact' }" :style="{ '--i': Math.min(i, 12) }"><!-- @vue-expect-error TS2365, from the conversion: Operator '>' cannot be applied to types 'string | number' and 'number'. --><small v-if="!(i > 0 && lines[i - 1].m && lines[i - 1].m.author === 'contact')">{{ P['prompt-label'] }}</small><p>{{ l.m.body }}</p></div>
-          <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'number'. --><div v-else class="sp-linewrap" :class="{ own: l.m.author === 'contact' }" :style="{ '--i': Math.min(i, 12) }">
+          <div v-if="l.day" class="sp-day" :style="{ '--i': Math.min(i, 12) }"><span>{{ l.day }}</span></div>
+          <a v-else-if="l.m.author === 'system' && l.m.kind === 'file'" class="sp-sysimg" :style="{ '--i': Math.min(i, 12) }" :href="l.m.url" target="_blank" rel="noopener"><img :src="l.m.url" alt="" loading="lazy" /></a>
+          <div v-else-if="l.m.author === 'system'" class="sp-sys" :class="{ 'sp-ack': i > 0 && lines[i - 1].m && lines[i - 1].m.author === 'contact' }" :style="{ '--i': Math.min(i, 12) }"><small v-if="!(i > 0 && lines[i - 1].m && lines[i - 1].m.author === 'contact')">{{ P['prompt-label'] }}</small><p>{{ l.m.body }}</p></div>
+          <div v-else class="sp-linewrap" :class="{ own: l.m.author === 'contact' }" :style="{ '--i': Math.min(i, 12) }">
             <small v-if="l.m.author === 'agent' && l.m.first" class="sp-who">{{ l.m.bot ? A.by : (l.m.agent_name || P.team) }}</small>
             <ChatBubble :message="l.m" :me="ME" :peer-read-at="agentReadAt" :actions="['remove']" @remove="takeBack(l.m.id)" />
             <ChatChoices :choices="l.m.choices || []" :live="l.m.id === liveOffer" :taken="l.m.choice_key || ''" :busy="busy" @choose="(c) => choose(l.m, c)" />

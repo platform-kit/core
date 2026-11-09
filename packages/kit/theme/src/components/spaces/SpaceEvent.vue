@@ -108,7 +108,7 @@ async function going(state: string|undefined) {
       <dl class="se-facts">
         <div v-if="next">
           <dt>{{ W.when }}</dt>
-          <dd><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(next.starts_at, now, dayWords) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clockOf(next.starts_at) }}</dd>
+          <dd>{{ whenWord(next.starts_at, now, dayWords) }} · {{ clockOf(next.starts_at) }}</dd>
         </div>
         <div v-if="place.kind">
           <dt>{{ W.where }}</dt>

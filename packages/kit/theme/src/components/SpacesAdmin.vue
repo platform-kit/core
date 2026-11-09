@@ -81,7 +81,7 @@ const offers = computed(() => products.filter((p: any) => p.sku).map((p: any) =>
 const bookables = computed(() => (sessions || []).filter((s: any) => s.published !== false).map((s: any) => ({ slug: s.slug, title: s.title || s.slug })))
 
 const say = (m: any) => { note.value = m; setTimeout(() => { if (note.value === m) note.value = '' }, 2600) }
-async function run(fn: any, done: any) {
+async function run(fn: any, done?: any) {
   busy.value = true; err.value = ''
   try { await fn(); if (done) say(done) } catch (e) { err.value = (e as any).message || String(e) } finally { busy.value = false }
 }
@@ -96,8 +96,7 @@ async function openSpace(name: any) {
   if (!name) { doc.value = null; rooms.value = []; return }
   doc.value = await pipe.read('spaces', name)
   const mine = files.value.filter((f: any) => f.kind === 'channel' && f.space === name)
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'.
-  rooms.value = await Promise.all(mine.map((f) => pipe.read('spaces', f.name)))
+  rooms.value = await Promise.all(mine.map((f: any) => pipe.read('spaces', f.name)))
   rooms.value.sort((a: any, b: any) => ((a.data.order ?? 99) - (b.data.order ?? 99)) || a.name.localeCompare(b.name))
   dirty.value = false
 }
@@ -154,9 +153,7 @@ async function loadAll() {
   await openSpace(slug.value)
   await Promise.all([loadMembers(), loadSaid()])
 }
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 onMounted(() => run(loadAll))
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 watch(slug, async (s) => { await run(async () => { await openSpace(s); await Promise.all([loadMembers(), loadSaid()]) }) })
 
 /* ------------------------------------------------------------------ the declaration */
@@ -396,7 +393,6 @@ const givable = computed(() => dbRoles.value.filter((r: any) => r.slug !== 'memb
 const holds = (m: any, role: any) => (held.value[m.user_id] || []).includes(role.id)
 async function toggleRole(m: any, role: any) {
   if (role.slug === 'member') return
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   await run(async () => {
     const q = holds(m, role)
       ? (supabase as any).from('space_member_roles').delete().eq('space_id', m.space_id).eq('user_id', m.user_id).eq('role_id', role.id)
@@ -426,8 +422,7 @@ async function withdraw(m: any) {
     await loadSaid()
   }, W.value.withdrawn)
 }
-// @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
-const roomName = (id) => (dbChannels.value.find((c) => c.id === id) || {}).name || ''
+const roomName = (id: any) => (dbChannels.value.find((c: any) => c.id === id) || {}).name || ''
 
 /* ------------------------------------------------------------------ voice */
 
@@ -472,13 +467,11 @@ function grantSays(g: any) {
   const w = W.value
   const cap = w['cap-' + g.capability] || g.capability
   const where = g.channel_id ? (w['says-channel'] || '').replace('{name}', roomName(g.channel_id) || '—')
-    // @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
-    : g.space_id ? (w['says-space'] || '').replace('{name}', (rows.value.find((s) => s.id === g.space_id) || {}).name || '—')
+    : g.space_id ? (w['says-space'] || '').replace('{name}', (rows.value.find((s: any) => s.id === g.space_id) || {}).name || '—')
       : w['says-site']
   const who = g.scope === 'user' ? (w['says-user'] || '').replace('{name}', nameOf(g.user_id))
     : g.scope === 'tier' ? (w['says-tier'] || '').replace('{tier}', g.tier)
-      // @ts-expect-error TS2339, from the conversion: Property 'name' does not exist on type '{}'.
-      : g.scope === 'role' ? (w['says-role'] || '').replace('{name}', (dbRoles.value.find((r) => r.id === g.role_id) || {}).name || '—')
+      : g.scope === 'role' ? (w['says-role'] || '').replace('{name}', (dbRoles.value.find((r: any) => r.id === g.role_id) || {}).name || '—')
         : g.scope === 'product' ? (g.days
           ? (w['says-product-days'] || '').replace('{name}', (offers.value.find((o: any) => o.key === g.product_key) || {}).title || g.product_key).replace('{n}', g.days)
           : (w['says-product'] || '').replace('{name}', (offers.value.find((o: any) => o.key === g.product_key) || {}).title || g.product_key))

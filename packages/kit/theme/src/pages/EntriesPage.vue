@@ -47,7 +47,6 @@ const summaryOf = (m: any, e: { [x: string]: any }) => { const f = summaryField(
 const dateField = (m: { fields: any[] }) => m.fields.find((f: { kind: string }) => f.kind === 'date' || f.kind === 'datetime')
 const imageField = (m: { fields: any[] }) => m.fields.find((f: { kind: string }) => f.kind === 'image')
 /* a model's own bar, asked of the ability */
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 const allowed = computed(() => !model.value || can('read', entrySubject({ kind: 'entries', slug: model.value.key, canAccess: model.value.access })))
 /* a reference: the other model's entry, and its page when that model has pages */
 const refOf = (f: { model: any }, slug: any) => { const m = MODELS.find((x: { key: any }) => x.key === f.model); const e = m && listOf(m.key).find((x) => x.slug === slug); return { title: e ? titleOf(m, e) : slug, href: m && e && m.deliver && m.deliver.pages ? `${ROUTES.entries}/${m.key}/${e.slug}` : null } }

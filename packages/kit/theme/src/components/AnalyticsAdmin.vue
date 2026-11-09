@@ -122,8 +122,7 @@ const secs = (s: any) => (s >= 60 ? Math.floor(s / 60) + 'm ' + Math.round(s % 6
 const offerName = (sku: any) => { const o = PRODUCTS.find((x: any) => x.sku === sku); return o ? o.title : sku }
 /* a day arrives as a date, or a timestamp at midnight: the first ten characters are the date either way */
 const dayKey = (d: any) => String(d || '').slice(0, 10)
-// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t.getTime()) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
 const rangeLabel = computed(() => H.range.replace('{days}', days.value))
 const audienceLine = computed(() => (audience.value === 'all' ? '' : String(H['audience-line'] || '').replace('{audience}', H['audience-' + audience.value] || audience.value)))
 const totals = computed(() => (data.value && data.value.totals) || {})
@@ -190,14 +189,13 @@ const entryRows = computed(() => bars(pub(data.value && data.value.entry_pages),
 const exitRows = computed(() => bars(pub(data.value && data.value.exit_pages), 'sessions'))
 
 /* ---- audience ---- */
-const facet = (key: any, prefix: any) => bars((((aud as any).value[key]) || []).map((r: any) => ({ ...r, label: prefix ? wordOf(prefix, r.key) : r.key })), 'n')
+const facet = (key: any, prefix?: any) => bars((((aud as any).value[key]) || []).map((r: any) => ({ ...r, label: prefix ? wordOf(prefix, r.key) : r.key })), 'n')
 const who = computed(() => { const w = (aud.value as any).who || {}; return bars([{ key: 'guest', label: AU['who-guest'], n: w.guest || 0 }, { key: 'user', label: AU['who-user'], n: w.user || 0 }, { key: 'member', label: AU['who-member'], n: w.member || 0 }], 'n') })
 const newShare = computed(() => pct((aud.value as any).new, ((aud.value as any).new || 0) + ((aud.value as any).returning || 0)))
 const countryName = (() => { try { const dn = new Intl.DisplayNames(undefined, { type: 'region' }); return (c: any) => (c === 'unknown' ? AU['os-unknown'] || 'Unknown' : (() => { try { return dn.of(c) } catch (e) { return c } })()) } catch (e) { return (c: any) => c } })()
 const countries = computed(() => bars((((aud.value as any).countries) || []).map((r: any) => ({ ...r, label: countryName(r.key) })), 'n'))
 /* the retention grid: a row per week, the cohort's size, then the share back in each later week */
-// @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-const cohorts = computed(() => (retention.value || []).map((r) => ({ ...r, label: new Date((r as any).week + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) })))
+const cohorts = computed(() => (retention.value || []).map((r: any) => ({ ...r, label: new Date((r as any).week + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) })))
 const cohortWeeks = computed(() => Math.max(0, ...cohorts.value.map((r: any) => (r.back || []).length)))
 /* the events tab: every name sent, the registered ones by their label and first */
 const eventRows = computed(() => { const list = ((events.value && events.value.events) || []).map((e: any) => ({ ...e, label: eventLabel((e as any).type), registered: !!EVENT_LABEL[(e as any).type], goal: GOALS.some((g: any) => (g as any).key === (e as any).type), perSession: events.value.sessions ? Math.round(((e as any).n / events.value.sessions) * 100) / 100 : 0, d: delta((e as any).n, (e as any).prev) })); const max = Math.max(1, ...list.map((e: any) => e.n)); return list.sort((a: any, b: any) => (b.registered - a.registered) || (b.n - a.n)).map((e: any) => ({ ...e, w: (e.n / max) * 100 })) })
@@ -232,8 +230,7 @@ const trafficOption = computed(() => {
   void chartKey.value; void chartKind.value   /* re-read the theme's tokens when it flips, redraw when the kind does */
   const b = base(), t = tokens()
   const x = series.value.map((r: any) => day((r as any).day))
-  const line = (name: any, key: any, color: any, area: any) => timeSeries({ name, color, area, data: series.value.map((r: any) => r[key] || 0) })
-  // @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
+  const line = (name: any, key: any, color: any, area?: any) => timeSeries({ name, color, area, data: series.value.map((r: any) => r[key] || 0) })
   return { ...b, xAxis: timeAxis({ ...b.xAxis, data: x }), series: [line(MN.visitors, 'visitors', t.accent, true), line(MN.pageviews, 'pageviews', PALETTE[1]), line(MN.sessions, 'sessions', PALETTE[2])] }
 })
 const typesOption = computed(() => {
@@ -276,8 +273,7 @@ function bucket(rows: any) {
   if (gran.value === 'day') return rows
   const out = [], byKey: any = {}
   for (const r of rows) {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-    const d = new Date(dayKey(r.day) + 'T00:00:00'); if (isNaN(d)) continue
+    const d = new Date(dayKey(r.day) + 'T00:00:00'); if (isNaN(d.getTime())) continue
     const mon = new Date(d); mon.setDate(d.getDate() - ((d.getDay() + 6) % 7))
     const k = mon.toISOString().slice(0, 10)
     if (!byKey[k]) { byKey[k] = { day: k }; out.push(byKey[k]) }
@@ -479,12 +475,12 @@ function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() 
           <section class="an-card">
             <div class="an-ch"><h2>{{ AU.zones }}</h2><p>{{ AU['zones-note'] }}</p></div>
             <ol class="an-list"><li v-for="r in facet('zones')" :key="r.key"><div class="an-rowtxt"><code>{{ r.key }}</code><b>{{ num(r.n) }}</b></div><span class="an-track"><span class="an-fill" :style="{ width: r.w + '%' }" /></span></li></ol>
-            <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. --><p v-if="!facet('zones').length" class="an-none">{{ AU['no-rows'] }}</p>
+            <p v-if="!facet('zones').length" class="an-none">{{ AU['no-rows'] }}</p>
           </section>
           <section class="an-card">
             <div class="an-ch"><h2>{{ AU.languages }}</h2></div>
             <ol class="an-list"><li v-for="r in facet('langs')" :key="r.key" :class="{ on: has('lang', r.key) }"><div class="an-rowtxt"><button type="button" class="an-rowbtn" :aria-pressed="has('lang', r.key)" @click="toggleFilter('lang', r.key)"><code>{{ r.key }}</code></button><b>{{ num(r.n) }}</b></div><span class="an-track"><span class="an-fill" :style="{ width: r.w + '%' }" /></span></li></ol>
-            <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. --><p v-if="!facet('langs').length" class="an-none">{{ AU['no-rows'] }}</p>
+            <p v-if="!facet('langs').length" class="an-none">{{ AU['no-rows'] }}</p>
           </section>
           <section class="an-card">
             <div class="an-ch"><h2>{{ AU.who }}</h2></div>

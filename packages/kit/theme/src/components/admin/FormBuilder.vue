@@ -46,12 +46,11 @@ const fieldsBefore: any = (si: any) => { const out: any = []; const walk = (bs: 
 const slideLabel = (s: any, i: any) => (s.type === 'start' ? W.start : s.type === 'end' ? W.end : W.body.replace('{n}', String(slides.value.slice(0, i + 1).filter((x: any) => x.type === 'body').length)))
 const summary = (b: any) => (b.type === 'field' ? (b.params.question === '...' ? b.name : b.params.question) : b.type === 'markdown' ? String(b.md || '').replace(/^#+\s*/gm, '').replace(/[*_`>]/g, '').split('\n').find((l) => l.trim()) || '…' : W.raw)
 const cur = computed<any>(() => { const p: any = picked.value; if (!p || !model.value) return null; const s = slides.value[p.slide]; if (!s) return null; return p.block == null ? { kind: 'slide', slide: s, i: p.slide } : { kind: 'block', block: s.blocks[p.block], slide: s, i: p.slide, j: p.block } })
-function pick(si: any, bj: any) { picked.value = bj == null ? { slide: si } : { slide: si, block: bj } }
+function pick(si: any, bj?: any) { picked.value = bj == null ? { slide: si } : { slide: si, block: bj } }
 const touchSlide = (s: any) => { s.headDirty = true; model.value.slidesChanged = true }
-function addSlide(after: any) {
+function addSlide(after?: any) {
   const s = { type: 'body', jump: '', progress: '', align: '', post: false, disablePrev: false, button: '', redirect: '', head: [], headDirty: true, blocks: [] }
   const at = after == null ? slides.value.length - (slides.value.some((x: any) => x.type === 'end') ? 1 : 0) : after + 1
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
   slides.value.splice(at, 0, s); model.value.slidesChanged = true; pick(at)
 }
 function removeSlide(i: any) { slides.value.splice(i, 1); model.value.slidesChanged = true; picked.value = slides.value.length ? { slide: Math.max(0, i - 1) } : null }
@@ -69,10 +68,8 @@ function setType(s: any, t: any) {
 function addField(si: any) { const s = slides.value[si]; const b = { type: 'field', name: uniqueName('field'), kind: 'text', required: false, params: { question: '' }, attrs: { deps: [], id: '', classes: [], other: [] }, deps: [], condition: '', dirty: true, autoname: true, line: 0 }; s.blocks.push(b); pick(si, s.blocks.length - 1); model.value.slidesChanged = true }
 function addText(si: any) { const s = slides.value[si]; s.blocks.push({ type: 'markdown', md: '', raw: null, deps: [], condition: '', dirty: true, line: 0 }); pick(si, s.blocks.length - 1); model.value.slidesChanged = true }
 function uniqueName(base: any) { let n = base, i = 2; while (allFields.value.some((f: any) => f.name === n)) n = base + i++; return n }
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 function removeBlock(si: any, bj: any) { slides.value[si].blocks.splice(bj, 1); pick(si); model.value.slidesChanged = true }
 function moveBlock(si: any, bj: any, d: any) { const bs = slides.value[si].blocks; const k = bj + d; if (k < 0 || k >= bs.length) return; [bs[bj], bs[k]] = [bs[k], bs[bj]]; pick(si, k); model.value.slidesChanged = true }
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 function onDrag(si: any) { model.value.slidesChanged = true; pick(si) }
 function setMd(b: any, v: any) { b.md = v; b.raw = null; b.dirty = true }
 const progressOf = (s: any) => (s.progress ? String(parseFloat(s.progress)) : '')
@@ -157,7 +154,7 @@ async function remove() {
       <div v-show="view === 'build'" class="fb-build">
         <div class="fb-slides">
           <div v-for="(s, si) in slides" :key="si" class="fb-slide" :class="{ 'fb-on': picked && picked.slide === si && picked.block == null }">
-            <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. --><button type="button" class="fb-slidehead" @click="pick(si)">
+            <button type="button" class="fb-slidehead" @click="pick(si)">
               <b>{{ slideLabel(s, si) }}</b>
               <small v-if="s.jump"><!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. -->{{ W['shown-when'].replace('{cond}', describe(s.jump, fieldsBefore(si - 1), WC)) }}</small>
               <small v-else-if="s.progress">{{ W['progress-line'].replace('{p}', progressOf(s)) }}</small>
@@ -179,7 +176,7 @@ async function remove() {
               <button v-if="s.type !== 'end'" type="button" class="ui-btn ui-ghost ui-sm" @click="addSlide(si)">{{ W['add-slide'] }}</button>
             </div>
           </div>
-          <!-- @vue-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0. --><button v-if="!slides.length" type="button" class="ui-btn ui-ghost" @click="addSlide()">{{ W['add-slide'] }}</button>
+          <button v-if="!slides.length" type="button" class="ui-btn ui-ghost" @click="addSlide()">{{ W['add-slide'] }}</button>
         </div>
 
         <div class="fb-inspector ui-card">

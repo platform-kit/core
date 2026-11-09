@@ -26,7 +26,7 @@ const matches = computed(() => {
   const s = q.value.trim().toLowerCase()
   const own = GLYPH_NAMES.filter((n) => !s || n.includes(s))
   // @ts-expect-error TS2339, from the conversion: Property 'filter' does not exist on type '{}'.
-  const luc = (NAMES || []).filter((n) => !s || n.includes(s)).filter((n) => !own.includes(n))
+  const luc = (NAMES || []).filter((n: any) => !s || n.includes(s)).filter((n: any) => !own.includes(n))
   return own.map((n) => ({ n, own: true })).concat(luc.slice(0, 96).map((n: any) => ({ n, own: false })))
 })
 function pick(n: any) { emit('update:modelValue', n); open.value = false }

@@ -106,11 +106,9 @@ const EMOJI = ['👍', '❤️', '🙏', '😂', '🤔']
    somebody else's. It is a global overlay of the shell, so the embed page has it too. */
 function signIn() { if (typeof window !== 'undefined' && (window as any).DLauth) (window as any).DLauth.open({ intent: 'comment' }) }
 
-// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const when = (v) => { const d = new Date(v); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
+const when = (v: any) => { const d = new Date(v); return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
 const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-// @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'.
-const unfold = (id) => { opened.value = opened.value.includes(id) ? opened.value.filter((x) => x !== id) : [...opened.value, id] }
+const unfold = (id: any) => { opened.value = opened.value.includes(id) ? opened.value.filter((x: any) => x !== id) : [...opened.value, id] }
 
 async function post() {
   const body = draft.value.trim()

@@ -577,12 +577,12 @@ const DAY = 86400000
 
 /* the day something falls on, as the reader's own clock reads it — which is what decides whether
    they are told "today" */
-export const dayOf = (when: string|number|Date, zone: string) => new Intl.DateTimeFormat('en-CA', {
+export const dayOf = (when: string|number|Date, zone?: string) => new Intl.DateTimeFormat('en-CA', {
   timeZone: zone || undefined, year: 'numeric', month: '2-digit', day: '2-digit',
 }).format(new Date(when))
 
 /* today · tomorrow · the weekday · the date, in the reader's own terms */
-export function whenWord(when: any, now = Date.now(), words = {}, zone: string) {
+export function whenWord(when: any, now: number = Date.now(), words: Record<string, string> = {}, zone?: string) {
   const w = { today: 'Today', tomorrow: 'Tomorrow', ...words }
   const d = dayOf(when, zone)
   if (d === dayOf(now, zone)) return w.today
@@ -593,7 +593,7 @@ export function whenWord(when: any, now = Date.now(), words = {}, zone: string) 
     : { timeZone: zone || undefined, day: 'numeric', month: 'short' }).format(new Date(when))
 }
 
-export const clockOf = (when: string|number|Date, zone: string) => new Intl.DateTimeFormat(undefined, {
+export const clockOf = (when: string|number|Date, zone?: string) => new Intl.DateTimeFormat(undefined, {
   timeZone: zone || undefined, hour: 'numeric', minute: '2-digit',
 }).format(new Date(when))
 
@@ -635,7 +635,7 @@ export function isOn(o: { starts_at?: any; ends_at?: any }|null, now = Date.now(
 }
 
 /* the occurrences gathered under the day they fall on, which is how a calendar reads */
-export function byDay(list: { id: string; starts_at: string }[]|undefined = [], zone: string) {
+export function byDay(list: { id: string; starts_at: string }[]|undefined = [], zone?: string) {
   const days = new Map()
   for (const o of list) {
     const key = dayOf((o as any).starts_at, zone)

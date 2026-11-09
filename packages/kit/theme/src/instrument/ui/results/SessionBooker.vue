@@ -269,7 +269,6 @@ async function confirm(afterAuth = false) {
       if (!list.length) { step.value = 'confirm'; error.value = HW['need-invitee']; return }
       if (list.some((e) => !emailOk(e))) { step.value = 'confirm'; error.value = HW['bad-email']; return }
       if (option.value.seats > 0 && list.length > option.value.seats) { step.value = 'confirm'; error.value = fill(HW['seats-full'], { n: option.value.seats }); return }
-      // @ts-expect-error TS2554, from the conversion: Expected 6 arguments, but got 5.
       const r = await bookForOthers(option.value.event, slot.value, zone.value, notes.value, list)
       done.value = r.booking; step.value = 'done'; emit('booked', r.booking); sendOn(); return
     }

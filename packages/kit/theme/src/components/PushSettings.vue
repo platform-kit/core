@@ -51,8 +51,7 @@ async function turnOn() {
 }
 async function turnOff() { busy.value = true; said.value = ''; try { await disable(); await load() } finally { busy.value = false } }
 async function toggle(t: any) {
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-  picked.value = picked.value.includes(t) ? picked.value.filter((x) => x !== t) : picked.value.concat([t])
+  picked.value = picked.value.includes(t) ? picked.value.filter((x: any) => x !== t) : picked.value.concat([t])
   if (on.value) { await setTopics(picked.value); saved.value = T.saved; setTimeout(() => { saved.value = '' }, 1500) }
 }
 async function sendTest() {

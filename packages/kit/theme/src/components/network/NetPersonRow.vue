@@ -12,7 +12,7 @@ import { isSignedIn } from 'platformkit/lib/auth.js'
 import { net, follow } from 'platformkit/lib/network/api.js'
 import site from '#site'
 import { showsFollowing } from 'platformkit/lib/community/places.js'
-// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'string[]'.
 const FOLLOWING = showsFollowing((site.community || {}).hide)
 import SpaceAvatar from '../spaces/SpaceAvatar.vue'
 

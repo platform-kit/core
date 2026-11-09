@@ -68,7 +68,7 @@ const owed: any = (c: any) => { if (!props.coach) return null; const d = dueOf(c
 <template>
   <nav class="cl" :aria-label="P.conversations">
     <div class="cl-head">
-      <span class="cl-eyebrow"><!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ say(P.eyebrow) }}</span>
+      <span class="cl-eyebrow">{{ say(P.eyebrow) }}</span>
       <h1 class="cl-h">{{ P.heading }}</h1>
       <button v-if="coach" type="button" class="cl-new" @click="emit('new')">
         <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>

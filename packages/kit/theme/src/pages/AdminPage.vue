@@ -114,7 +114,7 @@ function toggleFS() { fsPref.value = !fsPref.value; try { localStorage.setItem('
 import pipe from '../lib/admin/api.js'
 const API = '/__admin'
 /* the enrichment runs (the Books grid's scripts) are the dev server's own endpoint, beside the pipe — a machine's work, none of it in cloud mode */
-async function api(path: any, opts: any) {
+async function api(path: any, opts?: any) {
   if (CLOUD) throw new Error('this runs from a checkout or the deploy, not the live admin')
   const r = await fetch(API + path, opts)
   const j = await r.json().catch(() => ({}))
@@ -299,7 +299,7 @@ async function renameEntry() {
 const savedMsg = ref('')
 let savedTimer: any = null
 const fill = (str: any, m: any) => String(str || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-function showSaved(word: any) { savedMsg.value = word || 'Saved.'; clearTimeout(savedTimer); savedTimer = setTimeout(() => { savedMsg.value = '' }, 3000) }
+function showSaved(word?: any) { savedMsg.value = word || 'Saved.'; clearTimeout(savedTimer); savedTimer = setTimeout(() => { savedMsg.value = '' }, 3000) }
 const inlineSlot = ref<any>(null)   /* the element the editor teleports into; it exists only for a single-file collection */
 
 /* the rail: four sections. A key is a collection (label and count from the
@@ -603,7 +603,6 @@ async function loadList() {
   if (view.value === 'books') attachRun()
   if (col.value && col.value.single && !drawer.value) {
     await openEdit(col.value.single)
-    // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
     try { if (sessionStorage.getItem('dl.admin.saved') === view.value) { sessionStorage.removeItem('dl.admin.saved'); showSaved() } } catch (e) { /* private */ }
   }
 }
@@ -678,7 +677,6 @@ function stopPoll() { if (poll) { clearInterval(poll); poll = null } }
 async function refreshJob() {
   if (!job.value) return
   try {
-    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     const { jobs } = await api('/run?id=' + job.value.id)
     if (!jobs[0]) return
     const wasRunning = job.value.running
@@ -752,8 +750,7 @@ async function stopRun() {
 /* a run started before a reload is still going in the server: show it again */
 async function attachRun() {
   if (job.value) return
-  // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
-  try { const { jobs } = await api('/run'); const live = jobs.find((j) => j.running); if (live) { job.value = live; watchJob() } } catch (e) { /* no runs */ }
+  try { const { jobs } = await api('/run'); const live = jobs.find((j: any) => j.running); if (live) { job.value = live; watchJob() } } catch (e) { /* no runs */ }
 }
 const jobState = computed(() => {
   const j = job.value; if (!j) return ''
@@ -981,7 +978,6 @@ async function save() {
       /* the settings page stays open. Velite re-embeds the file and Vite reloads the
          page a moment later, so the message rides across that reload */
       try { sessionStorage.setItem('dl.admin.saved', view.value) } catch (e) { /* private */ }
-      // @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
       showSaved()
       return
     }

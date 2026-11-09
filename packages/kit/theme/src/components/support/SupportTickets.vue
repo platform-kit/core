@@ -88,7 +88,7 @@ const shown = computed(() => (ticket.timeline || []).filter((e: any) => lineOf(e
       <p v-if="ticket.loading && !ticket.row" class="st-none">{{ T.loading }}</p>
       <template v-if="ticket.row">
         <h3 class="st-title">{{ ticket.row.title }}</h3>
-        <p class="st-meta"><!-- @vue-expect-error TS2339, from the conversion: Property 'status' does not exist on type 'never'. --><i class="st-pill" :class="ticket.row.status"><!-- @vue-expect-error TS2339, from the conversion: Property 'status' does not exist on type 'never'. -->{{ statusWord(ticket.row.status) }}</i>{{ fill(T.ref, { n: ticket.row.ref }) }} · {{ fill(T.opened, { when: at(ticket.row.created_at) }) }}</p>
+        <p class="st-meta"><i class="st-pill" :class="ticket.row.status">{{ statusWord(ticket.row.status) }}</i>{{ fill(T.ref, { n: ticket.row.ref }) }} · {{ fill(T.opened, { when: at(ticket.row.created_at) }) }}</p>
         <div class="st-line" v-for="e in shown" :key="e.id" :class="{ own: e.by_contact, note: e.kind === 'status' }">
           <SupportMark v-if="!e.by_contact && e.kind !== 'status'" :name="e.agent_name || ''" :size="26" />
           <div class="st-said">

@@ -255,8 +255,8 @@ const onIt = (id: any) => assignees.value.some((a: any) => (a as any).id === id)
         <div class="st-when wq-scroll">
           <!-- WHAT IT WAS RAISED WITH, where a form raised it — at the head of the ticket, so
                nobody spends their first three replies asking what a form already asked. -->
-          <!-- @vue-expect-error TS18047, from the conversion: 'tickets.value.open' is possibly 'null'. --><div v-if="(tickets.open.answers || []).length" class="st-asked">
-            <!-- @vue-expect-error TS18047, from the conversion: 'tickets.value.open' is possibly 'null'. --><div v-for="a in tickets.open.answers" :key="a.field">
+          <div v-if="(tickets.open.answers || []).length" class="st-asked">
+            <div v-for="a in tickets.open.answers" :key="a.field">
               <b>{{ a.field }}</b><span>{{ Array.isArray(a.value) ? a.value.join(', ') : a.value }}</span>
             </div>
           </div>

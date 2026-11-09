@@ -56,8 +56,7 @@ const shown = computed(() => rows.value.filter((r: { status: string }) => filter
 const counts = computed(() => ({ all: rows.value.length, open: rows.value.filter((r: { status: string }) => OPEN.includes(r.status)).length, shipped: rows.value.filter((r: { status: string }) => r.status === 'shipped').length, trouble: rows.value.filter((r: { status: string }) => TROUBLE.includes(r.status)).length }))
 
 const bookTitle = (slug: any) => { const b = BOOKS.find((x: { slug: any }) => x.slug === slug); return b ? b.title : slug }
-// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const when = (d) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+const when = (d: any) => { const t = new Date(d); return isNaN(t.getTime()) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
 const addressLines = (a: { name: any; line1: any; line2: any; city: any; state: any; postal_code: any; country: any }) => [a.name, a.line1, a.line2, [a.city, a.state, a.postal_code].filter(Boolean).join(' '), a.country].filter((x) => x && String(x).trim())
 const money = (c: { print: any; currency: any; shipping: any }) => (c && typeof c.print === 'number' ? new Intl.NumberFormat(undefined, { style: 'currency', currency: c.currency || 'USD' }).format(c.print + (c.shipping || 0)) : '')
 const canSubmit = (r: { status: string }) => r.status === 'new' || r.status === 'failed'
@@ -67,8 +66,7 @@ async function act(r: { id: string|number }, action: string) {
   try {
     const { data, error } = await (supabase as any).functions.invoke('print-order', { body: { id: r.id, action } })
     if (error) throw error
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-    if (data && data.order) { const i = rows.value.findIndex((x) => x.id === r.id); if (i >= 0) rows.value.splice(i, 1, data.order) }
+    if (data && data.order) { const i = rows.value.findIndex((x: any) => x.id === r.id); if (i >= 0) rows.value.splice(i, 1, data.order) }
     said[r.id] = action === 'submit' && data && data.ok ? R.sent : ''
   } catch (e) { said[r.id] = (e && (e as any).message) || 'failed' }
   busy[r.id] = ''

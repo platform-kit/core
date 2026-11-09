@@ -125,8 +125,7 @@ const counts = computed(() => Object.fromEntries(FILTERS.map((f) => [f, rows.val
 const filters = computed(() => FILTERS.filter((f) => f === 'all' || counts.value[f]))
 
 const who = (r: any) => (r.user_id && people.value[r.user_id]) || null
-// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const when = (d) => { const t = new Date(d); return isNaN(t) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+const when = (d: any) => { const t = new Date(d); return isNaN(t.getTime()) ? '' : t.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
 const cash = (n: any, cur: any) => (typeof n === 'number' ? new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format(n / 100) : '')
 const money = (r: any) => cash(r.total, r.currency)
 /* what has actually been taken: the transactions, which is the same sum the database derives

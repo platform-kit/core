@@ -49,7 +49,7 @@ const NETWORK = moduleOn('network')
 /* other apps signing in is the site owner's choice (network.apps), off unless the config says so */
 const APPS = NETWORK && !!(site.network && site.network.apps)
 /* a site that lists following in community.hide draws no follow control or count (follows are kept) */
-// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'string[]'.
 const FOLLOWING = showsFollowing((site.community || {}).hide)
 const NP = computed(() => us('network').person.main)
 const fillN = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))

@@ -60,10 +60,8 @@ const money = (n: any, c: any) => new Intl.NumberFormat(undefined, { style: 'cur
 const secs = (s: any) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
 const delta = (now: any, before: any) => { if (!before) return null; const d = Math.round(((now - before) / before) * 100); return { dir: d > 0 ? 'up' : d < 0 ? 'down' : 'flat', text: (d > 0 ? '+' : '') + d + '%' } }
 const dayKey = (d: any) => String(d || '').slice(0, 10)
-// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
-// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const dateOnly = (d: any) => { if (!d) return ''; const t = new Date(d); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) }
+const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t.getTime()) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const dateOnly = (d: any) => { if (!d) return ''; const t = new Date(d); return isNaN(t.getTime()) ? '' : t.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) }
 const rangeLabel = computed(() => H.range.replace('{days}', days.value))
 const audienceLine = computed(() => (audience.value === 'all' ? '' : String(H['audience-line'] || '').replace('{audience}', H['audience-' + audience.value] || audience.value)))
 const kindName = (k: any) => KN[k] || k

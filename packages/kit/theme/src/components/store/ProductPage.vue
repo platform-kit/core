@@ -213,7 +213,7 @@ function previewHtml(markdown: any) {
   let html = String(previewRenderer.parse(source))
   for (const { token, text } of marks) {
     // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ '&': string; '<': string; '>': string; 
-    const safeText = text.replace(/[&<>"']/g, (character) => ({
+    const safeText = text.replace(/[&<>"']/g, (character: any) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     })[character])
     html = html.replace(token, `<mark class="print-preview-mark">${safeText}</mark>`)
@@ -296,7 +296,7 @@ const slides = computed(() => {
   if (sh) {
     const cap = (k: any) => fill(HC['shot-' + k] || '', { chapter: sh.chapter || '' })
     // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ full: any; summary: any; parts: any; bo
-    const previewThumb = (contents) => ({
+    const previewThumb = (contents: any) => ({
       full: HC['shot-thumb-full'],
       summary: HC['shot-thumb-summary'],
       parts: HC['shot-thumb-parts'],
@@ -460,7 +460,7 @@ function addToBag() {
   added.value = true; setTimeout(() => { added.value = false }, 1600)
   cart.openCart()
 }
-async function run(fn: any, evt: any, guestOk = false) {
+async function run(fn: any, evt?: any, guestOk = false) {
   if (!isSignedIn.value && !guestOk) { if ((window as any).DLauth) (window as any).DLauth.open(); return }
   busy.value = true; error.value = ''; errorCode.value = ''
   if (evt) capture('click', evt)
@@ -473,7 +473,6 @@ function buyNow() {
   run(() => checkout(cart.items.value), { kind: 'buy_now', product_id: sku.value }, guestCart(cart.items.value))
 }
 const join = () => run(() => subscribe(p.value.sku), { kind: 'subscribe', product_id: p.value.sku })
-// @ts-expect-error TS2554, from the conversion: Expected 2-3 arguments, but got 1.
 const manage = () => run(() => openPortal())
 
 watch(p, (v) => {

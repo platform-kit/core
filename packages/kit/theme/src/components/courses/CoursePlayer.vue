@@ -44,7 +44,7 @@
           <span v-else-if="state.enrollment && !m.measured && m.done > 0 && !m.finished" class="crs-pmod-bar" :class="{ 'is-done': m.finished }"><span :style="{ width: pct(m.done, m.total) + '%' }" /></span>
           <ol class="crs-plist">
             <li v-for="l in m.lessons" :key="l.key">
-              <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "page" | "time" | Booleanish | "date" | "location" | undefined'. --><a :href="courseHref + '/' + l.key" :class="['is-' + stateOf(l), { 'is-here': l.key === lessonKey, 'is-closed': !l.open, 'is-done': l.done, 'has-score': l.quiz && l.quiz.total }]" :aria-current="l.key === lessonKey ? 'page' : null">
+              <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "date" | "page" | "time" | Booleanish | "location" | undefined'. --><a :href="courseHref + '/' + l.key" :class="['is-' + stateOf(l), { 'is-here': l.key === lessonKey, 'is-closed': !l.open, 'is-done': l.done, 'has-score': l.quiz && l.quiz.total }]" :aria-current="l.key === lessonKey ? 'page' : null">
                 <CourseIcon :name="markOf(l)" :size="18" class="crs-mark" />
                 <span class="crs-plist-title">{{ l.title }}</span>
                 <!-- at the end: a quiz's score, else what kind of lesson it is where that is anything but reading -->

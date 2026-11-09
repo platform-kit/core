@@ -36,15 +36,12 @@ onMounted(() => { tick = setInterval(() => { now.value = Date.now() }, 30000) })
 onBeforeUnmount(() => clearInterval(tick))
 
 const shown = computed(() => (props.full ? props.occurrences : props.occurrences.slice(0, 4)))
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 const days = computed(() => byDay(shown.value))
 const words = computed(() => ({ today: W.value.today, tomorrow: W.value.tomorrow }))
 const untilWords = computed(() => ({ now: W.value['on-now'], mins: W.value['in-mins'], hours: W.value['in-hours'], days: W.value['in-days'] }))
 
-// @ts-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3.
-const when = (o) => whenWord(o.starts_at, now.value, words.value)
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
-const at = (o) => clockOf(o.starts_at)
+const when = (o: any) => whenWord(o.starts_at, now.value, words.value)
+const at = (o: any) => clockOf(o.starts_at)
 const until = (o: { starts_at: string|number|Date }) => untilWord(new Date(o.starts_at).getTime(), now.value, untilWords.value)
 const live = (o: { starts_at?: any; ends_at?: any }|null) => isOn(o, now.value)
 const noRoom = (o: { capacity: any; going: any; mine: string }) => !!o.capacity && Number(o.going) >= Number(o.capacity) && o.mine !== 'going'
@@ -76,7 +73,7 @@ async function say(o: { id: string; mine: any }, state: string|undefined) {
     <p v-else-if="!occurrences.length && !sessions.length" class="sc-none">{{ W.nothing }}</p>
 
     <div v-for="d in days" :key="d.day" class="sc-day">
-      <h4 v-if="full" class="sc-date"><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(d.at, now, words) }}</h4>
+      <h4 v-if="full" class="sc-date">{{ whenWord(d.at, now, words) }}</h4>
       <article v-for="o in d.items" :key="o.id" class="sc-item" :class="{ on: live(o), off: !!o.cancelled_at }">
         <!-- the time is the thing somebody scans for, so it leads and never moves -->
         <div class="sc-when">

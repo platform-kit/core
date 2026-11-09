@@ -292,7 +292,7 @@ function finishReading() { view.value = 'cover'; window.scrollTo(0, 0) }
 
 /* how far through the book, by chapter — drives the bar under the sticky header */
 const progress = computed(() => chapters.value.length ? Math.round(((ch.value + 1) / chapters.value.length) * 100) : 0)
-function begin(atCh: any, mode: any) {
+function begin(atCh: any, mode?: any) {
   if (mode) setMode(mode)
   if (typeof atCh === 'number') ch.value = atCh
   view.value = 'read'
@@ -320,7 +320,6 @@ const effClass = computed(() => (hasProduct(props.slug) && rank(userClass.value)
 /* THE BAR IS THE ABILITY'S, and it already knows that a book bought outright lifts its buyer to
    paid for that book — the same lift effClass makes below for the chapter allowance, which is a
    count rather than a bar and stays where it is. */
-// @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
 const bookAllowed = computed(() => can('read', entrySubject({ kind: 'books', slug: props.slug, canAccess: fm.value.canAccess })))
 /* the allowance counts chapters; the introduction page in front of them is free with the first */
 const firstLocked = computed(() => { if (!bookAllowed.value) return 0; const n = chapterAllowance(fm.value, effClass.value); return n > 0 ? n + introOffset.value : 0 })
@@ -404,7 +403,7 @@ async function render() {
   toolbar.value.open = false
 }
 // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-const escapeHtml = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const escapeHtml = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 watch(ch, () => { quizOpen.value = false; essOpen.value = false; render(); askCanSay() })
 watch(chapterSubject, askCanSay, { immediate: true })
 /* between one chapter fading out and the next fading in, the window is at the top */
@@ -701,7 +700,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="rd-covactions">
-          <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. --><button type="button" class="rd-begin" @click="begin(started ? undefined : 0)">
+          <button type="button" class="rd-begin" @click="begin(started ? undefined : 0)">
             {{ started ? R.cover.continue : R.cover.begin }}
             <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 8h11m-4-4 4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>

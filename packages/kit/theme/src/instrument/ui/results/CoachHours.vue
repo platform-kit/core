@@ -27,8 +27,7 @@ async function load() {
   try {
     const r = await getHours()
     sets.value = r.schedules || (r.hours ? [r.hours] : [])
-    // @ts-expect-error TS2339, from the conversion: Property 'id' does not exist on type 'never'.
-    if (!picked.value || !sets.value.some((s) => s.id === picked.value)) picked.value = (sets.value.find((s) => s.is_default) || sets.value[0] || {}).id ?? null
+    if (!picked.value || !sets.value.some((s: any) => s.id === picked.value)) picked.value = (sets.value.find((s: any) => s.is_default) || sets.value[0] || {}).id ?? null
     const mine = sets.value.find((s: any) => s.id === picked.value) || r.hours
     if (mine) { hours.value = { ...emptyHours(), ...mine }; had.value = true }
     /* an exception belongs to the set it was written on; one written before there were several has

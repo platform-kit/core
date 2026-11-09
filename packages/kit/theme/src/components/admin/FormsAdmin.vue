@@ -57,7 +57,7 @@ async function startNew() {
       <p v-if="loading" class="ui-muted">…</p>
       <div v-else-if="!forms.length" class="ui-empty"><h3>{{ W['empty-title'] }}</h3><p>{{ W['empty-body'] }}</p><button type="button" class="ui-btn ui-primary" @click="startNew">{{ W['empty-cta'] }}</button></div>
       <div v-else class="fa-grid">
-        <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: any; field: string; pinned: string; flex: number; minWidth: number; cellRenderer: (q: any) => string; width?: undefined --><AgGridVue class="fa-aggrid" :theme="theme" :row-data="forms" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
+        <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: any; field: string; pinned: string; flex: number; minWidth: number; cellRenderer: (q: { value: any; data: { name: any;  --><AgGridVue class="fa-aggrid" :theme="theme" :row-data="forms" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
                    :row-height="54" :suppress-cell-focus="true" @row-clicked="emit('open', $event.data.name)" />
       </div>
     </template>

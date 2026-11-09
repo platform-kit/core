@@ -39,7 +39,7 @@ export const openTimes = (event: any, from: any, to: any, timeZone: any, minutes
 /* book it (or move one: reschedule = its uid) */
 export const bookSession = (event: any, start: any, timeZone: any, notes: any, reschedule: any, phone: any, response: any, minutes: any, count: any, email: any) => call('book-session', { event, start, timeZone, notes: notes || '', reschedule: reschedule || undefined, phone: phone || undefined, response: response || undefined, minutes: minutes || undefined, count: count || undefined, email: email || undefined })
 /* a host books for people: the invitees by email — no judge, no credit, nothing charged */
-export const bookForOthers = (event: any, start: any, timeZone: any, notes: any, emails: any, host: any) => call('book-session', { event, start, timeZone, notes: notes || '', for: emails, host: host || undefined })
+export const bookForOthers = (event: any, start: any, timeZone: any, notes: any, emails: any, host?: any) => call('book-session', { event, start, timeZone, notes: notes || '', for: emails, host: host || undefined })
 /* WHO ELSE IS COMING to a group session, by the name each person chose to show — for somebody who
    holds a seat of it, and only where the type says to show it. Never an address: a list of who is in
    the room should not also be a list of how to write to them. */

@@ -18,7 +18,8 @@ import { loadCalendar, calendar, whenWord, clockOf } from 'platformkit/lib/space
 const emit = defineEmits(['events', 'event', 'session'])
 const S = computed(() => us('network').shell.main)
 const C = computed(() => us('spaces').calendar.main)
-const now = new Date()
+/* a number, as whenWord counts days forward from it (a Date added to a number is a string) */
+const now = Date.now()
 
 /* THE READER'S OWN SESSIONS, attended or given. An administrator may read every booking, so the
    rows are narrowed to the reader's own here rather than trusted to the policy alone. */
@@ -51,7 +52,7 @@ watch(() => user.value && user.value.id, loadSessions)
         <li v-for="o in next" :key="o.key">
           <button type="button" class="sa-row" :class="{ 'sa-session': o.kind === 'session' }" @click="o.kind === 'event' ? emit('event', o.slug) : emit('session')">
             <span class="sa-date"><b>{{ new Date(o.at).getDate() }}</b><small>{{ new Date(o.at).toLocaleString(undefined, { month: 'short' }) }}</small></span>
-            <span class="sa-what"><b>{{ o.title }}</b><small><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(o.at, now, { today: C.today, tomorrow: C.tomorrow }) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clockOf(o.at) }}<template v-if="o.kind === 'session'"> · {{ o.hosting ? S['aside-hosting'] : S['aside-session'] }}</template></small></span>
+            <span class="sa-what"><b>{{ o.title }}</b><small>{{ whenWord(o.at, now, { today: C.today, tomorrow: C.tomorrow }) }} · {{ clockOf(o.at) }}<template v-if="o.kind === 'session'"> · {{ o.hosting ? S['aside-hosting'] : S['aside-session'] }}</template></small></span>
           </button>
         </li>
       </ul>

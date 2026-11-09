@@ -104,8 +104,7 @@ const pct = (a: any, b: any) => (b ? Math.round((a / b) * 100) : 0)
 const money = (n: any, c: any) => new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase(), maximumFractionDigits: 0 }).format((n || 0) / 100)
 const secs = (s: any) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
 const dayKey = (d: any) => String(d || '').slice(0, 10)
-// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const day = (d) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t.getTime()) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
 const bars = (list: any, key: any) => { const rows = list || []; const max = Math.max(1, ...rows.map((x: any) => x[key] || 0)); return rows.map((x: any) => ({ ...x, w: ((x[key] || 0) / max) * 100 })) }
 const open = reactive<any>({})
 function L(name: any, arr: any, key: any, cap = 8) { const all = bars(arr || [], key); return { rows: open[name] ? all : all.slice(0, cap), more: all.length > cap, open: !!open[name], total: all.length } }
@@ -183,7 +182,7 @@ const authors = computed(() => {
   for (const r of (content.value && content.value.items) || []) { const a = authorOf(r); if (!a) continue; const x = by[a] || (by[a] = { author: a, pieces: 0, views: 0, readers: 0, minutes: 0, conversions: 0, revenue: 0 }); x.pieces++; x.views += r.views || 0; x.readers += r.readers || 0; x.minutes += r.minutes || 0; x.conversions += (r.signups || 0) + (r.subscriptions || 0) + (r.purchases || 0); x.revenue += r.revenue || 0 }
   const rows = Object.values(by).sort((a, b) => (b as any).views - (a as any).views); const max = Math.max(1, ...rows.map((r) => (r as any).views))
   // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-  return rows.map((r) => ({ ...r, w: (r.views / max) * 100 }))
+  return rows.map((r) => ({ ...r, w: ((r as any).views / max) * 100 }))
 })
 const channelName = (c: any) => ((T.acquisition && T.acquisition.ui) || {})['channel-' + c] || c
 const audienceLine = computed(() => (audience.value === 'all' ? '' : String(H['audience-line'] || '').replace('{audience}', H['audience-' + audience.value] || audience.value)))

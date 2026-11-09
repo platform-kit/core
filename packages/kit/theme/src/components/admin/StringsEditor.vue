@@ -47,7 +47,7 @@ function matches(file: { groups: any }) {
 }
 const visible = computed(() => (current.value ? matches(current.value) : {}))
 // @ts-expect-error TS18046, from the conversion: 'n' is of type 'unknown'.
-const visibleCount = (groups) => Object.values(groups).reduce((n, keys) => n + Object.keys(keys).length, 0)
+const visibleCount = (groups: any) => Object.values(groups).reduce((n, keys) => n + Object.keys(keys).length, 0)
 const countFor = (f: any) => (needle.value ? visibleCount(matches(f)) : null)
 /* the dropdown: each file, with how many of its strings match while searching */
 const fileOptions = computed(() => files.value.map((f: any) => ({ value: f.file, label: label(f), count: countFor(f), total: visibleCount(f.groups || {}) })))

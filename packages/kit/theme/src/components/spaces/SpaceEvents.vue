@@ -115,7 +115,7 @@ async function going(o: { id: string; mine: any }, state: string|undefined) {
           <h2><button type="button" @click="emit('open', next.slug)">{{ next.title }}</button></h2>
           <p v-if="next.sub" class="sv-sub">{{ next.sub }}</p>
           <dl class="sv-when">
-            <div><dt><SpaceIcon name="clock" :size="14" /></dt><dd><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(next.starts_at, now, dayWords) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clockOf(next.starts_at) }}</dd></div>
+            <div><dt><SpaceIcon name="clock" :size="14" /></dt><dd>{{ whenWord(next.starts_at, now, dayWords) }} · {{ clockOf(next.starts_at) }}</dd></div>
             <div><dt><SpaceIcon name="pin" :size="14" /></dt><dd>{{ placeWord(next) }}</dd></div>
             <div v-if="hostWord(next)"><dt><SpaceIcon name="people" :size="14" /></dt><dd>{{ hostWord(next) }}</dd></div>
           </dl>
@@ -139,7 +139,7 @@ async function going(o: { id: string; mine: any }, state: string|undefined) {
               </button>
               <div class="sv-card-body">
                 <h4><button type="button" @click="emit('open', o.slug)">{{ o.title }}</button></h4>
-                <p class="sv-cardwhen"><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(o.starts_at, now, dayWords) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clockOf(o.starts_at) }}</p>
+                <p class="sv-cardwhen">{{ whenWord(o.starts_at, now, dayWords) }} · {{ clockOf(o.starts_at) }}</p>
                 <p class="sv-cardwhere">{{ placeWord(o) }}<template v-if="o.going"> · {{ o.going === 1 ? C['going-one'] : C['going-many'].replace('{n}', o.going) }}</template></p>
                 <div class="sv-cardact">
                   <button v-if="o.rsvp && !o.cancelled_at && showing === 'upcoming'" type="button" class="sv-go sm" :class="{ on: o.mine === 'going' }"

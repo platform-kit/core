@@ -58,7 +58,7 @@ const selectedTopupPack = computed<any>(() =>
   eligiblePacks.value.find((pack: any) => (pack as any).key === selectedPack.value) || eligiblePacks.value[0] || null,
 )
 const titleOf = (key: any) => usageOffers.value.find((offer: any) => offer.key === key)?.title || W.value.archived
-const unitOf = (key: any, value: any) => resolveUsageUnit(
+const unitOf = (key: any, value?: any) => resolveUsageUnit(
   usageOffers.value.find((offer: any) => offer.key === key)?.usage?.unit,
   value,
 )
@@ -261,7 +261,7 @@ async function loadTopup() {
   }
 }
 
-async function loadPaymentSdk(provider: any, publishableKey: any, apiBaseUrl: any, profileId: any, clientUrl: any) {
+async function loadPaymentSdk(provider: any, publishableKey: any, apiBaseUrl?: any, profileId?: any, clientUrl?: any) {
   if (provider === 'stripe') {
     if (!stripeScriptPromise && !(window as any).Stripe) {
       stripeScriptPromise = new Promise((resolve, reject) => {
@@ -334,7 +334,6 @@ async function beginIncrementalPayment(settlement: any) {
       await nextTick()
       widget.mount('#usage-incremental-payment')
     } else {
-      // @ts-expect-error TS2554, from the conversion: Expected 5 arguments, but got 2.
       const { stripe } = await loadPaymentSdk(action.provider, action.publishable_key)
       activeIncremental.value = { ...activeIncremental.value, stripe }
     }
@@ -636,11 +635,11 @@ onBeforeUnmount(() => {
                 <span v-if="balance.period_start" class="usage-period">{{ timeOf(balance.period_start) }}</span>
               </div>
               <p class="usage-remaining">
-                <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ W.remaining.replace('{amount}', numberOf(balance.remaining_micros)).replace('{unit}', unitOf(balance.offer_key)) }}
+                {{ W.remaining.replace('{amount}', numberOf(balance.remaining_micros)).replace('{unit}', unitOf(balance.offer_key)) }}
               </p>
               <div class="usage-totals">
-                <span><!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ W.used.replace('{amount}', numberOf(balance.used_micros)).replace('{unit}', unitOf(balance.offer_key)) }}</span>
-                <span><!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ W.reserved.replace('{amount}', numberOf(balance.reserved_micros)).replace('{unit}', unitOf(balance.offer_key)) }}</span>
+                <span>{{ W.used.replace('{amount}', numberOf(balance.used_micros)).replace('{unit}', unitOf(balance.offer_key)) }}</span>
+                <span>{{ W.reserved.replace('{amount}', numberOf(balance.reserved_micros)).replace('{unit}', unitOf(balance.offer_key)) }}</span>
               </div>
             </article>
           </div>
@@ -764,7 +763,7 @@ onBeforeUnmount(() => {
             <article v-for="offer in usagePacks" :key="offer.key" class="usage-card">
               <div>
                 <h3>{{ offer.title }}</h3>
-                <p><!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ W['pack-size'].replace('{amount}', numberOf(Number(offer.usage.grant) * 1_000_000)).replace('{unit}', unitOf(offer.key)) }}</p>
+                <p>{{ W['pack-size'].replace('{amount}', numberOf(Number(offer.usage.grant) * 1_000_000)).replace('{unit}', unitOf(offer.key)) }}</p>
               </div>
               <div class="usage-pack-buy">
                 <strong>{{ moneyOf(offer.price, offer.currency) }}</strong>

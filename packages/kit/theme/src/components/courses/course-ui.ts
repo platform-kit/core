@@ -121,7 +121,7 @@ export function pointerHref(l: any = {}) {
   return ({ article: '/content/articles/', form: '/form/', session: '/book/' } as any)[l.kind] + ref
 }
 
-export const rpc = async (fn: any, args: any) => {
+export const rpc = async (fn: any, args?: any) => {
   if (!supabase) return null
   const { data, error } = await supabase.rpc(fn, args)
   if (error) throw error

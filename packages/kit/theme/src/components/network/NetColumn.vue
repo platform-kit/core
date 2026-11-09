@@ -60,15 +60,14 @@ const tl = timeline()
 const ds = discover()
 /* Home has two tabs, remembered for the visit: the people followed, or everything on the site */
 /* a site that hides following has one Home feed: everything the reader may read */
-// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
+// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'string[]'.
 const FOLLOWING = showsFollowing((site.community || {}).hide)
 /* Explore is the For You grid where the site turned it on */
 const FOR_YOU = !!(site.community || {}).forYou && !!(site.network)
 const tab = ref(!FOLLOWING ? 'discover' : (() => { try { return sessionStorage.getItem('dl.feed.tab') || 'following' } catch { return 'following' } })())
 function setTab(t: any) { tab.value = t; try { sessionStorage.setItem('dl.feed.tab', t) } catch { /* private window */ } ; if (t === 'discover' && !ds.st.items.length) ds.refresh(); window.scrollTo({ top: 0 }) }
 const source = computed(() => (view.value === 'explore' || tab.value === 'discover' ? ds : tl))
-// @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-const items = computed(() => source.value.st.items.map((it) => ({ ...it, post: it.post_id ? net.posts[it.post_id] : net.messages[it.message_id] })).filter((it) => it.post))
+const items = computed(() => source.value.st.items.map((it: any) => ({ ...it, post: it.post_id ? net.posts[it.post_id] : net.messages[it.message_id] })).filter((it: any) => it.post))
 
 /* ---------------------------------------------------------------- explore: people by name */
 const q = ref('')
@@ -143,7 +142,6 @@ function noteRuns(g: any) {
     const start = new Date(it.starts_at)
     const now = new Date()
     const key = start <= now ? 'event-on' : start.toDateString() === now.toDateString() ? 'event-today' : 'event-tomorrow'
-    // @ts-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1.
     return runs(W[key], { title: it.title, time: clockOf(it.starts_at) }, ['title'])
   }
   if (g.source !== 'network') {
@@ -208,7 +206,7 @@ watch([view, threadId, isSignedIn], show)
 /* answering from a card: open its thread with the reply box ready */
 function replyTo(post: any) { wantReply.value = post.id; navigate(ROUTES.feed + '/post/' + post.id) }
 function back() { if (window.history.length > 1) window.history.back(); else navigate(ROUTES.feed) }
-async function posted(out: any) {
+async function posted(out?: any) {
   if (view.value === 'thread') openThread(threadId.value)
   else source.value.refresh()
 }
@@ -218,7 +216,6 @@ const removed = (id: any) => { tl.st.items = tl.st.items.filter((it: any) => it.
 
 const signIn = () => { if ((window as any).DLauth) (window as any).DLauth.open() }
 /* a post made elsewhere — the post window — lands in whatever this column is showing */
-// @ts-expect-error TS2554, from the conversion: Expected 1 arguments, but got 0.
 defineExpose({ refresh: () => posted() })
 </script>
 

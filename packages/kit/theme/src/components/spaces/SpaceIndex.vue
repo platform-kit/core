@@ -108,8 +108,7 @@ const roomsIn = (id: any) => (props.rows || []).filter((r) => r.space === id && 
    date makes a reader work out for themselves whether it is new. */
 function ago(v: string|number|Date) {
   const d = new Date(v)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  if (isNaN(d)) return ''
+  if (isNaN(d.getTime())) return ''
   const s = Math.max(0, (now - d.getTime()) / 1000)
   if (s < 60) return W.value['ago-now']
   if (s < 3600) return Math.floor(s / 60) + 'm'
@@ -243,7 +242,7 @@ const shown = computed(() => {
                   </span>
                   <span class="si-onwhat">
                     <b>{{ o.title }}</b>
-                    <small><!-- @vue-expect-error TS2554, from the conversion: Expected 4 arguments, but got 3. -->{{ whenWord(o.starts_at, now, { today: C.today, tomorrow: C.tomorrow }) }} · <!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. -->{{ clockOf(o.starts_at) }}</small>
+                    <small>{{ whenWord(o.starts_at, now, { today: C.today, tomorrow: C.tomorrow }) }} · {{ clockOf(o.starts_at) }}</small>
                   </span>
                   <SpaceIcon class="si-go" name="fwd" :size="13" />
                 </button>

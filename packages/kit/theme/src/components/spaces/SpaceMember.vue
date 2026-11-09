@@ -86,8 +86,7 @@ const said = computed(() => {
 })
 const when = (v: any) => {
   const d = new Date(v)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
 }
 /* A PANEL'S TITLE KNOWS WHOSE CARD IT IS. On your own card "What they have read" is about you, and
    a site cannot word that from a single string — so a title may be a word or a function given

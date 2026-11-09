@@ -434,8 +434,7 @@ function buildSpeaker() {
        the kit's own voice has to be reachable — but a deployment whose endpoint works should
        never build one, and a worker holds about a gigabyte once it has */
     worker: theWorker,
-    // @ts-expect-error TS2322, from the conversion: Type '({ text, voice, format }: any) => Promise<ReadableStream<any> | null>' is not assignable to type 'null | undefined'.
-    post: async ({ text, voice, format }) => {
+    post: async ({ text, voice, format }: any) => {
       const res = await fetch(`${functionsBase()}/copilot-speak`, {
         method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${grant}` },
         body: JSON.stringify({ text, voice, format: format || 'pcm' }),

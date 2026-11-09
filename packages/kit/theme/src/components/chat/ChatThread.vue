@@ -166,7 +166,7 @@ function reply(m: any) { replyTo.value = m; if (composer.value) composer.value.f
       <p v-else-if="!thread.done && thread.messages.length" class="ct-note ct-earlier">{{ P['load-earlier'] }}</p>
       <template v-for="s in sections" :key="s.key">
         <div class="ct-day"><span>{{ s.label }}</span></div>
-        <!-- @vue-expect-error TS2339, from the conversion: Property 'id' does not exist on type 'never'. --><ChatBubble v-for="m in s.messages" :key="m.id" :message="m" :me="me" :peer-read-at="readAt" :reactions="reactionsOf(m.id)"
+        <!-- @vue-expect-error TS2339, from the conversion: Property 'reply_to' does not exist on type '{ id: any; sender_id: any; kind: string; body: string; created_at: any; }'. --><ChatBubble v-for="m in s.messages" :key="m.id" :message="m" :me="me" :peer-read-at="readAt" :reactions="reactionsOf(m.id)"
                     :quoted="m.reply_to ? byId[m.reply_to] || null : null" :name-of="nameOf" :can-write="canWrite" :flash="flashId === m.id"
                     @react="(e) => react(m.id, e)" @reply="reply(m)" @remove="remove(m.id)" @jump="jump" />
       </template>

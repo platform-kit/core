@@ -36,7 +36,7 @@ const cutNames = computed(() => {
   const r = cut.value; if (!r) return ''
   const byName = Object.fromEntries(promoList().map((x: { name: any; title: any }) => [x.name, x.title || x.name]))
   // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
-  return [...new Set(r.lines.flatMap((l) => l.by))].map((n) => byName[n] || n).join(' · ')
+  return [...new Set(r.lines.flatMap((l: any) => l.by))].map((n) => byName[n] || n).join(' · ')
 })
 const C = us('store').cart.ui
 const S = us('store').page.head

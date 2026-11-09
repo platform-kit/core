@@ -33,8 +33,7 @@ const money = (n: number, cur: any) => (typeof n === 'number'
   : '')
 const when = (v: string|number|Date) => {
   const d = new Date(v)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  return isNaN(d) ? '' : d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
 }
 </script>
 

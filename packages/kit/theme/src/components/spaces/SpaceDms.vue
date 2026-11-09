@@ -56,8 +56,7 @@ const lineOf = (row: { last: any; people: any }) => {
 }
 const when = (v: string|number|Date) => {
   const d = new Date(v)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  if (isNaN(d)) return ''
+  if (isNaN(d.getTime())) return ''
   const mins = Math.max(1, Math.round((Date.now() - d.getTime()) / 60000))
   if (mins < 60) return mins + 'm'
   const hrs = Math.round(mins / 60)

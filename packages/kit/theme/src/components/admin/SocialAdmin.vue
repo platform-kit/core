@@ -508,7 +508,7 @@ async function loadProviderPosts() {
   const result = await invokeCapability(workspaceAccountId.value, 'posts.read', {
     queryMode: 'list',
   })
-  // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
+  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   providerPostRows.value = workspaceRows(result, ['posts', 'items', 'results'])
 }
 async function inspectProviderPost(item: any) {
@@ -736,7 +736,7 @@ async function loadComments() {
   const result = await invokeCapability(workspaceAccountId.value, 'comments.read', {
     postId: selectedDelivery.value.provider_post_id,
   })
-  // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
+  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   workspaceRecords.value = workspaceRows(result, ['comments'])
   workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
 }
@@ -852,7 +852,7 @@ async function loadInbox() {
       return
     }
     const result = await invokeCapability(workspaceAccountId.value, 'notifications.read')
-    // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
+    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     workspaceRecords.value = workspaceRows(result, ['notifications'])
     workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
     return
@@ -862,7 +862,7 @@ async function loadInbox() {
     return
   }
   const result = await invokeCapability(workspaceAccountId.value, 'messages.read')
-  // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
+  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   workspaceRecords.value = workspaceRows(result, ['conversations', 'threads'])
   workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
   if (workspaceSelected.value) await loadConversation(workspaceSelected.value)
@@ -878,7 +878,7 @@ async function loadConversation(conversation: any) {
   const result = await invokeCapability(workspaceAccountId.value, 'messages.read', {
     conversationId,
   })
-  // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
+  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   workspaceMessages.value = workspaceRows(result, ['messages'])
 }
 async function selectConversation(row: any) {
@@ -942,7 +942,7 @@ async function searchWorkspace() {
       query: workspaceQuery.value.trim(),
       limit: 25,
     })
-    // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
+    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     workspaceRecords.value = workspaceRows(result, ['posts', 'items', 'results'])
     workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
   } catch (error) {
@@ -976,7 +976,7 @@ async function loadRelationships() {
       kind: workspaceMode.value,
       limit: 25,
     })
-    // @ts-expect-error TS2322, from the conversion: Type '{ _source: any; _key: any; _title: any; _subtitle: string; _status: string; }[]' is not assignable to type 'never[]'.
+    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     workspaceRecords.value = workspaceRows(result, ['profiles', 'users', 'items', 'results'])
     workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
   } catch (error) {
@@ -1174,7 +1174,7 @@ async function savePost() {
     busy.value = false
   }
 }
-async function uploadFiles(event: any, attachmentId: any) {
+async function uploadFiles(event: any, attachmentId?: any) {
   const files = [...(event.target.files || [])]
   event.target.value = ''
   if (!form.id) {
@@ -2799,7 +2799,7 @@ onMounted(async () => {
               <strong>{{ EDITOR.media }}</strong
               ><label v-if="!lockedPost" class="sp-file"
                 >{{ EDITOR['add-media']
-                }}<!-- @vue-expect-error TS2554, from the conversion: Expected 2 arguments, but got 1. --><input
+                }}<input
                   type="file"
                   accept="image/jpeg,image/png,video/mp4"
                   multiple

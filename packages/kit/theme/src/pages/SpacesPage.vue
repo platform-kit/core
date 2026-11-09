@@ -277,8 +277,7 @@ const laterLabel = computed(() => (laterHere.value.length === 1
   : (LW.value['waiting-many'] || '').replace('{n}', laterHere.value.length)))
 const sayWhenFull = (iso: any) => {
   const d = new Date(iso)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  if (isNaN(d)) return ''
+  if (isNaN(d.getTime())) return ''
   const today = new Date().toDateString() === d.toDateString()
   const at = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
   return today ? at : d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + at
@@ -419,8 +418,7 @@ const mutedSays = computed(() => {
   if (!m) return ''
   if (!m.until) return MuW.value['muted-ever']
   const d = new Date(m.until)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  return (MuW.value['muted-until'] || '').replace('{when}', isNaN(d) ? '' : d.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }))
+  return (MuW.value['muted-until'] || '').replace('{when}', isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }))
 })
 /* the place and what is in it: the conversation where they may write to a coach — a coach always, a
    member, somebody whose paid session's week is still running (read from the booking: the coaches they

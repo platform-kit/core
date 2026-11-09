@@ -54,8 +54,7 @@ const title = computed(() => props.root.title || titleOf(props.root, props.names
 const blocks = computed(() => lineBlocks(props.root.body, props.names, { someone: P.value.someone, channel: P.value['channel-word'] }))
 const when = computed(() => {
   const d = new Date(props.root.created_at)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-  if (isNaN(d)) return ''
+  if (isNaN(d.getTime())) return ''
   return d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
     + ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 })

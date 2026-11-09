@@ -90,8 +90,7 @@ async function answer(row: { id: string; kind: any; subject: any }) {
   } catch (e) { state.value = 'error' } finally { busy.value = '' }
 }
 
-// @ts-expect-error TS2345, from the conversion: Argument of type 'Date' is not assignable to parameter of type 'number'.
-const when = (v) => { const d = new Date(v); return isNaN(d) ? '' : spanOf(Date.now() - d.getTime()) }
+const when = (v: any) => { const d = new Date(v); return isNaN(d.getTime()) ? '' : spanOf(Date.now() - d.getTime()) }
 </script>
 
 <template>

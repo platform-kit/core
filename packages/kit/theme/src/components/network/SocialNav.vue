@@ -129,7 +129,7 @@ watch(() => [props.network, isSignedIn.value], ([on, signed]) => { if (on && sig
             <div class="sn-fold" :class="{ open: inboxOpen }">
               <!-- @vue-expect-error TS2322, from the conversion: Type 'true | null' is not assignable to type 'Booleanish | undefined'. --><ul class="sn-list sn-fold-in sn-sub" :inert="!inboxOpen || null">
                 <li v-for="r in m.rows" :key="r.key">
-                  <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "page" | "time" | Booleanish | "date" | "location" | undefined'. --><button type="button" class="sn-i sn-small" :class="{ on: view === r.key }" :aria-current="view === r.key ? 'page' : null" @click="emit('view', r.key)">
+                  <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "date" | "page" | "time" | Booleanish | "location" | undefined'. --><button type="button" class="sn-i sn-small" :class="{ on: view === r.key }" :aria-current="view === r.key ? 'page' : null" @click="emit('view', r.key)">
                     <span class="sn-ic"><SpaceIcon :name="QUEUE_ICON[r.key] || 'dm'" :size="17" /></span>
                     <span class="sn-w">{{ r.key === 'dms' ? S.messages : W[r.key] }}</span>
                     <em v-if="r.count" class="sn-c">{{ count(r.count) }}</em>
@@ -139,7 +139,7 @@ watch(() => [props.network, isSignedIn.value], ([on, signed]) => { if (on && sig
               </ul>
             </div>
           </template>
-          <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "page" | "time" | Booleanish | "date" | "location" | undefined'. --><button v-else type="button" class="sn-i" :class="{ on: isOn(m.key) }" :aria-current="isOn(m.key) ? 'page' : null" @click="emit('view', m.key)">
+          <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "date" | "page" | "time" | Booleanish | "location" | undefined'. --><button v-else type="button" class="sn-i" :class="{ on: isOn(m.key) }" :aria-current="isOn(m.key) ? 'page' : null" @click="emit('view', m.key)">
             <span class="sn-ic"><SpaceIcon :name="m.icon" :size="20" /></span>
             <span class="sn-w">{{ wordOf(m) }}</span>
             <em v-if="m.count" class="sn-c">{{ count(m.count) }}</em>

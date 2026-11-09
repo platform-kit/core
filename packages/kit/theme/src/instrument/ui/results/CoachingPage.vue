@@ -125,7 +125,7 @@ const asCoach = (b: any) => !!user.value && (b.provider_id === user.value.id || 
 const attending = computed(() => rows.value.filter((b: any) => !asCoach(b)));
 const live = (b: any) => (b.status === "accepted" || b.status === "pending") && b.end_at && new Date(b.end_at).getTime() > now();
 // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-const upcoming = computed(() => rows.value.filter(live).sort((a, b) => new Date(a.start_at) - new Date(b.start_at)));
+const upcoming = computed(() => rows.value.filter(live).sort((a: any, b: any) => new Date(a.start_at) - new Date(b.start_at)));
 /* HOW MANY SESSIONS THE RUN HOLDS, for the row that says "One of 6". Counted from the rows in hand
    rather than asked for: they are all the reader's own, so they are all here already. */
 const runOf = computed(() => {
