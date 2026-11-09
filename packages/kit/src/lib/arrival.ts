@@ -44,7 +44,7 @@ export function osOf(ua: string) {
 }
 
 /* the device class: a coarse pointer (a touch screen) is a phone, or a tablet when it is wide or says so */
-export function deviceOf(ua: string, { coarse = null, width = null } = {}) {
+export function deviceOf(ua: string, { coarse = null as boolean | null, width = null as number | null } = {}) {
   const s = String(ua || '')
   const tablet = /iPad|Tablet|PlayBook|Silk/.test(s) || (/Android/.test(s) && !/Mobile/.test(s)) || (/Macintosh/.test(s) && coarse === true)
   if (tablet) return 'tablet'

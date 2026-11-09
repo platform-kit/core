@@ -17,7 +17,7 @@ import { catalogFrom } from './spaces-disk.mjs'
 export const GRANTS = ['read', 'write']
 
 /* the config's access, compiled; faults are said, never swallowed */
-export function accessOf(config: { network: any }, root: string, { catalog = null } = {}) {
+export function accessOf(config: { network: any }, root: string, { catalog = null as { offers: any, sessions: any } | null } = {}) {
   const raw = (config && config.network && config.network.access) || null
   if (!raw) return { rules: null, join: null, faults: [] }
   const faults = []
@@ -51,7 +51,7 @@ const literal = (s: string) => "'" + String(s).replace(/'/g, "''") + "'"
  * community_admitted(place) in 93-network.sql. Home is not here: it is network.access, above.
  */
 export const GATED = ['events', 'messages', 'notifications']
-export function communityAccessOf(config: { community: any }, root: string, { catalog = null } = {}) {
+export function communityAccessOf(config: { community: any }, root: string, { catalog = null as { offers: any, sessions: any } | null } = {}) {
   const m = (config && config.community) || {}
   const wanted: any = {}
   const faults = []

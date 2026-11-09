@@ -38,7 +38,7 @@ await ok('Chatwoot\'s shapes: a message by author with its type, an attachment, 
   assert.equal(file.attachments[0].file_type, 'image'); assert.equal(file.attachments[0].data_url, '/storage/v1/x'); assert.equal(file.attachments[0].extension, 'png')
   const voice = messageOf({ id: 'm5', author: 'contact', kind: 'voice', attachment_path: 'c1/m5.mp3', attachment_type: 'audio/mpeg', seconds: 4, url: '/s', created_at: '2026-01-01T00:00:50Z' }, { contact }); assert.equal(voice.attachments[0].file_type, 'audio'); assert.equal(voice.content_attributes.seconds, 4)
   const gone = messageOf({ id: 'm6', author: 'contact', kind: 'text', body: null, deleted_at: '2026-01-01T00:01:00Z', created_at: '2026-01-01T00:00:55Z' }, { contact }); assert.equal(gone.content, null); assert.deepEqual(gone.content_attributes, { deleted: true })
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; user_id: null; name: null; email: null; verified: boolean; kind: string; custom_attributes: { plan: string; }; created_a
+  // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'assignee_id' does not exist in type '{ id: any; status: any; last_message_at: any; cr
   const conv: any = conversationOf({ id: 'c1', status: 'open', source: 'contact', path: '/store', created_at: '2026-01-01T00:00:00Z', last_message_at: '2026-01-01T00:00:20Z', assignee_id: 'a1', agent_read_at: null, contact_read_at: null, custom_attributes: {} }, { contact, assignee: { id: 'a1', name: 'Sam', email: 's@x', role: 'support' }, messages: [inc, out, sys], unread: 1, waitingSince: '2026-01-01T00:00:10Z' })
   assert.equal(conv.status, 'open'); assert.equal(conv.meta.sender.id, 'k1'); assert.equal(conv.meta.assignee.role, 'agent'); assert.equal(conv.unread_count, 1); assert.equal(conv.waiting_since, 1767225610); assert.equal(conv.last_non_activity_message.id, 'm2'); assert.equal(conv.channel, 'Channel::WebWidget'); assert.equal(conv.additional_attributes.path, '/store')
   const k = contactOf(contact, { sourceId: 'tok' }); assert.equal(k.name, 'Guest'); assert.equal(k.contact_inboxes[0].source_id, 'tok'); assert.equal(k.additional_attributes.kind, 'guest'); assert.deepEqual(k.custom_attributes, { plan: 'free' })
@@ -66,35 +66,28 @@ const makeKey = async (kind: string) => { const key = `pk_${kind}_probe${Date.no
 /* this run's calls come from one visitor of their own, as the proxy would say (cf-connecting-ip): the guest
    limit counts new contacts per address, and every run on one machine is otherwise the same address */
 const VISITOR = `198.51.100.${Math.floor(Math.random() * 250) + 1}`
-const call = async (p: string, { method = 'GET', body = null, headers = {} } = {}) => { const r = await fetch(FN + p, { method, headers: { 'cf-connecting-ip': VISITOR, ...(body ? { 'Content-Type': 'application/json' } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined }); return { status: r.status, body: await r.json().catch(() => null) } }
+const call = async (p: string, { method = 'GET', body = null as {} | { custom_attributes: { plan: string; }; } | { name: string; custom_attributes: { city: string; }; } | { path: string; } | { content: string; echo_id: string; } | { typing_status: string; } | { content: string; message_type: string; } | { assignee_id: any; } | { assignee_id: string; } | { status: string; } | { url: string; subscriptions: string[]; } | { webhook: { url: string; subscriptions: string[]; }; } | { content: string; } | null, headers = {} } = {}) => { const r = await fetch(FN + p, { method, headers: { 'cf-connecting-ip': VISITOR, ...(body ? { 'Content-Type': 'application/json' } : {}), ...headers }, body: body ? JSON.stringify(body) : undefined }); return { status: r.status, body: await r.json().catch(() => null) } }
 // @ts-expect-error TS2774, from the conversion: This condition will always return true since this function is always defined. Did you mean to call it instead?
 const INBOX = (await import('./content-json.mjs')).contentIndex ? String((await (await import('./content-json.mjs')).contentIndex({ root: ROOT })).space) : ''
 const PUB = `/public/api/v1/inboxes/${INBOX}`
-const ids = { contacts: [], convs: [], hooks: [] }
+const ids = { contacts: [] as any[], convs: [] as any[], hooks: [] as any[] }
 try {
   const key = await makeKey('support')
   const AUTH = { api_access_token: key }
   let sourceId: any = null, convId: any = null, echoOk = false
   await ok('the Client API: a guest contact (source_id), a conversation on the desk\'s default prompt, a message with its echo_id, the acknowledgement as an activity line, typing and last seen, the contact read and patched; a wrong inbox 404', async () => {
-    // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'null | undefined'.
     assert.equal((await call('/public/api/v1/inboxes/nope/contacts', { method: 'POST', body: {} })).status, 404)
-    // @ts-expect-error TS2322, from the conversion: Type '{ custom_attributes: { plan: string; }; }' is not assignable to type 'null | undefined'.
     const made = await call(PUB + '/contacts', { method: 'POST', body: { custom_attributes: { plan: 'trial' } } }); assert.equal(made.status, 200, JSON.stringify(made.body)); sourceId = made.body.source_id; assert.ok(sourceId && sourceId.length >= 16); ids.contacts.push(made.body.id)
     assert.equal(made.body.name, null, 'a guest has no name'); assert.deepEqual(made.body.custom_attributes, { plan: 'trial' })
     const got = await call(PUB + '/contacts/' + sourceId); assert.equal(got.status, 200); assert.equal(got.body.id, made.body.id)
-    // @ts-expect-error TS2322, from the conversion: Type '{ name: string; custom_attributes: { city: string; }; }' is not assignable to type 'null | undefined'.
     const patched = await call(PUB + '/contacts/' + sourceId, { method: 'PATCH', body: { name: 'Typed Name', custom_attributes: { city: 'Lisbon' } } }); assert.equal(patched.body.name, null, 'a typed name is no identity'); assert.deepEqual(patched.body.custom_attributes, { plan: 'trial', city: 'Lisbon' })
-    // @ts-expect-error TS2322, from the conversion: Type '{ path: string; }' is not assignable to type 'null | undefined'.
     const conv = await call(PUB + '/contacts/' + sourceId + '/conversations', { method: 'POST', body: { path: '/store' } }); assert.equal(conv.status, 200, JSON.stringify(conv.body)); convId = conv.body.id; ids.convs.push(convId)
     assert.equal(conv.body.status, 'open'); assert.ok(conv.body.pubsub_token, 'the thread\'s topic key'); assert.equal(conv.body.contact.id, made.body.id)
-    // @ts-expect-error TS2322, from the conversion: Type '{ content: string; echo_id: string; }' is not assignable to type 'null | undefined'.
     const msg = await call(PUB + '/contacts/' + sourceId + '/conversations/' + convId + '/messages', { method: 'POST', body: { content: 'Where is my order?', echo_id: 'e-1' } }); assert.equal(msg.status, 200, JSON.stringify(msg.body)); assert.equal(msg.body.message_type, 0); assert.equal(msg.body.content, 'Where is my order?'); echoOk = msg.body.echo_id === 'e-1'
     const list = await call(PUB + '/contacts/' + sourceId + '/conversations/' + convId + '/messages'); assert.equal(list.status, 200); assert.ok(list.body.some((x: { message_type: number; content: string }) => x.message_type === 0 && x.content === 'Where is my order?')); assert.ok(list.body.some((x: { message_type: number }) => x.message_type === 2), 'the acknowledgement as an activity line: ' + JSON.stringify(list.body.map((x: { message_type: any; content: any }) => [x.message_type, x.content])))
     const { data: row } = await service.from('support_contacts').select('token_hash, user_id').eq('id', made.body.id).single(); assert.equal((row as any).token_hash, await sha256(sourceId), 'the source_id is the contact token'); assert.equal((row as any).user_id, null)
-    // @ts-expect-error TS2322, from the conversion: Type '{ typing_status: string; }' is not assignable to type 'null | undefined'.
     assert.equal((await call(PUB + '/contacts/' + sourceId + '/conversations/' + convId + '/toggle_typing', { method: 'POST', body: { typing_status: 'on' } })).status, 200)
     const { data: c1 } = await service.from('support_conversations').select('contact_typing_at').eq('id', convId).single(); assert.ok((c1 as any).contact_typing_at, 'typing stamped')
-    // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'null | undefined'.
     assert.equal((await call(PUB + '/contacts/' + sourceId + '/conversations/' + convId + '/update_last_seen', { method: 'POST', body: {} })).status, 200)
     const { data: c2 } = await service.from('support_conversations').select('contact_read_at').eq('id', convId).single(); assert.ok((c2 as any).contact_read_at, 'read stamped')
     const all = await call(PUB + '/contacts/' + sourceId + '/conversations'); assert.equal(all.status, 200); assert.ok(all.body.some((x: { id: any }) => x.id === convId))
@@ -107,17 +100,13 @@ try {
     const me = await call('/api/v1/profile', { headers: AUTH }); assert.equal(me.status, 200); assert.equal(me.body.email, 'admin@example.com'); assert.equal(me.body.role, 'administrator')
     const list = await call('/api/v1/accounts/1/conversations?status=open&assignee_type=all', { headers: AUTH }); assert.equal(list.status, 200, JSON.stringify(list.body)); assert.ok(list.body.data.meta.all_count >= 1); assert.ok(list.body.data.payload.some((x: { id: any }) => x.id === convId)); const mine = list.body.data.payload.find((x: { id: any }) => x.id === convId); assert.equal(mine.meta.sender.name, 'Guest'); assert.equal(mine.unread_count, 1)
     const one = await call('/api/v1/accounts/1/conversations/' + convId, { headers: AUTH }); assert.equal(one.status, 200); assert.ok(one.body.messages.some((x: { message_type: number }) => x.message_type === 0)); assert.equal(one.body.additional_attributes.path, '/store')
-    // @ts-expect-error TS2322, from the conversion: Type '{ content: string; message_type: string; }' is not assignable to type 'null | undefined'.
     const reply = await call('/api/v1/accounts/1/conversations/' + convId + '/messages', { method: 'POST', headers: AUTH, body: { content: 'On its way.', message_type: 'outgoing' } }); assert.equal(reply.status, 200, JSON.stringify(reply.body)); assert.equal(reply.body.message_type, 1); assert.equal(reply.body.sender.type, 'user')
     const { data: m } = await service.from('support_messages').select('author, agent_id, body').eq('id', reply.body.id).single(); assert.equal((m as any).author, 'agent'); assert.equal((m as any).body, 'On its way.'); const { data: admin } = await service.from('profiles').select('id').eq('email', 'admin@example.com').single(); assert.equal((m as any).agent_id, (admin as any).id, 'the key\'s maker')
     const msgs = await call('/api/v1/accounts/1/conversations/' + convId + '/messages', { headers: AUTH }); assert.equal(msgs.status, 200); assert.ok(msgs.body.payload.some((x: { id: any }) => x.id === reply.body.id)); assert.equal(msgs.body.meta.contact.id, ids.contacts[0])
     const { data: agents } = await service.from('profiles').select('id, email').overlaps('roles', ['admin', 'support']); const other = (agents as any).find((a: { email: string }) => a.email !== 'admin@example.com') || (agents as any)[0]
-    // @ts-expect-error TS2322, from the conversion: Type '{ assignee_id: any; }' is not assignable to type 'null | undefined'.
     const asg = await call('/api/v1/accounts/1/conversations/' + convId + '/assignments', { method: 'POST', headers: AUTH, body: { assignee_id: other.id } }); assert.equal(asg.status, 200); assert.equal(asg.body.id, other.id)
     const { data: c1 } = await service.from('support_conversations').select('assignee_id').eq('id', convId).single(); assert.equal((c1 as any).assignee_id, other.id)
-    // @ts-expect-error TS2322, from the conversion: Type '{ assignee_id: string; }' is not assignable to type 'null | undefined'.
     assert.equal((await call('/api/v1/accounts/1/conversations/' + convId + '/assignments', { method: 'POST', headers: AUTH, body: { assignee_id: '00000000-0000-0000-0000-000000000000' } })).status, 422)
-    // @ts-expect-error TS2322, from the conversion: Type '{ status: string; }' is not assignable to type 'null | undefined'.
     const st = await call('/api/v1/accounts/1/conversations/' + convId + '/toggle_status', { method: 'POST', headers: AUTH, body: { status: 'resolved' } }); assert.equal(st.status, 200); assert.equal(st.body.payload.current_status, 'resolved')
     const { data: c2 } = await service.from('support_conversations').select('status, resolved_at').eq('id', convId).single(); assert.equal((c2 as any).status, 'resolved'); assert.ok((c2 as any).resolved_at)
     const resolved = await call('/api/v1/accounts/1/conversations?status=resolved', { headers: AUTH }); assert.ok(resolved.body.data.payload.some((x: { id: any }) => x.id === convId))
@@ -133,16 +122,12 @@ try {
     await new Promise((r) => server.listen(0, '0.0.0.0', r))
     const receiver = `http://host.docker.internal:${server.address().port}/hook`
     try {
-      // @ts-expect-error TS2322, from the conversion: Type '{ url: string; subscriptions: string[]; }' is not assignable to type 'null | undefined'.
       const w = await call('/api/v1/accounts/1/webhooks', { method: 'POST', headers: AUTH, body: { url: receiver, subscriptions: ['message_created', 'conversation_status_changed', 'conversation_created'] } }); assert.equal(w.status, 201, JSON.stringify(w.body)); const hookId = w.body.payload.webhook.id; ids.hooks.push(hookId)
       const listed = await call('/api/v1/accounts/1/webhooks', { headers: AUTH }); assert.ok(listed.body.payload.webhooks.some((x: { id: any }) => x.id === hookId))
-      // @ts-expect-error TS2322, from the conversion: Type '{ webhook: { url: string; subscriptions: string[]; }; }' is not assignable to type 'null | undefined'.
       const upd = await call('/api/v1/accounts/1/webhooks/' + hookId, { method: 'PATCH', headers: AUTH, body: { webhook: { url: receiver, subscriptions: ['message_created', 'conversation_status_changed'] } } }); assert.equal(upd.status, 200); assert.deepEqual(upd.body.payload.webhook.subscriptions, ['message_created', 'conversation_status_changed'])
       /* a contact's line through the Client API */
-      // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'null | undefined'.
       const conv2 = await call(PUB + '/contacts/' + sourceId + '/conversations', { method: 'POST', body: {} }); ids.convs.push(conv2.body.id)
       hits.length = 0
-      // @ts-expect-error TS2322, from the conversion: Type '{ content: string; }' is not assignable to type 'null | undefined'.
       await call(PUB + '/contacts/' + sourceId + '/conversations/' + conv2.body.id + '/messages', { method: 'POST', body: { content: 'A second question' } })
       for (let i = 0; i < 40 && !hits.some((h: { event: string; message_type: string; content: string }) => h.event === 'message_created' && h.message_type === 'incoming' && h.content === 'A second question'); i++) await new Promise((r) => setTimeout(r, 300))
       const inc = hits.find((h: { event: string; message_type: string; content: string }) => h.event === 'message_created' && h.message_type === 'incoming' && h.content === 'A second question'); assert.ok(inc, 'the contact\'s line delivered: ' + JSON.stringify(hits.map((h: { event: any; message_type: any; content: any }) => [h.event, h.message_type, h.content])))
@@ -151,12 +136,10 @@ try {
       const anonKey = anon; const agent = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })
       const { error: se } = await agent.auth.signInWithPassword({ email: 'support@example.com', password: 'password123' }); if (se) { const { error: se2 } = await agent.auth.signInWithPassword({ email: 'admin@example.com', password: 'password123' }); assert.ok(!se2, 'a staff sign-in') }
       const { data: who } = await agent.auth.getUser()
-      // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: unknown, message?: Error | AssertMessageFunction | undefined): asserts value', gave
-      const { error: ie } = await agent.from('support_messages').insert({ conversation_id: conv2.body.id, author: 'agent', agent_id: who.user.id, body: 'From the inbox' }); assert.ok(!ie, ie && ie.message)
+      const { error: ie } = await agent.from('support_messages').insert({ conversation_id: conv2.body.id, author: 'agent', agent_id: who.user!.id, body: 'From the inbox' }); assert.ok(!ie, String(ie && ie.message))
       for (let i = 0; i < 40 && !hits.some((h: { event: string; message_type: string }) => h.event === 'message_created' && h.message_type === 'outgoing'); i++) await new Promise((r) => setTimeout(r, 300))
       const out = hits.find((h: { event: string; message_type: string }) => h.event === 'message_created' && h.message_type === 'outgoing'); assert.ok(out, 'the agent\'s line delivered'); assert.equal(out.sender.type, 'user'); assert.equal(out.content, 'From the inbox')
       /* a status change through the Application API */
-      // @ts-expect-error TS2322, from the conversion: Type '{ status: string; }' is not assignable to type 'null | undefined'.
       await call('/api/v1/accounts/1/conversations/' + conv2.body.id + '/toggle_status', { method: 'POST', headers: AUTH, body: { status: 'resolved' } })
       for (let i = 0; i < 40 && !hits.some((h: { event: string }) => h.event === 'conversation_status_changed'); i++) await new Promise((r) => setTimeout(r, 300))
       const sc = hits.find((h: { event: string }) => h.event === 'conversation_status_changed'); assert.ok(sc, 'the status change delivered'); assert.equal(sc.status, 'resolved'); assert.equal(sc.id, conv2.body.id); assert.equal(sc.meta.sender.id, ids.contacts[0])
@@ -188,8 +171,7 @@ try {
     const shell = path.join(process.env.HOME || '', 'Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell')
     const b = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || (fs.existsSync(shell) ? shell : undefined) })
     const shots = process.env.SUPPORT_API_SHOTS
-    // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-    const before = (await service.from('support_contacts').select('id')).data.map((k) => k.id)
+    const before = (await service.from('support_contacts').select('id')).data!.map((k) => k.id)
     try {
       for (const scheme of ['light', 'dark']) {
         const p = await (await browserContext(b, { viewport: { width: 1280, height: 800 }, colorScheme: scheme })).newPage()
@@ -224,10 +206,8 @@ try {
           await p.waitForFunction(() => document.body.innerText.includes('Hello from another site'), null, { timeout: 20001 }).catch((e: { message: string }) => { throw new Error('the line shown: ' + e.message.split('\n')[0] + (refusedReqs.length ? ' — refused: ' + refusedReqs.slice(-6).join(' ; ') : '') + (errs.length ? ' — page errors: ' + errs.slice(-3).join(' ; ') : '')) })
           await p.waitForFunction(() => !!localStorage.getItem('dl.support.token'), null, { timeout: 20002 }).catch((e: { message: string }) => { throw new Error('the token kept: ' + e.message.split('\n')[0]) })
           const token = await p.evaluate(() => localStorage.getItem('dl.support.token'))
-          // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
           const { data: k } = await service.from('support_contacts').select('id, user_id').eq('token_hash', await sha256(token)).maybeSingle(); assert.ok(k && !k.user_id, 'a guest of the desk'); ids.contacts.push(k.id)
-          // @ts-expect-error TS18047, from the conversion: 'convs' is possibly 'null'.
-          const { data: convs } = await service.from('support_conversations').select('id').eq('contact_id', k.id); for (const c of convs) ids.convs.push(c.id)
+          const { data: convs } = await service.from('support_conversations').select('id').eq('contact_id', k.id); for (const c of convs!) ids.convs.push(c.id)
           const { data: msgs } = await service.from('support_messages').select('body').in('conversation_id', (convs as any).map((c: { id: any }) => c.id)); assert.ok((msgs as any).some((m: { body: string }) => m.body === 'Hello from another site'), 'the line in the desk\'s tables')
           await p.evaluate(() => (window as any).$chatwidget.setCustomAttributes({ plan: 'pro' }))
           await p.waitForTimeout(1500)
@@ -248,7 +228,6 @@ try {
   })
   await ok('the guards: a sixth guest from one address in an hour is refused as the widget\'s would be', async () => {
     let last = 0
-    // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'null | undefined'.
     for (let i = 0; i < 7; i++) { const r = await call(PUB + '/contacts', { method: 'POST', body: {} }); last = r.status; if (r.body && r.body.id) ids.contacts.push(r.body.id); if (last === 429) break }
     assert.equal(last, 429, 'the address is capped')
   })

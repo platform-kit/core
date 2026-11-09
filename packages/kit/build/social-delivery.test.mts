@@ -109,15 +109,13 @@ try {
     p_expected_updated_at: schedulePost.updated_at,
     p_actor_id: adminUser.id,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(initialScheduleError, null, initialScheduleError?.message)
+  assert.equal(initialScheduleError, null, String(initialScheduleError?.message))
   assert.equal(initialDeliveries.length, 3, 'one schedule creates an independent target per account')
   assert.ok(initialDeliveries.every((delivery) => delivery.status === 'scheduled'))
 
   const { data: latestPost, error: latestPostError } = await service.from('social_posts')
     .select('updated_at').eq('id', schedulePost.id).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(latestPostError, null, latestPostError?.message)
+  assert.equal(latestPostError, null, String(latestPostError?.message))
   const rescheduleAt = new Date(Date.now() + 10 * 60_000).toISOString()
   const { data: rescheduled, error: rescheduleError } = await service.rpc('social_schedule_post', {
     p_post_id: schedulePost.id,
@@ -128,13 +126,11 @@ try {
     p_expected_updated_at: latestPost.updated_at,
     p_actor_id: adminUser.id,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(rescheduleError, null, rescheduleError?.message)
+  assert.equal(rescheduleError, null, String(rescheduleError?.message))
   assert.equal(rescheduled.length, 2, 'rescheduling keeps only selected account targets')
   const { data: rescheduledStates, error: statesError } = await service.from('social_deliveries')
     .select('account_id, scheduled_at, status').eq('post_id', schedulePost.id)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(statesError, null, statesError?.message)
+  assert.equal(statesError, null, String(statesError?.message))
   assert.equal(rescheduledStates.length, 3)
   assert.equal((rescheduledStates as any).find((item: { account_id: string }) => item.account_id === scheduleAccounts[2]).status, 'cancelled')
   assert.ok(rescheduledStates.filter((item) => item.status === 'scheduled')
@@ -152,8 +148,7 @@ try {
   assert.equal(cancelled.status, 200, JSON.stringify(cancelled))
   const { data: cancelledTargets, error: cancelledError } = await service.from('social_deliveries')
     .select('status').eq('post_id', schedulePost.id)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(cancelledError, null, cancelledError?.message)
+  assert.equal(cancelledError, null, String(cancelledError?.message))
   assert.ok(cancelledTargets.every((delivery) => delivery.status === 'cancelled'))
 
   const concurrentPost = await createdPost('Concurrency test.')
@@ -165,8 +160,7 @@ try {
       scheduled_at: new Date(Date.now() - 60_000).toISOString(),
       status: 'scheduled',
     }).select('id').single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(concurrentInsertError, null, concurrentInsertError?.message)
+  assert.equal(concurrentInsertError, null, String(concurrentInsertError?.message))
 
   const [firstClaims, secondClaims] = await Promise.all([claimDue(), claimDue()])
   const concurrentClaims = [...firstClaims, ...secondClaims]
@@ -176,8 +170,7 @@ try {
   const { error: expireClaimError } = await service.from('social_deliveries')
     .update({ lease_until: new Date(Date.now() - 1_000).toISOString() })
     .eq('id', originalLease.id).eq('status', 'claimed')
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(expireClaimError, null, expireClaimError?.message)
+  assert.equal(expireClaimError, null, String(expireClaimError?.message))
   const reclaimed = (await claimDue()).find((delivery) => delivery.id === originalLease.id)
   assert.ok(reclaimed, 'an expired pre-publish claim can be leased by another worker')
   assert.notEqual(reclaimed.lease_token, originalLease.lease_token)
@@ -186,26 +179,22 @@ try {
     p_delivery_id: reclaimed.id,
     p_lease_token: reclaimed.lease_token,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(startError, null, startError?.message)
+  assert.equal(startError, null, String(startError?.message))
   assert.equal(attemptNumber, 1)
   const { error: expirePublishError } = await service.from('social_deliveries')
     .update({ lease_until: new Date(Date.now() - 1_000).toISOString() })
     .eq('id', reclaimed.id).eq('status', 'publishing')
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(expirePublishError, null, expirePublishError?.message)
+  assert.equal(expirePublishError, null, String(expirePublishError?.message))
   assert.deepEqual(await claimDue(), [], 'an expired publish lease is held for review, not blindly retried')
   const { data: expiredDelivery, error: expiredDeliveryError } = await service.from('social_deliveries')
     .select('status, lease_token, last_error_code').eq('id', reclaimed.id).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(expiredDeliveryError, null, expiredDeliveryError?.message)
+  assert.equal(expiredDeliveryError, null, String(expiredDeliveryError?.message))
   assert.equal(expiredDelivery.status, 'review_required')
   assert.equal(expiredDelivery.lease_token, null)
   assert.equal(expiredDelivery.last_error_code, 'delivery_lease_expired')
   const { data: expiredAttempt, error: expiredAttemptError } = await service.from('social_delivery_attempts')
     .select('status, error_code').eq('delivery_id', reclaimed.id).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(expiredAttemptError, null, expiredAttemptError?.message)
+  assert.equal(expiredAttemptError, null, String(expiredAttemptError?.message))
   assert.equal(expiredAttempt.status, 'unknown')
   assert.equal(expiredAttempt.error_code, 'delivery_lease_expired')
 
@@ -218,16 +207,14 @@ try {
       scheduled_at: new Date(Date.now() - 60_000).toISOString(),
       status: 'scheduled',
     }).select('id').single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(workerInsertError, null, workerInsertError?.message)
+  assert.equal(workerInsertError, null, String(workerInsertError?.message))
   const workerResult = await invokeWorker()
   assert.equal(workerResult.status, 200, JSON.stringify(workerResult))
   assert.equal(workerResult.claimed, 1)
   assert.equal(workerResult.processed, 1)
   const { data: workerState, error: workerStateError } = await service.from('social_deliveries')
     .select('status, last_error_code').eq('id', workerDelivery.id).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(workerStateError, null, workerStateError?.message)
+  assert.equal(workerStateError, null, String(workerStateError?.message))
   assert.equal(workerState.status, 'blocked')
   assert.equal(workerState.last_error_code, 'provider_unsupported')
   const repeatedWorker = await invokeWorker()
@@ -237,8 +224,7 @@ try {
   const approvalAccount = await createdAccount()
   const { error: approvalSettingError } = await service.from('social_accounts')
     .update({ approval_required: true }).eq('id', approvalAccount)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(approvalSettingError, null, approvalSettingError?.message)
+  assert.equal(approvalSettingError, null, String(approvalSettingError?.message))
   const { data: approvalTargets, error: approvalScheduleError } = await service.rpc('social_schedule_post', {
     p_post_id: approvalPost.id,
     p_body: 'Approval-gated immediate post.',
@@ -249,8 +235,7 @@ try {
     p_actor_id: adminUser.id,
     p_publish_now: true,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(approvalScheduleError, null, approvalScheduleError?.message)
+  assert.equal(approvalScheduleError, null, String(approvalScheduleError?.message))
   const approvalTarget = approvalTargets[0]
   assert.equal(approvalTarget.approval_state, 'pending', 'publish-now cannot bypass a required approval')
   assert.equal(approvalTarget.approval_intent, 'immediate')
@@ -260,14 +245,12 @@ try {
     .in('status', ['scheduled', 'retry_wait', 'remote_scheduled'])
     .lte('scheduled_at', new Date().toISOString())
     .neq('id', approvalTarget.id)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(otherDueError, null, otherDueError?.message)
+  assert.equal(otherDueError, null, String(otherDueError?.message))
   const { data: expiredClaims, error: expiredClaimsError } = await service.from('social_deliveries')
     .select('id')
     .eq('status', 'claimed')
     .lt('lease_until', new Date().toISOString())
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(expiredClaimsError, null, expiredClaimsError?.message)
+  assert.equal(expiredClaimsError, null, String(expiredClaimsError?.message))
   if (!otherDueTargets.length && !expiredClaims.length) {
     assert.equal(
       (await claimDue()).some((delivery) => delivery.id === approvalTarget.id),

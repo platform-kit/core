@@ -97,31 +97,25 @@ try {
   const purchaseA = await writePurchase(checkoutIdentities[0])
   const replayA = await writePurchase(checkoutIdentities[0])
   const purchaseB = await writePurchase(checkoutIdentities[1])
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(purchaseA.error, null, purchaseA.error?.message)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(replayA.error, null, replayA.error?.message)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(purchaseB.error, null, purchaseB.error?.message)
+  assert.equal(purchaseA.error, null, String(purchaseA.error?.message))
+  assert.equal(replayA.error, null, String(replayA.error?.message))
+  assert.equal(purchaseB.error, null, String(purchaseB.error?.message))
   assert.equal(replayA.data, purchaseA.data, 'same-provider checkout replay upserts its original purchase')
   assert.notEqual(purchaseB.data, purchaseA.data, 'same external checkout and price ids remain provider-isolated')
 
   const purchases = await admin.from('purchases').select('id, checkout_identity')
     .in('checkout_identity', checkoutIdentities)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(purchases.error, null, purchases.error?.message)
+  assert.equal(purchases.error, null, String(purchases.error?.message))
   assert.equal(purchases.data.length, 2, 'different provider identities retain independent purchases')
 
   const insertedRefs = await admin.from('payment_provider_refs').insert(refs)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(insertedRefs.error, null, insertedRefs.error?.message)
+  assert.equal(insertedRefs.error, null, String(insertedRefs.error?.message))
   const referenceRows = await admin.from('payment_provider_refs')
     .select('provider, external_id, entity_id')
     .in('provider', providers)
     .eq('object_type', 'checkout')
     .eq('external_id', externalId)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(referenceRows.error, null, referenceRows.error?.message)
+  assert.equal(referenceRows.error, null, String(referenceRows.error?.message))
   assert.deepEqual(new Set(referenceRows.data.map((row) => row.provider)), new Set(providers))
   for (const ref of refs) {
     const scoped = await admin.from('payment_provider_refs')
@@ -130,8 +124,7 @@ try {
       .eq('object_type', ref.object_type)
       .eq('external_id', ref.external_id)
       .eq('entity_type', ref.entity_type)
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-    assert.equal(scoped.error, null, scoped.error?.message)
+    assert.equal(scoped.error, null, String(scoped.error?.message))
     assert.deepEqual(scoped.data.map((row) => row.entity_id), [ref.entity_id])
   }
 
@@ -141,14 +134,12 @@ try {
   const insertedEvents = await admin.from('payment_events').insert(providers.map((provider) => ({
     provider, event_id: eventId, type: 'checkout.completed',
   })))
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(insertedEvents.error, null, insertedEvents.error?.message)
+  assert.equal(insertedEvents.error, null, String(insertedEvents.error?.message))
   const eventRows = await admin.from('payment_events')
     .select('provider, event_id')
     .in('provider', providers)
     .eq('event_id', eventId)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(eventRows.error, null, eventRows.error?.message)
+  assert.equal(eventRows.error, null, String(eventRows.error?.message))
   assert.equal(eventRows.data.length, 2, 'identical event ids are independent across providers')
 
   const duplicateEvent = await admin.from('payment_events').insert({
@@ -162,10 +153,7 @@ try {
     admin.from('payment_events').delete().in('provider', providers),
     admin.from('purchases').delete().in('checkout_identity', checkoutIdentities),
   ])
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(refsCleanup.error, null, refsCleanup.error?.message)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(eventsCleanup.error, null, eventsCleanup.error?.message)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(purchasesCleanup.error, null, purchasesCleanup.error?.message)
+  assert.equal(refsCleanup.error, null, String(refsCleanup.error?.message))
+  assert.equal(eventsCleanup.error, null, String(eventsCleanup.error?.message))
+  assert.equal(purchasesCleanup.error, null, String(purchasesCleanup.error?.message))
 }

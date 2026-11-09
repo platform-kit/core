@@ -68,7 +68,7 @@ ok('a count never goes below nothing', toggled({ id: 'p', repost_count: 0, repos
 /* ---- a space's message drawn as a post */
 const m: any = postOfMessage({ id: 'm', author_id: 'u', body: 'hello', created_at: 'x', reply_count: 2, channel_slug: 'feed' }, { id: 's', slug: 'cohort', name: 'Cohort' })
 ok('a space\'s message reads as a post of the space', m.kind === 'space' && m.audience === 'space' && m.space.name === 'Cohort' && m.text === 'hello')
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
+// @ts-expect-error TS2322, from the conversion: Type 'null' is not assignable to type 'string'.
 ok('the people of a set of posts, once each', eq(peopleIn([{ author_id: 'a' }, { author_id: 'a' }, { author_id: 'b' }], ['c', null]).sort(), ['a', 'b', 'c']))
 
 /* ---- OTHER APPS SIGNING IN: the site owner's choice, off unless the config says so */

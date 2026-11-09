@@ -91,7 +91,7 @@ const API = url + '/functions/v1/scheduling-api'
 const sha256 = async (s: string|undefined) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
 const madeKeys: any = [], madeBookings: any = []
 const makeKey = async (kind: string) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: a } = await admin.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await admin.from('api_keys').insert({ name: 'scheduling-api test', kind, gated: false, prefix: key.slice(0, 12), hash: await sha256(key), created_by: a ? a.id : null }); if (error) throw new Error(error.message); madeKeys.push(key); return key }
-const call = async (p: string, init: any = {}, token = null) => { const r = await fetch(API + p, { ...init, headers: { 'content-type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}), ...(init.headers || {}) } }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
+const call = async (p: string, init: any = {}, token: string | null = null) => { const r = await fetch(API + p, { ...init, headers: { 'content-type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}), ...(init.headers || {}) } }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
 const ids: any = {}
 for (const e of ['member@example.com', 'member2@example.com', 'free@example.com', 'coach@example.com', 'admin@example.com']) { const { data } = await admin.from('profiles').select('id').eq('email', e).maybeSingle(); if (data) ids[e] = data.id }
 const coach = ids['coach@example.com']
@@ -121,8 +121,7 @@ try {
   const [d1, d2] = await pickDays(2)
   assert.ok(d1 && d2, 'two open weekdays')
   /* the kit's own cal.com client, its base the site: the closed loop */
-  // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ CAL_API_KEY: string; CAL_API_BASE: stri
-  const cal = calClient((k) => ({ CAL_API_KEY: key, CAL_API_BASE: API + '/v2' })[k] || '')
+  const cal = calClient((k: string|number) => ({ CAL_API_KEY: key, CAL_API_BASE: API + '/v2' })[k] || '')
   const sType = { ...one, username: 'coach', event: one.slug }   /* cal.js finds a type by its slug under a username */
   let uid = null
 
@@ -132,7 +131,6 @@ try {
    * be, what it asks, what it caps, whether it waits for a yes.
    */
   await ok('every event type says, in cal.com\'s words, what its own file says', async () => {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const r = await call('/v2/event-types', {}, key)
     assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 200))
     const list = r.body.data || []
@@ -164,20 +162,17 @@ try {
     }
   })
   await ok('every set of hours is a schedule, and one can be asked for by id', async () => {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const r = await call('/v2/schedules', {}, key)
     assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 160))
     const sets = r.body.data || []
     assert.ok(sets.length, 'some schedules')
     assert.ok(sets.every((x: { name: any; isDefault: any }) => typeof x.name === 'string' && typeof x.isDefault === 'boolean'), 'each one is named and says whether it is the usual')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const one2 = await call('/v2/schedules/' + sets[0].id, {}, key)
     assert.equal(one2.status, 200); assert.equal(one2.body.data.id, sets[0].id)
   })
   await ok('the days somebody is away are answered', async () => {
     const { data: row } = await admin.from('provider_ooo').insert({ user_id: coach, from: d2, to: d2, reason: 'probe-schedapi' }).select('id').single()
     try {
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const r = await call('/v2/ooo', {}, key)
       assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 160))
       const mine = (r.body.data || []).find((x: { start: string }) => x.start === d2)
@@ -186,7 +181,6 @@ try {
     } finally { await admin.from('provider_ooo').delete().eq('id', (row as any).id) }
   })
   await ok('the API and the booker answer the same week, because they are the same function', async () => {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const r = await call(`/v2/slots?eventTypeSlug=${one.slug}&start=${d1}&end=${d1}&timeZone=UTC`, {}, key)
     assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 160))
     const theirs = Object.values(r.body.data || {}).flat().map((x: any) => (typeof x === 'string' ? x : x.start)).sort()
@@ -240,50 +234,35 @@ try {
   })
   await ok('the judge holds through the API: not admitted, over the allowance, a paid type with no credit, a guest on a members\' type', async () => {
     const [day] = await pickDays(1)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const { data: slotsR } = (await call(`/v2/slots?eventTypeSlug=${one.slug}&start=${day}&end=${day}&timeZone=${AMS}`, {}, key)).body
     const times = slotsR[day] || []; assert.ok(times.length >= 2)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     if (tier) { const r = await call('/v2/bookings', { method: 'POST', body: JSON.stringify({ start: times[0].start, eventTypeSlug: one.slug, attendee: { email: 'free@example.com', name: 'Free', timeZone: AMS }, metadata: { probe: 'schedapi' } }) }, key); assert.equal(r.status, 403, JSON.stringify(r.body)); assert.ok(['not-included', 'guest'].includes(r.body.error.details.code), r.body.error.details.code); assert.equal(r.body.status, 'error') }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const g = await call('/v2/bookings', { method: 'POST', body: JSON.stringify({ start: times[0].start, eventTypeSlug: one.slug, attendee: { email: 'nobody.' + Date.now() + '@example.org', name: 'Nobody', timeZone: AMS } }) }, key)
     assert.equal(g.status, 403, JSON.stringify(g.body)); assert.equal(g.body.error.details.code, 'guest')
     const paidListed = paidType && tier && catalog.allowances && catalog.allowances[tier] && catalog.allowances[tier][paidType.slug]
     if (paidType && paidListed) note('the paid type is included in ' + tier + ' — the unpaid refusal is not exercised here')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     if (paidType && !paidListed) { const p = await call('/v2/bookings', { method: 'POST', body: JSON.stringify({ start: times[0].start, eventTypeSlug: paidType.slug, attendee: { email: reader, timeZone: AMS }, metadata: { probe: 'schedapi' } }) }, key); assert.equal(p.status, 402, JSON.stringify(p.body)); assert.equal(p.body.error.details.code, 'unpaid') }
     if (one.weekly === 1 || (catalog.allowances && tier && catalog.allowances[tier] && catalog.allowances[tier][one.slug] && catalog.allowances[tier][one.slug].weekly === 1)) {
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const a = await call('/v2/bookings', { method: 'POST', body: JSON.stringify({ start: times[0].start, eventTypeSlug: one.slug, attendee: { email: reader, timeZone: AMS }, bookingFieldsResponses: { notes: 'probe-schedapi' } }) }, key); assert.equal(a.status, 201, JSON.stringify(a.body)); madeBookings.push(a.body.data.uid)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const b = await call('/v2/bookings', { method: 'POST', body: JSON.stringify({ start: times[1].start, eventTypeSlug: one.slug, attendee: { email: reader, timeZone: AMS }, bookingFieldsResponses: { notes: 'probe-schedapi' } }) }, key); assert.equal(b.status, 403, JSON.stringify(b.body)); assert.equal(b.body.error.details.code, 'over')
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       await call(`/v2/bookings/${a.body.data.uid}/cancel`, { method: 'POST', body: JSON.stringify({ cancellationReason: 'probe' }) }, key)
     } else note('the type allows more than one a week — the allowance refusal is not exercised here')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const bad = await call('/v2/bookings', { method: 'POST', body: JSON.stringify({ start: 'nope', eventTypeSlug: one.slug, attendee: { email: reader } }) }, key); assert.equal(bad.status, 400)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const nf = await call('/v2/event-types/999999999', {}, key); assert.equal(nf.status, 404); assert.equal(nf.body.error.code, 'NOT_FOUND')
     const none = await call('/v2/event-types'); assert.equal(none.status, 401)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const dk = await makeKey('delivery'); const other = await call('/v2/event-types', {}, dk); assert.equal(other.status, 403)
   })
   await ok('a reader\'s JWT: their own bookings, an admitted type\'s slots, 403 for one their plan does not admit', async () => {
     const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
     // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string'. Type 'null' is not assignable to type 'string'.
-    const { data: sess, error } = await sb.auth.signInWithPassword({ email: reader, password: 'password123' }); assert.ok(!error, error && error.message)
+    const { data: sess, error } = await sb.auth.signInWithPassword({ email: reader, password: 'password123' }); assert.ok(!error, String(error && error.message))
     const jwt = sess.session.access_token
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const me = await call('/v2/me', {}, jwt); assert.equal(me.status, 200); assert.equal(me.body.data.email, reader)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
-    const mine = await call('/v2/bookings?status=cancelled', {}, jwt); assert.equal(mine.status, 200); assert.ok(mine.body.data.every((b) => b.attendees.some((a) => a.email === reader)), 'only their own')
+    const mine = await call('/v2/bookings?status=cancelled', {}, jwt); assert.equal(mine.status, 200); assert.ok(mine.body.data.every((b: { attendees: any[] }) => b.attendees.some((a: { email: string|null }) => a.email === reader)), 'only their own')
     const [day] = await pickDays(1)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const sl = await call(`/v2/slots?eventTypeSlug=${one.slug}&start=${day}&end=${day}&timeZone=${AMS}`, {}, jwt); assert.equal(sl.status, 200)
     if (tier) { const { data: fs2 } = await createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } }).auth.signInWithPassword({ email: 'free@example.com', password: 'password123' }); const r = await call(`/v2/slots?eventTypeSlug=${one.slug}&start=${day}&end=${day}`, {}, (fs2 as any).session.access_token); assert.equal(r.status, 403, 'not theirs: ' + r.status); const et = await call('/v2/event-types', {}, (fs2 as any).session.access_token); assert.ok(!et.body.data.some((e: { slug: any }) => e.slug === one.slug), 'not listed for a reader the plan does not admit') }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const hooks = await call('/v2/webhooks', {}, jwt); assert.equal(hooks.status, 403, 'webhooks are the site\'s')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const all = await call('/v2/bookings?status=cancelled', {}, key); assert.ok(all.body.data.length >= mine.body.data.length, 'a key sees every booking')
   })
   await ok('webhooks: subscribed with cal.com\'s shape, a native booking made and cancelled reaches the receiver twice under X-Cal-Signature-256, listed, deleted, then silent', async () => {
@@ -293,49 +272,36 @@ try {
     const receiver = `http://host.docker.internal:${server.address().port}/schedapi-hook`
     try {
       const secret = 'shh-' + Math.random().toString(36).slice(2)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const w = await call('/v2/webhooks', { method: 'POST', body: JSON.stringify({ subscriberUrl: receiver, triggers: ['BOOKING_CREATED', 'BOOKING_CANCELLED'], active: true, secret }) }, key)
       assert.equal(w.status, 201, JSON.stringify(w.body)); assert.equal(w.body.data.subscriberUrl, receiver); assert.deepEqual(w.body.data.triggers, ['BOOKING_CREATED', 'BOOKING_CANCELLED']); assert.equal(w.body.data.secret, undefined)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
-      const list = await call('/v2/webhooks', {}, key); assert.ok(list.body.data.some((x) => x.uid === w.body.data.uid))
+      const list = await call('/v2/webhooks', {}, key); assert.ok(list.body.data.some((x: { uid: any }) => x.uid === w.body.data.uid))
       const [day] = await pickDays(1)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const { data: slotsR } = (await call(`/v2/slots?eventTypeSlug=${one.slug}&start=${day}&end=${day}&timeZone=${AMS}`, {}, key)).body
       const t = (slotsR[day] || [])[0].start
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const b = await call('/v2/bookings', { method: 'POST', body: JSON.stringify({ start: t, eventTypeSlug: one.slug, attendee: { email: reader, name: 'Probe', timeZone: AMS }, bookingFieldsResponses: { notes: 'probe-schedapi' } }) }, key)
       assert.equal(b.status, 201, JSON.stringify(b.body)); madeBookings.push(b.body.data.uid)
       for (let i = 0; i < 40 && got.length < 1; i++) await new Promise((x) => setTimeout(x, 250))
       assert.equal(got.length, 1, 'the creation delivered')
       const p1 = JSON.parse(got[0].body); assert.equal(p1.triggerEvent, 'BOOKING_CREATED'); assert.equal(p1.payload.uid, b.body.data.uid); assert.equal(p1.payload.attendees[0].email, reader); assert.equal(p1.payload.organizer.email, 'coach@example.com')
       assert.equal(got[0].sig, createHmac('sha256', secret).update(got[0].body).digest('hex'), 'X-Cal-Signature-256 verifies')
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const c = await call(`/v2/bookings/${b.body.data.uid}/cancel`, { method: 'POST', body: JSON.stringify({ cancellationReason: 'probe' }) }, key); assert.equal(c.status, 200); assert.equal(c.body.data.status, 'cancelled')
       for (let i = 0; i < 40 && got.length < 2; i++) await new Promise((x) => setTimeout(x, 250))
       assert.equal(got.length, 2, 'the cancellation delivered'); assert.equal(JSON.parse(got[1].body).triggerEvent, 'BOOKING_CANCELLED')
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const one1 = await call('/v2/webhooks/' + w.body.data.uid, {}, key); assert.equal(one1.status, 200); assert.ok(one1.body.data.lastDeliveredAt)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const upd = await call('/v2/webhooks/' + w.body.data.uid, { method: 'PATCH', body: JSON.stringify({ active: false }) }, key); assert.equal(upd.body.data.active, false)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const del = await call('/v2/webhooks/' + w.body.data.uid, { method: 'DELETE' }, key); assert.equal(del.status, 200)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const gone = await call('/v2/webhooks/' + w.body.data.uid, {}, key); assert.equal(gone.status, 404)
       const t2 = (slotsR[day] || [])[1].start
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const b2 = await call('/v2/bookings', { method: 'POST', body: JSON.stringify({ start: t2, eventTypeSlug: one.slug, attendee: { email: reader, timeZone: AMS }, bookingFieldsResponses: { notes: 'probe-schedapi' } }) }, key)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       if (b2.status === 201) { madeBookings.push(b2.body.data.uid); await call(`/v2/bookings/${b2.body.data.uid}/cancel`, { method: 'POST', body: '{}' }, key) }
       await new Promise((x) => setTimeout(x, 1500)); assert.equal(got.length, 2, 'nothing more arrives')
     } finally { server.close() }
   })
   await ok('a schedule: the coach\'s hours as cal.com\'s, under a key', async () => {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const r = await call('/v2/schedules', {}, key); assert.equal(r.status, 200)
     /* A HOST KEEPS SEVERAL SETS, so the route answers one row per set and its id is the set's; the
        host is the ownerId, and the one that stands for them is the default. */
     const sc = r.body.data.find((x: { ownerId: number; isDefault: any }) => x.ownerId === eventTypeId('user:coach@example.com') && x.isDefault); assert.ok(sc, 'the coach\'s default schedule'); assert.equal(sc.timeZone, AMS); assert.ok(sc.availability.some((a: { startTime: string; endTime: string; days: string|string[] }) => a.startTime === '09:00' && a.endTime === '12:00' && a.days.includes('Monday')))
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
     const one1 = await call('/v2/schedules/' + sc.id, {}, key); assert.equal(one1.status, 200)
   })
   /* ---- (3) cal.com's embed on Playwright ---- */
@@ -379,7 +345,6 @@ try {
       const ev = await p.evaluate(() => (window as any).events)
       const uid2 = ev.find((e: string) => e.startsWith('booked:')).slice(7); madeBookings.push(uid2)
       assert.ok(ev.some((e: string) => e.startsWith('size:')), 'the size reported: ' + ev.join(','))
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'null | undefined'.
       const got = await call('/v2/bookings/' + uid2, {}, key); assert.equal(got.status, 200); assert.equal(got.body.data.attendees[0].email, reader)
       assert.deepEqual(errs, [])
       if (shots) { await p.waitForTimeout(800); await p.screenshot({ path: path.join(shots, 'cal-embed-booked-1280.png') }) }

@@ -91,10 +91,9 @@ const code = (src: string) => src
      reads as an edition column — a false positive that would have blocked the very drop the
      carried-over check exists to force */
   .replace(/--[^\n]*/g, ' ')
-const walk = (rel: string, out = []) => {
+const walk = (rel: string, out: string[] = []) => {
   const abs = path.join(KIT, rel)
   let st; try { st = fs.statSync(abs) } catch { return out }
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
   if (st.isFile()) { out.push(rel); return out }
   for (const e of fs.readdirSync(abs)) walk(path.join(rel, e), out)
   return out

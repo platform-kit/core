@@ -312,7 +312,7 @@ export async function callHttp(tool: any, args = {}, { headers = {}, signal, fet
  * not offered, and the bot works without it, because a site removing a tool should not break every
  * bot that mentioned it.
  */
-export function toolsFor({ bot = {}, declared = {}, surface = 'spaces', opened = new Set(), allowed = null } = {}) {
+export function toolsFor({ bot = {}, declared = {}, surface = 'spaces', opened = new Set(), allowed = null as Set<string> | null } = {}) {
   /* the bot's own, plus `open_skill` when it has any, plus the tools of the skills it has OPENED
      — a skill's tools arrive with the skill and not before, so a bot that never opens the refunds
      skill is never offered the refund tool */

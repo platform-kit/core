@@ -49,12 +49,11 @@ const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void;
  * question instead: does anything read a switch without going through the one reading?
  */
 {
-  const walkSrc = (d: any, out = []) => {
+  const walkSrc = (d: any, out: string[] = []) => {
     if (!nodeFs.existsSync(d)) return out
     for (const e of nodeFs.readdirSync(d, { withFileTypes: true })) {
       const f = nodePath.join(d, e.name)
       if (e.isDirectory()) { if (e.name !== 'node_modules') walkSrc(f, out) }
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
       else if (/\.(mjs|js|ts|vue)$/.test(e.name)) out.push(f)
     }
     return out
@@ -352,7 +351,7 @@ if (CRON_SITE.deployment.backend) {
 
   t('and every step that names a module is claimed by that module', () => {
     // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-    const orphans = steps.filter((s) => s.module).filter((s) => !(CRON_MODULES.get(s.module) || { owns: { steps: [] } }).owns.steps.includes(s.key))
+    const orphans = steps.filter((s: { module: any }) => s.module).filter((s: { module: string; key: any }) => !(CRON_MODULES.get(s.module) || { owns: { steps: [] } }).owns.steps.includes(s.key))
       .map((s: { key: any; module: any }) => `${s.key} says ${s.module}, which does not claim it`)
     assert.deepEqual(orphans, [], orphans.join(' | '))
   })
@@ -371,12 +370,11 @@ if (CRON_SITE.deployment.backend) {
   const { readdirSync, readFileSync: rf, statSync } = await import('node:fs')
   const { join } = await import('node:path')
   const HERE = new URL('.', import.meta.url).pathname
-  const walk = (dir: any, out = []) => {
+  const walk = (dir: any, out: string[] = []) => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
       const p = join(dir, e.name)
       if (/node_modules|\.cache/.test(p)) continue
       if (e.isDirectory()) walk(p, out)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
       else if (/\.m[jt]s$/.test(e.name)) out.push(p)
     }
     return out

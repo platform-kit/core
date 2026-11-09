@@ -49,11 +49,10 @@ console.log('\nPAYOUTS · THE LEDGER\n')
 /* A THROWAWAY PROVIDER AND A THROWAWAY CLIENT. The seeded accounts are shared with every other
    suite, and a payout line left on one would be somebody else's confusing failure. */
 const tag = 't' + Math.random().toString(36).slice(2, 8)
-const made = { users: [], rules: [], bookings: [], purchases: [], credits: [], accounts: [] }
+const made = { users: [] as string[], rules: [] as string[], bookings: [] as string[], purchases: [] as string[], credits: [] as string[], accounts: [] as string[] }
 const mkUser = async (email: string) => {
   const { data, error } = await service.auth.admin.createUser({ email, password: 'password123', email_confirm: true })
   if (error) throw new Error(email + ': ' + error.message)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
   made.users.push(data.user.id)
   return data.user.id
 }
@@ -79,7 +78,6 @@ try {
   const rule = async (r: { trigger: string; booking_type?: string; amount_kind: string; amount: number }) => {
     const { data, error } = await service.from('payout_rules').insert({ user_id: providerId, ...r }).select('id').single()
     if (error) throw new Error('rule: ' + error.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     made.rules.push(data.id)
     return data.id
   }
@@ -105,13 +103,11 @@ try {
       .insert({ user_id: clientId, sku: tag + '-session', key: tag.slice(0, 8), status: 'paid', amount_total: amount, currency: 'usd', created_at: at, stripe_checkout_session_id: session })
       .select('id').single()
     if (error) throw new Error('purchase: ' + error.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     made.purchases.push(data.id)
     const credit = await service.from('entitlements')
       .insert({ user_id: clientId, kind: 'product', key: 'session:' + tag, source: 'purchase', source_id: session + ':0' })
       .select('id').single()
     if (credit.error) throw new Error('credit: ' + credit.error.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     made.credits.push(credit.data.id)
     return { id: data.id, credit: credit.data.id }
   }
@@ -122,7 +118,6 @@ try {
       start_at: iso(now - 2 * 864e5), end_at: iso(now - 2 * 864e5 + 36e5), ...fields,
     })
     if (error) throw new Error('booking: ' + error.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     made.bookings.push(uid)
   }
   const paidAt = iso(now - 3 * 864e5)
@@ -170,7 +165,7 @@ try {
 
   /* --- the balance, read three ways and agreeing --- */
   const { data: bal } = await service.rpc('payout_balance', { p_user: providerId })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'. Type 'any' is not assignable to type 'never'.
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{ about: string; amount: number; booking_uid: string | null; created_at: string; currency: string; earned_at: string; id: 
   const mine = balanceOf(await linesOf())
   ok('the database and the pure module agree on what is earned', Number((bal as any)!.earned) === mine.earned, (bal as any)!.earned + ' vs ' + mine.earned)
   ok('nothing is payable inside the window', Number((bal as any)!.payable) === 0 && Number((bal as any)!.waiting) === mine.earned)
@@ -275,7 +270,6 @@ try {
     const acctRow = await service.from('payout_accounts').select('*').eq('user_id', providerId).maybeSingle()
     ok('and the site keeps the processor\'s reference and nothing else', !!acctRow.data && !!acctRow.data.account_id)
     ok('no card and no bank detail anywhere in the row', !Object.keys(acctRow.data || {}).some((k) => /card|bank|iban|routing|account_number|sort/.test(k)))
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     made.accounts.push(providerId)
 
     /* --- who is due, and sending it --- */

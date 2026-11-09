@@ -37,7 +37,7 @@ ok('written back, it reads the same', round.name === t.name && round.position ==
 /* --- the refusals --- */
 const dir = mkdtempSync(join(tmpdir(), 'teams-'))
 const write = (slug: string, body: string|NodeJS.ArrayBufferView<ArrayBufferLike>) => { mkdirSync(join(dir, 'content/teams'), { recursive: true }); writeFileSync(join(dir, 'content/teams', slug + '.md'), body) }
-const catalog = (sessions = [], tiers = []) => {
+const catalog = (sessions: { slug: string; team: string; }[] = [], tiers: string[] = []) => {
   mkdirSync(join(dir, 'supabase/functions/_shared'), { recursive: true })
   writeFileSync(join(dir, 'supabase/functions/_shared/catalog.json'), JSON.stringify({ sessions, offers: Object.fromEntries(tiers.map((t) => [t, { sku: t, key: t, kind: 'membership', tier: t }])) }))
 }
@@ -56,14 +56,12 @@ write('bad-fill', '---\nname: Bad\nfill:\n  favourite: blue\n---\n')
 ok('a fill key that means nothing is refused', await refuses())
 rmSync(join(dir, 'content/teams/bad-fill.md'))
 
-// @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
 catalog([], ['tier-2'])
 write('wrong-tier', '---\nname: Wrong\nfill:\n  tier: tier-nine\n---\n')
 ok('a fill naming a tier the site does not sell is refused', await refuses())
 rmSync(join(dir, 'content/teams/wrong-tier.md'))
 
 /* THE ONE THAT WOULD OTHERWISE BE AN EMPTY CALENDAR */
-// @ts-expect-error TS2322, from the conversion: Type '{ slug: string; team: string; }' is not assignable to type 'never'.
 catalog([{ slug: 'a-call', team: 'gone' }], [])
 ok('a booking type naming a team that is not here is refused', await refuses())
 write('gone', '---\nname: Gone\npublished: false\n---\n')

@@ -36,16 +36,14 @@ const signIn = async (email: string) => {
 console.log('\nTEAMS · MEMBERSHIP\n')
 
 const tag = 't' + Math.random().toString(36).slice(2, 8)
-const made = { users: [], teams: [] }
-// @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-const team = async (slug, fill) => { made.teams.push(slug); const { error } = await db.from('teams').upsert({ slug, name: slug, fill: fill || {} }, { onConflict: 'slug' }); if (error) throw new Error(error.message); return slug }
+const made = { users: [] as string[], teams: [] as any[] }
+const team = async (slug: string, fill: { role?: string[] }) => { made.teams.push(slug); const { error } = await db.from('teams').upsert({ slug, name: slug, fill: fill || {} }, { onConflict: 'slug' }); if (error) throw new Error(error.message); return slug }
 const membersOf = async (slug: string) => ((await db.from('team_members').select('user_id, source').eq('team', slug)).data || [])
 
 try {
   const mk = async (email: string, roles: string[]) => {
     const { data, error } = await db.auth.admin.createUser({ email, password: 'password123', email_confirm: true })
     if (error) throw new Error(email + ': ' + error.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     made.users.push(data.user.id)
     if (roles) await db.from('profiles').update({ roles }).eq('id', data.user.id)
     return data.user.id
@@ -99,7 +97,7 @@ try {
   ok('and what they see is a name and a face, never an address', (seen.data as any)!.every((p: any) => !('email' in p)))
   const theirs = await asMember.rpc('my_teams')
   // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-  ok('a person sees their own teams and how they got there', (theirs.data || []).some((x) => x.slug === t && x.source === 'fill'))
+  ok('a person sees their own teams and how they got there', (theirs.data || []).some((x: { slug: any; source: string }) => x.slug === t && x.source === 'fill'))
 
   /* --- AND AN ADMINISTRATOR READS EVERY TEAM, published or not. It is what lets the editor tell a
      team nobody is in from a team that is not in the database yet — which is the ordinary state in

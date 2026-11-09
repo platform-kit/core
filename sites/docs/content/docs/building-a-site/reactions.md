@@ -8,7 +8,7 @@ sources:
     packages/kit/src/lib/comments/model.ts,
     packages/kit/build/reactions.test.mts,
   ]
-reviewed: 2026-11-08
+reviewed: 2026-11-09
 ---
 
 A **reaction** is expressive: an emoji, several per person, saying how something landed. A **vote**

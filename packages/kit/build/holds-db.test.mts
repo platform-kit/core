@@ -33,11 +33,10 @@ const db = createClient<Database>(url, serviceKey(), { auth: { persistSession: f
 console.log('\nHOLDS\n')
 
 const tag = 'h' + Math.random().toString(36).slice(2, 8)
-const made = { users: [], uids: [] }
+const made = { users: [] as string[], uids: [] as string[] }
 const iso = (ms: string|number|Date) => new Date(ms).toISOString()
 const at = Date.now() + 14 * 864e5
 const book = async (uid: string, host: string, start: number, extra: any = {}) => {
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
   made.uids.push(uid)
   const rec = {
     uid, provider: 'native', type: tag + '-type', event: tag + '-type', title: 'An hour',
@@ -52,7 +51,6 @@ try {
   const mk = async (email: string) => {
     const { data, error } = await db.auth.admin.createUser({ email, password: 'password123', email_confirm: true })
     if (error) throw new Error(email + ': ' + error.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     made.users.push(data.user.id)
     return data.user.id
   }

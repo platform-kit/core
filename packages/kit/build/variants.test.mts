@@ -72,7 +72,6 @@ ok('a slug is stable', slug('Deep Navy') === slug('deep navy'))
   ok('sizes IS the long form, not a second mechanism', JSON.stringify(optionsOf({ sizes: ['S', 'M'] })) === JSON.stringify(normaliseOptions([{ name: 'Size', values: ['S', 'M'] }])))
   ok('declared options and sizes are both kept', optionsOf({ sizes: ['S'], options: [{ name: 'Colour', values: ['black'] }] }).map((o) => o.name).join() === 'Colour,Size')
   ok('a declared Size wins over the short form', optionsOf({ sizes: ['S', 'M', 'L'], options: [{ name: 'Size', values: ['one'] }] })[0].values.length === 1)
-  // @ts-expect-error TS2322, from the conversion: Type '{ name: string; values: string[]; }' is not assignable to type 'never'.
   ok('a kind\'s options come first — they are what the thing IS', optionsOf({ options: [{ name: 'Cloth', values: ['black'] }] }, [{ name: 'Contents', values: ['parts'] }]).map((o) => o.name).join() === 'Contents,Cloth')
   ok('an offer with nothing has no options', optionsOf({}).length === 0 && optionsOf(null).length === 0)
 }

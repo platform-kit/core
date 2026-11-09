@@ -47,13 +47,12 @@ const ask = async (body: { collection?: string; slug?: string; class?: string; e
   return { status: r.status, data: await r.json().catch(() => ({})) }
 }
 // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-const fullChapters = (raw) => lasts.filter((s) => String(raw || '').includes(s)).length
+const fullChapters = (raw: any) => lasts.filter((s) => String(raw || '').includes(s)).length
 
 const member = await tokenOf('member@example.com'), free = await tokenOf('free@example.com')
 if (!member || !free) { note('skipped — the seed has no member@ or free@ account'); leave(0) }
 const userOf = async (token: string|undefined) => (await service.auth.getUser(token)).data.user
-// @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-const memberId = (await userOf(member)).id, freeId = (await userOf(free)).id
+const memberId = (await userOf(member))!.id, freeId = (await userOf(free))!.id
 
 /* the member is a member for this test, whatever the seed says; the grant is removed at the end */
 const grant = await service.from('entitlements').insert({ user_id: memberId, kind: 'class', key: 'subscribed', source: 'reader-content-test', source_id: 'probe' }).select('id').single()

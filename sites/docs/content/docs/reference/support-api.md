@@ -12,7 +12,7 @@ sources:
     packages/kit/src/lib/support/chat-widget.ts,
     packages/kit/build/support-api.test.mts,
   ]
-reviewed: 2026-11-08
+reviewed: 2026-11-09
 ---
 
 The guide is [The Support API, Chatwoot's](/content/docs/building-a-site/support-api). This page says exactly what is there.

@@ -32,22 +32,17 @@ ok('at depth 3 it nests', drawn(deepRows, { depth: 3, collapse: 20 }).join(' ') 
 ok('at depth 1 it is one run, each naming who it answers',
   drawn(deepRows, { depth: 1, collapse: 20 }).join(' ') === 'a@0 b@1 c@1←Bo d@1←Cy')
 ok('a reply the indent still speaks for says nothing',
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; parent: any; name: any; created_at: string; body: any; up: number; down: number; }[]' is not assignable to para
-  shape(deepRows, { depth: 3, collapse: 20 }).every((l) => l.fold || !l.answers))
+  shape(deepRows, { depth: 3, collapse: 20 }).every((l: { fold: any; answers: any }) => l.fold || !l.answers))
 ok('past the stop, a reply says whose comment it answers',
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; parent: any; name: any; created_at: string; body: any; up: number; down: number; }[]' is not assignable to para
-  shape(deepRows, { depth: 2, collapse: 20 }).find((l) => l.id === 'd').answers.name === 'Cy')
+  shape(deepRows, { depth: 2, collapse: 20 }).find((l: { id: string }) => l.id === 'd').answers.name === 'Cy')
 
 /* --- a long run folds, and says how many --- */
 const many = [line('r', null, 'Ada', 1), ...Array.from({ length: 9 }, (_, i) => line('k' + i, 'r', 'K' + i, 2))]
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; parent: any; name: any; created_at: string; body: any; up: number; down: number; }[]' is not assignable to para
 const folded = shape(many, { depth: 3, collapse: 4 })
 ok('four are shown', folded.filter((l: { fold: any; id: string }) => !l.fold && l.id !== 'r').length === 4)
 ok('the rest are behind one control saying how many', folded.filter((l: { fold: any }) => l.fold).length === 1 && folded.find((l: { fold: any }) => l.fold).hidden === 5)
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; parent: any; name: any; created_at: string; body: any; up: number; down: number; }[]' is not assignable to para
-ok('opening it shows them all', shape(many, { depth: 3, collapse: 4, open: ['r'] }).filter((l) => l.fold).length === 0)
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; parent: any; name: any; created_at: string; body: any; up: number; down: number; }[]' is not assignable to para
-ok('a run no longer than the count does not fold', shape(many, { depth: 3, collapse: 9 }).some((l) => l.fold) === false)
+ok('opening it shows them all', shape(many, { depth: 3, collapse: 4, open: ['r'] }).filter((l: { fold: any }) => l.fold).length === 0)
+ok('a run no longer than the count does not fold', shape(many, { depth: 3, collapse: 9 }).some((l: { fold: any }) => l.fold) === false)
 
 /* --- a withdrawn parent keeps its children --- */
 const gone = [{ ...line('p', null, 'Ada', 1), body: null, deleted_at: at(2) }, line('q', 'p', 'Bo', 3)]
@@ -58,7 +53,6 @@ ok('a waiting comment reads as waiting', stateOf({ state: 'waiting' }) === 'wait
 /* --- an orphan is not lost --- */
 ok('a reply whose parent is off this page is drawn as its own line',
   drawn([line('x', 'nowhere', 'Ada', 1)], { depth: 3, collapse: 9 }).join(' ') === 'x@0')
-// @ts-expect-error TS2322, from the conversion: Type '{ id: string; parent: string; created_at: string; }' is not assignable to type 'never'.
 ok('a loop cannot hang the draw', shape([{ id: 'l1', parent: 'l2', created_at: at(1) }, { id: 'l2', parent: 'l1', created_at: at(2) }], {}).length === 2)
 
 /* --- the order is over the roots; a reply never leaves its parent --- */
@@ -67,13 +61,10 @@ const scored = [
   { ...line('hi', null, 'Bo', 2), up: 9, down: 1 },
   line('re', 'lo', 'Cy', 3),
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; parent: any; name: any; created_at: string; body: any; up: number; down: number; }[]' is not assignable to para
 ok('oldest is the default order', sortComments(scored, 'oldest').map((r) => r.id).join(' ') === 'lo hi re')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; parent: any; name: any; created_at: string; body: any; up: number; down: number; }[]' is not assignable to para
 ok('newest turns the roots around', sortComments(scored, 'newest').map((r) => r.id).join(' ') === 'hi lo re')
 ok('a reply stays with what it answers whatever the order',
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; parent: any; name: any; created_at: string; body: any; up: number; down: number; }[]' is not assignable to para
-  shape(sortComments(scored, 'newest'), { depth: 3, collapse: 9 }).map((l) => l.id).join(' ') === 'hi lo re')
+  shape(sortComments(scored, 'newest'), { depth: 3, collapse: 9 }).map((l: { id: any }) => l.id).join(' ') === 'hi lo re')
 
 /* --- the flagged list: whole words, never substrings --- */
 const WORDS = ['damn', 'cunt', 'free vbucks']
@@ -93,10 +84,10 @@ ok('a trusted author does not wait', holdsFor({ approval: 'trusted', body: 'hell
 ok('an unknown one does', (holdsFor({ approval: 'trusted', body: 'hello', trusted: false }) as any).why === 'standing')
 ok('a flagged word holds a trusted author too',
   // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never[]'. Type 'string' is not assignable to type 'never'.
-  holdsFor({ approval: 'trusted', body: 'damn', words: WORDS, trusted: true }).why === 'word')
+  holdsFor({ approval: 'trusted', body: 'damn', words: WORDS, trusted: true })!.why === 'word')
 ok('and names the word, to whoever may see the hold',
   // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never[]'. Type 'string' is not assignable to type 'never'.
-  holdsFor({ approval: 'none', body: 'damn', words: WORDS }).word === 'damn')
+  holdsFor({ approval: 'none', body: 'damn', words: WORDS })!.word === 'damn')
 
 /* --- what came back with each line --- */
 ok('reactions come back most first',
@@ -134,8 +125,7 @@ ok('a nonsense allow falls back rather than inventing one', commentsOf({ allow: 
 ok('a depth out of range falls back', commentsOf({ depth: 99 }, SITE).depth === 1 && commentsOf({ depth: 2 }, SITE).depth === 2)
 ok('the row carries the answer and not the question',
   Object.keys(shapeRow(commentsOf(null, SITE))).join(' ') === 'allow approval votes reactions depth collapse')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ allow: any; approval: any; votes: any; reactions: any; depth: any; collapse: any; flagged: string[]; domains: string[]; 
-ok('and never the word list, which no browser may read', shapeRow(commentsOf(null, SITE)).flagged === undefined)
+ok('and never the word list, which no browser may read', (shapeRow(commentsOf(null, SITE)) as any).flagged === undefined)
 ok('the words are a list however they were written',
   wordsOf('damn, free vbucks').join('|') === 'damn|free vbucks' && wordsOf(['a', ' b ']).join('|') === 'a|b')
 ok('and nothing is shipped by the platform', POLICY.flagged.length === 0)

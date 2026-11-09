@@ -93,8 +93,7 @@ try {
   eventId = ev.id
   const soon = new Date(Date.now() + 6 * 3600e3).toISOString(), later = new Date(Date.now() + 4 * 864e5).toISOString()
   const { data: occ } = await service.from('calendar_occurrences').insert([{ event_id: ev.id, starts_at: soon }, { event_id: ev.id, starts_at: later }]).select()
-  // @ts-expect-error TS18047, from the conversion: 'occ' is possibly 'null'.
-  for (const o of occ) await service.from('calendar_rsvps').insert({ occurrence_id: o.id, user_id: A.id, state: 'going' })
+  for (const o of occ!) await service.from('calendar_rsvps').insert({ occurrence_id: o.id, user_id: A.id, state: 'going' })
   L = await list(A)
   const evs = L.filter((r: { source: string }) => r.source === 'event')
   ok('an event they are going to comes in the day before', evs.length === 1 && evs[0].item.starts_at.slice(0, 16) === soon.slice(0, 16), JSON.stringify(evs.map((e: { item: { starts_at: any } }) => e.item.starts_at)))

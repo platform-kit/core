@@ -39,8 +39,7 @@ await ok('a promotion with no limit is always allowed, and is still recorded', a
   await clear()
   const { data } = await db.rpc('promotion_take', { p_promotion: NAME, p_kind: 'usage', p_limit: null, p_amount: 500, p_about: null, p_user: null })
   eq(data, true)
-  // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-  eq((await db.from('promotion_uses').select('id').eq('promotion', NAME)).data.length, 1, 'what it cost is recorded even where nothing caps it')
+  eq((await db.from('promotion_uses').select('id').eq('promotion', NAME)).data!.length, 1, 'what it cost is recorded even where nothing caps it')
   eq(await used(), null, 'and no budget row is invented for a promotion that has no budget')
 })
 

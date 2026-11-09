@@ -26,6 +26,14 @@ import { spanOf } from '../chat/model.js'
 
 const MIN = 60 * 1000
 
+/* one line of the desk: where it came from, its own key, and what is owed on it (waiting_since, due); the rest of a
+   source's row rides along as it is */
+export interface DeskRow {
+  key?: string, id?: string, source?: string, status?: string, module?: string, conversationKind?: string
+  at?: string | null, waiting_since?: string | null, due?: string | number | null, resolved?: boolean
+  [k: string]: any
+}
+
 /* the sources, in the order a list ties by */
 /* WHO IS WAITING ON THE BUSINESS, by where they wrote from. A space is not among them: what waits
    in one is a mention or an unanswered direct message, and each of those is a place of the
@@ -43,7 +51,7 @@ const QUEUE_SOURCES: any = {
 export const sourceForQueue = (queue: string) => QUEUE_SOURCES[queue] || 'support'
 const SOCIAL_QUEUE_KINDS: any = { 'social-comments': 'comment', 'social-dms': 'dm' }
 
-export function filterQueue(rows = [], queue: string, done = false) {
+export function filterQueue(rows: DeskRow[] = [], queue: string, done = false) {
   const source = sourceForQueue(queue)
   const kind = SOCIAL_QUEUE_KINDS[queue]
   return filterDesk(rows, source, done).filter((row: any) => !kind || row.conversationKind === kind)
@@ -72,7 +80,7 @@ export function sourcesOn(modules: any = {}, registered: any[] = []) {
 
 /* what is owed: the promise the row carries, run from when the run began. A row that promises
    nothing owes nothing — it is still waiting, and that is a different sentence. */
-export function dueOf(row: { waiting_since: any; due?: any; source?: string }|undefined, now = Date.now()) {
+export function dueOf(row: DeskRow | undefined, now = Date.now()) {
   if (!row || !row.waiting_since || !(Number(row.due) > 0)) return null
   const since = new Date(row.waiting_since).getTime()
   if (!isFinite(since)) return null
@@ -82,7 +90,7 @@ export function dueOf(row: { waiting_since: any; due?: any; source?: string }|un
 
 /* the one badge, in one set of words: overdue, due, or simply waiting. A row waiting on nobody
    says nothing rather than showing an empty clock. */
-export function owedOf(row: { waiting_since: any; due?: any; source?: string }|undefined, words: any = {}, now = Date.now()) {
+export function owedOf(row: DeskRow | undefined, words: any = {}, now = Date.now()) {
   const d = dueOf(row, now)
   if (d) return { text: (d.over ? words['due-over'] : words['due-in'] || '').replace('{span}', spanOf(d.left)), over: d.over, soft: false }
   /* a wait is at least a minute: "waiting 0m" is not a thing anyone says */
@@ -92,7 +100,7 @@ export function owedOf(row: { waiting_since: any; due?: any; source?: string }|u
 
 /* longest wait first, and the rest by what was last said. A row with no wait is not owed and sits
    under every row that is, however recent it is. */
-export function sortDesk(rows = []) {
+export function sortDesk(rows: DeskRow[] = []) {
   const at = (r: any) => new Date(r?.at || 0).getTime() || 0
   const w = (r: any) => (r?.waiting_since ? new Date(r.waiting_since).getTime() || null : null)
   return rows.slice().sort((a: any, b: any) => {
@@ -106,13 +114,13 @@ export function sortDesk(rows = []) {
 
 /* what the rail shows: how many are waiting, and how many of those are past what was promised */
 /* what each queue is owed, counted apart: a place badges its own rows and nobody else's */
-export function badgeBySource(rows = [], now = Date.now(), sources = SOURCES) {
+export function badgeBySource(rows: DeskRow[] = [], now = Date.now(), sources = SOURCES) {
   const by: any = {}
   for (const s of sources) by[s] = deskBadge(rows.filter((r: any) => r && r.source === s), now)
   return by
 }
 
-export function deskBadge(rows = [], now = Date.now()) {
+export function deskBadge(rows: DeskRow[] = [], now = Date.now()) {
   let waiting = 0, overdue = 0
   for (const r of rows) {
     if (!r || !(r as any).waiting_since || (r as any).resolved) continue
@@ -126,12 +134,12 @@ export function deskBadge(rows = [], now = Date.now()) {
 /* the list narrowed to one source, and to what is still open or what has been finished with. Those
    are the only two narrowings the desk has: everything else about a row — who is waiting, how long
    — is what the order already says. */
-export function filterDesk(rows = [], source: string|null = null, done = false) {
+export function filterDesk(rows: DeskRow[] = [], source: string|null = null, done = false) {
   return rows.filter((r: any) => r && (!source || r.source === source) && !!r.resolved === !!done)
 }
 
 /* The marks the database keeps, as something to ask: source and id to when it was finished with. */
-export function doneSet(rows: { source: string; ref: string; resolved_at: string }[] = []) {
+export function doneSet(rows: DeskRow[] = []) {
   const out: any = {}
   for (const r of rows) if (r && (r as any).source && (r as any).ref) out[(r as any).source + ':' + (r as any).ref] = (r as any).resolved_at || null
   return out
@@ -152,7 +160,7 @@ export function isDone(row: { source: any; id?: any; waiting_since?: any; status
 }
 
 /* the sources a list actually holds, for the filter's own chips */
-export const sourcesIn = (rows = []) => [
+export const sourcesIn = (rows: DeskRow[] = []) => [
   ...SOURCES.filter((s) => rows.some((r: any) => r && r.source === s)),
   ...new Set(rows.map((r: any) => r && r.source).filter((s) => s && !SOURCES.includes(s))),
 ]

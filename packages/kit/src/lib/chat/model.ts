@@ -12,7 +12,7 @@ const RUN_GAP = 5 * MIN     /* messages closer than this, from one sender, read 
 const dayKey = (d: Date) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 
 /* the label a day divider carries: today, yesterday, else a date */
-export function dayLabel(date: string|number|Date, now: string|number|Date, words: any = {}, locale = undefined) {
+export function dayLabel(date: string|number|Date, now: string|number|Date, words: any = {}, locale: string | undefined = undefined) {
   const d = new Date(date), n = new Date(now)
   const k = dayKey(d), today = dayKey(n)
   if (k === today) return words.today || 'Today'
@@ -97,12 +97,12 @@ export function previewOf(m: { kind: any; body?: any; seconds?: any; deleted_at?
 }
 
 /* the time of day a bubble shows */
-export function timeOf(date: string|number|Date, locale = undefined) {
+export function timeOf(date: string|number|Date, locale: string | undefined = undefined) {
   return new Date(date).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' })
 }
 
 /* the moment an inbox row shows: a time today, a weekday this week, else a date */
-export function whenOf(date: string|number|Date, now = Date.now(), words: any = {}, locale = undefined) {
+export function whenOf(date: string|number|Date, now = Date.now(), words: any = {}, locale: string | undefined = undefined) {
   if (!date) return ''
   const d = new Date(date), n = new Date(now)
   if (dayKey(d) === dayKey(n)) return timeOf(date, locale)

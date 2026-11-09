@@ -32,9 +32,7 @@ ok('the system families', () => {
 })
 ok('the device class', () => {
   assert.equal(deviceOf(IPHONE), 'phone'); assert.equal(deviceOf(ANDROID), 'phone'); assert.equal(deviceOf(IPAD), 'tablet'); assert.equal(deviceOf(ANDROID_TAB), 'tablet')
-  // @ts-expect-error TS2322, from the conversion: Type 'true' is not assignable to type 'null | undefined'.
   assert.equal(deviceOf(MAC_CHROME), 'desktop'); assert.equal(deviceOf(MAC_SAFARI, { coarse: true }), 'tablet', 'an iPad that says Macintosh, told by its pointer')
-  // @ts-expect-error TS2322, from the conversion: Type 'false' is not assignable to type 'null | undefined'.
   assert.equal(deviceOf(WIN_EDGE, { coarse: false, width: 1400 }), 'desktop')
 })
 ok('the whole arrival: families only, never a version, nothing beyond the six facts', () => {
@@ -180,8 +178,7 @@ if (process.env.ANALYTICS_TEST !== '0') {
         const bad = await post({ batch: [row('<script>alert(1)')] })
         const long = await post({ batch: [row('x'.repeat(200))] })
         ok('a malformed event name is refused and nothing written', () => { assert.equal(bad.status, 400); assert.equal(long.status, 400) })
-        // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-        const token = (await sb.auth.getSession()).data.session.access_token
+        const token = (await sb.auth.getSession()).data.session!.access_token
         const mine = await post({ batch: [row('session_start', { props: { entry: '/' }, user_id: '00000000-0000-4000-8000-000000000000' }), row('Signed up for the webinar')] }, { Authorization: 'Bearer ' + token, 'x-country': 'nl' })
         /* THE DOOR ANSWERS BEFORE THE ROWS ARE THERE — it takes the batch and writes it, so a read
            the same millisecond can find one row or none. Wait for what was sent rather than

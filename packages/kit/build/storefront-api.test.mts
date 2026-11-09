@@ -112,8 +112,7 @@ await ok('the schema builds and introspects; a query over the fixture answers Sh
   assert.equal(upd.data.cartLinesUpdate.cart.totalQuantity, 6); assert.equal(upd.data.cartLinesUpdate.cart.cost.totalAmount.amount, '160.0')
   const rm: any = await execute(store, { query: `mutation { cartLinesRemove(cartId: "gid://shopify/Cart/tok", lineIds: ["${cart.lines.nodes[1].id}"]) { cart { totalQuantity lines(first: 5) { nodes { merchandise { ... on ProductVariant { sku } } } } } } }` }, cs)
   assert.equal(rm.data.cartLinesRemove.cart.totalQuantity, 5); assert.deepEqual(rm.data.cartLinesRemove.cart.lines.nodes.map((n: { merchandise: { sku: any } }) => n.merchandise.sku), ['tee-m'], "the variant's own sku, as Shopify means that field")
-  // @ts-expect-error TS18049, from the conversion: 'gone.data' is possibly 'null' or 'undefined'.
-  const gone = await execute(store, { query: '{ cart(id: "gid://shopify/Cart/none") { id } }' }, cs); assert.equal(gone.data.cart, null)
+  const gone = await execute(store, { query: '{ cart(id: "gid://shopify/Cart/none") { id } }' }, cs); assert.equal(gone.data!.cart, null)
   const stack = linesIn(store, [{ merchandiseId: 'gid://shopify/ProductVariant/quiet-room', quantity: 3 }], []); assert.equal(stack.rows[0].quantity, 1, 'an unlock never stacks')
   const cap = linesIn(store, [{ merchandiseId: 'gid://shopify/ProductVariant/tee/s', quantity: 40 }], []); assert.equal(cap.rows[0].quantity, 10, 'the bag\'s cap')
   const c2 = cartOf(store, { id: 'x', lines: cap.rows }, { site: 'https://x.test' }); assert.equal(c2.cost.totalAmount.amount, '250.0'); assert.equal(linesUpdated(store, [{ id: cap.rows[0].id, quantity: 0 }], cap.rows).rows.length, 0, 'zero removes')

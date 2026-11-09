@@ -62,7 +62,7 @@ if (!up) { note('the stack half skipped — the local stack is not up'); console
 
 const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const tag = 'p' + Math.random().toString(36).slice(2, 8)
-const made = { users: [], terms: [], offerings: [], bookings: [] }
+const made = { users: [] as string[], terms: [] as string[], offerings: [] as any[], bookings: [] as any[] }
 const now = Date.now()
 const setting = async (k: string, v: string) => { await service.from('app_settings').upsert({ key: 'provider_' + k, value: v, updated_at: new Date().toISOString() }, { onConflict: 'key' }) }
 let wasOfferings = null, wasApprove = null
@@ -75,7 +75,6 @@ try {
   const mk = async (email: string, roles: string[]) => {
     const { data, error } = await service.auth.admin.createUser({ email, password: 'password123', email_confirm: true })
     if (error) throw new Error(email + ': ' + error.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     made.users.push(data.user.id)
     if (roles) await service.from('profiles').update({ roles }).eq('id', data.user.id)
     return data.user.id
@@ -95,7 +94,6 @@ try {
   const v1 = tag + '-v1'
   const t1 = await service.from('provider_terms').insert({ version: v1, body: 'The first wording.' })
   ok('a version is written', !t1.error, t1.error && t1.error.message)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
   made.terms.push(v1)
   const anonSees = await createClient<Database>(url, anon, { auth: { persistSession: false } }).from('provider_terms').select('version').eq('version', v1)
   ok('anybody may read the terms — somebody deciding whether to become a provider reads them first', (anonSees.data || []).length === 1)
@@ -125,7 +123,6 @@ try {
   await setting('approve', 'on')
   const made1: any = await asProv.from('provider_offerings').insert({ provider_id: provId, slug: tag + '-a', title: 'An hour', price_cents: 8000 }).select('id').single()
   ok('with it on, a provider writes their own', !made1.error, made1.error && made1.error.message)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
   if (made1.data) made.offerings.push(made1.data.id)
   const forOther = await asProv.from('provider_offerings').insert({ provider_id: readerId, slug: tag + '-b', title: 'Somebody else\'s hour' })
   ok('and only their own', !!forOther.error)
@@ -190,7 +187,6 @@ try {
       minutes: 60, price_cents: 0, where: 'none', state: 'live', released_at: new Date().toISOString(), released_by: provId,
     }).select('id').single()
     ok('a live offering exists', !offering.error, offering.error && offering.error.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     made.offerings.push(offering.data.id)
     const event = 'offering:' + offering.data.id
 
@@ -203,7 +199,6 @@ try {
     const booked = await call(asReader, 'book-session', { event, start, timeZone: 'Europe/Amsterdam', notes: 'looking forward to it' })
     ok('a reader books it like anything else', booked.status === 200 && !!(booked.body && booked.body.booking && booked.body.booking.uid), JSON.stringify(booked.body).slice(0, 220))
     const uid = booked.body && booked.body.booking && booked.body.booking.uid
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     if (uid) made.bookings.push(uid)
     const row = uid ? (await service.from('bookings').select('*').eq('uid', uid).maybeSingle()).data : null
     ok('the row is a booking like any other', !!row && row.event === event && row.status === 'accepted')
@@ -247,7 +242,6 @@ try {
 
     /* a draft is not bookable either, and an unreleased one is not */
     const draft: any = await service.from('provider_offerings').insert({ provider_id: provId, slug: tag + '-draft', title: 'Not yet', minutes: 30, state: 'draft' }).select('id').single()
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     made.offerings.push(draft.data.id)
     const noDraft = await call(asReader, 'session-slots', { event: 'offering:' + draft.data.id, from, to, timeZone: 'Europe/Amsterdam' })
     ok('a draft is not bookable', noDraft.status >= 400)
@@ -281,7 +275,6 @@ try {
       provider_id: provId, slug: tag + '-evening', title: 'An evening hour', minutes: 60,
       where: 'none', state: 'live', released_at: new Date().toISOString(), released_by: provId,
     }).select('id').single()
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     made.offerings.push(onEvenings.data.id)
     const from2 = new Date(now + 2 * 864e5).toISOString().slice(0, 10)
     const to2 = new Date(now + 16 * 864e5).toISOString().slice(0, 10)
@@ -319,15 +312,14 @@ try {
   /* --- who is owed a signature --- */
   const v2 = tag + '-v2'
   await service.from('provider_terms').insert({ version: v2, body: 'The new wording.' })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
   made.terms.push(v2)
   const { data: owed } = await service.rpc('provider_terms_owed', { p_version: v2 })
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-  const mine = (owed || []).find((x) => x.user_id === provId)
+  const mine = (owed || []).find((x: { user_id: string }) => x.user_id === provId)
   ok('a provider who signed the old one is owed the new one', !!mine)
   ok('and the letter can say which they signed', mine && mine.signed === v1)
   // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-  ok('a reader is not a provider and is not asked', !(owed || []).some((x) => x.user_id === readerId))
+  ok('a reader is not a provider and is not asked', !(owed || []).some((x: { user_id: string }) => x.user_id === readerId))
   const nosy = await asReader.rpc('provider_terms_owed', { p_version: v2 })
   ok('and the list is not a reader\'s to see', nosy.data === null)
 
@@ -336,7 +328,6 @@ try {
   ok('somebody on the old terms may not sell', maySell === false)
   const draft2: any = await asProv.from('provider_offerings').insert({ provider_id: provId, slug: tag + '-d', title: 'A draft under old terms' }).select('id').single()
   ok('…but a draft is still theirs to write', !draft2.error, draft2.error && draft2.error.message)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
   if (draft2.data) made.offerings.push(draft2.data.id)
   const edit2 = await asProv.from('provider_offerings').update({ title: 'Still editable' }).eq('id', draft2.data.id)
   ok('…and still theirs to edit', !edit2.error)
@@ -361,7 +352,6 @@ try {
   {
     const { projectProviders } = await import('./providers-io.mjs')
     const v = 'probe-' + Date.now().toString(36)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     made.terms.push(v)
     const { policy } = await projectProviders({ data: { offerings: 'on', approve: 'off', terms: v, 'payout-delay': '2d', connect: 'own' }, body: 'The terms, as the function wrote them.', db: service })
     ok('the delay is resolved to minutes by the ledger\'s own arithmetic', policy.delay === 2880)

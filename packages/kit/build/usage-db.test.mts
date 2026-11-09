@@ -60,12 +60,10 @@ try {
     p_period_start: null, p_expires_at: null,
   })
   const firstGrant = await grant(users[0].id, 5_000_000)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(firstGrant.error, null, firstGrant.error?.message)
+  assert.equal(firstGrant.error, null, String(firstGrant.error?.message))
   assert.equal(firstGrant.data, true, 'first purchase grant is recorded')
   const replayGrant = await grant(users[0].id, 5_000_000)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(replayGrant.error, null, replayGrant.error?.message)
+  assert.equal(replayGrant.error, null, String(replayGrant.error?.message))
   assert.equal(replayGrant.data, false, 'a replayed Checkout reference grants nothing twice')
   assert.equal((await grant(users[1].id, 8_000_000)).error, null)
   const inferenceGrant = await admin.rpc('usage_grant', {
@@ -74,8 +72,7 @@ try {
     p_period_start: null, p_expires_at: null, p_usage_unit: 'token',
     p_rate_micros: 1_000, p_speech_cost_per_second_micros: 0,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(inferenceGrant.error, null, inferenceGrant.error?.message)
+  assert.equal(inferenceGrant.error, null, String(inferenceGrant.error?.message))
   assert.equal(inferenceGrant.data, true, 'the reader has balance for the isolated inference operation')
   const invoiceSource = `invoice:${suffix}`
   const periodStart = new Date(Date.now() - 60_000).toISOString()
@@ -85,15 +82,13 @@ try {
     p_source_id: invoiceSource, p_units_micros: 1_000_000,
     p_period_start: periodStart, p_expires_at: periodEnd,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(invoiceGrant.error, null, invoiceGrant.error?.message)
+  assert.equal(invoiceGrant.error, null, String(invoiceGrant.error?.message))
   const invoiceReplay = await admin.rpc('usage_grant', {
     p_user_id: users[0].id, p_offer_key: offerKey, p_source: 'subscription',
     p_source_id: invoiceSource, p_units_micros: 1_000_000,
     p_period_start: periodStart, p_expires_at: periodEnd,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(invoiceReplay.error, null, invoiceReplay.error?.message)
+  assert.equal(invoiceReplay.error, null, String(invoiceReplay.error?.message))
   assert.equal(invoiceReplay.data, false, 'replaying an invoice grants its period allowance once')
 
   const firstAdmission = await admin.rpc('usage_admit', { p_user_id: users[0].id, p_offer_key: offerKey })
@@ -105,8 +100,7 @@ try {
       p_usage_unit: 'minute', p_rate_micros: 10_000,
       p_speech_cost_per_second_micros: 200,
     })
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-    assert.equal(authorization.error, null, authorization.error?.message)
+    assert.equal(authorization.error, null, String(authorization.error?.message))
     if ((authorization.data as any)?.reason === 'reservation_already_closed') {
       return admin.rpc('usage_settle', {
         p_reservation_ref: sourceRef, p_kind: 'model', p_cost_micros: 250,
@@ -120,12 +114,10 @@ try {
     })
   }
   const initial = await record(users[0].id, `${source}:step-1`, 2_000_000)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(initial.error, null, initial.error?.message)
+  assert.equal(initial.error, null, String(initial.error?.message))
   assert.equal((initial.data as any)?.duplicate, false)
   const replay = await record(users[0].id, `${source}:step-1`, 2_000_000)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(replay.error, null, replay.error?.message)
+  assert.equal(replay.error, null, String(replay.error?.message))
   assert.equal((replay.data as any)?.duplicate, true, 'replaying a completed step creates no usage')
   const telemetryRef = `${source}:tts-telemetry`
   const telemetryAuthorization = await admin.rpc('usage_authorize', {
@@ -133,27 +125,23 @@ try {
     p_max_units_micros: 1, p_usage_unit: 'minute', p_rate_micros: 10_000,
     p_speech_cost_per_second_micros: 0,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(telemetryAuthorization.error, null, telemetryAuthorization.error?.message)
+  assert.equal(telemetryAuthorization.error, null, String(telemetryAuthorization.error?.message))
   assert.equal((telemetryAuthorization.data as any)?.admitted, true)
   const telemetry = await admin.rpc('usage_settle', {
     p_reservation_ref: telemetryRef, p_kind: 'tts', p_cost_micros: 0,
     p_seconds_micros: 500_000, p_units_micros: 0,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(telemetry.error, null, telemetry.error?.message)
+  assert.equal(telemetry.error, null, String(telemetry.error?.message))
   assert.equal((telemetry.data as any)?.admitted, true, 'zero-cost TTS duration is recorded through an authorized reservation')
   const telemetryReplay = await admin.rpc('usage_settle', {
     p_reservation_ref: telemetryRef, p_kind: 'tts', p_cost_micros: 0,
     p_seconds_micros: 500_000, p_units_micros: 0,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(telemetryReplay.error, null, telemetryReplay.error?.message)
+  assert.equal(telemetryReplay.error, null, String(telemetryReplay.error?.message))
   assert.equal((telemetryReplay.data as any)?.duplicate, true, 'TTS settlement retries remain idempotent')
   const balanceAfterReplay = await admin.from('usage_balances').select('*')
     .eq('user_id', users[0].id).eq('offer_key', offerKey).is('period_start', null).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(balanceAfterReplay.error, null, balanceAfterReplay.error?.message)
+  assert.equal(balanceAfterReplay.error, null, String(balanceAfterReplay.error?.message))
   assert.equal(balanceAfterReplay.data.granted_micros, 5_000_000)
   assert.equal(balanceAfterReplay.data.used_micros, 2_000_000)
   assert.equal(balanceAfterReplay.data.remaining_micros, 3_000_000)
@@ -173,8 +161,7 @@ try {
     p_operation_id: 'agent.game',
     p_markup_micros: 1_500_000,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(unpricedOperation.error, null, unpricedOperation.error?.message)
+  assert.equal(unpricedOperation.error, null, String(unpricedOperation.error?.message))
   if ((unpricedOperation.data as any)?.admitted) unauthorizedProviderCalls += 1
   assert.equal((unpricedOperation.data as any)?.admitted, false, 'a reader without the operation offer cannot reserve paid inference')
   assert.equal(unauthorizedProviderCalls, 0, 'insufficient operation authorization prevents provider work')
@@ -194,8 +181,7 @@ try {
     p_operation_id: readerOperationId,
     p_markup_micros: 1_500_000,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(inferenceAuthorization.error, null, inferenceAuthorization.error?.message)
+  assert.equal(inferenceAuthorization.error, null, String(inferenceAuthorization.error?.message))
   assert.equal((inferenceAuthorization.data as any)?.admitted, true, 'the paid operation is reserved before provider work')
   const inferenceAttempt = {
     p_invocation_ref: inferenceRef,
@@ -220,12 +206,10 @@ try {
     p_http_status: 200,
   }
   const recordedInferenceAttempt = await admin.rpc('usage_inference_attempt_record', inferenceAttempt)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(recordedInferenceAttempt.error, null, recordedInferenceAttempt.error?.message)
+  assert.equal(recordedInferenceAttempt.error, null, String(recordedInferenceAttempt.error?.message))
   assert.equal((recordedInferenceAttempt.data as any)?.duplicate, false)
   const replayInferenceAttempt = await admin.rpc('usage_inference_attempt_record', inferenceAttempt)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(replayInferenceAttempt.error, null, replayInferenceAttempt.error?.message)
+  assert.equal(replayInferenceAttempt.error, null, String(replayInferenceAttempt.error?.message))
   assert.equal((replayInferenceAttempt.data as any)?.duplicate, true, 'attempt evidence is idempotent')
   const conflictingInferenceAttempt = await admin.rpc('usage_inference_attempt_record', {
     ...inferenceAttempt, p_provider_cost_micros: 401,
@@ -245,8 +229,7 @@ try {
     p_retail_value_micros: 300,
     p_http_status: 503,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(estimatedFallbackAttempt.error, null, estimatedFallbackAttempt.error?.message)
+  assert.equal(estimatedFallbackAttempt.error, null, String(estimatedFallbackAttempt.error?.message))
   assert.equal((estimatedFallbackAttempt.data as any)?.recorded, true,
     'a possibly processed fallback with missing usage is retained as estimated')
   const inferenceSettlement = await admin.rpc('usage_settle_inference', {
@@ -263,8 +246,7 @@ try {
     p_retail_currency: 'usd',
     p_measurement_status: 'estimated',
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(inferenceSettlement.error, null, inferenceSettlement.error?.message)
+  assert.equal(inferenceSettlement.error, null, String(inferenceSettlement.error?.message))
   assert.equal((inferenceSettlement.data as any)?.admitted, true)
   const inferenceSettlementReplay = await admin.rpc('usage_settle_inference', {
     p_reservation_ref: inferenceRef,
@@ -280,8 +262,7 @@ try {
     p_retail_currency: 'usd',
     p_measurement_status: 'estimated',
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(inferenceSettlementReplay.error, null, inferenceSettlementReplay.error?.message)
+  assert.equal(inferenceSettlementReplay.error, null, String(inferenceSettlementReplay.error?.message))
   assert.equal((inferenceSettlementReplay.data as any)?.duplicate, true, 'inference settlement retries do not charge twice')
   const siteAttemptRef = `${source}:inference:staff`
   const siteAttempt = await admin.rpc('usage_inference_attempt_record', {
@@ -298,14 +279,12 @@ try {
     p_retail_currency: null,
     p_provider_cost_micros: 250,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(siteAttempt.error, null, siteAttempt.error?.message)
+  assert.equal(siteAttempt.error, null, String(siteAttempt.error?.message))
   assert.equal((siteAttempt.data as any)?.recorded, true, 'site-funded provider cost is recorded without a reader reservation')
 
   // @ts-expect-error TS2345, from the conversion: Argument of type 'null' is not assignable to parameter of type 'string | undefined'.
   const finalUse = await record(users[0].id, `${source}:step-2`, 3_000_000, null)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(finalUse.error, null, finalUse.error?.message)
+  assert.equal(finalUse.error, null, String(finalUse.error?.message))
   const exhausted = await admin.rpc('usage_admit', { p_user_id: users[0].id, p_offer_key: offerKey })
   assert.equal((exhausted.data as any)?.admitted, false, 'the last prepaid unit exhausts access')
   assert.equal((exhausted.data as any)?.reason, 'usage_balance_exhausted')
@@ -316,8 +295,7 @@ try {
     p_threshold_micros: 25_000_000, p_monthly_cap_minor: 500,
     p_currency: 'usd', p_consent_at: topupConsent,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(preference.error, null, preference.error?.message)
+  assert.equal(preference.error, null, String(preference.error?.message))
   assert.equal(preference.data, true, 'the server saves the reader-owned top-up preference')
   const topupInput: any = (attemptRef: string, siteEnabled: boolean, amountMinor = 500, providerId = 'stripe') => admin.rpc('usage_topup_begin', {
     p_provider_id: providerId,
@@ -342,15 +320,13 @@ try {
   assert.equal(concurrentTopups[1].data?.attempt?.attempt_ref, topupRef)
   const attemptCount = await admin.from('usage_topup_attempts').select('id', { count: 'exact', head: true })
     .eq('user_id', users[0].id).eq('offer_key', offerKey)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(attemptCount.error, null, attemptCount.error?.message)
+  assert.equal(attemptCount.error, null, String(attemptCount.error?.message))
   assert.equal(attemptCount.count, 1, 'concurrent invocations create one monthly top-up attempt')
   const paymentRecorded = await admin.rpc('usage_topup_finish', {
     p_attempt_ref: topupRef, p_status: 'succeeded', p_payment_intent_id: `pi_${suffix}`,
     p_error: null,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(paymentRecorded.error, null, paymentRecorded.error?.message)
+  assert.equal(paymentRecorded.error, null, String(paymentRecorded.error?.message))
   assert.equal(paymentRecorded.data, true, 'only a confirmed payment moves the attempt to succeeded')
   const topupGrant = await admin.rpc('usage_grant', {
     p_user_id: users[0].id, p_offer_key: offerKey, p_source: 'purchase',
@@ -358,8 +334,7 @@ try {
     p_period_start: null, p_expires_at: null, p_usage_unit: 'minute',
     p_rate_micros: 10_000, p_speech_cost_per_second_micros: 200,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(topupGrant.error, null, topupGrant.error?.message)
+  assert.equal(topupGrant.error, null, String(topupGrant.error?.message))
   assert.equal(topupGrant.data, true, 'the confirmed payment creates its usage grant')
   const grantReplay = await admin.rpc('usage_grant', {
     p_user_id: users[0].id, p_offer_key: offerKey, p_source: 'purchase',
@@ -367,15 +342,13 @@ try {
     p_period_start: null, p_expires_at: null, p_usage_unit: 'minute',
     p_rate_micros: 10_000, p_speech_cost_per_second_micros: 200,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(grantReplay.error, null, grantReplay.error?.message)
+  assert.equal(grantReplay.error, null, String(grantReplay.error?.message))
   assert.equal(grantReplay.data, false, 'a replayed PaymentIntent grants the pack only once')
   const attemptGranted = await admin.rpc('usage_topup_finish', {
     p_attempt_ref: topupRef, p_status: 'granted', p_payment_intent_id: `pi_${suffix}`,
     p_error: null,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(attemptGranted.error, null, attemptGranted.error?.message)
+  assert.equal(attemptGranted.error, null, String(attemptGranted.error?.message))
   assert.equal(attemptGranted.data, true)
   const customTopupRef = `${source}:custom-provider-topup`
   const customTopup = await topupInput(customTopupRef, true, 500, 'custom')
@@ -388,14 +361,12 @@ try {
     p_error: null,
     p_provider_id: 'custom',
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(customPayment.error, null, customPayment.error?.message)
+  assert.equal(customPayment.error, null, String(customPayment.error?.message))
   assert.equal(customPayment.data, true, 'the same external payment id is independent across provider namespaces')
   const paymentRefs = await admin.from('payment_provider_refs').select('provider,external_id')
     .eq('object_type', 'payment').eq('external_id', `pi_${suffix}`)
     .in('entity_type', ['usage_topup_attempts'])
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(paymentRefs.error, null, paymentRefs.error?.message)
+  assert.equal(paymentRefs.error, null, String(paymentRefs.error?.message))
   assert.deepEqual(paymentRefs.data.map((reference) => reference.provider).sort(), ['custom', 'stripe'])
   const overCap = await topupInput(`${source}:topup-over-cap`, true, 1)
   assert.equal(overCap.error, null, overCap.error?.message)
@@ -405,12 +376,10 @@ try {
     p_threshold_micros: 25_000_000, p_monthly_cap_minor: 500,
     p_currency: 'usd', p_consent_at: null,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(preferenceDisabled.error, null, preferenceDisabled.error?.message)
+  assert.equal(preferenceDisabled.error, null, String(preferenceDisabled.error?.message))
   const consentCleared = await admin.from('usage_topup_preferences')
     .select('enabled,off_session_consent_at').eq('user_id', users[0].id).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(consentCleared.error, null, consentCleared.error?.message)
+  assert.equal(consentCleared.error, null, String(consentCleared.error?.message))
   assert.equal(consentCleared.data.enabled, false)
   assert.equal(consentCleared.data.off_session_consent_at, null, 'opting out clears off-session consent')
   const missingConsent = await admin.rpc('usage_topup_save', {
@@ -430,8 +399,7 @@ try {
       p_reservation_ref: `${source}:race-b`, p_max_units_micros: 5_000_000,
     }),
   ])
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  for (const result of competing) assert.equal(result.error, null, result.error?.message)
+  for (const result of competing) assert.equal(result.error, null, String(result.error?.message))
   assert.equal(competing.filter((result) => (result.data as any)?.admitted).length, 1,
     'concurrent reservations cannot spend the same prepaid units')
   const heldIndex = competing.findIndex((result) => (result.data as any)?.admitted)
@@ -440,13 +408,11 @@ try {
   const heldRef = `${source}:race-${heldIndex === 0 ? 'a' : 'b'}`
   const heldBalance = await admin.from('usage_balances').select('remaining_micros,reserved_micros')
     .eq('user_id', users[1].id).eq('offer_key', offerKey).is('period_start', null).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(heldBalance.error, null, heldBalance.error?.message)
+  assert.equal(heldBalance.error, null, String(heldBalance.error?.message))
   assert.equal(heldBalance.data.remaining_micros, 3_000_000)
   assert.equal(heldBalance.data.reserved_micros, 5_000_000)
   const released = await admin.rpc('usage_release', { p_reservation_ref: heldRef })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(released.error, null, released.error?.message)
+  assert.equal(released.error, null, String(released.error?.message))
   assert.equal(released.data, true, 'unused authorization can be released')
   const replayRelease = await admin.rpc('usage_release', { p_reservation_ref: heldRef })
   assert.equal(replayRelease.data, false, 'releasing a closed reservation is idempotent')
@@ -456,8 +422,7 @@ try {
   const meteredEnd = new Date(Date.now() + 30 * 86_400_000).toISOString()
   const customerSaved = await admin.from('profiles').update({ stripe_customer_id: `cus_usage_${suffix}` })
     .eq('id', users[1].id)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(customerSaved.error, null, customerSaved.error?.message)
+  assert.equal(customerSaved.error, null, String(customerSaved.error?.message))
   const activeSubscription = await admin.from('subscriptions').insert({
     id: `sub_usage_${suffix}`, user_id: users[1].id, status: 'active', key: meteredKey,
     current_period_start: meteredStart, current_period_end: meteredEnd,
@@ -465,8 +430,7 @@ try {
     usage_included_micros: 2_000_000, usage_overage_price_micros: 30_000,
     usage_speech_cost_per_second_micros: 200,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(activeSubscription.error, null, activeSubscription.error?.message)
+  assert.equal(activeSubscription.error, null, String(activeSubscription.error?.message))
   const meterAllowance = await admin.rpc('usage_grant', {
     p_user_id: users[1].id, p_offer_key: meteredKey, p_source: 'subscription',
     p_source_id: `invoice:sub_usage_${suffix}`, p_units_micros: 2_000_000,
@@ -475,35 +439,30 @@ try {
     p_meter: 'usage_db_probe', p_overage_price_micros: 30_000,
     p_speech_cost_per_second_micros: 200,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(meterAllowance.error, null, meterAllowance.error?.message)
+  assert.equal(meterAllowance.error, null, String(meterAllowance.error?.message))
   const meteredRef = `${source}:metered`
   const meteredAuthorization = await admin.rpc('usage_authorize', {
     p_user_id: users[1].id, p_offer_key: meteredKey, p_reservation_ref: meteredRef,
     p_max_units_micros: 4_000_000,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(meteredAuthorization.error, null, meteredAuthorization.error?.message)
+  assert.equal(meteredAuthorization.error, null, String(meteredAuthorization.error?.message))
   assert.equal((meteredAuthorization.data as any)?.admitted, true, 'an active matching subscription authorizes metered work')
   assert.equal((meteredAuthorization.data as any)?.mode, 'metered')
   const meteredSettlement = await admin.rpc('usage_settle', {
     p_reservation_ref: meteredRef, p_kind: 'model', p_cost_micros: 500,
     p_seconds_micros: 0, p_units_micros: 3_000_000, p_bot_id: null,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(meteredSettlement.error, null, meteredSettlement.error?.message)
+  assert.equal(meteredSettlement.error, null, String(meteredSettlement.error?.message))
   assert.equal((meteredSettlement.data as any)?.included_micros, 2_000_000)
   assert.equal((meteredSettlement.data as any)?.metered_micros, 1_000_000)
   const usageEvent = await admin.from('usage_events').select('subscription_id')
     .eq('id', (meteredSettlement.data as any).usage_event_id).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(usageEvent.error, null, usageEvent.error?.message)
+  assert.equal(usageEvent.error, null, String(usageEvent.error?.message))
   assert.equal(usageEvent.data.subscription_id, `sub_usage_${suffix}`,
     'metered events retain their local subscription for Hyperswitch period-end billing')
   const report = await admin.from('usage_meter_reports').select('user_id,identifier,event_name,value_micros')
     .eq('usage_event_id', (meteredSettlement.data as any).usage_event_id).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(report.error, null, report.error?.message)
+  assert.equal(report.error, null, String(report.error?.message))
   assert.equal(report.data.user_id, users[1].id, 'meter reports retain the reader id for provider-scoped customer lookup')
   assert.equal(report.data.event_name, 'usage_db_probe')
   assert.equal(report.data.value_micros, 1_000_000)
@@ -511,28 +470,24 @@ try {
     p_reservation_ref: meteredRef, p_kind: 'model', p_cost_micros: 500,
     p_seconds_micros: 0, p_units_micros: 3_000_000, p_bot_id: null,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(meteredReplay.error, null, meteredReplay.error?.message)
+  assert.equal(meteredReplay.error, null, String(meteredReplay.error?.message))
   assert.equal((meteredReplay.data as any)?.duplicate, true, 'a metered settlement replay does not create a second report')
   const expiredKey = `expired_${suffix.replaceAll('-', '').slice(0, 16)}`
   const expireSubscription = await admin.from('subscriptions').update({
     key: expiredKey, current_period_start: new Date(Date.now() - 60 * 86_400_000).toISOString(),
     current_period_end: new Date(Date.now() - 30 * 86_400_000).toISOString(),
   }).eq('id', `sub_usage_${suffix}`)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(expireSubscription.error, null, expireSubscription.error?.message)
+  assert.equal(expireSubscription.error, null, String(expireSubscription.error?.message))
   const expiredAuthorization = await admin.rpc('usage_authorize', {
     p_user_id: users[1].id, p_offer_key: expiredKey,
     p_reservation_ref: `${source}:expired`, p_max_units_micros: 1_000_000,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(expiredAuthorization.error, null, expiredAuthorization.error?.message)
+  assert.equal(expiredAuthorization.error, null, String(expiredAuthorization.error?.message))
   assert.equal((expiredAuthorization.data as any)?.admitted, false, 'an expired matching subscription authorizes no new work')
 
   const storedEvents = await admin.from('usage_events').select('source_ref,bot_id,usage_unit,rate_micros')
     .eq('user_id', users[0].id).eq('offer_key', offerKey)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(storedEvents.error, null, storedEvents.error?.message)
+  assert.equal(storedEvents.error, null, String(storedEvents.error?.message))
   assert.equal(storedEvents.data.find((event) => event.source_ref === `${source}:step-2`)?.bot_id, null,
     'non-bot operations can record usage without bot provenance')
   assert.equal(storedEvents.data.find((event) => event.source_ref === `${source}:step-1`)?.usage_unit, 'minute',
@@ -545,8 +500,7 @@ try {
   const storedInferenceAttempts = await admin.from('usage_inference_attempts')
     .select('invocation_ref, sponsor, provider_cost_micros, customer_units_micros')
     .in('invocation_ref', [inferenceRef, siteAttemptRef])
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(storedInferenceAttempts.error, null, storedInferenceAttempts.error?.message)
+  assert.equal(storedInferenceAttempts.error, null, String(storedInferenceAttempts.error?.message))
   assert.equal(storedInferenceAttempts.data.length, 3,
     'site-funded, measured reader, and estimated fallback attempts are retained for administrators')
   assert.equal(storedInferenceAttempts.data.find((row) => row.invocation_ref === siteAttemptRef)?.sponsor, 'site')
@@ -594,8 +548,7 @@ try {
   assert.ok(attemptedPreference.error, 'reader preferences are changed only through the validated server API')
 
   const promoted = await admin.from('profiles').update({ roles: ['admin'] }).eq('id', users[1].id)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(promoted.error, null, promoted.error?.message)
+  assert.equal(promoted.error, null, String(promoted.error?.message))
   const usageReport = await readers[1].rpc('admin_usage', { p_days: 30 })
   assert.equal(usageReport.error, null, usageReport.error?.message)
   const reportRows = usageReport.data.inference.filter((row: { operation_id: string }) =>
@@ -639,14 +592,12 @@ try {
   }, 'site-funded spend is reported without reader charges')
 
   const deletedReader = await admin.auth.admin.deleteUser(users[0].id)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(deletedReader.error, null, deletedReader.error?.message)
+  assert.equal(deletedReader.error, null, String(deletedReader.error?.message))
   users[0].deleted = true
   const retainedAttempts = await admin.from('usage_inference_attempts')
     .select('user_id, sponsor, provider_cost_micros, measurement_status')
     .eq('invocation_ref', inferenceRef)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(retainedAttempts.error, null, retainedAttempts.error?.message)
+  assert.equal(retainedAttempts.error, null, String(retainedAttempts.error?.message))
   assert.equal(retainedAttempts.data.length, 2, 'reader deletion retains measured and estimated attempt evidence')
   assert.ok(retainedAttempts.data.every((row) => row.user_id === null && row.sponsor === 'reader'),
     'reader deletion removes identity while preserving the accounting sponsor')

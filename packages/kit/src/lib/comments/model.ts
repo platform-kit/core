@@ -14,7 +14,7 @@
 /* the tree, from the flat list the database returns. Oldest first; an orphan (its parent gone from
    this page, or a parent that would loop) is treated as a top-level line rather than dropped —
    losing somebody's words to a broken pointer is the worse failure. */
-export function treeOf(rows: { id: any; parent: any; name: any; created_at: string; body: any; up: number; down: number }[] = []) {
+export function treeOf(rows: CommentRow[] = []) {
   const list = (rows || []).filter((r: any) => r && r.id)
   const by = new Map(list.map((r: any) => [r.id, { ...r, kids: [] }]))
   const roots = []
@@ -39,7 +39,9 @@ export function treeOf(rows: { id: any; parent: any; name: any; created_at: stri
  *
  * A folded run is not dropped: `hidden` says how many there are, and the caller opens it by passing
  * that comment's id in `open`. */
-export function shape(rows = [], { depth = 3, collapse = 5, open = [] } = {}) {
+/* a comment as the thread reads it: its id, the comment it answers, when, and its votes; the rest rides along */
+export interface CommentRow { id: string, parent?: string | null, created_at?: string, up?: number, down?: number, [k: string]: any }
+export function shape(rows: CommentRow[] = [], { depth = 3, collapse = 5, open = [] as string[] } = {}) {
   const stop = Math.max(1, Number(depth) || 1)
   const most = Math.max(1, Number(collapse) || 1)
   const opened = new Set(open || [])
@@ -59,7 +61,6 @@ export function shape(rows = [], { depth = 3, collapse = 5, open = [] } = {}) {
        tell a reply from a reply to a reply, so they are one list in the order they were written */
     const run = node.depth >= stop ? deep(node) : node.kids
     if (!run.length) return
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     const show = run.length > most && !opened.has(node.id) ? run.slice(0, most) : run
     for (const k of show) {
       if (node.depth >= stop) out.push(line(k, k.of || node))
@@ -120,7 +121,7 @@ const stamp = (c: { created_at: any }) => new Date((c && c.created_at) || 0).get
 
 /* the reader's own order, over the roots alone: a reply belongs to what it answers, and sorting the
    whole flat list would scatter every conversation. `shape` nests what comes back. */
-export function sortComments(rows = [], order = 'oldest') {
+export function sortComments(rows: CommentRow[] = [], order = 'oldest') {
   const list = [...(rows || [])]
   const roots = list.filter((r: any) => !r.parent)
   const rest = list.filter((r: any) => r.parent)

@@ -214,8 +214,8 @@ const slow = (parts: string[], each = 5) => new ReadableStream({
   const heard: any = []
   let finished = false
   const sp = speaker({ id: 'endpoint', voice: {}, post: async () => slow(['one ', 'two ', 'three']) })
-  // @ts-expect-error TS2345, from the conversion: Argument of type '(c: any) => any' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Expecte
-  const p = sp.say('a sentence', (c) => heard.push(new TextDecoder().decode(c)))
+  // @ts-expect-error TS2345, from the conversion: Argument of type '(c: AllowSharedBufferSource | undefined) => any' is not assignable to parameter of type '() => void'. Target signature pro
+  const p = sp.say('a sentence', (c: AllowSharedBufferSource|undefined) => heard.push(new TextDecoder().decode(c)))
   p.then(() => { finished = true })
   /* after the first chunk has landed, the answer is NOT complete — a buffered proxy would fail this */
   while (heard.length < 1) await new Promise((r) => setTimeout(r, 2))
@@ -229,8 +229,8 @@ const slow = (parts: string[], each = 5) => new ReadableStream({
 {
   const heard = []
   const sp = speaker({ id: 'endpoint', voice: {}, post: async () => slow(['a', 'b', 'c'], 8) })
-  // @ts-expect-error TS2345, from the conversion: Argument of type '(c: any) => number' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Expe
-  const first = sp.say('the long answer nobody waited for', (c) => heard.push('1:' + new TextDecoder().decode(c)))
+  // @ts-expect-error TS2345, from the conversion: Argument of type '(c: AllowSharedBufferSource | undefined) => number' is not assignable to parameter of type '() => void'. Target signature 
+  const first = sp.say('the long answer nobody waited for', (c: AllowSharedBufferSource|undefined) => heard.push('1:' + new TextDecoder().decode(c)))
   await new Promise((r) => setTimeout(r, 12))
   sp.cancel(first.utterance)
   const got = await first
@@ -306,7 +306,7 @@ const slow = (parts: string[], each = 5) => new ReadableStream({
   })
   const played: any = []
   // @ts-expect-error TS2345, from the conversion: Argument of type '(bytes: any) => void' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Ex
-  await endpoint.say('Say hello', (bytes) => {
+  await endpoint.say('Say hello', (bytes: any) => {
     played.push(bytes)
     if (played.length === 1) playbackStartedBeforeEnd = !upstreamFinished
   })
@@ -656,10 +656,10 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
     /* a FACTORY, so a deployment whose endpoint works never builds an engine it cannot use */
     let made = 0
     const sp = speaker({ id: 'endpoint', post, worker: () => { made++; return w }, voice: {} })
-    // @ts-expect-error TS2345, from the conversion: Argument of type '(c: any) => any' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Expecte
-    await sp.say('first sentence', (c) => heard.push(c && c.pcm ? 'own' : 'endpoint'))
-    // @ts-expect-error TS2345, from the conversion: Argument of type '(c: any) => any' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Expecte
-    await sp.say('second sentence', (c) => heard.push(c && c.pcm ? 'own' : 'endpoint'))
+    // @ts-expect-error TS2345, from the conversion: Argument of type '(c: { pcm: any; }) => any' is not assignable to parameter of type '() => void'. Target signature provides too few argument
+    await sp.say('first sentence', (c: { pcm: any }) => heard.push(c && c.pcm ? 'own' : 'endpoint'))
+    // @ts-expect-error TS2345, from the conversion: Argument of type '(c: { pcm: any; }) => any' is not assignable to parameter of type '() => void'. Target signature provides too few argument
+    await sp.say('second sentence', (c: { pcm: any }) => heard.push(c && c.pcm ? 'own' : 'endpoint'))
     return { heard, worker: w.spoke, made, now: sp.id }
   }
 
@@ -697,8 +697,8 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
   const sp = speaker({ id: 'browser', worker: w, voice: { steps: 8, opening: 3, gap: 0.12, words: 12 } })
   const t0 = Date.now()
   const got: any = []
-  // @ts-expect-error TS2345, from the conversion: Argument of type '(c: any) => any' is not assignable to parameter of type '() => void'. Target signature provides too few arguments. Expecte
-  const u = sp.say('one. two. three.', (c) => got.push({ at: Date.now() - t0, blob: typeof c === 'string', i: c && c.i }))
+  // @ts-expect-error TS2345, from the conversion: Argument of type '(c: { i: any; }) => any' is not assignable to parameter of type '() => void'. Target signature provides too few arguments.
+  const u = sp.say('one. two. three.', (c: { i: any }) => got.push({ at: Date.now() - t0, blob: typeof c === 'string', i: c && c.i }))
   const r = await u
   const settled = Date.now() - t0
 

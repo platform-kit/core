@@ -26,9 +26,7 @@ console.log('\nREACTIONS AND VOTES\n')
 const liked = { id: 'liked', up: 9, down: 1, created_at: '2026-09-01T10:00:00.000Z' }
 const argued = { id: 'argued', up: 40, down: 30, created_at: '2026-09-02T10:00:00.000Z' }
 ok('top is the raw score', scoreOf(argued) === 10 && scoreOf(liked) === 8)
-// @ts-expect-error TS2322, from the conversion: Type '{ id: string; up: number; down: number; created_at: string; }' is not assignable to type 'never'.
 ok('top puts the argued one first', sortComments([liked, argued], 'top')[0].id === 'argued')
-// @ts-expect-error TS2322, from the conversion: Type '{ id: string; up: number; down: number; created_at: string; }' is not assignable to type 'never'.
 ok('best puts the liked one first', sortComments([liked, argued], 'best')[0].id === 'liked')
 ok('best is a proportion, not a count', bestOf(liked) > bestOf(argued), bestOf(liked) + ' vs ' + bestOf(argued))
 ok('nothing voted on is not liked', bestOf({ up: 0, down: 0 }) === 0)
@@ -42,7 +40,6 @@ ok('two people disagreeing is not a controversy',
   heatOf({ up: 1, down: 1 }) < heatOf({ up: 20, down: 19 }))
 ok('everybody agreeing is not one either', heatOf({ up: 40, down: 0 }) === 0)
 ok('controversial puts the split first',
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; up: number; down: number; }' is not assignable to type 'never'.
   sortComments([{ id: 'agreed', up: 40, down: 0 }, { id: 'split', up: 20, down: 19 }], 'controversial')[0].id === 'split')
 
 /* --- what a reader may choose --- */
@@ -50,7 +47,6 @@ ok('five orders where there are votes', ORDERS.length === 5 && ordersFor(true).l
 ok('an order nothing can compute is not offered', ordersFor(false).join(' ') === 'oldest newest')
 ok('oldest is first, and so the default', ORDERS[0] === 'oldest')
 ok('an unknown order falls back to oldest',
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; up: number; down: number; created_at: string; }' is not assignable to type 'never'.
   sortComments([argued, liked], 'whatever').map((r) => r.id).join(' ') === 'liked argued')
 
 /* --- one per person --- */

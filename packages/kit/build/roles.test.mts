@@ -58,7 +58,7 @@ for (const [who, c] of people) {
   ]) {
     const r = await c.from(table).insert(row).select()
     ok(`${who} cannot write themselves into ${table}`, refused(r), JSON.stringify(r.data))
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: string): PostgrestQueryBuilder<any, any, any, string, unknown>', gave the follow
+    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
     if (!r.error && r.data?.length) await service.from(table).delete().match(row)
   }
   const e = await c.from('entitlements').update({ active: true, expires_at: null }).eq('user_id', id).select('id')

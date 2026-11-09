@@ -105,8 +105,7 @@ await ok('every operator, recomputed from the records', () => {
   const tagged = m.fields.find((f: any) => f.name === 'tags') && rows.filter((r: any) => Array.isArray(r.data.tags) && r.data.tags.length)
   if (tagged && tagged.length) { const tag = tagged[0].data.tags[0]; assert.deepEqual(q({ 'fields.tags[in]': tag }).map((r: any) => r.path).sort(), rows.filter((r: any) => (r.data.tags || []).includes(tag)).map((r: any) => r.path).sort()); assert.deepEqual(q({ 'fields.tags[all]': tagged[0].data.tags.join(',') }).map((r: any) => r.path).sort(), rows.filter((r: any) => tagged[0].data.tags.every((x: any) => (r.data.tags || []).includes(x))).map((r: any) => r.path).sort()); assert.deepEqual(q({ 'fields.tags[exists]': 'false' }).length, rows.filter((r: any) => !(r.data.tags || []).length).length) }
   const dated = m.fields.find((f: any) => f.name === 'date') && rows.filter((r: any) => r.data.date)
-  // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  if (dated && dated.length > 1) { const sorted = [...dated].sort((a, b) => new Date(a.data.date) - new Date(b.data.date)); assert.deepEqual(q({ 'fields.date[gte]': new Date(sorted[1].data.date).toISOString() }).length, dated.filter((r) => new Date(r.data.date) >= new Date(sorted[1].data.date)).length); assert.deepEqual(q({ order: 'fields.date' }).filter((r) => r.data.date).map((r) => r.path), sorted.map((r) => r.path)) }
+  if (dated && dated.length > 1) { const sorted = [...dated].sort((a, b) => new Date(a.data.date).getTime() - new Date(b.data.date).getTime()); assert.deepEqual(q({ 'fields.date[gte]': new Date(sorted[1].data.date).toISOString() }).length, dated.filter((r: { data: { date: string|number|Date } }) => new Date(r.data.date) >= new Date(sorted[1].data.date)).length); assert.deepEqual(q({ order: 'fields.date' }).filter((r: { data: { date: any } }) => r.data.date).map((r: { path: any }) => r.path), sorted.map((r) => r.path)) }
   assert.deepEqual(q({ order: '-sys.createdAt', limit: '2' }).length, rows.length, 'order alone never cuts (the page does)')
   const bad = parse({ content_type: t.sys.id, 'fields.title[near]': '1,2' }, { types: ctx.types, locales: index.locales }); assert.equal(bad.error.id, 'InvalidQuery')
   const noType = parse({ 'fields.title': 'x' }, { types: ctx.types, locales: index.locales }); assert.equal(noType.error.id, 'BadQuery')
@@ -140,7 +139,6 @@ await ok('the OpenAPI document: valid 3.1, one schema per content type, content_
   const sessOn = c.modules.sessions !== false && fs.existsSync(path.join(ROOT, 'supabase/functions/_shared/catalog.json'))
   const sessions = sessOn ? (JSON.parse(fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8')).sessions || []) : null
   const storeOn = c.modules.store !== false, supportOn = c.modules.support !== false
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   const doc: any = openapiFor(index, { base: 'https://x.test', functions: 'http://stack.test', sources: ['other-site'], forms, sessions, store: storeOn, support: supportOn })
   const v = await validate(doc); assert.ok(v.valid, 'validate: ' + JSON.stringify((v.errors || []).slice(0, 3)))
   assert.equal(doc.openapi, '3.1.0'); assert.ok(doc.info.title && doc.info.description.includes(index.space))
@@ -148,7 +146,7 @@ await ok('the OpenAPI document: valid 3.1, one schema per content type, content_
   const entries = doc.paths[`/api/content/spaces/${index.space}/environments/master/entries`].get
   assert.deepEqual(entries.parameters.find((p: any) => p.name === 'content_type').schema.enum, index.types.map((t: any) => t.sys.id))
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): unknown[]', gave the following error. 
-  const tags = (tag) => Object.values(doc.paths).flatMap((p) => Object.values(p)).filter((op) => op.tags.includes(tag)).length
+  const tags = (tag: string) => Object.values(doc.paths).flatMap((p) => Object.values(p)).filter((op: any) => op.tags.includes(tag)).length
   assert.deepEqual([tags('Content Delivery'), tags('Content Management'), tags('Content Sync'), tags('Content GraphQL'), tags('Content Images'), tags('Analytics Events'), tags('Analytics Capture')], [8, 19, 1, 2, 1, 1, 4], 'every door has its operations under its tag')
   /* the Management API's operations sit on the Delivery routes, under their own tag and key */
   const entryRoute = doc.paths[`/api/content/spaces/${index.space}/environments/master/entries/{id}`]; assert.ok(entryRoute.get && entryRoute.put && entryRoute.delete, 'read, write and delete on one route'); assert.deepEqual(entryRoute.put.security, [{ managementKey: [] }]); assert.ok(doc.components.securitySchemes.managementKey)
@@ -162,7 +160,7 @@ await ok('the OpenAPI document: valid 3.1, one schema per content type, content_
   if (forms) { assert.deepEqual([tags('Forms'), tags('Responses'), tags('Webhooks'), tags('Insights')], [8, 3, 4, 1], 'the Forms API\'s operations (the reads and the writes)'); assert.ok(doc.paths['/api/forms/forms'].post && doc.paths['/api/forms/forms/{form_id}'].patch, 'the form writes'); assert.ok(doc.components.schemas.Form && doc.components.schemas.Response && doc.components.schemas.Webhook); assert.deepEqual(doc.paths['/api/forms/forms/{form_id}'].get.parameters[0].schema.enum, Object.entries(forms).filter(([, f]) => (f as any).kit?.published !== false && (f as any).settings?.page === 'form-slides').map(([k]) => k)) } else assert.ok(!Object.keys(doc.paths).some((p) => p.startsWith('/api/forms/')), 'no Forms API with forms off')
   assert.deepEqual(groups.flatMap((g: any) => g.tags).sort(), names.slice().sort(), 'every tag is in a group')
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): unknown[]', gave the following error. 
-  for (const op of Object.values(doc.paths).flatMap((p) => Object.values(p))) assert.ok(op.tags.every((t) => names.includes(t)) && /^[A-Z]/.test(op.summary) && !/posthog|contentful|typeform|cal\.com/i.test(op.summary) && !/posthog|contentful|typeform|cal\.com/i.test(op.tags.join()), 'an operation names a declared tag and says what it does, no product name in a name: ' + op.operationId)
+  for (const op of Object.values(doc.paths).flatMap((p) => Object.values(p))) assert.ok((op as any).tags.every((t: string) => names.includes(t)) && /^[A-Z]/.test((op as any).summary) && !/posthog|contentful|typeform|cal\.com/i.test((op as any).summary) && !/posthog|contentful|typeform|cal\.com/i.test((op as any).tags.join()), 'an operation names a declared tag and says what it does, no product name in a name: ' + (op as any).operationId)
   assert.deepEqual(doc.servers.map((x: any) => x.url), ['https://x.test', 'http://stack.test/functions/v1/content'])
   assert.ok(doc.paths['/api/events/e/'].post.description.includes('other-site'), 'the sources are named')
 })
@@ -225,7 +223,7 @@ try {
     if (tagged) { const tag = tagged.data.tags[0]; const r = await client.getEntries({ content_type: T, 'fields.tags[in]': tag, limit: 100 }); assert.deepEqual(r.items.map((i) => i.sys.id).sort(), rows.filter((x: any) => (x.data.tags || []).includes(tag)).map((x: any) => entryId(T, x.path)).sort()) }
     const r2 = await client.getEntries({ content_type: T, 'fields.title[match]': rows[0].data.title.slice(0, 4), limit: 100 }); assert.ok(r2.items.some((i) => i.sys.id === entryId(T, rows[0].path)))
     const r3 = await client.getEntries({ content_type: T, 'fields.title[exists]': false }); assert.equal(r3.total, 0)
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type '("fields" | "metadata" | "sys.createdAt" | "sys" | "metadata.concepts" | "sys.type" | "sys.id" | "s
+    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type '("metadata" | "fields" | "sys.createdAt" | "sys" | "metadata.concepts" | "sys.id" | "sys.type" | "s
     const r4 = await client.getEntries({ content_type: T, select: 'sys.id,fields.title', limit: 1 }); assert.deepEqual(Object.keys(r4.items[0].fields), ['title'])
     const linked = index.models.find((x: any) => x.fields.some((f: any) => f.kind === 'reference' || (f.widget === 'select' && f.options)))
     if (linked) { const f = linked.fields.find((x: any) => x.kind === 'reference' || (x.widget === 'select' && x.options)); const r = byModel(linked.key).find((x: any) => x.published && x.data[f.name]); const lt1 = index.types.find((x: any) => x._model === linked.key); const ltf = lt1.fields.find((x: any) => x.id === f.name); const targetT = ((ltf.validations.find((v: any) => v.linkContentType) || {}).linkContentType || [])[0]; if (r && targetT) { const lt = await client.getEntries({ links_to_entry: entryId(targetT, String(r.data[f.name])), limit: 100 }); assert.ok(lt.items.some((i) => i.sys.id === entryId(lt1.sys.id, r.path)), 'links_to_entry') } }
@@ -350,8 +348,7 @@ try {
     const a: any = await client.getAsset(assetId(pic.address)); const u = url + '/functions/v1/images' + a.fields.file.url.replace(/^\/\/[^/]+\/api\/media/, '')
     const sharp = (await import('sharp')).default
     const dims = async (qs: any) => { const r = await fetch(u + qs); if (r.status !== 200) return { status: r.status }; const buf = Buffer.from(await r.arrayBuffer()); const m = await sharp(buf).metadata(); return { status: 200, format: m.format, width: m.width, height: m.height, type: r.headers.get('content-type'), etag: r.headers.get('etag'), cache: r.headers.get('cache-control') } }
-    // @ts-expect-error TS18049, from the conversion: 'fill.cache' is possibly 'null' or 'undefined'.
-    const fill = await dims('?w=400&h=300&fit=fill&f=top&fm=webp&q=70'); assert.deepEqual([fill.status, fill.format, fill.width, fill.height], [200, 'webp', 400, 300]); assert.ok(fill.cache.includes('immutable'))
+    const fill = await dims('?w=400&h=300&fit=fill&f=top&fm=webp&q=70'); assert.deepEqual([fill.status, fill.format, fill.width, fill.height], [200, 'webp', 400, 300]); assert.ok(fill.cache!.includes('immutable'))
     const avif = await dims('?w=200&fm=avif'); assert.equal(avif.format, 'webp'); assert.equal(avif.width, 200)
     const pad = await dims('?w=300&h=300&fit=pad&bg=rgb:ff0000&fm=jpg'); assert.deepEqual([pad.format, pad.width, pad.height], ['jpeg', 300, 300])
     const circle = await dims('?w=120&r=max&fm=png'); assert.equal(circle.format, 'png'); assert.equal(circle.width, 120)
@@ -367,8 +364,7 @@ try {
   const mgmt = await makeKey('management')
   const cm = await import('contentful-management'); const CM = cm.createClient || cm.default.createClient
   const cma = CM({ accessToken: mgmt, host, hostUpload: host, basePath: '/functions/v1/content', insecure: url.startsWith('http:'), retryOnError: false })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(input: string | URL | Request, init?: RequestInit | undefined): Promise<Response>', gave t
-  const send = async (method, p, body?, headers = {}) => { const r = await fetch(API + p, { method, headers: { Authorization: 'Bearer ' + mgmt, 'Content-Type': 'application/vnd.contentful.management.v1+json', ...headers }, body: body == null ? undefined : (typeof body === 'string' || body instanceof Uint8Array ? body : JSON.stringify(body)) }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
+  const send = async (method: string, p: string, body?: BodyInit|null|undefined, headers = {}) => { const r = await fetch(API + p, { method, headers: { Authorization: 'Bearer ' + mgmt, 'Content-Type': 'application/vnd.contentful.management.v1+json', ...headers }, body: body == null ? undefined : (typeof body === 'string' || body instanceof Uint8Array ? body : JSON.stringify(body)) }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
   const ENV = `/spaces/${index.space}/environments/master`
   await ok('a management key reads an entry in Contentful\'s management shape (version, publishedVersion, updatedBy); a delivery key and no key are refused a write', async () => {
     const any = index.records.find((r: any) => r.typeId && r.published)
@@ -377,13 +373,16 @@ try {
     assert.ok(Object.values(r.body.fields).every((v) => v && typeof v === 'object' && 'en-US' in v), 'fields by locale')
     const asDelivery = await fetch(API + `${ENV}/entries/${entryId(any.typeId, any.path)}`, { method: 'PUT', headers: { Authorization: 'Bearer ' + delivery, 'Content-Type': 'application/json' }, body: '{}' }); assert.equal(asDelivery.status, 403)
     const noKey = await fetch(API + `${ENV}/entries`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); assert.equal(noKey.status, 403)
+    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'name' does not exist in type 'ArrayBuffer | ReadableStream<any> | Blob | ArrayBufferV
     const types = await send('PUT', `${ENV}/content_types/x`, { name: 'x' }); assert.equal(types.status, 405, 'a content type is the builder\'s')
     const defs = await send('GET', `/spaces/${index.space}/webhook_definitions`); assert.equal(defs.status, 200); assert.equal(defs.body.sys.type, 'Array')
   })
   if (!cloudMode) await ok('in git mode every write is 405 with the reason; a read still answers', async () => {
     const any = index.records.find((r: any) => r.typeId && r.published)
+    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'fields' does not exist in type 'ArrayBuffer | ReadableStream<any> | Blob | ArrayBuffe
     const r = await send('PUT', `${ENV}/entries/${entryId(any.typeId, any.path)}`, { fields: {} }); assert.equal(r.status, 405); assert.match(r.body.message, /git mode/)
     const p = await send('PUT', `${ENV}/entries/${entryId(any.typeId, any.path)}/published`); assert.equal(p.status, 405)
+    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'fields' does not exist in type 'ArrayBuffer | ReadableStream<any> | Blob | ArrayBuffe
     const a = await send('POST', `${ENV}/assets`, { fields: {} }); assert.equal(a.status, 405)
     const u = await send('POST', `/spaces/${index.space}/uploads`, new Uint8Array([1, 2, 3]), { 'Content-Type': 'application/octet-stream' }); assert.equal(u.status, 405)
     note('git mode — the life of an entry and an asset through the Management API is checked on the demo in cloud mode')
@@ -408,6 +407,7 @@ try {
         const pv = await get(`${ENV}/entries/${ID}`, { Authorization: 'Bearer ' + previewKey }); assert.equal(pv.status, 200); assert.equal(pv.body.fields[titleField], 'Probe ' + probe)
         if (model.body) assert.equal(pv.body.fields.bodyMarkdown.trim(), 'A **line** of body.\n\nAnd a second paragraph.')
         /* a stale version */
+        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'fields' does not exist in type 'ArrayBuffer | ReadableStream<any> | Blob | ArrayBuffe
         const stale = await send('PUT', `${ENV}/entries/${ID}`, { fields: { ...fields, [titleField]: { 'en-US': 'Stale' } } }, { 'X-Contentful-Version': String(entry.sys.version + 10) }); assert.equal(stale.status, 409); assert.equal(stale.body.sys.id, 'VersionMismatch')
         /* the update, with the version */
         entry.fields[titleField] = { 'en-US': 'Probe ' + probe + ' (edited)' }
@@ -449,8 +449,10 @@ try {
         const live = await get(`${ENV}/entries/${id}`, { Authorization: 'Bearer ' + delivery }); assert.equal(live.body.fields[titleField], fields[titleField]['en-US'], 'the live version untouched')
       })
       await ok('a field the type does not have is 422 with the field named; a create at an id that exists is 409', async () => {
+        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'fields' does not exist in type 'ArrayBuffer | ReadableStream<any> | Blob | ArrayBuffe
         const r = await send('PUT', `${ENV}/entries/${TYPE.sys.id}.probe-bad-${probe}`, { fields: { [titleField]: { 'en-US': 'x' }, nosuchfield: { 'en-US': 1 } } }); assert.equal(r.status, 422); assert.equal(r.body.sys.id, 'ValidationFailed'); assert.deepEqual(r.body.details.errors[0].path, ['fields', 'nosuchfield'])
         const any = index.records.find((r: any) => r.typeId === TYPE.sys.id && r.published)
+        // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'fields' does not exist in type 'ArrayBuffer | ReadableStream<any> | Blob | ArrayBuffe
         if (any) { const dup = await send('POST', `${ENV}/entries`, { fields: { [titleField]: { 'en-US': any.data[titleField] || any.data.title || any.path } } }, { 'X-Contentful-Content-Type': TYPE.sys.id }); assert.equal(dup.status, 409, JSON.stringify(dup.body)) }
       })
       await ok('the life of an asset: an upload, an asset made from it, processed into the library, published, linked from an entry (its delete refused while in use), deleted', async () => {
@@ -475,6 +477,7 @@ try {
           cleanup.push(async () => { try { await send('DELETE', `${ENV}/entries/${EID}`) } catch { /* gone */ } })
           assert.equal(e.fields[picField.id]['en-US'].sys.id, AID, 'the link reads back')
           const used = await send('DELETE', `${ENV}/assets/${AID}`); assert.equal(used.status, 409, 'in use: ' + JSON.stringify(used.body))
+          // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'fields' does not exist in type 'ArrayBuffer | ReadableStream<any> | Blob | ArrayBuffe
           const missing = await send('PUT', `${ENV}/entries/${TYPE.sys.id}.probe-nolink-${probe}`, { fields: { [titleField]: { 'en-US': 'x' }, [picField.id]: { 'en-US': { sys: { type: 'Link', linkType: 'Asset', id: 'no-such-asset' } } } } }); assert.equal(missing.status, 422); assert.equal(missing.body.details.errors[0].name, 'notResolvable')
           await e.delete()
         }
@@ -501,8 +504,10 @@ try {
         await new Promise((r) => server.listen(0, '0.0.0.0', r))
         const receiver = `http://host.docker.internal:${server.address().port}/hook`
         try {
+          // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'name' does not exist in type 'ArrayBuffer | ReadableStream<any> | Blob | ArrayBufferV
           const def = await send('POST', `/spaces/${index.space}/webhook_definitions`, { name: 'probe hook', url: receiver, topics: ['Entry.publish', 'Entry.unpublish'], headers: [{ key: 'X-Probe', value: 'yes' }] }); assert.equal(def.status, 201, JSON.stringify(def.body)); assert.equal(def.body.sys.type, 'WebhookDefinition')
           const listed = await send('GET', `/spaces/${index.space}/webhook_definitions`); assert.ok(listed.body.items.some((x: any) => x.sys.id === def.body.sys.id))
+          // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'name' does not exist in type 'ArrayBuffer | ReadableStream<any> | Blob | ArrayBufferV
           const upd = await send('PUT', `/spaces/${index.space}/webhook_definitions/${def.body.sys.id}`, { name: 'probe hook 2', url: receiver, topics: ['Entry.publish'], headers: [{ key: 'X-Probe', value: 'yes' }] }); assert.equal(upd.status, 200); assert.equal(upd.body.name, 'probe hook 2')
           const EID = `${TYPE.sys.id}.probe-hook-${probe}`
           const e = await env.createEntryWithId(TYPE.sys.id, EID, { fields: { [titleField]: { 'en-US': 'Probe hook ' + probe } } })
@@ -522,6 +527,7 @@ try {
             try { const { chromium } = await import('playwright'); const shell = path.join(process.env.HOME || '', 'Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell'); browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || (fs.existsSync(shell) ? shell : undefined) }) } catch { note('no browser — the admin\'s publish is not driven') }
             if (browser) {
               try {
+                // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'name' does not exist in type 'ArrayBuffer | ReadableStream<any> | Blob | ArrayBufferV
                 const up2 = await send('PUT', `/spaces/${index.space}/webhook_definitions/${def.body.sys.id}`, { name: 'probe hook 2', url: receiver, topics: ['Entry.publish', 'Entry.unpublish'], headers: [{ key: 'X-Probe', value: 'yes' }] }); assert.equal(up2.status, 200)
                 hits.length = 0
                 const pg = await browser.newPage(); pg.on('dialog', (d) => d.accept())

@@ -37,7 +37,7 @@ console.log('\nCOMMUNITY\n')
 const mark = Math.random().toString(36).slice(2, 8)
 const COMM = 'test-comm-' + mark, SERV = 'test-serv-' + mark
 const TIER = 'test-tier-' + mark
-const made = { spaces: [], ents: [], mods: [] }
+const made = { spaces: [] as string[], ents: [] as string[], mods: [] }
 
 try {
   /* Every account here is an ordinary reader on purpose. The staff always may, everywhere — that is
@@ -53,7 +53,6 @@ try {
   const makeSpace = async (slug: string, name: string, kind: string, fill: any) => {
     const { data, error } = await service.from('spaces').insert({ slug, name, kind, fill }).select().single()
     if (error) throw new Error(slug + ': ' + error.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     made.spaces.push(data.id)
     await service.from('space_roles').insert([
       { space_id: data.id, slug: 'member', name: 'Member', rank: 0 },
@@ -67,13 +66,11 @@ try {
 
   const grant = async (email: string, tier: string) => {
     const { data } = await service.from('entitlements').insert({
-      // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-      user_id: (await service.from('profiles').select('id').eq('email', email).single()).data.id,
+      user_id: (await service.from('profiles').select('id').eq('email', email).single()).data!.id,
       kind: 'class', key: 'subscribed', source: 'grant', source_id: 'probe-' + mark, tier, active: true,
       expires_at: new Date(Date.now() + 864e5).toISOString(),
     }).select().single()
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-    made.ents.push(data.id)
+    made.ents.push(data!.id)
     return data!.id
   }
   const servEnt = await grant(two.email, TIER)
@@ -119,7 +116,7 @@ try {
     ok('joining a space puts you in its open rooms', after.includes(comm.channel) && after.length > before.length)
     ok('and the rail has something in it at once',
       // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-      ((await fresh.sb.rpc('space_unread')).data || []).some((r) => r.channel === comm.channel))
+      ((await fresh.sb.rpc('space_unread')).data || []).some((r: { channel: string }) => r.channel === comm.channel))
 
     /* a private room is still joined by being put in it */
     const { data: shut } = await service.from('channels')
@@ -243,8 +240,8 @@ try {
   ok('somebody it was not done to reads none of it', !((await nobody.sb.rpc('space_my_record')).data || []).length)
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
   ok('a record cannot be changed by the person it is about', !!(await two.sb.from('space_moderation').update({ until: null }).eq('id', mute)).error
-    // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-    || !!(await service.from('space_moderation').select('until').eq('id', mute).single()).data.until)
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
+    || !!(await service.from('space_moderation').select('until').eq('id', mute).single()).data!.until)
   ok('nor read as a table by anybody', !((await one.sb.from('space_moderation').select('id')).data || []).length)
 
   /* ---- muting is a fence, not a filter ---- */
@@ -340,7 +337,7 @@ try {
     ((await one.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data || {}).about === line)
   ok('and in the directory beside their name',
     // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-    (((await one.sb.rpc('space_people', { p_space: comm.id })).data || []).find((p) => p.id === out.id) || {}).about === line)
+    (((await one.sb.rpc('space_people', { p_space: comm.id })).data || []).find((p: { id: string }) => p.id === out.id) || {}).about === line)
   const stolen = await one.sb.from('profiles').update({ about: 'written by somebody else' }).eq('id', out.id)
   ok('and nobody else may write it for them',
     // @ts-expect-error TS2339, from the conversion: Property 'about' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'about' does not 
@@ -355,7 +352,7 @@ try {
   ok('each says what it would take', could.every((s: any[]) => s.fill && Object.keys(s.fill).length))
   ok('and whether it is already theirs', could.find((s: { slug: string }) => s.slug === COMM).mine === false
     // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-    && ((await one.sb.rpc('space_discover')).data || []).find((s) => s.slug === COMM).mine === true)
+    && ((await one.sb.rpc('space_discover')).data || []).find((s: { slug: string }) => s.slug === COMM).mine === true)
 
   /* ------------------------------------------------------------------ a room with a rule of its own */
   /* The space takes the tier; the room inside it is narrower. A private room so that nothing but the
@@ -374,7 +371,6 @@ try {
       source_id: 'probe-' + mark + '-' + (++entN), ...extra,
     }).select().single()
     if (error) throw new Error('entitle ' + key + ': ' + error.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     made.ents.push(data.id); return data.id
   }
   await entitle(one, 'subscribed', { tier: TIER })

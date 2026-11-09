@@ -186,15 +186,10 @@ ok('a 90-minute session ends inside noon: 09:00 … 10:30 (7 starts)', ninety.le
   ok('and the week after is untouched', next.length === 9)
   /* which cap a time is past, so a booking can say */
   const taken = [{ start: Date.UTC(2026, 9, 5, 9), end: Date.UTC(2026, 9, 5, 10) }]
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ start: number; end: number; }[]' is not assignable to parameter of type 'never[]'. Type '{ start: number; end: number; }
   ok('under every cap: nothing to say', overLimit({ duration: 60, limits: { day: 2 } }, Date.UTC(2026, 9, 5, 11), taken) === null)
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ start: number; end: number; }[]' is not assignable to parameter of type 'never[]'. Type '{ start: number; end: number; }
   ok('the day, named', (overLimit({ duration: 60, limits: { day: 1 } }, Date.UTC(2026, 9, 5, 11), taken) || {}).span === 'day')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ start: number; end: number; }[]' is not assignable to parameter of type 'never[]'. Type '{ start: number; end: number; }
   ok('the week, named', (overLimit({ duration: 60, limits: { week: 1 } }, Date.UTC(2026, 9, 7, 11), taken) || {}).span === 'week')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ start: number; end: number; }[]' is not assignable to parameter of type 'never[]'. Type '{ start: number; end: number; }
   ok('and the minutes, counting the one about to be booked', (overLimit({ duration: 60, limits: { minutesDay: 90 } }, Date.UTC(2026, 9, 5, 11), taken) || {}).span === 'minutesDay')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ start: number; end: number; }[]' is not assignable to parameter of type 'never[]'. Type '{ start: number; end: number; }
   ok('with the limit it met', (overLimit({ duration: 60, limits: { day: 1 } }, Date.UTC(2026, 9, 5, 11), taken) || {}).limit === 1)
 }
 

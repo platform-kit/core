@@ -83,7 +83,7 @@ await ta('the route table: the pipe\'s endpoints and the three beside it, and no
   assert.deepEqual(routes, ['action', 'asset', 'collections', 'drafts', 'file', 'images', 'keep', 'list', 'media', 'media-file', 'options', 'preview', 'publish', 'run', 'run/stop', 'upload', 'upload-image'])   /* drafts · publish · keep: cloud mode's, answered from the checkout as empty and no-ops */
   const theme = path.join(HERE, '../theme/src')
   // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
+  const walk = (d: fs.PathLike) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
   const hits = walk(theme).filter((f: string) => /\.(vue|js|ts)$/.test(f)).filter((f: fs.PathOrFileDescriptor) => /__admin\/(forms|funnels|emails|strings|models|print|quiz|recommendations)\b/.test(fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))
   assert.deepEqual(hits.map((f: string) => path.relative(theme, f)), [])
 })
@@ -179,7 +179,8 @@ await ta('shared pipe imports do not depend on a function-scoped import map', as
   const STATIC_IMPORT = /^\s*(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]/gm
   const DYNAMIC_IMPORT = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g
   // @ts-expect-error TS7023, from the conversion: 'code' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-  const code = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+  const code = (dir: fs.PathLike) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'PathLike' is not assignable to parameter of type 'string'. Type 'URL' is not assignable to type 'string'.
     const file = path.join(dir, entry.name)
     if (entry.isDirectory()) return code(file)
     return /\.(?:[cm]?js|ts)$/.test(file) ? [file] : []

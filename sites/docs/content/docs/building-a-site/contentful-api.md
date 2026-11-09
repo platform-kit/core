@@ -36,7 +36,7 @@ sources:
     packages/kit/build/management.test.mts,
     packages/kit/build/store/rows.mts,
   ]
-reviewed: 2026-11-08
+reviewed: 2026-11-09
 ---
 
 A webhook subscription carries a **source**: one made through this API is `hand`, and one a deployment ships declared in `platformkit.config.js` is `file` and is replaced on every deploy.

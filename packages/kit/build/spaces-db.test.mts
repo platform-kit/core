@@ -201,7 +201,7 @@ try {
   /* ---------------------------------------------------------------- the counters */
   const walk = (await service.from('space_messages').select('seq').eq('channel_id', open_!.id)).data || []
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-  const sUnread = ((await support.sb.rpc('space_unread')).data || []).find((x) => x.channel === open_!.id)
+  const sUnread = ((await support.sb.rpc('space_unread')).data || []).find((x: { channel: string }) => x.channel === open_!.id)
   ok('unread is what a walk of the rows would say', sUnread && sUnread.unread === walk.length, JSON.stringify(sUnread))
   ok('the mention is counted apart', sUnread && sUnread.mentions === 1, JSON.stringify(sUnread))
   const mentioned = (await service.from('space_mentions').select('user_id, kind').eq('message_id', mention!.id)).data || []
@@ -210,7 +210,7 @@ try {
 
   await support.sb.rpc('space_read', { p_channel: open_!.id, p_seq: 4 })
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-  const sAfter = ((await support.sb.rpc('space_unread')).data || []).find((x) => x.channel === open_!.id)
+  const sAfter = ((await support.sb.rpc('space_unread')).data || []).find((x: { channel: string }) => x.channel === open_!.id)
   ok('reading to the end clears the unread', sAfter.unread === 0, JSON.stringify(sAfter))
   ok('and the mentions with it', sAfter.mentions === 0)
 
@@ -220,9 +220,9 @@ try {
   ok('a cursor returns only what is newer', mine && mine.messages.length === 2, JSON.stringify(mine && mine.messages.length))
   ok('and says where it started', mine && mine.from === 2)
   // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-  ok('a channel with nothing new is left out', !((await support.sb.rpc('space_catchup', { p_cursors: { [open_!.id]: 4 } })).data || []).some((x) => x.channel === open_!.id))
+  ok('a channel with nothing new is left out', !((await support.sb.rpc('space_catchup', { p_cursors: { [open_!.id]: 4 } })).data || []).some((x: { channel: string }) => x.channel === open_!.id))
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-  const c2 = ((await support.sb.rpc('space_catchup', { p_cursors: { [open_!.id]: 0 }, p_lim: 2 })).data || []).find((x) => x.channel === open_!.id)
+  const c2 = ((await support.sb.rpc('space_catchup', { p_cursors: { [open_!.id]: 0 }, p_lim: 2 })).data || []).find((x: { channel: string }) => x.channel === open_!.id)
   ok('a channel further behind than the answer carries is marked for paging', c2 && c2.more === true && c2.messages.length === 2, JSON.stringify(c2 && { more: c2.more, n: c2.messages.length }))
 
   /* ---------------------------------------------------------------- search */
@@ -247,7 +247,7 @@ try {
   }).select().single()
   const found = async (q: string) => ((await support.sb.rpc('space_search', { p_q: q, p_space: spaceId })).data || [])
     // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-    .some((r) => r.id === withFile!.id)
+    .some((r: { id: string }) => r.id === withFile!.id)
   ok('a word out of the middle of a file name finds it', await found('invoice'))
   ok('so does the whole name, pasted in', await found('kybalion-proof-invoice.pdf'))
   ok('and so do two of its words', await found('kybalion proof'))
@@ -451,14 +451,14 @@ try {
   ok('and the insert is refused, not merely unoffered', (await tryVoice(member, open_!.id)) === false)
   ok('the counters say so too, so the mic is never drawn',
     // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-    !(((await member.sb.rpc('space_unread')).data) || []).find((r) => r.channel === open_!.id).voice)
+    !(((await member.sb.rpc('space_unread')).data) || []).find((r: { channel: string }) => r.channel === open_!.id).voice)
   ok('the staff always may, because the desk answers everywhere', (await mayVoice(admin, open_!.id)) === true)
 
   const gSite = await grant({ scope: 'site' })
   ok('a grant to everyone reaches them', (await mayVoice(member, open_!.id)) === true)
   ok('and the insert goes through', (await tryVoice(member, open_!.id)) === true)
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-  ok('the counters carry the same answer', !!((((await member.sb.rpc('space_unread')).data) || []).find((r) => r.channel === open_!.id).voice))
+  ok('the counters carry the same answer', !!((((await member.sb.rpc('space_unread')).data) || []).find((r: { channel: string }) => r.channel === open_!.id).voice))
   await ungrant(gSite)
   ok('taking the grant away takes the capability away', (await mayVoice(member, open_!.id)) === false)
 
@@ -529,8 +529,7 @@ try {
   const { error: modErr } = await admin.sb.from('space_messages').update({ deleted_at: new Date().toISOString() }).eq('id', theirs!.id)
   ok('and may withdraw what is in it', !modErr, modErr && modErr.message)
   const { error: rewriteErr } = await admin.sb.from('space_messages').update({ body: 'rewritten' }).eq('id', theirs!.id)
-  // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-  ok('but may not rewrite it', !!rewriteErr || (((await service.from('space_messages').select('body').eq('id', theirs.id)).data)[0].body !== 'rewritten'))
+  ok('but may not rewrite it', !!rewriteErr || (((await service.from('space_messages').select('body').eq('id', theirs!.id)).data)![0].body !== 'rewritten'))
 
   for (const id of grants.slice()) await ungrant(id)
 
@@ -574,7 +573,7 @@ try {
   ok('a person holds several at once', (await heldBy(admin.id)) >= 2)
   ok('the space\'s people carry what each is called', (((await admin.sb.rpc('space_people', { p_space: spaceId, p_channel: open_!.id })).data) || [])
     // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-    .some((x) => Array.isArray(x.roles) && x.roles.includes('mentor')))
+    .some((x: { roles: string|string[] }) => Array.isArray(x.roles) && x.roles.includes('mentor')))
 
   /* And the point of all of it: a role can be given a capability. Asked of somebody who is NOT on
      the staff, because the staff always may and would prove nothing either way. */
@@ -662,7 +661,7 @@ try {
     const project = async () => {
       const declared = await compileSpaces({ store: gitStore(fixture), write: false })
       if (!declared) throw new Error('the fixture does not compile')
-      // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'null | undefined'.
+      // @ts-expect-error TS2322, from the conversion: Type 'SupabaseClient<Database, "public", "public", { Tables: { achievements: { Row: { access: string[]; colour: string | null; count: number
       return pushSpaces({ declared: [...mine, ...declared], db: service, quiet: true })
     }
     try {
@@ -672,8 +671,7 @@ try {
       await project()
 
       const spaceOf = async () => (await service.from('spaces').select('id, name, kind, archived_at').eq('slug', SL).maybeSingle()).data
-      // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-      const chOf = async (slug) => (await service.from('channels').select('id, name, topic, archived_at').eq('space_id', (await spaceOf()).id).eq('slug', slug).maybeSingle()).data
+      const chOf = async (slug: string) => (await service.from('channels').select('id, name, topic, archived_at').eq('space_id', (await spaceOf())!.id).eq('slug', slug).maybeSingle()).data
       const sp: any = await spaceOf()
       ok('the declaration makes the space', !!sp && sp.name === 'A projected space' && sp.kind === 'community')
       const lounge: any = await chOf('lounge'), attic: any = await chOf('attic')
@@ -760,7 +758,7 @@ try {
   await support.sb.from('space_messages').insert({ channel_id: dmChan, author_id: support.id, body: 'and one back' })
 
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-  const dmMine = ((await admin.sb.rpc('space_dms')).data || []).find((d) => d.channel === dmChan)
+  const dmMine = ((await admin.sb.rpc('space_dms')).data || []).find((d: { channel: string|null }) => d.channel === dmChan)
   ok('the DMs read answers every direct message the caller is in', !!dmMine)
   ok('and says which space it is in', dmMine && dmMine.space === spaceId && !!dmMine.space_name)
   ok('and names the other person, never the caller', dmMine
@@ -774,7 +772,7 @@ try {
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
   await service.from('channel_members').update({ last_read_seq: 0 }).eq('channel_id', dmChan).eq('user_id', admin.id)
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-  const dmUnreadRow = ((await admin.sb.rpc('space_dms')).data || []).find((d) => d.channel === dmChan)
+  const dmUnreadRow = ((await admin.sb.rpc('space_dms')).data || []).find((d: { channel: string|null }) => d.channel === dmChan)
   ok('unread is a count and the place can say how many are waiting', dmUnreadRow && dmUnreadRow.unread === 2)
   /* and it is each person's own: the other side has caught up, and says so in the same read */
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
@@ -782,14 +780,14 @@ try {
   // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
   await service.from('channel_members').update({ last_read_seq: seqNow }).eq('channel_id', dmChan).eq('user_id', support.id)
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-  const dmReadRow = ((await support.sb.rpc('space_dms')).data || []).find((d) => d.channel === dmChan)
+  const dmReadRow = ((await support.sb.rpc('space_dms')).data || []).find((d: { channel: string|null }) => d.channel === dmChan)
   ok('and it is each person\'s own', dmReadRow && dmReadRow.unread === 0)
 
   /* nobody else's conversation is in anybody's list */
   const dmStranger = await as('member@example.com')
   ok('somebody who is not in it is not told it exists',
     // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-    !((await dmStranger.sb.rpc('space_dms')).data || []).some((d) => d.channel === dmChan))
+    !((await dmStranger.sb.rpc('space_dms')).data || []).some((d: { channel: string|null }) => d.channel === dmChan))
 
   /* ---------------------------------------------------------------- which tiers a fill admits
      A FILL SAYS WHICH TIERS, AND NOTHING IS IMPLIED. Tiers are not a ladder here: a rule that
@@ -902,7 +900,7 @@ try {
     ok('…as a message in the room', after === before + 1)
     ok('…and the plan is gone, because a thing that happened is the thing',
       // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-      !((await admin.sb.rpc('space_scheduled_mine')).data || []).some((s) => s.id === made!.id))
+      !((await admin.sb.rpc('space_scheduled_mine')).data || []).some((s: { id: any }) => s.id === made!.id))
     const landed: any = ((await service.from('space_messages').select('body, author_id, seq').eq('channel_id', open_!.id).order('seq', { ascending: false }).limit(1)).data || [])[0]
     ok('…written by the person who scheduled it, numbered like any other',
       landed && landed.body === 'At nine, then.' && landed.author_id === admin.id && landed.seq > 0)
@@ -929,7 +927,7 @@ try {
     /* you have read what you wrote — the trigger says so, and the list agrees with the counter */
     ok('…and what they said themselves is not', !ids.includes(mine!.id))
     // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-    const row = ((await ordinary.sb.rpc('space_unread')).data || []).find((r) => r.channel === open_!.id)
+    const row = ((await ordinary.sb.rpc('space_unread')).data || []).find((r: { channel: string }) => r.channel === open_!.id)
     ok('…and the counter says the same number the list does',
       row && (row.seq - row.read) === waiting.filter((w: { channel_id: string }) => w.channel_id === open_!.id).length,
       JSON.stringify({ counter: row && row.seq - row.read, list: waiting.filter((w: { channel_id: string }) => w.channel_id === open_!.id).length }))
@@ -942,14 +940,14 @@ try {
       .eq('channel_id', open_!.id).eq('user_id', ordinary.id)
     ok('a muted room is left out',
       // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-      !((await ordinary.sb.rpc('space_unseen')).data || []).some((w) => w.channel_id === open_!.id))
+      !((await ordinary.sb.rpc('space_unseen')).data || []).some((w: { channel_id: string }) => w.channel_id === open_!.id))
     await service.from('channel_members').update({ muted_until: null }).eq('channel_id', open_!.id).eq('user_id', ordinary.id)
 
     /* and nothing of a room they are not in, ever */
     const outsider = await as('free@example.com')
     ok('and a room somebody is not in is not in their list',
       // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-      !((await outsider.sb.rpc('space_unseen')).data || []).some((w) => w.channel_id === open_!.id))
+      !((await outsider.sb.rpc('space_unseen')).data || []).some((w: { channel_id: string }) => w.channel_id === open_!.id))
 
     await service.from('space_messages').delete().in('id', [mine!.id, theirs!.id])
     await service.from('space_members').delete().eq('space_id', spaceId).eq('user_id', ordinary.id)
@@ -1049,7 +1047,7 @@ try {
   const gone = (await service.from('channel_members').select('user_id').eq('channel_id', open_!.id)).data || []
   ok('and it takes their channel memberships with it', !gone.map((m) => m.user_id).includes(support.id))
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-  const sGone = ((await support.sb.rpc('space_unread')).data || []).find((x) => x.channel === open_!.id)
+  const sGone = ((await support.sb.rpc('space_unread')).data || []).find((x: { channel: string }) => x.channel === open_!.id)
   ok('so the same read that worked before returns nothing', !sGone)
 } finally {
   if (spaceId) await service.from('spaces').delete().eq('id', spaceId)
@@ -1088,14 +1086,14 @@ try {
     const had = { u: process.env.SUPABASE_URL, k: process.env.SUPABASE_SERVICE_ROLE_KEY }
     delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY
     let r = null, threw = null
-    // @ts-expect-error TS2322, from the conversion: Type '{ slug: any; name: any; kind: any; published: boolean; discoverable: boolean; welcome: string | null; groups: string[]; cover: string 
+    // @ts-expect-error TS2322, from the conversion: Type 'SupabaseClient<Database, "public", "public", { Tables: { achievements: { Row: { access: string[]; colour: string | null; count: number
     try { r = await pushSpaces({ declared, db: service, quiet: true }) } catch (e: any) { threw = e.message }
     finally { if (had.u) process.env.SUPABASE_URL = had.u; if (had.k) process.env.SUPABASE_SERVICE_ROLE_KEY = had.k }
     ok('the spaces project with no environment and no file', !threw, threw)
     const after = ((await service.from('spaces').select('slug')).data || []).map((x) => x.slug)
     ok('every declared space is a row', names.every((s) => after.includes(s)), names.filter((s) => !after.includes(s)).join(', '))
     ok('and its rooms with it', ((await service.from('channels').select('id')).data || []).length > 0)
-    // @ts-expect-error TS2322, from the conversion: Type '{ slug: any; name: any; kind: any; published: boolean; discoverable: boolean; welcome: string | null; groups: string[]; cover: string 
+    // @ts-expect-error TS2322, from the conversion: Type 'SupabaseClient<Database, "public", "public", { Tables: { achievements: { Row: { access: string[]; colour: string | null; count: number
     const again = await pushSpaces({ declared, db: service, quiet: true })
     ok('running it twice changes nothing', (again.said || []).length === 0, (again.said || []).join('; '))
   }

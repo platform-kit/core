@@ -319,12 +319,11 @@ t('and the interface the header declares is the general one', () => {
 /* ─── the seam: nothing outside the printers' own directory knows a printer's name ─── */
 
 const SKIP = /node_modules|\.print|dist|\.velite|supabase\/functions\/_shared\/suppliers|build\/suppliers\.test\.m[jt]s/
-const walk = (dir: any, out = []) => {
+const walk = (dir: any, out: string[] = []) => {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name)
     if (SKIP.test(p)) continue
     if (e.isDirectory()) walk(p, out)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     else if (/\.(mjs|js|ts|vue)$/.test(e.name)) out.push(p)
   }
   return out

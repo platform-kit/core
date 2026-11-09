@@ -53,11 +53,8 @@ const socialQueueFixture = [
   { source: 'social', conversationKind: 'comment', id: 'comment-done', resolved: true },
 ]
 ok('Social comment and DM queues stay disjoint, including their done tabs',
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ source: string; conversationKind: string; id: string; resolved: boolean; }[]' is not assignable to parameter of type 'ne
   eq(filterQueue(socialQueueFixture, 'social-comments').map((row) => row.id), ['comment-1'])
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ source: string; conversationKind: string; id: string; resolved: boolean; }[]' is not assignable to parameter of type 'ne
     && eq(filterQueue(socialQueueFixture, 'social-dms').map((row) => row.id), ['dm-1'])
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ source: string; conversationKind: string; id: string; resolved: boolean; }[]' is not assignable to parameter of type 'ne
     && eq(filterQueue(socialQueueFixture, 'social-comments', true).map((row) => row.id), ['comment-done']))
 ok('the Node fallback has no registered Desk sources', Array.isArray(nodeDeskSources) && nodeDeskSources.length === 0)
 
@@ -87,10 +84,8 @@ const list = [
   { key: 'd', waiting_since: ago(40), at: ago(40) },
   { key: 'e', waiting_since: null, at: ago(200) },
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ key: string; waiting_since: string; at: string; } | { key: string; waiting_since: null; at: string; })[]' is not assign
 ok('longest wait first, the unwaiting under them by activity', eq(sortDesk(list).map((r) => r.key), ['b', 'd', 'a', 'c', 'e']))
 ok('the order does not disturb the list it was given', list[0].key === 'a')
-// @ts-expect-error TS2322, from the conversion: Type '{ waiting_since: string; due: any; }' is not assignable to type 'never'.
 const badge = deskBadge([owedRow(50, 15), owedRow(5, 15), { waiting_since: ago(60), due: 0 }, { waiting_since: null, due: 15 }], now)
 ok('the badge counts what waits and what is past its promise', eq(badge, { waiting: 3, overdue: 1 }), JSON.stringify(badge))
 
@@ -185,7 +180,6 @@ ok('a coaching row keys on its source', coa[0].key === 'coaching:c-wait' && coa[
 /* --- the union: two sources, one list --- */
 /* the desk's list is what is waiting; the support fixture's resolved thread is on the other side of
    it, which is exactly where a thread nobody is waiting on belongs */
-// @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'. Type 'any' is not assignable to type 'never'.
 const everything = sortDesk([...sup, ...coa])
 const all = filterDesk(everything, null, false)
 ok('two sources make one list', all.length === 2, JSON.stringify(everything.map((r: any) => [r.source, r.resolved])))
@@ -205,16 +199,13 @@ ok('each queue counts only its own rows',
   JSON.stringify(counted))
 ok('and the two are not the same number here', counted.support.waiting !== counted.coaching.waiting || all.length === 2)
 ok('a queue with nothing in it counts nought', badgeBySource([]).support.waiting === 0)
-// @ts-expect-error TS2322, from the conversion: Type '{ source: string; waiting_since: string; resolved: true; }' is not assignable to type 'never'.
 ok('a resolved row is nobody\'s badge', badgeBySource([{ source: 'support', waiting_since: new Date().toISOString(), resolved: true }]).support.waiting === 0)
 
 /* --- a source removed --- */
-// @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'. Type 'any' is not assignable to type 'never'.
 const withoutCoaching = filterDesk(sortDesk([...sup]), null, false)
 ok('with coaching off the desk lists the other one', eq(sourcesIn(withoutCoaching), ['support']))
 ok('and says nothing about coaching anywhere', !JSON.stringify(withoutCoaching).includes('coaching'))
 /* the narrowing is what a place does: Support is one queue, Clients the other */
-// @ts-expect-error TS2345, from the conversion: Argument of type '"coaching"' is not assignable to parameter of type 'null | undefined'.
 ok('the narrowing keeps one source', eq(filterDesk(all, 'coaching', false).map((r) => r.source), ['coaching']))
 ok('no narrowing keeps them all', filterDesk(all, null, false).length === 2)
 
@@ -237,13 +228,9 @@ const mixed = [
   { key: 'b', source: 'support', waiting_since: null, at: ago(10), resolved: true },
   { key: 'c', source: 'space', waiting_since: ago(5), at: ago(5), resolved: false },
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ key: string; source: string; waiting_since: string; at: string; resolved: boolean; } | { key: string; source: string; w
 ok('waiting is what is not finished with', eq(filterDesk(mixed, null, false).map((r) => r.key), ['a', 'c']))
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ key: string; source: string; waiting_since: string; at: string; resolved: boolean; } | { key: string; source: string; w
 ok('done is what is', eq(filterDesk(mixed, null, true).map((r) => r.key), ['b']))
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ key: string; source: string; waiting_since: string; at: string; resolved: boolean; } | { key: string; source: string; w
 ok('a source narrows either of them', eq(filterDesk(mixed, 'support', false).map((r) => r.key), ['a']))
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ key: string; source: string; waiting_since: string; at: string; resolved: boolean; } | { key: string; source: string; w
 ok('what is finished with is not still owed', deskBadge(mixed, now).waiting === 2, JSON.stringify(deskBadge(mixed, now)))
 
 /* --- the adapters carry it --- */

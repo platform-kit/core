@@ -34,7 +34,7 @@ const base = { root, store, by: 'Ada', models: () => registry(root, { site, stor
 const open = base                                     /* an editor: no fence */
 const fenced = { ...base, only: { col: 'pages', field: 'owner', value: 'ada' } }
 
-const call = (env: { root: string; store: any; by: string; models: () => Promise<any>; describe: (model: any,root: any,store?: any) => Promise<{ key: any; label: any; dir: any; body: boolean; bodyLabel: any; nested: boolean; title: any; assets: boolean; single: any; builder: any; variants: any; editor: any; model: { key: any; name: any; singular: any; slug: any; deliver: any; order: any }|null; core: any; custom: boolean; fields: { kind?: any; fields?: any; of?: any; shown: any; unique?: boolean|undefined; rules?: any; choices: any; name: string; type: string; required: boolean; widget: any; options: any; grid: boolean; half: boolean; readonly: boolean; label: any; help: any }[]; count: number }>; only?: { col: string; field: string; value: string } }, method: string, seg: string, q = {}, body = null) => adminRequest(env, { method, seg, q, body })
+const call = (env: { root: string; store: any; by: string; models: () => Promise<any>; describe: (model: any,root: any,store?: any) => Promise<{ key: any; label: any; dir: any; body: boolean; bodyLabel: any; nested: boolean; title: any; assets: boolean; single: any; builder: any; variants: any; editor: any; model: { key: any; name: any; singular: any; slug: any; deliver: any; order: any }|null; core: any; custom: boolean; fields: { kind?: any; fields?: any; of?: any; shown: any; unique?: boolean|undefined; rules?: any; choices: any; name: string; type: string; required: boolean; widget: any; options: any; grid: boolean; half: boolean; readonly: boolean; label: any; help: any }[]; count: number }>; only?: { col: string; field: string; value: string } }, method: string, seg: string, q = {}, body: { col: string; name: string; data: { title: string; route: string; owner: string; sections: never[]; }; } | { col: string; name: string; create: boolean; data: { title: string; route: string; owner: string; sections: never[]; }; } | { col: string; name: string; } | {} | null = null) => adminRequest(env, { method, seg, q, body })
 /* the pipe answers a refusal rather than throwing it: the status is the answer */
 const refused = async (p: Promise<any>) => { const r = await p.catch((e: { code: any }) => ({ status: e.code || 500 })); return r.status }
 
@@ -64,7 +64,6 @@ await ta('they may read their own page and not somebody else\'s', async () => {
 })
 
 await ta('they may save their own page', async () => {
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ col: string; name: string; data: { title: string; route: string; owner: string; sections: never[]; }; }' is not assignab
   const r = await call(fenced, 'POST', 'file', {}, { col: 'pages', name: 'mine', data: { title: 'Mine, edited', route: '/p/ada', owner: 'ada', sections: [] } })
   assert.ok(r.status === 200)
   const back = await call(fenced, 'GET', 'file', { col: 'pages', name: 'mine' })
@@ -73,24 +72,19 @@ await ta('they may save their own page', async () => {
 
 await ta('a save that would take somebody else\'s page is refused, whatever it claims', async () => {
   /* the record says it is theirs — the file says otherwise, and the file is what counts */
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ col: string; name: string; data: { title: string; route: string; owner: string; sections: never[]; }; }' is not assignab
   assert.equal(await refused(call(fenced, 'POST', 'file', {}, { col: 'pages', name: 'theirs', data: { title: 'Taken', route: '/', owner: 'ada', sections: [] } })), 403)
   /* and a save that signs their own page over to somebody else is refused too */
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ col: string; name: string; data: { title: string; route: string; owner: string; sections: never[]; }; }' is not assignab
   assert.equal(await refused(call(fenced, 'POST', 'file', {}, { col: 'pages', name: 'mine', data: { title: 'Mine', route: '/p/ada', owner: 'bea', sections: [] } })), 403)
 })
 
 await ta('a page they create is theirs or it is not created', async () => {
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ col: string; name: string; create: boolean; data: { title: string; route: string; owner: string; sections: never[]; }; }
   assert.equal(await refused(call(fenced, 'POST', 'file', {}, { col: 'pages', name: 'new-one', create: true, data: { title: 'New', route: '/p/bea', owner: 'bea', sections: [] } })), 403)
 })
 
 await ta('renaming, deleting and publishing obey the same fence', async () => {
   assert.equal(await refused(call(fenced, 'DELETE', 'file', { col: 'pages', name: 'theirs' })), 403)
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ col: string; name: string; }' is not assignable to parameter of type 'null | undefined'.
   assert.equal(await refused(call(fenced, 'POST', 'publish', {}, { col: 'pages', name: 'theirs' })), 403)
   /* and "publish everything" is the site's act, never one person's */
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{}' is not assignable to parameter of type 'null | undefined'.
   assert.equal(await refused(call(fenced, 'POST', 'publish', {}, {})), 403)
 })
 

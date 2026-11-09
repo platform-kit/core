@@ -161,7 +161,7 @@ try {
     const fh = new Firehose({
       idResolver, runner, service: FN.replace(/^http/, 'ws'), unauthenticatedHandles: true,
       // @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
-      handleEvent: async (evt) => { if (evt.did !== identity) return; seen.push({ seq: evt.seq, event: evt.event, path: evt.collection ? `${evt.collection}/${evt.rkey}` : '' }); last = evt.seq; if (seen.length >= stopAfter) { await fh.destroy(); resolve() } },
+      handleEvent: async (evt: any) => { if (evt.did !== identity) return; seen.push({ seq: evt.seq, event: evt.event, path: evt.collection ? `${evt.collection}/${evt.rkey}` : '' }); last = evt.seq; if (seen.length >= stopAfter) { await fh.destroy(); resolve() } },
       onError: (e) => { console.log('  firehose: ' + (e.message || e) + (e.cause ? ' — ' + ((e.cause as any).message || e.cause) : '')) },
     })
     fh.start()

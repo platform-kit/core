@@ -34,7 +34,7 @@ ok('…which is deliberate: a mixed cart must not quietly go untaxed',
 ok('a registration is asked for the same way',
   sessionParams([{ tax: { registration: true } }]).taxId === true)
 ok('and the two are separate',
-  // @ts-expect-error TS2322, from the conversion: Type '{ tax: { automatic: true; }; }' is not assignable to type 'never'.
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{ trial: number; automaticTax: boolean; taxId: boolean; methods: any; }' is not assignable to parameter of type '{ enabled
   eq(sessionParams([{ tax: { automatic: true } }]), { trial: 0, automaticTax: true, taxId: false, methods: [] }))
 ok('neither is on by default',
   sessionParams([{}, {}]).automaticTax === false && sessionParams([{}, {}]).taxId === false)
@@ -78,7 +78,7 @@ ok('bounds that make no sense are refused rather than sent',
   ok('another tier still has its own', trialDaysFor({ key: 'k_outer', trial: 7 }, ['k_week'], tierOf) === 7)
   ok('cancel and rejoin grants nothing, which is what this is for',
     trialDaysFor(weekly, ['k_week', 'k_week'], tierOf) === 0)
-  // @ts-expect-error TS2345, from the conversion: Argument of type '(k: any) => any' is not assignable to parameter of type '() => null'. Target signature provides too few arguments. Expecte
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{ key: string; }' is not assignable to parameter of type '{ trial: any; key: any; }'. Property 'trial' is missing in type 
   ok('an offer with no trial is unaffected', trialDaysFor({ key: 'k_week' }, [], tierOf) === 0)
   ok('a subscription with no tier is counted per offer instead',
     trialDaysFor({ key: 'solo', trial: 5 }, ['other'], () => null) === 5 &&
@@ -92,15 +92,15 @@ ok('bounds that make no sense are refused rather than sent',
   const sub = { ...asItWas, sku: 'inner-monthly', kind: 'membership', billing: 'subscription', period: 'monthly', tier: 'inner', rank: 2, book: null }
 
   ok('an existing one-off resolves to nothing at all',
-    // @ts-expect-error TS2322, from the conversion: Type '{ sku: string; key: string; kind: string; billing: string; period: null; unit_amount: number; currency: string; tier: null; rank: null
+    // @ts-expect-error TS2345, from the conversion: Argument of type '{ trial: number; automaticTax: boolean; taxId: boolean; methods: any; }' is not assignable to parameter of type '{ enabled
     eq(sessionParams([asItWas], 'payment'), { trial: 0, automaticTax: false, taxId: false, methods: [] }))
   ok('an existing subscription resolves to nothing at all',
-    // @ts-expect-error TS2322, from the conversion: Type '{ sku: string; kind: string; billing: string; period: string; tier: string; rank: number; book: null; key: string; unit_amount: number
+    // @ts-expect-error TS2345, from the conversion: Argument of type '{ trial: number; automaticTax: boolean; taxId: boolean; methods: any; }' is not assignable to parameter of type '{ enabled
     eq(sessionParams([sub], 'subscription'), { trial: 0, automaticTax: false, taxId: false, methods: [] }))
   ok('and neither line becomes adjustable',
     lineQuantity(asItWas) === null && lineQuantity(sub) === null)
   ok('a whole cart of existing offers adds not one parameter',
-    // @ts-expect-error TS2322, from the conversion: Type '{ sku: string; key: string; kind: string; billing: string; period: null; unit_amount: number; currency: string; tier: null; rank: null
+    // @ts-expect-error TS2345, from the conversion: Argument of type '{ trial: number; automaticTax: boolean; taxId: boolean; methods: any; }' is not assignable to parameter of type '{ enabled
     eq(sessionParams([asItWas, sub, { ...asItWas, sku: 'b' }], 'payment'), { trial: 0, automaticTax: false, taxId: false, methods: [] }))
 }
 

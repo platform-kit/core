@@ -82,7 +82,6 @@ try {
   const mine = async (who: { sb: any; id: any }) => {
     const s = support.rowsOf(await support.list(who.sb), { wait: 15 })
     const c = coaching.rowsOf(await coaching.list(who.sb), { products: [{ kind: 'membership', tier: 'tier-2', 'chat-hours': 48 }], rank: () => 1, me: who.id })
-    // @ts-expect-error TS2345, from the conversion: Argument of type '({ key: string; source: string; id: any; person: { id: any; name: any; kind: any; }; detail: any; last: { body: any; at: a
     return sortDesk([...s, ...c])
   }
 
@@ -126,9 +125,7 @@ try {
 
   /* and the desk no longer says any of them is waiting */
   const after = await mine(admin)
-  // @ts-expect-error TS2339, from the conversion: Property 'waiting_since' does not exist on type '{}'.
   ok('an answered thread stops waiting', !(after.find((r) => r.id === supportConv) || {}).waiting_since
-    // @ts-expect-error TS2339, from the conversion: Property 'waiting_since' does not exist on type '{}'.
     && !(after.find((r) => r.id === chatConv) || {}).waiting_since)
 
   /* ---------------------------------------------------------------- a line that is not words.
@@ -162,7 +159,7 @@ try {
   ok('…no message of the guest\'s', ((await reader.sb.from('support_messages').select('id').eq('conversation_id', supportConv)).data || []).length === 0)
   ok('…no conversation of the guest\'s', ((await reader.sb.from('support_conversations').select('id').eq('id', supportConv)).data || []).length === 0)
   // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-  ok('…no room of the staff\'s', !((await reader.sb.rpc('space_unread')).data || []).some((x) => x.channel === chan!.id))
+  ok('…no room of the staff\'s', !((await reader.sb.rpc('space_unread')).data || []).some((x: { channel: string }) => x.channel === chan!.id))
   ok('…and the channel\'s history is refused', (await reader.sb.rpc('space_history', { p_channel: chan!.id })).data === null)
 
   /* ---------------------------------------------------------------- provider conversations have only a private desk mark */

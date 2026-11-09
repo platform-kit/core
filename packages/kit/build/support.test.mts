@@ -126,18 +126,15 @@ t('taken is spent', () => {
 t('anything said after it takes the offer off the table', () => {
   /* the default asks about the LAST line: once somebody has spoken, no set is live at all */
   assert.equal(offerOf([offer(), { id: 'm3', body: 'something else' }]), null)
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  assert.equal(offerOf([offer(), { id: 'm3', body: 'something else' }], { at: 'm2' }).live, false)
+  assert.equal(offerOf([offer(), { id: 'm3', body: 'something else' }], { at: 'm2' })!.live, false)
 })
 t('a withdrawn line said after it does not spend it', () => {
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
-  assert.equal(offerOf([offer(), { id: 'm3', body: 'oops', deleted_at: 'now' }], { at: 'm2' }).live, true)
+  assert.equal(offerOf([offer(), { id: 'm3', body: 'oops', deleted_at: 'now' }], { at: 'm2' })!.live, true)
 })
 t('a message with no choices offers nothing', () => {
   assert.equal(offerOf([{ id: 'm2', body: 'just words' }]), null)
 })
 t('an offer may be asked for by name, wherever it is', () => {
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'null | undefined'.
   const r: any = offerOf([offer(), { id: 'm3', body: 'later' }], { at: 'm2' })
   assert.equal(r.id, 'm2'); assert.equal(r.live, false)
 })

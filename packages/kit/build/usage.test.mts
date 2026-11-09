@@ -666,21 +666,19 @@ assert.equal(invalidMeterErrors.length, 1)
 
 function stripeMock() {
   const state = {
-    meters: [],
-    prices: [],
-    meterCreates: [],
-    priceCreates: [],
-    priceUpdates: [],
+    meters: [] as any[],
+    prices: [] as any[],
+    meterCreates: [] as { params: any; options: any; }[],
+    priceCreates: [] as { params: any; options: any; }[],
+    priceUpdates: [] as { id: any; params: any; }[],
   }
   const stripe = {
     billing: {
       meters: {
         async list() { return { data: state.meters, has_more: false } },
         async create(params: any, options: any) {
-          // @ts-expect-error TS2345, from the conversion: Argument of type '{ params: any; options: any; }' is not assignable to parameter of type 'never'.
           state.meterCreates.push({ params, options })
           const meter = { id: `mtr_${state.meterCreates.length}`, status: 'active', ...params }
-          // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
           state.meters.push(meter)
           return meter
         },
@@ -691,7 +689,6 @@ function stripeMock() {
         return { data: state.prices.filter((price: any) => price.active && lookup_keys.includes(price.lookup_key)) }
       },
       async create(params: any, options: any) {
-        // @ts-expect-error TS2345, from the conversion: Argument of type '{ params: any; options: any; }' is not assignable to parameter of type 'never'.
         state.priceCreates.push({ params, options })
         const price = {
           id: `price_${state.priceCreates.length}`,
@@ -705,15 +702,12 @@ function stripeMock() {
           recurring: params.recurring,
           ...params,
         }
-        // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
         state.prices.push(price)
         return price
       },
       async update(id: any, params: any) {
-        // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; params: any; }' is not assignable to parameter of type 'never'.
         state.priceUpdates.push({ id, params })
         const price = state.prices.find((item: any) => item.id === id)
-        // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 4, '(target: {}, source: any): any', gave the following error. Argument of type 'undefined' is 
         Object.assign(price, params)
         return price
       },
@@ -875,8 +869,7 @@ Metered plan
     }],
   })
   assert.equal(
-    // @ts-expect-error TS2532, from the conversion: Object is possibly 'undefined'.
-    (await compileCatalog({ store: asStore(root), root, site: { usage: { autoTopUp: { enabled: false, packKeys: ['abcdef02'] } } } })).usage_auto_topup.enabled,
+    (await compileCatalog({ store: asStore(root), root, site: { usage: { autoTopUp: { enabled: false, packKeys: ['abcdef02'] } } } })).usage_auto_topup!.enabled,
     false,
     'the catalog preserves an explicit site disable for published Cloud-mode artifacts',
   )

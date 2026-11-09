@@ -144,7 +144,7 @@ export function remapKeys(keys: any, before: any, after: any) {
  * Declared options win where both are written, and `sizes` is appended rather than replacing
  * them, because a shirt with a Colour option and a sizes list means both.
  */
-export function optionsOf(offer: any, fromKind = []) {
+export function optionsOf(offer: any, fromKind: { name: string; values: string[]; }[] = []) {
   const declared = normaliseOptions((offer && offer.options) || [])
   const sized = (offer && Array.isArray(offer.sizes) && offer.sizes.length && !declared.some((o) => o.slug === 'size'))
     ? normaliseOptions([{ name: 'Size', values: offer.sizes }])

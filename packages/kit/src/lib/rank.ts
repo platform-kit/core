@@ -25,7 +25,7 @@ export function weightOf(tags: any, weights: any) {
   return (tags || []).reduce((m: number, t: any) => Math.max(m, Number((weights || {})[String(t).toLowerCase()]) || 0), 0)
 }
 
-export function scoreRow({ sem = 0, tags = [], href = '' }, { themeTags = [], prescribed = null, weights = null } = {}) {
+export function scoreRow({ sem = 0, tags = [] as string[], href = '' }, { themeTags = [], prescribed = null as Set<string> | null, weights = null as {} | null } = {}) {
   const themes = themeTags.map((t) => String(t).toLowerCase())
   const matchTag = (tags || []).some((t) => themes.includes(String(t).toLowerCase()))
   const isRx = prescribed ? (prescribed as any).has(href) : false

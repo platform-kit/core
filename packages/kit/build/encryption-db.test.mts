@@ -126,7 +126,7 @@ try {
       const moderator = await as('admin@example.com')
       const { data: rows } = await (moderator || db).rpc('space_reports', { p_space: (space as any).id, p_open: true })
       // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-      const mine = (rows || []).find((r) => r.message === msg.id)
+      const mine = (rows || []).find((r: { message: string }) => r.message === msg.id)
       ok('a report from a sealed room reaches the desk', !moderator || !!mine, JSON.stringify(rows).slice(0, 160))
       if (mine) {
         ok('…carrying no words', mine.body == null, JSON.stringify(mine.body))
@@ -443,7 +443,7 @@ try {
        this lane had just made, and the client then quite correctly could not find it */
     const wipeKeys = async () => {
       // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-      for (const id of [a2.id, b2.id]) for (const t of ['space_to_device', 'space_one_time_keys', 'space_devices', 'space_key_backups']) await db.from(t).delete().eq('user_id', id)
+      for (const id of [a2!.id, b2!.id]) for (const t of ['space_to_device', 'space_one_time_keys', 'space_devices', 'space_key_backups']) await db.from(t).delete().eq('user_id', id)
     }
     const clear = async () => {
       await wipeKeys()

@@ -116,9 +116,7 @@ ok('a message with no author never joins a run', runsOf([{ id: 'a', created_at: 
 /* --- threads --- */
 const root = { id: 'r', author_id: B, reply_count: 2, last_reply_at: '2026-09-22T10:00:00.000Z' }
 ok('a thread carries its own count', threadOf(root, [], A).count === 2)
-// @ts-expect-error TS2322, from the conversion: Type '{ author_id: string; }' is not assignable to type 'never'.
 ok('a thread I wrote in is mine', threadOf(root, [{ author_id: A }], A).mine === true)
-// @ts-expect-error TS2322, from the conversion: Type '{ author_id: string; }' is not assignable to type 'never'.
 ok('a thread I only read is not', threadOf(root, [{ author_id: B }], A).mine === false)
 ok('the root being mine puts me in the thread', threadOf({ ...root, author_id: A }, [], A).mine === true)
 
@@ -655,24 +653,20 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
     none.options.every((o: { share: number }) => o.share === 0) && none.cast === 0 && !none.voted,
     JSON.stringify(none.options.map((o: { share: any }) => o.share)))
 
-  // @ts-expect-error TS2322, from the conversion: Type '{ message_id: string; option_key: any; user_id: any; }' is not assignable to type 'never'.
   const one: any = tallyPoll(poll(O), [v('a', 'u1'), v('a', 'u2'), v('b', 'u3')], 'u3')
   ok('every vote is counted once against its option', one.options[0].votes === 2 && one.options[1].votes === 1)
   ok('and a share is of the people who voted', Math.abs(one.options[0].share - 2 / 3) < 1e-9)
   ok('the reader sees which one is theirs', one.options[1].mine === true && one.options[0].mine === false && one.voted)
   ok('the option in front is marked, and only it', one.options[0].leads === true && one.options[1].leads === false)
   ok('a vote of another poll is not counted here',
-    // @ts-expect-error TS2322, from the conversion: Type '{ message_id: string; option_key: any; user_id: any; }' is not assignable to type 'never'.
-    tallyPoll(poll(O), [v('a', 'u1'), { message_id: 'other', option_key: 'a', user_id: 'u9' }]).cast === 1)
+    tallyPoll(poll(O), [v('a', 'u1'), { message_id: 'other', option_key: 'a', user_id: 'u9' }])!.cast === 1)
 
-  // @ts-expect-error TS2322, from the conversion: Type '{ message_id: string; option_key: any; user_id: any; }' is not assignable to type 'never'.
   const many: any = tallyPoll(poll(O, { multi: true }), [v('a', 'u1'), v('b', 'u1')], 'u1')
   ok('a poll that takes several counts both of one person\'s answers', many.cast === 2 && many.people === 1)
   ok('and its shares are of the answers, not the people',
     Math.abs(many.options[0].share - 0.5) < 1e-9, JSON.stringify(many.options.map((o: { share: any }) => o.share)))
   ok('a single-answer poll shares out by people instead',
-    // @ts-expect-error TS2322, from the conversion: Type '{ message_id: string; option_key: any; user_id: any; }' is not assignable to type 'never'.
-    Math.abs(tallyPoll(poll(O), [v('a', 'u1'), v('b', 'u2')]).options[0].share - 0.5) < 1e-9)
+    Math.abs(tallyPoll(poll(O), [v('a', 'u1'), v('b', 'u2')])!.options[0].share - 0.5) < 1e-9)
 
   ok('a closed poll says so', (tallyPoll({ ...poll(O), poll_closed_at: '2026-09-23T00:00:00Z' }, []) as any).closed === true)
   ok('and an open one does not', (tallyPoll(poll(O), []) as any).closed === false)
@@ -738,9 +732,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   ok('down goes to the next', stepRoom(rooms, 'a', 1) === 'b')
   ok('…and wraps at the end', stepRoom(rooms, 'd', 1) === 'a')
   ok('up wraps the other way', stepRoom(rooms, 'a', -1) === 'd')
-  // @ts-expect-error TS2322, from the conversion: Type '(r: any) => any' is not assignable to type 'null | undefined'.
   ok('with a rule, only those count', stepRoom(rooms, 'b', 1, { only: (r) => r.hot }) === 'd')
-  // @ts-expect-error TS2322, from the conversion: Type '(r: any) => any' is not assignable to type 'null | undefined'.
   ok('…and from a room the rule excludes, it starts at one end', stepRoom(rooms, 'a', 1, { only: (r) => r.hot }) === 'b')
   ok('nowhere to go is nowhere', stepRoom([], 'a', 1) === null)
 }
@@ -866,7 +858,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
     { kind: 'text', body: 'Let me check.', mine: true },
   ]
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ kind: string; body: string; mine: boolean; attachment_name?: undefined; } | { kind: string; body: null; attachment_name
-  const said = roomAsProse(msgs, { who: (m) => (m.mine ? 'Us' : 'Them'), unheard: 'sent a voice note' })
+  const said = roomAsProse(msgs, { who: (m: { mine: any }) => (m.mine ? 'Us' : 'Them'), unheard: 'sent a voice note' })
   const lines = said.split('\n')
   ok('a side may be the speaker', lines[0] === 'Them: Do you ship to Japan?', said)
   ok('an attachment is in the transcript', said.includes('damaged-spine.jpg'))

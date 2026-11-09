@@ -51,7 +51,7 @@ try {
   ok('a table that calls the address something else still gets one',
     (await rows('scheduling_webhooks')).some((r: any) => r.subscriber_url === 'https://ours.example/cal' && r.source === 'file'))
   // @ts-expect-error TS2339, from the conversion: Property 'secret' does not exist on type 'SelectQueryError<"Invalid Relationships cannot infer result type"> | SelectQueryError<"Invalid Rel
-  ok('the secret is read from the environment', ((await rows('scheduling_webhooks')).find((r) => r.source === 'file') || {}).secret === process.env.WH_TEST_SECRET)
+  ok('the secret is read from the environment', ((await rows('scheduling_webhooks')).find((r: any) => r.source === 'file') || {}).secret === process.env.WH_TEST_SECRET)
   ok('and is nowhere in the file', !readFileSync(F, 'utf8').includes(process.env.WH_TEST_SECRET))
   ok('every kind is pushed', (await rows('support_webhooks')).some((r: any) => r.source === 'file'))
 

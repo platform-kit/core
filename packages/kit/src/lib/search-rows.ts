@@ -43,7 +43,7 @@ const day = (d: any) => (d ? String(d).slice(0, 10) : null)
  * "Pricing" whose words are all inside a LandingPricing block has no body at all, and without this
  * the one place a site says what it offers is the one place nothing can search.
  */
-export function pageWords(sections = []) {
+export function pageWords(sections: { component: string; }[] = []) {
   const out: any = []
   const walk = (v: any) => {
     if (typeof v === 'string') { const s = v.trim(); if (s && !/^(https?:|\/|#|[a-z-]+$)/.test(s)) out.push(s); return }

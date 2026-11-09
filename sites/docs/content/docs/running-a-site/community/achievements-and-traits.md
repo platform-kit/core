@@ -13,7 +13,7 @@ sources:
     packages/kit/theme/src/content/ui/awards.md,
     packages/kit/build/awards-db.test.mts,
   ]
-reviewed: 2026-11-08
+reviewed: 2026-11-09
 ---
 
 The site already records what people do. Every user-facing act is an event — a piece read, a book chosen, a button pressed — and has been since the first analytics. So neither of these invents a second way of noticing; they both read that stream and nothing else.

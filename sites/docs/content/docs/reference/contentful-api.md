@@ -28,7 +28,7 @@ sources:
     packages/kit/build/management.test.mts,
     packages/kit/supabase/schemas/85-api.sql,
   ]
-reviewed: 2026-11-08
+reviewed: 2026-11-09
 ---
 
 The guide is [The content API, Contentful's](/content/docs/building-a-site/contentful-api). This page says exactly what is there.

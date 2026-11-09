@@ -57,11 +57,11 @@ ok('and nothing has no age', ageOf(null, t0) === '' && ageOf({}, t0) === '')
     { id: 'h', priority: 'high', last_at: ago(30), created_at: ago(30) },
   ]
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; priority: string; last_at: string; created_at: string; }[]' is not assignable to parameter of type 'never[]'
-  ok('busy: the urgent first, whatever moved last', sortTickets(rows, 'busy').map((r) => r.id).join('') === 'uhnl',
+  ok('busy: the urgent first, whatever moved last', sortTickets(rows, 'busy').map((r: any) => r.id).join('') === 'uhnl',
     // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; priority: string; last_at: string; created_at: string; }[]' is not assignable to parameter of type 'never[]'
-    sortTickets(rows, 'busy').map((r) => r.id).join(''))
+    sortTickets(rows, 'busy').map((r: any) => r.id).join(''))
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; priority: string; last_at: string; created_at: string; }[]' is not assignable to parameter of type 'never[]'
-  ok('new: the newest raised', sortTickets(rows, 'new')[0].id === 'u')
+  ok('new: the newest raised', (sortTickets(rows, 'new')[0] as any).id === 'u')
   const waited = [
     { id: 'a', waiting_since: ago(2), last_at: ago(1) },
     { id: 'b', waiting_since: ago(20), last_at: ago(3) },
@@ -69,12 +69,12 @@ ok('and nothing has no age', ageOf(null, t0) === '' && ageOf({}, t0) === '')
   ]
   ok('waiting: the longest wait first, and nobody waiting last',
     // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; waiting_since: string; last_at: string; } | { id: string; waiting_since: null; last_at: string; })[]' is no
-    sortTickets(waited, 'waiting').map((r) => r.id).join('') === 'bac',
+    sortTickets(waited, 'waiting').map((r: any) => r.id).join('') === 'bac',
     // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; waiting_since: string; last_at: string; } | { id: string; waiting_since: null; last_at: string; })[]' is no
-    sortTickets(waited, 'waiting').map((r) => r.id).join(''))
+    sortTickets(waited, 'waiting').map((r: any) => r.id).join(''))
   const dated = [{ id: 'x', due_at: soon(40) }, { id: 'y', due_at: soon(2) }, { id: 'z', due_at: null }]
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; due_at: string; } | { id: string; due_at: null; })[]' is not assignable to parameter of type 'never[]'. Typ
-  ok('due: the soonest, and no date last', sortTickets(dated, 'due').map((r) => r.id).join('') === 'yxz')
+  ok('due: the soonest, and no date last', sortTickets(dated, 'due').map((r: any) => r.id).join('') === 'yxz')
   // @ts-expect-error TS2345, from the conversion: Argument of type 'null' is not assignable to parameter of type 'never[] | undefined'.
   ok('sorting nothing is nothing', sortTickets(null).length === 0 && sortTickets([]).length === 0)
   ok('and the list handed in is not reordered under the caller',
@@ -94,19 +94,19 @@ ok('and nothing has no age', ageOf(null, t0) === '' && ageOf({}, t0) === '')
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; ref: number; title: string; status: string; priority: string; assignees: { id: string; }[]; contact: { name
   ok('open is the live work', narrow(rows, { status: 'open' }, me).length === 3)
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; ref: number; title: string; status: string; priority: string; assignees: { id: string; }[]; contact: { name
-  ok('a named state is that state', narrow(rows, { status: 'resolved' }, me).map((r) => r.id).join('') === '2')
+  ok('a named state is that state', narrow(rows, { status: 'resolved' }, me).map((r: any) => r.id).join('') === '2')
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; ref: number; title: string; status: string; priority: string; assignees: { id: string; }[]; contact: { name
   ok('all is all of it', narrow(rows, { status: 'all' }, me).length === 4)
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; ref: number; title: string; status: string; priority: string; assignees: { id: string; }[]; contact: { name
-  ok('mine is the ones I am on', narrow(rows, { status: 'open', assignee: 'mine' }, me).map((r) => r.id).join('') === '1')
+  ok('mine is the ones I am on', narrow(rows, { status: 'open', assignee: 'mine' }, me).map((r: any) => r.id).join('') === '1')
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; ref: number; title: string; status: string; priority: string; assignees: { id: string; }[]; contact: { name
-  ok('nobody is the ones nobody is on', narrow(rows, { status: 'open', assignee: 'nobody' }, me).map((r) => r.id).join('') === '4')
+  ok('nobody is the ones nobody is on', narrow(rows, { status: 'open', assignee: 'nobody' }, me).map((r: any) => r.id).join('') === '4')
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; ref: number; title: string; status: string; priority: string; assignees: { id: string; }[]; contact: { name
-  ok('one person is theirs', narrow(rows, { status: 'open', assignee: 'sam' }, me).map((r) => r.id).join('') === '3')
+  ok('one person is theirs', narrow(rows, { status: 'open', assignee: 'sam' }, me).map((r: any) => r.id).join('') === '3')
   /* row 3 was written 'urgent', which is now high: an old row narrows with the new ones rather
      than falling out of every filter a desk offers */
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; ref: number; title: string; status: string; priority: string; assignees: { id: string; }[]; contact: { name
-  ok('an urgency narrows to it, and carries the old word with it', narrow(rows, { status: 'all', priority: 'high' }, me).map((r) => r.id).join('') === '13')
+  ok('an urgency narrows to it, and carries the old word with it', narrow(rows, { status: 'all', priority: 'high' }, me).map((r: any) => r.id).join('') === '13')
   ok('awaiting a reply is a narrowing of its own, derived and never set', narrow([
     // @ts-expect-error TS2322, from the conversion: Type '{ id: string; status: string; waiting_since: string; }' is not assignable to type 'never'.
     { id: 'a', status: 'open', waiting_since: ago(3) },
@@ -116,14 +116,14 @@ ok('and nothing has no age', ageOf(null, t0) === '' && ageOf({}, t0) === '')
     { id: 'c', status: 'resolved', waiting_since: ago(9) },
   ], { status: 'owed' }, me).map((r: any) => r.id).join('') === 'a')
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; ref: number; title: string; status: string; priority: string; assignees: { id: string; }[]; contact: { name
-  ok('words look in the title', narrow(rows, { status: 'all', q: 'carrier' }, me).map((r) => r.id).join('') === '4')
+  ok('words look in the title', narrow(rows, { status: 'all', q: 'carrier' }, me).map((r: any) => r.id).join('') === '4')
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; ref: number; title: string; status: string; priority: string; assignees: { id: string; }[]; contact: { name
-  ok('…and in who it is about', narrow(rows, { status: 'all', q: 'bea' }, me).map((r) => r.id).join('') === '14')
+  ok('…and in who it is about', narrow(rows, { status: 'all', q: 'bea' }, me).map((r: any) => r.id).join('') === '14')
   // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; ref: number; title: string; status: string; priority: string; assignees: { id: string; }[]; contact: { name
-  ok('a number finds the one it numbers', narrow(rows, { status: 'all', q: '1043' }, me).map((r) => r.id).join('') === '3')
+  ok('a number finds the one it numbers', narrow(rows, { status: 'all', q: '1043' }, me).map((r: any) => r.id).join('') === '3')
   ok('and so does it with a hash, because that is how people write it',
     // @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; ref: number; title: string; status: string; priority: string; assignees: { id: string; }[]; contact: { name
-    narrow(rows, { status: 'all', q: '#1043' }, me).map((r) => r.id).join('') === '3')
+    narrow(rows, { status: 'all', q: '#1043' }, me).map((r: any) => r.id).join('') === '3')
   // @ts-expect-error TS2345, from the conversion: Argument of type 'null' is not assignable to parameter of type 'never[] | undefined'.
   ok('narrowing nothing is nothing', narrow(null, {}, me).length === 0)
 

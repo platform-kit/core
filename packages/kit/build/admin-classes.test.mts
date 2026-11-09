@@ -37,7 +37,8 @@ let n = 0, bad = 0
 const t = (name: string, fn: { (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 8).join('\n    ')) } }
 
 // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-const walk = (d) => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => {
+const walk = (d: fs.PathLike) => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => {
+  // @ts-expect-error TS2345, from the conversion: Argument of type 'PathLike' is not assignable to parameter of type 'string'. Type 'URL' is not assignable to type 'string'.
   const f = path.join(d, e.name)
   return e.isDirectory() ? walk(f) : f.endsWith('.vue') ? [f] : []
 }) : [])

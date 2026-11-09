@@ -42,14 +42,13 @@ const RUNTIME = [
   'db/functions',
 ]
 const CODE = /\.(m?[jt]s|vue)$/
-const walk = (dir: any, out = []) => {
+const walk = (dir: any, out: string[] = []) => {
   if (!fs.existsSync(dir)) return out
   for (const name of fs.readdirSync(dir)) {
     if (name === 'node_modules' || name.startsWith('.')) continue
     const p = path.join(dir, name)
     const s = fs.statSync(p)
     if (s.isDirectory()) walk(p, out)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     else if (CODE.test(name)) out.push(p)
   }
   return out

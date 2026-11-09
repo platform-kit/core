@@ -124,7 +124,7 @@ await sweep()
   const REPO = process.cwd()
   const store = gitStore(REPO)
 
-  // @ts-expect-error TS2322, from the conversion: Type 'SupabaseClient<any, "public", "public", any, any>' is not assignable to type 'null | undefined'.
+  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; root: string; abs: (rel: string) => string; readLive(rel: string): Promise<string | null>; texts(dir: string): Promise
   const dry = await pushAchievements({ store, db, quiet: true, check: true })
   const names = (await store.list('content/achievements')) || []
   /* a site that declares no achievements has nothing to project; the demo's run covers the projection */
@@ -142,14 +142,14 @@ await sweep()
     const had = { u: process.env.SUPABASE_URL, k: process.env.SUPABASE_SERVICE_ROLE_KEY }
     delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY
     let r: any = null, threw = null
-    // @ts-expect-error TS2322, from the conversion: Type 'SupabaseClient<any, "public", "public", any, any>' is not assignable to type 'null | undefined'.
+    // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; root: string; abs: (rel: string) => string; readLive(rel: string): Promise<string | null>; texts(dir: string): Promise
     try { r = await pushAchievements({ store, db, quiet: true }) } catch (e: any) { threw = e.message }
     finally { if (had.u) process.env.SUPABASE_URL = had.u; if (had.k) process.env.SUPABASE_SERVICE_ROLE_KEY = had.k }
     ok('it projects with no environment at all', !threw && r && r.achievements === dry.achievements, threw || JSON.stringify(r))
     const after = ((await db.from('achievements').select('slug')).data || []).map((r2) => r2.slug)
     ok('every declared achievement is a row', declared.every((s) => after.includes(s)), declared.filter((s) => !after.includes(s)).join(', '))
     ok('and the trait rules with them', ((await db.from('trait_rules').select('id')).data || []).length === r.traits)
-    // @ts-expect-error TS2322, from the conversion: Type 'SupabaseClient<any, "public", "public", any, any>' is not assignable to type 'null | undefined'.
+    // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; root: string; abs: (rel: string) => string; readLive(rel: string): Promise<string | null>; texts(dir: string): Promise
     const again = await pushAchievements({ store, db, quiet: true })
     ok('running it twice changes nothing', again.said.length === 0, (again.said || []).join('; '))
   }

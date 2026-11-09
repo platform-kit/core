@@ -387,7 +387,7 @@ export function mockAsk({ messages = [], tools = [], schema = null, model = 'moc
   }
 }
 
-export const hasScript = (messages = []) => scriptFrom(messages).length > 0
+export const hasScript = (messages: { role: string; content: string; }[] = []) => scriptFrom(messages).length > 0
 
 /* the script is carried in the system message, because that is the one thing the loop always
    rebuilds from the run — nothing in the provider has to know about runs to find it */

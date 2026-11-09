@@ -102,7 +102,7 @@ const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
   const real = globalThis.fetch
   const answer = (status: number, body: { error?: { message: string }|{ message: string }; content?: { type: string; text: string }[]; usage?: { input_tokens: number; output_tokens: number }; model?: string }) => ({ ok: status < 400, status, json: async () => body, text: async () => JSON.stringify(body) })
   const seen: any = []
-  // @ts-expect-error TS2322, from the conversion: Type '(url: URL | RequestInfo) => Promise<{ ok: boolean; status: any; json: () => Promise<any>; text: () => Promise<string>; }>' is not assi
+  // @ts-expect-error TS2322, from the conversion: Type '(url: URL | RequestInfo) => Promise<{ ok: boolean; status: number; json: () => Promise<{ error?: { message: string; } | { message: str
   globalThis.fetch = async (url) => {
     seen.push(String(url))
     if (String(url).includes('openai')) return answer(429, { error: { message: 'You have no credits remaining.' } })
@@ -124,7 +124,7 @@ const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
 
     /* a malformed request stops at the first: trying again is two bills for one error */
     seen.length = 0
-    // @ts-expect-error TS2322, from the conversion: Type '(url: URL | RequestInfo) => Promise<{ ok: boolean; status: any; json: () => Promise<any>; text: () => Promise<string>; }>' is not assi
+    // @ts-expect-error TS2322, from the conversion: Type '(url: URL | RequestInfo) => Promise<{ ok: boolean; status: number; json: () => Promise<{ error?: { message: string; } | { message: str
     globalThis.fetch = async (url) => { seen.push(String(url)); return answer(400, { error: { message: 'bad request' } }) }
     let threw = null
     try {
@@ -136,7 +136,6 @@ const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
     seen.length = 0
     const script = [{ role: 'system', content: 'x <<mock:[{"say":"from the script"}]>>' }, { role: 'user', content: 'hi' }]
     const rehearsal = await ask({ providers: providersFrom({ AGENTS_LIVE: '1', OPENAI_API_KEY: 'sk-a', ANTHROPIC_API_KEY: 'sk-b' }), messages: script })
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ role: string; content: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ role: string; content: str
     ok('a scripted run reaches no vendor at all', seen.length === 0 && hasScript(script) && rehearsal.message.content === 'from the script')
   } finally { globalThis.fetch = real }
 }

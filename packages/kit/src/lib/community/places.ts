@@ -142,8 +142,8 @@ export function roomsOf(spaceId: string, channels: { id: any; space_id: any; mod
   const live = (channels || []).filter((c: any) => c.space_id === spaceId && c.kind !== 'dm' && !c.archived_at)
   return [...live.filter(isFeed), ...live.filter((c) => !isFeed(c))]
 }
-export const frontOf = (spaceId: string, channels = []) => roomsOf(spaceId, channels)[0] || null
-export function foldOf(spaceId: string, channels = []) {
+export const frontOf = (spaceId: string, channels: { id: string; space_id: string; mode: string; }[] = []) => roomsOf(spaceId, channels)[0] || null
+export function foldOf(spaceId: string, channels: { id: string; space_id: string; mode: string; }[] = []) {
   const rooms = roomsOf(spaceId, channels)
   return rooms.length > 1 ? rooms : []
 }
@@ -154,7 +154,7 @@ export function foldOf(spaceId: string, channels = []) {
  * whoever keeps it — and has no tabs. A space of one room (or only its feed) keeps the tabs, since a
  * list of one room and three places under it would be a menu for a single page.
  */
-export function spaceItems(spaceId: string, channels = [], { events = false, keeps = false } = {}) {
+export function spaceItems(spaceId: string, channels: { id: string; space_id: string; mode: string; }[] = [], { events = false, keeps = false } = {}) {
   const rooms = foldOf(spaceId, channels)
   if (!rooms.length) return []
   return [
@@ -165,7 +165,7 @@ export function spaceItems(spaceId: string, channels = [], { events = false, kee
   ]
 }
 /* whether the space's header carries tabs: only where its places are not in the navigation */
-export const spaceTabbed = (spaceId: string, channels = []) => !foldOf(spaceId, channels).length
+export const spaceTabbed = (spaceId: string, channels: { id: string; space_id: string; mode: string; }[] = []) => !foldOf(spaceId, channels).length
 
 /*
  * A READER'S COACHING PLACE in the community (openspec: coaching-in-one-place). Where coaching lives

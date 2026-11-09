@@ -22,9 +22,7 @@ const msg = (id: string|number, sender: string, when: string, extra = {}) => ({ 
 const W = { today: 'Today', yesterday: 'Yesterday' }
 ok('today', dayLabel(at(9), now, W) === 'Today')
 ok('yesterday', dayLabel(at(23, 59, -1), now, W) === 'Yesterday')
-// @ts-expect-error TS2345, from the conversion: Argument of type '"en-GB"' is not assignable to parameter of type 'undefined'.
 ok('earlier this year names the weekday', /^\w{3}/.test(dayLabel(at(9, 0, -10), now, W, 'en-GB')))
-// @ts-expect-error TS2345, from the conversion: Argument of type '"en-GB"' is not assignable to parameter of type 'undefined'.
 ok('last year carries the year', /2025/.test(dayLabel(new Date(2025, 0, 1).toISOString(), now, W, 'en-GB')))
 const across = [msg(1, you, at(23, 50, -1)), msg(2, me, at(0, 5)), msg(3, me, at(0, 6))]
 const secs = daySections(across, now, W)
@@ -74,9 +72,7 @@ ok('voice preview names it with its length', previewOf({ kind: 'voice', seconds:
 ok('deleted preview', previewOf({ kind: 'text', body: 'x', deleted_at: at(9) }, V) === 'This message was deleted')
 ok('when: today is a time', /\d/.test(whenOf(at(9), now, W)) && !/Yesterday/.test(whenOf(at(9), now, W)))
 ok('when: yesterday', whenOf(at(9, 0, -1), now, W) === 'Yesterday')
-// @ts-expect-error TS2345, from the conversion: Argument of type '"en-GB"' is not assignable to parameter of type 'undefined'.
 ok('when: this week is a weekday', /^\w{3}$/.test(whenOf(at(9, 0, -3), now, W, 'en-GB')))
-// @ts-expect-error TS2345, from the conversion: Argument of type '"en-GB"' is not assignable to parameter of type 'undefined'.
 ok('when: older is a date', /\d/.test(whenOf(at(9, 0, -30), now, W, 'en-GB')))
 
 /* --- merging --- */

@@ -117,31 +117,21 @@ const CH = [
   room('c', 'chat'),
   room('x', 'nofeed'), room('y', 'nofeed', 'forum'),
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
 ok('a space of one feed opens on it', frontOf('one', CH)?.id === 'f1')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
 ok('a space of one feed unfolds to nothing', foldOf('one', CH).length === 0)
 ok('a direct message and an archived room are not rooms', roomsOf('one', CH).map((c) => c.id).join() === 'f1')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
 ok('a space of one chat room opens on it and unfolds to nothing', frontOf('chat', CH)?.id === 'c' && !foldOf('chat', CH).length)
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
 ok('a space with a feed and rooms opens on its feed', frontOf('many', CH)?.id === 'f2')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
 ok('and unfolds to them, feed first, the rest in order', foldOf('many', CH).map((c) => c.id).join() === 'f2,g,o')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
 ok('a space with no feed opens on its first room', frontOf('nofeed', CH)?.id === 'x' && foldOf('nofeed', CH).length === 2)
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
 ok('a space with no room the reader sees opens on nothing (People)', frontOf('none', CH) === null && !foldOf('none', CH).length)
 
 /* a space's places in the navigation, or its tabs (openspec: space-places-in-the-nav) */
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
-const items = (id, o?) => spaceItems(id, CH, o).map((x) => x.key).join()
+const items = (id: string, o?: { events?: boolean|undefined; keeps?: boolean|undefined }|undefined) => spaceItems(id, CH, o).map((x) => x.key).join()
 ok('a space of several rooms unfolds to them, then People', items('many') === 'f2,g,o,people')
 ok('with events, Events comes before People', items('many', { events: true }) === 'f2,g,o,events,people')
 ok('a keeper has Moderation last', items('many', { events: true, keeps: true }) === 'f2,g,o,events,people,keeping')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
 ok('a space of several rooms has no tabs', !spaceTabbed('many', CH) && !spaceTabbed('nofeed', CH))
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ id: any; space_id: any; mode: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ id: any; space_id: 
 ok('a space of one room or one feed keeps its tabs, and unfolds to nothing', spaceTabbed('one', CH) && spaceTabbed('chat', CH) && items('one', { events: true }) === '')
 
 /* a reader's coaching place (openspec: coaching-in-one-place) */
@@ -196,15 +186,15 @@ let threw = ''
 try { communityOf({ community: { access: { coaching: { tier: 'a' } } } }) } catch (e: any) { threw = e.message }
 ok('a rule on a place that keeps no rows of its own refuses the build', /coaching/.test(threw), threw)
 const CAT = { offers: [{ kind: 'membership', sku: 'm1', key: 'k1', tier: 't1' }, { kind: 'membership', sku: 'm2', key: 'k2', tier: 't2' }] }
-// @ts-expect-error TS2322, from the conversion: Type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' is not assignable to type 'null | undefined'.
+// @ts-expect-error TS2741, from the conversion: Property 'sessions' is missing in type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' but required in type '{ of
 const ca = communityAccessOf({ community: { access: { events: { tier: ['t1', 't2'] } } } }, process.cwd(), { catalog: CAT })
 ok('a rule may name several tiers', !ca.faults.length && JSON.stringify(ca.rules.events) === JSON.stringify([{ tier: ['t1', 't2'] }]), JSON.stringify(ca))
-// @ts-expect-error TS2322, from the conversion: Type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' is not assignable to type 'null | undefined'.
+// @ts-expect-error TS2741, from the conversion: Property 'sessions' is missing in type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' but required in type '{ of
 const cb = communityAccessOf({ community: { access: { events: { tier: ['t1', 'nope'] } } } }, process.cwd(), { catalog: CAT })
 ok('a tier no membership declares is named, alone', cb.faults.length === 1 && /"nope"/.test(cb.faults[0]), cb.faults.join())
-// @ts-expect-error TS2322, from the conversion: Type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' is not assignable to type 'null | undefined'.
+// @ts-expect-error TS2741, from the conversion: Property 'sessions' is missing in type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' but required in type '{ of
 ok('no rule writes no row', communityAccessOf({ community: {} }, process.cwd(), { catalog: CAT }).rules === null)
-// @ts-expect-error TS2322, from the conversion: Type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' is not assignable to type 'null | undefined'.
+// @ts-expect-error TS2741, from the conversion: Property 'sessions' is missing in type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' but required in type '{ of
 const na = accessOf({ network: { access: { read: { tier: 't1' }, plans: 'pricing' } } }, process.cwd(), { catalog: CAT })
 ok('the plans page is an address on the site', na.faults.some((m) => /plans/.test(m)))
 

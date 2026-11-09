@@ -111,7 +111,7 @@ export function cutAnswer(body: string, cap = CHOICE_CAP) {
  * route the conversation left long ago. Spent is not hidden: the buttons stay under their own
  * answer, dead, so the thread still reads as what was offered and what was taken.
  */
-export function offerOf(messages: any, { at = null, answered = (m: { choice_at: any }) => m.choice_at } = {}) {
+export function offerOf(messages: any, { at = null as string | null, answered = (m: { choice_at: any }) => m.choice_at } = {}) {
   const list = messages || []
   const i = at == null ? list.length - 1 : list.findIndex((m: { id: any }) => m.id === at)
   const m = list[i]

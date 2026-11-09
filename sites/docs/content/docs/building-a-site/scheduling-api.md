@@ -13,7 +13,7 @@ sources:
     packages/kit/theme/src/pages/BookPage.vue,
     packages/kit/build/scheduling-api.test.mts,
   ]
-reviewed: 2026-11-08
+reviewed: 2026-11-09
 ---
 
 ## What it is

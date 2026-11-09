@@ -126,7 +126,7 @@ ok('and the set is exactly those two', sealed.size === 2, [...sealed].join(' '))
 ok('a site with no spaces seals nothing, and so refuses nothing', sealedRooms([]).size === 0 && sealedRooms().size === 0)
 /* the shape readSpaces hands over is `{ slug, data, channels: [{ slug, data }] }`; a caller that
    passed channels already flattened should still get an answer rather than a throw */
-// @ts-expect-error TS2322, from the conversion: Type '{ slug: string; data: {}; channels: { slug: string; encrypted: true; }[]; }' is not assignable to type 'never'.
+// @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'encrypted' does not exist in type '{ slug: string; data?: any; }'.
 ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {}, channels: [{ slug: 'c', encrypted: true }] }]).has('x/c'))
 
 /* ---- and none of it is announced by a toast ---- */
@@ -222,14 +222,13 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
   const { join, relative } = await import('node:path')
   const ROOT = new URL('../../..', import.meta.url).pathname
 
-  const walk = (dir: any, out = []) => {
+  const walk = (dir: any, out: string[] = []) => {
     let entries = []
     try { entries = rd(dir) } catch { return out }
     for (const e of entries) {
       if (e === 'node_modules' || e === 'dist' || e === '.velite' || e.startsWith('.')) continue
       const f = join(dir, e)
       if (st(f).isDirectory()) walk(f, out)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
       else if (/\.(vue|js|mjs|ts)$/.test(e)) out.push(f)
     }
     return out
@@ -239,7 +238,6 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
     ...walk(join(ROOT, 'packages/kit/theme/src')),
   ]
   const THE_ONE = join(ROOT, 'packages/kit/src/lib/spaces/crypto.ts')
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
   ok('there is a module whose job this is', files.includes(THE_ONE))
 
   /* the library itself */

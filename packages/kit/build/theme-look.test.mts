@@ -45,11 +45,10 @@ const REPO = path.resolve(HERE, '../../..')
 const THEME = path.join(REPO, 'packages/kit/theme/src')
 if (!fs.existsSync(THEME)) { console.log('  ⚠ SKIPPED — the theme is not in this checkout\n'); process.exit(0) }
 
-const walk = (d: any, out = []) => {
+const walk = (d: any, out: string[] = []) => {
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {
     const p = path.join(d, e.name)
     if (e.isDirectory()) { if (!/^(node_modules|dist)$/.test(e.name) && !e.name.startsWith('.')) walk(p, out) }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
     else if (/\.(css|vue|js|ts)$/.test(e.name)) out.push(p)
   }
   return out

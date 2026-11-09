@@ -56,7 +56,7 @@ async function identityFor(email: string) {
   try { const c = await signedIn(email); if (c) { const r = await c.rpc('get_my_entitlements'); ent = r.data || null } } catch { ent = null }
   return { id: u.id, identity: identityOf({
     signedIn: true, verified: !!u.email_verified_at, role: u.role || 'user',
-    // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
+    // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never[]'. Type 'string' is not assignable to type 'never'.
     roles: Array.isArray(u.roles) ? u.roles : [], entitlements: ent || {},
   }) }
 }

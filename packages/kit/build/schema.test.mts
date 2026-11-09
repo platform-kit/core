@@ -40,7 +40,7 @@ const ok = (msg: string, cond: boolean) => { if (cond) pass++; else { fail++; co
    from the scratch's cwd alone it would find — and stop, and start — the site's own stack */
 const sb = (args: string[], opts = {}) => spawnSync('npx', ['supabase', '--workdir', SCR, ...args], { cwd: SCR, encoding: 'utf8', env: process.env, ...opts })
 let db = new pg.Client({ connectionString: TARGET })
-const rows = async (s: string, p = []) => (await db.query(s, p)).rows
+const rows = async (s: string, p: (string | any | `${string}-${string}-${string}-${string}-${string}` | string[])[] = []) => (await db.query(s, p)).rows
 const plan = (env = {}) => computePlan({ root: SCR, target: TARGET, shadowUrl: null, env: { ...process.env, PLATFORMKIT_ALLOW_DESTRUCTIVE: '', ...env } })
 const apply = async (env?: {}|undefined) => { const p = await plan(env); await applyPlan(p, TARGET, () => {}); return p }
 const diffOf = (p: any) => p.parts.diff.replace(/^SET local[^\n]*\n/m, '').trim()
@@ -95,13 +95,11 @@ try {
   const providerACollision = await rows(
     `select entity_id from public.payment_provider_refs
       where provider = 'provider-a' and object_type = 'checkout' and external_id = $1 and entity_type = 'purchases'`,
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     [paymentExternalId],
   )
   const providerBCollision = await rows(
     `select entity_id from public.payment_provider_refs
       where provider = 'provider-b' and object_type = 'checkout' and external_id = $1 and entity_type = 'purchases'`,
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     [paymentExternalId],
   )
   ok('the same external object id resolves to provider-specific local records',
@@ -122,7 +120,6 @@ try {
     [paymentEventId],
   )
   ok('an event id can be replay-tracked independently per provider',
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     (await rows('select provider from public.payment_events where event_id = $1', [paymentEventId])).length === 2)
   let duplicateEventRejected = false
   try {
@@ -159,14 +156,12 @@ try {
     `select public.usage_record($1, $2, null, 'incremental-plan', 'model',
        0, 0, 1000000, true, 'request', 1000000, 'usage-incremental-test',
        100000000, 0, null) as result`,
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     [`usage-incremental-${usageClaimSuffix}`, usageClaimUserId],
   )
   const incrementalEventId = recordedIncrementalUsage[0].result.usage_event_id
   const incrementalSnapshot = await rows(
     `select usage_incremental_charge_minor, usage_incremental_charge_currency
        from public.usage_events where id = $1`,
-    // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
     [incrementalEventId],
   )
   ok('usage recording snapshots the threshold and currency that applied to the event',
@@ -203,12 +198,10 @@ try {
       && regularClaims.length === 1 && regularClaims[0].usage_event_id === regularEventId)
   const incrementalCompleted = await rows(
     'select public.usage_meter_complete($1, true) as completed',
-    // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
     [incrementalEventId],
   )
   const regularCompleted = await rows(
     'select public.usage_meter_complete($1, true) as completed',
-    // @ts-expect-error TS2322, from the conversion: Type '`${string}-${string}-${string}-${string}-${string}`' is not assignable to type 'never'.
     [regularEventId],
   )
   ok('both usage claim paths acknowledge their own reports',
@@ -311,25 +304,21 @@ try {
     `select
        (select checkout_identity from public.purchases where id = $1) as purchase,
        (select checkout_identity from public.bookings where uid = $2) as booking`,
-    // @ts-expect-error TS2322, from the conversion: Type '`${string}-${string}-${string}-${string}-${string}`' is not assignable to type 'never'.
     [purchaseId, bookingId],
   )
   ok('populated Stripe purchases and bookings keep their raw id as the generic checkout identity',
     genericIdentities[0].purchase === checkoutId && genericIdentities[0].booking === checkoutId)
   const migratedStripePurchase = await rows(
     'select public.purchase_write($1::jsonb)::text as id',
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     [JSON.stringify({ checkout_identity: checkoutId, stripe_checkout_session_id: checkoutId, price_id: priceId })],
   )
   const customIdentity = `provider-a:${checkoutId}`
   const customPurchase = await rows(
     'select public.purchase_write($1::jsonb)::text as id',
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     [JSON.stringify({ checkout_identity: customIdentity, price_id: priceId })],
   )
   const customPurchaseReplay = await rows(
     'select public.purchase_write($1::jsonb)::text as id',
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     [JSON.stringify({ checkout_identity: customIdentity, price_id: priceId })],
   )
   ok('provider-scoped purchase writes keep colliding checkout and price ids separate and idempotent',
@@ -340,7 +329,6 @@ try {
     `select count(*)::int as n from public.payment_provider_refs
       where provider = 'stripe' and object_type = 'price'
         and external_id = $1 and entity_type = 'purchases' and entity_id = $2`,
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     [priceId, customPurchase[0].id],
   )
   ok('repeatable Stripe backfill does not misattribute custom-provider prices',
@@ -349,7 +337,6 @@ try {
     `select object_type, external_id, entity_type, entity_id
        from public.payment_provider_refs
       where provider = 'stripe' and external_id = any($1::text[])`,
-    // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never'.
     [migrationExternalIds],
   )
   const migratedKeys = new Set(migratedRefs.map((row: { object_type: any; external_id: any; entity_type: any; entity_id: any }) =>
@@ -377,7 +364,6 @@ try {
   ok('populated legacy Stripe references are backfilled across commerce and usage',
     expectedMigratedRefs.every((entry) => migratedKeys.has(entry.join('|'))))
   ok('the legacy Stripe webhook id is copied into provider-scoped idempotency',
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     (await rows('select event_id from public.payment_events where provider = $1 and event_id = $2', ['stripe', eventId])).length === 1)
   const originalRows = await rows(
     `select
@@ -387,7 +373,6 @@ try {
        (select count(*)::int from public.order_transactions where id = $4) as transactions,
        (select count(*)::int from public.entitlements where id = $5 and user_id = $6) as entitlements,
        (select count(*)::int from public.usage_grants where id = $7 and user_id = $6) as usage_grants`,
-    // @ts-expect-error TS2322, from the conversion: Type '`${string}-${string}-${string}-${string}-${string}`' is not assignable to type 'never'.
     [purchaseId, subscriptionId, orderId, transactionId, entitlementId, migrationUserId, grantId],
   )
   ok('backfill preserves the original ledger and ownership rows',
@@ -399,10 +384,8 @@ try {
     `select object_type, external_id, entity_type, entity_id
        from public.payment_provider_refs
       where provider = 'stripe' and external_id = any($1::text[])`,
-    // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never'.
     [migrationExternalIds],
   )
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   const replayEvents = await rows('select event_id from public.payment_events where provider = $1 and event_id = $2', ['stripe', eventId])
   ok('repeat backfill creates no duplicate references or webhook events',
     replayRefs.length === migratedRefs.length && replayEvents.length === 1)

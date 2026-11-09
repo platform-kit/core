@@ -16,20 +16,20 @@ const ran = (status: number, stdout = '') => () => ({ status, stdout });
 
 /* two problems at once: Docker down and no browser, both reported, failures first, exit 1 */
 {
-  // @ts-expect-error TS2322, from the conversion: Type '(cmd: any) => { status: any; stdout: string; }' is not assignable to type '(cmd: any, args: any, opts?: {}) => SpawnSyncReturns<string
+  // @ts-expect-error TS2322, from the conversion: Type '(cmd: any) => { status: number; stdout: string; }' is not assignable to type '(cmd: any, args: any, opts?: {}) => SpawnSyncReturns<str
   const machine = machineChecks({ version: '22.1.0', exec: (cmd) => (cmd === 'docker' ? ran(1)() : ran(0, 'x')()) })
   const browser = await browserCheck(async () => ({ at: null, there: false }))
   const { text, ok: fine } = report([['the machine', [...machine, browser]]])
   ok('two problems: both reported in one run', /✖ Docker/.test(text) && /✖ test browser/.test(text), text)
   ok('…each with its fix', /→ start Docker/.test(text) && /→ npx playwright install chromium/.test(text), text)
   ok('…and the run fails', fine === false)
-  // @ts-expect-error TS2322, from the conversion: Type '() => { status: any; stdout: string; }' is not assignable to type '(cmd: any, args: any, opts?: {}) => SpawnSyncReturns<string>'. Type
+  // @ts-expect-error TS2322, from the conversion: Type '() => { status: number; stdout: string; }' is not assignable to type '(cmd: any, args: any, opts?: {}) => SpawnSyncReturns<string>'. T
   ok('an old Node fails, naming the version needed', machineChecks({ version: '18.20.0', exec: ran(0) })[0].level === 'fail')
 }
 
 /* a clean run passes */
 {
-  // @ts-expect-error TS2322, from the conversion: Type '() => { status: any; stdout: string; }' is not assignable to type '(cmd: any, args: any, opts?: {}) => SpawnSyncReturns<string>'. Type
+  // @ts-expect-error TS2322, from the conversion: Type '() => { status: number; stdout: string; }' is not assignable to type '(cmd: any, args: any, opts?: {}) => SpawnSyncReturns<string>'. T
   const { ok: fine, text } = report([['the machine', machineChecks({ version: '22.22.1', exec: ran(0, 'v') })]])
   ok('nothing wrong: the run passes', fine && /Everything is ready/.test(text), text)
 }

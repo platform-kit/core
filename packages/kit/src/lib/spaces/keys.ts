@@ -74,7 +74,7 @@ export function sayKey(k: any, { mac = true } = {}) {
 
 /* the next room to move to, in the order the rail shows them, wrapping at either end. `only` is
    the rule for which rooms count — every one, or only those with something waiting. */
-export function stepRoom(rooms: any[], currentId: string, step: number, { only = null } = {}) {
+export function stepRoom(rooms: any[], currentId: string, step: number, { only = null as ((r: any) => any) | null } = {}) {
   const list = (only ? rooms.filter(only) : rooms).filter(Boolean)
   if (!list.length) return null
   const at = list.findIndex((r: { id: any }) => r.id === currentId)

@@ -207,16 +207,14 @@ try {
     access_token: accessToken,
     refresh_token: refreshToken,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(sessionError, null, sessionError?.message)
+  assert.equal(sessionError, null, String(sessionError?.message))
   inviteeId = (sessionData as any).user.id
   assert.equal((sessionData as any).user.email?.toLowerCase(), email)
   assert.ok((sessionData as any).user.invited_at, 'the account was created through Supabase Auth invite')
 
   const { data: profileBefore, error: profileError } = await service
     .from('profiles').select('role, roles').eq('id', inviteeId).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(profileError, null, profileError?.message)
+  assert.equal(profileError, null, String(profileError?.message))
   const mismatch = await invoke(readerLogin.sb, { action: 'accept_invitation' })
   assert.equal(mismatch.status, 403, 'a different account cannot claim the pending recipient-bound grant')
 
@@ -228,14 +226,12 @@ try {
     'accepting an invitation alone grants no Social capabilities')
   const expiredInvite = await service.from('social_publisher_grants')
     .update({ expires_at: new Date(Date.now() - 1_000).toISOString() }).eq('id', grantId)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(expiredInvite.error, null, expiredInvite.error?.message)
+  assert.equal(expiredInvite.error, null, String(expiredInvite.error?.message))
   assert.equal((await invitee.rpc('social_has_access')).data, false,
     'an accepted invitation without explicit permissions still grants no Social capabilities')
   const { data: profileAfter, error: afterError } = await service
     .from('profiles').select('role, roles').eq('id', inviteeId).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(afterError, null, afterError?.message)
+  assert.equal(afterError, null, String(afterError?.message))
   assert.deepEqual(profileAfter, profileBefore, 'acceptance does not add or change a global staff role')
 
   const duplicate = await invoke(adminLogin.sb, { action: 'invite', email })
@@ -253,8 +249,7 @@ try {
     credential_secret_id: randomUUID(),
     connected_by: adminLogin.user.id,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(testAccount.error, null, testAccount.error?.message)
+  assert.equal(testAccount.error, null, String(testAccount.error?.message))
   await grantAccountAccess(testAccountId)
   assert.equal((await invitee.rpc('social_has_access')).data, true,
     'Social access begins only after the administrator explicitly grants an account capability')
@@ -347,8 +342,7 @@ try {
     p_name: `social-test-reddit-${randomUUID()}`,
     p_description: 'Temporary credential for the Social integration test',
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(redditCredential.error, null, redditCredential.error?.message)
+  assert.equal(redditCredential.error, null, String(redditCredential.error?.message))
   redditCredentialId = redditCredential.data
   redditAccountId = randomUUID()
   const redditAccount = await service.from('social_accounts').insert({
@@ -360,8 +354,7 @@ try {
     credential_secret_id: redditCredentialId,
     connected_by: adminLogin.user.id,
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(redditAccount.error, null, redditAccount.error?.message)
+  assert.equal(redditAccount.error, null, String(redditAccount.error?.message))
   await grantAccountAccess(redditAccountId)
 
   const redditCapabilities: any = await invoke(invitee, {
@@ -466,8 +459,7 @@ try {
     last_error_code: 'provider_rejected',
     last_error: 'The provider rejected the post.',
   }).select('id').single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(failedDelivery.error, null, failedDelivery.error?.message)
+  assert.equal(failedDelivery.error, null, String(failedDelivery.error?.message))
   const failedAttempt = await service.from('social_delivery_attempts').insert({
     delivery_id: failedDelivery.data.id,
     attempt_number: 1,
@@ -477,8 +469,7 @@ try {
     error_message: 'The provider rejected the post.',
     finished_at: new Date().toISOString(),
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(failedAttempt.error, null, failedAttempt.error?.message)
+  assert.equal(failedAttempt.error, null, String(failedAttempt.error?.message))
   const unrelatedRecovery = await invoke(readerLogin.sb, {
     action: 'recover_delivery',
     deliveryId: failedDelivery.data.id,
@@ -494,8 +485,7 @@ try {
   const failedRetryState = await service.from('social_deliveries')
     .select('status, attempt_count, recovered_by, recovered_at, recovery_action')
     .eq('id', failedDelivery.data.id).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(failedRetryState.error, null, failedRetryState.error?.message)
+  assert.equal(failedRetryState.error, null, String(failedRetryState.error?.message))
   assert.equal(failedRetryState.data.status, 'scheduled')
   assert.equal(failedRetryState.data.attempt_count, 1, 'manual recovery preserves the monotonic attempt number')
   assert.equal(failedRetryState.data.recovered_by, inviteeId)
@@ -513,8 +503,7 @@ try {
       credential_secret_id: randomUUID(),
       connected_by: adminLogin.user.id,
     })
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-    assert.equal(result.error, null, result.error?.message)
+    assert.equal(result.error, null, String(result.error?.message))
     testDeliveryAccountIds.push(id)
     await grantAccountAccess(id)
     return id
@@ -528,8 +517,7 @@ try {
     last_error_code: 'publish_outcome_unknown',
     last_error: 'The provider response did not confirm the outcome.',
   }).select('id').single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(reviewForRetry.error, null, reviewForRetry.error?.message)
+  assert.equal(reviewForRetry.error, null, String(reviewForRetry.error?.message))
   const unsafeRetry = await invoke(invitee, {
     action: 'recover_delivery',
     deliveryId: reviewForRetry.data.id,
@@ -553,8 +541,7 @@ try {
     last_error_code: 'publish_outcome_unknown',
     last_error: 'The provider response did not confirm the outcome.',
   }).select('id').single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(reviewForPublish.error, null, reviewForPublish.error?.message)
+  assert.equal(reviewForPublish.error, null, String(reviewForPublish.error?.message))
   const markedPublished = await invoke(invitee, {
     action: 'recover_delivery',
     deliveryId: reviewForPublish.data.id,
@@ -565,8 +552,7 @@ try {
   const publishedState = await service.from('social_deliveries')
     .select('status, provider_post_id, recovered_by, recovery_action')
     .eq('id', reviewForPublish.data.id).single()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(publishedState.error, null, publishedState.error?.message)
+  assert.equal(publishedState.error, null, String(publishedState.error?.message))
   assert.equal(publishedState.data.status, 'published')
   assert.equal(publishedState.data.provider_post_id, 'provider-post-123')
   assert.equal(publishedState.data.recovered_by, inviteeId)
@@ -576,8 +562,7 @@ try {
   assert.equal(revoked.status, 200, JSON.stringify(revoked))
   assert.equal((await invitee.rpc('social_has_access')).data, false, 'revocation takes effect in the existing session')
   const stillListed = await invitee.from('social_posts').select('id')
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(stillListed.error, null, stillListed.error?.message)
+  assert.equal(stillListed.error, null, String(stillListed.error?.message))
   assert.deepEqual(stillListed.data, [], 'RLS hides social posts immediately after revocation')
   const postRevokeReplay = await invoke(invitee, { action: 'accept_invitation' })
   assert.equal(postRevokeReplay.status, 409, 'a revoked invitation cannot be reused')

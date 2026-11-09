@@ -442,8 +442,7 @@ try {
 
     if (!made) ok('a job run can be queued', false, 'the insert was refused')
     else {
-      // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-      const before = (await db.from('content').select('text').eq('path', 'content/books/' + BOOK + '.md').maybeSingle()).data.text
+      const before = (await db.from('content').select('text').eq('path', 'content/books/' + BOOK + '.md').maybeSingle()).data!.text
       await turn(made.id)
       const r = await rests(made.id, 'done', 30000)
       ok('a job run walks its stages and finishes', r && r.status === 'done', r && (r.status + ' ' + (r.error || '')))
@@ -460,8 +459,7 @@ try {
        * does not. That is the same discipline the spending rule asks for, enforced by where the
        * write lands rather than by anyone remembering.
        */
-      // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-      const live = (await db.from('content').select('text').eq('path', 'content/books/' + BOOK + '.md').maybeSingle()).data.text
+      const live = (await db.from('content').select('text').eq('path', 'content/books/' + BOOK + '.md').maybeSingle()).data!.text
       const { data: draft } = await db.from('content_drafts').select('text').eq('path', 'content/books/' + BOOK + '.md').maybeSingle()
       // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
       ok('the introduction is written as a draft', !!(draft && /outlived almost everything/.test(draft.text)), draft ? 'a draft with other words' : 'no draft at all')

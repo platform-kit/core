@@ -25,7 +25,6 @@ const props = defineProps({
 })
 const emit = defineEmits(['vote', 'unvote', 'close'])
 const W = computed(() => us('spaces').poll.main)
-// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'never[]'.
 const tally = computed(() => tallyPoll(props.message, props.votes, props.me))
 
 const said = computed(() => {

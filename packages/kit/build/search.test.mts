@@ -24,7 +24,6 @@ console.log('\nSEARCH\n')
     { component: 'Hero', props: { lines: ['One big idea away', 'from your breakthrough'], cta: 'Take the quiz', href: '/app' } },
     { component: 'Pricing', props: { rows: [{ title: 'Membership', body: 'Every book, every chapter' }], tone: 'dusk', width: 'wide' } },
   ]
-  // @ts-expect-error TS2345, from the conversion: Argument of type '({ component: string; props: { lines: string[]; cta: string; href: string; rows?: undefined; tone?: undefined; width?: und
   const w = pageWords(sections)
   ok('a section’s copy is indexed', w.includes('One big idea away') && w.includes('Every book, every chapter'), w)
   ok('…down through lists and objects alike', w.includes('Membership'))
@@ -32,7 +31,6 @@ console.log('\nSEARCH\n')
   /* a one-word lower-case value is a setting (tone, width, a component name), not prose. Indexing
      them makes every page match "wide" and "dusk", which is noise in every result. */
   ok('a setting is not words', !/\bdusk\b/.test(w) && !/\bwide\b/.test(w), w)
-  // @ts-expect-error TS2322, from the conversion: Type '{ component: string; }' is not assignable to type 'never'.
   ok('nothing of nothing', pageWords() === '' && pageWords([{ component: 'X' }]) === '')
 }
 

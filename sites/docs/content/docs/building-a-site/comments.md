@@ -19,7 +19,7 @@ sources:
     packages/kit/theme/src/comments-embed.ts,
     packages/kit/theme/src/pages/CommentsEmbedPage.vue,
   ]
-reviewed: 2026-11-08
+reviewed: 2026-11-09
 ---
 
 People want to say something under an article, a wiki page, a book, a product and an event. That is

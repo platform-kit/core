@@ -46,7 +46,7 @@ const KIND = 'test-rec-' + T
 const TAG = { a: 'zz-alpha-' + T, b: 'zz-beta-' + T, c: 'zz-gamma-' + T }
 const PIECE = { a: 'piece-a-' + T, b: 'piece-b-' + T, c: 'piece-c-' + T }
 const SKU = 'piece-c-' + T   // the same ref as piece C: a purchase of the thing that was read
-const made = { events: [], purchases: [] }
+const made = { events: [], purchases: [] as string[] }
 
 /* what my_interests weighs a read by, read off the declaration so the test and the function cannot
    drift apart silently */
@@ -133,21 +133,15 @@ const ours = (rows: any) => Object.fromEntries(Object.entries(rows).filter(([k])
   const { scoreRow, profileText, WEIGHT_LIFT, RX_LIFT } = await import('../src/lib/rank.js')
   const at = { weights: { meditation: 3, gardening: 0.2 } }
   const same = { sem: 0.5 }
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   const a = scoreRow({ ...same, tags: ['meditation'] }, at)
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   const b = scoreRow({ ...same, tags: ['gardening'] }, at)
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   const c = scoreRow({ ...same, tags: ['nothing-in-particular'] }, at)
   ok('a weighted tag outranks an unweighted one of equal similarity', a.score > c.score, `${a.score} vs ${c.score}`)
   ok('a heavier tag outranks a lighter one', a.score > b.score)
   ok('a row takes its heaviest tag, not the sum of them',
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     scoreRow({ ...same, tags: ['meditation', 'gardening'] }, at).score === a.score)
-  // @ts-expect-error TS2322, from the conversion: Type 'Set<string>' is not assignable to type 'null | undefined'.
   const rx = scoreRow({ sem: 0, tags: [], href: '/x' }, { prescribed: new Set(['/x']), weights: {} })
   ok('no amount of history outranks what a site puts in front of somebody',
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     rx.score > scoreRow({ sem: 0, tags: ['meditation'] }, { weights: { meditation: 99 } }).score - (99 * WEIGHT_LIFT - RX_LIFT) - 1e-9 && RX_LIFT / WEIGHT_LIFT > 10)
   ok('a reader with no site registration still gets a sentence to rank against',
     profileText({ meditation: 3, gardening: 1 }) === 'Interested in meditation, gardening.')
@@ -177,7 +171,7 @@ try {
   ]
   const { data: ins, error: ie } = await service.from('events').insert(rows).select('id')
   if (ie) throw new Error('events: ' + ie.message)
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
+  // @ts-expect-error TS2322, from the conversion: Type 'number[]' is not assignable to type 'never[]'. Type 'number' is not assignable to type 'never'.
   made.events = ins.map((r) => r.id)
 
   let got = ours(await mine(member.sb))
@@ -193,7 +187,6 @@ try {
     .insert({ user_id: member.id, sku: SKU + '-softcover', status: 'paid', amount_total: 1900, currency: 'usd' })
     .select('id')
   if (pe) throw new Error('purchases: ' + pe.message)
-  // @ts-expect-error TS2322, from the conversion: Type 'any[]' is not assignable to type 'never[]'. Type 'any' is not assignable to type 'never'.
   made.purchases = p.map((r) => r.id)
 
   got = ours(await mine(member.sb))
@@ -230,8 +223,8 @@ try {
       read(member.id, P.quick, KIND, Math.max(0, floor - 2), 100),  /* a short page wholly in the viewport, gone at once */
     ]
     const { data: more } = await service.from('events').insert(rows).select('id')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-    made.events.push(...more.map((r) => r.id))
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'never'.
+    made.events.push(...more!.map((r) => r.id))
     const seen = await behind(member.sb)
     ok('a piece read to the end is behind them', seen.has(KIND + ':' + P.done))
     ok('a piece skimmed is not — it is the one they meant to come back to', !seen.has(KIND + ':' + P.skim))
@@ -242,8 +235,8 @@ try {
        one read that did — not a sum of the tries, which would make any number of skims a finish */
     const { data: again } = await service.from('events')
       .insert([read(member.id, P.skim, KIND, 40, Math.max(0, depth - 20))]).select('id')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-    made.events.push(...again.map((r) => r.id))
+    // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'never'.
+    made.events.push(...again!.map((r) => r.id))
     ok('two half reads do not make a whole', !(await behind(member.sb)).has(KIND + ':' + P.skim))
   }
 

@@ -84,8 +84,7 @@ if (got) {
       .map((r) => ({ r, clicked: r.clicked_at && Date.parse(r.clicked_at) <= t ? Date.parse(r.clicked_at) : null, opened: r.opened_at && Date.parse(r.opened_at) <= t ? Date.parse(r.opened_at) : null }))
       .filter((x) => x.clicked || x.opened)
     if (!c.length) return null
-    // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-    c.sort((a, b) => (b.clicked ? 1 : 0) - (a.clicked ? 1 : 0) || (b.clicked || b.opened) - (a.clicked || a.opened))
+    c.sort((a, b) => (b.clicked ? 1 : 0) - (a.clicked ? 1 : 0) || (b.clicked || b.opened)! - (a.clicked || a.opened)!)
     return c[0].r
   }
   /* the tiles count conversions in the window; a step counts those credited to a cohort send, whenever they happened */
@@ -100,7 +99,7 @@ if (got) {
       if (i < 0) continue   /* a send of a step the files no longer have */
       if (Date.parse(at) >= since) { if (kind === 'goal') goalN++; else { total++; if (kind === 'purchase') revenue += (c as any).amount_total || 0 } }
       // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-      if (cohort.has(r.user_id)) { if (kind === 'goal') exp[i].goal++; else { exp[i].conversions++; if (kind === 'purchase') exp[i].revenue += c.amount_total || 0 } }
+      if (cohort.has(r.user_id)) { if (kind === 'goal') exp[i].goal++; else { exp[i].conversions++; if (kind === 'purchase') exp[i].revenue += (c as any).amount_total || 0 } }
     }
   }
   ok('the conversions credited last touch, in all', (got as any).now.conversions === total && (got as any).now.revenue === revenue && (got as any).now.goal === goalN)
@@ -146,8 +145,7 @@ if (served) {
   const link = (await service.from('email_links').select('token, log_id, url').eq('kind', 'click').not('url', 'is', null).limit(1)).data?.[0]
   if (!link) note('no seeded click link — the redirect is not checked')
   else {
-    // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-    const before = (await service.from('email_links').select('hits').eq('token', link.token).single()).data.hits
+    const before = (await service.from('email_links').select('hits').eq('token', link.token).single()).data!.hits
     const logBefore = (await service.from('email_log').select('clicks, clicked_at, opened_at').eq('id', link.log_id).single()).data
     const started = new Date().toISOString()
     const r = await fetch(url + '/functions/v1/email-track/' + link.token, { redirect: 'manual' })

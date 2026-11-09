@@ -74,7 +74,6 @@ Deno.serve(async (req: Request) => {
   if (rl.over) return fail(ERR.rate(rl.reset))
 
   /* the API described: OpenAPI 3.1 from the index, for Scalar at /api and any client that reads it */
-  // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never[]'. Type 'string' is not assignable to type 'never'.
   if (path === '/openapi.json' || path === '/content/v1/openapi.json') { const idx = (await contentIndexes()).live; return reply(openapiFor(idx, { base: idx.site.url || site(), functions: (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/+$/, ''), sources: ((analyticsConfig as { sources?: { name: string }[] }).sources ?? []).map((x) => x.name), forms: await formsFor(), sessions: await sessionsFor(), store: STORE_ON, support: SUPPORT_ON }), 200, { 'Content-Type': 'application/json' }) }
 
   /* the space and the environment in the path */

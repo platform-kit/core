@@ -17,7 +17,7 @@ sources:
     packages/kit/build/interrupt.test.mts,
     packages/kit/build/support-api.test.mts,
   ]
-reviewed: 2026-11-08
+reviewed: 2026-11-09
 ---
 
 ## What it is

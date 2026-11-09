@@ -209,7 +209,6 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
   ok('and asking for the mock beats both', providerFrom({ ...key, AGENTS_LIVE: '1', PLATFORMKIT_AGENT_MOCK: '1' }).mock === true)
   /* the second lock: a rehearsal is answered from its script whatever the environment says */
   const script = [{ role: 'system', content: 'x <<mock:[{"say":"from the script"}]>>' }, { role: 'user', content: 'hi' }]
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ role: string; content: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ role: string; content: str
   ok('a scripted conversation is never bought', hasScript(script))
 }
 
@@ -436,7 +435,6 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
   ok('a withheld skill is not named in the prompt', !line.includes('refunds'), line)
   ok('\u2026and the permitted one is', line.includes('open-to-all'))
   ok('a skill nobody may have takes its tools with it',
-    // @ts-expect-error TS2322, from the conversion: Type 'Set<string>' is not assignable to type 'null | undefined'.
     !toolsFor({ bot, surface: 'support', opened, allowed: new Set(['search_site']) }).some((t) => t.name === 'raise_ticket'))
   ok('and with no gating the prompt names them all', skillsLine(bot).includes('refunds'))
 

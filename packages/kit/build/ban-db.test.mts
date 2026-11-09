@@ -29,7 +29,7 @@ const q = (sql: string, args: any[] = []) => client.query(sql, args).then((r: { 
    Without the savepoint the rollback in the finally throws over the top of the real error and the
    test reports "transaction is aborted" instead of the exception it was looking for. */
 let sp = 0
-const as = async (uid: any, sql: string, args = []) => {
+const as = async (uid: any, sql: string, args: any[] = []) => {
   const name = 'as_' + (++sp)
   await q('savepoint ' + name)
   await q('select set_config($1, $2, true)', ['request.jwt.claims', JSON.stringify({ sub: uid, role: 'authenticated' })])
@@ -68,39 +68,28 @@ try {
   await q(`insert into public.space_grants (space_id, capability, scope, user_id, source) values ($1, 'moderate', 'user', $2, 'hand')`, [spaceId, modId])
 
   /* --- a line each, before anything is done --- */
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   await as(badId, `insert into public.space_messages (channel_id, author_id, kind, body) values ($1, $2, 'text', 'before the act')`, [chanId, badId])
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const seenBefore = await as(byId, `select count(*)::int n from public.space_messages where channel_id = $1`, [chanId])
   ok('the bystander sees the line to begin with', seenBefore[0].n === 1, 'saw ' + seenBefore[0].n)
 
   /* --- SHADOW BAN --- */
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   await as(modId, `select public.space_moderate('shadow-ban', $1, null, $2, 'testing', null)`, [spaceId, badId])
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   await as(badId, `insert into public.space_messages (channel_id, author_id, kind, body) values ($1, $2, 'text', 'after the act')`, [chanId, badId])
 
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const byNow = await as(byId, `select body from public.space_messages where channel_id = $1 order by seq`, [chanId])
   ok('the bystander does not see what was said after it', byNow.length === 1 && byNow[0].body === 'before the act', JSON.stringify(byNow.map((r: { body: any }) => r.body)))
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const badNow = await as(badId, `select body from public.space_messages where channel_id = $1 order by seq`, [chanId])
   ok('and the shadow-banned person sees their own, unchanged', badNow.length === 2, JSON.stringify(badNow.map((r: { body: any }) => r.body)))
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const modNow = await as(modId, `select body from public.space_messages where channel_id = $1 order by seq`, [chanId])
   ok('a moderator sees everything', modNow.length === 2, JSON.stringify(modNow.map((r: { body: any }) => r.body)))
 
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const hist = await as(byId, `select public.space_history($1) h`, [chanId])
   ok('and the paged read agrees with the policy', JSON.stringify(hist[0].h).includes('before the act') && !JSON.stringify(hist[0].h).includes('after the act'))
 
   /* --- a lift is a row, and it puts things back --- */
   const [{ id: actId }] = await q(`select id from public.space_moderation where kind = 'shadow-ban' and subject_id = $1`, [badId])
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   await as(modId, `select public.space_lift($1, 'thought better of it')`, [actId])
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   await as(badId, `insert into public.space_messages (channel_id, author_id, kind, body) values ($1, $2, 'text', 'after the lift')`, [chanId, badId])
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const byLifted = await as(byId, `select body from public.space_messages where channel_id = $1 order by seq`, [chanId])
   ok('after a lift the bystander sees the new line', byLifted.some((r: { body: string }) => r.body === 'after the lift'), JSON.stringify(byLifted.map((r: { body: any }) => r.body)))
   ok('and what was said while shadowed stays shadowed', !byLifted.some((r: { body: string }) => r.body === 'after the act'))
@@ -110,7 +99,6 @@ try {
   ok('and the act it undid is still on the record', still[0].n === 1)
 
   /* --- BAN --- */
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   await as(modId, `select public.space_moderate('ban', $1, null, $2, 'testing', null)`, [spaceId, badId])
   const mem = await q(`select count(*)::int n from public.space_members where space_id = $1 and user_id = $2`, [spaceId, badId])
   ok('a ban takes the membership', mem[0].n === 0)
@@ -125,22 +113,18 @@ try {
   const afterInvite = await q(`select count(*)::int n from public.space_members where space_id = $1 and user_id = $2`, [spaceId, badId])
   ok('nor an invitation', afterInvite[0].n === 0)
 
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const door = await as(badId, `select public.space_ask($1) r`, [spaceId])
   ok('and the open door says so in words', door[0].r && door[0].r.error === 'barred', JSON.stringify(door[0].r))
 
   /* lifting the ban lets them back */
   const [{ id: banId }] = await q(`select id from public.space_moderation where kind = 'ban' and subject_id = $1`, [badId])
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   await as(modId, `select public.space_lift($1, null)`, [banId])
   ok('a lifted ban is no longer a ban', (await q(`select public.space_banned($1, $2) b`, [spaceId, badId]))[0].b === false)
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   const back = await as(badId, `select public.space_ask($1) r`, [spaceId])
   ok('and the door opens again', back[0].r && back[0].r.ok === true, JSON.stringify(back[0].r))
 
   /* --- who may do it --- */
   let refused = false
-  // @ts-expect-error TS2322, from the conversion: Type 'any' is not assignable to type 'never'.
   try { await as(byId, `select public.space_moderate('ban', $1, null, $2, null, null)`, [spaceId, modId]) } catch (e: any) { refused = /not allowed/.test(e.message) }
   ok('somebody who cannot moderate cannot ban', refused)
 } finally {

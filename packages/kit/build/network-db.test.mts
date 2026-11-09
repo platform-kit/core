@@ -57,7 +57,7 @@ try {
   /* a clean slate for these four: nothing of the network from an earlier run */
   for (const t of ['network_posts', 'network_follows', 'network_blocks', 'network_mutes', 'network_pins', 'network_likes', 'network_reposts']) {
     const col = { network_posts: 'author_id', network_follows: 'follower_id', network_blocks: 'blocker_id', network_mutes: 'muter_id', network_pins: 'user_id', network_likes: 'author_id', network_reposts: 'author_id' }[t]
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
+    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
     await service.from(t).delete().in(col, people)
   }
   await service.from('network_moderation').delete().in('subject_id', people)
@@ -137,20 +137,16 @@ try {
 
   /* ------------------------------------------------------------ the counts */
   const reread = async (id: string) => (await service.from('network_posts').select('like_count, repost_count, reply_count, quote_count').eq('id', id).single()).data
-  // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-  ok('a reply moves its parent\'s count', (await reread(here.id)).reply_count === 1)
+  ok('a reply moves its parent\'s count', (await reread(here.id))!.reply_count === 1)
   await C.sb.from('network_likes').insert({ author_id: C.id, post_id: everyone.id })
   await B.sb.from('network_likes').insert({ author_id: B.id, post_id: everyone.id })
   const twice = await C.sb.from('network_likes').insert({ author_id: C.id, post_id: everyone.id })
   ok('a like is once per person', !!twice.error)
-  // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-  ok('the likes are counted', (await reread(everyone.id)).like_count === 2)
+  ok('the likes are counted', (await reread(everyone.id))!.like_count === 2)
   await C.sb.from('network_likes').delete().eq('author_id', C.id).eq('post_id', everyone.id)
-  // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-  ok('…and an unlike is taken off', (await reread(everyone.id)).like_count === 1)
+  ok('…and an unlike is taken off', (await reread(everyone.id))!.like_count === 1)
   await B.sb.from('network_reposts').insert({ author_id: B.id, post_id: here.id })
-  // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-  ok('a repost is counted', (await reread(here.id)).repost_count === 1)
+  ok('a repost is counted', (await reread(here.id))!.repost_count === 1)
 
   /* ------------------------------------------------------------ the timeline */
   await C.sb.from('network_follows').insert({ follower_id: C.id, subject_id: A.id })

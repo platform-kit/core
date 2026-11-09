@@ -111,8 +111,7 @@ else {
          version of this used 'open', which the constraint rejects, so the row never existed and
          the check passed by comparing a count with itself. The insert is asserted now. */
       const ref = await admin.from('purchases').insert({ stripe_checkout_session_id: PROBE + 'refunded', key: A.key, sku: A.sku, status: 'refunded', amount_total: 1000, currency: 'usd', created_at: ago(1) })
-      // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: unknown, message?: Error | AssertMessageFunction | undefined): asserts value', gave
-      await t('a refunded purchase can be written', async () => { assert.ok(!ref.error, ref.error && ref.error.message) })
+      await t('a refunded purchase can be written', async () => { assert.ok(!ref.error, String(ref.error && ref.error.message)) })
       const unpaid = run()
       await t('a refunded purchase is not a sale', async () => {
         assert.equal(Number(unpaid.books[A.book] || 0), Number(now.books[A.book] || 0), 'a refund counted as a sale')

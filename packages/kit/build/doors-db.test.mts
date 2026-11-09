@@ -78,8 +78,7 @@ for (const fn of FIGURES) {
   /* an address already confirmed reads back as confirmed even from a password session — the
      function reports the truth, it just may not WRITE it */
   await admin.from('profiles').update({ email_verified_at: new Date().toISOString() }).eq('id', (me as any).id)
-  // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-  const r2 = await (await asPerson('member@example.com')).rpc('mark_email_verified')
+  const r2 = await (await asPerson('member@example.com'))!.rpc('mark_email_verified')
   ok('and an address already confirmed still reads as confirmed', r2.data === true, JSON.stringify(r2.data))
 
   await admin.from('profiles').update({ email_verified_at: was }).eq('id', (me as any).id)

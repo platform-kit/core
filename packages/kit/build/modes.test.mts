@@ -323,8 +323,7 @@ ok('the defaults are what a site already was', DEPLOYMENT_DEFAULTS.backend === t
   const site = await loadSite(join(REPO, 'sites', 'docs'))
   const shape = deploymentShape(site, {})
   const steps = await loadSteps(site)
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ backend: boolean; content: any; repo: any; mode: string; }' is not assignable to parameter of type 'null | undefined'.
-  const on = steps.filter((s) => isOn(s, site, {}, shape))
+  const on = steps.filter((s: any) => isOn(s, site, {}, shape))
   ok('the docs site is static', shape.mode === 'static')
   ok('steps load for it', steps.length > 10, String(steps.length))
   ok('not one step needing a backend runs there', on.filter(stepNeedsBackend).length === 0,

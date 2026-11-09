@@ -284,8 +284,8 @@ else {
 
       await saveHook(sb, 'https://hook.example/build')
       const calls: any = []
-      // @ts-expect-error TS2322, from the conversion: Type '(u: URL | RequestInfo, o: any) => Promise<{ ok: true; status: number; }>' is not assignable to type '{ (input: URL | RequestInfo, init
-      const ok = await askRebuild(sb, { fetchFn: async (u, o) => { calls.push(u + ' ' + o.method); return { ok: true, status: 200 } } })
+      // @ts-expect-error TS2322, from the conversion: Type '(u: URL | RequestInfo, o: RequestInit | undefined) => Promise<{ ok: true; status: number; }>' is not assignable to type '{ (input: URL
+      const ok = await askRebuild(sb, { fetchFn: async (u, o) => { calls.push(u + ' ' + o!.method); return { ok: true, status: 200 } } })
       assert.deepEqual(ok, { asked: true, error: null }, 'a hook that answers is asked and says nothing')
       assert.deepEqual(calls, ['https://hook.example/build POST'])
 

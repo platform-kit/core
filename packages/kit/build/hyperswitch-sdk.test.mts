@@ -95,7 +95,7 @@ globalThis.document = {
   // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'HTMLElementTagNameMap[K] | HTMLElement | HTMLElementDeprecatedTagNameMap[K]'.
   createElement: () => ({}),
   // @ts-expect-error TS2740, from the conversion: Type '{ append: (script: any) => void; }' is missing the following properties from type 'HTMLHeadElement': addEventListener, removeEventList
-  head: { append: (script) => { sdkScript = script; globalThis.window.Hyper = loadedHyperFactory; script.onload() } },
+  head: { append: (script: any) => { sdkScript = script; (globalThis.window as any).Hyper = loadedHyperFactory; script.onload() } },
 }
 assert.equal(
   await loadHyperswitchSdk('https://beta.hyperswitch.io/v2'),

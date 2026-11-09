@@ -34,7 +34,7 @@ function fieldSchema(f: { type: any; validations: any[]; linkType: string; items
   }
 }
 
-export function openapiFor(index: any, { base = '', functions = '', sources = [], forms = null, sessions = null, store = false, support = false } = {}) {
+export function openapiFor(index: any, { base = '', functions = '', sources = [] as string[], forms = null, sessions = null, store = false, support = false } = {}) {
   const space = index.space
   const types = index.types.map(({ _model, ...t }: any) => t)
   const typeIds = types.map((t: any) => t.sys.id)

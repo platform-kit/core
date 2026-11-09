@@ -135,7 +135,7 @@ export function dividerSeq(messages: { id: string; seq: number; author_id: strin
 
 /* a thread's own state: how many replies, when the last one came, and whether the reader is in it
    (they wrote the root or a reply), which is one of the things that notifies them. */
-export function threadOf(root: { id?: string; author_id: any; reply_count: any; last_reply_at: any }, replies = [], me: string | null = null) {
+export function threadOf(root: { id?: string; author_id: any; reply_count: any; last_reply_at: any }, replies: { author_id: string; }[] = [], me: string | null = null) {
   const count = Number(root?.reply_count ?? replies.length ?? 0)
   const last = root?.last_reply_at || (replies.length ? (replies[replies.length - 1] as any).created_at : null)
   const mine = !!me && (root?.author_id === me || replies.some((r: any) => r?.author_id === me))
@@ -537,7 +537,7 @@ export function pollOf(message: { id?: string; kind?: string; body?: string; met
   return { options: p.options, multi: !!p.multi, closed: !!(message.poll_closed_at) }
 }
 
-export function tallyPoll(message: any, votes = [], me = '') {
+export function tallyPoll(message: any, votes: { message_id: string; option_key: string; user_id: string; }[] = [], me = '') {
   const poll = pollOf(message)
   if (!poll) return null
   const mine = new Set()

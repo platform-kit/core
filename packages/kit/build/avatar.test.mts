@@ -44,12 +44,11 @@ console.log('\nONE PERSON, ONE FACE\n')
 /* 3 · nothing draws a person from their NAME */
 {
   const theme = join(KIT, 'theme', 'src')
-  const walk = (d: any, out = []) => {
+  const walk = (d: any, out: string[] = []) => {
     for (const e of readdirSync(d, { withFileTypes: true })) {
       if (e.name.startsWith('.') || e.name === 'node_modules') continue
       const f = join(d, e.name)
       if (e.isDirectory()) walk(f, out)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
       else if (e.name.endsWith('.vue')) out.push(f)
     }
     return out

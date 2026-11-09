@@ -54,7 +54,7 @@ const backdate = (course: string, user: any, days: number) => service.from('enro
 
 try {
   const pushed = await projectCourses({ courses, db: service })
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ courses: number; lessons: number; unpublished: number; refused: never[]; }' is not assignable to parameter of type 'stri
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{ courses: number; lessons: number; unpublished: number; refused: string[]; }' is not assignable to parameter of type 'str
   ok('the declaration is projected', pushed.courses === 2 && !pushed.refused.length, pushed)
 
   /* who gets in, and the outline anybody may read */
@@ -87,8 +87,7 @@ try {
   await backdate(FREE, memberId, 7)
   ok('a form lesson is not finished until the form is answered', (await call(member, 'course_complete', { p_course: FREE, p_lesson: 'c' })).error === 'form-not-finished')
   /* A QUIZ FINISHES ITS OWN LESSON: the response completing is what records it, never a button */
-  // @ts-expect-error TS2531, from the conversion: Object is possibly 'null'.
-  const attempt = async (score, passed) => (await service.from('form_responses').insert({ form: `courses-db-form-${STAMP}`, user_id: memberId, completed_at: new Date().toISOString(), score, total: 5, passed }).select('id').single()).data.id
+  const attempt = async (score: number, passed: boolean) => (await service.from('form_responses').insert({ form: `courses-db-form-${STAMP}`, user_id: memberId, completed_at: new Date().toISOString(), score, total: 5, passed }).select('id').single()).data!.id
   /* EVERY QUIZ PASSED EARNS ITS ACHIEVEMENT: the rule the achievements push declares for it, made here the same way */
   const awards = await moduleOn('achievements')
   const AWARD = `quiz-${FREE}-c`
@@ -210,13 +209,13 @@ try {
   const OWN = `courses-db-own-${STAMP}`
   const own = parseCourse(OWN, file(`title: Own kind\naccess: { free: true }\nlessons:\n  - { key: rate, title: Rate it, kind: self-rating, ref: How sure are you? }`), { kinds: { 'self-rating': { check: null } } })
   const ownPush = await projectCourses({ courses: [...courses, own], db: service })
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ courses: number; lessons: number; unpublished: number; refused: never[]; }' is not assignable to parameter of type 'stri
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{ courses: number; lessons: number; unpublished: number; refused: string[]; }' is not assignable to parameter of type 'str
   ok('a course with a site kind\'s lesson is written', !ownPush.refused.length && (await service.from('course_lessons').select('kind').eq('course', OWN).single()).data?.kind === 'self-rating', ownPush)
   await call(member, 'course_enroll', { p_course: OWN })
   const ownDone = await call(member, 'course_complete', { p_course: OWN, p_lesson: 'rate' })
   ok('…the reader finishes it, and the course with it', ownDone.done === 1 && ownDone.lessons[0].done === true && !!ownDone.enrollment.completed_at, ownDone)
   const { data: ownRow } = await service.from('lesson_progress').select('how, enrollments!inner(course)').eq('enrollments.course', OWN).single()
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ how: any; enrollments: { course: any; }[]; } | null' is not assignable to parameter of type 'string | undefined'. Type '
+  // @ts-expect-error TS2345, from the conversion: Argument of type '{ how: string; enrollments: { course: string; }; } | null' is not assignable to parameter of type 'string | undefined'. Ty
   ok('…recorded as marked, as a text lesson is', ownRow && ownRow.how === 'marked', ownRow)
   const { error: oddKind } = await service.from('course_lessons').insert({ course: OWN, key: 'odd', position: 2, title: 'Odd', kind: 'Not a kind', ref: 'x' })
   // @ts-expect-error TS2345, from the conversion: Argument of type 'PostgrestError | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 

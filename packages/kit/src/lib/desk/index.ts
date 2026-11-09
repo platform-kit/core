@@ -98,7 +98,6 @@ export async function load() {
         return previous.map((row: any) => ({ ...row, stale: true }))
       }
     }))
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'. Type 'any' is not assignable to type 'never'.
     rows.value = sortDesk(got.flat())
     /* the list is rebuilt whole, so the open conversation must be pointed at its new row or it would
        keep saying what was owed before it was answered */

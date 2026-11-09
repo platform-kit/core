@@ -36,11 +36,10 @@ const SEAM = path.join(PRINT, 'typeset')
 
 /* ---- the seam is the only door ---- */
 {
-  const walk = (d: any, out = []) => {
+  const walk = (d: any, out: string[] = []) => {
     for (const e of fs.readdirSync(d, { withFileTypes: true })) {
       const p = path.join(d, e.name)
       if (e.isDirectory()) walk(p, out)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
       else if (/\.(mjs|js|mts|ts)$/.test(e.name)) out.push(p)
     }
     return out

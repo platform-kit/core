@@ -200,7 +200,7 @@ const yearKey = (ms: any, tz: any) => dayOf(ms, tz).day.slice(0, 4)
  * be told WHICH limit it met rather than "that time has gone". A reader who is refused without a
  * reason assumes the site is broken; a reader told "the week is full" books the week after.
  */
-export function overLimit(type: any = {}, start: any, taken = [], tz = 'UTC') {
+export function overLimit(type: any = {}, start: any, taken: { start: number; end: number; }[] = [], tz = 'UTC') {
   const L = type.limits || {}
   const dur = Math.max(5, Number(type.duration) || 60)
   const keys = { day: dayOf(start, tz).day, week: weekKey(start, tz), month: monthKey(start, tz), year: yearKey(start, tz) }

@@ -259,8 +259,7 @@ await test('stable Supabase project IDs default to site slugs and allow exact co
       const held = startHeld(root, 'hold')
       const output = await held.ready
       const ports = vitePorts(output)
-      // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: 2, message?: Error | AssertMessageFunction | undefined): assert
-      assert.equal(ports.length, 2, output)
+      assert.equal(ports.length, 2, String(output))
       held.worker.kill('SIGKILL')
       await held.exited
       const until = Date.now() + 5000

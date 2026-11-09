@@ -101,7 +101,6 @@ export default {
     }
     const spaces = await compileSpaces({ store: ctx.store, write: false, catalog })
     if (!spaces) return
-    // @ts-expect-error TS2322, from the conversion: Type '{ slug: any; name: any; kind: any; published: boolean; discoverable: boolean; welcome: string | null; groups: string[]; cover: string 
     await pushSpaces({ declared: spaces, db, quiet: true })
   },
   options: {

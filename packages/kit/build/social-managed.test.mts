@@ -84,8 +84,7 @@ try {
   const { data: currentConfigs, error: configError } = await service
     .from('social_backend_configs')
     .select('backend_id, enabled')
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(configError, null, configError?.message)
+  assert.equal(configError, null, String(configError?.message))
   const configs = new Map((currentConfigs || []).map((config) => [config.backend_id, config]))
 
   for (const backendId of backendIds) {
@@ -96,8 +95,7 @@ try {
           .from('social_backend_configs')
           .update({ enabled: true })
           .eq('backend_id', backendId)
-        // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-        assert.equal(error, null, error?.message)
+        assert.equal(error, null, String(error?.message))
         enabledBackendIds.push(backendId)
       }
       continue
@@ -251,8 +249,7 @@ try {
     connected_by: login.user.id,
     status: 'connected',
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(directAccount.error, null, directAccount.error?.message)
+  assert.equal(directAccount.error, null, String(directAccount.error?.message))
   accountIds.push(directAccountId)
   const managedAccount = await service.from('social_accounts').insert({
     id: managedAccountId,
@@ -264,8 +261,7 @@ try {
     connected_by: login.user.id,
     status: 'connected',
   })
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(managedAccount.error, null, managedAccount.error?.message)
+  assert.equal(managedAccount.error, null, String(managedAccount.error?.message))
   accountIds.push(managedAccountId)
 
   const [directCapabilities, managedCapabilities] = await Promise.all(
@@ -346,8 +342,7 @@ try {
     .from('social_accounts')
     .select('id, backend_id, provider_id, external_id')
     .in('id', [directAccountId, managedAccountId])
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(actual: unknown, expected: null, message?: Error | AssertMessageFunction | undefined): ass
-  assert.equal(listedError, null, listedError?.message)
+  assert.equal(listedError, null, String(listedError?.message))
   assert.deepEqual(
     listed.map((account) => account.backend_id).sort(),
     [route.id, 'default'].sort(),
