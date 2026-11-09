@@ -291,8 +291,7 @@ else {
 
       // @ts-expect-error TS2322, from the conversion: Type '() => Promise<{ ok: false; status: number; }>' is not assignable to type '{ (input: URL | RequestInfo, init?: RequestInit | undefined)
       const bad = await askRebuild(sb, { fetchFn: async () => ({ ok: false, status: 503 }) })
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'st
-      assert.ok(bad.asked && /503/.test(bad.error), 'a hook that refuses is recorded, not thrown')
+      assert.ok(bad.asked && /503/.test(bad.error!), 'a hook that refuses is recorded, not thrown')
       const st = await githubSettings(sb)
       assert.ok(st.hook === true && /503/.test(st.hook_error || ''), 'and the page can say so')
       await saveHook(sb, '')
@@ -326,8 +325,7 @@ else {
       /* the ref refused: nothing moves, every row stays pending with the reason */
       // @ts-expect-error TS2322, from the conversion: Type '(u: any, init?: any) => Promise<{ ok: boolean; status: number; json: () => Promise<any>; text: () => Promise<string>; } | { ok: boolea
       const r1 = await pushPending(sb, 'Tester', { fetchFn: github({ failRef: true }), message: 'Autumn list' })
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'st
-      assert.equal(r1.pushed, 0); assert.match(r1.error, /401/)
+      assert.equal(r1.pushed, 0); assert.match(r1.error!, /401/)
       for (const f of ['one', 'two']) { const r = await rows.row(U + '/' + f + '.md'); assert.equal(r.pending, true); assert.match(r.push_error, /401/) }
       assert.equal((await sb.from('content').select('path').eq('path', U + '/gone.md')).data.length, 1, 'the removal waits too')
       assert.match((await githubSettings(sb)).error, /401/)
@@ -353,7 +351,7 @@ else {
       /* a branch with no commit yet is said plainly */
       await rows.write(U + '/three.md', 'three', { collection: 'articles', slug: 'three', live: true })
       // @ts-expect-error TS2322, from the conversion: Type '() => Promise<{ ok: false; status: number; text: () => Promise<string>; }>' is not assignable to type '{ (input: URL | RequestInfo, in
-      const r4 = await pushPending(sb, 'Tester', { fetchFn: async () => ({ ok: false, status: 404, text: async () => 'Not Found' }) }); assert.match(r4.error, /no commit yet/)
+      const r4 = await pushPending(sb, 'Tester', { fetchFn: async () => ({ ok: false, status: 404, text: async () => 'Not Found' }) }); assert.match(r4.error!, /no commit yet/)
       await sb.from('content').delete().like('path', U + '/%')
       await sb.from('app_settings').upsert(['repo', 'branch', 'token', 'last_push', 'error'].map((k) => ({ key: 'github:' + k, value: was[k] || '', updated_at: new Date().toISOString() })), { onConflict: 'key' })
     })

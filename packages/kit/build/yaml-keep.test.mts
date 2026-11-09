@@ -64,27 +64,22 @@ t('the key order is the file\'s, not the object\'s', () => {
 
 t('a nested block is merged, not replaced, so its own comments live', () => {
   const out = keepComments(FILE, data({ nested: { inner: 9, other: 'two' } }))
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  assert.match(out, /# how far in/)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  assert.match(out, /inner: 9/)
+  assert.match(out!, /# how far in/)
+  assert.match(out!, /inner: 9/)
 })
 
 t('a key that goes takes its own comments with it', () => {
   // @ts-expect-error TS2790, from the conversion: The operand of a 'delete' operator must be optional.
   const out = keepComments(FILE, (() => { const d = data(); delete d.flagged; return d })())
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  assert.ok(!/flagged/.test(out), 'the key')
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  assert.ok(!/# Words that HOLD/.test(out), 'and the lines that described it')
+  assert.ok(!/flagged/.test(out!), 'the key')
+  assert.ok(!/# Words that HOLD/.test(out!), 'and the lines that described it')
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
   assert.match(out, /# THE SITE'S COMMENT POLICY/, 'but nothing else')
 })
 
 t('a key that arrives is written, with no comment invented for it', () => {
   const out = keepComments(FILE, data({ collapse: 5 }))
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  assert.match(out, /^collapse: 5$/m)
+  assert.match(out!, /^collapse: 5$/m)
 })
 
 t('what it writes still parses back to what was asked for', () => {
@@ -132,22 +127,19 @@ t('a document it cannot read is declined rather than mangled', () => {
 
 t('a date is not re-expanded into a timestamp', () => {
   const src = '---\n# when\ndate: 2026-09-28\nx: 1\n---\nbody\n'
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  assert.match(keepComments(src, { date: '2026-09-28', x: 2 }), /date: 2026-09-28/)
+  assert.match(keepComments(src, { date: '2026-09-28', x: 2 })!, /date: 2026-09-28/)
 })
 
 t('a long line is never folded', () => {
   const long = 'https://example.com/' + 'a'.repeat(200)
   const src = '---\n# u\nurl: short\n---\nbody\n'
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  assert.match(keepComments(src, { url: long }), new RegExp('url: ' + long.slice(0, 40)))
+  assert.match(keepComments(src, { url: long })!, new RegExp('url: ' + long.slice(0, 40)))
   assert.ok(!(keepComments(src, { url: long }) as any).includes('\n  '), 'not folded onto a second line')
 })
 
 t('a value whose type changes is replaced whole', () => {
   const src = '---\n# c\na: one\n---\nbody\n'
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  assert.match(keepComments(src, { a: ['one', 'two'] }), /a:\n\s+- one\n\s+- two/)
+  assert.match(keepComments(src, { a: ['one', 'two'] })!, /a:\n\s+- one\n\s+- two/)
 })
 
 t('same() is the guard that decides what to leave alone', () => {
@@ -237,8 +229,7 @@ what these are for
   assert.match(out, /free: false\s+# on, a writer may type one/, 'and the end-of-line comment')
   // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
   assert.match(out, /- astrology/, 'and the save actually happened')
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'Input | { content: Input; }'. Type 'undefined' is not assignab
-  assert.equal(matter(out).data.free, false)
+  assert.equal(matter(out!).data.free, false)
 })
 
 console.log(`\n${n - bad} passed, ${bad} failed\n`)

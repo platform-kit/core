@@ -43,14 +43,12 @@ const steps = f.steps.map((s: { id: any; after: any }) => ({ id: s.id, after: s.
 const DAYS = 90, DAY = 86400e3
 const since = Date.now() - DAYS * DAY
 const rows = log.filter((r) => r.kind === 'funnel' && r.name === name)
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-const inWin = rows.filter((r) => Date.parse(r.sent_at) >= since)
+const inWin = rows.filter((r) => Date.parse(r.sent_at!) >= since)
 /* the journey's cohort: everyone who entered in the window, and every send they had */
 const members = (await service.from('funnel_members').select('user_id, entered_at, step, last_sent_at, done_at').eq('funnel', name)).data || []
 
 const cohort = new Set(members.filter((m) => Date.parse(m.entered_at) >= since).map((m) => m.user_id))
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-const jrows = rows.filter((r) => cohort.has(r.user_id))
+const jrows = rows.filter((r) => cohort.has(r.user_id!))
 const admin = await as('admin@example.com')
 const { data: got, error } = await admin.sb.rpc('admin_funnel', { kind: 'funnel', name, days: DAYS, steps, rules: null, goal: f.goal || null, tz: 'Europe/Amsterdam' })
 ok('admin_funnel answers the administrator', !error && got && Array.isArray((got as any).steps))
@@ -79,8 +77,7 @@ if (got) {
   const goals = f.goal ? ((await service.from('events').select('user_id, occurred_at').eq('type', 'pageview').eq('path', f.goal).not('user_id', 'is', null)).data || []) : []
   const credit = (userId: string|null, at: string) => {
     const t = Date.parse(at)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-    const c = rows.filter((r) => r.user_id === userId && Date.parse(r.sent_at) > t - 7 * DAY && Date.parse(r.sent_at) <= t)
+    const c = rows.filter((r) => r.user_id === userId && Date.parse(r.sent_at!) > t - 7 * DAY && Date.parse(r.sent_at!) <= t)
       .map((r) => ({ r, clicked: r.clicked_at && Date.parse(r.clicked_at) <= t ? Date.parse(r.clicked_at) : null, opened: r.opened_at && Date.parse(r.opened_at) <= t ? Date.parse(r.opened_at) : null }))
       .filter((x) => x.clicked || x.opened)
     if (!c.length) return null
@@ -98,8 +95,7 @@ if (got) {
       const i = steps.findIndex((s: { id: string|null }) => s.id === r.email_id)
       if (i < 0) continue   /* a send of a step the files no longer have */
       if (Date.parse(at) >= since) { if (kind === 'goal') goalN++; else { total++; if (kind === 'purchase') revenue += (c as any).amount_total || 0 } }
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-      if (cohort.has(r.user_id)) { if (kind === 'goal') exp[i].goal++; else { exp[i].conversions++; if (kind === 'purchase') exp[i].revenue += (c as any).amount_total || 0 } }
+      if (cohort.has(r.user_id!)) { if (kind === 'goal') exp[i].goal++; else { exp[i].conversions++; if (kind === 'purchase') exp[i].revenue += (c as any).amount_total || 0 } }
     }
   }
   ok('the conversions credited last touch, in all', (got as any).now.conversions === total && (got as any).now.revenue === revenue && (got as any).now.goal === goalN)
@@ -125,14 +121,12 @@ else {
     const go = (u: any, l: number) => fetch(`${url}/functions/v1/email-unsubscribe?u=${u}&t=${hmac(u)}&l=${l}`)
     const r1 = await go(a.user_id, a.id)
     const row1 = (await service.from('email_log').select('unsubscribed_at').eq('id', a.id).single()).data
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-    const p1 = (await service.from('profiles').select('email_opt_out_at').eq('id', a.user_id).single()).data
+    const p1 = (await service.from('profiles').select('email_opt_out_at').eq('id', a.user_id!).single()).data
     ok('the unsubscribe link opts the person out and marks the send it was in', r1.ok && row1 && row1.unsubscribed_at && p1 && p1.email_opt_out_at)
     /* the second person's link, with the first person's send in it: opted out, nothing marked */
     const r2 = await go(b.user_id, a.id)
     const rowB = (await service.from('email_log').select('unsubscribed_at').eq('id', b.id).single()).data
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-    const p2 = (await service.from('profiles').select('email_opt_out_at').eq('id', b.user_id).single()).data
+    const p2 = (await service.from('profiles').select('email_opt_out_at').eq('id', b.user_id!).single()).data
     ok("another person's send in the link marks nothing", r2.ok && p2 && p2.email_opt_out_at && rowB && !rowB.unsubscribed_at)
     /* put back */
     await service.from('email_log').update({ unsubscribed_at: null }).in('id', [a.id, b.id])
@@ -154,8 +148,7 @@ if (served) {
     ok('a tracked click redirects to the destination with the email\'s UTM tags', r.status === 302 && q && q.get('utm_source') === name && q.get('utm_medium') === 'email' && !!q.get('utm_campaign') && to.startsWith(link.url!.split('?')[0]))
     /* the hit put back: the link's count, the log's, the event */
     await service.from('email_links').update({ hits: before }).eq('token', link.token)
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ clicks: number; clicked_at: string | null; opened_at: string | null; } | null' is not assignable to parameter of type '{
-    await service.from('email_log').update(logBefore).eq('id', link.log_id)
+    await service.from('email_log').update(logBefore!).eq('id', link.log_id)
     await service.from('email_events').delete().eq('log_id', link.log_id).gte('at', started)
   }
 }

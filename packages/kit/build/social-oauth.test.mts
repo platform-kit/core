@@ -52,8 +52,7 @@ const callback = async (state: string, params = {}) => {
   const response = await fetch(target, { headers: { apikey: anonKey }, redirect: 'manual' })
   const responseBody = await response.text()
   assert.equal(response.status, 303, `OAuth callback returns only the fixed application redirect: ${responseBody.slice(0, 1000)}`)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string | URL'. Type 'null' is not assignable to type 'string | URL'
-  const destination = new URL(response.headers.get('location'))
+  const destination = new URL(response.headers.get('location')!)
   assert.equal(destination.pathname, '/admin/social')
   return destination.searchParams.get('social_code')
 }

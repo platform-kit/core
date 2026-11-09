@@ -54,8 +54,7 @@ const routesNow = () => {
   const code = `import(${JSON.stringify(routesUrl)}).then((m) => console.log(JSON.stringify(m.publicRoutes())))`
   const r = spawnSync(process.execPath, ['-e', code], { cwd: ROOT, encoding: 'utf8' })
   if (r.status !== 0) throw new Error('routes failed: ' + String(r.stderr).slice(0, 400))
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  return JSON.parse(r.stdout.trim().split('\n').pop())
+  return JSON.parse(r.stdout.trim().split('\n').pop()!)
 }
 
 /* the probes must not already be there — a leftover from a killed run would make this lie */

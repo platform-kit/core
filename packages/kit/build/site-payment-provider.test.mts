@@ -66,8 +66,7 @@ withSite('acme-pay')
     const none = { offers: [{ sku: 'thing', kind: 'good' }], printed: [], sessions: [], pricingSkus: [], funnels: [] }
     const r = checkDeploy({}, none, site.modules, [], null, [], modules, site)
     console.log(JSON.stringify({ missing: r.missing || [], wrong: r.wrong || [] }))`], { cwd: WORK, encoding: 'utf8' })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  let verdict = null; try { verdict = JSON.parse((check.stdout || '').trim().split('\n').pop()) } catch { /* below */ }
+  let verdict = null; try { verdict = JSON.parse((check.stdout || '').trim().split('\n').pop()!) } catch { /* below */ }
   ok('the deploy check asks for the secret the site\'s provider declares', !!verdict && JSON.stringify(verdict.missing).includes('ACME_PAY_KEY'), (check.stdout || '') + (check.stderr || ''))
 }
 

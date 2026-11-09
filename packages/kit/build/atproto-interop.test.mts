@@ -77,8 +77,7 @@ const OUTSIDER = 'did:plc:outsideoutsideoutsideout'
 const asked: any = []
 const outsidePost = { uri: `at://${OUTSIDER}/app.bsky.feed.post/3kzzzzzzzzzzz`, cid: 'bafyreie5737gdxlw5i64vzichcalba3z2v5n6icifvx5xytvske7mr3hpm', author: { did: OUTSIDER, handle: 'someone.elsewhere.test' }, record: { $type: 'app.bsky.feed.post', text: 'hello from elsewhere', createdAt: new Date().toISOString() }, indexedAt: new Date(Date.now() + 60000).toISOString() }
 const appview = http.createServer(async (req, res) => {
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string | URL'. Type 'undefined' is not assignable to type 'str
-  const u = new URL(req.url, 'http://x')
+  const u = new URL(req.url!, 'http://x')
   const nsid = u.pathname.replace('/xrpc/', '')
   try {
     const token = String(req.headers.authorization || '').replace(/^Bearer\s+/, '')

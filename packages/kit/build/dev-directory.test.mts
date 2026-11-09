@@ -184,8 +184,7 @@ try {
         url: 'http://secondary.localhost:8181/',
       }])
       const page = await fetch(`http://127.0.0.1:${directoryPort}/`)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-      assert.doesNotMatch(page.headers.get('content-security-policy'), /frame-src/)
+      assert.doesNotMatch(page.headers.get('content-security-policy')!, /frame-src/)
       assert.match(await page.text(), /src="\/__platformkit\/preview\/selected\.png"/)
       const [firstPreview, secondaryPreview] = await Promise.all([
         fetch(`http://127.0.0.1:${directoryPort}/__platformkit/preview/selected.png`),

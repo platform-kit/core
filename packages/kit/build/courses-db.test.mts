@@ -92,8 +92,7 @@ try {
   const awards = await moduleOn('achievements')
   const AWARD = `quiz-${FREE}-c`
   if (awards) await service.from('achievements').insert({ slug: AWARD, title: 'Passed C', event: 'quiz_passed', match: { course: FREE, lesson: 'c' } })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  const passes = async () => (await service.from('events').select('*', { count: 'exact', head: true }).eq('type', 'quiz_passed').eq('user_id', memberId).contains('props', { course: FREE, lesson: 'c' })).count
+  const passes = async () => (await service.from('events').select('*', { count: 'exact', head: true }).eq('type', 'quiz_passed').eq('user_id', memberId!).contains('props', { course: FREE, lesson: 'c' })).count
   const tries = [await attempt(2, false)]
   const failed = await call(member, 'course_state', { p_course: FREE })
   ok('a scored form not passed does not finish it', failed.lessons[2].done === false && (await call(member, 'course_complete', { p_course: FREE, p_lesson: 'c' })).error === 'form-not-finished')
@@ -103,8 +102,7 @@ try {
   const done = await call(member, 'course_state', { p_course: FREE })
   // @ts-expect-error TS2345, from the conversion: Argument of type 'number | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 'string 
   ok('the first pass records a quiz_passed event', (await passes()) === 1, await passes())
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  if (awards) ok('…and earns that quiz’s achievement', !!(await service.from('user_achievements').select('slug').eq('user_id', memberId).eq('slug', AWARD).maybeSingle()).data)
+  if (awards) ok('…and earns that quiz’s achievement', !!(await service.from('user_achievements').select('slug').eq('user_id', memberId!).eq('slug', AWARD).maybeSingle()).data)
   ok('passing the form finishes its lesson as the response completes', done.lessons[2].done === true)
   ok('…keeping the best attempt and counting them', done.lessons[2].quiz && done.lessons[2].quiz.score === 4 && done.lessons[2].quiz.passed === true && done.lessons[2].quiz.attempts === 2, done.lessons[2].quiz)
   tries.push(await attempt(1, false))
@@ -120,19 +118,16 @@ try {
   const cert = await call(anon, 'certificate_public', { p_id: done.certificate_id })
   ok('anybody holding the certificate\'s address can check it', cert && cert.course === 'Free one' && cert.slug === FREE && !!cert.name)
   ok('a made-up address is no certificate', (await call(anon, 'certificate_public', { p_id: 'nothing-here' })) === null)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  const { count: events } = await service.from('events').select('*', { count: 'exact', head: true }).eq('type', 'course_completed').eq('user_id', memberId).contains('props', { course: FREE })
+  const { count: events } = await service.from('events').select('*', { count: 'exact', head: true }).eq('type', 'course_completed').eq('user_id', memberId!).contains('props', { course: FREE })
   // @ts-expect-error TS2345, from the conversion: Argument of type 'number | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 'string 
   ok('finishing is an event, for a site\'s achievement rule', events === 1, events)
   const { data: rule } = await service.from('achievements').select('slug').eq('event', 'course_completed').limit(1).maybeSingle()
   if (rule) {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-    const { data: won } = await service.from('user_achievements').select('slug').eq('user_id', memberId).eq('slug', rule.slug).maybeSingle()
+    const { data: won } = await service.from('user_achievements').select('slug').eq('user_id', memberId!).eq('slug', rule.slug).maybeSingle()
     ok('…and a site\'s rule on it awards its achievement', !!won)
   }
   await service.from('form_responses').delete().in('id', tries)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  await service.from('events').delete().eq('type', 'quiz_passed').eq('user_id', memberId).contains('props', { course: FREE })
+  await service.from('events').delete().eq('type', 'quiz_passed').eq('user_id', memberId!).contains('props', { course: FREE })
   if (awards) await service.from('achievements').delete().eq('slug', AWARD)
 
   /* a purchase gets somebody in on the way, a refund closes it, a second purchase resumes it */
@@ -171,8 +166,7 @@ try {
   const owed = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r) => r.course === FREE && r.lesson !== '*complete' && r.email === 'member2@example.com')
   // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
   ok('a lesson released after somebody started is owed, the earliest first, one at a time', owed.length === 1 && owed[0].lesson === 'b', owed)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  const { data: e2 } = await service.from('enrollments').select('id').eq('course', FREE).eq('user_id', await idOf('member2@example.com')).single()
+  const { data: e2 } = await service.from('enrollments').select('id').eq('course', FREE).eq('user_id', (await idOf('member2@example.com'))!).single()
   await service.from('course_notices').insert({ enrollment: (e2 as any).id, lesson: 'b' })
   await call(other, 'course_complete', { p_course: FREE, p_lesson: 'b' })
   await backdate(FREE, await idOf('member2@example.com'), 5)

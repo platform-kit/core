@@ -101,8 +101,7 @@ for (const rel of SITES) {
   {
     const code = "const { publicRoutes } = await import('platformkit/build/routes.mjs'); console.log(JSON.stringify(publicRoutes()))"
     const r = spawnSync(process.execPath, ['--input-type=module', '-e', code], { cwd: root, env: cleanEnv(), encoding: 'utf8' })
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-    try { routes = JSON.parse((r.stdout || '').trim().split('\n').pop()) } catch { /* reported next */ }
+    try { routes = JSON.parse((r.stdout || '').trim().split('\n').pop()!) } catch { /* reported next */ }
     ok(rel + ' lists its routes', Array.isArray(routes) && routes.length > 0, (r.stderr || '').split('\n').filter(Boolean).slice(-2).join(' | '))
   }
   ok(rel + ' has its own routes, not another site\'s', routes.includes('/') && routes.length >= 3, routes.length + ': ' + routes.slice(0, 4).join(' '))

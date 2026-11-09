@@ -58,7 +58,7 @@ try {
   for (const t of ['network_posts', 'network_follows', 'network_blocks', 'network_mutes', 'network_pins', 'network_likes', 'network_reposts']) {
     const col = { network_posts: 'author_id', network_follows: 'follower_id', network_blocks: 'blocker_id', network_mutes: 'muter_id', network_pins: 'user_id', network_likes: 'author_id', network_reposts: 'author_id' }[t]
     // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-    await service.from(t).delete().in(col, people)
+    await service.from(t).delete().in(col!, people)
   }
   await service.from('network_moderation').delete().in('subject_id', people)
   await service.from('profiles').update({ public_profile: false }).eq('id', A.id)
@@ -217,13 +217,10 @@ try {
   ok('a moderator removes it', !removed.error, removed.error?.message)
   ok('…and nobody else reads it', !(await sees(B.sb, [everyone.id])).has(everyone.id) && !(await sees(C.sb, [everyone.id])).has(everyone.id))
   ok('…but its author still does', (await sees(A.sb, [everyone.id])).has(everyone.id))
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  const answered = (await service.from('network_moderation').select('answered_at').eq('id', rep.data).single()).data
+  const answered = (await service.from('network_moderation').select('answered_at').eq('id', rep.data!).single()).data
   ok('…and the report is answered', !!answered?.answered_at)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  const rewrite = await M.sb.from('network_moderation').update({ reason: 'changed' }).eq('id', rep.data).select()
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  const erase = await M.sb.from('network_moderation').delete().eq('id', rep.data).select()
+  const rewrite = await M.sb.from('network_moderation').update({ reason: 'changed' }).eq('id', rep.data!).select()
+  const erase = await M.sb.from('network_moderation').delete().eq('id', rep.data!).select()
   ok('the record cannot be edited or deleted, even by a moderator', (rewrite.error || !(rewrite.data || []).length) && (erase.error || !(erase.data || []).length))
 
   const cPost = await post(C, { text: 'C before', audience: 'here' })

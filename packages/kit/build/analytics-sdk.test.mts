@@ -197,8 +197,7 @@ if (browser) {
       const batch = decode({ api_key: src.key, batch: [{ event: 'server_signup', distinct_id: 'u-9', properties: { plan: 'monthly' }, timestamp: '2026-09-21T22:01:00.000Z', type: 'capture' }] })
       ok('the wire decoder reads plain, base64 and gzip-js alike, and a server batch', () => {
         for (const j of [plain, b64, gz]) { const d = decode(j); assert.equal(d.key, src.key); const r = toRow(d.events[0]); assert.equal(r.type, '$pageview'); assert.equal(r.anon_id, ev.properties.$device_id); assert.equal(r.session_id, ev.properties.$session_id); assert.equal(r.distinct_id, 'u-1'); assert.equal(r.path, '/x'); assert.equal(r.ref, null); assert.equal(r.props.mark, mark); assert.ok(!('token' in r.props) && !('$device_id' in r.props)) }
-        // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-        assert.equal(batch.key, src.key); const r = toRow(batch.events[0]); assert.equal(r.type, 'server_signup'); assert.equal(r.distinct_id, 'u-9'); assert.ok(/^[0-9a-f-]{36}$/.test(r.anon_id), 'a non-uuid id made one'); assert.equal(r.props.plan, 'monthly')
+        assert.equal(batch.key, src.key); const r = toRow(batch.events[0]); assert.equal(r.type, 'server_signup'); assert.equal(r.distinct_id, 'u-9'); assert.ok(/^[0-9a-f-]{36}$/.test(r.anon_id!), 'a non-uuid id made one'); assert.equal(r.props.plan, 'monthly')
         assert.equal(kindOf('/e/'), 'events'); assert.equal(kindOf('/i/v0/e/'), 'events'); assert.equal(kindOf('/flags/'), 'flags'); assert.equal(kindOf('/array/x/config.js'), 'config'); assert.equal(kindOf('/s/'), 'recordings'); assert.equal(kindOf('/'), null)
       })
       /* the served door: a server's /batch/ plain and gzipped, an unregistered token */
@@ -214,8 +213,7 @@ if (browser) {
         assert.equal(b1.status, 200); assert.equal(b2.status, 200); assert.equal(b3.status, 401); assert.equal(b3.body.status, 0)
         assert.deepEqual(serverRows.map((r) => r.distinct_id).sort(), ['u-10', 'u-9'])
         assert.equal(flags.status, 200); assert.deepEqual(flags.body.flags, {}); assert.equal(flags.body.sessionRecording, false); assert.deepEqual(flags.body.supportedCompression, ['gzip-js'])
-        // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-        assert.equal(cfg.status, 200); assert.ok(/application\/javascript/.test(cfg.headers.get('content-type'))); assert.ok(cfgText.includes('_POSTHOG_REMOTE_CONFIG'))
+        assert.equal(cfg.status, 200); assert.ok(/application\/javascript/.test(cfg.headers.get('content-type')!)); assert.ok(cfgText.includes('_POSTHOG_REMOTE_CONFIG'))
       })
       /* the real posthog-js in a page, api_host at the site's /api/events: a $pageview, identify, capture, no page errors */
       if (POSTHOG_DIST) {

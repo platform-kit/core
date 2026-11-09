@@ -316,8 +316,7 @@ try {
     /* the staff member's own purchase and a guest's conversation, made here rather than hoped for in a seed */
     const tag = 'probe-subject-' + Date.now().toString(36)
     if (staff) await db.from('purchases').insert({ user_id: staff.id, sku: tag, key: 'probe', kind: 'download', status: 'paid', stripe_checkout_session_id: 'cs_' + tag })
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-    const mine = (await db.from('purchases').select('sku').eq('user_id', staff?.id).limit(5)).data || []
+    const mine = (await db.from('purchases').select('sku').eq('user_id', staff?.id!).limit(5)).data || []
     /* a support conversation whose contact is a guest — no account behind it at all */
     const { data: guestContact } = await db.from('support_contacts').insert({}).select('id').single()
     const { data: guestConv } = guestContact ? await db.from('support_conversations').insert({ contact_id: guestContact.id }).select('id, contact_id').single() : { data: null }
@@ -347,8 +346,7 @@ try {
       /* THE ASSERTION. Whatever it answered, it is not the asker's shopping. */
       for (const p of mine) {
         ok('the asker\u2019s own purchase (' + p.sku + ') is not in an answer about somebody else',
-          // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-          !said.includes(p.sku), said.slice(0, 200))
+          !said.includes(p.sku!), said.slice(0, 200))
       }
       ok('a guest with no account is refused rather than substituted',
         /cannot see|error/i.test(said), said.slice(0, 160))
@@ -375,8 +373,7 @@ try {
       /* and the whole answer, not just the tool result */
       const done = await get(run.id)
       for (const p of mine) {
-        // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-        ok('nor in what the bot said', !String(done!.said || '').includes(p.sku), String(done!.said || '').slice(0, 160))
+        ok('nor in what the bot said', !String(done!.said || '').includes(p.sku!), String(done!.said || '').slice(0, 160))
       }
     }
 
@@ -461,8 +458,7 @@ try {
        */
       const live = (await db.from('content').select('text').eq('path', 'content/books/' + BOOK + '.md').maybeSingle()).data!.text
       const { data: draft } = await db.from('content_drafts').select('text').eq('path', 'content/books/' + BOOK + '.md').maybeSingle()
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-      ok('the introduction is written as a draft', !!(draft && /outlived almost everything/.test(draft.text)), draft ? 'a draft with other words' : 'no draft at all')
+      ok('the introduction is written as a draft', !!(draft && /outlived almost everything/.test(draft.text!)), draft ? 'a draft with other words' : 'no draft at all')
       ok('and the live book is untouched until somebody publishes it', live === before)
       /* put it back: this is a test, and the row is the site's content */
       await db.from('content_drafts').delete().eq('path', 'content/books/' + BOOK + '.md')

@@ -47,8 +47,7 @@ await t('with no database in reach there is no best seller, and it says why', as
     const r = execSync(`${process.execPath} -e "import(process.argv[1]).then(m => m.salesReport()).then(r => console.log(JSON.stringify(r)))" ${JSON.stringify(salesModule)}`,
       /* and with no stack in its environment either: the end-to-end run hands every test one */
       { cwd: tmp, encoding: 'utf8', env: Object.fromEntries(Object.entries(process.env).filter(([k]) => !/SUPABASE|PLATFORMKIT_TEST_|DB_URL/.test(k))) })
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-    const out = JSON.parse(r.trim().split('\n').pop())
+    const out = JSON.parse(r.trim().split('\n').pop()!)
     assert.equal(out.bestseller, null, 'a site with no database named a best seller')
     assert.deepEqual(out.books, {})
     assert.ok(out.note, 'it did not say why')
@@ -63,9 +62,8 @@ else {
   const { createClient } = await import('@supabase/supabase-js')
   const admin = createClient(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
   const env = { ...process.env, SUPABASE_URL: cfg.API_URL, SUPABASE_SERVICE_ROLE_KEY: cfg.SERVICE_ROLE_KEY }
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
   const run = () => JSON.parse(execSync(`${process.execPath} -e "import(process.argv[1]).then(m => m.salesReport({ dir: process.argv[2] })).then(r => console.log(JSON.stringify(r)))" ${JSON.stringify(salesModule)} ${JSON.stringify(SCRATCH)}`,
-    { cwd: process.cwd(), encoding: 'utf8', env }).trim().split('\n').pop())
+    { cwd: process.cwd(), encoding: 'utf8', env }).trim().split('\n').pop()!)
 
   /* which offers name a book at all — without one, no purchase can be attributed */
   let offers = {}

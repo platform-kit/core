@@ -46,8 +46,7 @@ const ask = async (body: { collection?: string; slug?: string; class?: string; e
   const r = await fetch(fn, { method: 'POST', headers: { apikey: anon, 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) }, body: JSON.stringify(body) })
   return { status: r.status, data: await r.json().catch(() => ({})) }
 }
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-const fullChapters = (raw: any) => lasts.filter((s) => String(raw || '').includes(s)).length
+const fullChapters = (raw: any) => lasts.filter((s) => String(raw || '').includes(s!)).length
 
 const member = await tokenOf('member@example.com'), free = await tokenOf('free@example.com')
 if (!member || !free) { note('skipped — the seed has no member@ or free@ account'); leave(0) }

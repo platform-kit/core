@@ -238,10 +238,8 @@ try {
   ok('and is told nothing done to anybody else', mine.every((m: { kind: string }) => m.kind !== 'report'))
   // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
   ok('somebody it was not done to reads none of it', !((await nobody.sb.rpc('space_my_record')).data || []).length)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  ok('a record cannot be changed by the person it is about', !!(await two.sb.from('space_moderation').update({ until: null }).eq('id', mute)).error
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-    || !!(await service.from('space_moderation').select('until').eq('id', mute).single()).data!.until)
+  ok('a record cannot be changed by the person it is about', !!(await two.sb.from('space_moderation').update({ until: null }).eq('id', mute!)).error
+    || !!(await service.from('space_moderation').select('until').eq('id', mute!).single()).data!.until)
   ok('nor read as a table by anybody', !((await one.sb.from('space_moderation').select('id')).data || []).length)
 
   /* ---- muting is a fence, not a filter ---- */
@@ -254,8 +252,7 @@ try {
   ok('and they cannot write in it either', !!(await write(two, dm)))
   ok('somebody who is not muted still can', !(await write(out, comm.channel)))
   /* it ends by itself */
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  await service.from('space_moderation').update({ until: new Date(Date.now() - 6e4).toISOString() }).eq('id', mute)
+  await service.from('space_moderation').update({ until: new Date(Date.now() - 6e4).toISOString() }).eq('id', mute!)
   ok('a mute ends by itself when its span does', !(await write(two, comm.channel)), 'still refused after the span')
 
   /* ---- a member removed ---- */

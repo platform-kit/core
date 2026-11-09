@@ -33,8 +33,7 @@ const RUN = {
 
 {
   const r = child('console.log(JSON.stringify(t.runStackFrom()))', RUN)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  const s = JSON.parse(r.out.trim().split('\n').pop())
+  const s = JSON.parse(r.out.trim().split('\n').pop()!)
   ok('under the run, the stack is the run\'s own — not the dev stack beside it', s.api === 'http://127.0.0.1:40000' && s.anon === 'anon', r.out)
   ok('…with its database, functions, mail and app', s.db.endsWith(':40001/postgres') && s.functions.endsWith('/functions/v1') && s.mail === 'http://127.0.0.1:40005' && s.app === 'http://localhost:40900' && s.site === 'demo', r.out)
 }

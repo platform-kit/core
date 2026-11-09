@@ -46,8 +46,7 @@ const { data: books } = await service.from('content').select('path, text').like(
 const printed = (books ?? []).find((b) => /^print:/m.test(b.text || ''))
 if (!printed) { notHere('print-jobs-db', 'the site has no book with a print block in its rows'); process.exit(0) }
 const BOOK = printed.path.replace(/^content\/books\//, '').replace(/\.md$/, '')
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-const CONTENTS = ((/\n  contents:\s*\n\s+- (\w+)/.exec(printed.text) || [])[1]) || 'parts'
+const CONTENTS = ((/\n  contents:\s*\n\s+- (\w+)/.exec(printed.text!) || [])[1]) || 'parts'
 
 try {
   /* ─── a set waits for its interior, which the browser sets ─── */

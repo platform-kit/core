@@ -180,8 +180,7 @@ try {
 
   const first = await support.sb.rpc('space_choose', { p_message: offered!.id, p_key: 'bb' })
   ok('somebody in the room takes it', !!first.data, (first.error || {}).message)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  const said = (await admin.sb.from('space_messages').select('body, author_id, meta').eq('id', first.data).single()).data
+  const said = (await admin.sb.from('space_messages').select('body, author_id, meta').eq('id', first.data!).single()).data
   ok('\u2026and the press is their own message, in their own name', said && said.author_id === support.id, said && said.author_id)
   ok('\u2026carrying the words the OFFER said, never the client\u2019s', said && said.body === 'Today', said && said.body)
   ok('\u2026and saying which offer it answers', said && said.meta && (said.meta as any).chose && (said.meta as any).chose.message === offered!.id)
@@ -769,16 +768,13 @@ try {
     && dmMine.last.author === support.id && String(dmMine.last.body).includes('one back') && !!dmMine.last_message_at)
 
   /* unread is the same subtraction the rest of the surface makes */
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  await service.from('channel_members').update({ last_read_seq: 0 }).eq('channel_id', dmChan).eq('user_id', admin.id)
+  await service.from('channel_members').update({ last_read_seq: 0 }).eq('channel_id', dmChan!).eq('user_id', admin.id)
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
   const dmUnreadRow = ((await admin.sb.rpc('space_dms')).data || []).find((d: { channel: string|null }) => d.channel === dmChan)
   ok('unread is a count and the place can say how many are waiting', dmUnreadRow && dmUnreadRow.unread === 2)
   /* and it is each person's own: the other side has caught up, and says so in the same read */
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  const seqNow = ((await service.from('channels').select('last_seq').eq('id', dmChan).maybeSingle()).data || {}).last_seq
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-  await service.from('channel_members').update({ last_read_seq: seqNow }).eq('channel_id', dmChan).eq('user_id', support.id)
+  const seqNow = ((await service.from('channels').select('last_seq').eq('id', dmChan!).maybeSingle()).data || {}).last_seq
+  await service.from('channel_members').update({ last_read_seq: seqNow }).eq('channel_id', dmChan!).eq('user_id', support.id)
   // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
   const dmReadRow = ((await support.sb.rpc('space_dms')).data || []).find((d: { channel: string|null }) => d.channel === dmChan)
   ok('and it is each person\'s own', dmReadRow && dmReadRow.unread === 0)

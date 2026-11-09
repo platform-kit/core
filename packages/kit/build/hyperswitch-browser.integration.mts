@@ -82,8 +82,7 @@ const deno = (args: any[]) => {
     },
   })
   if (result.status !== 0) throw new Error(`deno step failed: ${result.stderr || result.stdout}`)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-  return JSON.parse(result.stdout.trim().split('\n').pop())
+  return JSON.parse(result.stdout.trim().split('\n').pop()!)
 }
 
 const { launch, context: browserContext } = await import('./browser.mjs')

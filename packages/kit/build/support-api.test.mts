@@ -192,10 +192,8 @@ try {
         for (const [k, v] of Object.entries(tokens)) assert.ok(v, k + " is set on another origin (the design's tokens travel with the widget)")
         await p.locator('.sp-choice').first().waitFor({ timeout: 10000 }).catch(() => {})   /* the desk's prompt and its choices arrive a beat after the panel */
         if (await p.locator('.sp-choice').count()) assert.ok(await p.evaluate(() => { const el = document.querySelector('.sp-choice'); return el && parseFloat(getComputedStyle(el).borderWidth) > 0 }), 'a choice keeps its hairline')
-        // @ts-expect-error TS2345, from the conversion: Argument of type 'Element | null' is not assignable to parameter of type 'Element'. Type 'null' is not assignable to type 'Element'.
-        assert.ok(await p.evaluate(() => getComputedStyle(document.querySelector('.sw-btn')).backgroundColor !== 'rgba(0, 0, 0, 0)'), 'the launcher keeps its fill')
-        // @ts-expect-error TS2345, from the conversion: Argument of type 'HTMLHeadingElement | null' is not assignable to parameter of type 'Element'. Type 'null' is not assignable to type 'Elemen
-        const host = await p.evaluate(() => { const h = document.querySelector('h1'); const cs = getComputedStyle(h); return cs.fontFamily + '|' + cs.color })
+        assert.ok(await p.evaluate(() => getComputedStyle(document.querySelector('.sw-btn')!).backgroundColor !== 'rgba(0, 0, 0, 0)'), 'the launcher keeps its fill')
+        const host = await p.evaluate(() => { const h = document.querySelector('h1'); const cs = getComputedStyle(h!); return cs.fontFamily + '|' + cs.color })
         assert.ok(/sans-serif/.test(host) && /rgb\(0, 0, 0\)/.test(host), "the host page's own text is untouched: " + host)
         /* a prompt's picture is the site's, not the page's */
         const imgs = await p.evaluate(() => [...document.querySelectorAll('.sp img')].map((i: any) => ({ src: i.src, ok: i.complete && i.naturalWidth > 0 })))
