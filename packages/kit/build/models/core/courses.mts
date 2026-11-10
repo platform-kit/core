@@ -23,7 +23,7 @@ function lessonOut(l: any) {
   const track = l.video ? clean({ type: /\.(mp3|m4a|wav|ogg)(\?|$)/i.test(l.video) ? 'audio' : 'video', src: l.video, title: l.videoTitle }) : null
   const media = [...(track ? [track] : []), ...(more.media || [])]
   const downloads = [...(l.download ? [{ title: l.downloadTitle || 'Download', src: l.download }] : []), ...(more.downloads || [])]
-  return clean({ key: l.key, title: l.title, section: l.section, kind: l.kind && l.kind !== 'text' ? l.kind : undefined, ref: l.kind && l.kind !== 'text' ? l.ref : undefined, required: l.required === false ? false : undefined, media: media.length ? media : undefined, downloads: downloads.length ? downloads : undefined })
+  return clean({ key: l.key, title: l.title, section: l.section, kind: l.kind && l.kind !== 'text' ? l.kind : undefined, ref: l.kind && l.kind !== 'text' ? l.ref : undefined, required: l.required === false ? false : undefined, form: (!l.kind || l.kind === 'text') && l.form ? l.form : undefined, answers: (!l.kind || l.kind === 'text') && l.form && l.answers === 'required' ? 'required' : undefined, media: media.length ? media : undefined, downloads: downloads.length ? downloads : undefined })
 }
 
 /* every record the course builder saves, so a save cannot bend a file */
@@ -55,7 +55,7 @@ export default {
         const [media, ...restMedia] = Array.isArray(l.media) ? l.media : l.media ? [l.media] : []
         const [dl, ...restDl] = Array.isArray(l.downloads) ? l.downloads : []
         const more = clean({ media: restMedia, downloads: restDl })
-        return clean({ key: l.key, title: l.title, section: l.section, kind: l.kind || 'text', ref: l.ref, required: l.required !== false, text: texts[l.key], video: media && media.src, videoTitle: media && media.title, download: dl && dl.src, downloadTitle: dl && dl.title, more: Object.keys(more).length ? more : undefined })
+        return clean({ key: l.key, title: l.title, section: l.section, kind: l.kind || 'text', ref: l.ref, required: l.required !== false, form: l.form, answers: l.form ? (l.answers === 'required' ? 'required' : 'optional') : undefined, text: texts[l.key], video: media && media.src, videoTitle: media && media.title, download: dl && dl.src, downloadTitle: dl && dl.title, more: Object.keys(more).length ? more : undefined })
       })
       const cohorts = (Array.isArray(d.cohorts) ? d.cohorts : []).map((c) => clean({ key: c.key, starts: c.starts instanceof Date ? c.starts.toISOString().slice(0, 10) : c.starts, space: c.space }))
       return { data: clean({ title: d.title, image: d.image, position: d.position, published: d.published !== false, free: a.free === true, skus: a.skus, tiers: a.tiers, release: d.release || 'all', drip: d.drip || 'lesson', every: d.every, inOrder: d.inOrder === true, certificate: d.certificate === true, cohorts, lessons }), content: about }
@@ -81,7 +81,7 @@ export default {
     certificate: z.boolean().meta({ label: 'A certificate on finishing' }).optional(),
     cohorts: z.array(z.object({ key: z.string(), starts: z.string(), space: z.string().optional() })).meta({ label: 'Cohorts', widget: 'rows', kind: 'list', of: 'group', fields: [{ key: 'key', label: 'Name', kind: 'text' }, { key: 'starts', label: 'Starts', kind: 'date' }, { key: 'space', label: 'Space it meets in', kind: 'reference', options: 'comment-spaces' }], help: 'somebody joins the next cohort to start', shown: { field: 'release', is: 'is', value: 'cohort' } }).optional(),
     lessons: z.array(z.object({
-      key: z.string(), title: z.string(), section: z.string().optional(), kind: z.string().optional(), ref: z.string().optional(), required: z.boolean().optional(),
+      key: z.string(), title: z.string(), section: z.string().optional(), kind: z.string().optional(), ref: z.string().optional(), required: z.boolean().optional(), form: z.string().optional(), answers: z.enum(['optional', 'required']).optional(),
       text: z.string().optional(), video: z.string().optional(), videoTitle: z.string().optional(), download: z.string().optional(), downloadTitle: z.string().optional(), more: z.any().optional(),
     })).meta({ label: 'Lessons', widget: 'rows', kind: 'list', of: 'group', help: 'in order; drag to move one', fields: [
       { key: 'title', label: 'Title', kind: 'text' },
@@ -90,6 +90,8 @@ export default {
       { key: 'kind', label: 'Lesson', kind: 'reference', options: 'course-kinds' },
       { key: 'ref', label: 'Which one', kind: 'text', help: 'a chapter is <book>#<n>; an article, a form or a session type is its address; a lesson of the site\'s own kind is what that kind asks for', shown: { field: 'kind', is: 'not-in', value: ['text', undefined, ''] } },
       { key: 'text', label: 'Text', kind: 'markdown', shown: { field: 'kind', is: 'in', value: ['text', undefined, ''] } },
+      { key: 'form', label: 'Workbook form', kind: 'text', help: 'a workbook form\'s address, shown under the lesson\'s text for the reader to answer', shown: { field: 'kind', is: 'in', value: ['text', undefined, ''] } },
+      { key: 'answers', label: 'Its answers', kind: 'select', choices: [{ value: 'optional', label: 'Optional' }, { value: 'required', label: 'Needed to finish the lesson' }], shown: { field: 'form', is: 'not-in', value: [undefined, ''] } },
       { key: 'video', label: 'Video or audio', kind: 'url' },
       { key: 'videoTitle', label: 'Its title', kind: 'text' },
       { key: 'download', label: 'Download', kind: 'file' },

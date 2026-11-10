@@ -66,6 +66,7 @@ const KIT_TESTS = [
   ['generate.test.mts'],      /* platformkit generate: every kind at both levels into copies, held to the real checks; never overwrites */
   on('courses') && ['courses.test.mts'],       /* courses without a database: the file grammar, the builder's round trip, lesson links, the certificate PDF */
   on('courses') && ['courses-db.test.mts'],    /* and against the stack: who gets in, what opens when, completion, certificates, a refund and a return, the emails owed */
+  on('courses') && on('forms') && ['course-workbook-db.test.mts'],   /* a lesson's workbook form: answers required, private from administrators, shared with a coach and withdrawn; the list kept in order, a workbook revised */
   ['member-panels.test.mts'],   /* the member card's panels: the kit's three by module, a site's off, own panels and order, the theme's words, no site named */
   on('spaces') && ['member-panels-db.test.mts'],   /* the card's readings through may_see_member, refused as empty to anybody else, and the card and the admin agreeing on purchases */   /* PlatformKit is one package, platformkit: the retired names gone, the command and the theme packed, the command running from the packed copy */   /* a site's own adapter, registered through its own module and selected, with no change to the kit */
   on('store') && ['payment-provider-db.test.mts'],   /* provider references and event ids kept apart by provider, against the stack */

@@ -172,5 +172,25 @@ ok('…owning its schema, its push, its function, its routes and its sweep', mod
   ok('…and a course with problems is refused', parseCourse('q', `---\ntitle: Q\naccess: { free: true }\nlessons:\n  - { key: one, kind: form, ref: f, achievement: yes }\n---\n`).problems.some((p) => /achievement is an object/.test(p)))
 }
 
+/* a lesson's workbook form (openspec: courses) */
+{
+  const WB = `---\ntitle: W\naccess: { free: true }\nlessons:\n  - { key: look, title: Look, form: notes, answers: required }\n  - { key: think, title: Think, form: notes }\n---\n\n## look\n\nLook.\n\n## think\n\nThink.\n`
+  const forms = { notes: { workbook: true }, quiz: { workbook: false } }
+  const c = parseCourse('w', WB, { forms })
+  ok('a text lesson carries a workbook form, required or optional', !c.problems.length && c.lessons[0].form === 'notes' && c.lessons[0].answers_required === true && c.lessons[1].answers_required === false, c.problems.join())
+  ok('a lesson with no form has none', parseCourse('writing-plainly', FILE).lessons.every((l: any) => l.form === null && l.answers_required === false))
+  const p = (raw: string) => parseCourse('w', raw, { forms }).problems.join(' | ')
+  ok('a form that is not there is named', /there is no form called gone/.test(p(WB.replace('form: notes, answers', 'form: gone, answers'))))
+  ok('a form that is not a workbook form is named', /quiz is not a workbook form/.test(p(WB.replace('form: notes, answers', 'form: quiz, answers'))))
+  ok('only a text lesson carries one', /only a text lesson carries a form/.test(p(WB.replace('{ key: think, title: Think, form: notes }', '{ key: think, title: Think, kind: article, ref: a, form: notes }'))))
+  ok('answers is required or optional', /answers is required or optional, not always/.test(p(WB.replace('answers: required', 'answers: always'))))
+  ok('answers with no form is named', /names no form/.test(p(WB.replace('{ key: think, title: Think, form: notes }', '{ key: think, title: Think, answers: required }'))))
+  ok('workbook is never a lesson key', /that key is the address of the course's workbook/.test(p(WB.replace('key: think', 'key: workbook').replace('## think', '## workbook'))))
+  const d: any = model.grammar.parse(WB)
+  ok('the course builder carries a lesson\'s form and its answers', d.data.lessons[0].form === 'notes' && d.data.lessons[0].answers === 'required' && d.data.lessons[1].answers === 'optional')
+  const back = model.grammar.serialise({ data: d.data, content: d.content })
+  ok('…and saves them back as they were', JSON.stringify(parseCourse('w', back, { forms })) === JSON.stringify(c), back)
+}
+
 console.log(fail ? `courses: ${fail} failed, ${pass} passed` : `courses: all ${pass} checks passed`)
 process.exit(fail ? 1 : 0)

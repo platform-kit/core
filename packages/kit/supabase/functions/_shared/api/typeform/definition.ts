@@ -10,7 +10,7 @@
  * entry on the field before the slide it guards. Ids: the form's is its slug, a field's id and ref its name, a
  * choice's its value.
  */
-export const TYPE_OF: any = { text: 'short_text', email: 'email', url: 'website', tel: 'phone_number', password: 'short_text', number: 'number', select: 'dropdown', choice: 'multiple_choice', picture: 'picture_choice', rating: 'rating', scale: 'opinion_scale', datetime: 'date', date: 'date', time: 'short_text', file: 'file_upload' }
+export const TYPE_OF: any = { text: 'short_text', email: 'email', url: 'website', tel: 'phone_number', password: 'short_text', number: 'number', select: 'dropdown', choice: 'multiple_choice', picture: 'picture_choice', rating: 'rating', scale: 'opinion_scale', datetime: 'date', date: 'date', time: 'short_text', file: 'file_upload', list: 'long_text' }   /* Typeform has no ordered list: its rows, one to a line, are long text */
 const OP: any = { is: 'equal', isnot: 'not_equal', gt: 'greater_than', lt: 'lower_than', contains: 'contains', set: 'is', unset: 'is_not' }
 const slugify = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64) || 'x'
 const idOf = (s: any) => slugify(s)

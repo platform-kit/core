@@ -1305,6 +1305,39 @@ class Composer {
 	 * @param {FormFieldSharedParamsType & FileInputParamsType} params
 	 * @returns {string}
 	 */
+	/**
+	 * Create an ordered list field (the kit's): rows the respondent adds and puts in order.
+	 *
+	 * @param {string} name
+	 * @param {FormFieldSharedParamsType & { placeholder?: string, max?: number, maxlength?: number }} params
+	 * @returns {string}
+	 */
+	listInput = (name, params) => {
+		const instance = this;
+		const formDelimiter =
+			instance.settings.formDelimiter !== "\n"
+				? `${instance.settings.formDelimiter} `
+				: "";
+		const templateChunks = [
+			`${name}${params.required ? "*" : ""} = ListInput(`,
+		].concat(composeSharedFieldParams(params, formDelimiter));
+		if (params.placeholder !== undefined) templateChunks.push(`\t${formDelimiter}placeholder = ${params.placeholder}`);
+		if (params.max !== undefined) templateChunks.push(`\t${formDelimiter}max = ${params.max}`);
+		if (params.maxlength !== undefined) templateChunks.push(`\t${formDelimiter}maxlength = ${params.maxlength}`);
+		templateChunks.push(")");
+		const attrs = composeAttrs(params);
+		if (attrs.length > 0) templateChunks.unshift(`[${attrs.join(" ")}]`);
+		if (params.displayCondition !== undefined) {
+			templateChunks.unshift(`{% if ${params.displayCondition.condition} %}`);
+			templateChunks.unshift(`::: [{$ ${params.displayCondition.dependencies.join(" ")} $}]`);
+			templateChunks.push("{% endif %}");
+			templateChunks.push(":::");
+		}
+		const result = `\n${templateChunks.join("\n")}\n`;
+		instance.template += result;
+		return result;
+	};
+
 	fileInput = (name, params) => {
 		const instance = this;
 

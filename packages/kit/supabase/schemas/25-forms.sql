@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS "public"."form_responses" (
     "webhook_at" timestamp with time zone,
     "webhook_error" "text",
     "meta" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    -- a workbook form's response: its writer's alone, and the coaches they share it with (form_shared_with_me)
+    "private" boolean DEFAULT false NOT NULL,
     CONSTRAINT "form_responses_who_check" CHECK ((("user_id" IS NOT NULL) OR ("anon_id" IS NOT NULL)))
 );
 
@@ -131,16 +133,25 @@ ALTER TABLE "public"."form_answers" ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE "public"."form_responses" ENABLE ROW LEVEL SECURITY;
 
--- a reader reads their own responses; an administrator reads every one (the Forms section is theirs; the
--- desk reads a ticket's through ticket_answers); nothing is written from a client (the function writes).
+-- WHO SHARED A PRIVATE RESPONSE WITH ME: whether the caller is a coach the writer shared this form's answers with. Nobody,
+-- here: sharing is a course's (a workbook is a course's forms), so the glue the two modules share answers it while both
+-- are on (glue/courses+forms.sql; openspec: module-switch-removes-backend).
+CREATE OR REPLACE FUNCTION "public"."form_shared_with_me"("p_user" "uuid", "p_form" "text") RETURNS boolean
+    LANGUAGE "sql" STABLE
+    AS $$ select false $$;
+GRANT ALL ON FUNCTION "public"."form_shared_with_me"("uuid", "text") TO "authenticated";
+
+-- a reader reads their own responses; an administrator reads every one that isn't private (the Forms section is theirs;
+-- the desk reads a ticket's through ticket_answers); a private one, a workbook's, is read by its writer and by the
+-- coaches they shared it with, and by no administrator as such. Nothing is written from a client (the function writes).
 -- Not is_staff(): that is any role, and a provider or an analyst is not who a customer answered.
-CREATE POLICY "form_responses_own_select" ON "public"."form_responses" FOR SELECT TO "authenticated" USING ((("user_id" = "auth"."uid"()) OR "public"."is_admin"()));
+CREATE POLICY "form_responses_own_select" ON "public"."form_responses" FOR SELECT TO "authenticated" USING ((("user_id" = "auth"."uid"()) OR ((NOT "private") AND "public"."is_admin"()) OR ("private" AND "public"."form_shared_with_me"("user_id", "form"))));
 
 CREATE POLICY "form_answers_own_select" ON "public"."form_answers" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
    FROM "public"."form_responses" "r"
-  WHERE (("r"."id" = "form_answers"."response_id") AND (("r"."user_id" = "auth"."uid"()) OR "public"."is_admin"())))));
+  WHERE (("r"."id" = "form_answers"."response_id") AND (("r"."user_id" = "auth"."uid"()) OR ((NOT "r"."private") AND "public"."is_admin"()) OR ("r"."private" AND "public"."form_shared_with_me"("r"."user_id", "r"."form")))))));
 
-CREATE POLICY "form_responses_staff_delete" ON "public"."form_responses" FOR DELETE TO "authenticated" USING ("public"."is_admin"());
+CREATE POLICY "form_responses_staff_delete" ON "public"."form_responses" FOR DELETE TO "authenticated" USING (((NOT "private") AND "public"."is_admin"()));
 
 GRANT ALL ON FUNCTION "public"."admin_forms"("days" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."admin_forms"("days" integer) TO "authenticated";
@@ -159,7 +170,8 @@ GRANT ALL ON TABLE "public"."form_responses" TO "authenticated";
 GRANT ALL ON TABLE "public"."form_responses" TO "service_role";
 
 -- the files a form's answers carry, read by the staff alone (a reader's are handed back through the function, signed)
-CREATE POLICY "forms staff read files" ON "storage"."objects" FOR SELECT TO "authenticated" USING (bucket_id = 'forms' and public.is_admin());
+CREATE POLICY "forms staff read files" ON "storage"."objects" FOR SELECT TO "authenticated" USING (bucket_id = 'forms' and public.is_admin()
+  and not exists (select 1 from public.form_responses r where r.id::text = split_part(name, '/', 1) and r.private));
 
 -- webhook subscriptions on a form, as the Forms API (Typeform's Webhooks API) keeps them: any number per form, each
 -- a tag and a url with the secret that signs its deliveries (kept whole, since it is what signs; the service role's

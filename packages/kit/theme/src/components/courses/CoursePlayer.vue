@@ -18,6 +18,8 @@
         <button type="button" class="crs-icon-btn crs-pbar-list" :aria-expanded="sideOpen || drawer" :aria-label="sideOpen ? S['hide-lessons'] : S['show-lessons']" :title="sideOpen ? S['hide-lessons'] : S['show-lessons']" @click="toggleSide">
           <CourseIcon name="list" :size="18" /><span class="crs-pbar-word">{{ S.steps }}</span>
         </button>
+        <!-- the course's workbook, where its lessons carry forms -->
+        <a v-if="state.workbook && state.enrollment" class="crs-icon-btn crs-pbar-work" :href="courseHref + '/workbook'" :aria-label="S.workbook" :title="S.workbook"><CourseIcon name="workbook" :size="18" /><span class="crs-pbar-word">{{ S.workbook }}</span></a>
         <a class="crs-icon-btn" :class="{ 'is-off': !prev }" :href="prev ? courseHref + '/' + prev.key : undefined" :aria-label="S.previous" :title="prev ? S.previous + ': ' + prev.title : S.previous"><CourseIcon name="back" :size="18" /></a>
         <a class="crs-icon-btn" :class="{ 'is-off': !after }" :href="after ? courseHref + '/' + after.key : undefined" :aria-label="S.next" :title="after ? S.next + ': ' + after.title : S.next"><CourseIcon name="chev" :size="18" /></a>
       </span>
@@ -113,6 +115,20 @@
               <span class="crs-pointer-text"><strong>{{ S['kind-' + lesson.kind] }}</strong></span>
               <span class="btn solid crs-pointer-go">{{ goWord }}</span>
             </a>
+
+            <!-- THE LESSON'S WORKBOOK FORM: the reader's own answers, kept, and changed whenever they like -->
+            <div v-if="workDoc && state.enrollment" class="crs-quiz crs-work">
+              <p class="crs-kicker crs-work-kicker"><CourseIcon name="workbook" :size="15" />{{ S['work-kicker'] }}<span v-if="lesson.answers_required && !(here && here.done)" class="crs-work-need"> · {{ S['work-required'] }}</span></p>
+              <div v-if="workSaved" class="crs-quiz-result is-passed" role="status">
+                <span class="crs-quiz-badge"><CourseIcon name="done" :size="26" /></span>
+                <div class="crs-quiz-text"><strong>{{ S['work-saved'] }}</strong><span class="crs-quiz-need">{{ S['work-saved-line'] }}</span></div>
+                <span class="crs-work-acts">
+                  <button type="button" class="btn" @click="workAgain">{{ S['work-edit'] }}</button>
+                  <a class="btn" :href="courseHref + '/workbook'">{{ S['work-open'] }}</a>
+                </span>
+              </div>
+              <FormRun v-else :key="lessonKey + ':work:' + workRuns" :form="workDoc" embed class="crs-quiz-run crs-work-run" @complete="onWork" />
+            </div>
 
             <div v-if="downloads.length" class="crs-files">
               <p class="crs-kicker">{{ S.downloads }}</p>
@@ -238,5 +254,12 @@ function onForm({ grade }: any) {
   emit('form-done')
 }
 function again() { result.value = null; runs.value++ }
+/* A TEXT LESSON'S WORKBOOK FORM: the form named by the lesson, kept and revised. Finishing it says it is saved; the
+   lesson itself is finished by the reader, and waits for the form where the course says its answers are required. */
+const workDoc = computed(() => (props.lesson && props.lesson.form ? (FORMS || []).find((f: any) => f.slug === props.lesson.form && f.published !== false) || null : null))
+const workSaved = ref(false), workRuns = ref(0)
+watch(() => props.lessonKey, () => { workSaved.value = false })
+function onWork() { workSaved.value = true; emit('form-done') }
+function workAgain() { workSaved.value = false; workRuns.value++ }
 const whyWord = (l: any) => (l.why === 'not-yet' ? fill(S.value['not-yet'], { date: day(l.opens_at) }) : S.value[l.why] || '')
 </script>

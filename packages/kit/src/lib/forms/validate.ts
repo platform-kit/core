@@ -21,6 +21,11 @@ export function validateField(field: any, value: any, W: any) {
       return vs.every((v) => allowed.includes(v)) ? '' : (w['choice-required'] || 'Please select an item in the list.') }
     case 'select': { const r = req(w['select-required'] || w.required || 'This is required.'); if (r) return r
       return empty(value) || (p.options || []).some((o: any) => o.value === value) ? '' : (w['select-required'] || 'Select an option') }
+    /* an ordered list: the rows that say something; a required one needs at least one */
+    case 'list': { const rows = (Array.isArray(value) ? value : []).map((r: any) => String(r ?? '').trim()).filter(Boolean)
+      if (field.required && !rows.length) return w['list-required'] || 'Add at least one item.'
+      if (p.maxlength && rows.some((r: string) => r.length > Number(p.maxlength))) return (w['too-long'] || 'At most {n} characters.').replace('{n}', p.maxlength)
+      return '' }
     case 'rating': case 'scale': return req(w['number-choice-required'] || 'Please make a selection.')
     /* a voice note and a video are files: what differs is how they were made, and nothing past
        the field knows the difference */

@@ -28,6 +28,9 @@ sources:
     packages/kit/theme/src/content/ui/courses.md,
     packages/kit/build/courses.test.mts,
     packages/kit/build/courses-db.test.mts,
+    packages/kit/theme/src/components/courses/CourseWorkbook.vue,
+    packages/kit/supabase/schemas/glue/courses+forms.sql,
+    packages/kit/build/course-workbook-db.test.mts,
   ]
 reviewed: 2026-11-10
 ---
@@ -46,6 +49,20 @@ Each lesson is one of the kit's five kinds, or a kind the site adds:
 - **A kind of the site's own**, which the site registers in its config as `courses.kinds`. The site's own component plays it inside the lesson, and the lesson is finished when that component says so, recorded the way a text lesson is. A kind can also measure the reader: then its section's bar shows that measure, from 0 to 100, instead of how many of its lessons are done. The course's overall progress and its certificate still count lessons. The demo registers a self-rating, in which the reader rates how sure they are of what the section taught.
 
 A lesson is required to finish the course unless it is marked optional.
+
+## The workbook
+
+A text lesson can carry a **workbook form**: a form that sets `#! workbook = true` ([Forms](/docs/running-a-site/marketing/forms)), shown under the lesson's words, where its practice and journal prompt are. The reader answers it there, can come back and change it, and can use any field the forms have, including an ordered list they drag into order.
+
+```yaml
+- { key: honest-look, title: Take an honest look, form: honest-look-notes, answers: required }
+```
+
+`answers: required` holds the lesson until the form is finished: **Complete and continue** says to answer the questions first. `answers: optional`, the default, leaves the form there to use and the lesson finished as any text lesson is. Only a text lesson carries a form, the form must be a workbook form, and `workbook` is never a lesson's key; the build names any of these.
+
+**The workbook page**, `/courses/<slug>/workbook` (and the same under the community), gathers everything the reader has written in the course: each module, each lesson with a form, each question with its answer, a list in the reader's order. It prints on its own, without the site around it, so it saves as a PDF. The course page and the lesson player link to it.
+
+**It is private.** Only the reader reads it. On the workbook page they can share it with a particular coach, anyone holding the coach or provider role, and stop sharing it whenever they like. Each share is kept as a record of who, which course, and when it was granted and withdrawn. A coach finds what has been shared with them under **Workbooks shared with you** in the library, and reads it at the same address with `?reader=`. The site's administrators don't read a workbook unless they are also a coach it was shared with.
 
 ## Who gets in
 
@@ -121,6 +138,7 @@ cohorts: # with release: cohort
 lessons:
   - { key: welcome, title: Why plain words, section: Starting out, media: { type: video, src: … } }
   - { key: chapter-one, title: Read the first chapter, kind: chapter, ref: plain-words#1 }
+  - { key: one-page, title: One page, plainly, form: one-page-workbook, answers: required }
   - { key: check, title: A short check, kind: form, ref: reading-check }
   - { key: talk, title: Talk it through, kind: session, ref: one-on-one, required: false }
 ---

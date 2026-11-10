@@ -38,6 +38,9 @@ const TYPES = {
 	   difference. */
 	voiceinput: ["voiceInput", "voice"],
 	videoinput: ["videoInput", "video"],
+	/* and an ordered list: as many short rows as the respondent wants, put in the order they choose.
+	   The answer is the rows, in that order. */
+	listinput: ["listInput", "list"],
 };
 
 /* THE FIELD LINE, built from the kinds above so the list is written once. It was written out twice
@@ -212,6 +215,16 @@ function parseFieldLine(text, formDelimiter = "|") {
 			else bad(key, value);
 		}
 		validParams.sizelimit = validParams.sizelimit || 10;
+	} else if (kind === "list") {
+		/* AN ORDERED LIST: rows of one line each. `max` caps how many, `maxlength` how long a row may be,
+		   `placeholder` is what an empty row shows. */
+		for (const [key, value] of Object.entries(restParams)) {
+			if (key === "placeholder" && value && typeof value === "string") validParams[key] = value;
+			else if (key === "disabled" && value) validParams[key] = value;
+			else if (key === "max" && value && value >>> 0 === parseFloat(value) && Number(value) > 0) validParams[key] = Number(value);
+			else if (key === "maxlength" && value && value >>> 0 === parseFloat(value)) validParams[key] = Number(value);
+			else bad(key, value);
+		}
 	} else if (kind === "voice" || kind === "video") {
 		/* THE KIT'S TWO: an answer somebody says rather than types. Both end as a file, so what a
 		   recording takes is how long it may run — a minute unless the field says otherwise, because

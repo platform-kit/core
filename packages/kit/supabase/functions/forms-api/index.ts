@@ -43,7 +43,7 @@ const webhookView = (w: { id: string; form: string; tag: string; url: string; en
 
 /* the responses of a form with their answers, shaped for the query plan */
 async function responsesOf(slug: string) {
-  const { data: rows } = await admin.from('form_responses').select('*').eq('form', slug).order('started_at', { ascending: false }).limit(MAX_ROWS)
+  const { data: rows } = await admin.from('form_responses').select('*').eq('form', slug).eq('private', false).order('started_at', { ascending: false }).limit(MAX_ROWS)
   const ids = (rows ?? []).map((r) => r.id)
   const answers: Record<string, any[]> = {}
   for (let i = 0; i < ids.length; i += 500) {
@@ -102,7 +102,7 @@ Deno.serve(async (req: Request) => {
         if (seg.length === 3 && m === 'DELETE') {
           const ids = String(q.included_tokens || q.included_response_ids || '').split(',').map((s) => s.trim()).filter(Boolean)
           if (!ids.length) return fail('VALIDATION_ERROR', 'included_tokens names the responses to delete.')
-          const { data: rows } = await admin.from('form_responses').select('id').eq('form', slug).in('id', ids)
+          const { data: rows } = await admin.from('form_responses').select('id').eq('form', slug).eq('private', false).in('id', ids)
           const found = (rows ?? []).map((r) => r.id)
           if (found.length) {
             const { data: files } = await admin.from('form_answers').select('file_path').in('response_id', found).not('file_path', 'is', null)
@@ -115,7 +115,7 @@ Deno.serve(async (req: Request) => {
         if (seg.length >= 7 && seg[4] === 'fields' && seg[6] === 'files') {
           const rid = seg[3], field = decodeURIComponent(seg[5])
           const { data: a } = await admin.from('form_answers').select('file_path, response_id').eq('response_id', rid).eq('field', field).maybeSingle()
-          const { data: r } = a ? await admin.from('form_responses').select('form').eq('id', rid).maybeSingle() : { data: null }
+          const { data: r } = a ? await admin.from('form_responses').select('form').eq('id', rid).eq('private', false).maybeSingle() : { data: null }
           if (!a || !a.file_path || r?.form !== slug) return fail('NOT_FOUND', 'No such file.')
           const { data: s } = await admin.storage.from('forms').createSignedUrl(a.file_path, 3600)
           if (!s?.signedUrl) return fail('NOT_FOUND', 'The file is gone.')

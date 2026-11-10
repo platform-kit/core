@@ -134,6 +134,8 @@ const lastSlide = ref<any>(null)
 function placeStart() {
   const list = screens.value
   if (state.already) { startAt.value = list.length - 1; return }
+  /* a workbook form opens at its first question, with everything the reader wrote there to change */
+  if (kit.value.workbook) { startAt.value = 0; return }
   /* the slide after the last one posted (the server says which), never the end */
   startAt.value = lastSlide.value == null ? 0 : Math.min(lastSlide.value + 1, list.length - 1)
 }

@@ -12,6 +12,8 @@ sources:
     packages/kit/theme/src/components/admin/FormResponses.vue,
     packages/kit/theme/src/components/forms/FormRun.vue,
     packages/kit/theme/src/content/ui/forms.md,
+    packages/kit/theme/src/instrument/ui/screens/form/FmList.vue,
+    packages/kit/supabase/functions/form/index.ts,
   ]
 reviewed: 2026-11-10
 ---
@@ -30,7 +32,7 @@ The builder has three views.
 
 A **slide** is a start slide (its button text), a slide, or the end (an address to send them to once done). A slide may be _shown only when_ something earlier holds — a jump: the person goes past it when the condition fails. It may set its own progress (a percentage; blank lets the form count), the button's alignment, whether the person may go back from it, and whether to post the answers so far here.
 
-A **field** is a kind from the list — Text, Email, Web address, Phone, Password, Number, Drop-down, Choice, Picture choice, Rating, Opinion scale, Date, Time, Date and time, File, **Voice answer**, **Video answer** — its question, a description under it, whether it is required, and the controls that kind has: a placeholder and a starting value; several lines, a most-characters, a pattern to match; a phone's country and the countries offered; a recording's longest run in seconds (a minute by default, because an unbounded recording is a file nobody meant to upload); a number's least, most, step and units; a drop-down's options and the one chosen at first; a choice's choices (each a label, and a value when it should differ), whether several may be chosen, in a row, large; a picture choice's pictures, by address or uploaded; a rating's count and icon; an opinion scale's ends and their labels; a date's earliest and latest; a file's size limit and whether pictures only. Every field may be _shown only when_ — rows of a field, a comparison (is, is not, contains, is more than, is less than, is answered, is not answered) and a value, joined by _and_. A condition written by hand that rows cannot say is shown as it is and can only be cleared.
+A **field** is a kind from the list — Text, Email, Web address, Phone, Password, Number, Drop-down, Choice, Picture choice, Rating, Opinion scale, Date, Time, Date and time, File, **Voice answer**, **Video answer**, **Ordered list** — its question, a description under it, whether it is required, and the controls that kind has: a placeholder and a starting value; several lines, a most-characters, a pattern to match; a phone's country and the countries offered; a recording's longest run in seconds (a minute by default, because an unbounded recording is a file nobody meant to upload); a number's least, most, step and units; a drop-down's options and the one chosen at first; a choice's choices (each a label, and a value when it should differ), whether several may be chosen, in a row, large; a picture choice's pictures, by address or uploaded; a rating's count and icon; an opinion scale's ends and their labels; a date's earliest and latest; a file's size limit and whether pictures only; an ordered list's first-row placeholder, most rows and most characters a row. Every field may be _shown only when_ — rows of a field, a comparison (is, is not, contains, is more than, is less than, is answered, is not answered) and a value, joined by _and_. A condition written by hand that rows cannot say is shown as it is and can only be cleared.
 
 The field's **name** is what its answer is filed under: set from the question the first time, and editable after as an identifier. Change a name and the answers already given under the old one stay under it.
 
@@ -69,6 +71,32 @@ A chat prompt's choices may point somewhere. An arrow at the end of a choice tak
 ```
 
 That is the whole of what a desk with no language model needs: a prompt somebody wrote by hand that still collects the four things nobody wants to ask one at a time over three days.
+
+## An ordered list
+
+`ListInput` asks for a list in an order the person chooses: as many one-line rows as they want, each with a handle to drag it up or down (a finger works as well as a mouse; focused, the arrow keys move it). Enter starts a new row below, Backspace in an empty row takes it out, and Enter in an empty last row goes on to the next question. The question says what the order means.
+
+```
+going_well* = ListInput(
+  | question = What parts of your life are going well? Highest first
+  | placeholder = The first thing
+  | max = 10
+)
+```
+
+The answer is the rows in their order, each tidied and the empty ones dropped. A required list needs one row that says something. Through the Forms API it is long text, one row to a line.
+
+## A workbook form
+
+A workbook form is a person's own writing: a course lesson's practice and journal prompt, answered in the lesson and kept.
+
+```
+#! workbook = true
+```
+
+It is answered signed in, and each person has **one response**. It reopens at its first question with everything they wrote, and what they change replaces what was there: there is no score and no "already answered". The day it was first finished stays; the response's own time says when it last changed.
+
+**Its answers are private.** The person reads them, and so do the coaches they share a course's workbook with ([Courses](/docs/running-a-site/content/courses)). Nobody else does, and that includes the site's administrators: a workbook form's responses aren't listed under Responses, aren't in the Forms API, and can't be deleted from the admin. An administrator reads one only if they are also a coach it was shared with. So a workbook form can't also set `once`, `score`, `pass`, `paid`, `webhook` or `ticket`; the builder's **Workbook form** switch sets it.
 
 ## A form somebody pays to answer
 

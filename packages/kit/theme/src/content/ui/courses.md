@@ -120,6 +120,14 @@ no-access: This course isn't open to you yet
 not-enrolled: Start the course to open this lesson
 sign-in: Sign in to open this lesson
 form-not-finished: Finish the quiz above first
+answers-needed: Answer the questions above to finish this lesson
+work-kicker: Your workbook
+work-required: Answer these to finish the lesson
+work-saved: Saved to your workbook
+work-saved-line: You can change these answers whenever you like.
+work-edit: Change my answers
+work-open: Open my workbook
+workbook: Workbook
 quiz-passed: Passed
 quiz-failed: Not passed yet
 form-done: Done
@@ -141,6 +149,33 @@ kind-chapter: A chapter to read
 kind-article: An article to read
 kind-form: Something to answer
 kind-session: A session to book
+
+### workbook
+
+kicker: Workbook
+title-mine: Your workbook
+title-theirs: {name}'s workbook
+lead-mine: Everything you've written in this course, by module. Only you can read it, unless you share it with a coach.
+lead-theirs: Shared with you by {name}.
+print: Print or save as PDF
+not-answered: Not answered yet
+answer-it: Answer it
+updated: Last changed {date}
+empty: There are no workbook questions in this course.
+share-title: Share with a coach
+share-lead: A coach you share with can read this workbook for as long as you leave it shared. Nobody else can, including the site's administrators.
+share-pick: Choose a coach
+share-button: Share
+share-none: There are no coaches on this site yet.
+shared-with: Shared with
+withdraw: Stop sharing
+shared-on: since {date}
+shelf-title: Workbooks shared with you
+shelf-line: {course} · shared {date}
+not-shared: This workbook hasn't been shared with you.
+sign-in: Sign in to see your workbook.
+no-course: There is no course at this address.
+not-a-coach: That person isn't a coach on this site.
 
 ### certificate
 

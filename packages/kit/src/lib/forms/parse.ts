@@ -37,7 +37,7 @@ import { unescape } from '../../../vendor/formsmd/helpers.js'
 export const KINDS = Object.values(TYPES).map(([, kind]) => kind)
 export const FORMSMD_TYPE = Object.fromEntries(Object.values(TYPES).map(([type, kind]) => [kind, type]))
 /* the kit's own settings: what the file says about its life on the site */
-export const KIT_SETTINGS = ['published', 'once', 'respond', 'embed-origins', 'webhook', 'pass', 'score', 'paid', 'ticket', 'ticket-title', 'ticket-priority']
+export const KIT_SETTINGS = ['published', 'once', 'respond', 'embed-origins', 'webhook', 'pass', 'score', 'paid', 'ticket', 'ticket-title', 'ticket-priority', 'workbook']
 /* forms.md's settings that name where the data goes: the kit's backend is where, so a file never sets them */
 export const REFUSED_SETTINGS = ['post-url', 'get-url', 'post-sheet-name']
 /* forms.md's theming settings: read (the file is theirs) and ignored (the site's design draws the form) */
@@ -48,7 +48,7 @@ const isUrl = (v: string) => /^https?:\/\/[^\s]+$/.test(v)
 
 /* the kit's settings off the `#!` lines: parsed, validated, and the refused ones named */
 function kitSettings(lines: any) {
-  const kit: any = { published: true, once: false, respond: 'anyone', embedOrigins: [], webhook: '', pass: null, score: {}, paid: '', ticket: '', ticketTitle: '', ticketPriority: '' }
+  const kit: any = { published: true, once: false, respond: 'anyone', embedOrigins: [], webhook: '', pass: null, score: {}, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false }
   const errors: any = []
   lines.forEach((raw: string, i: number) => {
     const t = raw.trim()
@@ -59,7 +59,7 @@ function kitSettings(lines: any) {
     const line = i + 1
     if (REFUSED_SETTINGS.includes(key)) { errors.push({ line, message: `"${key}" is set by the kit — every answer goes to the site's own backend; remove the line` }); return }
     if (!KIT_SETTINGS.includes(key) || value === '') return
-    if (key === 'published' || key === 'once') { const b = bool(value); if (b === null) errors.push({ line, message: `"${key}" is true or false` }); else kit[key] = b }
+    if (key === 'published' || key === 'once' || key === 'workbook') { const b = bool(value); if (b === null) errors.push({ line, message: `"${key}" is true or false` }); else kit[key] = b }
     else if (key === 'respond') { if (!['anyone', 'authenticated'].includes(value)) errors.push({ line, message: '"respond" is anyone or authenticated' }); else kit.respond = value }
     /* WHAT IT COSTS TO ANSWER: an offer's sku, which the store already knows how to sell. The form
        says what it is worth and nothing about money — no price, no currency, no Stripe — because a
@@ -87,6 +87,15 @@ function kitSettings(lines: any) {
       }
     }
   })
+  /* A WORKBOOK FORM is a reader's own writing: one response each, signed in, reopened and revised, read by nobody else
+     but the coaches they share it with (openspec: forms-api). So nothing that sends the answers elsewhere or treats them as
+     a test goes with it. */
+  if (kit.workbook) {
+    const line = lines.findIndex((l: string) => /^\s*#!\s*workbook\s*=/.test(l)) + 1
+    const clash = [kit.once && 'once', kit.pass != null && 'pass', Object.keys(kit.score).length && 'score', kit.paid && 'paid', kit.webhook && 'webhook', kit.ticket && 'ticket'].filter(Boolean)
+    if (clash.length) errors.push({ line, message: `a workbook form keeps a reader's answers to themselves and lets them revise them, so it can't also set ${clash.join(', ')}` })
+    kit.respond = 'authenticated'
+  }
   return { kit, errors }
 }
 
@@ -337,5 +346,5 @@ export function fieldContract(model: any) {
      letter. A field's key is not a question, and `working_on` in front of somebody who has to act
      on the answer is a small daily insult to whoever wrote the form. ('...' is forms.md's own
      placeholder for a field that was never given one.) */
-    question: (f.params && f.params.question && f.params.question !== '...' ? f.params.question : '') || f.name, kind: f.kind, required: !!f.required, multiple: !!(f.params && f.params.multiple), values: f.kind === 'choice' || f.kind === 'picture' ? (f.params.choices || []).map((c: any) => c.value) : f.kind === 'select' ? (f.params.options || []).map((o: any) => o.value) : undefined, slide: f.slide }))
+    question: (f.params && f.params.question && f.params.question !== '...' ? f.params.question : '') || f.name, kind: f.kind, required: !!f.required, multiple: f.kind === 'list' || !!(f.params && f.params.multiple), values: f.kind === 'choice' || f.kind === 'picture' ? (f.params.choices || []).map((c: any) => c.value) : f.kind === 'select' ? (f.params.options || []).map((o: any) => o.value) : undefined, slide: f.slide }))
 }

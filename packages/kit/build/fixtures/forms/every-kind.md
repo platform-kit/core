@@ -90,6 +90,7 @@ stamp = DatetimeInput(| question = Stamp)
 file = FileInput(| question = File | sizeLimit = 2 | imageOnly)
 said = VoiceInput(| question = Say it | maxLength = 90)
 seen = VideoInput(| question = Show me | maxLength = 30)
+ranked = ListInput(| question = Ranked | max = 5)
 
 ::: [.col-6 #half]
 Half a row, kept as it is.

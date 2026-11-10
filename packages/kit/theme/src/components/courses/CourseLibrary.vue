@@ -63,6 +63,20 @@
         </ul>
       </div>
 
+      <!-- a coach: the workbooks readers have shared with them -->
+      <div v-if="shared.length" class="crs-shelf">
+        <h2 class="crs-shelf-title">{{ B['shelf-title'] }}<span class="crs-count">{{ shared.length }}</span></h2>
+        <ul class="crs-wb-shelf">
+          <li v-for="w in shared" :key="w.id">
+            <a :href="base + '/' + w.course + '/workbook?reader=' + w.reader">
+              <span class="crs-wb-shelf-ico"><CourseIcon name="workbook" :size="18" /></span>
+              <span><strong>{{ w.name }}</strong><small>{{ fill(B['shelf-line'], { course: w.title, date: day(w.granted_at) }) }}</small></span>
+              <CourseIcon name="chev" :size="16" />
+            </a>
+          </li>
+        </ul>
+      </div>
+
       <div v-if="catalogue.length" class="crs-shelf">
         <h2 v-if="mine.length" class="crs-shelf-title">{{ L.more }}<span class="crs-count">{{ catalogue.length }}</span></h2>
         <ul class="crs-grid">
@@ -84,14 +98,16 @@ import CourseIcon from './CourseIcon.vue'
 
 const props = defineProps({ base: { type: String, default: '/courses' } })
 const emit = defineEmits<{ one: [slug: string | null] }>()
-const { L } = words()
-const list = ref<any>([]), loading = ref(true)
+const { L, B } = words()
+const list = ref<any>([]), loading = ref(true), shared = ref<any[]>([])
 
 watch(() => (user.value ? user.value.id : null), async () => {
   loading.value = true
   try { list.value = (await rpc('courses_list')) || [] } catch (e) { console.warn('courses:', (e as any).message || e) }
+  /* what has been shared with this reader as a coach; nothing, for anyone else (or where there are no forms) */
+  shared.value = user.value ? ((await rpc('course_workbooks_shared').catch(() => [])) || []) : []
   loading.value = false
-  emit('one', list.value.length === 1 ? list.value[0].slug : null)
+  emit('one', list.value.length === 1 && !shared.value.length ? list.value[0].slug : null)
 }, { immediate: true })
 setHead({ title: L.value.title })
 

@@ -85,6 +85,7 @@ const setKit = (k: any, v: any) => {
   const c = changes()
   if (k === 'published') c.published = v === false ? 'false' : null
   else if (k === 'once') c.once = v ? 'true' : null
+  else if (k === 'workbook') c.workbook = v ? 'true' : null
   else if (k === 'respond') c.respond = v && v !== 'anyone' ? v : null
   else if (k === 'embedOrigins') c['embed-origins'] = v.length ? v.join(', ') : null
   else if (k === 'webhook') c.webhook = v || null
@@ -240,6 +241,7 @@ async function remove() {
         </div>
         <div class="ui-card">
           <div class="ui-row ui-wrap">
+            <label class="ui-switch" :title="WS['workbook-hint']"><input type="checkbox" :checked="kit.workbook" @change="setKit('workbook', ($event.target as any).checked)" /><i /><span>{{ WS.workbook }}</span></label>
             <label class="ui-switch"><input type="checkbox" :checked="kit.once" @change="setKit('once', ($event.target as any).checked)" /><i /><span>{{ WS.once }}</span></label>
             <label class="ui-field"><span>{{ WS.respond }}</span><select class="ui-select" :value="kit.respond" @change="setKit('respond', ($event.target as any).value)"><option value="anyone">{{ WS['respond-anyone'] }}</option><option value="authenticated">{{ WS['respond-authenticated'] }}</option></select></label>
           </div>

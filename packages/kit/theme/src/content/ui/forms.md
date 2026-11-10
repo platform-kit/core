@@ -31,6 +31,7 @@ invalid-time: Please use the HH:mm format.
 date-min: On or after {min}.
 date-max: On or before {max}.
 too-long: At most {n} characters.
+list-required: Add at least one item.
 invalid-pattern: Please match the requested format.
 file-size-error: File exceeds the size limit.
 file-image-only: Choose an image.
@@ -51,6 +52,14 @@ nps-label-start: Not likely at all
 nps-label-end: Extremely likely
 file-choose: choose a file
 file-drag: or drag it here
+list-placeholder: Type the first item
+list-add: Add another
+list-enter: for a new line
+list-item: Item {n}
+list-move: Move item {n}
+list-move-hint: Drag, or use the arrow keys
+list-moved: Moved to position {n} of {total}.
+list-remove: Remove item {n}
 record-voice: Record an answer
 record-video: Record a video
 record-again: Record it again
@@ -267,6 +276,7 @@ datetime: Date and time
 file: File
 voice: Voice answer
 video: Video answer
+list: Ordered list
 
 ### settings
 
@@ -292,6 +302,8 @@ autofocus: Focus the first field on every slide
 align: Button alignment
 published: Published
 once: One answer per person
+workbook: Workbook form
+workbook-hint: Each reader keeps one response, reopens it to change it, and nobody else reads it unless they share it with a coach.
 respond: Who may answer
 respond-anyone: Anyone
 respond-authenticated: Anyone signed in

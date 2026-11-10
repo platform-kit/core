@@ -34,7 +34,7 @@ import { fresh } from '../_shared/compiled.ts'
 import type { Json } from '../_shared/database.types.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
 type Field = { name: string; kind: string; required: boolean; multiple: boolean; values?: string[]; slide: number }
-type Form = { title: string; fields: Field[]; kit: { published: boolean; once: boolean; respond: string; embedOrigins: string[]; webhook: string; pass: number | null; score: Record<string, string>; paid?: string; ticket?: string; ticketTitle?: string; ticketPriority?: string }; settings: { page: string }; api?: any }
+type Form = { title: string; fields: Field[]; kit: { published: boolean; once: boolean; respond: string; embedOrigins: string[]; webhook: string; pass: number | null; score: Record<string, string>; paid?: string; ticket?: string; ticketTitle?: string; ticketPriority?: string; workbook?: boolean }; settings: { page: string }; api?: any }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const MAX_VALUE = 20000
 const MAX_FILE = 25 * 1024 * 1024
@@ -47,7 +47,10 @@ function originAllowed(req: Request, form: Form) {
   let site = ''
   try { site = new URL(appUrl()).origin } catch { site = '' }
   if (from === site) return true
-  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(from) && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(site)) return true
+  /* locally, any localhost address answers for any other: the front door names a site demo.localhost:3000, and its
+     vite still serves it on its own port */
+  const LOCAL = /^https?:\/\/(([a-z0-9-]+\.)*localhost|127\.0\.0\.1)(:\d+)?$/
+  if (LOCAL.test(from) && LOCAL.test(site)) return true
   return (form.kit.embedOrigins || []).map((o) => o.replace(/\/+$/, '')).includes(from.replace(/\/+$/, ''))
 }
 
@@ -69,7 +72,8 @@ async function formCredit(userId: string, sku: string) {
   return data && data.length ? data[0].id as string : null
 }
 
-/* the response this person is on for the form: open, or the completed one on a `once` form */
+/* the response this person is on for the form: open, or the completed one on a `once` form. A workbook form has one
+   response per reader, finished or not: it reopens with their answers and what they change revises it. */
 async function findResponse(slug: string, form: Form, w: { user: any; anon: string }) {
   let q = admin.from('form_responses').select('id, completed_at, score, total, passed').eq('form', slug)
   q = w.user ? q.eq('user_id', w.user.id) : q.is('user_id', null).eq('anon_id', w.anon)
@@ -77,6 +81,7 @@ async function findResponse(slug: string, form: Form, w: { user: any; anon: stri
   const rows = data ?? []
   const open = rows.find((r) => !r.completed_at)
   const done = rows.find((r) => r.completed_at)
+  if (form.kit.workbook) return { row: open ?? done ?? null, already: false }
   if (form.kit.once && done) return { row: done, already: true }
   return { row: open ?? null, already: false }
 }
@@ -213,6 +218,8 @@ Deno.serve(async (req: Request) => {
     let value: unknown = String(v).slice(0, MAX_VALUE)
     if (f.multiple) { try { value = JSON.parse(String(v)) } catch { value = [String(v)] } if (!Array.isArray(value)) value = [value] }
     if (f.values && f.values.length) { const vs = Array.isArray(value) ? value : [value]; if (vs.some((x) => !f.values!.includes(String(x)))) return json({ error: `"${k}" is not one of the choices`, code: 'choice' }, 400) }
+    /* an ordered list keeps its rows in order, each a line of text, the empty ones dropped */
+    if (f.kind === 'list') value = (value as unknown[]).map((x) => String(x ?? '').replace(/\s+/g, ' ').trim()).filter(Boolean)
     if (f.kind === 'number' || f.kind === 'rating' || f.kind === 'scale') { const n = Number(value); if (String(value) !== '' && Number.isFinite(n)) value = n }
     answers.push({ field: k, value })
   }
@@ -220,7 +227,8 @@ Deno.serve(async (req: Request) => {
   if (already) return json({ error: 'already answered', code: 'already' }, 409)
   let id = found ? found.id : ''
   if (!id) {
-    const { data, error } = await admin.from('form_responses').insert({ form: slug, ...ident(w), origin: req.headers.get('x-form-origin') || req.headers.get('origin') || null, meta: metaOf(req, body) }).select('id').single()
+    /* a workbook form's response is private: the database lets nobody but its writer and the coaches they share it with read it */
+    const { data, error } = await admin.from('form_responses').insert({ form: slug, ...ident(w), private: !!form.kit.workbook, origin: req.headers.get('x-form-origin') || req.headers.get('origin') || null, meta: metaOf(req, body) }).select('id').single()
     if (error) return json({ error: error.message }, 500)
     id = data.id
   }
@@ -240,9 +248,10 @@ Deno.serve(async (req: Request) => {
   if (end) {
     const view = await responseView(id)
     const g = grade(form.kit.score || {}, view.answers, form.kit.pass)
-    const patch = { completed_at: new Date().toISOString() }
+    /* a workbook finished again keeps the day it was first finished; the row's own time says when it last changed */
+    const patch = found && found.completed_at && form.kit.workbook ? {} : { completed_at: new Date().toISOString() }
     if (g.total) Object.assign(patch, { score: g.score, total: g.total, passed: g.passed })
-    await admin.from('form_responses').update(patch).eq('id', id)
+    if (Object.keys(patch).length) await admin.from('form_responses').update(patch).eq('id', id)
     out = { response_id: id, completed: true, score: g.total ? g.score : null, total: g.total || null, passed: g.passed }
     /* THIS ANSWER IS A PIECE OF WORK, where the form says so: a ticket, carrying the response, so
        the desk reads and filters the answers through it and this function never learns what a

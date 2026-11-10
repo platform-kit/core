@@ -164,6 +164,12 @@ const isDate = computed(() => ['date', 'time', 'datetime'].includes(kind.value))
       <label class="ui-field fi-num"><span>{{ W['record-length'] }}</span><input class="ui-input" type="number" min="5" :value="p.maxlength || 60" @input="setP('maxlength', Number(($event.target as any).value) || 60)" /></label>
       <label class="ui-field fi-num"><span>{{ W.sizelimit }}</span><input class="ui-input" type="number" min="1" :value="p.sizelimit || 25" @input="setP('sizelimit', Number(($event.target as any).value) || 25)" /></label>
     </div>
+    <!-- an ordered list: what an empty first row says, how many rows, how long each may be -->
+    <div v-if="kind === 'list'" class="ui-row ui-wrap">
+      <label class="ui-field"><span>{{ W.placeholder }}</span><input class="ui-input" :value="p.placeholder || ''" @input="setP('placeholder', ($event.target as any).value)" /></label>
+      <label class="ui-field fi-num"><span>{{ W.max }}</span><input class="ui-input" type="number" min="1" :value="p.max || ''" @input="setP('max', Number(($event.target as any).value) || '')" /></label>
+      <label class="ui-field fi-num"><span>{{ W.maxlength }}</span><input class="ui-input" type="number" min="1" :value="p.maxlength || ''" @input="setP('maxlength', Number(($event.target as any).value) || '')" /></label>
+    </div>
     <div v-if="kind === 'file'" class="ui-row">
       <label class="ui-field fi-num"><span>{{ W.sizelimit }}</span><input class="ui-input" type="number" min="1" :value="p.sizelimit || 10" @input="setP('sizelimit', Number(($event.target as any).value) || 10)" /></label>
       <label class="ui-switch"><input type="checkbox" :checked="flag('imageonly')" @change="setFlag('imageonly', ($event.target as any).checked)" /><i /><span>{{ W.imageonly }}</span></label>

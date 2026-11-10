@@ -14,6 +14,9 @@
  *   article   an article: `ref: <slug>`
  *   form      a form or quiz: `ref: <slug>`; finished when the reader has answered it (and passed, where it is scored)
  *   session   a booking type: `ref: <slug>`; finished when the reader has booked one
+ * A text lesson may carry a workbook form (`form: <slug>`, a form that sets `#! workbook = true`), shown under its words,
+ * with `answers: required` (the lesson isn't finished until the form is) or `answers: optional` (the default).
+ * `workbook` is never a lesson's key: it is the address of the course's workbook.
  * and any kind the site registers (platformkit.config.js `courses.kinds`): its `ref` is what the site's check says it
  * is, its own component plays it, and it is finished as a text lesson is, by the reader. A kind nobody registers is
  * refused by name; with the registration gone, a course naming it is refused, never half-played.
@@ -80,7 +83,7 @@ export function lessonHref(l: any) {
 }
 
 /* a course's file, parsed, with every problem in it named — a course with problems is not pushed */
-export function parseCourse(slug: string, raw: string, { kinds = {} } = {}) {
+export function parseCourse(slug: string, raw: string, { kinds = {}, forms = null }: { kinds?: any; forms?: Record<string, { workbook: boolean }> | null } = {}) {
   const f = matter(String(raw || ''))
   const d = f.data || {}
   const problems = []
@@ -116,6 +119,17 @@ export function parseCourse(slug: string, raw: string, { kinds = {} } = {}) {
     if (own && own.check && ref) problems.push(...checked(key, kind, ref, own.check))
     if (kind !== 'text' && !ref) problems.push(`lesson ${key} is a ${kind} and names none (ref)`)
     if (kind === 'chapter' && ref && !/^[a-z0-9-]+#\d+$/.test(ref)) problems.push(`lesson ${key}: a chapter is <book>#<n>, not ${ref}`)
+    if (key === 'workbook') problems.push('lesson workbook: that key is the address of the course\'s workbook; call the lesson something else')
+    /* THE LESSON'S WORKBOOK FORM, where it has one, and whether answering it is needed to finish the lesson */
+    const form = l && l.form != null && String(l.form).trim() ? String(l.form).trim() : null
+    const answers = l && l.answers != null ? String(l.answers) : 'optional'
+    if (form && kind !== 'text') problems.push(`lesson ${key}: only a text lesson carries a form; a ${kind} lesson can't`)
+    if (!['required', 'optional'].includes(answers)) problems.push(`lesson ${key}: answers is required or optional, not ${answers}`)
+    if (l && l.answers != null && !form) problems.push(`lesson ${key}: answers says how its form is answered, and it names no form`)
+    if (form && forms) {
+      if (!forms[form]) problems.push(`lesson ${key}: there is no form called ${form}`)
+      else if (!forms[form].workbook) problems.push(`lesson ${key}: form ${form} is not a workbook form; add #! workbook = true to it`)
+    }
     return {
       key, position: i + 1, section: l && l.section ? String(l.section) : null,
       title: String((l && l.title) || key).trim(), kind, ref,
@@ -123,6 +137,7 @@ export function parseCourse(slug: string, raw: string, { kinds = {} } = {}) {
       /* what plays beside it (video or audio, the shape a page's featured media has) and what it offers to download */
       media: [...(Array.isArray(l && l.media) ? l.media : l && l.media ? [l.media] : []), ...(Array.isArray(l && l.downloads) ? l.downloads : []).map((x: any) => ({ type: 'file', src: String(x.src || ''), title: String(x.title || '') }))].filter((m) => m && m.src),
       required: !(l && l.required === false),
+      form, answers_required: !!form && answers === 'required',
     }
   })
   if (!lessons.length) problems.push('it has no lessons')
@@ -177,9 +192,16 @@ export function quizAchievements(courses: any, { scored = (_ref: string | number
 export async function readCourses(store: string|undefined, { kinds }: any = {}) {
   const st = asStore(store)
   const own = kinds || await siteKinds(typeof store === 'string' ? store : process.cwd())
+  /* the site's forms, and which of them are workbooks, so a lesson naming one is checked against what there is */
+  const forms: Record<string, { workbook: boolean }> = {}
+  for (const n of (await st.list('content/forms', { ext: 'md' }).catch(() => [])).filter((x: string) => !x.includes('/'))) {
+    const name = n.replace(/\.md$/, '')
+    const raw = await st.read(`content/forms/${name}.md`).catch(() => '')
+    forms[name] = { workbook: /^\s*#!\s*workbook\s*=\s*(true|yes|1|on)\s*$/im.test(String(raw)) }
+  }
   const names = (await st.list(COURSES_DIR, { ext: 'md' })).filter((n: string|string[]) => !n.includes('/'))
   const out = []
-  for (const n of names.sort()) { const slug = n.replace(/\.md$/, ''); out.push(parseCourse(slug, await st.read(`${COURSES_DIR}/${slug}.md`), { kinds: own })) }
+  for (const n of names.sort()) { const slug = n.replace(/\.md$/, ''); out.push(parseCourse(slug, await st.read(`${COURSES_DIR}/${slug}.md`), { kinds: own, forms })) }
   return out
 }
 

@@ -44,6 +44,7 @@ export const words = () => {
     L: computed(() => W.value.list || {}),
     K: computed(() => W.value.course || {}),
     S: computed(() => W.value.lesson || {}),
+    B: computed(() => W.value.workbook || {}),
   }
 }
 

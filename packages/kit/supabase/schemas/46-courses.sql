@@ -48,6 +48,9 @@ CREATE TABLE IF NOT EXISTS "public"."course_lessons" (
     "body" "text",
     "media" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
     "required" boolean DEFAULT true NOT NULL,
+    -- a text lesson's workbook form, shown under its words, and whether the lesson waits for it to be finished
+    "form" "text",
+    "answers_required" boolean DEFAULT false NOT NULL,
     CONSTRAINT "course_lessons_pkey" PRIMARY KEY ("course", "key"),
     -- the kit's five kinds, or one the site registers (courses.kinds): the push, the only writer, refuses any other by name
     CONSTRAINT "course_lessons_kind_check" CHECK (("kind" ~ '^[a-z][a-z0-9]*(-[a-z0-9]+)*$'::"text")),
@@ -205,6 +208,7 @@ begin
   -- `has` is what kinds of media a lesson carries (video, audio, file) so the outline can mark it; never their addresses
   select coalesce(jsonb_agg(jsonb_build_object('key', f.key, 'section', f.section, 'title', f.title, 'kind', f.kind, 'ref', f.ref,
       'required', f.required, 'open', f.open, 'opens_at', f.opens_at, 'why', f.why, 'done', f.done,
+      'form', (select l.form from public.course_lessons l where l.course = p_course and l.key = f.key),
       -- a quiz's best attempt, the reader's own
       'quiz', case when f.kind = 'form' and uid is not null then public.course_quiz_result(uid, f.ref) end,
       'has', coalesce((select jsonb_agg(distinct m ->> 'type') from public.course_lessons l, jsonb_array_elements(l.media) m
@@ -221,7 +225,9 @@ begin
     'lessons', lessons,
     'done', (select count(*) from jsonb_array_elements(lessons) x where (x ->> 'done')::boolean and (x ->> 'required')::boolean),
     'total', (select count(*) from jsonb_array_elements(lessons) x where (x ->> 'required')::boolean),
-    'certificate_id', cert);
+    'certificate_id', cert,
+    -- whether any lesson carries a workbook form, so the pages can offer the workbook
+    'workbook', exists (select 1 from public.course_lessons l where l.course = p_course and l.form is not null));
 end;
 $$;
 
@@ -327,7 +333,7 @@ begin
   if not f.open then return jsonb_build_object('open', false, 'why', f.why, 'opens_at', f.opens_at, 'title', f.title); end if;
   select * into l from public.course_lessons where course = p_course and key = p_lesson;
   return jsonb_build_object('open', true, 'key', l.key, 'title', l.title, 'section', l.section, 'kind', l.kind, 'ref', l.ref,
-    'body', l.body, 'media', l.media, 'required', l.required, 'done', f.done);
+    'body', l.body, 'media', l.media, 'required', l.required, 'done', f.done, 'form', l.form, 'answers_required', l.answers_required);
 end;
 $$;
 
@@ -362,7 +368,7 @@ CREATE OR REPLACE FUNCTION "public"."course_complete"("p_course" "text", "p_less
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-declare me uuid := auth.uid(); e public.enrollments; f record; how_ text;
+declare me uuid := auth.uid(); e public.enrollments; f record; how_ text; wb public.course_lessons;
 begin
   if me is null then return jsonb_build_object('error', 'sign-in'); end if;
   select * into e from public.enrollments where user_id = me and course = p_course;
@@ -376,6 +382,11 @@ begin
   end if;
   if f.kind = 'session' and not public.course_session_booked(me, f.ref) then
     return jsonb_build_object('error', 'not-booked');
+  end if;
+  -- a lesson whose workbook form must be answered waits for it
+  select * into wb from public.course_lessons x where x.course = p_course and x.key = p_lesson;
+  if wb.form is not null and wb.answers_required and not public.course_form_done(me, wb.form, false) then
+    return jsonb_build_object('error', 'answers-needed');
   end if;
   insert into public.lesson_progress (enrollment, lesson, how) values (e.id, p_lesson, how_) on conflict do nothing;
   -- a quiz passed before its lesson opened, recorded now: its first pass, as the trigger records one
@@ -405,6 +416,29 @@ CREATE OR REPLACE FUNCTION "public"."course_quiz_result"("p_user" "uuid", "p_for
     AS $$ select null::jsonb $$;
 REVOKE ALL ON FUNCTION "public"."course_form_done"("uuid", "text", boolean) FROM PUBLIC, "anon", "authenticated";
 REVOKE ALL ON FUNCTION "public"."course_session_booked"("uuid", "text") FROM PUBLIC, "anon", "authenticated";
+
+-- A COURSE'S WORKBOOK: the reader's answers to its lessons' forms, and the coaches they share it with. The answers are
+-- the forms module's, so every one of these answers nothing here and is declared again in glue/courses+forms.sql.
+CREATE OR REPLACE FUNCTION "public"."course_workbook"("p_course" "text", "p_reader" "uuid" DEFAULT NULL::"uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select jsonb_build_object('error', 'no-forms') $$;
+CREATE OR REPLACE FUNCTION "public"."course_workbook_coaches"() RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
+CREATE OR REPLACE FUNCTION "public"."course_workbook_share"("p_course" "text", "p_coach" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql"
+    AS $$ select jsonb_build_object('error', 'no-forms') $$;
+CREATE OR REPLACE FUNCTION "public"."course_workbook_withdraw"("p_share" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql"
+    AS $$ select jsonb_build_object('error', 'no-forms') $$;
+CREATE OR REPLACE FUNCTION "public"."course_workbooks_shared"() RETURNS "jsonb"
+    LANGUAGE "sql" STABLE
+    AS $$ select '[]'::jsonb $$;
+GRANT ALL ON FUNCTION "public"."course_workbook"("text", "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."course_workbook_coaches"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."course_workbook_share"("text", "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."course_workbook_withdraw"("uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."course_workbooks_shared"() TO "authenticated";
 
 -- a certificate, for anyone holding its address
 CREATE OR REPLACE FUNCTION "public"."certificate_public"("p_id" "text") RETURNS "jsonb"

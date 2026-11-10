@@ -30,6 +30,8 @@ lessons:
   - key: one-page
     title: 'One page, plainly'
     section: Practice
+    form: one-page-workbook
+    answers: required
     downloads:
       - title: The one-page worksheet
         src: /uploads/books/plain-words.png

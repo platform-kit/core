@@ -155,3 +155,21 @@ html[data-theme='dark'] .ff-step, html[data-theme='dark'] .qopt { background: #F
   .fq { font-size: 21px }
   .ff-steps .ff-step { min-width: 36px; height: 44px; font-size: 15px }
 }
+
+/* AN ORDERED LIST: numbered rows, each with a handle to drag it by and a way to take it out */
+.ff-ol { list-style: none; margin: 4px 0 0; padding: 0; max-width: 560px; display: grid; gap: 8px }
+.ff-li { display: flex; align-items: center; gap: 8px; touch-action: none }
+.ff-li.is-dragging { opacity: .6 }
+.ff-li .ff-num { flex: 0 0 auto; min-width: 1.6em; text-align: right; font-size: 17px; color: var(--qink3); font-variant-numeric: tabular-nums }
+.qz .ff-li .ff-li-in { flex: 1 1 0; min-width: 0; width: 0; margin-top: 0 }
+.ff-grip, .ff-li-x { flex: 0 0 auto; display: inline-grid; place-items: center; width: 32px; height: 40px; border: 0; background: transparent; color: var(--qink3); border-radius: 8px; cursor: grab; padding: 0 }
+.ff-grip svg { width: 12px; height: 16px; fill: currentColor }
+.ff-li-x { cursor: pointer; opacity: .7 }
+.ff-li-x svg, .ff-li-add svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round }
+.ff-grip:hover, .ff-li-x:hover { color: var(--qink); background: var(--qhair) }
+.ff-grip:focus-visible, .ff-li-x:focus-visible, .ff-li-add:focus-visible { outline: 2px solid var(--qink); outline-offset: 1px }
+.ff-li.is-dragging .ff-grip { cursor: grabbing }
+.ff-li-add { display: inline-flex; align-items: center; gap: 8px; margin: 12px 0 0 72px; border: 1px dashed var(--qhair); background: transparent; color: var(--qink2); font: inherit; font-size: 15px; padding: 8px 14px; border-radius: 10px; cursor: pointer }
+.ff-li-add:hover { color: var(--qink); border-color: var(--qink3) }
+.ff-list .ff-hint { margin-left: 72px }
+@media (max-width: 560px) { .ff-li-add, .ff-list .ff-hint { margin-left: 0 } .ff-grip, .ff-li-x { width: 28px } }

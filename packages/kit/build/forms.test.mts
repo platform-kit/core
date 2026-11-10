@@ -43,14 +43,14 @@ const m = parseForm(fixture('every-kind.md'))
 t('the fixture parses with no error', () => assert.deepEqual(m.errors, []))
 t('the settings: forms.md\'s (defaults filled) and the kit\'s', () => {
   assert.equal(m.settings.title, 'Every kind'); assert.equal(m.settings['page-progress'], 'show'); assert.equal(m.settings.page, 'form-slides'); assert.equal(m.settings.accent, '0, 102, 255')
-  assert.deepEqual(m.kit, { published: true, once: true, respond: 'anyone', embedOrigins: ['https://example.com', 'http://localhost:3000'], webhook: 'https://example.com/hook', pass: 1, score: { pick: 'b' }, paid: '', ticket: '', ticketTitle: '', ticketPriority: '' })
+  assert.deepEqual(m.kit, { published: true, once: true, respond: 'anyone', embedOrigins: ['https://example.com', 'http://localhost:3000'], webhook: 'https://example.com/hook', pass: 1, score: { pick: 'b' }, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false })
 })
 t('the data block is read', () => assert.deepEqual(m.data, { brand: 'Acme', plans: ['Free', 'Pro'] }))
 t('the slides: start first, the bodies, the end last', () => assert.deepEqual(m.slides.map((s) => s.type), ['start', 'body', 'body', 'body', 'body', 'end']))
 t('the start slide: its button and its copy with a binding and an attribute line', () => { const s = m.slides[0]; assert.equal(s.button, 'Go'); assert.equal(s.blocks[0].type, 'markdown'); assert.deepEqual(s.blocks[0].deps, ['brand']); assert.ok(s.blocks[0].md.includes('[.text-center]')) })
 t('every kind is a field of its kind', () => {
   const kinds = Object.fromEntries(m.fields.map((f: { name: any; kind: any }) => [f.name, f.kind]))
-  assert.deepEqual(kinds, { name: 'text', email: 'email', site: 'url', phone: 'tel', secret: 'password', age: 'number', about: 'text', plan: 'select', pick: 'choice', many: 'choice', pickOther: 'text', picture: 'picture', stars: 'rating', nps: 'scale', when: 'date', at: 'time', stamp: 'datetime', file: 'file', said: 'voice', seen: 'video' })
+  assert.deepEqual(kinds, { name: 'text', email: 'email', site: 'url', phone: 'tel', secret: 'password', age: 'number', about: 'text', plan: 'select', pick: 'choice', many: 'choice', pickOther: 'text', picture: 'picture', stars: 'rating', nps: 'scale', when: 'date', at: 'time', stamp: 'datetime', file: 'file', said: 'voice', seen: 'video', ranked: 'list' })
   assert.deepEqual([...new Set(m.fields.map((f: { kind: any }) => f.kind))].sort(), [...KINDS].sort())   /* every kind the language has, at least once */
 })
 t('the parameters, per kind, as forms.md reads them', () => {
@@ -137,7 +137,7 @@ t('form-slides: a screen per slide, the end last, a jump as a skip', () => {
   assert.deepEqual(s.map((x: { progress: any }) => x.progress), [0, 25, 50, 75, 100, 100])
 })
 t('slides: the same screens, nothing posted', () => { const w = parseForm(raw.replace('#! title = Every kind', '#! title = Every kind\n#! page = slides')); const s = formScreens(w, () => ({})); assert.equal(s.length, 6); assert.ok(s.every((x: { post: any }) => !x.post)); assert.equal(s[1].isForm, false) })
-t('single: one screen, every block', () => { const w = parseForm(raw.replace('#! title = Every kind', '#! title = Every kind\n#! page = single')); const s = formScreens(w, () => ({})); assert.equal(s.length, 1); assert.equal(s[0].single, true); assert.equal(s[0].fields.length, 20) })
+t('single: one screen, every block', () => { const w = parseForm(raw.replace('#! title = Every kind', '#! title = Every kind\n#! page = single')); const s = formScreens(w, () => ({})); assert.equal(s.length, 1); assert.equal(s[0].single, true); assert.equal(s[0].fields.length, 21) })
 t('a document with no end slide gets the default one', () => { const w = parseForm('a = TextInput(| question = A)'); const s = formScreens(w, () => ({})); assert.equal(s.length, 2); assert.equal(s[1].defaultEnd, true) })
 
 /* ---- the validation ---- */
@@ -157,6 +157,36 @@ t('a slide: the first message per field', () => assert.deepEqual(validateSlide([
 
 /* ---- the grade ---- */
 t('a quiz is graded by its right answers', () => { assert.deepEqual(grade({ q1: 'b', q2: 'Paris' }, { q1: 'B', q2: ' paris ' }, 2), { score: 2, total: 2, passed: true }); assert.deepEqual(grade({ q1: 'a | b' }, { q1: ['b', 'a'] }, null), { score: 1, total: 1, passed: null }); assert.deepEqual(grade({ q1: 'a' }, {}, 1), { score: 0, total: 1, passed: false }) })
+
+/* ---- the ordered list (openspec: forms-api) ---- */
+t('an ordered list is a kind, read with its parameters and written back the same', () => {
+  assert.ok(KINDS.includes('list'))
+  const m = parseForm('ranked* = ListInput(\n  | question = What is going well? Highest first\n  | placeholder = The first thing\n  | max = 6\n  | maxlength = 80\n)')
+  assert.deepEqual(m.errors, []); assert.deepEqual(m.warnings, [])
+  const f = m.fields[0]
+  assert.equal(f.kind, 'list'); assert.equal(f.required, true)
+  assert.deepEqual({ ...f.params, question: undefined }, { question: undefined, placeholder: 'The first thing', max: 6, maxlength: 80 })
+  assert.equal(composeField(f), 'ranked* = ListInput(\n\t| question = What is going well? Highest first\n\t| placeholder = The first thing\n\t| max = 6\n\t| maxlength = 80\n)')
+  assert.equal(fieldContract(m).find((x: any) => x.name === 'ranked').multiple, true)
+})
+t('an ordered list refuses a parameter it has no use for', () => {
+  const m = parseForm('x = ListInput(| question = Q | choices = a, b | max = 0)')
+  assert.equal(m.warnings.length, 2)
+})
+t('an ordered list: required needs one row that says something; rows are checked for length', () => {
+  const W = { 'list-required': 'one', 'too-long': 'long {n}' }
+  assert.equal(validateField({ kind: 'list', required: true, params: {} }, ['', '  '], W), 'one')
+  assert.equal(validateField({ kind: 'list', required: true, params: {} }, ['my work'], W), '')
+  assert.equal(validateField({ kind: 'list', params: { maxlength: 3 } }, ['ok', 'too long'], W), 'long 3')
+  assert.equal(validateField({ kind: 'list', params: {} }, [], W), '')
+})
+
+/* ---- the workbook form ---- */
+t('a workbook form is signed in only', () => { const m = parseForm('#! workbook = true\n\nx = TextInput(| question = Q)'); assert.deepEqual(m.errors, []); assert.equal(m.kit.workbook, true); assert.equal(m.kit.respond, 'authenticated') })
+t('a workbook form refuses what would send its answers elsewhere or treat them as a test', () => {
+  const m = parseForm('#! workbook = true\n#! once = true\n#! webhook = https://example.com/hook\n#! score = x: a\n\nx = TextInput(| question = Q)')
+  assert.equal(m.errors.length, 1); assert.match(m.errors[0].message, /once, score, webhook/); assert.equal(m.errors[0].line, 1)
+})
 
 console.log(`forms: ${n - bad}/${n} pass`)
 process.exit(bad ? 1 : 0)

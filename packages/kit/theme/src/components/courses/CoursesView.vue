@@ -15,8 +15,9 @@
     <!-- a library of one course is that course: its overview, here at the library's address (openspec: courses) -->
     <CourseLibrary v-if="view === 'list'" v-show="!solo" :base="base" @one="(s: string | null) => (solo = s)" />
     <CourseOverview
-      v-if="view === 'list' ? !!solo : view === 'course' || !state" :base="base" :state="state" :loading="loading" :busy="busy" :problem="problem"
+      v-if="view === 'list' ? !!solo : view === 'course' || (view === 'lesson' && !state)" :base="base" :state="state" :loading="loading" :busy="busy" :problem="problem"
       :alone="view === 'list'" @enroll="enroll" @sign-in="signIn" />
+    <CourseWorkbook v-else-if="view === 'workbook'" :base="base" :slug="slug ?? ''" />
     <CoursePlayer
       v-else-if="view === 'lesson'" :base="base" :state="state" :lesson-key="lessonKey ?? ''" :lesson="lesson" :loading="loading" :busy="busy" :problem="problem" :outcome="outcome"
       :earned="earned" @enroll="enroll" @sign-in="signIn" @complete="complete" @form-done="formDone" />
@@ -33,6 +34,7 @@ import { setHead } from 'platformkit/lib/seo.js'
 import CourseLibrary from './CourseLibrary.vue'
 import CourseOverview from './CourseOverview.vue'
 import CoursePlayer from './CoursePlayer.vue'
+import CourseWorkbook from './CourseWorkbook.vue'
 import { words, rpc, leadOf, courseState, loadCourse, keepCourse, forgetCourses } from './course-ui.js'
 import './courses.css'
 
@@ -47,7 +49,8 @@ const { K, S } = words()
 
 /* where we are, under the base: '' · <slug> · <slug>/<lesson> */
 const parts = computed(() => String(props.path || '').split('/').filter(Boolean))
-const view = computed(() => (parts.value.length >= 2 ? 'lesson' : parts.value.length === 1 ? 'course' : 'list'))
+/* <slug>/workbook is the course's workbook; no lesson takes that key (the build refuses it) */
+const view = computed(() => (parts.value[1] === 'workbook' ? 'workbook' : parts.value.length >= 2 ? 'lesson' : parts.value.length === 1 ? 'course' : 'list'))
 /* the only course, where the library has one; the library finds out and says */
 const solo = ref<string | null>(null)
 const slug = computed(() => parts.value[0] || (view.value === 'list' ? solo.value : null))
@@ -59,7 +62,7 @@ const state = computed(() => (slug.value ? courseState(slug.value) : null))
 
 async function load() {
   problem.value = ''
-  if (!slug.value) return
+  if (!slug.value || view.value === 'workbook') return
   loading.value = true
   try {
     const [s, l] = await Promise.all([
@@ -113,6 +116,7 @@ watch(() => [lessonKey.value, state.value && state.value.slug], () => lookUpEarn
 /* A FORM LESSON'S FORM FINISHED: the server has recorded the lesson as the response completed (where it passed), so
    the course is only read again; where that finished the course, the player says so */
 async function formDone() {
+  problem.value = ''
   const at = lessonKey.value
   const was = !!(state.value && state.value.enrollment && state.value.enrollment.completed_at)
   try {

@@ -142,6 +142,7 @@ export const STATE = {
   /* courses: what a person did in one */
   enrollments: 'somebody got into a course — kept when they lose access, so coming back resumes it, and its release dates count from it',
   lesson_progress: 'a lesson somebody finished',
+  course_workbook_shares: 'a reader let a coach read their workbook for a course, until they withdrew it',
   course_notices: 'what each person has been told about a course, so nothing is told twice',
   certificates: 'a course somebody finished, issued once with the name and title as they read at the time',
   /* print production */

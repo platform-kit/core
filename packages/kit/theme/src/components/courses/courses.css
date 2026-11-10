@@ -321,3 +321,53 @@
 .crs-quiz-award:hover { text-decoration: underline; }
 /* the curriculum is beside the lesson on a wide screen, so its toggle in the bar needs no word */
 .crs-pbar-word { display: none; }
+
+/* a lesson's workbook form */
+.crs-work-kicker { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; }
+.crs-work-need { color: var(--ink2); text-transform: none; letter-spacing: 0; }
+.crs-work .crs-work-run { min-height: 380px; }
+.crs-work-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 640px) { .crs-quiz-result .crs-work-acts { grid-column: 1 / -1; justify-content: flex-start; } }
+
+/* THE WORKBOOK: the reader's answers by module and lesson, a question over its answer; and the sharing card */
+.crs-wb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin: 8px 0 28px; }
+.crs-wb-head h1 { margin: 4px 0 8px; }
+.crs-wb-head .btn { flex: 0 0 auto; }
+.crs-wb-mod { margin: 0 0 36px; }
+.crs-wb-mod-title { display: grid; gap: 2px; font-size: 22px; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--hair); }
+.crs-wb-lesson { padding: 18px 20px; margin: 0 0 12px; border: 1px solid var(--hair); border-radius: var(--crs-r); background: var(--card); break-inside: avoid; }
+.crs-wb-lesson-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.crs-wb-lesson-head h3 { font-size: 17px; margin: 0; }
+.crs-wb-when { font-size: 13px; color: var(--ink2); }
+.crs-wb-qa { margin: 0; display: grid; gap: 4px; }
+.crs-wb-qa dt { font-size: 14px; font-weight: 600; color: var(--ink2); margin-top: 10px; }
+.crs-wb-qa dt:first-child { margin-top: 0; }
+.crs-wb-qa dd { margin: 0; }
+.crs-wb-text { margin: 0; white-space: pre-wrap; line-height: 1.55; }
+.crs-wb-list { margin: 0; padding-left: 1.5em; line-height: 1.6; }
+.crs-wb-blank, .crs-wb-empty { margin: 0; color: var(--ink2); font-size: 15px; }
+.crs-wb-share { margin: 8px 0 24px; max-width: 640px; }
+.crs-wb-share-title { display: flex; align-items: center; gap: 8px; font-size: 18px; margin: 0 0 6px; }
+.crs-wb-share-lead { color: var(--ink2); font-size: 15px; margin: 0 0 14px; line-height: 1.5; }
+.crs-wb-shares { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
+.crs-wb-shares li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--hair); }
+.crs-wb-shares small { color: var(--ink2); }
+.crs-wb-share-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.crs-wb-select { flex: 1 1 220px; min-width: 0; font: inherit; font-size: 15px; padding: 9px 12px; border: 1px solid var(--hair); border-radius: 10px; background: var(--paper, var(--card)); color: var(--ink); }
+@media (max-width: 640px) { .crs-wb-head { flex-direction: column; gap: 12px; } .crs-wb-lesson { padding: 14px 16px; } }
+/* printed, the workbook is the page: everything around it goes */
+@media print {
+  body * { visibility: hidden; }
+  .crs-wb, .crs-wb * { visibility: visible; }
+  .crs-wb { position: absolute; left: 0; top: 0; width: 100%; }
+  .crs-wb-noprint { display: none !important; }
+  .crs-wb-lesson { border-color: #ccc; background: none; }
+}
+
+.crs-wb-shelf { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.crs-wb-shelf a { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--hair); border-radius: var(--crs-r); background: var(--card); color: var(--ink); text-decoration: none; }
+.crs-wb-shelf a:hover { border-color: var(--ink2); }
+.crs-wb-shelf a > span:nth-child(2) { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.crs-wb-shelf small { color: var(--ink2); font-size: 13px; }
+.crs-wb-shelf-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: var(--wash); color: var(--ink2); flex: 0 0 auto; }
+.crs-wb .crs-wb-mod-title { margin-bottom: 16px; }

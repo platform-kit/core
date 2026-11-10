@@ -48,6 +48,10 @@
                 <span class="crs-btn-main"><CourseIcon name="award" :size="15" />{{ K.certificate }}</span>
               </a>
               <a v-if="state.enrollment.completed_at && first" class="btn crs-btn-block" :href="courseHref + '/' + first.key">{{ K.review }}</a>
+              <!-- the course's workbook, where its lessons carry forms -->
+              <a v-if="state.workbook" class="btn crs-btn-block" :href="courseHref + '/workbook'">
+                <span class="crs-btn-main"><CourseIcon name="workbook" :size="15" />{{ S.workbook }}</span>
+              </a>
             </template>
             <template v-else>
               <p class="crs-access">{{ accessLine }}</p>
