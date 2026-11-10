@@ -14,8 +14,7 @@ const m = computed(() => text.value.match(/^(.*?)(\d[\d,.]*)(.*)$/))
 const rm = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 let io: any = null, raf = 0
 function run() {
-  // @ts-expect-error TS2488, from the conversion: Type 'RegExpMatchArray | null' must have a '[Symbol.iterator]()' method that returns an iterator.
-  const [, pre, num, post] = m.value
+  const [, pre, num, post] = m.value!
   const decimals = (num.split('.')[1] || '').length, target = Number(num.replace(/,/g, '')), grouped = num.includes(',')
   const t0 = performance.now()
   const step = (t: number) => {

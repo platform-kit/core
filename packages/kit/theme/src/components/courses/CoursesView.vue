@@ -16,8 +16,8 @@
     <CourseOverview
       v-else-if="view === 'course' || !state" :base="base" :state="state" :loading="loading" :busy="busy" :problem="problem"
       @enroll="enroll" @sign-in="signIn" />
-    <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string'. --><CoursePlayer
-      v-else :base="base" :state="state" :lesson-key="lessonKey" :lesson="lesson" :loading="loading" :busy="busy" :problem="problem" :outcome="outcome"
+    <CoursePlayer
+      v-else :base="base" :state="state" :lesson-key="lessonKey ?? ''" :lesson="lesson" :loading="loading" :busy="busy" :problem="problem" :outcome="outcome"
       :earned="earned" @enroll="enroll" @sign-in="signIn" @complete="complete" @form-done="formDone" />
   </div>
 </template>

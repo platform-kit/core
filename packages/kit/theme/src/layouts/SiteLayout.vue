@@ -6,7 +6,6 @@ import { t, us } from 'platformkit/lib/content.js'
 import { set as store } from 'platformkit/lib/store.js'
 import CommandK from '../components/content/CommandK.vue'
 import SiteMark from '../components/SiteMark.vue'
-// @ts-expect-error TS2305, from the conversion: Module '"#content"' has no exported member 'spaces'.
 import { site as SITE_RAW, spaces as SPACES_RAW } from '#content'
 /* the site's name, from content/site.md */
 const SITE_NAME = ((Array.isArray(SITE_RAW) ? SITE_RAW[0] : SITE_RAW) || {}).name || 'Site'

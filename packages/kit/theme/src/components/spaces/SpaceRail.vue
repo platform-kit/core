@@ -46,7 +46,6 @@ const shut = ref<any>({})
 const rowOf = (id: any) => props.unread.find((r) => r.channel === id) || null
 const joined = (id: any) => !!rowOf(id)
 const titleOf = (c: any) => (c.kind === 'dm' ? dmTitle(props.members[c.id] || [], props.names, props.me, { self: W.value.self, more: W.value.more, someone: W.value.someone }) : c.name)
-// @ts-expect-error TS2345, from the conversion: Argument of type 'any[]' is not assignable to parameter of type 'never[]'.
 const sections = computed(() => railSections(props.channels, props.unread, props.space ? props.space.id : null, (props.space && props.space.groups) || []))
 /* The rail's runs, in the order they are drawn: the headings the space's own file declares (each
    with the rooms that name it), then what this person starred, then whatever sits under no heading,
@@ -155,7 +154,7 @@ const soloPeer = (c: { id: string|number }) => {
                 <span v-if="c.encrypted" class="sr-sealed" role="img" :title="EN.room.sealed" :aria-label="EN.room.sealed">
                   <SpaceIcon name="shield" :size="12" />
                 </span>
-                <!-- @vue-expect-error TS2531, from the conversion: Object is possibly 'null'. --><em v-if="badge(c.id) && badge(c.id).mention" class="sr-badge"><!-- @vue-expect-error TS2531, from the conversion: Object is possibly 'null'. -->{{ badge(c.id).text }}</em>
+                <em v-if="badge(c.id)?.mention" class="sr-badge">{{ badge(c.id)!.text }}</em>
               </button>
             </li>
           </ul>

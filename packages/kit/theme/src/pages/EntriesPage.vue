@@ -36,8 +36,7 @@ const counted = computed(() => {
   const many = (model.value.name || '').toLowerCase()
   return n === 1
     ? String(WI['count-one'] || '').replace('{thing}', one)
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-    : String(WI.count || '').replace('{n}', n).replace('{things}', many)
+    : String(WI.count || '').replace('{n}', String(n)).replace('{things}', many)
 })
 const entry = computed(() => (parsed.value.slug ? entries.value.find((e) => e.slug === parsed.value.slug) || null : null))
 const titleOf = (m: { title: string|number }, e: { [x: string]: any; slug: any }) => String(e[m.title] || e.slug)
@@ -53,7 +52,7 @@ const refOf = (f: { model: any }, slug: any) => { const m = MODELS.find((x: { ke
 const src = (v: { src: any }) => (v && typeof v === 'object' ? v.src : v)
 const empty = (v: string|any[]|null|undefined) => v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length) || (typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length)
 const shown = computed(() => (entry.value && model.value ? model.value.fields.filter((f: { key: string|number }) => f.key !== model.value.title && !empty(entry.value[f.key])) : []))
-const md = (s: any) => marked.parse(String(s || ''))
+const md = (s: any) => marked.parse(String(s || ''), { async: false })
 const when = (s: any) => { const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(String(s || '')); if (!m) return s; const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) + (m[4] ? `, ${m[4]}:${m[5]}` : '') }
 watch([model, entry], ([m, e]) => {
   if (!m) { setHead({ title: '', path: props.path, noindex: true }); return }
@@ -96,7 +95,7 @@ watch([model, entry], ([m, e]) => {
               <dd>
                 <img v-if="f.kind === 'image'" :src="src(entry[f.key])" :alt="f.label" class="ep-img" />
                 <a v-else-if="f.kind === 'file'" :href="src(entry[f.key])" download>{{ f.label }}</a>
-                <!-- @vue-expect-error TS2322, from the conversion: Type 'string | Promise<string>' is not assignable to type 'string | undefined'. --><MarkdownDoc v-else-if="f.kind === 'markdown'" :html="md(entry[f.key])" class="ep-md" />
+                <MarkdownDoc v-else-if="f.kind === 'markdown'" :html="md(entry[f.key])" class="ep-md" />
                 <span v-else-if="f.kind === 'boolean'">{{ entry[f.key] ? WE.yes : WE.no }}</span>
                 <span v-else-if="f.kind === 'date' || f.kind === 'datetime'">{{ when(entry[f.key]) }}</span>
                 <a v-else-if="f.kind === 'url'" :href="entry[f.key]" rel="noopener">{{ entry[f.key] }}</a>
@@ -104,12 +103,12 @@ watch([model, entry], ([m, e]) => {
                 <span v-else-if="f.kind === 'select'">{{ (f.options.find((o: any) => o.value === entry[f.key]) || {}).label || entry[f.key] }}</span>
                 <span v-else-if="f.kind === 'multi-select'">{{ entry[f.key].map((v: any) => (f.options.find((o: any) => o.value === v) || {}).label || v).join(', ') }}</span>
                 <span v-else-if="f.kind === 'tags'" class="ep-tags"><span v-for="t in entry[f.key]" :key="t" class="ep-tag">{{ t }}</span></span>
-                <span v-else-if="f.kind === 'reference'" class="ep-refs"><template v-for="(s, i) in (Array.isArray(entry[f.key]) ? entry[f.key] : [entry[f.key]])" :key="s"><span v-if="i">, </span><!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><a v-if="refOf(f, s).href" :href="refOf(f, s).href">{{ refOf(f, s).title }}</a><span v-else>{{ refOf(f, s).title }}</span></template></span>
+                <span v-else-if="f.kind === 'reference'" class="ep-refs"><template v-for="(s, i) in (Array.isArray(entry[f.key]) ? entry[f.key] : [entry[f.key]])" :key="s"><span v-if="i">, </span><a v-if="refOf(f, s).href" :href="refOf(f, s).href ?? undefined">{{ refOf(f, s).title }}</a><span v-else>{{ refOf(f, s).title }}</span></template></span>
                 <dl v-else-if="f.kind === 'group'" class="ep-group"><template v-for="g in f.fields.filter((g: any) => !empty(entry[f.key][g.key]))" :key="g.key"><dt>{{ g.label }}</dt><dd>{{ g.kind === 'boolean' ? (entry[f.key][g.key] ? WE.yes : WE.no) : Array.isArray(entry[f.key][g.key]) ? entry[f.key][g.key].join(', ') : entry[f.key][g.key] }}</dd></template></dl>
                 <ul v-else-if="f.kind === 'list'" class="ep-rows">
                   <li v-for="(row, i) in entry[f.key]" :key="i">
                     <dl v-if="f.of === 'group'" class="ep-group"><template v-for="g in f.fields.filter((g: any) => !empty(row[g.key]))" :key="g.key"><dt>{{ g.label }}</dt><dd>{{ g.kind === 'boolean' ? (row[g.key] ? WE.yes : WE.no) : Array.isArray(row[g.key]) ? row[g.key].join(', ') : row[g.key] }}</dd></template></dl>
-                    <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><a v-else-if="f.of === 'reference' && refOf(f, row).href" :href="refOf(f, row).href">{{ refOf(f, row).title }}</a>
+                    <a v-else-if="f.of === 'reference' && refOf(f, row).href" :href="refOf(f, row).href ?? undefined">{{ refOf(f, row).title }}</a>
                     <a v-else-if="f.of === 'url'" :href="row" rel="noopener">{{ row }}</a>
                     <span v-else>{{ f.of === 'reference' ? refOf(f, row).title : Array.isArray(row) ? row.join(', ') : row }}</span>
                   </li>

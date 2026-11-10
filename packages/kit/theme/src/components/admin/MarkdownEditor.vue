@@ -136,7 +136,8 @@ const ICONS: any = {
 }
 const svg = (name: any) => `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`
 
-const TOOLS = [
+/* a toolbar button: its glyph and title, or a separator; whether it is lit, and what it does */
+const TOOLS: Array<{ icon?: string, title?: string, compact?: boolean, sep?: boolean, end?: boolean, active?: (e: any) => boolean, disabled?: (e: any) => boolean, run?: (e: any) => unknown }> = [
   { icon: 'bold', title: 'Bold', compact: true, active: (e: any) => e.isActive('bold'), run: (e: any) => e.chain().focus().toggleBold().run() },
   { icon: 'italic', title: 'Italic', compact: true, active: (e: any) => e.isActive('italic'), run: (e: any) => e.chain().focus().toggleItalic().run() },
   { icon: 'strike', title: 'Strikethrough', active: (e: any) => e.isActive('strike'), run: (e: any) => e.chain().focus().toggleStrike().run() },
@@ -163,8 +164,7 @@ const tools = computed(() => {
   const list = props.compact ? TOOLS.filter((t) => t.compact) : TOOLS
   if (!props.prose) return list
   /* the prose set, with no separator left standing beside another or at an end */
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
-  const out = list.filter((t) => t.sep || PROSE.has(t.icon))
+  const out = list.filter((t) => t.sep || PROSE.has(t.icon ?? ''))
   return out.filter((t, i) => !t.sep || (i > 0 && i < out.length - 1 && !out[i - 1].sep))
 })
 </script>
@@ -175,15 +175,15 @@ const tools = computed(() => {
       <template v-for="(t, i) in tools" :key="i">
         <span v-if="t.sep" class="md-sep" :class="{ 'md-sep-end': t.end }" />
         <span v-else-if="t.icon === 'image'" class="md-imgwrap">
-          <button type="button" class="md-btn" :class="{ on: imgMenu }" :title="t.title" @click="t.run(editor)" v-html="svg(t.icon)" />
+          <button type="button" class="md-btn" :class="{ on: imgMenu }" :title="t.title" @click="t.run!(editor)" v-html="svg(t.icon)" />
           <span v-if="imgMenu" class="md-imgmenu" @mouseleave="imgMenu = false">
             <button type="button" @click="uploadImage">{{ MF['upload-image'] }}</button>
             <button type="button" @click="libraryImage">{{ MF.choose }}</button>
           </span>
         </span>
-        <!-- @vue-expect-error TS2722, from the conversion: Cannot invoke an object which is possibly 'undefined'. --><button v-else type="button" class="md-btn" :class="{ on: t.active && t.active(editor) }"
+        <button v-else type="button" class="md-btn" :class="{ on: t.active && t.active(editor) }"
                 :disabled="t.disabled && t.disabled(editor)" :title="t.title"
-                @click="t.run(editor)" v-html="svg(t.icon)" />
+                @click="t.run!(editor)" v-html="svg(t.icon)" />
       </template>
     </div>
     <input ref="fileInput" type="file" accept="image/*" hidden @change="onPickImage" />

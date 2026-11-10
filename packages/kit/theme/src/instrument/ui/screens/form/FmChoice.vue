@@ -11,8 +11,7 @@ const p = computed(() => props.field.params || {})
 const multiple = computed(() => p.value.multiple !== undefined)
 const picture = computed(() => props.field.kind === 'picture')
 const chosen = computed(() => (multiple.value ? (Array.isArray(props.modelValue) ? props.modelValue : []) : props.modelValue == null ? '' : String(props.modelValue)))
-// @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-const isOn = (v: any) => (multiple.value ? chosen.value.includes(v) : chosen.value === v)
+const isOn = (v: any) => (multiple.value ? (chosen.value as any[]).includes(v) : chosen.value === v)
 function pick(v: string) {
   if (p.value.disabled !== undefined) return
   if (multiple.value) { const cur = [...chosen.value]; const i = cur.indexOf(v); if (i >= 0) cur.splice(i, 1); else cur.push(v); emit('update:modelValue', cur) }
@@ -28,7 +27,7 @@ const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     <div class="ff-choices" :role="multiple ? 'group' : 'radiogroup'">
       <button v-for="(c, n) in p.choices" :key="c.value" type="button" class="qopt ff-opt" :class="{ on: isOn(c.value) }" :role="multiple ? 'checkbox' : 'radio'" :aria-checked="isOn(c.value)" :disabled="p.disabled !== undefined" @click="pick(c.value)">
         <img v-if="picture && c.image" class="ff-pic" :src="c.image" alt="" loading="lazy" />
-        <span class="k"><!-- @vue-expect-error TS7015, from the conversion: Element implicitly has an 'any' type because index expression is not of type 'number'. -->{{ letters[n] || n + 1 }}</span>
+        <span class="k">{{ letters[Number(n)] || Number(n) + 1 }}</span>
         <span v-if="!(picture && p.hidelabels !== undefined)" class="qoptl">{{ c.label }}</span>
         <span v-if="multiple" class="ff-tick" aria-hidden="true">✓</span>
       </button>

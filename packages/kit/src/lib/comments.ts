@@ -30,7 +30,7 @@ export async function commentCounts(kind: any, subjects = []) {
 /* SAYING SOMETHING. The title and the address are only ever used where the subject does not exist
    yet and its KIND is open — an embed naming the page it is on. Everything of the site's own is
    projected and already has both. A caller may name a thread; it may not rename one. */
-export async function say(kind: any, subject: any, body: any, parent = null, title = null, href = null) {
+export async function say(kind: any, subject: any, body: any, parent: string | null = null, title: string | null = null, href: string | null = null) {
   if (!on()) return { error: 'offline' }
   const { data, error } = await (supabase as any).rpc('comment_say', {
     p_kind: kind, p_subject: subject, p_body: body, p_parent: parent, p_title: title, p_href: href,

@@ -140,7 +140,7 @@ const qNote = (x: any) => { const empty = x.options.filter((o: any) => !o.trim()
           <p class="co-hint">Four options each; choose the right one. A note under the question says why.</p>
           <div v-for="(x, i) in active.quiz" :key="i" class="co-q">
             <div class="co-qhead">
-              <span class="co-qn"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ i + 1 }}</span>
+              <span class="co-qn">{{ Number(i) + 1 }}</span>
               <textarea v-model="x.q" v-autosize class="co-qtext" rows="1" placeholder="The question" @input="fit($event.target)" />
               <span class="co-qtools">
                 <button type="button" class="co-qbtn" title="Move up" :disabled="i === 0" @click="moveQuestion(i, -1)">↑</button>
@@ -151,7 +151,7 @@ const qNote = (x: any) => { const empty = x.options.filter((o: any) => !o.trim()
             <div class="co-opts">
               <label v-for="(o, j) in x.options" :key="j" class="co-opt" :class="{ right: x.answer === j }">
                 <input type="radio" :name="'q' + active.id + '-' + i" :checked="x.answer === j" title="The right answer" @change="x.answer = j" />
-                <!-- @vue-expect-error TS7015, from the conversion: Element implicitly has an 'any' type because index expression is not of type 'number'. --><textarea v-model="x.options[j]" v-autosize rows="1" :placeholder="'Option ' + 'ABCD'[j]" @input="fit($event.target)" />
+                <textarea v-model="x.options[j]" v-autosize rows="1" :placeholder="'Option ' + 'ABCD'[Number(j)]" @input="fit($event.target)" />
               </label>
             </div>
             <textarea v-model="x.why" v-autosize rows="1" class="co-why" placeholder="Why (optional) — shown after answering" @input="fit($event.target)" />

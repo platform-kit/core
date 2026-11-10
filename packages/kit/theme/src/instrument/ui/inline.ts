@@ -9,8 +9,7 @@
  * than CommonMark's second bold, because bold already has `**` and a sentence
  * has no other way to say underline.
  */
-// @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Type 'string | undefined' is not assignable to type 'string'. Typ
-const esc = (s: any) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const esc = (s: any) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c])
 
 /* escaped text with the marks as tags */
 export function inline(text: any) {

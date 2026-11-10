@@ -35,8 +35,7 @@ let seq = 0
 const blocks = ref<any>([])
 const clone = (v: any) => JSON.parse(JSON.stringify(v == null ? null : v))
 /* `key:` with nothing after it is null in YAML; the form treats it as blank */
-// @ts-expect-error TS7023, from the conversion: 'blankNulls' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in 
-const blankNulls = (v: any) => (v === null ? undefined : Array.isArray(v) ? v.map(blankNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, blankNulls(x)])) : v)
+const blankNulls = (v: any): any => (v === null ? undefined : Array.isArray(v) ? v.map(blankNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, blankNulls(x)])) : v)
 const def = (b: any) => SECTION_SCHEMAS[b.component] || null
 /* the section against its schema, and its conditional record against the chosen kind's: { errors by path, valid } */
 function check(b: any) {

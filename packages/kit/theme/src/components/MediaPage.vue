@@ -57,7 +57,7 @@ let mo: any = null
 onMounted(() => { mo = new MutationObserver(() => { dark.value = document.documentElement.dataset.theme === 'dark' }); mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }) })
 onBeforeUnmount(() => { if (mo) mo.disconnect() })
 /* the tiles: a card the size of a small cover, the list a comfortable row */
-const config = computed(() => ({ theme: dark.value ? 'midnight' : 'silver', persist: !props.pick, initialPath: 'uploads://', showThumbnails: true, notificationPosition: 'bottom-right', gridItemWidth: 148, gridItemHeight: 150, gridItemGap: 10, gridIconSize: 56, listItemHeight: 40, listItemGap: 0, listIconSize: 18 }))
+const config = computed(() => ({ theme: dark.value ? 'midnight' : 'silver', persist: !props.pick, initialPath: 'uploads://', showThumbnails: true, notificationPosition: 'bottom-right' as const, gridItemWidth: 148, gridItemHeight: 150, gridItemGap: 10, gridIconSize: 56, listItemHeight: 40, listItemGap: 0, listIconSize: 18 }))
 /* what the pipe serves: no archives, no editor, no new empty file, no theme or language switch (the site's own) */
 const features = { edit: false, newfile: false, newfolder: true, preview: true, archive: false, unarchive: false, search: true, rename: true, upload: true, delete: true, fullscreen: false, download: true, language: false, move: true, copy: true, history: true, theme: false, pinned: !props.pick }
 
@@ -95,7 +95,7 @@ function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() 
     <template v-else>
       <div class="md-frame" :class="{ dark }">
         <div v-if="count === 0" class="md-empty">{{ F.empty }}</div>
-        <!-- @vue-expect-error TS2322, from the conversion: Type 'MediaDriver' is not assignable to type 'Driver'. --><VueFinder :id="pick ? 'media-picker' : 'media'" :driver="driver" :config="config" :features="features" locale="en"
+        <VueFinder :id="pick ? 'media-picker' : 'media'" :driver="driver" :config="config" :features="features" locale="en"
                    :selection-mode="pick ? 'single' : 'multiple'" :selection-filter-type="pick ? 'files' : 'both'" :selection-filter-mime-includes="mimes"
                    @select="onSelect" @file-dclick="onDclick">
           <template #menubar-start><MediaRoots /></template>

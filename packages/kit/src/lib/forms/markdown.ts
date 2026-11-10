@@ -42,5 +42,5 @@ md.use({
 /* the copy of a block, as HTML, over the context (data + answers) */
 export function renderMarkdown(text: string, ctx: { name: string }) {
   const src = renderCopy(text, ctx)
-  try { return md.parse(src) } catch (e: any) { if (typeof console !== 'undefined') console.warn('[forms] copy not rendered: ' + (e.message || e)); return `<p>${String(src).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' } as Record<string, string>)[c])}</p>` }
+  try { return md.parse(src, { async: false }) } catch (e: any) { if (typeof console !== 'undefined') console.warn('[forms] copy not rendered: ' + (e.message || e)); return `<p>${String(src).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' } as Record<string, string>)[c])}</p>` }
 }

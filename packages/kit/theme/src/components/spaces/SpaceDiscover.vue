@@ -131,7 +131,6 @@ async function ask() {
   if (!sp || busy.value) return
   busy.value = true; err.value = ''
   try {
-    // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'null | undefined'.
     const r = await askToJoin(sp.id, { note: note.value || null, response: answered.value, agreed: agreed.value })
     if (r && r.error) { err.value = W.value['err-' + r.error] || r.error; return }
     sent.value = (r && r.state) || 'accepted'
@@ -177,11 +176,11 @@ const shut = () => { door.value = null }
         <span class="sv-takes">{{ takes(s).word }}</span>
         <a v-if="s.mine" class="sv-go" :href="ROUTES.spaces + '/' + s.slug">{{ W['go-in'] }}</a>
         <template v-else-if="doorOf(s)">
-          <!-- @vue-expect-error TS2531, from the conversion: Object is possibly 'null'. --><button v-if="doorOf(s).state === 'open' || doorOf(s).state === 'signin'" type="button" class="sv-go"
-                  :disabled="busy" @click="knock(s)"><!-- @vue-expect-error TS2531, from the conversion: Object is possibly 'null'. -->{{ doorOf(s).word }}</button>
-          <span v-else class="sv-quiet"><!-- @vue-expect-error TS2531, from the conversion: Object is possibly 'null'. -->{{ doorOf(s).word }}</span>
+          <button v-if="doorOf(s)!.state === 'open' || doorOf(s)!.state === 'signin'" type="button" class="sv-go"
+                  :disabled="busy" @click="knock(s)">{{ doorOf(s)!.word }}</button>
+          <span v-else class="sv-quiet">{{ doorOf(s)!.word }}</span>
         </template>
-        <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><a v-else-if="takes(s).href" class="sv-go" :href="takes(s).href">{{ W.how }}</a>
+        <a v-else-if="takes(s).href" class="sv-go" :href="takes(s).href ?? undefined">{{ W.how }}</a>
         <span v-else class="sv-quiet">{{ W['by-invitation'] }}</span>
       </li>
     </ul>

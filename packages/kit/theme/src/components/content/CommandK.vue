@@ -10,8 +10,7 @@ import { ROUTES } from 'platformkit/lib/router.js'
 /* PEOPLE, where the network is on: the people with a page the reader may see, by name — the search
    the social layout's sidebar used to hold, kept where search already is */
 const PEOPLE = moduleOn('network')
-// @ts-expect-error TS2769, from the conversion: No overload matches this call.
-const esc = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const esc = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c])
 async function peopleHits(text: any) {
   if (!PEOPLE || !isSignedIn.value || !text.trim() || kind.value) return []
   const { findPeople, net } = await import('platformkit/lib/network/api.js')
@@ -44,8 +43,7 @@ const iso = (d: any) => d.toISOString().slice(0, 10)
 function rangeBounds() {
   if (range.value === 'custom') return { after: from.value || null, before: to.value || null }
   if (!range.value) return { after: null, before: null }
-  const days = { week: 7, month: 31, year: 366 }[range.value]
-  // @ts-expect-error TS18048, from the conversion: 'days' is possibly 'undefined'.
+  const days = ({ week: 7, month: 31, year: 366 } as Record<string, number>)[range.value]!
   return { after: iso(new Date(Date.now() - days * 86400000)), before: null }
 }
 

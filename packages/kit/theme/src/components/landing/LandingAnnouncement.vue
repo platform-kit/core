@@ -41,7 +41,7 @@ onBeforeUnmount(() => { offset(0); if (ro) ro.disconnect() })
 async function copy() { try { await navigator.clipboard.writeText(props.code); copied.value = true; setTimeout(() => { copied.value = false }, 1600) } catch (e) { /* no clipboard */ } }
 </script>
 <template>
-  <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><section v-if="!gone" ref="el" class="lpsec lpann" :class="{ 'lpann-sticky': sticky, 'lpann-alert': tone === 'alert' }" :role="tone === 'alert' ? 'alert' : null">
+  <section v-if="!gone" ref="el" class="lpsec lpann" :class="{ 'lpann-sticky': sticky, 'lpann-alert': tone === 'alert' }" :role="tone === 'alert' ? 'alert' : undefined">
     <div class="lpwrap lpann-in">
       <span v-if="badge" class="lpann-badge" v-html="md(badge)"></span>
       <span class="lpann-text" v-html="md(text)"></span>

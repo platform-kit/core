@@ -31,11 +31,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
     <div class="qopts">
       <template v-for="(o, n) in screen.options || []" :key="o.v">
         <button v-if="!(o.other && other)" type="button" class="qopt" @click="pick(o)">
-          <span class="k"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ n + 1 }}</span>
+          <span class="k">{{ Number(n) + 1 }}</span>
           <span class="qoptl">{{ o.label }}</span>
         </button>
         <div v-else class="qpick-other">
-          <span class="k"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ n + 1 }}</span>
+          <span class="k">{{ Number(n) + 1 }}</span>
           <input ref="input" v-model="text" class="qwordin qpick-in" autocomplete="off" :placeholder="screen.placeholder" :aria-label="o.label" @keydown.enter.prevent="sendOther" />
           <button type="button" class="qbtn" :disabled="!text.trim()" @click="sendOther">{{ screen.submit }}</button>
         </div>

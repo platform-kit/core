@@ -89,7 +89,7 @@ export function lockedPlaces({ home = true, admitted = {} } = {}) {
 }
 
 /* what community.hide: ['following'] takes away, read by the column and a person's page */
-export const showsFollowing = (hide: string[]|undefined = []) => !(hide || []).includes('following')
+export const showsFollowing = (hide: readonly unknown[]|undefined = []) => !(hide || []).includes('following')
 
 /*
  * WHERE EACH OF THE CHAT LAYOUT'S PLACES WENT. A place in the social list is reachable as itself; the

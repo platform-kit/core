@@ -5,7 +5,7 @@
    the content pipe (the models model). */
 import { ref, computed, onMounted, watch } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
+import { ModuleRegistry, AllCommunityModule, type ColDef } from 'ag-grid-community'
 import { useAgGridTheme } from '../../lib/agGridTheme.js'
 import ModelBuilder from './ModelBuilder.vue'
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -37,7 +37,7 @@ onMounted(load)
 watch(() => props.name, (n) => { if (!n) load() })
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
 const getRowId = (q: { data: { key: any } }) => q.data.key
-const columnDefs = computed(() => [
+const columnDefs = computed<ColDef[]>(() => [
   { headerName: G['col-name'], field: 'name', pinned: 'left', flex: 1.4, minWidth: 200, cellRenderer: (q: { value: any; data: { core: any; dir: any; key: string } }) => `<span class="ma-gtitle">${q.value}</span><span class="ma-gaddr">${q.data.core ? q.data.dir : 'content/models/' + q.data.key}</span>` },
   { headerName: G['col-kind'], width: 110, valueGetter: (q: { data: { core: any } }) => (q.data.core ? G.core : G.custom), cellRenderer: (q: { data: { core: any }; value: any }) => `<span class="ui-pill ${q.data.core ? 'ui-off' : 'ui-ok'}">${q.value}</span>` },
   { headerName: G['col-on'], width: 110, valueGetter: (q: { data: { errors: string|any[]; published: any } }) => (q.data.errors && q.data.errors.length ? '!' : q.data.published ? '✓' : '—'), cellRenderer: (q: { data: { errors: any[]; published: any }; value: any }) => (q.data.errors && q.data.errors.length ? `<span class="ui-pill ui-warn" title="${q.data.errors.join('\n').replace(/"/g, '&quot;')}">!</span>` : `<span class="ui-pill ${q.data.published ? 'ui-ok' : 'ui-off'}">${q.value}</span>`) },
@@ -72,7 +72,7 @@ const columnDefs = computed(() => [
       <p v-if="loading" class="ui-muted">…</p>
       <div v-else-if="!models.length" class="ui-empty"><p>{{ W.empty }}</p><button type="button" class="ui-btn ui-primary" @click="emit('open', '__new')">{{ W.new }}</button></div>
       <div v-else class="ma-grid">
-        <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: any; field: string; pinned: string; flex: number; minWidth: number; cellRenderer: (q: { value: any; data: { core: any;  --><AgGridVue class="ma-aggrid" :theme="theme" :row-data="models" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
+        <AgGridVue class="ma-aggrid" :theme="theme" :row-data="models" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
                    :row-height="54" :suppress-cell-focus="true" @row-clicked="emit('open', $event.data.key)" />
       </div>
     </template>

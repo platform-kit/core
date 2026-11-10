@@ -28,7 +28,7 @@ export function daySections(messages: { id: any; sender_id: any; kind: string; b
   let cur = null
   for (const m of messages) {
     const k = dayKey(new Date(m.created_at))
-    if (!cur || cur.key !== k) { cur = { key: k, label: dayLabel(m.created_at, now, words, locale), messages: [] as { id: any; sender_id: any; kind: string; body: string; created_at: any; }[] }; out.push(cur) }
+    if (!cur || cur.key !== k) { cur = { key: k, label: dayLabel(m.created_at, now, words, locale), messages: [] as { id: any; sender_id: any; kind: string; body: string; created_at: any; reply_to?: string | null; [k: string]: any }[] }; out.push(cur) }
     cur.messages.push(m)
   }
   return out

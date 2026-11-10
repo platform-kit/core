@@ -243,13 +243,11 @@ ok('who may name the whole channel is the database to decide, and the client no 
     { id: 'c4', space_id: 'other', kind: 'channel', name: 'elsewhere' },
   ]
   const rows = [{ channel: 'c1', starred: true }, { channel: 'c2' }, { channel: 'c3' }]
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ id: string; space_id: string; kind: string; name: string; }[]' is not assignable to parameter of type 'never[]'. Type '{
   const sec = railSections(chans, rows, 's')
   ok('a starred channel is in its own section', eq(sec.starred.map((c: { id: any }) => c.id), ['c1']))
   ok('the rest are channels, by name', eq(sec.channels.map((c: { name: any }) => c.name), ['alpha']))
   ok('a direct message is neither', eq(sec.dms.map((c: { id: any }) => c.id), ['c3']))
   ok('another space is not in this one', !JSON.stringify(sec).includes('elsewhere'))
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; space_id: string; kind: string; name: string; }' is not assignable to type 'never'.
   ok('a channel the reader has not joined is not a room of theirs', railSections([chans[0]], [], 's').channels.length === 1)
 
   ok('drafts are counted, and whitespace is not a draft', draftCount({ a: 'hi', b: '   ', c: '' }) === 1)

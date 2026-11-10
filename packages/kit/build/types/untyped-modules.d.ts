@@ -26,3 +26,20 @@ declare module '@myriaddreamin/typst-ts-node-compiler' {
     query(doc: unknown, args: { selector: string }): unknown
   }
 }
+/* StPageFlip ships its TypeScript source without a types entry: what the print preview uses of it */
+declare module 'page-flip' {
+  export class PageFlip {
+    constructor(el: HTMLElement, settings: Record<string, unknown>)
+    loadFromHTML(items: NodeListOf<HTMLElement> | HTMLElement[]): void
+    on(event: string, callback: (e: { data: any, object: PageFlip }) => void): PageFlip
+    flipNext(corner?: 'top' | 'bottom'): void
+    flipPrev(corner?: 'top' | 'bottom'): void
+    turnToPage(page: number): void
+    destroy(): void
+  }
+}
+/* MJML's browser build has no types: the call the email editor makes of it */
+declare module 'mjml-browser' {
+  const mjml: (source: string, options?: Record<string, unknown>) => { html: string, errors: unknown[] }
+  export default mjml
+}

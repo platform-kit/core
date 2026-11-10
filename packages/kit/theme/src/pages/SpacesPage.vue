@@ -50,7 +50,6 @@ import {
   makePoll, vote, unvote, closePoll, chooseOffer, votes, loadVotes, firstReplies,
 } from 'platformkit/lib/spaces/api.js'
 import { toast } from 'platformkit/lib/toast.js'
-// @ts-expect-error TS2305, from the conversion: Module '"#content"' has no exported member 'spaces'.
 import { spaces as declaredSpaces } from '#content'
 import { daySections, runsOf, badgesBySpace, dmTitle, sidedRoom, mentionsOf, unreadOf, mutedNow, plainBody, BOT_PICK, ROLE_PICK } from 'platformkit/lib/spaces/model.js'
 import { commandOf, isTyping, stepRoom } from 'platformkit/lib/spaces/keys.js'
@@ -969,7 +968,6 @@ const pollIds = computed(() => [...open.messages, ...(thread.root ? [thread.root
    single channel opening */
 vueWatch(() => pollIds.value.join(','), (ids) => {
   const want = ids ? ids.split(',') : []
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string[]' is not assignable to parameter of type 'never[]'.
   if (want.length) loadVotes(want); else votes.value = []
 }, { immediate: true })
 async function askRoom(p: any) {
@@ -1098,12 +1096,12 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
           @place="(id, key) => { railOpen = false; openPlace(id, key) }"
           @drawer="railOpen = true" />
         <template v-else>
-        <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><SpaceBar
+        <SpaceBar
           class="sp-bar" :spaces="spaces" :badges="badges" :open-id="space ? space.id : ''" :in-space="inSpace"
           :view="view" :events="EVENTS_ON" :work="workList" :my-tickets="myTicketCount"
           :coaching="coachingHere" :coaching-unread="coachingHere ? chatUnread : 0"
           :saved="saved.length" :drafts="draftRows.length"
-          :mentions="mentionCount" :dm-unread="dmUnread" :unreads="unreadCount" :status="status"
+          :mentions="mentionCount" :dm-unread="dmUnread" :unreads="unreadCount" :status="status ?? undefined"
           :me="me" :names="names" :myself="myName" :my-person="myPerson"
           :network="COMMUNITY" :network-unread="netUnread"
           @view="socialGo" @open-space="(id) => { railOpen = false; pickSpace(id) }"
@@ -1293,7 +1291,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
                 </li>
                 <template v-else>
                   <li v-for="w in MUTES" :key="w.key">
-                    <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'null | undefined'. --><button type="button" @click="hush('channel', open.id, w.at()); belling = false">
+                    <button type="button" @click="hush('channel', open.id, w.at()); belling = false">
                       <b>{{ (MuW['mute-for'] || '').replace('{span}', MuW['for-' + w.key]) }}</b>
                     </button>
                   </li>

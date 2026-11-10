@@ -14,8 +14,7 @@ export const SELECTION = Symbol('media-selection')
 export const USAGE = Symbol('media-usage')   /* { [store path]: [{ file, collection, title }] } for the selection: a file in use */
 export const words = () => us('media').page
 
-// @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-const flat = (items: any, out = []) => { for (const it of items || []) { out.push(it); if (it.items) flat(it.items, out) } return out }
+const flat = (items: any, out: any[] = []): any[] => { for (const it of items || []) { out.push(it); if (it.items) flat(it.items, out) } return out }
 export function useMedia() {
   const { menuItems } = useMenuItems()
   const crumbs = useBreadcrumbActions()

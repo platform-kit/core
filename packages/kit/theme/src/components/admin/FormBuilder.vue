@@ -156,7 +156,7 @@ async function remove() {
           <div v-for="(s, si) in slides" :key="si" class="fb-slide" :class="{ 'fb-on': picked && picked.slide === si && picked.block == null }">
             <button type="button" class="fb-slidehead" @click="pick(si)">
               <b>{{ slideLabel(s, si) }}</b>
-              <small v-if="s.jump"><!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. -->{{ W['shown-when'].replace('{cond}', describe(s.jump, fieldsBefore(si - 1), WC)) }}</small>
+              <small v-if="s.jump">{{ W['shown-when'].replace('{cond}', describe(s.jump, fieldsBefore(Number(si) - 1), WC)) }}</small>
               <small v-else-if="s.progress">{{ W['progress-line'].replace('{p}', progressOf(s)) }}</small>
             </button>
             <draggable v-model="s.blocks" item-key="line" handle=".fb-grip" class="fb-blocks" ghost-class="fb-ghost" :animation="150" @end="onDrag(si)">

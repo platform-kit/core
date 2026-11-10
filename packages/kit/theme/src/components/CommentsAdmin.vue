@@ -62,7 +62,7 @@ watch([isSignedIn, roleKnown], load)
 
 /* the kinds actually in hand, so the narrowing offers what there is rather than a list of every
    kind a site could ever have */
-const kinds = computed(() => [...new Set(rows.value.map((r: { kind: any }) => r.kind))].sort())
+const kinds = computed(() => [...new Set<string>(rows.value.map((r: { kind: any }) => r.kind))].sort())
 const waiting = computed(() => rows.value.filter((r: { state: string }) => r.state === 'waiting').length)
 
 async function decide(row: any, yes: any) {
@@ -123,7 +123,7 @@ const when = (v: any) => { const d = new Date(v); return isNaN(d.getTime()) ? ''
         <label v-if="kinds.length > 1">{{ FL.kind }}
           <select v-model="f.kind">
             <option value="all">{{ FL['kind-all'] }}</option>
-            <!-- @vue-expect-error TS2322, from the conversion: Type 'unknown' is not assignable to type 'PropertyKey | undefined'. --><option v-for="k in kinds" :key="k" :value="k">{{ k }}</option>
+            <option v-for="k in kinds" :key="k" :value="k">{{ k }}</option>
           </select>
         </label>
       </div>

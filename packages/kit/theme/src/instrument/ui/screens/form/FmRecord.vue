@@ -73,7 +73,7 @@ async function startVideo() {
   vtick = setInterval(() => { secs.value += 0.25; if (secs.value >= cap.value) stop() }, 250)
 }
 function stopVideo() {
-  return new Promise((done) => {
+  return new Promise<Blob | null>((done) => {
     if (!mr) return done(null)
     const type = mr.mimeType || 'video/webm'
     mr.onstop = () => {
@@ -98,7 +98,7 @@ async function start() {
 
 async function stop() {
   if (!recording.value) return
-  let file = null
+  let file: Blob | null = null
   if (isVideo.value) {
     clearInterval(vtick); vtick = null
     file = await stopVideo()
@@ -111,7 +111,6 @@ async function stop() {
     const out = rec.stop()
     if (out && out.blob) { file = new File([out.blob], 'answer.mp3', { type: out.blob.type || 'audio/mpeg' }); secs.value = out.seconds || 0 }
   }
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{}' is not assignable to parameter of type 'Blob | MediaSource'.
   if (file) { shot.value = URL.createObjectURL(file); emit('update:modelValue', file) }
 }
 

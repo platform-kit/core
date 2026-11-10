@@ -8,7 +8,7 @@
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
+import { ModuleRegistry, AllCommunityModule, type ColDef } from 'ag-grid-community'
 import { useAgGridTheme } from '../../lib/agGridTheme.js'
 import { supabase, configured as supabaseOn } from 'platformkit/lib/supabase.js'
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -48,7 +48,7 @@ const when = (s: string|number|Date) => (s ? new Date(s).toLocaleString() : '')
 /* the grid: every response a row; a click opens it */
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
 const getRowId = (q: { data: { id: any } }) => q.data.id
-const columnDefs = computed(() => {
+const columnDefs = computed<ColDef[]>(() => {
   void names.value
   return [
     { headerName: W.form, field: 'form', pinned: 'left', flex: 1.2, minWidth: 160, cellClass: 'fr-gform' },
@@ -122,7 +122,7 @@ async function exportCsv() {
       <p v-if="loading" class="ui-muted">…</p>
       <p v-else-if="!shown.length" class="ui-muted">{{ W.empty }}</p>
       <div v-else class="fr-grid">
-        <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: any; field: string; pinned: string; flex: number; minWidth: number; cellClass: string; valueGetter?: undefined; valueFo --><AgGridVue class="fr-aggrid" :theme="theme" :row-data="shown" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
+        <AgGridVue class="fr-aggrid" :theme="theme" :row-data="shown" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
                    :suppress-cell-focus="true" @row-clicked="emit('open', $event.data.id)" />
       </div>
     </template>

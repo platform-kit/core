@@ -15,8 +15,8 @@ const emit = defineEmits(['answer'])
   <div class="qzin qbooks">
     <ScreenHead :eyebrow="screen.eyebrow" :headline="screen.headline" :sub="screen.sub" />
     <div v-if="screen.books && screen.books.length" class="qbk-list">
-      <!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. --><a v-for="(b, n) in screen.books" :key="b.slug" class="qbk" :href="b.href" @click="capture('find_open', { book: b.slug, rank: n + 1, from: 'quiz' })">
-        <span class="qbk-n"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ n + 1 }}</span>
+      <a v-for="(b, n) in screen.books" :key="b.slug" class="qbk" :href="b.href" @click="capture('find_open', { book: b.slug, rank: Number(n) + 1, from: 'quiz' })">
+        <span class="qbk-n">{{ Number(n) + 1 }}</span>
         <span class="qbk-cover" :style="b.cover ? null : { backgroundImage: coverTint(b.slug) }"><img v-if="b.cover" :src="b.cover.src" alt="" /></span>
         <span class="qbk-txt">
           <b class="qbk-title">{{ b.title }}</b>
@@ -29,7 +29,7 @@ const emit = defineEmits(['answer'])
     <p v-else-if="screen.body" class="qp" v-html="screen.body" />
     <div class="qopts">
       <button v-for="(o, n) in screen.options || []" :key="o.v" class="qopt" @click="emit('answer', o.v)">
-        <span class="k"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ n + 1 }}</span>
+        <span class="k">{{ Number(n) + 1 }}</span>
         <span class="qoptl">{{ o.label }}</span>
       </button>
     </div>

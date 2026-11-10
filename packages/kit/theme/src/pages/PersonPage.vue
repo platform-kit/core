@@ -49,7 +49,6 @@ const NETWORK = moduleOn('network')
 /* other apps signing in is the site owner's choice (network.apps), off unless the config says so */
 const APPS = NETWORK && !!(site.network && site.network.apps)
 /* a site that lists following in community.hide draws no follow control or count (follows are kept) */
-// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'string[]'.
 const FOLLOWING = showsFollowing((site.community || {}).hide)
 const NP = computed(() => us('network').person.main)
 const fillN = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
@@ -288,7 +287,7 @@ const clearFace = () => { draft.value.avatar = null }
             <span v-if="o.sub" class="pp-o-sub">{{ o.sub }}</span>
             <p v-if="o.about" class="pp-o-about">{{ o.about }}</p>
             <span class="pp-o-facts">{{ o.minutes }} {{ OF.minutes }} · {{ o.priceText || (o.price_cents > 0 ? moneyOf(o.price_cents, o.currency) : OF.free) }}</span>
-            <!-- @vue-expect-error TS2339, from the conversion: Property 'app' does not exist on type '{ home: string; diagnostics: string; content: string; admin: string; preview: string; share: string;  --><a class="pp-o-book" :href="ROUTES.app + '/coaching'">{{ OF.book }}</a>
+            <a class="pp-o-book" :href="ROUTES.diagnostics + '/coaching'">{{ OF.book }}</a>
           </li>
         </ul>
       </section>

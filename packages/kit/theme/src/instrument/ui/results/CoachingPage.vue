@@ -124,8 +124,7 @@ const now = () => Date.now();
 const asCoach = (b: any) => !!user.value && (b.provider_id === user.value.id || (!!b.provider_email && !!user.value.email && b.provider_email.toLowerCase() === user.value.email.toLowerCase()) ) && b.user_id !== user.value.id;
 const attending = computed(() => rows.value.filter((b: any) => !asCoach(b)));
 const live = (b: any) => (b.status === "accepted" || b.status === "pending") && b.end_at && new Date(b.end_at).getTime() > now();
-// @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-const upcoming = computed(() => rows.value.filter(live).sort((a: any, b: any) => new Date(a.start_at) - new Date(b.start_at)));
+const upcoming = computed(() => rows.value.filter(live).sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()));
 /* HOW MANY SESSIONS THE RUN HOLDS, for the row that says "One of 6". Counted from the rows in hand
    rather than asked for: they are all the reader's own, so they are all here already. */
 const runOf = computed(() => {
@@ -208,7 +207,7 @@ const when = (iso: any) => { try { return new Intl.DateTimeFormat(undefined, { w
           <span class="sess-when">{{ when(b.start_at) }}</span>
           <span class="sess-title">{{ b.title }}<i v-for="n in note(b)" :key="n"> · {{ n }}</i><i v-if="runOf[b.uid]"> · {{ fill(B['in-run'], { n: runOf[b.uid] }) }}</i></span>
           <span class="sess-acts">
-            <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><a v-if="b.join_url" class="sess-join" :href="b.join_url" :target="ours(b.join_url) ? null : '_blank'" :rel="ours(b.join_url) ? null : 'noopener'">{{ C.join }}</a>
+            <a v-if="b.join_url" class="sess-join" :href="b.join_url" :target="ours(b.join_url) ? undefined : '_blank'" :rel="ours(b.join_url) ? undefined : 'noopener'">{{ C.join }}</a>
             <!-- A BOOKING WAITING FOR THE HOST'S WORD is one decision, so it is the only one offered
                  until it is answered: Move and Cancel are for a session that exists. -->
             <!-- THE TITLE ALREADY SAYS IT IS AWAITING CONFIRMATION, so the right-hand side carries the

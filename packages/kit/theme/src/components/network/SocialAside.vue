@@ -37,8 +37,7 @@ async function loadSessions() {
 const next = computed(() => [
   ...(calendar.upcoming || []).map((o: { id: string; starts_at: any; title: any; slug: any }) => ({ kind: 'event', key: 'e' + o.id, at: o.starts_at, title: o.title, slug: o.slug })),
   ...sessions.value.map((b: { uid: string; start_at: any; title: any; user_id: any }) => ({ kind: 'session', key: 's' + b.uid, at: b.start_at, title: b.title, hosting: b.user_id !== (user.value || {}).id })),
-// @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-].sort((a, b) => new Date(a.at) - new Date(b.at)).slice(0, 4))
+].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime()).slice(0, 4))
 const titleWord = computed(() => (sessions.value.length ? S.value['coming-up'] : S.value.events))
 onMounted(() => { loadCalendar(null, { days: 60, limit: 20 }).catch(() => {}); loadSessions() })
 watch(() => user.value && user.value.id, loadSessions)

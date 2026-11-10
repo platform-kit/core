@@ -84,8 +84,7 @@ const isUpcoming = (r: any) => r.status === 'accepted' && r.start_at && new Date
 const stateOf = (r: any) => (r.refused ? 'refused' : r.no_show ? 'no-show' : isUpcoming(r) ? 'upcoming' : r.status === 'accepted' ? 'ended' : r.status)
 const stateWord = (r: any) => { const k = stateOf(r); const w = ST[k] || k; return k === 'refused' && RF[r.refused] ? `${w} · ${RF[r.refused]}` : w }
 
-// @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-const upcoming = computed(() => rows.value.filter(isUpcoming).sort((a: any, b: any) => new Date(a.start_at) - new Date(b.start_at)))
+const upcoming = computed(() => rows.value.filter(isUpcoming).sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()))
 const past = computed(() => rows.value.filter((r: any) => !isUpcoming(r)))
 const shown = computed(() => (tab.value === 'upcoming' ? upcoming.value : tab.value === 'past' ? past.value : [...upcoming.value, ...past.value]))
 const counts = computed(() => ({ upcoming: upcoming.value.length, past: past.value.length, all: rows.value.length }))
@@ -132,8 +131,7 @@ async function loadAnswers(rows: any) {
   answers.value = by
 }
 const answersOf = (r: any) => (r.response_id && answers.value[r.response_id]) || []
-// @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-const minutes = (r: any) => { const a = new Date(r.start_at), b = new Date(r.end_at); const n = Math.round((b - a) / 60000); return n > 0 ? fill(R.minutes, { n }) : '' }
+const minutes = (r: any) => { const a = new Date(r.start_at), b = new Date(r.end_at); const n = Math.round((b.getTime() - a.getTime()) / 60000); return n > 0 ? fill(R.minutes, { n }) : '' }
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 

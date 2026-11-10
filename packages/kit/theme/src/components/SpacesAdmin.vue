@@ -137,13 +137,11 @@ async function loadGrants() {
 }
 /* a name for every id on screen, asked once each — profiles are self-select, so this is the door */
 async function namesFor(ids: any) {
-  const want = [...new Set(ids.filter((i: any) => i && !people.value[i]))]
+  const want = [...new Set<string>(ids.filter((i: any) => i && !people.value[i]))]
   if (!want.length) return
-  // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
   for (const id of want) people.value[id] = { name: '…', email: '' }
   const { data } = await (supabase as any).rpc('space_people_named', { p_ids: want })
   for (const r of data || []) people.value[r.id] = { name: r.name, email: r.email }
-  // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
   for (const id of want) if (people.value[id].name === '…') people.value[id] = { name: W.value.someone, email: '' }
 }
 const nameOf = (id: any) => (people.value[id] || {}).name || W.value.someone

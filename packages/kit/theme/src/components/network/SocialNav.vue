@@ -127,9 +127,9 @@ watch(() => [props.network, isSignedIn.value], ([on, signed]) => { if (on && sig
               <svg class="sn-chev" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 8 4 4 4-4" /></svg>
             </button>
             <div class="sn-fold" :class="{ open: inboxOpen }">
-              <!-- @vue-expect-error TS2322, from the conversion: Type 'true | null' is not assignable to type 'Booleanish | undefined'. --><ul class="sn-list sn-fold-in sn-sub" :inert="!inboxOpen || null">
+              <ul class="sn-list sn-fold-in sn-sub" :inert="!inboxOpen || undefined">
                 <li v-for="r in m.rows" :key="r.key">
-                  <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "date" | "page" | "time" | Booleanish | "location" | undefined'. --><button type="button" class="sn-i sn-small" :class="{ on: view === r.key }" :aria-current="view === r.key ? 'page' : null" @click="emit('view', r.key)">
+                  <button type="button" class="sn-i sn-small" :class="{ on: view === r.key }" :aria-current="view === r.key ? 'page' : undefined" @click="emit('view', r.key)">
                     <span class="sn-ic"><SpaceIcon :name="QUEUE_ICON[r.key] || 'dm'" :size="17" /></span>
                     <span class="sn-w">{{ r.key === 'dms' ? S.messages : W[r.key] }}</span>
                     <em v-if="r.count" class="sn-c">{{ count(r.count) }}</em>
@@ -139,7 +139,7 @@ watch(() => [props.network, isSignedIn.value], ([on, signed]) => { if (on && sig
               </ul>
             </div>
           </template>
-          <!-- @vue-expect-error TS2322, from the conversion: Type '"page" | null' is not assignable to type '"step" | "date" | "page" | "time" | Booleanish | "location" | undefined'. --><button v-else type="button" class="sn-i" :class="{ on: isOn(m.key) }" :aria-current="isOn(m.key) ? 'page' : null" @click="emit('view', m.key)">
+          <button v-else type="button" class="sn-i" :class="{ on: isOn(m.key) }" :aria-current="isOn(m.key) ? 'page' : undefined" @click="emit('view', m.key)">
             <span class="sn-ic"><SpaceIcon :name="m.icon" :size="20" /></span>
             <span class="sn-w">{{ wordOf(m) }}</span>
             <em v-if="m.count" class="sn-c">{{ count(m.count) }}</em>
@@ -164,7 +164,7 @@ watch(() => [props.network, isSignedIn.value], ([on, signed]) => { if (on && sig
               </button>
             </div>
             <div v-if="foldsOf(sp.id).length" class="sn-fold" :class="{ open: isOpen(sp.id) }">
-              <!-- @vue-expect-error TS2322, from the conversion: Type 'true | null' is not assignable to type 'Booleanish | undefined'. --><ul class="sn-rooms sn-fold-in" :inert="!isOpen(sp.id) || null">
+              <ul class="sn-rooms sn-fold-in" :inert="!isOpen(sp.id) || undefined">
                 <li v-for="it in itemsOf(sp.id)" :key="it.key" :class="{ 'sn-place-first': it.kind === 'place' && it.key === itemsOf(sp.id).find((x: any) => x.kind === 'place').key }">
                   <button v-if="it.kind === 'room'" type="button" class="sn-room" :class="{ on: channelId === it.key && view === 'channel', bold: unreadIn(it.key) > 0 }" @click="emit('open', it.key)">
                     <SpaceIcon :name="it.room.mode === 'feed' ? 'feed' : it.room.visibility === 'private' ? 'lock' : 'hash'" :size="14" />

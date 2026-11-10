@@ -114,7 +114,6 @@ async function post() {
   const body = draft.value.trim()
   if (!body || busy.value) return
   busy.value = true; failed.value = false
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'null | undefined'.
   const r = await say(props.kind, props.subject, body, answering.value, props.title || null, props.href || null)
   if (r && r.error) failed.value = true
   else { draft.value = ''; answering.value = null; await load() }

@@ -11,8 +11,7 @@ const emit = defineEmits(['start'])
    (the site's readings share one model through ctx) */
 /* a host that gives some of these pages homes of their own (a community place: Accomplishments, Coaching)
    leaves them out by key */
-const leaveOut = unref(inject('pk.sheet.hide', [])) || []
-// @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
+const leaveOut: string[] = unref(inject<string[]>('pk.sheet.hide', [])) || []
 const tabs = resolveTabs().filter((t) => !leaveOut.includes(t.key))
 const pages = tabs
 const ctx = {}

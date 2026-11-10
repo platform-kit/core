@@ -65,14 +65,14 @@ onBeforeUnmount(() => { clearTimeout(timer); document.removeEventListener('keydo
         </div>
         <label class="nm-search" :class="{ busy: searching }">
           <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><circle cx="9" cy="9" r="5.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M13.5 13.5 17.5 17.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><input ref="box" v-model="q" type="search" :placeholder="K.placeholder" :aria-label="K.placeholder" autocomplete="off" spellcheck="false"
-                 role="combobox" aria-autocomplete="list" aria-controls="nm-list" :aria-activedescendant="rows.length ? 'nm-' + cursor : null" />
+          <input ref="box" v-model="q" type="search" :placeholder="K.placeholder" :aria-label="K.placeholder" autocomplete="off" spellcheck="false"
+                 role="combobox" aria-autocomplete="list" aria-controls="nm-list" :aria-activedescendant="rows.length ? 'nm-' + cursor : undefined" />
           <span class="nm-spin" aria-hidden="true" />
         </label>
         <p class="nm-hint">{{ K.hint }}</p>
         <div id="nm-list" ref="list" class="nm-list" role="listbox">
-          <!-- @vue-expect-error TS2322, from the conversion: Type 'string | number' is not assignable to type 'number'. --><button v-for="(m, i) in rows" :id="'nm-' + i" :key="m.id" type="button" role="option" class="nm-row" :class="{ on: i === cursor }"
-                  :aria-selected="i === cursor" @mousemove="cursor = i" @click="choose(m)">
+          <button v-for="(m, i) in rows" :id="'nm-' + i" :key="m.id" type="button" role="option" class="nm-row" :class="{ on: i === cursor }"
+                  :aria-selected="i === cursor" @mousemove="cursor = Number(i)" @click="choose(m)">
             <ChatAvatar :name="m.name" :size="38" />
             <span class="nm-body">
               <b>{{ m.name }}</b>

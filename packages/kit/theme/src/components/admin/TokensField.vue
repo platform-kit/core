@@ -44,9 +44,8 @@ const open = ref<any>({})
 const ORDER = ['site', 'landing', 'qz', 'sp-page', 'reader']
 const groups = computed(() => {
   const by: any = {}
-  for (const [key, def] of Object.entries(props.tokens || {})) {
+  for (const [key, def] of Object.entries<Record<string, any>>(props.tokens || {})) {
     const g = (def as any).scope || 'site'
-    // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
     ;(by[g] || (by[g] = [])).push({ key, ...def })
   }
   for (const list of Object.values(by)) (list as any).sort((a: any, b: any) => a.token.localeCompare(b.token))

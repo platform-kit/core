@@ -75,8 +75,7 @@ const moneyMinorOf = (amountMinor: any, currency = 'usd') => {
     currency: code,
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
-  // @ts-expect-error TS18048, from the conversion: 'fractionDigits' is possibly 'undefined'.
-  }).format(Number(amountMinor || 0) / (10 ** fractionDigits))
+  }).format(Number(amountMinor || 0) / (10 ** fractionDigits!))
 }
 const timeOf = (value: any) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 const kindOf = (kind: any) => W.value[`kind-${kind}`] || W.value['kind-other']
@@ -616,7 +615,7 @@ onBeforeUnmount(() => {
       <section v-if="state === 'loading'" class="usage-card" role="status">{{ W.loading }}</section>
       <section v-else-if="state === 'error'" class="usage-card usage-error" role="alert">
         <p>{{ fault }}</p>
-        <!-- @vue-expect-error TS2345, from the conversion: Argument of type '{ class: string; type: "button"; onClick: (retryOnce?: boolean) => Promise<boolean>; }' is not assignable to parameter of  --><button type="button" class="usage-button" @click="load">{{ W.retry }}</button>
+        <button type="button" class="usage-button" @click="load()">{{ W.retry }}</button>
       </section>
       <template v-else-if="state === 'ready'">
         <p v-if="fault" class="usage-alert" role="alert">{{ fault }}</p>
@@ -702,12 +701,12 @@ onBeforeUnmount(() => {
             >
               {{ busy ? W['incremental-working'] : W['incremental-retry'] }}
             </button>
-            <!-- @vue-expect-error TS2345, from the conversion: Argument of type '{ disabled: boolean; class: string; type: "button"; onClick: (forPayout?: boolean) => Promise<void>; }' is not assignable  --><button
+            <button
               v-if="settlement.status === 'failed' && canManagePaymentMethod"
               type="button"
               class="usage-button"
               :disabled="busy"
-              @click="managePayment"
+              @click="managePayment()"
             >
               {{ W['manage-payment'] }}
             </button>
@@ -780,7 +779,7 @@ onBeforeUnmount(() => {
           <p class="usage-help">{{ W['topup-explanation'] }}</p>
           <p class="usage-help">{{ W['topup-failure-note'] }}</p>
           <p class="usage-payment">{{ hasPaymentMethod ? W['payment-ready'] : W['payment-missing'] }}</p>
-          <!-- @vue-expect-error TS2345, from the conversion: Argument of type '{ disabled: boolean; class: string; type: "button"; onClick: (forPayout?: boolean) => Promise<void>; }' is not assignable  --><button type="button" class="usage-button" :disabled="busy" @click="managePayment">{{ W['manage-payment'] }}</button>
+          <button type="button" class="usage-button" :disabled="busy" @click="managePayment()">{{ W['manage-payment'] }}</button>
 
           <form class="usage-settings" @submit.prevent="saveTopup">
             <label class="usage-check">

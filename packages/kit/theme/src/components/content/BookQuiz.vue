@@ -36,8 +36,7 @@ const progress = ref(0)
 const need = passMark(questions.length)
 const screens = computed(() => {
   const intro = { id: 'intro', kind: 'info', label: props.chapter.title, eyebrow: Q['intro-eyebrow'], headline: props.chapter.title,
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-    body: String(Q['intro-body'] || '').replace('{n}', questions.length).replace('{need}', need), options: [{ v: 'go', label: Q['intro-begin'] }] }
+    body: String(Q['intro-body'] || '').replace('{n}', String(questions.length)).replace('{need}', String(need)), options: [{ v: 'go', label: Q['intro-begin'] }] }
   const qs = questions.map((q: any) => ({ id: 'q:' + q.n, kind: 'choice', label: props.chapter.title, eyebrow: (q.n + 1) + ' ' + Q.of + ' ' + questions.length,
     headline: q.q, options: q.order.map((o: any) => ({ v: o.i, label: o.v })), meta: { n: q.n } }))
   return [intro, ...qs]

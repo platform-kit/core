@@ -27,14 +27,15 @@ const go = (d: number) => { at.value = (at.value + d + n.value) % n.value; scrol
 const track = ref<any>(null)
 function scrollTo() { const el = track.value && track.value.children[at.value]; if (el && props.layout === 'cards') el.scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'smooth' }) }
 function onScroll() { if (props.layout !== 'cards' || !track.value) return; const k = [...track.value.children]; const x = track.value.scrollLeft; let best = 0, d = 1e9; k.forEach((c, i) => { const dd = Math.abs(c.offsetLeft - x); if (dd < d) { d = dd; best = i } }); at.value = best }
-let timer: any = null, hover = false
+let timer: any = null
+const hover = ref(false)
 const rm = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-onMounted(() => { if (props.autoplay > 0 && !rm) timer = setInterval(() => { if (!hover) go(1) }, props.autoplay * 1000) })
+onMounted(() => { if (props.autoplay > 0 && !rm) timer = setInterval(() => { if (!hover.value) go(1) }, props.autoplay * 1000) })
 onBeforeUnmount(() => clearInterval(timer))
 const off = (i: number) => { let d = i - at.value; if (d > n.value / 2) d -= n.value; if (d < -n.value / 2) d += n.value; return d }
 </script>
 <template>
-  <!-- @vue-expect-error TS2322, from the conversion: Type 'true' is not assignable to type 'false'. --><section class="lpsec lpcarousel" :class="'lpcr-' + layout" @mouseenter="hover = true" @mouseleave="hover = false">
+  <section class="lpsec lpcarousel" :class="'lpcr-' + layout" @mouseenter="hover = true" @mouseleave="hover = false">
     <div class="lpwrap">
       <div class="lpcr-top">
         <slot name="head" :heading="heading" :lead="lead"><SectionHead class="lpcr-head" :badge="badge" :eyebrow="eyebrow" :heading="heading" :lead="lead" :center="layout !== 'cards'" /></slot>

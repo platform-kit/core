@@ -301,7 +301,7 @@ const hourLabel = (h: any) => (h % 6 === 0 ? String(h).padStart(2, '0') : '')
                       <div v-if="(s.g.versions || []).length > 1" class="an-jversions">
                         <h3>{{ FW.versions }} <small>· {{ FW['versions-subtitle'] }}</small></h3>
                         <table class="an-table"><thead><tr><th>{{ FW.version }}</th><th>{{ FW['first-sent'] }}</th><th class="an-td-num">{{ FW.sent }}</th><th class="an-td-num">{{ FW.opened }}</th><th class="an-td-num">{{ FW.clicked }}</th></tr></thead>
-                          <tbody><tr v-for="(v, i) in s.g.versions" :key="v.version"><td><code><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ i + 1 }}</code></td><td>{{ dateOnly(v.first) }}</td><td class="an-td-num">{{ num(v.sent) }}</td><td class="an-td-num">{{ pct(v.opened, v.sent) }}%</td><td class="an-td-num">{{ pct(v.clicked, v.sent) }}%</td></tr></tbody></table>
+                          <tbody><tr v-for="(v, i) in s.g.versions" :key="v.version"><td><code>{{ Number(i) + 1 }}</code></td><td>{{ dateOnly(v.first) }}</td><td class="an-td-num">{{ num(v.sent) }}</td><td class="an-td-num">{{ pct(v.opened, v.sent) }}%</td><td class="an-td-num">{{ pct(v.clicked, v.sent) }}%</td></tr></tbody></table>
                       </div>
                     </div>
                   </div>

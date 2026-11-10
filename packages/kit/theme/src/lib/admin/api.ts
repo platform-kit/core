@@ -80,8 +80,7 @@ export const preview = async (col: any, name: any, rec: any) => (CLOUD ? (await 
    index needs the same rule and two copies of it would drift */
 import { here } from 'platformkit/lib/bucket-host.js'
 export { here }
-// @ts-expect-error TS7023, from the conversion: 'addressed' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in o
-const addressed = (v: any) => (Array.isArray(v) ? v.map(addressed) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, addressed(x)])) : typeof v === 'string' ? here(v) : v)
+const addressed = (v: any): any => (Array.isArray(v) ? v.map(addressed) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, addressed(x)])) : typeof v === 'string' ? here(v) : v)
 export const upload = async (col: any, file: any) => {
   const dataBase64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file) })
   return post('/upload', { col, filename: file.name, dataBase64 }).then(addressed)

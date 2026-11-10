@@ -48,8 +48,8 @@ const q = ref('')
 const answer = ref<any>(null)
 const values = ref<any>([])
 const fields = computed(() => {
-  const by: any = {}
-  for (const v of values.value) (by[(v as any).field] = by[(v as any).field] || []).push(v)
+  const by: Record<string, Array<{ field: string, value: string, tickets: number }>> = {}
+  for (const v of values.value as any[]) (by[v.field] = by[v.field] || []).push(v)
   return Object.entries(by).map(([field, vs]) => ({ field, values: vs }))
 })
 const now = ref(Date.now())
@@ -109,7 +109,7 @@ async function say() {
 
 /* --- raising one --- */
 const making = ref(false)
-const draft = ref({ title: '', body: '', priority: 'normal', assign: [] })
+const draft = ref({ title: '', body: '', priority: 'normal', assign: [] as string[] })
 async function make() {
   if (!draft.value.title.trim()) return
   busy.value = true
@@ -164,7 +164,7 @@ const onIt = (id: any) => assignees.value.some((a: any) => (a as any).id === id)
               :value="answer && answer.field === f.field ? answer.value : ''"
               @change="answer = ($event.target as any).value ? { field: f.field, value: ($event.target as any).value } : null">
               <option value="">{{ W['filter-any'] }}</option>
-              <!-- @vue-expect-error TS2339, from the conversion: Property 'value' does not exist on type 'never'. --><option v-for="v in f.values" :key="v.value" :value="v.value"><!-- @vue-expect-error TS2339, from the conversion: Property 'value' does not exist on type 'never'. -->{{ v.value }} (<!-- @vue-expect-error TS2339, from the conversion: Property 'tickets' does not exist on type 'never'. -->{{ v.tickets }})</option>
+              <option v-for="v in f.values" :key="v.value" :value="v.value">{{ v.value }} ({{ v.tickets }})</option>
             </select>
           </label>
         </div>
@@ -309,7 +309,7 @@ const onIt = (id: any) => assignees.value.some((a: any) => (a as any).id === id)
         <div class="st-makewho">
           <span>{{ W['new-assign'] }}</span>
           <div class="st-whos">
-            <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'. --><button
+            <button
               v-for="a in agents" :key="a.id" type="button" class="st-chip" :class="{ on: draft.assign.includes(a.id) }"
               @click="draft.assign = draft.assign.includes(a.id) ? draft.assign.filter((x) => x !== a.id) : [...draft.assign, a.id]">
               <SpaceAvatar :name="a.name" :size="18" /><span>{{ a.name }}</span>

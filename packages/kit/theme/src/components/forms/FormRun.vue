@@ -142,7 +142,7 @@ const shown = computed(() => (state.signin || state.unpaid || !ready.value ? [] 
 
 <template>
   <div class="qz frun" :class="{ 'frun-embed': embed, 'frun-single': settings.page === 'single' }" :dir="settings.dir || null">
-    <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><div v-if="showProgress" class="fprog" :role="decorative ? null : 'progressbar'" :aria-label="decorative ? null : W['page-progress']" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="decorative ? null : (current ? current.progress : 0)">
+    <div v-if="showProgress" class="fprog" :role="decorative ? undefined : 'progressbar'" :aria-label="decorative ? null : W['page-progress']" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="decorative ? null : (current ? current.progress : 0)">
       <i :style="{ width: (current ? current.progress : 0) + '%' }" />
     </div>
     <div class="qzstage">

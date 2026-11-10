@@ -36,8 +36,7 @@ async function load() {
   const cc = data.buyerIdentity && data.buyerIdentity.countryCode
   if (cc && shipsTo(rules, cc)) shipTo.value = cc
   /* wait for the session to be known before deciding who is buying */
-  // @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
-  await new Promise((r) => { const t = setInterval(() => { if (authSettled.value) { clearInterval(t); r() } }, 50); setTimeout(() => { clearInterval(t); r() }, 4000) })
+  await new Promise<void>((r) => { const t = setInterval(() => { if (authSettled.value) { clearInterval(t); r() } }, 50); setTimeout(() => { clearInterval(t); r() }, 4000) })
   if (isSignedIn.value || guestCart(cart.items.value)) {
     try { await checkout(cart.items.value); return } catch (e) { state.value = 'failed'; error.value = (e as any).message; return }
   }

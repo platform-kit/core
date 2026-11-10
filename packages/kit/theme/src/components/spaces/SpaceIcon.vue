@@ -14,7 +14,6 @@ const P: any = {
   /* a picture: a frame, a sun, a hill */
   image: 'M4.5 4h11A1.5 1.5 0 0 1 17 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5v-9A1.5 1.5 0 0 1 4.5 4zM7.5 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM3.5 14l4-4 3 3 2-2 4 4',
   /* a month: what is on */
-  calendar: 'M5 4.5h10a1.5 1.5 0 0 1 1.5 1.5v9.5A1.5 1.5 0 0 1 15 17H5a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 5 4.5zM3.5 8.5h13M7 3v3M13 3v3',
   /* the rest, folded: three dots in a ring */
   menu: 'M10 2.75a7.25 7.25 0 1 0 0 14.5 7.25 7.25 0 0 0 0-14.5zM6.75 10h.01M10 10h.01M13.25 10h.01',
   bell: 'M10 3a4 4 0 0 0-4 4v3l-1.5 3h11L14 10V7a4 4 0 0 0-4-4zM8 16a2 2 0 0 0 4 0',
@@ -66,11 +65,8 @@ const P: any = {
   mic: 'M10 3.2a2.2 2.2 0 0 1 2.2 2.2v4.2a2.2 2.2 0 0 1-4.4 0V5.4A2.2 2.2 0 0 1 10 3.2zM5.8 9.6a4.2 4.2 0 0 0 8.4 0M10 13.8v3M7.6 16.8h4.8',
   /* a mic with a line through it: a muted person in a call was drawn with nothing at all, because
      the button asked for a glyph this set did not have and an unknown name draws empty */
-  'mic-off': 'M10 3.2a2.2 2.2 0 0 1 2.2 2.2v4.2a2.2 2.2 0 0 1-.3 1.1M7.8 8.2V5.4M5.8 9.6a4.2 4.2 0 0 0 6.5 3.5M10 13.8v3M7.6 16.8h4.8M3.6 3.6l12.8 12.8',
   /* a month, for the calendar the rail opens */
-  // @ts-expect-error TS1117, from the conversion: An object literal cannot have multiple properties with the same name.
   calendar: 'M4 5.5h12a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zM3 9h14M7 3.5v3M13 3.5v3',
-  // @ts-expect-error TS1117, from the conversion: An object literal cannot have multiple properties with the same name.
   'mic-off': 'M12.2 5.4a2.2 2.2 0 0 0-4.4 0v3.2M7.8 11.2a2.2 2.2 0 0 0 3.9 1.2M5.8 9.6a4.2 4.2 0 0 0 6.3 3.6M10 13.8v3M7.6 16.8h4.8M3.5 3.5l13 13',
   cam: 'M3.5 6.2h8.2v7.6H3.5zM11.7 9.4 16.5 7v6l-4.8-2.4z',
   'cam-off': 'M8.6 6.2h3.1v5M11.7 9.4 16.5 7v6l-2.6-1.3M3.5 7.6v6.2h7.3M3.5 3.5l13 13',

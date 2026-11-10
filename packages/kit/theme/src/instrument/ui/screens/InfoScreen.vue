@@ -26,7 +26,7 @@ const emit = defineEmits(['answer'])
         class="qopt"
         @click="emit('answer', o.v)"
       >
-        <span class="k"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ n + 1 }}</span>
+        <span class="k">{{ Number(n) + 1 }}</span>
         <span class="qoptl">
           {{ o.label }}
           <span v-if="o.sub" class="qopts2">{{ o.sub }}</span>

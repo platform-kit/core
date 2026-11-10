@@ -136,10 +136,10 @@ const matches = computed<any>(() => {
   const groups = props.groups
     .filter((g) => !q || String((g as any).name || '').toLowerCase().includes(q))
     .map((g) => ({ id: ROLE_PICK((g as any).slug), name: (g as any).name, group: true }))
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-  const all = bots.concat(groups, list)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-  return props.mayMentionChannel ? [{ id: null, name: W.value['mention-channel'] }].concat(all) : all
+  /* one list of who may be named: a bot, a group, a person, or (where it may) the whole channel */
+  type Pick = { id: string | null, name: string, bot?: boolean, group?: boolean, [k: string]: any }
+  const all: Pick[] = ([] as Pick[]).concat(bots, groups, list as Pick[])
+  return props.mayMentionChannel ? ([{ id: null, name: W.value['mention-channel'] }] as Pick[]).concat(all) : all
 })
 const warns = computed(() => !props.mayMentionChannel && mentionsChannel(toTokens(body.value, picked.value)))
 const ready = computed(() => !!body.value.trim() && !props.disabled)

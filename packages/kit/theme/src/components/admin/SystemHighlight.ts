@@ -62,11 +62,9 @@ function markdownItSysHl(md: any) {
       if (state.tokens[end.token - 1].type === 'text' && state.tokens[end.token - 1].content === '=') lone.push(end.token - 1)
     }
     while (lone.length) {
-      // @ts-expect-error TS18048, from the conversion: 'j' is possibly 'undefined'.
-      const j = lone.pop(); let k = j + 1
+      const j = lone.pop()!; let k = j + 1
       while (k < state.tokens.length && state.tokens[k].type === 'systemHighlight_close') k++
       k--
-      // @ts-expect-error TS2538, from the conversion: Type 'undefined' cannot be used as an index type.
       if (j !== k) { const t = state.tokens[k]; state.tokens[k] = state.tokens[j]; state.tokens[j] = t }
     }
   }

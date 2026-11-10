@@ -415,8 +415,7 @@ const TABBED: any = {
 const tabsOf = (v: any) => Object.values(TABBED).find((t) => (t as any).includes(v)) || null
 const railKey = (v: any) => Object.keys(TABBED).find((k) => TABBED[k].includes(v)) || v
 const navGroups = computed(() => {
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-  const named = new Set(NAV.flatMap((g) => g.items).concat(Object.values(TABBED).flat()))
+  const named = new Set<string>([...NAV.flatMap((g) => g.items), ...(Object.values(TABBED).flat() as string[])])
   const groups = NAV.map((g) => ({ key: g.key, sec: secName(g.key), items: g.items.filter((k) => viewOn(k) && allowed(k) && (k !== 'publishing' || CLOUD) && (VIEWS[k] || collections.value[k])) })).filter((g) => g.items.length)
   /* one row per content model, closing the Content group after the built-in kinds, by the models' order (the server lists them by name) */
   const modelRows = LIVE || !mayEditContent.value ? [] : Object.keys(collections.value).filter((k) => k.startsWith('models/') && viewOn(k))
@@ -646,7 +645,7 @@ const columnDefs = computed(() => {
   ]
 })
 /* books are selectable (checkbox column, header selects all); other grids are not */
-const rowSelection = computed(() => (view.value === 'books' ? { mode: 'multiRow', enableClickSelection: false } : undefined))
+const rowSelection = computed(() => (view.value === 'books' ? { mode: 'multiRow' as const, enableClickSelection: false } : undefined))
 const getRowId = (p: any) => p.data.name
 const gridApi = shallowRef<any>(null)
 const selected = ref<any>([])
@@ -1028,8 +1027,7 @@ watch(() => parsed.value.name, (name) => {
   else if (!(drawer.value && drawer.value.create)) drawer.value = null
 })
 /* the session is restored asynchronously: the pipe (cloud mode's function wants the JWT) waits for it */
-// @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
-const settled = () => new Promise((r) => { if (authSettled.value) return r(); const stop = watch(authSettled, (v) => { if (v) { stop(); r() } }) })
+const settled = () => new Promise<void>((r) => { if (authSettled.value) return r(); const stop = watch(authSettled, (v) => { if (v) { stop(); r() } }) })
 onMounted(async () => {
   await settled()
   if (!LIVE && (mayEditContent.value || isProvider.value)) await loadCollections()   /* production has no content pipe: the live views fetch their own data */
@@ -1079,7 +1077,7 @@ onMounted(async () => {
           </button>
           <div class="ad-navgroup" :class="{ open: isOpen('developers') || slim }" :inert="!(isOpen('developers') || slim) || undefined">
             <div class="ad-navinner">
-              <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><a v-for="l in devLinks" :key="l.key" class="ad-navitem ad-navlink" :href="l.href" :target="l.out ? '_blank' : null" :rel="l.out ? 'noopener' : null" :title="slim ? navLabel(l.key) : ''">
+              <a v-for="l in devLinks" :key="l.key" class="ad-navitem ad-navlink" :href="l.href" :target="l.out ? '_blank' : undefined" :rel="l.out ? 'noopener' : undefined" :title="slim ? navLabel(l.key) : ''">
                 <span class="ad-navico" v-html="icon(l.key)" />
                 <span class="ad-navlabel ad-fade">{{ navLabel(l.key) }}</span>
                 <span class="ad-navext ad-fade" aria-hidden="true">↗</span>
@@ -1148,7 +1146,7 @@ onMounted(async () => {
           <!-- a job has no room to say anything in, so it says it here: a line per stage, and its cost -->
           <pre v-for="r in cloudRuns" :key="'log-' + r.id" class="ad-batchlog">{{ logOf(r) }}</pre>
           <div class="ad-grid">
-            <!-- @vue-expect-error TS2322, from the conversion: Type '{ mode: string; enableClickSelection: boolean; } | undefined' is not assignable to type '"multiple" | "single" | RowSelectionOptions<a --><AgGridVue class="ad-aggrid" :theme="theme" :row-data="items" :column-defs="columnDefs" :default-col-def="defaultColDef"
+            <AgGridVue class="ad-aggrid" :theme="theme" :row-data="items" :column-defs="columnDefs" :default-col-def="defaultColDef"
                        :row-selection="rowSelection" :get-row-id="getRowId"
                        :suppress-cell-focus="true" @row-clicked="onRowClicked" @grid-ready="onGridReady" @selection-changed="onSelectionChanged" />
           </div>

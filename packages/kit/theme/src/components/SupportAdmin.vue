@@ -217,6 +217,9 @@ async function reply(text: any) {
   busy.value = false
 }
 const MIME: any = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp', 'audio/mpeg': 'mp3', 'application/pdf': 'pdf', 'text/plain': 'txt' }
+/* a recorded voice note, sent as the file it becomes (File is not one of the names a template can reach) */
+const sendVoice = (e: { blob: Blob, seconds: number, transcript: string }) =>
+  sendFile(new File([e.blob], 'voice.mp3', { type: 'audio/mpeg' }), { kind: 'voice', seconds: e.seconds, transcript: e.transcript })
 async function sendFile(file: any, { kind = 'file', seconds = 0, transcript = '' } = {}) {
   if (!thread.id || !file) return
   const type = kind === 'voice' ? 'audio/mpeg' : String(file.type || '').toLowerCase()
@@ -395,7 +398,7 @@ function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() 
                 <p v-if="!CANNED.length" class="su-cannednone">{{ T['canned-none'] }}</p>
               </div>
             </div>
-            <!-- @vue-expect-error TS2339, from the conversion: Property 'File' does not exist on type '{ name: string; onOpen?: ((...args: any[]) => any) | undefined; $props: { readonly name: string; } & --><SupportComposer ref="composer" :busy="busy" :placeholder="T.placeholder" @send="reply" @typing="typing" @file="sendFile($event)" @voice="sendFile(new File([$event.blob], 'voice.mp3', { type: 'audio/mpeg' }), { kind: 'voice', seconds: $event.seconds, transcript: $event.transcript })" />
+            <SupportComposer ref="composer" :busy="busy" :placeholder="T.placeholder" @send="reply" @typing="typing" @file="sendFile($event)" @voice="sendVoice($event)" />
           </div>
         </template>
       </div>

@@ -130,7 +130,7 @@ async function start(peerId: any) {
 <template>
   <div class="cpan" :class="{ narrow, open: !!activeId }">
     <aside v-show="!narrow || !activeId" class="cpan-list">
-      <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><ChatList :coach="coach" :conversations="inbox" :people="people" :active-id="activeId" :me="me" :loading="loadingInbox"
+      <ChatList :coach="coach" :conversations="inbox" :people="people" :active-id="activeId" :me="me" :loading="loadingInbox"
                 @pick="go" @start="start" @new="picking = true" />
     </aside>
     <main v-show="!narrow || activeId" class="cpan-main">

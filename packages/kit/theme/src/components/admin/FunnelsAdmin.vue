@@ -245,7 +245,7 @@ async function previewRun() {
       <!-- emails -->
       <div v-show="view === 'emails'" class="ui-card fn-stepcard">
         <div class="ui-steps">
-          <!-- @vue-expect-error TS2322, from the conversion: Type 'string | number' is not assignable to type 'number'. --><button v-for="(s, i) in form.steps" :key="i" type="button" class="ui-step" :class="{ 'ui-on': open === i, 'fn-chatstep': isChat(s) }" @click="open = i"><i>{{ isChat(s) ? '💬' : emailIndex(i) }}</i><b>{{ isChat(s) ? (s.title && !/^Step \d+$/.test(s.title) ? s.title : (s.body || 'Untitled').split('\n')[0]) : (s.subject || s.title || 'Untitled') }}</b><small>{{ isChat(s) ? 'chat' : (emailIndex(i) === 1 ? 'on entering' : '+' + s.after) }}</small></button>
+          <button v-for="(s, i) in form.steps" :key="i" type="button" class="ui-step" :class="{ 'ui-on': open === i, 'fn-chatstep': isChat(s) }" @click="open = Number(i)"><i>{{ isChat(s) ? '💬' : emailIndex(i) }}</i><b>{{ isChat(s) ? (s.title && !/^Step \d+$/.test(s.title) ? s.title : (s.body || 'Untitled').split('\n')[0]) : (s.subject || s.title || 'Untitled') }}</b><small>{{ isChat(s) ? 'chat' : (emailIndex(i) === 1 ? 'on entering' : '+' + s.after) }}</small></button>
           <button type="button" class="ui-step ui-add" @click="addStep('email')">+ Add an email</button>
           <button type="button" class="ui-step ui-add" @click="addStep('chat')">+ Add a chat prompt</button>
         </div>

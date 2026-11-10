@@ -30,8 +30,8 @@ const uid = 'tr' + Math.random().toString(36).slice(2, 9)
 </script>
 
 <template>
-  <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><span class="trophy" :class="['is-' + tier, { 'is-still': still, 'is-empty': empty }]" :style="{ width: size + 'px', height: size + 'px' }"
-        :role="label ? 'img' : null" :aria-label="label || null" :aria-hidden="label ? null : 'true'">
+  <span class="trophy" :class="['is-' + tier, { 'is-still': still, 'is-empty': empty }]" :style="{ width: size + 'px', height: size + 'px' }"
+        :role="label ? 'img' : undefined" :aria-label="label || undefined" :aria-hidden="label ? undefined : 'true'">
     <svg viewBox="0 0 64 64" width="100%" height="100%">
       <defs>
         <linearGradient :id="uid + 'c'" x1="0" y1="0" x2="1" y2="1">

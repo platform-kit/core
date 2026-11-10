@@ -249,7 +249,7 @@ function chose(e: any) {
                a control zero pixels wide: the designer is folded behind something nobody can see
                or press, and the page reads as though the customisation had been deleted. The
                chevron is drawn whatever the words do, so the fold is always openable. -->
-          <!-- @vue-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'Booleanish | undefined'. --><button type="button" class="ap-quiet ap-fold" :aria-expanded="String(designing)"
+          <button type="button" class="ap-quiet ap-fold" :aria-expanded="designing ? 'true' : 'false'"
             :aria-label="(designing ? W['design-close'] : W.design) || undefined" @click="designing = !designing">
             <span>{{ designing ? W['design-close'] : W.design }}</span>
             <i class="ap-chev" :class="{ up: designing }" aria-hidden="true"></i>

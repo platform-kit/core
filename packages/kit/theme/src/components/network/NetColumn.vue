@@ -60,7 +60,6 @@ const tl = timeline()
 const ds = discover()
 /* Home has two tabs, remembered for the visit: the people followed, or everything on the site */
 /* a site that hides following has one Home feed: everything the reader may read */
-// @ts-expect-error TS2345, from the conversion: Argument of type 'unknown[]' is not assignable to parameter of type 'string[]'.
 const FOLLOWING = showsFollowing((site.community || {}).hide)
 /* Explore is the For You grid where the site turned it on */
 const FOR_YOU = !!(site.community || {}).forYou && !!(site.network)

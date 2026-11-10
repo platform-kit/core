@@ -78,8 +78,8 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', onKey); if (io) io
 <template>
   <div class="fy">
     <div v-if="items.length" class="fy-grid">
-      <!-- @vue-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'number'. --><button v-for="(it, i) in items" :key="it.kind + it.id" type="button" class="fy-tile" :class="{ tall: isVideo(it) }"
-        :style="{ '--d': Math.min(i, 12) * 0.03 + 's' }" :aria-label="(it.post.text || '').slice(0, 80) || F.open" @click="show(i)">
+      <button v-for="(it, i) in items" :key="it.kind + it.id" type="button" class="fy-tile" :class="{ tall: isVideo(it) }"
+        :style="{ '--d': Math.min(Number(i), 12) * 0.03 + 's' }" :aria-label="(it.post.text || '').slice(0, 80) || F.open" @click="show(Number(i))">
         <img v-if="coverOf(it)" :src="coverOf(it)" alt="" loading="lazy" />
         <span v-else class="fy-wait" aria-hidden="true"></span>
         <span v-if="isMany(it)" class="fy-mark" aria-hidden="true">

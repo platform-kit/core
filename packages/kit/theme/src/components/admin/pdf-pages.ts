@@ -32,10 +32,9 @@ export function openPdf(url: any, { width = 720, onPage, onCount, crop = null }:
       const vp = crop ? page.getViewport({ scale, offsetX: -(crop as any).x * scale, offsetY: -(crop as any).y * scale }) : page.getViewport({ scale })
       const canvas = document.createElement('canvas'); canvas.width = Math.round(cw * scale); canvas.height = Math.round(ch * scale)
       await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise
-      const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.86))
+      const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.86))
       if (stopped) break
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'Blob | MediaSource'.
-      const u = URL.createObjectURL(blob); urls[i - 1] = u
+      const u = URL.createObjectURL(blob!); urls[i - 1] = u
       if (onPage) onPage(i, u)
       if (i !== 1) page.cleanup()
     }

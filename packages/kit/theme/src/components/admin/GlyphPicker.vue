@@ -6,7 +6,9 @@
  * shows the spark and says so.
  */
 import { ref, computed, nextTick, onBeforeUnmount } from 'vue'
-import NAMES from '#content/icon-names.json'
+import ICON_NAMES from '#content/icon-names.json'
+/* every Lucide name the build found, as the JSON holds them */
+const NAMES = ICON_NAMES as string[]
 import { GLYPH_NAMES } from '../landing/glyphs.js'
 import { glyph, hasGlyph } from '../landing/icons.js'
 const props = defineProps({ modelValue: { type: String, default: '' } })
@@ -25,7 +27,6 @@ onBeforeUnmount(() => { document.removeEventListener('keydown', onKey, true); do
 const matches = computed(() => {
   const s = q.value.trim().toLowerCase()
   const own = GLYPH_NAMES.filter((n) => !s || n.includes(s))
-  // @ts-expect-error TS2339, from the conversion: Property 'filter' does not exist on type '{}'.
   const luc = (NAMES || []).filter((n: any) => !s || n.includes(s)).filter((n: any) => !own.includes(n))
   return own.map((n) => ({ n, own: true })).concat(luc.slice(0, 96).map((n: any) => ({ n, own: false })))
 })
@@ -44,7 +45,7 @@ function pick(n: any) { emit('update:modelValue', n); open.value = false }
       <div class="gp-grid">
         <button v-for="m in matches" :key="m.n" type="button" class="gp-b" :class="{ on: m.n === modelValue, own: m.own }" :title="m.n" @click="pick(m.n)" v-html="glyph(m.n)"></button>
       </div>
-      <p class="gp-foot">{{ matches.length }} shown · <!-- @vue-expect-error TS2339, from the conversion: Property 'length' does not exist on type '{}'. -->{{ (NAMES || []).length + GLYPH_NAMES.length }} in all</p>
+      <p class="gp-foot">{{ matches.length }} shown · {{ (NAMES || []).length + GLYPH_NAMES.length }} in all</p>
     </div>
   </div>
 </template>

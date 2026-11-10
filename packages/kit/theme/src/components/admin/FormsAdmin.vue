@@ -5,7 +5,7 @@
    through the content pipe (the forms model). */
 import { ref, computed, onMounted, watch } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
+import { ModuleRegistry, AllCommunityModule, type ColDef } from 'ag-grid-community'
 import { useAgGridTheme } from '../../lib/agGridTheme.js'
 import FormBuilder from './FormBuilder.vue'
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -27,7 +27,7 @@ watch(() => props.name, (n) => { if (!n) load() })
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
 const getRowId = (q: { data: { name: any } }) => q.data.name
 const yes = (v: any) => (v ? '✓' : '—')
-const columnDefs = computed(() => [
+const columnDefs = computed<ColDef[]>(() => [
   { headerName: W['col-title'], field: 'title', pinned: 'left', flex: 1.6, minWidth: 220, cellRenderer: (q: { value: any; data: { name: any } }) => `<span class="fa-gtitle">${q.value}</span><span class="fa-gaddr">/form/${q.data.name}</span>` },
   { headerName: W['col-on'], width: 100, valueGetter: (q: { data: { published: any } }) => (q.data.published ? W.on : W.off), cellRenderer: (q: { data: { published: any }; value: any }) => `<span class="ui-pill ${q.data.published ? 'ui-ok' : 'ui-off'}">${q.value}</span>` },
   { headerName: W['col-slides'], field: 'slides', width: 100, type: 'numericColumn' },
@@ -57,7 +57,7 @@ async function startNew() {
       <p v-if="loading" class="ui-muted">…</p>
       <div v-else-if="!forms.length" class="ui-empty"><h3>{{ W['empty-title'] }}</h3><p>{{ W['empty-body'] }}</p><button type="button" class="ui-btn ui-primary" @click="startNew">{{ W['empty-cta'] }}</button></div>
       <div v-else class="fa-grid">
-        <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: any; field: string; pinned: string; flex: number; minWidth: number; cellRenderer: (q: { value: any; data: { name: any;  --><AgGridVue class="fa-aggrid" :theme="theme" :row-data="forms" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
+        <AgGridVue class="fa-aggrid" :theme="theme" :row-data="forms" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
                    :row-height="54" :suppress-cell-focus="true" @row-clicked="emit('open', $event.data.name)" />
       </div>
     </template>

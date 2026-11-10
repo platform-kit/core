@@ -35,7 +35,7 @@ const count = (c: { items: string|any[] }) => (W.count || '{n} items').replace('
       </div>
       <slot name="tiles" :items="items" :md="md">
         <div v-if="items.length" class="lpcl-grid lprv lpd1" :class="'lpcl-n' + Math.min(6, items.length)">
-          <!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. --><a v-for="(c, i) in items" :key="c.id" :href="c.href" class="lpcl lpk" :style="{ '--k': (0.05 + i * 0.06) + 's' }">
+          <a v-for="(c, i) in items" :key="c.id" :href="c.href" class="lpcl lpk" :style="{ '--k': (0.05 + Number(i) * 0.06) + 's' }">
             <template v-if="layout === 'icons'"><span class="lpcl-ico" v-html="glyph(icons[c.id] || 'layers')"></span><b>{{ c.title }}</b><span class="lpcl-count">{{ count(c) }}</span></template>
             <template v-else-if="layout === 'circles'"><span class="lpcl-circ"><img v-if="c.image || c.covers[0]" :src="c.image || c.covers[0]" :alt="c.title" loading="lazy" /></span><b>{{ c.title }}</b><span class="lpcl-count">{{ count(c) }}</span></template>
             <template v-else>

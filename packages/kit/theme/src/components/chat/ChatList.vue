@@ -26,7 +26,7 @@ const props = defineProps({
   coach: { type: Boolean, default: false },       /* the reader is a coach */
   conversations: { type: Array as PropType<any[]>, default: () => [] },
   people: { type: Array as PropType<any[]>, default: () => [] },     /* chat_people(): coaches + peers */
-  activeId: { type: String, default: null },
+  activeId: { type: String as PropType<string | null>, default: null },
   me: { type: String, default: '' },
   loading: { type: Boolean, default: false },
 })
@@ -44,10 +44,8 @@ function start(id: any) { emit('start', id) }
 
 /* ---- the coach's view: the order, and what each member is owed ---- */
 const ORDERS = ['activity', 'created', 'awaiting']
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'.
-const order = ref((() => { try { return ORDERS.includes(localStorage.getItem('dl.chat.order')) ? localStorage.getItem('dl.chat.order') : 'activity' } catch (e) { return 'activity' } })())
+const order = ref((() => { try { const o = localStorage.getItem('dl.chat.order'); return o !== null && ORDERS.includes(o) ? o : 'activity' } catch (e) { return 'activity' } })())
 function setOrder(o: any) { order.value = o; try { localStorage.setItem('dl.chat.order', o) } catch (e) { /* private mode */ } }
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string | undefined'.
 const rows = computed(() => (props.coach ? sortInbox(props.conversations, order.value) : props.conversations))
 /* the reply time a member's membership promises: their highest tier's product, else the paid session's */
 const HOURS: any = { tier: {}, session: 0 }

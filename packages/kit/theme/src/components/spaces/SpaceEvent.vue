@@ -70,7 +70,6 @@ watch(next, (o) => { why.value = (o && o.reason) || '' })
 async function sayWhy() {
   if (!next.value || !next.value.mine || busy.value) return
   busy.value = true
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'null | undefined'.
   await rsvp(next.value.id, next.value.mine, why.value.trim() || null)
   busy.value = false
 }

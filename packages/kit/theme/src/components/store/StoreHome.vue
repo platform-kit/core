@@ -33,8 +33,7 @@ const preview = inject('dl-preview', null)
 const A = computed(() => arrange(preview ? (preview as any).value : null))
 const hero = computed(() => A.value.hero)
 /* the title, with one *word* in italic: the markdown's asterisks, nothing else */
-// @ts-expect-error TS2769, from the conversion: No overload matches this call.
-const esc = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const esc = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c])
 const heroTitle = computed(() => esc(hero.value.title).replace(/\*([^*]+)\*/g, '<em>$1</em>'))
 /* the row under the buttons: the price the shelf starts at, what comes with a copy, where it ships */
 const HR = T.home.hero || {}
@@ -96,7 +95,7 @@ const shelf = (c: any) => c.items.slice(0, 12)
         <!-- the books themselves, as they are printed -->
         <div v-else-if="A.heroBooks.length" class="sf-hero-books" :class="'n' + A.heroBooks.length" aria-hidden="true">
           <a v-for="(b, i) in A.heroBooks" :key="b.slug" class="sf-hero-book" :href="bookHref(b.slug)" tabindex="-1">
-            <!-- @vue-expect-error TS7015, from the conversion: Element implicitly has an 'any' type because index expression is not of type 'number'. --><Book3D :art="b.art" :fallback-art="b.fallbackArt" :dims="b.dims" :binding="b.binding" :trim="b.trim" :pages="b.pages" :cloth="b.binding !== 'softcover' ? (b.cloth || 'black') : ''" :foil="b.binding === 'softcover' ? '' : (b.foil || 'gold')" :foil-layer="b.foilArt || ''" :jacket="b.jacket" :edges="b.edges" :sheets="b.sheets || []" :title="b.title" :author="b.author" mode="still" anchor="floor" :fill="i === 1 ? 0.92 : 0.8" :pose="POSES[i] || POSES[1]" />
+            <Book3D :art="b.art" :fallback-art="b.fallbackArt" :dims="b.dims" :binding="b.binding" :trim="b.trim" :pages="b.pages" :cloth="b.binding !== 'softcover' ? (b.cloth || 'black') : ''" :foil="b.binding === 'softcover' ? '' : (b.foil || 'gold')" :foil-layer="b.foilArt || ''" :jacket="b.jacket" :edges="b.edges" :sheets="b.sheets || []" :title="b.title" :author="b.author" mode="still" anchor="floor" :fill="i === 1 ? 0.92 : 0.8" :pose="POSES[Number(i)] || POSES[1]" />
           </a>
         </div>
       </div>

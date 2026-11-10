@@ -12,10 +12,9 @@
  * Everything here goes through the content pipe's print model (build/models/core/print.mjs, build/print/block.mjs).
  */
 import { ref, computed, reactive, watch, watchEffect, onMounted, onBeforeUnmount, nextTick } from 'vue'
-// @ts-expect-error TS7016, from the conversion: Could not find a declaration file for module 'page-flip'. '/Users/jameshuntercarter/htdocs/dharmalab/node_modules/page-flip/dist/js/page-fli
 import { PageFlip } from 'page-flip'
 import { AgGridVue } from 'ag-grid-vue3'
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community'
+import { ModuleRegistry, AllCommunityModule, type ColDef } from 'ag-grid-community'
 import { useAgGridTheme } from '../../lib/agGridTheme.js'
 ModuleRegistry.registerModules([AllCommunityModule])
 import { openPdf, shotsOf, coverArtOf } from './pdf-pages.js'
@@ -105,7 +104,7 @@ const pagesOf = (b: any, contents: any) => { const e = b.edition && b.edition.ed
 const theme = useAgGridTheme()
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
 const cap = (v: any) => (v ? String(v)[0].toUpperCase() + String(v).slice(1) : '—')
-const columnDefs = [
+const columnDefs: ColDef[] = [
   { headerName: 'Book', field: 'title', pinned: 'left', flex: 1.6, minWidth: 260, cellRenderer: (q: any) => `<span class="pr-gtitle">${q.value}</span><span class="pr-gauthor">${q.data.author || ''}</span>` },
   { headerName: 'Sale', flex: 2, minWidth: 260, valueGetter: (q: any) => state(q.data).label, cellRenderer: (q: any) => `<span class="pr-gstate pr-${state(q.data).kind}">${q.value}</span>` },
   { headerName: 'Contents', width: 170, valueGetter: (q: any) => { const s = printSpec(q.data.print); return s ? s.contents.map((c: any) => CONTENTS_NAMES[c] || c).join(', ') : '—' } },
@@ -207,8 +206,7 @@ const sells = (k: any) => {
   if (FILES.includes(k)) return price ? `Sells for ${money(price)}` : ''
   const costs = form.pr.contents.map((c: any) => { const e = cur.value.edition && cur.value.edition.editions && cur.value.edition.editions[c]; return e && e.printers && e.printers[k] ? costUsd(e.printers[k]) : null })
   if (costs.some((c: any) => c == null)) return 'No quote yet for every contents — set the editions and the printers price them'
-  // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
-  const who = [...new Set(form.pr.contents.map((c: any) => cur.value.edition.editions[c].printers[k].provider))].map((p) => PRINTER_NAMES[p] || p).join(' / ')
+  const who = [...new Set<string>(form.pr.contents.map((c: any) => cur.value.edition.editions[c].printers[k].provider))].map((p) => PRINTER_NAMES[p] || p).join(' / ')
   return `Sells for ${money(price)} — ${who}'s ${money(Math.max(...costs))} to print the costliest contents plus the markup, rounded up to the next $${PRICE_STEP}; shipping is charged where it goes`
 }
 const spine = computed<any>(() => (cur.value && form.pr ? spineWords(cur.value.title, form.pr.spine, SPINE_EDITION()) : null))
@@ -219,7 +217,7 @@ const spine = computed<any>(() => (cur.value && form.pr ? spineWords(cur.value.t
 const printedOn = computed(() => (form.pr ? PRINTED.filter((f) => form.pr.formats[f].on) : []))
 const makers: any = (f: any) => Object.values(printers.value).filter((p) => (p as any).formats.includes(f))
 /* the printers whose options are shown: every one named for a format, and every one auto might pick */
-const shownProviders = computed(() => { const ids = new Set(); for (const f of printedOn.value) { const id = form.pr.printers[f]; if (id && id !== 'auto') ids.add(id); else for (const p of makers(f)) if ((p as any).configured || !Object.values(printers.value).some((x) => (x as any).configured)) ids.add((p as any).id) } return [...ids] })
+const shownProviders = computed(() => { const ids = new Set<string>(); for (const f of printedOn.value) { const id = form.pr.printers[f]; if (id && id !== 'auto') ids.add(id); else for (const p of makers(f)) if ((p as any).configured || !Object.values(printers.value).some((x) => (x as any).configured)) ids.add((p as any).id) } return [...ids] })
 const optionsFor = (id: any) => { const p = printers.value[id]; if (!p) return []; const seen = new Map(); for (const f of printedOn.value) if (p.formats.includes(f) && (form.pr.printers[f] === id || form.pr.printers[f] === 'auto')) for (const o of p.options[f] || []) if (!seen.has(o.key)) seen.set(o.key, o); return [...seen.values()] }
 const optionValue = (id: any, o: any) => { const v = form.pr.providers[id] && form.pr.providers[id][o.key]; return v == null || v === '' ? o.default : v }
 const setOption = (id: any, o: any, v: any) => { if (!form.pr.providers[id]) form.pr.providers[id] = {}; form.pr.providers[id][o.key] = o.type === 'toggle' ? !!v : o.type === 'select' && typeof o.choices[0].value === 'number' ? Number(v) : v; quoteAll() }
@@ -246,8 +244,7 @@ function quoteAll() {
 const quoteOf = (f: any, pid: any) => quotes[f + ':' + pid] || null
 const quoteLine = (q: any) => { if (!q) return '…'; if (q.busy) return 'quoting…'; if (q.error) return 'no quote — ' + q.error; const cur = q.currency === 'GBP' ? '£' : q.currency === 'EUR' ? '€' : '$'; return `${cur}${Number(q.print).toFixed(2)} a copy${q.currency && q.currency !== 'USD' ? ' (≈ ' + money(costUsd({ cost: q.print, currency: q.currency })) + ')' : ''}${q.shipping ? ', ' + cur + Number(q.shipping).toFixed(2) + ' to ship' : ''}${q.days ? ', ' + q.days + ' days' : ''}${q.from === 'GB' ? ', from the UK' : ''}${q.mock ? ' · mock' : ''}` }
 /* the price a format would sell for at a quote, by the same rule the store uses */
-// @ts-expect-error TS18047, from the conversion: 'usd' is possibly 'null'.
-const priceAt = (f: any, q: any) => { if (!q || q.busy || q.error) return null; const r = form.pr.formats[f]; if (r.by === 'price') return Number(r.price); const usd = costUsd({ cost: q.print, currency: q.currency }); return Math.ceil((usd + Number(r.markup || 0)) / PRICE_STEP) * PRICE_STEP }
+const priceAt = (f: any, q: any) => { if (!q || q.busy || q.error) return null; const r = form.pr.formats[f]; if (r.by === 'price') return Number(r.price); const usd = costUsd({ cost: q.print, currency: q.currency }); return Math.ceil((usd! + Number(r.markup || 0)) / PRICE_STEP) * PRICE_STEP }
 watch(() => form.pr && [form.pr.printers, form.pr.contents, form.pr.trim, form.pr.paper], () => quoteAll(), { deep: true })
 watch(panel, (p) => { if (p === 'printers') quoteAll() })
 const clothHex: any = { navy: '#1c2740', gray: '#585b60', red: '#712727', black: '#161512', tan: '#b39a72', forest: '#28422f' }
@@ -355,7 +352,7 @@ async function drawListing(eds: any) {
 const previewOf = ref('interior')
 const previewContents = ref('')
 const previewCover = ref('')
-const pages = ref<any>([])
+const pages = ref<string[]>([])
 const pageCount = ref(0)
 const pageAt = ref(0)
 const jacket = ref('')
@@ -473,7 +470,7 @@ watchEffect(async () => {
       <p v-if="loading" class="ui-muted">Loading…</p>
       <p v-else-if="err" class="ui-err">{{ err }}</p>
       <div v-else class="pr-grid">
-        <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: string; field: string; pinned: string; flex: number; minWidth: number; cellRenderer: (q: any) => string; valueGetter?:  --><AgGridVue class="pr-aggrid" :theme="theme" :row-data="books" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
+        <AgGridVue class="pr-aggrid" :theme="theme" :row-data="books" :column-defs="columnDefs" :default-col-def="defaultColDef" :get-row-id="getRowId"
                    :row-height="54" :suppress-cell-focus="true" @row-clicked="emit('open', $event.data.slug)" />
       </div>
     </template>
@@ -585,8 +582,8 @@ watchEffect(async () => {
                 </li>
               </ul>
             </div>
-            <!-- @vue-expect-error TS2322, from the conversion: Type 'unknown' is not assignable to type 'PropertyKey | undefined'. --><div v-for="id in shownProviders" :key="id" class="pr-provider">
-              <div class="pr-provider-head"><h4><!-- @vue-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type. -->{{ PRINTER_NAMES[id] || id }}</h4><!-- @vue-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type. --><span v-if="printers[id] && !printers[id].configured" class="pr-nokeys"><!-- @vue-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type. -->{{ printers[id].mock ? 'no keys — every call is mocked' : 'no keys' }}</span><span v-else class="pr-keys">keys present</span><!-- @vue-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type. --><span v-if="printers[id] && printers[id].stateful" class="pr-stateful">keeps a title per book — made once, a setup fee</span></div>
+            <div v-for="id in shownProviders" :key="id" class="pr-provider">
+              <div class="pr-provider-head"><h4>{{ PRINTER_NAMES[id] || id }}</h4><span v-if="printers[id] && !printers[id].configured" class="pr-nokeys">{{ printers[id].mock ? 'no keys — every call is mocked' : 'no keys' }}</span><span v-else class="pr-keys">keys present</span><span v-if="printers[id] && printers[id].stateful" class="pr-stateful">keeps a title per book — made once, a setup fee</span></div>
               <div class="pr-options">
                 <label v-for="o in optionsFor(id)" :key="o.key" class="ui-field">
                   <span>{{ o.label }}<small v-if="o.help"> · {{ o.help }}</small></span>
@@ -698,7 +695,7 @@ watchEffect(async () => {
               <button type="button" class="ui-btn ui-sm" :disabled="pageAt >= pages.length - 1" @click="flipNext">Next ›</button>
             </div>
             <div v-if="pages.length" ref="bookEl" :key="bookKey" class="pr-flipbook">
-              <!-- @vue-expect-error TS2365, from the conversion: Operator '<=' cannot be applied to types 'string | number' and 'number'. --><div v-for="(u, i) in pages" :key="i" class="pr-page" :data-density="i <= 1 || i >= pages.length - 2 ? 'hard' : 'soft'"><img :src="u" alt="" draggable="false" /></div>
+              <div v-for="(u, i) in pages" :key="i" class="pr-page" :data-density="i <= 1 || i >= pages.length - 2 ? 'hard' : 'soft'"><img :src="u" alt="" draggable="false" /></div>
             </div>
             <div v-else class="ui-empty">{{ rendering ? 'Rendering the interior…' : 'Save to render the book.' }}</div>
           </div>

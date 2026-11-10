@@ -38,7 +38,7 @@ onBeforeUnmount(() => { window.removeEventListener('resize', fit) })
 </script>
 
 <template>
-  <!-- @vue-expect-error TS2345, from the conversion: Argument of type '{ style: { height: string | null; }; class: string; ref: string; }' is not assignable to parameter of type 'HTMLAttributes --><div ref="root" class="chat" :style="{ height: height ? height + 'px' : null }">
+  <div ref="root" class="chat" :style="{ height: height ? height + 'px' : undefined }">
     <div v-show="!ready" class="chat-wait" aria-busy="true" />
     <div v-if="ready && gate" class="chat-gate">
       <Gate kind="chat" :required="gate" />

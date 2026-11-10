@@ -63,7 +63,7 @@ const quick = (p: { available: any; kind: string; sizes: string|any[] }) => p.av
       <slot name="products" :items="items" :md="md">
         <!-- the list: a row per product -->
         <div v-if="layout === 'list' && items.length" class="lppd-rows lprv lpd1">
-          <!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. --><a v-for="(p, i) in items" :key="p.id" :href="p.href" class="lppd-row lpk" :style="{ '--k': (0.05 + i * 0.05) + 's' }">
+          <a v-for="(p, i) in items" :key="p.id" :href="p.href" class="lppd-row lpk" :style="{ '--k': (0.05 + Number(i) * 0.05) + 's' }">
             <span class="lppd-thumb"><img v-if="p.image" :src="p.image.src" :alt="p.title" loading="lazy" /></span>
             <span class="lppd-roww"><span v-if="p.tags && p.tags[0]" class="lppd-tag">{{ p.tags[0] }}</span><b>{{ p.title }}</b><span v-if="p.subtitle" class="lppd-sub">{{ p.subtitle }}</span><Stars v-if="p.rating" :value="Number(p.rating)" :line="p.reviews ? (W.reviews || '').replace('{n}', p.reviews) : ''" class="lppd-stars" /></span>
             <span class="lppd-price lpnum"><b>{{ p.available ? money(p.unit_amount, p.currency) : P.unavailable }}</b><s v-if="p.compare" class="lpnum">{{ p.compare }}</s></span>
@@ -73,7 +73,7 @@ const quick = (p: { available: any; kind: string; sizes: string|any[] }) => p.av
         </div>
         <!-- cards, bordered, and the rail -->
         <div v-else-if="items.length" class="lppd-grid lprv lpd1" :class="'lppd-c' + Math.min(5, Math.max(2, columns))">
-          <!-- @vue-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type. --><div v-for="(p, i) in items" :key="p.id" class="lppd-cell lpk" :style="{ '--k': (0.05 + i * 0.05) + 's' }">
+          <div v-for="(p, i) in items" :key="p.id" class="lppd-cell lpk" :style="{ '--k': (0.05 + Number(i) * 0.05) + 's' }">
             <ProductCard :product="p" />
           </div>
         </div>

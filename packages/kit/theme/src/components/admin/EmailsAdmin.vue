@@ -21,7 +21,7 @@ import pipe from '../../lib/admin/api.js'
 async function loadEmails() { const out: any = {}; for (const kind of KINDS) { const r = await pipe.read('emails', kind); out[kind] = { content: r.parsed, subject: r.data.subject || '' } } return out }
 
 /* the rail: each email, what it is and when it goes, in groups */
-const GROUPS = [
+const GROUPS: Array<[string, Array<[string, string, string]>]> = [
   ['The store', [['order', 'Order confirmation', 'when a payment lands'], ['shipped', 'Shipped', 'when the parcel leaves the printer'], ['files', 'Files ready', 'with a purchase that carries files']]],
   ['Accounts', [['magic-link', 'Confirm email', 'at sign-up, and a sign-in by link'], ['recovery', 'Password reset', 'from “Forgot your password?”']]],
   ['Coaching', [['chat', 'Chat message', 'when the other side is away']]],
@@ -52,7 +52,6 @@ let editor: any = null, mjml: any = null
 const host = ref<any>(null)
 async function compile(content: any) {
   const { renderToMjml } = await import('@templatical/renderer')
-  // @ts-expect-error TS7016, from the conversion: Could not find a declaration file for module 'mjml-browser'. '/Users/jameshuntercarter/htdocs/dharmalab/node_modules/mjml-browser/lib/index.
   if (!mjml) mjml = (await import('mjml-browser')).default
   const mj = await renderToMjml(content, { allowHtmlBlocks: true })
   const r = mjml(mj, { validationLevel: 'soft' })
@@ -81,7 +80,6 @@ async function mount() {
     colors: { presets: [INK, INK3, PAPER, HAIR, ACCENT, '#ffffff'], allowCustom: true },
     templateDefaults: { width: 600, backgroundColor: PAPER, textColor: INK, linkColor: INK, fontFamily: 'Georgia' },
     blockDefaults: { button: { backgroundColor: INK, textColor: PAPER, borderRadius: 999, fontSize: 15, align: 'left' }, divider: { color: HAIR, thickness: 1 } },
-    // @ts-expect-error TS7016, from the conversion: Could not find a declaration file for module 'mjml-browser'. '/Users/jameshuntercarter/htdocs/dharmalab/node_modules/mjml-browser/lib/index.
     render: { compileMjml: async (mj) => { if (!mjml) mjml = (await import('mjml-browser')).default; return mjml(mj, { validationLevel: 'soft' }).html } },
     testEmail: {
       defaultRecipient: me.value,
@@ -138,7 +136,7 @@ async function discard() { if (!emails.value) return; subject.value = savedSubje
     <p v-if="loading" class="ui-muted">Loading…</p>
     <template v-else-if="emails">
       <nav class="em-rail ui-rail" aria-label="Emails">
-        <!-- @vue-expect-error TS2322, from the conversion: Type 'string | string[][]' is not assignable to type 'PropertyKey | undefined'. --><template v-for="[group, list] in GROUPS" :key="group">
+        <template v-for="[group, list] in GROUPS" :key="group">
           <div class="ui-railhead">{{ group }}</div>
           <button v-for="[k, name, when] in list" :key="k" type="button" class="ui-railitem" :class="{ 'ui-on': kind === k }" @click="pick(k)"><b>{{ name }}</b><small>{{ when }}</small></button>
         </template>

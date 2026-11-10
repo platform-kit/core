@@ -24,7 +24,7 @@ const emit = defineEmits(['answer'])
         :style="o.multiline ? 'align-items:flex-start;padding:16px 20px' : null"
         @click="emit('answer', o.v)"
       >
-        <span class="k"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ n + 1 }}</span>
+        <span class="k">{{ Number(n) + 1 }}</span>
         <span v-if="o.colour" class="sw" :style="{ background: o.colour }" />
         <span class="qoptl">
           {{ o.label }}

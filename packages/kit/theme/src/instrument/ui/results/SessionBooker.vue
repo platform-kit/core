@@ -391,7 +391,7 @@ async function confirm(afterAuth = false) {
             <p v-if="error" class="bk-err">{{ error }}</p>
             <div class="bk-acts">
               <button type="button" class="bk-btn ghost" :disabled="step === 'busy'" @click="step = 'when'; slot = ''">{{ B.back }}</button>
-              <!-- @vue-expect-error TS2345, from the conversion: Argument of type '{ disabled: boolean; class: { busy: boolean; }; type: "button"; onClick: (afterAuth?: boolean) => Promise<void>; }' is not --><button type="button" class="bk-btn" :class="{ busy: step === 'busy' }" :disabled="step === 'busy'" @click="confirm">{{ step === 'busy' ? (moving ? B.moving : B.booking) : host ? HW.confirm : paying ? B['pay-confirm'] + ' · ' + price : B.confirm }}</button>
+              <button type="button" class="bk-btn" :class="{ busy: step === 'busy' }" :disabled="step === 'busy'" @click="confirm()">{{ step === 'busy' ? (moving ? B.moving : B.booking) : host ? HW.confirm : paying ? B['pay-confirm'] + ' · ' + price : B.confirm }}</button>
             </div>
           </div>
 

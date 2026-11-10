@@ -6,7 +6,6 @@ import { computed } from 'vue'
 import DOMPurify from 'dompurify'
 import { renderMarkdown } from 'platformkit/lib/forms/markdown.js'
 const props = defineProps({ md: { type: String, default: '' }, ctx: { type: Object as PropType<any>, default: () => ({}) } })
-// @ts-expect-error TS2769, from the conversion: No overload matches this call.
 const html = computed(() => DOMPurify.sanitize(renderMarkdown(props.md, props.ctx), { ADD_ATTR: ['target'] }))
 </script>
 

@@ -47,7 +47,7 @@ const rows = computed(() => p.value[rowsKey.value] || [])
 function setRow(i: any, k: any, v: any) { const list = rows.value.map((r: any) => ({ ...r })); list[i][k] = v; if (k === 'label' && (list[i].value === undefined || list[i].value === '' || list[i].auto)) { list[i].value = v; list[i].auto = true } if (k === 'value') list[i].auto = false; p.value[rowsKey.value] = list; touch() }
 function addRow() { p.value[rowsKey.value] = [...rows.value, kind.value === 'picture' ? { label: '', value: '', image: '', auto: true } : { label: '', value: '', auto: true }]; touch() }
 function removeRow(i: any) { const list = rows.value.slice(); list.splice(i, 1); p.value[rowsKey.value] = list; touch() }
-const countries = Object.keys(placeholdersAndCallingCodes)
+const countries = Object.keys(placeholdersAndCallingCodes) as Array<keyof typeof placeholdersAndCallingCodes>
 const countryList = computed(() => (Array.isArray(p.value.availablecountries) ? p.value.availablecountries : String(p.value.availablecountries || '').split(',')).map((c: any) => c.trim().toUpperCase()).filter(Boolean))
 function toggleCountry(c: any) { const list = countryList.value.includes(c) ? countryList.value.filter((x: any) => x !== c) : [...countryList.value, c]; if (list.length) p.value.availablecountries = list; else delete p.value.availablecountries; touch() }
 const checked = computed(() => (Array.isArray(p.value.checked) ? p.value.checked : p.value.checked ? [p.value.checked] : []))
@@ -92,7 +92,7 @@ const isDate = computed(() => ['date', 'time', 'datetime'].includes(kind.value))
         <label v-if="kind !== 'tel'" class="ui-field"><span>{{ W.pattern }}</span><input class="ui-input ui-mono" :value="p.pattern || ''" @input="setP('pattern', ($event.target as any).value)" /></label>
       </div>
       <template v-if="kind === 'tel'">
-        <label class="ui-field"><span>{{ W.country }}</span><select class="ui-select" :value="p.country || 'US'" @change="setP('country', ($event.target as any).value)"><option v-for="c in countries" :key="c" :value="c">{{ c }} <!-- @vue-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ AC: { placeholder: string; callingCo -->{{ placeholdersAndCallingCodes[c].callingCode }}</option></select></label>
+        <label class="ui-field"><span>{{ W.country }}</span><select class="ui-select" :value="p.country || 'US'" @change="setP('country', ($event.target as any).value)"><option v-for="c in countries" :key="c" :value="c">{{ c }} {{ placeholdersAndCallingCodes[c].callingCode }}</option></select></label>
         <div class="ui-field"><span>{{ W.countries }}</span>
           <div class="fi-chips"><button v-for="c in countries" :key="c" type="button" class="fi-chip" :class="{ on: countryList.includes(c) }" @click="toggleCountry(c)">{{ c }}</button></div>
         </div>

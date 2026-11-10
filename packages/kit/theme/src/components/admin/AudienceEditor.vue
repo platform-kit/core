@@ -54,10 +54,10 @@ function add(key: any) { if (!key) return; if (!added.value.includes(key)) added
 function drop(key: any) { added.value = added.value.filter((k: any) => k !== key); set(key, null) }
 
 /* the choices */
-const TIERS = [...new Map(PRODUCTS.filter((p: any) => p.kind === 'membership' && p.tier).map((p: any) => [p.tier, p.title])).entries()]
+const TIERS = [...new Map<string, string>(PRODUCTS.filter((p: any) => p.kind === 'membership' && p.tier).map((p: any) => [p.tier, p.title])).entries()]
 const AREAS = DOMAINS.map(([k, name]: any) => [k, name])
 const LVLS = Object.entries(LEVELS).map(([k, l]) => [k, (l as any).name])
-const BOOKLIST = BOOKS.map((b: any) => [b.slug, b.title])
+const BOOKLIST = BOOKS.map((b: any): [string, string] => [b.slug, b.title])
 const CHARGES = [['clear', 'nothing stirred'], ...CHS.map((c: any) => [(c as any).k, (c as any).label])]
 const bookName = (slug: any) => { const b = BOOKLIST.find(([s]: any) => s === slug); return b ? b[1] : slug }
 const statementText = (id: any) => { const s = STATEMENTS.find((x: any) => (x as any).id === id); return s ? (s as any).text : '' }
@@ -124,7 +124,7 @@ watch(rules, () => { count.value = null })
       <div v-else-if="r.kind === 'tiers'" class="ui-chips">
         <button type="button" class="ui-chip" :class="{ 'ui-on': listOf('subscription').includes('none') }" @click="toggleTier('none')">None</button>
         <button type="button" class="ui-chip" :class="{ 'ui-on': listOf('subscription').includes('any') }" @click="toggleTier('any')">Any</button>
-        <!-- @vue-expect-error TS2322, from the conversion: Type 'unknown' is not assignable to type 'PropertyKey | undefined'. --><button v-for="[t, name] in TIERS" :key="t" type="button" class="ui-chip" :class="{ 'ui-on': listOf('subscription').includes(t) }" @click="toggleTier(t)">{{ name }}</button>
+        <button v-for="[t, name] in TIERS" :key="t" type="button" class="ui-chip" :class="{ 'ui-on': listOf('subscription').includes(t) }" @click="toggleTier(t)">{{ name }}</button>
       </div>
       <div v-else-if="r.kind === 'roles'" class="ui-chips"><button v-for="k in ROLES" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('role').includes(k) }" @click="toggle('role', k)">{{ k }}</button></div>
       <div v-else-if="r.kind === 'grants'" class="ui-chips"><button v-for="k in GRANTS" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('grant').includes(k) }" @click="toggle('grant', k)">{{ k }}</button></div>
@@ -134,7 +134,7 @@ watch(rules, () => { count.value = null })
       <div v-else-if="r.kind === 'books'" class="ui-chips">
         <button v-for="slug in listOf(r.key)" :key="slug" type="button" class="ui-chip ui-on" title="Remove" @click="toggle(r.key, slug)">{{ bookName(slug) }} <span class="ae-x">×</span></button>
         <select class="ui-select ae-add" value="" @change="($event.target as any).value && toggle(r.key, ($event.target as any).value); ($event.target as any).value = ''">
-          <option value="">+ Add a book</option><!-- @vue-expect-error TS7031, from the conversion: Binding element 's' implicitly has an 'any' type. --><option v-for="[slug, name] in BOOKLIST.filter(([s]) => !listOf(r.key).includes(s))" :key="slug" :value="slug">{{ name }}</option>
+          <option value="">+ Add a book</option><option v-for="[slug, name] in BOOKLIST.filter(([s]: [string, string]) => !listOf(r.key).includes(s))" :key="slug" :value="slug">{{ name }}</option>
         </select>
       </div>
 

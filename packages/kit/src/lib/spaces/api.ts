@@ -464,7 +464,7 @@ export async function makePoll(channelId: any, question: any, options: any, opts
 
 /* the votes of the messages on screen — read as rows, counted in the browser by tallyPoll */
 export const votes = ref<any>([])
-export async function loadVotes(ids = []) {
+export async function loadVotes(ids: string[] = []) {
   const want = (ids || []).filter(Boolean)
   if (!on() || !want.length) { votes.value = []; return [] }
   const { data } = await (supabase as any).from('space_poll_votes').select('message_id, option_key, user_id').in('message_id', want)
@@ -800,7 +800,7 @@ export async function loadHushes() { if (on()) hushes.value = (await rpc('space_
 export const hushOf = (kind: string, ref: any) => (hushes.value || []).find((m: { kind: any; ref: any }) => m.kind === kind && m.ref === ref) || null
 export const isHushed = (kind: any, ref: any) => !!hushOf(kind, ref)
 
-export async function hush(kind: string, ref: any, until = null) {
+export async function hush(kind: string, ref: any, until: string | null = null) {
   if (!on() || !kind || !ref) return
   const { error } = await (supabase as any).rpc('space_mute', { p_kind: kind, p_ref: ref, p_until: until })
   if (error) return
@@ -1141,7 +1141,7 @@ export async function catchUp() {
 export const discover = () => rpc('space_discover')
 /* knocking on a space's own door, and — for whoever keeps it — what is waiting there. What the
    door asks (terms, a form) is enforced by space_ask, never by the page that draws it. */
-export const askToJoin = (space: any, { note = null, response = null, agreed = false } = {}) =>
+export const askToJoin = (space: any, { note = null, response = null, agreed = false }: { note?: string | null, response?: unknown, agreed?: boolean } = {}) =>
   rpc('space_ask', { p_space: space, p_note: note, p_response: response, p_agreed: agreed })
 export const asksOf = (space: any) => rpc('space_asks', { p_space: space })
 /* the badges a space has, and giving one to somebody or taking it back (a moderator's act) */
@@ -1197,7 +1197,7 @@ export const tokenHash = async (token: string|undefined) => {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))
   return [...new Uint8Array(bytes)].map((x) => x.toString(16).padStart(2, '0')).join('')
 }
-export async function makeInvite(space: any, { role = null, uses = 1, days = null, note = null } = {}) {
+export async function makeInvite(space: any, { role = null, uses = 1, days = null, note = null }: { role?: string | null, uses?: number | null, days?: number | null, note?: string | null } = {}) {
   const token = inviteToken()
   await rpc('space_invite', { p_space: space, p_hash: await tokenHash(token), p_role: role, p_uses: uses, p_days: days, p_note: note })
   return token

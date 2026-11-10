@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
-import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'
+import { AllCommunityModule, ModuleRegistry, type ColDef } from 'ag-grid-community'
 import { useAgGridTheme } from '../../lib/agGridTheme.js'
 import { supabase } from 'platformkit/lib/supabase.js'
 import { isAdmin } from 'platformkit/lib/auth.js'
@@ -197,8 +197,7 @@ function mondayOf(key: any) {
   const date = new Date(`${key}T00:00:00Z`)
   return plusDays(key, -((date.getUTCDay() + 6) % 7))
 }
-function dayLabel(key: any, options = { weekday: 'short' }) {
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call.
+function dayLabel(key: any, options: Intl.DateTimeFormatOptions = { weekday: 'short' }) {
   return dateAtNoon(key).toLocaleDateString(undefined, { ...options, timeZone: 'UTC' })
 }
 function localInputOf(iso: any, zone: any) {
@@ -375,7 +374,7 @@ function hasOperation(accountId: any, operation: any) {
 }
 function accountViews(account: any) {
   const operations = accountOperations[account.id] || []
-  const routes = [
+  const routes: Array<[string, string[]]> = [
     ['posts', ['posts.read']],
     ['comments', ['comments.read', 'comments.write']],
     ['analytics', ['analytics.account.read', 'analytics.read']],
@@ -508,7 +507,6 @@ async function loadProviderPosts() {
   const result = await invokeCapability(workspaceAccountId.value, 'posts.read', {
     queryMode: 'list',
   })
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   providerPostRows.value = workspaceRows(result, ['posts', 'items', 'results'])
 }
 async function inspectProviderPost(item: any) {
@@ -604,7 +602,7 @@ function recordId(item: any, keys = ['id', 'ref', 'postId', 'post_id', 'commentI
   }
   return ''
 }
-function resultItems(result: any, names = []) {
+function resultItems(result: any, names: string[] = []) {
   const value = result?.result ?? result
   if (Array.isArray(value)) return value
   const containers = [value, value?.data, value?.result]
@@ -616,7 +614,7 @@ function resultItems(result: any, names = []) {
   }
   return value && typeof value === 'object' ? [value] : []
 }
-function workspaceRows(result: any, names = []) {
+function workspaceRows(result: any, names: string[] = []) {
   return resultItems(result, names).map((source, index) => ({
     _source: source,
     _key: recordId(source) || `record-${index}`,
@@ -665,7 +663,7 @@ const postGridRows = computed(() =>
     }
   }),
 )
-const postGridColumns = computed(() => [
+const postGridColumns = computed<ColDef[]>(() => [
   { headerName: POSTS['col-post'], field: '_summary', pinned: 'left', flex: 2, minWidth: 160 },
   { headerName: POSTS['col-updated'], field: '_updated', width: 145 },
   { headerName: POSTS['col-scheduled'], field: '_scheduled', width: 150 },
@@ -736,7 +734,6 @@ async function loadComments() {
   const result = await invokeCapability(workspaceAccountId.value, 'comments.read', {
     postId: selectedDelivery.value.provider_post_id,
   })
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   workspaceRecords.value = workspaceRows(result, ['comments'])
   workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
 }
@@ -852,7 +849,6 @@ async function loadInbox() {
       return
     }
     const result = await invokeCapability(workspaceAccountId.value, 'notifications.read')
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     workspaceRecords.value = workspaceRows(result, ['notifications'])
     workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
     return
@@ -862,7 +858,6 @@ async function loadInbox() {
     return
   }
   const result = await invokeCapability(workspaceAccountId.value, 'messages.read')
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   workspaceRecords.value = workspaceRows(result, ['conversations', 'threads'])
   workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
   if (workspaceSelected.value) await loadConversation(workspaceSelected.value)
@@ -878,7 +873,6 @@ async function loadConversation(conversation: any) {
   const result = await invokeCapability(workspaceAccountId.value, 'messages.read', {
     conversationId,
   })
-  // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
   workspaceMessages.value = workspaceRows(result, ['messages'])
 }
 async function selectConversation(row: any) {
@@ -942,7 +936,6 @@ async function searchWorkspace() {
       query: workspaceQuery.value.trim(),
       limit: 25,
     })
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     workspaceRecords.value = workspaceRows(result, ['posts', 'items', 'results'])
     workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
   } catch (error) {
@@ -976,7 +969,6 @@ async function loadRelationships() {
       kind: workspaceMode.value,
       limit: 25,
     })
-    // @ts-expect-error TS2322, from the conversion: Type 'string' is not assignable to type 'never'.
     workspaceRecords.value = workspaceRows(result, ['profiles', 'users', 'items', 'results'])
     workspaceSelectedId.value = workspaceRecords.value[0]?._key || ''
   } catch (error) {
@@ -1557,8 +1549,7 @@ onMounted(async () => {
   await load()
   if (state.value === 'ready' && oauthConnection) {
     activeView.value = 'accounts'
-    // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
-    const outcome = PAGE_OAUTH[oauthCode] || PAGE['oauth-finished']
+    const outcome = (oauthCode && PAGE_OAUTH[oauthCode]) || PAGE['oauth-finished']
     if (oauthConnection === 'error') errorText.value = outcome
     else notice.value = outcome
   }
@@ -1649,7 +1640,7 @@ onMounted(async () => {
                 ‹
               </button>
               <h3>
-                <!-- @vue-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'month' does not exist in type '{ weekday: string; }'. -->{{
+                {{
                   mode === 'week'
                     ? `${dayLabel(periodDays[0], { month: 'short', day: 'numeric' })} – ${dayLabel(periodDays[6], { month: 'short', day: 'numeric', year: 'numeric' })}`
                     : monthLabel
@@ -1671,7 +1662,7 @@ onMounted(async () => {
             <div v-for="weekday in weekdayLabels" :key="weekday">{{ weekday }}</div>
           </div>
           <div class="sp-grid" :class="{ 'sp-grid-week': mode === 'week' }">
-            <!-- @vue-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'month' does not exist in type '{ weekday: string; }'. --><section
+            <section
               v-for="day in periodDays"
               :key="day"
               class="sp-day"
@@ -1684,7 +1675,7 @@ onMounted(async () => {
               "
             >
               <div class="sp-day-head">
-                <!-- @vue-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'month' does not exist in type '{ weekday: string; }'. --><button
+                <button
                   type="button"
                   class="sp-day-select"
                   :aria-label="
@@ -1698,13 +1689,13 @@ onMounted(async () => {
                   :aria-pressed="day === anchorDay"
                   @click="anchorDay = day"
                 >
-                  <!-- @vue-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'day' does not exist in type '{ weekday: string; }'. -->{{
+                  {{
                     mode === 'week'
                       ? `${dayLabel(day, { weekday: 'short' })} ${dayLabel(day, { day: 'numeric' })}`
                       : dayLabel(day, { day: 'numeric' })
                   }}
                 </button>
-                <!-- @vue-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'month' does not exist in type '{ weekday: string; }'. --><button
+                <button
                   type="button"
                   :aria-label="`${PAGE['new-post-for']} ${dayLabel(day, { month: 'long', day: 'numeric' })}`"
                   @click.stop="newPost(day)"
@@ -1744,7 +1735,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="sp-post-workspace">
-          <!-- @vue-expect-error TS2322, from the conversion: Type '({ headerName: any; field: string; pinned: string; flex: number; minWidth: number; width?: undefined; } | { headerName: any; field: st --><AgGridVue
+          <AgGridVue
             class="sp-post-grid"
             :theme="gridTheme"
             :row-data="postGridRows"
@@ -2313,14 +2304,14 @@ onMounted(async () => {
                   {{ ACCOUNT_OPERATIONS['no-workspaces'] }}
                 </p>
                 <div class="sp-account-workspaces">
-                  <!-- @vue-expect-error TS2322, from the conversion: Type 'string | string[]' is not assignable to type 'PropertyKey | undefined'. --><button
+                  <button
                     v-for="view in accountViews(account)"
                     :key="view"
                     class="sp-secondary"
                     type="button"
                     @click="openAccountView(view, account)"
                   >
-                    <!-- @vue-expect-error TS2538, from the conversion: Type 'string[]' cannot be used as an index type. -->{{ PAGE[`${view}-tab`] || W.page?.[view]?.title || view }}
+                    {{ PAGE[`${view}-tab`] || W.page?.[view]?.title || view }}
                   </button>
                 </div>
               </template>
@@ -2713,7 +2704,7 @@ onMounted(async () => {
             @click="editPost(post)"
           >
             <span>{{ post.body || PAGE['media-post'] }}</span>
-            <small><!-- @vue-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'month' does not exist in type '{ weekday: string; }'. -->{{
+            <small>{{
               dayLabel(dayKey(new Date(post.updated_at), timezone), {
                 month: 'short',
                 day: 'numeric',

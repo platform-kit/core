@@ -11,8 +11,7 @@ const emit = defineEmits(['update:modelValue', 'enter'])
 const p = computed(() => props.field.params || {})
 const kind = computed(() => props.field.kind)
 const id = computed(() => 'f_' + props.field.name)
-// @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ text: string; email: string; url: strin
-const type = computed(() => ({ text: 'text', email: 'email', url: 'url', tel: 'tel', password: 'password', number: 'number', date: 'date', time: 'time', datetime: 'datetime-local' })[kind.value] || 'text')
+const type = computed(() => ({ text: 'text', email: 'email', url: 'url', tel: 'tel', password: 'password', number: 'number', date: 'date', time: 'time', datetime: 'datetime-local' } as Record<string, string>)[kind.value] || 'text')
 const multiline = computed(() => kind.value === 'text' && p.value.multiline !== undefined)
 const placeholder = computed(() => p.value.placeholder || (kind.value === 'number' ? props.words['number-placeholder'] : props.words['text-placeholder']) || '')
 /* a tel value is "CC +code number" on the way out, as forms.md posts it; the two halves are edited apart */
@@ -33,7 +32,7 @@ function grow(e: { target: any }) { const t = e.target; t.style.height = 'auto';
       <div class="ff-telrow">
         <label class="fq-vh" :for="id + '_cc'">{{ words['country-calling-code'] }}</label>
         <select :id="id + '_cc'" v-model="country" class="qwordin ff-cc" :disabled="p.disabled !== undefined" @change="telOut">
-          <option v-for="c in countries" :key="c" :value="c">{{ c }} <!-- @vue-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ AC: { placeholder: string; callingCode: -->{{ placeholdersAndCallingCodes[c].callingCode }}</option>
+          <option v-for="c in countries" :key="c" :value="c">{{ c }} {{ placeholdersAndCallingCodes[c as keyof typeof placeholdersAndCallingCodes].callingCode }}</option>
         </select>
         <input ref="input" :id="id" v-model="number" type="tel" class="qwordin ff-in" :placeholder="getPhoneNumberPlaceholder(country)" :aria-label="words['phone-number']" :disabled="p.disabled !== undefined" autocomplete="tel-national" @input="telOut" @keydown.enter.prevent="emit('enter')" />
       </div>

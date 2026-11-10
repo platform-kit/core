@@ -23,8 +23,7 @@ const PROG = us('library').progress.label
 /* a shelf is shown when anything published is on it */
 const LANE_MIN = 1
 const articles = articleIndex().length >= LANE_MIN ? articleIndex().slice(0, 4) : []
-const flatten = (node: any, out = []) => {
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
+const flatten = (node: any, out: any[] = []): any[] => {
   node.docs.forEach((d: any) => out.push(d))
   node.dirs.forEach((dir: any) => flatten(dir, out))
   return out

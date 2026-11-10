@@ -178,8 +178,7 @@ laneArt('lpartConnect',function(s: any){
 
   [0,25,50,75,100].forEach(function(g){
     s.appendChild(el('line',{x1:L,y1:Y(g),x2:L+pw,y2:Y(g),'class':'lpgl'}));
-    // @ts-expect-error TS2322, from the conversion: Type 'number' is not assignable to type 'string'.
-    var t=el('text',{x:L-10,y:Y(g)+3.5,'class':'lpal','text-anchor':'end'}); t.textContent=g; s.appendChild(t);
+    var t=el('text',{x:L-10,y:Y(g)+3.5,'class':'lpal','text-anchor':'end'}); t.textContent=String(g); s.appendChild(t);
   });
   for(var i=0;i<N;i+=2){
     var t2=el('text',{x:X(i),y:H-B+22,'class':'lpal','text-anchor':'middle'});
@@ -219,8 +218,7 @@ laneArt('lpartConnect',function(s: any){
     i=Math.max(0,Math.min(N-1,i));
     cross.setAttribute('x1',X(i)); cross.setAttribute('x2',X(i));
     cross.style.opacity='1'; hd.setAttribute('opacity','1');
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
-    hdots.forEach(function(c,k){ c.setAttribute('cx',X(i)); c.setAttribute('cy',Y(SER[k].d[i])); });
+    hdots.forEach(function(c,k){ c.setAttribute('cx',String(X(i))); c.setAttribute('cy',String(Y(SER[k].d[i]))); });
     tip.innerHTML='<div class="tw">Week '+(i+1)+'</div>'+SER.map(function(se){
       return '<div class="tr"><span><i style="background:var('+se.v+')"></i>'+se.name+
              '</span><b class="num">'+se.d[i]+'</b></div>';
@@ -330,8 +328,7 @@ if(revs.length&&!RM){
   }
   var bo=obs(new IntersectionObserver(function(es){
     es.forEach(function(e){
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'string | null' is not assignable to parameter of type 'string'. Type 'null' is not assignable to type 'string'.
-      if(e.isIntersecting) setActive(parseInt(e.target.getAttribute('data-vis'),10));
+      if(e.isIntersecting) setActive(parseInt(e.target.getAttribute('data-vis')!,10));
     });
   },{rootMargin:'-45% 0px -45% 0px',threshold:0}));
   beats.forEach(function(b){ bo.observe(b); });

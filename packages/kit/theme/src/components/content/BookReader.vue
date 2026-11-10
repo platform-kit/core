@@ -385,8 +385,7 @@ async function render() {
   if (waitingFor(ch.value)) { html.value = ''; return }
   const cc = inSummary.value && !c.intro ? chapterCompanion(props.slug, c.title) : null
   if (c.intro) {
-    // @ts-expect-error TS2322, from the conversion: Type 'string | Promise<string>' is not assignable to type 'string'.
-    html.value = marked.parse(c.md)   /* the introduction: the same page whichever way the book is read */
+    html.value = marked.parse(c.md, { async: false })   /* the introduction: the same page whichever way the book is read */
   } else if (cc && cc.summaryMd) {
     /* the summary; the reader's own highlights anchor to the full text, so they
        are not painted here. The bottom line follows the text in both modes. */
@@ -402,8 +401,7 @@ async function render() {
   if (!cc) paintHighlights()
   toolbar.value.open = false
 }
-// @ts-expect-error TS2769, from the conversion: No overload matches this call.
-const escapeHtml = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const escapeHtml = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c])
 watch(ch, () => { quizOpen.value = false; essOpen.value = false; render(); askCanSay() })
 watch(chapterSubject, askCanSay, { immediate: true })
 /* between one chapter fading out and the next fading in, the window is at the top */
@@ -823,9 +821,9 @@ onBeforeUnmount(() => {
         </div>
 
         <div v-if="modal === 'contents'" class="rd-mbody">
-          <!-- @vue-expect-error TS2322, from the conversion: Type 'string | number' is not assignable to type 'number'. --><button v-for="(c, i) in chapters" :key="i" type="button" class="rd-row"
-                  :class="{ on: i === ch }" @click="ch = i; modal = ''; view = 'read'">
-            <span class="rd-n"><!-- @vue-expect-error TS2365, from the conversion: Operator '+' cannot be applied to types 'string | number' and 'number'. -->{{ i + 1 }}</span>{{ c.title }}
+          <button v-for="(c, i) in chapters" :key="i" type="button" class="rd-row"
+                  :class="{ on: i === ch }" @click="ch = Number(i); modal = ''; view = 'read'">
+            <span class="rd-n">{{ Number(i) + 1 }}</span>{{ c.title }}
           </button>
         </div>
 

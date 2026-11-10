@@ -37,8 +37,7 @@ const entry = (e: any) => {
 const toBase64 = (blob: any) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = rej; r.readAsDataURL(blob) })
 
 /* the uploader: every queued file posted through the pipe, its entry answered */
-// @ts-expect-error TS2707, from the conversion: Generic type 'BasePlugin<Opts, M, B, PluginState>' requires between 3 and 4 type arguments.
-class PipeUploader extends BasePlugin {
+class PipeUploader extends BasePlugin<any, any, any> {
   constructor(uppy: any, opts: any) { super(uppy, opts); (this as any).id = 'PipeUploader'; (this as any).type = 'uploader'; this.upload = this.upload.bind(this) }
   install() { (this as any).uppy.addUploader(this.upload) }
   uninstall() { (this as any).uppy.removeUploader(this.upload) }
@@ -81,10 +80,10 @@ export class MediaDriver {
   getDownloadUrl({ path }: any) { return this.getPreviewUrl({ path }) }
   /* the served address of a file, for the picker and the copy button; the entries carry it, this is the fallback */
   urlOf(rel: any) { if (URLS.has(rel)) return URLS.get(rel); const p = String(rel); return p.startsWith('public/') ? '/' + p.slice(7) : p.startsWith('content/uploads/') ? '/uploads/' + p.slice(16) : '/' + p }
-  async archive() { throw new Error('the library keeps files, not archives') }
-  async unarchive() { throw new Error('the library keeps files, not archives') }
-  async createFile() { throw new Error('the library takes files, it does not write them') }
-  async save() { throw new Error('the library takes files, it does not write them') }
+  async archive(): Promise<never> { throw new Error('the library keeps files, not archives') }
+  async unarchive(): Promise<never> { throw new Error('the library keeps files, not archives') }
+  async createFile(): Promise<never> { throw new Error('the library takes files, it does not write them') }
+  async save(): Promise<never> { throw new Error('the library takes files, it does not write them') }
   async getContent() { return { content: '' } }
   async upload() { return this.result('uploads://') }
 }

@@ -43,8 +43,7 @@ const fields = computed(() => {
   return Object.keys(shape).map((key) => {
     const z = shape[key], b = unwrap(z), cfg = (props.config || {})[key] || {}
     const t = b._def.typeName
-    // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ ZodString: string; ZodNumber: string; Z
-    let kind = cfg.component || ({ ZodString: 'text', ZodNumber: 'number', ZodBoolean: 'boolean', ZodEnum: 'enum', ZodArray: 'list', ZodObject: 'group' })[t] || 'text'
+    let kind = cfg.component || ({ ZodString: 'text', ZodNumber: 'number', ZodBoolean: 'boolean', ZodEnum: 'enum', ZodArray: 'list', ZodObject: 'group' } as Record<string, string>)[t] || 'text'
     let of = null, values = null
     if (t === 'ZodEnum') values = b._def.values
     if (t === 'ZodArray') { of = unwrap(b._def.type); kind = of._def.typeName === 'ZodObject' ? 'rows' : 'lines' }

@@ -67,8 +67,7 @@ const hostWord = (o: any) => {
   if (!h.length) return ''
   const name = h[0].name || h[0].email || h[0].role || ''
   return h.length === 1 ? String(B.value['host-one']).replace('{name}', name)
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call.
-    : String(B.value['host-many']).replace('{name}', name).replace('{n}', h.length - 1)
+    : String(B.value['host-many']).replace('{name}', name).replace('{n}', String(h.length - 1))
 }
 /* a ground of its own, from the slug, so an event with no artwork still looks like something and
    looks like the SAME something every time */

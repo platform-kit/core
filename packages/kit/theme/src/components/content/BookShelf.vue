@@ -36,7 +36,7 @@ const TR = us('library').trophy.tier
           <span class="cover-prog-fill" :style="{ width: b.prog.pct + '%' }" />
         </span>
         <span v-if="b.prog.opened" class="slot-prog">{{ b.prog.pct === 100 ? P.finished : b.prog.pct + '% ' + P.read }}</span>
-        <span v-if="masteryOf(b.slug).tier" class="slot-trophy" :class="'is-' + masteryOf(b.slug).tier"><!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><Trophy :tier="masteryOf(b.slug).tier" :size="18" /><!-- @vue-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type. -->{{ TR[masteryOf(b.slug).tier] }}</span>
+        <span v-if="masteryOf(b.slug).tier" class="slot-trophy" :class="'is-' + masteryOf(b.slug).tier"><Trophy :tier="masteryOf(b.slug).tier!" :size="18" />{{ TR[masteryOf(b.slug).tier!] }}</span>
       </span>
     </a>
     <p v-if="!books.length" class="tabintro">{{ S.empty }}</p>

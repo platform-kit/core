@@ -88,7 +88,7 @@ function line(p: any) {
 const voices = (p: any) => {
   const ids = (Array.isArray(p.voices) ? p.voices : []).filter(Boolean)
   const all = ids.length ? ids : (p.author_id ? [p.author_id] : [])
-  const out = [...new Set(all)].slice(0, 4).map((id) => ({ id, name: faceOf(id) }))
+  const out = [...new Set<string>(all)].slice(0, 4).map((id) => ({ id, name: faceOf(id) }))
   return out.length ? out : [{ id: 'bot', name: named(p) }]
 }
 const countWord = (n: any) => (n === 1 ? W.value['replies-one'] : (W.value['replies-many'] || '').replace('{n}', n))
@@ -114,12 +114,9 @@ function pick(what: any, v: any) { (what === 'sort' ? sort : show).value = v; me
 
 const shown = computed(() => {
   let list = props.posts.filter((p) => (show.value === 'open' ? !replies(p) : show.value === 'mine' ? (p as any).author_id === props.me : true))
-  // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-  const by = sort.value === 'new' ? (a: any, b: any) => new Date(b.created_at) - new Date(a.created_at)
-    // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-    : sort.value === 'busy' ? (a: any, b: any) => replies(b) - replies(a) || new Date(moved(b)) - new Date(moved(a))
-    // @ts-expect-error TS2362, from the conversion: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
-    : (a: any, b: any) => new Date(moved(b)) - new Date(moved(a))
+  const by = sort.value === 'new' ? (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    : sort.value === 'busy' ? (a: any, b: any) => replies(b) - replies(a) || new Date(moved(b)).getTime() - new Date(moved(a)).getTime()
+    : (a: any, b: any) => new Date(moved(b)).getTime() - new Date(moved(a)).getTime()
   list = [...list].sort(by)
   /* what the room pinned stands above whatever the reader chose: it was pinned to be seen */
   return [...list.filter((p) => (p as any).pinned), ...list.filter((p) => !(p as any).pinned)]
@@ -185,7 +182,7 @@ const shown = computed(() => {
           <button type="button" class="sf-post" :class="{ pin: p.pinned }" @click="emit('open', p.id)">
             <!-- the faces first: a conversation is people before it is a subject -->
             <span class="sf-faces" :style="{ width: Math.max(22, 22 + (voices(p).length - 1) * 15) + 'px' }">
-              <!-- @vue-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'PropertyKey | undefined'. --><span v-for="(v, i) in voices(p)" :key="v.id || i" class="sf-face" :style="{ left: (i * 15) + 'px', zIndex: 5 - i }">
+              <span v-for="(v, i) in voices(p)" :key="v.id || i" class="sf-face" :style="{ left: (i * 15) + 'px', zIndex: 5 - i }">
                 <SpaceAvatar :name="v.name" :size="22" />
               </span>
             </span>

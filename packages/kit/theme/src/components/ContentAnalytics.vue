@@ -181,8 +181,7 @@ const authors = computed(() => {
   const by: any = {}
   for (const r of (content.value && content.value.items) || []) { const a = authorOf(r); if (!a) continue; const x = by[a] || (by[a] = { author: a, pieces: 0, views: 0, readers: 0, minutes: 0, conversions: 0, revenue: 0 }); x.pieces++; x.views += r.views || 0; x.readers += r.readers || 0; x.minutes += r.minutes || 0; x.conversions += (r.signups || 0) + (r.subscriptions || 0) + (r.purchases || 0); x.revenue += r.revenue || 0 }
   const rows = Object.values(by).sort((a, b) => (b as any).views - (a as any).views); const max = Math.max(1, ...rows.map((r) => (r as any).views))
-  // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-  return rows.map((r) => ({ ...r, w: ((r as any).views / max) * 100 }))
+  return rows.map((r: any) => ({ ...r, w: (r.views / max) * 100 }))
 })
 const channelName = (c: any) => ((T.acquisition && T.acquisition.ui) || {})['channel-' + c] || c
 const audienceLine = computed(() => (audience.value === 'all' ? '' : String(H['audience-line'] || '').replace('{audience}', H['audience-' + audience.value] || audience.value)))

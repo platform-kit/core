@@ -164,7 +164,7 @@ const here = (s: any) => props.inSpace && s.id === props.openId
               </span>
             </button>
             <div id="sbar-inbox" class="sbar-fold" :class="{ open: inboxOpen }">
-              <!-- @vue-expect-error TS2322, from the conversion: Type 'true | null' is not assignable to type 'Booleanish | undefined'. --><ul class="sbar-list sbar-fold-in" :inert="!inboxOpen || null">
+              <ul class="sbar-list sbar-fold-in" :inert="!inboxOpen || undefined">
                 <li v-for="row in m.rows" :key="row.key">
                   <button type="button" class="sbar-row sbar-work-item" :class="{ on: view === row.key }" :aria-current="view === row.key ? 'page' : undefined" @click="emit('view', row.key)">
                     <SpaceIcon :name="QUEUE_ICON[row.key] || 'dm'" :size="14" /><span class="sbar-label">{{ row.key === 'dms' ? S.messages : W[row.key] }}</span>

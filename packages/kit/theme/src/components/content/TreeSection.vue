@@ -65,11 +65,10 @@ const currentTitle = computed(() => { const e: any = flat.find((x: any) => x.id 
 
 /* landing cards: pages grouped by their section (loose top-level pages first) */
 const landingSections: any = computed(() => {
-  const secs = [{ title: '', docs: [] }]
+  const secs: Array<{ title: string, docs: any[] }> = [{ title: '', docs: [] }]
   let cur = secs[0]
   for (const e of flat) {
     if (e.heading) { cur = { title: e.heading, docs: [] }; secs.push(cur) }
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
     else cur.docs.push(e)
   }
   return secs.filter((s) => s.docs.length)

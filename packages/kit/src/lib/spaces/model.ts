@@ -279,7 +279,7 @@ export function dmTitle(members: string[] = [], names: Record<string, string> = 
 }
 
 /* the rooms of a space, split the way a sidebar shows them */
-export function railSections(channels = [], rows = [], spaceId: string | null = null, groups = []) {
+export function railSections(channels: any[] = [], rows: any[] = [], spaceId: string | null = null, groups: string[] = []) {
   const row = (id: any) => rows.find((r: any) => r.channel === id) || null
   const mine = channels.filter((c: any) => !spaceId || c.space_id === spaceId)
   const starred: any = [], open: any = [], dms: any = []

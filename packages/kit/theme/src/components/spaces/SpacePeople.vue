@@ -57,7 +57,6 @@ watch(() => props.space && props.space.id, load)
 async function make() {
   busy.value = true; err.value = ''
   try {
-    // @ts-expect-error TS2322, from the conversion: Type 'number' is not assignable to type 'null | undefined'.
     made.value = await makeInvite(props.space.id, { uses: 0, days: 30 })
     invites.value = (await invitesOf(props.space.id)) || []
   } catch (e) { err.value = (e as any).message || String(e) } finally { busy.value = false }

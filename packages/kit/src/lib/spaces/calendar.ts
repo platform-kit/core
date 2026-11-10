@@ -54,7 +54,7 @@ export async function loadMine({ days = 90 } = {}) {
 /* say you are coming — and have the list say so at once, since the answer carries the new count */
 /* the reason is the file's business (rsvp.reason) and rides on the answer; a call with none never
    wipes one already given */
-export async function rsvp(occurrenceId: any, state = 'going', reason = null, guests = 0) {
+export async function rsvp(occurrenceId: any, state = 'going', reason: string | null = null, guests = 0) {
   if (!supabase) return { error: 'offline' }
   const { data: answered, error } = await supabase.rpc('event_rsvp', { p_occurrence: occurrenceId, p_state: state, p_guests: guests, p_reason: reason })
   if (error) return { error: error.message }

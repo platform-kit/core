@@ -261,7 +261,7 @@ const ROOM_OUTPUT = 'copilot.output'
 let shut = false          /* the recogniser is stopped because the assistant is talking */
 let overFor = 0           /* how long the person has been over the leak, in frames */
 let breath = ''           /* everything finalised in the sentence being spoken now */
-let settle = 0            /* the timer that decides the sentence has ended */
+let settle: ReturnType<typeof setTimeout> | 0 = 0            /* the timer that decides the sentence has ended */
 
 const phase = computed(() => forced || (ended.value ? 'connecting' : (chat.value?.state.phase || 'connecting')))
 const label = computed(() => {
@@ -667,7 +667,6 @@ function listen() {
     heard.value = (breath + ' ' + saying).replace(/\s+/g, ' ').trim()
     /* the words are still coming, so the sentence is not over yet */
     clearTimeout(settle)
-    // @ts-expect-error TS2322, from the conversion: Type '0 | Timeout' is not assignable to type 'number'.
     settle = breath.trim() ? setTimeout(finish, BREATH_MS) : 0
   }
   /* the recogniser noticed the silence before the timer did */
@@ -887,8 +886,8 @@ onBeforeUnmount(() => {
       <p class="vp-status" aria-hidden="true"><span class="vp-dot"></span>{{ label }}</p>
 
       <!-- THE LIVE LINE: being spoken, or spoken and still waiting. Never what has been answered. -->
-      <!-- @vue-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string | undefined'. --><p class="vp-line" :class="{ 'is-held': !!latest }" :data-who="latest?.who || ''"
-         :role="said.length ? null : 'status'" :aria-live="said.length ? 'off' : 'polite'"
+      <p class="vp-line" :class="{ 'is-held': !!latest }" :data-who="latest?.who || ''"
+         :role="said.length ? undefined : 'status'" :aria-live="said.length ? 'off' : 'polite'"
          :aria-hidden="said.length > 0">{{ latest?.text || '' }}</p>
 
       </div>

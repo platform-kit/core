@@ -39,7 +39,7 @@ watch(c, (v) => { if (v && !preview) { contentView({ kind: 'collection', id: v.i
       </div>
     </header>
     <div v-if="c.items.length" class="cp-grid">
-      <!-- @vue-expect-error TS2365, from the conversion: Operator '<' cannot be applied to types 'string | number' and 'number'. --><ProductCard v-for="(p, i) in c.items" :key="p.id" :product="p" :eager="i < 4" />
+      <ProductCard v-for="(p, i) in c.items" :key="p.id" :product="p" :eager="Number(i) < 4" />
     </div>
     <p v-else class="cp-empty">{{ CU.empty }}</p>
   </div>

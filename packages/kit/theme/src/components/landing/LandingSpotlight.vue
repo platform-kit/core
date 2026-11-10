@@ -57,7 +57,7 @@ const pct = computed(() => { const l = Number(props.stock.left), t = Number(prop
             <span class="lphalo"></span>
             <figure class="lpcard lpsl-main" :key="at"><img v-if="p.images[at]" :src="p.images[at].src" :alt="p.title" decoding="async" /><span v-if="p.badge" class="lpsl-badge">{{ p.badge }}</span></figure>
             <div v-if="p.images.length > 1" class="lpsl-thumbs" role="tablist">
-              <!-- @vue-expect-error TS2322, from the conversion: Type 'string | number' is not assignable to type 'number'. --><button v-for="(im, i) in p.images" :key="i" type="button" role="tab" :aria-selected="at === i" class="lpsl-thumb" :class="{ on: at === i }" @click="at = i"><img :src="im.src" :alt="p.title" loading="lazy" /></button>
+              <button v-for="(im, i) in p.images" :key="i" type="button" role="tab" :aria-selected="at === i" class="lpsl-thumb" :class="{ on: at === i }" @click="at = Number(i)"><img :src="im.src" :alt="p.title" loading="lazy" /></button>
             </div>
           </div>
         </slot>

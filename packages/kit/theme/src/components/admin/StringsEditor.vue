@@ -36,18 +36,15 @@ const needle = computed(() => q.value.trim().toLowerCase())
 const hit = (s: unknown) => String(s ?? '').toLowerCase().includes(needle.value)
 function matches(file: { groups: any }) {
   const out: any = {}
-  for (const [g, keys] of Object.entries(file.groups || {})) {
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call.
+  for (const [g, keys] of Object.entries<Record<string, Record<string, string>>>(file.groups || {})) {
     for (const [k, fields] of Object.entries(keys)) {
-      // @ts-expect-error TS2769, from the conversion: No overload matches this call.
       if (!needle.value || hit(g) || hit(k) || Object.entries(fields).some(([fn, v]) => hit(fn) || hit(v))) (out[g] = out[g] || {})[k] = fields
     }
   }
   return out
 }
 const visible = computed(() => (current.value ? matches(current.value) : {}))
-// @ts-expect-error TS18046, from the conversion: 'n' is of type 'unknown'.
-const visibleCount = (groups: any) => Object.values(groups).reduce((n, keys) => n + Object.keys(keys).length, 0)
+const visibleCount = (groups: any) => Object.values<object>(groups).reduce((n: number, keys) => n + Object.keys(keys).length, 0)
 const countFor = (f: any) => (needle.value ? visibleCount(matches(f)) : null)
 /* the dropdown: each file, with how many of its strings match while searching */
 const fileOptions = computed(() => files.value.map((f: any) => ({ value: f.file, label: label(f), count: countFor(f), total: visibleCount(f.groups || {}) })))

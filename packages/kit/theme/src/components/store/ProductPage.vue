@@ -212,10 +212,9 @@ function previewHtml(markdown: any) {
   })
   let html = String(previewRenderer.parse(source))
   for (const { token, text } of marks) {
-    // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ '&': string; '<': string; '>': string; 
-    const safeText = text.replace(/[&<>"']/g, (character: any) => ({
+    const safeText = text.replace(/[&<>"']/g, (character: string) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-    })[character])
+    } as Record<string, string>)[character])
     html = html.replace(token, `<mark class="print-preview-mark">${safeText}</mark>`)
   }
   return html
@@ -291,22 +290,18 @@ const slides = computed(() => {
     }
     return ims.map((im: any) => ({ image: im, caption: '' }))
   }
-  const out = [{ book: bookArt.value, caption: HC['shot-book'] || '' }]
+  const out: Array<Record<string, any>> = [{ book: bookArt.value, caption: HC['shot-book'] || '' }]
   const sh = shots.value
   if (sh) {
     const cap = (k: any) => fill(HC['shot-' + k] || '', { chapter: sh.chapter || '' })
-    // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ full: any; summary: any; parts: any; bo
     const previewThumb = (contents: any) => ({
       full: HC['shot-thumb-full'],
       summary: HC['shot-thumb-summary'],
       parts: HC['shot-thumb-parts'],
       both: HC['shot-thumb-both'],
-    })[contents] || HC['shot-thumb-page'] || ''
-    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'page' does not exist in type '{ book: { key: any; format: any; provider: any; art: an
+    } as Record<string, string>)[contents] || HC['shot-thumb-page'] || ''
     if (sh.edition) out.push({ page: sh.edition, preview: sourcePreview(sh.edition, sh.chapter), thumbLabel: previewThumb(sh.edition.contents), caption: cap(sh.edition.contents) })
-    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'page' does not exist in type '{ book: { key: any; format: any; provider: any; art: an
     if (sh.other) out.push({ page: sh.other, preview: sourcePreview(sh.other, sh.chapter), thumbLabel: previewThumb(sh.other.contents), caption: cap(sh.other.contents) })
-    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'page' does not exist in type '{ book: { key: any; format: any; provider: any; art: an
     if (sh.marks) out.push({ page: sh.marks, preview: sourcePreview(sh.marks, sh.chapter, true), thumbLabel: HC['shot-thumb-highlights'] || '', caption: cap('marks') })
   }
   return out
