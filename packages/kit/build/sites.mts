@@ -98,7 +98,12 @@ function writeSiteRegistry(root: any, registry: any) {
   }
 }
 
+/* A site's checkout is a repository of its own. Run from inside a git hook, the workspace's own repository variables
+   (GIT_INDEX_FILE above all, set when a commit uses a temporary index) would point the site's git at the wrong
+   index or directory, so they are dropped. */
+const REPO_LOCAL = ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_COMMON_DIR', 'GIT_PREFIX']
 function git(args: any, { cwd, operation, env = process.env }: any) {
+  env = Object.fromEntries(Object.entries(env).filter(([k]) => !REPO_LOCAL.includes(k)))
   const result = spawnSync('git', args, { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
   if (result.error) throw new Error(`${operation}: ${result.error.message}`)
   if (result.status !== 0) {
