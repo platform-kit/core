@@ -40,7 +40,7 @@ async function agree() {
   if (!terms.value || !user.value) return
   saving.value = true; error.value = ''
   try {
-    const { error: e } = await (supabase as any).from('provider_terms_signed').insert({ user_id: user.value.id, version: terms.value.version })
+    const { error: e } = await supabase!.from('provider_terms_signed').insert({ user_id: user.value.id, version: terms.value.version })
     if (e && !/duplicate|unique/i.test(e.message)) throw e
     emit('signed')
     emit('close')

@@ -43,7 +43,7 @@ const tzHere = (() => { try { return Intl.DateTimeFormat().resolvedOptions().tim
 async function load() {
   if (!configured || !isSignedIn.value || !props.id) { state.value = 'idle'; data.value = null; return }
   state.value = 'loading'
-  const { data: d, error } = await (supabase as any).rpc('admin_piece', { kind: props.kind, id: props.id, days: days.value, audience: audience.value, tz: tzHere, filters: filtersForRead.value })
+  const { data: d, error } = await supabase!.rpc('admin_piece', { kind: props.kind, id: props.id, days: days.value, audience: audience.value, tz: tzHere, filters: filtersForRead.value })
   if (error) { state.value = (error.code === '42501' || /admin only|permission/i.test(error.message || '')) ? 'denied' : 'error'; return }
   data.value = d || null
   state.value = 'ok'

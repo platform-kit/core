@@ -110,7 +110,7 @@ const hereHost = here.replace(/^https?:\/\//, '')
 const tfSnippet = computed(() => `<div data-tf-widget="${props.name}" data-tf-domain="${hereHost}" style="width:100%;height:600px"></div>\n<script src="//embed.typeform.com/next/embed.js"><\/script>`)
 /* the webhook subscriptions the Forms API keeps on this form — read here, written through the API alone */
 const hooks = ref<any>([])
-async function loadHooks() { try { const { data } = await (supabase as any).from('form_webhooks').select('tag, url, enabled, last_at, last_error').eq('form', props.name).order('created_at'); hooks.value = data || [] } catch (e) { hooks.value = [] } }
+async function loadHooks() { try { const { data } = await supabase!.from('form_webhooks').select('tag, url, enabled, last_at, last_error').eq('form', props.name).order('created_at'); hooks.value = data || [] } catch (e) { hooks.value = [] } }
 onMounted(loadHooks)
 const when = (iso: any) => { try { return new Date(iso).toLocaleString() } catch (e) { return iso } }
 const copied = ref('')

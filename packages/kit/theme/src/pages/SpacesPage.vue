@@ -491,7 +491,7 @@ const mentionsMe = (m: any) => !!m.body && m.body.includes('<@' + me.value + '>'
 const repliersOf = (id: any) => [...new Set(open.messages.filter((m: any) => m.thread_root_id === id).map((m: any) => m.author_id))]
 
 async function loadMembers() {
-  const { data } = await (supabase as any).from('channel_members').select('channel_id, user_id')
+  const { data } = await supabase!.from('channel_members').select('channel_id, user_id')
   const by = {}
   for (const r of data || []) ((by as any)[r.channel_id] = (by as any)[r.channel_id] || []).push(r.user_id)
   members.value = by
@@ -768,7 +768,7 @@ async function startDm() {
 
 async function loadPeople() {
   if (!space.value) { people.value = []; return }
-  const { data } = await (supabase as any).rpc('space_people', { p_space: space.value.id, p_channel: open.id })
+  const { data } = await supabase!.rpc('space_people', { p_space: space.value.id, p_channel: open.id })
   people.value = data || []
 }
 

@@ -41,9 +41,9 @@ const availableOf = (variant: any) => { const r = countOf(variant); return r ? M
 
 async function load() {
   if (!configured || !props.form.sku) { rows.value = []; return }
-  const { data } = await (supabase as any).from('inventory').select('variant, stocked, reserved, updated_at').eq('sku', props.form.sku)
+  const { data } = await supabase!.from('inventory').select('variant, stocked, reserved, updated_at').eq('sku', props.form.sku)
   rows.value = data || []
-  const { data: m } = await (supabase as any).from('inventory_movements').select('variant, delta, reason, note, at').eq('sku', props.form.sku).order('at', { ascending: false }).limit(8)
+  const { data: m } = await supabase!.from('inventory_movements').select('variant, delta, reason, note, at').eq('sku', props.form.sku).order('at', { ascending: false }).limit(8)
   moves.value = m || []
 }
 watch(() => props.form.sku, load, { immediate: true })
@@ -52,7 +52,7 @@ async function set(variant: string, value: any) {
   const n = Number(value)
   if (!Number.isInteger(n) || n < 0) { said.value = (W as any)['whole-number']; return }
   busy.value = variant; said.value = ''
-  const { data, error } = await (supabase as any).rpc('inventory_set', { p_sku: props.form.sku, p_variant: variant || '', p_stocked: n, p_note: null })
+  const { data, error } = await supabase!.rpc('inventory_set', { p_sku: props.form.sku, p_variant: variant || '', p_stocked: n, p_note: null })
   busy.value = ''
   if (error) { said.value = error.message; return }
   said.value = data === 0 ? (W as any).same : fill((W as any).moved, { n: data > 0 ? '+' + data : String(data) })

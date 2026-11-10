@@ -53,8 +53,8 @@ async function load() {
   loading.value = true
   try {
     const [{ data: st }, { data }] = await Promise.all([
-      (supabase as any).rpc('provider_standing'),
-      (supabase as any).from('provider_offerings').select('*').order('created_at', { ascending: true }),
+      supabase!.rpc('provider_standing'),
+      supabase!.from('provider_offerings').select('*').order('created_at', { ascending: true }),
     ])
     standing.value = st || null
     rows.value = data || []
@@ -84,8 +84,8 @@ async function save() {
     place: ['link', 'place', 'phone'].includes(d.where) ? (d.place || null) : null,
   }
   try {
-    if (d.id) { const { error: e } = await (supabase as any).from('provider_offerings').update(row).eq('id', d.id); if (e) throw e }
-    else { const { error: e } = await (supabase as any).from('provider_offerings').insert({ ...row, provider_id: user.value.id, slug: slugOf(row.title) + '-' + Math.random().toString(36).slice(2, 6) }); if (e) throw e }
+    if (d.id) { const { error: e } = await supabase!.from('provider_offerings').update(row).eq('id', d.id); if (e) throw e }
+    else { const { error: e } = await supabase!.from('provider_offerings').insert({ ...row, provider_id: user.value.id, slug: slugOf(row.title) + '-' + Math.random().toString(36).slice(2, 6) }); if (e) throw e }
     saved.value = true; setTimeout(() => { saved.value = false }, 1800)
     cancel(); await load()
   } catch (e) { error.value = (e as any).message || O.error } finally { saving.value = false }
@@ -94,7 +94,7 @@ async function save() {
 async function move(r: any, state: string) {
   if (state === 'retired' && !window.confirm(O['retire-ask'])) return
   error.value = ''
-  try { const { error: e } = await (supabase as any).from('provider_offerings').update({ state }).eq('id', r.id); if (e) throw e; await load() }
+  try { const { error: e } = await supabase!.from('provider_offerings').update({ state }).eq('id', r.id); if (e) throw e; await load() }
   catch (e) { error.value = (e as any).message || O.error }
 }
 /* what putting one out means here: on sale where the site takes their word for it, sent to be read

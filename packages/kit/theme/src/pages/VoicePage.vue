@@ -214,7 +214,7 @@ async function showMemories() {
   memoryLoading.value = true
   memoryFault.value = ''
   try {
-    const { data, error } = await (supabase as any).from('copilot_memory')
+    const { data, error } = await supabase!.from('copilot_memory')
       .select('id, said, created_at')
       .eq('bot', slug.value)
       .order('created_at', { ascending: false })
@@ -232,7 +232,7 @@ async function dropMemory(id: any) {
   memoryDeleting.value = id
   memoryFault.value = ''
   try {
-    const { error } = await (supabase as any).from('copilot_memory')
+    const { error } = await supabase!.from('copilot_memory')
       .delete().eq('id', id).eq('bot', slug.value)
     if (error) throw error
     memories.value = memories.value.filter((item: { id: any }) => item.id !== id)
@@ -336,7 +336,7 @@ async function reportStt(elapsedMs: number) {
 }
 
 async function begin() {
-  const { data: { session } } = await (supabase as any).auth.getSession()
+  const { data: { session } } = await supabase!.auth.getSession()
   if (!session) { fault.value = W.value['sign-in'] || ''; return }
   const r = await fetch(`${functionsBase()}/copilot-llm/start`, {
     method: 'POST',

@@ -252,7 +252,7 @@ function zonedInputToIso(value: any, zone: any) {
 }
 
 async function invoke(endpoint: any, body: any) {
-  const { data, error } = await (supabase as any).functions.invoke(endpoint, { body })
+  const { data, error } = await supabase!.functions.invoke(endpoint, { body })
   if (error) {
     let message = error.message || PAGE['request-failed']
     let databaseCode = ''
@@ -297,7 +297,7 @@ async function social(action: any, fields = {}) {
   return invoke('social', { action, ...fields })
 }
 async function withPreview(attachment: any) {
-  const { data, error } = await (supabase as any).storage
+  const { data, error } = await supabase!.storage
     .from('social')
     .createSignedUrl(attachment.object_path, 3600)
   if (error) throw new Error(ACCOUNT_WORDS['media-preview-failed'] || error.message)
@@ -805,7 +805,7 @@ async function loadAnalytics() {
   let offset = 0
   try {
     while (true) {
-      let query = (supabase as any)
+      let query = supabase!
         .from('social_metrics_snapshots')
         .select('id, delivery_id, post_id, account_id, collected_at, views, reads, likes, comments, provider_metrics')
       if (analyticsDelivery.value) query = query.eq('delivery_id', analyticsDelivery.value.id)

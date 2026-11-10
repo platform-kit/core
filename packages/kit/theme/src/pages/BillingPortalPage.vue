@@ -50,7 +50,7 @@ const activeTabLabel = computed(() => activeTab.value === 'usage'
   : W.value['billing-membership-tab'])
 
 async function request(action: string) {
-  const { data, error } = await (supabase as any).functions.invoke('create-portal-session', { body: { action } })
+  const { data, error } = await supabase!.functions.invoke('create-portal-session', { body: { action } })
   if (error) {
     let message = error.message || ''
     try { message = (await error.context?.clone?.json())?.error || message } catch {}

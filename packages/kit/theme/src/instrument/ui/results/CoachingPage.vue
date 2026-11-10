@@ -29,7 +29,7 @@ const offerings = ref<any>([]);
    offer the terms. Failing to sign stops nothing here; it stops a NEW thing going on sale, which the
    database holds and the offerings surface says. */
 const standing = ref<any>(null), termsOpen = ref(false), offeringsEl = ref<any>(null);
-async function loadStanding() { if (!isProvider.value || !configured) return; try { const { data } = await (supabase as any).rpc("provider_standing"); standing.value = data || null; } catch (e) { standing.value = null; } }
+async function loadStanding() { if (!isProvider.value || !configured) return; try { const { data } = await supabase!.rpc("provider_standing"); standing.value = data || null; } catch (e) { standing.value = null; } }
 function askTerms() { termsOpen.value = true; }
 async function onSigned() { await loadStanding(); if (offeringsEl.value && offeringsEl.value.reload) await offeringsEl.value.reload(); }
 const options = computed(() => sessionOptions(attending.value, offerings.value));
@@ -93,7 +93,7 @@ const rows = ref<any>([]);
 async function load() {
   if (!configured) { rows.value = []; offerings.value = []; standing.value = null; return; }
   if (!isSignedIn.value) { rows.value = []; offerings.value = []; standing.value = null; return; }
-  const { data } = await (supabase as any).from("bookings").select("uid,title,name,event,start_at,end_at,status,no_show,user_id,provider_id,provider_email,host_id,provider,where,join_url,credit_id,made_by,made_by_name,recording_path,transcript_path,recording_state,recording_error,run_of").order("start_at", { ascending: false }).limit(50);
+  const { data } = await supabase!.from("bookings").select("uid,title,name,event,start_at,end_at,status,no_show,user_id,provider_id,provider_email,host_id,provider,where,join_url,credit_id,made_by,made_by_name,recording_path,transcript_path,recording_state,recording_error,run_of").order("start_at", { ascending: false }).limit(50);
   rows.value = data || [];
   try { offerings.value = await loadOfferings(); } catch (e) { offerings.value = []; }
   await loadStanding();
@@ -111,11 +111,11 @@ async function transcript(b: { uid: string|number; }) { const m = media.value[b.
 let channel: any = null;
 function listen() {
   if (channel || !configured || !isSignedIn.value) return;
-  channel = (supabase as any).channel("bookings:mine")
+  channel = supabase!.channel("bookings:mine")
     .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, load)
     .subscribe((status: string) => { if (status === "SUBSCRIBED") load(); });
 }
-function unlisten() { if (channel) { try { (supabase as any).removeChannel(channel); } catch (e) { /* gone */ } channel = null; } }
+function unlisten() { if (channel) { try { supabase!.removeChannel(channel); } catch (e) { /* gone */ } channel = null; } }
 onMounted(() => { load(); listen(); });
 onBeforeUnmount(unlisten);
 watch(user, () => { unlisten(); load(); listen(); });

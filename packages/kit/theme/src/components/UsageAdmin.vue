@@ -36,7 +36,7 @@ const belowCost = (row: any) => {
 async function load() {
   state.value = 'loading'
   fault.value = ''
-  const { data, error } = await (supabase as any).rpc('admin_usage', { p_days: 30 })
+  const { data, error } = await supabase!.rpc('admin_usage', { p_days: 30 })
   if (error) {
     state.value = 'error'
     fault.value = error.message
@@ -51,7 +51,7 @@ async function retryReports() {
   retrying.value = true
   fault.value = ''
   try {
-    const { error } = await (supabase as any).functions.invoke('usage-meter-report', { body: {} })
+    const { error } = await supabase!.functions.invoke('usage-meter-report', { body: {} })
     if (error) throw new Error(error.message)
     await load()
   } catch (error) {

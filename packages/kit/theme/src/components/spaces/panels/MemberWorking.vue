@@ -22,7 +22,7 @@ watch(() => props.user, async (id) => {
   done.value = false
   row.value = null
   if (!id) return
-  const { data } = await (supabase as any).rpc('member_working', { p_user: id })
+  const { data } = await supabase!.rpc('member_working', { p_user: id })
   row.value = data || null
   done.value = true
 }, { immediate: true })

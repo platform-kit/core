@@ -85,7 +85,7 @@ const incrementalKey = (settlement: any) =>
 let loadGeneration = 0
 
 async function topupRequest(body: any) {
-  const { data, error } = await (supabase as any).functions.invoke('usage-topup', { body })
+  const { data, error } = await supabase!.functions.invoke('usage-topup', { body })
   if (error) {
     let detail = error.message || ''
     let code = ''
@@ -107,7 +107,7 @@ async function topupRequest(body: any) {
 }
 
 async function payoutRequest(body: { action: string; return_url?: string }) {
-  const { data, error } = await (supabase as any).functions.invoke('payouts', { body })
+  const { data, error } = await supabase!.functions.invoke('payouts', { body })
   if (error) {
     let detail = error.message || ''
     try {
@@ -177,7 +177,7 @@ async function load(retryOnce = true) {
   state.value = 'loading'
   fault.value = ''
   try {
-    const { data: { session }, error: authError } = await (supabase as any).auth.getSession()
+    const { data: { session }, error: authError } = await supabase!.auth.getSession()
     if (authError) throw authError
     if (generation !== loadGeneration) return false
     const user = session?.user
@@ -188,10 +188,10 @@ async function load(retryOnce = true) {
       return false
     }
     const [balanceResult, historyResult] = await Promise.all([
-      (supabase as any).from('usage_balances')
+      supabase!.from('usage_balances')
         .select('offer_key, period_start, granted_micros, used_micros, reserved_micros, remaining_micros')
         .eq('user_id', user.id),
-      (supabase as any).from('usage_events')
+      supabase!.from('usage_events')
         .select('id, offer_key, kind, units_micros, usage_unit, seconds_micros, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -598,7 +598,7 @@ onMounted(() => {
       paymentMethodNotice.value = W.value['payment-method-saved']
     }
   })
-  const result = (supabase as any).auth.onAuthStateChange(onAuthChange)
+  const result = supabase!.auth.onAuthStateChange(onAuthChange)
   authListener = result.data.subscription
 })
 

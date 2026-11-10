@@ -23,7 +23,7 @@ const resultsErr = ref('')
 async function loadResults() {
   if (!configured) { resultsErr.value = 'Supabase is not configured — no numbers.'; return }
   try {
-    const { data, error } = await (supabase as any).rpc('experiment_results')
+    const { data, error } = await supabase!.rpc('experiment_results')
     if (error) throw error
     results.value = data || []; resultsErr.value = ''
   } catch (e) { resultsErr.value = (e as any).message || String(e) }

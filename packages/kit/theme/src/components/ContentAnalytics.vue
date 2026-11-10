@@ -58,9 +58,9 @@ async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; content.value = null; find.value = null; return }
   state.value = 'loading'
   const [c, f, s] = await Promise.all([
-    (supabase as any).rpc('admin_content', { days: days.value, audience: audience.value, published: PUBLISHED, filters: filtersForRead.value }),
-    (supabase as any).rpc('admin_find', { days: days.value }),
-    (supabase as any).rpc('admin_series', { days: days.value, audience: audience.value, filters: filtersForRead.value }),
+    supabase!.rpc('admin_content', { days: days.value, audience: audience.value, published: PUBLISHED, filters: filtersForRead.value }),
+    supabase!.rpc('admin_find', { days: days.value }),
+    supabase!.rpc('admin_series', { days: days.value, audience: audience.value, filters: filtersForRead.value }),
   ])
   const err = c.error || f.error || s.error
   if (err) { state.value = (err.code === '42501' || /admin only|permission/i.test(err.message || '')) ? 'denied' : 'error'; return }
@@ -70,7 +70,7 @@ async function load() {
   state.value = 'ok'
   loadNow()
 }
-async function loadNow() { if (!configured || !isSignedIn.value) return; const { data: n } = await (supabase as any).rpc('admin_now'); if (n) now.value = n }
+async function loadNow() { if (!configured || !isSignedIn.value) return; const { data: n } = await supabase!.rpc('admin_now'); if (n) now.value = n }
 let nowTimer: any = null
 onMounted(() => { nowTimer = setInterval(() => { if (document.visibilityState !== 'hidden' && state.value === 'ok') loadNow() }, 60000) })
 onBeforeUnmount(() => clearInterval(nowTimer))

@@ -43,7 +43,7 @@ const summary = computed(() => {
 })
 
 async function call(action: any, body?: any) {
-  const { data, error: e } = await (supabase as any).functions.invoke('payouts', { body: { action, ...(body || {}) } })
+  const { data, error: e } = await supabase!.functions.invoke('payouts', { body: { action, ...(body || {}) } })
   if (e) throw e
   if (data && data.error) throw new Error(data.error)
   return data

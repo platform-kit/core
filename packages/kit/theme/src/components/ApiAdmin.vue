@@ -27,9 +27,9 @@ const KINDS = ['delivery', 'preview', 'management', ...(moduleOn('forms') ? ['fo
 
 async function load() {
   loading.value = true
-  const { data } = await (supabase as any).from('api_keys').select('id, name, kind, gated, prefix, created_at, last_used_at, revoked_at').order('created_at', { ascending: false })
+  const { data } = await supabase!.from('api_keys').select('id, name, kind, gated, prefix, created_at, last_used_at, revoked_at').order('created_at', { ascending: false })
   keys.value = data || []
-  const { data: h } = await (supabase as any).from('content_webhooks').select('id, name, url, topics, active, last_at, last_error').order('created_at')
+  const { data: h } = await supabase!.from('content_webhooks').select('id, name, url, topics, active, last_at, last_error').order('created_at')
   hooks.value = h || []
   loading.value = false
 }
@@ -49,7 +49,7 @@ async function create() {
   try {
     const key = `pk_${form.value.kind}_${random(32)}`
     const row = { name: form.value.name.trim().slice(0, 80), kind: form.value.kind, gated: !!form.value.gated, prefix: key.slice(0, 12), hash: await sha256(key), created_by: user.value ? user.value.id : null }
-    const { error } = await (supabase as any).from('api_keys').insert(row)
+    const { error } = await supabase!.from('api_keys').insert(row)
     if (error) throw error
     reveal.value = { key, name: row.name, kind: row.kind }
     form.value = null
@@ -59,7 +59,7 @@ async function create() {
 }
 async function revoke(k: { id: any }) {
   if (!window.confirm(K['revoke-confirm'])) return
-  await (supabase as any).from('api_keys').update({ revoked_at: new Date().toISOString() }).eq('id', k.id)
+  await supabase!.from('api_keys').update({ revoked_at: new Date().toISOString() }).eq('id', k.id)
   await load()
 }
 async function copy() { try { await navigator.clipboard.writeText(reveal.value.key); copied.value = true; setTimeout(() => { copied.value = false }, 1600) } catch { /* the field is selectable */ } }

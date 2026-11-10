@@ -48,11 +48,11 @@ async function load() {
   if (props.name) {
     const d = def.value
     const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch (e) { return 'UTC' } })()
-    const { data, error } = await (supabase as any).rpc('admin_funnel', { kind: props.kind, name: props.name, days: days.value, steps: stepDefs.value.map((s: any) => ({ id: s.id, after: s.after || 0, channel: s.channel })), rules: d && d.rules && Object.keys(d.rules).length ? d.rules : null, goal: d ? d.goal || null : null, tz })
+    const { data, error } = await supabase!.rpc('admin_funnel', { kind: props.kind, name: props.name, days: days.value, steps: stepDefs.value.map((s: any) => ({ id: s.id, after: s.after || 0, channel: s.channel })), rules: d && d.rules && Object.keys(d.rules).length ? d.rules : null, goal: d ? d.goal || null : null, tz })
     if (error) return fail(error)
     one.value = data || null
   } else {
-    const { data, error } = await (supabase as any).rpc('admin_funnels', { days: days.value, goals: goalsMap() })
+    const { data, error } = await supabase!.rpc('admin_funnels', { days: days.value, goals: goalsMap() })
     if (error) return fail(error)
     index.value = data || null
   }

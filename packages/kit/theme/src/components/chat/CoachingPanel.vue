@@ -53,7 +53,7 @@ const sessionCoaches = ref<any>([])
 watch(me, async (id) => {
   sessionCoaches.value = []
   if (!id || !configured) return
-  const { data } = await (supabase as any).rpc('chat_session_coaches')
+  const { data } = await supabase!.rpc('chat_session_coaches')
   if (me.value === id) sessionCoaches.value = Array.isArray(data) ? data : []
 }, { immediate: true })
 const allowed = computed(() => coach.value || canAccess('subscribed') || sessionCoaches.value.length > 0)
@@ -85,7 +85,7 @@ async function roleCheck() { coach.value = isProvider.value }
 
 async function boot() {
   if (!configured) { ready.value = true; emit('ready'); return }
-  try { await (supabase as any).auth.getSession() } catch (e) { /* offline */ }
+  try { await supabase!.auth.getSession() } catch (e) { /* offline */ }
   if (session.value) {
     await Promise.all([roleCheck(), loadInbox(), loadPeople()])
     /* one coach and nothing said yet: straight in */

@@ -33,7 +33,7 @@ let channel: any = null
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; rows.value = []; return }
   state.value = 'loading'
-  const { data, error } = await (supabase as any).from('fulfilments').select('*').order('created_at', { ascending: false }).limit(500)
+  const { data, error } = await supabase!.from('fulfilments').select('*').order('created_at', { ascending: false }).limit(500)
   if (error) { state.value = (error.code === '42501' || /permission/i.test(error.message || '')) ? 'denied' : 'error'; return }
   rows.value = data || []
   state.value = 'ok'
@@ -49,7 +49,7 @@ function listen() {
 }
 onMounted(load)
 onIdentity(load)
-onBeforeUnmount(() => { if (channel) (supabase as any).removeChannel(channel); channel = null })
+onBeforeUnmount(() => { if (channel) supabase!.removeChannel(channel); channel = null })
 
 const OPEN = ['new', 'submitted', 'in_production'], TROUBLE = ['failed', 'rejected']
 const shown = computed(() => rows.value.filter((r: { status: string }) => filter.value === 'all' || (filter.value === 'open' ? OPEN.includes(r.status) : filter.value === 'shipped' ? r.status === 'shipped' : TROUBLE.includes(r.status))))
@@ -64,7 +64,7 @@ const canSubmit = (r: { status: string }) => r.status === 'new' || r.status === 
 async function act(r: { id: string|number }, action: string) {
   busy[r.id] = action
   try {
-    const { data, error } = await (supabase as any).functions.invoke('print-order', { body: { id: r.id, action } })
+    const { data, error } = await supabase!.functions.invoke('print-order', { body: { id: r.id, action } })
     if (error) throw error
     if (data && data.order) { const i = rows.value.findIndex((x: { id: string|number }) => x.id === r.id); if (i >= 0) rows.value.splice(i, 1, data.order) }
     said[r.id] = action === 'submit' && data && data.ok ? R.sent : ''

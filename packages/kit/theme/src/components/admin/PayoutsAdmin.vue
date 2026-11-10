@@ -38,7 +38,7 @@ const forever = (d: string|number|Date) => !d || new Date(d).getTime() > Date.no
 const TYPES = computed(() => (SESSIONS || []).filter((s: { published: boolean }) => s.published !== false).map((s: any) => s.slug))
 
 async function call(action: string, body?: any) {
-  const { data, error: e } = await (supabase as any).functions.invoke('payouts', { body: { action, ...(body || {}) } })
+  const { data, error: e } = await supabase!.functions.invoke('payouts', { body: { action, ...(body || {}) } })
   if (e) throw e
   if (data && data.error) throw new Error(data.error)
   return data
@@ -99,7 +99,7 @@ async function saveRule() {
   if (!asRule.value || fault.value) return
   busy.value = 'rule'; error.value = ''
   try {
-    const { error: e } = await (supabase as any).from('payout_rules').insert({ user_id: openId.value, ...asRule.value })
+    const { error: e } = await supabase!.from('payout_rules').insert({ user_id: openId.value, ...asRule.value })
     if (e) throw e
     editing.value = false; draft.value = null
     await openPerson(openId.value, true)
@@ -107,7 +107,7 @@ async function saveRule() {
 }
 async function removeRule(r: any) {
   if (!window.confirm(P.value['remove-ask'])) return
-  try { await (supabase as any).from('payout_rules').update({ active: false }).eq('id', r.id); await openPerson(openId.value, true) }
+  try { await supabase!.from('payout_rules').update({ active: false }).eq('id', r.id); await openPerson(openId.value, true) }
   catch (e) { error.value = (e as any).message || W.value.error }
 }
 const ruleWords = (r: any) => {

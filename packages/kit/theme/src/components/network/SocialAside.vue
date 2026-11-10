@@ -28,7 +28,7 @@ async function loadSessions() {
   const me = user.value && user.value.id
   if (!me || !configured || !moduleOn('sessions')) { sessions.value = []; return }
   try {
-    const { data } = await (supabase as any).from('bookings').select('uid, title, start_at, end_at, status, user_id, provider_id, host_id')
+    const { data } = await supabase!.from('bookings').select('uid, title, start_at, end_at, status, user_id, provider_id, host_id')
       .in('status', ['accepted', 'pending']).gt('end_at', new Date().toISOString()).order('start_at').limit(20)
     sessions.value = (data || []).filter((b: { user_id: any; host_id: any; provider_id: any }) => b.user_id === me || b.host_id === me || b.provider_id === me)
   } catch (e) { sessions.value = [] }

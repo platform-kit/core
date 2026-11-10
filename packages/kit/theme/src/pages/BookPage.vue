@@ -26,7 +26,7 @@ setHead({ title: type.value ? fill(W.title, { session: type.value.title }) : (W.
 
 /* the reader's bookings, for the allowance the options count */
 const rows = ref<any>([])
-async function load() { if (!isSignedIn.value || !configured) { rows.value = []; return } const { data } = await (supabase as any).from('bookings').select('uid,event,start_at,status,user_id,made_by').eq('user_id', user.value ? user.value.id : ''); rows.value = data || [] }
+async function load() { if (!isSignedIn.value || !configured) { rows.value = []; return } const { data } = await supabase!.from('bookings').select('uid,event,start_at,status,user_id,made_by').eq('user_id', user.value ? user.value.id : ''); rows.value = data || [] }
 onIdentity(load)
 const options = computed(() => sessionOptions(rows.value).filter((o) => o.slug === slug.value))
 const notMine = computed(() => isSignedIn.value && type.value && !options.value.length)

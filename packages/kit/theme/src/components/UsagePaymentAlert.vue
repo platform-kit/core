@@ -24,7 +24,7 @@ const attention = ref<any>(null)
 async function ask() {
   if (!relevant || !isSignedIn.value) { attention.value = null; return }
   try {
-    const { data, error } = await (supabase as any).functions.invoke('usage-topup', { body: { action: 'attention' } })
+    const { data, error } = await supabase!.functions.invoke('usage-topup', { body: { action: 'attention' } })
     attention.value = error ? null : alertFor(data?.attention)
   } catch (e) {
     attention.value = null   /* the banner is a convenience: a failed question shows nothing */

@@ -32,7 +32,7 @@ const stats = ref<any>(null)
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; stats.value = null; return }
   state.value = 'loading'
-  const { data, error } = await (supabase as any).rpc('admin_forms', { days: days.value })
+  const { data, error } = await supabase!.rpc('admin_forms', { days: days.value })
   if (error) { state.value = (error.code === '42501' || /admin only|permission/i.test(error.message || '')) ? 'denied' : 'error'; return }
   stats.value = data || []
   state.value = 'ok'

@@ -68,7 +68,7 @@ const dmKnown = ref(false)
 async function loadDm(t: any) {
   dmSpace.value = null; dmKnown.value = false
   if (!SPACES || !isSignedIn.value || !t || (user.value && user.value.id === t.id)) return
-  const { data } = await (supabase as any).rpc('space_dm_where', { p_with: t.id })
+  const { data } = await supabase!.rpc('space_dm_where', { p_with: t.id })
   dmSpace.value = data || null; dmKnown.value = true
 }
 const dmBusy = ref(false)
@@ -77,7 +77,7 @@ async function message() {
   try {
     const cid = await openDm(dmSpace.value, [them.value.id])
     if (!cid) { dmSpace.value = null; return }
-    const { data } = await (supabase as any).from('channels').select('slug, spaces(slug)').eq('id', cid).single()
+    const { data } = await supabase!.from('channels').select('slug, spaces(slug)').eq('id', cid).single()
     if (data && data.spaces) navigate(ROUTES.spaces + '/' + data.spaces.slug + '/' + data.slug)
   } finally { dmBusy.value = false }
 }

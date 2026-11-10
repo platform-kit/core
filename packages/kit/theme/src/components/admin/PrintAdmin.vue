@@ -40,7 +40,7 @@ import pipe from '../../lib/admin/api.js'
  */
 const interiorStep = ref('')
 async function askPrintRender(body: any) {
-  const { data, error } = await (supabase as any).functions.invoke('print-render', { body })
+  const { data, error } = await supabase!.functions.invoke('print-render', { body })
   if (!error) return data
   const said = await error.context?.json?.().catch(() => null)
   throw new Error((said && said.error) || error.message)
@@ -171,7 +171,7 @@ async function sendProof() {
   try {
     try { localStorage.setItem(ADDR_KEY, JSON.stringify(proofForm.address)) } catch (e) { /* not kept */ }
     const hc = proofForm.format === 'hardcover' ? { cloth: proofForm.cloth || form.pr.formats.hardcover.cloth[0], foil: proofForm.foil || form.pr.formats.hardcover.foil[0] } : {}
-    const { data, error } = await (supabase as any).functions.invoke('print-order', { body: { action: 'proof', book: cur.value.slug, contents: proofForm.contents, format: proofForm.format, ...hc, level: proofForm.level, address: proofForm.address } })
+    const { data, error } = await supabase!.functions.invoke('print-order', { body: { action: 'proof', book: cur.value.slug, contents: proofForm.contents, format: proofForm.format, ...hc, level: proofForm.level, address: proofForm.address } })
     if (error) throw error
     if (data && data.error) throw new Error(data.error)
     proofMsg.value = data && data.ok ? `Proof ordered — ${FORMAT_NAMES[proofForm.format] || proofForm.format}, one copy, with ${PRINTER_NAMES[data.order.supplier] || data.order.supplier} (job ${data.order.supplier_job || '…'}). Follow it under Sales → Print orders.` : `Recorded but not sent: ${(data && data.order && data.order.error) || 'the printer refused it'} — retry from Sales → Print orders`

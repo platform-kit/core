@@ -93,7 +93,7 @@ const count = ref<any>(null), counting = ref(false), countErr = ref('')
 async function countNow() {
   if (!supabaseOn || !isSignedIn.value) { countErr.value = 'Sign in as an admin to count'; return }
   counting.value = true; countErr.value = ''
-  try { const { data, error } = await (supabase as any).rpc('email_audience_count', { rules: rules.value }); if (error) throw error; count.value = data } catch (e) { countErr.value = (e as any).message || 'Could not count' }
+  try { const { data, error } = await supabase!.rpc('email_audience_count', { rules: rules.value }); if (error) throw error; count.value = data } catch (e) { countErr.value = (e as any).message || 'Could not count' }
   finally { counting.value = false }
 }
 watch(rules, () => { count.value = null })

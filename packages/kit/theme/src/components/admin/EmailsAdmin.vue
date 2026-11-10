@@ -92,7 +92,7 @@ async function mount() {
 async function unmount() { if (editor) { try { editor.unmount() } catch (e) { /* gone */ } editor = null } }
 async function sendTo(to: string, html: any) {
   if (!supabaseOn || !isSignedIn.value) throw new Error('Sign in as an admin to send a test')
-  const { data, error } = await (supabase as any).functions.invoke('send-email', { body: { kind: kind.value, to, html, subject: subject.value } })
+  const { data, error } = await supabase!.functions.invoke('send-email', { body: { kind: kind.value, to, html, subject: subject.value } })
   if (error) throw error
   if (data && data.error) throw new Error(data.error)
   if (!data || !data.ok) throw new Error('Not sent — the relay refused it')

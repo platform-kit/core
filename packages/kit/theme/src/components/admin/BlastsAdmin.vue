@@ -34,7 +34,7 @@ async function loadView() {
 
 const data = ref<any>(null), stats = ref<any>(null), loading = ref(true), msg = ref('')
 async function load() { loading.value = true; try { data.value = await loadView(); await loadStats() } catch (e) { msg.value = (e as any).message } finally { loading.value = false } }
-async function loadStats() { if (!supabaseOn || !isSignedIn.value) return; try { const { data: s } = await (supabase as any).rpc('email_stats'); stats.value = s } catch (e) { /* none */ } }
+async function loadStats() { if (!supabaseOn || !isSignedIn.value) return; try { const { data: s } = await supabase!.rpc('email_stats'); stats.value = s } catch (e) { /* none */ } }
 onMounted(load)
 onIdentity((id: any) => { if (id) loadStats() })
 const statOf = (id: any) => { const rows = stats.value && stats.value.sent ? stats.value.sent.filter((x: { email_id: any }) => x.email_id === id) : []; return { n: rows.reduce((a: any, x: { n: any }) => a + x.n, 0), opened: rows.reduce((a: any, x: { opened: any }) => a + x.opened, 0), clicked: rows.reduce((a: any, x: { clicked: any }) => a + x.clicked, 0) } }
@@ -88,7 +88,7 @@ async function renderPreview() {
   try {
     const { html } = await pipe.action('funnels', 'preview', { body: form.value.body })
     if (!supabaseOn || !isSignedIn.value) { preview.value = html; return }
-    const { data: r, error } = await (supabase as any).functions.invoke('send-email', { body: { kind: form.value.design, sample: { subject: form.value.subject, body: html, name: 'Ada' }, subject: form.value.subject } })
+    const { data: r, error } = await supabase!.functions.invoke('send-email', { body: { kind: form.value.design, sample: { subject: form.value.subject, body: html, name: 'Ada' }, subject: form.value.subject } })
     if (error) throw error
     if (r && r.error) throw new Error(r.error)
     preview.value = r.html
@@ -102,7 +102,7 @@ async function sendTest() {
   testing.value = true; msg.value = ''
   try {
     const { html } = await pipe.action('funnels', 'preview', { body: form.value.body })
-    const { data: r, error } = await (supabase as any).functions.invoke('send-email', { body: { kind: form.value.design, to: me.value, sample: { subject: form.value.subject, body: html, name: 'Ada' }, subject: form.value.subject } })
+    const { data: r, error } = await supabase!.functions.invoke('send-email', { body: { kind: form.value.design, to: me.value, sample: { subject: form.value.subject, body: html, name: 'Ada' }, subject: form.value.subject } })
     if (error) throw error
     if (r && r.error) throw new Error(r.error)
     msg.value = r.ok ? `Test sent to ${me.value}` : 'Not sent — the relay refused it'
@@ -114,7 +114,7 @@ const sending = ref(false), result = ref<any>(null)
 async function count() {
   if (!cur.value) return
   sending.value = true; msg.value = ''
-  try { const { data: d, error } = await (supabase as any).functions.invoke('email-blast', { body: { name: cur.value.name, dry: true } }); if (error) throw error; if (d && d.error) throw new Error(d.error); result.value = d }
+  try { const { data: d, error } = await supabase!.functions.invoke('email-blast', { body: { name: cur.value.name, dry: true } }); if (error) throw error; if (d && d.error) throw new Error(d.error); result.value = d }
   catch (e) { msg.value = (e as any).message } finally { sending.value = false }
 }
 async function sendBlast() {
@@ -123,7 +123,7 @@ async function sendBlast() {
   if (!confirm(`Send “${form.value.subject}” to ${n} ${n === 1 ? 'person' : 'people'} now? This cannot be recalled.`)) return
   sending.value = true; msg.value = ''
   try {
-    const { data: r, error } = await (supabase as any).functions.invoke('email-blast', { body: { name: cur.value.name } })
+    const { data: r, error } = await supabase!.functions.invoke('email-blast', { body: { name: cur.value.name } })
     if (error) throw error
     if (r && r.error) throw new Error(r.error)
     result.value = r

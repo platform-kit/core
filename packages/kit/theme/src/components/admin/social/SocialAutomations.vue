@@ -65,7 +65,7 @@ const eventExcerpt = (eventId: any) => (eventById.value.get(eventId) as any)?.bo
 const dateLabel = (value: string|number|Date) => (value ? new Date(value).toLocaleString() : '')
 
 async function call(action: string, fields = {}) {
-  const { data, error } = await (supabase as any).functions.invoke('social', {
+  const { data, error } = await supabase!.functions.invoke('social', {
     body: { action, ...fields },
   })
   if (error || data?.error) throw error || new Error(data.error)
