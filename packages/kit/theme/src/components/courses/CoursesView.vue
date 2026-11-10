@@ -12,12 +12,13 @@
 -->
 <template>
   <div class="crs" :class="{ 'is-place': place, 'is-playing': view === 'lesson' && state }">
-    <CourseLibrary v-if="view === 'list'" :base="base" />
+    <!-- a library of one course is that course: its overview, here at the library's address (openspec: courses) -->
+    <CourseLibrary v-if="view === 'list'" v-show="!solo" :base="base" @one="(s: string | null) => (solo = s)" />
     <CourseOverview
-      v-else-if="view === 'course' || !state" :base="base" :state="state" :loading="loading" :busy="busy" :problem="problem"
-      @enroll="enroll" @sign-in="signIn" />
+      v-if="view === 'list' ? !!solo : view === 'course' || !state" :base="base" :state="state" :loading="loading" :busy="busy" :problem="problem"
+      :alone="view === 'list'" @enroll="enroll" @sign-in="signIn" />
     <CoursePlayer
-      v-else :base="base" :state="state" :lesson-key="lessonKey ?? ''" :lesson="lesson" :loading="loading" :busy="busy" :problem="problem" :outcome="outcome"
+      v-else-if="view === 'lesson'" :base="base" :state="state" :lesson-key="lessonKey ?? ''" :lesson="lesson" :loading="loading" :busy="busy" :problem="problem" :outcome="outcome"
       :earned="earned" @enroll="enroll" @sign-in="signIn" @complete="complete" @form-done="formDone" />
   </div>
 </template>
@@ -47,7 +48,9 @@ const { K, S } = words()
 /* where we are, under the base: '' · <slug> · <slug>/<lesson> */
 const parts = computed(() => String(props.path || '').split('/').filter(Boolean))
 const view = computed(() => (parts.value.length >= 2 ? 'lesson' : parts.value.length === 1 ? 'course' : 'list'))
-const slug = computed(() => parts.value[0] || null)
+/* the only course, where the library has one; the library finds out and says */
+const solo = ref<string | null>(null)
+const slug = computed(() => parts.value[0] || (view.value === 'list' ? solo.value : null))
 const lessonKey = computed(() => (view.value === 'lesson' ? parts.value[1] : null))
 
 const loading = ref(false), busy = ref(false), problem = ref(''), outcome = ref('')
@@ -56,7 +59,7 @@ const state = computed(() => (slug.value ? courseState(slug.value) : null))
 
 async function load() {
   problem.value = ''
-  if (view.value === 'list') return
+  if (!slug.value) return
   loading.value = true
   try {
     const [s, l] = await Promise.all([
@@ -64,12 +67,13 @@ async function load() {
       view.value === 'lesson' ? rpc('course_lesson', { p_course: slug.value, p_lesson: lessonKey.value }) : null,
     ])
     lesson.value = l
-    setHead({ title: l && l.title ? `${l.title} — ${s && s.title}` : s ? s.title : K.value.missing, description: s ? leadOf(s.about) : '' })
+    /* standing in for the library, the overview names the course's own address as the page */
+    setHead({ title: l && l.title ? `${l.title} — ${s && s.title}` : s ? s.title : K.value.missing, description: s ? leadOf(s.about) : '', path: view.value === 'list' ? props.base + '/' + slug.value : null })
   } catch (e) { console.warn('courses:', (e as any).message || e) }
   loading.value = false
 }
 let who: any
-watch([() => props.path, () => (user.value ? user.value.id : null)], ([, id]) => {
+watch([() => props.path, () => (user.value ? user.value.id : null), solo], ([, id]) => {
   /* somebody signing in or out sees every course afresh */
   if (who !== undefined && id !== who) forgetCourses()
   who = id

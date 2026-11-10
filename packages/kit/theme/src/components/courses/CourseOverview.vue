@@ -12,7 +12,7 @@
       <a class="btn" :href="base">{{ K.back }}</a>
     </div>
     <template v-else>
-      <a class="crs-crumb" :href="base"><CourseIcon name="back" :size="15" />{{ K.back }}</a>
+      <a v-if="!alone" class="crs-crumb" :href="base"><CourseIcon name="back" :size="15" />{{ K.back }}</a>
 
       <div class="crs-ov-hero">
         <div class="crs-ov-hero-text">
@@ -140,6 +140,8 @@ import { words, fill, pct, day, shortDay, leadOf, restOf, modulesOf, kindOf, sta
 
 const props = defineProps({
   base: { type: String, required: true },
+  /* standing in for a library of one: there is no 'all courses' to go back to */
+  alone: { type: Boolean, default: false },
   state: { type: Object as PropType<any>, default: null },
   loading: { type: Boolean, default: false },
   busy: { type: Boolean, default: false },

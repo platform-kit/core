@@ -2,7 +2,8 @@
   THE LIBRARY (openspec: courses): /courses, or the community's Courses place. For a reader who is in a course, the one
   they were last in leads with its next lesson; then the rest they are taking, then what they finished, each with its
   certificate; then every other course, with what getting in takes. A guest, or somebody in nothing yet, sees the
-  catalogue. All of it is courses_list's answer for this reader.
+  catalogue. All of it is courses_list's answer for this reader. Where that answer is one course, the library says so
+  (`one`) and CoursesView shows that course's overview here instead: a catalogue of one is the course.
 -->
 <template>
   <div class="crs-wrap crs-lib">
@@ -82,6 +83,7 @@ import CourseCover from './CourseCover.vue'
 import CourseIcon from './CourseIcon.vue'
 
 const props = defineProps({ base: { type: String, default: '/courses' } })
+const emit = defineEmits<{ one: [slug: string | null] }>()
 const { L } = words()
 const list = ref<any>([]), loading = ref(true)
 
@@ -89,6 +91,7 @@ watch(() => (user.value ? user.value.id : null), async () => {
   loading.value = true
   try { list.value = (await rpc('courses_list')) || [] } catch (e) { console.warn('courses:', (e as any).message || e) }
   loading.value = false
+  emit('one', list.value.length === 1 ? list.value[0].slug : null)
 }, { immediate: true })
 setHead({ title: L.value.title })
 
