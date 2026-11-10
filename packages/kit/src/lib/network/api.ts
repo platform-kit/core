@@ -14,6 +14,16 @@ export const PINNING = !!(site && site.community && site.community.pinning)
 import { joinPages, cursorOf, postOfMessage, peopleIn, toggled, spread } from './model.js'
 import { probe } from './probe.js'
 import { MEDIA } from '../../../supabase/functions/_shared/atproto/media.js'
+import type { Json } from '../../../supabase/functions/_shared/database.types.ts'
+
+/* network_people (93-network.sql): somebody as the network shows them, each field only where they may be seen */
+type NetworkPerson = {
+  id: string; name: string | null; username: string | null; handle_name: string | null; plc_did: string | null; about: string | null
+  created_at: string; page: boolean; joined: boolean
+  avatar: string | null; avatar_style: string | null; avatar_seed: string; avatar_options: Json | null
+}
+/* network_spaces (glue/network+spaces.sql; [] without spaces): the spaces whose feed the reader may post to */
+type NetworkSpace = { space_id: string; slug: string; name: string; channel_id: string | null; pinned: boolean }
 
 const POST_COLS = 'id, author_id, rkey, text, audience, media, reply_root_id, reply_parent_id, quote_id, reply_parent_uri, quote_uri, like_count, repost_count, reply_count, quote_count, created_at, removed_at'
 const MSG_COLS = 'id, channel_id, author_id, body, title, attachment, attachment_type, media, reply_count, created_at, channels!space_messages_channel_fkey(slug, space_id, spaces(id, slug, name))'
@@ -60,8 +70,8 @@ export async function admission() {
 export async function loadPeople(ids: Iterable<string>|null|undefined) {
   const want = [...new Set(ids)].filter((id) => id && !net.people[id])
   if (!want.length || !ok()) return
-  const { data } = await (supabase as any).rpc('network_people', { p_ids: want })
-  for (const p of data || []) net.people[p.id] = p
+  const { data } = await supabase!.rpc('network_people', { p_ids: want })
+  for (const p of (data as NetworkPerson[] | null) || []) net.people[p.id] = p
 }
 
 export async function personOf(userId: any) {
@@ -73,11 +83,11 @@ export async function personOf(userId: any) {
 /* ---------------------------------------------------------------- what */
 
 /* the reader's likes and reposts among these posts, so each card knows whether it is pressed */
-async function markMine(ids: string|any[]) {
+async function markMine(ids: string[]) {
   if (!me() || !ids.length) return
   const [likes, reposts] = await Promise.all([
-    (supabase as any).from('network_likes').select('post_id').eq('author_id', me()).in('post_id', ids),
-    (supabase as any).from('network_reposts').select('post_id').eq('author_id', me()).in('post_id', ids),
+    supabase!.from('network_likes').select('post_id').eq('author_id', me()).in('post_id', ids),
+    supabase!.from('network_reposts').select('post_id').eq('author_id', me()).in('post_id', ids),
   ])
   const liked = new Set((likes.data || []).map((r: { post_id: any }) => r.post_id))
   const reposted = new Set((reposts.data || []).map((r: { post_id: any }) => r.post_id))
@@ -119,9 +129,9 @@ async function loadMessages(ids: Iterable<string>|null|undefined) {
 /* ONE WAY TO REACT: a space's post is liked as the spaces like anything — a ❤️ reaction, the same row the
    spaces page writes — so its card can wear the network's bar and count it where the spaces count it */
 export const LIKE = '❤️'
-async function markMessages(ids: string|any[]) {
+async function markMessages(ids: string[]) {
   if (!ids.length) return
-  const { data } = await (supabase as any).from('reactions').select('target_id, user_id').eq('surface', 'message').eq('emoji', LIKE).in('target_id', ids)
+  const { data } = await supabase!.from('reactions').select('target_id, user_id').eq('surface', 'message').eq('emoji', LIKE).in('target_id', ids)
   const rows = data || []
   for (const id of ids) {
     if (!net.messages[id]) continue
@@ -129,13 +139,13 @@ async function markMessages(ids: string|any[]) {
     net.messages[id] = { ...net.messages[id], like_count: mine.length, liked: !!me() && mine.some((r: { user_id: any }) => r.user_id === me()) }
   }
 }
-export async function likeMessage(post: { id: string|number }, on: any) {
+export async function likeMessage(post: { id: string }, on: any) {
   const m = net.messages[post.id]
   if (!m || !me()) return
   net.messages[post.id] = { ...m, liked: on, like_count: Math.max(0, (m.like_count || 0) + (on ? 1 : -1)) }
   const q = on
-    ? (supabase as any).from('reactions').insert({ surface: 'message', target_id: post.id, channel_id: m.channel_id, user_id: me(), emoji: LIKE })
-    : (supabase as any).from('reactions').delete().eq('surface', 'message').eq('target_id', post.id).eq('user_id', me()).eq('emoji', LIKE)
+    ? supabase!.from('reactions').insert({ surface: 'message', target_id: post.id, channel_id: m.channel_id, user_id: me()!, emoji: LIKE })
+    : supabase!.from('reactions').delete().eq('surface', 'message').eq('target_id', post.id).eq('user_id', me()!).eq('emoji', LIKE)
   const { error } = await q
   if (error) { net.messages[post.id] = m; throw error }
 }
@@ -227,15 +237,15 @@ export function discover() {
 /* people: by name for the search box, and who the reader might follow for the rail */
 export async function findPeople(q: any, limit = 12) {
   if (!ok() || !me() || !String(q || '').trim()) return []
-  const { data } = await (supabase as any).rpc('network_find', { p_q: String(q).trim(), p_limit: limit })
-  const ids = (data || []).map((r: { network_find: any; id: any }) => (typeof r === 'string' ? r : r.network_find || r.id)).filter(Boolean)
+  const { data } = await supabase!.rpc('network_find', { p_q: String(q).trim(), p_limit: limit })
+  const ids = (data || []).map((r: string | { network_find?: string; id?: string }) => (typeof r === 'string' ? r : r.network_find || r.id)).filter((id): id is string => Boolean(id))
   await loadPeople(ids)
   return ids
 }
 export async function suggestions(limit = 5) {
   if (!ok() || !me()) return []
-  const { data } = await (supabase as any).rpc('network_suggestions', { p_limit: limit })
-  const ids = (data || []).map((r: { network_suggestions: any; id: any }) => (typeof r === 'string' ? r : r.network_suggestions || r.id)).filter(Boolean)
+  const { data } = await supabase!.rpc('network_suggestions', { p_limit: limit })
+  const ids = (data || []).map((r: string | { network_suggestions?: string; id?: string }) => (typeof r === 'string' ? r : r.network_suggestions || r.id)).filter((id): id is string => Boolean(id))
   await loadPeople(ids)
   return ids
 }
@@ -317,8 +327,8 @@ export async function markSeen() {
 
 export async function loadSpaces() {
   if (!ok() || !session.value) { net.spaces = []; return [] }
-  const { data } = await (supabase as any).rpc('network_spaces')
-  net.spaces = (data || []).filter((s: { channel_id: any }) => s.channel_id)
+  const { data } = await supabase!.rpc('network_spaces')
+  net.spaces = ((data as NetworkSpace[] | null) || []).filter((s) => s.channel_id)
   return net.spaces
 }
 export async function pin(spaceId: any, on: any) {
@@ -387,27 +397,27 @@ export async function publish({ text, audience, files = [], alts = [], replyTo =
   return { kind: 'post', id: data.id }
 }
 
-export async function remove(postId: string|number) {
+export async function remove(postId: string) {
   const p = net.posts[postId]
-  const { error } = await (supabase as any).from('network_posts').delete().eq('id', postId).eq('author_id', me())
+  const { error } = await supabase!.from('network_posts').delete().eq('id', postId).eq('author_id', me()!)
   if (error) throw error
   if (p && p.media && p.media.length) await supabase!.storage.from('network').remove(p.media.flatMap((im: { path: any; poster: any }) => [im.path, im.poster]).filter(Boolean)).catch(() => {})
   delete net.posts[postId]
 }
 
 /* a like or a repost: the card moves at once and moves back if the database says no */
-async function mark(table: string, postId: string|number, on: boolean) {
+async function mark(table: 'network_likes' | 'network_reposts', postId: string, on: boolean) {
   const which = table === 'network_likes' ? 'like' : 'repost'
   const before = net.posts[postId]
   if (before) net.posts[postId] = toggled(before, which, on)
   const q = on
-    ? (supabase as any).from(table).insert({ author_id: me(), post_id: postId })
-    : (supabase as any).from(table).delete().eq('author_id', me()).eq('post_id', postId)
+    ? supabase!.from(table).insert({ author_id: me()!, post_id: postId })
+    : supabase!.from(table).delete().eq('author_id', me()!).eq('post_id', postId)
   const { error } = await q
   if (error) { if (before) net.posts[postId] = before; throw error }
 }
-export const like = (postId: string|number, on: boolean) => mark('network_likes', postId, on)
-export const repost = (postId: string|number, on: boolean) => mark('network_reposts', postId, on)
+export const like = (postId: string, on: boolean) => mark('network_likes', postId, on)
+export const repost = (postId: string, on: boolean) => mark('network_reposts', postId, on)
 
 export async function follow(userId: any, on: any) {
   const q = on
