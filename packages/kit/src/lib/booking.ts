@@ -24,7 +24,7 @@ import { offeringType } from 'platformkit/supabase/functions/_shared/sessions/of
 
 /* a call to one of the booking functions; an answer with an error becomes one */
 async function call(name: string, body: any) {
-  const { data, error } = await (supabase as any).functions.invoke(name, { body })
+  const { data, error } = await supabase!.functions.invoke(name, { body })
   const fail = (msg: string|undefined, code: string, extra: any) => { const e: any = new Error(msg); e.code = code || ''; Object.assign(e, extra || {}); throw e }
   if (error) {
     let msg = error.message || 'request failed', code = '', extra = {}
@@ -117,14 +117,14 @@ export { OFFERING, isOffering as isOfferingEvent, offeringId } from 'platformkit
 import { managedFor } from 'platformkit/supabase/functions/_shared/sessions/managed.js'
 export { managedEvent, parseManaged } from 'platformkit/supabase/functions/_shared/sessions/managed.js'
 export async function loadOfferings() {
-  const { data, error } = await (supabase as any).rpc('provider_offerings_live')
+  const { data, error } = await supabase!.rpc('provider_offerings_live')
   if (error || !Array.isArray(data)) return []
   return data.map(asOption)
 }
 /* the offerings on one person's page: the same shape, without their name on each — the page is
    theirs and says whose it is once, at the top */
 export async function offeringsOf(username: any) {
-  const { data, error } = await (supabase as any).rpc('provider_offerings_of', { p_username: String(username || '') })
+  const { data, error } = await supabase!.rpc('provider_offerings_of', { p_username: String(username || '') })
   if (error || !Array.isArray(data)) return []
   return data.map(asOption)
 }
@@ -139,7 +139,7 @@ export async function managedOf(username: any) {
   if (!managed.length || !username) return []
   /* a membership is somebody's, not the public's, so the browser never reads the rows: it asks which
      PUBLISHED teams this person gives for, which says no more than the copy itself does */
-  const { data } = await (supabase as any).rpc('teams_giving', { p_username: String(username) })
+  const { data } = await supabase!.rpc('teams_giving', { p_username: String(username) })
   const teams = new Set(Array.isArray(data) ? data : [])
   /* wearing the card's shape, as an offering does through asOption below — a surface should have
      one kind of thing to draw, not two that differ in what they call a length */

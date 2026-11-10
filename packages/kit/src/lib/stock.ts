@@ -38,7 +38,7 @@ export async function loadStock(skus: any) {
   if (!configured || !want.length) return counts.value
   for (const s of want) asked.add(s)
   try {
-    const { data, error } = await (supabase as any).from('inventory').select('sku, variant, stocked, reserved').in('sku', want)
+    const { data, error } = await supabase!.from('inventory').select('sku, variant, stocked, reserved').in('sku', want)
     if (error) return counts.value          /* no table, no rights, no matter: unknown is buyable */
     const next = { ...(counts.value || {}) }
     for (const r of data || []) next[stockKey(r.sku, r.variant)] = { stocked: r.stocked, reserved: r.reserved }

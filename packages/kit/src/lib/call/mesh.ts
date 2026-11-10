@@ -108,7 +108,7 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
       trouble.value = 'no-devices'
       return
     }
-    channel = (supabase as any).channel(topic, { config: { private: true, broadcast: { self: false } } })
+    channel = supabase!.channel(topic, { config: { private: true, broadcast: { self: false } } })
     for (const e of ['hello', 'offer', 'answer', 'ice', 'bye']) channel.on('broadcast', { event: e }, ({ payload }: any) => heard(e, payload))
     await new Promise((res) => channel.subscribe((s: unknown) => { if (s === 'SUBSCRIBED' || s === 'CHANNEL_ERROR' || s === 'TIMED_OUT') res(s) }))
     state.value = 'live'
@@ -144,7 +144,7 @@ export function meshCall({ token, topic, iceServers, relay, max, me }: any) {
     for (const [id] of pcs) drop(id)
     if (local.stream) for (const t of local.stream.getTracks()) t.stop()
     local.stream = null
-    if (channel) { await (supabase as any).removeChannel(channel); channel = null }
+    if (channel) { await supabase!.removeChannel(channel); channel = null }
   }
 
   return { peers, state, trouble, local, join, leave, setMic, setCam, records: false, provider: 'mesh' }

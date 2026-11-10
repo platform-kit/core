@@ -72,7 +72,7 @@ const POLICY: any = Object.values(import.meta.glob('#content/desk-policy.json', 
 let marks = {}
 async function loadMarks() {
   try {
-    const { data } = await (supabase as any).from('desk_done').select('source, ref, resolved_at').eq('user_id', uid())
+    const { data } = await supabase!.from('desk_done').select('source, ref, resolved_at').eq('user_id', uid())
     marks = doneSet(data || [])
   } catch (e) { marks = {} }
 }
@@ -240,7 +240,7 @@ export async function assign(row: any, userId: any) {
 
 export async function loadAgents() {
   if (!on()) return
-  try { const { data } = await (supabase as any).rpc('support_agents'); agents.value = data || [] } catch (e) { agents.value = [] }
+  try { const { data } = await supabase!.rpc('support_agents'); agents.value = data || [] } catch (e) { agents.value = [] }
 }
 
 export async function markRead(row: { source: string|number; id: any; seq: any; key: any }) {
@@ -259,7 +259,7 @@ const soon = () => { clearTimeout(again); again = setTimeout(() => load(), 400) 
 export function start() {
   if (!on() || live) return
   load()
-  live = (supabase as any).channel('desk:' + uid())
+  live = supabase!.channel('desk:' + uid())
   if (sources.value.includes('support')) live.on('postgres_changes', { event: '*', schema: 'public', table: 'support_messages' }, soon)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_conversations' }, soon)
   if (sources.value.includes('coaching')) live.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, soon)
@@ -268,7 +268,7 @@ export function start() {
 
 export function stop() {
   clearTimeout(again)
-  if (live) { (supabase as any).removeChannel(live); live = null }
+  if (live) { supabase!.removeChannel(live); live = null }
 }
 
 const forget = () => { stop(); rows.value = []; booted.value = false; closeRow() }

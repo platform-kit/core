@@ -35,7 +35,7 @@ export const filePath = (channelId: string, messageId: string, ext: string) => c
  * sealed, or sealed to a device this one is not, and the surface has already said so.
  */
 async function opened(m: { attachment: any; media: any; attachment_type: any }) {
-  const { data, error } = await (supabase as any).storage.from(BUCKET).download(m.attachment)
+  const { data, error } = await supabase!.storage.from(BUCKET).download(m.attachment)
   if (error || !data) return null
   const crypt = await import('./crypto.js')
   const bytes = await crypt.openBytes(await data.arrayBuffer(), m.media)

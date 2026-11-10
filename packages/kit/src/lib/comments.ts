@@ -15,7 +15,7 @@ const on = () => !!supabase && configured
    placeholder: a conversation with holes in it reads as one somebody has tampered with. */
 export async function commentsOn(kind: any, subject: any, limit = 200) {
   if (!on()) return []
-  const { data, error } = await (supabase as any).rpc('comments_on', { p_kind: kind, p_subject: subject, p_limit: limit })
+  const { data, error } = await supabase!.rpc('comments_on', { p_kind: kind, p_subject: subject, p_limit: limit })
   return error ? [] : (data || [])
 }
 
@@ -23,24 +23,24 @@ export async function commentsOn(kind: any, subject: any, limit = 200) {
    Disqus's own count script asks for. */
 export async function commentCounts(kind: any, subjects = []) {
   if (!on() || !subjects.length) return {}
-  const { data, error } = await (supabase as any).rpc('comment_counts', { p_kind: kind, p_subjects: subjects })
+  const { data, error } = await supabase!.rpc('comment_counts', { p_kind: kind, p_subjects: subjects })
   return error ? {} : (data || {})
 }
 
 /* SAYING SOMETHING. The title and the address are only ever used where the subject does not exist
    yet and its KIND is open — an embed naming the page it is on. Everything of the site's own is
    projected and already has both. A caller may name a thread; it may not rename one. */
-export async function say(kind: any, subject: any, body: any, parent: string | null = null, title: string | null = null, href: string | null = null) {
+export async function say(kind: any, subject: any, body: any, parent: string | null = null, title: string | null = null, href: string | null = null): Promise<{ error?: string; [k: string]: unknown }> {
   if (!on()) return { error: 'offline' }
-  const { data, error } = await (supabase as any).rpc('comment_say', {
+  const { data, error } = await supabase!.rpc('comment_say', {
     p_kind: kind, p_subject: subject, p_body: body, p_parent: parent, p_title: title, p_href: href,
   })
-  return error ? { error: error.message } : (data || {})
+  return error ? { error: error.message } : ((data || {}) as { [k: string]: unknown })
 }
 
 export async function unsay(id: any) {
   if (!on()) return { error: 'offline' }
-  const { data, error } = await (supabase as any).rpc('comment_unsay', { p_comment: id })
+  const { data, error } = await supabase!.rpc('comment_unsay', { p_comment: id })
   return error ? { error: error.message } : (data || {})
 }
 
@@ -53,12 +53,12 @@ export async function unsay(id: any) {
 /* an emoji, several per person. Pressing one already left takes it back. */
 export async function react(id: any, emoji: any, on_ = true, surface = 'comment') {
   if (!on()) return { error: 'offline' }
-  const me = (await (supabase as any).auth.getUser()).data.user
+  const me = (await supabase!.auth.getUser()).data.user
   if (!me) return { error: 'sign-in' }
   const row = { surface, target_id: id, user_id: me.id, emoji }
   const { error } = on_
-    ? await (supabase as any).from('reactions').insert(row)
-    : await (supabase as any).from('reactions').delete().match(row)
+    ? await supabase!.from('reactions').insert(row)
+    : await supabase!.from('reactions').delete().match(row)
   return error ? { error: error.message } : { ok: true }
 }
 
@@ -67,12 +67,12 @@ export async function react(id: any, emoji: any, on_ = true, surface = 'comment'
    holds is not a vote of nought, it is no vote. */
 export async function vote(id: any, next: any, surface = 'comment') {
   if (!on()) return { error: 'offline' }
-  const me = (await (supabase as any).auth.getUser()).data.user
+  const me = (await supabase!.auth.getUser()).data.user
   if (!me) return { error: 'sign-in' }
   const key = { surface, target_id: id, user_id: me.id }
   const { error } = next
-    ? await (supabase as any).from('votes').upsert({ ...key, vote: next }, { onConflict: 'surface,target_id,user_id' })
-    : await (supabase as any).from('votes').delete().match(key)
+    ? await supabase!.from('votes').upsert({ ...key, vote: next }, { onConflict: 'surface,target_id,user_id' })
+    : await supabase!.from('votes').delete().match(key)
   return error ? { error: error.message } : { ok: true }
 }
 
@@ -82,6 +82,6 @@ export async function vote(id: any, next: any, surface = 'comment') {
    Null means the thing takes no comments, which is not an error: most things do not. */
 export async function commentSubject(kind: any, subject: any) {
   if (!on()) return null
-  const { data, error } = await (supabase as any).rpc('comment_subject', { p_kind: kind, p_subject: subject })
+  const { data, error } = await supabase!.rpc('comment_subject', { p_kind: kind, p_subject: subject })
   return error ? null : (data || null)
 }

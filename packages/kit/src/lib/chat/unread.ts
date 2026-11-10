@@ -43,7 +43,7 @@ function listen() {
     .subscribe((status) => { if (status === 'SUBSCRIBED') refresh() })
 }
 function unlisten() {
-  if (channel) { try { (supabase as any).removeChannel(channel) } catch (e) { /* gone */ } channel = null }
+  if (channel) { try { supabase!.removeChannel(channel) } catch (e) { /* gone */ } channel = null }
 }
 
 export function startUnreadWatch() {

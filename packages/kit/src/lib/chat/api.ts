@@ -91,8 +91,8 @@ export async function openThread(id: string) {
   thread.loading = true
   try {
     const [{ data: msgs, error: e1 }, { data: mem, error: e2 }] = await Promise.all([
-      (supabase as any).from('messages').select('*').eq('conversation_id', id).order('created_at', { ascending: false }).limit(PAGE),
-      (supabase as any).from('conversation_members').select('*').eq('conversation_id', id),
+      supabase!.from('messages').select('*').eq('conversation_id', id).order('created_at', { ascending: false }).limit(PAGE),
+      supabase!.from('conversation_members').select('*').eq('conversation_id', id),
     ])
     if (e1) throw e1
     if (e2) throw e2
@@ -102,7 +102,7 @@ export async function openThread(id: string) {
     thread.members = mem || []
     const ids = thread.messages.map((m: { id: any }) => m.id)
     if (ids.length) {
-      const { data: rx } = await (supabase as any).from('message_reactions').select('*').eq('conversation_id', id)
+      const { data: rx } = await supabase!.from('message_reactions').select('*').eq('conversation_id', id)
       thread.reactions = rx || []
     }
     subscribe(id)
@@ -118,7 +118,7 @@ export async function loadEarlier() {
   if (!on() || !thread.id || thread.done || thread.loading || !thread.messages.length) return
   thread.loading = true
   const before = thread.messages[0].created_at
-  const { data } = await (supabase as any).from('messages').select('*').eq('conversation_id', thread.id)
+  const { data } = await supabase!.from('messages').select('*').eq('conversation_id', thread.id)
     .lt('created_at', before).order('created_at', { ascending: false }).limit(PAGE)
   const rows = (data || []).reverse()
   thread.messages = mergeMessages(thread.messages, rows)
@@ -127,7 +127,7 @@ export async function loadEarlier() {
 }
 
 export function closeThread() {
-  if (channel) { try { (supabase as any).removeChannel(channel) } catch (e) { /* gone */ } channel = null }
+  if (channel) { try { supabase!.removeChannel(channel) } catch (e) { /* gone */ } channel = null }
   if (seenTimer) { clearInterval(seenTimer); seenTimer = null }
   thread.id = null; thread.peer = null
   thread.messages = []; thread.reactions = []; thread.members = []; thread.done = false
@@ -147,7 +147,7 @@ export function myMember() {
 function subscribe(id: string) {
   if (channel) return
   const filter = 'conversation_id=eq.' + id
-  channel = (supabase as any).channel('chat:' + id)
+  channel = supabase!.channel('chat:' + id)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter }, ({ new: row }: any) => {
       thread.messages = mergeMessages(thread.messages, [row])
       touchInbox(row)
@@ -173,7 +173,7 @@ function subscribe(id: string) {
 async function catchUp(id: string) {
   if (thread.id !== id) return
   const last = thread.messages[thread.messages.length - 1]
-  const q = (supabase as any).from('messages').select('*').eq('conversation_id', id).order('created_at', { ascending: true }).limit(PAGE)
+  const q = supabase!.from('messages').select('*').eq('conversation_id', id).order('created_at', { ascending: true }).limit(PAGE)
   const { data } = await (last ? q.gt('created_at', last.created_at) : q)
   if (data && data.length && thread.id === id) {
     thread.messages = mergeMessages(thread.messages, data)
@@ -198,7 +198,7 @@ export function markRead() {
   me.last_read_at = at
   clearTimeout(readTimer)
   readTimer = setTimeout(async () => {
-    await (supabase as any).from('conversation_members').update({ last_read_at: at }).eq('conversation_id', thread.id).eq('user_id', uid())
+    await supabase!.from('conversation_members').update({ last_read_at: at }).eq('conversation_id', thread.id).eq('user_id', uid())
     const row = inbox.value.find((c: { id: any }) => c.id === thread.id)
     if (row) row.unread = 0
     refreshUnread()
@@ -209,12 +209,12 @@ export function markRead() {
 export async function seen() {
   if (!on() || !thread.id) return
   const at = new Date().toISOString()
-  await (supabase as any).from('conversation_members').update({ last_seen_at: at }).eq('conversation_id', thread.id).eq('user_id', uid())
+  await supabase!.from('conversation_members').update({ last_seen_at: at }).eq('conversation_id', thread.id).eq('user_id', uid())
 }
 
 /* ---- sending ---- */
 async function notify(message_id: string) {
-  try { await (supabase as any).functions.invoke('chat-notify', { body: { message_id } }) } catch (e) { /* the email is a courtesy */ }
+  try { await supabase!.functions.invoke('chat-notify', { body: { message_id } }) } catch (e) { /* the email is a courtesy */ }
 }
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : (String([1e7]) + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c: string) => (Number(c) ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (Number(c) / 4)))).toString(16)))
@@ -224,7 +224,7 @@ export async function sendText(body: any, replyTo: any) {
   if (!on() || !thread.id || !text) return null
   const row = { id: newId(), conversation_id: thread.id, sender_id: uid(), kind: 'text', body: text, reply_to: replyTo || null, created_at: new Date().toISOString(), deleted_at: null, pending: true }
   thread.messages = mergeMessages(thread.messages, [{ ...row }])
-  const { error } = await (supabase as any).from('messages').insert({ id: row.id, conversation_id: row.conversation_id, sender_id: row.sender_id, kind: 'text', body: text, reply_to: row.reply_to })
+  const { error } = await supabase!.from('messages').insert({ id: row.id, conversation_id: row.conversation_id, sender_id: row.sender_id, kind: 'text', body: text, reply_to: row.reply_to })
   if (error) { thread.messages = thread.messages.filter((m: { id: any }) => m.id !== row.id); throw error }
   thread.messages = mergeMessages(thread.messages, [{ ...row, pending: false }])
   touchInbox(row)
@@ -241,9 +241,9 @@ export async function sendVoice(blob: any, seconds: any, replyTo: any, transcrip
   const path = thread.id + '/' + id + '.mp3'
   const row = { id, conversation_id: thread.id, sender_id: uid(), kind: 'voice', body: transcript || null, audio_path: path, seconds, reply_to: replyTo || null, created_at: new Date().toISOString(), deleted_at: null, pending: true, blob }
   thread.messages = mergeMessages(thread.messages, [{ ...row }])
-  const up = await (supabase as any).storage.from('chat').upload(path, blob, { contentType: 'audio/mpeg', cacheControl: '31536000', upsert: false })
+  const up = await supabase!.storage.from('chat').upload(path, blob, { contentType: 'audio/mpeg', cacheControl: '31536000', upsert: false })
   if (up.error) { thread.messages = thread.messages.filter((m: { id: any }) => m.id !== id); throw up.error }
-  const { error } = await (supabase as any).from('messages').insert({ id, conversation_id: thread.id, sender_id: uid(), kind: 'voice', body: transcript || null, audio_path: path, seconds, reply_to: row.reply_to })
+  const { error } = await supabase!.from('messages').insert({ id, conversation_id: thread.id, sender_id: uid(), kind: 'voice', body: transcript || null, audio_path: path, seconds, reply_to: row.reply_to })
   if (error) { thread.messages = thread.messages.filter((m: { id: any }) => m.id !== id); throw error }
   thread.messages = mergeMessages(thread.messages, [{ ...row, pending: false }])
   touchInbox(row)
@@ -268,7 +268,7 @@ export async function sendFile(file: { name: any; type: any; size: any }, replyT
   thread.messages = mergeMessages(thread.messages, [{ ...row }])
   const up = await (supabase as any).storage.from('chat').upload(path, file, { contentType: file.type || undefined, upsert: false })
   if (up.error) { thread.messages = thread.messages.filter((m: { id: any }) => m.id !== id); throw up.error }
-  const { error } = await (supabase as any).from('messages').insert({
+  const { error } = await supabase!.from('messages').insert({
     id, conversation_id: thread.id, sender_id: uid(), kind: 'file', attachment_path: path,
     attachment_name: clean, attachment_type: row.attachment_type, attachment_size: row.attachment_size, reply_to: row.reply_to })
   if (error) { thread.messages = thread.messages.filter((m: { id: any }) => m.id !== id); throw error }
@@ -289,7 +289,7 @@ export async function react(message_id: string, emoji: string) {
   const me = uid()
   const had = thread.reactions.some((r: { message_id: any; user_id: any; emoji: any }) => r.message_id === message_id && r.user_id === me && r.emoji === emoji)
   thread.reactions = toggleReaction(thread.reactions, message_id, me, emoji).map((r) => (r.conversation_id ? r : { ...r, conversation_id: thread.id }))
-  if (had) await (supabase as any).from('message_reactions').delete().match({ message_id, user_id: me, emoji })
+  if (had) await supabase!.from('message_reactions').delete().match({ message_id, user_id: me, emoji })
   else await (supabase as any).from('message_reactions').insert({ message_id, user_id: me, emoji })
 }
 
@@ -298,7 +298,7 @@ export async function remove(message_id: any) {
   if (!on() || !thread.id) return
   const at = new Date().toISOString()
   thread.messages = mergeMessages(thread.messages, [{ id: message_id, deleted_at: at }])
-  await (supabase as any).from('messages').update({ deleted_at: at }).eq('id', message_id)
+  await supabase!.from('messages').update({ deleted_at: at }).eq('id', message_id)
   lastInInbox({ id: message_id, conversation_id: thread.id, deleted_at: at })
 }
 

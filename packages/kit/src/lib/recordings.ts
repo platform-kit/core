@@ -19,7 +19,7 @@ export async function recordingFor(uid: any, fresh = false) {
 }
 /* an administrator's Fetch again: the pull asked for one booking, its tries reset */
 export async function fetchAgain(uid: any) {
-  const { data, error } = await (supabase as any).functions.invoke('session-recordings', { body: { action: 'pull', uid } })
+  const { data, error } = await supabase!.functions.invoke('session-recordings', { body: { action: 'pull', uid } })
   if (error) throw error
   cache.delete(uid)
   return data

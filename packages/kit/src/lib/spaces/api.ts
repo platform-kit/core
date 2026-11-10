@@ -91,20 +91,20 @@ export async function boot() {
   loading.value = true
   /* a private topic is authorised by the reader's own token, and the client only hands realtime that
      token on a sign-in event — a session restored from storage never fired one. Hand it over here. */
-  try { (supabase as any).realtime.setAuth(session.value.access_token) } catch (e) { /* older client */ }
+  try { supabase!.realtime.setAuth(session.value.access_token) } catch (e) { /* older client */ }
   try {
     const [s, c, u, m] = await Promise.all([
       /* the file's own arrangement, not the alphabet: a space says where it sits (position) and under
          which heading (group), and every member sees the same one */
-      (supabase as any).from('spaces').select('*').is('archived_at', null).order('position').order('name'),
-      (supabase as any).from('channels').select('*').is('archived_at', null).order('name'),
+      supabase!.from('spaces').select('*').is('archived_at', null).order('position').order('name'),
+      supabase!.from('channels').select('*').is('archived_at', null).order('name'),
       rpc('space_unread'),
       /* THE SPACES THIS PERSON IS IN, which is not the same as the spaces they may SELECT: an
          administrator's policy shows them every space on the instance, and the surface listing one
          they are not a member of gives them a row that does nothing when pressed — no rooms, no
          way in, no reason given. The nav is somebody's own places; an administrator looks at every
          space in the admin, which is where that belongs. */
-      (supabase as any).from('space_members').select('space_id, dms').eq('user_id', session.value.user.id),
+      supabase!.from('space_members').select('space_id, dms').eq('user_id', session.value.user.id),
     ])
     if (s.error) throw s.error
     if (c.error) throw c.error
@@ -192,7 +192,7 @@ export const isSealed = (channelId: string) => {
 async function recipients(channelId: string) {
   const c = channels.value.find((x: { id: any }) => x.id === channelId)
   if (!c) return []
-  const { data } = await (supabase as any).from('space_members').select('user_id').eq('space_id', c.space_id)
+  const { data } = await supabase!.from('space_members').select('user_id').eq('space_id', c.space_id)
   return (data || []).map((r: { user_id: any }) => r.user_id)
 }
 
@@ -373,7 +373,7 @@ export async function firstReplies(roots: string|any[], n = 2) {
    row says which surface it was left on. The room's own shape is unchanged — the name is put back
    on the way in, so nothing above here knows the column moved. */
 async function loadReactions(id: string) {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase!
     .from('reactions').select('message_id:target_id, channel_id, user_id, emoji')
     .eq('surface', 'message').eq('channel_id', id)
   if (!error) open.reactions = data || []
@@ -440,7 +440,7 @@ export async function send(channelId: string, body: string, opts: any = {}) {
       return null
     }
   }
-  const { data, error } = await (supabase as any).from('space_messages').insert(row).select().single()
+  const { data, error } = await supabase!.from('space_messages').insert(row).select().single()
   drop(temp.id)
   if (error) { open.error = error; console.error('spaces: the message was not written —', error.message, error.details || '', error.hint || ''); return null }
   land(await unseal(data))
@@ -467,7 +467,7 @@ export const votes = ref<any>([])
 export async function loadVotes(ids: string[] = []) {
   const want = (ids || []).filter(Boolean)
   if (!on() || !want.length) { votes.value = []; return [] }
-  const { data } = await (supabase as any).from('space_poll_votes').select('message_id, option_key, user_id').in('message_id', want)
+  const { data } = await supabase!.from('space_poll_votes').select('message_id, option_key, user_id').in('message_id', want)
   votes.value = data || []
   return votes.value
 }
@@ -479,10 +479,10 @@ export async function vote(messageId: any, optionKey: any, { multi = false } = {
   if (!on() || !messageId || !optionKey) return false
   const me = uid()
   if (!multi) {
-    await (supabase as any).from('space_poll_votes').delete().eq('message_id', messageId).eq('user_id', me)
+    await supabase!.from('space_poll_votes').delete().eq('message_id', messageId).eq('user_id', me)
     votes.value = votes.value.filter((v: { message_id: any; user_id: any }) => !(v.message_id === messageId && v.user_id === me))
   }
-  const { error } = await (supabase as any).from('space_poll_votes').insert({ message_id: messageId, option_key: optionKey, user_id: me })
+  const { error } = await supabase!.from('space_poll_votes').insert({ message_id: messageId, option_key: optionKey, user_id: me })
   if (error) return false
   votes.value = [...votes.value, { message_id: messageId, option_key: optionKey, user_id: me }]
   return true
@@ -491,7 +491,7 @@ export async function vote(messageId: any, optionKey: any, { multi = false } = {
 export async function unvote(messageId: any, optionKey: any) {
   if (!on() || !messageId) return false
   const me = uid()
-  const { error } = await (supabase as any).from('space_poll_votes').delete()
+  const { error } = await supabase!.from('space_poll_votes').delete()
     .eq('message_id', messageId).eq('user_id', me).eq('option_key', optionKey)
   if (error) return false
   votes.value = votes.value.filter((v: { message_id: any; user_id: any; option_key: any }) => !(v.message_id === messageId && v.user_id === me && v.option_key === optionKey))
@@ -501,7 +501,7 @@ export async function unvote(messageId: any, optionKey: any) {
 /* closing keeps the result: the author's to do, and whoever the space granted keeping the room */
 export async function closePoll(messageId: any) {
   if (!on() || !messageId) return false
-  const { data } = await (supabase as any).rpc('space_poll_close', { p_message: messageId })
+  const { data } = await supabase!.rpc('space_poll_close', { p_message: messageId })
   if (!data) return false
   const at = new Date().toISOString()
   open.messages = open.messages.map((m: { id: any }) => (m.id === messageId ? { ...m, poll_closed_at: at } : m))
@@ -523,7 +523,7 @@ export async function closePoll(messageId: any) {
  */
 export async function chooseOffer(messageId: any, key: any) {
   if (!on() || !messageId || !key) return null
-  const { data } = await (supabase as any).rpc('space_choose', { p_message: messageId, p_key: key })
+  const { data } = await supabase!.rpc('space_choose', { p_message: messageId, p_key: key })
   if (!data) return null
   const was = [...open.messages, thread.root, ...thread.replies].find((m) => m && m.id === messageId)
   /* the same act, said the same way, wherever it happened */
@@ -582,7 +582,7 @@ export async function sendVoice(channelId: string, blob: { arrayBuffer: () => an
   if (up.error) { drop(id); open.error = up.error; return null }
   const { data, error } = await (supabase as any).from('space_messages').insert(body).select().single()
   if (error) {
-    await (supabase as any).storage.from('spaces').remove([path]).catch(() => {})
+    await supabase!.storage.from('spaces').remove([path]).catch(() => {})
     drop(id)
     open.error = error
     return null
@@ -638,11 +638,11 @@ export async function sendFile(channelId: string, file: any, opts: any = {}) {
       return null
     }
   }
-  const up = await (supabase as any).storage.from('spaces').upload(path, put, { contentType: putType, cacheControl: '31536000', upsert: false })
+  const up = await supabase!.storage.from('spaces').upload(path, put, { contentType: putType, cacheControl: '31536000', upsert: false })
   if (up.error) { drop(id); open.error = up.error; return null }
   const { data, error } = await (supabase as any).from('space_messages').insert(body).select().single()
   if (error) {
-    await (supabase as any).storage.from('spaces').remove([path]).catch(() => {})
+    await supabase!.storage.from('spaces').remove([path]).catch(() => {})
     drop(id); open.error = error; return null
   }
   land({ ...data, blob: file, attachment_name: file.name, attachment_type: type, attachment_size: file.size, body: said })
@@ -670,13 +670,13 @@ export async function sendMedia(channelId: string, files: string|any[], opts: an
       const id = newId()
       const path = channelId + '/' + id + '.' + EXT[type]
       const info = await probe(f)
-      const up = await (supabase as any).storage.from('spaces').upload(path, f, { contentType: type, cacheControl: '31536000', upsert: false })
+      const up = await supabase!.storage.from('spaces').upload(path, f, { contentType: type, cacheControl: '31536000', upsert: false })
       if (up.error) throw up.error
       put.push(path)
       let poster
       if (info.poster) {
         poster = channelId + '/' + id + '.poster.jpg'
-        const pu = await (supabase as any).storage.from('spaces').upload(poster, info.poster, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false })
+        const pu = await supabase!.storage.from('spaces').upload(poster, info.poster, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false })
         if (pu.error) poster = undefined; else put.push(poster)
       }
       media.push({ kind: info.kind || 'image', path, alt: '', mime: type, size: f.size,
@@ -689,7 +689,7 @@ export async function sendMedia(channelId: string, files: string|any[], opts: an
     land(data)
     return data
   } catch (e) {
-    if (put.length) await (supabase as any).storage.from('spaces').remove(put).catch(() => {})
+    if (put.length) await supabase!.storage.from('spaces').remove(put).catch(() => {})
     open.error = e
     return null
   }
@@ -701,7 +701,7 @@ export async function signMedia(messages: any) {
   const paths = []
   for (const m of messages || []) for (const im of (m && m.media) || []) for (const at of [im.path, im.poster]) if (at && !mediaUrls[at]) paths.push(at)
   if (!paths.length || !on()) return
-  const { data } = await (supabase as any).storage.from('spaces').createSignedUrls(paths, 3600)
+  const { data } = await supabase!.storage.from('spaces').createSignedUrls(paths, 3600)
   for (const x of data || []) if (x.signedUrl && x.path) mediaUrls[x.path] = x.signedUrl
 }
 
@@ -727,7 +727,7 @@ export async function withdraw(id: any) {
  */
 export async function loadPins(channelId: string) {
   if (!on() || !channelId) return []
-  const { data } = await (supabase as any).rpc('space_pinned', { p_channel: channelId })
+  const { data } = await supabase!.rpc('space_pinned', { p_channel: channelId })
   if (open.id === channelId) open.pins = data || []
   return data || []
 }
@@ -737,7 +737,7 @@ export async function loadPins(channelId: string) {
    message of one room into another. */
 export async function pin(messageId: any, onOff = true, note = null) {
   if (!on() || !messageId) return { error: 'no message' }
-  const { data, error } = await (supabase as any).rpc('space_pin', { p_message: messageId, p_on: !!onOff, p_note: note })
+  const { data, error } = await supabase!.rpc('space_pin', { p_message: messageId, p_on: !!onOff, p_note: note })
   if (error) return { error: error.message }
   await loadPins(open.id)
   return data || {}
@@ -750,11 +750,11 @@ export async function react(messageId: any, emoji: any) {
   const channelId = open.id
   if (had) {
     open.reactions = open.reactions.filter((r: any) => r !== had)
-    await (supabase as any).from('reactions').delete()
+    await supabase!.from('reactions').delete()
       .eq('surface', 'message').eq('target_id', messageId).eq('user_id', me).eq('emoji', emoji)
   } else {
     open.reactions = [...open.reactions, { message_id: messageId, channel_id: channelId, user_id: me, emoji }]
-    await (supabase as any).from('reactions').insert({ surface: 'message', target_id: messageId, channel_id: channelId, user_id: me, emoji })
+    await supabase!.from('reactions').insert({ surface: 'message', target_id: messageId, channel_id: channelId, user_id: me, emoji })
   }
 }
 
@@ -782,7 +782,7 @@ export async function markRead(channelId: string, seq?: number | null) {
 
 export async function setNotify(channelId: any, notify: any) {
   if (!on() || !channelId) return
-  await (supabase as any).from('channel_members').update({ notify }).eq('channel_id', channelId).eq('user_id', uid())
+  await supabase!.from('channel_members').update({ notify }).eq('channel_id', channelId).eq('user_id', uid())
   const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   if (row) row.notify = notify
 }
@@ -802,7 +802,7 @@ export const isHushed = (kind: string, ref: any) => !!hushOf(kind, ref)
 
 export async function hush(kind: string, ref: any, until: string | null = null) {
   if (!on() || !kind || !ref) return
-  const { error } = await (supabase as any).rpc('space_mute', { p_kind: kind, p_ref: ref, p_until: until })
+  const { error } = await supabase!.rpc('space_mute', { p_kind: kind, p_ref: ref, p_until: until })
   if (error) return
   const had = hushOf(kind, ref)
   if (had) had.until = until
@@ -812,7 +812,7 @@ export async function hush(kind: string, ref: any, until: string | null = null) 
 }
 export async function unhush(kind: string, ref: any) {
   if (!on() || !kind || !ref) return
-  const { error } = await (supabase as any).rpc('space_unmute', { p_kind: kind, p_ref: ref })
+  const { error } = await supabase!.rpc('space_unmute', { p_kind: kind, p_ref: ref })
   if (error) return
   hushes.value = hushes.value.filter((m: { kind: any; ref: any }) => !(m.kind === kind && m.ref === ref))
   if (kind !== 'person') unread.value = (await rpc('space_unread')) || []
@@ -820,13 +820,13 @@ export async function unhush(kind: string, ref: any) {
 
 export async function join(channelId: string) {
   if (!on() || !channelId) return
-  const { error } = await (supabase as any).from('channel_members').insert({ channel_id: channelId, user_id: uid() })
+  const { error } = await supabase!.from('channel_members').insert({ channel_id: channelId, user_id: uid() })
   if (!error) { unread.value = (await rpc('space_unread')) || []; watch(channelId) }
 }
 
 export async function leave(channelId: any) {
   if (!on() || !channelId) return
-  await (supabase as any).from('channel_members').delete().eq('channel_id', channelId).eq('user_id', uid())
+  await supabase!.from('channel_members').delete().eq('channel_id', channelId).eq('user_id', uid())
   unwatch(channelId)
   unread.value = unread.value.filter((r: { channel: any }) => r.channel !== channelId)
 }
@@ -836,7 +836,7 @@ export async function leave(channelId: any) {
    because it needs a secret; everything else here is the database's own gate. */
 export async function callFor(channelId: any) {
   if (!on() || !channelId) return null
-  const { data, error } = await (supabase as any).functions.invoke('spaces', { body: { action: 'call', channel: channelId } })
+  const { data, error } = await supabase!.functions.invoke('spaces', { body: { action: 'call', channel: channelId } })
   if (error) throw error
   return data
 }
@@ -862,7 +862,7 @@ export async function openDm(spaceId: any, peers: any) {
   }
   if (!id) return null
   unread.value = (await rpc('space_unread')) || []
-  channels.value = ((await (supabase as any).from('channels').select('*').is('archived_at', null)).data) || []
+  channels.value = ((await supabase!.from('channels').select('*').is('archived_at', null)).data) || []
   watch(id)
   return id
 }
@@ -881,19 +881,19 @@ export async function loadDms() { if (on()) dms.value = (await rpc('space_dms'))
 
 export async function save(message: { id: any; channel_id: any }) {
   if (!on() || !message) return
-  await (supabase as any).from('space_saved').insert({ user_id: uid(), message_id: message.id, channel_id: message.channel_id })
+  await supabase!.from('space_saved').insert({ user_id: uid(), message_id: message.id, channel_id: message.channel_id })
   await loadSaved()
 }
 export async function unsave(messageId: any) {
   if (!on()) return
-  await (supabase as any).from('space_saved').delete().eq('user_id', uid()).eq('message_id', messageId)
+  await supabase!.from('space_saved').delete().eq('user_id', uid()).eq('message_id', messageId)
   await loadSaved()
 }
 export const isSaved = (id: any) => saved.value.some((x: { id: any }) => x.id === id)
 
 export async function star(channelId: any, on_: any) {
   if (!on() || !channelId) return
-  await (supabase as any).from('channel_members').update({ starred: !!on_ }).eq('channel_id', channelId).eq('user_id', uid())
+  await supabase!.from('channel_members').update({ starred: !!on_ }).eq('channel_id', channelId).eq('user_id', uid())
   const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   if (row) row.starred = !!on_
 }
@@ -915,7 +915,7 @@ function loadDrafts() {
 /* who else is here, on the space's own topic */
 function watchHere(spaceId: string) {
   if (!on() || !spaceId || presence) return
-  presence = (supabase as any).channel('here:' + spaceId, { config: { private: true, presence: { key: uid() } } })
+  presence = supabase!.channel('here:' + spaceId, { config: { private: true, presence: { key: uid() } } })
     .on('presence', { event: 'sync' }, () => {
       const state = presence.presenceState()
       for (const k of Object.keys(here)) delete here[k]
@@ -1019,7 +1019,7 @@ function watchAll() {
 
 function watch(channelId: string) {
   if (!on() || !channelId || live.has(channelId)) return
-  const ch = (supabase as any).channel(topicOf(channelId), { config: { private: true, broadcast: { self: false } } })
+  const ch = supabase!.channel(topicOf(channelId), { config: { private: true, broadcast: { self: false } } })
     .on('broadcast', { event: 'message' }, ({ payload }: any) => arrived(channelId, payload))
     .on('broadcast', { event: 'edited' }, ({ payload }: any) => arrived(channelId, payload))
     .on('broadcast', { event: 'withdrawn' }, ({ payload }: any) => arrived(channelId, payload))
@@ -1038,7 +1038,7 @@ function watch(channelId: string) {
 
 function unwatch(channelId: any) {
   const ch = live.get(channelId)
-  if (ch) { (supabase as any).removeChannel(ch); live.delete(channelId) }
+  if (ch) { supabase!.removeChannel(ch); live.delete(channelId) }
 }
 
 /* the database's own send. A payload without its body is a message too large to carry: fetch it. */
@@ -1047,7 +1047,7 @@ async function arrived(channelId: string, payload: any) {
   /* a sealed message's words ARE its cipher, which the wake carries, so it is not a payload that
      lost its body and must not be fetched again */
   if (payload.cipher == null && payload.body === null && payload.kind !== 'system' && payload.deleted_at == null && payload.title == null) {
-    const { data } = await (supabase as any).from('space_messages').select('*').eq('id', payload.id).single()
+    const { data } = await supabase!.from('space_messages').select('*').eq('id', payload.id).single()
     if (data) land(await unseal(data))
     return
   }
@@ -1162,7 +1162,7 @@ export const everywhere = (lim = 30) => rpc('space_everywhere', { p_lim: lim })
 export const groups = ref<any>([])
 export async function loadGroups(spaceId: any) {
   if (!on() || !spaceId) { groups.value = []; return [] }
-  const { data } = await (supabase as any).from('space_roles').select('slug, name, colour, rank').eq('space_id', spaceId).order('rank')
+  const { data } = await supabase!.from('space_roles').select('slug, name, colour, rank').eq('space_id', spaceId).order('rank')
   groups.value = data || []
   return groups.value
 }
@@ -1183,7 +1183,7 @@ export async function setAbout(text: any) {
   const id = session.value && session.value.user && session.value.user.id
   if (!id) return false
   const about = String(text || '').trim().slice(0, 280)
-  const { error } = await (supabase as any).from('profiles').update({ about: about || null }).eq('id', id)
+  const { error } = await supabase!.from('profiles').update({ about: about || null }).eq('id', id)
   return !error
 }
 
@@ -1221,9 +1221,9 @@ export const mayModerate = (channel: any) => rpc('space_may', { p_channel: chann
 export const mayInvite = (channel: any) => rpc('space_may', { p_channel: channel, p_capability: 'invite' })
 
 export function stop() {
-  for (const [, ch] of live) (supabase as any).removeChannel(ch)
+  for (const [, ch] of live) supabase!.removeChannel(ch)
   live.clear()
-  if (presence) { (supabase as any).removeChannel(presence); presence = null; saying = null }
+  if (presence) { supabase!.removeChannel(presence); presence = null; saying = null }
   if (idleTimer) { clearInterval(idleTimer); idleTimer = null }
   if (typingTimer) { clearInterval(typingTimer); typingTimer = null }
 }
@@ -1266,7 +1266,7 @@ export async function loadScheduled() {
 export async function sendLater(channelId: any, body: any, when: { toISOString: () => any }, { thread = null } = {}) {
   if (!on() || !channelId) return { error: 'no room' }
   const at = when instanceof Date ? when.toISOString() : String(when)
-  const { data, error } = await (supabase as any).rpc('space_schedule', {
+  const { data, error } = await supabase!.rpc('space_schedule', {
     p_channel: channelId, p_body: String(body || ''), p_at: at, p_thread: thread,
   })
   if (error) return { error: error.message }
@@ -1277,6 +1277,6 @@ export async function sendLater(channelId: any, body: any, when: { toISOString: 
 /* taking one back. The policy is the same rule: theirs and nobody else's. */
 export async function unschedule(id: any) {
   if (!on() || !id) return
-  await (supabase as any).from('space_scheduled').delete().eq('id', id)
+  await supabase!.from('space_scheduled').delete().eq('id', id)
   scheduled.value = scheduled.value.filter((s: { id: any }) => s.id !== id)
 }

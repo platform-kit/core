@@ -19,27 +19,27 @@ import { supabase } from './supabase.js'
  * An administrator reads every team, published or not, which is what makes this answerable.
  */
 export async function teamProjected(team: any) {
-  const { data, error } = await (supabase as any).from('teams').select('slug').eq('slug', String(team || '')).maybeSingle()
+  const { data, error } = await supabase!.from('teams').select('slug').eq('slug', String(team || '')).maybeSingle()
   if (error) return null   /* not answerable — the caller says nothing rather than guessing */
   return !!data
 }
 
 export async function teamPeople(team: any) {
-  const { data, error } = await (supabase as any).rpc('team_people', { p_team: String(team || '') })
+  const { data, error } = await supabase!.rpc('team_people', { p_team: String(team || '') })
   if (error) throw error
   return Array.isArray(data) ? data : []
 }
 export async function myTeams() {
-  const { data, error } = await (supabase as any).rpc('my_teams')
+  const { data, error } = await supabase!.rpc('my_teams')
   if (error) throw error
   return Array.isArray(data) ? data : []
 }
 export async function inviteToTeam(team: any, user: any) {
-  const { error } = await (supabase as any).rpc('team_invite', { p_team: String(team || ''), p_user: user })
+  const { error } = await supabase!.rpc('team_invite', { p_team: String(team || ''), p_user: user })
   if (error) throw error
 }
 export async function removeFromTeam(team: any, user: any) {
-  const { error } = await (supabase as any).rpc('team_remove', { p_team: String(team || ''), p_user: user })
+  const { error } = await supabase!.rpc('team_remove', { p_team: String(team || ''), p_user: user })
   if (error) throw error
 }
 /* WHO COULD BE ASKED — every account, the admin's own read, narrowed by what was typed. It is the

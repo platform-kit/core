@@ -39,7 +39,7 @@ export async function interests() {
   if (asking) return asking
   asking = (async () => {
     try {
-      const [got, was] = await Promise.all([(supabase as any).rpc('my_interests'), (supabase as any).rpc('my_reading')])
+      const [got, was] = await Promise.all([supabase!.rpc('my_interests'), supabase!.rpc('my_reading')])
       if (got.error) throw got.error
       const weights: any = {}
       for (const r of got.data || []) weights[r.tag] = Number(r.weight) || 0

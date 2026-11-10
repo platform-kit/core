@@ -9,7 +9,7 @@
 import { supabase } from './supabase.js'
 
 async function call(body: { action: string; hours?: any; schedule?: any; day?: any; ranges?: any; note?: any; }) {
-  const { data, error } = await (supabase as any).functions.invoke('coach-hours', { body })
+  const { data, error } = await supabase!.functions.invoke('coach-hours', { body })
   if (error) { let msg = error.message || 'request failed', code = ''; try { const j = await error.context.json(); if (j && j.error) { msg = j.error; code = j.code || '' } } catch (e) { /* no body */ } const e: any = new Error(msg); e.code = code; throw e }
   if (data && data.error) { const e: any = new Error(data.error); e.code = data.code || ''; throw e }
   return data
@@ -38,20 +38,20 @@ export const emptyHours = () => ({ name: 'Working hours', timezone: zones().mine
  * who give appointments, which the desk's own read answers.
  */
 export async function getAway() {
-  const { data, error } = await (supabase as any).from('provider_ooo').select('id, from, to, reason, cover_id').order('from')
+  const { data, error } = await supabase!.from('provider_ooo').select('id, from, to, reason, cover_id').order('from')
   if (error) throw error
   return data || []
 }
 export async function addAway({ from, to, reason, cover }: any) {
-  const { data: me } = await (supabase as any).auth.getUser()
+  const { data: me } = await supabase!.auth.getUser()
   const uid = me?.user?.id
   if (!uid) throw new Error('sign in first')
-  const { error } = await (supabase as any).from('provider_ooo').insert({ user_id: uid, from, to, reason: reason || null, cover_id: cover || null })
+  const { error } = await supabase!.from('provider_ooo').insert({ user_id: uid, from, to, reason: reason || null, cover_id: cover || null })
   if (error) throw error
   return getAway()
 }
 export async function removeAway(id: any) {
-  const { error } = await (supabase as any).from('provider_ooo').delete().eq('id', id)
+  const { error } = await supabase!.from('provider_ooo').delete().eq('id', id)
   if (error) throw error
   return getAway()
 }

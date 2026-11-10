@@ -31,13 +31,13 @@ export async function current() {
 export async function mine() {
   const sub = await current()
   if (!sub) return null
-  const { data } = await (supabase as any).from('push_subscriptions').select('*').eq('endpoint', sub.endpoint).maybeSingle()
+  const { data } = await supabase!.from('push_subscriptions').select('*').eq('endpoint', sub.endpoint).maybeSingle()
   return data || null
 }
 /* every browser of the signed-in staff member */
 export async function devices() {
   if (!uid()) return []
-  const { data } = await (supabase as any).from('push_subscriptions').select('id, endpoint, topics, ua, created_at, last_sent_at, failures').eq('user_id', uid()).order('created_at')
+  const { data } = await supabase!.from('push_subscriptions').select('id, endpoint, topics, ua, created_at, last_sent_at, failures').eq('user_id', uid()).order('created_at')
   return data || []
 }
 
@@ -52,26 +52,26 @@ export async function enable(topics: any) {
   const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(KEY) }))
   const j: any = sub.toJSON()
   const row = { user_id: uid(), endpoint: sub.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, topics, ua: navigator.userAgent.slice(0, 200) }
-  const { error } = await (supabase as any).from('push_subscriptions').upsert(row, { onConflict: 'endpoint' })
+  const { error } = await supabase!.from('push_subscriptions').upsert(row, { onConflict: 'endpoint' })
   if (error) throw error
   return row
 }
 export async function setTopics(topics: any) {
   const sub = await current()
   if (!sub) return
-  await (supabase as any).from('push_subscriptions').update({ topics }).eq('endpoint', sub.endpoint)
+  await supabase!.from('push_subscriptions').update({ topics }).eq('endpoint', sub.endpoint)
 }
 /* opt this browser out: the row, then the subscription */
 export async function disable() {
   const sub = await current()
   if (!sub) return
-  await (supabase as any).from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
+  await supabase!.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)
   try { await sub.unsubscribe() } catch (e) { /* already gone */ }
 }
-export async function forget(id: any) { await (supabase as any).from('push_subscriptions').delete().eq('id', id) }
+export async function forget(id: any) { await supabase!.from('push_subscriptions').delete().eq('id', id) }
 /* one to my own browsers, to see what it looks like */
 export async function test() {
-  const { data, error } = await (supabase as any).functions.invoke('push', { body: { action: 'test' } })
+  const { data, error } = await supabase!.functions.invoke('push', { body: { action: 'test' } })
   if (error) throw error
   return data
 }

@@ -43,11 +43,11 @@ const GATED = (site.community && site.community.gated) || []
 export async function admission() {
   const grants = site.network && site.network.access
   const places = GATED.length && ok()
-    ? Promise.all(GATED.map(async (k) => [k, (await (supabase as any).rpc('community_admitted', { p_place: k })).data !== false]))
+    ? Promise.all(GATED.map(async (k) => [k, (await supabase!.rpc('community_admitted', { p_place: k })).data !== false]))
     : Promise.resolve([])
   if (!grants || !ok()) { net.access = { read: true, write: true, known: true } }
   else {
-    const ask = async (g: string) => (await (supabase as any).rpc('network_admitted', { p_user: me(), p_grant: g })).data === true
+    const ask = async (g: string) => (await supabase!.rpc('network_admitted', { p_user: me(), p_grant: g })).data === true
     const [read, write] = await Promise.all([ask('read'), ask('write')])
     net.access = { read, write, known: true }
   }
@@ -66,7 +66,7 @@ export async function loadPeople(ids: Iterable<string>|null|undefined) {
 
 export async function personOf(userId: any) {
   if (!ok() || !userId) return null
-  const { data } = await (supabase as any).rpc('network_person', { p_user: userId })
+  const { data } = await supabase!.rpc('network_person', { p_user: userId })
   return data || null
 }
 
@@ -88,14 +88,14 @@ async function markMine(ids: string|any[]) {
 export async function loadPosts(ids: Iterable<string>|null|undefined) {
   const want = [...new Set(ids)].filter(Boolean)
   if (!want.length || !ok()) return []
-  const { data } = await (supabase as any).from('network_posts').select(POST_COLS).in('id', want)
+  const { data } = await supabase!.from('network_posts').select(POST_COLS).in('id', want)
   const rows = data || []
   for (const p of rows) net.posts[p.id] = { ...p, kind: 'post' }
   /* what they quote and answer, one level, so a card can say what it is answering */
   const more = new Set<string>()
   for (const p of rows) { if (p.quote_id && !net.posts[p.quote_id]) more.add(p.quote_id); if (p.reply_parent_id && !net.posts[p.reply_parent_id]) more.add(p.reply_parent_id) }
   if (more.size) {
-    const { data: extra } = await (supabase as any).from('network_posts').select(POST_COLS).in('id', [...more])
+    const { data: extra } = await supabase!.from('network_posts').select(POST_COLS).in('id', [...more])
     for (const p of extra || []) net.posts[p.id] = { ...p, kind: 'post' }
   }
   const all = want.concat([...more]).map((id) => net.posts[id]).filter(Boolean)
@@ -106,7 +106,7 @@ export async function loadPosts(ids: Iterable<string>|null|undefined) {
 async function loadMessages(ids: Iterable<string>|null|undefined) {
   const want = [...new Set(ids)].filter(Boolean)
   if (!want.length || !ok()) return
-  const { data, error } = await (supabase as any).from('space_messages').select(MSG_COLS).in('id', want)
+  const { data, error } = await supabase!.from('space_messages').select(MSG_COLS).in('id', want)
   if (error) throw error
   for (const m of data || []) {
     const ch = m.channels || {}
@@ -145,7 +145,7 @@ async function signImages(posts: any[]) {
   const paths = []
   for (const p of posts) for (const im of p.media || []) for (const at of [im && im.path, im && im.poster]) if (at && !net.images[at]) paths.push(at)
   if (!paths.length) return
-  const { data } = await (supabase as any).storage.from('network').createSignedUrls(paths, 3600)
+  const { data } = await supabase!.storage.from('network').createSignedUrls(paths, 3600)
   for (const s of data || []) if (s.signedUrl && s.path) net.images[s.path] = s.signedUrl
 }
 
@@ -158,7 +158,7 @@ export function timeline() {
     st.loading = true; st.error = ''
     try {
       const before = reset ? null : cursorOf(st.items)
-      const { data, error } = await (supabase as any).rpc('network_timeline', { p_before: before, p_limit: PAGE, p_all_spaces: !PINNING })
+      const { data, error } = await supabase!.rpc('network_timeline', { p_before: before, p_limit: PAGE, p_all_spaces: !PINNING })
       if (error) throw error
       const rows = data || []
       await Promise.all([
@@ -182,7 +182,7 @@ export function timeline() {
  */
 export async function forYou(offset = 0, limit = 30) {
   if (!ok() || !session.value) return { items: [], done: true }
-  const { data, error } = await (supabase as any).rpc('network_for_you', { p_offset: offset, p_limit: limit })
+  const { data, error } = await supabase!.rpc('network_for_you', { p_offset: offset, p_limit: limit })
   if (error) throw error
   const rows = data || []
   await Promise.all([
@@ -200,14 +200,14 @@ export function discover() {
     st.loading = true; st.error = ''
     try {
       const before = reset || !st.items.length ? null : st.items[st.items.length - 1].created_at
-      let q = (supabase as any).from('network_posts').select(POST_COLS).is('reply_parent_id', null).is('removed_at', null).order('created_at', { ascending: false }).limit(PAGE)
+      let q = supabase!.from('network_posts').select(POST_COLS).is('reply_parent_id', null).is('removed_at', null).order('created_at', { ascending: false }).limit(PAGE)
       if (before) q = q.lt('created_at', before)
       /* AND THE READER'S SPACES (spaces-reach-home): with following off this is Home, so the feeds of
          every space they are in come into it too — or only the pinned ones where the site has turned
          pinning on — by the timeline's own read, which applies each space's guards */
       const [{ data, error }, spaced] = await Promise.all([
         q,
-        session.value ? (supabase as any).rpc('network_timeline', { p_before: before, p_limit: PAGE, p_all_spaces: !PINNING }) : { data: [] },
+        session.value ? supabase!.rpc('network_timeline', { p_before: before, p_limit: PAGE, p_all_spaces: !PINNING }) : { data: [] },
       ])
       if (error) throw error
       const rows = data || []
@@ -248,7 +248,7 @@ export function authorFeed(userId: any) {
     st.loading = true; st.error = ''
     try {
       const before = reset || !st.items.length ? null : st.items[st.items.length - 1].created_at
-      let q = (supabase as any).from('network_posts').select(POST_COLS).eq('author_id', userId).order('created_at', { ascending: false }).limit(PAGE)
+      let q = supabase!.from('network_posts').select(POST_COLS).eq('author_id', userId).order('created_at', { ascending: false }).limit(PAGE)
       if (before) q = q.lt('created_at', before)
       const { data, error } = await q
       if (error) throw error
@@ -269,7 +269,7 @@ export async function loadThread(postId: string|number) {
   if (!p) return null
   const rootId = p.reply_root_id || p.id
   if (!net.posts[rootId]) await loadPosts([rootId])
-  const { data } = await (supabase as any).from('network_posts').select('id').eq('reply_root_id', rootId).order('created_at').limit(500)
+  const { data } = await supabase!.from('network_posts').select('id').eq('reply_root_id', rootId).order('created_at').limit(500)
   await loadPosts((data || []).map((r: { id: any }) => r.id))
   return { root: net.posts[rootId] || p, focus: postId, replies: (data || []).map((r: { id: string|number }) => net.posts[r.id]).filter(Boolean) }
 }
@@ -278,7 +278,7 @@ export async function loadThread(postId: string|number) {
 
 export async function notifications(before = null) {
   if (!ok() || !session.value) return []
-  const { data, error } = await (supabase as any).rpc('network_notifications', { p_before: before, p_limit: 50 })
+  const { data, error } = await supabase!.rpc('network_notifications', { p_before: before, p_limit: 50 })
   if (error) throw error
   const rows = data || []
   await Promise.all([
@@ -293,7 +293,7 @@ export async function notifications(before = null) {
    notifications() shapes one, a space's carries its message or event as `item`. */
 export async function communityNotes(before = null) {
   if (!ok() || !session.value) return []
-  const { data, error } = await (supabase as any).rpc('community_notifications', { p_before: before, p_limit: 60 })
+  const { data, error } = await supabase!.rpc('community_notifications', { p_before: before, p_limit: 60 })
   if (error) throw error
   const rows = data || []
   await Promise.all([
@@ -305,12 +305,12 @@ export async function communityNotes(before = null) {
 /* when the reader last opened the list — read before markSeen moves it, so what is new can be marked */
 export async function lastSeen() {
   if (!ok() || !me()) return null
-  const { data } = await (supabase as any).from('network_seen').select('seen_at').eq('user_id', me()).maybeSingle()
+  const { data } = await supabase!.from('network_seen').select('seen_at').eq('user_id', me()).maybeSingle()
   return data ? data.seen_at : null
 }
 export async function markSeen() {
   if (!ok() || !me()) return
-  await (supabase as any).from('network_seen').upsert({ user_id: me(), seen_at: new Date().toISOString() })
+  await supabase!.from('network_seen').upsert({ user_id: me(), seen_at: new Date().toISOString() })
 }
 
 /* ---------------------------------------------------------------- the spaces one may post to */
@@ -322,8 +322,8 @@ export async function loadSpaces() {
   return net.spaces
 }
 export async function pin(spaceId: any, on: any) {
-  if (on) await (supabase as any).from('network_pins').insert({ user_id: me(), space_id: spaceId })
-  else await (supabase as any).from('network_pins').delete().eq('user_id', me()).eq('space_id', spaceId)
+  if (on) await supabase!.from('network_pins').insert({ user_id: me(), space_id: spaceId })
+  else await supabase!.from('network_pins').delete().eq('user_id', me()).eq('space_id', spaceId)
   await loadSpaces()
 }
 
@@ -349,7 +349,7 @@ export async function publish({ text, audience, files = [], alts = [], replyTo =
       data = await sendMedia(sp.channel_id, files, { body: words })
       if (!data) throw new Error('media')
     } else {
-      const res = await (supabase as any).from('space_messages').insert({ channel_id: sp.channel_id, author_id: me(), body: words }).select('id').single()
+      const res = await supabase!.from('space_messages').insert({ channel_id: sp.channel_id, author_id: me(), body: words }).select('id').single()
       if (res.error) throw res.error
       data = res.data
     }
@@ -364,12 +364,12 @@ export async function publish({ text, audience, files = [], alts = [], replyTo =
     const id = crypto.randomUUID()
     const path = `${me()}/${id}.${ext}`
     const info = await probe(f)
-    const up = await (supabase as any).storage.from('network').upload(path, f, { contentType: f.type, cacheControl: '31536000', upsert: false })
+    const up = await supabase!.storage.from('network').upload(path, f, { contentType: f.type, cacheControl: '31536000', upsert: false })
     if (up.error) throw up.error
     let poster
     if (info.poster) {
       poster = `${me()}/${id}.poster.jpg`
-      const pu = await (supabase as any).storage.from('network').upload(poster, info.poster, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false })
+      const pu = await supabase!.storage.from('network').upload(poster, info.poster, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false })
       if (pu.error) poster = undefined
     }
     media.push({ kind: info.kind || 'image', path, alt: String(alts[i] || '').slice(0, 1000), mime: f.type, size: f.size,
@@ -379,7 +379,7 @@ export async function publish({ text, audience, files = [], alts = [], replyTo =
   const row: any = { author_id: me(), text: words, audience, media }
   if (replyTo) row.reply_parent_id = replyTo
   if (quote) row.quote_id = quote
-  const { data, error } = await (supabase as any).from('network_posts').insert(row).select(POST_COLS).single()
+  const { data, error } = await supabase!.from('network_posts').insert(row).select(POST_COLS).single()
   if (error) throw error
   net.posts[data.id] = { ...data, kind: 'post' }
   if (replyTo && net.posts[replyTo]) net.posts[replyTo] = { ...net.posts[replyTo], reply_count: (net.posts[replyTo].reply_count || 0) + 1 }
@@ -391,7 +391,7 @@ export async function remove(postId: string|number) {
   const p = net.posts[postId]
   const { error } = await (supabase as any).from('network_posts').delete().eq('id', postId).eq('author_id', me())
   if (error) throw error
-  if (p && p.media && p.media.length) await (supabase as any).storage.from('network').remove(p.media.flatMap((im: { path: any; poster: any }) => [im.path, im.poster]).filter(Boolean)).catch(() => {})
+  if (p && p.media && p.media.length) await supabase!.storage.from('network').remove(p.media.flatMap((im: { path: any; poster: any }) => [im.path, im.poster]).filter(Boolean)).catch(() => {})
   delete net.posts[postId]
 }
 
@@ -411,26 +411,26 @@ export const repost = (postId: string|number, on: boolean) => mark('network_repo
 
 export async function follow(userId: any, on: any) {
   const q = on
-    ? (supabase as any).from('network_follows').insert({ follower_id: me(), subject_id: userId })
-    : (supabase as any).from('network_follows').delete().eq('follower_id', me()).eq('subject_id', userId)
+    ? supabase!.from('network_follows').insert({ follower_id: me(), subject_id: userId })
+    : supabase!.from('network_follows').delete().eq('follower_id', me()).eq('subject_id', userId)
   const { error } = await q
   if (error) throw error
 }
 export async function block(userId: any, on: any) {
   const q = on
-    ? (supabase as any).from('network_blocks').insert({ blocker_id: me(), blocked_id: userId })
-    : (supabase as any).from('network_blocks').delete().eq('blocker_id', me()).eq('blocked_id', userId)
+    ? supabase!.from('network_blocks').insert({ blocker_id: me(), blocked_id: userId })
+    : supabase!.from('network_blocks').delete().eq('blocker_id', me()).eq('blocked_id', userId)
   const { error } = await q
   if (error) throw error
 }
 export async function mute(userId: any, on: any) {
   const q = on
-    ? (supabase as any).from('network_mutes').insert({ muter_id: me(), muted_id: userId })
-    : (supabase as any).from('network_mutes').delete().eq('muter_id', me()).eq('muted_id', userId)
+    ? supabase!.from('network_mutes').insert({ muter_id: me(), muted_id: userId })
+    : supabase!.from('network_mutes').delete().eq('muter_id', me()).eq('muted_id', userId)
   const { error } = await q
   if (error) throw error
 }
 export async function report({ post = null, person = null, reason, note = '' }: any) {
-  const { error } = await (supabase as any).rpc('network_report', { p_post: post, p_person: person, p_reason: reason, p_note: note || null })
+  const { error } = await supabase!.rpc('network_report', { p_post: post, p_person: person, p_reason: reason, p_note: note || null })
   if (error) throw error
 }

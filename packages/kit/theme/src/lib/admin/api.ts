@@ -22,7 +22,7 @@ async function call(path: string|URL, opts: any = {}) {
     const u = new URL(path, 'http://x')
     const seg = u.pathname.replace(/^\//, ''), method = opts.method || 'GET'
     const body = opts.body ? JSON.parse(opts.body) : null
-    const { data, error } = await (supabase as any).functions.invoke('admin', { body: { seg, method, q: Object.fromEntries(u.searchParams.entries()), body } })
+    const { data, error } = await supabase!.functions.invoke('admin', { body: { seg, method, q: Object.fromEntries(u.searchParams.entries()), body } })
     if (error) {
       let j: any = {}; try { j = error.context ? await error.context.json() : {} } catch { /* no body */ }
       const e: any = new Error(j.error || error.message); Object.assign(e, j); e.status = error.context ? error.context.status : 500; throw e

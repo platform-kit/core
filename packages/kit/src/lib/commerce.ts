@@ -18,7 +18,7 @@ import { ug } from './strings.js'
    back to the form itself, so the answer is the next thing they see). A path on this site only. */
 const here = (path?: string|undefined) => (path && String(path).startsWith('/') ? String(path) : window.location.pathname + window.location.search)
 async function call(name: string, body: { country?: any; items?: any; return?: string; booking?: any; success?: string }) {
-  const { data, error } = await (supabase as any).functions.invoke(name, { body })
+  const { data, error } = await supabase!.functions.invoke(name, { body })
   const fail = (msg: string|undefined, code: string) => {
     if (String(code || '').startsWith('hyperswitch_')) {
       console.error('Hyperswitch operation failed', { operation: name, code, message: msg })

@@ -138,7 +138,7 @@ async function refreshRole() {
      * nobody else was looking at, which reads as the site showing the wrong avatar, because it is.
      */
     try {
-      const { data: mine } = await (supabase as any).rpc('my_profile')
+      const { data: mine } = await supabase!.rpc('my_profile')
       myFace.value = mine || null
     } catch { myFace.value = data ? { id: session.value.user.id, email: data.email, avatar: data.avatar, avatar_style: data.avatar_style, avatar_seed: data.avatar_seed, avatar_options: data.avatar_options } : null }
     /* `role` is what this replaced: read as a fallback so the app works against a database the
@@ -155,7 +155,7 @@ async function refreshRole() {
 async function markVerified() {
   if (!configured || !session.value || emailVerified.value) return
   try {
-    const { data } = await (supabase as any).rpc('mark_email_verified')
+    const { data } = await supabase!.rpc('mark_email_verified')
     if (data === true) emailVerified.value = true
   } catch (e) { /* offline */ }
 }
@@ -260,18 +260,18 @@ export async function initAuth() {
     window.history.replaceState({}, '', window.location.pathname + (q ? '?' + q : '') + window.location.hash)
   }
 
-  const { data } = await (supabase as any).auth.getSession()
+  const { data } = await supabase!.auth.getSession()
   session.value = data.session
   if (!data.session) settle(null)   /* a guest: nothing more to read */
   /* back from the reset email with a session: the new-password form, not the page */
   if (data.session && /[#&]type=recovery(&|$)/.test(BOOT_HASH)) recovery.value = true
   if (data.session) {
     attachSync(data.session)
-    if (fromCheckout) await (supabase as any).auth.refreshSession().catch(() => {})
+    if (fromCheckout) await supabase!.auth.refreshSession().catch(() => {})
     let bought = null
     if (fromCheckout) {
       try {
-        const { data: result, error } = await (supabase as any).functions.invoke('confirm-checkout', {
+        const { data: result, error } = await supabase!.functions.invoke('confirm-checkout', {
           body: { session: checkoutSession || 'mock' },
         })
         if (error) {
@@ -313,7 +313,7 @@ export async function initAuth() {
     const W = (us('store').page || {}).head || {}
     let bought
     try {
-      const { data: result, error } = await (supabase as any).functions.invoke('confirm-checkout', {
+      const { data: result, error } = await supabase!.functions.invoke('confirm-checkout', {
         body: { session: checkoutSession || 'mock' },
       })
       if (error) {
@@ -349,7 +349,7 @@ export async function initAuth() {
   /* the work is deferred a tick: supabase-js holds its auth lock while it calls this,
      and a call that needs the lock from inside (any request, which asks for the
      session) can deadlock — the documented pattern is to leave the callback first */
-  ;(supabase as any).auth.onAuthStateChange((event: string, s: any) => {
+  ;supabase!.auth.onAuthStateChange((event: string, s: any) => {
     session.value = s
     /* back from the password-reset email: the link signed them in for the one purpose of
        choosing a new password, and the modal opens on that form (AuthModal watches this) */
@@ -367,7 +367,7 @@ export async function initAuth() {
 const must = ({ error }: any) => { if (error) throw error }
 
 export async function signInWithPassword(email: any, password: any) {
-  must(await (supabase as any).auth.signInWithPassword({ email, password }))
+  must(await supabase!.auth.signInWithPassword({ email, password }))
 }
 /* Resolves to what Supabase said about the new account:
    'confirm'  — made and signed in (Supabase confirms the address at sign-up),
@@ -377,7 +377,7 @@ export async function signInWithPassword(email: any, password: any) {
                 for a known email with a user that has no identities, rather
                 than saying so outright) */
 export async function signUpWithPassword(email: any, password: any, returnTo = '') {
-  const { data, error } = await (supabase as any).auth.signUp({ email, password, options: { emailRedirectTo: redirectTo(returnTo) } })
+  const { data, error } = await supabase!.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo(returnTo) } })
   if (error) throw error
   if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) return 'exists'
   await sendConfirmation(email, returnTo).catch(() => { /* the gate offers it again */ })
@@ -385,25 +385,25 @@ export async function signUpWithPassword(email: any, password: any, returnTo = '
 }
 /* the confirmation: a magic link to the address; following it proves it */
 export async function sendConfirmation(email: any, returnTo = '') {
-  must(await (supabase as any).auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: redirectTo(returnTo) } }))
+  must(await supabase!.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: redirectTo(returnTo) } }))
 }
 export const resendConfirmation = sendConfirmation
 export async function signInWithMagicLink(email: any, returnTo = '') {
-  must(await (supabase as any).auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo(returnTo) } }))
+  must(await supabase!.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo(returnTo) } }))
 }
 /* a forgotten password: the reset email (the "recovery" design under admin → Emails) carries a
    link back to the site; following it raises `recovery`, and the new password is set with the
    session it made */
 export const recovery = ref(false)
 export async function requestPasswordReset(email: any) {
-  must(await (supabase as any).auth.resetPasswordForEmail(email, { redirectTo: redirectTo() }))
+  must(await supabase!.auth.resetPasswordForEmail(email, { redirectTo: redirectTo() }))
 }
 export async function setPassword(password: any) {
-  must(await (supabase as any).auth.updateUser({ password }))
+  must(await supabase!.auth.updateUser({ password }))
   recovery.value = false
 }
 export async function signInWithGoogle(returnTo = '') {
-  must(await (supabase as any).auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTo(returnTo) } }))
+  must(await supabase!.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTo(returnTo) } }))
 }
 /* Signing out leaves the device as a fresh guest: push whatever is unsaved,
    end the session (which detaches the sync), throw the local document away —
@@ -416,7 +416,7 @@ export const beforeSignOut: ((() => Promise<void>) | (() => void))[] = []
 export async function signOut() {
   await Promise.all(beforeSignOut.map((fn) => Promise.resolve().then(fn).catch(() => {})))
   await pushNow().catch(() => { /* offline — the last debounced push already ran */ })
-  await (supabase as any).auth.signOut()
+  await supabase!.auth.signOut()
   detachSync()
   await resetStore()
   try { sessionStorage.removeItem('dl.sid') } catch (e) { /* private mode */ }

@@ -13,19 +13,19 @@ const XRPC = 'atproto/xrpc/'
 /* the handle domain and whether the server answers at all — the function's own description */
 export async function describe() {
   if (!configured) return null
-  const { data, error } = await (supabase as any).functions.invoke(XRPC + 'com.atproto.server.describeServer', { method: 'GET' })
+  const { data, error } = await supabase!.functions.invoke(XRPC + 'com.atproto.server.describeServer', { method: 'GET' })
   if (error || !data) return null
   return { domain: String((data.availableUserDomains || [''])[0] || '').replace(/^\./, ''), did: data.did }
 }
 
 export async function listAppPasswords() {
   if (!configured || !user.value) return []
-  const { data } = await (supabase as any).from('network_app_passwords').select('id, name, created_at, last_used_at').order('created_at', { ascending: false })
+  const { data } = await supabase!.from('network_app_passwords').select('id, name, created_at, last_used_at').order('created_at', { ascending: false })
   return data || []
 }
 
 export async function makeAppPassword(name: any) {
-  const { data, error } = await (supabase as any).functions.invoke(XRPC + 'com.atproto.server.createAppPassword', { body: { name: String(name || '').trim() } })
+  const { data, error } = await supabase!.functions.invoke(XRPC + 'com.atproto.server.createAppPassword', { body: { name: String(name || '').trim() } })
   if (error) {
     let message = error.message
     try { const b = await error.context.json(); message = b.message || message } catch { /* no body */ }
@@ -35,7 +35,7 @@ export async function makeAppPassword(name: any) {
 }
 
 export async function revokeAppPassword(id: any) {
-  const { error } = await (supabase as any).from('network_app_passwords').delete().eq('id', id)
+  const { error } = await supabase!.from('network_app_passwords').delete().eq('id', id)
   if (error) throw error
 }
 
@@ -43,11 +43,11 @@ export async function revokeAppPassword(id: any) {
    made for them, their public posts published, and leaving takes them down again */
 export async function networkStatus() {
   if (!configured || !user.value) return null
-  const { data } = await (supabase as any).from('network_identities').select('did, joined_at, left_at').maybeSingle()
+  const { data } = await supabase!.from('network_identities').select('did, joined_at, left_at').maybeSingle()
   return data && data.joined_at && !data.left_at ? { joined: true, did: data.did } : { joined: false }
 }
 async function door(path: string) {
-  const { data, error } = await (supabase as any).functions.invoke('atproto/network/' + path, { body: {} })
+  const { data, error } = await supabase!.functions.invoke('atproto/network/' + path, { body: {} })
   if (error) {
     let message = error.message
     try { const b = await error.context.json(); message = b.message || message } catch { /* no body */ }

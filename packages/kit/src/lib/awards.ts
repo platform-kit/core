@@ -24,7 +24,7 @@ let looked = false
 export async function loadCatalogue() {
   if (looked || !configured) return extra.value
   looked = true
-  const { data, error } = await (supabase as any).from('achievements').select('slug, title, sub, icon, colour, cover, shown, position')
+  const { data, error } = await supabase!.from('achievements').select('slug, title, sub, icon, colour, cover, shown, position')
   if (error) { looked = false; return extra.value }
   const known = new Set(catalogue.map((a: { slug: any }) => a.slug))
   extra.value = (data || []).filter((a: { slug: unknown }) => !known.has(a.slug)).map((a: { position: any }) => ({ ...a, order: a.position }))
@@ -41,7 +41,7 @@ export async function loadMine(force = false) {
   if (!configured || !id) { mine.value = []; asked = ''; return mine.value }
   if (!force && asked === id) return mine.value
   asked = id
-  const { data, error } = await (supabase as any).rpc('achievements_of', { p_user: id })
+  const { data, error } = await supabase!.rpc('achievements_of', { p_user: id })
   if (error) { asked = ''; throw error }
   mine.value = data || []
   return mine.value
@@ -50,7 +50,7 @@ export async function loadMine(force = false) {
 /* somebody else's, which answers nothing at all unless they have made their page public */
 export async function awardsOf(userId: any) {
   if (!configured || !userId) return []
-  const { data, error } = await (supabase as any).rpc('achievements_of', { p_user: userId })
+  const { data, error } = await supabase!.rpc('achievements_of', { p_user: userId })
   if (error) throw error
   return data || []
 }
@@ -58,13 +58,13 @@ export async function awardsOf(userId: any) {
 /* what the site has come to believe about somebody — the staff only, and the function says so */
 export async function traitsOf(userId: any) {
   if (!configured || !userId) return []
-  const { data, error } = await (supabase as any).rpc('traits_of', { p_user: userId })
+  const { data, error } = await supabase!.rpc('traits_of', { p_user: userId })
   if (error) throw error
   return data || []
 }
 export async function traitCounts() {
   if (!configured) return []
-  const { data, error } = await (supabase as any).rpc('trait_counts')
+  const { data, error } = await supabase!.rpc('trait_counts')
   if (error) throw error
   return data || []
 }

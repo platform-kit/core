@@ -116,7 +116,7 @@ export async function recordResult(corpus: string|number, payload: any, answered
   const id = uid()
   if (!id || !configured || !payload) return
   try {
-    await (supabase as any).from('results').insert({
+    await supabase!.from('results').insert({
       user_id: id, test: TESTS[corpus], engine_version: ENGINE_VERSION,
       answered: answered | 0, payload,
     })
@@ -138,8 +138,8 @@ export async function clearAll() {
   const id = uid()
   if (id && configured) {
     try {
-      await (supabase as any).from('answers').delete().eq('user_id', id)
-      await (supabase as any).from('results').delete().eq('user_id', id)
+      await supabase!.from('answers').delete().eq('user_id', id)
+      await supabase!.from('results').delete().eq('user_id', id)
     } catch (e) { /* offline: the local clear still lands, and the rows are gone next time */ }
   }
   const fresh = blank()
@@ -163,7 +163,7 @@ export async function hydrate() {
   load()
   const rows = []
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await (supabase as any).from('answers')
+    const { data, error } = await supabase!.from('answers')
       .select('test,item_id,value,answered_at').eq('user_id', id)
       .order('answered_at').range(from, from + PAGE - 1)
     if (error) { rebuilt(); return false } /* the document's state still shows */

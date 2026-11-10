@@ -29,7 +29,7 @@ async function pull() {
     await ready
     const doc = loroDoc()   /* the live document — a sign-out swaps in a new one */
     if (!doc) return
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase!
       .from('user_docs').select('snapshot').eq('user_id', userId).maybeSingle()
     if (error || !data || !data.snapshot) return
     doc.import(b64ToBytes(data.snapshot))
@@ -44,7 +44,7 @@ async function push() {
     const doc = loroDoc()
     if (!doc) return
     const snapshot = bytesToB64(doc.export({ mode: 'snapshot' }))
-    await (supabase as any).from('user_docs').upsert({ user_id: userId, snapshot }, { onConflict: 'user_id' })
+    await supabase!.from('user_docs').upsert({ user_id: userId, snapshot }, { onConflict: 'user_id' })
   } catch (e) { /* offline — the next commit or focus retries */ }
 }
 

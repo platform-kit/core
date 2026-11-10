@@ -30,7 +30,7 @@ const FIELDS = 'id, email, username, display_name, first_name, last_name, about,
    "avatar_seed" is what they actually chose, which is empty until they choose. */
 export async function loadMe() {
   if (!configured || !session.value) { me.value = null; return null }
-  const { data, error } = await (supabase as any).rpc('my_profile')
+  const { data, error } = await supabase!.rpc('my_profile')
   if (error) throw error
   me.value = data || null
   return me.value
@@ -41,7 +41,7 @@ export async function loadMe() {
    undoing each other. */
 export async function saveMe(patch: any) {
   if (!configured || !session.value) return null
-  const { error } = await (supabase as any).from('profiles').update(patch).eq('id', session.value.user.id).select(FIELDS).maybeSingle()
+  const { error } = await supabase!.from('profiles').update(patch).eq('id', session.value.user.id).select(FIELDS).maybeSingle()
   if (error) throw error
   /* …and then READ IT BACK THROUGH THE FUNCTION, which is the rule at the top of this file. A
      select cannot answer `seed` — the face somebody has when they have chosen none — so a page
@@ -64,7 +64,7 @@ export async function saveMe(patch: any) {
 export async function nameFree(username: any) {
   const u = String(username || '').trim().toLowerCase()
   if (!u) return true
-  const { data, error } = await (supabase as any).rpc('username_free', { p_username: u })
+  const { data, error } = await supabase!.rpc('username_free', { p_username: u })
   if (error) throw error
   return !!data
 }
@@ -76,7 +76,7 @@ export const usernameOk = (u: any) => USERNAME.test(String(u || '').trim().toLow
    is the default: a directory of everybody who ever signed up is not a thing to publish for them. */
 export async function personOf(username: any) {
   if (!configured) return null
-  const { data, error } = await (supabase as any).rpc('public_profile', { p_username: String(username || '').trim().toLowerCase() })
+  const { data, error } = await supabase!.rpc('public_profile', { p_username: String(username || '').trim().toLowerCase() })
   if (error) throw error
   return data || null
 }
@@ -89,7 +89,7 @@ export async function uploadAvatar(file: { name: any; type: any }) {
   const path = `${session.value.user.id}/face.${ext}`
   const { error } = await (supabase as any).storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type || undefined })
   if (error) throw error
-  const { data } = (supabase as any).storage.from('avatars').getPublicUrl(path)
+  const { data } = supabase!.storage.from('avatars').getPublicUrl(path)
   /* the url carries the moment, so a replaced picture is not the browser's old one */
   return (data && data.publicUrl ? data.publicUrl : '') + '?v=' + Date.now()
 }

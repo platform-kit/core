@@ -62,7 +62,7 @@ async function call(action: string, body = {}, file: any = null) {
   let payload: Record<string, unknown> | FormData = { action, path: location.pathname, anon_id: anonId(), ...body }
   /* a file goes up as a form; supabase-js sends a FormData as multipart */
   if (file) { const fd = new FormData(); for (const [k, v] of Object.entries(payload)) if (v != null) fd.append(k, String(v)); fd.append('file', file, file.name || 'file'); payload = fd }
-  const { data, error } = await (supabase as any).functions.invoke('support', { body: payload, headers })
+  const { data, error } = await supabase!.functions.invoke('support', { body: payload, headers })
   if (error) {
     /* the function's own answer rides on the error: a refused token, a thread already open */
     let j = null
@@ -114,7 +114,7 @@ function listen(conv: { listen_key: string; id: any }) {
     .on('broadcast', { event: '*' }, () => { if (thread.id !== conv.id) return; clearTimeout(wakeTimer); wakeTimer = setTimeout(poll, 80) })
     .subscribe((status) => { live = status === 'SUBSCRIBED'; if (live) poll(); schedule() })
 }
-function unlisten() { if (channel) { try { (supabase as any).removeChannel(channel) } catch (e) { /* gone */ } channel = null } live = false }
+function unlisten() { if (channel) { try { supabase!.removeChannel(channel) } catch (e) { /* gone */ } channel = null } live = false }
 
 /* ---- the open thread ---- */
 export async function openThread(id: string) {
