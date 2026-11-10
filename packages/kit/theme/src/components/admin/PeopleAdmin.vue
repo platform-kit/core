@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AdminReturns } from 'platformkit/lib/admin/shapes.js'
 /*
  * EVERYBODY WITH AN ACCOUNT HERE, and what the site already knows about each of them.
  *
@@ -46,11 +47,11 @@ const loading = ref(true)
 async function load(more = false) {
   loading.value = true
   try {
-    const { data } = await (supabase as any).rpc('admin_everybody', {
+    const { data } = await supabase!.rpc('admin_everybody', {
       p_q: q.value.trim() || null, p_narrow: narrow.value,
       p_limit: PAGE, p_offset: more ? rows.value.length : 0,
     })
-    const got = data || { people: [], total: 0 }
+    const got = (data as AdminReturns['admin_everybody'] | null) || { people: [], total: 0 }
     rows.value = more ? [...rows.value, ...(got.people || [])] : (got.people || [])
     total.value = Number(got.total) || 0
   } finally { loading.value = false }
@@ -69,8 +70,8 @@ async function open(row: any) {
   openId.value = row.id
   person.value = null
   traits.value = []
-  const { data } = await (supabase as any).rpc('admin_person', { p_user: row.id })
-  person.value = data || null
+  const { data } = await supabase!.rpc('admin_person', { p_user: row.id })
+  person.value = (data as AdminReturns['admin_person'] | null) || null
   /* WHAT THE SITE HAS COME TO BELIEVE about them: a note for whoever is about to talk to them. The
      read refuses anybody the declaration (content/traits.md) does not name, so this only asks. */
   try { traits.value = await traitsOf(row.id) } catch { traits.value = [] }
@@ -87,11 +88,12 @@ async function toggle(role: any) {
   const had = person.value.roles || []
   const want = had.includes(role) ? had.filter((r: any) => r !== role) : [...had, role]
   try {
-    const { data, error } = await (supabase as any).rpc('set_roles', { p_user: person.value.id, p_roles: want })
+    const { data, error } = await supabase!.rpc('set_roles', { p_user: person.value.id, p_roles: want })
     if (error) { said.value = error.message; return }
-    if (!data || !data.ok) {
+    const done = data as AdminReturns['set_roles'] | null
+    if (!done || !done.ok) {
       /* the database's own refusals, said in the site's words */
-      said.value = data && data.why === 'last-admin' ? W.value['last-admin'] : (W.value.refused || '')
+      said.value = done && done.why === 'last-admin' ? W.value['last-admin'] : (W.value.refused || '')
       return
     }
     person.value = { ...person.value, roles: want }

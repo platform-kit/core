@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AdminReturns } from 'platformkit/lib/admin/shapes.js'
 /*
  * Orders — EVERY sale, and what has happened to it since: what was on it, what has been paid,
  * what has gone out and what has come back. One read (`admin_orders`), because four would be
@@ -61,14 +62,15 @@ let channel: any = null
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; rows.value = []; return }
   state.value = 'loading'
-  const { data, error } = await (supabase as any).rpc('admin_orders', { p_limit: 200 })
+  const { data, error } = await supabase!.rpc('admin_orders', { p_limit: 200 })
   if (error) { state.value = (error.code === '42501' || /permission/i.test(error.message || '')) ? 'denied' : 'error'; return }
   if (!data) { state.value = 'denied'; return }
+  const got = data as AdminReturns['admin_orders']
   /* an order and a loose purchase are drawn the same way, so they are made the same shape here
      rather than branched on in the template */
   rows.value = [
-    ...(data.orders || []).map((o: any) => ({ ...o, kind: 'order' })),
-    ...(data.loose || []).map((r: any) => ({
+    ...(got.orders || []).map((o) => ({ ...o, kind: 'order' })),
+    ...(got.loose || []).map((r) => ({
       kind: 'loose', id: r.id, created_at: r.created_at, email: r.email, user_id: r.user_id,
       currency: r.currency, total: r.amount_total, payment: r.status === 'refunded' ? 'refunded' : 'paid',
       fulfilment: null, checkout_session: r.session,
@@ -81,14 +83,14 @@ async function load() {
   listen()
 }
 async function names(list: any) {
-  const ids = [...new Set(list.map((r: any) => r.user_id).filter((id: any) => id && !people.value[id]))]
+  const ids = [...new Set<string>(list.map((r: any) => r.user_id).filter((id: any) => id && !people.value[id]))]
   if (!ids.length) return
-  const { data } = await (supabase as any).rpc('admin_people', { ids })
-  for (const p of data || []) people.value[p.id] = p
+  const { data } = await supabase!.rpc('admin_people', { ids })
+  for (const p of (data as AdminReturns['admin_people'] | null) || []) people.value[p.id] = p
 }
 async function printLinks() {
-  const { data } = await (supabase as any).from('fulfilments').select('id, purchase_id').not('purchase_id', 'is', null).limit(500)
-  const m = {}; for (const o of data || []) (m as any)[o.purchase_id] = o.id; prints.value = m
+  const { data } = await supabase!.from('fulfilments').select('id, purchase_id').not('purchase_id', 'is', null).limit(500)
+  const m: Record<string, string> = {}; for (const o of data || []) m[o.purchase_id!] = o.id; prints.value = m
 }
 function listen() {
   if (channel || !supabase) return
@@ -102,7 +104,7 @@ function listen() {
 }
 onMounted(load)
 onIdentity(load)
-onBeforeUnmount(() => { if (channel) (supabase as any).removeChannel(channel); channel = null })
+onBeforeUnmount(() => { if (channel) supabase!.removeChannel(channel); channel = null })
 
 /* the kinds a line can be, and the three questions somebody comes to this page with: what still
    has to go out, what has come back, and what is at a printer — the last being the page that
@@ -145,7 +147,7 @@ const canSend = (f: any) => f.status === 'new' || f.status === 'failed'
 const act = async (f: any, action: any) => {
   busy[f.id] = action; said[f.id] = ''
   try {
-    const { data, error } = await (supabase as any).functions.invoke('print-order', { body: { id: f.id, action } })
+    const { data, error } = await supabase!.functions.invoke('print-order', { body: { id: f.id, action } })
     if (error) throw error
     said[f.id] = action === 'submit' && data && data.ok ? R.went : ''
     await load()
