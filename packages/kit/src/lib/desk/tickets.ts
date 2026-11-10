@@ -17,21 +17,22 @@
  */
 import { reactive, ref } from 'vue'
 import { supabase } from '../supabase.js'
+import type { SupportReturns as Says, TicketRow, TicketOpened, MyTicketRow, MyTicket } from '../support/shapes.js'
 /* the arithmetic lives with the rest of the desk's own, where a test reads it without a browser */
 export { STATES, LIVE, PRIORITIES, isLive, isOwed, sortTickets, owedOn, ageOf, tally, narrow, statusOfTicket, priorityOf, WAS } from './shape.js'
 
 /* ------------------------------------------------------------------ the reads */
 
-export const tickets = reactive<any>({ list: [], open: null, loading: false, error: null })
+export const tickets = reactive({ list: [], open: null, loading: false, error: null }) as { list: TicketRow[]; open: TicketOpened | null; loading: boolean; error: string | null }
 export const ticketsOn = ref(false)
 
-export async function loadTickets({ status = null, assignee = null, q = null, limit = 200 } = {}) {
+export async function loadTickets({ status = null, assignee = null, q = null, limit = 200 }: { status?: string | null; assignee?: string | null; q?: string | null; limit?: number } = {}) {
   if (!supabase) return []
   tickets.loading = true
   try {
     const { data, error } = await supabase.rpc('support_tickets_list', { p_status: status, p_assignee: assignee, p_q: q, p_limit: limit })
     if (error) throw error
-    tickets.list = data || []
+    tickets.list = (data as Says['support_tickets_list'] | null) || []
     ticketsOn.value = true
     return tickets.list
   } catch (e) {
@@ -41,10 +42,10 @@ export async function loadTickets({ status = null, assignee = null, q = null, li
   } finally { tickets.loading = false }
 }
 
-export async function openTicket(id: any) {
+export async function openTicket(id: string | null | undefined) {
   if (!supabase || !id) { tickets.open = null; return null }
   const { data } = await supabase.rpc('support_ticket', { p_ticket: id })
-  tickets.open = data || null
+  tickets.open = (data as Says['support_ticket'] | null) || null
   return tickets.open
 }
 
@@ -55,14 +56,16 @@ export const closeTicket = () => { tickets.open = null }
 export async function answerValues(open = true) {
   if (!supabase) return []
   const { data } = await supabase.rpc('ticket_answer_values', { p_open: open })
-  return data || []
+  return (data as Says['ticket_answer_values'] | null) || []
 }
 
 /* ------------------------------------------------------------------ the writes */
 
-const after = async (id: any) => { if (id) await openTicket(id); await loadTickets() }
+const after = async (id: string | null | undefined) => { if (id) await openTicket(id); await loadTickets() }
 
-export async function raise({ title, body = '', contact = null, priority = 'normal', category = null, conversation = null, assign = null }: any = {}) {
+export async function raise({ title, body = '', contact = null, priority = 'normal', category = null, conversation = null, assign = null }: {
+  title: string; body?: string; contact?: string | null; priority?: string; category?: string | null; conversation?: string | null; assign?: string[] | null
+} = {} as { title: string }) {
   if (!supabase) return { error: 'offline' }
   const { data, error } = await supabase.rpc('support_ticket_open', {
     p_title: title, p_body: body, p_contact: contact, p_priority: priority,
@@ -71,10 +74,10 @@ export async function raise({ title, body = '', contact = null, priority = 'norm
   if (error) return { error: error.message }
   await loadTickets()
   /* support_ticket_open answers the ticket made, or why not */
-  return (data || {}) as { ok?: true; id?: string; ref?: string; error?: string }
+  return (data || {}) as Says['support_ticket_open'] | Record<string, never>
 }
 
-export async function setTicket(id: any, patch: any = {}) {
+export async function setTicket(id: string, patch: { status?: string; priority?: string; title?: string; category?: string; due?: string; clearDue?: boolean } = {}) {
   if (!supabase) return { error: 'offline' }
   const { data, error } = await supabase.rpc('support_ticket_set', {
     p_ticket: id,
@@ -84,58 +87,58 @@ export async function setTicket(id: any, patch: any = {}) {
   })
   if (error) return { error: error.message }
   await after(id)
-  return data || {}
+  return (data as Says['support_ticket_set'] | null) || {}
 }
 
-export async function assignTicket(id: any, userId: any, on = true) {
+export async function assignTicket(id: string, userId: string, on = true) {
   if (!supabase) return { error: 'offline' }
   const { data, error } = await supabase.rpc('support_ticket_assign', { p_ticket: id, p_user: userId, p_on: on })
   if (error) return { error: error.message }
   await after(id)
-  return data || {}
+  return (data as Says['support_ticket_set'] | null) || {}
 }
 
-export async function sayOnTicket(id: any, body: any, internal = false) {
+export async function sayOnTicket(id: string, body: string, internal = false) {
   if (!supabase) return { error: 'offline' }
   const { data, error } = await supabase.rpc('support_ticket_say', { p_ticket: id, p_body: body, p_internal: internal })
   if (error) return { error: error.message }
   await after(id)
-  return data || {}
+  return (data as Says['support_ticket_set'] | null) || {}
 }
 
-export async function linkTicket(id: any, conversationId: any, on = true) {
+export async function linkTicket(id: string, conversationId: string, on = true) {
   if (!supabase) return { error: 'offline' }
   const { data, error } = await supabase.rpc('support_ticket_link', { p_ticket: id, p_conversation: conversationId, p_on: on })
   if (error) return { error: error.message }
   await after(id)
-  return data || {}
+  return (data as Says['support_ticket_set'] | null) || {}
 }
 
 /* the tickets one conversation has thrown up, for the chat's own side panel */
-export async function ticketsFor(conversationId: any) {
+export async function ticketsFor(conversationId: string | null | undefined) {
   if (!supabase || !conversationId) return []
   const { data } = await supabase.rpc('support_tickets_for', { p_conversation: conversationId })
-  return (data || []) as Array<{ id: string; ref: string; title: string }>
+  return (data as Says['support_tickets_for'] | null) || []
 }
 
 /* ------------------------------------------------------------------ a person's own */
 
-export const mine = reactive<any>({ list: [], open: null, loading: false })
+export const mine = reactive({ list: [], open: null, loading: false }) as { list: MyTicketRow[]; open: MyTicket | null; loading: boolean }
 
 export async function loadMyTickets() {
   if (!supabase) return []
   mine.loading = true
   try {
     const { data } = await supabase.rpc('support_tickets_mine')
-    mine.list = data || []
+    mine.list = (data as Says['support_tickets_mine'] | null) || []
     return mine.list
   } catch { mine.list = []; return [] } finally { mine.loading = false }
 }
 
-export async function openMyTicket(id: any) {
+export async function openMyTicket(id: string | null | undefined) {
   if (!supabase || !id) { mine.open = null; return null }
   const { data } = await supabase.rpc('support_ticket_mine', { p_ticket: id })
-  mine.open = data || null
+  mine.open = (data as Says['support_ticket_mine'] | null) || null
   return mine.open
 }
 

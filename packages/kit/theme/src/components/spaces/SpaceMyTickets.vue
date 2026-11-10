@@ -30,7 +30,7 @@ const stateWord = (s: string) => W.value['mine-' + s] || W.value['state-' + s] |
 const replies = (t: { replies: any }) => (Number(t.replies) === 1 ? W.value['replies-one'] : (W.value['replies-many'] || '').replace('{n}', t.replies))
 /* where it got to, rather than the desk's own book-keeping: "now Waiting on you" says the thing
    they want to know, and a from-and-to says the thing we want to know */
-const said = (e: { kind: string; data: { to: any } }) => {
+const said = (e: { kind: string; data: { to?: string } }) => {
   const to = e.kind === 'status' && e.data && e.data.to
   return to ? (W.value['said-now'] || '').replace('{to}', stateWord(to)) : ''
 }

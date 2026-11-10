@@ -27,6 +27,7 @@ import ChatBubble from './chat/ChatBubble.vue'
 import ChatAvatar from './chat/ChatAvatar.vue'
 import SupportComposer from './support/SupportComposer.vue'
 import AdminHead from './admin/AdminHead.vue'
+import type { SupportReturns as Says, InboxItem } from 'platformkit/lib/support/shapes.js'
 
 const props = defineProps({ name: { type: String, default: '' } })   /* a conversation id in the path */
 const emit = defineEmits(['open'])
@@ -38,8 +39,8 @@ const uid = () => (session.value && session.value.user && session.value.user.id)
 const ME = 'agent'
 
 const state = ref('idle')      /* idle | loading | ok | denied | error */
-const rows = ref<any>([])
-const agents = ref<any>([])
+const rows = ref<InboxItem[]>([])
+const agents = ref<Says['support_agents']>([])
 let channel: any = null, refreshTimer: any = null
 
 /* the filters, remembered per browser */
@@ -52,12 +53,12 @@ async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; rows.value = []; return }
   if (roleKnown.value && !isStaff.value) { state.value = 'denied'; return }
   if (state.value !== 'ok') state.value = 'loading'
-  const { data, error } = await (supabase as any).rpc('support_inbox', { p_status: null, p_limit: 500 })
+  const { data, error } = await supabase!.rpc('support_inbox', { p_status: null, p_limit: 500 })
   if (error) { state.value = /permission|denied/i.test(error.message || '') ? 'denied' : 'error'; return }
   if (data === null) { state.value = 'denied'; return }
-  rows.value = data || []
+  rows.value = (data as Says['support_inbox'] | null) || []
   state.value = 'ok'
-  if (!agents.value.length) { const { data: ag } = await (supabase as any).rpc('support_agents'); agents.value = ag || [] }
+  if (!agents.value.length) { const { data: ag } = await supabase!.rpc('support_agents'); agents.value = (ag as Says['support_agents'] | null) || [] }
   listen()
 }
 const refresh = () => { clearTimeout(refreshTimer); refreshTimer = setTimeout(load, 250) }
@@ -67,7 +68,7 @@ const SEEN_MS = 60 * 1000
 let seenTimer: any = null
 async function seen() {
   if (!uid() || !isStaff.value || document.visibilityState !== 'visible') return
-  await (supabase as any).from('support_agents_seen').upsert({ user_id: uid(), last_seen_at: new Date().toISOString() })
+  await supabase!.from('support_agents_seen').upsert({ user_id: uid(), last_seen_at: new Date().toISOString() })
 }
 function startSeen() { if (seenTimer) return; seen(); seenTimer = setInterval(seen, SEEN_MS) }
 
@@ -126,14 +127,14 @@ function listen() {
 function onVisible() { if (document.visibilityState === 'visible' && state.value === 'ok') { refresh(); seen() } }
 onMounted(load)
 watch([isSignedIn, roleKnown, isStaff], load)
-onBeforeUnmount(() => { if (channel) (supabase as any).removeChannel(channel); channel = null; clearTimeout(refreshTimer); clearInterval(seenTimer); seenTimer = null; document.removeEventListener('visibilitychange', onVisible) })
+onBeforeUnmount(() => { if (channel) supabase!.removeChannel(channel); channel = null; clearTimeout(refreshTimer); clearInterval(seenTimer); seenTimer = null; document.removeEventListener('visibilitychange', onVisible) })
 
 /* ---- the list ---- */
 const counts = computed(() => ({ all: rows.value.length, open: rows.value.filter((r: { status: string }) => r.status === 'open').length, pending: rows.value.filter((r: { status: string }) => r.status === 'pending').length, resolved: rows.value.filter((r: { status: string }) => r.status === 'resolved').length }))
 /* the search: names, addresses and notes on the rows in hand at once; every line by the server, a beat later */
 const q = ref(''), hits = ref<any>(null), searching = ref(false)
 let qTimer: any = null
-watch(q, (v) => { clearTimeout(qTimer); const t = v.trim(); if (t.length < 2) { hits.value = null; searching.value = false; return } searching.value = true; qTimer = setTimeout(async () => { const { data } = await (supabase as any).rpc('support_search', { q: t, lim: 200 }); hits.value = new Set(data || []); searching.value = false }, 300) })
+watch(q, (v) => { clearTimeout(qTimer); const t = v.trim(); if (t.length < 2) { hits.value = null; searching.value = false; return } searching.value = true; qTimer = setTimeout(async () => { const { data } = await supabase!.rpc('support_search', { q: t, lim: 200 }); hits.value = new Set((data as Says['support_search'] | null) || []); searching.value = false }, 300) })
 const matches = (r: any) => { const t = q.value.trim().toLowerCase(); if (t.length < 2) return true; const k = r.contact || {}; return (hits.value && hits.value.has(r.id)) || String(k.name || '').toLowerCase().includes(t) || String(k.email || '').toLowerCase().includes(t) || String(k.notes || '').toLowerCase().includes(t) || preview(r).toLowerCase().includes(t) }
 const shown = computed(() => {
   let list = rows.value.filter((r: any) => matches(r) && (f.status === 'all' || r.status === f.status)
@@ -166,7 +167,7 @@ async function withUrls(rows: any) {
     if (!m.attachment_path) { out.push(m); continue }
     if (/^(https?:)?\//.test(m.attachment_path)) { out.push({ ...m, url: m.attachment_path }); continue }
     if (!signed.has(m.attachment_path)) {
-      const { data } = await (supabase as any).storage.from('support').createSignedUrl(m.attachment_path, 3600)
+      const { data } = await supabase!.storage.from('support').createSignedUrl(m.attachment_path, 3600)
       signed.set(m.attachment_path, (data && data.signedUrl) || null)
     }
     out.push({ ...m, url: signed.get(m.attachment_path) })
@@ -178,7 +179,7 @@ function toFoot() { nextTick(() => { const el = scroller.value; if (el) el.scrol
 async function open(id: any) {
   if (!id) return
   thread.id = id; thread.messages = []; thread.loading = true
-  const { data } = await (supabase as any).from('support_messages').select('*').eq('conversation_id', id).order('created_at', { ascending: true }).limit(500)
+  const { data } = await supabase!.from('support_messages').select('*').eq('conversation_id', id).order('created_at', { ascending: true }).limit(500)
   if (thread.id !== id) return
   thread.messages = mergeMessages([], await withUrls((data || []).map(asRow)))
   thread.loading = false
@@ -195,7 +196,7 @@ function markRead() {
   if (r.agent_read_at && new Date(r.agent_read_at) >= new Date(last.created_at)) return
   const at = new Date().toISOString()
   r.agent_read_at = at; r.unread = 0
-  ;(supabase as any).from('support_conversations').update({ agent_read_at: at }).eq('id', thread.id).then(() => {})
+  ;supabase!.from('support_conversations').update({ agent_read_at: at }).eq('id', thread.id).then(() => {})
 }
 const sections = computed(() => daySections(thread.messages, now.value, { today: H.today, yesterday: H.yesterday }).map((s) => ({ ...s, messages: groupRuns(s.messages) })))
 /* a system line after the contact's is the desk's acknowledgement, not the prompt */
@@ -209,11 +210,11 @@ async function reply(text: any) {
   const id = crypto.randomUUID()
   const row = { id, conversation_id: thread.id, author: ME, sender_id: ME, kind: 'text', agent_id: uid(), body: text, created_at: new Date().toISOString(), pending: true }
   thread.messages = mergeMessages(thread.messages, [row])
-  const { error } = await (supabase as any).from('support_messages').insert({ id, conversation_id: thread.id, author: 'agent', agent_id: uid(), body: text })
+  const { error } = await supabase!.from('support_messages').insert({ id, conversation_id: thread.id, author: 'agent', agent_id: uid(), body: text })
   if (error) { thread.messages = thread.messages.filter((m: { id: string }) => m.id !== id); said.value = error.message; busy.value = false; return }
   thread.messages = mergeMessages(thread.messages, [{ ...row, pending: false }])
   toFoot()
-  try { const { data } = await (supabase as any).functions.invoke('support', { body: { action: 'notify', message_id: id } }); if (data && data.sent) said.value = T['notify-sent'] } catch (e) { /* a courtesy */ }
+  try { const { data } = await supabase!.functions.invoke('support', { body: { action: 'notify', message_id: id } }); if (data && data.sent) said.value = T['notify-sent'] } catch (e) { /* a courtesy */ }
   busy.value = false
 }
 const MIME: any = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp', 'audio/mpeg': 'mp3', 'application/pdf': 'pdf', 'text/plain': 'txt' }
@@ -231,13 +232,13 @@ async function sendFile(file: any, { kind = 'file', seconds = 0, transcript = ''
   const name = kind === 'voice' ? 'voice.mp3' : file.name
   const row = { id, conversation_id: thread.id, author: ME, sender_id: ME, kind, agent_id: uid(), body: kind === 'file' ? name : (transcript || null), attachment_path: path, attachment_type: type, attachment_name: name, attachment_size: file.size, seconds: kind === 'voice' ? seconds : null, blob: kind === 'voice' ? file : null, url: kind === 'file' ? URL.createObjectURL(file) : null, created_at: new Date().toISOString(), pending: true }
   thread.messages = mergeMessages(thread.messages, [row])
-  const up = await (supabase as any).storage.from('support').upload(path, file, { contentType: type, cacheControl: '31536000', upsert: false })
+  const up = await supabase!.storage.from('support').upload(path, file, { contentType: type, cacheControl: '31536000', upsert: false })
   if (up.error) { thread.messages = thread.messages.filter((m: { id: string }) => m.id !== id); said.value = up.error.message; busy.value = false; return }
-  const { error } = await (supabase as any).from('support_messages').insert({ id, conversation_id: thread.id, author: 'agent', agent_id: uid(), kind, body: row.body, attachment_path: path, attachment_type: type, attachment_name: name, attachment_size: file.size, seconds: row.seconds })
+  const { error } = await supabase!.from('support_messages').insert({ id, conversation_id: thread.id, author: 'agent', agent_id: uid(), kind, body: row.body, attachment_path: path, attachment_type: type, attachment_name: name, attachment_size: file.size, seconds: row.seconds })
   if (error) { thread.messages = thread.messages.filter((m: { id: string }) => m.id !== id); said.value = error.message; busy.value = false; return }
   thread.messages = mergeMessages(thread.messages, [{ ...row, pending: false }])
   toFoot()
-  try { const { data } = await (supabase as any).functions.invoke('support', { body: { action: 'notify', message_id: id } }); if (data && data.sent) said.value = T['notify-sent'] } catch (e) { /* a courtesy */ }
+  try { const { data } = await supabase!.functions.invoke('support', { body: { action: 'notify', message_id: id } }); if (data && data.sent) said.value = T['notify-sent'] } catch (e) { /* a courtesy */ }
   busy.value = false
 }
 /* a private note on the contact, saved when the field is left */
@@ -247,7 +248,7 @@ async function saveNote(e: any) {
   const notes = String(e.target.value || '').trim() || null
   if ((r.contact.notes || null) === notes) return
   r.contact.notes = notes
-  const { error } = await (supabase as any).from('support_contacts').update({ notes }).eq('id', r.contact.id)
+  const { error } = await supabase!.from('support_contacts').update({ notes }).eq('id', r.contact.id)
   noteSaved.value = error ? error.message : T['notes-saved']
   setTimeout(() => { noteSaved.value = '' }, 2000)
 }
@@ -268,22 +269,22 @@ const agentNameOf = (id: any) => { const a = agents.value.find((x: any) => x.id 
 /* a thread and its files, gone */
 async function deleteThread() {
   const r = current.value; if (!r || !window.confirm(T['delete-confirm'])) return
-  const { error } = await (supabase as any).functions.invoke('support', { body: { action: 'purge', conversation_id: r.id } })
+  const { error } = await supabase!.functions.invoke('support', { body: { action: 'purge', conversation_id: r.id } })
   if (error) { said.value = error.message; return }
   rows.value = rows.value.filter((x: any) => x.id !== r.id); thread.id = null; thread.messages = []
 }
 /* my own line, taken back */
 async function takeBack(id: any) {
   thread.messages = mergeMessages(thread.messages, [{ id, deleted_at: new Date().toISOString(), body: null, url: null, attachment_path: null }])
-  await (supabase as any).functions.invoke('support', { body: { action: 'withdraw', message_id: id } }).catch(() => {})
+  await supabase!.functions.invoke('support', { body: { action: 'withdraw', message_id: id } }).catch(() => {})
 }
 /* I am writing: stamped every few seconds; the contact is: read off the row */
 let typedAt = 0
-function typing() { if (!thread.id || Date.now() - typedAt < 2500) return; typedAt = Date.now(); (supabase as any).from('support_conversations').update({ agent_typing_at: new Date().toISOString() }).eq('id', thread.id).then(() => {}) }
+function typing() { if (!thread.id || Date.now() - typedAt < 2500) return; typedAt = Date.now(); supabase!.from('support_conversations').update({ agent_typing_at: new Date().toISOString() }).eq('id', thread.id).then(() => {}) }
 const contactTyping = computed(() => { void now.value; const r = current.value; const t = r && (thread.conversation && thread.conversation.contact_typing_at || r.contact_typing_at); return !!t && Date.now() - new Date(t).getTime() < 5000 })
 onMounted(() => { const t = setInterval(() => { now.value = Date.now() }, 1000); onBeforeUnmount(() => clearInterval(t)) })
-async function setStatus(status: any) { if (!thread.id) return; await (supabase as any).from('support_conversations').update({ status }).eq('id', thread.id); refresh() }
-async function assign(to: any) { if (!thread.id) return; await (supabase as any).from('support_conversations').update({ assignee_id: to || null }).eq('id', thread.id); refresh() }
+async function setStatus(status: any) { if (!thread.id) return; await supabase!.from('support_conversations').update({ status }).eq('id', thread.id); refresh() }
+async function assign(to: any) { if (!thread.id) return; await supabase!.from('support_conversations').update({ assignee_id: to || null }).eq('id', thread.id); refresh() }
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 
@@ -387,7 +388,7 @@ function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() 
               </template>
             </template>
             <div v-if="contactTyping" class="su-typing" :aria-label="fill(T.typing, { name: nameOf(current.contact) })"><span /><span /><span /></div>
-            <p v-if="current.status === 'resolved'" class="su-resolved">{{ fill(T['resolved-at'], { when: when(current.resolved_at) }) }}</p>
+            <p v-if="current.status === 'resolved'" class="su-resolved">{{ fill(T['resolved-at'], { when: when(current.resolved_at!) }) }}</p>
           </div>
           <div class="su-foot">
             <p v-if="said" class="su-said">{{ said }}</p>

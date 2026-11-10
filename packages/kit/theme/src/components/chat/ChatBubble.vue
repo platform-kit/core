@@ -22,7 +22,7 @@ import { messageBlocks } from 'platformkit/lib/chat/markup.js'
 const props = defineProps({
   message: { type: Object as PropType<any>, required: true },     /* with first/last from groupRuns */
   me: { type: String, default: '' },
-  peerReadAt: { type: String, default: null },
+  peerReadAt: { type: String as PropType<string | null>, default: null },
   reactions: { type: Array as PropType<any[]>, default: () => [] }, /* this message's */
   quoted: { type: Object as PropType<any>, default: null },       /* the message it replies to */
   /* the name of whoever sent a quoted message */

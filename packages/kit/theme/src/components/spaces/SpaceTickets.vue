@@ -61,10 +61,10 @@ const shown = computed<any>(() => sortTickets(narrow(tickets.list, {
   status: status.value, assignee: assignee.value, q: q.value, answer: answer.value,
 }, props.me), order.value))
 
-const open = computed<any>(() => tickets.open && (tickets.open as any).ticket)
-const timeline = computed<any>(() => (tickets.open && (tickets.open as any).timeline) || [])
-const assignees = computed(() => (tickets.open && (tickets.open as any).assignees) || [])
-const chats = computed<any>(() => (tickets.open && (tickets.open as any).chats) || [])
+const open = computed<any>(() => tickets.open && tickets.open.ticket)
+const timeline = computed<any>(() => (tickets.open && tickets.open.timeline) || [])
+const assignees = computed(() => (tickets.open && tickets.open.assignees) || [])
+const chats = computed<any>(() => (tickets.open && tickets.open.chats) || [])
 
 const owed: any = (t: any) => owedOn(t, W.value, now.value)
 const stateWord = (s: string) => W.value['state-' + s] || s
@@ -255,8 +255,8 @@ const onIt = (id: any) => assignees.value.some((a: any) => (a as any).id === id)
         <div class="st-when wq-scroll">
           <!-- WHAT IT WAS RAISED WITH, where a form raised it — at the head of the ticket, so
                nobody spends their first three replies asking what a form already asked. -->
-          <div v-if="(tickets.open.answers || []).length" class="st-asked">
-            <div v-for="a in tickets.open.answers" :key="a.field">
+          <div v-if="(tickets.open!.answers || []).length" class="st-asked">
+            <div v-for="a in tickets.open!.answers" :key="a.field">
               <b>{{ a.field }}</b><span>{{ Array.isArray(a.value) ? a.value.join(', ') : a.value }}</span>
             </div>
           </div>
