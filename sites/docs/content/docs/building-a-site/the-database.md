@@ -14,6 +14,7 @@ sources:
     packages/kit/build/db-types.test.mts,
     packages/kit/supabase/functions/_shared/database.types.ts,
     packages/kit/src/lib/admin/shapes.ts,
+    packages/kit/src/lib/chat/shapes.ts,
     packages/kit/src/lib/comments/shapes.ts,
     packages/kit/src/lib/spaces/shapes.ts,
     packages/kit/src/lib/support/shapes.ts,
@@ -151,11 +152,11 @@ A paid session selected in the app and purchased through the selected payment pr
 
 It is generated, never edited. `platformkit db-types` starts a throwaway Postgres in Docker, applies every kit schema file and the glue between modules, and runs Supabase's own generator (postgres-meta, which `supabase gen types` uses). No stack is touched, and the images are pinned, so the same schema always gives the same file. Run it after changing a schema file; `--check` fails when the file is out of date, and the end-to-end run checks it (`db-types.test`).
 
-Two things the generator cannot see are added. Any argument of a database function may be null, because Postgres passes null to a function that is not STRICT and the kit declares none STRICT. And a column a trigger fills before the row is written is optional to insert: a message's `seq` is its channel's next number.
+Two things the generator cannot see are added. Any argument of a database function may be null, because Postgres passes null to a function that is not STRICT and the kit declares none STRICT. And a column a trigger fills before the row is written is optional to insert: a message's `seq` is its channel's next number, and a chat reaction's conversation is its message's. The list is `FILLED_ON_INSERT` in `build/db-types.mts`, and a trigger that fills a column belongs on it.
 
-A function returning `jsonb` is typed `Json`, which says nothing about its keys. Where code reads one, it declares the shape that function builds, read from the SQL. An Edge Function declares it next to the call. In the browser, each area keeps its functions' shapes in one module, `shapes.ts`, beside the code that calls them: `src/lib/comments/`, `src/lib/spaces/`, `src/lib/support/` and `src/lib/admin/`. Each module maps a function's name to its shape (`SpaceReturns`, `SupportReturns`, `AdminReturns`), and a call reads its answer through that map, for example `data as SupportReturns['support_ticket'] | null`. A function that refuses answers `{ error }`. Its shape gives the success fields of that refusal as `undefined`, so checking `r.error` first narrows the rest.
+A function returning `jsonb` is typed `Json`, which says nothing about its keys. Where code reads one, it declares the shape that function builds, read from the SQL. An Edge Function declares it next to the call. In the browser, each area keeps its functions' shapes in one module, `shapes.ts`, beside the code that calls them: `src/lib/comments/`, `src/lib/spaces/`, `src/lib/chat/`, `src/lib/support/` and `src/lib/admin/`. A function with one caller has its shape declared beside that call instead. Each module maps a function's name to its shape (`SpaceReturns`, `SupportReturns`, `AdminReturns`), and a call reads its answer through that map, for example `data as SupportReturns['support_ticket'] | null`. A function that refuses answers `{ error }`. Its shape gives the success fields of that refusal as `undefined`, so checking `r.error` first narrows the rest.
 
-The spaces module's `rpc()` reads the map itself. It takes only a function the schema has, with that function's arguments, and answers that function's shape.
+The spaces and chat modules' `rpc()` reads the map itself. It takes only a function the schema has, with that function's arguments, and answers that function's shape.
 
 ## The plan
 

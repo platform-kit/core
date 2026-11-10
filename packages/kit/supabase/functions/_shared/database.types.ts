@@ -2426,7 +2426,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          conversation_id: string
+          conversation_id?: string
           created_at?: string
           emoji: string
           message_id: string

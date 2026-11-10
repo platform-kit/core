@@ -65,8 +65,9 @@ async function schemaSql(): Promise<string> {
   return files.map((f) => `\n-- ${path.basename(f)}\n` + fs.readFileSync(f, 'utf8')).join('')
 }
 
-/* the columns a BEFORE INSERT trigger sets, which no insert gives: a message's seq is its channel's next (90-spaces.sql) */
-export const FILLED_ON_INSERT: Record<string, string[]> = { space_messages: ['seq'] }
+/* the columns a BEFORE INSERT trigger sets, which no insert gives: a message's seq is its channel's next (90-spaces.sql),
+   and a chat reaction's conversation is its message's (fill_reaction_conversation, 50-chat.sql) */
+export const FILLED_ON_INSERT: Record<string, string[]> = { space_messages: ['seq'], message_reactions: ['conversation_id'] }
 
 /* a database function's arguments, each of which Postgres will take as null */
 export function nullableArgs(source: string): string {   /* and FILLED_ON_INSERT, which the same pass applies */

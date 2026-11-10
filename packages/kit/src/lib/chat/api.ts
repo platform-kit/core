@@ -15,6 +15,8 @@ import { supabase, configured } from '../supabase.js'
 import { session, beforeSignOut, onIdentity } from '../auth.js'
 import { mergeMessages, toggleReaction } from './model.js'
 import { bump as bumpUnread, refresh as refreshUnread } from './unread.js'
+import type { Database } from '../../../supabase/functions/_shared/database.types.ts'
+import type { ChatReturns } from './shapes.js'
 
 const PAGE = 50
 const SEEN_MS = 60 * 1000
@@ -34,10 +36,13 @@ export const thread = reactive<any>({
   loading: false, done: false, error: null,
 })
 
-const rpc = async (name: string, args?: { q?: string; lim?: number; peer?: any }|undefined) => {
-  const { data, error } = await (supabase as any).rpc(name, args || {})
+type Fns = Database['public']['Functions']
+/* what a function answers: the shape it builds where it returns jsonb (shapes.ts), the generated type otherwise */
+type Answer<N extends keyof Fns> = N extends keyof ChatReturns ? ChatReturns[N] : Fns[N]['Returns']
+const rpc = async <N extends keyof Fns>(name: N, args?: Fns[N]['Args']): Promise<Answer<N> | null> => {
+  const { data, error } = await supabase!.rpc(name, (args || {}) as Fns[N]['Args'])
   if (error) throw error
-  return data
+  return data as unknown as Answer<N> | null   /* supabase-js cannot infer its row type from a name not yet known */
 }
 
 export async function loadInbox() {
@@ -254,7 +259,7 @@ export async function sendVoice(blob: any, seconds: any, replyTo: any, transcrip
 /* A FILE, the same way: the bytes first under the message's own id, then the row. The coaching
    chat's messages table has taken a file since the support desk's did — what it lacked was a way
    to send one, which meant a coach could be sent a screenshot and could not send one back. */
-export async function sendFile(file: { name: any; type: any; size: any }, replyTo: any) {
+export async function sendFile(file: File, replyTo: any) {
   if (!on() || !thread.id || !file) return null
   const id = newId()
   const clean = String(file.name || 'file').replace(/[^\w.\-]+/g, '_').slice(0, 120) || 'file'
@@ -266,7 +271,7 @@ export async function sendFile(file: { name: any; type: any; size: any }, replyT
     attachment_path: path, attachment_name: clean, attachment_type: file.type || null, attachment_size: file.size || null,
     reply_to: replyTo || null, created_at: new Date().toISOString(), deleted_at: null, pending: true }
   thread.messages = mergeMessages(thread.messages, [{ ...row }])
-  const up = await (supabase as any).storage.from('chat').upload(path, file, { contentType: file.type || undefined, upsert: false })
+  const up = await supabase!.storage.from('chat').upload(path, file, { contentType: file.type || undefined, upsert: false })
   if (up.error) { thread.messages = thread.messages.filter((m: { id: any }) => m.id !== id); throw up.error }
   const { error } = await supabase!.from('messages').insert({
     id, conversation_id: thread.id, sender_id: uid(), kind: 'file', attachment_path: path,
@@ -290,7 +295,7 @@ export async function react(message_id: string, emoji: string) {
   const had = thread.reactions.some((r: { message_id: any; user_id: any; emoji: any }) => r.message_id === message_id && r.user_id === me && r.emoji === emoji)
   thread.reactions = toggleReaction(thread.reactions, message_id, me, emoji).map((r) => (r.conversation_id ? r : { ...r, conversation_id: thread.id }))
   if (had) await supabase!.from('message_reactions').delete().match({ message_id, user_id: me, emoji })
-  else await (supabase as any).from('message_reactions').insert({ message_id, user_id: me, emoji })
+  else await supabase!.from('message_reactions').insert({ message_id, user_id: me, emoji })
 }
 
 /* withdraw one's own message; the row stays as a placeholder */
