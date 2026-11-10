@@ -9,6 +9,7 @@
  * to keep somebody out of a filled team is to change the rule.
  */
 import { supabase } from './supabase.js'
+import type { AdminReturns } from './admin/shapes.js'
 
 /*
  * IS THE TEAM IN THE DATABASE AT ALL? The file is the declaration and the row is a projection of it,
@@ -45,7 +46,8 @@ export async function removeFromTeam(team: any, user: any) {
 /* WHO COULD BE ASKED — every account, the admin's own read, narrowed by what was typed. It is the
    People section's read and not a list of its own: one answer to "who is here" is enough. */
 export async function peopleToAsk(q: any, limit = 8) {
-  const { data, error } = await (supabase as any).rpc('admin_everybody', { p_q: q ? String(q) : null, p_narrow: 'all', p_limit: limit, p_offset: 0 })
+  const { data, error } = await supabase!.rpc('admin_everybody', { p_q: q ? String(q) : null, p_narrow: 'all', p_limit: limit, p_offset: 0 })
   if (error) throw error
-  return (data && Array.isArray(data.people)) ? data.people : []
+  const found = data as AdminReturns['admin_everybody'] | null
+  return (found && Array.isArray(found.people)) ? found.people : []
 }

@@ -44,8 +44,8 @@ export const bookForOthers = (event: any, start: any, timeZone: any, notes: any,
    holds a seat of it, and only where the type says to show it. Never an address: a list of who is in
    the room should not also be a list of how to write to them. */
 export async function companyOf(uid: any) {
-  const { data, error } = await (supabase as any).rpc('booking_company', { p_uid: String(uid || '') })
-  return error || !Array.isArray(data) ? [] : data.map((r) => r.name).filter(Boolean)
+  const { data, error } = await supabase!.rpc('booking_company', { p_uid: String(uid || '') })
+  return error || !Array.isArray(data) ? [] : (data as { name: string }[]).map((r) => r.name).filter(Boolean)   /* booking_company (55-sessions.sql) */
 }
 /* THE HOST'S WORD on a booking that was waiting for it. Saying yes IS the booking being made —
    the invitation, the room and the week of chat all follow — so it goes through book-session rather

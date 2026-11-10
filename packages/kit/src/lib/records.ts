@@ -23,6 +23,7 @@
  */
 import { ref } from 'vue'
 import { supabase, configured } from './supabase.js'
+import type { Database } from '../../supabase/functions/_shared/database.types.ts'
 import { session, beforeSignOut, onIdentity } from './auth.js'
 import { whenPulled } from './sync.js'
 import { get as storeGet, set as storeSet, onReconcile } from './store.js'
@@ -63,10 +64,10 @@ function rowFor(corpus: string, e: any, userId: any) {
 const rowKey = (r: any) => keyOf(r.test, r.item_id, Date.parse(r.answered_at))
 
 /* ---- the outbox ---- */
-let outbox: any = null
+let outbox: Record<string, Database['public']['Tables']['answers']['Insert']> | null = null
 function box() {
   if (!outbox) { try { outbox = JSON.parse(storeGet(OUTBOX_KEY) || 'null') || {} } catch (e) { outbox = {} } }
-  return outbox
+  return outbox!
 }
 function saveBox() { try { storeSet(OUTBOX_KEY, JSON.stringify(box())) } catch (e) { /* full */ } }
 
@@ -86,7 +87,7 @@ export async function flush() {
   if (timer) { clearTimeout(timer); timer = null }
   const b = box(), rows = Object.values(b)
   if (!rows.length || !uid() || !configured) return
-  const { error } = await (supabase as any).from('answers').upsert(rows, { onConflict: ON_CONFLICT })
+  const { error } = await supabase!.from('answers').upsert(rows, { onConflict: ON_CONFLICT })
   if (error) return /* offline or refused — the outbox keeps them for next time */
   /* drop what was sent, unless a follow-up replaced the row meanwhile */
   for (const r of rows) { const k = rowKey(r); if (b[k] === r) delete b[k] }

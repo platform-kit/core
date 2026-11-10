@@ -15,6 +15,12 @@
 import { ref, computed } from 'vue'
 import { identityBus } from './identity.js'
 import { supabase, configured } from './supabase.js'
+/* get_my_entitlements (40-commerce.sql): what this person holds, by class, product, credit and tier, and their plan */
+type Held = {
+  class: 'subscribed' | 'paid' | 'authenticated' | 'guest'; products: string[]; credits: Record<string, number>; tiers: string[]
+  plan: string | null; plan_key: string | null; plan_next: string | null; plan_next_key: string | null; plan_next_at: string | null
+  plan_amount: number | null; expires_at: string | null
+}
 import { attachSync, detachSync, pushNow } from './sync.js'
 import { products as PRODUCTS } from '#content'
 import { get as storeGet, set as storeSet, del as storeDel, reset as resetStore } from './store.js'
@@ -130,7 +136,7 @@ async function refreshRole() {
   if (!configured || !session.value) { clearRoles(); emailVerified.value = false; roleKnown.value = false; myFace.value = null; return }
   roleKnown.value = false
   try {
-    const { data } = await (supabase as any).from('profiles').select('roles, role, email_verified_at, email, avatar, avatar_style, avatar_seed, avatar_options').eq('id', session.value.user.id).maybeSingle()
+    const { data } = await supabase!.from('profiles').select('roles, role, email_verified_at, email, avatar, avatar_style, avatar_seed, avatar_options').eq('id', session.value.user.id).maybeSingle()
     /*
      * THE FACE, THROUGH THE FUNCTION. A select cannot answer the seed a person has when they have
      * chosen none — the database makes it from their address, and every other surface is given it
@@ -143,7 +149,7 @@ async function refreshRole() {
     } catch { myFace.value = data ? { id: session.value.user.id, email: data.email, avatar: data.avatar, avatar_style: data.avatar_style, avatar_seed: data.avatar_seed, avatar_options: data.avatar_options } : null }
     /* `role` is what this replaced: read as a fallback so the app works against a database the
        backfill has not reached yet. It is dropped by a change of its own. */
-    const held = Array.isArray(data && data.roles) && data.roles.length ? data.roles
+    const held = Array.isArray(data && data.roles) && data!.roles.length ? data!.roles
       : data && data.role && data.role !== 'user' ? [data.role] : []
     setRoles(held)
     emailVerified.value = !!(data && data.email_verified_at)
@@ -172,9 +178,9 @@ export const entitlements = ref(readCached())
 export async function refreshEntitlements() {
   if (!configured || !session.value) { entitlements.value = null; return }
   try {
-    const { data, error } = await (supabase as any).rpc('get_my_entitlements')
+    const { data, error } = await supabase!.rpc('get_my_entitlements')
     if (error || !data) return
-    entitlements.value = { ...data, at: Date.now() }
+    entitlements.value = { ...(data as Held), at: Date.now() }
     storeSet(ENT_KEY, JSON.stringify(entitlements.value))
   } catch (e) { /* offline — the cached answer stands */ }
 }

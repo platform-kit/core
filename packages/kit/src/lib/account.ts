@@ -83,11 +83,11 @@ export async function personOf(username: any) {
 
 /* their own picture, into the avatars bucket under their own id. A picture always beats a drawn
    face, so this is the one write that changes what everybody sees without touching a style. */
-export async function uploadAvatar(file: { name: any; type: any }) {
+export async function uploadAvatar(file: File) {
   if (!configured || !session.value) return null
   const ext = (String(file.name || '').match(/\.([a-z0-9]+)$/i) || [, 'png'])[1].toLowerCase()
   const path = `${session.value.user.id}/face.${ext}`
-  const { error } = await (supabase as any).storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type || undefined })
+  const { error } = await supabase!.storage.from('avatars').upload(path, file, { upsert: true, contentType: file.type || undefined })
   if (error) throw error
   const { data } = supabase!.storage.from('avatars').getPublicUrl(path)
   /* the url carries the moment, so a replaced picture is not the browser's old one */

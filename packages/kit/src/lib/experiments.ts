@@ -21,6 +21,7 @@
 import { experiments as ALL } from '#content'
 import { get as storeGet, set as storeSet } from './store.js'
 import { supabase, configured } from './supabase.js'
+import type { Json } from '../../supabase/functions/_shared/database.types.ts'
 import { capture } from './analytics.js'
 
 const ASSIGN_KEY = 'dl.exp.v1'        /* { [experiment]: { variant, at } } */
@@ -53,15 +54,15 @@ function pickWeighted(variants: any[]) {
 
 /* ---- what the network knows: first exposure and counts per variant ---- */
 const refreshing: Record<string, boolean> = {}
-async function refresh(name: string|number) {
+async function refresh(name: string) {
   if (!configured || refreshing[name]) return
   refreshing[name] = true
   try {
-    const { data, error } = await (supabase as any).rpc('experiment_state', { name })
-    if (!error && data) { const all = read(STATE_KEY); all[name] = { ...data, at: Date.now() }; write(STATE_KEY, all) }
+    const { data, error } = await supabase!.rpc('experiment_state', { name })
+    if (!error && data) { const all = read(STATE_KEY); all[name] = { ...(data as { experiment: string; started_at: string | null; variants: Json }), at: Date.now() }; write(STATE_KEY, all) }   /* experiment_state (30-analytics.sql) */
   } catch (e) { /* offline */ } finally { refreshing[name] = false }
 }
-function stateOf(exp: { id: string|number }) {
+function stateOf(exp: { id: string }) {
   const state = read(STATE_KEY)[exp.id] || null
   if (!state || Date.now() - (state.at || 0) > STATE_TTL) refresh(exp.id)
   return state
@@ -95,7 +96,7 @@ export function statusOf(exp: any, state: { started_at: string }) {
 }
 
 /* which variant this visitor gets, and why */
-export function decide(exp: { variants: never[]; id: string|number }) {
+export function decide(exp: { variants: never[]; id: string }) {
   const vs = exp.variants || []
   if (!vs.length) return null
   const state = stateOf(exp)
