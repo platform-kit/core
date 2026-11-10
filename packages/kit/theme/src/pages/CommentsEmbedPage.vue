@@ -67,10 +67,10 @@ onMounted(async () => {
      reads as a grey box they forgot to style. The words and the rules are ours; the paper is theirs. */
   document.documentElement.setAttribute('data-embed', '')
   if (!subject) { state.value = 'nothing'; return }
-  let domains = []
+  let domains: string[] = []
   if (configured) {
-    const { data } = await (supabase as any).rpc('comment_domains')
-    domains = Array.isArray(data) ? data : []
+    const { data } = await supabase!.rpc('comment_domains')
+    domains = Array.isArray(data) ? (data as string[]) : []
   }
   state.value = embedAllowed(ancestor(), domains, location.origin) ? 'ok' : 'refused'
   tell()

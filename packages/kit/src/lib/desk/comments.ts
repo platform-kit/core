@@ -13,33 +13,38 @@
  *
  * `rowsOf` is pure — build/desk.test.mjs reads it against real comment_queue rows.
  */
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '../../../supabase/functions/_shared/database.types.ts'
+import type { QueuedComment, CommentLine, Said, Decided } from '../comments/shapes.js'
 
-export function rowsOf(raw: any[] = [], ctx: any = {}) {
+type Db = SupabaseClient<Database>
+
+export function rowsOf(raw: (QueuedComment | null)[] = [], ctx: { wait?: number } = {}) {
   const out = []
   for (const r of raw || []) {
-    if (!r || !(r as any).id) continue
-    if ((r as any).attached) continue   /* a room's own; its moderators answer it there */
-    const waiting = (r as any).state === 'waiting'
+    if (!r || !r.id) continue
+    if (r.attached) continue   /* a room's own; its moderators answer it there */
+    const waiting = r.state === 'waiting'
     out.push({
-      key: 'comments:' + (r as any).id,
+      key: 'comments:' + r.id,
       source: 'comments',
-      id: (r as any).id,
-      person: { id: (r as any).author_id || null, name: (r as any).author || null, kind: (r as any).trusted ? 'member' : 'reader' },
+      id: r.id,
+      person: { id: r.author_id || null, name: r.author || null, kind: r.trusted ? 'member' : 'reader' },
       /* what it is attached to, by the name a person reads: a queue listing
          /content/articles/listening-back is a queue nobody scans */
-      detail: (r as any).title || (r as any).subject || null,
-      last: { body: (r as any).body, at: (r as any).created_at, mine: false },
+      detail: r.title || r.subject || null,
+      last: { body: r.body, at: r.created_at, mine: false },
       unread: waiting ? 1 : 0,
-      waiting_since: waiting ? (r as any).created_at : null,
+      waiting_since: waiting ? r.created_at : null,
       due: Number(ctx.wait) > 0 ? Number(ctx.wait) : 0,
       /* the word that held it, for the moderator alone — never shown to its author */
-      flagged: (r as any).flagged || null,
-      state: (r as any).state,
-      href: (r as any).href || null,
-      kind: (r as any).kind,
-      subject: (r as any).subject,
+      flagged: r.flagged || null,
+      state: r.state,
+      href: r.href || null,
+      kind: r.kind,
+      subject: r.subject,
       resolved: !waiting,
-      at: (r as any).created_at || null,
+      at: r.created_at || null,
       assignee: null,
     })
   }
@@ -51,12 +56,12 @@ export function rowsOf(raw: any[] = [], ctx: any = {}) {
 /* WHAT A COMMENT IS UNDER, by its id. The queue is what answers it, and what the queue returns is
    what this moderator may decide — so one they may not is simply not found, and every caller below
    refuses it without asking a second time. Both states, because a live comment is answered too. */
-const CACHE = new Map()
-async function rowOf(supabase: any, id: any) {
-  if (CACHE.has(id)) return CACHE.get(id)
+const CACHE = new Map<string, QueuedComment>()
+async function rowOf(supabase: Db, id: string): Promise<QueuedComment | null> {
+  if (CACHE.has(id)) return CACHE.get(id)!
   for (const state of ['waiting', 'live']) {
     const { data } = await supabase.rpc('comment_queue', { p_state: state, p_limit: 500 })
-    const found = (data || []).find((r: any) => r.id === id)
+    const found = ((data as QueuedComment[] | null) || []).find((r) => r.id === id)
     if (found) { CACHE.set(id, found); return found }
   }
   return null
@@ -64,22 +69,22 @@ async function rowOf(supabase: any, id: any) {
 
 /* everything undecided and everything lately decided, so the desk can show what was finished with
    as well as what waits — narrowed to the conversations no room owns */
-export async function list(supabase: any) {
+export async function list(supabase: Db): Promise<QueuedComment[]> {
   const held = await supabase.rpc('comment_queue', { p_state: 'waiting', p_attached: false, p_limit: 200 })
   if (held.error) throw held.error
   const live = await supabase.rpc('comment_queue', { p_state: 'live', p_attached: false, p_limit: 50 })
-  return [...(held.data || []), ...(live.error ? [] : live.data || [])]
+  return [...((held.data as QueuedComment[] | null) || []), ...(live.error ? [] : (live.data as QueuedComment[] | null) || [])]
 }
 
 /* the thread the held comment sits in, so a moderator decides in context rather than on one line
    out of the air. The held ones of other people are invisible to everybody but a moderator, which
    is exactly who is reading this. */
-export async function messages(supabase: any, id: any, me: any) {
+export async function messages(supabase: Db, id: string, me: string | null) {
   const found = await rowOf(supabase, id)
   if (!found) return []
   const { data, error } = await supabase.rpc('comments_on', { p_kind: found.kind, p_subject: found.subject, p_limit: 200 })
   if (error) throw error
-  return (data || []).map((c: any) => ({
+  return ((data as CommentLine[] | null) || []).map((c) => ({
     id: c.id, body: c.body, kind: 'text', created_at: c.created_at, deleted_at: c.deleted_at,
     mine: c.author_id === me, author: c.name, state: c.state, flagged: c.flagged,
     /* the one being decided, so the pane can say which line the queue was about */
@@ -89,35 +94,39 @@ export async function messages(supabase: any, id: any, me: any) {
 
 /* A MODERATOR MAY ANSWER, which is a comment like anybody's — under their own name, in the open,
    never a note that appears to come from the site. */
-export async function send(supabase: any, id: any, body: any) {
+export async function send(supabase: Db, id: string, body: string) {
   const found = await rowOf(supabase, id)
   if (!found) throw new Error('no such comment')
   const { data, error } = await supabase.rpc('comment_say', {
     p_kind: found.kind, p_subject: found.subject, p_body: body, p_parent: id,
   })
   if (error) throw error
-  if (data && data.error) throw new Error(data.error)
-  return (data && data.id) || null
+  const said = data as Said | null
+  if (said && said.error) throw new Error(said.error)
+  return (said && said.id) || null
 }
 
 /* FINISHED WITH means DECIDED, and the two ways of deciding are the two acts. Each writes a row of
    the moderation record — a person's name, a moment, a reason where one is given — because this is
    the act that happens before anybody else reads the words, and a moderator who quietly declines to
    release something has made a decision about somebody's voice. */
-export async function resolve(supabase: any, id: any, done: any) {
+export async function resolve(supabase: Db, id: string, done: unknown) {
   const { data, error } = await supabase.rpc(done ? 'comment_approve' : 'comment_refuse', { p_comment: id })
   if (error) throw error
-  if (data && data.error) throw new Error(data.error)
+  const decided = data as Decided | null
+  if (decided && decided.error) throw new Error(decided.error)
 }
-export async function approve(supabase: any, id: any, reason = null) {
+export async function approve(supabase: Db, id: string, reason: string | null = null) {
   const { data, error } = await supabase.rpc('comment_approve', { p_comment: id, p_reason: reason })
   if (error) throw error
-  if (data && data.error) throw new Error(data.error)
+  const decided = data as Decided | null
+  if (decided && decided.error) throw new Error(decided.error)
 }
-export async function refuse(supabase: any, id: any, reason = null) {
+export async function refuse(supabase: Db, id: string, reason: string | null = null) {
   const { data, error } = await supabase.rpc('comment_refuse', { p_comment: id, p_reason: reason })
   if (error) throw error
-  if (data && data.error) throw new Error(data.error)
+  const decided = data as Decided | null
+  if (decided && decided.error) throw new Error(decided.error)
 }
 
 /* nothing to mark read: a held comment is read by being decided */

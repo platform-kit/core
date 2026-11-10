@@ -8,40 +8,42 @@
  * (comments_on), and a caller that had to know would be a caller that could get it wrong.
  */
 import { supabase, configured } from './supabase.js'
+import type { CommentLine, CommentCounts, CommentSubject, Said, Refused } from './comments/shapes.js'
+export type { CommentLine, CommentCounts, CommentSubject, QueuedComment, Said, Refused, Decided } from './comments/shapes.js'
 
 const on = () => !!supabase && configured
 
 /* the thread, oldest first. A withdrawn comment comes back with a null body and is kept as a
    placeholder: a conversation with holes in it reads as one somebody has tampered with. */
-export async function commentsOn(kind: any, subject: any, limit = 200) {
+export async function commentsOn(kind: string, subject: string, limit = 200): Promise<CommentLine[]> {
   if (!on()) return []
   const { data, error } = await supabase!.rpc('comments_on', { p_kind: kind, p_subject: subject, p_limit: limit })
-  return error ? [] : (data || [])
+  return error ? [] : ((data as CommentLine[] | null) || [])
 }
 
 /* how many, for a listing. One call for fifty things, which is what a count badge needs and what
    Disqus's own count script asks for. */
-export async function commentCounts(kind: any, subjects = []) {
+export async function commentCounts(kind: string, subjects: string[] = []): Promise<CommentCounts> {
   if (!on() || !subjects.length) return {}
   const { data, error } = await supabase!.rpc('comment_counts', { p_kind: kind, p_subjects: subjects })
-  return error ? {} : (data || {})
+  return error ? {} : ((data as CommentCounts | null) || {})
 }
 
 /* SAYING SOMETHING. The title and the address are only ever used where the subject does not exist
    yet and its KIND is open — an embed naming the page it is on. Everything of the site's own is
    projected and already has both. A caller may name a thread; it may not rename one. */
-export async function say(kind: any, subject: any, body: any, parent: string | null = null, title: string | null = null, href: string | null = null): Promise<{ error?: string; [k: string]: unknown }> {
+export async function say(kind: string, subject: string, body: string, parent: string | null = null, title: string | null = null, href: string | null = null): Promise<Said | { error?: undefined }> {
   if (!on()) return { error: 'offline' }
   const { data, error } = await supabase!.rpc('comment_say', {
     p_kind: kind, p_subject: subject, p_body: body, p_parent: parent, p_title: title, p_href: href,
   })
-  return error ? { error: error.message } : ((data || {}) as { [k: string]: unknown })
+  return error ? { error: error.message } : ((data as Said | null) || {})
 }
 
-export async function unsay(id: any) {
+export async function unsay(id: string): Promise<Refused | { error?: undefined; ok?: true }> {
   if (!on()) return { error: 'offline' }
   const { data, error } = await supabase!.rpc('comment_unsay', { p_comment: id })
-  return error ? { error: error.message } : (data || {})
+  return error ? { error: error.message } : ((data as Refused | { ok: true } | null) || {})
 }
 
 /* ---------------------------------------------------------------------------------------------
@@ -80,8 +82,8 @@ export async function vote(id: any, next: any, surface = 'comment') {
    join it, and — where it is also a post in the community — the address of that post. One read, so
    a component that draws a thread needs to know nothing about kinds, channels or policies.
    Null means the thing takes no comments, which is not an error: most things do not. */
-export async function commentSubject(kind: any, subject: any) {
+export async function commentSubject(kind: string, subject: string): Promise<CommentSubject | null> {
   if (!on()) return null
   const { data, error } = await supabase!.rpc('comment_subject', { p_kind: kind, p_subject: subject })
-  return error ? null : (data || null)
+  return error ? null : ((data as CommentSubject | null) || null)
 }

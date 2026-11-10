@@ -20,6 +20,7 @@ import { us } from 'platformkit/lib/content.js'
 import { supabase, configured } from 'platformkit/lib/supabase.js'
 import { isSignedIn, isStaff, roleKnown } from 'platformkit/lib/auth.js'
 import { spanOf } from 'platformkit/lib/chat/model.js'
+import type { Decided, Said } from 'platformkit/lib/comments.js'
 import AdminHead from './admin/AdminHead.vue'
 
 /* a scope the site has not compiled yet must not white-screen the admin: a missing key shows
@@ -46,7 +47,7 @@ async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; rows.value = []; return }
   if (roleKnown.value && !isStaff.value) { state.value = 'denied'; return }
   if (state.value !== 'ok') state.value = 'loading'
-  const { data, error } = await (supabase as any).rpc('comment_queue', {
+  const { data, error } = await supabase!.rpc('comment_queue', {
     p_state: f.state === 'all' ? null : f.state,
     p_kind: f.kind === 'all' ? null : f.kind,
     p_attached: f.where === 'all' ? null : f.where === 'rooms',
@@ -69,8 +70,9 @@ async function decide(row: { id: string; state: string; body: null }, yes: any) 
   if (busy.value) return
   busy.value = row.id
   try {
-    const { data, error } = await (supabase as any).rpc(yes ? 'comment_approve' : 'comment_refuse', { p_comment: row.id })
-    if (error || (data && data.error)) throw new Error((error && error.message) || data.error)
+    const { data, error } = await supabase!.rpc(yes ? 'comment_approve' : 'comment_refuse', { p_comment: row.id })
+    const decided = data as Decided | null
+    if (error || (decided && decided.error)) throw new Error((error && error.message) || decided!.error)
     row.state = yes ? 'live' : 'removed'
     if (!yes) row.body = null
   } catch (e) { state.value = 'error' } finally { busy.value = '' }
@@ -83,8 +85,9 @@ async function answer(row: { id: string; kind: any; subject: any }) {
   if (!body || busy.value) return
   busy.value = row.id
   try {
-    const { data, error } = await (supabase as any).rpc('comment_say', { p_kind: row.kind, p_subject: row.subject, p_body: body, p_parent: row.id })
-    if (error || (data && data.error)) throw new Error((error && error.message) || data.error)
+    const { data, error } = await supabase!.rpc('comment_say', { p_kind: row.kind, p_subject: row.subject, p_body: body, p_parent: row.id })
+    const said = data as Said | null
+    if (error || (said && said.error)) throw new Error((error && error.message) || said!.error)
     draft.value = ''
     open.value = null
   } catch (e) { state.value = 'error' } finally { busy.value = '' }
