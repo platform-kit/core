@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { SpaceReturns } from 'platformkit/lib/spaces/shapes.js'
 /*
  * Spaces, from the admin. Four views over one space at a time, and they are two different KINDS of
  * thing, which is the whole shape of this screen:
@@ -102,8 +103,8 @@ async function openSpace(name: string|number|boolean) {
 }
 async function loadRows() {
   const [s, c] = await Promise.all([
-    (supabase as any).from('spaces').select('*').order('name'),
-    (supabase as any).from('channels').select('*').order('name'),
+    supabase!.from('spaces').select('*').order('name'),
+    supabase!.from('channels').select('*').order('name'),
   ])
   rows.value = s.data || []
   dbChannels.value = c.data || []
@@ -111,9 +112,9 @@ async function loadRows() {
 async function loadMembers() {
   if (!row.value) { members.value = []; dbRoles.value = []; held.value = {}; return }
   const [m, r, h] = await Promise.all([
-    (supabase as any).from('space_members').select('*').eq('space_id', row.value.id),
-    (supabase as any).from('space_roles').select('*').eq('space_id', row.value.id).order('rank', { ascending: false }),
-    (supabase as any).from('space_member_roles').select('user_id, role_id').eq('space_id', row.value.id),
+    supabase!.from('space_members').select('*').eq('space_id', row.value.id),
+    supabase!.from('space_roles').select('*').eq('space_id', row.value.id).order('rank', { ascending: false }),
+    supabase!.from('space_member_roles').select('user_id, role_id').eq('space_id', row.value.id),
   ])
   members.value = m.data || []
   dbRoles.value = r.data || []
@@ -125,13 +126,13 @@ async function loadMembers() {
 async function loadSaid() {
   const ids = dbChannels.value.filter((c: any) => c.kind !== 'dm' && (!row.value || c.space_id === row.value.id)).map((c: any) => c.id)
   if (!ids.length) { said.value = []; return }
-  const { data } = await (supabase as any).from('space_messages').select('id, channel_id, author_id, kind, body, title, created_at, deleted_at')
+  const { data } = await supabase!.from('space_messages').select('id, channel_id, author_id, kind, body, title, created_at, deleted_at')
     .in('channel_id', ids).order('created_at', { ascending: false }).limit(60)
   said.value = data || []
   await namesFor(said.value.map((m: any) => m.author_id))
 }
 async function loadGrants() {
-  const { data } = await (supabase as any).from('space_grants').select('*').order('created_at', { ascending: false })
+  const { data } = await supabase!.from('space_grants').select('*').order('created_at', { ascending: false })
   grants.value = data || []
   await namesFor(grants.value.map((g: any) => g.user_id))
 }
@@ -140,8 +141,8 @@ async function namesFor(ids: any) {
   const want = [...new Set<string>(ids.filter((i: string|number) => i && !people.value[i]))]
   if (!want.length) return
   for (const id of want) people.value[id] = { name: '…', email: '' }
-  const { data } = await (supabase as any).rpc('space_people_named', { p_ids: want })
-  for (const r of data || []) people.value[r.id] = { name: r.name, email: r.email }
+  const { data } = await supabase!.rpc('space_people_named', { p_ids: want })
+  for (const r of (data as SpaceReturns['space_people_named'] | null) || []) people.value[r.id] = { name: r.name, email: r.email }
   for (const id of want) if (people.value[id].name === '…') people.value[id] = { name: W.value.someone, email: '' }
 }
 const nameOf = (id: string|number) => (people.value[id] || {}).name || W.value.someone
@@ -367,18 +368,18 @@ watch(finding, (q) => {
   clearTimeout(findTimer)
   if (q.trim().length < 2) { found.value = []; return }
   findTimer = setTimeout(async () => {
-    const { data } = await (supabase as any).rpc('space_find_people', { q: q.trim(), lim: 12 })
+    const { data } = await supabase!.rpc('space_find_people', { q: q.trim(), lim: 12 })
     const have = new Set(members.value.map((m: any) => m.user_id))
-    found.value = (data || []).filter((p: any) => !have.has(p.id))
+    found.value = ((data as SpaceReturns['space_find_people'] | null) || []).filter((p) => !have.has(p.id))
   }, 250)
 })
 async function addMember(p: any) {
   await run(async () => {
-    const { error } = await (supabase as any).from('space_members').insert({ space_id: row.value.id, user_id: p.id, source: 'invite' })
+    const { error } = await supabase!.from('space_members').insert({ space_id: row.value.id, user_id: p.id, source: 'invite' })
     if (error) throw error
     /* an open channel of the space is theirs to be in from the start */
     const open = dbChannels.value.filter((c: any) => c.space_id === row.value.id && c.kind !== 'dm' && c.visibility === 'open')
-    if (open.length) await (supabase as any).from('channel_members').insert(open.map((c: any) => ({ channel_id: c.id, user_id: p.id })))
+    if (open.length) await supabase!.from('channel_members').insert(open.map((c: any) => ({ channel_id: c.id, user_id: p.id })))
     finding.value = ''
     found.value = []
     await loadMembers()
@@ -393,8 +394,8 @@ async function toggleRole(m: any, role: any) {
   if (role.slug === 'member') return
   await run(async () => {
     const q = holds(m, role)
-      ? (supabase as any).from('space_member_roles').delete().eq('space_id', m.space_id).eq('user_id', m.user_id).eq('role_id', role.id)
-      : (supabase as any).from('space_member_roles').insert({ space_id: m.space_id, user_id: m.user_id, role_id: role.id, given_by: me.value })
+      ? supabase!.from('space_member_roles').delete().eq('space_id', m.space_id).eq('user_id', m.user_id).eq('role_id', role.id)
+      : supabase!.from('space_member_roles').insert({ space_id: m.space_id, user_id: m.user_id, role_id: role.id, given_by: me.value })
     const { error } = await q
     if (error) throw error
     await loadMembers()
@@ -403,8 +404,8 @@ async function toggleRole(m: any, role: any) {
 async function removeMember(m: any) {
   await run(async () => {
     const ids = dbChannels.value.filter((c: any) => c.space_id === m.space_id).map((c: any) => c.id)
-    if (ids.length) await (supabase as any).from('channel_members').delete().eq('user_id', m.user_id).in('channel_id', ids)
-    const { error } = await (supabase as any).from('space_members').delete().eq('space_id', m.space_id).eq('user_id', m.user_id)
+    if (ids.length) await supabase!.from('channel_members').delete().eq('user_id', m.user_id).in('channel_id', ids)
+    const { error } = await supabase!.from('space_members').delete().eq('space_id', m.space_id).eq('user_id', m.user_id)
     if (error) throw error
     await loadMembers()
   }, W.value['member-removed'])
@@ -415,7 +416,7 @@ async function removeMember(m: any) {
 async function withdraw(m: any) {
   if (!window.confirm(W.value['withdraw-sure'])) return
   await run(async () => {
-    const { error } = await (supabase as any).from('space_messages').update({ deleted_at: new Date().toISOString() }).eq('id', m.id)
+    const { error } = await supabase!.from('space_messages').update({ deleted_at: new Date().toISOString() }).eq('id', m.id)
     if (error) throw error
     await loadSaid()
   }, W.value.withdrawn)
@@ -438,14 +439,14 @@ watch(grantFinding, (q) => {
   clearTimeout(grantTimer)
   if (q.trim().length < 2) { grantFound.value = []; return }
   grantTimer = setTimeout(async () => {
-    const { data } = await (supabase as any).rpc('space_find_people', { q: q.trim(), lim: 12 })
+    const { data } = await supabase!.rpc('space_find_people', { q: q.trim(), lim: 12 })
     grantFound.value = data || []
   }, 250)
 })
 async function addGrant() {
   const g = newGrant.value
   await run(async () => {
-    const { error } = await (supabase as any).rpc('space_grant_person', {
+    const { error } = await supabase!.rpc('space_grant_person', {
       p_user: g.user_id, p_capability: g.capability,
       p_space: g.space_id || null, p_channel: g.channel_id || null,
       p_days: g.days ? Number(g.days) : null, p_note: g.note.trim() || null,
@@ -458,7 +459,7 @@ async function addGrant() {
   }, W.value['grant-added'])
 }
 async function dropGrant(g: any) {
-  await run(async () => { const { error } = await (supabase as any).rpc('space_ungrant', { p_id: g.id }); if (error) throw error; await loadGrants() }, W.value['grant-dropped'])
+  await run(async () => { const { error } = await supabase!.rpc('space_ungrant', { p_id: g.id }); if (error) throw error; await loadGrants() }, W.value['grant-dropped'])
 }
 /* a grant said back in words, because a row of ids tells nobody anything */
 function grantSays(g: any) {

@@ -37,11 +37,11 @@ async function load() {
   if (roleKnown.value && !isAdmin.value) { state.value = 'denied'; return }
   if (state.value !== 'ok') state.value = 'loading'
   const [r, s, l] = await Promise.all([
-    (supabase as any).from('network_moderation').select('*').eq('kind', 'report').is('answered_at', null).order('created_at', { ascending: false }).limit(200),
-    (supabase as any).from('network_moderation').select('*').eq('kind', 'suspend').order('created_at', { ascending: false }).limit(200),
-    (supabase as any).from('network_moderation').select('lifts_id').eq('kind', 'lift'),
+    supabase!.from('network_moderation').select('*').eq('kind', 'report').is('answered_at', null).order('created_at', { ascending: false }).limit(200),
+    supabase!.from('network_moderation').select('*').eq('kind', 'suspend').order('created_at', { ascending: false }).limit(200),
+    supabase!.from('network_moderation').select('lifts_id').eq('kind', 'lift'),
   ])
-  if (r.error || s.error) { state.value = /permission|denied/i.test((r.error || s.error).message || '') ? 'denied' : 'error'; return }
+  if (r.error || s.error) { state.value = /permission|denied/i.test((r.error || s.error)!.message || '') ? 'denied' : 'error'; return }
   const lifted = new Set((l.data || []).map((x: any) => x.lifts_id))
   const now = Date.now()
   reports.value = r.data || []
@@ -57,7 +57,7 @@ watch([isSignedIn, roleKnown], load)
 
 async function run(key: any, fn: any, args: any) {
   busy.value = key
-  try { const { error } = await (supabase as any).rpc(fn, args); if (error) throw error; await load() }
+  try { const { error } = await supabase!.rpc(fn, args); if (error) throw error; await load() }
   catch (e) { state.value = 'error' } finally { busy.value = '' }
 }
 const remove = (r: any) => run(r.id, 'network_remove_post', { p_post: r.post_id, p_reason: r.reason })

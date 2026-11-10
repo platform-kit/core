@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AdminReturns } from 'platformkit/lib/admin/shapes.js'
 /*
  * Bookings — every session cal.com mirrored into bookings (the webhook's projection: the attendee,
  * the coach, the time, what became of it), upcoming first and then the past, read with the admin's
@@ -51,7 +52,7 @@ let channel: any = null
 async function load() {
   if (!configured || !isSignedIn.value) { state.value = 'idle'; rows.value = []; return }
   state.value = 'loading'
-  const { data, error } = await (supabase as any).from('bookings').select('*').order('start_at', { ascending: false }).limit(500)
+  const { data, error } = await supabase!.from('bookings').select('*').order('start_at', { ascending: false }).limit(500)
   if (error) { state.value = (error.code === '42501' || /permission/i.test(error.message || '')) ? 'denied' : 'error'; return }
   rows.value = data || []
   loadAnswers(rows.value)
@@ -60,10 +61,10 @@ async function load() {
   listen()
 }
 async function names(list: any) {
-  const ids = [...new Set(list.flatMap((r: any) => [r.user_id, r.provider_id]).filter((id: string|number) => id && !people.value[id]))]
+  const ids = [...new Set<string>(list.flatMap((r: any) => [r.user_id, r.provider_id]).filter((id: string|number) => id && !people.value[id]))]
   if (!ids.length) return
-  const { data } = await (supabase as any).rpc('admin_people', { ids })
-  for (const p of data || []) people.value[p.id] = p
+  const { data } = await supabase!.rpc('admin_people', { ids })
+  for (const p of (data as AdminReturns['admin_people'] | null) || []) people.value[p.id] = p
 }
 function listen() {
   if (channel || !supabase) return
@@ -76,7 +77,7 @@ function listen() {
 }
 onMounted(load)
 onIdentity(load)
-onBeforeUnmount(() => { if (channel) (supabase as any).removeChannel(channel); channel = null })
+onBeforeUnmount(() => { if (channel) supabase!.removeChannel(channel); channel = null })
 
 /* what became of it: refused and no-show first (they say more than the status), then the status, an accepted one ahead as upcoming */
 const now = () => Date.now()
@@ -117,11 +118,11 @@ function orderOf(slug: any) {
   return ((doc && doc.model && doc.model.fields) || []).map((x: any) => x.name)
 }
 async function loadAnswers(rows: any) {
-  const ids = [...new Set((rows || []).map((r: any) => r.response_id).filter(Boolean))]
+  const ids = [...new Set<string>((rows || []).map((r: any) => r.response_id).filter(Boolean))]
   if (!ids.length) { answers.value = {}; return }
-  const { data: resp } = await (supabase as any).from('form_responses').select('id, form').in('id', ids)
+  const { data: resp } = await supabase!.from('form_responses').select('id, form').in('id', ids)
   const formOf = Object.fromEntries((resp || []).map((r: any) => [r.id, r.form]))
-  const { data } = await (supabase as any).from('form_answers').select('response_id, field, value, file_name').in('response_id', ids)
+  const { data } = await supabase!.from('form_answers').select('response_id, field, value, file_name').in('response_id', ids)
   const by: any = {}
   for (const a of data || []) {
     const v = a.file_name ? a.file_name : Array.isArray(a.value) ? a.value.join(', ') : a.value && typeof a.value === 'object' ? JSON.stringify(a.value) : String(a.value ?? '')

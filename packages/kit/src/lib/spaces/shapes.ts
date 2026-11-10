@@ -5,6 +5,7 @@
  * A function that refuses says why in `error`; a shape that can also be a refusal carries `error?: undefined`.
  */
 import type { Database, Json } from '../../../supabase/functions/_shared/database.types.ts'
+import type { NamedPerson } from '../admin/shapes.js'
 
 type Row<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
 type Refused = { error: string }
@@ -91,6 +92,8 @@ export type SpaceReturns = {
   space_dms: Dm[]
   space_everywhere: Everywhere[]
   space_first_replies: Record<string, Message[]>
+  space_find_people: NamedPerson[]   /* an admin's search; [] to anybody else */
+  space_people_named: NamedPerson[]  /* staff alone; [] to anybody else */
   space_flairs: SpaceFlair[]
   space_give_flair: Ok
   space_history: Message[]          /* null where the room may not be read */

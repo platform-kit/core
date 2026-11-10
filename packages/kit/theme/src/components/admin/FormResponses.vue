@@ -32,11 +32,11 @@ async function load() {
   if (!supabaseOn || !isSignedIn.value) return
   loading.value = true; msg.value = ''
   try {
-    const { data, error } = await (supabase as any).from('form_responses').select('id, form, user_id, anon_id, started_at, completed_at, score, total, passed, webhook_at, webhook_error').order('started_at', { ascending: false }).limit(500)
+    const { data, error } = await supabase!.from('form_responses').select('id, form, user_id, anon_id, started_at, completed_at, score, total, passed, webhook_at, webhook_error').order('started_at', { ascending: false }).limit(500)
     if (error) throw error
     rows.value = data || []
-    const ids = [...new Set(rows.value.map((r: { user_id: any }) => r.user_id).filter(Boolean))]
-    if (ids.length) { const { data: p } = await (supabase as any).from('profiles').select('id, display_name, email').in('id', ids); for (const x of p || []) names.value[x.id] = x.display_name || x.email || x.id.slice(0, 8) }
+    const ids = [...new Set<string>(rows.value.map((r: { user_id: any }) => r.user_id).filter(Boolean))]
+    if (ids.length) { const { data: p } = await supabase!.from('profiles').select('id, display_name, email').in('id', ids); for (const x of p || []) names.value[x.id] = x.display_name || x.email || x.id.slice(0, 8) }
   } catch (e) { msg.value = (e as any).message } finally { loading.value = false }
 }
 onMounted(load)
@@ -66,23 +66,23 @@ const answers = ref<any>([]), files = ref<any>({})
 async function loadOne() {
   answers.value = []; files.value = {}
   if (!cur.value) return
-  const { data } = await (supabase as any).from('form_answers').select('field, value, file_path, file_name, file_type, file_size, slide, answered_at').eq('response_id', cur.value.id)
+  const { data } = await supabase!.from('form_answers').select('field, value, file_path, file_name, file_type, file_size, slide, answered_at').eq('response_id', cur.value.id)
   const order = fieldsOf(cur.value.form).map((f: { name: any }) => f.name)
   answers.value = (data || []).sort((a: { field: any; answered_at: string }, b: { field: any; answered_at: any }) => (order.indexOf(a.field) - order.indexOf(b.field)) || a.answered_at.localeCompare(b.answered_at))
   const paths = answers.value.filter((a: { file_path: any }) => a.file_path).map((a: { file_path: any }) => a.file_path)
-  if (paths.length) { const { data: s } = await (supabase as any).storage.from('forms').createSignedUrls(paths, 3600); for (const x of s || []) if (x.signedUrl) files.value[x.path] = x.signedUrl }
+  if (paths.length) { const { data: s } = await supabase!.storage.from('forms').createSignedUrls(paths, 3600); for (const x of s || []) if (x.signedUrl) files.value[x.path!] = x.signedUrl }
 }
 watch([cur, rows], loadOne, { immediate: true })
 const question = (slug: any, name: any) => { const f = fieldsOf(slug).find((x: { name: any }) => x.name === name); return f && f.question && f.question !== '...' ? f.question : name }
 const show = (a: { file_path: any; file_name: any; value: any[]|null }) => (a.file_path ? a.file_name : Array.isArray(a.value) ? a.value.join(', ') : a.value == null ? '' : typeof a.value === 'object' ? JSON.stringify(a.value) : String(a.value))
-async function remove() { if (!cur.value || !confirm(W1.delete + '?')) return; await (supabase as any).from('form_responses').delete().eq('id', cur.value.id); rows.value = rows.value.filter((r: { id: any }) => r.id !== cur.value.id); emit('back') }
+async function remove() { if (!cur.value || !confirm(W1.delete + '?')) return; await supabase!.from('form_responses').delete().eq('id', cur.value.id); rows.value = rows.value.filter((r: { id: any }) => r.id !== cur.value.id); emit('back') }
 
 /* CSV: the rows shown, every answer of each as a column */
 async function exportCsv() {
   const list = shown.value
   const ids = list.map((r: { id: any }) => r.id)
   const all = []
-  for (let i = 0; i < ids.length; i += 200) { const { data } = await (supabase as any).from('form_answers').select('response_id, field, value, file_name').in('response_id', ids.slice(i, i + 200)); all.push(...(data || [])) }
+  for (let i = 0; i < ids.length; i += 200) { const { data } = await supabase!.from('form_answers').select('response_id, field, value, file_name').in('response_id', ids.slice(i, i + 200)); all.push(...(data || [])) }
   const byResp: any = {}
   for (const a of all) (byResp[a.response_id] = byResp[a.response_id] || {})[a.field] = a.file_name || (Array.isArray(a.value) ? a.value.join('; ') : a.value == null ? '' : String(a.value))
   const fields = [...new Set(all.map((a) => a.field))]

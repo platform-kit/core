@@ -13,6 +13,10 @@ sources:
     packages/kit/build/db-types.mts,
     packages/kit/build/db-types.test.mts,
     packages/kit/supabase/functions/_shared/database.types.ts,
+    packages/kit/src/lib/admin/shapes.ts,
+    packages/kit/src/lib/comments/shapes.ts,
+    packages/kit/src/lib/spaces/shapes.ts,
+    packages/kit/src/lib/support/shapes.ts,
     packages/kit/build/runtime-paths.mts,
     packages/kit/build/destructive.mts,
     packages/kit/build/assemble.mts,
@@ -149,7 +153,9 @@ It is generated, never edited. `platformkit db-types` starts a throwaway Postgre
 
 Two things the generator cannot see are added. Any argument of a database function may be null, because Postgres passes null to a function that is not STRICT and the kit declares none STRICT. And a column a trigger fills before the row is written is optional to insert: a message's `seq` is its channel's next number.
 
-A function returning `jsonb` is typed `Json`, which says nothing about its keys. Where code reads one, it declares the shape that function builds, next to the call, from the SQL.
+A function returning `jsonb` is typed `Json`, which says nothing about its keys. Where code reads one, it declares the shape that function builds, read from the SQL. An Edge Function declares it next to the call. In the browser, each area keeps its functions' shapes in one module, `shapes.ts`, beside the code that calls them: `src/lib/comments/`, `src/lib/spaces/`, `src/lib/support/` and `src/lib/admin/`. Each module maps a function's name to its shape (`SpaceReturns`, `SupportReturns`, `AdminReturns`), and a call reads its answer through that map, for example `data as SupportReturns['support_ticket'] | null`. A function that refuses answers `{ error }`. Its shape gives the success fields of that refusal as `undefined`, so checking `r.error` first narrows the rest.
+
+The spaces module's `rpc()` reads the map itself. It takes only a function the schema has, with that function's arguments, and answers that function's shape.
 
 ## The plan
 

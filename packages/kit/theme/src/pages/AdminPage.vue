@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AdminReturns } from 'platformkit/lib/admin/shapes.js'
 /*
  * The content admin — local-dev only (App.vue gates the route on import.meta.env.DEV;
  * the API it talks to is a dev-server-only Vite middleware, build/admin-server.mjs).
@@ -159,7 +160,7 @@ async function refreshSocialAccess() {
   socialAccessKnown.value = false
   const params = new URLSearchParams(window.location.search)
   if (params.get('invitation') === 'accepted') {
-    const { error } = await (supabase as any).functions.invoke('social', { body: { action: 'accept_invitation' } })
+    const { error } = await supabase!.functions.invoke('social', { body: { action: 'accept_invitation' } })
     if (request !== socialAccessRequest) return
     if (error) {
       console.error('social invitation acceptance failed', error.message)
@@ -172,7 +173,7 @@ async function refreshSocialAccess() {
     const query = params.toString()
     history.replaceState(history.state, '', window.location.pathname + (query ? `?${query}` : '') + window.location.hash)
   }
-  const { data, error } = await (supabase as any).rpc('social_has_access')
+  const { data, error } = await supabase!.rpc('social_has_access')
   if (request !== socialAccessRequest) return
   if (error) {
     console.error('social access lookup failed', error.code)
@@ -544,7 +545,7 @@ async function loadOptions(key: any) {
   if (optionsCache[key]) return
   try {
     /* the hosts a booking type may name are accounts, read from the database (admin_hosts: every account that gives appointments) */
-    const opts = key === 'hosts' ? ((await (supabase as any).rpc('admin_hosts')).data || []).map((h: any) => ({ value: h.email, label: h.name ? `${h.name} · ${h.email}` : h.email })) : await pipe.options(key)
+    const opts = key === 'hosts' ? (((await supabase!.rpc('admin_hosts')).data as AdminReturns['admin_hosts'] | null) || []).map((h) => ({ value: h.email, label: h.name ? `${h.name} · ${h.email}` : h.email })) : await pipe.options(key)
     optionsCache[key] = opts
     if (opts.some((o: any) => o.group)) {
       const map: any = {}, out = []
