@@ -88,7 +88,7 @@ const mayRoute = computed(() => botIsInPlay.value && bot.value.offer === 'ask' &
  * It is ephemeral: it belongs to the answer on screen, not to the conversation, so it is a ref and
  * not a row. A new line from either side clears it.
  */
-const checking = ref<any>(null)
+const checking = ref<string | null>(null)
 const answered = computed(() => botIsInPlay.value && !!lastSaid.value && !!lastSaid.value.bot)
 /* the check belongs to an answer you WATCHED ARRIVE, not to every time the panel is opened. Asking
    "did that help?" again about an answer from last Tuesday is a bot that has lost the thread — so

@@ -38,7 +38,7 @@ const composer = ref<any>(null)
 const atBottom = ref(true)
 const fresh = ref(0)          /* messages that arrived while scrolled up */
 const replyTo = ref<any>(null)
-const flashId = ref<any>(null)
+const flashId = ref<string | null>(null)
 const error = ref('')
 const busy = ref(false)
 

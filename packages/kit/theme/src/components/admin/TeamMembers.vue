@@ -27,7 +27,7 @@ const props = defineProps({
 const W = computed(() => (us('teams').members || {}).main || {})
 const rows = ref<any>([])
 /* null while unknown, false where the file exists and the row does not — see teamProjected */
-const projected = ref<any>(null)
+const projected = ref<boolean | null>(null)
 const loading = ref(false)
 const err = ref('')
 const asking = ref(false)

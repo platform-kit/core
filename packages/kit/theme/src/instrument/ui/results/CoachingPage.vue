@@ -100,7 +100,7 @@ async function load() {
 }
 /* a call's recording: ours, in the bucket, signed for the attendee and the coach when Watch is pressed (session-files);
    the state while it is on its way, or after the keep took it — never a cal.com link */
-const watching = ref<any>(null), media = ref<any>({}), mediaBusy = ref("");
+const watching = ref<string | null>(null), media = ref<any>({}), mediaBusy = ref("");
 const fill = (t: any, m: any) => String(t || "").replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? "" : m[k]));
 async function watch_(b: { uid: string; }) {
   if (watching.value === b.uid) { watching.value = null; return; }

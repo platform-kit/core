@@ -91,7 +91,7 @@ const saying = ref(false)
 /* the chapter the comments are about, named once so the button and the panel cannot disagree */
 const chapterSubject = computed(() => props.slug + '/chapters/' + (ch.value + 1))
 const body = ref<any>(null)
-const suggestions = ref<any>([])   /* every baked-in editorial mark: { text, color } */
+const suggestions = ref<{ text: string; color: string; }[]>([])   /* every baked-in editorial mark: { text, color } */
 const teaser = ref<any>([])        /* a randomised handful, one per colour, for the cover */
 
 /* ---- reader preferences + kept things, per book ---- */

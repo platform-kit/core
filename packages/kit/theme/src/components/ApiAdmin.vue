@@ -21,7 +21,7 @@ const H = W.head || {}, K = W.keys || {}, WH = W.webhooks || {}, R = (us('api').
 const S = Array.isArray(SITE) ? SITE[0] : SITE
 const base = computed(() => String((S && S.url) || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/+$/, ''))
 const state = computed(() => (!roleKnown.value ? 'loading' : !isSignedIn.value ? 'idle' : !isAdmin.value ? 'denied' : 'ok'))
-const keys = ref<any>([]), hooks = ref<any>([]), loading = ref(false), making = ref(false), form = ref<any>(null), reveal = ref<any>(null), copied = ref(false), failed = ref('')
+const keys = ref<any>([]), hooks = ref<any>([]), loading = ref(false), making = ref(false), form = ref<{ name: string; kind: string; gated: boolean; } | null>(null), reveal = ref<any>(null), copied = ref(false), failed = ref('')
 /* the content API's three kinds, then a kind per door the site has on: forms (the Forms API), scheduling (the Scheduling API) */
 const KINDS = ['delivery', 'preview', 'management', ...(moduleOn('forms') ? ['forms'] : []), ...(moduleOn('sessions') ? ['scheduling'] : []), ...(moduleOn('store') ? ['storefront'] : []), ...(moduleOn('support') ? ['support'] : [])]
 

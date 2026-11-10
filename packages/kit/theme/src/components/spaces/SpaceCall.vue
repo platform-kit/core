@@ -34,7 +34,7 @@ const W = computed(() => us('spaces').call.main)
    reading .value on the unwrapped value is an error rather than the ref it looks like */
 const call = shallowRef<any>(null)
 const cred = ref<any>(null)
-const error = ref<any>(null)
+const error = ref<string | null>(null)
 const els = ref<any>({})
 const big = ref(false)
 

@@ -34,7 +34,7 @@ onMounted(load)
 watch([isSignedIn, roleKnown], () => { if (state.value === 'loading' || state.value === 'refused') load() })
 
 /* the lobby: a preview of the reader's own camera, the devices to choose from */
-const previewEl = ref<any>(null), mics = ref<any>([]), cams = ref<any>([]), micId = ref(''), camId = ref(''), noDevices = ref(false)
+const previewEl = ref<any>(null), mics = ref<MediaDeviceInfo[]>([]), cams = ref<MediaDeviceInfo[]>([]), micId = ref(''), camId = ref(''), noDevices = ref(false)
 let previewTracks: any = []
 async function preview() {
   try {

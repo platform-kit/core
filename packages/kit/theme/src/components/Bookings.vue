@@ -31,7 +31,7 @@ const H = T.bookings.head, ST = T.bookings.status, RF = T.bookings.refused, R = 
 const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 /* a call's recording on the desk: watched or downloaded from a signed url (session-files), fetched again when a pull failed */
-const media = ref<any>({}), mediaBusy = ref(''), watching = ref<any>(null)
+const media = ref<any>({}), mediaBusy = ref(''), watching = ref<string | null>(null)
 async function open(r: { uid: string }, what: string) {
   mediaBusy.value = r.uid
   try {

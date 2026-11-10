@@ -147,7 +147,7 @@ const speaking = ref('browser')   /* which provider ended up speaking; a compute
  * broken. It is not the conversation; it is the reason there is not one yet, so it goes where the
  * state goes.
  */
-const fetching = ref<any>(null)
+const fetching = ref<{ pct: number; } | null>(null)
 const canPick = computed(() => voicesFor(speaking.value, bot.value?.voice || {}))
 /* the voice that would be used if the reader chose nothing: the endpoint's named one, or the
    engine's own. The control shows this rather than a phrase about where it came from. */
