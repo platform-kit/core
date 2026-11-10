@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { AdminReturns } from 'platformkit/lib/admin/shapes.js'
 /*
  * The Analytics & KPI dashboard — the one admin surface that ships to
  * production (a lazy chunk; echarts loads only here). Two views over the same
@@ -83,11 +84,11 @@ async function load() {
   state.value = 'loading'
   const goals = GOALS.map((g: any) => ({ key: (g as any).key, label: (g as any).label, value: (g as any).value || null }))
   const [k, s, m, r, e] = await Promise.all([
-    (supabase as any).rpc('admin_kpis', { days: days.value, audience: audience.value, tz: tzHere, filters: forRead.value, goals }),
-    (supabase as any).rpc('admin_series', { days: days.value * 2, audience: audience.value, filters: forRead.value, goals: (SITE_EVENTS || []).map((g: any) => ({ key: (g as any).key })) }),
-    MEMBERS_ON ? (supabase as any).rpc('admin_members', { days: days.value }) : Promise.resolve({ data: null, error: null }),
-    (supabase as any).rpc('admin_retention', { weeks: 8, audience: audience.value, filters: forRead.value }),
-    (supabase as any).rpc('admin_events', { days: days.value, audience: audience.value, filters: forRead.value, event: openEvent.value || null }),
+    supabase!.rpc('admin_kpis', { days: days.value, audience: audience.value, tz: tzHere, filters: forRead.value, goals }),
+    supabase!.rpc('admin_series', { days: days.value * 2, audience: audience.value, filters: forRead.value, goals: (SITE_EVENTS || []).map((g: any) => ({ key: (g as any).key })) }),
+    MEMBERS_ON ? supabase!.rpc('admin_members', { days: days.value }) : Promise.resolve({ data: null, error: null }),
+    supabase!.rpc('admin_retention', { weeks: 8, audience: audience.value, filters: forRead.value }),
+    supabase!.rpc('admin_events', { days: days.value, audience: audience.value, filters: forRead.value, event: openEvent.value || null }),
   ])
   const err = k.error || s.error || m.error || r.error || e.error
   if (err) { state.value = (err.code === '42501' || /admin only|permission/i.test(err.message || '')) ? 'denied' : 'error'; return }
@@ -95,21 +96,21 @@ async function load() {
   members.value = m.data
   retention.value = r.data || []
   events.value = e.data || null
-  const all = s.data || []
+  const all = (s.data as AdminReturns['admin_series'] | null) || []
   series.value = all.slice(-days.value)
   seriesPrev.value = all.slice(0, all.length - days.value)
   state.value = 'ok'
   loadNow()
 }
 /* right now: asked on load and every minute while the tab is visible */
-async function loadNow() { if (!configured || !isSignedIn.value) return; const { data: n } = await (supabase as any).rpc('admin_now'); if (n) now.value = n }
+async function loadNow() { if (!configured || !isSignedIn.value) return; const { data: n } = await supabase!.rpc('admin_now'); if (n) now.value = n }
 let nowTimer: any = null
 onMounted(() => { nowTimer = setInterval(() => { if (document.visibilityState !== 'hidden' && state.value === 'ok') loadNow() }, 60000) })
 onBeforeUnmount(() => clearInterval(nowTimer))
 onMounted(load)
 watch([isSignedIn, days, audience, () => JSON.stringify(forRead.value)], load)
 /* one event opened on the Events tab: its series, channels and values */
-async function openTheEvent(type: string) { openEvent.value = openEvent.value === type ? '' : type; if (!openEvent.value) return; const { data: e } = await (supabase as any).rpc('admin_events', { days: days.value, audience: audience.value, filters: forRead.value, event: openEvent.value }); if (e) events.value = e }
+async function openTheEvent(type: string) { openEvent.value = openEvent.value === type ? '' : type; if (!openEvent.value) return; const { data: e } = await supabase!.rpc('admin_events', { days: days.value, audience: audience.value, filters: forRead.value, event: openEvent.value }); if (e) events.value = e }
 
 /* ---- helpers ---- */
 const num = (n: any) => new Intl.NumberFormat().format(Math.round(n || 0))

@@ -51,7 +51,18 @@ export type LoosePurchase = Pick<Row<'purchases'>, 'id' | 'sku' | 'variant' | 't
 }
 export type AdminOrders = { orders: AdminOrder[]; loose: LoosePurchase[] }
 
+/* admin_series (30-analytics.sql): one row a day, oldest first, with a count for each goal asked for under its key */
+export type SeriesDay = {
+  day: string
+  visitors: number; pageviews: number; sessions: number; users: number; content_views: number
+  cta_impressions: number; cta_clicks: number; add_to_cart: number; checkouts: number; exposures: number
+  signups: number; purchases: number; revenue: number; rounds: number; answers: number; new_members: number
+  find_starts: number; find_results: number
+  [goal: string]: number | string
+}
+
 export type AdminReturns = {
+  admin_series: SeriesDay[]
   admin_people: NamedPerson[]                                          /* 10-foundation.sql */
   admin_hosts: { id: string; email: string; name: string | null }[]    /* 55-sessions.sql: every provider with an email */
   admin_everybody: Everybody
