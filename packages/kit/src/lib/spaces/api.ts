@@ -208,7 +208,7 @@ async function recipients(channelId: string) {
  * surface already looks for it, so no component knows the difference.
  */
 const WRAP = 'dl.attachment.v1'
-const wrapFile = (file: { name: any; type: any; size: any; seconds: any }, info: any, said: string|null) => JSON.stringify({
+const wrapFile = (file: { name: string | null; type: string; size: number; seconds?: number }, info: any, said: string|null) => JSON.stringify({
   _: WRAP, name: file.name || null, type: file.type || null, size: file.size || null,
   seconds: file.seconds == null ? null : file.seconds, media: info, body: said || null,
 })
@@ -547,7 +547,7 @@ export async function chooseOffer(messageId: any, key: any) {
 /* the transcript is the message's body: it makes a voice note readable at a glance, searchable by
    the same index every other message uses (the stored tsvector), and there for anybody who cannot
    play sound where they are — and it costs no column */
-export async function sendVoice(channelId: string, blob: { arrayBuffer: () => any; size: any }, seconds: any, opts: any = {}) {
+export async function sendVoice(channelId: string, blob: Blob, seconds: any, opts: any = {}) {
   if (!on() || !channelId || !blob) return null
   const me = uid()
   const id = newId()
@@ -562,10 +562,10 @@ export async function sendVoice(channelId: string, blob: { arrayBuffer: () => an
   if (!opts.thread || opts.echo) open.messages = mergeMessages(open.messages, [temp])
   /* SEALED: the bucket gets the ciphertext, and what it is — how long, whose voice, what was said
      with it — travels in the message. What is uploaded is bytes nobody can play. */
-  let body: Record<string, unknown> = { id, channel_id: channelId, author_id: me, kind: 'voice', attachment: path,
+  let body: Database['public']['Tables']['space_messages']['Insert'] = { id, channel_id: channelId, author_id: me, kind: 'voice', attachment: path,
     attachment_type: 'audio/mpeg', seconds, body: opts.transcript || null,
     thread_root_id: opts.thread || null, echoed: !!opts.echo }
-  let put = blob, type = 'audio/mpeg'
+  let put: Blob = blob, type = 'audio/mpeg'
   if (isSealed(channelId)) {
     try {
       if (!(await readyToSeal())) throw sealing.error || new Error('this device is not set up')
@@ -583,9 +583,9 @@ export async function sendVoice(channelId: string, blob: { arrayBuffer: () => an
       return null
     }
   }
-  const up = await (supabase as any).storage.from('spaces').upload(path, put, { contentType: type, upsert: false })
+  const up = await supabase!.storage.from('spaces').upload(path, put, { contentType: type, upsert: false })
   if (up.error) { drop(id); open.error = up.error; return null }
-  const { data, error } = await (supabase as any).from('space_messages').insert(body).select().single()
+  const { data, error } = await supabase!.from('space_messages').insert(body).select().single()
   if (error) {
     await supabase!.storage.from('spaces').remove([path]).catch(() => {})
     drop(id)
@@ -602,7 +602,7 @@ export async function sendVoice(channelId: string, blob: { arrayBuffer: () => an
    own id, and the row follows, so a row never points at nothing; a refused insert takes the object
    with it rather than leaving litter. The words a person typed beside it ride on the body, which
    is what makes an attachment searchable and what a caption is. */
-export async function sendFile(channelId: string, file: any, opts: any = {}) {
+export async function sendFile(channelId: string, file: File, opts: any = {}) {
   if (!on() || !channelId || !file) return null
   const type = String(file.type || '').toLowerCase()
   const ext = (FILE_TYPES as any)[type]
@@ -622,10 +622,10 @@ export async function sendFile(channelId: string, file: any, opts: any = {}) {
   if (!opts.thread || opts.echo) open.messages = mergeMessages(open.messages, [row])
   /* SEALED: as for a voice note, and the file's NAME goes inside — "severance-agreement.pdf" says
      most of what the message said, and the row's own check refuses a name beside a cipher anyway. */
-  let body: Record<string, unknown> = { id, channel_id: channelId, author_id: me, kind: 'file', attachment: path,
+  let body: Database['public']['Tables']['space_messages']['Insert'] = { id, channel_id: channelId, author_id: me, kind: 'file', attachment: path,
     attachment_type: type, attachment_name: file.name, attachment_size: file.size, body: said,
     thread_root_id: opts.thread || null, echoed: !!opts.echo }
-  let put = file, putType = type
+  let put: Blob = file, putType = type
   if (isSealed(channelId)) {
     try {
       if (!(await readyToSeal())) throw sealing.error || new Error('this device is not set up')
@@ -645,7 +645,7 @@ export async function sendFile(channelId: string, file: any, opts: any = {}) {
   }
   const up = await supabase!.storage.from('spaces').upload(path, put, { contentType: putType, cacheControl: '31536000', upsert: false })
   if (up.error) { drop(id); open.error = up.error; return null }
-  const { data, error } = await (supabase as any).from('space_messages').insert(body).select().single()
+  const { data, error } = await supabase!.from('space_messages').insert(body).select().single()
   if (error) {
     await supabase!.storage.from('spaces').remove([path]).catch(() => {})
     drop(id); open.error = error; return null
@@ -689,7 +689,7 @@ export async function sendMedia(channelId: string, files: string|any[], opts: an
         ...(info.duration ? { duration: info.duration } : {}), ...(poster ? { poster } : {}) })
     }
     const body = String(opts.body || '').trim()
-    const { data, error } = await (supabase as any).from('space_messages').insert({ id: newId(), channel_id: channelId, author_id: me, kind: 'text', body, media }).select().single()
+    const { data, error } = await supabase!.from('space_messages').insert({ id: newId(), channel_id: channelId, author_id: me, kind: 'text', body, media }).select().single()
     if (error) throw error
     land(data)
     return data
@@ -714,13 +714,13 @@ export async function edit(id: any, body: any, title: any) {
   if (!on() || !id) return
   const patch: any = { body }
   if (title !== undefined) patch.title = title
-  const { data, error } = await (supabase as any).from('space_messages').update(patch).eq('id', id).select().single()
+  const { data, error } = await supabase!.from('space_messages').update(patch).eq('id', id).select().single()
   if (!error && data) land(data)
 }
 
 export async function withdraw(id: any) {
   if (!on() || !id) return
-  const { data, error } = await (supabase as any).from('space_messages').update({ deleted_at: new Date().toISOString() }).eq('id', id).select().single()
+  const { data, error } = await supabase!.from('space_messages').update({ deleted_at: new Date().toISOString() }).eq('id', id).select().single()
   if (!error && data) land(data)
 }
 
@@ -1005,7 +1005,7 @@ const drop = (id: string) => {
 }
 
 /* a row from anywhere — our own insert, the database's broadcast, a page — put where it belongs */
-function land(row: { id: any; channel_id: any; thread_root_id: any; echoed: any; seq: any; created_at: any; at?: any; author_id: any }) {
+function land(row: { id: any; channel_id: any; thread_root_id: any; echoed: any; seq: any; created_at: any; at?: any; author_id: any; blob?: Blob; [held: string]: unknown }) {
   if (!row || !row.id) return
   if (row.channel_id === open.id && (!row.thread_root_id || row.echoed)) open.messages = mergeMessages(open.messages, [row])
   if (thread.root && row.thread_root_id === thread.root.id) thread.replies = mergeMessages(thread.replies, [row])
