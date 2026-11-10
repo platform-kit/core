@@ -25,6 +25,8 @@ import { voicePath, filePath, FILE_TYPES, FILE_MAX } from './audio.js'
 import { queryArgs } from './query.js'
 import { capture } from '../analytics.js'
 import { moduleOn } from '../modules.js'
+import type { Database } from '../../../supabase/functions/_shared/database.types.ts'
+import type { SpaceReturns } from './shapes.js'
 
 const PAGE = 50
 const TYPING_MS = 3000        /* a keystroke says so at most this often */
@@ -73,10 +75,13 @@ let presence: any = null                  /* the space's own topic */
 const lastTyped = new Map()          /* channelId → when we last said we were typing */
 let typingTimer: any = null
 
-const rpc = async (name: string, args?: any) => {
-  const { data, error } = await (supabase as any).rpc(name, args || {})
+type Fns = Database['public']['Functions']
+/* what a function answers: the shape it builds where it returns jsonb (shapes.ts), the generated type otherwise */
+type Answer<N extends keyof Fns> = N extends keyof SpaceReturns ? SpaceReturns[N] : Fns[N]['Returns']
+const rpc = async <N extends keyof Fns>(name: N, args?: Fns[N]['Args']): Promise<Answer<N> | null> => {
+  const { data, error } = await supabase!.rpc(name, (args || {}) as Fns[N]['Args'])
   if (error) throw error
-  return data
+  return data as Answer<N> | null
 }
 
 /* ------------------------------------------------------------------ loading */
@@ -361,7 +366,7 @@ export async function older() {
 
 /* A FEED'S FIRST ANSWERS: the first few replies under each post a channel read as a feed shows —
    the same rows the thread would show, under the same guards, unsealed here as the thread's are */
-export async function firstReplies(roots: string|any[], n = 2) {
+export async function firstReplies(roots: string[], n = 2) {
   if (!on() || !roots.length) return {}
   const map = (await rpc('space_first_replies', { p_roots: roots, p_n: n })) || {}
   const out: any = {}
@@ -1000,7 +1005,7 @@ const drop = (id: string) => {
 }
 
 /* a row from anywhere — our own insert, the database's broadcast, a page — put where it belongs */
-function land(row: { id: any; channel_id: any; thread_root_id: any; echoed: any; seq: any; created_at: any; at: any; author_id: any }) {
+function land(row: { id: any; channel_id: any; thread_root_id: any; echoed: any; seq: any; created_at: any; at?: any; author_id: any }) {
   if (!row || !row.id) return
   if (row.channel_id === open.id && (!row.thread_root_id || row.echoed)) open.messages = mergeMessages(open.messages, [row])
   if (thread.root && row.thread_root_id === thread.root.id) thread.replies = mergeMessages(thread.replies, [row])
@@ -1141,7 +1146,7 @@ export async function catchUp() {
 export const discover = () => rpc('space_discover')
 /* knocking on a space's own door, and — for whoever keeps it — what is waiting there. What the
    door asks (terms, a form) is enforced by space_ask, never by the page that draws it. */
-export const askToJoin = (space: any, { note = null, response = null, agreed = false }: { note?: string | null, response?: unknown, agreed?: boolean } = {}) =>
+export const askToJoin = (space: any, { note = null, response = null, agreed = false }: { note?: string | null, response?: string | null, agreed?: boolean } = {}) =>
   rpc('space_ask', { p_space: space, p_note: note, p_response: response, p_agreed: agreed })
 export const asksOf = (space: any) => rpc('space_asks', { p_space: space })
 /* the badges a space has, and giving one to somebody or taking it back (a moderator's act) */
