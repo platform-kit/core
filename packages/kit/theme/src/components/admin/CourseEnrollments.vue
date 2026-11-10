@@ -9,6 +9,16 @@ import { us } from 'platformkit/lib/content.js'
 import { supabase } from 'platformkit/lib/supabase.js'
 import AdminHead from './AdminHead.vue'
 
+/* what this page reads of each answer (46-courses.sql): the courses, and a course's lessons by key */
+type Listed = { slug: string; title: string }
+type Lessons = { lessons: { key: string; title: string }[] }
+/* admin_course_enrollments: who is enrolled and how far they are, or why not */
+type Enrollments = { error: string } | {
+  error?: undefined; enrolled: number; completed: number; total: number
+  stuck: { lesson: string; title: string | null; people: number } | null
+  people: { name: string; email: string | null; cohort: string | null; started_at: string; completed_at: string | null; done: number; at: string | null; quizzes: ({ lesson: string; title: string | null; attempts: number } & Record<string, unknown>)[] }[]
+}
+
 const W = computed(() => ((us('courses').admin || {}).enrollments) || {})
 const fill = (t: any, m: { [x: string]: any }) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : String(m[k])))
 const day = (iso: string|number|Date) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso)) } catch { return '' } }
@@ -21,15 +31,16 @@ const quizzed = computed(() => !!(view.value && (view.value.people || []).some((
 const lessonTitle = (key: string|number) => { const s = view.value && view.value.lessons; return (s && s[key]) || key }
 
 onMounted(async () => {
-  const { data } = await (supabase as any).rpc('courses_list')
-  courses.value = data || []
+  const { data } = await supabase!.rpc('courses_list')
+  courses.value = (data as Listed[] | null) || []
   pick.value = (courses.value[0] && courses.value[0].slug) || ''
   if (!pick.value) loading.value = false
 })
 watch(pick, async (slug) => {
   if (!slug) return
   loading.value = true; error.value = ''
-  const [{ data, error: e }, { data: state }] = await Promise.all([(supabase as any).rpc('admin_course_enrollments', { p_course: slug }), (supabase as any).rpc('course_state', { p_course: slug })])
+  const [{ data: got, error: e }, { data: held }] = await Promise.all([supabase!.rpc('admin_course_enrollments', { p_course: slug }), supabase!.rpc('course_state', { p_course: slug })])
+  const data = got as Enrollments | null, state = held as Lessons | null
   if (e || (data && data.error)) { error.value = data && data.error === 'not-allowed' ? W.value.denied : (e && e.message) || ''; view.value = null }
   else view.value = { ...data, lessons: Object.fromEntries(((state && state.lessons) || []).map((l: { key: any; title: any }) => [l.key, l.title])) }
   loading.value = false
