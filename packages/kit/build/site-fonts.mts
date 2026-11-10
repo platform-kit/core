@@ -28,7 +28,7 @@ export function readSiteFonts(root = process.cwd()) {
     /* a one-line flow mapping, which a person may well have typed */
     const flow = m[1].match(/^fonts:\s*\{(.*)\}\s*$/m)
     if (!flow) return {}
-    const out: any = {}
+    const out: Record<string, string> = {}
     for (const pair of flow[1].split(',')) {
       const kv = pair.split(':')
       if (kv.length < 2) continue
@@ -38,7 +38,7 @@ export function readSiteFonts(root = process.cwd()) {
     return out
   }
 
-  const out: any = {}
+  const out: Record<string, string> = {}
   for (let i = at + 1; i < lines.length; i++) {
     const l = lines[i]
     if (!/^\s+\S/.test(l)) break           /* the block ended */

@@ -30,7 +30,7 @@ import { readFileSync, existsSync } from 'node:fs'
 
 function loadEnvFile(path: any) {
   if (!existsSync(path)) return {}
-  const out: any = {}
+  const out: Record<string, string> = {}
   for (const line of readFileSync(path, 'utf8').split(/\r?\n/)) {
     const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line)
     if (m && !line.trimStart().startsWith('#')) out[m[1]] = m[2].replace(/^["']|["']$/g, '')

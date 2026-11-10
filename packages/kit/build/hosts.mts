@@ -207,7 +207,7 @@ export function configureHosts({
     ...site,
     backend: fs.existsSync(rewriteTemplateFor(templateDir, site)),
   }))
-  const ports: any = {}
+  const ports: Record<string, string> = {}
   for (const site of siteList) {
     const portFile = platformkitRuntimePath(root, 'dev', `${site.name}.port`)
     if (fs.existsSync(portFile)) ports[site.name] = fs.readFileSync(portFile, 'utf8').trim()

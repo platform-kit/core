@@ -1119,7 +1119,7 @@ async function catchUpChannel(channelId: string) {
    are paged rather than trusted to the answer. */
 export async function catchUp() {
   if (!on()) return
-  const cursors: any = {}
+  const cursors: Record<string, number> = {}
   for (const r of unread.value) cursors[r.channel] = Number(r.seq) || 0
   const answer = (await rpc('space_catchup', { p_cursors: cursors, p_lim: PAGE })) || []
   for (const a of answer) {

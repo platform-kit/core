@@ -37,7 +37,7 @@ export function lexicalIndex(rows: any) {
 }
 export function bm25(index: any, query: string, k1 = 1.2, b = 0.75) {
   const q = [...new Set(tokens(query))]
-  const out: any = {}
+  const out: Record<string, number> = {}
   for (const d of index.docs) {
     let s = 0
     for (const w of q) {
@@ -56,7 +56,7 @@ export const cosine = (a: any, b: number[]) => { let s = 0; for (let i = 0; i < 
 export function semantic(pieces: { book: string; key: string; vec: number[]; }[], qvec: number[]) {
   const by: any = {}
   for (const p of pieces) (by[p.book] = by[p.book] || { head: 0, ch: [] })[p.key === 'insight' ? 'head' : 'ch'] = p.key === 'insight' ? cosine(p.vec, qvec) : (by[p.book].ch.push(cosine(p.vec, qvec)), by[p.book].ch)
-  const out: any = {}
+  const out: Record<string, number> = {}
   for (const [slug, v] of Object.entries(by)) {
     const ch = (v as any).ch.slice().sort((x: number, y: number) => y - x)
     const top = ch.length ? (ch[0] + (ch[1] ?? ch[0])) / 2 : (v as any).head
@@ -68,7 +68,7 @@ export function semantic(pieces: { book: string; key: string; vec: number[]; }[]
 /* 0..1 across the books, 0 everywhere when nothing separates them */
 export function normalise(scores: Record<string, number>) {
   const vals = Object.values(scores); const lo = Math.min(...vals), hi = Math.max(...vals)
-  const out: any = {}
+  const out: Record<string, number> = {}
   for (const [k, v] of Object.entries(scores)) out[k] = hi > lo ? (v - lo) / (hi - lo) : 0
   return out
 }

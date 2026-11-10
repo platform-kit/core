@@ -73,7 +73,7 @@ export async function pushAchievements({ check = false, root = process.cwd(), st
      one out in full. */
   const fromFiles = new Set(want.map((r) => r.slug))
   const courses = await readCourses(st).catch(() => [])
-  const scored: any = {}
+  const scored: Record<string, boolean> = {}
   for (const c of courses) for (const l of c.lessons) if (l.kind === 'form' && l.ref && !(l.ref in scored)) scored[l.ref] = /^#!\s*score\s*=\s*\S/m.test((await st.read(`content/forms/${l.ref}.md`)) || '')
   for (const r of quizAchievements(courses, { scored: (ref: string|number) => scored[ref] })) if (!fromFiles.has(r.slug)) want.push(r)
 

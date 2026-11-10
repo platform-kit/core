@@ -81,7 +81,7 @@ export function badgesBySpace(rows: UnreadRow[] = [], now = Date.now()) {
     if (!by.has(k)) by.set(k, [])
     by.get(k).push(r)
   }
-  const out: any = {}
+  const out: Record<string, { unread: number; mentions: number; channels: number; }> = {}
   for (const [k, list] of by) out[k] = badgeOf(list, now)
   return out
 }
@@ -90,7 +90,7 @@ export function badgesBySpace(rows: UnreadRow[] = [], now = Date.now()) {
 /* how far somebody has read one channel: the last seq seen, or read */
 export type CursorRow = { channel: string, seen?: number, read?: number }
 export function cursorsOf(rows: CursorRow[] = []) {
-  const out: any = {}
+  const out: Record<string, number> = {}
   for (const r of rows) {
     const id = (r as any)?.channel || (r as any)?.channel_id
     if (!id) continue

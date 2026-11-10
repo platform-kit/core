@@ -89,7 +89,7 @@ export function buildFill(raw: any, { bad, where, keyOf, tierOk, sessionOk, sell
   const sets = fillSets(raw)
   const built = sets.map((set, i) => {
     const one: any = {}
-    const spans: any = {}
+    const spans: Record<string, number> = {}
     for (const [k, v] of Object.entries(set)) {
       /* A SPAN IS A QUALIFIER, NOT A CONDITION. It says how long matching admits somebody for; it
          cannot admit anybody by itself, so a set carrying one and naming nothing it could hang on

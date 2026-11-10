@@ -17,7 +17,7 @@ const names = Object.keys(theme.components)
 /* a stub per component, under the site's root (a package specifier resolves from where the file is: outside the site there is no node_modules) */
 const dir = path.join(ROOT, 'node_modules', '.cache', 'platformkit', 'overrides-test')
 fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true })
-const overrides: any = {}
+const overrides: Record<string, string> = {}
 for (const n of names) { const f = path.join(dir, n + '.vue'); fs.writeFileSync(f, `<template><div class="stub-${n}" /></template>\n`); overrides[n] = f }
 
 /* the plugin over a config with every override — velite is not run (the guard the plugin already keeps) */

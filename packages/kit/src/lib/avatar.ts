@@ -144,7 +144,7 @@ export function isolate(style: any, trait: any) {
   const order = drawOrder(style)
   const at = order.indexOf(trait)
   if (at < 0) return {}
-  const off: any = {}
+  const off: Record<string, number> = {}
   for (const name of order.slice(at + 1)) off[name + 'Probability'] = 0
   return off
 }
@@ -181,7 +181,7 @@ export function traitRows(style: string|number, traits: any) {
 export function traitsOf(style: string|number) {
   const def = (DEFS && ((DEFS as any)[style] || DEFS.patchwork)) || null
   if (!def) return { shapes: {}, colours: {} }
-  const shapes: any = {}
+  const shapes: Record<string, string[]> = {}
   for (const [name, c] of Object.entries(def.components || {})) {
     const names = Object.keys((c && (c as any).variants) || {})
     if (names.length > 1) shapes[name] = names        /* one variant is not a choice */
@@ -208,7 +208,7 @@ export function traitsOf(style: string|number) {
  * empty and a picker full of broken images is the only symptom.
  */
 export function optionsFor(chosen: any) {
-  const out: any = {}
+  const out: Record<string, number | string[]> = {}
   for (const [k, v] of Object.entries(chosen || {})) {
     if (v == null || v === '') continue
     /* NONE. A person may want no glasses and no hair, and DiceBear's way of saying that is a

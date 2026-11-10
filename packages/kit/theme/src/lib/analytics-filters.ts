@@ -11,7 +11,7 @@ export const FILTER_KEYS = ['channel', 'ref', 'campaign', 'entry', 'device', 'br
 const KEYS = FILTER_KEYS.concat('source')
 
 function fromQuery() {
-  const out: any = {}
+  const out: Record<string, string> = {}
   try {
     const q = new URLSearchParams(location.search)
     for (const k of KEYS) { const v = q.get(k); if (v) out[k] = v }

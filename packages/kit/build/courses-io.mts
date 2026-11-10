@@ -128,7 +128,7 @@ export function parseCourse(slug: string, raw: string, { kinds = {} } = {}) {
   if (!lessons.length) problems.push('it has no lessons')
   /* what each quiz earns, where the file names it (`achievement: { title, sub, icon, colour }`) or says `achievement: false`;
      kept apart from the lesson, whose fields are the lesson table's */
-  const awards: any = {}
+  const awards: Record<string, boolean | ({ title: string | null; sub: string | null; icon: string | null; colour: string | null; })> = {}
   ;(Array.isArray(d.lessons) ? d.lessons : []).forEach((l) => {
     if (!l || l.achievement === undefined || !l.key) return
     if (l.achievement === false) awards[String(l.key)] = false

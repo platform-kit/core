@@ -427,7 +427,7 @@ for (const { file, data: d } of files('content/sessions')) {
   /* THE BOOKING PAGE'S OWN SWITCHES, kept as written; every one of them is a default that says
      yes, so a type with no block behaves exactly as every type did before there was one. */
   const PAGE = ['redirect', 'notes', 'organiser', 'details', 'zone', 'cancel', 'reschedule', 'past', 'account', 'hidden', 'seatsLeft', 'attendees']
-  const page: any = {}
+  const page: Record<string, string | (string | boolean) | boolean> = {}
   for (const [k, val] of Object.entries(d.page || {})) {
     if (!PAGE.includes(k)) { err(`${file}: page "${k}" is not one of ${PAGE.join(', ')}`); continue }
     if (k === 'redirect') { if (val) { if (!/^(https?:\/\/|\/)/.test(String(val))) err(`${file}: the redirect is a url or a path on this site`); else page.redirect = String(val) } continue }
@@ -436,7 +436,7 @@ for (const { file, data: d } of files('content/sessions')) {
     else err(`${file}: page.${k} is true or false`)
   }
   const LIMITS = ['day', 'week', 'month', 'year', 'minutesDay', 'minutesWeek']
-  const limits: any = {}
+  const limits: Record<string, number> = {}
   for (const [k, val] of Object.entries(d.limits || {})) {
     if (!LIMITS.includes(k)) { err(`${file}: "${k}" is not one of ${LIMITS.join(', ')}`); continue }
     const n = Number(val)

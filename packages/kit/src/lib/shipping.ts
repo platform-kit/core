@@ -37,7 +37,7 @@ export function shippingRules(s: any = {}) {
   for (const c of list(s.countries)) if (!STRIPE_COUNTRIES.includes(c)) issues.push(`"${c}" is not a country code Checkout ships to`)
   const cents = (v: unknown) => Math.round(Number(v) * 100)
   if (!(Number(s.default) >= 0)) issues.push('shipping needs a default price')
-  const overrides: any = {}
+  const overrides: Record<string, number> = {}
   for (const [c, v] of Object.entries(s.overrides || {})) { if (!(Number(v) >= 0)) issues.push(`the override for ${c} is not a price`); else overrides[code(c)] = cents(v) }
   const methods = (Array.isArray(s.methods) && s.methods.length ? s.methods : [{ level: 'standard', label: 'Standard' }]).map((m: { level: any; days: any; label: any; plus: unknown; }, i: number) => {
     const level = levelOf(m.level || 'standard')

@@ -275,7 +275,7 @@ const toolStep = (name: string, result: any, call = 'c1') => ({ kind: 'tool', na
 {
   const src = readFileSync(join(HERE, '..', 'supabase', 'functions', '_shared', 'agents', 'tools.ts'), 'utf8')
   /* the body of each builtin, from its name to the next one */
-  const bodies: any = {}
+  const bodies: Record<string, string> = {}
   const re = /^  ([a-z_]+): \{$/gm
   const starts = []
   let mm

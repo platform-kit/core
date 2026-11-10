@@ -50,7 +50,7 @@ const cacheOpen = () => (typeof caches !== 'undefined' ? caches.open(AUDIO_CACHE
 
 /* Is this recording in the bucket already? Asked once per name; a hit becomes
    a done track served from the bucket's public url. */
-const probed: any = {}
+const probed: Record<string, Promise<boolean>> = {}
 export function probe(slug: string, hash: string) {
   if (!hash || !slug) return Promise.resolve(false)
   if (tracks[hash] && tracks[hash].status === 'done') return Promise.resolve(true)

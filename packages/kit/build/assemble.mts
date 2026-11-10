@@ -269,7 +269,7 @@ for (const [name, r] of Object.entries(PRINT_MODULES)) {
    almost never changed — and is fetched from the bucket once per worker. */
 {
   const dir = path.join(KIT_PKG, 'build/print')
-  const t: any = {}
+  const t: Record<string, string> = {}
   if (fs.existsSync(dir)) for (const n of fs.readdirSync(dir).sort()) if (n.endsWith('.typ')) t[n] = fs.readFileSync(path.join(dir, n), 'utf8')
   if (Object.keys(t).length) plan.set('functions/_shared/print/templates.json', { from: dir, content: Buffer.from(JSON.stringify(t, null, 2) + '\n') })
 }
@@ -339,7 +339,7 @@ for (const [target, entry] of plan) {
 {
   const { loadTheme } = await import('./theme.mjs')
   const theme = await loadTheme(c)
-  const out: any = {}
+  const out: Record<string, string> = {}
   try { for (const f of fs.readdirSync(theme.skills).filter((x) => x.endsWith('.md'))) out[f.slice(0, -3)] = fs.readFileSync(path.join(theme.skills, f), 'utf8') } catch { /* a theme with none */ }
   plan.set('functions/_shared/pipe/theme-skills.json', { from: theme.skills, content: Buffer.from(JSON.stringify(out) + '\n') })
 }
@@ -367,7 +367,7 @@ for (const [target, entry] of plan) {
  * keys that include the prompt version stay honest.
  */
 {
-  const out: any = {}
+  const out: Record<string, string> = {}
   const named = c.enrichment && c.enrichment.briefs
   if (named) {
     try {

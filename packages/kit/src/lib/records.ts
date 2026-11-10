@@ -170,7 +170,7 @@ export async function hydrate() {
     rows.push(...(data || []))
     if (!data || data.length < PAGE) break
   }
-  const resp: any = { domain: [], type: [], words: [], books: [] }, seen: any = {}
+  const resp: any = { domain: [], type: [], words: [], books: [] }, seen: Record<string, number> = {}
   for (const r of rows) {
     const c = CORPUS[r.test]
     if (!c || !r.value) continue

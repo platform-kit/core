@@ -52,7 +52,7 @@ function ratesFor(models: any, providerId: string) {
     for (const field of ['inputPerMillionUsd', 'outputPerMillionUsd']) {
       if ((value as any)[field] == null) fail(`providers.${providerId}.models.${model}.${field} is required`)
     }
-    const normalized: any = {}
+    const normalized: Record<string, number> = {}
     for (const [field, dimension] of Object.entries(dimensions)) {
       if ((value as any)[field] != null) normalized[dimension] = rate((value as any)[field], `providers.${providerId}.models.${model}.${field}`)
     }
@@ -133,7 +133,7 @@ export function inferenceOf(config: any = {}) {
   if (!offerMarkups || typeof offerMarkups !== 'object' || Array.isArray(offerMarkups)) {
     fail('markup.offers must map stable offer keys to multipliers')
   }
-  const markups: any = {}
+  const markups: Record<string, number> = {}
   for (const [key, value] of Object.entries(offerMarkups)) {
     if (!OFFER_KEY.test(key)) fail(`markup.offers key ${key} must be a stable eight-character offer key`)
     markups[key] = multiplier(value, `markup.offers.${key}`)

@@ -38,7 +38,7 @@ export async function salesReport({ dir = DIR } = {}) {
     if (error) throw error
     rows = data || []
   } catch (e: any) { console.log('[sales] not read — ' + (e && e.message || e)); return write(empty('purchases not read')) }
-  const books: any = {}, last: any = {}
+  const books: any = {}, last: Record<string, string> = {}
   for (const r of rows) {
     const b = bookOfKey.get(r.key) || bookOfSku.get(r.sku)
     if (!b) continue

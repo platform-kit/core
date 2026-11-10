@@ -135,7 +135,7 @@ export const agentGrammar = {
     if (d.hears != null) { const h = hearsOut(d.hears); if (h.length) d.hears = h; else delete d.hears }
     const limits: any = {}
     for (const k of LIMIT_KEYS) { const v = num(d['limit-' + k]); delete d['limit-' + k]; if (v != null && !Number.isNaN(v)) limits[k] = v }
-    const per: any = {}
+    const per: Record<string, number> = {}
     for (const k of PER_KEYS) { const v = num(d['per-' + k]); delete d['per-' + k]; if (v != null && !Number.isNaN(v)) per[k] = v }
     if (Object.keys(per).length) limits.per = per
     if (Object.keys(limits).length) d.limits = limits; else delete d.limits

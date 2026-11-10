@@ -406,7 +406,7 @@ if (isMain(import.meta.url)) {
     const args = process.argv.slice(2)
     const [action, name, ...options] = args
     const parseOptions = (allowed: string|string[]) => {
-      const parsed: any = {}
+      const parsed: Record<string, string> = {}
       for (let index = 0; index < options.length; index += 2) {
         const key = options[index]
         const value = options[index + 1]

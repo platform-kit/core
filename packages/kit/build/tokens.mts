@@ -133,7 +133,7 @@ export async function compileTokens({ root = process.cwd(), check = false } = {}
   const site = await loadSite(root)
   const theme = await loadTheme(site)
   const looksDir = path.join(root, 'src/looks')
-  const looks: any = {}
+  const looks: Record<string, string> = {}
   if (fs.existsSync(looksDir)) {
     for (const f of fs.readdirSync(looksDir)) {
       if (!f.endsWith('.css') || f === 'design.css') continue

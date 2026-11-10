@@ -252,7 +252,7 @@ export async function printBook(slug: any, { local = false, force = false, keepT
        cheapest quoted), its product there, a cover to that printer's dimensions for this page
        count — the linen's jacket per cloth and foil — its quote, and where a printer keeps a
        title of its own, the title (found by our SKU before it is ever made) */
-    const covers: any = {}, dims = have ? { ...have.dims } : {}, files: any = {}, art: any = {}, printersOut: any = {}, foils: any = {}
+    const covers: Record<string, string> = {}, dims = have ? { ...have.dims } : {}, files: any = {}, art: Record<string, string> = {}, printersOut: any = {}, foils: Record<string, string> = {}
     /* the cover — and, for a format stamped with our own foil artwork, the foil layer alone: the
        same design with only what is stamped, black on white (the printer's foil file, the
        store's mask) */

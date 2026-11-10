@@ -48,7 +48,7 @@ export const viewTally = () => read(HIST_KEY, { n: 0, t: {} })
 
 /* ---- what the results say, as weighted slugs ---- */
 async function signalSlugs() {
-  const w: any = {}
+  const w: Record<string, number> = {}
   try {
     const { readerSignals, topicByKey } = await import('#site/recommendations')   /* the site's scorer, or the kit's defaults (nothing) */
     const sig = readerSignals()

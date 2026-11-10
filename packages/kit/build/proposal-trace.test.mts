@@ -69,7 +69,7 @@ const norm = (s: string|null) => String(s || '')
 
 /* every `### Requirement: X` in a delta, by capability */
 export function deltaRequirements(files: any) {
-  const by: any = {}
+  const by: Record<string, string[]> = {}
   for (const [capability, text] of Object.entries(files)) {
     by[capability] = String(text || '').split('\n')
       .filter((l) => l.startsWith('### Requirement:'))
@@ -203,7 +203,7 @@ for (const name of live) {
   const dir = path.join(CHANGES, name)
   const proposal = fs.readFileSync(path.join(dir, 'proposal.md'), 'utf8')
   const specs = path.join(dir, 'specs')
-  const deltas: any = {}
+  const deltas: Record<string, string> = {}
   if (fs.existsSync(specs)) {
     for (const cap of fs.readdirSync(specs)) {
       const f = path.join(specs, cap, 'spec.md')

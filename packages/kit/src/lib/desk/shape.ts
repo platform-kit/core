@@ -115,7 +115,7 @@ export function sortDesk(rows: DeskRow[] = []) {
 /* what the rail shows: how many are waiting, and how many of those are past what was promised */
 /* what each queue is owed, counted apart: a place badges its own rows and nobody else's */
 export function badgeBySource(rows: DeskRow[] = [], now = Date.now(), sources = SOURCES) {
-  const by: any = {}
+  const by: Record<string, { waiting: number; overdue: number; }> = {}
   for (const s of sources) by[s] = deskBadge(rows.filter((r: any) => r && r.source === s), now)
   return by
 }

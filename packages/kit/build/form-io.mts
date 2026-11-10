@@ -109,7 +109,7 @@ export function kitSettingLines(kit: any) {
 }
 /* forms.md's own settings the builder edits, as `#!` values: only the ones that differ from the defaults are written */
 export function formsmdSettingLines(settings: any) {
-  const d: any = getDefaultSettings(), out: any = {}
+  const d: any = getDefaultSettings(), out: Record<string, string | null> = {}
   for (const k of ['title', 'meta-description', 'page', 'page-progress', 'slide-controls', 'restart-button', 'submit-button-text', 'autofocus', 'button-alignment', 'placeholders', 'dir', 'field-size', 'label-style', 'form-style']) {
     const v = settings && settings[k]
     out[k] = v == null || v === '' || v === d[k] ? null : String(v)

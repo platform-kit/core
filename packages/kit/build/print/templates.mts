@@ -29,7 +29,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 export const FONT_PREFIX = '_type'          /* where the type lives in the print bucket */
 
 export function templates() {
-  const out: any = {}
+  const out: Record<string, string> = {}
   for (const f of fs.readdirSync(HERE)) {
     if (f.endsWith('.typ')) out[f] = fs.readFileSync(path.join(HERE, f), 'utf8')
   }

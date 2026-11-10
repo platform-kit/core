@@ -52,7 +52,7 @@ function pickWeighted(variants: any[]) {
 }
 
 /* ---- what the network knows: first exposure and counts per variant ---- */
-const refreshing: any = {}
+const refreshing: Record<string, boolean> = {}
 async function refresh(name: string|number) {
   if (!configured || refreshing[name]) return
   refreshing[name] = true

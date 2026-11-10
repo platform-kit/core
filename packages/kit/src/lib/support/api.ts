@@ -56,7 +56,7 @@ const asRow = (m: { author: any; kind: any; url: any }) => ({ ...m, sender_id: m
 
 async function call(action: string, body = {}, file: any = null) {
   if (!on()) throw new Error('offline')
-  const headers: any = {}
+  const headers: Record<string, string> = {}
   const t = getToken()
   if (t) headers['x-support-token'] = t
   let payload: Record<string, unknown> | FormData = { action, path: location.pathname, anon_id: anonId(), ...body }

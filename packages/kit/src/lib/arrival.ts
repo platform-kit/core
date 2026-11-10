@@ -13,7 +13,7 @@ export function utmOf(address: string) {
   let q = ''
   try { q = new URL(String(address || ''), 'http://x').search } catch (e) { q = String(address || '') }
   const p = new URLSearchParams(q.startsWith('?') ? q : '?' + q)
-  const out: any = {}
+  const out: Record<string, string> = {}
   for (const k of UTM) { const v = (p.get('utm_' + k) || '').trim().slice(0, 120); if (v) out[k] = v.toLowerCase() }
   return Object.keys(out).length ? out : null
 }

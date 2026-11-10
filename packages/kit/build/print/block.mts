@@ -108,7 +108,7 @@ function clean(pr: { [x: string]: any; main: string }) {
       if (Object.keys(fm).length) out.formats = fm
       continue
     }
-    if (k === 'printers') { const p: any = {}; for (const f of PRINTED) if (spec.formats[f] && spec.printers[f]) p[f] = spec.printers[f]; if (Object.keys(p).length) out.printers = p; continue }
+    if (k === 'printers') { const p: Record<string, string> = {}; for (const f of PRINTED) if (spec.formats[f] && spec.printers[f]) p[f] = spec.printers[f]; if (Object.keys(p).length) out.printers = p; continue }
     if (k === 'providers') { const p: any = {}; for (const [id, o] of Object.entries(spec.providers)) if (o && Object.keys(o).length) p[id] = o; if (Object.keys(p).length) out.providers = p; continue }
     if (k === 'includes') { if (spec.includes.length) out.includes = spec.includes; continue }
     if (k === 'files') { if (spec.files.length) out.files = spec.files; continue }

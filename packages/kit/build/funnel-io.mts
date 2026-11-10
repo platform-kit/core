@@ -35,7 +35,7 @@ export const goalOk = (s: string|null) => s == null || s === '' || /^\/[^\s]*$/.
 /* the step's head: `field: value` lines up to the first blank line; the rest is the markdown */
 function splitStep(text: string) {
   const lines = text.replace(/^\n+/, '').split('\n')
-  const fields: any = {}
+  const fields: Record<string, string> = {}
   let i = 0
   for (; i < lines.length; i++) {
     const m = /^([a-z][a-z0-9-]*):\s*(.*)$/.exec(lines[i])

@@ -141,7 +141,7 @@ if (process.env.ANALYTICS_TEST !== '0') {
       /* retention: recomputed from the rows for the last two weeks */
       const ret = await rpc('admin_retention', { weeks: 8, audience: 'all', filters: {} })
       const allRows = []; for (let from = 0; ; from += 1000) { const { data: page } = await service.from('events').select('anon_id, occurred_at').is('source', null).order('id').range(from, from + 999); allRows.push(...(page || [])); if (!page || page.length < 1000) break }
-      const firstOf: any = {}; for (const r of allRows) { const t0 = Date.parse(r.occurred_at); if (!(r.anon_id in firstOf) || t0 < firstOf[r.anon_id]) firstOf[r.anon_id] = t0 }
+      const firstOf: Record<string, number> = {}; for (const r of allRows) { const t0 = Date.parse(r.occurred_at); if (!(r.anon_id in firstOf) || t0 < firstOf[r.anon_id]) firstOf[r.anon_id] = t0 }
       const week = (ms: any) => { const d = new Date(ms); const day = (d.getUTCDay() + 6) % 7; const m = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - day)); return m.getTime() }
       ok('retention: each cohort\'s size is the browsers first seen that week', () => {
         for (const row of ret) { const wk = Date.parse(row.week + 'T00:00:00Z'); const size = Object.values(firstOf).filter((f) => week(f) === wk).length; assert.equal(row.size, size, row.week) }

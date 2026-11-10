@@ -22,7 +22,7 @@ export async function loadTheme(c: { theme: any; root: any }) {
   const src = path.dirname(file)
   /* a path the manifest names as the site has it (.js); in the workspace, a .js not there is its .ts */
   const abs = (p: string) => { const a = path.resolve(src, p); const t = a.replace(/\.(m?)js$/, '.$1ts'); return !fs.existsSync(a) && t !== a && fs.existsSync(t) ? t : a }
-  const components: any = {}
+  const components: Record<string, string> = {}
   for (const f of walk(src)) {
     if (!f.endsWith('.vue')) continue
     const n = path.basename(f, '.vue')
@@ -34,7 +34,7 @@ export async function loadTheme(c: { theme: any; root: any }) {
 
 /* the site's overrides resolved against the registry: { Name: absolute path }; an unknown name is refused, so a typo never misses silently */
 export function resolveOverrides(c: { overrides: any; root: string }, theme: { components: { [x: string]: any } }) {
-  const out: any = {}
+  const out: Record<string, string> = {}
   for (const [n, p] of Object.entries<string>((c && c.overrides) || {})) {
     if (!theme.components[n]) throw new Error(`platformkit.config.js overrides: the theme has no component named ${n}`)
     const f = path.resolve(c.root, p)

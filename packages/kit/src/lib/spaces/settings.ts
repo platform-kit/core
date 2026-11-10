@@ -49,7 +49,7 @@ export const has = (feature: string|number) => settings().features[feature] !== 
 const VARS = { rail: '--spaces-rail', side: '--spaces-side', ink: '--spaces-side-ink',
   on: '--spaces-side-on', link: '--spaces-link', badge: '--spaces-badge', go: '--spaces-go' }
 export function paint(colours = settings().colours) {
-  const out: any = {}
+  const out: Record<string, string> = {}
   for (const [k, v] of Object.entries(VARS)) if (colours[k]) out[v] = String(colours[k])
   return out
 }

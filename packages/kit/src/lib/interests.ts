@@ -41,7 +41,7 @@ export async function interests() {
     try {
       const [got, was] = await Promise.all([supabase!.rpc('my_interests'), supabase!.rpc('my_reading')])
       if (got.error) throw got.error
-      const weights: any = {}
+      const weights: Record<string, number> = {}
       for (const r of got.data || []) weights[r.tag] = Number(r.weight) || 0
       const tags = tagsOf(weights)
       const read = new Set((was.data || []).map((r: { kind: any; ref: any }) => seenKey(r.kind, r.ref)))

@@ -36,7 +36,7 @@ export function postSlide(slug: string|Blob, values: any, { end = false, slide =
   fd.append('_slide', String(slide))
   if (end) fd.append('_end', 'true')
   /* the page's query — a GET prefill, a campaign's parameters — as the response's hidden fields (Typeform's `hidden`) */
-  try { const h: any = {}; for (const [k, v] of new URLSearchParams(location.search)) if (!k.startsWith('typeform-') && !k.startsWith('embed-') && !k.startsWith('_')) h[k] = v; if (Object.keys(h).length) fd.append('_hidden', JSON.stringify(h)) } catch (e) { /* no window */ }
+  try { const h: Record<string, string> = {}; for (const [k, v] of new URLSearchParams(location.search)) if (!k.startsWith('typeform-') && !k.startsWith('embed-') && !k.startsWith('_')) h[k] = v; if (Object.keys(h).length) fd.append('_hidden', JSON.stringify(h)) } catch (e) { /* no window */ }
   const files = []
   for (const [k, v] of Object.entries(values || {})) {
     if (v == null) continue

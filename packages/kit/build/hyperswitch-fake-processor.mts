@@ -17,7 +17,7 @@ const id = (prefix: string) => `${prefix}_${randomBytes(12).toString('hex')}`
 const now = () => Math.floor(Date.now() / 1000)
 
 function parseForm(text: string|string[][]|Record<string,string>|URLSearchParams|undefined) {
-  const out: any = {}
+  const out: Record<string, string> = {}
   for (const [key, value] of new URLSearchParams(text)) out[key] = value
   return out
 }

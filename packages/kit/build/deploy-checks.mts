@@ -76,7 +76,7 @@ export function surfaces(root = '.') {
     if (!live(b) || !(b as any).print || !String((b as any).print.rights || '').trim()) continue
     const spec = printSpec((b as any).print, b)
     if (!spec) continue
-    const printers: any = {}
+    const printers: Record<string, string> = {}
     for (const f of PRINTED) if (spec.formats[f]) printers[f] = spec.printers[f] || (f === 'premium' ? 'bookvault' : 'auto')
     if (Object.keys(printers).length) printed.push({ slug: b.file, printers })
   }
