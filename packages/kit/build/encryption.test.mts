@@ -126,7 +126,6 @@ ok('and the set is exactly those two', sealed.size === 2, [...sealed].join(' '))
 ok('a site with no spaces seals nothing, and so refuses nothing', sealedRooms([]).size === 0 && sealedRooms().size === 0)
 /* the shape readSpaces hands over is `{ slug, data, channels: [{ slug, data }] }`; a caller that
    passed channels already flattened should still get an answer rather than a throw */
-// @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'encrypted' does not exist in type '{ slug: string; data?: any; }'.
 ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {}, channels: [{ slug: 'c', encrypted: true }] }]).has('x/c'))
 
 /* ---- and none of it is announced by a toast ---- */

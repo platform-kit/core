@@ -15,7 +15,7 @@ import { libraryOf } from '../src/lib/courses-paths.js'
 import fs from 'node:fs'
 
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean|undefined, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 
 const FILE = `---
 title: Writing plainly

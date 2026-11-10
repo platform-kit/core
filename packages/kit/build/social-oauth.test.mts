@@ -47,8 +47,7 @@ const invoke = async (sb: any, endpoint: string, body: any) => {
 const callback = async (state: string, params = {}) => {
   const target = new URL(callbackUrl)
   target.searchParams.set('state', state)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
-  for (const [key, value] of Object.entries(params)) target.searchParams.set(key, value)
+  for (const [key, value] of Object.entries(params as Record<string, string>)) target.searchParams.set(key, value)
   const response = await fetch(target, { headers: { apikey: anonKey }, redirect: 'manual' })
   const responseBody = await response.text()
   assert.equal(response.status, 303, `OAuth callback returns only the fixed application redirect: ${responseBody.slice(0, 1000)}`)

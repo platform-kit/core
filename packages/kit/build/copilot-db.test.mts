@@ -81,17 +81,13 @@ try {
   /* ------------------------------------------------------ recall, and the floor */
   {
     const { data: near } = await service.rpc('copilot_recall', { p_user: one.id, p_bot: BOT, p_query: JSON.stringify(vec(0)), p_limit: 6 })
-    // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-    ok('recall finds what was close', (near || []).length === 2 && (near! as any).some((t: string) => /marathon/.test(t)), JSON.stringify(near))
+    ok('recall finds what was close', ((near as any[] | null) || []).length === 2 && (near! as any).some((t: string) => /marathon/.test(t)), JSON.stringify(near))
     ok('THE FLOOR: an unrelated remark is not recalled, because a nearest neighbour is always something',
-      // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-      !(near || []).some((t: string) => /chickens/.test(t)), JSON.stringify(near))
+      !((near as any[] | null) || []).some((t: string) => /chickens/.test(t)), JSON.stringify(near))
     const { data: other } = await service.rpc('copilot_recall', { p_user: two.id, p_bot: BOT, p_query: JSON.stringify(vec(0)), p_limit: 6 })
-    // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-    ok('and it never crosses between people', (other || []).length === 1 && /cello/.test((other! as any)[0]), JSON.stringify(other))
+    ok('and it never crosses between people', ((other as any[] | null) || []).length === 1 && /cello/.test((other! as any)[0]), JSON.stringify(other))
     const { data: nobot } = await service.rpc('copilot_recall', { p_user: one.id, p_bot: 'a-different-bot', p_query: JSON.stringify(vec(0)), p_limit: 6 })
-    // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-    ok('nor between assistants — what they told one is not the other\'s', (nobot || []).length === 0, JSON.stringify(nobot))
+    ok('nor between assistants — what they told one is not the other\'s', ((nobot as any[] | null) || []).length === 0, JSON.stringify(nobot))
   }
 
   /* ------------------------------------------------------ theirs to delete */
@@ -102,8 +98,7 @@ try {
     const after = (await one.sb.from('copilot_memory').select('id').eq('bot', BOT)).data || []
     ok('and it is gone', before.length > 0 && after.length === 0, `${before.length} → ${after.length}`)
     const { data: recalled } = await service.rpc('copilot_recall', { p_user: one.id, p_bot: BOT, p_query: JSON.stringify(vec(0)), p_limit: 6 })
-    // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-    ok('the assistant recalls none of it afterwards', (recalled || []).length === 0, JSON.stringify(recalled))
+    ok('the assistant recalls none of it afterwards', ((recalled as any[] | null) || []).length === 0, JSON.stringify(recalled))
   }
   {
     const { error } = await one.sb.from('copilot_memory').delete().eq('user_id', two.id).eq('bot', BOT)

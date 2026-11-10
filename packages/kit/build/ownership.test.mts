@@ -25,6 +25,9 @@ import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, declared, notHere, moduleOn } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+/* a table the test names by a variable: one of the schema's */
+type TableName = keyof Database['public']['Tables']
 
 const note = (m: string) => console.log('ownership: ' + m)
 if (process.env.OWNERSHIP_TEST === '0') { note('skipped (OWNERSHIP_TEST=0)'); process.exit(0) }
@@ -34,7 +37,7 @@ if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the
 try { await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(4000) }) } catch { note('skipped — the stack is not answering'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
 const service = createClient<Database>(url, serviceKey(), O)
 const guest = createClient<Database>(url, anonKey, O)
@@ -168,7 +171,6 @@ try {
   /* …until the address is proven by its own link, which is the honest buyer coming back */
   const proven = await byLink(victim)
   const { data: marked } = await proven.rpc('mark_email_verified')
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'boolean | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 'string
   ok('the address proven by its link is marked', marked === true, marked)
   const { data: claimed } = await service.from('purchases').select('user_id').eq('id', bought.id).single()
   ok('…and then claims the guest\'s purchases', (claimed as any).user_id === up.user.id, (claimed as any).user_id)
@@ -195,8 +197,8 @@ try {
   for (const [table, col, val] of RECORDS) {
     const r = await member2.from(table).select(col).eq(col, val)
     ok(`another reader's ${table} row by its id comes back as nothing`, !(r.data || []).length, r.error?.message || JSON.stringify(r.data))
-    // @ts-expect-error TS2589, from the conversion: Type instantiation is excessively deep and possibly infinite.
-    const g = await guest.from(table).select(col).eq(col, val)
+    /* a guest asking a table it names by a variable: the client without the schema's types, whose every table is a type */
+    const g = await (guest as unknown as { from: (t: string) => any }).from(table).select(col).eq(col, val)
     ok(`…and to a visitor`, !(g.data || []).length, g.error?.message || JSON.stringify(g.data))
   }
   {
@@ -257,15 +259,13 @@ try {
 } catch (e: any) {
   ok('the fixtures were made', false, e.message)
 } finally {
-  // @ts-expect-error TS18046, from the conversion: 'rows' is of type 'unknown'.
-  for (const [table, rows] of Object.entries(made)) for (const r of rows) {
+  for (const [table, rows] of Object.entries(made as Record<string, any[]>)) for (const r of rows) {
     if (table === 'users') { await service.auth.admin.deleteUser(r).catch(() => {}); continue }
     const key = table === 'payout_accounts' ? 'account_id' : r.id !== undefined ? 'id' : 'uid'
     if (table === 'support_contacts') { await service.from('support_tickets').delete().eq('contact_id', r.id); }
     if (table === 'agent_runs') await service.from('agent_steps').delete().eq('run_id', r.id)
     if (table === 'purchases') await service.from('entitlements').delete().eq('source_id', r.stripe_checkout_session_id)
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-    await service.from(table).delete().eq(key, r[key])
+    await service.from(table as TableName).delete().eq(key, r[key])
   }
   await service.from('bookings').delete().like('uid', `probe-%-${stamp}`)
   await asOwner('delete from public.usage_events where source_ref = $1', ['probe-' + stamp]).catch(() => {})

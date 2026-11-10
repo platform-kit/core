@@ -48,7 +48,7 @@ const same = (a: { id: string; event: string; match: any; key: string; value: st
  * Edge Function can run it when somebody publishes. Given neither it falls back to the machine's
  * .env and the checkout, which is what the script and the deploy do.
  */
-export async function pushAchievements({ check = false, root = process.cwd(), store = null, quiet = false, db: client = null } = {}) {
+export async function pushAchievements({ check = false, root = process.cwd(), store = null, quiet = false, db: client = null }: { check?: boolean, root?: string, store?: any, quiet?: boolean, db?: any } = {}) {
   const st = asStore(store || root)
   const said: any = []
   const say = (m: string) => { said.push(m); if (!quiet) console.log('  ' + m) }

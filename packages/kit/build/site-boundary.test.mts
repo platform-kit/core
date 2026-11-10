@@ -8,12 +8,10 @@ const forbidden = /site-brand-reference-sentinel/gi
 const textExtensions = new Set(['.md', '.yaml', '.yml', '.json', '.js', '.mjs', '.toml', '.conf'])
 const skipDirectories = new Set(['.git', 'node_modules', 'dist', 'coverage'])
 
-// @ts-expect-error TS7023, from the conversion: 'filesUnder' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in 
-function filesUnder(directory: fs.PathLike, relative = '') {
+function filesUnder(directory: string, relative = ''): string[] {
   const files = []
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const childRelative = path.join(relative, entry.name)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'PathLike' is not assignable to parameter of type 'string'. Type 'URL' is not assignable to type 'string'.
     const child = path.join(directory, entry.name)
     if (entry.isDirectory()) {
       if (skipDirectories.has(entry.name)) continue

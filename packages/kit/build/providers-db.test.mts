@@ -314,12 +314,10 @@ try {
   await service.from('provider_terms').insert({ version: v2, body: 'The new wording.' })
   made.terms.push(v2)
   const { data: owed } = await service.rpc('provider_terms_owed', { p_version: v2 })
-  // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-  const mine = (owed || []).find((x: { user_id: string }) => x.user_id === provId)
+  const mine = ((owed as any[] | null) || []).find((x: { user_id: string }) => x.user_id === provId)
   ok('a provider who signed the old one is owed the new one', !!mine)
   ok('and the letter can say which they signed', mine && mine.signed === v1)
-  // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-  ok('a reader is not a provider and is not asked', !(owed || []).some((x: { user_id: string }) => x.user_id === readerId))
+  ok('a reader is not a provider and is not asked', !((owed as any[] | null) || []).some((x: { user_id: string }) => x.user_id === readerId))
   const nosy = await asReader.rpc('provider_terms_owed', { p_version: v2 })
   ok('and the list is not a reader\'s to see', nosy.data === null)
 

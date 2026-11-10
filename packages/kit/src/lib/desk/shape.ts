@@ -203,7 +203,9 @@ export const isOwed = (t: any) => !!t && statusOfTicket(t) === 'open' && !!t.wai
    what somebody is waiting on, because a person waiting is the thing a desk exists to stop; then
    whatever moved last. A sort spread across a template is a sort nobody can check. */
 const RANK: any = { urgent: 0, high: 0, normal: 1, low: 2 }
-export function sortTickets(list = [], mode = 'busy') {
+/* a ticket as the desk sorts and filters it: its id, its state and its clocks; the rest rides along */
+export interface TicketRow { id: string, status?: string, priority?: string, last_at?: string | null, created_at?: string | null, waiting_since?: string | null, due_at?: string | null, [k: string]: any }
+export function sortTickets(list: TicketRow[] | null = [], mode = 'busy') {
   const at = (t: any) => new Date(t.last_at || t.created_at || 0).getTime()
   const rows = [...(list || [])]
   if (mode === 'new') return rows.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
@@ -245,7 +247,7 @@ export function owedOn(t: { status?: string; due_at?: any; waiting_since?: any }
 export const ageOf = (t: { created_at?: any }|null, now = Date.now()) => (t && t.created_at ? spanOf(now - new Date(t.created_at).getTime()) : '')
 
 /* the counts a desk wants at a glance: what is live, what is owed, what is mine */
-export function tally(list = [], me: string | null = null) {
+export function tally(list: TicketRow[] = [], me: string | null = null) {
   const rows = list || []
   return {
     live: rows.filter(isLive).length,
@@ -256,7 +258,7 @@ export function tally(list = [], me: string | null = null) {
 }
 
 /* the narrowing a list offers, applied in one place so the chips and the rows can never disagree */
-export function narrow(list = [], { status = 'open', assignee = null, priority = null, q = '', answer = null } = {}, me: string | null = null) {
+export function narrow(list: TicketRow[] | null = [], { status = 'open', assignee = null, priority = null, q = '', answer = null }: { status?: string, assignee?: string | null, priority?: string | null, q?: string, answer?: string | null } = {}, me: string | null = null) {
   const want = String(q || '').trim().toLowerCase().replace(/^#/, '')
   return (list || []).filter((t: any) => {
     /* 'owed' is not a state a row holds: it is the derived fact that the contact has spoken since

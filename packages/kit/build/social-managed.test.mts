@@ -105,14 +105,13 @@ try {
       `social-managed-test-${testId}-${backendId}`,
       'Temporary managed Social SDK runtime fixture',
     )
-    // @ts-expect-error TS7022, from the conversion: 'error' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer
-    const { error } = await service.from('social_backend_configs').insert({
+    const { error }: { error: { message: string } | null } = await service.from('social_backend_configs').insert({
       backend_id: backendId,
       credential_secret_id: credentialSecretId,
       enabled: true,
       updated_by: login.user.id,
     })
-    assert.equal(error, null, error?.message)
+    assert.equal(error, null, String(error?.message))
     insertedBackendIds.push(backendId)
   }
 
@@ -136,8 +135,7 @@ try {
     for (const platform of backend.platforms) {
       const accountId = randomUUID()
       const externalAccountId = `runtime-${backend.id}-${platform}-${testId}`
-      // @ts-expect-error TS7022, from the conversion: 'accountError' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own init
-      const { error: accountError } = await service.from('social_accounts').insert({
+      const { error: accountError }: { error: { message: string } | null } = await service.from('social_accounts').insert({
         id: accountId,
         backend_id: backend.id,
         provider_id: platform,

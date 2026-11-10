@@ -121,8 +121,7 @@ ok('a 90-minute session ends inside noon: 09:00 … 10:30 (7 starts)', ninety.le
   /* level all the way down, one at random — checked by distribution rather than by one draw */
   const seen: any = { a: 0, b: 0, c: 0 }
   for (let i = 0; i < 3000; i++) seen[share(three, { a: { count: 1, last: 5 }, b: { count: 1, last: 5 }, c: { count: 1, last: 5 } }).id]++
-  // @ts-expect-error TS18046, from the conversion: 'v' is of type 'unknown'.
-  ok('level to the bottom: at random, and every host is drawn', Object.values(seen).every((v) => v > 800))
+  ok('level to the bottom: at random, and every host is drawn', (Object.values(seen) as number[]).every((v) => v > 800))
   /* the joining credit: their share of what the rota has done, at their own weight */
   ok('a host joining is credited their share', joiningCredit([{ id: 'a' }, { id: 'b' }], { a: { count: 6 }, b: { count: 4 } }, 100) === 5)
   ok('at twice the weight, twice the credit', joiningCredit([{ id: 'a' }, { id: 'b' }], { a: { count: 6 }, b: { count: 4 } }, 200) === 10)

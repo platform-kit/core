@@ -83,10 +83,8 @@ ok('everything waits where the surface says all', (holdsFor({ approval: 'all', b
 ok('a trusted author does not wait', holdsFor({ approval: 'trusted', body: 'hello', trusted: true }) === null)
 ok('an unknown one does', (holdsFor({ approval: 'trusted', body: 'hello', trusted: false }) as any).why === 'standing')
 ok('a flagged word holds a trusted author too',
-  // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never[]'. Type 'string' is not assignable to type 'never'.
   holdsFor({ approval: 'trusted', body: 'damn', words: WORDS, trusted: true })!.why === 'word')
 ok('and names the word, to whoever may see the hold',
-  // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never[]'. Type 'string' is not assignable to type 'never'.
   holdsFor({ approval: 'none', body: 'damn', words: WORDS })!.word === 'damn')
 
 /* --- what came back with each line --- */

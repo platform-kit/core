@@ -24,9 +24,12 @@ import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { statusOf, leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+/* a table the test names by a variable: one of the schema's */
+type TableName = keyof Database['public']['Tables']
 
 let pass = 0, fail = 0
-const ok = (name: string, cond: boolean, detail: string) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 const note = (s: string) => console.log('  ' + s)
 
 console.log('\nTHE ABILITY AND THE POLICIES, ASKED THE SAME QUESTION\n')
@@ -56,8 +59,7 @@ async function identityFor(email: string) {
   try { const c = await signedIn(email); if (c) { const r = await c.rpc('get_my_entitlements'); ent = r.data || null } } catch { ent = null }
   return { id: u.id, identity: identityOf({
     signedIn: true, verified: !!u.email_verified_at, role: u.role || 'user',
-    // @ts-expect-error TS2322, from the conversion: Type 'string[]' is not assignable to type 'never[]'. Type 'string' is not assignable to type 'never'.
-    roles: Array.isArray(u.roles) ? u.roles : [], entitlements: ent || {},
+    roles: Array.isArray(u.roles) ? u.roles : [], entitlements: (ent as Record<string, any> | null) || {},
   }) }
 }
 
@@ -109,13 +111,11 @@ for (const email of WHO) {
   const ability = abilityFor(me.identity)
   for (const c of CASES) {
     /* what the database admits: rows this person can actually see */
-    // @ts-expect-error TS2589, from the conversion: Type instantiation is excessively deep and possibly infinite.
-    const { data, error } = await client.from(c.table).select('*').limit(1)
+    const { data, error } = await (client as SupabaseClient<any>).from(c.table).select('*').limit(1)
     const admits = !error && Array.isArray(data) && data.length > 0
     const says = ability.can(c.action, c.subject)
     /* an empty table cannot testify either way */
-    // @ts-expect-error TS2589, from the conversion: Type instantiation is excessively deep and possibly infinite.
-    const { count } = await admin.from(c.table).select('*', { count: 'exact', head: true })
+    const { count } = await (admin as SupabaseClient<any>).from(c.table).select('*', { count: 'exact', head: true })
     if (!count) { note(`${c.table} is empty in the seed — ${email} not asked about it`); continue }
     asked++
     const k = known(email, c.subject)

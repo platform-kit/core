@@ -37,7 +37,7 @@ const PROBE = path.join(HERE, 'fixtures', 'e2e-probe.mts')
 const SCHEMA = path.join(CLUB, 'db', 'schemas', 'zz_e2e_probe.sql')
 const ENV = path.join(CLUB, '.env')
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-12).join('\n        ') : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-12).join('\n        ') : '')) } }
 
 if (spawnSync('docker', ['info'], { stdio: 'ignore', timeout: 20000 }).status !== 0) { console.log('e2e-runner: Docker is not answering — this test runs the end-to-end runner, which needs it'); process.exit(1) }
 if (fs.existsSync(ENV)) { console.log(`e2e-runner: ${path.relative(ROOT, ENV)} exists — the live-key check writes that file and will not overwrite one`); process.exit(1) }

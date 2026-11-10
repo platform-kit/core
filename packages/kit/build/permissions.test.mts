@@ -48,8 +48,7 @@ const ENTRIES = [
 
 await ok('the ability reads an entry exactly as the ladder does, for every account', () => {
   for (const [who, raw] of Object.entries(PEOPLE)) {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type '{ signedIn?: boolean | undefined; entitlements?: null | undefined; role?:
-    const me = identityOf(raw)
+    const me = identityOf(raw as Parameters<typeof identityOf>[0])
     const ability = abilityFor(me)
     for (const entry of ENTRIES) {
       /* what the product does today */
@@ -119,8 +118,7 @@ await ok("a session's gate is admits()'s own answer, every shape of it", async (
   }
   let checked = 0
   for (const [who, raw] of Object.entries(WHO)) {
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ signedIn: boolean; } | { signedIn: boolean; entitlements: {}; } | { signedIn: boolean; entitlements: { class: string; ti
-    const me = identityOf(raw)
+    const me = identityOf(raw as Parameters<typeof identityOf>[0])
     const ability = abilityFor(me)
     for (const type of TYPES) {
       const theirs = admits(type, { tiers: me.tiers, signed: me.signedIn, ranks: RANKS })
@@ -171,7 +169,6 @@ await ok("a caller's own verdict wins over the subject's default", () => {
    * agreeing.
    */
   const { sessionSubject } = P
-  // @ts-expect-error TS2322, from the conversion: Type '{ tiers: never[]; }' is not assignable to type 'null | undefined'.
   const me = identityOf({ signedIn: true, entitlements: { tiers: [] } })
   const type = { slug: 'members', requires: 'tier-2' }
   const RANKS = { 'tier-2': 2 }

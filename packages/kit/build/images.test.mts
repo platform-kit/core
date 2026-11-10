@@ -63,8 +63,7 @@ const unsplash = sourceOf('unsplash')
 if (unsplash) {
   const calls: any = []
   const real = globalThis.fetch
-  // @ts-expect-error TS2322, from the conversion: Type '(u: URL | RequestInfo, o: RequestInit | undefined) => Promise<{ ok: true; json: () => Promise<{ total: number; results: { id: string; 
-  globalThis.fetch = async (u, o) => {
+  ;(globalThis as any).fetch = async (u: any, o: any) => {
     calls.push({ url: String(u), auth: (o && o.headers && (o.headers as any).Authorization) || '' })
     if (String(u).includes('/search/photos')) return { ok: true, json: async () => ({ total: 1, results: [{
       id: 'pic1', width: 4000, height: 3000, alt_description: 'A still lake',
@@ -97,11 +96,9 @@ if (unsplash) {
     ok('the credit travels with the picture', taken.credit && taken.credit.name === 'A Photographer')
 
     /* a refusal says WHICH, because "search failed" sends somebody to the wrong place */
-    // @ts-expect-error TS2322, from the conversion: Type 'Promise<{ ok: false; status: number; }>' is not assignable to type 'Promise<Response>'. Type '{ ok: false; status: number; }' is missi
-    globalThis.fetch = async () => ({ ok: false, status: 401 })
+    ;(globalThis as any).fetch = async () => ({ ok: false, status: 401 })
     ok('a refused key says so', /key/.test((await unsplash.search('x', { env: env2 })).error || ''))
-    // @ts-expect-error TS2322, from the conversion: Type 'Promise<{ ok: false; status: number; }>' is not assignable to type 'Promise<Response>'. Type '{ ok: false; status: number; }' is missi
-    globalThis.fetch = async () => ({ ok: false, status: 403 })
+    ;(globalThis as any).fetch = async () => ({ ok: false, status: 403 })
     ok('a spent allowance says so', /allowance/.test((await unsplash.search('x', { env: env2 })).error || ''))
   } finally { globalThis.fetch = real }
 }

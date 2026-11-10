@@ -9,6 +9,8 @@ import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
+/* a table the test names by a variable: one of the schema's */
+type TableName = keyof Database['public']['Tables']
 
 const note = (m: string) => console.log('network-db: ' + m)
 if (process.env.NETWORK_TEST === '0') { note('skipped (NETWORK_TEST=0)'); process.exit(0) }
@@ -57,8 +59,7 @@ try {
   /* a clean slate for these four: nothing of the network from an earlier run */
   for (const t of ['network_posts', 'network_follows', 'network_blocks', 'network_mutes', 'network_pins', 'network_likes', 'network_reposts']) {
     const col = { network_posts: 'author_id', network_follows: 'follower_id', network_blocks: 'blocker_id', network_mutes: 'muter_id', network_pins: 'user_id', network_likes: 'author_id', network_reposts: 'author_id' }[t]
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-    await service.from(t).delete().in(col!, people)
+    await service.from(t as TableName).delete().in(col!, people)
   }
   await service.from('network_moderation').delete().in('subject_id', people)
   await service.from('profiles').update({ public_profile: false }).eq('id', A.id)
@@ -153,7 +154,7 @@ try {
   await C.sb.from('network_follows').insert({ follower_id: C.id, subject_id: B.id })
   const self = await C.sb.from('network_follows').insert({ follower_id: C.id, subject_id: C.id })
   ok('nobody follows themselves', !!self.error)
-  let tl = (await C.sb.rpc('network_timeline', { p_before: null, p_limit: 50 })).data || []
+  let tl = (await C.sb.rpc('network_timeline', { p_before: null, p_limit: 50 })).data as any[] | null || []
   ok('the timeline holds the posts of the people one follows', tl.some((t) => t.post_id === everyone.id) && tl.some((t) => t.post_id === here.id))
   ok('…and what they reposted', tl.some((t) => t.kind === 'repost' && t.post_id === here.id && t.reposted_by === B.id))
   ok('…and a reply between two people one follows', tl.some((t) => t.post_id === reply.id))
@@ -163,26 +164,26 @@ try {
   ok('nobody pins a space they are not in', !!pinOut.error)
   /* every space one is in reaches the timeline by default (spaces-reach-home); pins count only where
      the site has turned pinning on (p_all_spaces false) */
-  const tlB0 = (await B.sb.rpc('network_timeline', { p_before: null, p_limit: 50 })).data || []
+  const tlB0 = (await B.sb.rpc('network_timeline', { p_before: null, p_limit: 50 })).data as any[] | null || []
   ok('by default a space one is in reaches one’s timeline, nothing pinned', tlB0.some((t) => t.kind === 'space' && t.message_id === spaced.id))
-  const tlB0p = (await B.sb.rpc('network_timeline', { p_before: null, p_limit: 50, p_all_spaces: false })).data || []
+  const tlB0p = (await B.sb.rpc('network_timeline', { p_before: null, p_limit: 50, p_all_spaces: false })).data as any[] | null || []
   ok('with pinning on, a space one has not pinned does not', !tlB0p.some((t) => t.message_id === spaced.id))
   await B.sb.from('network_pins').insert({ user_id: B.id, space_id: spaceId })
-  const tlB = (await B.sb.rpc('network_timeline', { p_before: null, p_limit: 50, p_all_spaces: false })).data || []
+  const tlB = (await B.sb.rpc('network_timeline', { p_before: null, p_limit: 50, p_all_spaces: false })).data as any[] | null || []
   ok('with pinning on, a pinned space’s feed runs through its member’s timeline', tlB.some((t) => t.kind === 'space' && t.message_id === spaced.id))
-  const older = (await C.sb.rpc('network_timeline', { p_before: tl[0]?.at, p_limit: 50 })).data || []
+  const older = (await C.sb.rpc('network_timeline', { p_before: tl[0]?.at, p_limit: 50 })).data as any[] | null || []
   ok('the timeline pages backwards', older.every((t) => new Date(t.at) < new Date(tl[0].at)))
 
   /* a mute: gone from the timeline, still readable, and never told */
   await C.sb.from('network_mutes').insert({ muter_id: C.id, muted_id: A.id })
-  tl = (await C.sb.rpc('network_timeline', { p_before: null, p_limit: 50 })).data || []
+  tl = (await C.sb.rpc('network_timeline', { p_before: null, p_limit: 50 })).data as any[] | null || []
   ok('a muted person is gone from the timeline', !tl.some((t) => t.post_id === everyone.id))
   ok('…and still readable where one goes to look', (await sees(C.sb, [everyone.id])).has(everyone.id))
   ok('…and the muted person is never told', ((await A.sb.from('network_mutes').select('muter_id').eq('muted_id', A.id)).data || []).length === 0)
   await C.sb.from('network_mutes').delete().eq('muter_id', C.id)
 
   /* notifications: a like, a follow, a reply — to the author */
-  const notes = (await A.sb.rpc('network_notifications', { p_before: null, p_limit: 50 })).data || []
+  const notes = (await A.sb.rpc('network_notifications', { p_before: null, p_limit: 50 })).data as any[] | null || []
   ok('the author is told of a like, a follow and a reply', ['like', 'follow', 'reply'].every((r) => notes.some((n) => n.reason === r)), notes.map((n) => n.reason).join(','))
   const unread = (await A.sb.rpc('network_unread')).data
   await A.sb.from('network_seen').upsert({ user_id: A.id, seen_at: new Date().toISOString() })
@@ -274,7 +275,7 @@ try {
   ok('…while the pass-holder likes', !(await B.sb.from('network_likes').insert({ author_id: B.id, post_id: open!.id })).error)
   ok('the staff always take part', (await admitted(M, 'read')))
   ok('an administrator always takes part', (await admitted(M, 'read')) && (await admitted(M, 'write')) && (await sees(M.sb, [open!.id])).has(open!.id))
-  ok('…and the notifications of somebody outside are empty', ((await C.sb.rpc('network_notifications', {})).data || []).length === 0)
+  ok('…and the notifications of somebody outside are empty', ((await C.sb.rpc('network_notifications', {})).data as any[] | null || []).length === 0)
 
   await grant({ write: [{ entitlement: PASS }] })
   ok('free to read, paid to post: anybody signed in reads', (await sees(C.sb, [open!.id])).has(open!.id) && (await admitted(C, 'read')))
@@ -299,12 +300,10 @@ try {
   ok('…and nobody else', !(await enters(C, 'events')) && !(await enters(C, 'messages')) && !(await enters(C, 'notifications')))
   ok('…but the staff', (await enters(M, 'events')) && (await enters(M, 'messages')))
   ok('…and a place without a rule stays open', await enters(C, 'diagnostics'))
-  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-  ok('outside Events, no event is listed', ((await C.sb.rpc('events_upcoming', {})).data || []).length === 0)
-  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-  ok('outside Messages, no direct message is listed', ((await C.sb.rpc('space_dms', {})).data || []).length === 0)
+  ok('outside Events, no event is listed', ((await C.sb.rpc('events_upcoming', {})).data as any[] | null || []).length === 0)
+  ok('outside Messages, no direct message is listed', ((await C.sb.rpc('space_dms', {})).data as any[] | null || []).length === 0)
   ok('…nor opened', !!(await C.sb.rpc('space_dm_open', { p_space: spaceId, p_with: [B.id] })).error)
-  ok('outside Notifications, nothing is notified', ((await C.sb.rpc('network_notifications', {})).data || []).length === 0)
+  ok('outside Notifications, nothing is notified', ((await C.sb.rpc('network_notifications', {})).data as any[] | null || []).length === 0)
   await places(null)
   ok('taking the rules away opens every place again', (await enters(C, 'events')) && (await enters(C, 'messages')))
 
@@ -331,7 +330,7 @@ try {
   const tooMany = await A.sb.from('network_posts').insert({ author_id: A.id, text: 'eleven', audience: 'here', media: Array.from({ length: 11 }, (_, i) => ({ kind: 'image', path: A.id + '/' + i + '.jpg' })) })
   ok('…and never more than ten', !!tooMany.error)
   /* For You: the media posts the reader may read, and nothing else */
-  const fy = async (who: any) => ((await who.rpc('network_for_you', { p_offset: 0, p_limit: 60 })).data || []).map((r: { id: any }) => r.id)
+  const fy = async (who: any) => ((await who.rpc('network_for_you', { p_offset: 0, p_limit: 60 })).data as any[] | null || []).map((r: { id: any }) => r.id)
   const plain = await post(A, { text: 'words alone', audience: 'here' })
   const bSees = await fy(B.sb)
   ok('For You holds a media post the reader may read', mp && bSees.includes(mp.id))
@@ -347,8 +346,7 @@ try {
     await service.from('network_moderation').delete().in('subject_id', people)
     await service.from('network_moderation').delete().in('actor_id', people)
     for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_blocks', 'blocker_id'], ['network_mutes', 'muter_id'], ['network_pins', 'user_id'], ['network_seen', 'user_id'], ['network_posts', 'author_id']]) {
-      // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-      await service.from(t).delete().in(col, people)
+      await service.from(t as TableName).delete().in(col, people)
     }
     for (const [id, p] of profilesBefore) await service.from('profiles').update({ public_profile: p.public_profile, username: p.username }).eq('id', id)
   }

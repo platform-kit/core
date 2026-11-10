@@ -186,8 +186,7 @@ for (const [name, f] of Object.entries(ALL())) {
     if (typeof model.projected !== 'function') derived.projections.set(name, (derived.projections.get(name) || []).concat(t))
   }
   /* an artefact frozen in FIXED is a file the functions read that a publish cannot change */
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'PropertyKey'.
-  for (const a of artefactsOf(name)) if (Object.prototype.hasOwnProperty.call(FIXED, a) || Object.prototype.hasOwnProperty.call(FIXED, a + '.json')) derived.artefacts.set(name, (derived.artefacts.get(name) || []).concat(a))
+  for (const a of artefactsOf(name) as string[]) if (Object.prototype.hasOwnProperty.call(FIXED, a) || Object.prototype.hasOwnProperty.call(FIXED, a + '.json')) derived.artefacts.set(name, (derived.artefacts.get(name) || []).concat(a))
   /* an action only a machine can run */
   for (const m of models) {
     if (m.module !== name) continue
@@ -278,13 +277,9 @@ for (const dir of ['sites/brochure', 'sites/demo', 'sites/docs']) {
 }
 
 /* ------------------------------------------------------------- 6. the shape a deployment resolves to */
-// @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'content' does not exist in type '{ backend?: boolean | undefined; repo?: boolean | un
 ok('no backend is static', modeOf({ backend: false, content: 'files', repo: true }) === 'static')
-// @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'content' does not exist in type '{ backend?: boolean | undefined; repo?: boolean | un
 ok('a backend with the repository in the cycle is git', modeOf({ backend: true, content: 'files', repo: true }) === 'git')
-// @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'content' does not exist in type '{ backend?: boolean | undefined; repo?: boolean | un
 ok('rows with the repository still in the cycle is git', modeOf({ backend: true, content: 'rows', repo: true }) === 'git')
-// @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'content' does not exist in type '{ backend?: boolean | undefined; repo?: boolean | un
 ok('rows with the repository out of the cycle is cloud', modeOf({ backend: true, content: 'rows', repo: false }) === 'cloud')
 ok('the defaults are what a site already was', DEPLOYMENT_DEFAULTS.backend === true && DEPLOYMENT_DEFAULTS.content === 'files' && DEPLOYMENT_DEFAULTS.repo === true)
 

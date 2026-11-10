@@ -26,7 +26,7 @@ import type { Database } from '../supabase/functions/_shared/database.types.js'
 const S: any = requireStack('print-jobs-db')
 if (!(await moduleOn('print'))) { notHere('print-jobs-db', 'the print module is off'); process.exit(0) }
 let pass = 0, fail = 0
-const ok = (msg: string, cond: string|number|boolean|null, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 400) : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 400) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
 const service = createClient<Database>(S.api, S.service, O)
 const anon = createClient<Database>(S.api, S.anon, O)
@@ -74,7 +74,6 @@ try {
     for (const p of h?.fonts || []) fonts.push(new Uint8Array(await (await fetch(S.api + p)).arrayBuffer()))
     const wrong = await setInterior({ files: h.files, fonts, min: h.min, step: h.step })
     const put = await fetch(S.api + h.upload, { method: 'PUT', headers: { 'content-type': 'application/pdf', 'x-upsert': 'true' }, body: wrong.pdf as Uint8Array<ArrayBuffer> })   /* a Node Buffer's backing store is an ArrayBufferLike; fetch's lib type asks for an ArrayBuffer */
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
     ok('…and the interior goes up to the address it gave', put.ok, put.status)
     const refused = await call({ job: first.body.job, interior: { edition: h.edition, pages: wrong.pages + 2, pad: wrong.pad + 2, where: [], marks: [] } })
     ok('an interior that is not what it says is refused, and the job with it', refused.status === 422 && (await rowOf(first.body.job))!.state === 'failed', JSON.stringify(refused.body).slice(0, 200))
@@ -148,7 +147,6 @@ try {
     const resumed = await call({ job: cut!.id })
     ok('a job cut off with its interior done is finished by the next call', resumed.status === 200 && resumed.body?.ok === true && resumed.body.job === cut!.id, JSON.stringify(resumed.body).slice(0, 300))
     /* by this call or by the minute's sweep, whichever claimed it first: either way, the second attempt */
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
     ok('…on its second attempt', (await settled(cut!.id))!.attempts === 2, (await rowOf(cut!.id))!.attempts)
     ok('…the same edition and pages', resumed.body?.edition === first.body.edition && resumed.body?.pages === first.body.pages)
     ok('…taking the interior back rather than compiling it again', (await stamp()) === before, `${before} → ${await stamp()}`)
@@ -197,7 +195,6 @@ try {
     const sweep = await anon.rpc('run_print_jobs')
     ok('…nor runs the sweep', !!sweep.error)
     const anonymous = await call({ book: BOOK, contents: CONTENTS }, S.anon)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
     ok('…nor sets a book', anonymous.status === 401 || anonymous.status === 403, anonymous.status)
   }
 } finally {

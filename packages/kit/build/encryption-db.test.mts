@@ -20,6 +20,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+/* a table the test names by a variable: one of the schema's */
+type TableName = keyof Database['public']['Tables']
 
 let pass = 0, fail = 0
 const ok = (msg: string, cond: string|number|boolean|null, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
@@ -51,8 +54,7 @@ try {
 
 /* ---- the four tables are there, and are state ---- */
 for (const t of ['space_devices', 'space_one_time_keys', 'space_to_device', 'space_key_backups']) {
-  // @ts-expect-error TS2589, from the conversion: Type instantiation is excessively deep and possibly infinite.
-  const { error } = await db.from(t).select('*').limit(1)
+  const { error } = await (db as SupabaseClient<any>).from(t).select('*').limit(1)
   ok(`${t} exists`, !error, error && error.message)
 }
 
@@ -125,8 +127,7 @@ try {
     if (rep) {
       const moderator = await as('admin@example.com')
       const { data: rows } = await (moderator || db).rpc('space_reports', { p_space: (space as any).id, p_open: true })
-      // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-      const mine = (rows || []).find((r: { message: string }) => r.message === msg.id)
+      const mine = ((rows as any[] | null) || []).find((r: { message: string }) => r.message === msg.id)
       ok('a report from a sealed room reaches the desk', !moderator || !!mine, JSON.stringify(rows).slice(0, 160))
       if (mine) {
         ok('…carrying no words', mine.body == null, JSON.stringify(mine.body))
@@ -442,8 +443,7 @@ try {
     /* the keys alone before, because the ROOM is wanted: clearing it here deleted the very channel
        this lane had just made, and the client then quite correctly could not find it */
     const wipeKeys = async () => {
-      // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-      for (const id of [a2!.id, b2!.id]) for (const t of ['space_to_device', 'space_one_time_keys', 'space_devices', 'space_key_backups']) await db.from(t).delete().eq('user_id', id)
+      for (const id of [a2!.id, b2!.id]) for (const t of ['space_to_device', 'space_one_time_keys', 'space_devices', 'space_key_backups']) await db.from(t as TableName).delete().eq('user_id', id)
     }
     const clear = async () => {
       await wipeKeys()
@@ -501,8 +501,7 @@ try {
           if (row) {
             await theirs.receive()
             ok('THE SITE\'S OWN CLIENT READS WHAT A REAL CLIENT SEALED',
-              // @ts-expect-error TS2345, from the conversion: Argument of type 'Json' is not assignable to parameter of type '{ session_id: any; }'. Type 'null' is not assignable to type '{ session_id: 
-              (await theirs.open(live.id, row.cipher, row.author_id)) === said)
+              (await theirs.open(live.id, row.cipher as any, row.author_id)) === said)
           }
 
           /* and back: the site seals, the real client reads */

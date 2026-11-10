@@ -45,14 +45,10 @@ console.log('\nA SAVE KEEPS THE FILE\'S OWN WORDS\n')
 
 /* ---- what must survive ---- */
 t('a value changes and every comment stays', () => {
-  const out = keepComments(FILE, data({ allow: 'everyone' }))
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
+  const out = keepComments(FILE, data({ allow: 'everyone' }))!
   assert.match(out, /^# THE SITE'S COMMENT POLICY/, 'the block comment at the top')
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
   assert.match(out, /allow: everyone\s+# off · everyone · members · hosts/, 'the end-of-line comment moved to the new value')
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
   assert.match(out, /# Words that HOLD a comment/, 'a comment between groups')
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
   assert.match(out, /# how far in/, 'a comment inside a nested block')
 })
 
@@ -63,22 +59,20 @@ t('the key order is the file\'s, not the object\'s', () => {
 })
 
 t('a nested block is merged, not replaced, so its own comments live', () => {
-  const out = keepComments(FILE, data({ nested: { inner: 9, other: 'two' } }))
+  const out = keepComments(FILE, data({ nested: { inner: 9, other: 'two' } }))!
   assert.match(out!, /# how far in/)
   assert.match(out!, /inner: 9/)
 })
 
 t('a key that goes takes its own comments with it', () => {
-  // @ts-expect-error TS2790, from the conversion: The operand of a 'delete' operator must be optional.
-  const out = keepComments(FILE, (() => { const d = data(); delete d.flagged; return d })())
+  const out = keepComments(FILE, (() => { const d: Record<string, any> = data(); delete d.flagged; return d })())!
   assert.ok(!/flagged/.test(out!), 'the key')
   assert.ok(!/# Words that HOLD/.test(out!), 'and the lines that described it')
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
   assert.match(out, /# THE SITE'S COMMENT POLICY/, 'but nothing else')
 })
 
 t('a key that arrives is written, with no comment invented for it', () => {
-  const out = keepComments(FILE, data({ collapse: 5 }))
+  const out = keepComments(FILE, data({ collapse: 5 }))!
   assert.match(out!, /^collapse: 5$/m)
 })
 
@@ -101,14 +95,12 @@ t('a file with no comments takes the old path, byte for byte', () => {
   const plain = '---\na: 1\nb:\n  - x\n---\n\nbody\n'
   assert.equal(keepComments(plain, { a: 1, b: ['x'] }), null, 'nothing to keep, so it declines')
   assert.equal(frontmatter.serialise({ data: { a: 1, b: ['x'] }, content: 'body\n' }, { current: plain }),
-    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'lineWidth' does not exist in type 'GrayMatterOption<string, GrayMatterOption<string, 
-    matter.stringify('\nbody\n', { a: 1, b: ['x'] }, { lineWidth: -1 }), 'and writes exactly as it always did')
+    matter.stringify('\nbody\n', { a: 1, b: ['x'] }, { lineWidth: -1 } as { lineWidth: number } & matter.GrayMatterOption<string, never>), 'and writes exactly as it always did')
 })
 
 t('a new record has nothing to keep and is written as before', () => {
   assert.equal(frontmatter.serialise({ data: { a: 1 }, content: 'b\n' }, {}),
-    // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'lineWidth' does not exist in type 'GrayMatterOption<string, GrayMatterOption<string, 
-    matter.stringify('\nb\n', { a: 1 }, { lineWidth: -1 }))
+    matter.stringify('\nb\n', { a: 1 }, { lineWidth: -1 } as { lineWidth: number } & matter.GrayMatterOption<string, never>))
 })
 
 t('the whole file keeps its framing and its body', () => {
@@ -176,7 +168,7 @@ await ta('every content file that carries comments survives a no-op save unchang
   for (const f of withComments) {
     const text = readFileSync(f, 'utf8')
     const parsed = frontmatter.parse(text)
-    const out = keepComments(text, parsed.data)
+    const out = keepComments(text, parsed.data)!
     if (out == null) continue   /* no front-matter comments after all (a # inside the body) */
     assert.equal(out, fm(text), f + ' changed on a save that changed nothing')
   }
@@ -221,12 +213,9 @@ what these are for
     dirs: async () => [],
   }
   await write(model, 'tags', { data: { free: false, tags: ['meditation', 'astrology'] }, content: 'what these are for\n' }, process.cwd(), { store })
-  const out = rows.get(PATH)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
+  const out = rows.get(PATH)!
   assert.match(out, /# WHAT THIS SITE WRITES ABOUT/, 'the block comment survived a save over rows')
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
   assert.match(out, /free: false\s+# on, a writer may type one/, 'and the end-of-line comment')
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
   assert.match(out, /- astrology/, 'and the save actually happened')
   assert.equal(matter(out!).data.free, false)
 })

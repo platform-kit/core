@@ -25,6 +25,8 @@ import { AtpAgent } from '@atproto/api'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, siteUnderTest, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
+/* a table the test names by a variable: one of the schema's */
+type TableName = keyof Database['public']['Tables']
 
 const note = (m: string) => console.log('atproto-interop: ' + m)
 if (process.env.ATPROTO_INTEROP_TEST === '0') { note('skipped (ATPROTO_INTEROP_TEST=0)'); process.exit(0) }
@@ -66,8 +68,7 @@ const plc = http.createServer(async (req: any, res) => {
     service: [{ id: '#atproto_pds', type: 'AtprotoPersonalDataServer', serviceEndpoint: d.services.atproto_pds.endpoint }],
   }))
 })
-// @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Argument of type 'string' is not assignable to parameter of type 
-await new Promise((r, j) => plc.listen(PORT, '0.0.0.0', r).on('error', j))
+await new Promise<void>((r, j) => plc.listen(PORT, '0.0.0.0', () => r()).on('error', j))
 
 /* ------------------------------------------------------------ an app view of our own, standing in for Bluesky's:
    it answers only a service token that verifies — by Bluesky's own server library — against the key
@@ -93,8 +94,7 @@ const appview = http.createServer(async (req, res) => {
     : {}
   res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(out))
 })
-// @ts-expect-error TS2769, from the conversion: No overload matches this call. The last overload gave the following error. Argument of type 'string' is not assignable to parameter of type 
-await new Promise((r, j) => appview.listen(PORT + 1, '0.0.0.0', r).on('error', j))
+await new Promise<void>((r, j) => appview.listen(PORT + 1, '0.0.0.0', () => r()).on('error', j))
 
 const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false, autoRefreshToken: false } })
 const site = async (email: string) => {
@@ -113,8 +113,7 @@ try {
   A = await site('member@example.com'); M = await site('admin@example.com')
   before = (await service.from('profiles').select('username, public_profile').eq('id', A.id).single()).data
   await service.from('profiles').update({ username: SLUG }).eq('id', A.id)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-  for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_posts', 'author_id']]) await service.from(t).delete().eq(col, A.id)
+  for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_posts', 'author_id']]) await service.from(t as TableName).delete().eq(col, A.id)
   const old = (await service.from('network_identities').select('did').eq('user_id', A.id).maybeSingle()).data
   if (old) { await service.from('network_seq').delete().eq('did', old.did); await service.from('network_identities').delete().eq('user_id', A.id) }
 
@@ -155,16 +154,14 @@ try {
   const docRes: any = await new Promise((resolve) => http.get(`http://127.0.0.1:${PORT}/${encodeURIComponent(identity)}`, (r) => { let b = ''; r.on('data', (c) => { b += c }); r.on('end', () => resolve(JSON.parse(b))) }))
   await didCache.cacheDid(identity, docRes)
   const idResolver = new IdResolver({ plcUrl: `http://localhost:${PORT}`, didCache })
-  const read = (cursor: number, stopAfter: number) => new Promise((resolve) => {
+  const read = (cursor: number, stopAfter: number) => new Promise<void>((resolve) => {
     const runner = new MemoryRunner({ startCursor: cursor })
     const fh = new Firehose({
       idResolver, runner, service: FN.replace(/^http/, 'ws'), unauthenticatedHandles: true,
-      // @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
       handleEvent: async (evt: any) => { if (evt.did !== identity) return; seen.push({ seq: evt.seq, event: evt.event, path: evt.collection ? `${evt.collection}/${evt.rkey}` : '' }); last = evt.seq; if (seen.length >= stopAfter) { await fh.destroy(); resolve() } },
       onError: (e) => { console.log('  firehose: ' + (e.message || e) + (e.cause ? ' — ' + ((e.cause as any).message || e.cause) : '')) },
     })
     fh.start()
-    // @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
     setTimeout(async () => { await fh.destroy(); resolve() }, 20000)
   })
   await read(0, 2)
@@ -235,8 +232,7 @@ try {
   console.log('  FAIL  the run — ' + (e && (e.message || e)))
 } finally {
   if (A) {
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-    for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_dirty', 'user_id'], ['network_posts', 'author_id']]) await service.from(t).delete().eq(col, A.id)
+    for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_dirty', 'user_id'], ['network_posts', 'author_id']]) await service.from(t as TableName).delete().eq(col, A.id)
     await service.from('network_moderation').delete().eq('subject_id', A.id)
     if (identity) { await service.from('network_seq').delete().eq('did', identity); await service.from('network_repo_blocks').delete().eq('did', identity); await service.from('network_commits').delete().eq('did', identity) }
     await service.from('network_identities').delete().eq('user_id', A.id)

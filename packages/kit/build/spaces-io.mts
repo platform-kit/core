@@ -69,7 +69,7 @@ export { encryptedOf }
  * It takes what `readSpaces` gives — spaces each carrying their channels — so a caller with the
  * declaration in hand needs nothing else.
  */
-export function sealedRooms(declared: Array<{ slug: string, data?: any, channels?: Array<{ slug: string, data?: any }> } | null> = []) {
+export function sealedRooms(declared: Array<{ slug: string, data?: any, channels?: Array<{ slug: string, data?: any, [k: string]: any }> } | null> = []) {
   const out = new Set<string>()
   for (const s of declared || []) {
     for (const c of (s && s.channels) || []) {

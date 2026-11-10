@@ -28,7 +28,7 @@ if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the
 try { const r = await fetch(`${url}/functions/v1/ingest`, { method: 'OPTIONS', signal: AbortSignal.timeout(4000) }); if (r.status >= 500) throw new Error() } catch { note('skipped — the functions are not served'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const DB_URL = process.env.PLATFORMKIT_TEST_DB_URL || `postgresql://postgres:postgres@${new URL(url).hostname}:${Number(new URL(url).port || 54321) + 1}/postgres`
 const sql = async (q: string, args?: any[]|undefined) => { const db = new pg.Client({ connectionString: DB_URL }); await db.connect(); try { return (await db.query(q, args)).rows } finally { await db.end() } }
 /* the site's limits, as the functions read them (the policy record compiled beside them) */
@@ -48,10 +48,8 @@ try {
   /* ─── guest checkout ─── */
   await fill(`door:checkout:${hashed(flooder)}`, LIMIT.checkout)
   const over = await post('create-checkout-session', { items: [] }, { 'cf-connecting-ip': flooder })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
   ok(`guest checkout refuses a visitor past ${LIMIT.checkout} an hour`, over.status === 429, over.status)
   const fine = await post('create-checkout-session', { items: [] }, { 'cf-connecting-ip': other })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
   ok('…and still serves another visitor', fine.status !== 429, fine.status)
   /* a signed-in reader is counted by their account, wherever they are */
   {
@@ -60,7 +58,6 @@ try {
     if (data?.session) {
       await fill(`door:checkout:u:${data.user.id}`, LIMIT.checkout)
       const r = await post('create-checkout-session', { items: [] }, { authorization: 'Bearer ' + data.session.access_token, 'cf-connecting-ip': `198.51.100.${n + 2}` })
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
       ok('…and a signed-in reader is counted by their account, from any address', r.status === 429, r.status)
       await sql('delete from public.api_rate where who = $1', [`door:checkout:u:${data.user.id}`])
     } else note('⚠ free@ does not sign in — the account check is skipped')
@@ -69,17 +66,14 @@ try {
   /* ─── form answers ─── */
   await fill(`door:forms:${hashed(flooder)}`, LIMIT.forms)
   const f1 = await post('form', { action: 'get', form: 'probe' }, { 'cf-connecting-ip': flooder, 'x-form-anon': uuid() })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
   ok(`form answers refuse a visitor past ${LIMIT.forms} an hour, whatever anonymous id they send`, f1.status === 429, f1.status)
   const f2 = await post('form', { action: 'get', form: 'probe' }, { 'cf-connecting-ip': other, 'x-form-anon': uuid() })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
   ok('…and still serve another visitor', f2.status !== 429, f2.status)
 
   /* ─── analytics intake ─── */
   const batch = (anon: string) => ({ batch: [{ type: 'probe_flood', anon_id: anon, session_id: uuid(), path: '/' }] })
   await fill(`door:analytics:${hashed(flooder)}`, LIMIT.analytics)
   const a1 = await post('ingest', batch(uuid()), { 'cf-connecting-ip': flooder })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
   ok(`analytics intake refuses a visitor past ${LIMIT.analytics} batches an hour, whatever anonymous id they send`, a1.status === 429, a1.status)
   const a2 = await post('ingest', batch(uuid()), { 'cf-connecting-ip': other })
   ok('…and still takes another visitor\'s', a2.status === 200, a2.status + ' ' + (await a2.text()).slice(0, 100))
@@ -108,7 +102,6 @@ try {
     for (let i = 0; i < 6; i++) results.push((await post('support', { action: 'start', body: 'probe ' + i }, { 'cf-connecting-ip': flooder })).status)
     ok('the support widget refuses a sixth new guest from one visitor in an hour', results.slice(0, 5).every((s) => s === 200) && results[5] === 429, results.join(','))
     const r = await post('support', { action: 'start', body: 'probe other' }, { 'cf-connecting-ip': other })
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
     ok('…and still serves another visitor', r.status === 200, r.status)
   }
 

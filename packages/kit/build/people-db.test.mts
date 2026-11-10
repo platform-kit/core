@@ -107,8 +107,7 @@ try {
    */
   const everybody: any = (await admin.sb.rpc('admin_everybody', { p_narrow: 'staff', p_limit: 200 })).data
   const others = (((everybody && everybody.people) || [])).filter((p: { id: string; roles: any }) => p.id !== admin.id && (p.roles || []).includes('admin'))
-  // @ts-expect-error TS2339, from the conversion: Property 'roles' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'roles' does not 
-  const mine = ((await admin.sb.rpc('admin_person', { p_user: admin.id })).data || {}).roles || ['admin']
+  const mine = ((await admin.sb.rpc('admin_person', { p_user: admin.id })).data as Record<string, any> | null || {}).roles || ['admin']
   const held = others.map((p: { id: any; roles: any }) => ({ id: p.id, roles: p.roles || [] }))
   try {
     /* stand the others down, so the one under test really is the last */
@@ -124,8 +123,7 @@ try {
     for (const w of held) await admin.sb.rpc('set_roles', { p_user: w.id, p_roles: w.roles })
   }
   ok('a member cannot give themselves a role',
-    // @ts-expect-error TS2339, from the conversion: Property 'ok' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'ok' does not exist 
-    ((await member.sb.rpc('set_roles', { p_user: member.id, p_roles: ['admin'] })).data || {}).ok === false)
+    ((await member.sb.rpc('set_roles', { p_user: member.id, p_roles: ['admin'] })).data as Record<string, any> | null || {}).ok === false)
 } catch (e: any) {
   fail++
   console.log('  FAIL  ' + (e && e.message))

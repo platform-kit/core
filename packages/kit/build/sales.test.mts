@@ -86,8 +86,7 @@ else {
       const ago = (d: number) => new Date(Date.now() - d * 86400e3).toISOString()
       /* three of A, so it outsells whatever the seed holds by a clear margin */
       const need = (before.books[A.book] || 0)
-      // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'number'.
-      const top = Math.max(...Object.values(before.books || {}), 0)
+      const top = Math.max(...(Object.values(before.books || {}) as number[]), 0)
       const buys = top - need + 3
       for (let i = 0; i < buys; i++) await buy(A, i, ago(1))
       const now = run()

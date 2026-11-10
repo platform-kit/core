@@ -139,8 +139,7 @@ for (const rule of all) {
       if (fs.existsSync(f)) collections[name] = JSON.parse(fs.readFileSync(f, 'utf8'))
     }
     const faults = checkContent(collections, {})
-    // @ts-expect-error TS18046, from the conversion: 'n' is of type 'unknown'.
-    ok(`this site's content keeps every rule (${Object.values(collections).reduce((n, x) => n + (Array.isArray(x) ? x.length : 0), 0)} records)`,
+    ok(`this site's content keeps every rule (${Object.values(collections).reduce((n: number, x) => n + (Array.isArray(x) ? x.length : 0), 0)} records)`,
       faults.length === 0, faults.length ? '\n' + report(faults) : '')
   }
 }

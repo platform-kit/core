@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 const buildRoot = path.dirname(fileURLToPath(import.meta.url))
 const kitRoot = path.dirname(buildRoot)
 const test = (file: string) => path.join(buildRoot, file)
-const steps = [
+const steps: Array<[string, string, string[]]> = [
   ['provider registry and capability declarations', 'node', [test('payment-providers.test.mjs')]],
   ['Hyperswitch API and webhook contract', 'node', [test('hyperswitch-payment-provider.test.mjs')]],
   ['Hyperswitch billing periods and rounding', 'node', [test('hyperswitch-billing.test.mjs')]],
@@ -15,7 +15,6 @@ const steps = [
 
 for (const [label, command, args] of steps) {
   console.log(`\n▸ ${label}`)
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 8, '(command: string, args: readonly string[], options: SpawnSyncOptionsWithStringEncoding): Sp
   const result = spawnSync(command, args, { cwd: kitRoot, stdio: 'inherit', env: process.env })
   if (result.error) throw result.error
   if (result.status !== 0) {

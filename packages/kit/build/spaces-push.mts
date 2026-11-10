@@ -46,7 +46,7 @@ const rows = (value: { data: any }, label: string) => {
 
 /* `root` is the site whose declaration is projected (a test feeds it a fixture); `declared` the
    compiled record itself, for a caller that has one in hand */
-export async function pushSpaces({ check = false, seed = false, root = ROOT, declared: given = null as any[] | null, quiet = false, db: client = null } = {}) {
+export async function pushSpaces({ check = false, seed = false, root = ROOT, declared: given = null as any[] | null, quiet = false, db: client = null as any }: { check?: boolean, seed?: boolean, root?: string, declared?: any[] | null, quiet?: boolean, db?: any } = {}) {
   /*
    * THE DECLARATION COMES IN, or is read from the file the compile wrote. A caller with one in hand
    * — the admin's Edge Function on a publish — hands it over and nothing here opens a file; the

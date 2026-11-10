@@ -63,8 +63,7 @@ const invokeMultipart = async (sb: any, fields: any) => {
   const { data, error } = await sb.auth.getSession()
   if (error || !data.session) throw new Error('social upload requires a signed-in test user')
   const form = new FormData()
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 3, '(name: string, value: string | Blob): void', gave the following error. Argument of type 'un
-  for (const [key, value] of Object.entries(fields)) form.set(key, value)
+  for (const [key, value] of Object.entries(fields as Record<string, string>)) form.set(key, value)
   const response = await fetch(url + '/functions/v1/social', {
     method: 'POST',
     headers: {

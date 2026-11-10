@@ -55,7 +55,7 @@ export function lineQuantity(offer: any) {
  * stored twice. An offer with no tier — a non-membership subscription — is per offer key instead,
  * since there is no tier to share.
  */
-export function trialDaysFor(offer: { trial: any; key: any }, taken: ((string | null))[] = [], tierOf: (key: string) => string | null = () => null) {
+export function trialDaysFor(offer: { trial?: any; key: any }, taken: ((string | null))[] = [], tierOf: (key: string) => string | null = () => null) {
   const days = Number(offer && offer.trial) || 0
   if (!days) return 0
   const mine = tierOf(offer.key)

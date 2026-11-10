@@ -63,7 +63,11 @@ export function reversalOf(line: { amount: any }, refunded: number, collected: n
    sent and not why. Earned is everything; payable is what the delay has released and nothing has
    paid; sent is what went. A reversal is a line of its own with a negative amount, so it simply
    sums: nothing here has to remember to subtract. */
-export function balanceOf(lines = [], now = Date.now()) {
+/* a line of what a provider is owed: its amount, when it may be paid, and when it was */
+export type PayoutLine = { amount: number, payable_at: string, paid_at?: string | null, [k: string]: any }
+/* a provider's standing rule: what it earns on, how much, and in what */
+export type PayoutRule = { trigger: string, booking_type?: string, amount_kind: string, amount: number, currency: string, active: boolean, [k: string]: any }
+export function balanceOf(lines: PayoutLine[] = [], now = Date.now()) {
   let earned = 0, payable = 0, sent = 0, waiting = 0
   for (const l of lines || []) {
     const a = Number((l as any).amount) || 0
@@ -84,7 +88,7 @@ export function balanceOf(lines = [], now = Date.now()) {
 
 /* the lines one booking makes, given the rules the person holds. One per rule, so two rules on one
    booking are two lines that each say which rule made them. */
-export function linesFor({ rules = [], booking = {}, collected = 0, delay = 0 } = {}) {
+export function linesFor({ rules = [], booking = {}, collected = 0, delay = 0 }: { rules?: PayoutRule[], booking?: Record<string, any>, collected?: number, delay?: number } = {}) {
   const out = []
   for (const r of rules) {
     if (!r || (r as any).active === false || ruleFault(r)) continue

@@ -40,7 +40,7 @@ export function pathOfAddress(ref: any) {
   if (s.startsWith('/')) return 'public' + s
   return null
 }
-export async function resolveAsset(ref: any, { root = process.cwd(), fromFile = null as string | null, fetchFn = globalThis.fetch, log = console.warn } = {}) {
+export async function resolveAsset(ref: any, { root = process.cwd(), fromFile = null as string | null, fetchFn = globalThis.fetch as (url: string) => Promise<{ ok: boolean, status?: number, arrayBuffer?: () => Promise<ArrayBuffer> }>, log = console.warn } = {}) {
   const s = String(ref || '').trim()
   if (!s) return null
   const rel = pathOfAddress(s)
@@ -59,7 +59,7 @@ export async function resolveAsset(ref: any, { root = process.cwd(), fromFile = 
       const r = await fetchFn(s)
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       fs.mkdirSync(dir, { recursive: true })
-      fs.writeFileSync(out, Buffer.from(await r.arrayBuffer()))
+      fs.writeFileSync(out, Buffer.from(await r.arrayBuffer!()))
       return out
     } catch (e: any) { log(`[assets] ${s}: could not be fetched — ${e.message}`); return null }
   }

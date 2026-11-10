@@ -195,7 +195,7 @@ export function flaggedWord(body = '', words: string[] = []) {
    anything: `word` is the flagged list, which holds a comment whoever wrote it — including
    somebody otherwise trusted, since the list exists for the times trust is misplaced — and
    `standing` is the surface's approval setting against facts about the person. */
-export function holdsFor({ approval = 'none', body = '', words = [], trusted = false } = {}) {
+export function holdsFor({ approval = 'none', body = '', words = [], trusted = false }: { approval?: string, body?: string, words?: string[], trusted?: boolean } = {}) {
   const word = flaggedWord(body, words)
   if (word) return { why: 'word', word }
   if (approval === 'all') return { why: 'standing', word: null }

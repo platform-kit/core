@@ -52,7 +52,7 @@ try {
   await service.from('space_members').insert([{ space_id: spaceId, user_id: A.id }, { space_id: spaceId, user_id: B.id }])
   await service.from('channel_members').upsert([{ channel_id: room.id, user_id: A.id }, { channel_id: room.id, user_id: B.id }])
 
-  const list = async (who: { sb: any; id?: string }) => ((await who.sb.rpc('community_notifications', {})).data || [])
+  const list = async (who: { sb: any; id?: string }) => ((await who.sb.rpc('community_notifications', {})).data as any[] | null || [])
   const count = async (who: { sb: any; id?: string }) => (await who.sb.rpc('community_unread')).data
 
   /* ------------------------------------------------------------ a mention and a like */

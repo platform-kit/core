@@ -119,8 +119,7 @@ await ok('the jump condition as logic: shown only when pick is b → jump past t
 })
 await ok('a response item: every answer typed by its kind, the token the row, the times, the metadata, the score', () => {
   const row = { id: 'r1', form: 'every', anon_id: 'abcdef12-0000-4000-8000-000000000000', user_id: null, origin: '/x', started_at: '2026-09-01T10:00:00Z', completed_at: '2026-09-01T10:04:00Z', score: 1, meta: { user_agent: 'UA', referer: 'https://ref', platform: 'other', browser: 'default', hidden: { utm: 'a' } } }
-  const rows = [['name', 'Jane'], ['about', 'Long'], ['email', 'j@x.y'], ['site', 'https://j.x'], ['phone', '+1 555'], ['age', 40], ['city', 'Rome'], ['pick', 'b'], ['many', ['x', 'z']], ['pic', 'Sun'], ['stars', 5], ['scale', 9], ['when', '2026-09-02T09:30'], ['day', '2026-09-03'], ['at', '09:30']].map(([field, value]) => ({ field, value, file_path: null as string | null }))
-  // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'file_name' does not exist in type '{ field: string | number | string[]; value: string
+  const rows: Array<Record<string, any>> = [['name', 'Jane'], ['about', 'Long'], ['email', 'j@x.y'], ['site', 'https://j.x'], ['phone', '+1 555'], ['age', 40], ['city', 'Rome'], ['pick', 'b'], ['many', ['x', 'z']], ['pic', 'Sun'], ['stars', 5], ['scale', 9], ['when', '2026-09-02T09:30'], ['day', '2026-09-03'], ['at', '09:30']].map(([field, value]) => ({ field, value, file_path: null as string | null }))
   rows.push({ field: 'doc', value: 'cv.pdf', file_path: 'r1/doc/cv.pdf', file_name: 'cv.pdf' })
   const item = itemOf(row, rows, compiled, (p: any) => fileUrlOf('https://x.test/api/forms', 'every', p))
   assert.equal(item.token, 'r1'); assert.equal(item.response_id, 'r1'); assert.equal(item.landed_at, '2026-09-01T10:00:00.000Z'); assert.equal(item.submitted_at, '2026-09-01T10:04:00.000Z')

@@ -79,7 +79,7 @@ assert.deepEqual(
   'author profile reads are available only when explicitly declared by the provider',
 )
 
-const socialClient = (webhooks = { verify() {}, decode() {} }) => ({
+const socialClient = (webhooks: { verify(): void, decode?(): void } = { verify() {}, decode() {} }) => ({
   adapter: () => ({ webhooks }),
 })
 const routesFor = (backend: string|undefined, provider: string, operations: any[], webhooks?: string|undefined) =>
@@ -162,7 +162,6 @@ assert.deepEqual(
       { operation: 'comments.write', platform: 'instagram', availability: 'available' },
     ]),
     'instagram',
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ verify(): void; }' is not assignable to parameter of type '{ verify(): void; decode(): void; }'. Property 'decode' is mi
     socialClient({ verify() {} }),
   ),
   [],

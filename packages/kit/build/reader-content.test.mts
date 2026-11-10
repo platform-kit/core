@@ -36,7 +36,7 @@ const source = fs.readFileSync(file, 'utf8').replace(/^---[\s\S]*?\n---\n?/, '')
 const lasts = splitChapters(source).map((p) => p.replace(/^# .*$/m, '').trim().split(/(?<=[.!?])\s+/).filter((s) => s.length > 20).pop())
 
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const service = createClient<Database>(url, serviceKey(), { auth: { persistSession: false } })
 const tokenOf = async (email: string) => {
   const r = await (await fetch(url + '/auth/v1/token?grant_type=password', { method: 'POST', headers: { apikey: anon, 'content-type': 'application/json' }, body: JSON.stringify({ email, password: 'password123' }) })).json()

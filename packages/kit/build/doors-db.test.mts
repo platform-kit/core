@@ -19,9 +19,11 @@ import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
+/* a database function the test names by a variable: one of the schema's */
+type FnName = keyof Database['public']['Functions']
 
 let pass = 0, fail = 0
-const ok = (name: string, cond: boolean, detail: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 const note = (s: string) => console.log('  ' + s)
 
 console.log('\nWHO GETS IN\n')
@@ -50,8 +52,7 @@ if (!analyst) note('⚠ no analyst account signs in — the figures-only checks 
 
 const FIGURES = ['admin_kpis', 'admin_events', 'admin_retention']
 for (const fn of FIGURES) {
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type '"public_profile" | "access_allows" | "achievements_of" | "admin_content" |
-  const g = await guest.rpc(fn, {})
+  const g = await guest.rpc(fn as FnName, {})
   ok(`a guest calling ${fn} gets nothing`, !!g.error || g.data == null || (Array.isArray(g.data) && g.data.length === 0), 'the figures came back')
   const m = await member.rpc(fn, {})
   ok(`a member calling ${fn} gets nothing`, !!m.error || m.data == null || (Array.isArray(m.data) && m.data.length === 0), 'the figures came back')

@@ -13,6 +13,8 @@ import { AtpAgent } from '@atproto/api'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, siteUnderTest, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
+/* a table the test names by a variable: one of the schema's */
+type TableName = keyof Database['public']['Tables']
 
 const note = (m: string) => console.log('atproto: ' + m)
 if (process.env.ATPROTO_TEST === '0') { note('skipped (ATPROTO_TEST=0)'); process.exit(0) }
@@ -69,8 +71,7 @@ try {
   /* this test refuses a wrong password on purpose every run; earlier runs' attempts are not this run's */
   await service.from('network_login_attempts').delete().gte('id', 0)
   /* a clean slate for these three: nothing of the network from an earlier run */
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-  for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_blocks', 'blocker_id'], ['network_mutes', 'muter_id'], ['network_seen', 'user_id'], ['network_posts', 'author_id']]) await service.from(t).delete().in(col, people)
+  for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_blocks', 'blocker_id'], ['network_mutes', 'muter_id'], ['network_seen', 'user_id'], ['network_posts', 'author_id']]) await service.from(t as TableName).delete().in(col, people)
 
   /* ------------------------------------------------------------ signing in */
   const made = await xrpc('com.atproto.server.createAppPassword', { token: A.token, body: { name: 'Bluesky on my phone' } })
@@ -221,8 +222,7 @@ try {
 } finally {
   if (people.length) {
     await service.from('network_app_passwords').delete().in('user_id', people)
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-    for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_seen', 'user_id'], ['network_posts', 'author_id']]) await service.from(t).delete().in(col, people)
+    for (const [t, col] of [['network_likes', 'author_id'], ['network_reposts', 'author_id'], ['network_follows', 'follower_id'], ['network_seen', 'user_id'], ['network_posts', 'author_id']]) await service.from(t as TableName).delete().in(col, people)
     const { data: objs } = await service.storage.from('network').list(people[0], { limit: 100 })
     if (objs && objs.length) await service.storage.from('network').remove(objs.map((o) => people[0] + '/' + o.name))
     for (const [id, p] of before) await service.from('profiles').update({ username: p.username, public_profile: p.public_profile }).eq('id', id)

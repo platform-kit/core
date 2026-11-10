@@ -41,8 +41,7 @@ if (docker(['version']).status !== 0) {
 {
   const dir = mkdtempSync(join(tmpdir(), 'nginx-'))
   for (const f of ['templates/default.conf.template', 'templates/rewrites.inc.template', 'templates/prerender.inc.template', 'templates/functions-proxy.inc.template'])
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. Type 'undefined' is not assignable to type 'string'.
-    cpSync(join(REPO, 'deploy/nginx', f), join(dir, f.split('/').pop()))
+    cpSync(join(REPO, 'deploy/nginx', f), join(dir, f.split('/').pop()!))
   for (const f of ['15-supabase-host.envsh', '40-prerender.sh']) { cpSync(join(REPO, 'deploy/nginx', f), join(dir, f)); chmodSync(join(dir, f), 0o755) }
 
   const check = (env: { [s: string]: unknown }|ArrayLike<unknown>) => {

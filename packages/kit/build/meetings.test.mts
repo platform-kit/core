@@ -16,8 +16,7 @@ let n = 0, bad = 0
 const ta = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
 const url = supabaseUrl(), anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
 let up = false
-// @ts-expect-error TS2322, from the conversion: Type 'string | boolean' is not assignable to type 'boolean'. Type 'string' is not assignable to type 'boolean'.
-try { up = url && localStack() && (await fetch(url + '/rest/v1/', { headers: { apikey: anonKey }, signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
+try { up = !!url && localStack() && (await fetch(url + '/rest/v1/', { headers: { apikey: anonKey }, signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
 let served = false
 if (up) { try { served = (await fetch(url + '/functions/v1/session-room', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* not served */ } }
 if (!up || !served) { console.log(`meetings: skipped — ${!up ? 'the local stack is not up' : 'the functions are not served (npm run dev serves them)'}`); leave(0) }

@@ -16,7 +16,7 @@ const KIND: any = { guest: 'guest', user: 'reader', customer: 'customer' }
 
 /* every thread waiting on the desk: open, and the contact has said something since the last agent
    did. A resolved thread waits on nobody, and neither does one already answered. */
-export function rowsOf(raw = [], ctx: any = {}) {
+export function rowsOf(raw: any[] = [], ctx: any = {}) {
   const wait = Number(ctx.wait) > 0 ? Number(ctx.wait) : 0
   const out = []
   for (const r of raw || []) {

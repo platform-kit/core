@@ -74,9 +74,8 @@ await test('stopping a single-site process group closes its Vite listener', asyn
     })
     assert.equal(await acceptsConnections(port), true, 'the Vite listener started')
     signalGroup(child)
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('single-site process group did not stop')), 3000)
-      // @ts-expect-error TS2794, from the conversion: Expected 1 arguments, but got 0. Did you forget to include 'void' in your type argument to 'Promise'?
       child.once('exit', () => { clearTimeout(timeout); resolve() })
     })
     const deadline = Date.now() + 3000

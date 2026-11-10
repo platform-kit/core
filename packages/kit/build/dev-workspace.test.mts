@@ -412,9 +412,8 @@ watchParent(stop, 2000, {
 setInterval(() => {}, 1000)
 `)
   const proxy = {
-    server: null,
+    server: null as http.Server | null,
     async start({ port, domain, sites }: any) {
-      // @ts-expect-error TS2322, from the conversion: Type 'Server<typeof IncomingMessage, typeof ServerResponse>' is not assignable to type 'null'.
       this.server = http.createServer((request, response) => {
         const site = sites.find(({ name }: any) => request.headers.host?.split(':')[0] === `${name}.${domain}`)
         if (!site) { response.writeHead(404); response.end(); return }
@@ -481,7 +480,7 @@ process.on('SIGTERM', () => server.close(() => { fs.rmSync(portFile, { force: tr
 `)
 
   const frontDoor: any = {
-    server: null,
+    server: null as http.Server | null,
     async start({ port, domain, sites, directoryPort }: any) {
       this.server = http.createServer((request, response) => {
         const site = sites.find(({ name }: any) => request.headers.host?.split(':')[0] === `${name}.${domain}`)

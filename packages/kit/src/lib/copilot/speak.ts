@@ -59,7 +59,7 @@ export function speakerIdOf({ voice = {}, haveEndpoint = false } = {}) {
  */
 /* where the voice is: fetching its weights (done of total bytes), starting, or ready */
 export type SpeakerState = { at: 'fetching', done: number, total: number } | { at: 'starting' } | { at: 'ready' }
-export function speaker({ id = 'browser', worker = null, post = null, voice = {}, onState = () => {} }: { id?: string, worker?: unknown, post?: ((text: string) => Promise<unknown>) | null, voice?: Record<string, unknown>, onState?: (state: SpeakerState) => void } = {}) {
+export function speaker({ id = 'browser', worker = null, post = null, voice = {}, onState = () => {} }: { id?: string, worker?: unknown, post?: ((body: { text: string, voice?: string, format?: string }) => Promise<any>) | null, voice?: Record<string, unknown>, onState?: (state: SpeakerState) => void } = {}) {
   const own = () => browserSpeaker({ worker: typeof worker === 'function' ? worker() : worker, voice, onState })
   if (id !== 'endpoint') return own()
   return failover({ first: endpointSpeaker({ post, voice }), own })
@@ -136,7 +136,7 @@ function browserSpeaker({ worker, voice, onState = () => {} }: any) {
   }
   return {
     id: 'browser',
-    say(text: string, onChunk = () => {}) {
+    say(text: string, onChunk: (chunk: any) => void = () => {}) {
       if (!worker) return Object.assign(Promise.reject(new Error('no voice worker')), { utterance: null })
       const utterance = 'say-' + (++n)
       const p = new Promise((resolve, reject) => live.set(utterance, { resolve, reject, onChunk }))

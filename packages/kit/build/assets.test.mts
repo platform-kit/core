@@ -32,12 +32,9 @@ await ta('the resolver: the four kinds', async () => {
   let fetched = 0
   const fetchFn = async () => { fetched++; return { ok: true, arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer } }
   const far = 'https://elsewhere.example/pic/four.png'
-  // @ts-expect-error TS2322, from the conversion: Type '() => Promise<{ ok: boolean; arrayBuffer: () => Promise<ArrayBuffer>; }>' is not assignable to type '{ (input: URL | RequestInfo, init
   const got = await resolveAsset(far, { root, fetchFn })
   assert.ok(got && got.startsWith(path.join(root, 'node_modules', '.cache', 'platformkit', 'assets')) && got.endsWith('.png')); assert.equal(fs.readFileSync(got).length, 3)
-  // @ts-expect-error TS2322, from the conversion: Type '() => Promise<{ ok: boolean; arrayBuffer: () => Promise<ArrayBuffer>; }>' is not assignable to type '{ (input: URL | RequestInfo, init
   await resolveAsset(far, { root, fetchFn }); assert.equal(fetched, 1, 'fetched once, kept')
-  // @ts-expect-error TS2322, from the conversion: Type '() => Promise<{ ok: false; status: number; }>' is not assignable to type '{ (input: URL | RequestInfo, init?: RequestInit | undefined)
   assert.equal(await resolveAsset('https://elsewhere.example/gone.png', { root, fetchFn: async () => ({ ok: false, status: 404 }), log }), null); assert.match(logs.pop(), /404/)
   const beside = await resolveAsset('./three.png', { root, fromFile: path.join(root, 'content/books/three.md'), log })
   assert.equal(beside, path.join(root, 'content/books/three.png')); assert.match(logs.pop(), /the old way/)

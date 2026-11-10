@@ -185,8 +185,7 @@ console.log('\nTHE MATRIX SURFACE — the translation\n')
 /* ---- 1.4 errors: every refusal says something a person can act on ---- */
 {
   const made: any = []
-  for (const [name, fn] of Object.entries(errors.REFUSALS)) {
-    // @ts-expect-error TS18046, from the conversion: 'fn' is of type 'unknown'.
+  for (const [name, fn] of Object.entries(errors.REFUSALS as Record<string, (n: number) => any>)) {
     const r = fn(60)
     made.push([name, r])
     ok(`the refusal "${name}" says why, not just a code`, errors.speaks(r), JSON.stringify(r && r.body))
@@ -269,8 +268,7 @@ if (client) {
 
   if (channel) {
     try {
-      // @ts-expect-error TS2345, from the conversion: Argument of type '"b"' is not assignable to parameter of type 'Direction'.
-      const page = await client.createMessagesRequest(channel, null, 20, 'b')
+      const page = await client.createMessagesRequest(channel, null, 20, sdk.Direction.Backward)
       ok('a room pages backwards', Array.isArray(page.chunk))
     } catch (e: any) { ok('a room pages backwards', false, String(e && e.message).slice(0, 200)) }
 
@@ -283,14 +281,12 @@ if (client) {
 
     if (sentId) {
       try {
-        // @ts-expect-error TS2345, from the conversion: Argument of type '"b"' is not assignable to parameter of type 'Direction'.
-        const page = await client.createMessagesRequest(channel, null, 30, 'b')
+        const page = await client.createMessagesRequest(channel, null, 30, sdk.Direction.Backward)
         ok('and it is there when the room is read back', (page.chunk || []).some((e) => e.event_id === sentId))
       } catch (e: any) { ok('and it is there when the room is read back', false, String(e && e.message).slice(0, 200)) }
       try {
         await client.redactEvent(channel, sentId)
-        // @ts-expect-error TS2345, from the conversion: Argument of type '"b"' is not assignable to parameter of type 'Direction'.
-        const page = await client.createMessagesRequest(channel, null, 30, 'b')
+        const page = await client.createMessagesRequest(channel, null, 30, sdk.Direction.Backward)
         const back = (page.chunk || []).find((e) => e.event_id === sentId)
         ok('a withdrawal comes back as a redaction', !!back && !!(back.unsigned || {}).redacted_because)
       } catch (e: any) { ok('a withdrawal comes back as a redaction', false, String(e && e.message).slice(0, 200)) }
@@ -299,8 +295,7 @@ if (client) {
     /* NOTHING IS SET FROM A CLIENT — the refusal a second, weaker way to grant moderation would
        have gone through */
     try {
-      // @ts-expect-error TS2345, from the conversion: Argument of type '"m.room.power_levels"' is not assignable to parameter of type 'keyof StateEvents'.
-      await client.sendStateEvent(channel, 'm.room.power_levels', { users: {} }, '')
+      await client.sendStateEvent(channel, sdk.EventType.RoomPowerLevels, { users: {} }, '')
       ok('a client cannot raise its own power level', false, 'the write was accepted')
     } catch (e: any) {
       ok('a client cannot raise its own power level', /forbidden|M_FORBIDDEN|403/i.test(String(e && (e.errcode || e.message))))
@@ -310,19 +305,16 @@ if (client) {
 
   /* /sync twice: the second carries what is new and not the room again */
   try {
-    // @ts-expect-error TS2345, from the conversion: Argument of type '"GET"' is not assignable to parameter of type 'Method'.
-    const first: any = await client.http.authedRequest('GET', '/sync', { timeout: '0' })
+    const first: any = await client.http.authedRequest(sdk.Method.Get, '/sync', { timeout: '0' })
     const token = first.next_batch
-    // @ts-expect-error TS2345, from the conversion: Argument of type '"GET"' is not assignable to parameter of type 'Method'.
-    const second: any = await client.http.authedRequest('GET', '/sync', { since: token, timeout: '0' })
+    const second: any = await client.http.authedRequest(sdk.Method.Get, '/sync', { since: token, timeout: '0' })
     ok('sync gives a token that pages forward', !!token && !!second.next_batch)
     ok('and a second sync is smaller than the first', JSON.stringify(second.rooms || {}).length <= JSON.stringify(first.rooms || {}).length)
   } catch (e: any) { ok('sync gives a token that pages forward', false, String(e && e.message).slice(0, 200)) }
 
   /* a room on another homeserver: a refusal that says why, never a hang */
   try {
-    // @ts-expect-error TS2345, from the conversion: Argument of type '"b"' is not assignable to parameter of type 'Direction'.
-    await client.createMessagesRequest('!c' + '0'.repeat(30) + 'ff:elsewhere.example', null, 5, 'b')
+    await client.createMessagesRequest('!c' + '0'.repeat(30) + 'ff:elsewhere.example', null, 5, sdk.Direction.Backward)
     ok('a room on another homeserver is refused', false, 'it was not')
   } catch (e: any) {
     const said = String((e && (e.data?.error || e.message)) || '')
@@ -347,8 +339,7 @@ if (client) {
 
   /* and it says federation and encryption are absent rather than letting a client find out */
   try {
-    // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
-    const caps = await client.getCapabilities(true)
+    const caps = await client.getCapabilities()
     const fed = caps['site.platformkit.federation']
     const enc = caps['site.platformkit.encryption']
     ok('capabilities say federation is absent, with a reason', fed && fed.enabled === false && (fed.reason || '').length > 20)
@@ -371,12 +362,11 @@ if (client) {
     })
     return { status: r.status, body: await r.json().catch(() => null) }
   }
-  const me = client.getUserId(), dev = client.getDeviceId()
+  const me = client.getUserId()!, dev = client.getDeviceId()!
 
   const up = await K('/_matrix/client/v3/keys/upload', {
     method: 'POST',
     body: JSON.stringify({
-      // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
       device_keys: { user_id: me, device_id: dev, algorithms: ['m.olm.v1.curve25519-aes-sha2', 'm.megolm.v1.aes-sha2'], keys: { ['curve25519:' + dev]: 'CURVE', ['ed25519:' + dev]: 'ED' }, signatures: { [me]: { ['ed25519:' + dev]: 'SIG' } } },
       one_time_keys: { 'signed_curve25519:AAAAAQ': { key: 'one', signatures: {} }, 'signed_curve25519:AAAAAg': { key: 'two', signatures: {} } },
     }),
@@ -385,29 +375,21 @@ if (client) {
   ok('…and is told how many one-time keys it now has', (up.body && up.body.one_time_key_counts && up.body.one_time_key_counts.signed_curve25519) === 2,
     'a count of zero after a successful upload makes a client upload for ever: ' + JSON.stringify(up.body))
 
-  // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
   const qy = await K('/_matrix/client/v3/keys/query', { method: 'POST', body: JSON.stringify({ device_keys: { [me]: [] } }) })
-  // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
   const mine = qy.body && qy.body.device_keys && qy.body.device_keys[me] && qy.body.device_keys[me][dev]
   ok('a query gives the device back', !!mine, JSON.stringify(qy.body).slice(0, 200))
   ok('…with the public keys it uploaded', mine && mine.keys['curve25519:' + dev] === 'CURVE')
   ok('…and the signature that makes them its own rather than whatever the server served', mine && mine.signatures[me]['ed25519:' + dev] === 'SIG')
 
-  // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
   const c1 = await K('/_matrix/client/v3/keys/claim', { method: 'POST', body: JSON.stringify({ one_time_keys: { [me]: { [dev]: 'signed_curve25519' } } }) })
-  // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
   const got1 = c1.body && c1.body.one_time_keys && c1.body.one_time_keys[me] && c1.body.one_time_keys[me][dev]
   ok('a one-time key can be claimed', !!got1 && Object.keys(got1).length === 1, JSON.stringify(c1.body).slice(0, 200))
-  // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
   const c2 = await K('/_matrix/client/v3/keys/claim', { method: 'POST', body: JSON.stringify({ one_time_keys: { [me]: { [dev]: 'signed_curve25519' } } }) })
-  // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
   const got2 = c2.body && c2.body.one_time_keys && c2.body.one_time_keys[me] && c2.body.one_time_keys[me][dev]
   ok('…and the second claim gives a DIFFERENT key, never the same one twice',
     !!got2 && Object.keys(got2)[0] !== Object.keys(got1 || {})[0],
     'two sessions built on one key is exactly what a one-time key exists to prevent: ' + JSON.stringify([got1, got2]))
-  // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
   const c3 = await K('/_matrix/client/v3/keys/claim', { method: 'POST', body: JSON.stringify({ one_time_keys: { [me]: { [dev]: 'signed_curve25519' } } }) })
-  // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
   const got3 = c3.body && c3.body.one_time_keys && c3.body.one_time_keys[me]
   ok('…and when they run out, none is invented', !got3 || !Object.keys(got3[dev] || {}).length, JSON.stringify(c3.body).slice(0, 160))
 
@@ -416,12 +398,9 @@ if (client) {
     body: JSON.stringify({ master_key: { user_id: me, usage: ['master'], keys: { 'ed25519:MASTER': 'MASTER' } }, self_signing_key: { user_id: me, usage: ['self_signing'], keys: { 'ed25519:SELF': 'SELF' } } }),
   })
   ok('cross-signing keys are taken', cs.status === 200, JSON.stringify(cs.body).slice(0, 160))
-  // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
   const qy2 = await K('/_matrix/client/v3/keys/query', { method: 'POST', body: JSON.stringify({ device_keys: { [me]: [] } }) })
   ok('…and given back, which is what makes verification possible at all',
-    // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
     !!(qy2.body && qy2.body.master_keys && qy2.body.master_keys[me]), JSON.stringify(qy2.body && qy2.body.master_keys).slice(0, 160))
-  // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
   ok('…and a device row is never mistaken for the person\'s own', !(qy2.body.device_keys[me] || {})[''])
 
 
@@ -433,13 +412,10 @@ if (client) {
    */
   const sig = await K('/_matrix/client/v3/keys/signatures/upload', {
     method: 'POST',
-    // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
     body: JSON.stringify({ [me]: { [dev]: { user_id: me, device_id: dev, algorithms: ['m.megolm.v1.aes-sha2'], keys: { ['ed25519:' + dev]: 'ED' }, signatures: { [me]: { 'ed25519:MASTER': 'CROSSSIG' } } } } }),
   })
   ok('a signature is taken', sig.status === 200, JSON.stringify(sig.body).slice(0, 160))
-  // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
   const qy3 = await K('/_matrix/client/v3/keys/query', { method: 'POST', body: JSON.stringify({ device_keys: { [me]: [] } }) })
-  // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
   const back2 = qy3.body && qy3.body.device_keys && qy3.body.device_keys[me] && qy3.body.device_keys[me][dev]
   ok('…and comes back under the signer, which is what verification reads',
     !!(back2 && back2.signatures && back2.signatures[me] && back2.signatures[me]['ed25519:MASTER'] === 'CROSSSIG'),
@@ -480,14 +456,11 @@ if (client) {
       /* the other person signs OUR device, naming themselves as the signer */
       const cross = await K2('/_matrix/client/v3/keys/signatures/upload', {
         method: 'POST',
-        // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
         body: JSON.stringify({ [me]: { [dev]: { user_id: me, device_id: dev, algorithms: ['m.megolm.v1.aes-sha2'], keys: { ['ed25519:' + dev]: 'ED' }, signatures: { [them.user_id]: { 'ed25519:THEIRS': 'THEIRSIG' } } } } }),
       })
       ok('somebody else may sign a key', cross.status === 200, JSON.stringify(cross.body).slice(0, 160))
 
-      // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
       const seen = await K('/_matrix/client/v3/keys/query', { method: 'POST', body: JSON.stringify({ device_keys: { [me]: [] } }) })
-      // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
       const row = seen.body && seen.body.device_keys && seen.body.device_keys[me] && seen.body.device_keys[me][dev]
       const sigs = (row && row.signatures) || {}
       ok('…and it is stored under the SIGNER, not under whoever the key belongs to',
@@ -499,13 +472,10 @@ if (client) {
       /* and a signature the body attributes to somebody who is not the caller is not written */
       const forged = await K2('/_matrix/client/v3/keys/signatures/upload', {
         method: 'POST',
-        // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
         body: JSON.stringify({ [me]: { [dev]: { user_id: me, device_id: dev, keys: {}, signatures: { [me]: { 'ed25519:FORGED': 'NOPE' } } } } }),
       })
       void forged
-      // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
       const after = await K('/_matrix/client/v3/keys/query', { method: 'POST', body: JSON.stringify({ device_keys: { [me]: [] } }) })
-      // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
       const sigs2 = ((((after.body || {}).device_keys || {})[me] || {})[dev] || {}).signatures || {}
       ok('a signature the body attributes to somebody else is not written in their name',
         !(sigs2[me] && sigs2[me]['ed25519:FORGED']),
@@ -578,7 +548,6 @@ if (client) {
 
   /* to-device, and the sync that delivers it */
   const td = await K('/_matrix/client/v3/sendToDevice/m.room_key/txn1', {
-    // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
     method: 'PUT', body: JSON.stringify({ messages: { [me]: { [dev]: { algorithm: 'm.megolm.v1.aes-sha2', session_id: 's1' } } } }),
   })
   ok('a to-device message is accepted', td.status === 200, JSON.stringify(td.body).slice(0, 160))

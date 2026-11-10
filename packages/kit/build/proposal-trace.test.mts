@@ -82,20 +82,18 @@ export function deltaRequirements(files: any) {
 export function trace({ proposal, deltas }: any) {
   const rows = traceRows(proposal)
   if (rows === null) return { noTable: true, missing: [], unclaimed: [], capabilities: [], malformed: [] }
-  const have = deltaRequirements(deltas)
+  const have: Record<string, string[]> = deltaRequirements(deltas)
   const malformed = rows.filter((r) => !r.requirement).map((r) => r.raw || r.promise)
 
   /* 1. a promise naming a requirement no delta carries */
   const missing = rows.filter((r) => r.requirement)
-    // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
-    .filter((r) => !(have[r.capability] || []).some((h: any) => norm(h) === norm(r.requirement)))
+    .filter((r) => !(have[r.capability!] || []).some((h: any) => norm(h) === norm(r.requirement)))
     .map((r) => `${r.capability} — ${r.requirement}  (promised: ${r.promise})`)
 
   /* 2. a requirement nobody promised */
   const claimed = new Set(rows.filter((r) => r.requirement).map((r) => r.capability + '\u0000' + norm(r.requirement)))
   const unclaimed = []
   for (const [capability, reqs] of Object.entries(have)) {
-    // @ts-expect-error TS18046, from the conversion: 'reqs' is of type 'unknown'.
     for (const r of reqs) if (!claimed.has(capability + '\u0000' + norm(r))) unclaimed.push(`${capability} — ${r}`)
   }
 

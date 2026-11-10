@@ -181,15 +181,11 @@ let threw = ''
 try { communityOf({ community: { access: { coaching: { tier: 'a' } } } }) } catch (e: any) { threw = e.message }
 ok('a rule on a place that keeps no rows of its own refuses the build', /coaching/.test(threw), threw)
 const CAT = { offers: [{ kind: 'membership', sku: 'm1', key: 'k1', tier: 't1' }, { kind: 'membership', sku: 'm2', key: 'k2', tier: 't2' }] }
-// @ts-expect-error TS2741, from the conversion: Property 'sessions' is missing in type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' but required in type '{ of
 const ca = communityAccessOf({ community: { access: { events: { tier: ['t1', 't2'] } } } }, process.cwd(), { catalog: CAT })
 ok('a rule may name several tiers', !ca.faults.length && JSON.stringify(ca.rules.events) === JSON.stringify([{ tier: ['t1', 't2'] }]), JSON.stringify(ca))
-// @ts-expect-error TS2741, from the conversion: Property 'sessions' is missing in type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' but required in type '{ of
 const cb = communityAccessOf({ community: { access: { events: { tier: ['t1', 'nope'] } } } }, process.cwd(), { catalog: CAT })
 ok('a tier no membership declares is named, alone', cb.faults.length === 1 && /"nope"/.test(cb.faults[0]), cb.faults.join())
-// @ts-expect-error TS2741, from the conversion: Property 'sessions' is missing in type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' but required in type '{ of
 ok('no rule writes no row', communityAccessOf({ community: {} }, process.cwd(), { catalog: CAT }).rules === null)
-// @ts-expect-error TS2741, from the conversion: Property 'sessions' is missing in type '{ offers: { kind: string; sku: string; key: string; tier: string; }[]; }' but required in type '{ of
 const na = accessOf({ network: { access: { read: { tier: 't1' }, plans: 'pricing' } } }, process.cwd(), { catalog: CAT })
 ok('the plans page is an address on the site', na.faults.some((m) => /plans/.test(m)))
 

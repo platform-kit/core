@@ -183,8 +183,7 @@ for (const a of ACTIONS) {
     try { did = await a.run(c, who) } catch (e) { did = false }
     if (did === null) continue                          /* not applicable to this person */
     if (did) able[a.name].push(who)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type 'never'.
-    const allowed = a.can.includes(who)
+    const allowed = (a.can as string[]).includes(who)
     ok(`${who} ${allowed ? 'CAN' : 'cannot'} ${a.name}`, did === allowed,
       did ? `they could, and should not — ${a.why}` : `they could not, and should be able to`)
   }

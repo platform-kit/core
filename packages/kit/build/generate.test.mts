@@ -18,7 +18,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const WORKSPACE = path.resolve(HERE, '../../..')
 const DEMO = path.join(WORKSPACE, 'sites', 'demo')
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
 const node = (args: readonly string[], cwd: string) => spawnSync(process.execPath, args, { cwd, encoding: 'utf8', env: process.env, timeout: 300000 })
 const out = (r: any) => (r.stdout || '') + (r.stderr || '')
 const hashDir = (dir: string) => { const h = crypto.createHash('sha256'); const walk = (d: any) => { for (const e of fs.readdirSync(d, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) { const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else { h.update(path.relative(dir, f)); h.update(fs.readFileSync(f)) } } }; walk(dir); return h.digest('hex') }
@@ -36,8 +36,7 @@ const cfgBefore = fs.readFileSync(path.join(SITE, 'platformkit.config.ts'), 'utf
   ok('no kind: it lists the kinds and writes nothing', help.status === 0 && KINDS.every((k) => out(help).includes(k)), out(help))
 
   for (const [kind, name, extra] of [['module', 'gift-cards'], ['page', 'gift-cards', { module: 'gift-cards' }], ['content-type', 'recipes'], ['function', 'hello-world'], ['test', 'sanity'], ['step', 'tally']]) {
-    // @ts-expect-error TS2698, from the conversion: Spread types may only be created from object types.
-    const r = await generate({ kind, name, siteRoot: SITE, ...(extra || {}) })
+    const r = await generate({ kind, name, siteRoot: SITE, ...((extra || {}) as object) })
     ok(`site ${kind}: written and registered`, r.ok && !/by hand/.test(r.message), r.message)
   }
   const cfg = fs.readFileSync(path.join(SITE, 'platformkit.config.ts'), 'utf8')

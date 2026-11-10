@@ -168,7 +168,7 @@ if (browser) {
       await p4.goto(PAGE + '/', { waitUntil: 'load' })
       await p4.evaluate(({ key, apiHost, mark }: any) => {
         /* the snippet as PostHog ships it, the script's host ours */
-        // @ts-expect-error TS1345, from the conversion: An expression of type 'void' cannot be tested for truthiness.
+        // @ts-expect-error TS1345: PostHog's own minified snippet, kept as PostHog ships it rather than rewritten to please a checker
         !function(t,e){var o,n,p,r;e.__SV||((window as any).posthog=e,e._i=[],e.init=function(i: any,s: { api_host: string },a: string|undefined){function g(t: any[][],e: string){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]||t.head).parentNode!.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t: any){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once unregister identify alias reset group".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,(window as any).posthog||[]);
         ;(window as any).posthog.init(key, { api_host: window.location.origin, capture_pageleave: false })
         ;(window as any).posthog.register({ mark, snippet: true })

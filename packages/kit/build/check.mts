@@ -37,7 +37,9 @@ const readEnv = (file: any) => (fs.existsSync(file) ? parseEnv(fs.readFileSync(f
 const sh = (cmd: any, args: any, opts = {}) => spawnSync(cmd, args, { encoding: 'utf8', timeout: 20000, ...opts })
 
 /* ---- the machine ---- */
-export function machineChecks({ version = process.versions.node, exec = sh } = {}) {
+/* how a check runs a command: its exit status and what it printed */
+export type Exec = (cmd: string, args?: string[], opts?: object) => { status: number | null, stdout: string }
+export function machineChecks({ version = process.versions.node, exec = sh as Exec } = {}) {
   const out = []
   const major = Number(version.split('.')[0])
   out.push(major >= NODE_MAJOR ? pass('Node', version) : fail('Node', `${version} — PlatformKit needs ${NODE_MAJOR} or later`, `install Node ${NODE_MAJOR} (nvm install ${NODE_MAJOR})`))
@@ -130,7 +132,7 @@ export function tcpOpen(host: any, port: any, ms = 3000) {
 }
 
 /* ---- online: one read-only call per service this knows how to ask ---- */
-export async function onlineChecks(site: any, env: any, { fetch: f = fetch, connect = tcpOpen } = {}) {
+export async function onlineChecks(site: any, env: any, { fetch: f = fetch as (url: string, init?: RequestInit) => Promise<{ status: number, ok: boolean, json?: () => Promise<any> }>, connect = tcpOpen } = {}) {
   const out = []
   const ask = async (name: any, url: any, headers: any) => {
     try {

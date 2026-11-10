@@ -13,7 +13,7 @@ const WORKSPACE = path.resolve(HERE, '../../..')
 const DEMO = path.join(WORKSPACE, 'sites', 'demo')
 const WORK = path.join(WORKSPACE, '.cache', 'platformkit', 'site-payment-provider-test')
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
 
 const generated = /(^|\/)(node_modules|dist|\.velite|\.platformkit|\.vite|\.content-collections)(\/|$)/
 fs.rmSync(WORK, { recursive: true, force: true })

@@ -130,8 +130,7 @@ else {
     ok("another person's send in the link marks nothing", r2.ok && p2 && p2.email_opt_out_at && rowB && !rowB.unsubscribed_at)
     /* put back */
     await service.from('email_log').update({ unsubscribed_at: null }).in('id', [a.id, b.id])
-    // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string'. Type 'null' is not assignable to type 'string'.
-    await service.from('profiles').update({ email_opt_out_at: null }).in('id', [a.user_id, b.user_id])
+    await service.from('profiles').update({ email_opt_out_at: null }).in('id', [a.user_id!, b.user_id!])
   }
 }
 /* a tracked click lands with the email's tags: the redirect's address carries utm_source (the funnel), utm_medium email and utm_campaign (the step's title) */

@@ -46,7 +46,7 @@ const KIND = 'test-rec-' + T
 const TAG = { a: 'zz-alpha-' + T, b: 'zz-beta-' + T, c: 'zz-gamma-' + T }
 const PIECE = { a: 'piece-a-' + T, b: 'piece-b-' + T, c: 'piece-c-' + T }
 const SKU = 'piece-c-' + T   // the same ref as piece C: a purchase of the thing that was read
-const made = { events: [], purchases: [] as string[] }
+const made = { events: [] as number[], purchases: [] as string[] }
 
 /* what my_interests weighs a read by, read off the declaration so the test and the function cannot
    drift apart silently */
@@ -171,7 +171,6 @@ try {
   ]
   const { data: ins, error: ie } = await service.from('events').insert(rows).select('id')
   if (ie) throw new Error('events: ' + ie.message)
-  // @ts-expect-error TS2322, from the conversion: Type 'number[]' is not assignable to type 'never[]'. Type 'number' is not assignable to type 'never'.
   made.events = ins.map((r) => r.id)
 
   let got = ours(await mine(member.sb))
@@ -212,7 +211,7 @@ try {
      somebody's interests AND was never offered again — exactly the piece they meant to come back
      to, silently withheld. So the two questions are asked with two numbers, and these are the
      cases that tell them apart. */
-  const behind = async (sb: any) => new Set(((await sb.rpc('my_reading')).data || []).map((r: any) => r.kind + ':' + r.ref))
+  const behind = async (sb: any) => new Set(((await sb.rpc('my_reading')).data as any[] | null || []).map((r: any) => r.kind + ':' + r.ref))
   {
     const P = { skim: 'skim-' + T, done: 'done-' + T, quick: 'quick-' + T }
     await service.from('content_search').insert(Object.values(P).map((ref) =>
@@ -223,7 +222,6 @@ try {
       read(member.id, P.quick, KIND, Math.max(0, floor - 2), 100),  /* a short page wholly in the viewport, gone at once */
     ]
     const { data: more } = await service.from('events').insert(rows).select('id')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'never'.
     made.events.push(...more!.map((r) => r.id))
     const seen = await behind(member.sb)
     ok('a piece read to the end is behind them', seen.has(KIND + ':' + P.done))
@@ -235,15 +233,13 @@ try {
        one read that did — not a sum of the tries, which would make any number of skims a finish */
     const { data: again } = await service.from('events')
       .insert([read(member.id, P.skim, KIND, 40, Math.max(0, depth - 20))]).select('id')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'never'.
     made.events.push(...again!.map((r) => r.id))
     ok('two half reads do not make a whole', !(await behind(member.sb)).has(KIND + ':' + P.skim))
   }
 
   /* ---- IT IS THEIR OWN AND NOBODY ELSE'S ---- */
   ok('another account sees none of it', Object.keys(ours(await mine(other.sb))).length === 0)
-  // @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'p_user' does not exist in type '{ p_days?: number | null | undefined; }'.
-  const { error: argErr } = await other.sb.rpc('my_interests', { p_user: member.id })
+  const { error: argErr } = await other.sb.rpc('my_interests', { p_user: member.id } as any)   /* an argument the function does not take, on purpose: it must refuse it */
   ok('there is no argument to ask for somebody else with', !!argErr, 'the call was accepted')
   const guest = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data: none } = await guest.rpc('my_interests')

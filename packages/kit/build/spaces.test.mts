@@ -61,14 +61,11 @@ ok('a muted room still counts what names you', waitingOf([{ ...dms[2], muted_unt
 ok('a DM set to nothing stops counting', waitingOf([{ ...dms[0], notify: 'none' }], now) === 0)
 ok('nothing waiting is zero, not a blank', waitingOf([], now) === 0)
 
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ channel: string; space: string; seq: number; read: number; mentions: number; notify: string; muted_until?: undefined; }
 const by = badgesBySpace(rows, now)
 ok('badges split by space', by.s1.unread === 6 && by.s2.unread === 0 && by.s2.mentions === 2, JSON.stringify(by))
 
 /* --- the cursor, and what is too far behind to carry --- */
-// @ts-expect-error TS2322, from the conversion: Type '{ channel: string; seen: number; }' is not assignable to type 'never'.
 ok('cursors are the last seq seen per channel', eq(cursorsOf([{ channel: 'c1', seen: 4 }, { channel: 'c2', read: 8 }]), { c1: 4, c2: 8 }))
-// @ts-expect-error TS2322, from the conversion: Type '{ channel: string; seen: number; }' is not assignable to type 'never'.
 ok('a channel named twice keeps the furthest', eq(cursorsOf([{ channel: 'c1', seen: 4 }, { channel: 'c1', seen: 9 }]), { c1: 9 }))
 const answer = [
   { channel: 'c1', from: 4, more: false, messages: [{ id: 'm5', seq: 5 }, { id: 'm6', seq: 6 }] },
@@ -791,20 +788,15 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   ok('…and by somebody when it has neither', saidBy({}, names) === 'someone')
 
   const room = roomAsProse([
-    // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; body: null; meta: { event: string; sku: string; amount: number; }; }' is not assignable to type 'never'.
     ev,
-    // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; body: string; author_id: string; }' is not assignable to type 'never'.
     { kind: 'text', body: 'Chasing the printer.', author_id: 'u1' },
-    // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; body: string; deleted_at: string; author_id: string; }' is not assignable to type 'never'.
     { kind: 'text', body: 'thanks', deleted_at: 'now', author_id: 'u1' },
   ], { names, words, money })
   ok('a notice is a notice, not something somebody said', room.split('\n')[0] === 'A purchase: server-pass — $20.00.')
   ok('…and a person is named', room.split('\n')[1] === 'Ada: Chasing the printer.')
-  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; body: null; meta: { event: string; sku: string; amount: number; }; }' is not assignable to type 'never'.
   ok('a room of platform lines is not an empty room', roomAsProse([ev, ev], { words, money }).split('\n').length === 2)
   ok('and nothing withdrawn is handed on', !room.includes('thanks'))
   ok('the last of a long room is what is kept', roomAsProse(
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ kind: string; body: string; author_id: string; }[]' is not assignable to parameter of type 'never[]'. Type '{ kind: stri
     Array.from({ length: 80 }, (_, i) => ({ kind: 'text', body: 'n' + i, author_id: 'u1' })), { names, limit: 3 })
     === 'Ada: n77\nAda: n78\nAda: n79')
 }
@@ -818,12 +810,10 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   const chan = [{ id: 'c1', kind: 'text', body: 'channel one' }, { id: 'c2', kind: 'text', body: 'channel two' }]
   const thread = { root: { id: 't0', kind: 'text', body: 'the question' }, replies: [{ id: 't1', kind: 'text', body: 'the answer' }] }
 
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; kind: string; body: string; }[]' is not assignable to type 'never[]'. Type '{ id: string; kind: string; body: string; }'
   const inCh = roomFor({ messages: chan, thread, threadRoot: null })
   ok('outside a thread the bot gets the channel', !inCh.inThread && inCh.lines.length === 2)
   ok('\u2026and not the thread\u2019s replies', !inCh.lines.some((m) => m.id === 't1'))
 
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; kind: string; body: string; }[]' is not assignable to type 'never[]'. Type '{ id: string; kind: string; body: string; }'
   const inTh = roomFor({ messages: chan, thread, threadRoot: 't0' })
   ok('in a thread the bot gets the thread', inTh.inThread, JSON.stringify(inTh.lines.map((m) => m.id)))
   ok('\u2026opening message first', inTh.lines[0].id === 't0')
@@ -831,14 +821,11 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   ok('\u2026and none of the channel around it', !inTh.lines.some((m) => String(m.id).startsWith('c')))
 
   /* the case that produced an empty context: the thread was opened directly, so nothing else loaded */
-  // @ts-expect-error TS2322, from the conversion: Type '{ root: { id: string; kind: string; body: string; }; replies: { id: string; kind: string; body: string; }[]; }' is not assignable to t
   const cold = roomFor({ messages: [], thread, threadRoot: 't0' })
   ok('a thread opened cold still has its own words', cold.lines.length === 2)
 
   /* a threadRoot naming a thread that is not the open one is not that thread */
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; kind: string; body: string; }[]' is not assignable to type 'never[]'. Type '{ id: string; kind: string; body: string; }'
   ok('a stale root falls back to the channel', !roomFor({ messages: chan, thread, threadRoot: 'other' }).inThread)
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; kind: string; body: string; }[]' is not assignable to type 'never[]'. Type '{ id: string; kind: string; body: string; }'
   ok('and no thread at all is the channel', !roomFor({ messages: chan }).inThread)
   ok('nothing of nothing', roomFor({}).lines.length === 0)
 }
@@ -855,7 +842,6 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
     { kind: 'voice', body: null, mine: false },
     { kind: 'text', body: 'Let me check.', mine: true },
   ]
-  // @ts-expect-error TS2345, from the conversion: Argument of type '({ kind: string; body: string; mine: boolean; attachment_name?: undefined; } | { kind: string; body: null; attachment_name
   const said = roomAsProse(msgs, { who: (m: { mine: any }) => (m.mine ? 'Us' : 'Them'), unheard: 'sent a voice note' })
   const lines = said.split('\n')
   ok('a side may be the speaker', lines[0] === 'Them: Do you ship to Japan?', said)
@@ -864,7 +850,6 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   ok('both sides are there', lines[3] === 'Us: Let me check.')
   ok('every line survived', lines.length === 4, String(lines.length))
   /* and with no word for it, an untranscribed note is simply not spoken for */
-  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; body: string; mine: boolean; attachment_name?: undefined; } | { kind: string; body: null; attachment_name: string; min
   ok('nothing is invented for it', !roomAsProse([msgs[2]], { who: () => 'Them' }))
 }
 

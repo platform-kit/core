@@ -10,7 +10,7 @@
  */
 
 /* the pieces a recognition event carries, reduced to the two things worth having */
-export function readResults(results = [], from = 0) {
+export function readResults(results: ArrayLike<any> = [], from = 0) {
   let done = '', saying = ''
   for (let i = from; i < results.length; i++) {
     const r: any = results[i]

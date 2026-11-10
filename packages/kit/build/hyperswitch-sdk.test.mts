@@ -87,14 +87,13 @@ await assert.rejects(
 
 let sdkScript: any
 const loadedHyperFactory = () => 'loaded-sdk'
-const previousWindow = globalThis.window
-const previousDocument = globalThis.document
-// @ts-expect-error TS2353, from the conversion: Object literal may only specify known properties, and 'Hyper' does not exist in type 'Window & typeof globalThis'.
-globalThis.window = { Hyper: null }
-globalThis.document = {
-  // @ts-expect-error TS2322, from the conversion: Type '{}' is not assignable to type 'HTMLElementTagNameMap[K] | HTMLElement | HTMLElementDeprecatedTagNameMap[K]'.
+/* a stand-in browser: only the window and document calls the loader makes */
+const g = globalThis as any
+const previousWindow = g.window
+const previousDocument = g.document
+g.window = { Hyper: null }
+g.document = {
   createElement: () => ({}),
-  // @ts-expect-error TS2740, from the conversion: Type '{ append: (script: any) => void; }' is missing the following properties from type 'HTMLHeadElement': addEventListener, removeEventList
   head: { append: (script: any) => { sdkScript = script; (globalThis.window as any).Hyper = loadedHyperFactory; script.onload() } },
 }
 assert.equal(
@@ -102,11 +101,9 @@ assert.equal(
   loadedHyperFactory,
 )
 assert.equal(sdkScript.src, 'https://beta.hyperswitch.io/v2/HyperLoader.js')
-// @ts-expect-error TS2790, from the conversion: The operand of a 'delete' operator must be optional.
-if (previousWindow === undefined) delete globalThis.window
-else globalThis.window = previousWindow
-// @ts-expect-error TS2790, from the conversion: The operand of a 'delete' operator must be optional.
-if (previousDocument === undefined) delete globalThis.document
+if (previousWindow === undefined) delete g.window
+else g.window = previousWindow
+if (previousDocument === undefined) delete g.document
 else globalThis.document = previousDocument
 
 let confirmationRequest: any

@@ -12,6 +12,8 @@ import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
+/* a table the test names by a variable: one of the schema's */
+type TableName = keyof Database['public']['Tables']
 
 const note = (m: string) => console.log('roles: ' + m)
 if (process.env.ROLES_TEST === '0') { note('skipped (ROLES_TEST=0)'); process.exit(0) }
@@ -21,7 +23,7 @@ if (!url || !anonKey || !localStack()) { note('skipped — no local stack in the
 try { await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(4000) }) } catch { note('skipped — the stack is not answering'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
 const service = createClient<Database>(url, serviceKey(), O)
 const as = async (email: string) => { const c = createClient<Database>(url, anonKey, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
@@ -40,9 +42,8 @@ const { data: rooms } = await service.from('channels').select('id, space_id').eq
 for (const [who, c] of people) {
   const id = await idOf(c)
   const { data: before } = await service.from('profiles').select('roles, role, email, email_verified_at, stripe_customer_id').eq('id', id).single()
-  for (const [field, value] of [['roles', ['admin']], ['role', 'admin'], ['email_verified_at', new Date().toISOString()], ['stripe_customer_id', 'cus_probe'], ['email', `probe-${stamp}@example.test`]]) {
+  for (const [field, value] of ([['roles', ['admin']], ['role', 'admin'], ['email_verified_at', new Date().toISOString()], ['stripe_customer_id', 'cus_probe'], ['email', `probe-${stamp}@example.test`]] as Array<[string, unknown]>)) {
     if (field === 'email_verified_at' && (before as any).email_verified_at) continue
-    // @ts-expect-error TS2464, from the conversion: A computed property name must be of type 'string', 'number', 'symbol', or 'any'.
     const r = await c.from('profiles').update({ [field]: value }).eq('id', id).select(field)
     ok(`${who} cannot write their own ${field}`, refused(r), JSON.stringify(r.data))
   }
@@ -58,8 +59,7 @@ for (const [who, c] of people) {
   ]) {
     const r = await c.from(table).insert(row).select()
     ok(`${who} cannot write themselves into ${table}`, refused(r), JSON.stringify(r.data))
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(relation: "achievements" | "agent_runs" | "agent_steps" | "answers" | "api_keys" | "api_ra
-    if (!r.error && r.data?.length) await service.from(table).delete().match(row)
+    if (!r.error && r.data?.length) await service.from(table as TableName).delete().match(row)
   }
   const e = await c.from('entitlements').update({ active: true, expires_at: null }).eq('user_id', id).select('id')
   ok(`${who} cannot revive or extend their own entitlements`, refused(e), JSON.stringify(e.data))

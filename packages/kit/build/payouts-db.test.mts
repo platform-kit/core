@@ -165,7 +165,6 @@ try {
 
   /* --- the balance, read three ways and agreeing --- */
   const { data: bal } = await service.rpc('payout_balance', { p_user: providerId })
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ about: string; amount: number; booking_uid: string | null; created_at: string; currency: string; earned_at: string; id: 
   const mine = balanceOf(await linesOf())
   ok('the database and the pure module agree on what is earned', Number((bal as any)!.earned) === mine.earned, (bal as any)!.earned + ' vs ' + mine.earned)
   ok('nothing is payable inside the window', Number((bal as any)!.payable) === 0 && Number((bal as any)!.waiting) === mine.earned)

@@ -18,7 +18,7 @@ const DEMO = path.join(WORKSPACE, 'sites', 'demo')
 const WORK = path.join(WORKSPACE, '.cache', 'platformkit', 'gated-content-test')
 
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).trim().split('\n').slice(-8).join('\n        ') : '')) } }
 
 /* the markers: where a guest may read, and where none may */
 const FREE = 'GATEFREE chapter one is for everyone.'

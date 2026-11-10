@@ -12,13 +12,10 @@ console.log('\nTRANSCRIPT\n')
 /* a recognition event's results, as the browser shapes them */
 const R = (...items: any[]) => items.map(([t, isFinal]) => ({ 0: { transcript: t }, isFinal, length: 1 }))
 
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ 0: { transcript: any; }; isFinal: any; length: number; }[]' is not assignable to parameter of type 'never[]'. Type '{ 0:
 const a = readResults(R(['hello there ', true], ['how are ', false]))
 ok('what is settled and what is still a guess are kept apart', a.done === 'hello there ' && a.saying === 'how are ', JSON.stringify(a))
 ok('nothing said is nothing either way', JSON.stringify(readResults([])) === JSON.stringify({ done: '', saying: '' }))
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ 0: { transcript: any; }; isFinal: any; length: number; }[]' is not assignable to parameter of type 'never[]'. Type '{ 0:
 ok('every final piece is kept, in order', readResults(R(['one ', true], ['two ', true])).done === 'one two ')
-// @ts-expect-error TS2345, from the conversion: Argument of type '{ 0: { transcript: any; }; isFinal: any; length: number; }[]' is not assignable to parameter of type 'never[]'. Type '{ 0:
 ok('a run can be read from part way in', readResults(R(['old ', true], ['new ', true]), 1).done === 'new ')
 
 ok('what is on screen is what is settled then what is guessed', showing('hello there', 'how are') === 'hello there how are')

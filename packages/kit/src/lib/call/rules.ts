@@ -36,7 +36,7 @@ export function roomFull(count: number, max: number) {
 
 /* the tiles a call draws: the reader first, then everyone else by name. A tile knows only what a
    surface needs — who it is, whether they are speaking, and what is off. */
-export function tiles(peers = [], me: any = {}, words: any = {}) {
+export function tiles(peers: Array<{ id: string, name?: string }> = [], me: any = {}, words: any = {}) {
   const mine = { id: me.id, name: words.you || 'You', me: true, speaking: !!me.speaking, muted: !!me.muted, cameraOff: !!me.cameraOff, stream: me.stream || null }
   const theirs = peers
     .map((p: any) => ({ id: p.id, name: p.name || words.someone || 'someone', me: false, speaking: !!p.speaking, muted: !!p.muted, cameraOff: !!p.cameraOff, stream: p.stream || null }))

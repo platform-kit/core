@@ -114,11 +114,10 @@ assert.throws(
     const unsupported = {
       id: 'limited',
       capabilities: ['checkout.subscription'],
-      createCheckout: async () => { providerSideEffects++; return {} },
+      createCheckout: async (_input: unknown) => { providerSideEffects++; return {} },
       verifyWebhook: async () => [],
     }
     assertPaymentCapabilities(unsupported, checkoutRequirements)
-    // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
     return unsupported.createCheckout({})
   },
   (error: any) => error.code === 'unsupported_capability',
@@ -129,14 +128,13 @@ assert.throws(
     const unsupported = {
       id: 'limited',
       capabilities: ['subscription.change'],
-      changeSubscription: async () => { providerSideEffects++; return { subscriptionId: 'sub_test', status: 'active' } },
+      changeSubscription: async (_input: unknown) => { providerSideEffects++; return { subscriptionId: 'sub_test', status: 'active' } },
       verifyWebhook: async () => [],
     }
     assertPaymentCapabilities(
       unsupported,
       paymentCapabilitiesForSubscriptionChange({ proration: 'immediate' }),
     )
-    // @ts-expect-error TS2554, from the conversion: Expected 0 arguments, but got 1.
     return unsupported.changeSubscription({})
   },
   (error: any) => error.code === 'unsupported_capability',

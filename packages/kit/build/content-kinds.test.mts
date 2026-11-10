@@ -24,7 +24,7 @@ const KIT = join(here, '..')
 const ROOT = join(KIT, '..', '..')
 const SITE = process.cwd()
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail: string) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n          ' + detail : '')) } }
 
 /* every content directory of every site in this repository: the site itself and the kit's own */
 const SITES = [SITE, join(ROOT, 'sites', 'demo'), join(ROOT, 'sites', 'docs')].filter((d) => existsSync(join(d, 'content')))

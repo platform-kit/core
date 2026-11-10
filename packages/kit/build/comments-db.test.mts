@@ -68,7 +68,7 @@ try {
 
   const say = async (who: { sb: any; id?: string }, body: string, parent = null) =>
     (await who.sb.rpc('comment_say', { p_kind: KIND, p_subject: SUBJ, p_body: body, p_parent: parent })).data
-  const readAs = async (who: { sb: any; id?: string }) => (await who.sb.rpc('comments_on', { p_kind: KIND, p_subject: SUBJ })).data || []
+  const readAs = async (who: { sb: any; id?: string }) => (await who.sb.rpc('comments_on', { p_kind: KIND, p_subject: SUBJ })).data as any[] | null || []
 
   /* ---- trusted, and not ---- */
   const free1 = await say(free, 'A first comment from somebody nobody knows.')
@@ -87,8 +87,7 @@ try {
   ok('nobody else sees it at all', !(await readAs(member)).some((c: { id: any }) => c.id === free1.id))
   ok('a moderator does', (await readAs(admin)).some((c: { id: any }) => c.id === free1.id))
   ok('and it is not counted where it is not shown',
-    // @ts-expect-error TS7053, from the conversion: Element implicitly has an 'any' type because expression of type '"a-thing"' can't be used to index type 'string | number | true | { [key: st
-    Number(((await member.sb.rpc('comment_counts', { p_kind: KIND, p_subjects: [SUBJ] })).data || {})[SUBJ]) === 1)
+    Number(((await member.sb.rpc('comment_counts', { p_kind: KIND, p_subjects: [SUBJ] })).data as Record<string, any> | null || {})[SUBJ]) === 1)
 
   /* ---- the flagged list: a machine may flag, only a person decides ---- */
   const mem2 = await say(member, 'This one says fnord, which the site has listed.')
@@ -118,11 +117,9 @@ try {
   const free2 = await say(free, 'And so this one goes straight up.')
   ok('so their next comment appears at once', free2 && free2.state === 'live', JSON.stringify(free2))
 
-  // @ts-expect-error TS2339, from the conversion: Property 'error' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'error' does not 
-  ok('a member cannot release their own', ((await member.sb.rpc('comment_approve', { p_comment: mem2.id })).data || {}).error === 'not-yours')
+  ok('a member cannot release their own', ((await member.sb.rpc('comment_approve', { p_comment: mem2.id })).data as Record<string, any> | null || {}).error === 'not-yours')
   ok('and refusing removes it as any message is',
-    // @ts-expect-error TS2339, from the conversion: Property 'state' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'state' does not 
-    ((await admin.sb.rpc('comment_refuse', { p_comment: mem2.id })).data || {}).state === 'removed')
+    ((await admin.sb.rpc('comment_refuse', { p_comment: mem2.id })).data as Record<string, any> | null || {}).state === 'removed')
   ok('the placeholder stays', (await readAs(admin)).some((c: { id: any; deleted_at: any }) => c.id === mem2.id && c.deleted_at))
 
   /* ---- a reply keeps its real depth ---- */
@@ -175,11 +172,10 @@ try {
     ((await service.from('comments').select('id').eq('kind', KIND).eq('subject', SLUG)).data || []).length === 2)
 
   /* ---- the queue: the unattached ones, and who may read it ---- */
-  const q = (await admin.sb.rpc('comment_queue', { p_state: 'waiting', p_attached: false, p_limit: 100 })).data || []
+  const q = (await admin.sb.rpc('comment_queue', { p_state: 'waiting', p_attached: false, p_limit: 100 })).data as any[] | null || []
   ok('the desk\'s queue is the conversations no room owns', Array.isArray(q) && q.every((r: any) => r!.attached === false))
   ok('and an ordinary member reads nothing from it',
-    // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-    (((await member.sb.rpc('comment_queue', { p_state: 'waiting', p_limit: 100 })).data) || []).length === 0)
+    (((await member.sb.rpc('comment_queue', { p_state: 'waiting', p_limit: 100 })).data as any[] | null) || []).length === 0)
 } catch (e: any) {
   fail++
   console.log('  FAIL  ' + (e && e.message))

@@ -18,8 +18,7 @@ let n = 0, bad = 0
 const ta = async (name: string, fn: { (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): Promise<void>; (): any }) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
 const url = supabaseUrl(), anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
 let up = false
-// @ts-expect-error TS2322, from the conversion: Type 'string | boolean' is not assignable to type 'boolean'. Type 'string' is not assignable to type 'boolean'.
-try { up = url && localStack() && (await fetch(url + '/rest/v1/', { headers: { apikey: anonKey }, signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
+try { up = !!url && localStack() && (await fetch(url + '/rest/v1/', { headers: { apikey: anonKey }, signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
 let served = false
 if (up) { try { served = (await fetch(url + '/functions/v1/session-slots', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* not served */ } }
 if (!up || !served) { console.log(`scheduling: skipped — ${!up ? 'the local stack is not up' : 'the functions are not served (npm run dev serves them)'}`); leave(0) }
@@ -143,8 +142,7 @@ try {
     assert.equal(all[0], at('09:00')); assert.ok(all.length >= 5, 'a morning of starts')
     const soon = dayOf(Date.now() + 36e5, AMS).day
     const s2 = await fn(member, 'session-slots', { event: one.event, from: soon, to: soon, timeZone: 'UTC' })
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
-    assert.equal(Object.values(s2.slots || {}).flat().filter((t) => Date.parse(t) < Date.now() + 24 * 36e5).length, 0, 'nothing inside 24 hours')
+    assert.equal((Object.values(s2.slots || {}) as string[][]).flat().filter((t) => Date.parse(t) < Date.now() + 24 * 36e5).length, 0, 'nothing inside 24 hours')
   })
   await ta('a day off by exception offers nothing, and is gone when removed', async () => {
     const r = await fn(host, 'coach-hours', { action: 'override', day, ranges: null })
@@ -367,7 +365,7 @@ try {
     /* a day of its own (the group's ninety minutes need a clear morning), its last open start */
     const day3 = await nextDay()
     const s0 = await fn(x, 'session-slots', { event: group.event, from: day3, to: day3, timeZone: 'UTC' })
-    const open = Object.values(s0.slots || {}).flat(); assert.ok(open.length, 'an open time for the group: ' + JSON.stringify(s0))
+    const open = (Object.values(s0.slots || {}) as string[][]).flat(); assert.ok(open.length, 'an open time for the group: ' + JSON.stringify(s0))
     const t0 = open[open.length - 1]
     const [a, b] = await Promise.all([fn(x, 'book-session', { event: group.event, start: t0, timeZone: 'UTC', notes: 'probe-sched' }), fn(y, 'book-session', { event: group.event, start: t0, timeZone: 'UTC', notes: 'probe-sched' })])
     assert.equal(a.status, 200, JSON.stringify(a)); assert.equal(b.status, 200, JSON.stringify(b))
@@ -389,7 +387,7 @@ try {
     const dayR = await nextDay()
     const who = async (start: unknown) => { const r = await fn(member, 'book-session', { event: rr.event, start, timeZone: 'UTC', notes: 'probe-sched' }); assert.equal(r.status, 200, JSON.stringify(r)); made.push(r.booking.uid); return (await admin.from('bookings').select('host_id').eq('uid', r.booking.uid).single()).data!.host_id }
     const s = await fn(member, 'session-slots', { event: rr.event, from: dayR, to: dayR, timeZone: 'UTC' })
-    const open = Object.values(s.slots || {}).flat()
+    const open = (Object.values(s.slots || {}) as string[][]).flat()
     assert.ok(open.length >= 2, 'two open times: ' + JSON.stringify(s))
     /* NOBODY HAS BEEN BOOKED, so the first goes to whichever the ladder settles on; the SECOND must
        go to the other one, because the first now has a turn behind them */
@@ -419,8 +417,7 @@ try {
       assert.ok(Object.values(s.slots || {}).flat().length, 'the team still offers times with a new member')
       /* they take the next booking, because everybody else has turns behind them and they have none */
       const r = await fn(member, 'book-session', { event: rr.event, start: Object.values(s.slots).flat()[0], timeZone: 'UTC', notes: 'probe-sched' })
-      // @ts-expect-error TS2304, from the conversion: Cannot find name 'covered'.
-      if (r.status !== 200) { const { data: hh } = await admin.from('booking_holds').select('user_id, start_at'); console.log('    (covered: ' + JSON.stringify(covered.slice(0,4)) + ' holds: ' + JSON.stringify(hh) + ')') }
+      if (r.status !== 200) { const { data: hh } = await admin.from('booking_holds').select('user_id, start_at'); console.log('    (holds: ' + JSON.stringify(hh) + ')') }
       assert.equal(r.status, 200, JSON.stringify(r))
       made.push(r.booking.uid)
       const { data: row } = await admin.from('bookings').select('host_id').eq('uid', r.booking.uid).single()
@@ -437,7 +434,7 @@ try {
     for (const p of all) { await admin.from('provider_schedules').delete().eq('user_id', p.id); await admin.from('provider_schedules').insert({ user_id: p.id, name: 'Working hours', is_default: true, ...HOURS }) }
     const dayC = await nextDay()
     const s = await fn(member, 'session-slots', { event: coll.event, from: dayC, to: dayC, timeZone: 'UTC' })
-    const open = Object.values(s.slots || {}).flat()
+    const open = (Object.values(s.slots || {}) as string[][]).flat()
     assert.ok(open.length, 'a time both hosts keep: ' + JSON.stringify(s))
     const r = await fn(member, 'book-session', { event: coll.event, start: open[0], timeZone: 'UTC', notes: 'probe-sched' })
     assert.equal(r.status, 200, JSON.stringify(r))
@@ -466,7 +463,7 @@ try {
     const theirs = man.slug + '@' + me.username
     const s = await fn(member, 'session-slots', { event: theirs, from: dayM, to: dayM, timeZone: 'UTC' })
     assert.equal(s.status, 200, 'the copy is bookable at their address: ' + JSON.stringify(s))
-    const open = Object.values(s.slots || {}).flat()
+    const open = (Object.values(s.slots || {}) as string[][]).flat()
     assert.ok(open.length, 'their own hours are the copy\'s hours: ' + JSON.stringify(s.slots))
     /* SOMEBODY WHO IS NOT IN THE TEAM HAS NO COPY — the address simply does not exist */
     const outsider = (await admin.from('profiles').select('username').eq('email', 'member2@example.com').maybeSingle()).data
@@ -504,11 +501,10 @@ try {
     const dayL = await nextDay()
     const book = async (start: unknown) => { const r = await fn(member, 'book-session', { event: capped.event, start, timeZone: 'UTC', notes: 'probe-sched' }); if (r.status === 200) made.push(r.booking.uid); return r }
     const s = await fn(member, 'session-slots', { event: capped.event, from: dayL, to: dayL, timeZone: 'UTC' })
-    const open = Object.values(s.slots || {}).flat()
+    const open = (Object.values(s.slots || {}) as string[][]).flat()
     assert.ok(open.length >= week, `${week} open times to fill the week: ` + JSON.stringify(s.slots))
     /* THE TYPE'S GRID IS ITS OWN: an interval and an offset written on the type, not in the week */
     if (capped.interval) {
-      // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 4, '(value: string | number | Date): Date', gave the following error. Argument of type 'unknown
       const mins = open.map((iso) => new Date(iso).getUTCMinutes())
       assert.ok(mins.every((m, i) => i === 0 || (m - mins[i - 1] + 60) % 60 === capped.interval % 60), 'the times sit on the type\'s own interval: ' + JSON.stringify(open.slice(0, 4)))
       /* the host's hours begin on the hour, so every start sits at the offset within the interval */
@@ -547,7 +543,7 @@ try {
     for (const id of ids3) { await admin.from('provider_schedules').delete().eq('user_id', id); await admin.from('provider_schedules').insert({ user_id: id, name: 'Working hours', is_default: true, ...HOURS }) }
     const dayP = await nextDay()
     const s = await fn(member, 'session-slots', { event: noCancel.event, from: dayP, to: dayP, timeZone: 'UTC' })
-    const open = Object.values(s.slots || {}).flat()
+    const open = (Object.values(s.slots || {}) as string[][]).flat()
     assert.ok(open.length, 'an open time: ' + JSON.stringify(s))
     const r = await fn(member, 'book-session', { event: noCancel.event, start: open[0], timeZone: 'UTC', notes: 'probe-sched' })
     assert.equal(r.status, 200, JSON.stringify(r))
@@ -571,7 +567,7 @@ try {
     const dayH = await nextDay()
     const s = await fn(member, 'session-slots', { event: hidden.event, from: dayH, to: dayH, timeZone: 'UTC' })
     assert.equal(s.status, 200, 'the calendar answers for somebody who has the address: ' + JSON.stringify(s))
-    const open = Object.values(s.slots || {}).flat()
+    const open = (Object.values(s.slots || {}) as string[][]).flat()
     assert.ok(open.length, 'and offers times')
     const r = await fn(member, 'book-session', { event: hidden.event, start: open[0], timeZone: 'UTC', notes: 'probe-sched' })
     assert.equal(r.status, 200, 'and books: ' + JSON.stringify(r))
@@ -585,7 +581,7 @@ try {
     const atier = ['anyone', 'guest', 'authenticated'].includes(asks.requires) ? null : asks.requires
     if (atier) await grant('member@example.com', atier)
     const s = await fn(member, 'session-slots', { event: asks.event, from: dayF, to: dayF, timeZone: 'UTC' })
-    const open = Object.values(s.slots || {}).flat()
+    const open = (Object.values(s.slots || {}) as string[][]).flat()
     assert.ok(open.length, 'an open time: ' + JSON.stringify(s))
     /* the answers are a form response like any other — made the way the runner makes one */
     const mine: any = (await admin.from('form_responses').insert({ form: asks.form, user_id: ids['member@example.com'], completed_at: new Date().toISOString() }).select('id').single()).data
@@ -622,7 +618,7 @@ try {
     for (const id of ids6) { await admin.from('provider_schedules').delete().eq('user_id', id); await admin.from('provider_schedules').insert({ user_id: id, name: 'Working hours', is_default: true, ...HOURS }) }
     const dayC2 = await nextDay()
     const s = await fn(member, 'session-slots', { event: asked2.event, from: dayC2, to: dayC2, timeZone: 'UTC' })
-    const open = Object.values(s.slots || {}).flat()
+    const open = (Object.values(s.slots || {}) as string[][]).flat()
     assert.ok(open.length, 'an open time: ' + JSON.stringify(s))
     const r = await fn(member, 'book-session', { event: asked2.event, start: open[0], timeZone: 'UTC', notes: 'probe-sched' })
     assert.equal(r.status, 200, JSON.stringify(r))
@@ -694,10 +690,9 @@ try {
     const s = await fn(member, 'session-slots', { event: seated.event, from: await nextDay(), to: await nextDay(), timeZone: 'UTC' })
     /* a fixed-time type answers for its own occurrences, so the day asked for may hold none */
     const wide = await fn(member, 'session-slots', { event: seated.event, from: new Date().toISOString().slice(0, 10), to: new Date(Date.now() + 60 * 864e5).toISOString().slice(0, 10), timeZone: 'UTC' })
-    const open = Object.values(wide.slots || {}).flat()
+    const open = (Object.values(wide.slots || {}) as string[][]).flat()
     assert.ok(open.length, 'an occurrence to sit in: ' + JSON.stringify(wide).slice(0, 200))
     assert.ok(wide.left && typeof wide.left === 'object', 'the calendar says how many are left: ' + JSON.stringify(wide.left))
-    // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
     const before = wide.left[open[0]]
     assert.ok(before > 0, 'and it is a number of seats: ' + JSON.stringify(before))
     void s
@@ -707,7 +702,6 @@ try {
     if (a.status !== 200) return   /* their allowance may already be spent by the seed; the count is what this checks */
     made.push(a.booking.uid)
     const after = await fn(member, 'session-slots', { event: seated.event, from: new Date().toISOString().slice(0, 10), to: new Date(Date.now() + 60 * 864e5).toISOString().slice(0, 10), timeZone: 'UTC' })
-    // @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
     assert.equal(after.left[open[0]], before - 1, 'one fewer once a seat is taken')
     /* AND GIVING UP A SEAT GIVES UP ONLY THAT SEAT: the others are still in the room */
     const b2 = await fn(member2, 'book-session', { event: seated.event, start: open[0], timeZone: 'UTC', notes: 'probe-sched' })
@@ -726,7 +720,7 @@ try {
     for (const id of ids8) { await admin.from('provider_schedules').delete().eq('user_id', id); await admin.from('provider_schedules').insert({ user_id: id, name: 'Working hours', is_default: true, ...HOURS }) }
     const dayR2 = await nextDay()
     const s = await fn(member, 'session-slots', { event: course.event, from: dayR2, to: dayR2, timeZone: 'UTC', count: course.repeat.count })
-    const open = Object.values(s.slots || {}).flat()
+    const open = (Object.values(s.slots || {}) as string[][]).flat()
     assert.ok(open.length, 'a start whose whole run fits: ' + JSON.stringify(s).slice(0, 200))
     assert.equal(s.run, course.repeat.count, 'and the calendar says how many it is answering for')
     const r = await fn(member, 'book-session', { event: course.event, start: open[0], timeZone: 'UTC', notes: 'probe-sched', count: course.repeat.count })
@@ -741,12 +735,11 @@ try {
     /* MOVING ONE LEAVES THE REST WHERE THEY ARE */
     const dayR3 = await nextDay()
     const s2 = await fn(member, 'session-slots', { event: course.event, from: dayR3, to: dayR3, timeZone: 'UTC' })
-    const to = Object.values(s2.slots || {}).flat()[0]
+    const to = (Object.values(s2.slots || {}) as string[][]).flat()[0]
     const mv = await fn(member, 'book-session', { event: course.event, start: to, timeZone: 'UTC', reschedule: (run as any)[1].uid })
     assert.equal(mv.status, 200, JSON.stringify(mv))
     const { data: after } = await admin.from('bookings').select('uid, start_at').eq('run_of', r.booking.uid).order('start_at')
     assert.equal((after as any).length, course.repeat.count, 'the run is still the same size')
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
     assert.equal(Date.parse(after!.find((b) => b.uid === run![1].uid)!.start_at), Date.parse(to), 'the one moved is where it was moved to')
     assert.equal(Date.parse((after as any).find((b: { uid: any }) => b.uid === (run as any)[2].uid).start_at), Date.parse((run as any)[2].start_at), 'and the rest are where they were')
     /* CANCELLING ONE TAKES ONE; CANCELLING THE RUN TAKES WHAT IS LEFT TO COME */
@@ -795,7 +788,7 @@ try {
       await admin.from('provider_schedules').insert({ user_id: cover, name: 'Working hours', is_default: true, ...HOURS, weekly: { 1: [['14:00', '17:00']], 2: [['14:00', '17:00']], 3: [['14:00', '17:00']], 4: [['14:00', '17:00']], 5: [['14:00', '17:00']] } })
       await admin.from('provider_ooo').update({ cover_id: cover }).eq('id', (ooo as any).id)
       const s2 = await fn(free, 'session-slots', { event: freeType.event, from: dayA, to: dayA, timeZone: 'UTC' })
-      const covered = Object.values(s2.slots || {}).flat()
+      const covered = (Object.values(s2.slots || {}) as string[][]).flat()
       assert.ok(covered.length, 'the cover\'s own times stand in for those days: ' + JSON.stringify(s2))
       /* and the booking made in them goes to the cover, not the person who is away */
       /* the cover may already hold an hour of their own from an earlier check, so the first start

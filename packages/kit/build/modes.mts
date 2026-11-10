@@ -179,4 +179,4 @@ export const exceptions = () => {
 }
 
 /* which shape a resolved deployment is: the column the matrix is read by */
-export const modeOf = ({ backend = true, repo = true } = {}) => (!backend ? 'static' : repo ? 'git' : 'cloud')
+export const modeOf = ({ backend = true, repo = true }: { backend?: boolean, repo?: boolean, content?: string } = {}) => (!backend ? 'static' : repo ? 'git' : 'cloud')

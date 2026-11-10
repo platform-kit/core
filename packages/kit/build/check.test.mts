@@ -11,25 +11,22 @@ import { machineChecks, browserCheck, settingsChecks, siteChecks, onlineChecks, 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const DEMO = path.resolve(HERE, '../../../sites/demo')
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 400) : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 400) : '')) } }
 const ran = (status: number, stdout = '') => () => ({ status, stdout });
 
 /* two problems at once: Docker down and no browser, both reported, failures first, exit 1 */
 {
-  // @ts-expect-error TS2322, from the conversion: Type '(cmd: any) => { status: number; stdout: string; }' is not assignable to type '(cmd: any, args: any, opts?: {}) => SpawnSyncReturns<str
   const machine = machineChecks({ version: '22.1.0', exec: (cmd) => (cmd === 'docker' ? ran(1)() : ran(0, 'x')()) })
   const browser = await browserCheck(async () => ({ at: null, there: false }))
   const { text, ok: fine } = report([['the machine', [...machine, browser]]])
   ok('two problems: both reported in one run', /✖ Docker/.test(text) && /✖ test browser/.test(text), text)
   ok('…each with its fix', /→ start Docker/.test(text) && /→ npx playwright install chromium/.test(text), text)
   ok('…and the run fails', fine === false)
-  // @ts-expect-error TS2322, from the conversion: Type '() => { status: number; stdout: string; }' is not assignable to type '(cmd: any, args: any, opts?: {}) => SpawnSyncReturns<string>'. T
   ok('an old Node fails, naming the version needed', machineChecks({ version: '18.20.0', exec: ran(0) })[0].level === 'fail')
 }
 
 /* a clean run passes */
 {
-  // @ts-expect-error TS2322, from the conversion: Type '() => { status: number; stdout: string; }' is not assignable to type '(cmd: any, args: any, opts?: {}) => SpawnSyncReturns<string>'. T
   const { ok: fine, text } = report([['the machine', machineChecks({ version: '22.22.1', exec: ran(0, 'v') })]])
   ok('nothing wrong: the run passes', fine && /Everything is ready/.test(text), text)
 }
@@ -70,7 +67,6 @@ const ran = (status: number, stdout = '') => () => ({ status, stdout });
 /* a refused key is told apart from an unreachable service */
 {
   const env = { STRIPE_SECRET_KEY: 'sk_test_refused' }
-  // @ts-expect-error TS2322, from the conversion: Type '() => Promise<{ status: number; ok: false; }>' is not assignable to type '{ (input: URL | RequestInfo, init?: RequestInit | undefined)
   const refused = await onlineChecks({}, env, { fetch: async () => ({ status: 401, ok: false }) })
   ok('a refused key: the report says refused', refused.some((r) => r.name === 'Stripe' && r.level === 'fail' && /refused/.test(r.detail)), JSON.stringify(refused))
   const away = await onlineChecks({}, env, { fetch: async () => { throw new Error('getaddrinfo ENOTFOUND') } })

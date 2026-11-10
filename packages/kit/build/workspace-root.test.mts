@@ -44,8 +44,7 @@ try {
   assert.match(rootScripts['docs:dev'], /--workspace @platform-kit\/docs/)
   for (const [command, script] of Object.entries(rootScripts)) {
     if (['dev', 'sites', 'docs:dev', 'prepare'].includes(command)) continue
-    // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
-    assert.doesNotMatch(script, /@[^/]+\/site|sites\//, `${command} must not require a particular site`)
+    assert.doesNotMatch(script as string, /@[^/]+\/site|sites\//, `${command} must not require a particular site`)
   }
 
   const sites = spawnSync(process.execPath, [KIT('bin/platformkit.mjs'), 'sites', '--json'], {

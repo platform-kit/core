@@ -88,8 +88,7 @@ ok('every weight the browser wants is one the script fetches', BROWSER_FILES.eve
   ok(audioFor({ 'A Chapter': { full: { file: 'x.mp3' } } }, 'A Chapter') !== null, 'and a manifest with it: a recording')
   /* the introduction is keyed by a constant rather than its label, because the label is editable
      copy and a recording named after it would be orphaned the moment somebody reworded it */
-  // @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types '"__intro__"' and '"Introduction"' have no overlap.
-  ok(INTRO_KEY && INTRO_KEY !== 'Introduction', 'the introduction is keyed by a constant, not by its label: ' + INTRO_KEY)
+  ok(INTRO_KEY && (INTRO_KEY as string) !== 'Introduction', 'the introduction is keyed by a constant, not by its label: ' + INTRO_KEY)
 }
 
 console.log(`\n${fail ? fail + ' failed, ' : ''}${pass} passed\n`)

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 const HELPER = fileURLToPath(new URL('./test-stack.mjs', import.meta.url))
 const STORAGE = fileURLToPath(new URL('./tts/storage.mjs', import.meta.url))
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 
 /* the guard knows a test by its file name, in either language: a rename once switched it off, and stack tests reached a dev stack */
 {

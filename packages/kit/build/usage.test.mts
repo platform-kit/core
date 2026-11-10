@@ -286,8 +286,7 @@ const allowedInvocation = await allowedGate({
 })
 assert.equal(allowedInvocation.admitted, true, 'a non-bot operation can use the common gate')
 nonBotProviderCalls++
-// @ts-expect-error TS2722, from the conversion: Cannot invoke an object which is possibly 'undefined'.
-assert.deepEqual(await allowedInvocation.settle({
+assert.deepEqual(await allowedInvocation.settle!({
   kind: 'model', costMicros: 12, unitsMicros: 400_000, customerCostMicros: 15,
   retailValueMicros: 20, retailCurrency: 'usd', measurementStatus: 'estimated',
 }), {
@@ -340,8 +339,7 @@ for (const invocationRef of ['stream:chunk-1', 'stream:chunk-2']) {
     break
   }
   streamProviderCalls++
-  // @ts-expect-error TS2722, from the conversion: Cannot invoke an object which is possibly 'undefined'.
-  await chunk.settle({ kind: 'model', costMicros: 10, unitsMicros: 1_000_000 })
+  await chunk.settle!({ kind: 'model', costMicros: 10, unitsMicros: 1_000_000 })
 }
 assert.equal(streamProviderCalls, 1, 'a bounded stream stops before provider work after the next reservation is denied')
 

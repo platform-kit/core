@@ -27,7 +27,7 @@ const fold = (h: any) => String(h).replace(/<pre[\s\S]*?<\/pre>/g, '<pre/>').rep
 const norm = (k: string, v: { map: (arg0: (c: any) => any) => any; readingTime: any }) => (k === 'body' || k === 'summary' ? fold(v) : k === 'chapters' && Array.isArray(v) ? v.map((c) => ({ ...c, summary: fold(c.summary || '') })) : k === 'excerpt' ? (/^[|#]/.test(String(v)) ? '(a table or a heading first: velite excerpts the markdown itself)' : plain(String(v)).replace(/\s+/g, ' ').trim().slice(0, 60)) : k === 'metadata' ? { readingTime: v.readingTime } : k === 'raw' ? String(v).trim() : v)
 
 /* the file a built entry came from */
-const fileOf = (target: string, e: { slug: any; path: any }) => {
+const fileOf = (target: string, e: { slug: any; path: any }): string | null | undefined => {
   if (target === 'site') return 'content/site.md'
   if (target === 'storefront') return 'content/store/storefront.md'
   if (target === 'ui') return null   /* found by scope below */
@@ -46,8 +46,7 @@ for (const [target, built] of Object.entries(bundle)) {
   if (['search', 'icons', 'icon-names', 'sales', 'teachings', 'support-prompts', 'models', 'print'].includes(target)) continue
   const list = Array.isArray(built) ? built : built && typeof built === 'object' && Object.keys(built).length ? [built] : []
   for (const e of list) {
-    let file = fileOf(target, e)
-    // @ts-expect-error TS2322, from the conversion: Type 'string | null | undefined' is not assignable to type 'string | null'. Type 'undefined' is not assignable to type 'string | null'.
+    let file: string | null | undefined = fileOf(target, e)
     if (target === 'ui') { const dir = 'content/app/ui'; file = fs.existsSync(path.join(ROOT, dir)) ? fs.readdirSync(path.join(ROOT, dir)).map((f) => dir + '/' + f).find((f) => /^scope:\s*(.+)$/m.exec(fs.readFileSync(path.join(ROOT, f), 'utf8'))?.[1].trim() === e.scope) : null }
     if (!file || !fs.existsSync(path.join(ROOT, file))) continue   /* a theme default with no site file (a ui scope), or a collection the site's own velite made */
     const text = fs.readFileSync(path.join(ROOT, file), 'utf8')

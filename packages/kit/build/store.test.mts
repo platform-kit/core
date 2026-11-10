@@ -115,8 +115,7 @@ else {
   const { supabaseUrl, localStack, serviceKey } = await import('./tts/storage.mjs')
   const url = supabaseUrl(), anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
   let up = false
-  // @ts-expect-error TS2322, from the conversion: Type 'string | boolean' is not assignable to type 'boolean'. Type 'string' is not assignable to type 'boolean'.
-  try { up = url && localStack() && (await fetch(url + '/rest/v1/', { headers: { apikey: anonKey }, signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
+  try { up = !!url && localStack() && (await fetch(url + '/rest/v1/', { headers: { apikey: anonKey }, signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }
   if (!up) console.log('store: the rows skipped — the local stack is not up')
   else {
     const { rowsStore } = await import('./store/rows.mjs')
@@ -282,12 +281,10 @@ else {
 
       await saveHook(sb, 'https://hook.example/build')
       const calls: any = []
-      // @ts-expect-error TS2322, from the conversion: Type '(u: URL | RequestInfo, o: RequestInit | undefined) => Promise<{ ok: true; status: number; }>' is not assignable to type '{ (input: URL
       const ok = await askRebuild(sb, { fetchFn: async (u, o) => { calls.push(u + ' ' + o!.method); return { ok: true, status: 200 } } })
       assert.deepEqual(ok, { asked: true, error: null }, 'a hook that answers is asked and says nothing')
       assert.deepEqual(calls, ['https://hook.example/build POST'])
 
-      // @ts-expect-error TS2322, from the conversion: Type '() => Promise<{ ok: false; status: number; }>' is not assignable to type '{ (input: URL | RequestInfo, init?: RequestInit | undefined)
       const bad = await askRebuild(sb, { fetchFn: async () => ({ ok: false, status: 503 }) })
       assert.ok(bad.asked && /503/.test(bad.error!), 'a hook that refuses is recorded, not thrown')
       const st = await githubSettings(sb)
@@ -321,7 +318,6 @@ else {
         return { ok: false, status: 404, text: async () => 'no' }
       }
       /* the ref refused: nothing moves, every row stays pending with the reason */
-      // @ts-expect-error TS2322, from the conversion: Type '(u: any, init?: any) => Promise<{ ok: boolean; status: number; json: () => Promise<any>; text: () => Promise<string>; } | { ok: boolea
       const r1 = await pushPending(sb, 'Tester', { fetchFn: github({ failRef: true }), message: 'Autumn list' })
       assert.equal(r1.pushed, 0); assert.match(r1.error!, /401/)
       for (const f of ['one', 'two']) { const r = await rows.row(U + '/' + f + '.md'); assert.equal(r.pending, true); assert.match(r.push_error, /401/) }
@@ -329,7 +325,6 @@ else {
       assert.match((await githubSettings(sb)).error, /401/)
       /* the same again, the ref accepted: one commit with every file, the message and the name */
       calls.length = 0
-      // @ts-expect-error TS2322, from the conversion: Type '(u: any, init?: any) => Promise<{ ok: boolean; status: number; json: () => Promise<any>; text: () => Promise<string>; } | { ok: boolea
       const r2 = await pushPending(sb, 'Tester', { fetchFn: github(), message: 'Autumn list' })
       assert.ok(r2.pushed >= 3); assert.equal(r2.error, null); assert.equal(r2.commit, 'commit1')
       const commits = calls.filter((c: any) => c.m === 'POST' && /\/git\/commits$/.test(c.path))
@@ -344,11 +339,9 @@ else {
       const st2 = await githubSettings(sb); assert.equal(st2.error, null); assert.ok(st2.last_push)
       /* nothing pending: no call at all */
       calls.length = 0; await sb.from('content').update({ pending: false }).eq('pending', true)
-      // @ts-expect-error TS2322, from the conversion: Type '(u: any, init?: any) => Promise<{ ok: boolean; status: number; json: () => Promise<any>; text: () => Promise<string>; } | { ok: boolea
       const r3 = await pushPending(sb, 'Tester', { fetchFn: github() }); assert.equal(r3.pushed, 0); assert.equal(calls.length, 0)
       /* a branch with no commit yet is said plainly */
       await rows.write(U + '/three.md', 'three', { collection: 'articles', slug: 'three', live: true })
-      // @ts-expect-error TS2322, from the conversion: Type '() => Promise<{ ok: false; status: number; text: () => Promise<string>; }>' is not assignable to type '{ (input: URL | RequestInfo, in
       const r4 = await pushPending(sb, 'Tester', { fetchFn: async () => ({ ok: false, status: 404, text: async () => 'Not Found' }) }); assert.match(r4.error!, /no commit yet/)
       await sb.from('content').delete().like('path', U + '/%')
       await sb.from('app_settings').upsert(['repo', 'branch', 'token', 'last_push', 'error'].map((k) => ({ key: 'github:' + k, value: was[k] || '', updated_at: new Date().toISOString() })), { onConflict: 'key' })

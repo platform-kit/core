@@ -85,7 +85,6 @@ const lines = [
   { amount: 500, payable_at: '2026-09-30T00:00:00.000Z' },                         /* still held */
   { amount: 300, payable_at: '2026-09-05T00:00:00.000Z', paid_at: '2026-09-06T00:00:00.000Z' }, /* gone */
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ amount: number; payable_at: string; paid_at?: undefined; } | { amount: number; payable_at: string; paid_at: string; })[
 const b = balanceOf(lines, now)
 ok('earned is everything', b.earned === 1800)
 ok('payable is what the delay released and nothing paid', b.payable === 1000)
@@ -97,18 +96,14 @@ ok('no lines is four zeroes', JSON.stringify(balanceOf([], now)) === JSON.string
 /* a reversal is a line with a negative amount, so it simply sums */
 /* A LINE A REFUND CAUGHT INSIDE THE WINDOW is out of all four: the money went back, and a figure
    counted as earned but never payable, never waiting and never sent is a figure with no home. */
-// @ts-expect-error TS2322, from the conversion: Type '{ amount: number; payable_at: string; paid_at?: undefined; } | { amount: number; payable_at: string; paid_at: string; }' is not assign
 const caught = balanceOf([...lines, { amount: 700, payable_at: 'infinity' }], now)
 ok('a line caught inside the window is not earned', caught.earned === 1800)
 ok('nor payable, nor waiting, nor sent', caught.payable === 1000 && caught.waiting === 500 && caught.sent === 300)
-// @ts-expect-error TS2322, from the conversion: Type '{ amount: number; payable_at: string; paid_at: string; }' is not assignable to type 'never'.
 ok('but one already sent is still sent, whatever its date says', balanceOf([{ amount: 700, payable_at: 'infinity', paid_at: '2026-09-01T00:00:00.000Z' }], now).sent === 700)
 
-// @ts-expect-error TS2322, from the conversion: Type '{ amount: number; payable_at: string; paid_at?: undefined; } | { amount: number; payable_at: string; paid_at: string; }' is not assign
 const reversed = balanceOf([...lines, { amount: -1000, payable_at: '2026-09-11T00:00:00.000Z' }], now)
 ok('a reversal sums', reversed.earned === 800 && reversed.payable === 0)
 /* and a reversal bigger than the balance is not a demand */
-// @ts-expect-error TS2322, from the conversion: Type '{ amount: number; payable_at: string; }' is not assignable to type 'never'.
 const overdrawn = balanceOf([{ amount: 300, payable_at: '2026-09-01T00:00:00.000Z' }, { amount: -900, payable_at: '2026-09-02T00:00:00.000Z' }], now)
 ok('a reversal never asks a provider for money', overdrawn.payable === 0 && overdrawn.owed === 0)
 ok('but the earning still shows what happened', overdrawn.earned === -600)
@@ -116,7 +111,6 @@ ok('but the earning still shows what happened', overdrawn.earned === -600)
 /* --- the lines one booking makes --- */
 const booking = { uid: 'ns_a1', type: 'coaching-session', end_at: '2026-09-01T13:00:00.000Z', collected_at: collected }
 /* a retainer and a share together: the mix James asked for, as two rows */
-// @ts-expect-error TS2322, from the conversion: Type '{ trigger: string; amount_kind: string; amount: number; currency: string; active: boolean; }' is not assignable to type 'never'.
 const made = linesFor({ rules: [retainer, share, perCall], booking, collected: 8000, delay: 30 * 1440 })
 ok('the period rule does not fire on a booking', made.length === 2)
 ok('the share is a share of the payment', made.some((l) => l.amount === 1000))
@@ -124,11 +118,8 @@ ok('the flat one is flat', made.some((l) => l.amount === 5000))
 ok('each line says which rule made it', made.every((l) => 'rule_id' in l))
 ok('each line is payable from when the money came', made.every((l) => l.payable_at === '2026-10-01T12:00:00.000Z'))
 ok('each line is earned when the call ended', made.every((l) => l.earned_at === booking.end_at))
-// @ts-expect-error TS2322, from the conversion: Type '{ trigger: string; booking_type: string; amount_kind: string; amount: number; currency: string; active: boolean; }' is not assignable 
 ok('another booking type earns nothing', linesFor({ rules: [share], booking: { ...booking, type: 'discovery-call' }, collected: 8000 }).length === 0)
-// @ts-expect-error TS2322, from the conversion: Type '{ active: false; trigger: string; booking_type: string; amount_kind: string; amount: number; currency: string; }' is not assignable to
 ok('an inactive rule earns nothing', linesFor({ rules: [{ ...share, active: false }], booking, collected: 8000 }).length === 0)
-// @ts-expect-error TS2322, from the conversion: Type '{ trigger: string; booking_type: string; amount_kind: string; amount: number; currency: string; active: boolean; }' is not assignable 
 ok('a faulty rule earns nothing', linesFor({ rules: [{ ...share, trigger: 'weekly' }], booking, collected: 8000 }).length === 0)
 ok('no rules is no lines', linesFor({ booking, collected: 8000 }).length === 0)
 

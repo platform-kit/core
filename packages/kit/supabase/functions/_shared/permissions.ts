@@ -35,7 +35,7 @@ import { admits } from './sessions/admits.ts'   /* who a booking type is for: th
  * and the entitlements per (person, tenant) rather than per person, and this is where that scope
  * would arrive; a single deployment has one tenant and never names it.
  */
-export function identityOf({ signedIn = false, entitlements = null, role = '', roles = [], verified = false, tenant = null } = {}) {
+export function identityOf({ signedIn = false, entitlements = null, role = '', roles = [], verified = false, tenant = null }: { signedIn?: boolean, entitlements?: Record<string, any> | null, role?: string, roles?: string[], verified?: boolean, tenant?: string | null } = {}) {
   const e: any = entitlements || {}
   const cls = classOf(e, !!signedIn)
   return {

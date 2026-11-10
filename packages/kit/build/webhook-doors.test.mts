@@ -31,7 +31,7 @@ import type { Database } from '../supabase/functions/_shared/database.types.js'
 const door = (fn: string) => served(fn) || (notHere(fn, 'its module is off'), false)
 
 let pass = 0, fail = 0
-const ok = (name: string, cond: boolean, detail: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 const note = (s: string) => console.log('  ' + s)
 
 console.log('\nTHE DOORS THAT FACE THE INTERNET\n')

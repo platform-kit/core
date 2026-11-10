@@ -24,7 +24,9 @@ export const MAX_TOKENS = 4096
  *     `role: 'tool'` messages behind, and Anthropic wants one user turn holding both results.
  *   · a tool's answer is a user turn, not a tool turn. There is no tool role.
  */
-export function toAnthropic(messages = [], tools = []) {
+/* a chat message in the OpenAI shape the loop keeps, which this turns into Anthropic's */
+export type ChatMessage = { role: string, content?: string | null, tool_calls?: any[], tool_call_id?: string, [k: string]: any }
+export function toAnthropic(messages: ChatMessage[] = [], tools: any[] = []) {
   const system = messages.filter((m: any) => m && m.role === 'system').map((m: any) => String(m.content || '')).join('\n\n').trim()
   const out: any = []
   const push = (role: string, block: { type: string; tool_use_id?: string; content?: any; text?: any; id?: string; name?: string; input?: {} }) => {

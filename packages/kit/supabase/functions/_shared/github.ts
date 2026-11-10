@@ -82,7 +82,9 @@ export async function saveHook(sb: any, url: any) {
 
 /* asked after a publish: fire and forget. The rows are already live, so a hook that refuses is
    something to show, never something that fails a publish. */
-export async function askRebuild(sb: any, { fetchFn = fetch } = {}) {
+/* the calls these make of fetch: an address, the request, and an answer with its status */
+type FetchLike = (url: string, init?: RequestInit) => Promise<{ ok: boolean, status: number, json?: () => Promise<any>, text?: () => Promise<string> }>
+export async function askRebuild(sb: any, { fetchFn = fetch as FetchLike } = {}) {
   const s = await readSettings(sb)
   if (!s.hook) return { asked: false }
   let err = ''
@@ -164,7 +166,7 @@ export async function commitFiles({ fetchFn = fetch, token, repo, branch, files,
 }
 
 /* ---- every pending row, as one commit ---- */
-export async function pushPending(sb: any, by = '', { fetchFn = fetch, message = '', limit = 200 } = {}) {
+export async function pushPending(sb: any, by = '', { fetchFn = fetch as FetchLike, message = '', limit = 200 } = {}) {
   const s = await readSettings(sb)
   const { repo, branch, off } = await targetOf(s)
   /* git out of the cycle: there is nothing to push to, and a row's pending flag is not debt */

@@ -14,7 +14,7 @@ import { isDone } from './shape.js'
 
 /* the promises the offers make, gathered once: the longest a tier promises (a tier that appears on
    two offers keeps the kinder number), and the shortest a paid session does */
-export function hoursTable(products = []) {
+export function hoursTable(products: Array<{ kind?: string, tier?: string, 'chat-hours'?: number, [k: string]: any }> = []) {
   const t: any = { tier: {}, session: 0 }
   for (const p of products || []) {
     const h = Number(p && p['chat-hours']) || 0
@@ -36,7 +36,7 @@ export function hoursFor(table: any, peer: any, rank: (a: any) => number = () =>
 
 /* every thread whose last word is the member's. The caller is the coach: chat_inbox already answers
    from their side, and `awaiting_since` is the first line of the run they have not answered. */
-export function rowsOf(raw = [], ctx: any = {}) {
+export function rowsOf(raw: any[] = [], ctx: any = {}) {
   const table = ctx.table || hoursTable(ctx.products)
   const rank = ctx.rank || (() => 0)
   const marks = ctx.marks || {}

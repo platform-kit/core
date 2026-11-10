@@ -215,8 +215,7 @@ t('a module whose step is running stops it when switched off', () => {
 
 if (Object.keys(COUPLED).length) {
   console.log('\n  COUPLED ON PURPOSE — a site owner must be told before switching these off:')
-  // @ts-expect-error TS18046, from the conversion: 'cs' is of type 'unknown'.
-  for (const [m, cs] of Object.entries(COUPLED)) for (const c of cs) console.log(`    ${c.dependent} needs ${m}: ${c.why}`)
+  for (const [m, cs] of Object.entries(COUPLED as Record<string, Array<{ dependent: string, why: string }>>)) for (const c of cs) console.log(`    ${c.dependent} needs ${m}: ${c.why}`)
 }
 console.log(bad ? `\nmodules off: ${n - bad} passed, ${bad} failed (${HERE.length} modules)\n` : `\nmodules off: ${n} passed, 0 failed (${HERE.length} modules)\n`)
 process.exit(bad ? 1 : 0)

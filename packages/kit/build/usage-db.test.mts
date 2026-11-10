@@ -93,7 +93,7 @@ try {
 
   const firstAdmission = await admin.rpc('usage_admit', { p_user_id: users[0].id, p_offer_key: offerKey })
   assert.equal((firstAdmission.data as any)?.admitted, true, 'a reader with prepaid units is admitted')
-  const record = async (userId: any, sourceRef: string, units: number, botId = 'usage-probe') => {
+  const record = async (userId: any, sourceRef: string, units: number, botId: string | null = 'usage-probe') => {
     const authorization = await admin.rpc('usage_authorize', {
       p_user_id: userId, p_offer_key: offerKey, p_reservation_ref: sourceRef,
       p_max_units_micros: units,
@@ -282,7 +282,6 @@ try {
   assert.equal(siteAttempt.error, null, String(siteAttempt.error?.message))
   assert.equal((siteAttempt.data as any)?.recorded, true, 'site-funded provider cost is recorded without a reader reservation')
 
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'null' is not assignable to parameter of type 'string | undefined'.
   const finalUse = await record(users[0].id, `${source}:step-2`, 3_000_000, null)
   assert.equal(finalUse.error, null, String(finalUse.error?.message))
   const exhausted = await admin.rpc('usage_admit', { p_user_id: users[0].id, p_offer_key: offerKey })

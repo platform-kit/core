@@ -350,8 +350,7 @@ if (CRON_SITE.deployment.backend) {
   })
 
   t('and every step that names a module is claimed by that module', () => {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'any' is not assignable to parameter of type 'never'.
-    const orphans = steps.filter((s: { module: any }) => s.module).filter((s: { module: string; key: any }) => !(CRON_MODULES.get(s.module) || { owns: { steps: [] } }).owns.steps.includes(s.key))
+    const orphans = steps.filter((s: { module: any }) => s.module).filter((s: { module: string; key: any }) => !(CRON_MODULES.get(s.module) || { owns: { steps: [] as string[] } }).owns.steps.includes(s.key))
       .map((s: { key: any; module: any }) => `${s.key} says ${s.module}, which does not claim it`)
     assert.deepEqual(orphans, [], orphans.join(' | '))
   })
@@ -414,8 +413,7 @@ if (CRON_SITE.deployment.backend) {
   const demanded = new Set()
   for (const m of src.matchAll(/need\(\s*'([A-Z][A-Z_0-9]*)'/g)) demanded.add(m[1])
   for (const m of src.matchAll(/\[\s*'([A-Z][A-Z_0-9]*)'\s*,\s*['"`]/g)) demanded.add(m[1])
-  // @ts-expect-error TS18046, from the conversion: 'ks' is of type 'unknown'.
-  for (const ks of Object.values(PRINTER_KEYS)) for (const k of ks) demanded.add(k)
+  for (const ks of Object.values(PRINTER_KEYS) as string[][]) for (const k of ks) demanded.add(k)
 
   t('the deploy demands something', () => {
     assert.ok(demanded.size > 10, `only found ${demanded.size} — the scan has stopped matching and this check is now vacuous`)
@@ -423,8 +421,7 @@ if (CRON_SITE.deployment.backend) {
 
   const declared = new Set([...declaredEnv(), ...DEPLOYMENT_ENV])
   t('every variable the deploy can demand is declared by a module or is the deployment\'s own', () => {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
-    const orphans = [...demanded].filter((k) => !declared.has(k)).sort()
+    const orphans = [...demanded as Set<string>].filter((k) => !declared.has(k)).sort()
     assert.deepEqual(orphans, [], `nobody declares ${orphans.join(', ')} — add it to the owning module's \`owns.env\`, or to DEPLOYMENT_ENV if it belongs to no module`)
   })
 

@@ -132,11 +132,9 @@ console.log('\nHUDDLE\n')
   ok('and a cap of nothing never fills', roomFull(99, 0) === false)
 
   const W = { you: 'You', someone: 'someone' }
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; name: string; }' is not assignable to type 'never'.
   const list = tiles([{ id: 'b', name: 'Zoe' }, { id: 'a', name: 'Ada' }], { id: 'me' }, W)
   ok('the reader is the first tile', list[0].me === true && list[0].name === 'You')
   ok('and the rest are by name', list[1].name === 'Ada' && list[2].name === 'Zoe')
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; }' is not assignable to type 'never'.
   ok('a person with no name is not a blank', tiles([{ id: 'x' }], { id: 'me' }, W)[1].name === 'someone')
 
   ok('alone, in a pair, or a grid', layoutOf(1) === 'alone' && layoutOf(2) === 'pair' && layoutOf(3) === 'grid')
@@ -238,8 +236,7 @@ if (process.env.HUDDLE_LIVE === '0' || !appUp) {
     ok('with media actually flowing between them', live.length === 2 && live.every((v: any) => v.on && v.w > 0), JSON.stringify(live))
     ok('and no trouble to report', (await a.locator('.sq-trouble').count()) === 0)
     const PAGE_OWN = /(^|\.)(fonts\.googleapis\.com|fonts\.gstatic\.com|huggingface\.co|hf\.co)$/
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
-    const forCall = [...new Set(foreign)].filter((h) => !PAGE_OWN.test(h))
+    const forCall = [...new Set<string>(foreign)].filter((h) => !PAGE_OWN.test(h))
     ok('nothing left the site to make the call happen', forCall.length === 0, forCall.join(', '))
 
     await a.locator('.sq-hang').click()

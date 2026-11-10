@@ -36,7 +36,6 @@ console.log('\nSEARCH\n')
 
 /* ---- the row a page becomes ---- */
 {
-  // @ts-expect-error TS2322, from the conversion: Type '{ id: string; title: string; description: string; route: string; sections: { component: string; props: { note: string; }; }[]; body: s
   const rows = searchRows({ pages: [{ id: 'pricing', title: 'Pricing', description: 'What it costs', route: '/pricing',
     sections: [{ component: 'Pricing', props: { note: 'A membership opens every book' } }], body: '' }] })
   ok('one row per page', rows.length === 1 && rows[0].kind === 'page')
@@ -70,9 +69,7 @@ console.log('\nSEARCH\n')
    paying one bought. Two columns, and the excerpt comes from the safe one. */
 {
   const rows = searchRows({
-    // @ts-expect-error TS2322, from the conversion: Type '{ slug: string; title: string; description: string; raw: string; }' is not assignable to type 'never'.
     books: [{ slug: 'kybalion', title: 'The Kybalion', description: 'Seven principles.', raw: 'THE ALL IS MIND. The universe is mental.' }],
-    // @ts-expect-error TS2322, from the conversion: Type '{ id: string; title: string; description: string; body: string; }' is not assignable to type 'never'.
     articles: [{ id: 'a', title: 'A', description: 'd', body: '<p>free to read</p>' }],
   })
   const book = rows.find((r: { kind: string }) => r.kind === 'book')

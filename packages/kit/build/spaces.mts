@@ -38,7 +38,7 @@ export const SITE_OUT = '.velite/spaces.json'
 /* a sku → the offer's key, and the tiers a site actually sells, from the catalog the functions read.
    A fill or a grant naming a tier no membership declares fills nobody and grants nobody — silently,
    which is the worst way for a room to be empty — so it is a fault like an unknown sku. */
-export function catalogOf(root: any, given: { offers: any; sessions: any; } | null = null) {
+export function catalogOf(root: any, given: { offers: any; sessions?: any; } | null = null) {
   /* the catalog as DATA. On a machine the caller reads it off the disk (build/spaces-disk.mjs); in an
      Edge Function there is no file, and an absent catalog means the sku and tier checks below simply
      find nothing to contradict — which is what they did before, when the read threw and was caught. */

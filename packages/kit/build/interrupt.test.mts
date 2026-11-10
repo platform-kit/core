@@ -25,7 +25,6 @@ ok('the quiet list is the one the module publishes', QUIET.includes('/admin') &&
 ok('the configured community prefix is quiet', mayInterrupt('/community/coaching', ['/community']) === false)
 ok('a configured community prefix does not catch a neighboring route', mayInterrupt('/community-life/story', ['/community']) === true)
 ok('a custom community path is quiet', mayInterrupt('/our-community/social/notifications', ['/our-community']) === false)
-// @ts-expect-error TS2322, from the conversion: Type 'null' is not assignable to type 'string'.
 ok('invalid custom prefixes are ignored', mayInterrupt('/pricing', [null, 'community', 3]) === true)
 
 /* --- the corner belongs to one of them --- */

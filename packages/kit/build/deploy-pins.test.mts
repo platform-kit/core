@@ -10,8 +10,7 @@ import { installPlatformKitSource } from './source-install.mjs'
 /* one package: the engine with its theme inside it */
 const names = ['platformkit']
 
-// @ts-expect-error TS7022, from the conversion: 'versions' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initiali
-function writeFixture(root: string, { versions = ['0.1.0', '0.1.0'], rootVersions = versions, lockVersions = versions, resolved = true, linked = false } = {}) {
+function writeFixture(root: string, { versions = ['0.1.0', '0.1.0'], rootVersions = versions, lockVersions = versions, resolved = true, linked = false }: { versions?: string[], rootVersions?: string[], lockVersions?: string[], resolved?: boolean, linked?: boolean } = {}) {
   const dependencies = Object.fromEntries(names.map((name, index) => [name, versions[index]]))
   const lockedDependencies = Object.fromEntries(names.map((name, index) => [name, rootVersions[index]]))
   const packages = Object.fromEntries(names.map((name, index) => [

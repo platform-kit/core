@@ -26,7 +26,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const KIT = path.resolve(HERE, '..')
 const WORKSPACE = path.resolve(KIT, '../..')
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).split('\n').join('\n        ') : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).split('\n').join('\n        ') : '')) } }
 
 const tests = fs.readdirSync(HERE).filter((f) => /\.(test|integration)\.m[jt]s$/.test(f) && f !== 'test-coverage.test.mts')
 const source = Object.fromEntries(tests.map((f) => [f, fs.readFileSync(path.join(HERE, f), 'utf8')]))
@@ -47,9 +47,7 @@ const early = []
 for (const [f, s] of Object.entries(source)) {
   if (!STACK.test(s)) continue
   const lines = s.split('\n')
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'string'. Type 'number' is not assignable to type 'string'.
-  const exits = lines.map((l, i) => [l, i]).filter(([l]) => /process\.exit\(/.test(l) && !/^\s*(\/\/|\*)/.test(l))
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'string'. Type 'number' is not assignable to type 'string'.
+  const exits = lines.map((l, i): [string, number] => [l, i]).filter(([l]) => /process\.exit\(/.test(l) && !/^\s*(\/\/|\*)/.test(l))
   for (const [l, i] of exits.slice(0, -1)) if (!allowed(l, lines[i - 1] || '')) early.push(`${f}:${i + 1}  ${(l as any).trim().slice(0, 110)}`)
 }
 ok('no stack test leaves early with a pass except through skip() or notHere()', !early.length, `${early.length} early exit(s):\n` + early.slice(0, 40).join('\n') + (early.length > 40 ? `\n… and ${early.length - 40} more` : ''))
@@ -94,15 +92,13 @@ const staleNot = Object.keys(NOT_A_STACK).filter((f) => !source[f] || marked(sou
 ok('no test is excused as reaching no stack when it is gone or takes one', !staleNot.length, staleNot.join(', '))
 /* a fallback to the dev ports (the stack's 543xx, the app's 5173) is a test that runs against whatever is there when the run's stack is not given */
 const FIXED = /(\|\||\?\?)\s*['"`][^'"`]*(127\.0\.0\.1|localhost):(5\d{4}|5173)\b|supabase status|'status', '-o'/
-// @ts-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'string'. Type 'number' is not assignable to type 'string'.
-const fixed = Object.entries(source).filter(([f, s]) => marked(s)).flatMap(([f, s]) => s.split('\n').map((l, i) => [l, i]).filter(([l]) => FIXED.test(l) && !/^\s*(\/\/|\*)/.test(l)).map(([l, i]) => `${f}:${i + 1}  ${(l as any).trim().slice(0, 110)}`))
+const fixed = Object.entries(source).filter(([f, s]) => marked(s)).flatMap(([f, s]) => s.split('\n').map((l, i): [string, number] => [l, i]).filter(([l]) => FIXED.test(l) && !/^\s*(\/\/|\*)/.test(l)).map(([l, i]) => `${f}:${i + 1}  ${(l as any).trim().slice(0, 110)}`))
 ok('no stack test reads `supabase status` or falls back to a fixed port', !fixed.length, fixed.join('\n'))
 
 /* every browser launch honours PLAYWRIGHT_CHROMIUM_PATH (or goes through browser.mjs, which does): a machine where
    Playwright's own build is not installed names its own, and a launch that ignores it fails there — six did */
 {
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'string | number' is not assignable to parameter of type 'string'. Type 'number' is not assignable to type 'string'.
-  const launches = fs.readdirSync(HERE).filter((f) => /\.m?[jt]s$/.test(f) && !/\.d\.m?ts$/.test(f) && !/^browser\.m[jt]s$/.test(f)).flatMap((f) => fs.readFileSync(path.join(HERE, f), 'utf8').split('\n').map((l, i) => [f, l, i]).filter(([, l]) => /chromium\.launch\(/.test(l) && !/PLAYWRIGHT_CHROMIUM_PATH|executablePath: exe\b|\{ executablePath \}/.test(l)).map(([f, l, i]) => `${f}:${i + 1}  ${(l as any).trim().slice(0, 100)}`))
+  const launches = fs.readdirSync(HERE).filter((f) => /\.m?[jt]s$/.test(f) && !/\.d\.m?ts$/.test(f) && !/^browser\.m[jt]s$/.test(f)).flatMap((f) => fs.readFileSync(path.join(HERE, f), 'utf8').split('\n').map((l, i): [string, string, number] => [f, l, i]).filter(([, l]) => /chromium\.launch\(/.test(l) && !/PLAYWRIGHT_CHROMIUM_PATH|executablePath: exe\b|\{ executablePath \}/.test(l)).map(([f, l, i]) => `${f}:${i + 1}  ${(l as any).trim().slice(0, 100)}`))
   ok('every browser launch honours PLAYWRIGHT_CHROMIUM_PATH', !launches.length, launches.join('\n'))
 }
 
@@ -136,12 +132,9 @@ for (const f of specFiles.filter(started)) {
     else if (!registered.has(name)) claims.push(`${path.relative(WORKSPACE, f)}: ${name} is not registered to run (test.mjs)`)
   }
 }
-// @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
-const gaps = [...new Set(claims)].filter((c) => KNOWN_GAPS[c])
-// @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
+const gaps = [...new Set<string>(claims)].filter((c) => KNOWN_GAPS[c])
 for (const g of gaps) console.log('  ⚠ known gap: ' + g + ' — ' + KNOWN_GAPS[g])
-// @ts-expect-error TS2538, from the conversion: Type 'unknown' cannot be used as an index type.
-const open = [...new Set(claims)].filter((c) => !KNOWN_GAPS[c])
+const open = [...new Set<string>(claims)].filter((c) => !KNOWN_GAPS[c])
 ok('every "Verified by" names a test that exists and is registered to run', !open.length, open.join('\n'))
 ok('no known gap is listed that has since been closed', Object.keys(KNOWN_GAPS).every((k) => claims.includes(k)), Object.keys(KNOWN_GAPS).filter((k) => !claims.includes(k)).join('\n'))
 

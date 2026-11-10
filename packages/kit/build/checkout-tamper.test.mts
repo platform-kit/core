@@ -37,7 +37,7 @@ if (!/^sk_test_/.test(sk) || /^(1|true|yes|on)$/i.test(process.env.STRIPE_MOCK |
   if (!offers.notebook) { notHere('checkout-tamper', 'the site does not sell the demo\'s notebook, whose variants these checks read'); process.exit(0) }
 }
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
 const as = async (email: string) => { const c = createClient<Database>(url, anonKey, O); const { data, error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : data.session.access_token }
 const made: any = []

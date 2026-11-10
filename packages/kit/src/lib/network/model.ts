@@ -130,8 +130,8 @@ export function postOfMessage(m: { id: any; author_id: any; body: any; created_a
 }
 
 /* the people a set of posts names, for one read of their names and faces */
-export function peopleIn(posts: any[], extra: string[] = []) {
-  const ids = new Set(extra.filter(Boolean))
+export function peopleIn(posts: any[], extra: Array<string | null> = []) {
+  const ids = new Set<string>(extra.filter((x): x is string => !!x))
   for (const p of posts) { if (p && p.author_id) ids.add(p.author_id) }
   return [...ids]
 }

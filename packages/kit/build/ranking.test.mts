@@ -175,8 +175,7 @@ else {
       const word = words(rows[0].text).find((w) => !others.has(w))
       assert.ok(word, 'the first two books hold the same words')
       const s = bm25(real, word)
-      const vals = Object.values(s)
-      // @ts-expect-error TS18046, from the conversion: 'x' is of type 'unknown'.
+      const vals = Object.values(s) as number[]
       assert.ok(vals.some((x) => x > 0), `no book scored on "${word}"`)
       assert.ok(new Set(vals).size > 1, 'every book scored the same — the index is not discriminating')
     })

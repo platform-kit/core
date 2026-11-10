@@ -66,7 +66,6 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
 
 /* ---- a model that wrote something is done ---- */
 {
-  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; response: { message: { role: string; content: any; }; }; }' is not assignable to type 'never'.
   const d = next({ run, bot, steps: [saidStep('It shipped on Tuesday.')], now: t0 })
   ok('what the model wrote is what gets said', d.do === 'say' && d.text === 'It shipped on Tuesday.')
 }
@@ -74,12 +73,10 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
 /* ---- a model that asked for a tool ---- */
 {
   const steps = [askedStep('lookup_order', { ref: '1042' })]
-  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; response: { message: { role: string; content: null; tool_calls: { id: string; type: string; function: { name: any; arg
   const d = next({ run, bot, steps, now: t0 })
   ok('a tool call is the next thing done', d.do === 'tool' && d.name === 'lookup_order' && (d.args as any).ref === '1042')
   ok('…and it is named by its own call id, so it is done once', d.call === 'c1')
   /* once the tool has answered, the model thinks again with the answer in hand */
-  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; response: { message: { role: string; content: null; tool_calls: { id: string; type: string; function: { name: any; arg
   const after: any = next({ run, bot, steps: [...steps, toolStep('lookup_order', { status: 'shipped' })], now: t0 })
   ok('after a tool, the model goes again', after.do === 'model')
   const roles = after.messages.map((m: any) => m.role).join(',')
@@ -97,13 +94,10 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
       { id: 'b', function: { name: 'two', arguments: '{}' } },
     ] } },
   }
-  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; response: { message: { role: string; content: null; tool_calls: { id: string; function: { name: string; arguments: str
   const first = next({ run, bot, steps: [two], now: t0 })
   ok('the first of two tools', first.do === 'tool' && first.call === 'a')
-  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; response: { message: { role: string; content: null; tool_calls: { id: string; function: { name: string; arguments: str
   const second = next({ run, bot, steps: [two, toolStep('one', 'ok', 'a')], now: t0 })
   ok('then the second, never the first again', second.do === 'tool' && second.call === 'b')
-  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; response: { message: { role: string; content: null; tool_calls: { id: string; function: { name: string; arguments: str
   const done = next({ run, bot, steps: [two, toolStep('one', 'ok', 'a'), toolStep('two', 'ok', 'b')], now: t0 })
   ok('and once both have answered, the model thinks', done.do === 'model')
 }
@@ -114,7 +108,6 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
   ok('a cancelled run stops before it thinks', next({ run: cancelled, bot, steps: [], now: t0 }).do === 'stop')
   /* the case that matters: the model has already asked for a tool, and somebody pressed stop.
      The tool must NOT run — it is the step that would change the world. */
-  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; response: { message: { role: string; content: null; tool_calls: { id: string; type: string; function: { name: any; arg
   const d = next({ run: cancelled, bot, steps: [askedStep('refund_order', { ref: '1042' })], now: t0 })
   ok('…and stops before running a tool it had already asked for', d.do === 'stop' && d.why === 'cancelled',
     JSON.stringify(d))
@@ -128,13 +121,11 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
   ok('…and it is the bot\'s own budget, in the money people write', limitsOf(bot, {}).spend === 25)
   ok('…which a run may be given instead', limitsOf(bot, { budget_cents: 9 }).spend === 9)
   const four = [saidStep('a'), saidStep('b'), saidStep('c'), saidStep('d')].map((s) => ({ ...s, kind: 'model' }))
-  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; response: { message: { role: string; content: any; }; }; }[]' is not assignable to type 'never[]'. Type '{ kind: strin
   ok('out of steps', next({ run, bot, steps: four, now: t0 }).why === 'steps')
   const late = { ...run, deadline_at: new Date(t0 - 1000).toISOString() }
   ok('out of time', next({ run: late, bot, steps: [], now: t0 }).why === 'time')
   ok('…but not a second before', next({ run: { ...run, deadline_at: new Date(t0 + 1000).toISOString() }, bot, steps: [], now: t0 }).do === 'model')
   const tools = [askedStep('x', {}, 'q'), toolStep('x', 1, 'q'), toolStep('x', 2, 'r'), toolStep('x', 3, 's')]
-  // @ts-expect-error TS2322, from the conversion: Type '({ kind: string; response: { message: { role: string; content: null; tool_calls: { id: string; type: string; function: { name: any; ar
   ok('out of tool calls', next({ run, bot, steps: tools, now: t0 }).why === 'tools')
 }
 
@@ -264,11 +255,8 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
     { kind: 'model', response: {} },
     { kind: 'tool', name: 'open_skill', request: { args: { name: 'refunds' } }, response: { result: { skill: 'refunds' } } },
   ]
-  // @ts-expect-error TS2345, from the conversion: Argument of type '({ kind: string; response: { result?: undefined; }; name?: undefined; request?: undefined; } | { kind: string; name: strin
   ok('what has been opened is read off the steps', openedSkills(steps).has('refunds'))
-  // @ts-expect-error TS2345, from the conversion: Argument of type '({ kind: string; response: { result?: undefined; }; name?: undefined; request?: undefined; } | { kind: string; name: strin
   ok('…and nothing else', !openedSkills(steps).has('shipping'))
-  // @ts-expect-error TS2322, from the conversion: Type '{ kind: string; name: string; error: string; request: { args: { name: string; }; }; }' is not assignable to type 'never'.
   ok('a failed open does not count', !openedSkills([{ kind: 'tool', name: 'open_skill', error: 'no', request: { args: { name: 'x' } } }]).has('x'))
   ok('nothing opened is nothing', openedSkills([]).size === 0)
 }
@@ -299,8 +287,7 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
   ok('the builtins are exactly the ones we meant', Object.keys(bodies).sort().join(',') === TOOLS.slice().sort().join(','),
     Object.keys(bodies).sort().join(',') + '  wanted: ' + TOOLS.slice().sort().join(','))
 
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'unknown' is not assignable to parameter of type 'string'.
-  const personal = Object.entries(bodies).filter(([, b]) => /personal: true/.test(b)).map(([n]) => n)
+  const personal = Object.entries(bodies as Record<string, string>).filter(([, b]) => /personal: true/.test(b)).map(([n]) => n)
   ok('there is a personal tool to check', personal.length >= 1, personal.join(','))
   /* ONE tool for the person, not one per fact about them. Three of these was three round trips for
      "tell me about this person" and three places for the same mistake to live. */

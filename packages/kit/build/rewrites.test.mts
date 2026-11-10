@@ -193,8 +193,7 @@ try {
   if (hasRule('/api/desk/*')) await ok("Chatwoot's own SDK, given <site>/api/desk, reaches the desk", async () => {
     const { default: mod } = await import('@figuro/chatwoot-sdk')
     const Client = mod.default
-    // @ts-expect-error TS2739, from the conversion: Type '{ basePath: string; token: string; }' is missing the following properties from type 'ChatwootAPIConfig': with_credentials, credentials
-    const client = new Client({ config: { basePath: base + '/api/desk', token: 'not-a-key' } })
+    const client = new Client({ config: { basePath: base + '/api/desk', token: 'not-a-key' } as any })   /* only what the client reads to make the call */
     let answered: any = null
     try { await client.conversations.list({ accountId: 1 }) } catch (e) { answered = e }
     assert.ok(answered, 'an unauthenticated call is refused')

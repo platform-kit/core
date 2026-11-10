@@ -154,12 +154,11 @@ try {
 
   /* ---------------------------------------------------------------- not for a reader */
   ok('a reader is refused the support inbox outright', (await reader.sb.rpc('support_inbox', { p_status: 'open' })).data === null)
-  const rChat: any = (await reader.sb.rpc('chat_inbox')).data || []
+  const rChat: any = (await reader.sb.rpc('chat_inbox')).data as any[] | null || []
   ok('…and sees none of the coaching threads', !rChat.some((c: { id: any }) => c.id === chatConv))
   ok('…no message of the guest\'s', ((await reader.sb.from('support_messages').select('id').eq('conversation_id', supportConv)).data || []).length === 0)
   ok('…no conversation of the guest\'s', ((await reader.sb.from('support_conversations').select('id').eq('id', supportConv)).data || []).length === 0)
-  // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-  ok('…no room of the staff\'s', !((await reader.sb.rpc('space_unread')).data || []).some((x: { channel: string }) => x.channel === chan!.id))
+  ok('…no room of the staff\'s', !((await reader.sb.rpc('space_unread')).data as any[] | null || []).some((x: { channel: string }) => x.channel === chan!.id))
   ok('…and the channel\'s history is refused', (await reader.sb.rpc('space_history', { p_channel: chan!.id })).data === null)
 
   /* ---------------------------------------------------------------- provider conversations have only a private desk mark */

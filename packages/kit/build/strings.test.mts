@@ -35,12 +35,10 @@ const byScope = Object.fromEntries(merged.map((e) => [e.scope, e]))
 ok('every theme scope is in the merged collection', Object.keys(T).every((s) => byScope[s]))
 ok('every site scope is in the merged collection', Object.keys(S).every((s) => byScope[s]))
 let lost = []
-// @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): [string, unknown][]', gave the followi
-for (const [scope, t] of Object.entries(T)) for (const [gk, keys] of Object.entries((t as any).groups)) for (const [k, fields] of Object.entries(keys)) for (const f of Object.keys(fields)) if (!(byScope[scope].groups[gk] && byScope[scope].groups[gk][k] && f in byScope[scope].groups[gk][k])) lost.push(`${scope}.${gk}.${k}.${f}`)
+for (const [scope, t] of Object.entries(T)) for (const [gk, keys] of Object.entries((t as any).groups as Record<string, Record<string, Record<string, any>>>)) for (const [k, fields] of Object.entries(keys)) for (const f of Object.keys(fields)) if (!(byScope[scope].groups[gk] && byScope[scope].groups[gk][k] && f in byScope[scope].groups[gk][k])) lost.push(`${scope}.${gk}.${k}.${f}`)
 ok(`no field of the theme's defaults is lost in the merge${lost.length ? ' — ' + lost.slice(0, 5).join(' ') : ''}`, lost.length === 0)
 let overwritten = []
-// @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): [string, unknown][]', gave the followi
-for (const [scope, s] of Object.entries(S)) for (const [gk, keys] of Object.entries((s as any).groups)) for (const [k, fields] of Object.entries(keys)) for (const [f, v] of Object.entries(fields)) if (byScope[scope].groups[gk][k][f] !== v) overwritten.push(`${scope}.${gk}.${k}.${f}`)
+for (const [scope, s] of Object.entries(S)) for (const [gk, keys] of Object.entries((s as any).groups as Record<string, Record<string, Record<string, any>>>)) for (const [k, fields] of Object.entries(keys)) for (const [f, v] of Object.entries(fields)) if (byScope[scope].groups[gk][k][f] !== v) overwritten.push(`${scope}.${gk}.${k}.${f}`)
 ok(`no word of the site's is overwritten by a default${overwritten.length ? ' — ' + overwritten.slice(0, 5).join(' ') : ''}`, overwritten.length === 0)
 const spacesRail = byScope.spaces.groups.rail.main
 ok('the Spaces rail names Social Comments and Social Messages separately',
@@ -93,8 +91,7 @@ ok('the merged entries carry no file path into the bundle', merged.every((e) => 
       lines.push('## ' + g, '')
       for (const [k, fields] of Object.entries(keys)) {
         lines.push('### ' + k, '')
-        // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(o: ArrayLike<unknown> | { [s: string]: unknown; }): [string, unknown][]', gave the followi
-        for (const [fk, fv] of Object.entries(fields)) lines.push(fk + ': ' + fv)
+        for (const [fk, fv] of Object.entries(fields as Record<string, string>)) lines.push(fk + ': ' + fv)
         lines.push('')
       }
     }

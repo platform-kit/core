@@ -13,7 +13,7 @@ sources:
     package.json,
     packages/kit/build/sites.mts,
   ]
-reviewed: 2026-11-08
+reviewed: 2026-11-10
 ---
 
 A site is an independently configured project built with PlatformKit. It contains its own package manifest and lockfile, `platformkit.config.js`, content, and any code or data it registers. The PlatformKit workspace also contains generic example sites; copy one as a starting point, then keep the new project's code and content in its own repository.

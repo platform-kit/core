@@ -7,11 +7,13 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireStack, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
+/* a database function the test names by a variable: one of the schema's */
+type FnName = keyof Database['public']['Functions']
 
 const S: any = requireStack('member-panels-db')
 if (!(await moduleOn('spaces'))) { notHere('member-panels-db', 'the spaces module is off: there is no member card'); process.exit(0) }
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(detail).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
 const service = createClient<Database>(S.api, S.service, O)
 const as = async (email: string) => { const c = createClient<Database>(S.api, S.anon, O); const { error } = await c.auth.signInWithPassword({ email, password: 'password123' }); return error ? null : c }
@@ -26,33 +28,26 @@ const { data: probe } = await service.from('purchases').insert({ user_id: buyerI
 
 try {
   for (const fn of ['member_read', 'member_bought']) {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type '"public_profile" | "access_allows" | "achievements_of" | "admin_content" |
-    const own = await buyer.rpc(fn, { p_user: buyerId })
+    const own = await buyer.rpc(fn as FnName, { p_user: buyerId })
     ok(`${fn}: a person reads their own`, !own.error && Array.isArray(own.data), own.error?.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type '"public_profile" | "access_allows" | "achievements_of" | "admin_content" |
-    const staff = await admin.rpc(fn, { p_user: buyerId })
+    const staff = await admin.rpc(fn as FnName, { p_user: buyerId })
     ok(`${fn}: staff read anybody's`, !staff.error && Array.isArray(staff.data), staff.error?.message)
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'string' is not assignable to parameter of type '"public_profile" | "access_allows" | "achievements_of" | "admin_content" |
-    const other = await member.rpc(fn, { p_user: buyerId })
+    const other = await member.rpc(fn as FnName, { p_user: buyerId })
     ok(`${fn}: anybody else is answered as somebody with nothing to show`, !other.error && Array.isArray(other.data) && other.data.length === 0, JSON.stringify(other.data))
   }
-  // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string | null'. Type 'undefined' is not assignable to type 'string | null'.
-  const bought: any = (await buyer.rpc('member_bought', { p_user: buyerId })).data || []
+  const bought: any = (await buyer.rpc('member_bought', { p_user: buyerId! })).data as any[] | null || []
   ok('Bought holds the person\'s paid purchase', bought.some((p: { sku: string; }) => p.sku === 'member-panels-probe'), JSON.stringify(bought).slice(0, 200))
   ok('…with nothing of a payment provider\'s or a card\'s', !JSON.stringify(bought).match(/cs_|pi_|stripe|card/i))
 
-  // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string | null'. Type 'undefined' is not assignable to type 'string | null'.
-  const working = await member.rpc('member_working', { p_user: buyerId })
+  const working = await member.rpc('member_working', { p_user: buyerId! })
   ok('member_working: anybody else is answered as nothing', !working.error && working.data === null, JSON.stringify(working.data))
 
   /* one source: the card's Bought is the admin's purchases, paid, newest first, the first eight */
-  // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string | null'. Type 'undefined' is not assignable to type 'string | null'.
-  const person: any = (await admin.rpc('admin_person', { p_user: buyerId })).data
+  const person: any = (await admin.rpc('admin_person', { p_user: buyerId! })).data
   const fromAdmin = (person?.purchases || []).filter((p: { status: string; }) => p.status === 'paid').slice(0, 8).map((p: { id: any; }) => p.id)
   ok('the card and the admin list the same purchases in the same order', JSON.stringify(bought.map((p: { id: any; }) => p.id)) === JSON.stringify(fromAdmin), `${JSON.stringify(bought.map((p: { id: any; }) => p.id))} vs ${JSON.stringify(fromAdmin)}`)
 
-  // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string | null'. Type 'undefined' is not assignable to type 'string | null'.
-  const direct = await member.rpc('person_purchases', { p_user: buyerId })
+  const direct = await member.rpc('person_purchases', { p_user: buyerId! })
   ok('the one source is no client\'s to call', !!direct.error, JSON.stringify(direct.data))
 } finally {
   if (probe) await service.from('purchases').delete().eq('id', probe.id)

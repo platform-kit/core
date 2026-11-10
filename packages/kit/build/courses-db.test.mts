@@ -16,7 +16,7 @@ import type { Database } from '../supabase/functions/_shared/database.types.js'
 const S: any = requireStack('courses-db')
 if (!(await moduleOn('courses'))) { notHere('courses-db', 'the courses module is off'); process.exit(0) }
 let pass = 0, fail = 0
-const ok = (msg: string, cond: boolean|null, detail = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(typeof detail === 'string' ? detail : JSON.stringify(detail)).slice(0, 300) : '')) } }
+const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + String(typeof detail === 'string' ? detail : JSON.stringify(detail)).slice(0, 300) : '')) } }
 const O = { auth: { persistSession: false, autoRefreshToken: false } }
 const service = createClient<Database>(S.api, S.service, O)
 const anon = createClient<Database>(S.api, S.anon, O)
@@ -54,7 +54,6 @@ const backdate = (course: string, user: any, days: number) => service.from('enro
 
 try {
   const pushed = await projectCourses({ courses, db: service })
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ courses: number; lessons: number; unpublished: number; refused: string[]; }' is not assignable to parameter of type 'str
   ok('the declaration is projected', pushed.courses === 2 && !pushed.refused.length, pushed)
 
   /* who gets in, and the outline anybody may read */
@@ -100,7 +99,6 @@ try {
   ok('a quiz not passed is no quiz passed', (await passes()) === 0)
   tries.push(await attempt(4, true))
   const done = await call(member, 'course_state', { p_course: FREE })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'number | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 'string 
   ok('the first pass records a quiz_passed event', (await passes()) === 1, await passes())
   if (awards) ok('…and earns that quiz’s achievement', !!(await service.from('user_achievements').select('slug').eq('user_id', memberId!).eq('slug', AWARD).maybeSingle()).data)
   ok('passing the form finishes its lesson as the response completes', done.lessons[2].done === true)
@@ -108,7 +106,6 @@ try {
   tries.push(await attempt(1, false))
   ok('a worse attempt afterwards undoes nothing', (await call(member, 'course_state', { p_course: FREE })).lessons[2].done === true)
   tries.push(await attempt(5, true))
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'number | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 'string 
   ok('passing again records no second event', (await passes()) === 1, await passes())
   ok('every required lesson finished: the course is complete (the optional session not needed)', done.enrollment && done.enrollment.completed_at && done.done === done.total, done)
   const scores = (await call(admin, 'admin_course_enrollments', { p_course: FREE })).people.find((p: { email: string }) => p.email === 'member@example.com')
@@ -119,7 +116,6 @@ try {
   ok('anybody holding the certificate\'s address can check it', cert && cert.course === 'Free one' && cert.slug === FREE && !!cert.name)
   ok('a made-up address is no certificate', (await call(anon, 'certificate_public', { p_id: 'nothing-here' })) === null)
   const { count: events } = await service.from('events').select('*', { count: 'exact', head: true }).eq('type', 'course_completed').eq('user_id', memberId!).contains('props', { course: FREE })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'number | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 'string 
   ok('finishing is an event, for a site\'s achievement rule', events === 1, events)
   const { data: rule } = await service.from('achievements').select('slug').eq('event', 'course_completed').limit(1).maybeSingle()
   if (rule) {
@@ -154,31 +150,25 @@ try {
   ok('a course nobody gave them is refused, not enrolled', (await call(other, 'course_enroll', { p_course: SOLD })).error === 'no-access')
 
   /* the emails owed: a drip lesson that opened after somebody started, once, and a course finished, once */
-  const due = (await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
+  const due = (await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data as any[] | null || []
   ok('a finished course is owed its email', due.some((r) => r.course === FREE && r.lesson === '*complete' && r.user_id === memberId), due)
   const lessonDue = due.filter((r) => r.user_id === memberId && r.course === FREE && r.lesson !== '*complete')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
   ok('a finished course owes no lesson emails', lessonDue.length === 0, lessonDue)
   await call(other, 'course_enroll', { p_course: FREE })
   await call(other, 'course_complete', { p_course: FREE, p_lesson: 'a' })
   await backdate(FREE, await idOf('member2@example.com'), 3)
-  const owed = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r) => r.course === FREE && r.lesson !== '*complete' && r.email === 'member2@example.com')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
+  const owed = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data as any[] | null || []).filter((r) => r.course === FREE && r.lesson !== '*complete' && r.email === 'member2@example.com')
   ok('a lesson released after somebody started is owed, the earliest first, one at a time', owed.length === 1 && owed[0].lesson === 'b', owed)
   const { data: e2 } = await service.from('enrollments').select('id').eq('course', FREE).eq('user_id', (await idOf('member2@example.com'))!).single()
   await service.from('course_notices').insert({ enrollment: (e2 as any).id, lesson: 'b' })
   await call(other, 'course_complete', { p_course: FREE, p_lesson: 'b' })
   await backdate(FREE, await idOf('member2@example.com'), 5)
-  const sameDay = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r) => r.email === 'member2@example.com' && r.lesson !== '*complete')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
+  const sameDay = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data as any[] | null || []).filter((r) => r.email === 'member2@example.com' && r.lesson !== '*complete')
   ok('one lesson email a day: the next waits for tomorrow', sameDay.length === 0, sameDay)
   await service.from('course_notices').update({ sent_at: new Date(Date.now() - 86400000).toISOString() }).eq('enrollment', (e2 as any).id)
-  const nextDay = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data || []).filter((r) => r.email === 'member2@example.com' && r.lesson !== '*complete')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ certificate_id: string; course: string; course_title: string; email: string; enrollment: string; lesson: string; lesson_
+  const nextDay = ((await service.rpc('course_notices_due', { p_late_hours: 24 * 30 })).data as any[] | null || []).filter((r) => r.email === 'member2@example.com' && r.lesson !== '*complete')
   ok('…and never the same lesson twice', nextDay.length === 1 && nextDay[0].lesson === 'c', nextDay)
   const fn = await fetch(`${S.functions}/course-notify`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${S.anon}` }, body: JSON.stringify({ action: 'send', dry: true }) })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'number' is not assignable to parameter of type 'string'.
   ok('course-notify answers only the service', fn.status === 401, fn.status)
 
   /* the member card, the staff's view */
@@ -192,34 +182,27 @@ try {
   ok('a reader cannot read anybody else\'s enrolment rows', ((await member.from('enrollments').select('user_id').eq('course', SOLD)).data || []).length === 0)
 
   /* a space filled by a course's people */
-  // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string | null'. Type 'undefined' is not assignable to type 'string | null'.
-  ok('a space\'s rule matches somebody enrolled in the course', (await service.rpc('space_fill_matches', { p_user: memberId, p_fill: { course: FREE } })).data === true)
-  // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string | null'. Type 'undefined' is not assignable to type 'string | null'.
-  ok('…and not somebody who is not', (await service.rpc('space_fill_matches', { p_user: buyerId, p_fill: { course: FREE } })).data === false)
-  // @ts-expect-error TS2322, from the conversion: Type 'string | undefined' is not assignable to type 'string | null'. Type 'undefined' is not assignable to type 'string | null'.
-  ok('…nor somebody outside the cohort the rule names', (await service.rpc('space_fill_matches', { p_user: memberId, p_fill: { course: FREE, cohort: 'spring' } })).data === false)
+  ok('a space\'s rule matches somebody enrolled in the course', (await service.rpc('space_fill_matches', { p_user: memberId!, p_fill: { course: FREE } })).data === true)
+  ok('…and not somebody who is not', (await service.rpc('space_fill_matches', { p_user: buyerId!, p_fill: { course: FREE } })).data === false)
+  ok('…nor somebody outside the cohort the rule names', (await service.rpc('space_fill_matches', { p_user: memberId!, p_fill: { course: FREE, cohort: 'spring' } })).data === false)
 
   /* a lesson of a kind the site registers: written by the push, finished by the reader as a text lesson is */
   const OWN = `courses-db-own-${STAMP}`
   const own = parseCourse(OWN, file(`title: Own kind\naccess: { free: true }\nlessons:\n  - { key: rate, title: Rate it, kind: self-rating, ref: How sure are you? }`), { kinds: { 'self-rating': { check: null } } })
   const ownPush = await projectCourses({ courses: [...courses, own], db: service })
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ courses: number; lessons: number; unpublished: number; refused: string[]; }' is not assignable to parameter of type 'str
   ok('a course with a site kind\'s lesson is written', !ownPush.refused.length && (await service.from('course_lessons').select('kind').eq('course', OWN).single()).data?.kind === 'self-rating', ownPush)
   await call(member, 'course_enroll', { p_course: OWN })
   const ownDone = await call(member, 'course_complete', { p_course: OWN, p_lesson: 'rate' })
   ok('…the reader finishes it, and the course with it', ownDone.done === 1 && ownDone.lessons[0].done === true && !!ownDone.enrollment.completed_at, ownDone)
   const { data: ownRow } = await service.from('lesson_progress').select('how, enrollments!inner(course)').eq('enrollments.course', OWN).single()
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{ how: string; enrollments: { course: string; }; } | null' is not assignable to parameter of type 'string | undefined'. Ty
   ok('…recorded as marked, as a text lesson is', ownRow && ownRow.how === 'marked', ownRow)
   const { error: oddKind } = await service.from('course_lessons').insert({ course: OWN, key: 'odd', position: 2, title: 'Odd', kind: 'Not a kind', ref: 'x' })
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'PostgrestError | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 
   ok('the database refuses a kind that is no kind\'s name', !!oddKind && /course_lessons_kind_check/.test(oddKind.message), oddKind)
 
   /* a course whose file has gone */
   await projectCourses({ courses: [courses[1]], db: service })
   ok('a course whose file has gone is unpublished, not deleted', (await call(member, 'course_state', { p_course: FREE })) === null)
   const { count: kept } = await service.from('enrollments').select('*', { count: 'exact', head: true }).eq('course', FREE)
-  // @ts-expect-error TS2345, from the conversion: Argument of type 'number | null' is not assignable to parameter of type 'string | undefined'. Type 'null' is not assignable to type 'string 
   ok('…and its enrolments and certificates are kept', kept === 2, kept)
 } finally {
   for (const id of purchases) await service.from('purchases').delete().eq('id', id)

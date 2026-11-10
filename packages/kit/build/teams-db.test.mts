@@ -96,8 +96,7 @@ try {
   ok('a member can', Array.isArray(seen.data) && seen.data.length > 0)
   ok('and what they see is a name and a face, never an address', (seen.data as any)!.every((p: any) => !('email' in p)))
   const theirs = await asMember.rpc('my_teams')
-  // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-  ok('a person sees their own teams and how they got there', (theirs.data || []).some((x: { slug: any; source: string }) => x.slug === t && x.source === 'fill'))
+  ok('a person sees their own teams and how they got there', ((theirs.data as any[] | null) || []).some((x: { slug: any; source: string }) => x.slug === t && x.source === 'fill'))
 
   /* --- AND AN ADMINISTRATOR READS EVERY TEAM, published or not. It is what lets the editor tell a
      team nobody is in from a team that is not in the database yet — which is the ordinary state in

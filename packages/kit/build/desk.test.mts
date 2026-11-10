@@ -102,7 +102,6 @@ const SUPPORT_ROWS = [
   { id: 's-resolved', status: 'resolved', created_at: ago(900), last_message_at: ago(800),
     contact: { id: 'k3', user_id: 'u3', name: 'Bo', kind: 'user' }, last: null, unread: 0, waiting_since: ago(800) },
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; status: string; assignee_id: null; created_at: string; last_message_at: string; contact: { id: string; user
 const sup: any = support.rowsOf(SUPPORT_ROWS, { wait: 15 })
 ok('support lists what waits on the desk and what was finished with, and nothing between',
   eq(sup.map((r: { id: any }) => r.id), ['s-open', 's-resolved']), JSON.stringify(sup.map((r: { id: any; resolved: any }) => [r.id, r.resolved])))
@@ -111,12 +110,9 @@ ok('a support row carries the desk\'s wait as its promise', sup[0].due === 15)
 ok('a guest is a guest, and the page they are on is the detail', sup[0].person.kind === 'guest' && sup[0].detail === '/store')
 ok('a support row names its source and keys on it', sup[0].source === 'support' && sup[0].key === 'support:s-open')
 ok('the last line is theirs, not ours', sup[0].last.mine === false && sup[0].last.body === 'is this in stock?')
-// @ts-expect-error TS2322, from the conversion: Type '{ waiting_since: string; last: { author: string; body: string; created_at: string; }; id: string; status: string; assignee_id: null; c
 const supCustomer = support.rowsOf([{ ...SUPPORT_ROWS[1], waiting_since: ago(5), last: { author: 'contact', body: 'hi', created_at: ago(5) } }], { wait: 15 })
 ok('a signed-in reader who has paid is a customer', supCustomer[0].person.kind === 'customer' && supCustomer[0].person.name === 'Ada')
-// @ts-expect-error TS2322, from the conversion: Type '{ id: string; status: string; waiting_since: string; contact: { kind: string; name: string; }; last: null; }' is not assignable to typ
 ok('a reader who has not is a reader', support.rowsOf([{ id: 'x', status: 'open', waiting_since: ago(5), contact: { kind: 'user', name: 'Bo' }, last: null }], {})[0].person.kind === 'reader')
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; status: string; assignee_id: null; created_at: string; last_message_at: string; contact: { id: string; user
 ok('with no policy in hand a support thread still waits, promising nothing', support.rowsOf(SUPPORT_ROWS, {})[0].due === 0)
 
 /* --- comments: the conversations no room owns, and only those --- */
@@ -154,7 +150,6 @@ const PRODUCTS = [
   { kind: 'session', 'chat-hours': 48 },
   { kind: 'book' },
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ kind: string; tier: string; 'chat-hours': number; } | { kind: string; 'chat-hours': number; tier?: undefined; } | { kin
 const table = coaching.hoursTable(PRODUCTS)
 ok('a tier keeps the kinder of two promises', table.tier.inner === 48 && table.tier.basic === 72)
 ok('a paid session keeps the shortest', table.session === 48)
@@ -169,7 +164,6 @@ const CHAT_ROWS = [
   { id: 'c-done', created_at: ago(900), last_message_at: ago(5), awaiting_since: null, unread: 0,
     peer: { id: 'u6', name: 'Lee', tiers: [], session_chat: false }, last: { sender_id: 'me', body: 'anytime', created_at: ago(5) } },
 ]
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; created_at: string; last_message_at: string; awaiting_since: string; unread: number; peer: { id: string; na
 const coa = coaching.rowsOf(CHAT_ROWS, { products: PRODUCTS, rank, me: 'me' })
 ok('coaching lists only the threads whose last word is theirs', eq(coa.map((r) => r.id), ['c-wait']))
 ok('a coaching row carries the tier\'s promise in minutes', coa[0].due === 72 * 60)
@@ -234,15 +228,12 @@ ok('a source narrows either of them', eq(filterDesk(mixed, 'support', false).map
 ok('what is finished with is not still owed', deskBadge(mixed, now).waiting === 2, JSON.stringify(deskBadge(mixed, now)))
 
 /* --- the adapters carry it --- */
-// @ts-expect-error TS2322, from the conversion: Type '{ id: string; status: string; created_at: string; last_message_at: string; contact: { kind: string; }; last: { author: string; body: s
 const supDone = support.rowsOf([{ id: 's-done', status: 'resolved', created_at: ago(900), last_message_at: ago(80),
   contact: { kind: 'guest' }, last: { author: 'agent', body: 'sorted', created_at: ago(80) }, unread: 0, waiting_since: ago(900) }], { wait: 15 })
 ok('a resolved support thread is on the desk as finished, not as waiting',
   supDone.length === 1 && supDone[0].resolved === true && supDone[0].waiting_since === null)
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; created_at: string; last_message_at: string; awaiting_since: string; unread: number; peer: { id: string; na
 const coaDone = coaching.rowsOf(CHAT_ROWS, { products: PRODUCTS, rank, me: 'me', marks: doneSet([{ source: 'coaching', ref: 'c-wait', resolved_at: ago(10) }]) })
 ok('a coaching thread marked after their last word is finished with', coaDone[0].resolved === true)
-// @ts-expect-error TS2345, from the conversion: Argument of type '({ id: string; created_at: string; last_message_at: string; awaiting_since: string; unread: number; peer: { id: string; na
 const coaBack = coaching.rowsOf(CHAT_ROWS, { products: PRODUCTS, rank, me: 'me', marks: doneSet([{ source: 'coaching', ref: 'c-wait', resolved_at: ago(300) }]) })
 ok('and one marked before it is waiting again', coaBack[0].resolved === false)
 

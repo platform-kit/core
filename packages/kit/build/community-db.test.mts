@@ -115,8 +115,7 @@ try {
     const after = await roomsOf(fresh.id)
     ok('joining a space puts you in its open rooms', after.includes(comm.channel) && after.length > before.length)
     ok('and the rail has something in it at once',
-      // @ts-expect-error TS2339, from the conversion: Property 'some' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'some' does not ex
-      ((await fresh.sb.rpc('space_unread')).data || []).some((r: { channel: string }) => r.channel === comm.channel))
+      ((await fresh.sb.rpc('space_unread')).data as any[] | null || []).some((r: { channel: string }) => r.channel === comm.channel))
 
     /* a private room is still joined by being put in it */
     const { data: shut } = await service.from('channels')
@@ -172,11 +171,10 @@ try {
   /* an invitation is not a rule, and a rule must not take back what a person was invited to */
   await service.rpc('space_sync_members')
   ok('somebody who joined by invitation outlives a sweep', ((await out.sb.from('spaces').select('slug').eq('slug', COMM)).data || []).length === 1)
-  const rows: any = (await one.sb.rpc('space_invites_of', { p_space: comm.id })).data || []
+  const rows: any = (await one.sb.rpc('space_invites_of', { p_space: comm.id })).data as any[] | null || []
   ok('the invitations a space has out are listed for whoever may make one', rows.length === 2)
   ok('and the token is never among them', !JSON.stringify(rows).includes(t1) && !JSON.stringify(rows).includes('token'))
-  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-  ok('somebody who may not invite is shown none', !((await two.sb.rpc('space_invites_of', { p_space: comm.id })).data || []).length)
+  ok('somebody who may not invite is shown none', !((await two.sb.rpc('space_invites_of', { p_space: comm.id })).data as any[] | null || []).length)
 
   /* ---- a space filled more than one way ---- */
   /* `one` and `two` hold the community's entitlement; `nobody` (reader1) holds nothing and is on no
@@ -217,27 +215,25 @@ try {
   ok('a member may report a message they can read', !!r1)
   const r2 = (await out.sb.rpc('space_report', { p_message: said!.id, p_reason: 'spam' })).data
   ok('reporting it twice is one report, not two', r1 === r2)
-  const queue: any = (await one.sb.rpc('space_reports', { p_space: comm.id })).data || []
+  const queue: any = (await one.sb.rpc('space_reports', { p_space: comm.id })).data as any[] | null || []
   ok('the queue shows it once to whoever may moderate', queue.filter((q: { message: string }) => q.message === said!.id).length === 1, JSON.stringify(queue.map((q: { reason: any }) => q.reason)))
   ok('and carries what was said and who said it', queue.some((q: { body: string; about: any }) => q.body === 'Something worth reporting.' && !!q.about))
-  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-  ok('somebody who may not moderate is shown no queue', !((await two.sb.rpc('space_reports', { p_space: comm.id })).data || []).length)
+  ok('somebody who may not moderate is shown no queue', !((await two.sb.rpc('space_reports', { p_space: comm.id })).data as any[] | null || []).length)
 
   /* ---- a message removed and a member muted ---- */
   const rem = (await one.sb.rpc('space_moderate', { p_kind: 'remove-message', p_space: comm.id, p_message: said!.id, p_reason: 'spam' })).data
   ok('a moderator may remove a message', !!rem)
   const after: any = (await service.from('space_messages').select('deleted_at, body').eq('id', said!.id).single()).data
   ok('and it reads as withdrawn rather than vanishing', !!after.deleted_at && !!after.body)
-  const closed: any = (await one.sb.rpc('space_reports', { p_space: comm.id })).data || []
+  const closed: any = (await one.sb.rpc('space_reports', { p_space: comm.id })).data as any[] | null || []
   ok('the report about it is answered by the act', !closed.some((q: { message: string }) => q.message === said!.id))
 
   const mute = (await one.sb.rpc('space_moderate', { p_kind: 'mute', p_space: comm.id, p_user: two.id, p_reason: 'spam', p_minutes: 1440 })).data
   ok('a moderator may mute a member for a span', !!mute)
-  const mine: any = (await two.sb.rpc('space_my_record')).data || []
+  const mine: any = (await two.sb.rpc('space_my_record')).data as any[] | null || []
   ok('the member is told it was done and when it ends', mine.some((m: { kind: string; until: any }) => m.kind === 'mute' && !!m.until))
   ok('and is told nothing done to anybody else', mine.every((m: { kind: string }) => m.kind !== 'report'))
-  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-  ok('somebody it was not done to reads none of it', !((await nobody.sb.rpc('space_my_record')).data || []).length)
+  ok('somebody it was not done to reads none of it', !((await nobody.sb.rpc('space_my_record')).data as any[] | null || []).length)
   ok('a record cannot be changed by the person it is about', !!(await two.sb.from('space_moderation').update({ until: null }).eq('id', mute!)).error
     || !!(await service.from('space_moderation').select('until').eq('id', mute!).single()).data!.until)
   ok('nor read as a table by anybody', !((await one.sb.from('space_moderation').select('id')).data || []).length)
@@ -263,19 +259,17 @@ try {
   ok('and every word they wrote is still there', kept === before && before > 0, `${kept} of ${before}`)
 
   /* ---- the acts a space has had done in it ---- */
-  const record: any = (await one.sb.rpc('space_record', { p_space: comm.id })).data || []
+  const record: any = (await one.sb.rpc('space_record', { p_space: comm.id })).data as any[] | null || []
   ok('the acts are listed for whoever may moderate, with who did each and why', record.length >= 3 && record.every((m: { kind: string }) => m.kind !== 'report'), JSON.stringify(record.map((m: { kind: any }) => m.kind)))
-  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-  ok('and are not listed for anybody else', !((await nobody.sb.rpc('space_record', { p_space: comm.id })).data || []).length)
+  ok('and are not listed for anybody else', !((await nobody.sb.rpc('space_record', { p_space: comm.id })).data as any[] | null || []).length)
 
   /* ---- the directory says only what is already public ---- */
-  const people: any = (await one.sb.rpc('space_people', { p_space: comm.id })).data || []
+  const people: any = (await one.sb.rpc('space_people', { p_space: comm.id })).data as any[] | null || []
   ok('a member sees who else is in their space', people.length >= 1, JSON.stringify(people.map((p: { name: any }) => p.name)))
   const keys = new Set(people.flatMap((p: any) => Object.keys(p)))
   ok('and no address is disclosed', !keys.has('email'), [...keys].join(', '))
   ok('nor anything bought', !keys.has('purchases') && !keys.has('tier'))
-  // @ts-expect-error TS2339, from the conversion: Property 'length' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'length' does no
-  ok('somebody outside the space is shown nobody', !((await nobody.sb.rpc('space_people', { p_space: comm.id })).data || []).length)
+  ok('somebody outside the space is shown nobody', !((await nobody.sb.rpc('space_people', { p_space: comm.id })).data as any[] | null || []).length)
 
 
 
@@ -312,8 +306,7 @@ try {
     (await staff.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data === null)
   await service.from('space_members').insert({ space_id: comm.id, user_id: staff.id, source: 'manual' })
   ok('and once they are in it, they are told they may see the second half',
-    // @ts-expect-error TS2339, from the conversion: Property 'more' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'more' does not ex
-    ((await staff.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data || {}).more === true)
+    ((await staff.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data as Record<string, any> | null || {}).more === true)
   ok('somebody outside the space is answered nothing at all',
     (await nobody.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data === null)
   ok('and so is a caller asking about somebody who is not in it',
@@ -330,26 +323,22 @@ try {
   const line = 'A line about me, ' + mark
   ok('a person may write a line about themselves', !(await out.sb.from('profiles').update({ about: line }).eq('id', out.id)).error)
   ok('and it is shown to somebody in the space with them',
-    // @ts-expect-error TS2339, from the conversion: Property 'about' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'about' does not 
-    ((await one.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data || {}).about === line)
+    ((await one.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data as Record<string, any> | null || {}).about === line)
   ok('and in the directory beside their name',
-    // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-    (((await one.sb.rpc('space_people', { p_space: comm.id })).data || []).find((p: { id: string }) => p.id === out.id) || {}).about === line)
+    (((await one.sb.rpc('space_people', { p_space: comm.id })).data as any[] | null || []).find((p: { id: string }) => p.id === out.id) || {}).about === line)
   const stolen = await one.sb.from('profiles').update({ about: 'written by somebody else' }).eq('id', out.id)
   ok('and nobody else may write it for them',
-    // @ts-expect-error TS2339, from the conversion: Property 'about' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'about' does not 
-    !!stolen.error || ((await one.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data || {}).about === line)
+    !!stolen.error || ((await one.sb.rpc('space_member_card', { p_space: comm.id, p_user: out.id })).data as Record<string, any> | null || {}).about === line)
   const long = await out.sb.from('profiles').update({ about: 'x'.repeat(281) }).eq('id', out.id)
   ok('a line past the limit is refused by the database, not only by the browser', !!long.error, long.error && long.error.message)
 
   /* ---- what a reader could be in ---- */
-  const could: any = (await nobody.sb.rpc('space_discover')).data || []
+  const could: any = (await nobody.sb.rpc('space_discover')).data as any[] | null || []
   ok('a reader is shown the spaces they could be in', could.some((s: { slug: string }) => s.slug === COMM) && could.some((s: { slug: string }) => s.slug === SERV), JSON.stringify(could.map((s: { slug: any }) => s.slug)))
   ok('and the staff space is never among them', !could.some((s: { slug: string }) => s.slug === 'the-team'))
   ok('each says what it would take', could.every((s: any[]) => s.fill && Object.keys(s.fill).length))
   ok('and whether it is already theirs', could.find((s: { slug: string }) => s.slug === COMM).mine === false
-    // @ts-expect-error TS2339, from the conversion: Property 'find' does not exist on type 'string | number | true | { [key: string]: Json | undefined; } | Json[]'. Property 'find' does not ex
-    && ((await one.sb.rpc('space_discover')).data || []).find((s: { slug: string }) => s.slug === COMM).mine === true)
+    && ((await one.sb.rpc('space_discover')).data as any[] | null || []).find((s: { slug: string }) => s.slug === COMM).mine === true)
 
   /* ------------------------------------------------------------------ a room with a rule of its own */
   /* The space takes the tier; the room inside it is narrower. A private room so that nothing but the

@@ -185,8 +185,7 @@ try {
     assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 160))
     const theirs = Object.values(r.body.data || {}).flat().map((x: any) => (typeof x === 'string' ? x : x.start)).sort()
     const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
-    // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string'. Type 'null' is not assignable to type 'string'.
-    await sb.auth.signInWithPassword({ email: reader, password: 'password123' })
+    await sb.auth.signInWithPassword({ email: reader!, password: 'password123' })
     const { data: app } = await sb.functions.invoke('session-slots', { body: { event: one.event, from: d1, to: d1, timeZone: 'UTC' } })
     const ours = Object.values((app && app.slots) || {}).flat().sort()
     assert.deepEqual(theirs, ours, 'the same times: ' + theirs.length + ' / ' + ours.length)
@@ -200,8 +199,7 @@ try {
     uid = b.uid; madeBookings.push(uid)
     assert.ok(uid.startsWith('ns_'), 'the site\'s own uid'); assert.equal(b.status, 'accepted'); assert.equal(b.start, new Date(first).toISOString()); assert.equal(b.attendees[0].email, reader); assert.equal(b.eventType.slug, one.slug); assert.equal(b.hosts[0].email, 'coach@example.com')
     const { data: row } = await admin.from('bookings').select('uid, user_id, provider, status, host_id, start_at').eq('uid', uid).maybeSingle()
-    // @ts-expect-error TS2538, from the conversion: Type 'null' cannot be used as an index type.
-    assert.ok(row && row.provider === 'native' && row.status === 'accepted' && row.user_id === ids[reader] && row.host_id === coach, 'the row the app would have made')
+    assert.ok(row && row.provider === 'native' && row.status === 'accepted' && row.user_id === ids[reader!] && row.host_id === coach, 'the row the app would have made')
     const { slots: after } = await cal.slots(sType, d1, d1, AMS); assert.ok(!(after[d1] || []).includes(first), 'the time is taken')
     const { slots: s2 } = await cal.slots(sType, d2, d2, AMS); const next = (s2[d2] || [])[0]; assert.ok(next)
     const moved = await cal.reschedule(uid, next, reader, 'probe')
@@ -254,8 +252,7 @@ try {
   })
   await ok('a reader\'s JWT: their own bookings, an admitted type\'s slots, 403 for one their plan does not admit', async () => {
     const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
-    // @ts-expect-error TS2322, from the conversion: Type 'string | null' is not assignable to type 'string'. Type 'null' is not assignable to type 'string'.
-    const { data: sess, error } = await sb.auth.signInWithPassword({ email: reader, password: 'password123' }); assert.ok(!error, String(error && error.message))
+    const { data: sess, error } = await sb.auth.signInWithPassword({ email: reader!, password: 'password123' }); assert.ok(!error, String(error && error.message))
     const jwt = sess.session.access_token
     const me = await call('/v2/me', {}, jwt); assert.equal(me.status, 200); assert.equal(me.body.data.email, reader)
     const mine = await call('/v2/bookings?status=cancelled', {}, jwt); assert.equal(mine.status, 200); assert.ok(mine.body.data.every((b: { attendees: any[] }) => b.attendees.some((a: { email: string|null }) => a.email === reader)), 'only their own')

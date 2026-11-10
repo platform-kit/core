@@ -209,11 +209,9 @@ await ok('the companion records the model that ANSWERED, not the one asked for',
   const llm = fakeLlm({ replies: REPLIES(area) })
   const { enrich } = pipeline({ briefs: BRIEFS, llm, write: true, maxSpend: 100 })
   await enrich('short', { store, cache: fileCache('short', { root, fs, path }) })
-  const written = store.files.get('content/companions/short.md')
+  const written = String(store.files.get('content/companions/short.md'))
   assert.ok(written, 'a companion was written')
-  // @ts-expect-error TS2769, from the conversion: No overload matches this call. Overload 1 of 2, '(value: string, regExp: RegExp, message?: Error | AssertMessageFunction | undefined): void'
   assert.match(written, /model: answering-model/, 'the model that answered')
-  // @ts-expect-error TS2345, from the conversion: Argument of type '{}' is not assignable to parameter of type 'string'.
   assert.ok(!/asked-model/.test(written), 'and not the one asked for — a stamp naming the wrong model is worse than none')
 })
 

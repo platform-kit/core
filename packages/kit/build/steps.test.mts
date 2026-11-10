@@ -133,8 +133,7 @@ await ta('a failing step stops the phase naming itself; a change list runs the m
   /* prerender (the kit's) would run first in this phase: keep it out by a change list that matches only the fixture's `one` */
   const got = await rp('site', { site: cfg, changed: ['content/a/x.md'], log: (m: any) => log.push(m) })
   assert.deepEqual(got, ['one'])
-  // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
-  assert.deepEqual(globalThis.__ran, ['one'])
+  assert.deepEqual((globalThis as any).__ran, ['one'])
   assert.equal((await loadSteps(cfg)).length, KIT_STEPS + 5)
   const projected = await rp('after', {
     site: cfg,
@@ -144,12 +143,10 @@ await ta('a failing step stops the phase naming itself; a change list runs the m
     log: (m: any) => log.push(m),
   })
   assert.deepEqual(projected, ['local-projection'])
-  // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
-  assert.deepEqual(globalThis.__ran, ['one', 'local'])
+  assert.deepEqual((globalThis as any).__ran, ['one', 'local'])
   /* every step: prerender runs the real script — so only the three, by `only` */
   await assert.rejects(() => rp('site', { site: cfg, only: ['one', 'two', 'three'], log: (m: any) => log.push(m) }), /step two \(Two\) failed: boom/)
-  // @ts-expect-error TS7017, from the conversion: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
-  assert.deepEqual(globalThis.__ran, ['one', 'local', 'one'])
+  assert.deepEqual((globalThis as any).__ran, ['one', 'local', 'one'])
   rmSync(d, { recursive: true, force: true })
 })
 

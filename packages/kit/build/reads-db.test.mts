@@ -28,7 +28,7 @@ import { statusOf, leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
-const ok = (name: string, cond: boolean, detail: string) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 const note = (s: string) => console.log('  ' + s)
 
 console.log('\nONE READ IS ONE READ\n')

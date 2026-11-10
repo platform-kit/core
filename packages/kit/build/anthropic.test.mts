@@ -12,9 +12,7 @@ const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
 /* ---- out: our messages become theirs ---- */
 {
   const said = toAnthropic([
-    // @ts-expect-error TS2322, from the conversion: Type '{ role: string; content: string; }' is not assignable to type 'never'.
     { role: 'system', content: 'You help.' },
-    // @ts-expect-error TS2322, from the conversion: Type '{ role: string; content: string; }' is not assignable to type 'never'.
     { role: 'user', content: 'what is on?' },
   ], [{ name: 'get_events', description: 'what is on', parameters: { type: 'object', properties: {} } }])
   ok('the system prompt is a field, not a turn', said.system === 'You help.' && said.messages.length === 1)
@@ -24,18 +22,13 @@ const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
   /* THE HARD CASE: a model asked for two tools at once, and both answers come back. Anthropic
      wants ONE user turn holding both results — two consecutive user turns are refused. */
   const mid = toAnthropic([
-    // @ts-expect-error TS2322, from the conversion: Type '{ role: string; content: string; }' is not assignable to type 'never'.
     { role: 'system', content: 'S' },
-    // @ts-expect-error TS2322, from the conversion: Type '{ role: string; content: string; }' is not assignable to type 'never'.
     { role: 'user', content: 'go' },
-    // @ts-expect-error TS2322, from the conversion: Type '{ role: string; content: null; tool_calls: { id: string; type: string; function: { name: string; arguments: string; }; }[]; }' is not 
     { role: 'assistant', content: null, tool_calls: [
       { id: 'a', type: 'function', function: { name: 'one', arguments: '{"x":1}' } },
       { id: 'b', type: 'function', function: { name: 'two', arguments: '{}' } },
     ] },
-    // @ts-expect-error TS2322, from the conversion: Type '{ role: string; tool_call_id: string; content: string; }' is not assignable to type 'never'.
     { role: 'tool', tool_call_id: 'a', content: '[]' },
-    // @ts-expect-error TS2322, from the conversion: Type '{ role: string; tool_call_id: string; content: string; }' is not assignable to type 'never'.
     { role: 'tool', tool_call_id: 'b', content: '{}' },
   ])
   ok('the turns alternate', eq(mid.messages.map((m: { role: any }) => m.role), ['user', 'assistant', 'user']))
@@ -45,13 +38,11 @@ const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
   ok('a result is tied to the call that asked for it', mid.messages[2].content[0].tool_use_id === 'a')
   ok('arguments arrive parsed, not as a string', eq(mid.messages[1].content[0].input, { x: 1 }))
   ok('unparseable arguments are an empty object, never a crash',
-    // @ts-expect-error TS2322, from the conversion: Type '{ role: string; content: string; }' is not assignable to type 'never'.
     eq(toAnthropic([{ role: 'user', content: 'x' }, { role: 'assistant', tool_calls: [{ id: 'z', function: { name: 'n', arguments: '{oh' } }] }])
       .messages[1].content[0].input, {}))
 
   /* it will not take a conversation that does not begin with the person */
   ok('a history starting with the assistant is trimmed to one that starts with the person',
-    // @ts-expect-error TS2322, from the conversion: Type '{ role: string; content: string; }' is not assignable to type 'never'.
     toAnthropic([{ role: 'assistant', content: 'hello' }, { role: 'user', content: 'hi' }]).messages[0].role === 'user')
   ok('nothing at all is no turns', toAnthropic([]).messages.length === 0)
 }
@@ -102,8 +93,7 @@ const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
   const real = globalThis.fetch
   const answer = (status: number, body: { error?: { message: string }|{ message: string }; content?: { type: string; text: string }[]; usage?: { input_tokens: number; output_tokens: number }; model?: string }) => ({ ok: status < 400, status, json: async () => body, text: async () => JSON.stringify(body) })
   const seen: any = []
-  // @ts-expect-error TS2322, from the conversion: Type '(url: URL | RequestInfo) => Promise<{ ok: boolean; status: number; json: () => Promise<{ error?: { message: string; } | { message: str
-  globalThis.fetch = async (url) => {
+  ;(globalThis as any).fetch = async (url: any) => {
     seen.push(String(url))
     if (String(url).includes('openai')) return answer(429, { error: { message: 'You have no credits remaining.' } })
     return answer(200, { content: [{ type: 'text', text: 'Anthropic answered.' }], usage: { input_tokens: 3, output_tokens: 2 }, model: 'claude-x' })
@@ -124,8 +114,7 @@ const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
 
     /* a malformed request stops at the first: trying again is two bills for one error */
     seen.length = 0
-    // @ts-expect-error TS2322, from the conversion: Type '(url: URL | RequestInfo) => Promise<{ ok: boolean; status: number; json: () => Promise<{ error?: { message: string; } | { message: str
-    globalThis.fetch = async (url) => { seen.push(String(url)); return answer(400, { error: { message: 'bad request' } }) }
+    ;(globalThis as any).fetch = async (url: any) => { seen.push(String(url)); return answer(400, { error: { message: 'bad request' } }) }
     let threw = null
     try {
       await ask({ providers: providersFrom({ AGENTS_LIVE: '1', OPENAI_API_KEY: 'sk-a', ANTHROPIC_API_KEY: 'sk-b' }), messages: [{ role: 'user', content: 'x' }] })

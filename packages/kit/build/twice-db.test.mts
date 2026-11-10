@@ -116,7 +116,7 @@ else {
     const at = (h: number) => new Date(Date.now() + h * 3600e3).toISOString()
     await admin.from('bookings').insert({ uid: WK, user_id: buyer.id, provider_id: giver.id, start_at: at(48), end_at: at(49), status: 'accepted', credit_id: (credit as any).id, title: 'probe' })
     cleanup.push(async () => { await admin.from('bookings').delete().eq('uid', WK); await admin.from('entitlements').delete().eq('source_id', WK) })
-    const coaches = async () => ((await as.rpc('chat_session_coaches')).data || [])
+    const coaches = async () => ((await as.rpc('chat_session_coaches')).data as any[] | null || [])
     ok('a paid session opens the chat with its coach', (await coaches()).includes(giver.id))
     const other = await as.rpc('chat_session_with', { p_member: buyer.id, p_coach: coach.id })
     ok('and with no other coach', (await coaches()).length === 1 && other.data === false, JSON.stringify({ c: await coaches(), other }))

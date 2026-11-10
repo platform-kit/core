@@ -169,8 +169,8 @@ sql_paths = ["./schemas/*.sql", "./data.sql"]
     assert.equal((await db.query('select count(*)::int as n from cron.job')).rows[0].n, initial.length)
 
     await db.query("select cron.schedule('operator-owned-job', '11 * * * *', 'select 1')")
-    const updatedModules = new Map(kitModules)
-    // @ts-expect-error TS2345, from the conversion: Argument of type '{ owns: any; key?: string | undefined; what?: string | undefined; needs?: string | null | undefined; static?: Cell | undef
+    /* modules made by hand for the test, holding only what cron reads */
+    const updatedModules = new Map<string, any>(kitModules)
     updatedModules.set('coaching', {
       ...kitModules.get('coaching'),
       owns: {
@@ -189,25 +189,22 @@ sql_paths = ["./schemas/*.sql", "./data.sql"]
     assert.ok(await getJob('chat-followups'))
     assert.ok(await getJob('operator-owned-job'))
 
-    const withRemoved = new Map(updatedModules)
+    const withRemoved = new Map<string, any>(updatedModules)
     withRemoved.set('cron-test-owner', {
       key: 'cron-test-owner',
-      // @ts-expect-error TS2740, from the conversion: Type '{ cron: { name: string; schedule: string; command: string; }[]; }' is missing the following properties from type 'Required<Owns>': rou
       owns: { cron: [{ name: 'cron-test-removed-job', schedule: '17 * * * *', command: 'select 1' }] },
     })
     await db.query(cronSql(withRemoved, { support: false }))
     assert.ok(await getJob('cron-test-removed-job'))
-    // @ts-expect-error TS2740, from the conversion: Type '{ cron: never[]; }' is missing the following properties from type 'Required<Owns>': routes, admin, schema, functions, and 2 more.
     withRemoved.set('cron-test-owner', { ...withRemoved.get('cron-test-owner'), owns: { cron: [] } })
     await db.query(cronSql(withRemoved, { support: false }))
     assert.equal(await getJob('cron-test-removed-job'), null)
     assert.ok(await getJob('operator-owned-job'))
 
     await db.query("select cron.schedule('cron-test-collision', '19 * * * *', 'select 1')")
-    const colliding = new Map(withRemoved)
+    const colliding = new Map<string, any>(withRemoved)
     colliding.set('cron-test-owner', {
       ...colliding.get('cron-test-owner'),
-      // @ts-expect-error TS2740, from the conversion: Type '{ cron: { name: string; schedule: string; command: string; }[]; }' is missing the following properties from type 'Required<Owns>': rou
       owns: { cron: [{ name: 'cron-test-collision', schedule: '20 * * * *', command: 'select 2' }] },
     })
     await assert.rejects(db.query(cronSql(colliding, { support: false })), /collides with an untracked cron\.job/)

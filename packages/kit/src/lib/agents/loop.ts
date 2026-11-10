@@ -51,7 +51,9 @@ export function limitsOf(bot: any = {}, run: any = {}) {
  *
  * `now` is passed in, never read, so a deadline is testable.
  */
-export function next({ run = {}, bot = {}, steps = [], now = Date.now() } = {}) {
+/* one step of a run: what the model said or asked, or what a tool answered; the rest of the row rides along */
+export type AgentStep = { kind: string, name?: string, request?: any, response?: any, error?: string, [k: string]: any }
+export function next({ run = {}, bot = {}, steps = [], now = Date.now() }: { run?: Record<string, any>, bot?: Record<string, any>, steps?: AgentStep[], now?: number } = {}) {
   const lim = limitsOf(bot, run)
   const spent = Number((run as any).spent_cents) || 0
 
@@ -115,7 +117,7 @@ export function skillsLine(bot: any = {}, allowed: any = null) {
 
 /* which skills this run has already opened, read off its own steps — so a resumed run on another
    machine knows exactly what the one before it had open */
-export function openedSkills(steps = []) {
+export function openedSkills(steps: AgentStep[] = []) {
   const out = new Set<string>()
   for (const s of steps) {
     if (s && (s as any).kind === 'tool' && (s as any).name === 'open_skill' && !(s as any).error) {
@@ -174,7 +176,7 @@ export const MEMORIES = ['none', 'thread', 'person', 'person+recall']
 export const recalls = (bot = {}) => memoryOf(bot) === 'person+recall'
 export const memoryOf = (bot: any = {}) => (MEMORIES.includes(bot.memory) ? bot.memory : 'thread')
 
-export function messagesFor({ run = {}, bot = {}, steps = [] } = {}) {
+export function messagesFor({ run = {}, bot = {}, steps = [] }: { run?: Record<string, any>, bot?: Record<string, any>, steps?: AgentStep[] } = {}) {
   const out = []
   const mem = memoryOf(bot)
   const here = mem === 'none' ? '' : ((run as any).state && (run as any).state.context)

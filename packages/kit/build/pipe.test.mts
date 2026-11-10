@@ -82,8 +82,7 @@ await ta('the route table: the pipe\'s endpoints and the three beside it, and no
   const routes = [...src.matchAll(/seg === '([a-z/-]+)'/g)].map((m) => m[1]).filter((v, i, a) => a.indexOf(v) === i).sort()
   assert.deepEqual(routes, ['action', 'asset', 'collections', 'drafts', 'file', 'images', 'keep', 'list', 'media', 'media-file', 'options', 'preview', 'publish', 'run', 'run/stop', 'upload', 'upload-image'])   /* drafts · publish · keep: cloud mode's, answered from the checkout as empty and no-ops */
   const theme = path.join(HERE, '../theme/src')
-  // @ts-expect-error TS7023, from the conversion: 'walk' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-  const walk = (d: fs.PathLike) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
+  const walk = (d: string): string[] => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
   const hits = walk(theme).filter((f: string) => /\.(vue|js|ts)$/.test(f)).filter((f: fs.PathOrFileDescriptor) => /__admin\/(forms|funnels|emails|strings|models|print|quiz|recommendations)\b/.test(fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))
   assert.deepEqual(hits.map((f: string) => path.relative(theme, f)), [])
 })
@@ -92,14 +91,13 @@ await ta('a save through the pipe: refused before the write and the hook; a good
   try {
     fs.mkdirSync(path.join(d, 'content/funnels'), { recursive: true })
     const m = byKey(await registry(ROOT, { site: ALL }), 'funnels')
-    let hooks = 0
+    let hooks = 0 as number   /* counted inside the callback below, which the checker cannot see run */
     const test = { ...m, after: () => { hooks++ } }
     await assert.rejects(() => write(test, 'welcome', { data: { title: 'Welcome' }, parsed: { steps: [] } }, d, { create: true }), /at least one step/)
     assert.ok(!fs.existsSync(path.join(d, 'content/funnels/welcome.md')) && hooks === 0)
     await assert.rejects(() => write(test, 'Bad Name', { data: { title: 'x' }, parsed: { steps: [{ title: 'One', after: '1d', subject: 'Hi', body: 'Hello' }] } }, d, { create: true }), /lower-case words/)
     await write(test, 'welcome', { data: { title: 'Welcome', published: true }, parsed: { steps: [{ title: 'One', after: '1d', subject: 'Hi', body: 'Hello' }] } }, d, { create: true })
-    // @ts-expect-error TS2367, from the conversion: This comparison appears to be unintentional because the types '0' and '1' have no overlap.
-    assert.ok(fs.existsSync(path.join(d, 'content/funnels/welcome.md')) && hooks === 1)
+    assert.ok(fs.existsSync(path.join(d, 'content/funnels/welcome.md')) && (hooks as number) === 1)
     const back = await read(test, 'welcome', d)
     assert.equal(back.data.title, 'Welcome'); assert.equal(back.parsed.steps.length, 1)
     const items = await list(test, d); assert.equal(items.length, 1); assert.ok(items[0].words)
@@ -178,9 +176,7 @@ await ta('shared pipe imports do not depend on a function-scoped import map', as
   if (!fs.existsSync(pipe)) return
   const STATIC_IMPORT = /^\s*(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]/gm
   const DYNAMIC_IMPORT = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g
-  // @ts-expect-error TS7023, from the conversion: 'code' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of
-  const code = (dir: fs.PathLike) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    // @ts-expect-error TS2345, from the conversion: Argument of type 'PathLike' is not assignable to parameter of type 'string'. Type 'URL' is not assignable to type 'string'.
+  const code = (dir: string): string[] => fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const file = path.join(dir, entry.name)
     if (entry.isDirectory()) return code(file)
     return /\.(?:[cm]?js|ts)$/.test(file) ? [file] : []

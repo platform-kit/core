@@ -54,7 +54,7 @@ export function pageWords(sections: { component: string; }[] = []) {
   return out.join(' ').replace(/\s+/g, ' ').trim()
 }
 
-export function searchRows({ articles = [], wiki = [], docs = [], books = [], products = [], pages = [] }) {
+export function searchRows({ articles = [], wiki = [], docs = [], books = [], products = [], pages = [] }: { articles?: any[], wiki?: any[], docs?: any[], books?: any[], products?: any[], pages?: any[] }) {
   const rows: any = []
   articles.forEach((a: any) => rows.push({ kind: 'article', id: a.id, title: a.title, sub: a.description || '',
     href: '/content/articles/' + a.id, image: a.image || null, date: day(a.date), tags: a.tags || [],

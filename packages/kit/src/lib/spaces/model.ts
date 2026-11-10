@@ -74,7 +74,7 @@ export function waitingOf(rows: UnreadRow[] = [], now = Date.now()) {
 }
 
 /* the same, per space */
-export function badgesBySpace(rows = [], now = Date.now()) {
+export function badgesBySpace(rows: UnreadRow[] = [], now = Date.now()) {
   const by = new Map()
   for (const r of rows) {
     const k = (r as any)?.space || ''
@@ -87,7 +87,9 @@ export function badgesBySpace(rows = [], now = Date.now()) {
 }
 
 /* what a catch-up asks for: the last seq seen per channel, the rows the client already holds */
-export function cursorsOf(rows = []) {
+/* how far somebody has read one channel: the last seq seen, or read */
+export type CursorRow = { channel: string, seen?: number, read?: number }
+export function cursorsOf(rows: CursorRow[] = []) {
   const out: any = {}
   for (const r of rows) {
     const id = (r as any)?.channel || (r as any)?.channel_id
@@ -228,14 +230,16 @@ export const saidBy = (m: { author_id?: any; meta?: any; kind?: string; body?: s
  * Outside a thread it is the channel, and a thread's replies are NOT folded in: they are a
  * conversation somebody stepped aside to have, and the channel does not show them either.
  */
-export function roomFor({ messages = [], thread = null, threadRoot = null } = {}) {
+/* a line of a room as the prose and the thread view read it; the rest of the row rides along */
+export type SpaceLine = { id?: string, kind?: string, body?: string | null, author_id?: string, meta?: any, deleted_at?: string | null, [k: string]: any }
+export function roomFor({ messages = [], thread = null, threadRoot = null }: { messages?: SpaceLine[], thread?: { root: SpaceLine, replies: SpaceLine[] } | null, threadRoot?: string | null } = {}) {
   const inThread = !!(threadRoot && thread && (thread as any).root && (thread as any).root.id === threadRoot)
   if (!inThread) return { inThread: false, lines: messages || [] }
   return { inThread: true, lines: [(thread as any).root, ...((thread as any).replies || [])].filter(Boolean) }
 }
 
 /* the room as prose, newest last: what a person would have read, for something that was not here */
-export function roomAsProse(messages = [], { names = {}, words = {}, money, someone = 'someone', limit = 60, who, unheard = '' }: any = {}) {
+export function roomAsProse(messages: SpaceLine[] = [], { names = {}, words = {}, money, someone = 'someone', limit = 60, who, unheard = '' }: any = {}) {
   /* `who` lets a surface label a line by SIDE rather than by person — a support desk has two of
      them and no names — while what was SAID stays the one function, so a voice note or an
      attachment is never silently dropped from one surface's transcript and not another's. */
